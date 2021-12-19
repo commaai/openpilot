@@ -246,7 +246,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Model longitudinal ",
       "Remain alert",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .4, 0., 1.5),
+      Priority.LOW, VisualAlert.none, AudibleAlert.promptSingle, 1.5),
   },
 
   'dfButtonAlert': {
@@ -254,7 +254,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Using profile: ",
       "",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .4, 0., 1.5),
+      Priority.LOW, VisualAlert.none, AudibleAlert.promptSingle, 1.5),
   },
 
   'lsButtonAlert': {
@@ -262,7 +262,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Lane Speed set to: ",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .4, 0., 1.5),
+      Priority.LOW, VisualAlert.none, AudibleAlert.promptSingle, 1.5),
   },
 
   'dfButtonAlertSilent': {
@@ -270,7 +270,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Dynamic follow: ",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2, 0., 1.5),
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 1.5),
   },
 
   'laneSpeedAlert': {
@@ -278,7 +278,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "",
       "",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .4, 0., .1),
+      Priority.LOW, VisualAlert.none, AudibleAlert.promptSingle, .1),
   },
 
   'laneSpeedAlertSilent': {
@@ -286,7 +286,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "",
       "",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2, 0., .1),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
 
   'laneSpeedKeeping': {
@@ -294,7 +294,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "KEEPING ",
       "",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2, 0., .1),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
 
   EventName.joystickDebug: {
