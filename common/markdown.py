@@ -20,8 +20,14 @@ def parse_markdown(text: str, tab_length: int = 2) -> str:
     return end_level
 
   for i, line in enumerate(lines):
-    if i + 1 < len(lines) and lines[i + 1].startswith("==="):  # heading
-      output.append(f"<h1>{line}</h1>")
+    if (i + 1 < len(lines) and lines[i + 1].startswith("===")) or line.startswith("#"):  # heading
+      list_level = end_outstanding_lists(list_level, 0)
+      if line.startswith("#"):
+        heading_size = len(line) - len(line.lstrip("#"))
+        line = line.lstrip("#").lstrip(" ")
+      else:
+        heading_size = 1
+      output.append(f"<h{heading_size}>{line}</h{heading_size}>")
     elif line.startswith("==="):
       pass
     elif line.lstrip().startswith("* "):  # list

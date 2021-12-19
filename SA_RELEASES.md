@@ -1,5 +1,6 @@
-Stock Additions - 2021-12-19 (0.8.12)
+Stock Additions 0.8.12
 ===
+## - 2021-12-19 Notes
  * Update to 0.8.12 with new MPC tuning, smoothing out stopping control
    * Removing "SA Update x" — Starting now, any new fork changes will just be appended to the latest release notes and only will be reset when SA is updated to a new version of openpilot
  * Custom TSS2 stop and go tuning
