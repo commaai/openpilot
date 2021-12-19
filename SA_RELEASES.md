@@ -8,6 +8,7 @@ Stock Additions 0.8.12
  * New dynamic follow profile configuration: (same) traffic, 1.45sec (stock), 1.8sec (prev stock)
  * New improved lead model (exit model soon)
  * Temporarily removed Model Long Button
+ * New chime sound for DF and LS alerts made using the new disengage sound. Similar to the previous sound that was removed
 
 Stock Additions Update 2 - 2021-11-14 (0.8.11)
 ===
