@@ -109,6 +109,7 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
 
   main_layout->addWidget(btns_wrapper, 0, Qt::AlignBottom);
 
+  // Model long button
   mlButton = new QPushButton("Model Cruise Control");
   QObject::connect(mlButton, &QPushButton::clicked, [=]() {
     QUIState::ui_state.scene.mlButtonEnabled = !mlEnabled;
@@ -124,6 +125,17 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
     mlButton->hide();
   }
 
+  // Lane speed button
+  lsButton = new QPushButton("LS\nmode");
+  QObject::connect(lsButton, &QPushButton::clicked, [=]() {
+    QUIState::ui_state.scene.lsButtonStatus = lsStatus < 2 ? lsStatus + 1 : 0;  // wrap back around
+  });
+  lsButton->setFixedWidth(200);
+  lsButton->setFixedHeight(200);
+  btns_layout->addWidget(lsButton, 0, Qt::AlignRight);
+  btns_layout->addSpacing(35);
+
+  // Dynamic follow button
   dfButton = new QPushButton("DF\nprofile");
   QObject::connect(dfButton, &QPushButton::clicked, [=]() {
     QUIState::ui_state.scene.dfButtonStatus = dfStatus < 3 ? dfStatus + 1 : 0;  // wrap back around
@@ -159,6 +171,16 @@ void ButtonsWindow::updateState(const UIState &s) {
       dfButtonStatus.setStatus(dfStatus);
       QUIState::ui_state.pm->send("dynamicFollowButton", msg);
     }
+  }
+
+  if (lsStatus != s.scene.lsButtonStatus) {  // update lane speed button
+    lsStatus = s.scene.lsButtonStatus;
+    lsButton->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(lsButtonColors.at(lsStatus)));
+
+    MessageBuilder msg;
+    auto lsButtonStatus = msg.initEvent().initLaneSpeedButton();
+    lsButtonStatus.setStatus(lsStatus);
+    QUIState::ui_state.pm->send("laneSpeedButton", msg);
   }
 
   if (mlEnabled != s.scene.mlButtonEnabled) {  // update model longitudinal button

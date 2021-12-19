@@ -27,12 +27,12 @@ void saInit(UIState *s) {
     qDebug() << "set dfButtonStatus to" << QString::fromStdString(dynamic_follow);
     s->scene.dfButtonStatus = DF_TO_IDX[dynamic_follow];
   }
-//  std::string lane_speed_alerts = util::read_file("/data/community/params/lane_speed_alerts");
-//  if (lane_speed_alerts != "") {
-//    lane_speed_alerts = lane_speed_alerts.substr(1, lane_speed_alerts.find_last_of('"') - 1);
-//    qDebug() << "Set lsButtonStatus to " << lane_speed_alerts;
-//    s->scene.lsButtonStatus = DF_TO_IDX[lane_speed_alerts];
-//  }
+  std::string lane_speed_alerts = util::read_file("/data/community/params/lane_speed_alerts");
+  if (lane_speed_alerts != "") {
+    lane_speed_alerts = lane_speed_alerts.substr(1, lane_speed_alerts.find_last_of('"') - 1);
+    qDebug() << "Set lsButtonStatus to " << QString::fromStdString(lane_speed_alerts);
+    s->scene.lsButtonStatus = LS_TO_IDX[lane_speed_alerts];
+  }
 }
 
 // Projects a point in car to space to the corresponding point in full frame
