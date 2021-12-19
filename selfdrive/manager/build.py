@@ -22,7 +22,7 @@ MAX_BUILD_PROGRESS = 100
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 
-def build(spinner, dirty=False):
+def build(spinner: Spinner, dirty: bool = False) -> None:
   env = os.environ.copy()
   env['SCONS_PROGRESS'] = "1"
   nproc = os.cpu_count()
@@ -30,6 +30,7 @@ def build(spinner, dirty=False):
 
   for retry in [True, False]:
     scons = subprocess.Popen(["scons", j_flag, "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    assert scons.stderr is not None
 
     compile_output = []
 

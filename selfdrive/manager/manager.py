@@ -100,12 +100,12 @@ def manager_init() -> None:
                    device=HARDWARE.get_device_type())
 
 
-def manager_prepare():
+def manager_prepare() -> None:
   for p in managed_processes.values():
     p.prepare()
 
 
-def manager_cleanup():
+def manager_cleanup() -> None:
   # send signals to kill all procs
   for p in managed_processes.values():
     p.stop(block=False)
