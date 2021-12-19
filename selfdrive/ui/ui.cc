@@ -244,11 +244,11 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   });
   std::string toyota_distance_btn = util::read_file("/data/community/params/toyota_distance_btn");
   if (toyota_distance_btn == "true") {
-    ui_state.enable_distance_btn = true;
-    ui_state.pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"laneSpeedButton", "modelLongButton"});
+    enable_distance_btn = true;
+    pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"laneSpeedButton", "modelLongButton"});
   } else {
-    ui_state.enable_distance_btn = false;
-    ui_state.pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"laneSpeedButton", "dynamicFollowButton", "modelLongButton"});
+    enable_distance_btn = false;
+    pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"laneSpeedButton", "dynamicFollowButton", "modelLongButton"});
   }
 
   Params params;
