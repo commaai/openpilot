@@ -262,7 +262,7 @@ void IconItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, 
   painter->drawEllipse(0, 0, radius, radius);
   painter->setOpacity(opacity);
   painter->drawPixmap((radius - img_size) / 2, (radius - img_size) / 2, pixmap);
-};
+}
 
 // OnroadGraphicsView
 OnroadGraphicsView::OnroadGraphicsView(QWidget *parent) : QGraphicsView(parent) {

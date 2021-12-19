@@ -28,7 +28,7 @@ public:
   CurrentSpeedItem(QGraphicsItem *parent = nullptr) : QGraphicsItem(parent) {}
   void update(const QString &speed, const QString &unit);
   QRectF boundingRect() const override { return {0, 0, 300, 300}; }
- 
+
 protected:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   QString speed;
@@ -68,7 +68,7 @@ class OnroadHud : public QGraphicsScene {
 public:
   explicit OnroadHud(QObject *parent = nullptr);
   void updateState(const UIState &s);
-  void 	setGeometry(const QRectF &rect);
+  void setGeometry(const QRectF &rect);
   inline void updateAlert(const Alert &alert, const QColor &color) {
     alerts->update(alert, color);
   }
@@ -105,16 +105,16 @@ class OnroadWindow : public QWidget {
   Q_OBJECT
 
 public:
-  OnroadWindow(QWidget* parent = 0);
+  OnroadWindow(QWidget *parent = 0);
   bool isMapVisible() const { return map && map->isVisible(); }
 
 private:
   void paintEvent(QPaintEvent *event);
-  void mousePressEvent(QMouseEvent* e) override;
+  void mousePressEvent(QMouseEvent *e) override;
   QColor bg = bg_colors[STATUS_DISENGAGED];
   OnroadGraphicsView *onroad_view;
   QWidget *map = nullptr;
-  QHBoxLayout* split;
+  QHBoxLayout *split;
 
 private slots:
   void offroadTransition(bool offroad);
