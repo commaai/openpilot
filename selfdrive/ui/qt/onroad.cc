@@ -27,7 +27,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   split = new QHBoxLayout();
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
-  
+
   onroad_view = new OnroadGraphicsView(this);
   split->addWidget(onroad_view);
   main_layout->addLayout(split);
@@ -156,7 +156,7 @@ OnroadHud::OnroadHud(QObject *parent) : QGraphicsScene(parent) {
   addItem(wheel = new IconItem("../assets/img_chffr_wheel.png"));
   addItem(dm = new IconItem("../assets/img_driver_face.png"));
   addItem(alerts = new OnroadAlerts);
-  
+
   for (auto item : items()) {
     item->setFlag(QGraphicsItem::ItemIgnoresTransformations);
     item->setCacheMode(QGraphicsItem::DeviceCoordinateCache);
@@ -165,7 +165,7 @@ OnroadHud::OnroadHud(QObject *parent) : QGraphicsScene(parent) {
 
 void OnroadHud::setGeometry(const QRectF &rect) {
   setSceneRect(rect);
-  
+
   max_speed->setPos(bdr_s * 2, bdr_s * 1.5);
   current_speed->setPos((rect.width() / 2 - current_speed->boundingRect().width() / 2), rect.top());
   wheel->setPos(rect.right() - wheel->boundingRect().width() - bdr_s * 2.0, bdr_s * 1.5);
