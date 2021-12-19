@@ -18,7 +18,7 @@ from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
 from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import get_dirty, get_commit, get_version, get_origin, get_short_branch, \
+from selfdrive.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
                               terms_version, training_version, get_fork_remote
 
 
@@ -96,7 +96,7 @@ def manager_init():
   if get_fork_remote() and not (os.getenv("NOLOG") or os.getenv("NOCRASH") or PC):
     crash.init()
   crash.bind_user(id=dongle_id)
-  crash.bind_extra(dirty=get_dirty(fork=True), origin=get_origin(), branch=get_short_branch(), commit=get_commit(),
+  crash.bind_extra(dirty=is_dirty(fork=True), origin=get_origin(), branch=get_short_branch(), commit=get_commit(),
                    device=HARDWARE.get_device_type())
 
 

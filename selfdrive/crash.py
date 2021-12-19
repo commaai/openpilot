@@ -2,7 +2,7 @@
 from selfdrive.swaglog import cloudlog
 from selfdrive.version import get_version
 
-from selfdrive.version import get_origin, get_branch, get_dirty, get_commit
+from selfdrive.version import get_origin, get_branch, is_dirty, get_commit
 from common.op_params import opParams
 
 import sentry_sdk
@@ -38,7 +38,7 @@ def init() -> None:
   sentry_sdk.init(sentry_uri, default_integrations=False,
                   integrations=[ThreadingIntegration(propagate_hub=True)], release=get_version())
 
-  error_tags = {'dirty': get_dirty(fork=True), 'origin': get_origin(), 'branch': get_branch(), 'commit': get_commit(), 'username': opParams().get('username')}
+  error_tags = {'dirty': is_dirty(fork=True), 'origin': get_origin(), 'branch': get_branch(), 'commit': get_commit(), 'username': opParams().get('username')}
   if error_tags['username'] is None or not isinstance(error_tags['username'], str):
     error_tags['username'] = 'undefined'
   for tag in error_tags:
