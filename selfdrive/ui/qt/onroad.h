@@ -19,7 +19,6 @@ public:
 
 protected:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
-
   QString maxSpeed;
   bool is_cruise_set = false;
 };
@@ -32,7 +31,6 @@ public:
  
 protected:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
-
   QString speed;
   QString speedUnit;
 };
@@ -41,7 +39,6 @@ class OnroadAlerts : public QGraphicsRectItem {
 public:
   OnroadAlerts(QGraphicsItem *parent = 0) : QGraphicsRectItem(parent) {}
   void update(const Alert &a, const QColor &color);
-  QRectF boundingRect() const override;
 
 protected:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
@@ -60,7 +57,6 @@ public:
 
 protected:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
-
   QPixmap pixmap;
   QColor bg;
   bool opacity = 1.0;
@@ -68,23 +64,18 @@ protected:
   const int img_size = (radius / 2) * 1.5;
 };
 
-class OnroadHud : public QGraphicsWidget {
+class OnroadHud : public QGraphicsScene {
 public:
-  explicit OnroadHud(QGraphicsItem *parent = nullptr);
+  explicit OnroadHud(QObject *parent = nullptr);
   void updateState(const UIState &s);
-  void 	setGeometry(const QRectF &rect) override;
+  void 	setGeometry(const QRectF &rect);
   inline void updateAlert(const Alert &alert, const QColor &color) {
     alerts->update(alert, color);
   }
 
 private:
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
-  void drawLaneLines(QPainter &painter, const UIScene &scene);
-  void drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd);
-  inline QColor redColor(int alpha = 255) { return QColor(201, 34, 49, alpha); }
-
-  OnroadAlerts *alerts;
   QGraphicsRectItem *header;
+  OnroadAlerts *alerts;
   MaxSpeedItem *max_speed;
   CurrentSpeedItem *current_speed;
   IconItem *dm, *wheel;
@@ -98,11 +89,12 @@ public:
   }
 
 protected:
+  void drawLaneLines(QPainter &painter, const UIScene &scene);
+  void drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd);
+  inline QColor redColor(int alpha = 255) { return QColor(201, 34, 49, alpha); }
   void offroadTransition(bool offroad);
   void resizeEvent(QResizeEvent *event) override;
-  void drawBackground(QPainter *painter, const QRectF &rect) override {
-    camera_view->doPaint();
-  }
+  void drawBackground(QPainter *painter, const QRectF &rect) override;
 
   OnroadHud *hud;
   CameraViewWidget *camera_view;
@@ -117,8 +109,8 @@ public:
   bool isMapVisible() const { return map && map->isVisible(); }
 
 private:
+  void paintEvent(QPaintEvent *event);
   void mousePressEvent(QMouseEvent* e) override;
-
   QColor bg = bg_colors[STATUS_DISENGAGED];
   OnroadGraphicsView *onroad_view;
   QWidget *map = nullptr;
