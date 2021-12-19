@@ -4,7 +4,7 @@ import signal
 import struct
 import time
 import subprocess
-from typing import Optional
+from typing import Optional, List, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process
 
@@ -23,7 +23,7 @@ WATCHDOG_FN = "/dev/shm/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None
 
 
-def launcher(proc, name):
+def launcher(proc: str, name: str) -> None:
   try:
     # import the process
     mod = importlib.import_module(proc)
@@ -38,7 +38,7 @@ def launcher(proc, name):
     cloudlog.bind(daemon=name)
 
     # exec the process
-    mod.main()
+    getattr(mod, 'main')()
   except KeyboardInterrupt:
     cloudlog.warning(f"child {proc} got SIGINT")
   except Exception:
@@ -48,13 +48,13 @@ def launcher(proc, name):
     raise
 
 
-def nativelauncher(pargs, cwd):
+def nativelauncher(pargs: List[str], cwd: str) -> None:
   # exec the process
   os.chdir(cwd)
   os.execvp(pargs[0], pargs)
 
 
-def join_process(process, timeout):
+def join_process(process: Process, timeout: float) -> None:
   # Process().join(timeout) will hang due to a python 3 bug: https://bugs.python.org/issue28382
   # We have to poll the exitcode instead
   t = time.monotonic()
@@ -66,6 +66,7 @@ class ManagerProcess(ABC):
   unkillable = False
   daemon = False
   sigkill = False
+  persistent = False
   proc: Optional[Process] = None
   enabled = True
   name = ""
@@ -87,13 +88,14 @@ class ManagerProcess(ABC):
     self.stop()
     self.start()
 
-  def check_watchdog(self, started):
+  def check_watchdog(self, started: bool):
     if self.watchdog_max_dt is None or self.proc is None:
       return
 
     try:
       fn = WATCHDOG_FN + str(self.proc.pid)
-      self.last_watchdog_time = struct.unpack('Q', open(fn, "rb").read())[0]
+      # TODO: why can't pylint find struct.unpack?
+      self.last_watchdog_time = struct.unpack('Q', open(fn, "rb").read())[0] # pylint: disable=no-member
     except Exception:
       pass
 
@@ -183,10 +185,10 @@ class NativeProcess(ManagerProcess):
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
 
-  def prepare(self):
+  def prepare(self) -> None:
     pass
 
-  def start(self):
+  def start(self) -> None:
     # In case we only tried a non blocking stop we need to stop it before restarting
     if self.shutting_down:
         self.stop()
@@ -213,12 +215,12 @@ class PythonProcess(ManagerProcess):
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
 
-  def prepare(self):
+  def prepare(self) -> None:
     if self.enabled:
       cloudlog.info(f"preimporting {self.module}")
       importlib.import_module(self.module)
 
-  def start(self):
+  def start(self) -> None:
     # In case we only tried a non blocking stop we need to stop it before restarting
     if self.shutting_down:
         self.stop()
@@ -243,10 +245,10 @@ class DaemonProcess(ManagerProcess):
     self.enabled = enabled
     self.persistent = True
 
-  def prepare(self):
+  def prepare(self) -> None:
     pass
 
-  def start(self):
+  def start(self) -> None:
     params = Params()
     pid = params.get(self.param_name, encoding='utf-8')
 
@@ -270,11 +272,11 @@ class DaemonProcess(ManagerProcess):
 
     params.put(self.param_name, str(proc.pid))
 
-  def stop(self, retry=True, block=True):
+  def stop(self, retry=True, block=True) -> None:
     pass
 
 
-def ensure_running(procs, started, driverview=False, not_run=None):
+def ensure_running(procs: ValuesView[ManagerProcess], started: bool, driverview: bool=False, not_run: Optional[List[str]]=None) -> None:
   if not_run is None:
     not_run = []
 
@@ -285,7 +287,8 @@ def ensure_running(procs, started, driverview=False, not_run=None):
       p.stop(block=False)
     elif p.persistent:
       p.start()
-    elif p.driverview and driverview:
+    elif getattr(p, 'driverview', False) and driverview:
+      # TODO: why is driverview an argument here? can this be done with the name?
       p.start()
     elif started:
       p.start()
