@@ -303,6 +303,10 @@ class Tici(HardwareBase):
       val = "0" if powersave_enabled else "1"
       os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
 
+    for n in ('0', '4'):
+      gov = 'powersave' if powersave_enabled else 'performance'
+      os.system(f"sudo su -c 'echo {gov} > /sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor'")
+
   def get_gpu_usage_percent(self):
     try:
       used, total = open('/sys/class/kgsl/kgsl-3d0/gpubusy').read().strip().split()

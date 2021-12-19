@@ -288,15 +288,25 @@ void OnroadHud::updateState(const UIState &s) {
   setProperty("speed", QString::number(std::nearbyint(cur_speed)));
   setProperty("maxSpeed", maxspeed_str);
   setProperty("speedUnit", s.scene.is_metric ? "km/h" : "mph");
-  setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
-  setProperty("engageable", cs.getEngageable());
   setProperty("status", s.status);
+
+  // update engageability and DM icons at 2Hz
+  if (sm.frame % (UI_FREQ / 2) == 0) {
+    setProperty("engageable", cs.getEngageable() || cs.getEnabled());
+    setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
+  }
 }
 
 void OnroadHud::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
+
+  // Header gradient
+  QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
+  bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
+  bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+  p.fillRect(0, 0, width(), header_h, bg);
 
   // max speed
   QRect rc(bdr_s * 2, bdr_s * 1.5, 184, 202);

@@ -130,12 +130,6 @@ static void update_state(UIState *s) {
   UIScene &scene = s->scene;
   s->running_time = 1e-9 * (nanos_since_boot() - sm["deviceState"].getDeviceState().getStartedMonoTime());
 
-  // update engageability and DM icons at 2Hz
-  if (sm.frame % (UI_FREQ / 2) == 0) {
-    auto cs = sm["controlsState"].getControlsState();
-    scene.engageable = cs.getEngageable() || cs.getEnabled();
-    scene.dm_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
-  }
   if (sm.updated("modelV2") && s->vg) {
     update_model(s, sm["modelV2"].getModelV2());
   }

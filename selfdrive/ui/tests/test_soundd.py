@@ -19,7 +19,7 @@ SOUNDS = {
   AudibleAlert.disengage: 230,
   AudibleAlert.refuse: 189,
   AudibleAlert.prompt: 230,
-  AudibleAlert.promptRepeat: 468,
+  AudibleAlert.promptRepeat: 520,
   AudibleAlert.promptDistracted: 187,
   AudibleAlert.warningSoft: 499,
   AudibleAlert.warningImmediate: 496,
@@ -66,9 +66,9 @@ class TestSoundd(unittest.TestCase):
         pm.send('controlsState', msg)
         time.sleep(DT_CTRL)
 
-      tolerance = expected_writes / 10
+      tolerance = expected_writes / 8
       actual_writes = get_total_writes() - start_writes
-      #print(f"  expected {expected_writes} writes, got {actual_writes}")
+      print(f"  expected {expected_writes} writes, got {actual_writes}")
       assert abs(expected_writes - actual_writes) <= tolerance, f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}"
 
 if __name__ == "__main__":
