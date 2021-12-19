@@ -16,16 +16,7 @@
 #include <nanovg_gl.h>
 #include <nanovg_gl_utils.h>
 
-#include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
-#include "selfdrive/ui/ui.h"
-
-static void ui_draw_text(const UIState *s, float x, float y, const char *string, float size, NVGcolor color, const char *font_name) {
-  nvgFontFace(s->vg, font_name);
-  nvgFontSize(s->vg, size);
-  nvgFillColor(s->vg, color);
-  nvgText(s->vg, x, y, string, NULL);
-}
 
 static void draw_chevron(UIState *s, float x, float y, float sz, NVGcolor fillColor, NVGcolor glowColor) {
   // glow
@@ -47,21 +38,6 @@ static void draw_chevron(UIState *s, float x, float y, float sz, NVGcolor fillCo
   nvgClosePath(s->vg);
   nvgFillColor(s->vg, fillColor);
   nvgFill(s->vg);
-}
-
-static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, int radius, const char *image, NVGcolor color, float img_alpha) {
-  nvgBeginPath(s->vg);
-  nvgCircle(s->vg, center_x, center_y, radius);
-  nvgFillColor(s->vg, color);
-  nvgFill(s->vg);
-  const int img_size = radius * 1.5;
-  ui_draw_image(s, {center_x - (img_size / 2), center_y - (img_size / 2), img_size, img_size}, image, img_alpha);
-}
-
-static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, int radius, const char *image, bool active) {
-  float bg_alpha = active ? 0.3f : 0.1f;
-  float img_alpha = active ? 1.0f : 0.15f;
-  ui_draw_circle_image(s, center_x, center_y, radius, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
 static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &lead_data, const vertex_data &vd) {
@@ -171,60 +147,13 @@ static void ui_draw_world(UIState *s) {
   nvgResetScissor(s->vg);
 }
 
-static void ui_draw_vision_maxspeed(UIState *s) {
-  const int SET_SPEED_NA = 255;
-  float maxspeed = (*s->sm)["controlsState"].getControlsState().getVCruise();
-  const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
-  if (is_cruise_set && !s->scene.is_metric) { maxspeed *= KM_TO_MILE; }
-
-  const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
-  ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
-  ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
-
-  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, rect.centerX(), 118, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), "sans-regular");
-  if (is_cruise_set) {
-    const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
-    ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, "sans-bold");
-  } else {
-    ui_draw_text(s, rect.centerX(), 212, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), "sans-semibold");
-  }
-}
-
-static void ui_draw_vision_speed(UIState *s) {
-  const float speed = std::max(0.0, (*s->sm)["carState"].getCarState().getVEgo() * (s->scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
-  const std::string speed_str = std::to_string((int)std::nearbyint(speed));
-  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, s->fb_w/2, 210, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
-  ui_draw_text(s, s->fb_w/2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
-}
-
-static void ui_draw_vision_event(UIState *s) {
-  if (s->scene.engageable) {
-    // draw steering wheel
-    const int radius = 96;
-    const int center_x = s->fb_w - radius - bdr_s * 2;
-    const int center_y = radius  + (bdr_s * 1.5);
-    const QColor &color = bg_colors[s->status];
-    NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), color.alpha());
-    ui_draw_circle_image(s, center_x, center_y, radius, "wheel", nvg_color, 1.0f);
-  }
-}
-
-static void ui_draw_vision_face(UIState *s) {
-  const int radius = 96;
-  const int center_x = radius + (bdr_s * 2);
-  const int center_y = s->fb_h - footer_h / 2;
-  ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dm_active);
-}
-
 static void ui_draw_vision_header(UIState *s) {
   NVGpaint gradient = nvgLinearGradient(s->vg, 0, header_h - (header_h / 2.5), 0, header_h,
                                         nvgRGBAf(0, 0, 0, 0.45), nvgRGBAf(0, 0, 0, 0));
-  ui_fill_rect(s->vg, {0, 0, s->fb_w , header_h}, gradient);
-  ui_draw_vision_maxspeed(s);
-  ui_draw_vision_speed(s);
-  ui_draw_vision_event(s);
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, 0, 0, s->fb_w, header_h);
+  nvgFillPaint(s->vg, gradient);
+  nvgFill(s->vg);
 }
 
 static void ui_draw_vision(UIState *s) {
@@ -233,11 +162,8 @@ static void ui_draw_vision(UIState *s) {
   if (scene->world_objects_visible) {
     ui_draw_world(s);
   }
-  // Set Speed, Current Speed, Status/Events
+  // TODO: move this to Qt
   ui_draw_vision_header(s);
-  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
-    ui_draw_vision_face(s);
-  }
 }
 
 void ui_draw(UIState *s, int w, int h) {
@@ -253,61 +179,10 @@ void ui_draw(UIState *s, int w, int h) {
   glDisable(GL_BLEND);
 }
 
-void ui_draw_image(const UIState *s, const Rect &r, const char *name, float alpha) {
-  nvgBeginPath(s->vg);
-  NVGpaint imgPaint = nvgImagePattern(s->vg, r.x, r.y, r.w, r.h, 0, s->images.at(name), alpha);
-  nvgRect(s->vg, r.x, r.y, r.w, r.h);
-  nvgFillPaint(s->vg, imgPaint);
-  nvgFill(s->vg);
-}
-
-void ui_draw_rect(NVGcontext *vg, const Rect &r, NVGcolor color, int width, float radius) {
-  nvgBeginPath(vg);
-  radius > 0 ? nvgRoundedRect(vg, r.x, r.y, r.w, r.h, radius) : nvgRect(vg, r.x, r.y, r.w, r.h);
-  nvgStrokeColor(vg, color);
-  nvgStrokeWidth(vg, width);
-  nvgStroke(vg);
-}
-
-static inline void fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor *color, const NVGpaint *paint, float radius) {
-  nvgBeginPath(vg);
-  radius > 0 ? nvgRoundedRect(vg, r.x, r.y, r.w, r.h, radius) : nvgRect(vg, r.x, r.y, r.w, r.h);
-  if (color) nvgFillColor(vg, *color);
-  if (paint) nvgFillPaint(vg, *paint);
-  nvgFill(vg);
-}
-void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor &color, float radius) {
-  fill_rect(vg, r, &color, nullptr, radius);
-}
-void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGpaint &paint, float radius) {
-  fill_rect(vg, r, nullptr, &paint, radius);
-}
-
 void ui_nvg_init(UIState *s) {
   // on EON, we enable MSAA
   s->vg = Hardware::EON() ? nvgCreate(0) : nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
-
-  // init fonts
-  std::pair<const char *, const char *> fonts[] = {
-      {"sans-regular", "../assets/fonts/opensans_regular.ttf"},
-      {"sans-semibold", "../assets/fonts/opensans_semibold.ttf"},
-      {"sans-bold", "../assets/fonts/opensans_bold.ttf"},
-  };
-  for (auto [name, file] : fonts) {
-    int font_id = nvgCreateFont(s->vg, name, file);
-    assert(font_id >= 0);
-  }
-
-  // init images
-  std::vector<std::pair<const char *, const char *>> images = {
-    {"wheel", "../assets/img_chffr_wheel.png"},
-    {"driver_face", "../assets/img_driver_face.png"},
-  };
-  for (auto [name, file] : images) {
-    s->images[name] = nvgCreateImage(s->vg, file, 1);
-    assert(s->images[name] != 0);
-  }
 }
 
 void ui_resize(UIState *s, int width, int height) {
