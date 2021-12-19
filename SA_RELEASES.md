@@ -1,6 +1,7 @@
 Stock Additions 0.8.13
 ===
 ## - 2021-19-19, 4:51pm CST Notes
+ * Add steering torque model for Toyota Camry
  * Update SA to the latest master commit (0.8.13)! This includes:
    * A longitudinal sng bug fix
    * Brand new no-exit-taking model

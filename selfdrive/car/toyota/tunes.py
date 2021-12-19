@@ -26,6 +26,7 @@ class LatTunes(Enum):
   PID_M = 14
   PID_N = 15
   STEER_MODEL_COROLLA = 16
+  STEER_MODEL_CAMRY = 17
 
 
 ###### LONG ######
@@ -100,11 +101,17 @@ def set_lat_tune(tune, params, name):
     tune.lqr.l = [0.3233671, 0.3185757]
     tune.lqr.dcGain = 0.002237852961363602
 
-  elif name == LatTunes.STEER_MODEL_COROLLA:
+  if 'STEER_MODEL' in str(name):
     tune.init('model')
-    tune.model.name = "corolla_model_v5"
     tune.model.useRates = False  # TODO: makes model sluggish, see comments in latcontrol_model.py
     tune.model.multiplier = 1.
+
+    if name == LatTunes.STEER_MODEL_COROLLA:
+      tune.model.name = "corolla_model_v5"
+    elif name == LatTunes.STEER_MODEL_CAMRY:
+      tune.model.name = "camryh_tss2"
+    else:
+      raise NotImplementedError('This steering model does not exist')
 
   elif 'PID' in str(name):
     tune.init('pid')
