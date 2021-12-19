@@ -5,6 +5,7 @@ import signal
 import subprocess
 import sys
 import traceback
+from typing import List, Tuple, Union
 
 import cereal.messaging as messaging
 import selfdrive.crash as crash
@@ -25,7 +26,7 @@ from selfdrive.version import is_dirty, get_commit, get_version, get_origin, get
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
 
-def manager_init():
+def manager_init() -> None:
   # update system time from panda
   set_time(cloudlog)
 
@@ -35,7 +36,7 @@ def manager_init():
   params = Params()
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
 
-  default_params = [
+  default_params: List[Tuple[str, Union[str, bytes]]] = [
     ("CompletedTrainingVersion", "0"),
     ("HasAcceptedTerms", "0"),
     ("OpenpilotEnabledToggle", "1"),
@@ -56,7 +57,7 @@ def manager_init():
 
   # is this dashcam?
   if os.getenv("PASSIVE") is not None:
-    params.put_bool("Passive", bool(int(os.getenv("PASSIVE"))))
+    params.put_bool("Passive", bool(int(os.getenv("PASSIVE", "0"))))
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")

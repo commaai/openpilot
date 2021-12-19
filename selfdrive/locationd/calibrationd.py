@@ -8,6 +8,7 @@ and the image input into the neural network is not corrected for roll.
 
 import os
 import copy
+from typing import NoReturn
 import numpy as np
 import cereal.messaging as messaging
 from cereal import log
@@ -183,11 +184,11 @@ class Calibrator():
     msg.liveCalibration.rpyCalibSpread = [float(x) for x in self.calib_spread]
     return msg
 
-  def send_data(self, pm):
+  def send_data(self, pm) -> None:
     pm.send('liveCalibration', self.get_msg())
 
 
-def calibrationd_thread(sm=None, pm=None):
+def calibrationd_thread(sm=None, pm=None) -> NoReturn:
   if sm is None:
     sm = messaging.SubMaster(['cameraOdometry', 'carState'], poll=['cameraOdometry'])
 
@@ -215,7 +216,7 @@ def calibrationd_thread(sm=None, pm=None):
       calibrator.send_data(pm)
 
 
-def main(sm=None, pm=None):
+def main(sm=None, pm=None) -> NoReturn:
   calibrationd_thread(sm, pm)
 
 
