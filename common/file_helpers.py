@@ -35,7 +35,7 @@ def get_tmpdir_on_same_filesystem(path):
   if len(parts) > 1 and parts[1] == "scratch":
     return "/scratch/tmp"
   elif len(parts) > 2 and parts[2] == "runner":
-    return "/{}/runner/tmp".format(parts[1])
+    return f"/{parts[1]}/runner/tmp"
   return "/tmp"
 
 

@@ -68,8 +68,7 @@ class Planner:
     force_slow_decel = sm['controlsState'].forceDecel
 
     prev_accel_constraint = True
-    enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
-    if not enabled or sm['carState'].gasPressed:
+    if long_control_state == LongCtrlState.off or sm['carState'].gasPressed:
       self.v_desired = v_ego
       self.a_desired = a_ego
       # Smoothly changing between accel trajectory is only relevant when OP is driving

@@ -98,21 +98,6 @@ void initApp() {
   }
 }
 
-ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }
-
-void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
-  emit clicked();
-}
-
-// Fix stylesheets
-void ClickableWidget::paintEvent(QPaintEvent *) {
-  QStyleOption opt;
-  opt.init(this);
-  QPainter p(this);
-  style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
-}
-
-
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   static std::map<QtMsgType, int> levels = {
     {QtMsgType::QtDebugMsg, CLOUDLOG_DEBUG},
@@ -135,4 +120,12 @@ void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, co
 QWidget* topWidget (QWidget* widget) {
   while (widget->parentWidget() != nullptr) widget=widget->parentWidget();
   return widget;
+}
+
+QPixmap loadPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMode aspectRatioMode) {
+  if (size.isEmpty()) {
+    return QPixmap(fileName);
+  } else {
+    return QPixmap(fileName).scaled(size, aspectRatioMode, Qt::SmoothTransformation);
+  }
 }

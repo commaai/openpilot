@@ -97,7 +97,7 @@ void run_camera(CameraState *s, cv::VideoCapture &video_cap, float *ts) {
 }
 
 static void road_camera_thread(CameraState *s) {
-  set_thread_name("webcam_road_camera_thread");
+  util::set_thread_name("webcam_road_camera_thread");
 
   cv::VideoCapture cap_road(ROAD_CAMERA_ID, cv::CAP_V4L2); // road
   cap_road.set(cv::CAP_PROP_FRAME_WIDTH, 853);
@@ -186,7 +186,7 @@ void cameras_run(MultiCameraState *s) {
   threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
 
   std::thread t_rear = std::thread(road_camera_thread, &s->road_cam);
-  set_thread_name("webcam_thread");
+  util::set_thread_name("webcam_thread");
   driver_camera_thread(&s->driver_cam);
 
   t_rear.join();

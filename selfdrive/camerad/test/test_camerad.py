@@ -54,7 +54,7 @@ class TestCamerad(unittest.TestCase):
           self.assertTrue(abs(dfid - 1) <= SKIP_FRAME_TOLERANCE, "%s frame id diff is %d" % (camera, dfid))
 
           dts = ct - last_ts[camera]
-          self.assertTrue(abs(dts - (1000/CAMERAS[camera])) < LAG_FRAME_TOLERANCE, "%s frame t(ms) diff is %f" % (camera, dts))
+          self.assertTrue(abs(dts - (1000/CAMERAS[camera])) < LAG_FRAME_TOLERANCE, f"{camera} frame t(ms) diff is {dts:f}")
 
           last_frame_id[camera] = sm[camera].frameId
           last_ts[camera] = ct

@@ -19,7 +19,7 @@ from selfdrive.manager.process_config import managed_processes
 from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
 from selfdrive.swaglog import cloudlog, add_file_handler
 from selfdrive.version import get_dirty, get_commit, get_version, get_origin, get_short_branch, \
-                              terms_version, training_version, get_comma_remote, get_fork_remote
+                              terms_version, training_version, get_fork_remote
 
 
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
@@ -86,10 +86,10 @@ def manager_init():
     raise Exception(f"Registration failed for device {serial}")
   os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
 
-  if not get_dirty():
+  if not is_dirty():
     os.environ['CLEAN'] = '1'
 
-  cloudlog.bind_global(dongle_id=dongle_id, version=get_version(), dirty=get_dirty(),
+  cloudlog.bind_global(dongle_id=dongle_id, version=get_version(), dirty=is_dirty(),
                        device=HARDWARE.get_device_type())
 
   # NOTE: All crash reports are sent to this fork maintainer's sentry, not comma
@@ -118,6 +118,7 @@ def manager_cleanup():
 
 
 def manager_thread():
+  cloudlog.bind(daemon="manager")
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 

@@ -8,7 +8,6 @@ from typing import List, Dict, Optional
 from cereal import car, log
 from common.basedir import BASEDIR
 from common.params import Params
-from common.realtime import DT_CTRL
 from selfdrive.controls.lib.events import Alert
 from selfdrive.controls.lib.events import EVENTS, ET
 
@@ -34,12 +33,14 @@ class AlertEntry:
   start_frame: int = -1
   end_frame: int = -1
 
+  def active(self, frame: int) -> bool:
+    return frame <= self.end_frame
 
 class AlertManager:
 
   def __init__(self):
     self.reset()
-    self.activealerts: Dict[str, AlertEntry] = defaultdict(AlertEntry)
+    self.alerts: Dict[str, AlertEntry] = defaultdict(AlertEntry)
 
   def reset(self) -> None:
     self.alert: Optional[Alert] = None
@@ -52,11 +53,14 @@ class AlertManager:
     self.audible_alert = car.CarControl.HUDControl.AudibleAlert.none
     self.alert_rate: float = 0.
 
-  def add_many(self, frame: int, alerts: List[Alert], enabled: bool = True) -> None:
+  def add_many(self, frame: int, alerts: List[Alert]) -> None:
     for alert in alerts:
-      self.activealerts[alert.alert_type].alert = alert
-      self.activealerts[alert.alert_type].start_frame = frame
-      self.activealerts[alert.alert_type].end_frame = frame + int(alert.duration / DT_CTRL)
+      key = alert.alert_type
+      self.alerts[key].alert = alert
+      if not self.alerts[key].active(frame):
+        self.alerts[key].start_frame = frame
+      min_end_frame = self.alerts[key].start_frame + alert.duration
+      self.alerts[key].end_frame = max(frame + 1, min_end_frame)
 
   def SA_set_frame(self, frame):
     self.SA_frame = frame
@@ -79,17 +83,16 @@ class AlertManager:
 
   def process_alerts(self, frame: int, clear_event_type=None) -> None:
     current_alert = AlertEntry()
-    for k, v in self.activealerts.items():
+    for k, v in self.alerts.items():
       if v.alert is None:
         continue
 
-      if v.alert.event_type == clear_event_type:
-        self.activealerts[k].end_frame = -1
+      if clear_event_type is not None and v.alert.event_type == clear_event_type:
+        self.alerts[k].end_frame = -1
 
       # sort by priority first and then by start_frame
-      active = self.activealerts[k].end_frame > frame
       greater = current_alert.alert is None or (v.alert.priority, v.start_frame) > (current_alert.alert.priority, current_alert.start_frame)
-      if active and greater:
+      if v.active(frame) and greater:
         current_alert = v
 
     # clear current alert

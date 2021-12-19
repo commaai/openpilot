@@ -40,7 +40,7 @@ if __name__ == '__main__':
       power_average = average(power_average, power)
       power_total_average = average(power_total_average, power_total)
 
-      print("%12.2f mW %12.2f mW %12.2f mW" % (power, power_total, power_total-power))
+      print(f"{power:12.2f} mW {power_total:12.2f} mW {power_total - power:12.2f} mW")
       time.sleep(0.25)
   finally:
     stop_time = time.monotonic()
@@ -48,6 +48,6 @@ if __name__ == '__main__':
     voltage = voltage_average[0]
     current = current_average[0]
     power = power_average[0]
-    print("%.2f volts %12.2f ma %12.2f mW %12.2f mW" % (voltage, current, power, power_total))
-    print("  {:.2f} Seconds     {} samples".format(stop_time - start_time, voltage_average[1]))
+    print(f"{voltage:.2f} volts {current:12.2f} ma {power:12.2f} mW {power_total:12.2f} mW")
+    print(f"  {stop_time - start_time:.2f} Seconds     {voltage_average[1]} samples")
     print("----------------------------------------------------------------")
