@@ -17,10 +17,15 @@ class LatControlModel:
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
 
+    self.i_unwind_rate = 0.3 * DT_CTRL
+    self.i_rate = 1.0 * DT_CTRL
+    self.k_i = 0.03
+
     self.reset()
 
   def reset(self):
     self.sat_count = 0.0
+    self.i = 0.0
 
   def _check_saturation(self, control, check_saturation, limit):
     saturated = abs(control) == limit
@@ -76,6 +81,13 @@ class LatControlModel:
         _90_degree_bp = interp(CS.vEgo, [17.8816, 31.2928], [1., 1.1])  # 40 to 70 mph, 90 degree brakepoint
         multiplier = interp(abs(CS.steeringAngleDeg), [0, 90.], [1.27, _90_degree_bp])
         output_steer = float(output_steer * multiplier)
+
+      if CS.steeringPressed:
+        self.i -= self.i_unwind_rate * float(np.sign(self.i))
+      else:
+        error = angle_steers_des - CS.steeringAngleDeg
+        i = self.i + error * self.k_i * self.i_rate
+        output_steer += i
 
       model_log.active = True
       model_log.output = output_steer
