@@ -2,7 +2,7 @@ import os
 from common.params import Params
 from common.basedir import BASEDIR
 from common.travis_checker import gh_actions
-from selfdrive.version import is_comma_remote, is_tested_branch, get_fork_tested_branch, get_fork_remote
+from selfdrive.version import is_comma_remote, is_tested_branch, is_fork_tested_branch, is_fork_remote
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
 from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
@@ -17,7 +17,7 @@ EventName = car.CarEvent.EventName
 def get_startup_event(car_recognized, controller_available, fw_seen, CP):
   # only for startup alert and to pass unit tests
   comma_check = is_comma_remote() and is_tested_branch()
-  fork_check = get_fork_remote() and get_fork_tested_branch()
+  fork_check = is_fork_remote() and is_fork_tested_branch()
   if comma_check if gh_actions else fork_check:
     event = EventName.startupZss if CP.hasZss else EventName.startup
   else:

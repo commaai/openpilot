@@ -76,7 +76,7 @@ def is_comma_remote() -> bool:
   return origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
 
 @cache
-def get_fork_remote() -> bool:  # RENAME
+def is_fork_remote() -> bool:
   origin = get_origin()
   if origin is None:
     return False
@@ -89,7 +89,7 @@ def is_tested_branch() -> bool:
   return get_short_branch() in TESTED_BRANCHES
 
 @cache
-def get_fork_tested_branch() -> bool:
+def is_fork_tested_branch() -> bool:
   return get_short_branch() in FORK_BRANCHES
 
 
@@ -114,7 +114,7 @@ def is_dirty(fork=False) -> bool:
 
       dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
 
-    correct_remote = get_fork_remote() if fork else is_comma_remote()
+    correct_remote = is_fork_remote() if fork else is_comma_remote()
     dirty = dirty or (not correct_remote)
     dirty = dirty or ('master' in branch)
 

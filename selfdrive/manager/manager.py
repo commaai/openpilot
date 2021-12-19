@@ -19,7 +19,7 @@ from selfdrive.manager.process_config import managed_processes
 from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
 from selfdrive.swaglog import cloudlog, add_file_handler
 from selfdrive.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
-                              terms_version, training_version, get_fork_remote
+                              terms_version, training_version, is_fork_remote
 
 
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
@@ -93,7 +93,7 @@ def manager_init():
                        device=HARDWARE.get_device_type())
 
   # NOTE: All crash reports are sent to this fork maintainer's sentry, not comma
-  if get_fork_remote() and not (os.getenv("NOLOG") or os.getenv("NOCRASH") or PC):
+  if is_fork_remote() and not (os.getenv("NOLOG") or os.getenv("NOCRASH") or PC):
     crash.init()
   crash.bind_user(id=dongle_id)
   crash.bind_extra(dirty=is_dirty(fork=True), origin=get_origin(), branch=get_short_branch(), commit=get_commit(),
