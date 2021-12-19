@@ -4,6 +4,7 @@ import signal
 import struct
 import time
 import subprocess
+from typing import Optional
 from abc import ABC, abstractmethod
 from multiprocessing import Process
 
@@ -65,7 +66,7 @@ class ManagerProcess(ABC):
   unkillable = False
   daemon = False
   sigkill = False
-  proc = None
+  proc: Optional[Process] = None
   enabled = True
   name = ""
 

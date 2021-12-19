@@ -117,7 +117,7 @@ def manager_cleanup():
   cloudlog.info("everything is dead")
 
 
-def manager_thread():
+def manager_thread() -> None:
   cloudlog.bind(daemon="manager")
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
@@ -129,8 +129,7 @@ def manager_thread():
     ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
-  if os.getenv("BLOCK") is not None:
-    ignore += os.getenv("BLOCK").split(",")
+  ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
 
@@ -177,7 +176,7 @@ def manager_thread():
       break
 
 
-def main():
+def main() -> None:
   prepare_only = os.getenv("PREPAREONLY") is not None
 
   manager_init()
