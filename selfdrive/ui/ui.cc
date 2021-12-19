@@ -6,7 +6,6 @@
 #include "common/transformations/orientation.hpp"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
 #include "selfdrive/common/watchdog.h"
 #include "selfdrive/hardware/hw.h"
 
@@ -210,6 +209,7 @@ static void update_status(UIState *s) {
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
     }
+    ui_update_params(uiState());
   }
   started_prev = s->scene.started;
 }

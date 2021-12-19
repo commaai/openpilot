@@ -20,13 +20,14 @@ public:
   ~CameraViewWidget();
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
-  virtual void doPaint();
-  virtual void updateFrameMat(int w, int h);
+  void doPaint() { paintGL(); }
+  void updateFrameMat(int w, int h);
 
 signals:
   void clicked();
   void vipcThreadConnected(VisionIpcClient *);
   void vipcThreadFrameReceived(VisionBuf *);
+  void frameMatrixChanged(const mat3 &matrix, float y_offset, float zoom);
 
 protected:
   void paintGL() override;
@@ -50,7 +51,7 @@ protected:
   int stream_height = 0;
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
-
+  double prev_draw_t = 0;
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);

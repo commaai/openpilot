@@ -3,7 +3,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QGraphicsWidget>
-#include <QStackedLayout>
+#include <QHBoxLayout>
 #include <QWidget>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
@@ -11,90 +11,101 @@
 
 // ***** onroad widgets *****
 
-class OnroadHud : public QGraphicsWidget {
-  Q_OBJECT
-  Q_PROPERTY(QString speed MEMBER speed NOTIFY valueChanged);
-  Q_PROPERTY(QString speedUnit MEMBER speedUnit NOTIFY valueChanged);
-  Q_PROPERTY(QString maxSpeed MEMBER maxSpeed NOTIFY valueChanged);
-  Q_PROPERTY(bool is_cruise_set MEMBER is_cruise_set NOTIFY valueChanged);
-  Q_PROPERTY(bool engageable MEMBER engageable NOTIFY valueChanged);
-  Q_PROPERTY(bool dmActive MEMBER dmActive NOTIFY valueChanged);
-  Q_PROPERTY(bool hideDM MEMBER hideDM NOTIFY valueChanged);
-  Q_PROPERTY(int status MEMBER status NOTIFY valueChanged);
-
+class MaxSpeedItem : public QGraphicsItem {
 public:
-  explicit OnroadHud(QGraphicsItem *parent = nullptr);
-  void updateState(const UIState &s);
+  MaxSpeedItem(QGraphicsItem *parent = nullptr) : QGraphicsItem(parent) {}
+  void update(bool cruise_set, const QString &speed);
+  QRectF boundingRect() const override { return {0, 0, 184, 202}; }
 
-private:
-  void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
-  void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
+protected:
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
 
-  QPixmap engage_img;
-  QPixmap dm_img;
-  const int radius = 192;
-  const int img_size = (radius / 2) * 1.5;
-  QString speed;
-  QString speedUnit;
   QString maxSpeed;
   bool is_cruise_set = false;
-  bool engageable = false;
-  bool dmActive = false;
-  bool hideDM = false;
-  int status = STATUS_DISENGAGED;
-
-signals:
-  void valueChanged();
 };
 
-class OnroadAlerts : public QGraphicsWidget {
-  Q_OBJECT
-
+class CurrentSpeedItem : public QGraphicsItem {
 public:
-  OnroadAlerts(QGraphicsItem *parent = 0);
-  void updateAlert(const Alert &a, const QColor &color);
+  CurrentSpeedItem(QGraphicsItem *parent = nullptr) : QGraphicsItem(parent) {}
+  void update(const QString &speed, const QString &unit);
+  QRectF boundingRect() const override { return {0, 0, 300, 300}; }
+ 
+protected:
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
+
+  QString speed;
+  QString speedUnit;
+};
+
+class OnroadAlerts : public QGraphicsRectItem {
+public:
+  OnroadAlerts(QGraphicsItem *parent = 0) : QGraphicsRectItem(parent) {}
+  void update(const Alert &a, const QColor &color);
+  QRectF boundingRect() const override;
 
 protected:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
-
-private:
   QColor bg;
   Alert alert = {};
 };
 
-// container window for the NVG UI
-class NvgWindow : public CameraViewWidget {
-  Q_OBJECT
-
+class IconItem : public QGraphicsItem {
 public:
-  explicit NvgWindow(VisionStreamType type, QWidget* parent = 0) : CameraViewWidget("camerad", type, true, parent) {}
-  void doPaint(QPainter *painter);
-  void updateFrameMat(int w, int h) override;
+  IconItem(const QString &fn, QGraphicsItem *parent = 0) : QGraphicsItem(parent) {
+    pixmap = QPixmap(fn).scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    setVisible(false);
+  }
+  QRectF boundingRect() const override { return {0, 0, (qreal)radius, (qreal)radius}; }
+  void update(const QColor color, float opacity);
+
 protected:
-  void initializeGL() override;
-  void showEvent(QShowEvent *event) override;
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
+
+  QPixmap pixmap;
+  QColor bg;
+  bool opacity = 1.0;
+  const int radius = 192;
+  const int img_size = (radius / 2) * 1.5;
+};
+
+class OnroadHud : public QGraphicsWidget {
+public:
+  explicit OnroadHud(QGraphicsItem *parent = nullptr);
+  void updateState(const UIState &s);
+  void 	setGeometry(const QRectF &rect) override;
+  inline void updateAlert(const Alert &alert, const QColor &color) {
+    alerts->update(alert, color);
+  }
+
+private:
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
   void drawLaneLines(QPainter &painter, const UIScene &scene);
   void drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd);
   inline QColor redColor(int alpha = 255) { return QColor(201, 34, 49, alpha); }
-  double prev_draw_t = 0;
+
+  OnroadAlerts *alerts;
+  QGraphicsRectItem *header;
+  MaxSpeedItem *max_speed;
+  CurrentSpeedItem *current_speed;
+  IconItem *dm, *wheel;
 };
 
 class OnroadGraphicsView : public QGraphicsView {
- public:
+public:
   OnroadGraphicsView(QWidget *parent = nullptr);
   inline void updateAlert(const Alert &alert, const QColor &color) {
-    alerts->updateAlert(alert, color);
+    hud->updateAlert(alert, color);
   }
 
- protected:
-  void resizeEvent(QResizeEvent *event) override;
-  void drawBackground(QPainter *painter, const QRectF &rect) override;
+protected:
   void offroadTransition(bool offroad);
-  void updateState(const UIState &s);
+  void resizeEvent(QResizeEvent *event) override;
+  void drawBackground(QPainter *painter, const QRectF &rect) override {
+    camera_view->doPaint();
+  }
+
   OnroadHud *hud;
-  OnroadAlerts *alerts;
-  NvgWindow *nvg;
+  CameraViewWidget *camera_view;
 };
 
 // container for all onroad widgets
@@ -106,7 +117,6 @@ public:
   bool isMapVisible() const { return map && map->isVisible(); }
 
 private:
-  void paintEvent(QPaintEvent *event);
   void mousePressEvent(QMouseEvent* e) override;
 
   QColor bg = bg_colors[STATUS_DISENGAGED];

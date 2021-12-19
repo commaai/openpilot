@@ -151,6 +151,7 @@ void CameraViewWidget::initializeGL() {
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
+  prev_draw_t = millis_since_boot();
   latest_texture_id = -1;
   if (!vipc_thread) {
     vipc_thread = new QThread();
@@ -189,6 +190,7 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
         0.0, 0.0, 0.0, 1.0,
       }};
       frame_mat = matmul(device_transform, frame_transform);
+      emit frameMatrixChanged(intrinsic_matrix, y_offset, zoom);
     }
   } else if (stream_width > 0 && stream_height > 0) {
     // fit frame to widget size
@@ -199,10 +201,6 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
 }
 
 void CameraViewWidget::paintGL() {
-  doPaint();
-}
-
-void CameraViewWidget::doPaint() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -223,6 +221,14 @@ void CameraViewWidget::doPaint() {
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
   glDisableVertexAttribArray(0);
   glBindVertexArray(0);
+
+  double cur_draw_t = millis_since_boot();
+  double dt = cur_draw_t - prev_draw_t;
+  if (dt > 66) {
+    // warn on sub 15fps
+    LOGW("slow frame time: %.2f", dt);
+  }
+  prev_draw_t = cur_draw_t;
 }
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
