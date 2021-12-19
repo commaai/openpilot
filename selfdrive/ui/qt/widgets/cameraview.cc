@@ -31,8 +31,8 @@ const char frame_fragment_shader[] =
   "#version 150 core\n"
 #else
   "#version 300 es\n"
-#endif
   "precision mediump float;\n"
+#endif
   "uniform sampler2D uTexture;\n"
   "in vec4 vTexCoord;\n"
   "out vec4 colorOut;\n"
