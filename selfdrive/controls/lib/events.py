@@ -50,19 +50,19 @@ class Events:
   def names(self):
     return self.events
 
-  def __len__(self):
+  def __len__(self) -> int:
     return len(self.events)
 
-  def add(self, event_name, static=False):
+  def add(self, event_name: str, static: bool=False) -> None:
     if static:
       self.static_events.append(event_name)
     self.events.append(event_name)
 
-  def clear(self):
+  def clear(self) -> None:
     self.events_prev = {k: (v + 1 if k in self.events else 0) for k, v in self.events_prev.items()}
     self.events = self.static_events.copy()
 
-  def any(self, event_type):
+  def any(self, event_type: str) -> bool:
     for e in self.events:
       if event_type in EVENTS.get(e, {}).keys():
         return True

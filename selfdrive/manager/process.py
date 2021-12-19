@@ -77,18 +77,18 @@ class ManagerProcess(ABC):
   shutting_down = False
 
   @abstractmethod
-  def prepare(self):
+  def prepare(self) -> None:
     pass
 
   @abstractmethod
-  def start(self):
+  def start(self) -> None:
     pass
 
-  def restart(self):
+  def restart(self) -> None:
     self.stop()
     self.start()
 
-  def check_watchdog(self, started: bool):
+  def check_watchdog(self, started: bool) -> None:
     if self.watchdog_max_dt is None or self.proc is None:
       return
 
@@ -109,9 +109,9 @@ class ManagerProcess(ABC):
     else:
       self.watchdog_seen = True
 
-  def stop(self, retry=True, block=True):
+  def stop(self, retry: bool=True, block: bool=True) -> Optional[int]:
     if self.proc is None:
-      return
+      return None
 
     if self.proc.exitcode is None:
       if not self.shutting_down:
@@ -121,7 +121,7 @@ class ManagerProcess(ABC):
         self.shutting_down = True
 
         if not block:
-          return
+          return None
 
       join_process(self.proc, 5)
 
@@ -151,12 +151,16 @@ class ManagerProcess(ABC):
 
     return ret
 
-  def signal(self, sig):
+  def signal(self, sig: int) -> None:
     if self.proc is None:
       return
 
     # Don't signal if already exited
     if self.proc.exitcode is not None and self.proc.pid is not None:
+      return
+
+    # Can't signal if we don't have a pid
+    if self.proc.pid is None:
       return
 
     cloudlog.info(f"sending signal {sig} to {self.name}")
