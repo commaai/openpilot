@@ -1,10 +1,19 @@
+Stock Additions - 2021-12-19 (0.8.12)
+===
+ * Update to 0.8.12 with new MPC tuning, smoothing out stopping control
+   * Removing "SA Update x" — Starting now, any new fork changes will just be appended to the latest release notes and only will be reset when SA is updated to a new version of openpilot
+ * Custom TSS2 stop and go tuning
+ * Re-enable Lane Speed alerts for fast lanes of travel!
+ * New dynamic follow profile configuration: (same) traffic, 1.45sec (stock), 1.8sec (prev stock)
+ * New improved lead model (exit model soon)
+ * Temporarily removed Model Long Button
+
 Stock Additions Update 2 - 2021-11-14 (0.8.11)
 ===
  * Merge in rest of changes from 0.8.10, including:
    * New MPC library ACADOS
    * New wide FOV DM model on C3
    * AGNOS 2
- * TODO: Update dynamic follow to work with ACADOS
 
 Stock Additions Update 1 - 2021-09-30 (0.8.10)
 ===

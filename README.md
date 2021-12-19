@@ -1,4 +1,4 @@
-# Stock Additions [Update 1](/SA_RELEASES.md) (0.8.10)
+# Stock Additions - [2021-12-19](/SA_RELEASES.md) (0.8.12)
 
 Stock Additions is a fork of openpilot designed to be minimal in design while boasting various feature additions and behavior improvements over stock. I have a 2017 Toyota Corolla with comma pedal, so most of my changes are designed to improve the longitudinal performance.
 
@@ -12,21 +12,21 @@ Want to request a feature or create a bug report? [Open an issue here!](https://
 ### Behavior Changes
 * [**Dynamic follow (now with profiles!)**](#dynamic-follow-3-profiles) - 3 + auto profiles to control distance
   * [**`auto-df` model for automatic distance profile switching**](#Automatic-DF-profile-switching)
-* **Lane Speed**  [***❗ALL LANE SPEED FEATURES REMOVED TEMPORARILY❗***](https://github.com/sshane/openpilot-archive/blob/stock_additions-082/SA_RELEASES.md#stock-additions-v066---2021-02-27-082)
+* **Lane Speed**
   * [**Lane Speed Alerts**](#Lane-Speed-alerts) - alerts for when an adjacent lane is faster
-  * [**Dynamic camera offsetting**](#Dynamic-camera-offset-based-on-oncoming-traffic) - moves you over if adjacent lane has oncoming traffic
-* [**Dynamic gas**](#dynamic-gas) - smoother gas control
-* [**Adding derivative to PI for better control**](#pi---pid-controller-for-long-and-lat) - lat: smoother control in turns; long: fix for comma pedal overshoot
+  * [**~~Dynamic camera offsetting~~ (removed temporarily)**](#Dynamic-camera-offset-based-on-oncoming-traffic) - moves you over if adjacent lane has oncoming traffic
+* [**~~Dynamic gas~~**](#dynamic-gas) - smoother gas control
+* [**~~Adding derivative to PI for better control~~**](#pi---pid-controller-for-long-and-lat) - lat: smoother control in turns; long: fix for comma pedal overshoot
 
 ### General Features
-* [**Smoother long control using delay**](#compensate-for-longitudinal-delay-for-earlier-braking) - using an accel delay, just like for lateral
+* [**~~Smoother long control using delay~~ (stock added this!)**](#compensate-for-longitudinal-delay-for-earlier-braking) - using an accel delay, just like for lateral
 * [**Customize this fork**](#Customize-this-fork-opEdit) - easily edit fork parameters with support for live tuning
 * [**Automatic updates**](#Automatic-updates)
 * [**ZSS Support**](#ZSS-support) - takes advantage of your high-precision Zorrobyte Steering Sensor
-* [**Offline crash logging**](#Offline-crash-logging) - check out `/data/community/crashes`
+* [**~~Offline crash logging~~ (removed temporarily)**](#Offline-crash-logging) - check out `/data/community/crashes`
 
 ### Visual Changes (LINKS WIP)
-* [**Colored the lane lines**]() - based on distance from car
+* [**Colored lane lines**]() - based on distance from car
 * [**Colored model path**]() - based on curvature
 
 ## Documentation
