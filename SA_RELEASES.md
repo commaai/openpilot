@@ -1,12 +1,19 @@
-Stock Additions 0.8.12
+Stock Additions 0.8.13
 ===
-## - 2021-12-19 Notes
- * Update to 0.8.12 with new MPC tuning, smoothing out stopping control
+## - 2021-19-19, 4:51pm CST Notes
+ * Update SA to the latest master commit (0.8.13)! This includes:
+   * A longitudinal sng bug fix
+   * Brand new no-exit-taking model
+   * Road roll compensation for reduced hugging
+   * Moved onroad UI into QT
+   * Improved driver monitoring
+   * Fixed unable to use navigation
+## - 2021-12-18 Notes
+ * Update to 0.8.12 with new MPC tuning and closer distance, smoothing out stopping control
    * Removing "SA Update x" — Starting now, any new fork changes will just be appended to the latest release notes with the current date the changes were made.
  * Custom TSS2 stop and go tuning
  * Re-enable Lane Speed alerts for fast lanes of travel!
  * New dynamic follow profile configuration: (same) traffic, 1.45sec (stock), 1.8sec (prev stock)
- * New improved lead model (exit model soon)
  * Temporarily removed Model Long Button
  * New chime sound for DF and LS alerts made using the new disengage sound. Similar to the previous sound that was removed
 
