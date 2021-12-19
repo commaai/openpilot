@@ -8,6 +8,7 @@ from typing import List, Dict, Optional
 from cereal import car, log
 from common.basedir import BASEDIR
 from common.params import Params
+from common.realtime import DT_CTRL
 from selfdrive.controls.lib.events import Alert
 from selfdrive.controls.lib.events import EVENTS, ET
 
