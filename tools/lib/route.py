@@ -23,7 +23,8 @@ def parse_route_or_segment_name(name):
   m = re.fullmatch(SEGMENT_NAME_RE, name) or re.fullmatch(ROUTE_NAME_RE, name)
   if not m:
     raise Exception("invalid route or segment name:", name)
-  return m.groupdict().get('dongle_id'), m.groupdict().get('timestamp'), m.groupdict().get('segment_num')
+  segment_num = int(m.group('segment_num')) if 'segment_num' in m.groupdict() else None
+  return m.group('dongle_id'), m.group('timestamp'), segment_num
 
 class Route(object):
   def __init__(self, route_name, data_dir=None):
