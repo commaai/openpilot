@@ -43,6 +43,8 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.pcmCruise = False  # stock cruise control is kept off
+    ret.openpilotLongitudinalControl = True # ASCM vehicles use OP for long
+    ret.radarOffCan = False # ASCM vehicles (typically) have radar
 
     # TODO: safety param should be a bitmask so we can pass info about ACC type?
     
@@ -54,14 +56,14 @@ class CarInterface(CarInterfaceBase):
     # or camera is on powertrain bus (LKA cars without ACC).
     
     
-    # JJS Testing for silverado crash
+    # LKAS only - no radar, no long 
     if candidate in NO_ASCM:
       ret.openpilotLongitudinalControl = False
       ret.radarOffCan = True
-    else:
-      ret.openpilotLongitudinalControl = True
-      ret.radarOffCan = False
     
+    # TODO: How Do we detect vehicles using stock cam-based ACC?
+      #ret.pcmCruise = True
+      
     tire_stiffness_factor = 0.444  # not optimized yet
 
     # Start with a baseline lateral tuning for all GM vehicles. Override tuning as needed in each model section below.
@@ -74,7 +76,6 @@ class CarInterface(CarInterfaceBase):
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
     if ret.enableGasInterceptor:
       ret.openpilotLongitudinalControl = True
-      #ret.radarOffCan = False
 
     if candidate == CAR.VOLT or candidate == CAR.VOLT_NR:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -182,6 +183,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.3 # From a 2019 SILVERADO
       ret.centerToFront = ret.wheelbase * 0.49
       ret.steerActuatorDelay = 0.075
+      ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
     
     if candidate in HIGH_TORQUE:
       ret.safetyConfigs[0].safetyParam = 1 # set appropriate safety param for increased torque limits to match values.py

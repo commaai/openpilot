@@ -45,6 +45,9 @@ class CarControllerParams():
       self.STEER_DRIVER_ALLOWANCE = 100
       self.STEER_DRIVER_MULTIPLIER = 4
       self.STEER_DRIVER_FACTOR = 100
+    
+    #if CP.enableGasInterceptor:
+    #TODO: Pedal may need different accel_max and min?  
 
     self.MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
     self.GAS_LOOKUP_BP = [-1., 0., self.ACCEL_MAX]
