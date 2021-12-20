@@ -65,6 +65,8 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
+    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
+
     # events
     events = self.create_common_events(ret)
 
@@ -75,8 +77,6 @@ class CarInterface(CarInterfaceBase):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-    ret = self.CC.update(self.CS, self.frame, c.actuators,
-                         c.hudControl.visualAlert, c.cruiseControl.cancel)
-
+    ret = self.CC.update(c, self.CS, self.frame)
     self.frame += 1
     return ret

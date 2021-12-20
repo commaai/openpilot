@@ -7,7 +7,20 @@ from selfdrive.car.docs_definitions import CarInfo
 
 Ecu = car.CarParams.Ecu
 TransmissionType = car.CarParams.TransmissionType
-MAX_ANGLE = 87.  # make sure we never command the extremes (0xfff) which cause latching fault
+
+AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
+
+
+class CarControllerParams:
+  # Messages: Lane_Assist_Data1, LateralMotionControl
+  LKAS_STEER_STEP = 5
+  # Message: IPMA_Data
+  LKAS_UI_STEP = 100
+  # Message: ACCDATA_3
+  ACC_UI_STEP = 5
+
+  STEER_RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
+  STEER_RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
 
 
 class CANBUS:
