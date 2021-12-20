@@ -86,8 +86,10 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret)
 
-    if self.CS.low_speed_alert:
-      events.add(EventName.belowSteerSpeed)
+    if self.CS.lkas_disabled:
+      events.add(EventName.lkasDisabled)
+    elif self.CS.low_speed_alert:
+       events.add(EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
 
