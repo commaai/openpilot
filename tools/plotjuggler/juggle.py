@@ -4,7 +4,6 @@ import sys
 import multiprocessing
 import subprocess
 import argparse
-import re
 from tempfile import NamedTemporaryFile
 
 from common.basedir import BASEDIR
@@ -12,20 +11,12 @@ from selfdrive.test.process_replay.compare_logs import save_log
 from tools.lib.api import CommaApi
 from tools.lib.auth_config import get_token
 from tools.lib.robust_logreader import RobustLogReader
-from tools.lib.route import Route, RouteSegmentName, SEGMENT_NAME_RE, ROUTE_NAME_RE
+from tools.lib.route import Route, parse_route_or_segment_name
 from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
 DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
-
-def get_route_and_segment_num(name):
-  if re.fullmatch(SEGMENT_NAME_RE, name):
-    rsn = RouteSegmentName(name)
-    return rsn.route_name, rsn.segment_num
-  if re.fullmatch(ROUTE_NAME_RE, name):
-    return name, None
-  raise Exception("invalid route or segment name:", name)
 
 def load_segment(segment_name):
   print(f"Loading {segment_name}")
@@ -65,11 +56,11 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
   elif route_or_segment_name.startswith("http://") or route_or_segment_name.startswith("https://") or os.path.isfile(route_or_segment_name):
     logs = [route_or_segment_name]
   else:
-    route_name, segment_number = get_route_and_segment_num(route_or_segment_name)
+    dongle_id, timestamp, segment_number = parse_route_or_segment_name(route_or_segment_name)
     segment_start = segment_number or 0
     if segment_number is not None and segment_count is None:
       segment_count = 1
-    r = Route(route_name)
+    r = Route(f'{dongle_id}|{timestamp}')
     logs = r.qlog_paths() if qlog else r.log_paths()
 
   segment_end = segment_start + segment_count if segment_count else -1

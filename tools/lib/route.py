@@ -7,10 +7,10 @@ from itertools import chain
 from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
 
-ROUTE_NAME_RE = r'[a-z0-9]{16}[|_][0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2}'
-SEGMENT_NAME_RE = r'{}--[0-9]+'.format(ROUTE_NAME_RE)
-EXPLORER_FILE_RE = r'^({})--([a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME_RE)
-OP_SEGMENT_DIR_RE = r'^({})$'.format(SEGMENT_NAME_RE)
+ROUTE_NAME_RE = r'(?P<dongle_id>[a-z0-9]{16})[|_/](?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2})'
+SEGMENT_NAME_RE = r'{}(?:--|/)(?P<segment_num>[0-9]+)'.format(ROUTE_NAME_RE)
+EXPLORER_FILE_RE = r'^(?P<segment_name>{})--(?P<file_name>[a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME_RE)
+OP_SEGMENT_DIR_RE = r'^(?P<segment_name>{})$'.format(SEGMENT_NAME_RE)
 
 QLOG_FILENAMES = ['qlog.bz2']
 QCAMERA_FILENAMES = ['qcamera.ts']
@@ -18,6 +18,12 @@ LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']
+
+def parse_route_or_segment_name(name):
+  m = re.fullmatch(SEGMENT_NAME_RE, name) or re.fullmatch(ROUTE_NAME_RE, name)
+  if not m:
+    raise Exception("invalid route or segment name:", name)
+  return m.groupdict().get('dongle_id'), m.groupdict().get('timestamp'), m.groupdict().get('segment_num')
 
 class Route(object):
   def __init__(self, route_name, data_dir=None):
@@ -100,11 +106,12 @@ class Route(object):
       op_match = re.match(OP_SEGMENT_DIR_RE, f)
 
       if explorer_match:
-        segment_name, fn = explorer_match.groups()
+        segment_name = explorer_match.group('segment_name')
+        fn = explorer_match.group('file_name')
         if segment_name.replace('_', '|').startswith(self.route_name):
           segment_files[segment_name].append((fullpath, fn))
       elif op_match and os.path.isdir(fullpath):
-        segment_name, = op_match.groups()
+        segment_name = op_match.group('segment_name')
         if segment_name.startswith(self.route_name):
           for seg_f in os.listdir(fullpath):
             segment_files[segment_name].append((os.path.join(fullpath, seg_f), seg_f))
@@ -179,10 +186,6 @@ class RouteSegmentName(object):
     self._segment_name_str = name_str
     self._route_name_str, num_str = self._segment_name_str.rsplit("--", 1)
     self._num = int(num_str)
-
-  @property
-  def route_name(self):
-    return self._route_name_str
 
   @property
   def segment_num(self):
