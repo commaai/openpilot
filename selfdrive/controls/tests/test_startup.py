@@ -50,8 +50,8 @@ class TestStartup(unittest.TestCase):
     (EventName.communityFeatureDisallowed, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_NO_DSU),
 
     # dashcamOnly car
-    (EventName.startupNoControl, MAZDA.CX5, True, CX5_FW_VERSIONS),
-    (EventName.startupNoControl, MAZDA.CX5, False, CX5_FW_VERSIONS),
+    (EventName.lkasDisabled, MAZDA.CX5, True, CX5_FW_VERSIONS),
+    (EventName.lkasDisabled, MAZDA.CX5, False, CX5_FW_VERSIONS),
 
     # unrecognized car with no fw
     (EventName.startupNoFw, None, True, None),

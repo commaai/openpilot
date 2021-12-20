@@ -267,8 +267,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.stockFcw: {},
 
-  EventName.lkasDisabled: {},
-
   # ********** events only containing alerts displayed in all states **********
 
   EventName.joystickDebug: {
@@ -832,6 +830,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   EventName.lowSpeedLockout: {
     ET.PERMANENT: NormalPermanentAlert("Cruise Fault: Restart the car to engage"),
     ET.NO_ENTRY: NoEntryAlert("Cruise Fault: Restart the Car"),
+  },
+
+  EventName.lkasDisabled: {
+    ET.PERMANENT: NormalPermanentAlert("LKAS Disabled: Enable LKAS to engage"),
+    ET.NO_ENTRY: NoEntryAlert("LKAS Disabled"),
   },
 
 }
