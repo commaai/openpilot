@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 from cereal import log, car
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.controls.lib.events import Alert, EVENTS
+from selfdrive.controls.lib.events import Alert, EVENTS, ET
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
 AlertSize = log.ControlsState.AlertSize
@@ -70,24 +70,32 @@ class TestAlerts(unittest.TestCase):
 
         font = fonts[alert.alert_size][i]
         w, _ = draw.textsize(txt, font)
-        msg = "type: %s msg: %s" % (alert.alert_type, txt)
+        msg = f"type: {alert.alert_type} msg: {txt}"
         self.assertLessEqual(w, max_text_width, msg=msg)
 
   def test_alert_sanity_check(self):
-    for a in ALERTS:
-      if a.alert_size == AlertSize.none:
-        self.assertEqual(len(a.alert_text_1), 0)
-        self.assertEqual(len(a.alert_text_2), 0)
-      elif a.alert_size == AlertSize.small:
-        self.assertGreater(len(a.alert_text_1), 0)
-        self.assertEqual(len(a.alert_text_2), 0)
-      elif a.alert_size == AlertSize.mid:
-        self.assertGreater(len(a.alert_text_1), 0)
-        self.assertGreater(len(a.alert_text_2), 0)
-      else:
-        self.assertGreater(len(a.alert_text_1), 0)
+    for event_types in EVENTS.values():
+      for event_type, a in event_types.items():
+        # TODO: add callback alerts
+        if not isinstance(a, Alert):
+          continue
 
-      self.assertGreaterEqual(a.duration, 0.)
+        if a.alert_size == AlertSize.none:
+          self.assertEqual(len(a.alert_text_1), 0)
+          self.assertEqual(len(a.alert_text_2), 0)
+        elif a.alert_size == AlertSize.small:
+          self.assertGreater(len(a.alert_text_1), 0)
+          self.assertEqual(len(a.alert_text_2), 0)
+        elif a.alert_size == AlertSize.mid:
+          self.assertGreater(len(a.alert_text_1), 0)
+          self.assertGreater(len(a.alert_text_2), 0)
+        else:
+          self.assertGreater(len(a.alert_text_1), 0)
+
+        self.assertGreaterEqual(a.duration, 0.)
+
+        if event_type not in (ET.WARNING, ET.PERMANENT, ET.PRE_ENABLE):
+          self.assertEqual(a.creation_delay, 0.)
 
   def test_offroad_alerts(self):
     params = Params()

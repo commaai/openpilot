@@ -284,10 +284,10 @@ class CarInterface(CarInterfaceBase):
     else:
       enabled = c.enabled
 
-    can_sends = self.CC.update(enabled, self.CS, self.frame,
-                               c.actuators,
-                               hud_v_cruise, c.hudControl.lanesVisible,
-                               c.hudControl.leadVisible, c.hudControl.visualAlert)
+    ret = self.CC.update(enabled, self.CS, self.frame,
+                         c.actuators,
+                         hud_v_cruise, c.hudControl.lanesVisible,
+                         c.hudControl.leadVisible, c.hudControl.visualAlert)
 
     self.frame += 1
-    return can_sends
+    return ret

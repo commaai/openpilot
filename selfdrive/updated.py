@@ -40,7 +40,7 @@ from common.params import Params
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.version import get_tested_branch
+from selfdrive.version import is_tested_branch
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -142,7 +142,7 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
   now = datetime.datetime.utcnow()
   dt = now - last_update
   if failed_count > 15 and exception is not None:
-    if get_tested_branch():
+    if is_tested_branch():
       extra_text = "Ensure the software is correctly installed"
     else:
       extra_text = exception
@@ -342,7 +342,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
   new_version = cur_hash != upstream_hash
   git_fetch_result = check_git_fetch_result(git_fetch_output)
 
-  cloudlog.info("comparing %s to %s" % (cur_hash, upstream_hash))
+  cloudlog.info(f"comparing {cur_hash} to {upstream_hash}")
   if new_version or git_fetch_result:
     cloudlog.info("Running update")
 
@@ -459,7 +459,11 @@ def main():
       exception = str(e)
       overlay_init.unlink(missing_ok=True)
 
-    set_params(new_version, update_failed_count, exception)
+    try:
+      set_params(new_version, update_failed_count, exception)
+    except Exception:
+      cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
+
     wait_helper.sleep(60)
 
   dismount_overlay()

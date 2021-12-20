@@ -1,7 +1,7 @@
 import os
 from common.params import Params
 from common.basedir import BASEDIR
-from selfdrive.version import get_comma_remote, get_tested_branch
+from selfdrive.version import is_comma_remote, is_tested_branch
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
 from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
@@ -14,7 +14,7 @@ EventName = car.CarEvent.EventName
 
 
 def get_startup_event(car_recognized, controller_available, fw_seen):
-  if get_comma_remote() and get_tested_branch():
+  if is_comma_remote() and is_tested_branch():
     event = EventName.startup
   else:
     event = EventName.startupMaster
@@ -39,7 +39,7 @@ def get_one_can(logcan):
 def load_interfaces(brand_names):
   ret = {}
   for brand_name in brand_names:
-    path = ('selfdrive.car.%s' % brand_name)
+    path = f'selfdrive.car.{brand_name}'
     CarInterface = __import__(path + '.interface', fromlist=['CarInterface']).CarInterface
 
     if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carstate.py'):
@@ -65,7 +65,7 @@ def _get_interface_names():
   for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
     try:
       brand_name = car_folder.split('/')[-1]
-      model_names = __import__('selfdrive.car.%s.values' % brand_name, fromlist=['CAR']).CAR
+      model_names = __import__(f'selfdrive.car.{brand_name}.values', fromlist=['CAR']).CAR
       model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
       brand_names[brand_name] = model_names
     except (ImportError, IOError):

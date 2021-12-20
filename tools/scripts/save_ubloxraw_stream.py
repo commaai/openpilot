@@ -52,7 +52,7 @@ def main(argv):
           i += 1
     except StopIteration:
       print('All done')
-  print('Writed {} msgs'.format(i))
+  print(f'Writed {i} msgs')
 
 
 if __name__ == "__main__":

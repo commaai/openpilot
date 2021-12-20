@@ -531,7 +531,7 @@ int Localizer::locationd_thread() {
 }
 
 int main() {
-  set_realtime_priority(5);
+  util::set_realtime_priority(5);
 
   Localizer localizer;
   return localizer.locationd_thread();
