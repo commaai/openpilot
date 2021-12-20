@@ -78,9 +78,11 @@ class AlertManager:
     added_alert.alert_type = f"{alert_name}/{ET.PERMANENT}"  # fixes alerts being silent
     added_alert.event_type = ET.PERMANENT
 
-    self.activealerts[alert.alert_type].alert = added_alert
-    self.activealerts[alert.alert_type].start_frame = self.SA_frame
-    self.activealerts[alert.alert_type].end_frame = self.SA_frame + int(alert.duration / DT_CTRL)
+    self.alerts[alert.alert_type].alert = added_alert
+    if not self.alerts[alert.alert_type].active(self.SA_frame):
+      self.alerts[alert.alert_type].start_frame = self.SA_frame
+    min_end_frame = self.alerts[alert.alert_type].start_frame + alert.duration
+    self.alerts[alert.alert_type].end_frame = max(self.SA_frame + 1, min_end_frame)
 
   def process_alerts(self, frame: int, clear_event_type=None) -> None:
     current_alert = AlertEntry()
