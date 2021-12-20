@@ -110,6 +110,7 @@ def set_lat_tune(tune, params, name):
       tune.model.name = "corolla_model_v5"
     elif name == LatTunes.STEER_MODEL_CAMRY:
       tune.model.name = "camryh_tss2"
+      tune.model.useRates = True
     else:
       raise NotImplementedError('This steering model does not exist')
 
@@ -120,6 +121,7 @@ def set_lat_tune(tune, params, name):
     if name == LatTunes.PID_A:
       tune.pid.kpV = [0.2]
       tune.pid.kiV = [0.05]
+      tune.pid.kdV = [0.1]
       tune.pid.kf = 0.00003
     elif name == LatTunes.PID_B:
       tune.pid.kpV = [0.6]
