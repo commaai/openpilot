@@ -53,7 +53,7 @@ class LatControlModel:
     model_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     model_log.useRates = self.use_rates
 
-    angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo))
+    angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
     if CS.vEgo < 0.15 or not active:
@@ -64,7 +64,7 @@ class LatControlModel:
       pos_limit = steers_max
       neg_limit = -steers_max
 
-      rate_des = VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo)
+      rate_des = VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, 0)
 
       # TODO: Can be sluggish when model is given rates, the issue is probably with the training data,
       # specifically the disturbances/perturbations fed into the model to recover from large errors
