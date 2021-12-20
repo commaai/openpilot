@@ -101,7 +101,7 @@ def set_lat_tune(tune, params, name):
     tune.lqr.l = [0.3233671, 0.3185757]
     tune.lqr.dcGain = 0.002237852961363602
 
-  if 'STEER_MODEL' in str(name):
+  elif 'STEER_MODEL' in str(name):
     tune.init('model')
     tune.model.useRates = False  # TODO: makes model sluggish, see comments in latcontrol_model.py
     tune.model.multiplier = 1.
