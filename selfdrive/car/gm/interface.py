@@ -184,6 +184,16 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.49
       ret.steerActuatorDelay = 0.075
       ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
+
+    elif candidate == CAR.SUBURBAN:
+      ret.minEnableSpeed = -1. # engage speed is decided by pcm
+      ret.minSteerSpeed = -1 * CV.MPH_TO_MS
+      ret.mass = 1278. + STD_CARGO_KG
+      ret.wheelbase = 3.302
+      ret.steerRatio = 16.3 # COPIED FROM SILVERADO
+      ret.centerToFront = ret.wheelbase * 0.49
+      ret.steerActuatorDelay = 0.075
+      #ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
     
     if candidate in HIGH_TORQUE:
       ret.safetyConfigs[0].safetyParam = 1 # set appropriate safety param for increased torque limits to match values.py
