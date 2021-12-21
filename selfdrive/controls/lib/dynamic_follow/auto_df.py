@@ -1,5 +1,5 @@
 """
-  Generated using Konverter: https://github.com/ShaneSmiskol/Konverter
+  Generated using Konverter: https://github.com/sshane/Konverter
 """
 
 import numpy as np
