@@ -118,7 +118,6 @@ static void update_state(UIState *s) {
     update_leads(s, sm["radarState"].getRadarState(), line);
   }
   if (sm.updated("liveCalibration")) {
-    scene.world_objects_visible = true;
     auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
     Eigen::Vector3d rpy;
     rpy << rpy_list[0], rpy_list[1], rpy_list[2];
@@ -210,8 +209,6 @@ static void update_status(UIState *s) {
       s->scene.started_frame = s->sm->frame;
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
     }
-    // Invisible until we receive a calibration message.
-    s->scene.world_objects_visible = false;
   }
   started_prev = s->scene.started;
 }

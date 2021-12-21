@@ -347,7 +347,7 @@ void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
 
   UIState *s = uiState();
-  if (s->scene.world_objects_visible) {
+  if (s->worldObjectsVisible()) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(Qt::NoPen);
