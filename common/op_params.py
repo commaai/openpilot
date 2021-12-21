@@ -107,7 +107,7 @@ class opParams:
       'alca_no_nudge_speed': Param(90., NUMBER, 'Above this speed (mph), lane changes initiate IMMEDIATELY. Behavior is stock under'),
       'steer_ratio': Param(None, NONE_OR_NUMBER, '(Can be: None, or a float) If you enter None, openpilot will use the learned sR.\n'
                                                  'If you use a float/int, openpilot will use that steer ratio instead', live=True),
-      'upload_on_hotspot': Param(False, bool, 'If False, openpilot will not upload driving data while connected to your phone\'s hotspot'),
+      'upload_onroad': Param(True, bool, 'By default, openpilot uploads small qlogs while driving. Set to False to wait until we go offroad', static=True),
       'disengage_on_gas': Param(False, bool, 'Whether you want openpilot to disengage on gas input or not'),
       'update_behavior': Param('alert', str, 'Can be: (\'off\', \'alert\', \'auto\') without quotes\n'
                                              'off will never update, alert shows an alert on-screen\n'

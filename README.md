@@ -121,7 +121,7 @@ This feature mod was so good it was added to stock openpilot! The only change no
 
 ---
 ### Customize this fork (opEdit)
-This is a handy tool to change your `opParams` parameters without diving into any json files or code. You can specify parameters to be used in any fork's operation that supports `opParams`. First, ssh in to your EON and make sure you're in `/data/openpilot`, then start `opEdit`:
+This is a handy tool to change your `opParams` parameters without diving into any json files or code. You can specify parameters to be used in any fork's operation that supports `opParams`. First, ssh in to your comma device and make sure you're in `/data/openpilot`, then start `opEdit`:
 ```python
 cd /data/openpilot
 python op_edit.py  # or ./op_edit.py
@@ -138,7 +138,7 @@ Here are the main parameters you can change with this fork:
   - [`use_lqr`](#pi---pid-controller-for-long-and-lat): Enable this to use LQR for lateral control with any car. It uses the RAV4 tuning, but has proven to work well for many cars
 - **General fork params**:
   - `alca_no_nudge_speed`: Above this speed (mph), lane changes initiate IMMEDIATELY after turning on the blinker. Behavior is stock under this speed (waits for torque)
-  - `upload_on_hotspot`: Controls whether your EON will upload driving data on your phone's hotspot
+  - `upload_onroad`: By default, openpilot uploads small qlogs while driving. Set to False to wait until we go offroad
   - [`update_behavior`](#Automatic-updates): `off` will never update, `alert` shows an alert on-screen. `auto` will reboot the device when an update is seen
   - `disengage_on_gas`: Whether you want openpilot to disengage on gas input or not
   - `hide_model_long`: Enable this to hide the Model Long button on the screen
@@ -171,8 +171,8 @@ Parameters are stored at `/data/op_params.json`
 
 ---
 ### Automatic updates
-When a new update is available on GitHub for Stock Additions, your EON/C2 will pull and reset your local branch to the remote. It then queues a reboot to occur when the following is true:
-- your EON has been inactive or offroad for more than 5 minutes
+When a new update is available on GitHub for Stock Additions, your comma device will pull and reset your local branch to the remote. It then queues a reboot to occur when the following is true:
+- your comma device has been inactive or offroad for more than 5 minutes
 - `update_behavior` param is set to `auto`
 
 Therefore, if your device sees an update while you're driving it will reboot approximately 5 to 10 minutes after you finish your drive, it resets the timer if you start driving again before the time is up.
