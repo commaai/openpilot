@@ -10,7 +10,7 @@ from common.op_params import opParams
 from collections import namedtuple
 
 EventName = car.CarEvent.EventName
-LatParams = namedtuple('LatParams', ['use_steering_model', 'use_lqr', 'prius_use_pid', 'corollaTSS2_use_indi', 'rav4TSS2_use_indi', 'hasZss'])
+LatParams = namedtuple('LatParams', ['use_steering_model', 'use_lqr', 'prius_use_pid', 'corollaTSS2_use_indi', 'rav4TSS2_use_indi', 'hasZss', 'TSS2'])
 
 
 class CarInterface(CarInterfaceBase):
@@ -43,6 +43,7 @@ class CarInterface(CarInterfaceBase):
       not use_steering_model and op_params.get('corollaTSS2_use_indi'),
       not use_steering_model and op_params.get('rav4TSS2_use_indi'),
       ret.hasZss,
+      candidate in TSS2_CAR,
     )
 
     if candidate == CAR.PRIUS:

@@ -1,5 +1,7 @@
 Stock Additions 0.8.13
 ===
+## - 2021-12-21, 2:46am MST Notes
+ * When param `use_steering_model` is True and if car is Toyota TSS2, we now use a TSS2 trained steering model instead of the TSSP Corolla
 ## - 2021-12-19, 4:51pm CST Notes
  * Add steering torque model for Toyota Camry
  * Update SA to the latest master commit (0.8.13)! This includes:
