@@ -85,7 +85,7 @@ class DynamicFollow:
 
   def _setup_collector(self):
     self.sm_collector = SubMaster(['liveTracks', 'laneSpeed'])
-    self.log_auto_df = self.op_params.get('log_auto_df')
+    self.log_auto_df = False  # self.op_params.get('log_auto_df')
     if not isinstance(self.log_auto_df, bool):
       self.log_auto_df = False
     self.data_collector = DataCollector(file_path='/data/df_data', keys=['v_ego', 'a_ego', 'a_lead', 'v_lead', 'x_lead', 'left_lane_speeds', 'middle_lane_speeds', 'right_lane_speeds', 'left_lane_distances', 'middle_lane_distances', 'right_lane_distances', 'profile', 'time'], log_data=self.log_auto_df)
