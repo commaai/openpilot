@@ -265,8 +265,10 @@ class CarState(CarStateBase):
         ret.cruiseState.standstill = cp.vl["ACC_HUD"]["CRUISE_SPEED"] == 252.
 
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
-        # TODO: Fix this to support both cam and pt bus parsing
-        ret.cruiseState.speed = self.v_cruise_pcm_prev if cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.MPH_TO_MS
+        if self.CP.carFingerprint in (CAR.CIVIC_22):
+            ret.cruiseState.speed = self.v_cruise_pcm_prev if cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.MPH_TO_MS
+        else:
+            ret.cruiseState.speed = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.MPH_TO_MS
         self.v_cruise_pcm_prev = ret.cruiseState.speed
     else:
       ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * CV.KPH_TO_MS
