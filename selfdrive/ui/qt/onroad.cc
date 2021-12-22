@@ -163,8 +163,8 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
 // OnroadHud
 OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
-  engage_img = QPixmap("../assets/img_chffr_wheel.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-  dm_img = QPixmap("../assets/img_driver_face.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
+  dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
 
   connect(this, &OnroadHud::valueChanged, [=] { update(); });
 }
