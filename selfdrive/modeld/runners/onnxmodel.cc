@@ -99,9 +99,16 @@ void ONNXModel::addTrafficConvention(float *state, int state_size) {
   traffic_convention_size = state_size;
 }
 
-void ONNXModel::execute(float *net_input_buf, int buf_size) {
+void ONNXModel::addImage(float *image_buf, int buf_size) {
+  image_input_buf = image_buf;
+  image_buf_size = buf_size;
+}
+
+void ONNXModel::execute() {
   // order must be this
-  pwrite(net_input_buf, buf_size);
+  if (image_input_buf != NULL) {
+    pwrite(image_input_buf, image_buf_size);
+  }
   if (desire_input_buf != NULL) {
     pwrite(desire_input_buf, desire_state_size);
   }

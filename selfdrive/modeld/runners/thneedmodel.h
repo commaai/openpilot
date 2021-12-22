@@ -9,12 +9,14 @@ public:
   void addRecurrent(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
   void addDesire(float *state, int state_size);
-  void execute(float *net_input_buf, int buf_size);
+  void addImage(float *image_buf, int buf_size);
+  void execute();
   void* getInputBuf();
 private:
   Thneed *thneed = NULL;
   bool recorded;
 
+  float *input;
   float *output;
 
   // recurrent and desire
