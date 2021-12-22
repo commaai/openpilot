@@ -143,7 +143,7 @@ def gen_long_mpc_solver():
 
   # Constraints on speed, acceleration and desired distance to
   # the obstacle, which is treated as a slack constraint so it
-  # behaves like an assymetrical cost.
+  # behaves like an asymmetrical cost.
   constraints = vertcat(v_ego,
                         (a_ego - a_min),
                         (a_max - a_ego),
@@ -169,7 +169,7 @@ def gen_long_mpc_solver():
   ocp.constraints.idxsh = np.arange(CONSTR_DIM)
 
   # The HPIPM solver can give decent solutions even when it is stopped early
-  # Which is critical for our purpose where the compute time is strictly bounded
+  # Which is critical for our purpose where compute time is strictly bounded
   # We use HPIPM in the SPEED_ABS mode, which ensures fastest runtime. This
   # does not cause issues since the problem is well bounded.
   ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
@@ -264,7 +264,8 @@ class LongitudinalMpc:
       self.x0[1] = v
       self.x0[2] = a
 
-  def extrapolate_lead(self, x_lead, v_lead, a_lead, a_lead_tau):
+  @staticmethod
+  def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
     a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
     v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
     x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
@@ -351,8 +352,8 @@ class LongitudinalMpc:
     self.accel_limit_arr[:,1] = 10.
     x_obstacle = 1e5*np.ones((N+1))
     self.params = np.concatenate([self.accel_limit_arr,
-                             x_obstacle[:,None],
-                             self.prev_a[:,None]], axis=1)
+                                  x_obstacle[:, None],
+                                  self.prev_a[:,None]], axis=1)
     self.run()
 
 
