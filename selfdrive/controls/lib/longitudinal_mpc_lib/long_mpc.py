@@ -144,7 +144,7 @@ def gen_long_mpc_solver():
   # Constraints on speed, acceleration and desired distance to
   # the obstacle, which is treated as a slack constraint so it
   # behaves like an assymetrical cost.
-  constraints = vertcat((v_ego),
+  constraints = vertcat(v_ego,
                         (a_ego - a_min),
                         (a_max - a_ego),
                         ((x_obstacle - x_ego) - (3/4) * (desired_dist_comfort)) / (v_ego + 10.))
@@ -190,7 +190,7 @@ def gen_long_mpc_solver():
   return ocp
 
 
-class LongitudinalMpc():
+class LongitudinalMpc:
   def __init__(self, e2e=False):
     self.e2e = e2e
     self.reset()
@@ -201,10 +201,10 @@ class LongitudinalMpc():
 
   def reset(self):
     self.solver = AcadosOcpSolverFast('long', N, EXPORT_DIR)
-    self.v_solution = [0.0 for i in range(N+1)]
-    self.a_solution = [0.0 for i in range(N+1)]
+    self.v_solution = np.zeros(N+1)
+    self.a_solution = np.zeros(N+1)
     self.prev_a = np.array(self.a_solution)
-    self.j_solution = [0.0 for i in range(N)]
+    self.j_solution = np.zeros(N)
     self.yref = np.zeros((N+1, COST_DIM))
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
