@@ -28,6 +28,7 @@ constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> 
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->frame = new ModelFrame(device_id, context);
+  s->wide_frame = new ModelFrame(device_id, context);
 
 #ifdef USE_THNEED
   s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME);
@@ -52,8 +53,8 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #endif
 }
 
-ModelOutput* model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
-                           const mat3 &transform, const mat3 &transform_wide, float *desire_in) {
+ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
+                              const mat3 &transform, const mat3 &transform_wide, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
     for (int i = 1; i < DESIRE_LEN; i++) {
@@ -70,7 +71,7 @@ ModelOutput* model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 #endif
 
   // if getInputBuf is not NULL, net_input_buf will be
-  auto net_input_buf = s->frame->prepare(yuv_cl, width, height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
+  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
   s->m->execute(net_input_buf, s->frame->buf_size);
 
   return (ModelOutput*)&s->output;
