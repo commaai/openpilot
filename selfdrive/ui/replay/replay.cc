@@ -124,9 +124,6 @@ void Replay::doSeekToFlag(FindFlag flag) {
     if (auto next = find(flag)) {
       uint64_t tm = *next - 2 * 1e9;  // seek to 2 seconds before next
       if (tm <= cur_mono_time_) {
-        if (flag == FindFlag::nextEngagement) {
-          qInfo() << "already in engagement";
-        }
         return true;
       }
 
@@ -152,15 +149,12 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
     if (!log.load(route_->at(n).qlog.toStdString(), nullptr, cache_to_local, 0, 3)) continue;
 
     for (const Event *e : log.events) {
-      if (e->mono_time > cur_mono_time_) {
-        if (flag == FindFlag::nextEngagement) {
-          if (e->which == cereal::Event::Which::CONTROLS_STATE && e->event.getControlsState().getEnabled()) {
-            return e->mono_time;
-          }
-        } else if (flag == FindFlag::nextDisEngagement) {
-          if (e->which == cereal::Event::Which::CONTROLS_STATE && !e->event.getControlsState().getEnabled()) {
-            return e->mono_time;
-          }
+      if (e->mono_time > cur_mono_time_ && e->which == cereal::Event::Which::CONTROLS_STATE) {
+        const auto cs = e->event.getControlsState();
+        if (flag == FindFlag::nextEngagement && cs.getEnabled()) {
+          return e->mono_time;
+        } else if (flag == FindFlag::nextDisEngagement && !cs.getEnabled()) {
+          return e->mono_time;
         }
       }
     }
