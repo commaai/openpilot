@@ -41,6 +41,7 @@ protected:
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
+  GLsync gl_fences[UI_BUF_COUNT] = {};
   std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
 
@@ -49,7 +50,6 @@ protected:
   int stream_height = 0;
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
-
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);

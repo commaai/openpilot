@@ -106,6 +106,11 @@ CameraViewWidget::~CameraViewWidget() {
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteBuffers(1, &frame_vbo);
     glDeleteBuffers(1, &frame_ibo);
+    for (auto sync : gl_fences) {
+      if (glIsSync(sync)) {
+        glDeleteSync(sync);
+      }
+    }
   }
   doneCurrent();
 }
@@ -202,13 +207,19 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  if (latest_texture_id == -1) return;
+  int texture_id = latest_texture_id;
+  if (texture_id == -1) return;
+
+  // sync with the PBO
+  if (glIsSync(gl_fences[texture_id])) {
+    glWaitSync(gl_fences[texture_id], 0, GL_TIMEOUT_IGNORED);
+  }
 
   glViewport(0, 0, width(), height());
 
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture[latest_texture_id]->frame_tex);
+  glBindTexture(GL_TEXTURE_2D, texture[texture_id]->frame_tex);
 
   glUseProgram(program->programId());
   glUniform1i(program->uniformLocation("uTexture"), 0);
@@ -299,8 +310,11 @@ void CameraViewWidget::vipcThread() {
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
         assert(glGetError() == GL_NO_ERROR);
-        // use glFinish to ensure that the texture has been uploaded.
-        glFinish();
+
+        if (glIsSync(gl_fences[buf->idx])) {
+          glDeleteSync(gl_fences[buf->idx]);
+        }
+        gl_fences[buf->idx] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
       }
       latest_texture_id = buf->idx;
       // Schedule update. update() will be invoked on the gui thread.
