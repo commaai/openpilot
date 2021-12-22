@@ -194,9 +194,6 @@ class LongitudinalMpc:
   def __init__(self, e2e=False):
     self.e2e = e2e
     self.reset()
-    self.accel_limit_arr = np.zeros((N+1, 2))
-    self.accel_limit_arr[:,0] = -1.2
-    self.accel_limit_arr[:,1] = 1.2
     self.source = SOURCES[2]
 
   def reset(self):
@@ -348,14 +345,12 @@ class LongitudinalMpc:
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
     self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
-    self.accel_limit_arr[:,0] = -10.
-    self.accel_limit_arr[:,1] = 10.
-    x_obstacle = 1e5*np.ones(N+1)
-    self.params = np.concatenate([self.accel_limit_arr,
-                                  x_obstacle[:, None],
+    accel_limit_arr = np.full((N+1, 2), (-10., 10.))
+    x_obstacle = 1e5*np.ones((N+1))
+    self.params = np.concatenate([accel_limit_arr,
+                                  x_obstacle[:,None],
                                   self.prev_a[:,None]], axis=1)
     self.run()
-
 
   def run(self):
     for i in range(N+1):
