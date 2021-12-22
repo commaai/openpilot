@@ -151,6 +151,7 @@ def set_lat_tune(tune, params, name):
     elif name == LatTunes.PID_H:
       tune.pid.kpV = [0.17]
       tune.pid.kiV = [0.03]
+      tune.pid.kdV = [0.07]
       tune.pid.kf = 0.00006
     elif name == LatTunes.PID_I:
       tune.pid.kpV = [0.15]
