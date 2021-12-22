@@ -40,7 +40,7 @@ CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
 
 
-# Less timestamps doesn't hurt performance and leads to
+# Fewer timestamps doesn't hurt performance and leads to
 # much better convergence of the MPC with low iterations
 N = 12
 MAX_T = 10.0
