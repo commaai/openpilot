@@ -174,6 +174,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.3 # guess for tourx
       ret.steerRatioRear = 0. # unknown online
       ret.centerToFront = 2.59  # ret.wheelbase * 0.4 # wild guess
+      ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
+      ret.openpilotLongitudinalControl = False # ASCM vehicles use OP for long
+      ret.radarOffCan = True # ASCM vehicles (typically) have radar
 
     elif candidate == CAR.SILVERADO_NR:
       ret.minEnableSpeed = -1. # engage speed is decided by pcm
@@ -194,6 +197,8 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.49
       ret.steerActuatorDelay = 0.075
       ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
+      ret.openpilotLongitudinalControl = False # ASCM vehicles use OP for long
+      ret.radarOffCan = False # ASCM vehicles (typically) have radar
     
     if candidate in HIGH_TORQUE:
       ret.safetyConfigs[0].safetyParam = 1 # set appropriate safety param for increased torque limits to match values.py
