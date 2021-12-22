@@ -81,7 +81,7 @@ size_t getRemoteFileSize(const std::string &url) {
   if (res == CURLE_OK) {
     curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
   } else {
-    std::cout << "Download failed: error code: " << res << std::endl;
+    rError("Download failed: error code: " << res);
   }
   curl_easy_cleanup(curl);
   return content_length > 0 ? (size_t)content_length : 0;
@@ -140,8 +140,8 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
       if (double ts = millis_since_boot(); (ts - last_print) > 2 * 1000) {
         size_t average = (written - prev_written) / ((ts - last_print) / 1000.);
         int progress = std::min<int>(100, 100.0 * (double)written / (double)content_length);
-        std::cout << "downloading " << getUrlWithoutQuery(url) << " - " << progress
-                  << "% (" << formattedDataSize(average) << "/s)" << std::endl;
+        rDebug("downloading " << getUrlWithoutQuery(url) << " - " << progress
+                  << "% (" << formattedDataSize(average) << "/s)");
         last_print = ts;
         prev_written = written;
       }
@@ -159,10 +159,10 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
         if (res_status == 206) {
           complete++;
         } else {
-          std::cout << "Download failed: http error code: " << res_status << std::endl;
+          rError("Download failed: http error code: " << res_status);
         }
       } else {
-        std::cout << "Download failed: connection failure: " << msg->data.result << std::endl;
+        rError("Download failed: connection failure: " << msg->data.result);
       }
     }
   }
@@ -216,7 +216,7 @@ std::string decompressBZ2(const std::byte *in, size_t in_size) {
     if (bzerror == BZ_OK && prev_write_pos == strm.next_out) {
       // content is corrupt
       bzerror = BZ_STREAM_END;
-      std::cout << "decompressBZ2 error : content is corrupt" << std::endl;
+      rError("decompressBZ2 error : content is corrupt");
       break;
     }
 

@@ -2,10 +2,8 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
-#include <QDebug>
 #include <QThread>
 #include <csignal>
-#include <iostream>
 
 #include "selfdrive/ui/replay/replay.h"
 
@@ -56,7 +54,7 @@ void keyboardThread(Replay *replay_) {
           replay_->seekTo(std::stoi(r), false);
         }
       } catch (std::invalid_argument) {
-        qDebug() << "invalid argument";
+        rWarning("invalid argument");
       }
       getch();  // remove \n from entering seek
     } else if (c == 'm') {
@@ -75,22 +73,7 @@ void keyboardThread(Replay *replay_) {
   }
 }
 
-void replayMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-  QByteArray localMsg = msg.toLocal8Bit();
-  if (type == QtDebugMsg) {
-    std::cout << "\033[38;5;248m" << localMsg.constData() << "\033[00m" << std::endl;
-  } else if (type == QtWarningMsg) {
-    std::cout << "\033[38;5;227m" << localMsg.constData() << "\033[00m" << std::endl;
-  } else if (type == QtCriticalMsg) {
-    std::cout << "\033[38;5;196m" << localMsg.constData() << "\033[00m" << std::endl;
-  } else {
-    std::cout << localMsg.constData() << std::endl;
-  }
-}
-
 int main(int argc, char *argv[]) {
-  qInstallMessageHandler(replayMessageOutput);
-
   QApplication app(argc, argv);
   std::signal(SIGINT, sigHandler);
   std::signal(SIGTERM, sigHandler);

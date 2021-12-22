@@ -26,7 +26,7 @@ RouteIdentifier Route::parseRoute(const QString &str) {
 
 bool Route::load() {
   if (route_.str.isEmpty()) {
-    qInfo() << "invalid route format";
+    rInfo("invalid route format");
     return false;
   }
   return data_dir_.isEmpty() ? loadFromServer() : loadFromLocal();
