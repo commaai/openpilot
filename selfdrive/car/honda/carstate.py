@@ -5,7 +5,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_RADARLESS
 
 TransmissionType = car.CarParams.TransmissionType
 
@@ -77,7 +77,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
     checks += [("BRAKE_MODULE", 50)]
 
-  if CP.carFingerprint in HONDA_BOSCH:
+  if CP.carFingerprint in HONDA_BOSCH or CP.carFingerprint in HONDA_RADARLESS:
     signals += [
       ("EPB_STATE", "EPB_STATUS", 0),
       ("IMPERIAL_UNIT", "CAR_SPEED", 1),
@@ -95,7 +95,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
         ("AEB_STATUS", "ACC_CONTROL", 0),
       ]
       checks += [
-        ("ACC_HUD", 10),
+        ("ACC_HUD", 0), # TODO: Fix this
         ("ACC_CONTROL", 50),
       ]
   else:  # Nidec signals
@@ -107,7 +107,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     else:
       checks += [("CRUISE_PARAMS", 50)]
 
-  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
+  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_22):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1)]
@@ -185,7 +185,7 @@ class CarState(CarStateBase):
 
     # ******************* parse out can *******************
     # TODO: find wheels moving bit in dbc
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_22):
       ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 0.1
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]["DRIVERS_DOOR_OPEN"])
     elif self.CP.carFingerprint == CAR.ODYSSEY_CHN:
@@ -237,7 +237,7 @@ class CarState(CarStateBase):
     ret.brakeHoldActive = cp.vl["VSA_STATUS"]["BRAKE_HOLD_ACTIVE"] == 1
 
     if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH,
-                                  CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
+                                  CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_22):
       self.park_brake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
     else:
       self.park_brake = 0  # TODO
@@ -259,13 +259,14 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]["MOTOR_TORQUE"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
-    if self.CP.carFingerprint in HONDA_BOSCH:
+    if self.CP.carFingerprint in HONDA_BOSCH or self.CP.carFingerprint in HONDA_RADARLESS:
       if not self.CP.openpilotLongitudinalControl:
         ret.cruiseState.nonAdaptive = cp.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"] != 0
         ret.cruiseState.standstill = cp.vl["ACC_HUD"]["CRUISE_SPEED"] == 252.
 
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
-        ret.cruiseState.speed = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.KPH_TO_MS
+        # TODO: Fix this to support both cam and pt bus parsing
+        ret.cruiseState.speed = self.v_cruise_pcm_prev if cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.MPH_TO_MS
         self.v_cruise_pcm_prev = ret.cruiseState.speed
     else:
       ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * CV.KPH_TO_MS
@@ -300,12 +301,12 @@ class CarState(CarStateBase):
     else:
       self.is_metric = False
 
-    if self.CP.carFingerprint in HONDA_BOSCH:
+    if self.CP.carFingerprint in HONDA_BOSCH or self.CP.carFingerprint in HONDA_RADARLESS:
       ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
     else:
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
 
-    if self.CP.carFingerprint in HONDA_BOSCH:
+    if self.CP.carFingerprint in HONDA_BOSCH or self.CP.carFingerprint in HONDA_RADARLESS:
       self.stock_hud = False
       ret.stockFcw = False
     else:
@@ -333,7 +334,14 @@ class CarState(CarStateBase):
       ("STEERING_CONTROL", 100),
     ]
 
-    if CP.carFingerprint not in HONDA_BOSCH:
+    if CP.carFingerprint in HONDA_RADARLESS:
+      signals += [("CRUISE_SPEED", "ACC_HUD", 255),
+              ]
+      checks += [
+        ("ACC_HUD", 0),
+      ]
+
+    elif CP.carFingerprint not in HONDA_BOSCH:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),
                   ("AEB_REQ_1", "BRAKE_COMMAND", 0),
                   ("FCW", "BRAKE_COMMAND", 0),

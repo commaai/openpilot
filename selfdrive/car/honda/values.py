@@ -69,6 +69,7 @@ class CAR:
   CIVIC = "HONDA CIVIC 2016"
   CIVIC_BOSCH = "HONDA CIVIC (BOSCH) 2019"
   CIVIC_BOSCH_DIESEL = "HONDA CIVIC SEDAN 1.6 DIESEL 2019"
+  CIVIC_22 = "HONDA CIVIC 2022"
   ACURA_ILX = "ACURA ILX 2016"
   CRV = "HONDA CR-V 2016"
   CRV_5G = "HONDA CR-V 2017"
@@ -1351,6 +1352,40 @@ FW_VERSIONS = {
       b'57114-TYF-E030\x00\x00'
     ],
   },
+  CAR.CIVIC_22:{
+    (Ecu.eps, 0x18DA30F1, None):[
+      b'39990-T39-A130\x00\x00',
+      b'39990-T43-J020\x00\x00', #hatch
+    ],
+    (Ecu.gateway, 0x18DAEFF1, None):[
+      b'38897-T20-A020\x00\x00',
+      b'38897-T20-A510\x00\x00', #hatch
+      b'38897-T21-A010\x00\x00',
+    ],
+    (Ecu.srs, 0x18DA53F1, None):[
+      b'77959-T20-A970\x00\x00',
+      b'77959-T47-A940\x00\x00', #hatch
+    ],
+    (Ecu.combinationMeter, 0x18DA60F1, None):[
+      b'78108-T21-A220\x00\x00',
+      b'78108-T21-A620\x00\x00',
+      b'78108-T23-A110\x00\x00', #hatch
+    ],
+    (Ecu.vsa, 0x18DA28F1, None):[
+      b'57114-T20-AB40\x00\x00',
+      b'57114-T43-JB30\x00\x00', #hatch
+    ],
+    (Ecu.transmission, 0x18da1ef1, None): [
+      b'28101-65D-A020\x00\x00',
+      b'28101-65D-A120\x00\x00', #hatch
+      b'28101-65H-A020\x00\x00',
+    ],
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-64L-A540\x00\x00',
+      b'37805-64S-A540\x00\x00',
+      b'37805-64S-A720\x00\x00', #hatch
+    ],
+  },  
 }
 
 DBC = {
@@ -1377,6 +1412,7 @@ DBC = {
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
   CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
+  CAR.CIVIC_22: dbc_dict('honda_civic_ex_2022_can_generated', None),
 }
 
 STEER_THRESHOLD = {
@@ -1391,3 +1427,4 @@ HONDA_NIDEC_ALT_SCM_MESSAGES = set([CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.C
 HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
                    CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E])
 HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G])
+HONDA_RADARLESS = set([CAR.CIVIC_22, ])

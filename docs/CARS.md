@@ -10,10 +10,12 @@
 | Honda     | Accord 2018-21                | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Accord Hybrid 2018-21         | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Civic Hatchback 2017-21       | Honda Sensing     | Stock            | 0mph               | 12mph             |
+| Honda     | Civic Hatchback 2022 	    | All 		| Stock            | 0mph		| 0mph 		    |
 | Honda     | Civic Coupe 2016-18           | Honda Sensing     | openpilot        | 0mph               | 12mph             |
 | Honda     | Civic Coupe 2019-20           | All               | Stock            | 0mph               | 2mph<sup>2</sup>  |
 | Honda     | Civic Sedan 2016-18           | Honda Sensing     | openpilot        | 0mph               | 12mph             |
 | Honda     | Civic Sedan 2019-20           | All               | Stock            | 0mph               | 2mph<sup>2</sup>  |
+| Honda     | Civic Sedan 2022    	    | All 		| Stock            | 0mph		| 0mph		    |
 | Honda     | CR-V 2015-16                  | Touring           | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | CR-V 2017-21                  | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph             |
