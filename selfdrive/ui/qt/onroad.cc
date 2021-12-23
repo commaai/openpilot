@@ -168,7 +168,7 @@ void OnroadHud::setGeometry(const QRectF &rect) {
   max_speed->setPos(bdr_s * 2, bdr_s * 1.5);
   current_speed->setPos((rect.width() / 2 - current_speed->boundingRect().width() / 2), rect.top());
   wheel->setPos(rect.right() - wheel->boundingRect().width() - bdr_s * 2.0, bdr_s * 1.5);
-  dm->setPos(bdr_s * 2, rect.bottom() - 200);
+  dm->setPos(bdr_s * 2, rect.bottom() - footer_h / 2 - dm->img_size / 2);
   alerts->setPos(0, rect.bottom() - alerts->rect().height());
   alerts->setRect(0, 0, rect.width(), alerts->rect().height());
   header->setRect(0, 0, rect.width(), header_h);

@@ -56,13 +56,14 @@ public:
   QRectF boundingRect() const override { return {0, 0, (qreal)radius, (qreal)radius}; }
   void update(const QColor color, float opacity);
 
+  const int radius = 192;
+  const int img_size = (radius / 2) * 1.5;
+
 protected:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
   QPixmap pixmap;
   QColor bg;
   bool opacity = 1.0;
-  const int radius = 192;
-  const int img_size = (radius / 2) * 1.5;
 };
 
 class OnroadHud : public QGraphicsScene {
