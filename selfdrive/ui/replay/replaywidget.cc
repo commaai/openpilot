@@ -1,9 +1,48 @@
 #include "selfdrive/ui/replay/replaywidget.h"
 
+#include <QDir>
 #include <QPainter>
+#include <QRegExp>
 #include <QVBoxLayout>
 
-RouteSelector::RouteSelector(QWidget *parent) : QWidget(parent) {}
+#include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
+
+RouteSelector::RouteSelector(QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(25, 25, 25, 25);
+
+  auto label = new QLabel("Local routes:");
+  main_layout->addWidget(label);
+  auto w = new ListWidget(this);
+  ScrollView *scroll = new ScrollView(w);
+  main_layout->addWidget(scroll);
+
+  QDir log_dir(Path::log_root().c_str());
+  for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
+    if (int pos = folder.lastIndexOf("--"); pos != -1) {
+      if (QString route = folder.left(pos); !route.isEmpty()) {
+        route_names.insert(route);
+      }
+    }
+  }
+  for (auto &route : route_names) {
+    ButtonControl *c = new ButtonControl(route, "view");
+    QObject::connect(c, &ButtonControl::clicked, [=, r = route]() {
+      emit selectRoute(r);
+    });
+    w->addItem(c);
+  }
+  main_layout->addStretch();
+
+  setStyleSheet(R"(
+    QPushButton {
+     border:none;
+      background-color: black;
+    }
+  )");
+}
 
 ThumbnailsWidget::ThumbnailsWidget(QWidget *parent) : QWidget(parent) {}
 
@@ -45,13 +84,23 @@ void TimelineWidget::setThumbnail(std::vector<QPixmap> *t) {
 }
 
 ReplayWidget::ReplayWidget(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  stacked_layout = new QStackedLayout(this);
+
+  route_selector = new RouteSelector(this);
+  QObject::connect(route_selector, &RouteSelector::selectRoute, [=](const QString &route) {
+    replayRoute(route, Path::log_root().c_str());
+  });
+
+  QWidget *r = new QWidget(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(r);
   cam_view = new CameraViewWidget("camerad", VISION_STREAM_RGB_BACK, false);
   main_layout->addWidget(cam_view);
   timeline = new TimelineWidget(this);
   QObject::connect(timeline, &TimelineWidget::sliderReleased, this, &ReplayWidget::seekTo);
   main_layout->addWidget(timeline);
 
+  stacked_layout->addWidget(route_selector);
+  stacked_layout->addWidget(r);
   setStyleSheet(R"(
     * {
       outline: none;
@@ -62,8 +111,9 @@ ReplayWidget::ReplayWidget(QWidget *parent) : QWidget(parent) {
   )");
 }
 
-void ReplayWidget::replayRoute(const QString &route) {
-  replay.reset(new Replay(route, {}, {}));
+void ReplayWidget::replayRoute(const QString &route, const QString &data_dir) {
+  stacked_layout->setCurrentIndex(1);
+  replay.reset(new Replay(route, {}, {}, nullptr, REPLAY_FLAG_NONE, data_dir));
   if (!replay->load()) {
     qInfo() << "failed to load route " << route;
     return;
@@ -93,4 +143,5 @@ void ReplayWidget::replayRoute(const QString &route) {
 }
 
 void ReplayWidget::seekTo(int pos) {
+  replay->seekTo(pos, false);
 }
