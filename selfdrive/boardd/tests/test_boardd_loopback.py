@@ -69,7 +69,7 @@ class TestBoardd(unittest.TestCase):
         for __ in range(random.randrange(100)):
           bus = random.choice([b for b in range(3*num_pandas) if b % 4 != 3])
           addr = random.randrange(1, 1<<29)
-          dat = bytes([random.getrandbits(8) for _ in range(random.randrange(1, 9))])
+          dat = bytes(random.getrandbits(8) for _ in range(random.randrange(1, 9)))
           sent_msgs[bus].add((addr, dat))
           to_send.append(make_can_msg(addr, dat, bus))
         sendcan.send(can_list_to_can_capnp(to_send, msgtype='sendcan'))
