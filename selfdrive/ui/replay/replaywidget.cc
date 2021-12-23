@@ -91,6 +91,10 @@ ReplayWidget::ReplayWidget(QWidget *parent) : QWidget(parent) {
     replayRoute(route, Path::log_root().c_str());
   });
 
+  QLabel *loading = new QLabel("Loading...");
+  loading->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+  loading->setStyleSheet("font-size: 150px; font-weight: 500;");
+
   QWidget *r = new QWidget(this);
   QVBoxLayout *main_layout = new QVBoxLayout(r);
   cam_view = new CameraViewWidget("camerad", VISION_STREAM_RGB_BACK, false);
@@ -101,6 +105,8 @@ ReplayWidget::ReplayWidget(QWidget *parent) : QWidget(parent) {
 
   stacked_layout->addWidget(route_selector);
   stacked_layout->addWidget(r);
+  stacked_layout->addWidget(loading);
+
   setStyleSheet(R"(
     * {
       outline: none;
@@ -112,7 +118,7 @@ ReplayWidget::ReplayWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void ReplayWidget::replayRoute(const QString &route, const QString &data_dir) {
-  stacked_layout->setCurrentIndex(1);
+  stacked_layout->setCurrentIndex(2);
   replay.reset(new Replay(route, {}, {}, nullptr, REPLAY_FLAG_NONE, data_dir));
   if (!replay->load()) {
     qInfo() << "failed to load route " << route;
@@ -138,8 +144,10 @@ void ReplayWidget::replayRoute(const QString &route, const QString &data_dir) {
       }
     }
   }
-  timeline->setThumbnail(&thumbnails);
+  
   replay->start();
+  timeline->setThumbnail(&thumbnails);
+  stacked_layout->setCurrentIndex(1);
 }
 
 void ReplayWidget::seekTo(int pos) {
