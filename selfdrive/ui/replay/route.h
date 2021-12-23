@@ -29,7 +29,7 @@ public:
   inline const QString &name() const { return route_.str; }
   inline const RouteIdentifier &identifier() const { return route_; }
   inline const std::map<int, SegmentFile> &segments() const { return segments_; }
-  inline const SegmentFile &at(int n) { return segments_.at(n); }
+  inline const SegmentFile &at(int n) const { return segments_.at(n); }
   static RouteIdentifier parseRoute(const QString &str);
 
 protected:

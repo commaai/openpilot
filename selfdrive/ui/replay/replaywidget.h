@@ -16,7 +16,15 @@ class ThumbnailsWidget : public QWidget {
   Q_OBJECT
  public:
   ThumbnailsWidget(QWidget *parent = nullptr);
+  void setThumbnail(std::vector<QPixmap> *thumbnails) {
+    thumbnails_ = thumbnails;
+    update();
+  }
+
   void paintEvent(QPaintEvent *event);
+protected:
+
+  std::vector<QPixmap> *thumbnails_ = nullptr;
 };
 
 class TimelineWidget : public QWidget {
@@ -24,10 +32,14 @@ class TimelineWidget : public QWidget {
 
  public:
   TimelineWidget(QWidget *parent = nullptr);
+  void setThumbnail(std::vector<QPixmap> *thumbnails);
+
+ signals:
+  void sliderReleased(int value);
 
  private:
-  void sliderReleased();
   ThumbnailsWidget *thumbnails;
+  
   QSlider *slider;
 };
 
@@ -37,6 +49,7 @@ class ReplayWidget : public QWidget {
  public:
   ReplayWidget(QWidget *parent = nullptr);
   void replayRoute(const QString &route);
+  void seekTo(int pos);
 
  private:
   CameraViewWidget *cam_view = nullptr;

@@ -37,7 +37,8 @@ public:
   Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr,
           uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
   ~Replay();
-  const SegmentMap &segments() const { return segments_; }
+  inline const SegmentMap &segments() const { return segments_; }
+  inline const Route* route() const { return route_.get(); }
   bool load();
   void start(int seconds = 0);
   void pause(bool pause);
