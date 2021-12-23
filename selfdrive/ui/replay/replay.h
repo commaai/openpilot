@@ -28,6 +28,8 @@ enum class FindFlag {
   nextDisEngagement
 };
 
+typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
+
 class Replay : public QObject {
   Q_OBJECT
 
@@ -35,6 +37,7 @@ public:
   Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr,
           uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
   ~Replay();
+  const SegmentMap &segments() const { return segments_; }
   bool load();
   void start(int seconds = 0);
   void pause(bool pause);
