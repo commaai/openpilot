@@ -16,7 +16,7 @@ class MaxSpeedItem : public QGraphicsItem {
 public:
   MaxSpeedItem(QGraphicsItem *parent = nullptr) : QGraphicsItem(parent) {}
   void update(bool cruise_set, const QString &speed);
-  QRectF boundingRect() const override { return {0, 0, 184, 202}; }
+  QRectF boundingRect() const override { return {0, 0, 184 + 10, 202 + 10}; }
 
 protected:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;

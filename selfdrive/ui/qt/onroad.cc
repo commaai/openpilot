@@ -214,7 +214,7 @@ void MaxSpeedItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *opti
   p.setRenderHint(QPainter::Antialiasing);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
-  p.drawRoundedRect(rc, 20, 20);
+  p.drawRoundedRect(rc.adjusted(10, 10, -10, -10), 20, 20);
   p.setPen(Qt::NoPen);
 
   configFont(p, "Open Sans", 48, "Regular");
