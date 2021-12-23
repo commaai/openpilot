@@ -30,7 +30,17 @@ const char yuv_fragment_shader[] =
 #ifdef __APPLE__
   "#version 150 core\n"
 #else
-    "#version 300 es\n"
+  "#version 300 es\n"
+  "precision mediump float;\n"
+#endif
+  "uniform sampler2D uTexture;\n"
+  "in vec4 vTexCoord;\n"
+  "out vec4 colorOut;\n"
+  "void main() {\n"
+  "  colorOut = texture(uTexture, vTexCoord.xy);\n"
+#ifdef QCOM
+  "  vec3 dz = vec3(0.0627f, 0.0627f, 0.0627f);\n"
+  "  colorOut.rgb = ((vec3(1.0f, 1.0f, 1.0f) - dz) * colorOut.rgb / vec3(1.0f, 1.0f, 1.0f)) + dz;\n"
 #endif
     "precision mediump float;\n"
     "in vec2 vTexCoord;\n"
