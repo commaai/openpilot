@@ -25,16 +25,23 @@ TimelineWidget::TimelineWidget(QWidget *parent) : QWidget(parent) {
   thumbnails = new ThumbnailsWidget(this);
   main_layout->addWidget(thumbnails);
   slider = new QSlider(Qt::Horizontal, this);
-  slider->setMinimum(0);
-  slider->setMaximum(100);
   QObject::connect(slider, &QSlider::sliderReleased, [=]() {
     emit sliderReleased(slider->value());
   });
   main_layout->addWidget(slider);
+
+  timer.callOnTimeout([=]() {
+    slider->setValue(slider->value() + 1);
+  });
 }
 
 void TimelineWidget::setThumbnail(std::vector<QPixmap> *t) {
   thumbnails->setThumbnail(t);
+  slider->setMinimum(0);
+  slider->setSingleStep(1);
+  slider->setMaximum(t->size() * 60);
+  slider->setValue(0);
+  timer.start(1000);
 }
 
 ReplayWidget::ReplayWidget(QWidget *parent) : QWidget(parent) {
@@ -44,6 +51,15 @@ ReplayWidget::ReplayWidget(QWidget *parent) : QWidget(parent) {
   timeline = new TimelineWidget(this);
   QObject::connect(timeline, &TimelineWidget::sliderReleased, this, &ReplayWidget::seekTo);
   main_layout->addWidget(timeline);
+
+  setStyleSheet(R"(
+    * {
+      outline: none;
+      color: white;
+      background-color: black;
+      font-size: 60px;
+    }
+  )");
 }
 
 void ReplayWidget::replayRoute(const QString &route) {

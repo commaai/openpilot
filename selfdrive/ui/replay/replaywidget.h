@@ -39,8 +39,8 @@ class TimelineWidget : public QWidget {
 
  private:
   ThumbnailsWidget *thumbnails;
-  
   QSlider *slider;
+  QTimer timer;
 };
 
 class ReplayWidget : public QWidget {
