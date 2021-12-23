@@ -7,6 +7,7 @@
 #include <QWidget>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/ui.h"
 
 // ***** onroad widgets *****
@@ -49,7 +50,7 @@ protected:
 class IconItem : public QGraphicsItem {
 public:
   IconItem(const QString &fn, QGraphicsItem *parent = 0) : QGraphicsItem(parent) {
-    pixmap = QPixmap(fn).scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    pixmap = loadPixmap(fn, {img_size, img_size});
     setVisible(false);
   }
   QRectF boundingRect() const override { return {0, 0, (qreal)radius, (qreal)radius}; }
