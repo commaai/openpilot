@@ -93,9 +93,6 @@ def fingerprint(logcan, sendcan):
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
 
   if not fixed_fingerprint and not skip_fw_query:
-    # Vin query only reliably works thorugh OBDII
-    bus = 1
-
     cached_params = Params().get("CarParamsCache")
     if cached_params is not None:
       cached_params = car.CarParams.from_bytes(cached_params)
@@ -107,9 +104,21 @@ def fingerprint(logcan, sendcan):
       vin = cached_params.carVin
       car_fw = list(cached_params.carFw)
     else:
+      # Vin query only reliably works through OBDII
+      bus = 1
+      # Try panda bus if there are few results
+      panda_bus = 0
+
       cloudlog.warning("Getting VIN & FW versions")
       _, vin = get_vin(logcan, sendcan, bus)
+      if vin == VIN_UNKNOWN:
+        cloudlog.info("No VIN from OBDII, trying Panda bus")
+        _, vin = get_vin(logcan, sendcan, panda_bus)
+
       car_fw = get_fw_versions(logcan, sendcan, bus)
+      if len(car_fw) < 3:
+        cloudlog.info("Few FW results from OBDII, trying Panda bus")
+        car_fw += get_fw_versions(logcan, sendcan, panda_bus)
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
