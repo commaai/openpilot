@@ -119,6 +119,7 @@ ReplayWidget::ReplayWidget(QWidget *parent) : QWidget(parent) {
 
 void ReplayWidget::replayRoute(const QString &route, const QString &data_dir) {
   stacked_layout->setCurrentIndex(2);
+
   replay.reset(new Replay(route, {}, {}, nullptr, REPLAY_FLAG_NONE, data_dir));
   if (!replay->load()) {
     qInfo() << "failed to load route " << route;
@@ -144,7 +145,7 @@ void ReplayWidget::replayRoute(const QString &route, const QString &data_dir) {
       }
     }
   }
-  
+
   replay->start();
   timeline->setThumbnail(&thumbnails);
   stacked_layout->setCurrentIndex(1);
