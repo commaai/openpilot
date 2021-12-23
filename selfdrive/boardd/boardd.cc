@@ -205,17 +205,17 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
 }
 
 void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
-  set_thread_name("boardd_can_send");
+  util::set_thread_name("boardd_can_send");
 
   AlignedBuffer aligned_buf;
-  Context * context = Context::create();
-  SubSocket * subscriber = SubSocket::create(context, "sendcan");
+  std::unique_ptr<Context> context(Context::create());
+  std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "sendcan"));
   assert(subscriber != NULL);
   subscriber->setTimeout(100);
 
   // run as fast as messages come in
   while (!do_exit && check_all_connected(pandas)) {
-    Message * msg = subscriber->receive();
+    std::unique_ptr<Message> msg(subscriber->receive());
     if (!msg) {
       if (errno == EINTR) {
         do_exit = true;
@@ -223,27 +223,20 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
       continue;
     }
 
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg));
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
     //Dont send if older than 1 second
-    if (nanos_since_boot() - event.getLogMonoTime() < 1e9) {
-      if (!fake_send) {
-        for (const auto& panda : pandas) {
-          panda->can_send(event.getSendcan());
-        }
+    if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
+      for (const auto& panda : pandas) {
+        panda->can_send(event.getSendcan());
       }
     }
-
-    delete msg;
   }
-
-  delete subscriber;
-  delete context;
 }
 
 void can_recv_thread(std::vector<Panda *> pandas) {
-  set_thread_name("boardd_can_recv");
+  util::set_thread_name("boardd_can_recv");
 
   // can = 8006
   PubMaster pm({"can"});
@@ -415,9 +408,11 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
 }
 
 void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofing_started) {
-  set_thread_name("boardd_panda_state");
+  util::set_thread_name("boardd_panda_state");
 
   Params params;
+  SubMaster sm({"controlsState"});
+
   Panda *peripheral_panda = pandas[0];
   bool ignition_last = false;
   std::future<bool> safety_future;
@@ -452,8 +447,11 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
     ignition_last = ignition;
 
+    sm.update(0);
+    const bool engaged = sm.allAliveAndValid({"controlsState"}) && sm["controlsState"].getControlsState().getEnabled();
+
     for (const auto &panda : pandas) {
-      panda->send_heartbeat();
+      panda->send_heartbeat(engaged);
     }
     util::sleep_for(500);
   }
@@ -461,7 +459,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
 
 void peripheral_control_thread(Panda *panda) {
-  set_thread_name("boardd_peripheral_control");
+  util::set_thread_name("boardd_peripheral_control");
 
   SubMaster sm({"deviceState", "driverCameraState"});
 
@@ -547,12 +545,12 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
 }
 
 void pigeon_thread(Panda *panda) {
-  set_thread_name("boardd_pigeon");
+  util::set_thread_name("boardd_pigeon");
 
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
 
-  Pigeon *pigeon = Hardware::TICI() ? Pigeon::connect("/dev/ttyHS0") : Pigeon::connect(panda);
+  std::unique_ptr<Pigeon> pigeon(Hardware::TICI() ? Pigeon::connect("/dev/ttyHS0") : Pigeon::connect(panda));
 
   std::unordered_map<char, uint64_t> last_recv_time;
   std::unordered_map<char, int64_t> cls_max_dt = {
@@ -620,8 +618,6 @@ void pigeon_thread(Panda *panda) {
     // 10ms - 100 Hz
     util::sleep_for(10);
   }
-
-  delete pigeon;
 }
 
 int main(int argc, char *argv[]) {
@@ -629,9 +625,9 @@ int main(int argc, char *argv[]) {
 
   if (!Hardware::PC()) {
     int err;
-    err = set_realtime_priority(54);
+    err = util::set_realtime_priority(54);
     assert(err == 0);
-    err = set_core_affinity({Hardware::TICI() ? 4 : 3});
+    err = util::set_core_affinity({Hardware::TICI() ? 4 : 3});
     assert(err == 0);
   }
 

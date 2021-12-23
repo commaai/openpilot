@@ -1,9 +1,9 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from collections import namedtuple
 
 ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient', 'pmic'])
 
-class HardwareBase:
+class HardwareBase(ABC):
   @staticmethod
   def get_cmdline():
     with open('/proc/cmdline') as f:

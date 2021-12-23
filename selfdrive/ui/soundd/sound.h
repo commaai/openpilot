@@ -34,7 +34,7 @@ protected:
     {AudibleAlert::PROMPT_DISTRACTED, {"prompt_distracted.wav", LOOP_INFINITE, 6}},
 
     {AudibleAlert::WARNING_SOFT, {"warning_soft.wav", LOOP_INFINITE, 0}},
-    {AudibleAlert::WARNING_IMMEDIATE, {"warning_immediate.wav", 10, 6}},
+    {AudibleAlert::WARNING_IMMEDIATE, {"warning_immediate.wav", QSoundEffect::Infinite, 6}},
   };
 
   Alert current_alert = {};

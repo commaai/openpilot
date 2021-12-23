@@ -112,7 +112,7 @@ class Route(object):
           if not seg_num.isdigit():
             continue
 
-          segment_name = '{}--{}'.format(self.route_name, seg_num)
+          segment_name = f'{self.route_name}--{seg_num}'
           for seg_f in os.listdir(os.path.join(fullpath, seg_num)):
             segment_files[segment_name].append((os.path.join(fullpath, seg_num, seg_f), seg_f))
 
@@ -152,7 +152,7 @@ class Route(object):
       segments.append(RouteSegment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path))
 
     if len(segments) == 0:
-      raise ValueError('Could not find segments for route {} in data directory {}'.format(self.route_name, data_dir))
+      raise ValueError(f'Could not find segments for route {self.route_name} in data directory {data_dir}')
     return sorted(segments, key=lambda seg: seg.canonical_name.segment_num)
 
 class RouteSegment(object):

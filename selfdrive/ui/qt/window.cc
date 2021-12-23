@@ -12,14 +12,10 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(homeWindow);
   QObject::connect(homeWindow, &HomeWindow::openSettings, this, &MainWindow::openSettings);
   QObject::connect(homeWindow, &HomeWindow::closeSettings, this, &MainWindow::closeSettings);
-  QObject::connect(&qs, &QUIState::uiUpdate, homeWindow, &HomeWindow::update);
-  QObject::connect(&qs, &QUIState::offroadTransition, homeWindow, &HomeWindow::offroadTransition);
-  QObject::connect(&qs, &QUIState::offroadTransition, homeWindow, &HomeWindow::offroadTransitionSignal);
 
   settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
   QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
-  QObject::connect(&qs, &QUIState::offroadTransition, settingsWindow, &SettingsWindow::offroadTransition);
   QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, [=]() {
     onboardingWindow->showTrainingGuide();
     main_layout->setCurrentWidget(onboardingWindow);
@@ -37,17 +33,15 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     main_layout->setCurrentWidget(onboardingWindow);
   }
 
-  device.setAwake(true, true);
-  QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);
-  QObject::connect(&qs, &QUIState::offroadTransition, [=](bool offroad) {
+  QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     if (!offroad) {
       closeSettings();
     }
   });
-  QObject::connect(&device, &Device::displayPowerChanged, [=]() {
-     if(main_layout->currentWidget() != onboardingWindow) {
-       closeSettings();
-     }
+  QObject::connect(&device, &Device::interactiveTimout, [=]() {
+    if (main_layout->currentWidget() == settingsWindow) {
+      closeSettings();
+    }
   });
 
   // load fonts
@@ -80,15 +74,14 @@ void MainWindow::openSettings() {
 void MainWindow::closeSettings() {
   main_layout->setCurrentWidget(homeWindow);
 
-  if (QUIState::ui_state.scene.started) {
+  if (uiState()->scene.started) {
     homeWindow->showSidebar(false);
   }
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-  // wake screen on tap
   if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::TouchBegin) {
-    device.setAwake(true, true);
+    device.resetInteractiveTimout();
   }
 
 #ifdef QCOM

@@ -69,12 +69,13 @@ protected:
   bool events_updated_ = false;
   uint64_t route_start_ts_ = 0;
   uint64_t cur_mono_time_ = 0;
-  std::vector<Event *> *events_ = nullptr;
+  std::unique_ptr<std::vector<Event *>> events_;
+  std::unique_ptr<std::vector<Event *>> new_events_;
   std::vector<int> segments_merged_;
 
   // messaging
   SubMaster *sm = nullptr;
-  PubMaster *pm = nullptr;
+  std::unique_ptr<PubMaster> pm;
   std::vector<const char*> sockets_;
   std::unique_ptr<Route> route_;
   std::unique_ptr<CameraServer> camera_server_;

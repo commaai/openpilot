@@ -105,6 +105,11 @@ class CarController():
     self.last_pump_ts = 0.
     self.packer = CANPacker(dbc_name)
 
+    self.accel = 0
+    self.speed = 0
+    self.gas = 0
+    self.brake = 0
+
     self.params = CarControllerParams(CP)
 
   def update(self, enabled, active, CS, frame, actuators, pcm_cancel_cmd,
@@ -211,10 +216,9 @@ class CarController():
         ts = frame * DT_CTRL
 
         if CS.CP.carFingerprint in HONDA_BOSCH:
-          accel = clip(accel, P.BOSCH_ACCEL_MIN, P.BOSCH_ACCEL_MAX)
-          bosch_gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
-          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, active, accel, bosch_gas, idx, stopping, starting, CS.CP.carFingerprint))
-
+          self.accel = clip(accel, P.BOSCH_ACCEL_MIN, P.BOSCH_ACCEL_MAX)
+          self.gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
+          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, active, accel, self.gas, idx, stopping, starting, CS.CP.carFingerprint))
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * P.NIDEC_BRAKE_MAX, 0, P.NIDEC_BRAKE_MAX - 1))
@@ -224,6 +228,7 @@ class CarController():
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
             pcm_override, pcm_cancel_cmd, fcw_display, idx, CS.CP.carFingerprint, CS.stock_brake))
           self.apply_brake_last = apply_brake
+          self.brake = apply_brake / P.NIDEC_BRAKE_MAX
 
           if CS.CP.enableGasInterceptor:
             # way too aggressive at low speed without this
@@ -233,17 +238,28 @@ class CarController():
             # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected
             # when you do enable.
             if active:
-              apply_gas = clip(gas_mult * (gas - brake + wind_brake*3/4), 0., 1.)
+              self.gas = clip(gas_mult * (gas - brake + wind_brake*3/4), 0., 1.)
             else:
-              apply_gas = 0.0
-            can_sends.append(create_gas_interceptor_command(self.packer, apply_gas, idx))
-
-    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
-                  hud_lanes, fcw_display, acc_alert, steer_required)
+              self.gas = 0.0
+            can_sends.append(create_gas_interceptor_command(self.packer, self.gas, idx))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame//10) % 4
+      hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
+                    hud_lanes, fcw_display, acc_alert, steer_required)
       can_sends.extend(hondacan.create_ui_commands(self.packer, CS.CP, pcm_speed, hud, CS.is_metric, idx, CS.stock_hud))
 
-    return can_sends
+      if (CS.CP.openpilotLongitudinalControl) and (CS.CP.carFingerprint not in HONDA_BOSCH):
+        self.speed = pcm_speed
+
+        if not CS.CP.enableGasInterceptor:
+          self.gas = pcm_accel / 0xc6
+
+    new_actuators = actuators.copy()
+    new_actuators.speed = self.speed
+    new_actuators.accel = self.accel
+    new_actuators.gas = self.gas
+    new_actuators.brake = self.brake
+
+    return new_actuators, can_sends

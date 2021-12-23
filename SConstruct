@@ -127,6 +127,7 @@ else:
       "/opt/homebrew/lib",
       "/usr/local/opt/openssl/lib",
       "/opt/homebrew/opt/openssl/lib",
+      f"#third_party/acados/{arch}/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
