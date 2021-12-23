@@ -1,4 +1,4 @@
-from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, CAR, CarControllerParams
+from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_RADARLESS, CAR, CarControllerParams
 from selfdrive.config import Conversions as CV
 
 # CAN bus layout with relay
@@ -170,5 +170,8 @@ def spam_buttons_command(packer, button_val, idx, car_fingerprint):
     'CRUISE_BUTTONS': button_val,
     'CRUISE_SETTING': 0,
   }
-  bus = get_pt_bus(car_fingerprint)
+  if CP.carFingerprint in HONDA_RADARLESS:
+    bus = 2
+  else:
+    bus = get_pt_bus(car_fingerprint)
   return packer.make_can_msg("SCM_BUTTONS", bus, values, idx)
