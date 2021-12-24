@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
   # check to make sure all car brands are tested
   if FULL_TEST:
-    tested_cars = set(c.lower() for c, _ in segments)
+    tested_cars = {c.lower() for c, _ in segments}
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 

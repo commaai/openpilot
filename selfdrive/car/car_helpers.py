@@ -68,7 +68,7 @@ def _get_interface_names():
       model_names = __import__(f'selfdrive.car.{brand_name}.values', fromlist=['CAR']).CAR
       model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
       brand_names[brand_name] = model_names
-    except (ImportError, IOError):
+    except (ImportError, OSError):
       pass
 
   return brand_names

@@ -81,7 +81,7 @@ def set_eon_fan(val):
     try:
       i = [0x1, 0x3 | 0, 0x3 | 0x08, 0x3 | 0x10][val]
       bus.write_i2c_block_data(0x3d, 0, [i])
-    except IOError:
+    except OSError:
       # tusb320
       if val == 0:
         bus.write_i2c_block_data(0x67, 0xa, [0])

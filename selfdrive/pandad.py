@@ -30,7 +30,7 @@ def flash_panda(panda_serial : str) -> Panda:
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
   panda_signature = b"" if panda.bootstub else panda.get_signature()
-  cloudlog.warning("Panda %s connected, version: %s, signature %s, expected %s" % (
+  cloudlog.warning("Panda {} connected, version: {}, signature {}, expected {}".format(
     panda_serial,
     panda_version,
     panda_signature.hex()[:16],

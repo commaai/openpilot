@@ -380,7 +380,7 @@ def main():
   ov_lock_fd = open(LOCK_FILE, 'w')
   try:
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-  except IOError as e:
+  except OSError as e:
     raise RuntimeError("couldn't get overlay lock; is another instance running?") from e
 
   # Set low io priority
