@@ -28,7 +28,7 @@ def get_attr_from_cars(attr, result=dict, combine_brands=True):
       elif isinstance(attr_values, list):
         result += attr_values
 
-    except (ImportError, IOError):
+    except (ImportError, OSError):
       pass
 
   return result

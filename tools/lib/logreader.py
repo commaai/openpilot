@@ -12,7 +12,7 @@ except ImportError:
 from cereal import log as capnp_log
 
 # this is an iterator itself, and uses private variables from LogReader
-class MultiLogIterator(object):
+class MultiLogIterator:
   def __init__(self, log_paths, wraparound=False):
     self._log_paths = log_paths
     self._wraparound = wraparound
@@ -74,7 +74,7 @@ class MultiLogIterator(object):
     return True
 
 
-class LogReader(object):
+class LogReader:
   def __init__(self, fn, canonicalize=True, only_union_types=False):
     data_version = None
     _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)

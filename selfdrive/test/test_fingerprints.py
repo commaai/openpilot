@@ -19,7 +19,7 @@ def _get_fingerprints():
     car_name = car_folder.split('/')[-1]
     try:
       fingerprints[car_name] = __import__(f'selfdrive.car.{car_name}.values', fromlist=['FINGERPRINTS']).FINGERPRINTS
-    except (ImportError, IOError, AttributeError):
+    except (ImportError, OSError, AttributeError):
       pass
 
   return fingerprints

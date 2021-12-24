@@ -262,7 +262,7 @@ class DaemonProcess(ManagerProcess):
 
     cloudlog.info(f"starting daemon {self.name}")
     proc = subprocess.Popen(['python', '-m', self.module],  # pylint: disable=subprocess-popen-preexec-fn
-                               stdin=open('/dev/null', 'r'),
+                               stdin=open('/dev/null'),
                                stdout=open('/dev/null', 'w'),
                                stderr=open('/dev/null', 'w'),
                                preexec_fn=os.setpgrp)
