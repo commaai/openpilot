@@ -448,8 +448,8 @@ class Controls:
     self.sm.update(0)
     self.sm_smiskol.update(0)
 
-    all_valid = CS.canValid  # and self.sm.all_alive_and_valid()
-    if not self.initialized and (all_valid or self.sm.frame * DT_CTRL > 3.5 or SIMULATION):
+    # all_valid = CS.canValid and self.sm.all_alive_and_valid()
+    if not self.initialized:  # and (all_valid or self.sm.frame * DT_CTRL > 3.5 or SIMULATION):
       if not self.read_only:
         self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
       self.initialized = True
