@@ -7,6 +7,7 @@
 #include <cstring>
 #include <cassert>
 #include <cmath>
+#include <iomanip>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -67,7 +68,67 @@ std::string formattedDataSize(size_t size) {
   }
 }
 
+struct DownloadProgressBar {
+  void addDownload(const std::string &url, uint64_t total_bytes) {
+    std::lock_guard lk(lock);
+    items[url] = {.downloaded = 0, .total = total_bytes};
+  }
+
+  void removeDownload(const std::string &url) {
+    std::lock_guard lk(lock);
+    auto it = items.find(url);
+    if (it != items.end()) {
+      items.erase(it);
+    }
+  }
+
+  void update(const std::string &url, uint64_t downloaded) {
+    std::lock_guard lk(lock);
+
+    items[url].downloaded = downloaded;
+    double ts = millis_since_boot();
+    if (!enable_http_logging || (ts - last_print) < 1000) return;
+
+    last_print = ts;
+    uint64_t total_bytes = 0;
+    uint64_t total_downloaded = 0;
+    for (const auto &[url, item] : items) {
+      total_bytes += item.total;
+      total_downloaded += item.downloaded;
+    }
+
+    const int width = 70;
+    std::cout << "Downloading [";
+    float progress = total_downloaded / (double)total_bytes;
+    int pos = width * progress;
+    for (int i = 0; i < width; ++i) {
+      if (i < pos) {
+        std::cout << "=";
+      } else if (i == pos) {
+        std::cout << ">";
+      } else {
+        std::cout << " ";
+      }
+    }
+    std::cout << "] " << std::setw(2) << int(progress * 100.0) << "% " << formattedDataSize(total_bytes) << "\r";
+    std::cout.flush();
+  }
+
+  struct Item {
+    uint64_t total = 0;
+    uint64_t downloaded = 0;
+  };
+  std::mutex lock;
+  double last_print = 0;
+  std::map<std::string, Item> items;
+  inline static std::atomic<bool> enable_http_logging = false;
+};
+
 } // namespace
+
+void enableHttpLogging(bool enable) {
+  DownloadProgressBar::enable_http_logging = enable;
+}
 
 size_t getRemoteFileSize(const std::string &url) {
   CURL *curl = curl_easy_init();
@@ -93,12 +154,12 @@ std::string getUrlWithoutQuery(const std::string &url) {
   return (idx == std::string::npos ? url : url.substr(0, idx));
 }
 
-void enableHttpLogging(bool enable) {
-  enable_http_logging = enable;
-}
-
 template <class T>
 bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
+  static DownloadProgressBar progress_bar;
+
+  progress_bar.addDownload(url, content_length);
+
   int parts = 1;
   if (chunk_size > 0 && content_length > 10 * 1024 * 1024) {
     parts = std::nearbyint(content_length / (float)chunk_size);
@@ -128,24 +189,14 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
     curl_multi_add_handle(cm, eh);
   }
 
-  size_t prev_written = 0;
-  double last_print = millis_since_boot();
   int still_running = 1;
   while (still_running > 0 && !(abort && *abort)) {
     curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
     curl_multi_perform(cm, &still_running);
-
-    if (enable_http_logging) {
-      if (double ts = millis_since_boot(); (ts - last_print) > 2 * 1000) {
-        size_t average = (written - prev_written) / ((ts - last_print) / 1000.);
-        int progress = std::min<int>(100, 100.0 * (double)written / (double)content_length);
-        std::cout << "downloading " << getUrlWithoutQuery(url) << " - " << progress
-                  << "% (" << formattedDataSize(average) << "/s)" << std::endl;
-        last_print = ts;
-        prev_written = written;
-      }
-    }
+    progress_bar.update(url, written);
   }
+
+  progress_bar.removeDownload(url);
 
   CURLMsg *msg;
   int msgs_left = -1;
