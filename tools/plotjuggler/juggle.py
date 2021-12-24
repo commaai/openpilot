@@ -11,7 +11,7 @@ from selfdrive.test.process_replay.compare_logs import save_log
 from tools.lib.api import CommaApi
 from tools.lib.auth_config import get_token
 from tools.lib.robust_logreader import RobustLogReader
-from tools.lib.route import Route, parse_route_or_segment_name
+from tools.lib.route import Route, SegmentName
 from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
@@ -56,11 +56,11 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
   elif route_or_segment_name.startswith("http://") or route_or_segment_name.startswith("https://") or os.path.isfile(route_or_segment_name):
     logs = [route_or_segment_name]
   else:
-    dongle_id, timestamp, segment_number = parse_route_or_segment_name(route_or_segment_name)
-    segment_start = segment_number or 0
-    if segment_number is not None and segment_count is None:
+    route_or_segment_name = SegmentName(route_or_segment_name, allow_route_name=True)
+    segment_start = route_or_segment_name.segment_num or 0
+    if route_or_segment_name.segment_num is not None and segment_count is None:
       segment_count = 1
-    r = Route(f'{dongle_id}|{timestamp}')
+    r = Route(route_or_segment_name.route_name.canonical_name)
     logs = r.qlog_paths() if qlog else r.log_paths()
 
   segment_end = segment_start + segment_count if segment_count else -1
