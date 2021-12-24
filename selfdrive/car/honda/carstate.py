@@ -81,10 +81,12 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     signals += [
       ("EPB_STATE", "EPB_STATUS", 0),
       ("IMPERIAL_UNIT", "CAR_SPEED", 1),
+      ("AEB_STATUS", "ACC_CONTROL", 0),
     ]
     checks += [
       ("EPB_STATUS", 50),
       ("CAR_SPEED", 10),
+      ("ACC_CONTROL", 50),
     ]
 
   if CP.carFingerprint in HONDA_BOSCH:
@@ -322,8 +324,11 @@ class CarState(CarStateBase):
     else:
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
 
-    if self.CP.carFingerprint in HONDA_BOSCH or self.CP.carFingerprint in HONDA_RADARLESS:
+    if self.CP.carFingerprint in HONDA_BOSCH:
       self.stock_hud = False
+      ret.stockFcw = False
+    elif self.CP.carFingerprint in HONDA_RADARLESS:
+      self.stock_hud = cp_cam.vl["ACC_HUD"]
       ret.stockFcw = False
     else:
       ret.stockFcw = cp_cam.vl["BRAKE_COMMAND"]["FCW"] != 0
