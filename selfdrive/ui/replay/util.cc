@@ -86,10 +86,7 @@ struct DownloadProgressBar {
     std::lock_guard lk(lock);
 
     items[url].downloaded = downloaded;
-    double ts = millis_since_boot();
-    if (!enable_http_logging || (ts - last_print) < 1000) return;
 
-    last_print = ts;
     uint64_t total_bytes = 0;
     uint64_t total_downloaded = 0;
     for (const auto &[url, item] : items) {
@@ -97,6 +94,17 @@ struct DownloadProgressBar {
       total_downloaded += item.downloaded;
     }
 
+    if (total_downloaded == total_bytes) {
+      // clear the progress bar
+      std::cout << "\33[2K";
+      std::cout.flush();
+      return;
+    }
+
+    double ts = millis_since_boot();
+    if (!enable_http_logging || (ts - last_print) < 1000) return;
+
+    last_print = ts;
     const int width = 70;
     std::cout << "Downloading [";
     float progress = total_downloaded / (double)total_bytes;
@@ -196,6 +204,7 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
     progress_bar.update(url, written);
   }
 
+  progress_bar.update(url, written);
   progress_bar.removeDownload(url);
 
   CURLMsg *msg;
