@@ -101,19 +101,24 @@ class CAR:
 FW_VERSIONS = {
   CAR.ARTEON_MK1: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x873G0906259F \xf1\x890004',
       b'\xf1\x873G0906259P \xf1\x890001',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158L \xf1\x893611',
+      b'\xf1\x870GC300011L \xf1\x891401',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655BK\xf1\x890703\xf1\x82\x0e1616001613121177161113772900',
       b'\xf1\x873Q0959655DL\xf1\x890732\xf1\x82\0161812141812171105141123052J00',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x873Q0909144K \xf1\x895072\xf1\x82\x0571B41815A1',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\00567B0020800',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572T \xf1\x890383',
+      b'\xf1\x875Q0907572J \xf1\x890654',
     ],
   },
   CAR.ATLAS_MK1: {
