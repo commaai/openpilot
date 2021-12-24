@@ -77,7 +77,17 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
     checks += [("BRAKE_MODULE", 50)]
 
-  if CP.carFingerprint in HONDA_BOSCH or CP.carFingerprint in HONDA_RADARLESS:
+  if CP.carFingerprint in HONDA_RADARLESS:
+      signals += [
+      ("EPB_STATE", "EPB_STATUS", 0),
+      ("IMPERIAL_UNIT", "CAR_SPEED", 1),
+    ]
+    checks += [
+      ("EPB_STATUS", 50),
+      ("CAR_SPEED", 10),
+    ]
+
+  if CP.carFingerprint in HONDA_BOSCH:
     signals += [
       ("EPB_STATE", "EPB_STATUS", 0),
       ("IMPERIAL_UNIT", "CAR_SPEED", 1),
@@ -95,7 +105,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
         ("AEB_STATUS", "ACC_CONTROL", 0),
       ]
       checks += [
-        ("ACC_HUD", 0), # TODO: Fix this
+        ("ACC_HUD", 10),
         ("ACC_CONTROL", 50),
       ]
   else:  # Nidec signals
@@ -338,9 +348,10 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in HONDA_RADARLESS:
       signals += [("CRUISE_SPEED", "ACC_HUD", 255),
+                  ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
               ]
       checks += [
-        ("ACC_HUD", 0),
+        ("ACC_HUD", 10),
       ]
 
     elif CP.carFingerprint not in HONDA_BOSCH:
