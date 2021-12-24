@@ -12,7 +12,6 @@ from sentry_sdk.integrations.threading import ThreadingIntegration
 class SentryProject:
   # python project
   SELFDRIVE = "https://a8dc76b5bfb34908a601d67e2aa8bcf9@o33823.ingest.sentry.io/77924"
-
   # native project
   SELFDRIVE_NATIVE = "https://a40f22e13cbc4261873333c125fc9d38@o33823.ingest.sentry.io/157615"
 
@@ -38,20 +37,16 @@ def capture_exception(*args, **kwargs) -> None:
 
 
 def init(project: SentryProject) -> None:
-  # forks like to mess with this
-  comma_remote = is_comma_remote() and "commaai" in get_origin(default="")
+  # forks like to mess with this, so double check
+  if not (is_comma_remote() and "commaai" in get_origin(default="")):
+    return
 
-  env = "production"
-  if not comma_remote:
-    env = "fork"
-  elif not is_tested_branch():
-    env = "master"
-
+  env = "production" if is_tested_branch() else "master"
   dongle_id = Params().get("DongleId", encoding='utf-8')
 
   integrations = []
   if project == SentryProject.SELFDRIVE:
-    integrations = [ThreadingIntegration(propagate_hub=True)]
+    integrations.append(ThreadingIntegration(propagate_hub=True))
   else:
     sentry_sdk.utils.MAX_STRING_LENGTH = 8192
 
