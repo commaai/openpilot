@@ -82,11 +82,13 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       ("EPB_STATE", "EPB_STATUS", 0),
       ("IMPERIAL_UNIT", "CAR_SPEED", 1),
       ("AEB_STATUS", "ACC_CONTROL", 0),
+      ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS", 0),
     ]
     checks += [
       ("EPB_STATUS", 50),
       ("CAR_SPEED", 10),
       ("ACC_CONTROL", 50),
+      ("CRUISE_PARAMS", 50),
     ]
 
   if CP.carFingerprint in HONDA_BOSCH:
