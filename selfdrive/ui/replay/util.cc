@@ -76,8 +76,7 @@ struct DownloadProgressBar {
 
   void removeDownload(const std::string &url) {
     std::lock_guard lk(lock);
-    auto it = items.find(url);
-    if (it != items.end()) {
+    if (auto it = items.find(url); it != items.end()) {
       items.erase(it);
     }
   }
@@ -93,33 +92,21 @@ struct DownloadProgressBar {
       total_bytes += item.total;
       total_downloaded += item.downloaded;
     }
+    if (!enable_http_logging) return;
 
     if (total_downloaded == total_bytes) {
       // clear the progress bar
       std::cout << "\33[2K";
       std::cout.flush();
-      return;
+    } else if (double ts = millis_since_boot(); (ts - last_print) >= 1000) {
+      const int width = 70;
+      const float progress = total_downloaded / (double)total_bytes;
+      const int pos = width * progress;
+      std::cout << "Downloading [" << std::string(pos, '=') << ">" << std::string(width - pos, ' ') << "] "
+                << std::setw(2) << int(progress * 100.0) << "% " << formattedDataSize(total_bytes) << "\r";
+      std::cout.flush();
+      last_print = ts;
     }
-
-    double ts = millis_since_boot();
-    if (!enable_http_logging || (ts - last_print) < 1000) return;
-
-    last_print = ts;
-    const int width = 70;
-    std::cout << "Downloading [";
-    float progress = total_downloaded / (double)total_bytes;
-    int pos = width * progress;
-    for (int i = 0; i < width; ++i) {
-      if (i < pos) {
-        std::cout << "=";
-      } else if (i == pos) {
-        std::cout << ">";
-      } else {
-        std::cout << " ";
-      }
-    }
-    std::cout << "] " << std::setw(2) << int(progress * 100.0) << "% " << formattedDataSize(total_bytes) << "\r";
-    std::cout.flush();
   }
 
   struct Item {
@@ -133,10 +120,6 @@ struct DownloadProgressBar {
 };
 
 } // namespace
-
-void enableHttpLogging(bool enable) {
-  DownloadProgressBar::enable_http_logging = enable;
-}
 
 size_t getRemoteFileSize(const std::string &url) {
   CURL *curl = curl_easy_init();
@@ -160,6 +143,10 @@ size_t getRemoteFileSize(const std::string &url) {
 std::string getUrlWithoutQuery(const std::string &url) {
   size_t idx = url.find("?");
   return (idx == std::string::npos ? url : url.substr(0, idx));
+}
+
+void enableHttpLogging(bool enable) {
+  DownloadProgressBar::enable_http_logging = enable;
 }
 
 template <class T>
