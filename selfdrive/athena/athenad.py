@@ -34,7 +34,7 @@ from selfdrive.version import get_version, get_origin, get_short_branch, get_com
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
-LOCAL_PORT_WHITELIST = set([8022])
+LOCAL_PORT_WHITELIST = {8022}
 
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
@@ -287,7 +287,7 @@ def listUploadQueue():
 
 @dispatcher.add_method
 def cancelUpload(upload_id):
-  upload_ids = set(item.id for item in list(upload_queue.queue))
+  upload_ids = {item.id for item in list(upload_queue.queue)}
   if upload_id not in upload_ids:
     return 404
 
@@ -338,7 +338,7 @@ def getPublicKey():
   if not os.path.isfile(PERSIST + '/comma/id_rsa.pub'):
     return None
 
-  with open(PERSIST + '/comma/id_rsa.pub', 'r') as f:
+  with open(PERSIST + '/comma/id_rsa.pub') as f:
     return f.read()
 
 
@@ -419,7 +419,7 @@ def log_handler(end_event):
           curr_time = int(time.time())
           log_path = os.path.join(SWAGLOG_DIR, log_entry)
           setxattr(log_path, LOG_ATTR_NAME, int.to_bytes(curr_time, 4, sys.byteorder))
-          with open(log_path, "r") as f:
+          with open(log_path) as f:
             jsonrpc = {
               "method": "forwardLogs",
               "params": {

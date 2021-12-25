@@ -29,7 +29,7 @@ def unblock_stdout():
 
       try:
         sys.stdout.write(dat.decode('utf8'))
-      except (OSError, IOError, UnicodeDecodeError):
+      except (OSError, UnicodeDecodeError):
         pass
 
     # os.wait() returns a tuple with the pid and a 16 bit value
