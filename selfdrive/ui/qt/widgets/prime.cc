@@ -217,6 +217,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
 
 
 SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
+  has_prime = Params().getBool("HasPrime");
   mainLayout = new QStackedWidget;
 
   // Unpaired, registration prompt layout
@@ -314,8 +315,8 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
 
     bool prime = json["prime"].toBool();
 
-    if (uiState()->has_prime != prime) {
-      uiState()->has_prime = prime;
+    if (has_prime != prime) {
+      has_prime = prime;
       Params().putBool("HasPrime", prime);
     }
 
