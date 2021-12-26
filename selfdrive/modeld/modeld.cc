@@ -15,7 +15,7 @@
 
 ExitHandler do_exit;
 
-mat3 update_calibration(cereal::LiveCalibrationData::Reader live_calib, bool wide_camera) {
+mat3 update_calibration(cereal::LiveCalibrationData::Reader live_calib, int frame_width, bool wide_camera) {
   /*
      import numpy as np
      from common.transformations.model import medmodel_frame_from_road_frame
@@ -27,8 +27,8 @@ mat3 update_calibration(cereal::LiveCalibrationData::Reader live_calib, bool wid
     -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
     -1.84808520e-20, 9.00738606e-04, -4.28751576e-02).finished();
 
-  static const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
-  static const mat3 yuv_transform = get_model_yuv_transform();
+  static const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(get_camera_intrinsics(frame_width, wide_camera).v);
+  static const mat3 yuv_transform = get_model_yuv_transform(frame_width);
 
   auto extrinsic_matrix = live_calib.getExtrinsicMatrix();
   Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
@@ -75,7 +75,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, bool wide_camera
     int desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
     frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
     if (sm.updated("liveCalibration")) {
-      model_transform = update_calibration(sm["liveCalibration"].getLiveCalibration(), wide_camera);
+      model_transform = update_calibration(sm["liveCalibration"].getLiveCalibration(), buf->width, wide_camera);
       live_calib_seen = true;
     }
 

@@ -25,6 +25,7 @@ signals:
   void clicked();
   void vipcThreadConnected(VisionIpcClient *);
   void vipcThreadFrameReceived(VisionBuf *);
+  void frameMatrixUpdated(int w, int h, const mat3 &matrix, float y_offset, float zoom);
 
 protected:
   void paintGL() override;

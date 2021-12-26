@@ -14,19 +14,30 @@
 #define BACKLIGHT_TS 10.00
 #define BACKLIGHT_OFFROAD 50
 
+void UIState::updateTransform(int w, int h, const mat3 &matrix, float y_offset, float zoom) {
+  const float margin = 500.0f;
+  scene.clip_region = {-margin, -margin, w + 2 * margin, h + 2 * margin};
+  scene.camera_intrinsics = matrix;
+  // Apply transformation such that video pixel coordinates match video
+  // 1) Put (0, 0) in the middle of the video
+  // 2) Apply same scaling as video
+  // 3) Put (0, 0) in top left corner of video
+  scene.car_space_transform.reset();
+  scene.car_space_transform.translate(w / 2, h / 2 + y_offset)
+      .scale(zoom, zoom)
+      .translate(-scene.camera_intrinsics.v[2], -scene.camera_intrinsics.v[5]);
+}
+
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
 static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, QPointF *out) {
-  const float margin = 500.0f;
-  const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
-
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
   const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
+  const vec3 KEp = matvecmul3(s->scene.camera_intrinsics, Ep);
 
   // Project.
-  QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
-  if (clip_region.contains(point)) {
+  QPointF point = s->scene.car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
+  if (s->scene.clip_region.contains(point)) {
     *out = point;
     return true;
   }
@@ -208,7 +219,6 @@ static void update_status(UIState *s) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
-      s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
     }
   }
   started_prev = s->scene.started;
@@ -221,9 +231,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
   });
 
-  Params params;
-  wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
-  has_prime = params.getBool("HasPrime");
+  has_prime = Params().getBool("HasPrime");
 
   // update timer
   timer = new QTimer(this);

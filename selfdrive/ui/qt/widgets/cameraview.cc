@@ -174,13 +174,14 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
     if (stream_type == VISION_STREAM_RGB_FRONT) {
       frame_mat = matmul(device_transform, get_driver_view_transform(w, h, stream_width, stream_height));
     } else {
-      auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-      float zoom = ZOOM / intrinsic_matrix.v[0];
+      const float y_offset = is_tici_frame(stream_width) ? 150.0 : 0.0;
+      auto camera_intrinsics = get_camera_intrinsics(stream_width, stream_type == VISION_STREAM_RGB_WIDE);
+      float zoom = (is_tici_frame(stream_width) ? 2912.8 : 2138.5) / camera_intrinsics.v[0];
       if (stream_type == VISION_STREAM_RGB_WIDE) {
         zoom *= 0.5;
       }
-      float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
-      float zy = zoom * 2 * intrinsic_matrix.v[5] / height();
+      float zx = zoom * 2 * camera_intrinsics.v[2] / width();
+      float zy = zoom * 2 * camera_intrinsics.v[5] / height();
 
       const mat4 frame_transform = {{
         zx, 0.0, 0.0, 0.0,
@@ -189,6 +190,7 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
         0.0, 0.0, 0.0, 1.0,
       }};
       frame_mat = matmul(device_transform, frame_transform);
+      emit frameMatrixUpdated(w, h, camera_intrinsics, y_offset ,zoom);
     }
   } else if (stream_width > 0 && stream_height > 0) {
     // fit frame to widget size

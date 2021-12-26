@@ -21,11 +21,6 @@ const int footer_h = 280;
 const int UI_FREQ = 20;   // Hz
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
-// TODO: this is also hardcoded in common/transformations/camera.py
-// TODO: choose based on frame input size
-const float y_offset = Hardware::EON() ? 0.0 : 150.0;
-const float ZOOM = Hardware::EON() ? 2138.5 : 2912.8;
-
 struct Alert {
   QString text1;
   QString text2;
@@ -90,7 +85,10 @@ typedef struct {
 } line_vertices_data;
 
 typedef struct UIScene {
+  QRectF clip_region;
   mat3 view_from_calib;
+  mat3 camera_intrinsics;
+  QTransform car_space_transform;
   cereal::PandaState::PandaType pandaType;
 
   // modelV2
@@ -113,11 +111,10 @@ class UIState : public QObject {
 
 public:
   UIState(QObject* parent = 0);
+  void updateTransform(int w, int h, const mat3 &matrix, float y_offset, float zoom);
   inline bool worldObjectsVisible() const { 
     return sm->rcv_frame("liveCalibration") > scene.started_frame;
   };
-
-  int fb_w = 0, fb_h = 0;
 
   std::unique_ptr<SubMaster> sm;
 
@@ -126,9 +123,6 @@ public:
 
   bool awake;
   bool has_prime = false;
-
-  QTransform car_space_transform;
-  bool wide_camera;
 
 signals:
   void uiUpdate(const UIState &s);

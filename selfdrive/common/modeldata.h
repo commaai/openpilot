@@ -25,6 +25,7 @@ constexpr auto X_IDXS = build_idxs<double, TRAJECTORY_SIZE>(192.0);
 constexpr auto X_IDXS_FLOAT = build_idxs<float, TRAJECTORY_SIZE>(192.0);
 
 const int TICI_CAM_WIDTH = 1928;
+const int TICI_QCAM_WIDTH = (526 + 3) & ~3; // same as replay/framereader
 
 namespace tici_dm_crop {
   const int x_offset = -72;
@@ -32,21 +33,34 @@ namespace tici_dm_crop {
   const int width = 954;
 };
 
-const mat3 fcam_intrinsic_matrix =
-    Hardware::EON() ? (mat3){{910., 0., 1164.0 / 2,
-                              0., 910., 874.0 / 2,
-                              0., 0., 1.}}
-                    : (mat3){{2648.0, 0.0, 1928.0 / 2,
-                              0.0, 2648.0, 1208.0 / 2,
-                              0.0, 0.0, 1.0}};
+inline bool is_tici_frame(int frame_width) {
+  return frame_width == TICI_CAM_WIDTH || frame_width == TICI_QCAM_WIDTH;
+}
 
-// without unwarp, focal length is for center portion only
-const mat3 ecam_intrinsic_matrix = (mat3){{620.0, 0.0, 1928.0 / 2,
-                                           0.0, 620.0, 1208.0 / 2,
-                                           0.0, 0.0, 1.0}};
+inline const mat3 get_camera_intrinsics(int frame_width, bool wide_camera) {
+  static constexpr mat3 eon_intrinsics =
+      (mat3){{910., 0., 1164.0 / 2,
+              0., 910., 874.0 / 2,
+              0., 0., 1.}};
+  static constexpr mat3 tici_intrinsics =
+      (mat3){{2648.0, 0.0, 1928.0 / 2,
+              0.0, 2648.0, 1208.0 / 2,
+              0.0, 0.0, 1.0}};
+  // without unwarp, focal length is for center portion only
+  static constexpr mat3 tici_wide_intrinsics =
+      (mat3){{620.0, 0.0, 1928.0 / 2,
+              0.0, 620.0, 1208.0 / 2,
+              0.0, 0.0, 1.0}};
 
-static inline mat3 get_model_yuv_transform(bool bayer = true) {
-  float db_s = Hardware::EON() ? 0.5 : 1.0; // debayering does a 2x downscale on EON
+  if (is_tici_frame(frame_width)) {
+    return wide_camera ? tici_wide_intrinsics : tici_intrinsics;
+  } else {
+    return eon_intrinsics;
+  }
+}
+
+inline mat3 get_model_yuv_transform(int frame_width, bool bayer = true) {
+  float db_s = is_tici_frame(frame_width) ? 1.0 : 0.5;  // debayering does a 2x downscale on EON
   const mat3 transform = (mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
