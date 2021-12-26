@@ -172,3 +172,11 @@ def spam_buttons_command(packer, button_val, idx, car_fingerprint):
   }
   bus = get_pt_bus(car_fingerprint)
   return packer.make_can_msg("SCM_BUTTONS", bus, values, idx)
+
+def create_scm_command(packer, car_fingerprint, idx):
+  # non-active params
+  values = {
+    "SET_TO_X12": 0x12,
+  }
+  bus = get_pt_bus(car_fingerprint)
+  return packer.make_can_msg("SCM_BUTTONS", bus, values, idx)
