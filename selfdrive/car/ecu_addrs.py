@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 import traceback
 from typing import Any, Set
 
@@ -20,11 +21,13 @@ def is_tester_present_response(msg: Any) -> bool:
       return True
   return False
 
-def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float=0.1, debug: bool=False) -> Set[int]:
+def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float=1, debug: bool=True) -> Set[int]:
   ecu_addrs = set()
   try:
     addr_list = [0x700 + i for i in range(256)] + [0x18da00f1 + (i << 8) for i in range(256)]
-    msgs = [[addr, 0, bytes([SERVICE_TYPE.TESTER_PRESENT, 0x0]), bus] for addr in addr_list]
+    tester_present = bytes([0x02, SERVICE_TYPE.TESTER_PRESENT, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0])
+    msgs = [[addr, 0, tester_present, bus] for addr in addr_list]
+
     messaging.drain_sock(logcan)
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
     start_time = time.monotonic()
@@ -43,7 +46,6 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus
   return ecu_addrs
 
 if __name__ == "__main__":
-  import time
   import argparse
 
   parser = argparse.ArgumentParser(description='Get addresses of all ECUs')

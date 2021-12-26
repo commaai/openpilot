@@ -315,7 +315,7 @@ def get_brand_candidates(logcan, sendcan, bus, versions):
 
   brand_candidates = list()
   for brand, brand_addrs in response_addrs_by_brand.items():
-    if brand_addrs.intersection(ecu_response_addrs) >= 4:
+    if len(brand_addrs.intersection(ecu_response_addrs)) >= 4:
       brand_candidates.append(brand)
   return brand_candidates
 
@@ -333,7 +333,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
 
   brand_candidates = get_brand_candidates(logcan, sendcan, bus, versions)
   for brand, brand_versions in versions.items():
-    if brand not in brand_candidates:
+    if brand_candidates and brand not in brand_candidates:
       continue
     for c in brand_versions.values():
       for ecu_type, addr, sub_addr in c.keys():
