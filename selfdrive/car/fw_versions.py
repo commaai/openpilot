@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
+from selfdrive.car.ecu_addrs import get_ecu_addrs
 from selfdrive.car.fingerprints import FW_VERSIONS, get_attr_from_cars
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.car.toyota.values import CAR as TOYOTA
@@ -294,6 +295,29 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
 
   return exact_match, matches
 
+def get_brand_candidates(logcan, sendcan, bus, versions):
+  response_offset_by_brand = dict()
+  for brand, _, _, response_offset in REQUESTS:
+    response_offset_by_brand[brand] = response_offset
+
+  response_addrs_by_brand = dict()
+  for brand, brand_versions in versions.items():
+    if brand not in response_offset_by_brand:
+      continue
+
+    response_addrs_by_brand[brand] = set()
+    for c in brand_versions.values():
+      for _, addr, _ in c.keys():
+        response_addr = addr + response_offset_by_brand[brand]
+        response_addrs_by_brand[brand].add(response_addr)
+
+  ecu_response_addrs = get_ecu_addrs(logcan, sendcan, bus)
+
+  brand_candidates = list()
+  for brand, brand_addrs in response_addrs_by_brand.items():
+    if brand_addrs.intersection(ecu_response_addrs) >= 4:
+      brand_candidates.append(brand)
+  return brand_candidates
 
 def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
@@ -307,7 +331,10 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   if extra is not None:
     versions.update(extra)
 
+  brand_candidates = get_brand_candidates(logcan, sendcan, bus, versions)
   for brand, brand_versions in versions.items():
+    if brand not in brand_candidates:
+      continue
     for c in brand_versions.values():
       for ecu_type, addr, sub_addr in c.keys():
         a = (brand, addr, sub_addr)
