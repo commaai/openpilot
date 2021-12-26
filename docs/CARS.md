@@ -141,7 +141,7 @@
 | SEAT      | Leon 2014-2020                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Kamiq 2021<sup>2</sup>        | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Karoq 2019                    | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Škoda     | Kodiaq 2018-19                | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Škoda     | Kodiaq 2018-19, 2021          | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Octavia 2015, 2018-19         | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Octavia RS 2016               | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Scala 2020                    | Driver Assistance | Stock            | 0mph               | 0mph         |
