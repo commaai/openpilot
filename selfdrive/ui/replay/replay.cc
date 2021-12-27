@@ -318,11 +318,14 @@ void Replay::stream() {
           // reset start times
           evt_start_ts = cur_mono_time_;
           loop_start_ts = nanos_since_boot();
-        } else if (behind_ns > 0) {
+        } else if (behind_ns > 0 && !(flags_ & REPLAY_FLAG_FULL_SPEED)) {
           precise_nano_sleep(behind_ns);
         }
 
         if (evt->frame) {
+          if (flags_ & REPLAY_FLAG_FULL_SPEED) {
+            camera_server_->waitFinish();
+          }
           publishFrame(evt);
         } else {
           publishMessage(evt);
