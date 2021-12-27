@@ -56,9 +56,11 @@ bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool loca
 }
 
 bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abort) {
-  raw_ = decompressBZ2(data, size);
+  raw_ = decompressBZ2(data, size, abort);
   if (raw_.empty()) {
-    std::cout << "failed to decompress log" << std::endl;
+    if (!(abort && *abort)) {
+      std::cout << "failed to decompress log" << std::endl;
+    }
     return false;
   }
 
@@ -99,7 +101,6 @@ bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abor
   if (!events.empty() && !(abort && *abort)) {
     std::sort(events.begin(), events.end(), Event::lessThan());
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
