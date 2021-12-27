@@ -122,5 +122,4 @@ if __name__ == "__main__":
     route = DEMO_ROUTE if args.demo else args.route_name.strip()
     if route.count("--") > 1:
       route, args.segment_number = route.rsplit("--", 1)
-      args.segment_number = int(args.segment_number)
-    juggle_route(route, args.segment_number, args.segment_count, args.qlog, args.can, args.layout)
+    juggle_route(route, int(args.segment_number), args.segment_count, args.qlog, args.can, args.layout)
