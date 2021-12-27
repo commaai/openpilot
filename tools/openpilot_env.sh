@@ -1,5 +1,5 @@
-OP_ROOT=$(git rev-parse --show-toplevel)
 if [ -z "$OPENPILOT_ENV" ]; then
+  OP_ROOT=$(git rev-parse --show-toplevel)
   export PYTHONPATH="$OP_ROOT:$PYTHONPATH"
   export PATH="$HOME/.pyenv/bin:$PATH"
 
