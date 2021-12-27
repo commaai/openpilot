@@ -3,7 +3,7 @@ import datetime
 import os
 import time
 from pathlib import Path
-from typing import Dict, NoReturn, Optional, Tuple, Any
+from typing import Dict, NoReturn, Optional, Tuple
 from collections import namedtuple, OrderedDict
 
 import psutil
@@ -163,7 +163,7 @@ def thermald_thread() -> NoReturn:
   fan_speed = 0
   count = 0
 
-  onroad_conditions = {
+  onroad_conditions: Dict[str, bool] = {
     "ignition": False,
   }
   startup_conditions: Dict[str, bool] = {}
