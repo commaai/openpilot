@@ -399,6 +399,8 @@ def thermald_thread():
     last_ping = params.get("LastAthenaPingTime")
     if last_ping is not None:
       msg.deviceState.lastAthenaPingTime = int(last_ping)
+    else:
+      msg.deviceState.primeRedirected = params.get_bool("PrimeRedirected")
 
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
