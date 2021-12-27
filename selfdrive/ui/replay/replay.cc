@@ -228,7 +228,7 @@ void Replay::startStream(const Segment *cur_segment) {
       camera_size[type] = {fr->width, fr->height};
     }
   }
-  camera_server_ = std::make_unique<CameraServer>(camera_size, flags_ & REPLAY_FLAG_SEND_YUV);
+  camera_server_ = std::make_unique<CameraServer>(camera_size, hasFlag(REPLAY_FLAG_SEND_YUV));
 
   // start stream thread
   stream_thread_ = new QThread();
@@ -256,8 +256,8 @@ void Replay::publishFrame(const Event *e) {
       {cereal::Event::DRIVER_ENCODE_IDX, DriverCam},
       {cereal::Event::WIDE_ROAD_ENCODE_IDX, WideRoadCam},
   };
-  if ((e->which == cereal::Event::DRIVER_ENCODE_IDX && !(flags_ & REPLAY_FLAG_DCAM)) ||
-      (e->which == cereal::Event::WIDE_ROAD_ENCODE_IDX && !(flags_ & REPLAY_FLAG_ECAM))) {
+  if ((e->which == cereal::Event::DRIVER_ENCODE_IDX && !hasFlag(REPLAY_FLAG_DCAM)) ||
+      (e->which == cereal::Event::WIDE_ROAD_ENCODE_IDX && !hasFlag(REPLAY_FLAG_ECAM))) {
     return;
   }
   auto eidx = capnp::AnyStruct::Reader(e->event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
@@ -318,12 +318,12 @@ void Replay::stream() {
           // reset start times
           evt_start_ts = cur_mono_time_;
           loop_start_ts = nanos_since_boot();
-        } else if (behind_ns > 0 && !(flags_ & REPLAY_FLAG_FULL_SPEED)) {
+        } else if (behind_ns > 0 && !hasFlag(REPLAY_FLAG_FULL_SPEED)) {
           precise_nano_sleep(behind_ns);
         }
 
         if (evt->frame) {
-          if (flags_ & REPLAY_FLAG_FULL_SPEED) {
+          if (hasFlag(REPLAY_FLAG_FULL_SPEED)) {
             camera_server_->waitFinish();
           }
           publishFrame(evt);
@@ -335,7 +335,7 @@ void Replay::stream() {
     // wait for frame to be sent before unlock.(frameReader may be deleted after unlock)
     camera_server_->waitFinish();
 
-    if (eit == events_->end() && !(flags_ & REPLAY_FLAG_NO_LOOP)) {
+    if (eit == events_->end() && !hasFlag(REPLAY_FLAG_NO_LOOP)) {
       int last_segment = segments_.rbegin()->first;
       if (current_segment_ >= last_segment && isSegmentMerged(last_segment)) {
         qInfo() << "reaches the end of route, restart from beginning";
