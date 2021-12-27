@@ -64,7 +64,7 @@ bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abor
 
   try {
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
-    while (words.size() > 0) {
+    while (words.size() > 0 && !(abort && *abort)) {
 
 #ifdef HAS_MEMORY_RESOURCE
       Event *evt = new (mbr_) Event(words);
@@ -91,11 +91,15 @@ bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abor
     }
   } catch (const kj::Exception &e) {
     std::cout << "failed to parse log : " << e.getDescription().cStr() << std::endl;
-    if (events.empty()) return false;
-
-    std::cout << "read " << events.size() << " events from corrupt log" << std::endl;
+    if (!events.empty()) {
+      std::cout << "read " << events.size() << " events from corrupt log" << std::endl;
+    }
   }
 
-  std::sort(events.begin(), events.end(), Event::lessThan());
-  return true;
+  if (!events.empty() && !(abort && *abort)) {
+    std::sort(events.begin(), events.end(), Event::lessThan());
+    return true;
+  } else {
+    return false;
+  }
 }
