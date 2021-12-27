@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
   assert(err >= 0);
   err = sd_journal_seek_tail(journal);
   assert(err >= 0);
+  sd_journal_previous_skip(journal, 1);
 
   while (!do_exit) {
     err = sd_journal_next(journal);
