@@ -8,7 +8,12 @@ from selfdrive.config import Conversions as CV
 # 3 = F-CAN A - OBDII port
 
 def get_pt_bus(car_fingerprint):
-  return 1 if car_fingerprint in HONDA_BOSCH elif car_fingerprint in HONDA_RADARLESS 2 else 0
+  if car_fingerprint in HONDA_BOSCH:
+    return 1
+  elif car_fingerprint in HONDA_RADARLESS:
+    return 2
+  else:
+    return 0
 
 
 def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
