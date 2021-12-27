@@ -28,7 +28,6 @@ public:
   ~Replay();
   bool load();
   void start(int seconds = 0);
-  void stop();
   void pause(bool pause);
   bool isPaused() const { return paused_; }
 
