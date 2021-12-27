@@ -1,12 +1,12 @@
 """Install exception handler for process crash."""
+import sentry_sdk
+from sentry_sdk.integrations.threading import ThreadingIntegration
+
 from common.params import Params
 from selfdrive.hardware import HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.version import get_branch, get_commit, get_origin, get_version, \
                               is_comma_remote, is_dirty, is_tested_branch
-
-import sentry_sdk
-from sentry_sdk.integrations.threading import ThreadingIntegration
 
 
 class SentryProject:
@@ -63,3 +63,5 @@ def init(project: SentryProject) -> None:
   sentry_sdk.set_tag("branch", get_branch())
   sentry_sdk.set_tag("commit", get_commit())
   sentry_sdk.set_tag("device", HARDWARE.get_device_type())
+
+  sentry_sdk.start_session()
