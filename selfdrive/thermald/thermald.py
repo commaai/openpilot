@@ -166,8 +166,8 @@ def thermald_thread() -> NoReturn:
   onroad_conditions = {
     "ignition": False,
   }
-  startup_conditions: Dict[str, Any]= {}
-  startup_conditions_prev: Dict[str, Any] = {}
+  startup_conditions: Dict[str, bool] = {}
+  startup_conditions_prev: Dict[str, bool] = {}
 
   off_ts = None
   started_ts = None
