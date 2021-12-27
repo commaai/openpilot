@@ -1,4 +1,4 @@
-from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, CAR, CarControllerParams
+from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_RADARLESS, CAR, CarControllerParams
 from selfdrive.config import Conversions as CV
 
 # CAN bus layout with relay
@@ -8,7 +8,7 @@ from selfdrive.config import Conversions as CV
 # 3 = F-CAN A - OBDII port
 
 def get_pt_bus(car_fingerprint):
-  return 1 if car_fingerprint in HONDA_BOSCH else 0
+  return 1 if car_fingerprint in HONDA_BOSCH elif car_fingerprint in HONDA_RADARLESS 2 else 0
 
 
 def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
@@ -170,5 +170,5 @@ def spam_buttons_command(packer, button_val, idx, car_fingerprint):
     'CRUISE_BUTTONS': button_val,
     'CRUISE_SETTING': 0,
   }
-  bus = 2
+  bus = get_pt_bus(car_fingerprint)
   return packer.make_can_msg("SCM_BUTTONS", bus, values, idx)
