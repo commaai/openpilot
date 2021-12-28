@@ -63,7 +63,7 @@ myst_html_meta = {
    "property=twitter:description": "openpilot API docs"
 }
 
-html_baseurl = 'https://docs.openpilot.ai/'
+html_baseurl = 'https://docs.comma.ai/'
 sitemap_filename = "sitemap.xml"
 
 # Add any paths that contain templates here, relative to this directory.
