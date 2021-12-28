@@ -48,19 +48,19 @@ myst_html_meta = {
    "googlebot": "index,follow,snippet,archive",
    "property=og:locale": "en_US",
    "property=og:site_name": "docs.comma.ai",
-   "property=og:url": "https://docs.openpilot.ai",
-   "property=og:title": "openpilot docs",
+   "property=og:url": "https://docs.comma.ai",
+   "property=og:title": "openpilot Docuemntation",
    "property=og:type": "website",
    "property=og:image:type": "image/jpeg",
    "property=og:image:width": "400",
-   "property=og:image": "https://docs.openpilot.ai/_static/logo.png",
-   "property=og:image:url": "https://docs.openpilot.ai/_static/logo.png",
-   "property=og:image:secure_url": "https://docs.openpilot.ai/_static/logo.png",
-   "property=og:description": "openpilot docs",
+   "property=og:image": "https://docs.comma.ai/_static/logo.png",
+   "property=og:image:url": "https://docs.comma.ai/_static/logo.png",
+   "property=og:image:secure_url": "https://docs.comma.ai/_static/logo.png",
+   "property=og:description": "openpilot Documentation",
    "property=twitter:card": "summary_large_image",
-   "property=twitter:logo": "https://docs.openpilot.ai/_static/logo.png",
-   "property=twitter:title": "openpilot docs",
-   "property=twitter:description": "openpilot API docs"
+   "property=twitter:logo": "https://docs.comma.ai/_static/logo.png",
+   "property=twitter:title": "openpilot Documentation",
+   "property=twitter:description": "openpilot Documentation"
 }
 
 html_baseurl = 'https://docs.comma.ai/'
