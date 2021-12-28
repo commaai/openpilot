@@ -7,6 +7,7 @@ import signal
 import subprocess
 import time
 import glob
+from typing import NoReturn
 
 import sentry_sdk
 
@@ -197,7 +198,7 @@ def report_tombstone_apport(fn):
     pass
 
 
-def main():
+def main() -> NoReturn:
   clear_apport_folder()  # Clear apport folder on start, otherwise duplicate crashes won't register
   initial_tombstones = set(get_tombstones())
 
