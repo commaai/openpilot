@@ -65,6 +65,14 @@ void keyboardThread(Replay *replay_) {
       replay_->seekTo(-10, true);
     } else if (c == 'G') {
       replay_->seekTo(0, true);
+    } else if (c == 'x') {
+      if (replay_->hasFlag(REPLAY_FLAG_FULL_SPEED)) {
+        replay_->removeFlag(REPLAY_FLAG_FULL_SPEED);
+        qInfo() << "replay at normal speed";
+      } else {
+        replay_->addFlag(REPLAY_FLAG_FULL_SPEED);
+        qInfo() << "replay at full speed";
+      }
     } else if (c == ' ') {
       replay_->pause(!replay_->isPaused());
     }
