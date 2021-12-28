@@ -18,7 +18,6 @@ import sys
 from selfdrive.version import get_version 
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
-OPENPILOT_ROOT = os.path.abspath('../../')      # from openpilot/build/docs
 VERSION = get_version()
 
 
