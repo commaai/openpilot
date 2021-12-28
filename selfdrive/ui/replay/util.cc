@@ -24,7 +24,6 @@ struct CURLGlobalInitializer {
 };
 
 static CURLGlobalInitializer curl_initializer;
-static std::atomic<bool> enable_http_logging = false;
 
 template <class T>
 struct MultiPartWriter {
