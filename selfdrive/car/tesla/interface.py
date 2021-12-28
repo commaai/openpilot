@@ -25,7 +25,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0]
     ret.longitudinalTuning.kiV = [0]
     ret.stopAccel = 0.0
-    ret.startAccel = 0.0
     ret.longitudinalActuatorDelayUpperBound = 0.5 # s
     ret.radarTimeStep = (1.0 / 8) # 8Hz
 
