@@ -49,9 +49,10 @@ void OnroadWindow::updateState(const UIState &s) {
   QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   if (s.sm->updated("controlsState") || !alert.equal({})) {
-    if (alert.type == "controlsUnresponsive" ||
-        alert.type == "controlsUnresponsivePermanent") {
+    if (alert.type == "controlsUnresponsive") {
       bgColor = bg_colors[STATUS_ALERT];
+    } else if (alert.type == "controlsUnresponsivePermanent") {
+      bgColor = bg_colors[STATUS_DISENGAGED];
     }
     alerts->updateAlert(alert, bgColor);
   }
