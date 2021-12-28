@@ -37,7 +37,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
       if starting_condition:
         long_control_state = LongCtrlState.pid
 
-  return long_control_state
+  return long_control_state, stopping_condition, starting_condition
 
 
 class LongControl():
@@ -83,9 +83,9 @@ class LongControl():
 
     # Update state machine
     output_accel = self.last_output_accel
-    self.long_control_state = long_control_state_trans(CP, active, self.long_control_state, CS.vEgo,
-                                                       v_target, v_target_future, CS.brakePressed,
-                                                       CS.cruiseState.standstill)
+    self.long_control_state, stopping, starting = long_control_state_trans(CP, active, self.long_control_state, CS.vEgo,
+                                                                           v_target, v_target_future, CS.brakePressed,
+                                                                           CS.cruiseState.standstill)
 
     if self.long_control_state == LongCtrlState.off or CS.gasPressed:
       self.reset(CS.vEgo)
@@ -117,4 +117,4 @@ class LongControl():
     self.last_output_accel = output_accel
     final_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
-    return final_accel
+    return final_accel, stopping, starting
