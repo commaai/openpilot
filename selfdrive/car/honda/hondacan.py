@@ -20,11 +20,8 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
   if radar_disabled:
     # when radar is disabled, steering commands are sent directly to powertrain bus
     return get_pt_bus(car_fingerprint)
-  elif car_fingerprint in HONDA_RADARLESS:
-    return 2
-  else:
-    # normally steering commands are sent to radar, which forwards them to powertrain bus
-    return 0
+  # normally steering commands are sent to radar, which forwards them to powertrain bus
+  return 0
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?
