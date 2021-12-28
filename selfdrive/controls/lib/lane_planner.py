@@ -8,7 +8,7 @@ from selfdrive.swaglog import cloudlog
 
 
 TRAJECTORY_SIZE = 33
-# model path is 0.06 m left of center
+# model path is 0.06 m left of car center
 MODEL_PATH_OFFSET = -0.06
 if EON:
   CAMERA_OFFSET = -0.06
