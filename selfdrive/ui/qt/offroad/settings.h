@@ -24,7 +24,6 @@ protected:
 
 signals:
   void closeSettings();
-  void offroadTransition(bool offroad);
   void reviewTrainingGuide();
   void showDriverView();
 
@@ -76,4 +75,15 @@ private:
 
   Params params;
   QFileSystemWatcher *fs_watch;
+};
+
+class C2NetworkPanel: public QWidget {
+  Q_OBJECT
+public:
+  explicit C2NetworkPanel(QWidget* parent = nullptr);
+
+private:
+  void showEvent(QShowEvent *event) override;
+  QString getIPAddress();
+  LabelControl *ipaddress;
 };

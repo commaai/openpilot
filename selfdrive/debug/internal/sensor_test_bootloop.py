@@ -17,7 +17,7 @@ except PermissionError:
   print("WARNING: failed to make /dev/shm")
 
 try:
-  with open('/tmp/sensor-test-results.json', 'r') as infile:
+  with open('/tmp/sensor-test-results.json') as infile:
     data = json.load(infile)
 except Exception:
   data = {'sensor-pass': 0, 'sensor-fail': 0}

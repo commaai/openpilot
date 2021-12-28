@@ -28,6 +28,8 @@ copyright = '2021, comma.ai'
 author = 'comma.ai'
 version = VERSION
 release = VERSION
+language = 'en'
+
 
 # -- General configuration ---------------------------------------------------
 
@@ -39,7 +41,33 @@ extensions = [
         'sphinx.ext.viewcode',  # Add view code link to modules
         'sphinx_rtd_theme',     # Read The Docs theme
         'myst_parser',          # Markdown parsing
+        'sphinx_sitemap',       # sitemap generation for SEO
 ]
+
+myst_html_meta = {
+   "description": "openpilot docs",
+   "keywords": "op, openpilot, docs, documentation",
+   "robots": "all,follow",
+   "googlebot": "index,follow,snippet,archive",
+   "property=og:locale": "en_US",
+   "property=og:site_name": "docs.comma.ai",
+   "property=og:url": "https://docs.comma.ai",
+   "property=og:title": "openpilot Docuemntation",
+   "property=og:type": "website",
+   "property=og:image:type": "image/jpeg",
+   "property=og:image:width": "400",
+   "property=og:image": "https://docs.comma.ai/_static/logo.png",
+   "property=og:image:url": "https://docs.comma.ai/_static/logo.png",
+   "property=og:image:secure_url": "https://docs.comma.ai/_static/logo.png",
+   "property=og:description": "openpilot Documentation",
+   "property=twitter:card": "summary_large_image",
+   "property=twitter:logo": "https://docs.comma.ai/_static/logo.png",
+   "property=twitter:title": "openpilot Documentation",
+   "property=twitter:description": "openpilot Documentation"
+}
+
+html_baseurl = 'https://docs.comma.ai/'
+sitemap_filename = "sitemap.xml"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -62,7 +90,6 @@ html_show_copyright = True
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
 html_logo = '_static/logo.png'
 html_favicon = '_static/favicon.ico'
 html_theme_options = {
@@ -71,3 +98,4 @@ html_theme_options = {
     'vcs_pageview_mode': 'blob',
     'style_nav_header_background': '#000000',
 }
+html_extra_path = ['_static']

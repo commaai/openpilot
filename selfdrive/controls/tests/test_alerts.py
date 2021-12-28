@@ -70,7 +70,7 @@ class TestAlerts(unittest.TestCase):
 
         font = fonts[alert.alert_size][i]
         w, _ = draw.textsize(txt, font)
-        msg = "type: %s msg: %s" % (alert.alert_type, txt)
+        msg = f"type: {alert.alert_type} msg: {txt}"
         self.assertLessEqual(w, max_text_width, msg=msg)
 
   def test_alert_sanity_check(self):

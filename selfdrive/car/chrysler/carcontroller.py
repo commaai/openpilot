@@ -1,3 +1,4 @@
+from cereal import car
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, \
                                                create_wheel_buttons
@@ -20,9 +21,8 @@ class CarController():
     # this seems needed to avoid steering faults and to force the sync with the EPS counter
     frame = CS.lkas_counter
     if self.prev_frame == frame:
-      return []
+      return car.CarControl.Actuators.new_message(), []
 
-    # *** compute control surfaces ***
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last,
@@ -67,4 +67,7 @@ class CarController():
     self.ccframe += 1
     self.prev_frame = frame
 
-    return can_sends
+    new_actuators = actuators.copy()
+    new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
+
+    return new_actuators, can_sends

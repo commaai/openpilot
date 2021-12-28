@@ -46,9 +46,9 @@ void party(cl_device_id device_id, cl_context context) {
 int main(int argc, char *argv[]) {
   if (!Hardware::PC()) {
     int ret;
-    ret = set_realtime_priority(53);
+    ret = util::set_realtime_priority(53);
     assert(ret == 0);
-    ret = set_core_affinity({Hardware::EON() ? 2 : 6});
+    ret = util::set_core_affinity({Hardware::EON() ? 2 : 6});
     assert(ret == 0 || Params().getBool("IsOffroad")); // failure ok while offroad due to offlining cores
   }
 

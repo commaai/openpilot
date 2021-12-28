@@ -152,7 +152,7 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
       plots.append(plot)
       idxs.append(name_to_arr_idx[item])
       plot_select.append(i)
-    axs[i].set_title(", ".join("%s (%s)" % (nm, cl)
+    axs[i].set_title(", ".join(f"{nm} ({cl})"
                                for (nm, cl) in zip(pl_list, plot_colors[i])), fontsize=10)
     axs[i].tick_params(axis="x", colors="white")
     axs[i].tick_params(axis="y", colors="white")

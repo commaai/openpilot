@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 import numpy as np
 
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.swaglog import cloudlog
 
@@ -37,6 +38,7 @@ class States():
   VELOCITY = _slice(2)  # (x, y) [m/s]
   YAW_RATE = _slice(1)  # [rad/s]
   STEER_ANGLE = _slice(1)  # [rad]
+  ROAD_ROLL = _slice(1)  # [rad]
 
 
 class CarKalman(KalmanFilter):
@@ -51,6 +53,7 @@ class CarKalman(KalmanFilter):
     10.0, 0.0,
     0.0,
     0.0,
+    0.0
   ])
 
   # process noise
@@ -63,12 +66,14 @@ class CarKalman(KalmanFilter):
     .1**2, .01**2,
     math.radians(0.1)**2,
     math.radians(0.1)**2,
+    math.radians(1)**2,
   ])
   P_initial = Q.copy()
 
   obs_noise: Dict[int, Any] = {
     ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.01)**2),
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(10.0)**2),
+    ObservationKind.ROAD_ROLL: np.atleast_2d(math.radians(1.0)**2),
     ObservationKind.STEER_RATIO: np.atleast_2d(5.0**2),
     ObservationKind.STIFFNESS: np.atleast_2d(5.0**2),
     ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.1**2),
@@ -87,7 +92,7 @@ class CarKalman(KalmanFilter):
   def generate_code(generated_dir):
     dim_state = CarKalman.initial_x.shape[0]
     name = CarKalman.name
-    
+
     # vehicle models comes from The Science of Vehicle Dynamics: Handling, Braking, and Ride of Road and Race Cars
     # Model used is in 6.15 with formula from 6.198
 
@@ -106,6 +111,7 @@ class CarKalman(KalmanFilter):
     cF, cR = x * cF_orig, x * cR_orig
     angle_offset = state[States.ANGLE_OFFSET, :][0, 0]
     angle_offset_fast = state[States.ANGLE_OFFSET_FAST, :][0, 0]
+    theta = state[States.ROAD_ROLL, :][0, 0]
     sa = state[States.STEER_ANGLE, :][0, 0]
 
     sR = state[States.STEER_RATIO, :][0, 0]
@@ -122,8 +128,12 @@ class CarKalman(KalmanFilter):
     B[0, 0] = cF / m / sR
     B[1, 0] = (cF * aF) / j / sR
 
+    C = sp.Matrix(np.zeros((2, 1)))
+    C[0, 0] = ACCELERATION_DUE_TO_GRAVITY
+    C[1, 0] = 0
+
     x = sp.Matrix([v, r])  # lateral velocity, yaw rate
-    x_dot = A * x + B * (sa - angle_offset - angle_offset_fast)
+    x_dot = A * x + B * (sa - angle_offset - angle_offset_fast) - C * theta
 
     dt = sp.Symbol('dt')
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
@@ -145,11 +155,12 @@ class CarKalman(KalmanFilter):
       [sp.Matrix([angle_offset_fast]), ObservationKind.ANGLE_OFFSET_FAST, None],
       [sp.Matrix([sR]), ObservationKind.STEER_RATIO, None],
       [sp.Matrix([x]), ObservationKind.STIFFNESS, None],
+      [sp.Matrix([theta]), ObservationKind.ROAD_ROLL, None],
     ]
 
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, global_vars=global_vars)
 
-  def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0):  # pylint: disable=super-init-not-called
+  def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0, P_initial=None):  # pylint: disable=super-init-not-called
     dim_state = self.initial_x.shape[0]
     dim_state_err = self.P_initial.shape[0]
     x_init = self.initial_x
@@ -157,6 +168,8 @@ class CarKalman(KalmanFilter):
     x_init[States.STIFFNESS] = stiffness_factor
     x_init[States.ANGLE_OFFSET] = angle_offset
 
+    if P_initial is not None:
+      self.P_initial = P_initial
     # init filter
     self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, self.P_initial, dim_state, dim_state_err, global_vars=self.global_vars, logger=cloudlog)
 

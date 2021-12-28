@@ -21,19 +21,22 @@ from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
 from cereal import messaging
 
+
 class TestAthenadMethods(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     cls.SOCKET_PORT = 45454
+    athenad.Params = MockParams
     athenad.ROOT = tempfile.mkdtemp()
     athenad.SWAGLOG_DIR = swaglog.SWAGLOG_DIR = tempfile.mkdtemp()
-    athenad.Params = MockParams
     athenad.Api = MockApi
-    athenad.LOCAL_PORT_WHITELIST = set([cls.SOCKET_PORT])
+    athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
   def setUp(self):
+    MockParams.restore_defaults()
     athenad.upload_queue = queue.Queue()
     athenad.cur_upload_items.clear()
+    athenad.cancelled_uploads.clear()
 
     for i in os.listdir(athenad.ROOT):
       p = os.path.join(athenad.ROOT, i)
@@ -248,6 +251,26 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.cancelled_uploads.add(item.id)
     items = dispatcher["listUploadQueue"]()
     self.assertEqual(len(items), 0)
+
+  def test_upload_queue_persistence(self):
+    item1 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id1')
+    item2 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id2')
+
+    athenad.upload_queue.put_nowait(item1)
+    athenad.upload_queue.put_nowait(item2)
+
+    # Ensure cancelled items are not persisted
+    athenad.cancelled_uploads.add(item2.id)
+
+    # serialize item
+    athenad.UploadQueueCache.cache(athenad.upload_queue)
+
+    # deserialize item
+    athenad.upload_queue.queue.clear()
+    athenad.UploadQueueCache.initialize(athenad.upload_queue)
+
+    self.assertEqual(athenad.upload_queue.qsize(), 1)
+    self.assertDictEqual(athenad.upload_queue.queue[-1]._asdict(), item1._asdict())
 
   @mock.patch('selfdrive.athena.athenad.create_connection')
   def test_startLocalProxy(self, mock_create_connection):

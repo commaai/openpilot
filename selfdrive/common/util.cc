@@ -20,6 +20,8 @@
 #include <sched.h>
 #endif  // __linux__
 
+namespace util {
+
 void set_thread_name(const char* name) {
 #ifdef __linux__
   // pthread_setname_np is dumb (fails instead of truncates)
@@ -55,8 +57,6 @@ int set_core_affinity(std::vector<int> cores) {
   return -1;
 #endif
 }
-
-namespace util {
 
 std::string read_file(const std::string& fn) {
   std::ifstream f(fn, std::ios::binary | std::ios::in);

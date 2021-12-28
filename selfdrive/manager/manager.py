@@ -5,6 +5,7 @@ import signal
 import subprocess
 import sys
 import traceback
+from typing import List, Tuple, Union
 
 import cereal.messaging as messaging
 import selfdrive.crash as crash
@@ -18,14 +19,14 @@ from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
 from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import get_dirty, get_commit, get_version, get_origin, get_short_branch, \
-                              terms_version, training_version, get_comma_remote
+from selfdrive.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
+                              terms_version, training_version, is_comma_remote
 
 
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
 
-def manager_init():
+def manager_init() -> None:
   # update system time from panda
   set_time(cloudlog)
 
@@ -35,7 +36,7 @@ def manager_init():
   params = Params()
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
 
-  default_params = [
+  default_params: List[Tuple[str, Union[str, bytes]]] = [
     ("CompletedTrainingVersion", "0"),
     ("HasAcceptedTerms", "0"),
     ("OpenpilotEnabledToggle", "1"),
@@ -56,7 +57,7 @@ def manager_init():
 
   # is this dashcam?
   if os.getenv("PASSIVE") is not None:
-    params.put_bool("Passive", bool(int(os.getenv("PASSIVE"))))
+    params.put_bool("Passive", bool(int(os.getenv("PASSIVE", "0"))))
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
@@ -86,25 +87,25 @@ def manager_init():
     raise Exception(f"Registration failed for device {serial}")
   os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
 
-  if not get_dirty():
+  if not is_dirty():
     os.environ['CLEAN'] = '1'
 
-  cloudlog.bind_global(dongle_id=dongle_id, version=get_version(), dirty=get_dirty(),
+  cloudlog.bind_global(dongle_id=dongle_id, version=get_version(), dirty=is_dirty(),
                        device=HARDWARE.get_device_type())
 
-  if get_comma_remote() and not (os.getenv("NOLOG") or os.getenv("NOCRASH") or PC):
+  if is_comma_remote() and not (os.getenv("NOLOG") or os.getenv("NOCRASH") or PC):
     crash.init()
   crash.bind_user(id=dongle_id)
-  crash.bind_extra(dirty=get_dirty(), origin=get_origin(), branch=get_short_branch(), commit=get_commit(),
+  crash.bind_extra(dirty=is_dirty(), origin=get_origin(), branch=get_short_branch(), commit=get_commit(),
                    device=HARDWARE.get_device_type())
 
 
-def manager_prepare():
+def manager_prepare() -> None:
   for p in managed_processes.values():
     p.prepare()
 
 
-def manager_cleanup():
+def manager_cleanup() -> None:
   # send signals to kill all procs
   for p in managed_processes.values():
     p.stop(block=False)
@@ -116,7 +117,8 @@ def manager_cleanup():
   cloudlog.info("everything is dead")
 
 
-def manager_thread():
+def manager_thread() -> None:
+  cloudlog.bind(daemon="manager")
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
@@ -127,8 +129,7 @@ def manager_thread():
     ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
-  if os.getenv("BLOCK") is not None:
-    ignore += os.getenv("BLOCK").split(",")
+  ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
 
@@ -175,7 +176,7 @@ def manager_thread():
       break
 
 
-def main():
+def main() -> None:
   prepare_only = os.getenv("PREPAREONLY") is not None
 
   manager_init()

@@ -3,8 +3,6 @@
 #include <cassert>
 #include <iostream>
 
-const int YUV_BUF_COUNT = 50;
-
 CameraServer::CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS], bool send_yuv) : send_yuv(send_yuv) {
   for (int i = 0; i < MAX_CAMERAS; ++i) {
     std::tie(cameras_[i].width, cameras_[i].height) = camera_size[i];
@@ -29,7 +27,7 @@ void CameraServer::startVipcServer() {
       std::cout << "camera[" << cam.type << "] frame size " << cam.width << "x" << cam.height << std::endl;
       vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
       if (send_yuv) {
-        vipc_server_->create_buffers(cam.yuv_type, YUV_BUF_COUNT, false, cam.width, cam.height);
+        vipc_server_->create_buffers(cam.yuv_type, YUV_BUFFER_COUNT, false, cam.width, cam.height);
       }
       if (!cam.thread.joinable()) {
         cam.thread = std::thread(&CameraServer::cameraThread, this, std::ref(cam));

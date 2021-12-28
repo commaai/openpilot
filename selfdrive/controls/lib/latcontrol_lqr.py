@@ -44,7 +44,7 @@ class LatControlLQR():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate):
+  def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate):
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     steers_max = get_steer_max(CP, CS.vEgo)
@@ -53,7 +53,7 @@ class LatControlLQR():
     # Subtract offset. Zero angle should correspond to zero torque
     steering_angle_no_offset = CS.steeringAngleDeg - params.angleOffsetAverageDeg
 
-    desired_angle = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo))
+    desired_angle = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
 
     instant_offset = params.angleOffsetDeg - params.angleOffsetAverageDeg
     desired_angle += instant_offset  # Only add offset that originates from vehicle model errors

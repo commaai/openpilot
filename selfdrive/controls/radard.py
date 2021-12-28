@@ -135,7 +135,7 @@ class RadarD():
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
 
     idens = list(sorted(self.tracks.keys()))
-    track_pts = list([self.tracks[iden].get_key_for_cluster() for iden in idens])
+    track_pts = [self.tracks[iden].get_key_for_cluster() for iden in idens]
 
     # If we have multiple points, cluster them
     if len(track_pts) > 1:
@@ -189,7 +189,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
   # import the radar from the fingerprint
   cloudlog.info("radard is importing %s", CP.carName)
-  RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
+  RadarInterface = importlib.import_module(f'selfdrive.car.{CP.carName}.radar_interface').RadarInterface
 
   # *** setup messaging
   if can_sock is None:

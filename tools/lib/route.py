@@ -18,7 +18,7 @@ CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']
 
-class Route(object):
+class Route:
   def __init__(self, route_name, data_dir=None):
     self.files = None
     self.route_name = route_name.replace('_', '|')
@@ -112,7 +112,7 @@ class Route(object):
           if not seg_num.isdigit():
             continue
 
-          segment_name = '{}--{}'.format(self.route_name, seg_num)
+          segment_name = f'{self.route_name}--{seg_num}'
           for seg_f in os.listdir(os.path.join(fullpath, seg_num)):
             segment_files[segment_name].append((os.path.join(fullpath, seg_num, seg_f), seg_f))
 
@@ -152,10 +152,10 @@ class Route(object):
       segments.append(RouteSegment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path))
 
     if len(segments) == 0:
-      raise ValueError('Could not find segments for route {} in data directory {}'.format(self.route_name, data_dir))
+      raise ValueError(f'Could not find segments for route {self.route_name} in data directory {data_dir}')
     return sorted(segments, key=lambda seg: seg.canonical_name.segment_num)
 
-class RouteSegment(object):
+class RouteSegment:
   def __init__(self, name, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path):
     self._name = RouteSegmentName(name)
     self.log_path = log_path
@@ -173,7 +173,7 @@ class RouteSegment(object):
   def canonical_name(self):
     return self._name
 
-class RouteSegmentName(object):
+class RouteSegmentName:
   def __init__(self, name_str):
     self._segment_name_str = name_str
     self._route_name_str, num_str = self._segment_name_str.rsplit("--", 1)

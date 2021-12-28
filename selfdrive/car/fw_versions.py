@@ -221,7 +221,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   if match_count >= 2:
     if log:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
-    return set([candidate])
+    return {candidate}
   else:
     return set()
 
@@ -362,7 +362,7 @@ if __name__ == "__main__":
   print("Getting vin...")
   addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
   print(f"VIN: {vin}")
-  print("Getting VIN took %.3f s" % (time.time() - t))
+  print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
 
   t = time.time()
@@ -379,4 +379,4 @@ if __name__ == "__main__":
 
   print()
   print("Possible matches:", candidates)
-  print("Getting fw took %.3f s" % (time.time() - t))
+  print(f"Getting fw took {time.time() - t:.3f} s")

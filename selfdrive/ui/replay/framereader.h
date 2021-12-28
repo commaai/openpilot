@@ -22,12 +22,13 @@ public:
   bool load(const std::string &url, bool no_cuda = false, std::atomic<bool> *abort = nullptr, bool local_cache = false, int chunk_size = -1, int retries = 0);
   bool load(const std::byte *data, size_t size, bool no_cuda = false, std::atomic<bool> *abort = nullptr);
   bool get(int idx, uint8_t *rgb, uint8_t *yuv);
-  int getRGBSize() const { return width * height * 3; }
+  int getRGBSize() const { return aligned_width * aligned_height * 3; }
   int getYUVSize() const { return width * height * 3 / 2; }
   size_t getFrameCount() const { return packets.size(); }
   bool valid() const { return valid_; }
 
   int width = 0, height = 0;
+  int aligned_width = 0, aligned_height = 0;
 
 private:
   bool initHardwareDecoder(AVHWDeviceType hw_device_type);

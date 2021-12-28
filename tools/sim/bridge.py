@@ -93,7 +93,7 @@ class Camerad:
     rgb_cl = cl_array.to_device(self.queue, rgb)
     yuv_cl = cl_array.empty_like(rgb_cl)
     self.krnl(self.queue, (np.int32(self.Wdiv4), np.int32(self.Hdiv4)), None, rgb_cl.data, yuv_cl.data).wait()
-    yuv = np.resize(yuv_cl.get(), np.int32((rgb.size / 2)))
+    yuv = np.resize(yuv_cl.get(), np.int32(rgb.size / 2))
     eof = self.frame_id * 0.05
 
     # TODO: remove RGB send once the last RGB vipc subscriber is removed

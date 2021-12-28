@@ -17,6 +17,7 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_QCAMERA = 0x0040,
   REPLAY_FLAG_SEND_YUV = 0x0080,
   REPLAY_FLAG_NO_CUDA = 0x0100,
+  REPLAY_FLAG_FULL_SPEED = 0x0200,
 };
 
 class Replay : public QObject {
@@ -28,9 +29,11 @@ public:
   ~Replay();
   bool load();
   void start(int seconds = 0);
-  void stop();
   void pause(bool pause);
   bool isPaused() const { return paused_; }
+  inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
+  inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
+  inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
 
 signals:
   void segmentChanged();
@@ -69,14 +72,15 @@ protected:
   bool events_updated_ = false;
   uint64_t route_start_ts_ = 0;
   uint64_t cur_mono_time_ = 0;
-  std::vector<Event *> *events_ = nullptr;
+  std::unique_ptr<std::vector<Event *>> events_;
+  std::unique_ptr<std::vector<Event *>> new_events_;
   std::vector<int> segments_merged_;
 
   // messaging
   SubMaster *sm = nullptr;
-  PubMaster *pm = nullptr;
+  std::unique_ptr<PubMaster> pm;
   std::vector<const char*> sockets_;
   std::unique_ptr<Route> route_;
   std::unique_ptr<CameraServer> camera_server_;
-  uint32_t flags_ = REPLAY_FLAG_NONE;
+  std::atomic<uint32_t> flags_ = REPLAY_FLAG_NONE;
 };
