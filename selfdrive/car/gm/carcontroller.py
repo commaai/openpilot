@@ -113,7 +113,7 @@ class CarController():
         at_full_stop = enabled and CS.out.standstill
         near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
         # non-ascm cars have brakes on PT bus (if they have them)
-        #TODO: FIX  can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.POWERTRAIN, self.apply_brake, idx, near_stop, at_full_stop))
+        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.POWERTRAIN, self.apply_brake, idx, near_stop, at_full_stop))
         # TODO: Can we detect that brake controller via fingerprint?
         # TODO: Check to see if your fingerprint has changed!
         
