@@ -232,8 +232,6 @@ class CarInterface(CarInterfaceBase):
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS2)
       ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
       ret.startingAccelRate = 6.0  # release brakes fast
-      ret.vEgoStopping = 0.5
-      ret.vEgoStarting = 0.2
     else:
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS)
 
