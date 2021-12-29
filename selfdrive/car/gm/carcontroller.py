@@ -38,9 +38,9 @@ class CarController():
     # Steering (50Hz)
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
-    if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
-      self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
-    elif (frame % P.STEER_STEP) == 0:
+    #if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
+    #  self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
+    if (frame % P.STEER_STEP) == 0:
       lkas_enabled = enabled and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED
       if lkas_enabled:
         new_steer = int(round(actuators.steer * P.STEER_MAX))
@@ -113,7 +113,7 @@ class CarController():
         at_full_stop = enabled and CS.out.standstill
         near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
         # non-ascm cars have brakes on PT bus (if they have them)
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.POWERTRAIN, self.apply_brake, idx, near_stop, at_full_stop))
+        #TODO: FIX  can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.POWERTRAIN, self.apply_brake, idx, near_stop, at_full_stop))
         # TODO: Can we detect that brake controller via fingerprint?
         # TODO: Check to see if your fingerprint has changed!
         
