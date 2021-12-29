@@ -1,5 +1,5 @@
 if [ -z "$OPENPILOT_ENV" ]; then
-  OP_ROOT="$(dirname "$(dirname "$(realpath -s "$0")")")"
+  OP_ROOT="$(dirname "$(dirname "${BASH_SOURCE[0]}")")"
   export PYTHONPATH="$OP_ROOT:$PYTHONPATH"
   export PATH="$HOME/.pyenv/bin:$PATH"
 
