@@ -6,7 +6,6 @@
 #define TEMPORAL_SIZE 512
 #define DESIRE_LEN 8
 #define TRAFFIC_CONVENTION_LEN 2
-#define USE_EXTRA true
 
 // TODO: This should probably use SNPE directly.
 int main(int argc, char* argv[]) {

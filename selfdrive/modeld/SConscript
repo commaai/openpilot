@@ -27,6 +27,7 @@ thneed_src = [
 ]
 
 use_thneed = not GetOption('no_thneed')
+lenv['CXXFLAGS'].append('-DUSE_EXTRA=true')
 
 if arch == "aarch64" or arch == "larch64":
   libs += ['gsl', 'CB']
