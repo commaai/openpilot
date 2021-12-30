@@ -125,6 +125,11 @@ void SNPEModel::addImage(float *image_buf, int buf_size) {
   input_size = buf_size;
 }
 
+void SNPEModel::addExtra(float *image_buf, int buf_size) {
+  extra = image_buf;
+  extra_size = buf_size;
+}
+
 std::unique_ptr<zdl::DlSystem::IUserBuffer> SNPEModel::addExtra(float *state, int state_size, int idx) {
   // get input and output names
   const auto &strListi_opt = snpe->getInputTensorNames();
@@ -144,10 +149,13 @@ std::unique_ptr<zdl::DlSystem::IUserBuffer> SNPEModel::addExtra(float *state, in
 void SNPEModel::execute() {
 #ifdef USE_THNEED
   if (Runtime == zdl::DlSystem::Runtime_t::GPU) {
-    float *inputs[4] = {recurrent, trafficConvention, desire, input};
     if (thneed == NULL) {
       bool ret = inputBuffer->setBufferAddress(input);
       assert(ret == true);
+      if (extra != NULL) {
+        bool extra_ret = extraBuffer->setBufferAddress(extra);
+        assert(extra_ret == true);
+      }
       if (!snpe->execute(inputMap, outputMap)) {
         PrintErrorStringAndExit();
       }
@@ -164,7 +172,13 @@ void SNPEModel::execute() {
       memcpy(outputs_golden, output, output_size*sizeof(float));
       memset(output, 0, output_size*sizeof(float));
       memset(recurrent, 0, recurrent_size*sizeof(float));
-      thneed->execute(inputs, output);
+      if (extra != NULL) {
+        float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
+        thneed->execute(inputs, output);
+      } else {
+        float *inputs[4] = {recurrent, trafficConvention, desire, input};
+        thneed->execute(inputs, output);
+      }
 
       if (memcmp(output, outputs_golden, output_size*sizeof(float)) == 0) {
         printf("thneed selftest passed\n");
@@ -176,12 +190,22 @@ void SNPEModel::execute() {
       }
       free(outputs_golden);
     } else {
-      thneed->execute(inputs, output);
+      if (extra != NULL) {
+        float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
+        thneed->execute(inputs, output);
+      } else {
+        float *inputs[4] = {recurrent, trafficConvention, desire, input};
+        thneed->execute(inputs, output);
+      }
     }
   } else {
 #endif
     bool ret = inputBuffer->setBufferAddress(input);
     assert(ret == true);
+    if (extra != NULL) {
+      bool extra_ret = extraBuffer->setBufferAddress(extra);
+      assert(extra_ret == true);
+    }
     if (!snpe->execute(inputMap, outputMap)) {
       PrintErrorStringAndExit();
     }

@@ -17,10 +17,12 @@ int main(int argc, char* argv[]) {
   float desire[DESIRE_LEN] = {0};
   float traffic_convention[TRAFFIC_CONVENTION_LEN] = {0};
   float *input = (float*)calloc(0x1000000, sizeof(float));
+  float *extra = (float*)calloc(0x1000000, sizeof(float));
 
   mdl.addRecurrent(state, TEMPORAL_SIZE);
   mdl.addDesire(desire, DESIRE_LEN);
   mdl.addTrafficConvention(traffic_convention, TRAFFIC_CONVENTION_LEN);
+  mdl.addExtra(extra, 0); // TODO: Should only add extra if the model supports it
   mdl.addImage(input, 0);
 
   // first run

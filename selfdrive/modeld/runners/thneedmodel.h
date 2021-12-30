@@ -10,13 +10,16 @@ public:
   void addTrafficConvention(float *state, int state_size);
   void addDesire(float *state, int state_size);
   void addImage(float *image_buf, int buf_size);
+  void addExtra(float *image_buf, int buf_size);
   void execute();
   void* getInputBuf();
+  void* getExtraBuf();
 private:
   Thneed *thneed = NULL;
   bool recorded;
 
   float *input;
+  float *extra;
   float *output;
 
   // recurrent and desire

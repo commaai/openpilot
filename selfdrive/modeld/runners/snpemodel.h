@@ -27,6 +27,7 @@ public:
   void addTrafficConvention(float *state, int state_size);
   void addDesire(float *state, int state_size);
   void addImage(float *image_buf, int buf_size);
+  void addExtra(float *image_buf, int buf_size);
   void execute();
 
 #ifdef USE_THNEED
@@ -54,6 +55,11 @@ private:
   std::unique_ptr<zdl::DlSystem::IUserBuffer> outputBuffer;
   float *output;
   size_t output_size;
+
+  // extra input stuff
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> extraBuffer;
+  float *extra;
+  size_t extra_size;
 
   // recurrent and desire
   std::unique_ptr<zdl::DlSystem::IUserBuffer> addExtra(float *state, int state_size, int idx);

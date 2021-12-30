@@ -104,6 +104,11 @@ void ONNXModel::addImage(float *image_buf, int buf_size) {
   image_buf_size = buf_size;
 }
 
+void ONNXModel::addExtra(float *image_buf, int buf_size) {
+  extra_input_buf = image_buf;
+  extra_buf_size = buf_size;
+}
+
 void ONNXModel::execute() {
   // order must be this
   if (image_input_buf != NULL) {
