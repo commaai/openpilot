@@ -36,7 +36,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
 static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
   int max_idx = 0;
-  for (int i = 1; i < TRAJECTORY_SIZE && line_x[i] < path_height; ++i) {
+  for (int i = 1; i < TRAJECTORY_SIZE && std::islessequal(line_x[i], path_height); ++i) {
     max_idx = i;
   }
   return max_idx;
