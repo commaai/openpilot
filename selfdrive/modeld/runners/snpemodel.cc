@@ -13,7 +13,7 @@ void PrintErrorStringAndExit() {
   std::exit(EXIT_FAILURE);
 }
 
-SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false) {
+SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra) {
   output = loutput;
   output_size = loutput_size;
   use_extra = luse_extra;
