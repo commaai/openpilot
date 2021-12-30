@@ -6,12 +6,13 @@
 #define TEMPORAL_SIZE 512
 #define DESIRE_LEN 8
 #define TRAFFIC_CONVENTION_LEN 2
+#define USE_EXTRA true
 
 // TODO: This should probably use SNPE directly.
 int main(int argc, char* argv[]) {
   #define OUTPUT_SIZE 0x10000
   float *output = (float*)calloc(OUTPUT_SIZE, sizeof(float));
-  SNPEModel mdl(argv[1], output, 0, USE_GPU_RUNTIME);
+  SNPEModel mdl(argv[1], output, 0, USE_GPU_RUNTIME, USE_EXTRA);
 
   float state[TEMPORAL_SIZE] = {0};
   float desire[DESIRE_LEN] = {0};
@@ -22,8 +23,10 @@ int main(int argc, char* argv[]) {
   mdl.addRecurrent(state, TEMPORAL_SIZE);
   mdl.addDesire(desire, DESIRE_LEN);
   mdl.addTrafficConvention(traffic_convention, TRAFFIC_CONVENTION_LEN);
-  mdl.addExtra(extra, 0); // TODO: Should only add extra if the model supports it
   mdl.addImage(input, 0);
+  if (USE_EXTRA) {
+    mdl.addExtra(extra, 0);
+  }
 
   // first run
   printf("************** execute 1 **************\n");

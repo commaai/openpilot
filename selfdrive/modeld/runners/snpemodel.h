@@ -22,7 +22,7 @@
 
 class SNPEModel : public RunModel {
 public:
-  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime);
+  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra);
   void addRecurrent(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
   void addDesire(float *state, int state_size);
@@ -60,6 +60,7 @@ private:
   std::unique_ptr<zdl::DlSystem::IUserBuffer> extraBuffer;
   float *extra;
   size_t extra_size;
+  bool use_extra;
 
   // recurrent and desire
   std::unique_ptr<zdl::DlSystem::IUserBuffer> addExtra(float *state, int state_size, int idx);
