@@ -27,7 +27,7 @@ INSTALL_DIR = os.path.join(juggle_dir, "bin")
 
 def install():
   m = f"{platform.system()}-{platform.machine()}"
-  supported = ("Linux-x86-64", "Darwin-arm64", "Darwin-x86_64")
+  supported = ("Linux-x86_64", "Darwin-arm64", "Darwin-x86_64")
   if m not in supported:
     raise Exception(f"Unsupported platform: '{m}'. Supported platforms: {supported}")
 
