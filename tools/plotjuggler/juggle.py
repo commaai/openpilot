@@ -47,7 +47,6 @@ def install():
 
 
 def load_segment(segment_name):
-  print(f"Loading {segment_name}")
   if segment_name is None:
     return []
 
@@ -76,6 +75,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
 
 
 def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
+  # TODO: abstract out the cabana stuff
   if 'cabana' in route_name:
     query = parse_qs(urlparse(route_name).query)
     api = CommaApi(get_token())
@@ -90,8 +90,8 @@ def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
     logs = logs[segment_number:segment_number+segment_count]
 
   if None in logs:
-    fallback_answer = input("At least one of the rlogs in this segment does not exist, would you like to use the qlogs? (y/n) : ")
-    if fallback_answer == 'y':
+    ans = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
+    if ans == 'y':
       logs = r.qlog_paths()
       if segment_number is not None:
         logs = logs[segment_number:segment_number+segment_count]
@@ -117,11 +117,10 @@ def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
       pass
     break
 
-  tmp = tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir)
-  save_log(tmp.name, all_data, compress=False)
-  del all_data
-
-  start_juggler(tmp.name, dbc, layout)
+  with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
+    save_log(tmp.name, all_data, compress=False)
+    del all_data
+    start_juggler(tmp.name, dbc, layout)
 
 
 if __name__ == "__main__":
