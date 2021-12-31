@@ -31,7 +31,7 @@ def install():
   if m not in supported:
     raise Exception(f"Unsupported platform: '{m}'. Supported platforms: {supported}")
 
-  if os.path.exists(INSTASLL_DIR):
+  if os.path.exists(INSTALL_DIR):
     shutil.rmtree(INSTALL_DIR)
   os.mkdir(INSTALL_DIR)
 
