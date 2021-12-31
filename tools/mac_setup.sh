@@ -10,6 +10,7 @@ fi
 
 brew bundle --file=- <<-EOS
 brew "cmake"
+brew "git-lfs"
 brew "zlib"
 brew "bzip2"
 brew "rust"
