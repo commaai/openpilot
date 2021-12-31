@@ -70,7 +70,7 @@ class Planner:
     prev_accel_constraint = True
     if long_control_state == LongCtrlState.off or sm['carState'].gasPressed:
       self.v_desired = v_ego
-      self.a_desired = a_ego
+      self.a_desired = 0.0
       # Smoothly changing between accel trajectory is only relevant when OP is driving
       prev_accel_constraint = False
 
