@@ -144,7 +144,8 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
     'SET_ME_X41': 0x41,
     'SET_ME_X48': 0x48,
     'STEERING_REQUIRED': hud.steer_required,
-    'LANE_LINES': hud.lanes,
+    'SOLID_LANES' : hud.lanes,
+    'LANE_LINES': 3,
     'BEEP': 0,
   }
 

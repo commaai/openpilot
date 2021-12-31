@@ -132,7 +132,7 @@ class CarController():
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
     if hud_show_lanes:
-      hud_lanes = 3
+      hud_lanes = 1
     else:
       hud_lanes = 0
 
