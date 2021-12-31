@@ -61,8 +61,7 @@ def load_segment(segment_name):
 def start_juggler(fn=None, dbc=None, layout=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
-  pj = os.getenv("PLOTJUGGLER_PATH", os.path.join(juggle_dir, "bin/plotjuggler"))
-
+  env["PATH"] = f"{INSTALL_DIR}:{os.getenv('PATH', '')}"
   if dbc:
     env["DBC_NAME"] = dbc
 
@@ -72,7 +71,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
   if layout is not None:
     extra_args += f"-l {layout}"
 
-  subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}',
+  subprocess.call(f'{pj} --plugin_folders {INSTALL_DIR} {extra_args}',
                   shell=True, env=env, cwd=juggle_dir)
 
 
