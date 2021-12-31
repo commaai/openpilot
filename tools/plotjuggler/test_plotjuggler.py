@@ -8,23 +8,17 @@ import unittest
 from common.basedir import BASEDIR
 from common.timeout import Timeout
 from selfdrive.test.openpilotci import get_url
+from tools.plotjuggler.juggle import install
 
 class TestPlotJuggler(unittest.TestCase):
 
-  def test_install(self):
-    exit_code = os.system(os.path.join(BASEDIR, "tools/plotjuggler/juggle.py"))
-    self.assertEqual(exit_code, 0)
-
   def test_run(self):
-    test_url = get_url("ffccc77938ddbc44|2021-01-04--16-55-41", 0)
+    install()
 
-    # Launch PlotJuggler with the executable in the bin directory
-    os.environ["PLOTJUGGLER_PATH"] = f'{os.path.join(BASEDIR, "tools/plotjuggler/bin/plotjuggler")}'
-    p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} \
-    "{test_url}"', stderr=subprocess.PIPE, shell=True,
-    start_new_session=True)
+    p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} --demo',
+                         stderr=subprocess.PIPE, shell=True, start_new_session=True)
 
-    # Wait max 60 seconds for the "Done reading Rlog data" signal from the plugin
+    # Wait for "Done reading Rlog data" signal from the plugin
     output = "\n"
     with Timeout(120, error_msg=output):
       while output.splitlines()[-1] != "Done reading Rlog data":
