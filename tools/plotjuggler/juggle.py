@@ -71,7 +71,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
   if layout is not None:
     extra_args += f"-l {layout}"
 
-  subprocess.call(f'{pj} --plugin_folders {INSTALL_DIR} {extra_args}',
+  subprocess.call(f'plotjuggler --plugin_folders {INSTALL_DIR} {extra_args}',
                   shell=True, env=env, cwd=juggle_dir)
 
 
@@ -117,11 +117,11 @@ def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
       pass
     break
 
-  tempfile = tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir)
-  save_log(tempfile.name, all_data, compress=False)
+  tmp = tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir)
+  save_log(tmp.name, all_data, compress=False)
   del all_data
 
-  start_juggler(tempfile.name, dbc, layout)
+  start_juggler(tmp.name, dbc, layout)
 
 
 if __name__ == "__main__":
