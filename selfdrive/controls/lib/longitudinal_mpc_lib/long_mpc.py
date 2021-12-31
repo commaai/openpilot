@@ -299,9 +299,8 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.cruise_max_a = max_a
 
-  def update(self, carstate, radarstate, v_cruise, prev_accel_constraint=False):
+  def update(self, carstate, radarstate, v_cruise):
     v_ego = self.x0[1]
-    a_ego = self.x0[2]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
@@ -329,10 +328,7 @@ class LongitudinalMpc:
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
     self.source = SOURCES[np.argmin(x_obstacles[0])]
     self.params[:,2] = np.min(x_obstacles, axis=1)
-    if prev_accel_constraint:
-      self.params[:,3] = np.copy(self.prev_a)
-    else:
-      self.params[:,3] = a_ego
+    self.params[:,3] = np.copy(self.prev_a)
 
     self.run()
     if (np.any(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) and
