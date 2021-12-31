@@ -76,7 +76,7 @@ class Planner:
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired.update(v_ego)
-    self.v_desired.x = max(0.0, self.v_desired)
+    self.v_desired.x = max(0.0, self.v_desired.x)
 
     accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
