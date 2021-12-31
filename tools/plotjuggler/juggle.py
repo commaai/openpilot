@@ -31,7 +31,8 @@ def install():
   if m not in supported:
     raise Exception(f"Unsupported platform: '{m}'. Supported platforms: {supported}")
 
-  shutil.rmtree(INSTALL_DIR)
+  if os.path.exists(INSTASLL_DIR):
+    shutil.rmtree(INSTALL_DIR)
   os.mkdir(INSTALL_DIR)
 
   url = os.path.join(RELEASES_URL, m + ".tar.gz")
