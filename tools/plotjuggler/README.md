@@ -4,11 +4,9 @@
 
 ## Installation
 
-**NOTE: this is Ubuntu only for now. Pull requests for macOS support are welcome.**
-
 Once you've cloned and are in openpilot, this command will download PlotJuggler and install our plugins:
 
-`cd tools/plotjuggler && ./install.sh`
+`cd tools/plotjuggler && ./juggle.py --install`
 
 ## Usage
 
