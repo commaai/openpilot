@@ -51,6 +51,7 @@ class Planner:
     self.v_desired = init_v
     self.a_desired = init_a
     self.alpha = np.exp(-DT_MDL / 2.0)
+    self.alpha_a = np.exp(-DT_MDL / 1.0)
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -70,9 +71,9 @@ class Planner:
     prev_accel_constraint = True
     if long_control_state == LongCtrlState.off or sm['carState'].gasPressed:
       self.v_desired = v_ego
-      self.a_desired = 0.0
+      self.a_desired = self.alpha_a * self.a_desired + (1 - self.alpha_a) * a_ego
       # Smoothly changing between accel trajectory is only relevant when OP is driving
-      prev_accel_constraint = False
+      #prev_accel_constraint = False
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired = self.alpha * self.v_desired + (1 - self.alpha) * v_ego
