@@ -89,7 +89,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       ("EPB_STATUS", 50),
       ("CAR_SPEED", 10),
       ("ACC_CONTROL", 50),
-      ("LKAS_HUD_2" 20),
+      ("LKAS_HUD_2", 20),
     ]
 
   if CP.carFingerprint in HONDA_BOSCH:
