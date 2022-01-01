@@ -134,7 +134,9 @@ if [ -z "$OPENPILOT_ENV" ]; then
 fi
 
 # do the rest of the git checkout
-git lfs pull
+if [ -z "$SKIP_LFS" ]; then
+  git lfs pull
+fi
 git submodule init
 git submodule update
 
@@ -148,7 +150,7 @@ eval "$(pyenv init -)"
 # **** in python env ****
 pip install pip==21.3.1
 pip install pipenv==2021.5.29
-pipenv install --dev --deploy
+pipenv install --dev --deploy --clear
 
 echo
 echo "----   FINISH OPENPILOT SETUP   ----"
