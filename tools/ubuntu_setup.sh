@@ -1,6 +1,7 @@
 #!/bin/bash -e
 
-OP_ROOT=$(git rev-parse --show-toplevel)
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+ROOT="$(cd $DIR/../ && pwd)"
 
 # Install packages present in all supported versions of Ubuntu
 function install_ubuntu_common_requirements() {
@@ -123,11 +124,11 @@ if ! command -v "pyenv" > /dev/null 2>&1; then
 fi
 
 # in the openpilot repo
-cd $OP_ROOT
+cd $ROOT
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
-  printf "\nsource %s/tools/openpilot_env.sh" "$OP_ROOT" >> ~/.bashrc
+  printf "\nsource %s/tools/openpilot_env.sh" "$ROOT" >> ~/.bashrc
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi
@@ -138,7 +139,7 @@ git submodule init
 git submodule update
 
 # install python
-PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
+PYENV_PYTHON_VERSION=$(cat $ROOT/.python-version)
 PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 pyenv install -s ${PYENV_PYTHON_VERSION}
 pyenv rehash

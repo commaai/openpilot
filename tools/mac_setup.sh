@@ -1,6 +1,7 @@
 #!/bin/bash -e
 
-OP_ROOT=$(git rev-parse --show-toplevel)
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+ROOT="$(cd $DIR/../ && pwd)"
 
 # Install brew if required
 if [[ $(command -v brew) == "" ]]; then
@@ -54,14 +55,14 @@ export PATH="$PATH:/usr/local/bin"
 # OpenPilot environment variables
 if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
   echo "export PATH=\"\$PATH:$HOME/.cargo/bin\"" >> $RC_FILE
-  echo "source $OP_ROOT/tools/openpilot_env.sh" >> $RC_FILE
+  echo "source $ROOT/tools/openpilot_env.sh" >> $RC_FILE
   export PATH="$PATH:\"\$HOME/.cargo/bin\""
-  source "$OP_ROOT/tools/openpilot_env.sh"
+  source "$ROOT/tools/openpilot_env.sh"
   echo "Added openpilot_env to RC file: $RC_FILE"
 fi
 
 # install python
-PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
+PYENV_PYTHON_VERSION=$(cat $ROOT/.python-version)
 PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 pyenv install -s ${PYENV_PYTHON_VERSION}
 pyenv rehash
