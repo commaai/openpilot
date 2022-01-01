@@ -4,12 +4,13 @@ ENV PYTHONUNBUFFERED 1
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends sudo && \
+    apt-get install -y --no-install-recommends sudo apt-utils && \
     rm -rf /var/lib/apt/lists/*
 
-COPY Pipfile Pipfile.lock /tmp/
+COPY Pipfile Pipfile.lock .python-version /tmp/
 COPY tools/ubuntu_setup.sh /tmp/tools/
-RUN SKIP_LFS=1 /tmp/tools/ubuntu_setup.sh && \
+RUN cd /tmp && \
+    tools/ubuntu_setup.sh && \
     rm -rf /var/lib/apt/lists/* && \
     pip uninstall -y pipenv
 

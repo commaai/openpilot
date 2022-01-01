@@ -1,12 +1,16 @@
-#!/bin/bash -e
+#!/bin/bash
+
+set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
 
+# NOTE: this is used in a docker build, so do not run any scripts here.
+
 # Install packages present in all supported versions of Ubuntu
 function install_ubuntu_common_requirements() {
-  sudo apt-get update
-  sudo apt-get install -y --no-install-recommends \
+  sudo DEBIAN_FRONTEND=noninteractive apt-get update
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     clang \
@@ -70,14 +74,15 @@ function install_ubuntu_common_requirements() {
     libqt5svg5-dev \
     libqt5x11extras5-dev \
     libreadline-dev \
-    libdw1
+    libdw1 \
+    valgrind
 }
 
 # Install Ubuntu 21.10 packages
 function install_ubuntu_latest_requirements() {
   install_ubuntu_common_requirements
 
-  sudo apt-get install -y --no-install-recommends \
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     qtbase5-dev \
     qtchooser \
     qt5-qmake \
@@ -88,7 +93,7 @@ function install_ubuntu_latest_requirements() {
 function install_ubuntu_lts_requirements() {
   install_ubuntu_common_requirements
 
-  sudo apt-get install -y --no-install-recommends \
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     libavresample-dev \
     qt5-default
 }
@@ -132,13 +137,6 @@ if [ -z "$OPENPILOT_ENV" ]; then
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi
-
-# do the rest of the git checkout
-if [ -z "$SKIP_LFS" ]; then
-  git lfs pull
-fi
-git submodule init
-git submodule update
 
 # install python
 PYENV_PYTHON_VERSION=$(cat $ROOT/.python-version)
