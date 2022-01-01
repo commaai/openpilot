@@ -159,7 +159,7 @@ class CarController():
 
     # 2022 Honda Civic LKAS HUD
     if CS.CP.carFingerprint in HONDA_RADARLESS:
-        can_sends.append(hondacan.create_lkas_command(self.packer, idx))
+        can_sends.append(hondacan.create_lkas_command(self.packer))
 
     # tester present - w/ no response (keeps radar disabled)
     if CS.CP.carFingerprint in HONDA_BOSCH and CS.CP.openpilotLongitudinalControl:
