@@ -45,7 +45,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.longitudinalActuatorDelayUpperBound = 1.0 # s
 
-    if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022]:
+    if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022]:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.766
