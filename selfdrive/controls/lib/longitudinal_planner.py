@@ -50,8 +50,8 @@ class Planner:
 
     self.v_desired = init_v
     self.a_desired = init_a
-    self.alpha = np.exp(-DT_MDL / 2.0)
-    self.alpha_a = np.exp(-DT_MDL / 1.0)
+    self.alpha_v = np.exp(-DT_MDL / 2.0)
+    self.alpha_a = np.exp(-DT_MDL / 0.5)
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -74,7 +74,7 @@ class Planner:
       self.a_desired = self.alpha_a * self.a_desired + (1 - self.alpha_a) * a_ego
 
     # Prevent divergence, smooth in current v_ego
-    self.v_desired = self.alpha * self.v_desired + (1 - self.alpha) * v_ego
+    self.v_desired = self.alpha_v * self.v_desired + (1 - self.alpha_v) * v_ego
     self.v_desired = max(0.0, self.v_desired)
 
     accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
