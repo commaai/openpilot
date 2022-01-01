@@ -9,8 +9,8 @@ ROOT="$(cd $DIR/../ && pwd)"
 
 # Install packages present in all supported versions of Ubuntu
 function install_ubuntu_common_requirements() {
-  sudo DEBIAN_FRONTEND=noninteractive apt-get update
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  sudo apt-get update
+  sudo apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     clang \
@@ -82,7 +82,7 @@ function install_ubuntu_common_requirements() {
 function install_ubuntu_latest_requirements() {
   install_ubuntu_common_requirements
 
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  sudo apt-get install -y --no-install-recommends \
     qtbase5-dev \
     qtchooser \
     qt5-qmake \
@@ -93,7 +93,7 @@ function install_ubuntu_latest_requirements() {
 function install_ubuntu_lts_requirements() {
   install_ubuntu_common_requirements
 
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  sudo apt-get install -y --no-install-recommends \
     libavresample-dev \
     qt5-default
 }

@@ -1,23 +1,31 @@
 FROM ubuntu:20.04
 
 ENV PYTHONUNBUFFERED 1
-ENV DEBIAN_FRONTEND=noninteractive
 
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends sudo apt-utils && \
+    apt-get install -y --no-install-recommends sudo tzdata locales && \
     rm -rf /var/lib/apt/lists/*
-
-COPY Pipfile Pipfile.lock .python-version /tmp/
-COPY tools/ubuntu_setup.sh /tmp/tools/
-RUN cd /tmp && \
-    tools/ubuntu_setup.sh && \
-    rm -rf /var/lib/apt/lists/* && \
-    pip uninstall -y pipenv
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-# TODO: fix the paths cleanly
-#ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
+# create non-root user
+ENV USER batman
+RUN groupadd -r $USER --gid=1280 && \
+    useradd -ms /bin/bash -r -g $USER --uid=1280 $USER && \
+    echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER
+
+USER $USER
+
+ENV PIPENV_SYSTEM=1
+COPY Pipfile Pipfile.lock .python-version /tmp/
+COPY tools/ubuntu_setup.sh /tmp/tools/
+RUN cd /tmp && \
+    tools/ubuntu_setup.sh && \
+    sudo rm -rf /var/lib/apt/lists/* && \
+    sudo pip uninstall -y pipenv
+
+WORKDIR /home/$USER
