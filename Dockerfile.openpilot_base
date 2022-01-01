@@ -28,4 +28,6 @@ RUN cd /tmp && \
     sudo rm -rf /var/lib/apt/lists/* && \
     sudo pip uninstall -y pipenv
 
-WORKDIR /home/$USER
+ENV HOME /home/$USER
+ENV PATH="$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH"
+ENV PYENV_ROOT="$HOME/.pyenv"
