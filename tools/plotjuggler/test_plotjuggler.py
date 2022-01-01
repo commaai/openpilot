@@ -15,12 +15,12 @@ class TestPlotJuggler(unittest.TestCase):
     install()
 
     pj = os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")
-    p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {pj} --demo None 1',
+    p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {pj} --demo None 1 --qlog',
                          stderr=subprocess.PIPE, shell=True, start_new_session=True)
 
     # Wait for "Done reading Rlog data" signal from the plugin
     output = "\n"
-    with Timeout(120, error_msg=output):
+    with Timeout(180, error_msg=output):
       while output.splitlines()[-1] != "Done reading Rlog data":
         output += p.stderr.readline().decode("utf-8")
 
