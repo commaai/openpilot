@@ -4,17 +4,16 @@
 
 ## Installation
 
-**NOTE: this is Ubuntu only for now. Pull requests for macOS support are welcome.**
-
 Once you've cloned and are in openpilot, this command will download PlotJuggler and install our plugins:
 
-`cd tools/plotjuggler && ./install.sh`
+`cd tools/plotjuggler && ./juggle.py --install`
 
 ## Usage
 
 ```
 $ ./juggle.py -h
-usage: juggle.py [-h] [--demo] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [route_name] [segment_number] [segment_count]
+usage: juggle.py [-h] [--demo] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [--install]
+                 [route_name] [segment_number] [segment_count]
 
 A helper to run PlotJuggler on openpilot routes
 
@@ -30,6 +29,7 @@ optional arguments:
   --can              Parse CAN data (default: False)
   --stream           Start PlotJuggler in streaming mode (default: False)
   --layout [LAYOUT]  Run PlotJuggler with a pre-defined layout (default: None)
+  --install          Install or update PlotJuggler + plugins (default: False)
 ```
 
 Example:
