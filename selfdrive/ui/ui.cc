@@ -249,7 +249,9 @@ Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT
 }
 
 void Device::update(const UIState &s) {
-  updateBrightness(s);
+  if (s.sm->frame % 2 == 0) {
+    updateBrightness(s);
+  }
   updateWakefulness(s);
 
   // TODO: remove from UIState and use signals
