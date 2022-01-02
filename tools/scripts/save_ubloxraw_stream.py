@@ -35,7 +35,7 @@ def main(argv):
     args.data_dir = os.path.dirname(args.data_dir)
 
   route = Route(args.route_name, args.data_dir)
-  lr = MultiLogIterator(route.log_paths(), wraparound=False)
+  lr = MultiLogIterator(route.log_paths())
 
   with open(args.out_path, 'wb') as f:
     try:
