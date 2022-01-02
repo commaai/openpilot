@@ -13,9 +13,8 @@ from cereal import log as capnp_log
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator:
-  def __init__(self, log_paths, wraparound=False, sort_by_time=False):
+  def __init__(self, log_paths, sort_by_time=False):
     self._log_paths = log_paths
-    self._wraparound = wraparound
 
     self._first_log_idx = next(i for i in range(len(log_paths)) if log_paths[i] is not None)
     self._current_log = self._first_log_idx
@@ -42,12 +41,8 @@ class MultiLogIterator:
       self._idx = 0
       self._current_log = next(i for i in range(self._current_log + 1, len(self._log_readers) + 1)
                                if i == len(self._log_readers) or self._log_paths[i] is not None)
-      # wraparound
       if self._current_log == len(self._log_readers):
-        if self._wraparound:
-          self._current_log = self._first_log_idx
-        else:
-          raise StopIteration
+        raise StopIteration
 
   def __next__(self):
     while 1:
