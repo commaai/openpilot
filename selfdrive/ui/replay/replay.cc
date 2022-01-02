@@ -58,8 +58,10 @@ bool Replay::load() {
   }
 
   for (auto &[n, f] : route_->segments()) {
-    if ((!f.rlog.isEmpty() || !f.qlog.isEmpty()) && (!f.road_cam.isEmpty() || !f.qcamera.isEmpty())) {
-      segments_[n] = nullptr;
+    bool has_log = !f.rlog.isEmpty() || !f.qlog.isEmpty();
+    bool has_video = !f.road_cam.isEmpty() || !f.qcamera.isEmpty();
+    if (has_log && (has_video || hasFlag(REPLAY_FLAG_NO_VIPC))) {
+      segments_.insert({n, nullptr});
     }
   }
   if (segments_.empty()) {
@@ -218,13 +220,15 @@ void Replay::startStream(const Segment *cur_segment) {
   }
 
   // start camera server
-  std::pair<int, int> camera_size[MAX_CAMERAS] = {};
-  for (auto type : ALL_CAMERAS) {
-    if (auto &fr = cur_segment->frames[type]) {
-      camera_size[type] = {fr->width, fr->height};
+  if (!hasFlag(REPLAY_FLAG_NO_VIPC)) {
+    std::pair<int, int> camera_size[MAX_CAMERAS] = {};
+    for (auto type : ALL_CAMERAS) {
+      if (auto &fr = cur_segment->frames[type]) {
+        camera_size[type] = {fr->width, fr->height};
+      }
     }
+    camera_server_ = std::make_unique<CameraServer>(camera_size, hasFlag(REPLAY_FLAG_SEND_YUV));
   }
-  camera_server_ = std::make_unique<CameraServer>(camera_size, hasFlag(REPLAY_FLAG_SEND_YUV));
 
   // start stream thread
   stream_thread_ = new QThread();
@@ -318,18 +322,20 @@ void Replay::stream() {
           precise_nano_sleep(behind_ns);
         }
 
-        if (evt->frame) {
+        if (!evt->frame) {
+          publishMessage(evt);
+        } else if (camera_server_) {
           if (hasFlag(REPLAY_FLAG_FULL_SPEED)) {
             camera_server_->waitFinish();
           }
           publishFrame(evt);
-        } else {
-          publishMessage(evt);
         }
       }
     }
     // wait for frame to be sent before unlock.(frameReader may be deleted after unlock)
-    camera_server_->waitFinish();
+    if (camera_server_) {
+      camera_server_->waitFinish();
+    }
 
     if (eit == events_->end() && !hasFlag(REPLAY_FLAG_NO_LOOP)) {
       int last_segment = segments_.rbegin()->first;
