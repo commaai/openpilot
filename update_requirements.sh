@@ -25,15 +25,19 @@ echo "update pip"
 pip install pip==21.3.1
 pip install pipenv==2021.5.29
 
-echo "pip packages install ..."
 if [ -d "./xx" ]; then
+  export PIPENV_SYSTEM=1
   export PIPENV_PIPFILE=./xx/Pipfile
-  pipenv install --system --dev --deploy
+fi
+
+if [ -z "$PIPENV_SYSTEM" ]; then
   RUN=""
 else
-  pipenv install --dev --deploy
   RUN="pipenv run"
 fi
+
+echo "pip packages install ..."
+pipenv install --dev --deploy --clear
 
 echo "precommit install ..."
 $RUN pre-commit install
