@@ -142,13 +142,13 @@ fi
 PYENV_PYTHON_VERSION=$(cat $ROOT/.python-version)
 PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 pyenv install -s ${PYENV_PYTHON_VERSION}
-pyenv rehash
 eval "$(pyenv init -)"
 
 # **** in python env ****
 pip install pip==21.3.1
 pip install pipenv==2021.5.29
 pipenv install --dev --deploy --clear
+pyenv rehash
 
 echo
 echo "----   FINISH OPENPILOT SETUP   ----"
