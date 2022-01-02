@@ -38,13 +38,9 @@ fi
 
 echo "pip packages install ..."
 pipenv install --dev --deploy --clear
+pyenv rehash
 
 echo "precommit install ..."
 $RUN pre-commit install
-
-# for internal comma repos
 [ -d "./xx" ] && (cd xx && $RUN pre-commit install)
 [ -d "./notebooks" ] && (cd notebooks && $RUN pre-commit install)
-
-# update shims for newly installed executables (e.g. scons)
-pyenv rehash
