@@ -112,7 +112,7 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("radarState")) {
     std::optional<cereal::ModelDataV2::XYZTData::Reader> line;
-    if (sm.rcv_frame("modelV2") > 0) {
+    if (sm.rcv_frame("modelV2") >= s->scene.started_frame) {
       line = sm["modelV2"].getModelV2().getPosition();
     }
     update_leads(s, sm["radarState"].getRadarState(), line);
