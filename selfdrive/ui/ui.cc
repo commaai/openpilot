@@ -17,8 +17,8 @@
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
 static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, QPointF *out) {
-  const float margin = 500.0f;
-  const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
+  constexpr float qt_coord_limit = std::numeric_limits<int16_t>::max();
+  static constexpr QRectF clip_region{-qt_coord_limit, -qt_coord_limit, qt_coord_limit * 2, qt_coord_limit * 2};
 
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
   const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);

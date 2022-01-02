@@ -278,8 +278,6 @@ void NvgWindow::updateFrameMat(int w, int h) {
   CameraViewWidget::updateFrameMat(w, h);
 
   UIState *s = uiState();
-  s->fb_w = w;
-  s->fb_h = h;
   auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
   float zoom = ZOOM / intrinsic_matrix.v[0];
   if (s->wide_camera) {

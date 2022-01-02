@@ -117,8 +117,6 @@ public:
     return sm->rcv_frame("liveCalibration") > scene.started_frame;
   };
 
-  int fb_w = 0, fb_h = 0;
-
   std::unique_ptr<SubMaster> sm;
 
   UIStatus status;
