@@ -13,7 +13,7 @@ from cereal import log as capnp_log
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator:
-  def __init__(self, log_paths, wraparound=False):
+  def __init__(self, log_paths, wraparound=False, sort_by_time=False):
     self._log_paths = log_paths
     self._wraparound = wraparound
 
@@ -22,11 +22,12 @@ class MultiLogIterator:
     self._idx = 0
     self._log_readers = [None]*len(log_paths)
     self.start_time = self._log_reader(self._first_log_idx)._ts[0]
+    self.sort_by_time = sort_by_time
 
   def _log_reader(self, i):
     if self._log_readers[i] is None and self._log_paths[i] is not None:
       log_path = self._log_paths[i]
-      self._log_readers[i] = LogReader(log_path)
+      self._log_readers[i] = LogReader(log_path, sort_by_time=self.sort_by_time)
 
     return self._log_readers[i]
 
@@ -75,7 +76,7 @@ class MultiLogIterator:
 
 
 class LogReader:
-  def __init__(self, fn, canonicalize=True, only_union_types=False):
+  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False):
     data_version = None
     _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
     with FileReader(fn) as f:
@@ -90,7 +91,7 @@ class LogReader:
     else:
       raise Exception(f"unknown extension {ext}")
 
-    self._ents = list(ents)
+    self._ents = list(sorted(ents, key=lambda x: x.logMonoTime) if sort_by_time else ents)
     self._ts = [x.logMonoTime for x in self._ents]
     self.data_version = data_version
     self._only_union_types = only_union_types
@@ -112,6 +113,6 @@ if __name__ == "__main__":
   # below line catches those errors and replaces the bytes with \x__
   codecs.register_error("strict", codecs.backslashreplace_errors)
   log_path = sys.argv[1]
-  lr = LogReader(log_path)
+  lr = LogReader(log_path, sort_by_time=True)
   for msg in lr:
     print(msg)
