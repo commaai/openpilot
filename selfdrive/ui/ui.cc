@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cmath>
 
+#include <QtConcurrent>
+
 #include "common/transformations/orientation.hpp"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
@@ -290,9 +292,11 @@ void Device::updateBrightness(const UIState &s) {
   }
 
   if (brightness != last_brightness) {
-    std::thread{Hardware::set_brightness, brightness}.detach();
+    if (!brightness_future.isRunning()) {
+      brightness_future = QtConcurrent::run(Hardware::set_brightness, brightness);
+      last_brightness = brightness;
+    }
   }
-  last_brightness = brightness;
 }
 
 bool Device::motionTriggered(const UIState &s) {

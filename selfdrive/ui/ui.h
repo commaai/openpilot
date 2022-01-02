@@ -7,6 +7,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QColor>
+#include <QFuture>
 #include <QTransform>
 
 #include "cereal/messaging/messaging.h"
@@ -162,6 +163,7 @@ private:
   bool ignition_on = false;
   int last_brightness = 0;
   FirstOrderFilter brightness_filter;
+  QFuture<void> brightness_future;
 
   void updateBrightness(const UIState &s);
   void updateWakefulness(const UIState &s);
