@@ -1,6 +1,7 @@
 #!/bin/bash -e
 
-cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+cd $DIR
 
 if ! command -v "pyenv" > /dev/null 2>&1; then
   echo "installing pyenv..."
@@ -40,7 +41,9 @@ echo "pip packages install ..."
 pipenv install --dev --deploy --clear
 pyenv rehash
 
-echo "precommit install ..."
-$RUN pre-commit install
-[ -d "./xx" ] && (cd xx && $RUN pre-commit install)
-[ -d "./notebooks" ] && (cd notebooks && $RUN pre-commit install)
+if [ -f "$DIR/.pre-commit-config.yaml" ]; then
+  echo "precommit install ..."
+  $RUN pre-commit install
+  [ -d "./xx" ] && (cd xx && $RUN pre-commit install)
+  [ -d "./notebooks" ] && (cd notebooks && $RUN pre-commit install)
+fi
