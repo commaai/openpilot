@@ -23,7 +23,7 @@ fi
 
 echo "update pip"
 pip install pip==21.3.1
-pip install pipenv==2021.5.29
+pip install pipenv==2021.11.23
 
 if [ -d "./xx" ]; then
   export PIPENV_SYSTEM=1
@@ -31,9 +31,9 @@ if [ -d "./xx" ]; then
 fi
 
 if [ -z "$PIPENV_SYSTEM" ]; then
-  RUN=""
-else
   RUN="pipenv run"
+else
+  RUN=""
 fi
 
 echo "pip packages install ..."
