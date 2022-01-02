@@ -66,12 +66,12 @@ def start_juggler(fn=None, dbc=None, layout=None):
 
   extra_args = ""
   if fn is not None:
-    extra_args += f"-d {fn}"
+    extra_args += f" -d {fn}"
   if layout is not None:
-    extra_args += f"-l {layout}"
+    extra_args += f" -l {layout}"
 
-  subprocess.call(f'plotjuggler --plugin_folders {INSTALL_DIR} {extra_args}',
-                  shell=True, env=env, cwd=juggle_dir)
+  cmd = f'plotjuggler --plugin_folders {INSTALL_DIR}{extra_args}'
+  subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
 
 def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
