@@ -123,13 +123,8 @@ else
 fi
 
 
-# install pyenv
-if ! command -v "pyenv" > /dev/null 2>&1; then
-  curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-fi
-
-# in the openpilot repo
-cd $ROOT
+# install python dependencies
+$ROOT/update_requirements.sh
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
@@ -137,18 +132,6 @@ if [ -z "$OPENPILOT_ENV" ]; then
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi
-
-# install python
-PYENV_PYTHON_VERSION=$(cat $ROOT/.python-version)
-PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
-pyenv install -s ${PYENV_PYTHON_VERSION}
-eval "$(pyenv init -)"
-
-# **** in python env ****
-pip install pip==21.3.1
-pip install pipenv==2021.5.29
-pipenv install --dev --deploy --clear
-pyenv rehash
 
 echo
 echo "----   FINISH OPENPILOT SETUP   ----"

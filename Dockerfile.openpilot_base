@@ -13,7 +13,7 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 ENV PIPENV_SYSTEM=1
-COPY Pipfile Pipfile.lock .python-version /tmp/
+COPY Pipfile Pipfile.lock .python-version update_requirements.sh /tmp/
 COPY tools/ubuntu_setup.sh /tmp/tools/
 RUN cd /tmp && \
     tools/ubuntu_setup.sh && \
