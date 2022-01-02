@@ -98,7 +98,7 @@ Segment::Segment(int n, const SegmentFile &files, uint32_t flags) : seg_num(n), 
       files.rlog.isEmpty() ? files.qlog : files.rlog,
   };
   for (int i = 0; i < file_list.size(); ++i) {
-    if (!file_list[i].isEmpty()) {
+    if (!file_list[i].isEmpty() && (!(flags & REPLAY_FLAG_NO_VIPC) || i >= MAX_CAMERAS)) {
       ++loading_;
       synchronizer_.addFuture(QtConcurrent::run(this, &Segment::loadFile, i, file_list[i].toStdString()));
     }
