@@ -10,12 +10,10 @@ if [ -z "$OPENPILOT_ENV" ]; then
   # https://github.com/pyenv/pyenv/issues/1906
   export PYENV_ROOT="$HOME/.pyenv"
 
-  unamestr=`uname`
-  if [[ "$unamestr" == 'Linux' ]]; then
+  if [[ "$(uname)" == 'Linux' ]]; then
     eval "$(pyenv init --path)"
-
     eval "$(pyenv virtualenv-init -)"
-  elif [[ "$unamestr" == 'Darwin' ]]; then
+  elif [[ "$(uname)" == 'Darwin' ]]; then
     # msgq doesn't work on mac
     export ZMQ=1
     export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
