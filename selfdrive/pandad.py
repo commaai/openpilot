@@ -4,7 +4,7 @@ import os
 import usb1
 import time
 import subprocess
-from typing import List, NoReturn
+from typing import NoReturn
 from functools import cmp_to_key
 
 from panda import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, Panda, PandaDFU
