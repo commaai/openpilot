@@ -20,7 +20,7 @@ cdef extern from "selfdrive/ui/replay/logreader.h":
     cpp_LogReader()
     void setSortByTime(bool)
     bool load(string, bool)
-    vector[cpp_Event*] getEvents() nogil
+    vector[cpp_Event*]& getEvents() nogil
     cpp_Event *at(int) nogil
     size_t size()
   
@@ -44,11 +44,12 @@ cdef class LogReader:
 
   def __iter__(self):
     with nogil:
-      events = self.lr.getEvents()
+      events = &self.lr.getEvents()
 
     cdef cnp.ndarray dat
     cdef char[:] dat_view
-    for e in events:
+    for i in xrange(events.size()):
+      e = events.at(i)
       dat = np.empty(e.size(), dtype=np.uint8)
       dat_view = dat
       memcpy(&dat_view[0], e.data(), e.size())

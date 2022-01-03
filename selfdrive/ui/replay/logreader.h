@@ -57,7 +57,7 @@ public:
   bool load(const std::byte *data, size_t size, std::atomic<bool> *abort = nullptr);
   inline void setSortByTime(bool b) { sort = b; }
   inline size_t size() const { return events.size(); }
-  inline const std::vector<Event*> getEvents() const { return events; }
+  inline std::vector<Event*> &getEvents() { return events; }
   inline Event *at(int idx) const {
     if (idx < 0 || idx >= events.size()) return nullptr;
     return events[idx];
