@@ -280,6 +280,28 @@ def uploadFileToUrl(fn, url, headers):
 
 
 @dispatcher.add_method
+def uploadFilesToUrls(files_data):
+  items = []
+  for fn, url, headers in files_data:
+    if len(fn) == 0 or fn[0] == '/' or '..' in fn:
+      return 500
+    path = os.path.join(ROOT, fn)
+    if not os.path.exists(path):
+      return 404
+
+    item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None)
+    upload_id = hashlib.sha1(str(item).encode()).hexdigest()
+    item = item._replace(id=upload_id)
+    items.append(item)
+
+  for item in items:
+    upload_queue.put_nowait(item)
+    UploadQueueCache.cache(upload_queue)
+
+  return {"enqueued": len(items), "items": [i._asdict() for i in items]}
+
+
+@dispatcher.add_method
 def listUploadQueue():
   items = list(upload_queue.queue) + list(cur_upload_items.values())
   return [i._asdict() for i in items if (i is not None) and (i.id not in cancelled_uploads)]
