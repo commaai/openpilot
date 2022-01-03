@@ -1,6 +1,6 @@
 if [ -z "$OPENPILOT_ENV" ]; then
   OP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
-  ARCH=$(uname -m)
+  ARCH="$(uname -m)"
   HOST="$(uname -s)"
 
   export PYTHONPATH="$OP_ROOT:$PYTHONPATH"
