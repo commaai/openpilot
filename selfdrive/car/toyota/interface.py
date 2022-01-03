@@ -58,6 +58,8 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_A)
 
     elif candidate in [CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2]:
+      stop_and_go = True
+      ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
       ret.wheelSpeedFactor = 1.035
       tire_stiffness_factor = 0.5533
