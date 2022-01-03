@@ -17,6 +17,8 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_QCAMERA = 0x0040,
   REPLAY_FLAG_SEND_YUV = 0x0080,
   REPLAY_FLAG_NO_CUDA = 0x0100,
+  REPLAY_FLAG_FULL_SPEED = 0x0200,
+  REPLAY_FLAG_NO_VIPC = 0x0400,
 };
 
 class Replay : public QObject {
@@ -28,9 +30,11 @@ public:
   ~Replay();
   bool load();
   void start(int seconds = 0);
-  void stop();
   void pause(bool pause);
   bool isPaused() const { return paused_; }
+  inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
+  inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
+  inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
 
 signals:
   void segmentChanged();
@@ -79,5 +83,5 @@ protected:
   std::vector<const char*> sockets_;
   std::unique_ptr<Route> route_;
   std::unique_ptr<CameraServer> camera_server_;
-  uint32_t flags_ = REPLAY_FLAG_NONE;
+  std::atomic<uint32_t> flags_ = REPLAY_FLAG_NONE;
 };

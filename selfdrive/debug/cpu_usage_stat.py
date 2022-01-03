@@ -118,6 +118,6 @@ if __name__ == "__main__":
       l.sort(key=lambda x: -x[1])
       for x in l:
         print(x[2])
-      print('avg sum: {0:.2%} over {1} samples {2} seconds\n'.format(
+      print('avg sum: {:.2%} over {} samples {} seconds\n'.format(
         sum(stat['avg']['total'] for k, stat in stats.items()), i, i * SLEEP_INTERVAL
       ))

@@ -5,7 +5,6 @@ import cProfile  # pylint: disable=import-error
 import pprofile  # pylint: disable=import-error
 import pyprof2calltree  # pylint: disable=import-error
 
-from cereal import car
 from common.params import Params
 from tools.lib.logreader import LogReader
 from selfdrive.test.profiling.lib import SubMaster, PubMaster, SubSocket, ReplayDone
@@ -35,9 +34,7 @@ def get_inputs(msgs, process, fingerprint):
     if msg.which() == 'carParams':
       m = msg.as_builder()
       m.carParams.carFingerprint = fingerprint
-
-      CP = car.CarParams.from_dict(m.carParams.to_dict())
-      Params().put("CarParams", CP.to_bytes())
+      Params().put("CarParams", m.carParams.copy().to_bytes())
       break
 
   sm = SubMaster(msgs, trigger, sub_socks)

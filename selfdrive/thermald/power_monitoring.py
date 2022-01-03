@@ -2,6 +2,7 @@ import random
 import threading
 import time
 from statistics import mean
+from typing import Optional
 
 from cereal import log
 from common.params import Params, put_nonblocking
@@ -135,7 +136,7 @@ class PowerMonitoring:
     except Exception:
       cloudlog.exception("Power monitoring calculation failed")
 
-  def _perform_integration(self, t, current_power):
+  def _perform_integration(self, t: float, current_power: float) -> None:
     with self.integration_lock:
       try:
         if self.last_measurement_time:
@@ -150,14 +151,14 @@ class PowerMonitoring:
         cloudlog.exception("Integration failed")
 
   # Get the power usage
-  def get_power_used(self):
+  def get_power_used(self) -> int:
     return int(self.power_used_uWh)
 
-  def get_car_battery_capacity(self):
+  def get_car_battery_capacity(self) -> int:
     return int(self.car_battery_capacity_uWh)
 
   # See if we need to disable charging
-  def should_disable_charging(self, ignition, in_car, offroad_timestamp):
+  def should_disable_charging(self, ignition: bool, in_car: bool, offroad_timestamp: Optional[float]) -> bool:
     if offroad_timestamp is None:
       return False
 

@@ -115,6 +115,7 @@
 | Hyundai   | Santa Fe 2019-20              | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2021-22              | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe Hybrid 2022          | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Santa Fe Plug-in Hybrid 2022  | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Sonata 2018-2019              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Sonata Hybrid 2021-22         | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Veloster 2019-20              | SCC + LKAS        | Stock            | 5mph               | 0mph         |
@@ -150,7 +151,7 @@
 | Subaru    | Crosstrek 2018-20             | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Forester 2019-21              | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Impreza 2017-19               | EyeSight          | Stock            | 0mph               | 0mph         |
-| Volkswagen| Arteon 2021<sup>4</sup>       | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Arteon 2018, 2021<sup>4</sup> | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Atlas 2018-19                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| California 2021<sup>4</sup>   | Driver Assistance | Stock            | 0mph               | 32mph        |
 | Volkswagen| e-Golf 2014, 2019-20          | Driver Assistance | Stock            | 0mph               | 0mph         |

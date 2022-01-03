@@ -4,7 +4,7 @@ import os
 import usb1
 import time
 import subprocess
-from typing import List
+from typing import List, NoReturn
 from functools import cmp_to_key
 
 from panda import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, Panda, PandaDFU
@@ -30,7 +30,7 @@ def flash_panda(panda_serial : str) -> Panda:
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
   panda_signature = b"" if panda.bootstub else panda.get_signature()
-  cloudlog.warning("Panda %s connected, version: %s, signature %s, expected %s" % (
+  cloudlog.warning("Panda {} connected, version: {}, signature {}, expected {}".format(
     panda_serial,
     panda_version,
     panda_signature.hex()[:16],
@@ -76,7 +76,7 @@ def panda_sort_cmp(a : Panda, b : Panda):
   # last resort: sort by serial number
   return a.get_usb_serial() < b.get_usb_serial()
 
-def main() -> None:
+def main() -> NoReturn:
   while True:
     try:
       # Flash all Pandas in DFU mode

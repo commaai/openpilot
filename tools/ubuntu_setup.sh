@@ -1,6 +1,11 @@
-#!/bin/bash -e
+#!/bin/bash
 
-OP_ROOT=$(git rev-parse --show-toplevel)
+set -e
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+ROOT="$(cd $DIR/../ && pwd)"
+
+# NOTE: this is used in a docker build, so do not run any scripts here.
 
 # Install packages present in all supported versions of Ubuntu
 function install_ubuntu_common_requirements() {
@@ -69,7 +74,8 @@ function install_ubuntu_common_requirements() {
     libqt5svg5-dev \
     libqt5x11extras5-dev \
     libreadline-dev \
-    libdw1
+    libdw1 \
+    valgrind
 }
 
 # Install Ubuntu 21.10 packages
@@ -117,37 +123,15 @@ else
 fi
 
 
-# install pyenv
-if ! command -v "pyenv" > /dev/null 2>&1; then
-  curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-fi
-
-# in the openpilot repo
-cd $OP_ROOT
+# install python dependencies
+$ROOT/update_requirements.sh
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
-  printf "\nsource %s/tools/openpilot_env.sh" "$OP_ROOT" >> ~/.bashrc
+  printf "\nsource %s/tools/openpilot_env.sh" "$ROOT" >> ~/.bashrc
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi
-
-# do the rest of the git checkout
-git lfs pull
-git submodule init
-git submodule update
-
-# install python
-PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
-PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
-pyenv install -s ${PYENV_PYTHON_VERSION}
-pyenv rehash
-eval "$(pyenv init -)"
-
-# **** in python env ****
-pip install pip==21.3.1
-pip install pipenv==2021.5.29
-pipenv install --dev --deploy
 
 echo
 echo "----   FINISH OPENPILOT SETUP   ----"
