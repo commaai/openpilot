@@ -55,7 +55,7 @@ public:
   ~LogReader();
   bool load(const std::string &url, bool local_cache = false, std::atomic<bool> *abort = nullptr, int chunk_size = -1, int retries = 0);
   bool load(const std::byte *data, size_t size, std::atomic<bool> *abort = nullptr);
-  inline void setSortByTime(bool b) { sort = b; }
+  inline void setSortByTime(bool sort) { sort_by_time = sort; }
   inline size_t size() const { return events.size(); }
   inline std::vector<Event*> &getEvents() { return events; }
   inline Event *at(int idx) const {
@@ -66,7 +66,7 @@ public:
   std::vector<Event*> events;
 
 private:
-  bool sort = true;
+  bool sort_by_time = true;
   std::string raw_;
 #ifdef HAS_MEMORY_RESOURCE
   std::pmr::monotonic_buffer_resource *mbr_ = nullptr;
