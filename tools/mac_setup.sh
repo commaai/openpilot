@@ -56,12 +56,6 @@ if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
   echo "source $ROOT/tools/openpilot_env.sh" >> $RC_FILE
   source "$ROOT/tools/openpilot_env.sh"
   echo "Added openpilot_env to RC file: $RC_FILE"
-  # for qt resource compiler "rcc"
-  if ARCH=="arm64"; then
-    echo 'export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"' >> $RC_FILE
-  else # x86_64
-    echo 'export PATH="/opt/local/opt/qt@5/bin:$PATH"' >> $RC_FILE
-  fi
 fi
 
 # install python dependencies

@@ -1,4 +1,6 @@
 #!/bin/bash -e
+alias python="python3"
+alias pip="pip3"
 HOST="$(uname -m)"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR
@@ -19,12 +21,12 @@ fi
 
 if ! command -v pipenv &> /dev/null; then
   echo "pipenv install ..."
-  python3 -m pip install pipenv
+  pip install pipenv
 fi
 
 echo "update pip"
-python3 -m pip install pip==21.3.1
-python3 -m pip install pipenv==2021.11.23
+pip install pip==21.3.1
+pip install pipenv==2021.11.23
 
 if [ -d "./xx" ]; then
   export PIPENV_SYSTEM=1
