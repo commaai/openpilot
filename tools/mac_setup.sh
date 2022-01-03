@@ -16,6 +16,7 @@ brew "git-lfs"
 brew "zlib"
 brew "bzip2"
 brew "unzip"
+brew "wget"
 brew "capnp"
 brew "coreutils"
 brew "eigen"
@@ -75,6 +76,14 @@ cmake .. \
   -DPYTHON_INCLUDE_DIR:PATH=$HOME/.pyenv/versions/$PYTHON_VERSION/include/python3.8
 make -j$(nproc) && make install
 cd $ROOT
+
+# install onnx-runtime
+cd /tmp/ && mkdir -p onnx-runtime
+wget https://github.com/microsoft/onnxruntime/releases/download/v1.10.0/onnxruntime-osx-universal2-1.10.0.tgz
+tar -xzf onnxruntime-osx-universal2-1.10.0.tgz -C onnx-runtime --strip-components=1
+cd onnx-runtime
+cp -r lib/*.dylib $VENV/lib
+cp -r include/* $VENV/include
 
 echo
 echo "----   FINISH OPENPILOT SETUP   ----"
