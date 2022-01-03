@@ -57,39 +57,18 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_A)
 
-    elif candidate == CAR.LEXUS_RX:
-      stop_and_go = True
-      ret.wheelbase = 2.79
+    elif candidate in [CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2]:
+      # TODO: which steerRatio?
       ret.steerRatio = 14.8
-      tire_stiffness_factor = 0.5533
-      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_B)
-
-    elif candidate == CAR.LEXUS_RXH:
-      stop_and_go = True
-      ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
-      tire_stiffness_factor = 0.444  # not optimized yet
+      ret.wheelSpeedFactor = 1.035
+      tire_stiffness_factor = 0.5533
       ret.mass = 4481. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
+      # TODO: which tuning? they're slightly different
+      set_lat_tune(ret.lateralTuning, LatTunes.PID_B)
       set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
-
-    elif candidate == CAR.LEXUS_RX_TSS2:
-      stop_and_go = True
-      ret.wheelbase = 2.79
-      ret.steerRatio = 14.8
-      tire_stiffness_factor = 0.5533  # not optimized yet
-      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
-      ret.wheelSpeedFactor = 1.035
-
-    elif candidate == CAR.LEXUS_RXH_TSS2:
-      stop_and_go = True
-      ret.wheelbase = 2.79
-      ret.steerRatio = 16.0  # 14.8 is spec end-to-end
-      tire_stiffness_factor = 0.444  # not optimized yet
-      ret.mass = 4481.0 * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
       set_lat_tune(ret.lateralTuning, LatTunes.PID_E)
-      ret.wheelSpeedFactor = 1.035
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
       stop_and_go = True
