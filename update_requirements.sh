@@ -19,12 +19,12 @@ fi
 
 if ! command -v pipenv &> /dev/null; then
   echo "pipenv install ..."
-  pip install pipenv
+  python3 -m pip install pipenv
 fi
 
 echo "update pip"
-pip install pip==21.3.1
-pip install pipenv==2021.11.23
+python3 -m pip install pip==21.3.1
+python3 -m pip install pipenv==2021.11.23
 
 if [ -d "./xx" ]; then
   export PIPENV_SYSTEM=1

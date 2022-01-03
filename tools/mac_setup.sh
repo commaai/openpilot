@@ -77,14 +77,6 @@ cmake .. \
 make -j$(nproc) && make install
 cd $ROOT
 
-# install onnx-runtime
-cd /tmp/ && mkdir -p onnx-runtime
-wget https://github.com/microsoft/onnxruntime/releases/download/v1.10.0/onnxruntime-osx-universal2-1.10.0.tgz
-tar -xzf onnxruntime-osx-universal2-1.10.0.tgz -C onnx-runtime --strip-components=1
-cd onnx-runtime
-cp -r lib/*.dylib $VENV/lib
-cp -r include/* $VENV/include
-
 echo
 echo "----   FINISH OPENPILOT SETUP   ----"
 echo "Configure your active shell env by running:"
