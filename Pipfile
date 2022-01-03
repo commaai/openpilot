@@ -35,7 +35,7 @@ tenacity = "*"
 
 [packages]
 atomicwrites = "*"
-casadi = "*"
+casadi = {version = "*", markers="platform_system != 'Darwin'"}
 cffi = "*"
 crcmod = "*"
 cryptography = "*"
@@ -51,7 +51,7 @@ libusb1 = "*"
 nose = "*"
 numpy = "*"
 onnx = "*"
-onnxruntime-gpu = "*"
+onnxruntime-gpu = {version = "*", markers="platform_system != 'Darwin'"}
 pillow = "*"
 psutil = "*"
 pycapnp = "==1.1.0"

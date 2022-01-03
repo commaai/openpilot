@@ -1,5 +1,5 @@
 #!/bin/bash -e
-
+HOST="$(uname -m)"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR
 
@@ -37,8 +37,12 @@ else
   RUN=""
 fi
 
-echo "pip packages install ..."
-pipenv install --dev --deploy --clear
+echo "pip packages install for $HOST ..."
+if HOST=="Darwin"; then
+  pipenv install --dev --deploy --clear --skip-lock
+else
+  pipenv install --dev --deploy --clear
+fi
 pyenv rehash
 
 if [ -f "$DIR/.pre-commit-config.yaml" ]; then
