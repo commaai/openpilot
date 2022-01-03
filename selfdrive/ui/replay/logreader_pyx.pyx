@@ -18,6 +18,7 @@ cdef extern from "selfdrive/ui/replay/logreader.h":
 
   cdef cppclass cpp_LogReader "LogReader":
     cpp_LogReader()
+    void setSortByTime(bool)
     bool load(string, bool)
     vector[cpp_Event*] getEvents() nogil
     cpp_Event *at(int) nogil
@@ -26,8 +27,9 @@ cdef extern from "selfdrive/ui/replay/logreader.h":
 cdef class LogReader:
   cdef cpp_LogReader *lr
 
-  def __cinit__(self, fn):
+  def __cinit__(self, fn, sort_by_time=False):
     self.lr = new cpp_LogReader()
+    self.lr.setSortByTime(sort_by_time)
     self.lr.load(fn.encode(), True)
 
   def __dealloc__(self):
