@@ -38,7 +38,7 @@ else
 fi
 
 echo "pip packages install for $HOST ..."
-if HOST=="Darwin"; then
+if [[ "$HOST" == "Darwin" ]] ; then
   pipenv install --dev --deploy --clear --skip-lock
 else
   pipenv install --dev --deploy --clear
