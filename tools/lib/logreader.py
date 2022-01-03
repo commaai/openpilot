@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import sys
-from selfdrive.ui.replay.logreader_pyx import LogReader
+from selfdrive.ui.replay.logreader_pyx import LogReader # pylint: disable=no-name-in-module, import-error
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator:
