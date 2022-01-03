@@ -115,7 +115,6 @@ if GetOption('extras'):
 if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
   qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
-  #replay_lib_src = ["replay/replay.cc", "replay/camera.cc", "replay/filereader.cc", "replay/logreader.cc", "replay/framereader.cc", "replay/route.cc", "replay/util.cc"]
   log_lib = env.Library("log_lib", ["replay/camera.cc", "replay/filereader.cc", "replay/logreader.cc", "replay/framereader.cc", "replay/util.cc"])
 
   replay_lib = qt_env.Library("qt_replay", ["replay/replay.cc", "replay/route.cc"], LIBS=base_libs)

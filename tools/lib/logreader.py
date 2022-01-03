@@ -64,8 +64,8 @@ if __name__ == "__main__":
   import codecs
   # capnproto <= 0.8.0 throws errors converting byte data to string
   # below line catches those errors and replaces the bytes with \x__
-  #codecs.register_error("strict", codecs.backslashrepxplace_errors)
+  codecs.register_error("strict", codecs.backslashreplace_errors)
   log_path = sys.argv[1]
-  lr = LogReader(log_path)
+  lr = LogReader(log_path, sort_by_time=True)
   for msg in lr:
-    print(msg.which())
+    print(msg)

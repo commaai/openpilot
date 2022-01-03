@@ -3,8 +3,6 @@
 
 import numpy as np
 cimport numpy as cnp
-import ctypes
-import capnp
 from libc.string cimport memcpy
 from cereal import log as capnp_log
 from libcpp cimport bool
@@ -36,11 +34,9 @@ cdef class LogReader:
     del self.lr
 
   def __getitem__(self, item):
-    cdef char *cMemoryPointer
-    cdef char[:] dat_view
     e = self.lr.at(item)
-    dat = np.empty(e.size(), dtype=np.uint8)
-    dat_view = dat
+    cdef cnp.ndarray dat = np.empty(e.size(), dtype=np.uint8)
+    cdef char[:] dat_view = dat
     memcpy(&dat_view[0], e.data(), e.size())
     return capnp_log.Event.from_bytes(dat_view)
 
@@ -55,11 +51,9 @@ cdef class LogReader:
       dat_view = dat
       memcpy(&dat_view[0], e.data(), e.size())
       yield capnp_log.Event.from_bytes(dat_view)
-
-  def ts(self, idx):
-    return self.lr.at(idx).monoTime()
-
+  
   def __len__(self):
     return self.lr.size()
 
-
+  def ts(self, idx):
+    return self.lr.at(idx).monoTime()
