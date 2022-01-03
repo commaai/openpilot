@@ -111,6 +111,10 @@ def format_diff(results, ref_commit):
   return diff1, diff2, failed
 
 if __name__ == "__main__":
+  import codecs
+  # capnproto <= 0.8.0 throws errors converting byte data to string
+  # below line catches those errors and replaces the bytes with \x__
+  codecs.register_error("strict", codecs.backslashreplace_errors)
 
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
 
