@@ -69,52 +69,52 @@ jobs:
                           rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
 
-  #build_mac:
-  #  name: build macos
-  #  runs-on: macos-10.15
-  #  timeout-minutes: 60
-  #  steps:
-  #  - uses: actions/checkout@v2
-  #    with:
-  #      submodules: true
-  #  - name: Determine pre-existing Homebrew packages
-  #    if: steps.dependency-cache.outputs.cache-hit != 'true'
-  #    run: |
-  #      echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
-  #      ls -1 /usr/local/Cellar >> $GITHUB_ENV
-  #      echo 'EOF' >> $GITHUB_ENV
-  #  - name: Cache dependencies
-  #    id: dependency-cache
-  #    uses: actions/cache@v2
-  #    with:
-  #      path: |
-  #        ~/.pyenv
-  #        ~/Library/Caches/pip
-  #        ~/Library/Caches/pipenv
-  #        /usr/local/Cellar
-  #        ~/github_brew_cache_entries.txt
-  #      key: macos-cache-${{ hashFiles('tools/mac_setup.sh') }}
-  #  - name: Brew link restored dependencies
-  #    if: steps.dependency-cache.outputs.cache-hit == 'true'
-  #    run: |
-  #      while read pkg; do
-  #        brew link --force "$pkg" # `--force` for keg-only packages
-  #      done < ~/github_brew_cache_entries.txt
-  #  - name: Install dependencies
-  #    run: ./tools/mac_setup.sh
-  #  - name: Build openpilot
-  #    run: eval "$(pyenv init -)" && scons -j$(nproc)
-  #  - name: Remove pre-existing Homebrew packages for caching
-  #    if: steps.dependency-cache.outputs.cache-hit != 'true'
-  #    run: |
-  #      cd /usr/local/Cellar
-  #      new_cellar=$(ls -1)
-  #      comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
-  #        if [[ $pkg != "zstd" ]]; then # caching step needs zstd
-  #          rm -rf "$pkg"
-  #        fi
-  #      done
-  #      comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
+  build_mac:
+   name: build macos
+   runs-on: macos-10.15
+   timeout-minutes: 60
+   steps:
+   - uses: actions/checkout@v2
+     with:
+       submodules: true
+   - name: Determine pre-existing Homebrew packages
+     if: steps.dependency-cache.outputs.cache-hit != 'true'
+     run: |
+       echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
+       ls -1 /usr/local/Cellar >> $GITHUB_ENV
+       echo 'EOF' >> $GITHUB_ENV
+   - name: Cache dependencies
+     id: dependency-cache
+     uses: actions/cache@v2
+     with:
+       path: |
+         ~/.pyenv
+         ~/Library/Caches/pip
+         ~/Library/Caches/pipenv
+         /usr/local/Cellar
+         ~/github_brew_cache_entries.txt
+       key: macos-cache-${{ hashFiles('tools/mac_setup.sh') }}
+   - name: Brew link restored dependencies
+     if: steps.dependency-cache.outputs.cache-hit == 'true'
+     run: |
+       while read pkg; do
+         brew link --force "$pkg" # `--force` for keg-only packages
+       done < ~/github_brew_cache_entries.txt
+   - name: Install dependencies
+     run: ./tools/mac_setup.sh
+   - name: Build openpilot
+     run: eval "$(pyenv init -)" && scons -j$(nproc)
+   - name: Remove pre-existing Homebrew packages for caching
+     if: steps.dependency-cache.outputs.cache-hit != 'true'
+     run: |
+       cd /usr/local/Cellar
+       new_cellar=$(ls -1)
+       comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
+         if [[ $pkg != "zstd" ]]; then # caching step needs zstd
+           rm -rf "$pkg"
+         fi
+       done
+       comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
 
   build_webcam:
     name: build webcam
