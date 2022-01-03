@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import print_function
 import math
 from cereal import car
 from opendbc.can.parser import CANParser

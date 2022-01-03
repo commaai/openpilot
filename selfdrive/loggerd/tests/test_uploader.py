@@ -39,7 +39,7 @@ cloudlog.addHandler(log_handler)
 
 class TestUploader(UploaderTestCase):
   def setUp(self):
-    super(TestUploader, self).setUp()
+    super().setUp()
     log_handler.reset()
 
   def start_thread(self):

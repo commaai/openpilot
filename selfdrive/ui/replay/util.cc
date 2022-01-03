@@ -17,12 +17,13 @@
 
 namespace {
 
-static std::atomic<bool> enable_http_logging = false;
-
 struct CURLGlobalInitializer {
   CURLGlobalInitializer() { curl_global_init(CURL_GLOBAL_DEFAULT); }
   ~CURLGlobalInitializer() { curl_global_cleanup(); }
 };
+
+static CURLGlobalInitializer curl_initializer;
+static std::atomic<bool> enable_http_logging = false;
 
 template <class T>
 struct MultiPartWriter {
@@ -98,8 +99,6 @@ void enableHttpLogging(bool enable) {
 
 template <class T>
 bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
-  static CURLGlobalInitializer curl_initializer;
-
   int parts = 1;
   if (chunk_size > 0 && content_length > 10 * 1024 * 1024) {
     parts = std::nearbyint(content_length / (float)chunk_size);

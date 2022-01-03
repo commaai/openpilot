@@ -32,29 +32,38 @@ struct Alert {
   QString type;
   cereal::ControlsState::AlertSize size;
   AudibleAlert sound;
+
   bool equal(const Alert &a2) {
     return text1 == a2.text1 && text2 == a2.text2 && type == a2.type && sound == a2.sound;
   }
 
   static Alert get(const SubMaster &sm, uint64_t started_frame) {
+    const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
     if (sm.updated("controlsState")) {
-      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
       return {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
               cs.getAlertType().cStr(), cs.getAlertSize(),
               cs.getAlertSound()};
     } else if ((sm.frame - started_frame) > 5 * UI_FREQ) {
       const int CONTROLS_TIMEOUT = 5;
+      const int controls_missing = (nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9;
+
       // Handle controls timeout
       if (sm.rcv_frame("controlsState") < started_frame) {
         // car is started, but controlsState hasn't been seen at all
         return {"openpilot Unavailable", "Waiting for controls to start",
                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
                 AudibleAlert::NONE};
-      } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
+      } else if (controls_missing > CONTROLS_TIMEOUT) {
         // car is started, but controls is lagging or died
-        return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
-                "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
-                AudibleAlert::WARNING_IMMEDIATE};
+        if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
+          return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
+                  "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
+                  AudibleAlert::WARNING_IMMEDIATE};
+        } else {
+          return {"Controls Unresponsive", "Reboot Device",
+                  "controlsUnresponsivePermanent", cereal::ControlsState::AlertSize::MID,
+                  AudibleAlert::NONE};
+        }
       }
     }
     return {};
@@ -82,8 +91,6 @@ typedef struct {
 
 typedef struct UIScene {
   mat3 view_from_calib;
-  bool world_objects_visible;
-
   cereal::PandaState::PandaType pandaType;
 
   // modelV2
@@ -106,6 +113,9 @@ class UIState : public QObject {
 
 public:
   UIState(QObject* parent = 0);
+  inline bool worldObjectsVisible() const { 
+    return sm->rcv_frame("liveCalibration") > scene.started_frame;
+  };
 
   int fb_w = 0, fb_h = 0;
 

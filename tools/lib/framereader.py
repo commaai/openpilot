@@ -572,15 +572,13 @@ class StreamFrameReader(StreamGOPReader, GOPFrameReader):
 
 def GOPFrameIterator(gop_reader, pix_fmt):
   dec = VideoStreamDecompressor(gop_reader.fn, gop_reader.vid_fmt, gop_reader.w, gop_reader.h, pix_fmt)
-  for frame in dec.read():
-    yield frame
+  yield from dec.read()
 
 
 def FrameIterator(fn, pix_fmt, **kwargs):
   fr = FrameReader(fn, **kwargs)
   if isinstance(fr, GOPReader):
-    for v in GOPFrameIterator(fr, pix_fmt):
-      yield v
+    yield from GOPFrameIterator(fr, pix_fmt)
   else:
     for i in range(fr.frame_count):
       yield fr.get(i, pix_fmt=pix_fmt)[0]

@@ -30,7 +30,7 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.ROOT = tempfile.mkdtemp()
     athenad.SWAGLOG_DIR = swaglog.SWAGLOG_DIR = tempfile.mkdtemp()
     athenad.Api = MockApi
-    athenad.LOCAL_PORT_WHITELIST = set([cls.SOCKET_PORT])
+    athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
   def setUp(self):
     MockParams.restore_defaults()

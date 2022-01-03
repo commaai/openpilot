@@ -40,7 +40,8 @@ jobs:
     timeout-minutes: 50
     env:
       IMAGE_NAME: openpilot-sim
-    if: github.repository == 'commaai/openpilot'
+    if: ${{ false }}  # disable until LFS quota is fixed
+    #if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:

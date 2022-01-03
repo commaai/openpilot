@@ -89,7 +89,7 @@ class DumbSocket:
 
 class FakeSubMaster(messaging.SubMaster):
   def __init__(self, services):
-    super(FakeSubMaster, self).__init__(services, addr=None)
+    super().__init__(services, addr=None)
     self.sock = {s: DumbSocket(s) for s in services}
     self.update_called = threading.Event()
     self.update_ready = threading.Event()
@@ -111,7 +111,7 @@ class FakeSubMaster(messaging.SubMaster):
   def update_msgs(self, cur_time, msgs):
     wait_for_event(self.update_called)
     self.update_called.clear()
-    super(FakeSubMaster, self).update_msgs(cur_time, msgs)
+    super().update_msgs(cur_time, msgs)
     self.update_ready.set()
 
   def wait_for_update(self):
