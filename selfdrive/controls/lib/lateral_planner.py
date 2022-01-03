@@ -204,20 +204,22 @@ class LateralPlanner:
     plan_solution_valid = self.solution_invalid_cnt < 2
     plan_send = messaging.new_message('lateralPlan')
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'modelV2'])
-    plan_send.lateralPlan.laneWidth = float(self.LP.lane_width)
-    plan_send.lateralPlan.dPathPoints = [float(x) for x in self.y_pts]
-    plan_send.lateralPlan.psis = [float(x) for x in self.lat_mpc.x_sol[0:CONTROL_N, 2]]
-    plan_send.lateralPlan.curvatures = [float(x) for x in self.lat_mpc.x_sol[0:CONTROL_N, 3]]
-    plan_send.lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
-    plan_send.lateralPlan.lProb = float(self.LP.lll_prob)
-    plan_send.lateralPlan.rProb = float(self.LP.rll_prob)
-    plan_send.lateralPlan.dProb = float(self.LP.d_prob)
 
-    plan_send.lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
+    lateralPlan = plan_send.lateralPlan
+    lateralPlan.laneWidth = float(self.LP.lane_width)
+    lateralPlan.dPathPoints = [float(x) for x in self.y_pts]
+    lateralPlan.psis = [float(x) for x in self.lat_mpc.x_sol[0:CONTROL_N, 2]]
+    lateralPlan.curvatures = [float(x) for x in self.lat_mpc.x_sol[0:CONTROL_N, 3]]
+    lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
+    lateralPlan.lProb = float(self.LP.lll_prob)
+    lateralPlan.rProb = float(self.LP.rll_prob)
+    lateralPlan.dProb = float(self.LP.d_prob)
 
-    plan_send.lateralPlan.desire = self.desire
-    plan_send.lateralPlan.useLaneLines = self.use_lanelines
-    plan_send.lateralPlan.laneChangeState = self.lane_change_state
-    plan_send.lateralPlan.laneChangeDirection = self.lane_change_direction
+    lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
+
+    lateralPlan.desire = self.desire
+    lateralPlan.useLaneLines = self.use_lanelines
+    lateralPlan.laneChangeState = self.lane_change_state
+    lateralPlan.laneChangeDirection = self.lane_change_direction
 
     pm.send('lateralPlan', plan_send)

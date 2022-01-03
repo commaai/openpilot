@@ -221,7 +221,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   if match_count >= 2:
     if log:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
-    return set([candidate])
+    return {candidate}
   else:
     return set()
 

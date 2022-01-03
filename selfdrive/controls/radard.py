@@ -135,7 +135,7 @@ class RadarD():
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
 
     idens = list(sorted(self.tracks.keys()))
-    track_pts = list([self.tracks[iden].get_key_for_cluster() for iden in idens])
+    track_pts = [self.tracks[iden].get_key_for_cluster() for iden in idens]
 
     # If we have multiple points, cluster them
     if len(track_pts) > 1:
