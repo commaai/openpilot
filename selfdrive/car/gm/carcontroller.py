@@ -56,7 +56,8 @@ class CarController():
 
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 
-    if CS.CP.carFingerprint not in NO_ASCM:
+    # TODO: All three conditions should not be required - really only last two?
+    if CS.CP.carFingerprint not in NO_ASCM and CS.CP.openpilotLongitudinalControl and not CS.CP.pcmCruise:
       # Gas/regen and brakes - all at 25Hz
       if (frame % 4) == 0:
         if not enabled:
@@ -113,7 +114,7 @@ class CarController():
         at_full_stop = enabled and CS.out.standstill
         near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
         # non-ascm cars have brakes on PT bus (if they have them)
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.POWERTRAIN, self.apply_brake, idx, near_stop, at_full_stop))
+        can_sends.append(gmcan.create_friction_brake_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_brake, idx, near_stop, at_full_stop))
         # TODO: Can we detect that brake controller via fingerprint?
         # TODO: Check to see if your fingerprint has changed!
         
