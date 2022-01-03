@@ -1,9 +1,12 @@
 #!/bin/bash -e
-alias python="python3"
-alias pip="pip3"
 HOST="$(uname -m)"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR
+
+if [[ "$HOST" == "Darwin" ]]; then
+  alias python="python3"
+  alias pip="pip3"
+fi
 
 if ! command -v "pyenv" > /dev/null 2>&1; then
   echo "installing pyenv..."
