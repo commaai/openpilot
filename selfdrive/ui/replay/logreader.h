@@ -22,6 +22,9 @@ public:
   }
   Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame = false);
   inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
+  inline char *data() const { return (char *)words.asBytes().begin(); }
+  inline size_t size() const { return words.asBytes().size(); }
+  inline uint64_t monoTime() const { return mono_time; }
 
   struct lessThan {
     inline bool operator()(const Event *l, const Event *r) {
@@ -50,8 +53,14 @@ class LogReader {
 public:
   LogReader(size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
   ~LogReader();
-  bool load(const std::string &url, std::atomic<bool> *abort = nullptr, bool local_cache = false, int chunk_size = -1, int retries = 0);
+  bool load(const std::string &url, bool local_cache = false, std::atomic<bool> *abort = nullptr, int chunk_size = -1, int retries = 0);
   bool load(const std::byte *data, size_t size, std::atomic<bool> *abort = nullptr);
+  inline size_t size() const { return events.size(); }
+  inline const std::vector<Event*> getEvents() const { return events; }
+  inline Event *at(int idx) const {
+    if (idx < 0 || idx >= events.size()) return nullptr;
+    return events[idx];
+  }
 
   std::vector<Event*> events;
 
