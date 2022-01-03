@@ -27,10 +27,10 @@ cdef extern from "selfdrive/ui/replay/logreader.h":
 cdef class LogReader:
   cdef cpp_LogReader *lr
 
-  def __cinit__(self, fn, sort_by_time=False):
+  def __cinit__(self, fn, sort_by_time=False, cache_to_local=False):
     self.lr = new cpp_LogReader()
     self.lr.setSortByTime(sort_by_time)
-    self.lr.load(fn.encode(), True)
+    self.lr.load(fn.encode(), cache_to_local)
 
   def __dealloc__(self):
     del self.lr
