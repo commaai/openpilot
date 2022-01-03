@@ -20,7 +20,7 @@ cdef extern from "selfdrive/ui/replay/logreader.h":
     cpp_LogReader()
     void setSortByTime(bool)
     bool load(string, bool)
-    vector[cpp_Event*]& getEvents() nogil
+    vector[cpp_Event *] &getEvents() nogil
     cpp_Event *at(int) nogil
     size_t size()
   
