@@ -15,13 +15,13 @@ from cereal import log as capnp_log
 class MultiLogIterator:
   def __init__(self, log_paths, sort_by_time=False):
     self._log_paths = log_paths
+    self.sort_by_time = sort_by_time
 
     self._first_log_idx = next(i for i in range(len(log_paths)) if log_paths[i] is not None)
     self._current_log = self._first_log_idx
     self._idx = 0
     self._log_readers = [None]*len(log_paths)
     self.start_time = self._log_reader(self._first_log_idx)._ts[0]
-    self.sort_by_time = sort_by_time
 
   def _log_reader(self, i):
     if self._log_readers[i] is None and self._log_paths[i] is not None:
