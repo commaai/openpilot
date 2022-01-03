@@ -69,21 +69,24 @@ class LateralPlanner:
     self.lat_mpc.reset(x0=self.x0)
 
   def update(self, sm):
-    v_ego = sm['carState'].vEgo
+    car_state = sm['carState']
+    v_ego = car_state.vEgo
     active = sm['controlsState'].active
     measured_curvature = sm['controlsState'].curvature
 
     md = sm['modelV2']
-    self.LP.parse_model(sm['modelV2'])
-    if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
-      self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-      self.t_idxs = np.array(md.position.t)
+    self.LP.parse_model(md)
+
+    model_position = md.position
+    if len(model_position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
+      self.path_xyz = np.column_stack([model_position.x, model_position.y, model_position.z])
+      self.t_idxs = np.array(model_position.t)
       self.plan_yaw = list(md.orientation.z)
-    if len(md.position.xStd) == TRAJECTORY_SIZE:
-      self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
+    if len(model_position.xStd) == TRAJECTORY_SIZE:
+      self.path_xyz_stds = np.column_stack([model_position.xStd, model_position.yStd, model_position.zStd])
 
     # Lane change logic
-    one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
+    one_blinker = car_state.leftBlinker != car_state.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
     if (not active) or (self.lane_change_timer > LANE_CHANGE_TIME_MAX):
@@ -98,19 +101,19 @@ class LateralPlanner:
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
         # Set lane change direction
-        if sm['carState'].leftBlinker:
+        if car_state.leftBlinker:
           self.lane_change_direction = LaneChangeDirection.left
-        elif sm['carState'].rightBlinker:
+        elif car_state.rightBlinker:
           self.lane_change_direction = LaneChangeDirection.right
         else:  # If there are no blinkers we will go back to LaneChangeState.off
           self.lane_change_direction = LaneChangeDirection.none
 
-        torque_applied = sm['carState'].steeringPressed and \
-                         ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
-                          (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
+        torque_applied = car_state.steeringPressed and \
+                         ((car_state.steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
+                          (car_state.steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
 
-        blindspot_detected = ((sm['carState'].leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
-                              (sm['carState'].rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
+        blindspot_detected = ((car_state.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
+                              (car_state.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
 
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
