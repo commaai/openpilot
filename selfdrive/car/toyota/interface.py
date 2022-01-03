@@ -58,17 +58,11 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_A)
 
     elif candidate in [CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2]:
-      # TODO: which steerRatio?
-      ret.steerRatio = 14.8
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
       ret.wheelSpeedFactor = 1.035
       tire_stiffness_factor = 0.5533
       ret.mass = 4481. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
-      # TODO: which tuning? they're slightly different
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_B)
       set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_E)
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
       stop_and_go = True
