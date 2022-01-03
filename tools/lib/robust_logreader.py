@@ -2,7 +2,7 @@
 import os
 import bz2
 import urllib.parse
-import subprocess
+from tools.lib.bz2recover import recover
 import tqdm
 import glob
 from tempfile import TemporaryDirectory
@@ -28,9 +28,10 @@ class RobustLogReader(LogReader):
         print("Failed to decompress, falling back to bzip2recover")
         with TemporaryDirectory() as directory:
           # Run bzip2recovery on log
-          with open(os.path.join(directory, 'out.bz2'), 'wb') as f:
+          file_path = os.path.join(directory, 'out.bz2')
+          with open(file_path, 'wb') as f:
             f.write(dat)
-          subprocess.check_call(["bzip2recover", "out.bz2"], cwd=directory)
+          recover(file_path)
 
           # Decompress and concatenate parts
           dat = b""
