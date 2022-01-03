@@ -1,6 +1,4 @@
 #!/bin/bash -e
-alias python="python3"
-alias pip="pip3"
 HOST="$(uname -m)"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR
@@ -19,14 +17,25 @@ if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
   CONFIGURE_OPTS="--enable-shared" pyenv install -f ${PYENV_PYTHON_VERSION}
 fi
 
-if ! command -v pipenv &> /dev/null; then
-  echo "pipenv install ..."
-  pip install pipenv
-fi
+if [[ "$HOST" != "Darwin" ]]; then
+  if ! command -v pipenv &> /dev/null; then
+    echo "pipenv install ..."
+    pip install pipenv
+  fi
 
-echo "update pip"
-pip install pip==21.3.1
-pip install pipenv==2021.11.23
+  echo "update pip"
+  pip install pip==21.3.1
+  pip install pipenv==2021.11.23
+else  # MacOS
+  if ! command -v pipenv &> /dev/null; then
+    echo "pipenv install ..."
+    python3 -m pip install pipenv
+  fi
+
+  echo "update pip"
+  python3 -m pip install pip==21.3.1
+  python3 -m pip install pipenv==2021.11.23
+fi
 
 if [ -d "./xx" ]; then
   export PIPENV_SYSTEM=1
