@@ -261,43 +261,33 @@ def reboot():
   return {"success": 1}
 
 
-def get_upload_item(fn, url, headers):
-  if len(fn) == 0 or fn[0] == '/' or '..' in fn:
-    return 500
-  path = os.path.join(ROOT, fn)
-  if not os.path.exists(path):
-    return 404
-
-  item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None)
-  upload_id = hashlib.sha1(str(item).encode()).hexdigest()
-  return item._replace(id=upload_id)
-
-
 @dispatcher.add_method
 def uploadFileToUrl(fn, url, headers):
-  item = get_upload_item(fn, url, headers)
-  if type(item) != UploadItem:
-    return item
+  res = uploadFilesToUrls([[fn, url, headers]])
+  if type(res) != dict:
+    return res
 
-  upload_queue.put_nowait(item)
-  UploadQueueCache.cache(upload_queue)
-
-  return {"enqueued": 1, "item": item._asdict()}
+  return {"enqueued": 1, "item": res["items"][0]}
 
 
 @dispatcher.add_method
 def uploadFilesToUrls(files_data):
   items = []
   for fn, url, headers in files_data:
-    item = get_upload_item(fn, url, headers)
-    if type(item) != UploadItem:
-      return item
-    else:
-      items.append(item)
+    if len(fn) == 0 or fn[0] == '/' or '..' in fn:
+      return 500
+    path = os.path.join(ROOT, fn)
+    if not os.path.exists(path):
+      return 404
+
+    item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None)
+    upload_id = hashlib.sha1(str(item).encode()).hexdigest()
+    items.append(item._replace(id=upload_id))
 
   for item in items:
     upload_queue.put_nowait(item)
-    UploadQueueCache.cache(upload_queue)
+
+  UploadQueueCache.cache(upload_queue)
 
   return {"enqueued": len(items), "items": [i._asdict() for i in items]}
 
