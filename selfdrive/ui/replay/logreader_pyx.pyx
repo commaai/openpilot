@@ -36,27 +36,22 @@ cdef class LogReader:
     del self.lr
 
   def __getitem__(self, item):
-    e = self.lr.at(item)
-    cdef cnp.ndarray dat = np.empty(e.size(), dtype=np.uint8)
-    cdef char[:] dat_view = dat
-    memcpy(&dat_view[0], e.data(), e.size())
-    return capnp_log.Event.from_bytes(dat_view)
+    return self.__from_bytes(self.lr.at(item))
 
   def __iter__(self):
     with nogil:
       events = &self.lr.getEvents()
-
-    cdef cnp.ndarray dat
-    cdef char[:] dat_view
     for i in xrange(events.size()):
-      e = events.at(i)
-      dat = np.empty(e.size(), dtype=np.uint8)
-      dat_view = dat
-      memcpy(&dat_view[0], e.data(), e.size())
-      yield capnp_log.Event.from_bytes(dat_view)
+      yield self.__from_bytes(events.at(i))
   
   def __len__(self):
     return self.lr.size()
 
   def ts(self, idx):
     return self.lr.at(idx).monoTime()
+
+  cdef __from_bytes(self, cpp_Event* e):
+    cdef cnp.ndarray dat = np.empty(e.size(), dtype=np.uint8)
+    cdef char[:] dat_view = dat
+    memcpy(&dat_view[0], e.data(), e.size())
+    return capnp_log.Event.from_bytes(dat_view)
