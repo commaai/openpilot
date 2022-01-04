@@ -173,6 +173,10 @@ if arch != "Darwin":
 cflags += ["-DSWAGLOG"]
 cxxflags += ["-DSWAGLOG"]
 
+# Disable capnp's asserts
+cflags += ["-DKJ_NDEBUG"]
+cxxflags += ["-DKJ_NDEBUG"]
+
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
