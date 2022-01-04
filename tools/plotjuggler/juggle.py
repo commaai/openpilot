@@ -15,7 +15,7 @@ from selfdrive.test.process_replay.compare_logs import save_log
 from tools.lib.api import CommaApi
 from tools.lib.auth_config import get_token
 from tools.lib.robust_logreader import RobustLogReader
-from tools.lib.route import Route
+from tools.lib.route import Route, SegmentName
 from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
@@ -74,29 +74,33 @@ def start_juggler(fn=None, dbc=None, layout=None):
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
 
-def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
-  # TODO: abstract out the cabana stuff
-  if 'cabana' in route_name:
-    query = parse_qs(urlparse(route_name).query)
+def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
+  segment_start = 0
+  if 'cabana' in route_or_segment_name:
+    query = parse_qs(urlparse(route_or_segment_name).query)
     api = CommaApi(get_token())
     logs = api.get(f'v1/route/{query["route"][0]}/log_urls?sig={query["sig"][0]}&exp={query["exp"][0]}')
-  elif route_name.startswith("http://") or route_name.startswith("https://") or os.path.isfile(route_name):
-    logs = [route_name]
+  elif route_or_segment_name.startswith("http://") or route_or_segment_name.startswith("https://") or os.path.isfile(route_or_segment_name):
+    logs = [route_or_segment_name]
   else:
-    r = Route(route_name)
+    route_or_segment_name = SegmentName(route_or_segment_name, allow_route_name=True)
+    segment_start = max(route_or_segment_name.segment_num, 0)
+
+    if route_or_segment_name.segment_num != -1 and segment_count is None:
+      segment_count = 1
+
+    r = Route(route_or_segment_name.route_name.canonical_name)
     logs = r.qlog_paths() if qlog else r.log_paths()
 
-  if segment_number is not None:
-    logs = logs[segment_number:segment_number+segment_count]
+  segment_end = segment_start + segment_count if segment_count else -1
+  logs = logs[segment_start:segment_end]
 
   if None in logs:
     ans = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
     if ans == 'y':
-      logs = r.qlog_paths()
-      if segment_number is not None:
-        logs = logs[segment_number:segment_number+segment_count]
+      logs = r.qlog_paths()[segment_start:segment_end]
     else:
-      print(f"Please try a different {'segment' if segment_number is not None else 'route'}")
+      print("Please try a different route or segment")
       return
 
   all_data = []
@@ -133,9 +137,9 @@ if __name__ == "__main__":
   parser.add_argument("--stream", action="store_true", help="Start PlotJuggler in streaming mode")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("--install", action="store_true", help="Install or update PlotJuggler + plugins")
-  parser.add_argument("route_name", nargs='?', help="The route name to plot (cabana share URL accepted)")
-  parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment to plot")
-  parser.add_argument("segment_count", type=int, nargs='?', help="The number of segments to plot", default=1)
+  parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot (cabana share URL accepted)")
+  parser.add_argument("segment_count", type=int, nargs='?', help="The number of segments to plot")
+
   if len(sys.argv) == 1:
     parser.print_help()
     sys.exit()
@@ -148,5 +152,5 @@ if __name__ == "__main__":
   if args.stream:
     start_juggler(layout=args.layout)
   else:
-    route = DEMO_ROUTE if args.demo else args.route_name.strip()
-    juggle_route(route, args.segment_number, args.segment_count, args.qlog, args.can, args.layout)
+    route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
+    juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.can, args.layout)
