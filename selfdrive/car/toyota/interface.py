@@ -245,6 +245,7 @@ class CarInterface(CarInterfaceBase):
     if ret.enableGasInterceptor:
       set_long_tune(ret.longitudinalTuning, LongTunes.PEDAL)
     elif candidate in TSS2_CAR:
+      set_long_tune(ret.longitudinalTuning, LongTunes.TSS2)
       ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
       ret.startingAccelRate = 6.0  # release brakes fast
     else:
