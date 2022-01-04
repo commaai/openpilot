@@ -17,11 +17,17 @@ TEST_CASE("httpMultiPartDownload") {
   const size_t chunk_size = 5 * 1024 * 1024;
   std::string content;
   SECTION("download to file") {
-    REQUIRE(httpDownload(TEST_RLOG_URL, filename, chunk_size));
+    bool ret = false;
+    for (int i = 0; i < 3 && !ret; ++i) {
+      ret = httpDownload(TEST_RLOG_URL, filename, chunk_size);
+    }
+    REQUIRE(ret);
     content = util::read_file(filename);
   }
   SECTION("download to buffer") {
-    content = httpGet(TEST_RLOG_URL, chunk_size);
+    for (int i = 0; i < 3 && content.empty(); ++i) {
+      content = httpGet(TEST_RLOG_URL, chunk_size);
+    }
     REQUIRE(!content.empty());
   }
   REQUIRE(content.size() == 9112651);

@@ -227,7 +227,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 11.95  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.06]]
       tire_stiffness_factor = 0.677
 
     elif candidate == CAR.ODYSSEY:
@@ -432,8 +432,9 @@ class CarInterface(CarInterfaceBase):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-    if c.hudControl.speedVisible:
-      hud_v_cruise = c.hudControl.setSpeed * CV.MS_TO_KPH
+    hud_control = c.hudControl
+    if hud_control.speedVisible:
+      hud_v_cruise = hud_control.setSpeed * CV.MS_TO_KPH
     else:
       hud_v_cruise = 255
 
@@ -441,9 +442,9 @@ class CarInterface(CarInterfaceBase):
                          c.actuators,
                          c.cruiseControl.cancel,
                          hud_v_cruise,
-                         c.hudControl.lanesVisible,
-                         hud_show_car=c.hudControl.leadVisible,
-                         hud_alert=c.hudControl.visualAlert)
+                         hud_control.lanesVisible,
+                         hud_show_car=hud_control.leadVisible,
+                         hud_alert=hud_control.visualAlert)
 
     self.frame += 1
     return ret

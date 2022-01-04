@@ -19,7 +19,7 @@ CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']
 
-class Route(object):
+class Route:
   def __init__(self, name, data_dir=None):
     self._name = RouteName(name)
     self.files = None
@@ -161,7 +161,7 @@ class Route(object):
       raise ValueError(f'Could not find segments for route {self.name.canonical_name} in data directory {data_dir}')
     return sorted(segments, key=lambda seg: seg.name.segment_num)
 
-class Segment(object):
+class Segment:
   def __init__(self, name, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path):
     self._name = SegmentName(name)
     self.log_path = log_path
@@ -175,7 +175,7 @@ class Segment(object):
   def name(self):
     return self._name
 
-class RouteName(object):
+class RouteName:
   def __init__(self, name_str: str):
     self._name_str = name_str
     delim = next(c for c in self._name_str if c in ("|", "/"))
@@ -196,7 +196,7 @@ class RouteName(object):
 
   def __str__(self) -> str: return self._canonical_name
 
-class SegmentName(object):
+class SegmentName:
   # TODO: add constructor that takes dongle_id, time_str, segment_num and then create instances
   # of this class instead of manually constructing a segment name (use canonical_name prop instead)
   def __init__(self, name_str: str, allow_route_name=False):

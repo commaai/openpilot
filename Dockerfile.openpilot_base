@@ -1,70 +1,26 @@
 FROM ubuntu:20.04
+
 ENV PYTHONUNBUFFERED 1
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    autoconf \
-    build-essential \
-    bzip2 \
-    ca-certificates \
-    capnproto \
-    clang \
-    cmake \
-    cppcheck \
-    curl \
-    ffmpeg \
-    gcc-arm-none-eabi \
-    git \
-    iputils-ping \
-    libarchive-dev \
-    libbz2-dev \
-    libcapnp-dev \
-    libcurl4-openssl-dev \
-    libeigen3-dev \
-    libffi-dev \
-    libgles2-mesa-dev \
-    libglew-dev \
-    libglib2.0-0 \
-    liblzma-dev \
-    libomp-dev \
-    libopencv-dev \
-    libqt5sql5-sqlite \
-    libqt5svg5-dev \
-    libsqlite3-dev \
-    libssl-dev \
-    libsystemd-dev \
-    libusb-1.0-0-dev \
-    libzmq3-dev \
-    locales \
-    ocl-icd-libopencl1 \
-    ocl-icd-opencl-dev \
-    opencl-headers \
-    python-dev \
-    qml-module-qtquick2 \
-    qt5-default \
-    qtlocation5-dev \
-    qtmultimedia5-dev \
-    qtpositioning5-dev \
-    qtwebengine5-dev \
-    sudo \
-    valgrind \
-    wget \
-  && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends sudo tzdata locales && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
-
-COPY Pipfile Pipfile.lock /tmp/
-RUN pyenv install 3.8.10 && \
-    pyenv global 3.8.10 && \
-    pyenv rehash && \
-    pip install --no-cache-dir --upgrade pip==21.3.1 && \
-    pip install --no-cache-dir pipenv==2021.5.29 && \
-    cd /tmp && \
-    pipenv install --system --deploy --dev --clear && \
+ENV PIPENV_SYSTEM=1
+COPY Pipfile Pipfile.lock .python-version update_requirements.sh /tmp/
+COPY tools/ubuntu_setup.sh /tmp/tools/
+RUN cd /tmp && \
+    tools/ubuntu_setup.sh && \
+    rm -rf /tmp/* && \
+    rm -rf /var/lib/apt/lists/* && \
     pip uninstall -y pipenv
+
+ENV PYENV_VERSION=3.8.10
+ENV PYENV_ROOT="/root/.pyenv"
+ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
