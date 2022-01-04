@@ -5,8 +5,7 @@ openpilot
 opendbc
 ------
 .. autodoxygenindex::
-   :project: can
-
+   :project: opendbc_can
 
 
 cereal
@@ -15,13 +14,12 @@ cereal
 messaging
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: messaging
+   :project: cereal_messaging
 
 visionipc
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: visionipc
-
+   :project: cereal_visionipc
 
 
 selfdrive
@@ -30,79 +28,78 @@ selfdrive
 camerad
 ^^^^^^^
 .. autodoxygenindex::
-   :project: cameras
+   :project: selfdrive_camerad_cameras
 .. autodoxygenindex::
-   :project: transforms
+   :project: selfdrive_camerad_transforms
 .. autodoxygenindex::
-   :project: imgproc
-.. autodoxygenindex::
-   :project: test
+   :project: selfdrive_camerad_imgproc
 
 locationd
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: locationd
-.. autodoxygenindex::
-   :project: models
+   :project: selfdrive_locationd
 
 ui
 ^^
+
 .. autodoxygenindex::
-   :project: ui
+   :project: selfdrive_ui
+
+soundd
+""""""
 .. autodoxygenindex::
-   :project: soundd
+   :project: selfdrive_ui_soundd
+
+navd
+""""
 .. autodoxygenindex::
-   :project: navd
+   :project: selfdrive_ui_navd
+
+replay
+""""""
 .. autodoxygenindex::
-   :project: installer
-.. autodoxygenindex::
-   :project: replay
+   :project: selfdrive_ui_replay
 
 qt
 ""
-
 .. autodoxygenindex::
-   :project: setup
-
+   :project: selfdrive_ui_qt_offroad
 .. autodoxygenindex::
-   :project: offroad
-.. autodoxygenindex::
-   :project: maps
+   :project: selfdrive_ui_qt_maps
 
 proclogd
 ^^^^^^^^
 .. autodoxygenindex::
-   :project: proclogd
+   :project: selfdrive_proclogd
 
 modeld
 ^^^^^^
 .. autodoxygenindex::
-   :project: transforms
+   :project: selfdrive_modeld_transforms
 .. autodoxygenindex::
-   :project: models
+   :project: selfdrive_modeld_models
 .. autodoxygenindex::
-   :project: thneed
+   :project: selfdrive_modeld_thneed
 .. autodoxygenindex::
-   :project: runners
+   :project: selfdrive_modeld_runners
 
 common
 ^^^^^^
 .. autodoxygenindex::
-   :project: common
+   :project: selfdrive_common
 
 sensorsd
 ^^^^^^^^
 .. autodoxygenindex::
-   :project: sensors
+   :project: selfdrive_sensord_sensors
 
 boardd
 ^^^^^^
 .. autodoxygenindex::
-   :project: boardd
-
+   :project: selfdrive_boardd
 
 
 rednose
 -------
 .. autodoxygenindex::
-   :project: helpers
+   :project: rednose_repo_rednose_helpers

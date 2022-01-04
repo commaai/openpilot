@@ -40,34 +40,34 @@ language = 'en'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-        'sphinx.ext.autodoc',   # Auto-generate docs
-        'sphinx.ext.viewcode',  # Add view code link to modules
-        'sphinx_rtd_theme',     # Read The Docs theme
-        'myst_parser',          # Markdown parsing
-        'breathe',              # Doxygen C/C++ integration
-        'sphinx_sitemap',       # sitemap generation for SEO
+  'sphinx.ext.autodoc',   # Auto-generate docs
+  'sphinx.ext.viewcode',  # Add view code link to modules
+  'sphinx_rtd_theme',     # Read The Docs theme
+  'myst_parser',          # Markdown parsing
+  'breathe',              # Doxygen C/C++ integration
+  'sphinx_sitemap',       # sitemap generation for SEO
 ]
 
 myst_html_meta = {
-   "description": "openpilot docs",
-   "keywords": "op, openpilot, docs, documentation",
-   "robots": "all,follow",
-   "googlebot": "index,follow,snippet,archive",
-   "property=og:locale": "en_US",
-   "property=og:site_name": "docs.comma.ai",
-   "property=og:url": "https://docs.comma.ai",
-   "property=og:title": "openpilot Docuemntation",
-   "property=og:type": "website",
-   "property=og:image:type": "image/jpeg",
-   "property=og:image:width": "400",
-   "property=og:image": "https://docs.comma.ai/_static/logo.png",
-   "property=og:image:url": "https://docs.comma.ai/_static/logo.png",
-   "property=og:image:secure_url": "https://docs.comma.ai/_static/logo.png",
-   "property=og:description": "openpilot Documentation",
-   "property=twitter:card": "summary_large_image",
-   "property=twitter:logo": "https://docs.comma.ai/_static/logo.png",
-   "property=twitter:title": "openpilot Documentation",
-   "property=twitter:description": "openpilot Documentation"
+  "description": "openpilot docs",
+  "keywords": "op, openpilot, docs, documentation",
+  "robots": "all,follow",
+  "googlebot": "index,follow,snippet,archive",
+  "property=og:locale": "en_US",
+  "property=og:site_name": "docs.comma.ai",
+  "property=og:url": "https://docs.comma.ai",
+  "property=og:title": "openpilot Docuemntation",
+  "property=og:type": "website",
+  "property=og:image:type": "image/jpeg",
+  "property=og:image:width": "400",
+  "property=og:image": "https://docs.comma.ai/_static/logo.png",
+  "property=og:image:url": "https://docs.comma.ai/_static/logo.png",
+  "property=og:image:secure_url": "https://docs.comma.ai/_static/logo.png",
+  "property=og:description": "openpilot Documentation",
+  "property=twitter:card": "summary_large_image",
+  "property=twitter:logo": "https://docs.comma.ai/_static/logo.png",
+  "property=twitter:title": "openpilot Documentation",
+  "property=twitter:description": "openpilot Documentation"
 }
 
 html_baseurl = 'https://docs.comma.ai/'
@@ -92,7 +92,7 @@ breathe_default_members = ('members', 'private-members', 'undoc-members')
 breathe_domain_by_extension = {
   "h": "cc",
 }
-breathe_implementation_filename_extensions = ['.c', '.cc', '.cpp']
+breathe_implementation_filename_extensions = ['.c', '.cc']
 breathe_doxygen_config_options = {}
 breathe_projects_source = {}
 
@@ -108,19 +108,20 @@ for root, dirs, files in os.walk(BASEDIR):
 
     if file.endswith(".h") and exists(ccFile):
       f = os.path.join(root, file)
-      parent_dir = os.path.basename(os.path.dirname(f))
+
       parent_dir_abs = os.path.dirname(f)
-      print(f"\tFOUND: {f} in {parent_dir} ({parent_dir_abs})")
+      parent_dir = parent_dir_abs[len(BASEDIR) + 1:]
+      project = parent_dir.replace('/', '_')
+      print(f"\tFOUND: {f} in {project}")
 
       breathe_srcs_list.append(file)
       found = True
 
     if found:
-      breath_src[parent_dir] = (parent_dir_abs, breathe_srcs_list)
+      breath_src[project] = (parent_dir_abs, breathe_srcs_list)
       breathe_projects_source.update(breath_src)
 
 print(f"breathe_projects_source: {breathe_projects_source.keys()}")
-# input("Press Enter to continue...")
 
 # -- Options for HTML output -------------------------------------------------
 
