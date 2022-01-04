@@ -53,7 +53,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, idx, stopping, car_
   accel_command = accel if active else 0
   braking = 1 if active and accel < min_gas_accel else 0
   standstill = 1 if active and stopping else 0
-  standstill_release = 1 if active else 0
+  standstill_release = 1 if active and not stopping else 0
 
   acc_control_values = {
     # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
