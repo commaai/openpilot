@@ -14,6 +14,8 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 
+#include "selfdrive/ui/qt/wakeable.h"
+
 const int bdr_s = 30;
 const int header_h = 420;
 const int footer_h = 280;
@@ -146,7 +148,7 @@ UIState *uiState();
 
 // device management class
 
-class Device : public QObject {
+class Device : public QObject, public Wakeable {
   Q_OBJECT
 
 public:
@@ -156,8 +158,6 @@ private:
   // auto brightness
   const float accel_samples = 5*UI_FREQ;
 
-  bool awake = false;
-  int interactive_timeout = 0;
   bool ignition_on = false;
   int last_brightness = 0;
   FirstOrderFilter brightness_filter;
@@ -165,7 +165,6 @@ private:
   void updateBrightness(const UIState &s);
   void updateWakefulness(const UIState &s);
   bool motionTriggered(const UIState &s);
-  void setAwake(bool on);
 
 signals:
   void displayPowerChanged(bool on);
