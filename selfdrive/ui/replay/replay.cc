@@ -31,7 +31,9 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   events_ = std::make_unique<std::vector<Event *>>();
   new_events_ = std::make_unique<std::vector<Event *>>();
 
+  qRegisterMetaType<FindFlag>("FindFlag");
   connect(this, &Replay::seekTo, this, &Replay::doSeek);
+  connect(this, &Replay::seekToFlag, this, &Replay::doSeekToFlag);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
 
@@ -107,6 +109,55 @@ void Replay::doSeek(int seconds, bool relative) {
     return isSegmentMerged(seg);
   });
   queueSegment();
+}
+
+void Replay::doSeekToFlag(FindFlag flag) {
+  if (flag == FindFlag::nextEngagement) {
+    qInfo() << "seeking to the next engagement...";
+  } else if (flag == FindFlag::nextDisEngagement) {
+    qInfo() << "seeking to the disengagement...";
+  }
+
+  updateEvents([&]() {
+    if (auto next = find(flag)) {
+      uint64_t tm = *next - 2 * 1e9;  // seek to 2 seconds before next
+      if (tm <= cur_mono_time_) {
+        return true;
+      }
+
+      cur_mono_time_ = tm;
+      current_segment_ = currentSeconds() / 60;
+      return isSegmentMerged(current_segment_);
+    } else {
+      qWarning() << "seeking failed";
+      return true;
+    }
+  });
+
+  queueSegment();
+}
+
+std::optional<uint64_t> Replay::find(FindFlag flag) {
+  // Search in all segments
+  for (const auto &[n, _] : segments_) {
+    if (n < current_segment_) continue;
+
+    LogReader log;
+    bool cache_to_local = true;  // cache qlog to local for fast seek
+    if (!log.load(route_->at(n).qlog.toStdString(), nullptr, cache_to_local, 0, 3)) continue;
+
+    for (const Event *e : log.events) {
+      if (e->mono_time > cur_mono_time_ && e->which == cereal::Event::Which::CONTROLS_STATE) {
+        const auto cs = e->event.getControlsState();
+        if (flag == FindFlag::nextEngagement && cs.getEnabled()) {
+          return e->mono_time;
+        } else if (flag == FindFlag::nextDisEngagement && !cs.getEnabled()) {
+          return e->mono_time;
+        }
+      }
+    }
+  }
+  return std::nullopt;
 }
 
 void Replay::pause(bool pause) {
