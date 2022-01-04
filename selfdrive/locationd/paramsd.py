@@ -169,30 +169,31 @@ def main(sm=None, pm=None):
       msg = messaging.new_message('liveParameters')
       msg.logMonoTime = sm.logMonoTime['carState']
 
-      msg.liveParameters.posenetValid = True
-      msg.liveParameters.sensorValid = True
-      msg.liveParameters.steerRatio = float(x[States.STEER_RATIO])
-      msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
-      msg.liveParameters.roll = float(x[States.ROAD_ROLL])
-      msg.liveParameters.angleOffsetAverageDeg = angle_offset_average
-      msg.liveParameters.angleOffsetDeg = angle_offset
-      msg.liveParameters.valid = all((
-        abs(msg.liveParameters.angleOffsetAverageDeg) < 10.0,
-        abs(msg.liveParameters.angleOffsetDeg) < 10.0,
-        0.2 <= msg.liveParameters.stiffnessFactor <= 5.0,
-        min_sr <= msg.liveParameters.steerRatio <= max_sr,
+      liveParameters = msg.liveParameters
+      liveParameters.posenetValid = True
+      liveParameters.sensorValid = True
+      liveParameters.steerRatio = float(x[States.STEER_RATIO])
+      liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
+      liveParameters.roll = float(x[States.ROAD_ROLL])
+      liveParameters.angleOffsetAverageDeg = angle_offset_average
+      liveParameters.angleOffsetDeg = angle_offset
+      liveParameters.valid = all((
+        abs(liveParameters.angleOffsetAverageDeg) < 10.0,
+        abs(liveParameters.angleOffsetDeg) < 10.0,
+        0.2 <= liveParameters.stiffnessFactor <= 5.0,
+        min_sr <= liveParameters.steerRatio <= max_sr,
       ))
-      msg.liveParameters.steerRatioStd = float(P[States.STEER_RATIO])
-      msg.liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS])
-      msg.liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET])
-      msg.liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
+      liveParameters.steerRatioStd = float(P[States.STEER_RATIO])
+      liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS])
+      liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET])
+      liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
 
       if sm.frame % 1200 == 0:  # once a minute
         params = {
           'carFingerprint': CP.carFingerprint,
-          'steerRatio': msg.liveParameters.steerRatio,
-          'stiffnessFactor': msg.liveParameters.stiffnessFactor,
-          'angleOffsetAverageDeg': msg.liveParameters.angleOffsetAverageDeg,
+          'steerRatio': liveParameters.steerRatio,
+          'stiffnessFactor': liveParameters.stiffnessFactor,
+          'angleOffsetAverageDeg': liveParameters.angleOffsetAverageDeg,
         }
         put_nonblocking("LiveParameters", json.dumps(params))
 
