@@ -42,11 +42,11 @@ static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line
   return max_idx;
 }
 
-static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, std::optional<cereal::ModelDataV2::XYZTData::Reader> line) {
+static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
   for (int i = 0; i < 2; ++i) {
     auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
     if (lead_data.getStatus()) {
-      float z = line ? (*line).getZ()[get_path_length_idx(*line, lead_data.getDRel())] : 0.0;
+      float z = line.getZ()[get_path_length_idx(line, lead_data.getDRel())];
       calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
     }
   }
@@ -110,12 +110,8 @@ static void update_state(UIState *s) {
   if (sm.updated("modelV2")) {
     update_model(s, sm["modelV2"].getModelV2());
   }
-  if (sm.updated("radarState")) {
-    std::optional<cereal::ModelDataV2::XYZTData::Reader> line;
-    if (sm.rcv_frame("modelV2") > 0) {
-      line = sm["modelV2"].getModelV2().getPosition();
-    }
-    update_leads(s, sm["radarState"].getRadarState(), line);
+  if (sm.updated("radarState") && sm.rcv_frame("modelV2") >= s->scene.started_frame) {
+    update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
   }
   if (sm.updated("liveCalibration")) {
     auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
@@ -188,32 +184,33 @@ void ui_update_params(UIState *s) {
   s->scene.is_metric = Params().getBool("IsMetric");
 }
 
-static void update_status(UIState *s) {
-  if (s->scene.started && s->sm->updated("controlsState")) {
-    auto controls_state = (*s->sm)["controlsState"].getControlsState();
+void UIState::updateStatus() {
+  if (scene.started && sm->updated("controlsState")) {
+    auto controls_state = (*sm)["controlsState"].getControlsState();
     auto alert_status = controls_state.getAlertStatus();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
-      s->status = STATUS_WARNING;
+      status = STATUS_WARNING;
     } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
-      s->status = STATUS_ALERT;
+      status = STATUS_ALERT;
     } else {
-      s->status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+      status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
   }
 
   // Handle onroad/offroad transition
-  static bool started_prev = false;
-  if (s->scene.started != started_prev) {
-    if (s->scene.started) {
-      s->status = STATUS_DISENGAGED;
-      s->scene.started_frame = s->sm->frame;
-      s->scene.end_to_end = Params().getBool("EndToEndToggle");
-      s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+  if (scene.started != started_prev) {
+    if (scene.started) {
+      status = STATUS_DISENGAGED;
+      scene.started_frame = sm->frame;
+      scene.end_to_end = Params().getBool("EndToEndToggle");
+      wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
     }
+    started_prev = scene.started;
+    emit offroadTransition(!scene.started);
+  } else if (sm->frame == 1) {
+    emit offroadTransition(!scene.started);
   }
-  started_prev = s->scene.started;
 }
-
 
 UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
@@ -234,12 +231,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
 void UIState::update() {
   update_sockets(this);
   update_state(this);
-  update_status(this);
-
-  if (scene.started != started_prev || sm->frame == 1) {
-    started_prev = scene.started;
-    emit offroadTransition(!scene.started);
-  }
+  updateStatus();
 
   if (sm->frame % UI_FREQ == 0) {
     watchdog_kick();

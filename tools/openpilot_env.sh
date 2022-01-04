@@ -1,6 +1,4 @@
 if [ -z "$OPENPILOT_ENV" ]; then
-  OP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
-  export PYTHONPATH="$OP_ROOT:$PYTHONPATH"
   export PATH="$HOME/.pyenv/bin:$PATH"
 
   # Pyenv suggests we place the below two lines in .profile before we source
