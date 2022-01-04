@@ -351,12 +351,13 @@ jobs:
         name: longitudinal
         path: selfdrive/test/longitudinal_maneuvers/out/longitudinal/
 
-  test_car_models:
-    name: car models
+  test_cars:
+    name: cars
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     strategy:
       matrix:
+        fail-fast: false
         job: [0, 1, 2, 3]
     steps:
     - uses: actions/checkout@v2
@@ -385,7 +386,7 @@ jobs:
     - name: Test car models
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test && \
-                        FILEREADER_CACHE=1 coverage run selfdrive/test/test_models.py && \
+                        FILEREADER_CACHE=1 pytest -n 4 selfdrive/test/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4
