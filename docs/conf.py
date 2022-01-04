@@ -111,14 +111,14 @@ for root, dirs, files in os.walk(BASEDIR):
 
       parent_dir_abs = os.path.dirname(f)
       parent_dir = parent_dir_abs[len(BASEDIR) + 1:]
-      project = parent_dir.replace('/', '_')
-      print(f"\tFOUND: {f} in {project}")
+      parent_project = parent_dir.replace('/', '_')
+      print(f"\tFOUND: {f} in {parent_project}")
 
       breathe_srcs_list.append(file)
       found = True
 
     if found:
-      breath_src[project] = (parent_dir_abs, breathe_srcs_list)
+      breath_src[parent_project] = (parent_dir_abs, breathe_srcs_list)
       breathe_projects_source.update(breath_src)
 
 print(f"breathe_projects_source: {breathe_projects_source.keys()}")
