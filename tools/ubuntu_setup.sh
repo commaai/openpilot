@@ -15,7 +15,6 @@ function install_ubuntu_common_requirements() {
     build-essential \
     clang \
     cmake \
-    doxygen \
     make \
     cppcheck \
     libtool \
