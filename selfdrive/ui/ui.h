@@ -157,8 +157,8 @@ public:
   Device(QObject *parent = 0);
 
 protected:
-  virtual void setAwake(bool on);
-  virtual void updateWakefulness(const QObject &o);
+  virtual void updateWakefulness(const UIState &s);
+  virtual void emitDisplayPowerChanged(bool on);
 
 private:
   // auto brightness

@@ -255,17 +255,12 @@ void Device::update(const UIState &s) {
   updateWakefulness(s);
 }
 
-void Device::setAwake(bool on) {
-  if (on != awake) {
-    awake = on;
-    Hardware::set_display_power(awake);
-    LOGD("setting display power %d", awake);
-    emit displayPowerChanged(awake);
-  }
-}
-
 void Device::resetInteractiveTimout() {
   interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
+}
+
+void Device::emitDisplayPowerChanged(bool on) {
+  emit displayPowerChanged(on);
 }
 
 void Device::updateBrightness(const UIState &s) {
@@ -311,8 +306,7 @@ bool Device::motionTriggered(const UIState &s) {
   return (!awake && accel_trigger && gyro_trigger);
 }
 
-void Device::updateWakefulness(const QObject &o) {
-  const UIState &s = dynamic_cast<const UIState &>(o);
+void Device::updateWakefulness(const UIState &s) {
   bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
   ignition_on = s.scene.ignition;
 

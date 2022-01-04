@@ -2,6 +2,9 @@
 
 #include <QObject>
 
+// Forward declaration
+class UIState;
+
 class Wakeable {
 
   public:
@@ -11,7 +14,7 @@ class Wakeable {
     bool awake = false;
     int interactive_timeout = 0;
     
-    virtual void setAwake(bool on) = 0;
-    virtual void updateWakefulness(const QObject &o) = 0;
-
+    virtual void setAwake(bool on);
+    virtual void updateWakefulness(const UIState &s) = 0;
+    virtual void emitDisplayPowerChanged(bool on) = 0;
 };
