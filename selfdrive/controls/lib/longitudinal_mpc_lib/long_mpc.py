@@ -223,7 +223,7 @@ class LongitudinalMpc:
       self.set_weights_for_xva_policy()
       self.params[:,0] = -10.
       self.params[:,1] = 10.
-      self.params[:,2] = 1e5*np.ones((N+1))
+      self.params[:,2] = 1e5
     else:
       self.set_weights_for_lead_policy()
 
