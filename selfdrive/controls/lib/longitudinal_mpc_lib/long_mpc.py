@@ -221,7 +221,9 @@ class LongitudinalMpc:
   def set_weights(self):
     if self.e2e:
       self.set_weights_for_xva_policy()
-      self.set_params_for_xva_policy()
+      self.params[:,0] = -10.
+      self.params[:,1] = 10.
+      self.params[:,2] = 1e5*np.ones((N+1))
     else:
       self.set_weights_for_lead_policy()
 
@@ -251,11 +253,6 @@ class LongitudinalMpc:
     Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0])
     for i in range(N):
       self.solver.cost_set(i, 'Zl', Zl)
-
-  def set_params_for_xva_policy(self):
-    self.params[:,0] = -10.
-    self.params[:,1] = 10.
-    self.params[:,2] = 1e5*np.ones((N+1))
 
   def set_cur_state(self, v, a):
     if abs(self.x0[1] - v) > 2.:
