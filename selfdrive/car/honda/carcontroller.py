@@ -95,7 +95,7 @@ HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise", "car",
                      "lanes", "fcw", "acc_alert", "steer_required"])
 
-AHUData = namedtuple("AHUDATA",
+AHUDData = namedtuple("AHUDATA",
                       ["lanes"])
 
 class CarController():
