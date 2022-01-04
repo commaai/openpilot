@@ -83,12 +83,6 @@ FINGERPRINTS = {
 
 FW_VERSIONS = {
   CAR.ASCENT: {
-    # 2019 Ascent - UDM / @Adminiuga
-    # 2019 Ascent - UDM / @tvo
-    # 2019 Ascent - UDM / @RCoaster
-    # 2021 Ascent - UDM / @Sandy
-    # 2020 Ascent - UDM / @ndtran
-    # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\xa5 \x19\x02\x00',
       b'\xa5 !\002\000',
@@ -118,28 +112,6 @@ FW_VERSIONS = {
     ],
   },
   CAR.IMPREZA: {
-    # 2018 Crosstrek - EDM / @martinl
-    # 2018 Impreza - ADM / @Michael
-    # 2019 Impreza Premium - UDM / @hitoryu2001
-    # 2018 Crosstrek Limited - UDM / @Joey
-    # 2017 Impreza - UDM / @Frye
-    # 2018 Crosstrek - UDM / @rwalsh3
-    # 2018 Crosstrek - UDM / @pemerick07
-    # 2018 Crosstrek - UDM / @rwalsh3 (new engine fw)
-    # 2019 Crosstrek - UDM / @Nooks Cranny
-    # 2019 Impreza - UDM / @phosphor
-    # 2019 Impreza - UDM / @cheesypotato
-    # 2019 Impreza - UDM / @dbzx6r
-    # 2018 Impreza Sport - UDM / @gking
-    # 2019 Crosstrek Limited - UDM / @cellfreak
-    # 2019 Impreza Limited - UDM / @boros
-    # 2017 Impreza - UDM / @Fidel
-    # 2018 Crosstrek - UDM / @dnewstat
-    # 2018 Impreza Limited - UDM / @isaacdchan
-    # 2017 Impreza 1.6 - UDM / @Moodkiller
-    # 2019 Crosstrek - UDM / @AJInvesting
-    # 2017 Impreza 2.0 - UDM / @prlifestyle93
-    # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\x7a\x94\x3f\x90\x00',
       b'\xa2 \x185\x00',
@@ -209,13 +181,6 @@ FW_VERSIONS = {
     ],
   },
   CAR.IMPREZA_2020: {
-    # 2020 Impreza Sport - UDM / @CrispinFlowerday
-    # 2020 Impreza Hatchback Premium - UDM / @davidvatz
-    # 2020 Impreza Hatchback - UDM / @GPT-3
-    # 2020 Impreza Premium - UDM / @KeetsScrimalittle
-    # 2021 Crosstrek Limited - UDM / @AdamSLevy
-    # 2021 Crosstrek Premium - UDM / @pemerick07
-    # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\xa2 \0314\000',
       b'\xa2 \0313\000',
@@ -245,14 +210,6 @@ FW_VERSIONS = {
     ],
   },
   CAR.FORESTER: {
-    # 2021 Forester - UDM / @gotham
-    # 2019 Forester - UDM / @clockenessmnstr
-    # 2020 Forester - UDM / @TH156UY
-    # 2021 Forester - UDM / @umby24
-    # 2020 Forester Sport - UDM / @RyanYo
-    # 2019 Forester Sport - UDM / @Zapman
-    # 2019 Forester - UDM / @Patienc3
-    # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\xa3 \030\024\000',
       b'\xa3  \024\000',
@@ -284,13 +241,6 @@ FW_VERSIONS = {
     ],
   },
   CAR.FORESTER_PREGLOBAL: {
-    # 2018 Forester 2.5i Touring - UDM / @Oreo
-    # 2018 Forester 2.5 Limited - Canada / @litobro
-    # 2017 Forester - UDM / @hitoryu2001
-    # 2018 Forester - UDM / @sarvcomp
-    # 2018 Forester 2.5i Premium - UDM / @Diesel Monkey
-    # 2018 Forester - UDM / @2018NissanRogue
-    # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\x7d\x97\x14\x40',
       b'\xf1\x00\xbb\x0c\x04',
@@ -319,11 +269,6 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEGACY_PREGLOBAL: {
-    # 2016 Subaru Legacy - UDM / @nort
-    # 2015 Subaru Legacy 3.6R Limited / @chrissantamaria
-    # 2017 Subaru Legacy 2.5i Sport / @bonnysonnyandclyde
-    # 2015 Subaru Legacy Premium 2.5i / @Wanting.RA1N
-    # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'k\x97D\x00',
       b'[\xba\xc4\x03',
@@ -354,19 +299,6 @@ FW_VERSIONS = {
     ],
   },
   CAR.OUTBACK_PREGLOBAL: {
-    # 2017 Outback Limited 3.6r - UDM / @Anthony
-    # 2016 Outback Limited 2.5 - UDM / @aeiro
-    # 2015 Outback Limited 2.5 - ADM / @Bugsy
-    # 2015 Outback Premium 3.6i - UDM / @aidrive
-    # 2016 Outback Premium 2.5 - UDM / @Troy
-    # 2017 Subaru Outback 2.5 - UDM / @chewbaru
-    # 2017 Subaru Outback - UDM / @the3seashells
-    # 2016 Outback Premium 2.5i - UDM / @G-Wood
-    # 2016 Outback 3.6R - UDM / @KingSlayer
-    # 2017 Outback Limited 2.5i / @laksdjf
-    # 2015 Outback 3.6R - UDM / @bitwaster
-    # 2015 Outback - UDM / @chk_null
-    # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'{\x9a\xac\x00',
       b'k\x97\xac\x00',
@@ -420,19 +352,7 @@ FW_VERSIONS = {
       b'\xbf\xfb\xe0b\x00',
     ],
   },
-  # Outback with reversed driver torque signal
   CAR.OUTBACK_PREGLOBAL_2018: {
-    # 2018 Outback Premium 2.5i - UDM / @zhoux260
-    # 2018 Outback 3.6r UDM / @mirroregami
-    # 2018 Outback 2.5i Premium UDM / @dirkmm
-    # 2019 Outback UDM / @Valhalla
-    # 2018 Outback 2.5 / @haak
-    # 2018 Outback 3.6r USDM / @Scripty_
-    # 2018 Subaru Outback 2.0d - ADM / @Richo
-    # 2019 Outback 2.5i Premium / @Z-dawg Swizzlepants
-    # 2019 Outback Touring 3.6R / @danyo
-    # 2019 Outback - UDM / @Steven C
-    # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\x8b\x97\xac\x00',
       b'\x8b\x9a\xac\x00',
