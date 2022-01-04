@@ -670,18 +670,18 @@ class Controls:
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.can_rcv_error_counter
 
+    lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
       controlsState.lateralControlState.debugState = lac_log
     elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       controlsState.lateralControlState.angleState = lac_log
-    else:
-      lat_tuning = self.CP.lateralTuning.which()
-      if lat_tuning == 'pid':
-        controlsState.lateralControlState.pidState = lac_log
-      elif lat_tuning == 'lqr':
-        controlsState.lateralControlState.lqrState = lac_log
-      elif lat_tuning == 'indi':
-        controlsState.lateralControlState.indiState = lac_log
+    elif lat_tuning == 'pid':
+      controlsState.lateralControlState.pidState = lac_log
+    elif lat_tuning == 'lqr':
+      controlsState.lateralControlState.lqrState = lac_log
+    elif lat_tuning == 'indi':
+      controlsState.lateralControlState.indiState = lac_log
+
     self.pm.send('controlsState', dat)
 
     # carState
