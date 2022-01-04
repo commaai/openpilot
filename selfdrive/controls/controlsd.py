@@ -198,7 +198,6 @@ class Controls:
       events.add_from_msg(self.sm['driverMonitoringState'].events)
       self.latest_events['driverMonitoringState'] = events
 
-
     # Handle startup event
     if self.startup_event is not None:
       self.events.add(self.startup_event)
@@ -255,7 +254,11 @@ class Controls:
     # Handle lane change
     if self.sm.updated['lateralPlan']:
       events = Events()
-      if self.sm['lateralPlan'].laneChangeState == LaneChangeState.preLaneChange:
+      if not self.sm['lateralPlan'].mpcSolutionValid:
+        events.add(EventName.plannerError)
+
+      lane_change_state = self.sm['lateralPlan'].laneChangeState
+      if lane_change_state == LaneChangeState.preLaneChange:
         direction = self.sm['lateralPlan'].laneChangeDirection
         if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
           (CS.rightBlindspot and direction == LaneChangeDirection.right):
@@ -265,8 +268,7 @@ class Controls:
             events.add(EventName.preLaneChangeLeft)
           else:
             events.add(EventName.preLaneChangeRight)
-      elif self.sm['lateralPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
-                                                  LaneChangeState.laneChangeFinishing]:
+      elif lane_change_state in [LaneChangeState.laneChangeStarting, LaneChangeState.laneChangeFinishing]:
         events.add(EventName.laneChange)
 
       self.latest_events['lateralPlan'] = events
@@ -308,8 +310,6 @@ class Controls:
 
     if not self.sm['liveParameters'].valid:
       self.events.add(EventName.vehicleModelInvalid)
-    if not self.sm['lateralPlan'].mpcSolutionValid:
-      self.events.add(EventName.plannerError)
     if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
@@ -369,7 +369,7 @@ class Controls:
       if self.sm.updated['managerState']:
         events = Events()
         not_running = {p.name for p in self.sm['managerState'].processes if not p.running}
-        if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
+        if not_running - IGNORE_PROCESSES:
           events.add(EventName.processNotRunning)
         
         self.latest_events['managerState'] = events
