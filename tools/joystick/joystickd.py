@@ -46,10 +46,9 @@ class Joystick:
     if event[0] == self.cancel_button and event[1] == 0:  # state 0 is falling edge
       self.cancel = True
     elif event[0] in self.axes_values:
-      if event[1] > self.max_axis_value:
-        self.max_axis_value = event[1]
-      elif event[1] < self.min_axis_value:
-        self.min_axis_value = event[1]
+      self.max_axis_value = max(event[1], self.max_axis_value)
+      self.min_axis_value = min(event[1], self.min_axis_value)
+
       norm = -interp(event[1], [self.min_axis_value, self.max_axis_value], [-1., 1.])
       self.axes_values[event[0]] = norm if abs(norm) > 0.05 else 0.  # center can be noisy, deadzone of 5%
     else:
