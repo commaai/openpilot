@@ -4,8 +4,7 @@
 #include <string>
 #include <optional>
 
-#include "selfdrive/ui/qt/wakeable.h"
-
+#include <QObject>
 #include <QTimer>
 #include <QColor>
 #include <QTransform>
@@ -15,6 +14,7 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 
+#include "selfdrive/ui/qt/wakeable.h"
 
 const int bdr_s = 30;
 const int header_h = 420;

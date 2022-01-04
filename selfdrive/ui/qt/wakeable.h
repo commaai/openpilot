@@ -1,7 +1,5 @@
 #pragma once
 
-#include <QObject>
-
 class Wakeable {
 
   protected:
