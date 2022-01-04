@@ -316,7 +316,8 @@ bool Device::motionTriggered(const UIState &s) {
   return (!awake && accel_trigger && gyro_trigger);
 }
 
-void Device::updateWakefulness(const UIState &s) {
+void Device::updateWakefulness(const QObject &o) {
+  const UIState &s = dynamic_cast<const UIState &>(o);
   bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
   ignition_on = s.scene.ignition;
 

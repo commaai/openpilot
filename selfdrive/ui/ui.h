@@ -166,7 +166,7 @@ private:
   FirstOrderFilter brightness_filter;
 
   void updateBrightness(const UIState &s);
-  void updateWakefulness(const UIState &s);
+  void updateWakefulness(const QObject &o);
   bool motionTriggered(const UIState &s);
 
 signals:
