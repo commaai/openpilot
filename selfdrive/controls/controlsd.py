@@ -164,7 +164,8 @@ class Controls:
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
 
-    self.startup_event = get_startup_event(car_recognized, controller_available, len(self.CP.carFw) > 0)
+    if not self.joystick_mode:
+      self.events.add(get_startup_event(car_recognized, controller_available, len(self.CP.carFw) > 0))
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
@@ -180,7 +181,6 @@ class Controls:
       self.events.add(EventName.dashcamMode, static=True)
     elif self.joystick_mode:
       self.events.add(EventName.joystickDebug, static=True)
-      self.startup_event = None
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -189,14 +189,8 @@ class Controls:
   def update_events(self, CS):
     """Compute carEvents from carState"""
 
-    self.events.clear()
     self.events.add_from_msg(CS.events)
     self.events.add_from_msg(self.sm['driverMonitoringState'].events)
-
-    # Handle startup event
-    if self.startup_event is not None:
-      self.events.add(self.startup_event)
-      self.startup_event = None
 
     # Don't add any more events if not initialized
     if not self.initialized:
@@ -698,6 +692,7 @@ class Controls:
       ce_send.carEvents = car_events
       self.pm.send('carEvents', ce_send)
     self.events_prev = self.events.names.copy()
+    self.events.clear()
 
     # carParams - logged every 50 seconds (> 1 per segment)
     if (self.sm.frame % int(50. / DT_CTRL) == 0):
