@@ -99,7 +99,9 @@ bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abor
   }
 
   if (!events.empty() && !(abort && *abort)) {
-    std::sort(events.begin(), events.end(), Event::lessThan());
+    if (sort_by_time) {
+      std::sort(events.begin(), events.end(), Event::lessThan());
+    }
     return true;
   }
   return false;
