@@ -32,6 +32,7 @@ if [ -d "./xx" ]; then
 fi
 
 if [ -z "$PIPENV_SYSTEM" ]; then
+  echo "PYTHONPATH=${PWD}" > .env
   RUN="pipenv run"
 else
   RUN=""
