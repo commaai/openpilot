@@ -95,6 +95,8 @@ HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise", "car",
                      "lanes", "fcw", "acc_alert", "steer_required"])
 
+AHUData = namedtuple("AHUDATA",
+                      ["lanes"])
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -166,7 +168,7 @@ class CarController():
 
       if (frame % 5) == 0:
         idx = frame // 5
-        hud = HUDData(hud_lanes)
+        hud = AHUDData(hud_lanes)
         can_sends.append(hondacan.create_lkas_command(self.packer, hud, idx))
 
     # tester present - w/ no response (keeps radar disabled)
