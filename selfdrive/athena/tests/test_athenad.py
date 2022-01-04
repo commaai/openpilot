@@ -141,8 +141,8 @@ class TestAthenadMethods(unittest.TestCase):
 
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", f"{host}/qlog.bz2", {})
     self.assertEqual(resp['enqueued'], 1)
-    self.assertDictContainsSubset({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}, resp['item'])
-    self.assertIsNotNone(resp['item'].get('id'))
+    self.assertDictContainsSubset({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}, resp['items'][0])
+    self.assertIsNotNone(resp['items'][0].get('id'))
     self.assertEqual(athenad.upload_queue.qsize(), 1)
 
   @with_http_server

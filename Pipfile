@@ -32,6 +32,7 @@ scipy = "*"
 sphinx = "*"
 sphinx-sitemap = "*"
 sphinx-rtd-theme = "*"
+breathe = "*"
 subprocess32 = "*"
 tenacity = "*"
 

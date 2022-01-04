@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cmath>
 
+#include <QtConcurrent>
+
 #include "common/transformations/orientation.hpp"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
@@ -36,7 +38,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
 static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
   int max_idx = 0;
-  for (int i = 0; i < TRAJECTORY_SIZE && line_x[i] < path_height; ++i) {
+  for (int i = 1; i < TRAJECTORY_SIZE && line_x[i] <= path_height; ++i) {
     max_idx = i;
   }
   return max_idx;
@@ -71,11 +73,11 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   auto model_position = model.getPosition();
   float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
                                   MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
+  int max_idx = get_path_length_idx(model_position, max_distance);
 
   // update lane lines
   const auto lane_lines = model.getLaneLines();
   const auto lane_line_probs = model.getLaneLineProbs();
-  int max_idx = get_path_length_idx(lane_lines[0], max_distance);
   for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
     scene.lane_line_probs[i] = lane_line_probs[i];
     update_line_data(s, lane_lines[i], 0.025 * scene.lane_line_probs[i], 0, &scene.lane_line_vertices[i], max_idx);
@@ -94,8 +96,8 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   if (lead_one.getStatus()) {
     const float lead_d = lead_one.getDRel() * 2.;
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
+    max_idx = get_path_length_idx(model_position, max_distance);  
   }
-  max_idx = get_path_length_idx(model_position, max_distance);
   update_line_data(s, model_position, 0.5, 1.22, &scene.track_vertices, max_idx);
 }
 
@@ -289,9 +291,11 @@ void Device::updateBrightness(const UIState &s) {
   }
 
   if (brightness != last_brightness) {
-    std::thread{Hardware::set_brightness, brightness}.detach();
+    if (!brightness_future.isRunning()) {
+      brightness_future = QtConcurrent::run(Hardware::set_brightness, brightness);
+      last_brightness = brightness;
+    }
   }
-  last_brightness = brightness;
 }
 
 bool Device::motionTriggered(const UIState &s) {
