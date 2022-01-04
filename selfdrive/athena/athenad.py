@@ -264,7 +264,7 @@ def reboot():
 @dispatcher.add_method
 def uploadFileToUrl(fn, url, headers):
   res = uploadFilesToUrls([[fn, url, headers]])
-  if type(res) != dict:
+  if not isinstance(res, dict):
     return res
 
   return {"enqueued": 1, "item": res["items"][0]}
@@ -300,7 +300,7 @@ def listUploadQueue():
 
 @dispatcher.add_method
 def cancelUpload(upload_id):
-  if type(upload_id) != list:
+  if not isinstance(upload_id, list):
     upload_id = [upload_id]
 
   uploading_ids = {item.id for item in list(upload_queue.queue)}
