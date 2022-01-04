@@ -40,13 +40,25 @@ jobs:
     timeout-minutes: 50
     env:
       IMAGE_NAME: openpilot-sim
-    if: ${{ false }}  # disable until LFS quota is fixed
-    #if: github.repository == 'commaai/openpilot'
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: true
-        lfs: true
+
+    # HACK: cache LFS objects since they count against our quota
+    # https://github.com/actions/checkout/issues/165#issuecomment-657673315
+    - name: Create LFS file list
+      run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
+    - name: Restore LFS cache
+      uses: actions/cache@v2
+      id: lfs-cache
+      with:
+        path: .git/lfs
+        key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}
+    - name: Git LFS Pull
+      run: git lfs pull
+
     - name: Build Docker image
       run: |
         eval "$BUILD"
