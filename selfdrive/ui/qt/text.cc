@@ -10,9 +10,29 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
+class TouchEventEater : public QObject {
+public:
+  TouchEventEater(QObject *parent) : QObject(parent) {}
+  bool eventFilter(QObject *obj, QEvent *event) override {
+#ifdef QCOM
+    // filter out touches while in android activity
+    const static QSet<QEvent::Type> filter_events({QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
+    if (HardwareEon::launched_activity && filter_events.contains(event->type())) {
+      HardwareEon::check_activity();
+      if (HardwareEon::launched_activity) {
+        return true;
+      }
+    }
+#endif
+    return false;
+  }
+};
+
 int main(int argc, char *argv[]) {
   initApp();
   QApplication a(argc, argv);
+  a.installEventFilter(new TouchEventEater(&a));
+
   QWidget window;
   setMainWindow(&window);
 
@@ -35,13 +55,13 @@ int main(int argc, char *argv[]) {
   if (!Hardware::PC()) {
 #ifdef QCOM
     QPushButton *wifiBtn = new QPushButton("Wi-Fi Settings");
-    QObject::connect(wifiBtn, &ButtonControl::clicked, [=]() { 
+    QObject::connect(wifiBtn, &ButtonControl::clicked, []() { 
       HardwareEon::launch_wifi(); 
     });
     button_layout->addWidget(wifiBtn);
 #endif
     QPushButton *btn = new QPushButton("Reboot");
-    QObject::connect(btn, &QPushButton::clicked, [=]() {
+    QObject::connect(btn, &QPushButton::clicked, []() {
       Hardware::reboot();
     });
     button_layout->addWidget(btn);
