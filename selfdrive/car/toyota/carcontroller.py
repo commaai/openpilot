@@ -26,7 +26,7 @@ class CarController():
              left_line, right_line, lead, left_lane_depart, right_lane_depart):
 
     # gas and brake
-    if CS.CP.enableGasInterceptor and enabled:
+    if CS.CP.enableGasInterceptor and CS.CP.openpilotLongitudinalControl and enabled:
       MAX_INTERCEPTOR_GAS = 0.5
       # RAV4 has very sensitive gas pedal
       if CS.CP.carFingerprint in [CAR.RAV4, CAR.RAV4H, CAR.HIGHLANDER, CAR.HIGHLANDERH]:
