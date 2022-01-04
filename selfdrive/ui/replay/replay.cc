@@ -149,7 +149,7 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
 
     LogReader log;
     bool cache_to_local = true;  // cache qlog to local for fast seek
-    if (!log.load(route_->at(n).qlog.toStdString(), nullptr, cache_to_local, 0, 3)) continue;
+    if (!log.load(route_->at(n).qlog.toStdString(), cache_to_local, nullptr, 0, 3)) continue;
 
     for (const Event *e : log.events) {
       if (e->mono_time > cur_mono_time_ && e->which == cereal::Event::Which::CONTROLS_STATE) {
