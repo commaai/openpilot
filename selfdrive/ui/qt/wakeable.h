@@ -5,7 +5,7 @@
 class Wakeable {
 
   public:
-    virtual void resetInteractiveTimout(); 
+    virtual void resetInteractiveTimout() = 0; 
 
   protected:
     bool awake = false;
