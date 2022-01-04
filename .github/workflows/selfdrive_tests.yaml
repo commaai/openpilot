@@ -356,8 +356,8 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     strategy:
+      fail-fast: false
       matrix:
-        fail-fast: false
         job: [0, 1, 2, 3]
     steps:
     - uses: actions/checkout@v2
