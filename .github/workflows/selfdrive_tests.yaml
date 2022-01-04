@@ -386,7 +386,7 @@ jobs:
     - name: Test car models
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test && \
-                        FILEREADER_CACHE=1 pytest -n 4 selfdrive/test/test_models.py && \
+                        FILEREADER_CACHE=1 pytest selfdrive/test/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4
