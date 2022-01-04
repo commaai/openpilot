@@ -150,7 +150,7 @@ class Controls:
     self.v_cruise_kph_last = 0
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
-    self.can_error_counter = 0
+    self.can_rcv_error_counter = 0
     self.last_blinker_frame = 0
     self.saturated_count = 0
     self.distance_traveled = 0
@@ -253,13 +253,9 @@ class Controls:
                                                  LaneChangeState.laneChangeFinishing]:
       self.events.add(EventName.laneChange)
 
-    if self.can_rcv_error or not CS.canValid:
-      pass
       # TODO: JJS - figure out why - CS.canValid is false so much
-      # This is firing a LOT on GM...
-      # if (not CS.canValid):
-      #   cloudlog.error("###@@@ controlsd.py.Controls.update_events: CS.canValid false")
-      #self.events.add(EventName.canError)
+    if not CS.canValid:
+      self.events.add(EventName.canError)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
@@ -279,13 +275,13 @@ class Controls:
     elif not self.sm.valid["pandaStates"]:
       self.events.add(EventName.usbError)
     # TODO: JJS - Silverado is throwing this on engage. Shock and awe campaign to stop it...  
-    # elif not self.sm.all_alive_and_valid():
-    #   self.events.add(EventName.commIssue)
-    #   if not self.logged_comm_issue:
-    #     invalid = [s for s, valid in self.sm.valid.items() if not valid]
-    #     not_alive = [s for s, alive in self.sm.alive.items() if not alive]
-    #     cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive)
-    #     self.logged_comm_issue = True
+    elif not self.sm.all_alive_and_valid() or self.can_rcv_error:
+      self.events.add(EventName.commIssue)
+      if not self.logged_comm_issue:
+        invalid = [s for s, valid in self.sm.valid.items() if not valid]
+        not_alive = [s for s, alive in self.sm.alive.items() if not alive]
+        cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive)
+        self.logged_comm_issue = True
     else:
       self.logged_comm_issue = False
 
@@ -384,7 +380,7 @@ class Controls:
 
     # Check for CAN timeout
     if not can_strs:
-      self.can_error_counter += 1
+      self.can_rcv_error_counter += 1
       self.can_rcv_error = True
       cloudlog.error("###@@@ gm controlsd.py can_strs (timeout?) false")
       
@@ -673,7 +669,7 @@ class Controls:
     controlsState.cumLagMs = -self.rk.remaining * 1000.
     controlsState.startMonoTime = int(start_time * 1e9)
     controlsState.forceDecel = bool(force_decel)
-    controlsState.canErrorCounter = self.can_error_counter
+    controlsState.canErrorCounter = self.can_rcv_error_counter
 
     if self.joystick_mode:
       controlsState.lateralControlState.debugState = lac_log
