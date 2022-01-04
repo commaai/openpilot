@@ -126,7 +126,6 @@ public:
   UIStatus status;
   UIScene scene = {};
 
-  bool awake;
   bool has_prime = false;
 
   QTransform car_space_transform;
@@ -135,6 +134,7 @@ public:
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
+  void displayPowerChanged(bool on);
 
 private slots:
   void update();
@@ -174,7 +174,7 @@ signals:
   void interactiveTimout();
 
 public slots:
-  void resetInteractiveTimout();
+  virtual void resetInteractiveTimout();
   void update(const UIState &s);
 };
 

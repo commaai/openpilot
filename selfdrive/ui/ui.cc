@@ -248,18 +248,17 @@ void UIState::update() {
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
+  // Connect device signal directly to UI state signal for awake boolean
+  QObject::connect(this, &Device::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
+
   setAwake(true);
   resetInteractiveTimout();
-
-  QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
 }
 
 void Device::update(const UIState &s) {
   updateBrightness(s);
   updateWakefulness(s);
-
-  // TODO: remove from UIState and use signals
-  uiState()->awake = awake;
 }
 
 void Device::setAwake(bool on) {
