@@ -176,12 +176,13 @@ class Calibrator():
     extrinsic_matrix = get_view_frame_from_road_frame(0, smooth_rpy[1], smooth_rpy[2], model_height)
 
     msg = messaging.new_message('liveCalibration')
-    msg.liveCalibration.validBlocks = self.valid_blocks
-    msg.liveCalibration.calStatus = self.cal_status
-    msg.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
-    msg.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
-    msg.liveCalibration.rpyCalib = [float(x) for x in smooth_rpy]
-    msg.liveCalibration.rpyCalibSpread = [float(x) for x in self.calib_spread]
+    liveCalibration = msg.liveCalibration
+    liveCalibration.validBlocks = self.valid_blocks
+    liveCalibration.calStatus = self.cal_status
+    liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
+    liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
+    liveCalibration.rpyCalib = [float(x) for x in smooth_rpy]
+    liveCalibration.rpyCalibSpread = [float(x) for x in self.calib_spread]
     return msg
 
   def send_data(self, pm) -> None:
