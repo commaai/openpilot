@@ -2,6 +2,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QSet>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -55,7 +56,7 @@ int main(int argc, char *argv[]) {
   if (!Hardware::PC()) {
 #ifdef QCOM
     QPushButton *wifiBtn = new QPushButton("Wi-Fi Settings");
-    QObject::connect(wifiBtn, &ButtonControl::clicked, []() { 
+    QObject::connect(wifiBtn, &QPushButton::clicked, []() { 
       HardwareEon::launch_wifi(); 
     });
     button_layout->addWidget(wifiBtn);
