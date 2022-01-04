@@ -263,11 +263,7 @@ def reboot():
 
 @dispatcher.add_method
 def uploadFileToUrl(fn, url, headers):
-  res = uploadFilesToUrls([[fn, url, headers]])
-  if not isinstance(res, dict):
-    return res
-
-  return {"enqueued": 1, "item": res["items"][0]}
+  return uploadFilesToUrls([[fn, url, headers]])
 
 
 @dispatcher.add_method
