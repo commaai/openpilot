@@ -91,6 +91,11 @@ class Events:
     for e in events:
       self.events.append(e.name.raw)
 
+  def add_from_events(self, events):
+    for e in events:
+      self.static_events.extend(e.static_events)
+      self.events.extend(e.events)
+
   def to_msg(self):
     ret = []
     for event_name in self.events:

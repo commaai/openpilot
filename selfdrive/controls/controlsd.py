@@ -127,6 +127,7 @@ class Controls:
     self.CC = car.CarControl.new_message()
     self.AM = AlertManager()
     self.events = Events()
+    self.latest_events = dict()
 
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
@@ -191,7 +192,12 @@ class Controls:
 
     self.events.clear()
     self.events.add_from_msg(CS.events)
-    self.events.add_from_msg(self.sm['driverMonitoringState'].events)
+
+    if self.sm.updated['driverMonitoringState']:
+      events = Events()
+      events.add_from_msg(self.sm['driverMonitoringState'].events)
+      self.latest_events['driverMonitoringState'] = events
+
 
     # Handle startup event
     if self.startup_event is not None:
@@ -203,70 +209,87 @@ class Controls:
       self.events.add(EventName.controlsInitializing)
       return
 
-    # Create events for battery, temperature, disk space, and memory
-    if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
-       self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
-      # at zero percent battery, while discharging, OP should not allowed
-      self.events.add(EventName.lowBattery)
-    if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
-      self.events.add(EventName.overheat)
-    if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
-      # under 7% of space free no enable allowed
-      self.events.add(EventName.outOfSpace)
-    # TODO: make tici threshold the same
-    if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not SIMULATION:
-      self.events.add(EventName.lowMemory)
+    if self.sm.updated['deviceState']:
+      events = Events()
+      # Create events for battery, temperature, disk space, and memory
+      if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
+        self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
+        # at zero percent battery, while discharging, OP should not allowed
+        events.add(EventName.lowBattery)
+      if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
+        events.add(EventName.overheat)
+      if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
+        # under 7% of space free no enable allowed
+        events.add(EventName.outOfSpace)
+      # TODO: make tici threshold the same
+      if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not SIMULATION:
+        events.add(EventName.lowMemory)
+      
+      # TODO: enable this once loggerd CPU usage is more reasonable
+      #cpus = list(self.sm['deviceState'].cpuUsagePercent)[:(-1 if EON else None)]
+      #if max(cpus, default=0) > 95 and not SIMULATION:
+      #  self.events.add(EventName.highCpuUsage)
 
-    # TODO: enable this once loggerd CPU usage is more reasonable
-    #cpus = list(self.sm['deviceState'].cpuUsagePercent)[:(-1 if EON else None)]
-    #if max(cpus, default=0) > 95 and not SIMULATION:
-    #  self.events.add(EventName.highCpuUsage)
+      # Alert if fan isn't spinning for 5 seconds
+      if self.sm['peripheralState'].pandaType in [PandaType.uno, PandaType.dos]:
+        if self.sm['peripheralState'].fanSpeedRpm == 0 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
+          if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
+            events.add(EventName.fanMalfunction)
+        else:
+          self.last_functional_fan_frame = self.sm.frame
 
-    # Alert if fan isn't spinning for 5 seconds
-    if self.sm['peripheralState'].pandaType in [PandaType.uno, PandaType.dos]:
-      if self.sm['peripheralState'].fanSpeedRpm == 0 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
-        if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
-          self.events.add(EventName.fanMalfunction)
-      else:
-        self.last_functional_fan_frame = self.sm.frame
+      self.latest_events['deviceState'] = events
 
     # Handle calibration status
-    cal_status = self.sm['liveCalibration'].calStatus
-    if cal_status != Calibration.CALIBRATED:
-      if cal_status == Calibration.UNCALIBRATED:
-        self.events.add(EventName.calibrationIncomplete)
-      else:
-        self.events.add(EventName.calibrationInvalid)
-
-    # Handle lane change
-    if self.sm['lateralPlan'].laneChangeState == LaneChangeState.preLaneChange:
-      direction = self.sm['lateralPlan'].laneChangeDirection
-      if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
-         (CS.rightBlindspot and direction == LaneChangeDirection.right):
-        self.events.add(EventName.laneChangeBlocked)
-      else:
-        if direction == LaneChangeDirection.left:
-          self.events.add(EventName.preLaneChangeLeft)
+    if self.sm.updated['liveCalibration']:
+      events = Events()
+      cal_status = self.sm['liveCalibration'].calStatus
+      if cal_status != Calibration.CALIBRATED:
+        if cal_status == Calibration.UNCALIBRATED:
+          events.add(EventName.calibrationIncomplete)
         else:
-          self.events.add(EventName.preLaneChangeRight)
-    elif self.sm['lateralPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
-                                                 LaneChangeState.laneChangeFinishing]:
-      self.events.add(EventName.laneChange)
+          events.add(EventName.calibrationInvalid)
+      
+      self.latest_events['liveCalibration'] = events
+      
+    # Handle lane change
+    if self.sm.updated['lateralPlan']:
+      events = Events()
+      if self.sm['lateralPlan'].laneChangeState == LaneChangeState.preLaneChange:
+        direction = self.sm['lateralPlan'].laneChangeDirection
+        if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
+          (CS.rightBlindspot and direction == LaneChangeDirection.right):
+          events.add(EventName.laneChangeBlocked)
+        else:
+          if direction == LaneChangeDirection.left:
+            events.add(EventName.preLaneChangeLeft)
+          else:
+            events.add(EventName.preLaneChangeRight)
+      elif self.sm['lateralPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
+                                                  LaneChangeState.laneChangeFinishing]:
+        events.add(EventName.laneChange)
+
+      self.latest_events['lateralPlan'] = events
 
     if not CS.canValid:
       self.events.add(EventName.canError)
 
-    for i, pandaState in enumerate(self.sm['pandaStates']):
-      # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
-      if i < len(self.CP.safetyConfigs):
-        safety_mismatch = pandaState.safetyModel != self.CP.safetyConfigs[i].safetyModel or pandaState.safetyParam != self.CP.safetyConfigs[i].safetyParam
-      else:
-        safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
-      if safety_mismatch or self.mismatch_counter >= 200:
-        self.events.add(EventName.controlsMismatch)
+    if self.sm.updated['pandaStates']:
+      events = Events()
+      for i, pandaState in enumerate(self.sm['pandaStates']):
+        # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
+        if i < len(self.CP.safetyConfigs):
+          safety_mismatch = pandaState.safetyModel != self.CP.safetyConfigs[i].safetyModel or pandaState.safetyParam != self.CP.safetyConfigs[i].safetyParam
+        else:
+          safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
+        if safety_mismatch or self.mismatch_counter >= 200:
+          events.add(EventName.controlsMismatch)
 
-      if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
-        self.events.add(EventName.relayMalfunction)
+        if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
+          events.add(EventName.relayMalfunction)
+
+      self.latest_events['pandaStates'] = events
+      
 
     # Check for HW or system issues
     if len(self.sm['radarState'].radarErrors):
@@ -343,19 +366,29 @@ class Controls:
         self.events.add(EventName.localizerMalfunction)
 
       # Check if all manager processes are running
-      not_running = {p.name for p in self.sm['managerState'].processes if not p.running}
-      if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
-        self.events.add(EventName.processNotRunning)
+      if self.sm.updated['managerState']:
+        events = Events()
+        not_running = {p.name for p in self.sm['managerState'].processes if not p.running}
+        if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
+          events.add(EventName.processNotRunning)
+        
+        self.latest_events['managerState'] = events
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
-    speeds = self.sm['longitudinalPlan'].speeds
-    if len(speeds) > 1:
-      v_future = speeds[-1]
-    else:
-      v_future = 100.0
-    if CS.brakePressed and v_future >= self.CP.vEgoStarting \
-      and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3:
-      self.events.add(EventName.noTarget)
+    if self.sm.updated['longitudinalPlan']:
+      events = Events()
+      speeds = self.sm['longitudinalPlan'].speeds
+      if len(speeds) > 1:
+        v_future = speeds[-1]
+      else:
+        v_future = 100.0
+      if CS.brakePressed and v_future >= self.CP.vEgoStarting \
+        and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3:
+        events.add(EventName.noTarget)
+      
+      self.latest_events['longitudinalPlan'] = events
+    
+    self.events.add_from_events(self.latest_events.values())
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
