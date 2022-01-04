@@ -7,9 +7,10 @@ from itertools import chain
 from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
 
-SEGMENT_NAME_RE = r'[a-z0-9]{16}[|_][0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2}--[0-9]+'
-EXPLORER_FILE_RE = r'^({})--([a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME_RE)
-OP_SEGMENT_DIR_RE = r'^({})$'.format(SEGMENT_NAME_RE)
+ROUTE_NAME_RE = r'(?P<dongle_id>[a-z0-9]{16})[|_/](?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2})'
+SEGMENT_NAME_RE = r'{}(?:--|/)(?P<segment_num>[0-9]+)'.format(ROUTE_NAME_RE)
+EXPLORER_FILE_RE = r'^(?P<segment_name>{})--(?P<file_name>[a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME_RE)
+OP_SEGMENT_DIR_RE = r'^(?P<segment_name>{})$'.format(SEGMENT_NAME_RE)
 
 QLOG_FILENAMES = ['qlog.bz2']
 QCAMERA_FILENAMES = ['qcamera.ts']
@@ -18,48 +19,52 @@ CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']
 
-class Route(object):
-  def __init__(self, route_name, data_dir=None):
+class Route:
+  def __init__(self, name, data_dir=None):
+    self._name = RouteName(name)
     self.files = None
-    self.route_name = route_name.replace('_', '|')
     if data_dir is not None:
       self._segments = self._get_segments_local(data_dir)
     else:
       self._segments = self._get_segments_remote()
-    self.max_seg_number = self._segments[-1].canonical_name.segment_num
+    self.max_seg_number = self._segments[-1].name.segment_num
+
+  @property
+  def name(self):
+    return self._name
 
   @property
   def segments(self):
     return self._segments
 
   def log_paths(self):
-    log_path_by_seg_num = {s.canonical_name.segment_num: s.log_path for s in self._segments}
+    log_path_by_seg_num = {s.name.segment_num: s.log_path for s in self._segments}
     return [log_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
   def qlog_paths(self):
-    qlog_path_by_seg_num = {s.canonical_name.segment_num: s.qlog_path for s in self._segments}
+    qlog_path_by_seg_num = {s.name.segment_num: s.qlog_path for s in self._segments}
     return [qlog_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
   def camera_paths(self):
-    camera_path_by_seg_num = {s.canonical_name.segment_num: s.camera_path for s in self._segments}
+    camera_path_by_seg_num = {s.name.segment_num: s.camera_path for s in self._segments}
     return [camera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
   def dcamera_paths(self):
-    dcamera_path_by_seg_num = {s.canonical_name.segment_num: s.dcamera_path for s in self._segments}
+    dcamera_path_by_seg_num = {s.name.segment_num: s.dcamera_path for s in self._segments}
     return [dcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
   def ecamera_paths(self):
-    ecamera_path_by_seg_num = {s.canonical_name.segment_num: s.ecamera_path for s in self._segments}
+    ecamera_path_by_seg_num = {s.name.segment_num: s.ecamera_path for s in self._segments}
     return [ecamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
   def qcamera_paths(self):
-    qcamera_path_by_seg_num = {s.canonical_name.segment_num: s.qcamera_path for s in self._segments}
+    qcamera_path_by_seg_num = {s.name.segment_num: s.qcamera_path for s in self._segments}
     return [qcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
   # TODO: refactor this, it's super repetitive
   def _get_segments_remote(self):
     api = CommaApi(get_token())
-    route_files = api.get('v1/route/' + self.route_name + '/files')
+    route_files = api.get('v1/route/' + self.name.canonical_name + '/files')
     self.files = list(chain.from_iterable(route_files.values()))
 
     segments = {}
@@ -67,7 +72,7 @@ class Route(object):
       _, dongle_id, time_str, segment_num, fn = urlparse(url).path.rsplit('/', maxsplit=4)
       segment_name = f'{dongle_id}|{time_str}--{segment_num}'
       if segments.get(segment_name):
-        segments[segment_name] = RouteSegment(
+        segments[segment_name] = Segment(
           segment_name,
           url if fn in LOG_FILENAMES else segments[segment_name].log_path,
           url if fn in QLOG_FILENAMES else segments[segment_name].qlog_path,
@@ -77,7 +82,7 @@ class Route(object):
           url if fn in QCAMERA_FILENAMES else segments[segment_name].qcamera_path,
         )
       else:
-        segments[segment_name] = RouteSegment(
+        segments[segment_name] = Segment(
           segment_name,
           url if fn in LOG_FILENAMES else None,
           url if fn in QLOG_FILENAMES else None,
@@ -87,7 +92,7 @@ class Route(object):
           url if fn in QCAMERA_FILENAMES else None,
         )
 
-    return sorted(segments.values(), key=lambda seg: seg.canonical_name.segment_num)
+    return sorted(segments.values(), key=lambda seg: seg.name.segment_num)
 
   def _get_segments_local(self, data_dir):
     files = os.listdir(data_dir)
@@ -99,20 +104,21 @@ class Route(object):
       op_match = re.match(OP_SEGMENT_DIR_RE, f)
 
       if explorer_match:
-        segment_name, fn = explorer_match.groups()
-        if segment_name.replace('_', '|').startswith(self.route_name):
+        segment_name = explorer_match.group('segment_name')
+        fn = explorer_match.group('file_name')
+        if segment_name.replace('_', '|').startswith(self.name.canonical_name):
           segment_files[segment_name].append((fullpath, fn))
       elif op_match and os.path.isdir(fullpath):
-        segment_name, = op_match.groups()
-        if segment_name.startswith(self.route_name):
+        segment_name = op_match.group('segment_name')
+        if segment_name.startswith(self.name.canonical_name):
           for seg_f in os.listdir(fullpath):
             segment_files[segment_name].append((os.path.join(fullpath, seg_f), seg_f))
-      elif f == self.route_name:
+      elif f == self.name.canonical_name:
         for seg_num in os.listdir(fullpath):
           if not seg_num.isdigit():
             continue
 
-          segment_name = '{}--{}'.format(self.route_name, seg_num)
+          segment_name = f'{self.name.canonical_name}--{seg_num}'
           for seg_f in os.listdir(os.path.join(fullpath, seg_num)):
             segment_files[segment_name].append((os.path.join(fullpath, seg_num, seg_f), seg_f))
 
@@ -149,15 +155,15 @@ class Route(object):
       except StopIteration:
         qcamera_path = None
 
-      segments.append(RouteSegment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path))
+      segments.append(Segment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path))
 
     if len(segments) == 0:
-      raise ValueError('Could not find segments for route {} in data directory {}'.format(self.route_name, data_dir))
-    return sorted(segments, key=lambda seg: seg.canonical_name.segment_num)
+      raise ValueError(f'Could not find segments for route {self.name.canonical_name} in data directory {data_dir}')
+    return sorted(segments, key=lambda seg: seg.name.segment_num)
 
-class RouteSegment(object):
+class Segment:
   def __init__(self, name, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path):
-    self._name = RouteSegmentName(name)
+    self._name = SegmentName(name)
     self.log_path = log_path
     self.qlog_path = qlog_path
     self.camera_path = camera_path
@@ -167,21 +173,55 @@ class RouteSegment(object):
 
   @property
   def name(self):
-    return str(self._name)
-
-  @property
-  def canonical_name(self):
     return self._name
 
-class RouteSegmentName(object):
-  def __init__(self, name_str):
-    self._segment_name_str = name_str
-    self._route_name_str, num_str = self._segment_name_str.rsplit("--", 1)
-    self._num = int(num_str)
+class RouteName:
+  def __init__(self, name_str: str):
+    self._name_str = name_str
+    delim = next(c for c in self._name_str if c in ("|", "/"))
+    self._dongle_id, self._time_str = self._name_str.split(delim)
+
+    assert len(self._dongle_id) == 16, self._name_str
+    assert len(self._time_str) == 20, self._name_str
+    self._canonical_name = f"{self._dongle_id}|{self._time_str}"
 
   @property
-  def segment_num(self):
-    return self._num
+  def canonical_name(self) -> str: return self._canonical_name
 
-  def __str__(self):
-    return self._segment_name_str
+  @property
+  def dongle_id(self) -> str: return self._dongle_id
+
+  @property
+  def time_str(self) -> str: return self._time_str
+
+  def __str__(self) -> str: return self._canonical_name
+
+class SegmentName:
+  # TODO: add constructor that takes dongle_id, time_str, segment_num and then create instances
+  # of this class instead of manually constructing a segment name (use canonical_name prop instead)
+  def __init__(self, name_str: str, allow_route_name=False):
+    self._name_str = name_str
+    seg_num_delim = "--" if self._name_str.count("--") == 2 else "/"
+    name_parts = self._name_str.rsplit(seg_num_delim, 1)
+    if allow_route_name and len(name_parts) == 1:
+      name_parts.append("-1") # no segment number
+    self._route_name = RouteName(name_parts[0])
+    self._num = int(name_parts[1])
+    self._canonical_name = f"{self._route_name._dongle_id}|{self._route_name._time_str}--{self._num}"
+
+  @property
+  def canonical_name(self) -> str: return self._canonical_name
+
+  @property
+  def dongle_id(self) -> str: return self._route_name.dongle_id
+
+  @property
+  def time_str(self) -> str: return self._route_name.time_str
+
+  @property
+  def segment_num(self) -> int: return self._num
+
+  @property
+  def route_name(self) -> RouteName: return self._route_name
+
+  def __str__(self) -> str: return self._canonical_name

@@ -17,12 +17,13 @@
 
 namespace {
 
-static std::atomic<bool> enable_http_logging = false;
-
 struct CURLGlobalInitializer {
   CURLGlobalInitializer() { curl_global_init(CURL_GLOBAL_DEFAULT); }
   ~CURLGlobalInitializer() { curl_global_cleanup(); }
 };
+
+static CURLGlobalInitializer curl_initializer;
+static std::atomic<bool> enable_http_logging = false;
 
 template <class T>
 struct MultiPartWriter {
@@ -98,8 +99,6 @@ void enableHttpLogging(bool enable) {
 
 template <class T>
 bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
-  static CURLGlobalInitializer curl_initializer;
-
   int parts = 1;
   if (chunk_size > 0 && content_length > 10 * 1024 * 1024) {
     parts = std::nearbyint(content_length / (float)chunk_size);
@@ -193,11 +192,11 @@ bool httpDownload(const std::string &url, const std::string &file, size_t chunk_
   return httpDownload(url, of, chunk_size, size, abort);
 }
 
-std::string decompressBZ2(const std::string &in) {
-  return decompressBZ2((std::byte *)in.data(), in.size());
+std::string decompressBZ2(const std::string &in, std::atomic<bool> *abort) {
+  return decompressBZ2((std::byte *)in.data(), in.size(), abort);
 }
 
-std::string decompressBZ2(const std::byte *in, size_t in_size) {
+std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool> *abort) {
   if (in_size == 0) return {};
 
   bz_stream strm = {};
@@ -223,10 +222,10 @@ std::string decompressBZ2(const std::byte *in, size_t in_size) {
     if (bzerror == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
       out.resize(out.size() * 2);
     }
-  } while (bzerror == BZ_OK);
+  } while (bzerror == BZ_OK && !(abort && *abort));
 
   BZ2_bzDecompressEnd(&strm);
-  if (bzerror == BZ_STREAM_END) {
+  if (bzerror == BZ_STREAM_END && !(abort && *abort)) {
     out.resize(strm.total_out_lo32);
     return out;
   }

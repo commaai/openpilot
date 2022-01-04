@@ -106,7 +106,7 @@ void MapWindow::initLayers() {
 }
 
 void MapWindow::timerUpdate() {
-  if (!QUIState::ui_state.scene.started) {
+  if (!uiState()->scene.started) {
     return;
   }
 
@@ -387,7 +387,7 @@ void MapInstructions::updateDistance(float d) {
   d = std::max(d, 0.0f);
   QString distance_str;
 
-  if (QUIState::ui_state.scene.is_metric) {
+  if (uiState()->scene.is_metric) {
     if (d > 500) {
       distance_str.setNum(d / 1000, 'f', 1);
       distance_str += " km";
@@ -498,10 +498,9 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
       fn += "turn_straight";
     }
 
-    QPixmap pix(fn + ICON_SUFFIX);
     auto icon = new QLabel;
     int wh = active ? 125 : 75;
-    icon->setPixmap(pix.scaled(wh, wh, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+    icon->setPixmap(loadPixmap(fn + ICON_SUFFIX, {wh, wh}, Qt::IgnoreAspectRatio));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     lane_layout->addWidget(icon);
   }
@@ -620,7 +619,7 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   // Distance
   QString distance_str;
   float num = 0;
-  if (QUIState::ui_state.scene.is_metric) {
+  if (uiState()->scene.is_metric) {
     num = d / 1000.0;
     distance_unit->setText("km");
   } else {

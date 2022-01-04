@@ -84,8 +84,21 @@ NISSAN_VERSION_RESPONSE_STANDARD =  bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIF
 
 NISSAN_RX_OFFSET = 0x20
 
+SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+
+
 # brand, request, response, response offset
 REQUESTS = [
+  # Subaru
+  (
+    "subaru",
+    [TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+    [TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
+  ),
   # Hyundai
   (
     "hyundai",
@@ -221,7 +234,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   if match_count >= 2:
     if log:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
-    return set([candidate])
+    return {candidate}
   else:
     return set()
 
@@ -362,7 +375,7 @@ if __name__ == "__main__":
   print("Getting vin...")
   addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
   print(f"VIN: {vin}")
-  print("Getting VIN took %.3f s" % (time.time() - t))
+  print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
 
   t = time.time()
@@ -379,4 +392,4 @@ if __name__ == "__main__":
 
   print()
   print("Possible matches:", candidates)
-  print("Getting fw took %.3f s" % (time.time() - t))
+  print(f"Getting fw took {time.time() - t:.3f} s")

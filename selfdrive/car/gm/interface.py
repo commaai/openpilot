@@ -212,7 +212,8 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    hud_v_cruise = c.hudControl.setSpeed
+    hud_control = c.hudControl
+    hud_v_cruise = hud_control.setSpeed
     if hud_v_cruise > 70:
       hud_v_cruise = 0
 
@@ -220,10 +221,10 @@ class CarInterface(CarInterfaceBase):
     # In GM, PCM faults out if ACC command overlaps user gas.
     enabled = c.enabled and not self.CS.out.gasPressed
 
-    can_sends = self.CC.update(enabled, self.CS, self.frame,
-                               c.actuators,
-                               hud_v_cruise, c.hudControl.lanesVisible,
-                               c.hudControl.leadVisible, c.hudControl.visualAlert)
+    ret = self.CC.update(enabled, self.CS, self.frame,
+                         c.actuators,
+                         hud_v_cruise, hud_control.lanesVisible,
+                         hud_control.leadVisible, hud_control.visualAlert)
 
     self.frame += 1
-    return can_sends
+    return ret

@@ -87,4 +87,7 @@ class CarController():
           self.packer, lkas_hud_info_msg, steer_hud_alert
         ))
 
-    return can_sends
+    new_actuators = actuators.copy()
+    new_actuators.steeringAngleDeg = apply_angle
+
+    return new_actuators, can_sends

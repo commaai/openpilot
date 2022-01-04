@@ -7,6 +7,7 @@ import signal
 import subprocess
 import time
 import glob
+from typing import NoReturn
 
 import sentry_sdk
 
@@ -15,7 +16,7 @@ from common.file_helpers import mkdirs_exists_ok
 from selfdrive.hardware import TICI, HARDWARE
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
-from selfdrive.version import get_branch, get_commit, get_dirty, get_origin, get_version
+from selfdrive.version import get_branch, get_commit, is_dirty, get_origin, get_version
 
 MAX_SIZE = 100000 * 10  # mal size is 40-100k, allow up to 1M
 if TICI:
@@ -197,7 +198,7 @@ def report_tombstone_apport(fn):
     pass
 
 
-def main():
+def main() -> NoReturn:
   clear_apport_folder()  # Clear apport folder on start, otherwise duplicate crashes won't register
   initial_tombstones = set(get_tombstones())
 
@@ -207,7 +208,7 @@ def main():
 
   dongle_id = Params().get("DongleId", encoding='utf-8')
   sentry_sdk.set_user({"id": dongle_id})
-  sentry_sdk.set_tag("dirty", get_dirty())
+  sentry_sdk.set_tag("dirty", is_dirty())
   sentry_sdk.set_tag("origin", get_origin())
   sentry_sdk.set_tag("branch", get_branch())
   sentry_sdk.set_tag("commit", get_commit())

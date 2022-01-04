@@ -22,7 +22,7 @@ def hash_256(link):
   return hsh
 
 
-class URLFile(object):
+class URLFile:
   _tlocal = threading.local()
 
   def __init__(self, url, debug=False, cache=None):
@@ -70,7 +70,7 @@ class URLFile(object):
       return self._length
     file_length_path = os.path.join(CACHE_DIR, hash_256(self._url) + "_length")
     if os.path.exists(file_length_path) and not self._force_download:
-      with open(file_length_path, "r") as file_length:
+      with open(file_length_path) as file_length:
           content = file_length.read()
           self._length = int(content)
           return self._length
@@ -156,7 +156,7 @@ class URLFile(object):
     if self._debug:
       t2 = time.time()
       if t2 - t1 > 0.1:
-        print("get %s %r %.f slow" % (self._url, headers, t2 - t1))
+        print(f"get {self._url} {headers!r} {t2 - t1:.f} slow")
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
     if response_code == 416:  # Requested Range Not Satisfiable

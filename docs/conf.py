@@ -16,16 +16,22 @@
 import os
 from os.path import exists
 import sys
+from selfdrive.version import get_version
+from common.basedir import BASEDIR
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
-OPENPILOT_ROOT = os.path.abspath(r'../../') # from openpilot/build/docs
+
+VERSION = get_version()
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'openpilot'
+project = 'openpilot docs'
 copyright = '2021, comma.ai'
 author = 'comma.ai'
+version = VERSION
+release = VERSION
+language = 'en'
 
 
 # -- General configuration ---------------------------------------------------
@@ -39,7 +45,33 @@ extensions = [
         'sphinx_rtd_theme',     # Read The Docs theme
         'myst_parser',          # Markdown parsing
         'breathe',              # Doxygen C/C++ integration
+        'sphinx_sitemap',       # sitemap generation for SEO
 ]
+
+myst_html_meta = {
+   "description": "openpilot docs",
+   "keywords": "op, openpilot, docs, documentation",
+   "robots": "all,follow",
+   "googlebot": "index,follow,snippet,archive",
+   "property=og:locale": "en_US",
+   "property=og:site_name": "docs.comma.ai",
+   "property=og:url": "https://docs.comma.ai",
+   "property=og:title": "openpilot Docuemntation",
+   "property=og:type": "website",
+   "property=og:image:type": "image/jpeg",
+   "property=og:image:width": "400",
+   "property=og:image": "https://docs.comma.ai/_static/logo.png",
+   "property=og:image:url": "https://docs.comma.ai/_static/logo.png",
+   "property=og:image:secure_url": "https://docs.comma.ai/_static/logo.png",
+   "property=og:description": "openpilot Documentation",
+   "property=twitter:card": "summary_large_image",
+   "property=twitter:logo": "https://docs.comma.ai/_static/logo.png",
+   "property=twitter:title": "openpilot Documentation",
+   "property=twitter:description": "openpilot Documentation"
+}
+
+html_baseurl = 'https://docs.comma.ai/'
+sitemap_filename = "sitemap.xml"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -54,43 +86,38 @@ exclude_patterns = []
 
 # Breathe Configuration
 # breathe_default_project = "c_docs"
-breathe_build_directory = f"{OPENPILOT_ROOT}/build/docs/html/xml"
+breathe_build_directory = f"{BASEDIR}/build/docs/html/xml"
 breathe_separate_member_pages = True
 breathe_default_members = ('members', 'private-members', 'undoc-members')
 breathe_domain_by_extension = {
-        "h" : "cc",
-        }
+  "h": "cc",
+}
 breathe_implementation_filename_extensions = ['.c', '.cc', '.cpp']
 breathe_doxygen_config_options = {}
-breathe_projects_source  = {
-        # "loggerd" : ("../../../selfdrive/loggerd", ["logger.h"])
-        }
+breathe_projects_source = {}
 
 # only document files that have accompanying .cc files next to them
 print("searching for c_docs...")
-for root, dirs, files in os.walk(OPENPILOT_ROOT):
-        found = False
-        breath_src = {}
-        breathe_srcs_list = []
+for root, dirs, files in os.walk(BASEDIR):
+  found = False
+  breath_src = {}
+  breathe_srcs_list = []
 
-        for file in files:
-                ccFile = os.path.join(root, file)[:-2] +".cc"
+  for file in files:
+    ccFile = os.path.join(root, file)[:-2] + ".cc"
 
-                if file.endswith(".h") and exists(ccFile):
-                        f = os.path.join(root, file)
-                        parent_dir = os.path.basename(os.path.dirname(f))
-                        parent_dir_abs = os.path.dirname(f)
-                        print(f"\tFOUND: {f} in {parent_dir} ({parent_dir_abs})")
+    if file.endswith(".h") and exists(ccFile):
+      f = os.path.join(root, file)
+      parent_dir = os.path.basename(os.path.dirname(f))
+      parent_dir_abs = os.path.dirname(f)
+      print(f"\tFOUND: {f} in {parent_dir} ({parent_dir_abs})")
 
-                        breathe_srcs_list.append(file)
-                        # breathe_srcs_list.append(ccFile)
-                        found = True
+      breathe_srcs_list.append(file)
+      found = True
 
-                # print(f"\tbreathe_srcs_list: {breathe_srcs_list}")
-
-                if found:
-                        breath_src[parent_dir] = (parent_dir_abs, breathe_srcs_list)
-                        breathe_projects_source.update(breath_src)
+    if found:
+      breath_src[parent_dir] = (parent_dir_abs, breathe_srcs_list)
+      breathe_projects_source.update(breath_src)
 
 print(f"breathe_projects_source: {breathe_projects_source.keys()}")
 # input("Press Enter to continue...")
@@ -101,8 +128,18 @@ print(f"breathe_projects_source: {breathe_projects_source.keys()}")
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+html_show_copyright = True
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_logo = '_static/logo.png'
+html_favicon = '_static/favicon.ico'
+html_theme_options = {
+  'logo_only': False,
+  'display_version': True,
+  'vcs_pageview_mode': 'blob',
+  'style_nav_header_background': '#000000',
+}
+html_extra_path = ['_static']
