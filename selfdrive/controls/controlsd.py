@@ -579,46 +579,51 @@ class Controls:
     CC.active = self.active
     CC.actuators = actuators
 
-    if len(self.sm['liveLocationKalman'].orientationNED.value) > 2:
-      CC.roll = self.sm['liveLocationKalman'].orientationNED.value[0]
-      CC.pitch = self.sm['liveLocationKalman'].orientationNED.value[1]
+    orientation_value = self.sm['liveLocationKalman'].orientationNED.value
+    if len(orientation_value) > 2:
+      CC.roll = orientation_value[0]
+      CC.pitch = orientation_value[1]
 
     CC.cruiseControl.cancel = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
     if self.joystick_mode and self.sm.rcv_frame['testJoystick'] > 0 and self.sm['testJoystick'].buttons[0]:
       CC.cruiseControl.cancel = True
 
-    CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
-    CC.hudControl.speedVisible = self.enabled
-    CC.hudControl.lanesVisible = self.enabled
-    CC.hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
+    hudControl = CC.hudControl
+    hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
+    hudControl.speedVisible = self.enabled
+    hudControl.lanesVisible = self.enabled
+    hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
 
-    CC.hudControl.rightLaneVisible = True
-    CC.hudControl.leftLaneVisible = True
+    hudControl.rightLaneVisible = True
+    hudControl.leftLaneVisible = True
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
                     and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
-    meta = self.sm['modelV2'].meta
-    if len(meta.desirePrediction) and ldw_allowed:
+    model_v2 = self.sm['modelV2'] 
+    desire_prediction = model_v2.meta.desirePrediction
+    if len(desire_prediction) and ldw_allowed:
       right_lane_visible = self.sm['lateralPlan'].rProb > 0.5
       left_lane_visible = self.sm['lateralPlan'].lProb > 0.5
-      l_lane_change_prob = meta.desirePrediction[Desire.laneChangeLeft - 1]
-      r_lane_change_prob = meta.desirePrediction[Desire.laneChangeRight - 1]
-      l_lane_close = left_lane_visible and (self.sm['modelV2'].laneLines[1].y[0] > -(1.08 + CAMERA_OFFSET))
-      r_lane_close = right_lane_visible and (self.sm['modelV2'].laneLines[2].y[0] < (1.08 - CAMERA_OFFSET))
+      l_lane_change_prob = desire_prediction[Desire.laneChangeLeft - 1]
+      r_lane_change_prob = desire_prediction[Desire.laneChangeRight - 1]
 
-      CC.hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
-      CC.hudControl.rightLaneDepart = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
+      lane_lines = model_v2.laneLines
+      l_lane_close = left_lane_visible and (lane_lines[1].y[0] > -(1.08 + CAMERA_OFFSET))
+      r_lane_close = right_lane_visible and (lane_lines[2].y[0] < (1.08 - CAMERA_OFFSET))
 
-    if CC.hudControl.rightLaneDepart or CC.hudControl.leftLaneDepart:
+      hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
+      hudControl.rightLaneDepart = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
+
+    if hudControl.rightLaneDepart or hudControl.leftLaneDepart:
       self.events.add(EventName.ldw)
 
     clear_event = ET.WARNING if ET.WARNING not in self.current_alert_types else None
     alerts = self.events.create_alerts(self.current_alert_types, [self.CP, self.sm, self.is_metric, self.soft_disable_timer])
     self.AM.add_many(self.sm.frame, alerts)
     self.AM.process_alerts(self.sm.frame, clear_event)
-    CC.hudControl.visualAlert = self.AM.visual_alert
+    hudControl.visualAlert = self.AM.visual_alert
 
     if not self.read_only and self.initialized:
       # send car controls over can
@@ -665,16 +670,18 @@ class Controls:
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.can_rcv_error_counter
 
+    lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
       controlsState.lateralControlState.debugState = lac_log
     elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       controlsState.lateralControlState.angleState = lac_log
-    elif self.CP.lateralTuning.which() == 'pid':
+    elif lat_tuning == 'pid':
       controlsState.lateralControlState.pidState = lac_log
-    elif self.CP.lateralTuning.which() == 'lqr':
+    elif lat_tuning == 'lqr':
       controlsState.lateralControlState.lqrState = lac_log
-    elif self.CP.lateralTuning.which() == 'indi':
+    elif lat_tuning == 'indi':
       controlsState.lateralControlState.indiState = lac_log
+
     self.pm.send('controlsState', dat)
 
     # carState
