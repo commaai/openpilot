@@ -348,7 +348,7 @@ class LongitudinalMpc:
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
     self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
-    self.params[:,3] = self.prev_a
+    self.params[:,3] = np.copy(self.prev_a)
     self.run()
 
   def run(self):
