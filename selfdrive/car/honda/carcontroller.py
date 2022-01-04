@@ -166,7 +166,8 @@ class CarController():
 
       if (frame % 5) == 0:
         idx = frame // 5
-        can_sends.append(hondacan.create_lkas_command(self.packer, hud_lanes, idx))
+        hud = HUDData(hud_lanes)
+        can_sends.append(hondacan.create_lkas_command(self.packer, hud, idx))
 
     # tester present - w/ no response (keeps radar disabled)
     if CS.CP.carFingerprint in HONDA_BOSCH and CS.CP.openpilotLongitudinalControl:
