@@ -4,7 +4,8 @@
 #include <string>
 #include <optional>
 
-#include <QObject>
+#include "selfdrive/ui/qt/wakeable.h"
+
 #include <QTimer>
 #include <QColor>
 #include <QTransform>
@@ -14,7 +15,6 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 
-#include "selfdrive/ui/qt/wakeable.h"
 
 const int bdr_s = 30;
 const int header_h = 420;
@@ -156,6 +156,7 @@ public:
 
 protected:
   virtual void setAwake(bool on);
+  virtual void updateWakefulness(const QObject &o);
 
 private:
   // auto brightness
@@ -166,7 +167,6 @@ private:
   FirstOrderFilter brightness_filter;
 
   void updateBrightness(const UIState &s);
-  void updateWakefulness(const QObject &o);
   bool motionTriggered(const UIState &s);
 
 signals:

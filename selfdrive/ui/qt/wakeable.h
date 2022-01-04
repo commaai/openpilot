@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QObject>
+
 class Wakeable {
 
   protected:
@@ -7,4 +9,5 @@ class Wakeable {
     int interactive_timeout = 0;
     
     virtual void setAwake(bool on) = 0;
+    virtual void updateWakefulness(const QObject &o) = 0;
 };
