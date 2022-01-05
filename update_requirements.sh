@@ -19,13 +19,9 @@ if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
   CONFIGURE_OPTS="--enable-shared" pyenv install -f ${PYENV_PYTHON_VERSION}
 fi
 
-if ! command -v pipenv &> /dev/null; then
-  echo "pipenv install ..."
-  pip install pipenv
-fi
-
-echo "update pip"
+echo "pip install ..."
 pip install pip==21.3.1
+echo "pipenv install ..."
 pip install pipenv==2021.11.23
 
 if [ -d "./xx" ]; then
