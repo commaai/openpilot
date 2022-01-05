@@ -9,7 +9,7 @@ from datetime import datetime
 from selfdrive.hardware import PC
 from selfdrive.swaglog import cloudlog
 from cereal.messaging import SubMaster
-from common.file_helpers import atomic_write_on_fs_tmp
+from common.file_helpers import atomic_write_in_dir
 
 FLUSH_TIME_S = 60
 STATS_SOCKET = "ipc:///tmp/stats"
@@ -91,7 +91,7 @@ def main():
       gauges = {}
 
       stats_path = os.path.join(STATS_DIR, str(flush_result['time_utc']))
-      with atomic_write_on_fs_tmp(stats_path) as f:
+      with atomic_write_in_dir(stats_path) as f:
         f.write(json.dumps(flush_result))
 
       last_flush_time = time.monotonic()
