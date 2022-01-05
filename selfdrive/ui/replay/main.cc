@@ -55,6 +55,10 @@ void keyboardThread(Replay *replay_) {
         qDebug() << "invalid argument";
       }
       getch();  // remove \n from entering seek
+    } else if (c == 'e') {
+      replay_->seekToFlag(FindFlag::nextEngagement);
+    } else if (c == 'd') {
+      replay_->seekToFlag(FindFlag::nextDisEngagement);
     } else if (c == 'm') {
       replay_->seekTo(+60, true);
     } else if (c == 'M') {

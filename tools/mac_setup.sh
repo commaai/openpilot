@@ -15,6 +15,9 @@ fi
 ## casadi pip package is available
 brew bundle --file=- <<-EOS
 brew "cmake"
+brew "cppcheck"
+brew "flake8"
+brew "pylint"
 brew "git-lfs"
 brew "zlib"
 brew "bzip2"

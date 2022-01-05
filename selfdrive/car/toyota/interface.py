@@ -57,39 +57,14 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_A)
 
-    elif candidate == CAR.LEXUS_RX:
-      stop_and_go = True
-      ret.wheelbase = 2.79
-      ret.steerRatio = 14.8
-      tire_stiffness_factor = 0.5533
-      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_B)
-
-    elif candidate == CAR.LEXUS_RXH:
+    elif candidate in [CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2]:
       stop_and_go = True
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
-      tire_stiffness_factor = 0.444  # not optimized yet
+      ret.wheelSpeedFactor = 1.035
+      tire_stiffness_factor = 0.5533
       ret.mass = 4481. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
       set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
-
-    elif candidate == CAR.LEXUS_RX_TSS2:
-      stop_and_go = True
-      ret.wheelbase = 2.79
-      ret.steerRatio = 14.8
-      tire_stiffness_factor = 0.5533  # not optimized yet
-      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
-      ret.wheelSpeedFactor = 1.035
-
-    elif candidate == CAR.LEXUS_RXH_TSS2:
-      stop_and_go = True
-      ret.wheelbase = 2.79
-      ret.steerRatio = 16.0  # 14.8 is spec end-to-end
-      tire_stiffness_factor = 0.444  # not optimized yet
-      ret.mass = 4481.0 * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_E)
-      ret.wheelSpeedFactor = 1.035
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
       stop_and_go = True
@@ -269,11 +244,9 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptor:
       set_long_tune(ret.longitudinalTuning, LongTunes.PEDAL)
-    elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2,
-                       CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2]:
+    elif candidate in TSS2_CAR:
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS2)
       ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
-      ret.startingAccelRate = 6.0  # release brakes fast
     else:
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS)
 
@@ -312,11 +285,12 @@ class CarInterface(CarInterfaceBase):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
+    hud_control = c.hudControl
     ret = self.CC.update(c.enabled, c.active, self.CS, self.frame,
                          c.actuators, c.cruiseControl.cancel,
-                         c.hudControl.visualAlert, c.hudControl.leftLaneVisible,
-                         c.hudControl.rightLaneVisible, c.hudControl.leadVisible,
-                         c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
+                         hud_control.visualAlert, hud_control.leftLaneVisible,
+                         hud_control.rightLaneVisible, hud_control.leadVisible,
+                         hud_control.leftLaneDepart, hud_control.rightLaneDepart)
 
     self.frame += 1
     return ret

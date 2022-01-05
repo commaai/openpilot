@@ -2,6 +2,7 @@ Version 0.8.13 (2022-XX-XX)
 ========================
  * Improved driver monitoring
  * Improved camera focus on the comma two
+ * Subaru ECU firmware fingerprinting thanks to martinl!
  * Hyundai Santa Fe Plug-in Hybrid 2022 support thanks to sunnyhaibin!
  * Subaru Impreza 2020 support thanks to martinl!
 
