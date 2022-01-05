@@ -4,9 +4,10 @@ from selfdrive.ui.replay.logreader_pyx import LogReader # pylint: disable=no-nam
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator:
-  def __init__(self, log_paths, sort_by_time=False):
+  def __init__(self, log_paths, sort_by_time=False, cache_to_local=True):
     self._log_paths = log_paths
     self.sort_by_time = sort_by_time
+    self.cache_to_local = cache_to_local
 
     self._first_log_idx = next(i for i in range(len(log_paths)) if log_paths[i] is not None)
     self._current_log = self._first_log_idx
@@ -17,7 +18,7 @@ class MultiLogIterator:
   def _log_reader(self, i):
     if self._log_readers[i] is None and self._log_paths[i] is not None:
       log_path = self._log_paths[i]
-      self._log_readers[i] = LogReader(log_path, sort_by_time=self.sort_by_time)
+      self._log_readers[i] = LogReader(log_path, sort_by_time=self.sort_by_time, cache_to_local=self.cache_to_local)
 
     return self._log_readers[i]
 
