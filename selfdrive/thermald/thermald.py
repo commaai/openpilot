@@ -23,6 +23,7 @@ from selfdrive.loggerd.config import get_available_percent
 from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import terms_version, training_version
+from selfdrive.statsd import statlog
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -408,6 +409,10 @@ def thermald_thread() -> NoReturn:
 
     should_start_prev = should_start
     startup_conditions_prev = startup_conditions.copy()
+
+    # stats
+    # TODO: add more here!
+    statlog.log("memory_usage_percent", msg.deviceState.memoryUsagePercent)
 
     # report to server once every 10 minutes
     if (count % int(600. / DT_TRML)) == 0:

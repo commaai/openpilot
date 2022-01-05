@@ -31,6 +31,7 @@ from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
 from selfdrive.version import get_version, get_origin, get_short_branch, get_commit
+from selfdrive.statsd import STATS_DIR
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -48,7 +49,7 @@ dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
 send_queue: Any = queue.Queue()
 upload_queue: Any = queue.Queue()
-log_send_queue: Any = queue.Queue()
+secondary_send_queue: Any = queue.Queue()
 log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress'], defaults=(0, False, 0))
@@ -447,7 +448,7 @@ def log_handler(end_event):
               "jsonrpc": "2.0",
               "id": log_entry
             }
-            log_send_queue.put_nowait(json.dumps(jsonrpc))
+            secondary_send_queue.put_nowait(json.dumps(jsonrpc))
             curr_log = log_entry
         except OSError:
           pass  # file could be deleted by log rotation
@@ -476,6 +477,33 @@ def log_handler(end_event):
 
     except Exception:
       cloudlog.exception("athena.log_handler.exception")
+
+
+def stat_handler(end_event):
+  while not end_event.is_set():
+    last_scan = 0
+    try:
+      curr_scan = sec_since_boot()
+      if curr_scan - last_scan > 10:
+        for stat_entry in os.listdir(STATS_DIR):
+          stat_path = os.path.join(STATS_DIR, stat_entry)
+          with open(stat_path) as f:
+            stats = json.loads(f.read())
+            jsonrpc = {
+              "method": "storeStats",
+              "params": {
+                **stats
+              },
+              "jsonrpc": "2.0",
+              "id": stat_entry
+            }
+            secondary_send_queue.put_nowait(json.dumps(jsonrpc))
+          os.remove(stat_path)
+        last_scan = curr_scan
+
+    except Exception:
+      cloudlog.exception("athena.stat_handler.exception")
+
 
 
 def ws_proxy_recv(ws, local_sock, ssock, end_event, global_end_event):
@@ -550,7 +578,7 @@ def ws_send(ws, end_event):
       try:
         data = send_queue.get_nowait()
       except queue.Empty:
-        data = log_send_queue.get(timeout=1)
+        data = secondary_send_queue.get(timeout=1)
       for i in range(0, len(data), WS_FRAME_SIZE):
         frame = data[i:i+WS_FRAME_SIZE]
         last = i + WS_FRAME_SIZE >= len(data)
