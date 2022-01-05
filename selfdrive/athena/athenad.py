@@ -281,8 +281,9 @@ def uploadFilesToUrls(files_data):
 
     item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None)
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
+    item = item._replace(id=upload_id)
     upload_queue.put_nowait(item)
-    items.append(item._replace(id=upload_id)._asdict())
+    items.append(item._asdict())
 
   UploadQueueCache.cache(upload_queue)
 
