@@ -32,10 +32,18 @@ class StatLog:
     self.sock.connect(STATS_SOCKET)
     self.pid = os.getpid()
 
-  def gauge(self, name: str, value: float):
+  def _send(self, metric: str):
     if os.getpid() != self.pid:
       self.connect()
-    self.sock.send_string(f"{name}:{value}|{METRIC_TYPE.GAUGE}", zmq.NOBLOCK)
+
+    try:
+      self.sock.send_string(metric, zmq.NOBLOCK)
+    except zmq.error.Again:
+      # drop :/
+      pass
+
+  def gauge(self, name: str, value: float):
+    self._send(f"{name}:{value}|{METRIC_TYPE.GAUGE}")
 
 
 def main():
