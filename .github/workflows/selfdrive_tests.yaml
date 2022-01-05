@@ -71,7 +71,7 @@ jobs:
 
   build_mac:
    name: build macos
-   runs-on: macos-10.15
+   runs-on: macos-11
    timeout-minutes: 60
    steps:
    - uses: actions/checkout@v2
