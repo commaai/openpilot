@@ -356,7 +356,7 @@ void Setup::nextPage() {
   setCurrentIndex(currentIndex() + 1);
 }
 
-Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
+Setup::Setup(QWidget *parent) : Wakeable(), QStackedWidget(parent) {
   std::stringstream buffer;
   buffer << std::ifstream("/sys/class/hwmon/hwmon1/in1_input").rdbuf();
   float voltage = (float)std::atoi(buffer.str().c_str()) / 1000.;
@@ -383,6 +383,12 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
       setCurrentWidget(failed_widget);
     }
   });
+
+  // Connect device signal directly to UI state signal for awake boolean
+  QObject::connect(this, &Setup::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &Setup::update);
+  setAwake(true);
+  resetInteractiveTimout();
 
   // TODO: revisit pressed bg color
   setStyleSheet(R"(
@@ -414,6 +420,10 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
       background-color: #3049F4;
     }
   )");
+}
+
+void Setup::update(const UIState &s) {
+  Wakeable::update(s);
 }
 
 int main(int argc, char *argv[]) {

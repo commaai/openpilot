@@ -4,8 +4,11 @@
 #include <QString>
 #include <QWidget>
 
-class Setup : public QStackedWidget {
+#include "selfdrive/ui/ui.h"
+
+class Setup : public QStackedWidget, public Wakeable {
   Q_OBJECT
+  Q_INTERFACES(Wakeable)
 
 public:
   explicit Setup(QWidget *parent = 0);
@@ -23,9 +26,12 @@ private:
 
 signals:
   void finished(bool success);
+  void displayPowerChanged(bool on);
+  void interactiveTimout();
 
 public slots:
   void nextPage();
   void prevPage();
   void download(QString url);
+  virtual void update(const UIState &s);
 };
