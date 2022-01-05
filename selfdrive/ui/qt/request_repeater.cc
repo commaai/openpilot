@@ -14,7 +14,6 @@ RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, con
 
   });
 
-
   timer->start(period * 1000);
 
   if (!cacheKey.isEmpty()) {

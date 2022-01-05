@@ -269,6 +269,11 @@ void Wakeable::setAwake(bool on) {
   }
 }
 
+void Wakeable::update(const UIState &s) {
+  updateBrightness(s);
+  updateWakefulness(s);
+}
+
 void Wakeable::updateBrightness(const UIState &s) {
   float clipped_brightness = BACKLIGHT_OFFROAD;
   if (s.scene.started) {
@@ -316,14 +321,12 @@ Device::Device(QObject *parent) : Wakeable(), QObject(parent) {
   // Connect device signal directly to UI state signal for awake boolean
   QObject::connect(this, &Device::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
-
   setAwake(true);
   resetInteractiveTimout();
 }
 
 void Device::update(const UIState &s) {
-  updateBrightness(s);
-  updateWakefulness(s);
+  Wakeable::update(s);
 }
 
 UIState *uiState() {

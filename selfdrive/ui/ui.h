@@ -15,7 +15,6 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 
-
 const int bdr_s = 30;
 const int header_h = 420;
 const int footer_h = 280;
@@ -155,7 +154,7 @@ public:
   Wakeable();
   virtual ~Wakeable(){}
   virtual void resetInteractiveTimout();
-  virtual void update(const UIState &s) = 0;
+  virtual void update(const UIState &s);
 
 protected:
   // auto brightness
@@ -194,8 +193,7 @@ signals:
   void interactiveTimout();
 
 public slots:
-  void update(const UIState &s);
-
+  virtual void update(const UIState &s);
 };
 
 void ui_update_params(UIState *s);
