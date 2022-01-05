@@ -320,7 +320,10 @@ void Wakeable::updateWakefulness(const UIState &s) {
 Device::Device(QObject *parent) : Wakeable(), QObject(parent) {
   // Connect device signal directly to UI state signal for awake boolean
   QObject::connect(this, &Device::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
+
+  // Connect to UI state messages for brightness and wakefulness
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
+
   setAwake(true);
   resetInteractiveTimeout();
 }

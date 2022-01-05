@@ -97,9 +97,12 @@ Spinner::Spinner(QWidget *parent) : Wakeable(), QWidget(parent) {
   notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read);
   QObject::connect(notifier, &QSocketNotifier::activated, this, static_cast<void (Spinner::*)(int)>(&Spinner::update));
 
-  // Connect device signal directly to UI state signal for awake boolean
+  // Connect spinner signal directly to UI state signal for awake boolean
   QObject::connect(this, &Spinner::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
+
+  // Connect to UI state messages for brightness and wakefulness
   QObject::connect(uiState(), &UIState::uiUpdate, this, static_cast<void (Spinner::*)(const UIState &)>(&Spinner::update));
+
   setAwake(true);
   resetInteractiveTimeout();
 };

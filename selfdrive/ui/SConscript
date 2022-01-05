@@ -52,7 +52,7 @@ if GetOption('test'):
 qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
 
 # spinner and text window
-qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
+qt_env.Program("qt/text", ["qt/text.cc", "ui.cc"], LIBS=qt_libs)
 qt_env.Program("qt/spinner", ["qt/spinner.cc", "ui.cc"], LIBS=qt_libs)
 
 # build main UI

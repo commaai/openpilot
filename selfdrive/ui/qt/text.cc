@@ -10,7 +10,7 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
-Text::Text(char *argv[], QApplication &a, QWidget *parent) : QWidget(parent) {
+Text::Text(char *argv[], QApplication &a, QWidget *parent) : Wakeable(), QWidget(parent) {
   QGridLayout *main_layout = new QGridLayout(this);
   main_layout->setMargin(50);
 
@@ -54,7 +54,20 @@ Text::Text(char *argv[], QApplication &a, QWidget *parent) : QWidget(parent) {
       margin-right: 40px;
     }
   )");
+
+  // Connect text signal directly to UI state signal for awake boolean
+  QObject::connect(this, &Text::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
+
+  // Connect to UI state messages for brightness and wakefulness
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &Text::update);
+
+  setAwake(true);
+  resetInteractiveTimeout();
 };
+
+void Text::update(const UIState &s) {
+  Wakeable::update(s);
+}
 
 int main(int argc, char *argv[]) {
   initApp();
