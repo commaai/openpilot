@@ -26,7 +26,7 @@ class PIController():
     self.neg_limit = neg_limit
 
     self.i_unwind_rate = 0.3 / rate
-    self.i_bf_rate = 2.0 / rate
+    self.i_backfeed_rate = 2.0 / rate
     self.i_rate = 1.0 / rate
 
     self.reset()
@@ -44,6 +44,7 @@ class PIController():
     self.i = 0.0
     self.f = 0.0
     self.control = 0
+    self.control_last = 0
 
   def update(self, setpoint, measurement, last_output=None, speed=0.0, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
@@ -53,10 +54,13 @@ class PIController():
     self.f = feedforward * self.k_f
 
     # Clip integrator based on the last output value
+    #TODO require last_output by position only
+    #TODO test long performance (freeze integrator performance)
+    #TODO (option) i_unwind_rate can be used instead of i_backfeed_rate
     if last_output is not None:
       if not freeze_integrator:
-        i_bf = self.p + self.i + self.f - last_output
-        self.i = self.i +  self.k_i * (error * self.i_rate - i_bf * self.i_bf_rate)
+        control_clip = self.control_last - last_output
+        self.i = self.i +  self.k_i * (error * self.i_rate - control_clip * self.i_backfeed_rate)
     else:
         if override:
           self.i -= self.i_unwind_rate * float(np.sign(self.i))
@@ -74,4 +78,5 @@ class PIController():
     control = self.p + self.i + self.f
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
+    self.control_last = self.control
     return self.control
