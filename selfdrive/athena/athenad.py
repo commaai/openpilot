@@ -269,23 +269,28 @@ def uploadFileToUrl(fn, url, headers):
 @dispatcher.add_method
 def uploadFilesToUrls(files_data):
   items = []
+  failed = {}
   for fn, url, headers in files_data:
     if len(fn) == 0 or fn[0] == '/' or '..' in fn:
-      return 500
+      failed[fn] = 500
+      continue
     path = os.path.join(ROOT, fn)
     if not os.path.exists(path):
-      return 404
+      failed[fn] = 404
+      continue
 
     item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None)
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
-    items.append(item._replace(id=upload_id))
-
-  for item in items:
     upload_queue.put_nowait(item)
+    items.append(item._replace(id=upload_id)._asdict())
 
   UploadQueueCache.cache(upload_queue)
 
-  return {"enqueued": len(items), "items": [i._asdict() for i in items]}
+  resp = {"enqueued": len(items), "items": items}
+  if len(failed):
+    resp["failed"] = failed
+
+  return resp
 
 
 @dispatcher.add_method
