@@ -265,7 +265,7 @@ void Wakeable::setAwake(bool on) {
     awake = on;
     Hardware::set_display_power(awake);
     LOGD("setting display power %d", awake);
-    emitDisplayPowerChanged(awake);
+    emit displayPowerChanged(awake);
   }
 }
 
@@ -306,7 +306,7 @@ void Wakeable::updateWakefulness(const UIState &s) {
   if (ignition_just_turned_off || motionTriggered(s)) {
     resetInteractiveTimout();
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
-    emitInteractiveTimeout();
+    emit interactiveTimout();
   }
 
   setAwake(s.scene.ignition || interactive_timeout > 0);
@@ -319,14 +319,6 @@ Device::Device(QObject *parent) : Wakeable(), QObject(parent) {
 
   setAwake(true);
   resetInteractiveTimout();
-}
-
-void Device::emitDisplayPowerChanged(bool on) {
-  emit displayPowerChanged(on);
-}
-
-void Device::emitInteractiveTimeout() {
-  emit interactiveTimout();
 }
 
 void Device::update(const UIState &s) {

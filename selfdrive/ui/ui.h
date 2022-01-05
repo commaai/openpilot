@@ -153,6 +153,7 @@ class Wakeable {
 
 public:
   Wakeable();
+  virtual ~Wakeable(){}
   virtual void resetInteractiveTimout();
   virtual void update(const UIState &s) = 0;
 
@@ -173,21 +174,20 @@ protected:
   virtual void updateWakefulness(const UIState &s);
   virtual void updateBrightness(const UIState &s);
 
-  virtual void emitDisplayPowerChanged(bool on) = 0;
-  virtual void emitInteractiveTimeout() = 0;
+  virtual void displayPowerChanged(bool on) = 0;
+  virtual void interactiveTimout() = 0;
 };
+
+Q_DECLARE_INTERFACE(Wakeable, "Wakeable")
 
 // device management class
 
 class Device : public QObject, public Wakeable {
   Q_OBJECT
+  Q_INTERFACES(Wakeable)
 
 public:
   Device(QObject *parent = 0);
-
-protected:
-  virtual void emitInteractiveTimeout();
-  virtual void emitDisplayPowerChanged(bool on);
 
 signals:
   void displayPowerChanged(bool on);
