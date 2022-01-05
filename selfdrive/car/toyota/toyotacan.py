@@ -55,6 +55,20 @@ def create_acc_cancel_command(packer):
   return packer.make_can_msg("PCM_CRUISE", 0, values)
 
 
+def create_acc_cancel_command_2(packer, counter):
+  values = {
+      "COUNTER" : counter,
+      "FORCE" : 0,
+      "STATE" : 3,
+      "BRAKE_STATUS" : 0,
+      "PRECOLLISION_ACTIVE" : 0,
+      "SET_ME_X00" : 0,
+      "SET_ME_X002" : 0,
+      "SET_ME_X003" : 0
+  }
+  return packer.make_can_msg("PRE_COLLISION", 0, values)
+
+
 def create_fcw_command(packer, fcw):
   values = {
     "PCS_INDICATOR": 1,
