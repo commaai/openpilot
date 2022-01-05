@@ -74,13 +74,14 @@ class LateralPlanner:
     measured_curvature = sm['controlsState'].curvature
 
     md = sm['modelV2']
-    self.LP.parse_model(sm['modelV2'])
-    if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
-      self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-      self.t_idxs = np.array(md.position.t)
+    self.LP.parse_model(md)
+    position = md.position
+    if len(position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
+      self.path_xyz = np.column_stack([position.x, position.y, position.z])
+      self.t_idxs = np.array(position.t)
       self.plan_yaw = list(md.orientation.z)
-    if len(md.position.xStd) == TRAJECTORY_SIZE:
-      self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
+    if len(position.xStd) == TRAJECTORY_SIZE:
+      self.path_xyz_stds = np.column_stack([position.xStd, position.yStd, position.zStd])
 
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
