@@ -19,6 +19,7 @@ if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
   CONFIGURE_OPTS="--enable-shared" pyenv install -f ${PYENV_PYTHON_VERSION}
 fi
 
+
 if [[ "$HOST" != "Darwin" ]]; then
   if ! command -v pipenv &> /dev/null; then
     echo "pipenv install ..."
@@ -38,6 +39,7 @@ else  # MacOS
   python3 -m pip install pip==21.3.1
   python3 -m pip install pipenv==2021.11.23
 fi
+
 
 if [ -d "./xx" ]; then
   export PIPENV_SYSTEM=1
