@@ -196,7 +196,7 @@ class Controls:
     if self.sm.updated['driverMonitoringState']:
       events = Events()
       events.add_from_msg(self.sm['driverMonitoringState'].events)
-      self.latest_events['driverMonitoringState'] = events
+      self.latest_events['driverMonitoringState'] = events.names
 
     # Handle startup event
     if self.startup_event is not None:
@@ -209,20 +209,20 @@ class Controls:
       return
 
     if self.sm.updated['deviceState']:
-      events = Events()
+      events = []
       # Create events for battery, temperature, disk space, and memory
       if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
         self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
         # at zero percent battery, while discharging, OP should not allowed
-        events.add(EventName.lowBattery)
+        events.append(EventName.lowBattery)
       if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
-        events.add(EventName.overheat)
+        events.append(EventName.overheat)
       if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
         # under 7% of space free no enable allowed
-        events.add(EventName.outOfSpace)
+        events.append(EventName.outOfSpace)
       # TODO: make tici threshold the same
       if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not SIMULATION:
-        events.add(EventName.lowMemory)
+        events.append(EventName.lowMemory)
       
       # TODO: enable this once loggerd CPU usage is more reasonable
       #cpus = list(self.sm['deviceState'].cpuUsagePercent)[:(-1 if EON else None)]
@@ -233,7 +233,7 @@ class Controls:
       if self.sm['peripheralState'].pandaType in [PandaType.uno, PandaType.dos]:
         if self.sm['peripheralState'].fanSpeedRpm == 0 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
           if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
-            events.add(EventName.fanMalfunction)
+            events.append(EventName.fanMalfunction)
         else:
           self.last_functional_fan_frame = self.sm.frame
 
@@ -241,35 +241,35 @@ class Controls:
 
     # Handle calibration status
     if self.sm.updated['liveCalibration']:
-      events = Events()
+      events = []
       cal_status = self.sm['liveCalibration'].calStatus
       if cal_status != Calibration.CALIBRATED:
         if cal_status == Calibration.UNCALIBRATED:
-          events.add(EventName.calibrationIncomplete)
+          events.append(EventName.calibrationIncomplete)
         else:
-          events.add(EventName.calibrationInvalid)
+          events.append(EventName.calibrationInvalid)
       
       self.latest_events['liveCalibration'] = events
       
     # Handle lane change
     if self.sm.updated['lateralPlan']:
-      events = Events()
+      events = []
       if not self.sm['lateralPlan'].mpcSolutionValid:
-        events.add(EventName.plannerError)
+        events.append(EventName.plannerError)
 
       lane_change_state = self.sm['lateralPlan'].laneChangeState
       if lane_change_state == LaneChangeState.preLaneChange:
         direction = self.sm['lateralPlan'].laneChangeDirection
         if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
           (CS.rightBlindspot and direction == LaneChangeDirection.right):
-          events.add(EventName.laneChangeBlocked)
+          events.append(EventName.laneChangeBlocked)
         else:
           if direction == LaneChangeDirection.left:
-            events.add(EventName.preLaneChangeLeft)
+            events.append(EventName.preLaneChangeLeft)
           else:
-            events.add(EventName.preLaneChangeRight)
+            events.append(EventName.preLaneChangeRight)
       elif lane_change_state in [LaneChangeState.laneChangeStarting, LaneChangeState.laneChangeFinishing]:
-        events.add(EventName.laneChange)
+        events.append(EventName.laneChange)
 
       self.latest_events['lateralPlan'] = events
 
@@ -277,7 +277,7 @@ class Controls:
       self.events.add(EventName.canError)
 
     if self.sm.updated['pandaStates']:
-      events = Events()
+      events = []
       for i, pandaState in enumerate(self.sm['pandaStates']):
         # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
         if i < len(self.CP.safetyConfigs):
@@ -285,10 +285,10 @@ class Controls:
         else:
           safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
         if safety_mismatch or self.mismatch_counter >= 200:
-          events.add(EventName.controlsMismatch)
+          events.append(EventName.controlsMismatch)
 
         if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
-          events.add(EventName.relayMalfunction)
+          events.append(EventName.relayMalfunction)
 
       self.latest_events['pandaStates'] = events
       
@@ -367,16 +367,16 @@ class Controls:
 
       # Check if all manager processes are running
       if self.sm.updated['managerState']:
-        events = Events()
+        events = []
         not_running = {p.name for p in self.sm['managerState'].processes if not p.running}
         if not_running - IGNORE_PROCESSES:
-          events.add(EventName.processNotRunning)
+          events.append(EventName.processNotRunning)
         
         self.latest_events['managerState'] = events
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if self.sm.updated['longitudinalPlan']:
-      events = Events()
+      events = []
       speeds = self.sm['longitudinalPlan'].speeds
       if len(speeds) > 1:
         v_future = speeds[-1]
@@ -384,7 +384,7 @@ class Controls:
         v_future = 100.0
       if CS.brakePressed and v_future >= self.CP.vEgoStarting \
         and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3:
-        events.add(EventName.noTarget)
+        events.append(EventName.noTarget)
       
       self.latest_events['longitudinalPlan'] = events
     
