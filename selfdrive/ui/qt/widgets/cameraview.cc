@@ -291,6 +291,12 @@ void CameraViewWidget::vipcThread() {
     if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
       if (!Hardware::EON()) {
         void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
+
+        if (texture_buffer == nullptr) {
+          LOGE("gl_buffer->map returned nullptr");
+          continue;
+        }
+
         memcpy(texture_buffer, buf->addr, buf->len);
         gl_buffer->unmap();
 
