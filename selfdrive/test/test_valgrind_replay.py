@@ -78,9 +78,7 @@ class TestValgrind(unittest.TestCase):
     pm = messaging.PubMaster(pub_sockets)
     sm = messaging.SubMaster(sub_sockets)
 
-    print("Sorting logs")
-    all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
-    pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
+    pub_msgs = [msg for msg in logreader if msg.which() in list(config.pub_sub.keys())]
 
     thread = threading.Thread(target=self.valgrindlauncher, args=(config.command, config.path))
     thread.daemon = True
@@ -104,7 +102,7 @@ class TestValgrind(unittest.TestCase):
       self.replay_done = False
 
       r, n = cfg.segment.rsplit("--", 1)
-      lr = LogReader(get_url(r, n))
+      lr = LogReader(get_url(r, n), sort_by_time=True)
       self.replay_process(cfg, lr)
 
       while self.leak is None:

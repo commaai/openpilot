@@ -362,8 +362,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
     can_sock = FakeSocket()
     args = (fsm, fpm, can_sock)
 
-  all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
-  pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
+  pub_msgs = [msg for msg in lr if msg.which() in list(cfg.pub_sub.keys())]
 
   setup_env()
 
@@ -401,7 +400,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
   if cfg.init_callback is not None:
     if 'can' not in list(cfg.pub_sub.keys()):
       can_sock = None
-    cfg.init_callback(all_msgs, fsm, can_sock, fingerprint)
+    cfg.init_callback(lr, fsm, can_sock, fingerprint)
 
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
@@ -444,8 +443,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(cfg.pub_sub.keys())
 
-  all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
-  pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
+  pub_msgs = [msg for msg in lr if msg.which() in list(cfg.pub_sub.keys())]
   log_msgs = []
 
   setup_env()

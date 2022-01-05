@@ -17,7 +17,7 @@ if __name__ == "__main__":
   cfg = [c for c in CONFIGS if c.proc_name == args.process][0]
 
   route = Route(args.route)
-  lr = MultiLogIterator(route.log_paths())
+  lr = MultiLogIterator(route.log_paths(), sort_by_time=True)
   inputs = list(lr)
 
   outputs = replay_process(cfg, inputs)

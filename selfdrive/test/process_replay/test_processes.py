@@ -60,7 +60,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
     ignore_msgs = []
 
   cmp_log_path = cmp_log_fn if os.path.exists(cmp_log_fn) else BASE_URL + os.path.basename(cmp_log_fn)
-  cmp_log_msgs = list(LogReader(cmp_log_path))
+  cmp_log_msgs = LogReader(cmp_log_path)
 
   log_msgs = replay_process(cfg, lr)
 
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     results[segment] = {}
 
     r, n = segment.rsplit("--", 1)
-    lr = LogReader(get_url(r, n))
+    lr = LogReader(get_url(r, n), sort_by_time=True)
 
     for cfg in CONFIGS:
       if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
