@@ -1,8 +1,8 @@
 from enum import IntEnum
-from typing import Dict, Union, Callable, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
-from cereal import log, car
 import cereal.messaging as messaging
+from cereal import car, log
 from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
 from selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
@@ -42,28 +42,29 @@ EVENT_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
 
 class Events:
   def __init__(self):
-    self.events: List[int] = []
-    self.static_events: List[int] = []
-    self.events_prev = dict.fromkeys(EVENTS.keys(), 0)
+    self.events: List[Tuple[int, Optional[str]]] = []
+    self.static_events: List[Tuple[int, Optional[str]]] = []
+    self.events_t = dict.fromkeys(EVENTS.keys(), 0)
 
   @property
-  def names(self) -> List[int]:
+  def names(self) -> List[Tuple[int, Optional[str]]]:
     return self.events
 
   def __len__(self) -> int:
     return len(self.events)
 
-  def add(self, event_name: int, static: bool=False) -> None:
+  def add(self, event_name: int, static: bool = False, meta: Optional[str] = None) -> None:
     if static:
-      self.static_events.append(event_name)
-    self.events.append(event_name)
+      self.static_events.append((event_name, meta))
+    self.events.append((event_name, meta))
 
   def clear(self) -> None:
-    self.events_prev = {k: (v + 1 if k in self.events else 0) for k, v in self.events_prev.items()}
+    cur_event_types = set(e for e, _ in self.events)
+    self.events_t = {k: (v + 1 if k in cur_event_types else 0) for k, v in self.events_t.items()}
     self.events = self.static_events.copy()
 
   def any(self, event_type: str) -> bool:
-    for e in self.events:
+    for e, _ in self.events:
       if event_type in EVENTS.get(e, {}).keys():
         return True
     return False
@@ -73,7 +74,7 @@ class Events:
       callback_args = []
 
     ret = []
-    for e in self.events:
+    for e, _ in self.events:
       types = EVENTS[e].keys()
       for et in event_types:
         if et in types:
@@ -81,7 +82,7 @@ class Events:
           if not isinstance(alert, Alert):
             alert = alert(*callback_args)
 
-          if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
+          if DT_CTRL * (self.events_t[e] + 1) >= alert.creation_delay:
             alert.alert_type = f"{EVENT_NAME[e]}/{et}"
             alert.event_type = et
             ret.append(alert)
@@ -89,15 +90,21 @@ class Events:
 
   def add_from_msg(self, events):
     for e in events:
-      self.events.append(e.name.raw)
+      meta = e.meta if len(e.meta) else None
+      self.events.append((e.name.raw, meta))
 
   def to_msg(self):
     ret = []
-    for event_name in self.events:
+    for event_name, meta in self.events:
       event = car.CarEvent.new_message()
       event.name = event_name
+
+      if meta is not None:
+        event.meta = meta
+
       for event_type in EVENTS.get(event_name, {}).keys():
         setattr(event, event_type, True)
+
       ret.append(event)
     return ret
 
