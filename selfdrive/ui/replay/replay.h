@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <QThread>
 
 #include "selfdrive/ui/replay/camera.h"
