@@ -241,6 +241,15 @@ void UIState::update() {
   emit uiUpdate(*this);
 }
 
+void Wakeable::setAwake(bool on) {
+  if (on != awake) {
+    awake = on;
+    Hardware::set_display_power(awake);
+    LOGD("setting display power %d", awake);
+    emitDisplayPowerChanged(awake);
+  }
+}
+
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
   // Connect device signal directly to UI state signal for awake boolean
   QObject::connect(this, &Device::displayPowerChanged, uiState(), &UIState::displayPowerChanged);

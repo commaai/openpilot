@@ -4,8 +4,7 @@
 #include <string>
 #include <optional>
 
-#include "selfdrive/ui/qt/wakeable.h"
-
+#include <QObject>
 #include <QTimer>
 #include <QColor>
 #include <QFuture>
@@ -147,6 +146,22 @@ private:
 };
 
 UIState *uiState();
+
+// wakeable display ui interface
+
+class Wakeable {
+
+public:
+  virtual void resetInteractiveTimout() = 0;
+
+protected:
+  bool awake = false;
+  int interactive_timeout = 0;
+
+  virtual void setAwake(bool on);
+  virtual void updateWakefulness(const UIState &s) = 0;
+  virtual void emitDisplayPowerChanged(bool on) = 0;
+};
 
 // device management class
 
