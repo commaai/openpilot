@@ -75,8 +75,9 @@ if [ ! -f "$VENV/include/casadi/casadi.hpp" ]; then
     -DPYTHON_PREFIX:PATH=$VENV/lib/python$PYTHON_VER/site-packages \
     -DPYTHON_LIBRARY:FILEPATH=$HOME/.pyenv/versions/$PYTHON_VERSION/lib/libpython$PYTHON_VER.dylib \
     -DPYTHON_EXECUTABLE:FILEPATH=$HOME/.pyenv/versions/$PYTHON_VERSION/bin/python \
-    -DPYTHON_INCLUDE_DIR:PATH=$HOME/.pyenv/versions/$PYTHON_VERSION/include/python$PYTHON_VER
-  make -j$(nproc) && make install
+    -DPYTHON_INCLUDE_DIR:PATH=$HOME/.pyenv/versions/$PYTHON_VERSION/include/python$PYTHON_VER \
+    -DCMAKE_CXX_FLAGS="-ferror-limit=0" -DCMAKE_C_FLAGS="-ferror-limit=0"
+  CFLAGS="-ferror-limit=0" make -j$(nproc) && make install
 else
   echo "----   'casadi found in venv. skipping build   ----"
 fi
