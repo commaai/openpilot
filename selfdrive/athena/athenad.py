@@ -269,14 +269,14 @@ def uploadFileToUrl(fn, url, headers):
 @dispatcher.add_method
 def uploadFilesToUrls(files_data):
   items = []
-  failed = {}
+  failed = []
   for fn, url, headers in files_data:
     if len(fn) == 0 or fn[0] == '/' or '..' in fn:
-      failed[fn] = 500
+      failed.append(fn)
       continue
     path = os.path.join(ROOT, fn)
     if not os.path.exists(path):
-      failed[fn] = 404
+      failed.append(fn)
       continue
 
     item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None)

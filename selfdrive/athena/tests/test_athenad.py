@@ -134,7 +134,7 @@ class TestAthenadMethods(unittest.TestCase):
   @with_http_server
   def test_uploadFileToUrl(self, host):
     not_exists_resp = dispatcher["uploadFileToUrl"]("does_not_exist.bz2", "http://localhost:1238", {})
-    self.assertEqual(not_exists_resp, {'enqueued': 0, 'items': [], 'failed': {'does_not_exist.bz2': 404}})
+    self.assertEqual(not_exists_resp, {'enqueued': 0, 'items': [], 'failed': ['does_not_exist.bz2']})
 
     fn = os.path.join(athenad.ROOT, 'qlog.bz2')
     Path(fn).touch()
