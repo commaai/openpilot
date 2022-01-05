@@ -12,6 +12,7 @@ from cereal.messaging import SubMaster
 from common.file_helpers import atomic_write_in_dir
 
 FLUSH_TIME_S = 60
+STATS_DIR_FILE_LIMIT = 10000
 STATS_SOCKET = "ipc:///tmp/stats"
 if PC:
   STATS_DIR = os.path.join(str(Path.home()), ".comma", "stats")
@@ -90,9 +91,13 @@ def main():
       # clear intermediate data
       gauges = {}
 
-      stats_path = os.path.join(STATS_DIR, str(flush_result['time_utc']))
-      with atomic_write_in_dir(stats_path) as f:
-        json.dump(flush_result, f)
+      # check that we aren't filling up the drive
+      if len(os.listdir(STATS_DIR)) < STATS_DIR_FILE_LIMIT:
+        stats_path = os.path.join(STATS_DIR, str(flush_result['time_utc']))
+        with atomic_write_in_dir(stats_path) as f:
+          json.dump(flush_result, f)
+      else:
+        cloudlog.error("stats dir full")
 
       last_flush_time = time.monotonic()
     started_prev = started
