@@ -127,6 +127,7 @@ class Controls:
     self.CC = car.CarControl.new_message()
     self.AM = AlertManager()
     self.events = Events()
+    self.car_events = []
 
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
@@ -685,19 +686,21 @@ class Controls:
     self.pm.send('controlsState', dat)
 
     # carState
-    car_events = self.events.to_msg()
+    if events_changed := (self.events.names != self.events_prev):
+      self.car_events = self.events.to_msg()
+      self.events_prev = self.events.names.copy()
+
     cs_send = messaging.new_message('carState')
     cs_send.valid = CS.canValid
     cs_send.carState = CS
-    cs_send.carState.events = car_events
+    cs_send.carState.events = self.car_events
     self.pm.send('carState', cs_send)
 
     # carEvents - logged every second or on change
-    if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
+    if (self.sm.frame % int(1. / DT_CTRL) == 0) or events_changed:
       ce_send = messaging.new_message('carEvents', len(self.events))
-      ce_send.carEvents = car_events
+      ce_send.carEvents = self.car_events
       self.pm.send('carEvents', ce_send)
-    self.events_prev = self.events.names.copy()
 
     # carParams - logged every 50 seconds (> 1 per segment)
     if (self.sm.frame % int(50. / DT_CTRL) == 0):
