@@ -241,6 +241,25 @@ void UIState::update() {
   emit uiUpdate(*this);
 }
 
+Wakeable::Wakeable() : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT) {}
+
+bool Wakeable::motionTriggered(const UIState &s) {
+  static float accel_prev = 0;
+  static float gyro_prev = 0;
+
+  bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
+  bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
+
+  gyro_prev = s.scene.gyro_sensor;
+  accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
+
+  return (!awake && accel_trigger && gyro_trigger);
+}
+
+void Wakeable::resetInteractiveTimout() {
+  interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
+}
+
 void Wakeable::setAwake(bool on) {
   if (on != awake) {
     awake = on;
@@ -250,29 +269,7 @@ void Wakeable::setAwake(bool on) {
   }
 }
 
-Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
-  // Connect device signal directly to UI state signal for awake boolean
-  QObject::connect(this, &Device::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
-  QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
-
-  setAwake(true);
-  resetInteractiveTimout();
-}
-
-void Device::update(const UIState &s) {
-  updateBrightness(s);
-  updateWakefulness(s);
-}
-
-void Device::resetInteractiveTimout() {
-  interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
-}
-
-void Device::emitDisplayPowerChanged(bool on) {
-  emit displayPowerChanged(on);
-}
-
-void Device::updateBrightness(const UIState &s) {
+void Wakeable::updateBrightness(const UIState &s) {
   float clipped_brightness = BACKLIGHT_OFFROAD;
   if (s.scene.started) {
     // Scale to 0% to 100%
@@ -302,30 +299,39 @@ void Device::updateBrightness(const UIState &s) {
   }
 }
 
-bool Device::motionTriggered(const UIState &s) {
-  static float accel_prev = 0;
-  static float gyro_prev = 0;
-
-  bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
-  bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
-
-  gyro_prev = s.scene.gyro_sensor;
-  accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
-
-  return (!awake && accel_trigger && gyro_trigger);
-}
-
-void Device::updateWakefulness(const UIState &s) {
+void Wakeable::updateWakefulness(const UIState &s) {
   bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
   ignition_on = s.scene.ignition;
 
   if (ignition_just_turned_off || motionTriggered(s)) {
     resetInteractiveTimout();
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
-    emit interactiveTimout();
+    emitInteractiveTimeout();
   }
 
   setAwake(s.scene.ignition || interactive_timeout > 0);
+}
+
+Device::Device(QObject *parent) : Wakeable(), QObject(parent) {
+  // Connect device signal directly to UI state signal for awake boolean
+  QObject::connect(this, &Device::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
+
+  setAwake(true);
+  resetInteractiveTimout();
+}
+
+void Device::emitDisplayPowerChanged(bool on) {
+  emit displayPowerChanged(on);
+}
+
+void Device::emitInteractiveTimeout() {
+  emit interactiveTimout();
+}
+
+void Device::update(const UIState &s) {
+  updateBrightness(s);
+  updateWakefulness(s);
 }
 
 UIState *uiState() {

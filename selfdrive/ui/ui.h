@@ -152,15 +152,29 @@ UIState *uiState();
 class Wakeable {
 
 public:
-  virtual void resetInteractiveTimout() = 0;
+  Wakeable();
+  virtual void resetInteractiveTimout();
+  virtual void update(const UIState &s) = 0;
 
 protected:
+  // auto brightness
+  const float accel_samples = 5*UI_FREQ;
+
+  bool ignition_on = false;
+  int last_brightness = 0;
+  FirstOrderFilter brightness_filter;
+  QFuture<void> brightness_future;
+
   bool awake = false;
   int interactive_timeout = 0;
 
   virtual void setAwake(bool on);
-  virtual void updateWakefulness(const UIState &s) = 0;
+  virtual bool motionTriggered(const UIState &s);
+  virtual void updateWakefulness(const UIState &s);
+  virtual void updateBrightness(const UIState &s);
+
   virtual void emitDisplayPowerChanged(bool on) = 0;
+  virtual void emitInteractiveTimeout() = 0;
 };
 
 // device management class
@@ -172,28 +186,16 @@ public:
   Device(QObject *parent = 0);
 
 protected:
-  virtual void updateWakefulness(const UIState &s);
+  virtual void emitInteractiveTimeout();
   virtual void emitDisplayPowerChanged(bool on);
-
-private:
-  // auto brightness
-  const float accel_samples = 5*UI_FREQ;
-
-  bool ignition_on = false;
-  int last_brightness = 0;
-  FirstOrderFilter brightness_filter;
-  QFuture<void> brightness_future;
-
-  void updateBrightness(const UIState &s);
-  bool motionTriggered(const UIState &s);
 
 signals:
   void displayPowerChanged(bool on);
   void interactiveTimout();
 
 public slots:
-  virtual void resetInteractiveTimout();
   void update(const UIState &s);
+
 };
 
 void ui_update_params(UIState *s);
