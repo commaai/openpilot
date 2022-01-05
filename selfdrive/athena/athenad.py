@@ -288,7 +288,7 @@ def uploadFilesToUrls(files_data):
   UploadQueueCache.cache(upload_queue)
 
   resp = {"enqueued": len(items), "items": items}
-  if len(failed):
+  if failed:
     resp["failed"] = failed
 
   return resp
