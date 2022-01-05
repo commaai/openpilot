@@ -4,7 +4,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR
 
 if ! command -v "pyenv" > /dev/null 2>&1; then
-  echo "installing pyenv..."
+  echo "pyenv install ..."
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
   export PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 fi
@@ -13,7 +13,9 @@ export MAKEFLAGS="-j$(nproc)"
 
 PYENV_PYTHON_VERSION=$(cat .python-version)
 if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
-  echo "pyenv ${PYENV_PYTHON_VERSION} install ..."
+  echo "pyenv update ..."
+  pyenv update
+  echo "python ${PYENV_PYTHON_VERSION} install ..."
   CONFIGURE_OPTS="--enable-shared" pyenv install -f ${PYENV_PYTHON_VERSION}
 fi
 
