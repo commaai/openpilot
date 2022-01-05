@@ -92,7 +92,7 @@ def main():
 
       stats_path = os.path.join(STATS_DIR, str(flush_result['time_utc']))
       with atomic_write_in_dir(stats_path) as f:
-        f.write(json.dumps(flush_result))
+        json.dump(flush_result, f)
 
       last_flush_time = time.monotonic()
     started_prev = started
