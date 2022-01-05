@@ -61,7 +61,7 @@ class TestCarModel(unittest.TestCase):
 
       can_msgs = []
       fingerprint = {i: dict() for i in range(3)}
-      for msg in lr:
+      for msg in lr.findAll({"can", "carParams"}):
         if msg.which() == "can":
           for m in msg.can:
             if m.src < 64:

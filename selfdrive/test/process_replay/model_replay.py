@@ -64,12 +64,12 @@ def model_replay(lr, frs):
     frame_idxs = defaultdict(lambda: 0)
 
     # init modeld with valid calibration
-    cal_msgs = [msg for msg in lr if msg.which() == "liveCalibration"]
+    cal_msgs = [msg for msg in lr.findAll(['liveCalibration'])]
     for _ in range(5):
       pm.send(cal_msgs[0].which(), cal_msgs[0].as_builder())
       time.sleep(0.1)
 
-    for msg in tqdm(lr):
+    for msg in tqdm(lr.findAll(['liveCalibration', 'lateralPlan', 'roadCameraState', 'driverCameraState'])):
       if SEND_EXTRA_INPUTS:
         if msg.which() == "liveCalibration":
           last_calib = list(msg.liveCalibration.rpyCalib)
@@ -118,7 +118,7 @@ if __name__ == "__main__":
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
   # load logs
-  lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT)))
+  lr = LogReader(get_url(TEST_ROUTE, SEGMENT))
   frs = {
     'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="fcamera")),
     'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="dcamera")),
