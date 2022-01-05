@@ -7,17 +7,19 @@ from pathlib import Path
 from collections import deque
 from datetime import datetime
 from selfdrive.hardware import PC
+from selfdrive.swaglog import cloudlog
 from cereal.messaging import SubMaster
 from common.file_helpers import atomic_write_on_fs_tmp
 
-
-AGGREGATION_TIME_S = 60
+FLUSH_TIME_S = 60
 STATS_SOCKET = "ipc:///tmp/stats"
 if PC:
   STATS_DIR = os.path.join(str(Path.home()), ".comma", "stats")
 else:
   STATS_DIR = "/data/stats/"
 
+class METRIC_TYPE:
+  GAUGE = 'g'
 
 class StatLog:
   def __init__(self):
@@ -30,32 +32,13 @@ class StatLog:
     self.sock.connect(STATS_SOCKET)
     self.pid = os.getpid()
 
-  def log(self, name: str, value: float):
+  def gauge(self, name: str, value: float):
     if os.getpid() != self.pid:
       self.connect()
-    self.sock.send_string(json.dumps({"name": name, "val": value}), zmq.NOBLOCK)
+    self.sock.send_string(f"{name}:{value}|{METRIC_TYPE.GAUGE}", zmq.NOBLOCK)
 
 
 def run_daemon():
-  def aggregate(values: deque):
-    samples = list(values)
-    samples.sort()
-
-    _len = len(samples)
-    _sum = sum(samples)
-
-    aggregates =  {
-      'count': _len,
-      'max': samples[-1],
-      'min': samples[0],
-      'mean': _sum / _len,
-    }
-
-    for percentile in [0.05, 0.25, 0.5, 0.75, 0.95]:
-      aggregates[f"p{int(percentile * 100)}"] = samples[int(round(percentile * _len - 1))]
-
-    return aggregates
-
   # open statistics socket
   ctx = zmq.Context().instance()
   sock = ctx.socket(zmq.PULL)
@@ -67,36 +50,43 @@ def run_daemon():
   # subscribe to deviceState for started state
   sm = SubMaster(['deviceState'])
 
-  last_aggregate_time = time.monotonic()
-  values = {}
+  last_flush_time = time.monotonic()
+  gauges = {}
   started_prev = False
   while True:
     try:
-      dat = json.loads(b''.join(sock.recv_multipart(zmq.NOBLOCK)))
-      if dat['name'] not in values.keys():
-        values[dat['name']] = deque()
-      values[dat['name']].append(dat['val'])
+      metric = sock.recv_string(zmq.NOBLOCK)
+      try:
+        metric_type = metric.split('|')[1]
+        metric_name = metric.split(':')[0]
+        metric_value = metric.split('|')[0].split(':')[1]
+
+        if metric_type == METRIC_TYPE.GAUGE:
+          gauges[metric_name] = metric_value
+        else:
+          cloudlog.error(f"unknown metric type: {metric_type}")
+      except Exception:
+        cloudlog.error(f"malformed metric: {metric}")
     except zmq.error.Again:
       time.sleep(1e-3)
 
     started = sm['deviceState'].started
-    # aggregate when started state changes or after AGGREGATION_TIME_S
-    if (time.monotonic() > last_aggregate_time + AGGREGATION_TIME_S) or (started != started_prev):
-      aggregates = {
+    # flush when started state changes or after FLUSH_TIME_S
+    if (time.monotonic() > last_flush_time + FLUSH_TIME_S) or (started != started_prev):
+      flush_result = {
         'time_utc': int(datetime.utcnow().timestamp()),
         'started': started,
+        'gauges': {**gauges},
       }
 
-      for key in values.keys():
-        if len(values[key]) > 0:
-          aggregates[key] = aggregate(values[key])
-        values[key].clear()
+      # clear intermediate data
+      gauges = {}
 
-      stats_path = os.path.join(STATS_DIR, str(aggregates['time_utc']))
+      stats_path = os.path.join(STATS_DIR, str(flush_result['time_utc']))
       with atomic_write_on_fs_tmp(stats_path) as f:
-        f.write(json.dumps(aggregates))
+        f.write(json.dumps(flush_result))
 
-      last_aggregate_time = time.monotonic()
+      last_flush_time = time.monotonic()
     started_prev = started
 
 if __name__ == "__main__":

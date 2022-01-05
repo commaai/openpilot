@@ -412,7 +412,7 @@ def thermald_thread() -> NoReturn:
 
     # stats
     # TODO: add more here!
-    statlog.log("memory_usage_percent", msg.deviceState.memoryUsagePercent)
+    statlog.gauge("memory_usage_percent", msg.deviceState.memoryUsagePercent)
 
     # report to server once every 10 minutes
     if (count % int(600. / DT_TRML)) == 0:
