@@ -50,7 +50,7 @@ void TrackWidget::paintEvent(QPaintEvent *event) {
 
 // Spinner
 
-Spinner::Spinner(QWidget *parent) : QWidget(parent) {
+Spinner::Spinner(QWidget *parent) : Wakeable(), QWidget(parent) {
   QGridLayout *main_layout = new QGridLayout(this);
   main_layout->setSpacing(0);
   main_layout->setMargin(200);
@@ -91,8 +91,17 @@ Spinner::Spinner(QWidget *parent) : QWidget(parent) {
     }
   )");
 
+  // Due to overloaded Qt slots, update(int n) and update(const UIState &s), we are forced to use
+  // this ugly casting syntax when connecting. Alternative is to rename the slot methods.
+
   notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read);
-  QObject::connect(notifier, &QSocketNotifier::activated, this, &Spinner::update);
+  QObject::connect(notifier, &QSocketNotifier::activated, this, static_cast<void (Spinner::*)(int)>(&Spinner::update));
+
+  // Connect device signal directly to UI state signal for awake boolean
+  QObject::connect(this, &Spinner::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
+  QObject::connect(uiState(), &UIState::uiUpdate, this, static_cast<void (Spinner::*)(const UIState &)>(&Spinner::update));
+  setAwake(true);
+  resetInteractiveTimout();
 };
 
 void Spinner::update(int n) {
@@ -108,6 +117,10 @@ void Spinner::update(int n) {
       progress_bar->setValue(std::stoi(line));
     }
   }
+}
+
+void Spinner::update(const UIState &s) {
+  Wakeable::update(s);
 }
 
 int main(int argc, char *argv[]) {

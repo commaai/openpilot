@@ -7,6 +7,8 @@
 #include <QVariantAnimation>
 #include <QWidget>
 
+#include "selfdrive/ui/ui.h"
+
 constexpr int spinner_fps = 30;
 constexpr QSize spinner_size = QSize(360, 360);
 
@@ -21,17 +23,23 @@ private:
   QVariantAnimation m_anim;
 };
 
-class Spinner : public QWidget {
+class Spinner : public QWidget, public Wakeable {
   Q_OBJECT
+  Q_INTERFACES(Wakeable)
 
 public:
   explicit Spinner(QWidget *parent = 0);
+
+signals:
+  void displayPowerChanged(bool on);
+  void interactiveTimout();
+
+public slots:
+  void update(int n);
+  virtual void update(const UIState &s);
 
 private:
   QLabel *text;
   QProgressBar *progress_bar;
   QSocketNotifier *notifier;
-
-public slots:
-  void update(int n);
 };
