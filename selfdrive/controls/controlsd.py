@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import math
+import json
 from numbers import Number
 
 from cereal import car, log
@@ -274,11 +275,15 @@ class Controls:
     elif not self.sm.valid["pandaStates"]:
       self.events.add(EventName.usbError)
     elif not self.sm.all_alive_and_valid() or self.can_rcv_error:
-      self.events.add(EventName.commIssue)
+      meta = {
+        'invalid': [s for s, valid in self.sm.valid.items() if not valid],
+        'not_alive': [s for s, alive in self.sm.alive.items() if not alive],
+        'can_rcv_error': self.can_rcv_error,
+      }
+
+      self.events.add(EventName.commIssue, meta=json.dumps(meta))
       if not self.logged_comm_issue:
-        invalid = [s for s, valid in self.sm.valid.items() if not valid]
-        not_alive = [s for s, alive in self.sm.alive.items() if not alive]
-        cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive)
+        cloudlog.event("commIssue", **meta)
         self.logged_comm_issue = True
     else:
       self.logged_comm_issue = False
@@ -598,7 +603,7 @@ class Controls:
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
                     and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
-    model_v2 = self.sm['modelV2'] 
+    model_v2 = self.sm['modelV2']
     desire_prediction = model_v2.meta.desirePrediction
     if len(desire_prediction) and ldw_allowed:
       right_lane_visible = self.sm['lateralPlan'].rProb > 0.5
