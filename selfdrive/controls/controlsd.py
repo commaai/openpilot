@@ -192,7 +192,6 @@ class Controls:
 
     self.events.clear()
     self.events.add_from_msg(CS.events)
-
     if self.sm.updated['driverMonitoringState']:
       events = Events()
       events.add_from_msg(self.sm['driverMonitoringState'].events)
@@ -240,17 +239,13 @@ class Controls:
       self.latest_events['deviceState'] = events
 
     # Handle calibration status
-    if self.sm.updated['liveCalibration']:
-      events = []
-      cal_status = self.sm['liveCalibration'].calStatus
-      if cal_status != Calibration.CALIBRATED:
-        if cal_status == Calibration.UNCALIBRATED:
-          events.append(EventName.calibrationIncomplete)
-        else:
-          events.append(EventName.calibrationInvalid)
-      
-      self.latest_events['liveCalibration'] = events
-      
+    cal_status = self.sm['liveCalibration'].calStatus
+    if cal_status != Calibration.CALIBRATED:
+      if cal_status == Calibration.UNCALIBRATED:
+        self.events.add(EventName.calibrationIncomplete)
+      else:
+        self.events.add(EventName.calibrationInvalid)
+
     # Handle lane change
     if self.sm.updated['lateralPlan']:
       events = []
@@ -289,9 +284,7 @@ class Controls:
 
         if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
           events.append(EventName.relayMalfunction)
-
       self.latest_events['pandaStates'] = events
-      
 
     # Check for HW or system issues
     if len(self.sm['radarState'].radarErrors):
@@ -371,7 +364,6 @@ class Controls:
         not_running = {p.name for p in self.sm['managerState'].processes if not p.running}
         if not_running - IGNORE_PROCESSES:
           events.append(EventName.processNotRunning)
-        
         self.latest_events['managerState'] = events
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
@@ -385,9 +377,8 @@ class Controls:
       if CS.brakePressed and v_future >= self.CP.vEgoStarting \
         and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3:
         events.append(EventName.noTarget)
-      
       self.latest_events['longitudinalPlan'] = events
-    
+
     self.events.add_from_events(self.latest_events.values())
 
   def data_sample(self):
