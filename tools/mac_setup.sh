@@ -73,9 +73,9 @@ if [ ! -f "/tmp/casadi/build/CMakeCache.txt" ]; then
     -DWITH_PYTHON=ON \
     -DCMAKE_INSTALL_PREFIX:PATH=$VENV \
     -DPYTHON_PREFIX:PATH=$VENV/lib/python$PYTHON_VER/site-packages \
-    -DPYTHON_LIBRARY:FILEPATH=$HOME/.pyenv/versions/$PYTHON_VERSION/lib/libpython3.8.dylib \
+    -DPYTHON_LIBRARY:FILEPATH=$HOME/.pyenv/versions/$PYTHON_VERSION/lib/libpython$PYTHON_VER.dylib \
     -DPYTHON_EXECUTABLE:FILEPATH=$HOME/.pyenv/versions/$PYTHON_VERSION/bin/python \
-    -DPYTHON_INCLUDE_DIR:PATH=$HOME/.pyenv/versions/$PYTHON_VERSION/include/python3.8
+    -DPYTHON_INCLUDE_DIR:PATH=$HOME/.pyenv/versions/$PYTHON_VERSION/include/python$PYTHON_VER
   make -j$(nproc) && make install
 else
   echo "----   'casadi build files found. skipping rebuild   ----"
