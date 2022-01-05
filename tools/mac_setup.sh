@@ -1,9 +1,7 @@
 #!/bin/bash -e
-PYTHON_VERSION=3.8.10
-PYTHON_VER=3.8
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
-ARCH=$(uname -m)
 
 # Install brew if required
 if [[ $(command -v brew) == "" ]]; then
@@ -11,8 +9,7 @@ if [[ $(command -v brew) == "" ]]; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
-## TODO remove protobuf,protobuf-c,swig when
-## casadi pip package is available
+# TODO: remove protobuf,protobuf-c,swig when casadi can be pip installed
 brew bundle --file=- <<-EOS
 brew "cmake"
 brew "cppcheck"
@@ -62,9 +59,12 @@ fi
 
 # install python dependencies
 $ROOT/update_requirements.sh || true
+eval "$(pyenv init --path)"
 
 # install casadi
 VENV=`pipenv --venv`
+PYTHON_VER=3.8
+PYTHON_VERSION=$(cat $ROOT/.python-version)
 if [ ! -f "$VENV/include/casadi/casadi.hpp" ]; then
   echo "-- casadi manual install"
   cd /tmp/ && curl -L https://github.com/casadi/casadi/archive/refs/tags/ge6.tar.gz --output casadi.tar.gz

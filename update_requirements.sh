@@ -20,12 +20,7 @@ if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
   echo "python ${PYENV_PYTHON_VERSION} install ..."
   CONFIGURE_OPTS="--enable-shared" pyenv install -f ${PYENV_PYTHON_VERSION}
 fi
-
-
-if ! command -v pipenv &> /dev/null; then
-  echo "pipenv install ..."
-  pip install pipenv
-fi
+eval "$(pyenv init --path)"
 
 echo "update pip"
 pip install pip==21.3.1
