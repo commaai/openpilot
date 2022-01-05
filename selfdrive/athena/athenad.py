@@ -484,11 +484,12 @@ def log_handler(end_event):
 def stat_handler(end_event):
   while not end_event.is_set():
     last_scan = 0
+    curr_scan = sec_since_boot()
     try:
-      curr_scan = sec_since_boot()
       if curr_scan - last_scan > 10:
-        for stat_entry in filter(lambda name: not name.startswith(tempfile.gettempprefix()), os.listdir(STATS_DIR)):
-          stat_path = os.path.join(STATS_DIR, stat_entry)
+        stat_filenames = filter(lambda name: not name.startswith(tempfile.gettempprefix()), os.listdir(STATS_DIR))
+        if len(stat_filenames) > 0:
+          stat_path = os.path.join(STATS_DIR, stat_filenames[0])
           with open(stat_path) as f:
             stats = json.load(f)
           jsonrpc = {
@@ -497,13 +498,13 @@ def stat_handler(end_event):
               **stats
             },
             "jsonrpc": "2.0",
-            "id": stat_entry
+            "id": stat_filenames[0]
           }
           low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
           os.remove(stat_path)
-        last_scan = curr_scan
     except Exception:
       cloudlog.exception("athena.stat_handler.exception")
+    last_scan = curr_scan
     time.sleep(0.1)
 
 
