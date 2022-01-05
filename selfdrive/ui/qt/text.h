@@ -1,8 +1,11 @@
 #include <array>
 
 #include <QWidget>
+#include <QLabel>
+#include <QPushButton>
 
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 // Forward declaration
 class QApplication;
@@ -20,4 +23,10 @@ signals:
 
 public slots:
   virtual void update(const UIState &s);
+
+private:
+  QLabel *label;
+  ScrollView *scroll;
+  QPushButton *btn;
+
 };

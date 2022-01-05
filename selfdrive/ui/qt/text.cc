@@ -1,6 +1,5 @@
 #include <QApplication>
 #include <QLabel>
-#include <QPushButton>
 #include <QScrollBar>
 #include <QVBoxLayout>
 
@@ -8,16 +7,16 @@
 #include "selfdrive/ui/qt/text.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/widgets/scrollview.h"
+
 
 Text::Text(char *argv[], QApplication &a, QWidget *parent) : Wakeable(), QWidget(parent) {
   QGridLayout *main_layout = new QGridLayout(this);
   main_layout->setMargin(50);
 
-  QLabel *label = new QLabel(argv[1]);
+  label = new QLabel(argv[1]);
   label->setWordWrap(true);
   label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-  ScrollView *scroll = new ScrollView(label);
+  scroll = new ScrollView(label);
   scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   main_layout->addWidget(scroll, 0, 0, Qt::AlignTop);
 
@@ -26,7 +25,7 @@ Text::Text(char *argv[], QApplication &a, QWidget *parent) : Wakeable(), QWidget
     scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
   });
 
-  QPushButton *btn = new QPushButton();
+  btn = new QPushButton();
 #ifdef __aarch64__
   btn->setText("Reboot");
   QObject::connect(btn, &QPushButton::clicked, [=]() {
