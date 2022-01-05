@@ -57,7 +57,7 @@ if [[ "$HOST" == "Darwin" ]]; then
 else
   pipenv install --dev --deploy --clear
 fi
-pyenv rehash
+`pyenv rehash
 
 if [ -f "$DIR/.pre-commit-config.yaml" ]; then
   echo "precommit install ..."

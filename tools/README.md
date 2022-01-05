@@ -37,13 +37,6 @@ Build openpilot with this command:
 scons -u -j$(nproc)
 ```
 
-## macOS
-
-> Q: I cannot build openpilot after running `mac_setup.sh` using `scons`
-  - Ensure you are in openpilot's virtual environment:
-    - `pipenv shell` then `scons -j$(nproc)`
-    - or `pipenv run scons -j$(nproc)`
-
 ### Windows
 
 Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should get Windows users a similiar experience to Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
