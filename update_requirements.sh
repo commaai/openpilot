@@ -1,5 +1,5 @@
 #!/bin/bash -e
-HOST="$(uname -m)"
+HOST="$(uname -s)"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR
 
