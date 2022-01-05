@@ -487,7 +487,7 @@ def stat_handler(end_event):
     try:
       curr_scan = sec_since_boot()
       if curr_scan - last_scan > 10:
-        for stat_entry in filter(lambda name: tempfile.gettempprefix() not in name, os.listdir(STATS_DIR)):
+        for stat_entry in filter(lambda name: not name.startswith(tempfile.gettempprefix()), os.listdir(STATS_DIR)):
           stat_path = os.path.join(STATS_DIR, stat_entry)
           with open(stat_path) as f:
             stats = json.load(f)
