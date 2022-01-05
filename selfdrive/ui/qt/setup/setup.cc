@@ -386,7 +386,10 @@ Setup::Setup(QWidget *parent) : Wakeable(), QStackedWidget(parent) {
 
   // Connect device signal directly to UI state signal for awake boolean
   QObject::connect(this, &Setup::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
+
+  // Connect to UI state messages for brightness and wakefulness
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Setup::update);
+
   setAwake(true);
   resetInteractiveTimeout();
 

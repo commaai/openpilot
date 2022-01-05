@@ -1,5 +1,4 @@
 #include <QApplication>
-#include <QLabel>
 #include <QScrollBar>
 #include <QVBoxLayout>
 
