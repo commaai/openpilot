@@ -38,7 +38,7 @@ class StatLog:
     self.sock.send_string(f"{name}:{value}|{METRIC_TYPE.GAUGE}", zmq.NOBLOCK)
 
 
-def run_daemon():
+def main():
   # open statistics socket
   ctx = zmq.Context().instance()
   sock = ctx.socket(zmq.PULL)
@@ -89,7 +89,8 @@ def run_daemon():
       last_flush_time = time.monotonic()
     started_prev = started
 
+
 if __name__ == "__main__":
-  run_daemon()
+  main()
 else:
   statlog = StatLog()
