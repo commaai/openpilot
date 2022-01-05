@@ -156,7 +156,7 @@ def fingerprint(msgs, fsm, can_sock, fingerprint):
   fsm.wait_on_getitem = True
 
   # populate fake socket with data for fingerprinting
-  canmsgs = [msg for msg in msgs if msg.which() == "can"]
+  canmsgs = msgs.findAll(["can"])
   wait_for_event(can_sock.recv_called)
   can_sock.recv_called.clear()
   can_sock.data = [msg.as_builder().to_bytes() for msg in canmsgs[:300]]
@@ -183,7 +183,7 @@ def get_car_params(msgs, fsm, can_sock, fingerprint):
     can = FakeSocket(wait=False)
     sendcan = FakeSocket(wait=False)
 
-    canmsgs = [msg for msg in msgs if msg.which() == 'can']
+    canmsgs = msgs.findAll(["can"])
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan)
@@ -362,7 +362,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
     can_sock = FakeSocket()
     args = (fsm, fpm, can_sock)
 
-  pub_msgs = [msg for msg in lr if msg.which() in list(cfg.pub_sub.keys())]
+  pub_msgs = lr.findAll(list(cfg.pub_sub.keys()))
 
   setup_env()
 

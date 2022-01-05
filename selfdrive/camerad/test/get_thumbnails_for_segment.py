@@ -21,9 +21,9 @@ if __name__ == "__main__":
 
   r = Route(args.route)
   path = r.log_paths()[args.segment] or r.qlog_paths()[args.segment]
-  lr = list(LogReader(path))
+  lr = LogReader(path)
 
-  for msg in tqdm(lr):
+  for msg in tqdm(lr.findAll(['thumbnail', 'navThumbnail'])):
       if msg.which() == 'thumbnail':
           with open(os.path.join(out_path, f"{msg.thumbnail.frameId}.jpg"), 'wb') as f:
               f.write(msg.thumbnail.thumbnail)

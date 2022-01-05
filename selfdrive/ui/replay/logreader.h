@@ -55,6 +55,7 @@ public:
   ~LogReader();
   bool load(const std::string &url, bool local_cache = false, std::atomic<bool> *abort = nullptr, int chunk_size = -1, int retries = 0);
   bool load(const std::byte *data, size_t size, std::atomic<bool> *abort = nullptr);
+  std::vector<Event*> findAll(const std::vector<std::string>& services);
   inline void setSortByTime(bool sort) { sort_by_time = sort; }
   inline size_t size() const { return events.size(); }
   inline Event *at(int idx) const {

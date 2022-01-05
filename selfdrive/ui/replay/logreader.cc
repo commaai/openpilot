@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <set>
+#include <capnp/dynamic.h>
 #include "selfdrive/ui/replay/util.h"
 
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
@@ -105,4 +107,21 @@ bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abor
     return true;
   }
   return false;
+}
+
+std::vector<Event *> LogReader::findAll(const std::vector<std::string> &services) {
+  std::set<uint16_t> which_set;
+  auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
+  for (auto &s : services) {
+    which_set.insert(event_struct.getFieldByName(s).getProto().getDiscriminantValue());
+  }
+
+  const auto end = which_set.end();
+  std::vector<Event *> result;
+  for (Event *e : events) {
+    if (which_set.find(e->which) != end) {
+      result.push_back(e);
+    }
+  }
+  return result;
 }
