@@ -309,10 +309,6 @@ void CameraViewWidget::vipcThread() {
           assert(glGetError() == GL_NO_ERROR);
 
           wait_fence.reset(new WaitFence());
-
-          // Ensure the fence is in the GPU command queue, or waiting on it might block
-          // https://www.khronos.org/opengl/wiki/Sync_Object#Flushing_and_contexts
-          glFlush();
         }
         latest_texture_id = buf->idx;
       }
