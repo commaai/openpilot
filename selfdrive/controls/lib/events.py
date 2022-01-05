@@ -47,8 +47,8 @@ class Events:
     self.events_t = dict.fromkeys(EVENTS.keys(), 0)
 
   @property
-  def names(self) -> List[Tuple[int, Optional[str]]]:
-    return self.events
+  def names(self) -> List[int]:
+    return [e for e, _ in self.events]
 
   def __len__(self) -> int:
     return len(self.events)
