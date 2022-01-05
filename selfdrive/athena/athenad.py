@@ -489,16 +489,16 @@ def stat_handler(end_event):
         for stat_entry in os.listdir(STATS_DIR):
           stat_path = os.path.join(STATS_DIR, stat_entry)
           with open(stat_path) as f:
-            stats = json.loads(f.read())
-            jsonrpc = {
-              "method": "storeStats",
-              "params": {
-                **stats
-              },
-              "jsonrpc": "2.0",
-              "id": stat_entry
-            }
-            low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
+            stats = json.load(f)
+          jsonrpc = {
+            "method": "storeStats",
+            "params": {
+              **stats
+            },
+            "jsonrpc": "2.0",
+            "id": stat_entry
+          }
+          low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
           os.remove(stat_path)
         last_scan = curr_scan
     except Exception:
