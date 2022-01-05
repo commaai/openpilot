@@ -380,14 +380,13 @@ def python_replay_process(cfg, lr, fingerprint=None):
   else:
     os.environ['SKIP_FW_QUERY'] = ""
     os.environ['FINGERPRINT'] = ""
-    for msg in lr:
-      if msg.which() == 'carParams':
-        car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-        if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
-          Params().put("CarParamsCache", msg.carParams.as_builder().to_bytes())
-        else:
-          os.environ['SKIP_FW_QUERY'] = "1"
-          os.environ['FINGERPRINT'] = car_fingerprint
+    for msg in lr.findAll(['carParams']):
+      car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
+      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
+        Params().put("CarParamsCache", msg.carParams.as_builder().to_bytes())
+      else:
+        os.environ['SKIP_FW_QUERY'] = "1"
+        os.environ['FINGERPRINT'] = car_fingerprint
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
