@@ -15,7 +15,7 @@ Connect to your comma device using [SSH](ssh/README.md)
 System requirements
 ============
 
-openpilot is developed and tested on **Ubuntu 20.04**, which is the primary development target aside from the [supported embdedded hardware](https://github.com/commaai/openpilot#running-on-pc). We also have a CI test to verify that openpilot builds on macOS, but the tools are untested. For the best experience, stick to Ubuntu 20.04, otherwise openpilot and the tools should work with minimal to no modifications on macOS and other Linux systems.
+openpilot is developed and tested on **Ubuntu 20.04**, which is the primary development target aside from the [supported embdedded hardware](https://github.com/commaai/openpilot#running-on-pc). We also have a CI test to verify that openpilot builds on macOS For the best experience, stick to Ubuntu 20.04, otherwise openpilot and the tools should work with minimal to no modifications on macOS and other Linux systems.
 
 Setup your PC
 ============
@@ -61,6 +61,13 @@ cd openpilot && scons -j$(nproc)
 
 NOTE: you can always run `update_requirements.sh` to pull in new python dependencies.
 
+## macOS build troubleshooting
+
+> Q: I cannot build openpilot after running `mac_setup.sh` using `scons`
+  - Ensure you are in openpilot's virtual environment:
+    - `pipenv shell` then `scons -j$(nproc)`
+    - or `pipenv run scons -j$(nproc)`
+
 Windows
 ------------
 
@@ -68,7 +75,7 @@ Neither openpilot nor any of the tools are developed or tested on Windows, but t
 
 Follow [these instructions](https://docs.microsoft.com/en-us/windows/wsl/install) to setup the WSL and install the `Ubuntu-20.04` distribution. Once your Ubuntu WSL environment is setup, follow the Linux setup instructions to finish setting up your environment.
 
-GUI applications do not work with WSL out of the box. You will have to either [upgrade your system to Windows 11](https://docs.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) or [set up an Xorg server](https://techcommunity.microsoft.com/t5/windows-dev-appconsult/running-wsl-gui-apps-on-windows-10/ba-p/1493242).  
+GUI applications do not work with WSL out of the box. You will have to either [upgrade your system to Windows 11](https://docs.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) or [set up an Xorg server](https://techcommunity.microsoft.com/t5/windows-dev-appconsult/running-wsl-gui-apps-on-windows-10/ba-p/1493242).
 
 Tools
 ============
