@@ -256,7 +256,7 @@ bool Wakeable::motionTriggered(const UIState &s) {
   return (!awake && accel_trigger && gyro_trigger);
 }
 
-void Wakeable::resetInteractiveTimout() {
+void Wakeable::resetInteractiveTimeout() {
   interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
 }
 
@@ -309,9 +309,9 @@ void Wakeable::updateWakefulness(const UIState &s) {
   ignition_on = s.scene.ignition;
 
   if (ignition_just_turned_off || motionTriggered(s)) {
-    resetInteractiveTimout();
+    resetInteractiveTimeout();
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
-    emit interactiveTimout();
+    emit interactiveTimeout();
   }
 
   setAwake(s.scene.ignition || interactive_timeout > 0);
@@ -322,7 +322,7 @@ Device::Device(QObject *parent) : Wakeable(), QObject(parent) {
   QObject::connect(this, &Device::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
   setAwake(true);
-  resetInteractiveTimout();
+  resetInteractiveTimeout();
 }
 
 void Device::update(const UIState &s) {

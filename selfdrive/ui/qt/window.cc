@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
       closeSettings();
     }
   });
-  QObject::connect(&device, &Device::interactiveTimout, [=]() {
+  QObject::connect(&device, &Device::interactiveTimeout, [=]() {
     if (main_layout->currentWidget() == settingsWindow) {
       closeSettings();
     }
@@ -81,7 +81,7 @@ void MainWindow::closeSettings() {
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
   if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::TouchBegin) {
-    device.resetInteractiveTimout();
+    device.resetInteractiveTimeout();
   }
 
 #ifdef QCOM

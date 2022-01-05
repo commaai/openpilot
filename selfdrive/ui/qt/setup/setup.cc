@@ -388,7 +388,7 @@ Setup::Setup(QWidget *parent) : Wakeable(), QStackedWidget(parent) {
   QObject::connect(this, &Setup::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Setup::update);
   setAwake(true);
-  resetInteractiveTimout();
+  resetInteractiveTimeout();
 
   // TODO: revisit pressed bg color
   setStyleSheet(R"(

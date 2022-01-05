@@ -27,7 +27,7 @@ private:
 signals:
   void finished(bool success);
   void displayPowerChanged(bool on);
-  void interactiveTimout();
+  void interactiveTimeout();
 
 public slots:
   void nextPage();

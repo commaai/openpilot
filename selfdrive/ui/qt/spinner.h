@@ -32,7 +32,7 @@ public:
 
 signals:
   void displayPowerChanged(bool on);
-  void interactiveTimout();
+  void interactiveTimeout();
 
 public slots:
   void update(int n);

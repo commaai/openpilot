@@ -101,7 +101,7 @@ Spinner::Spinner(QWidget *parent) : Wakeable(), QWidget(parent) {
   QObject::connect(this, &Spinner::displayPowerChanged, uiState(), &UIState::displayPowerChanged);
   QObject::connect(uiState(), &UIState::uiUpdate, this, static_cast<void (Spinner::*)(const UIState &)>(&Spinner::update));
   setAwake(true);
-  resetInteractiveTimout();
+  resetInteractiveTimeout();
 };
 
 void Spinner::update(int n) {

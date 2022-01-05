@@ -115,7 +115,7 @@ class UIState : public QObject {
 public:
   UIState(QObject* parent = 0);
   void updateStatus();
-  inline bool worldObjectsVisible() const { 
+  inline bool worldObjectsVisible() const {
     return sm->rcv_frame("liveCalibration") > scene.started_frame;
   };
 
@@ -153,7 +153,7 @@ class Wakeable {
 public:
   Wakeable();
   virtual ~Wakeable(){}
-  virtual void resetInteractiveTimout();
+  virtual void resetInteractiveTimeout();
   virtual void update(const UIState &s);
 
 protected:
@@ -174,7 +174,7 @@ protected:
   virtual void updateBrightness(const UIState &s);
 
   virtual void displayPowerChanged(bool on) = 0;
-  virtual void interactiveTimout() = 0;
+  virtual void interactiveTimeout() = 0;
 };
 
 Q_DECLARE_INTERFACE(Wakeable, "Wakeable")
@@ -190,7 +190,7 @@ public:
 
 signals:
   void displayPowerChanged(bool on);
-  void interactiveTimout();
+  void interactiveTimeout();
 
 public slots:
   virtual void update(const UIState &s);
