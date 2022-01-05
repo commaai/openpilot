@@ -134,13 +134,14 @@ class TestAthenadMethods(unittest.TestCase):
   @with_http_server
   def test_uploadFileToUrl(self, host):
     not_exists_resp = dispatcher["uploadFileToUrl"]("does_not_exist.bz2", "http://localhost:1238", {})
-    self.assertEqual(not_exists_resp, 404)
+    self.assertEqual(not_exists_resp, {'enqueued': 0, 'items': [], 'failed': ['does_not_exist.bz2']})
 
     fn = os.path.join(athenad.ROOT, 'qlog.bz2')
     Path(fn).touch()
 
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", f"{host}/qlog.bz2", {})
     self.assertEqual(resp['enqueued'], 1)
+    self.assertNotIn('failed', resp)
     self.assertDictContainsSubset({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}, resp['items'][0])
     self.assertIsNotNone(resp['items'][0].get('id'))
     self.assertEqual(athenad.upload_queue.qsize(), 1)
