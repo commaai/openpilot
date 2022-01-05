@@ -3,20 +3,15 @@
 #include <QPushButton>
 #include <QScrollBar>
 #include <QVBoxLayout>
-#include <QWidget>
 
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/text.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
-int main(int argc, char *argv[]) {
-  initApp();
-  QApplication a(argc, argv);
-  QWidget window;
-  setMainWindow(&window);
-
-  QGridLayout *main_layout = new QGridLayout(&window);
+Text::Text(char *argv[], QApplication &a, QWidget *parent) : QWidget(parent) {
+  QGridLayout *main_layout = new QGridLayout(this);
   main_layout->setMargin(50);
 
   QLabel *label = new QLabel(argv[1]);
@@ -43,7 +38,7 @@ int main(int argc, char *argv[]) {
 #endif
   main_layout->addWidget(btn, 0, 0, Qt::AlignRight | Qt::AlignBottom);
 
-  window.setStyleSheet(R"(
+  setStyleSheet(R"(
     * {
       outline: none;
       color: white;
@@ -59,6 +54,12 @@ int main(int argc, char *argv[]) {
       margin-right: 40px;
     }
   )");
+};
 
+int main(int argc, char *argv[]) {
+  initApp();
+  QApplication a(argc, argv);
+  Text text(argv, a);
+  setMainWindow(&text);
   return a.exec();
 }
