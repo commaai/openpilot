@@ -11,7 +11,7 @@ if [[ $(command -v brew) == "" ]]; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
-## TODO remove protobuf,protobuf-c when
+## TODO remove protobuf,protobuf-c,swig when
 ## casadi pip package is available
 brew bundle --file=- <<-EOS
 brew "cmake"
@@ -33,6 +33,7 @@ brew "qt@5"
 brew "zeromq"
 brew "protobuf"
 brew "protobuf-c"
+brew "swig"
 cask "gcc-arm-embedded"
 EOS
 
@@ -62,13 +63,12 @@ fi
 $ROOT/update_requirements.sh || true
 
 # install casadi
-if [ ! -f "/tmp/casadi/build/CMakeCache.txt" ]; then
+VENV=`pipenv --venv`
+if [ ! -f "$VENV/include/casadi/casadi.hpp" ]; then
   echo "-- casadi manual install"
-  VENV=`pipenv --venv`
-  cd /tmp/ && mkdir -p casadi
-  curl -L https://github.com/casadi/casadi/archive/refs/tags/ge6.tar.gz --output casadi.tar.gz
-  tar -xzf casadi.tar.gz -C casadi/
-  cd casadi && mkdir -p build && cd build
+  cd /tmp/ && curl -L https://github.com/casadi/casadi/archive/refs/tags/ge6.tar.gz --output casadi.tar.gz
+  tar -xzf casadi.tar.gz
+  cd casadi-ge6/ && mkdir -p build && cd build
   cmake .. \
     -DWITH_PYTHON=ON \
     -DCMAKE_INSTALL_PREFIX:PATH=$VENV \
@@ -78,7 +78,7 @@ if [ ! -f "/tmp/casadi/build/CMakeCache.txt" ]; then
     -DPYTHON_INCLUDE_DIR:PATH=$HOME/.pyenv/versions/$PYTHON_VERSION/include/python$PYTHON_VER
   make -j$(nproc) && make install
 else
-  echo "----   'casadi build files found. skipping rebuild   ----"
+  echo "----   'casadi found in venv. skipping build   ----"
 fi
 
 cd $ROOT
