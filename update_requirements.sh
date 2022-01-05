@@ -1,5 +1,7 @@
-#!/bin/bash -e
-HOST="$(uname -s)"
+#!/bin/bash
+
+set -e
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR
 
@@ -20,26 +22,14 @@ if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
 fi
 
 
-if [[ "$HOST" != "Darwin" ]]; then
-  if ! command -v pipenv &> /dev/null; then
-    echo "pipenv install ..."
-    pip install pipenv
-  fi
-
-  echo "update pip"
-  pip install pip==21.3.1
-  pip install pipenv==2021.11.23
-else  # MacOS
-  if ! command -v pipenv &> /dev/null; then
-    echo "pipenv install ..."
-    python3 -m pip install pipenv
-  fi
-
-  echo "update pip"
-  python3 -m pip install pip==21.3.1
-  python3 -m pip install pipenv==2021.11.23
+if ! command -v pipenv &> /dev/null; then
+  echo "pipenv install ..."
+  pip install pipenv
 fi
 
+echo "update pip"
+pip install pip==21.3.1
+pip install pipenv==2021.11.23
 
 if [ -d "./xx" ]; then
   export PIPENV_SYSTEM=1
@@ -53,13 +43,9 @@ else
   RUN=""
 fi
 
-echo "pip packages install for $HOST ..."
-if [[ "$HOST" == "Darwin" ]]; then
-  pipenv install --dev --deploy --clear --skip-lock
-else
-  pipenv install --dev --deploy --clear
-fi
-`pyenv rehash
+echo "pip packages install..."
+pipenv install --dev --deploy --clear
+pyenv rehash
 
 if [ -f "$DIR/.pre-commit-config.yaml" ]; then
   echo "precommit install ..."
