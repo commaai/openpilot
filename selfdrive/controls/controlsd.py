@@ -55,7 +55,7 @@ ButtonEvent = car.CarState.ButtonEvent
 SafetyModel = car.CarParams.SafetyModel
 
 IGNORED_SAFETY_MODES = [SafetyModel.silent, SafetyModel.noOutput]
-
+CSID_MAP = {"0": EventName.roadCameraError, "1": EventName.wideRoadCameraError, "2": EventName.driverCameraError}
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
@@ -311,13 +311,12 @@ class Controls:
       self.events.add(EventName.fcw)
 
     if TICI:
-      csid_map = {"0": EventName.roadCameraError, "1": EventName.wideRoadCameraError, "2": EventName.driverCameraError}
       for m in  messaging.drain_sock(self.log_sock, wait_for_one=False):
         try:
           msg = m.androidLog.message
           if any(err in msg for err in ["ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED"]):
             csid = msg.split("CSID:")[-1].split(" ")[0]
-            if (evt := csid_map.get(csid, None)) is not None:
+            if (evt := CSID_MAP.get(csid, None)) is not None:
               self.events.add(evt)
         except UnicodeDecodeError:
           pass
