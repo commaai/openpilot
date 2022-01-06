@@ -1,23 +1,16 @@
 #!/usr/bin/env python3
 import os
 import zmq
-import json
 import time
 from pathlib import Path
-from collections import deque
 from datetime import datetime
-from selfdrive.hardware import PC
+from common.params import Params
 from selfdrive.swaglog import cloudlog
 from cereal.messaging import SubMaster
 from common.file_helpers import atomic_write_in_dir
+from selfdrive.version import get_origin, get_short_branch, get_short_version, is_dirty
+from selfdrive.loggerd.config import STATS_DIR, STATS_DIR_FILE_LIMIT, STATS_SOCKET, STATS_FLUSH_TIME_S
 
-FLUSH_TIME_S = 60
-STATS_DIR_FILE_LIMIT = 10000
-STATS_SOCKET = "ipc:///tmp/stats"
-if PC:
-  STATS_DIR = os.path.join(str(Path.home()), ".comma", "stats")
-else:
-  STATS_DIR = "/data/stats/"
 
 class METRIC_TYPE:
   GAUGE = 'g'
@@ -48,6 +41,13 @@ class StatLog:
 
 
 def main():
+  def get_influxdb_line(measurement: str, value: float, timestamp: datetime, tags: dict):
+    res = f"{measurement}"
+    for tag_key in tags.keys():
+      res += f",{tag_key}={str(tags[tag_key])}"
+    res += f" value={value} {int(timestamp.timestamp() * 1e9)}\n"
+    return res
+
   # open statistics socket
   ctx = zmq.Context().instance()
   sock = ctx.socket(zmq.PULL)
@@ -56,12 +56,21 @@ def main():
   # initialize stats directory
   Path(STATS_DIR).mkdir(parents=True, exist_ok=True)
 
+  # initialize tags
+  tags = {
+    'dongleId': Params().get("DongleId", encoding='utf-8'),
+    'started': False,
+    'version': get_short_version(),
+    'branch': get_short_branch(),
+    'dirty': is_dirty(),
+    'origin': get_origin(),
+  }
+
   # subscribe to deviceState for started state
   sm = SubMaster(['deviceState'])
 
   last_flush_time = time.monotonic()
   gauges = {}
-  started_prev = False
   while True:
     try:
       metric = sock.recv_string(zmq.NOBLOCK)
@@ -73,34 +82,36 @@ def main():
         if metric_type == METRIC_TYPE.GAUGE:
           gauges[metric_name] = metric_value
         else:
-          cloudlog.error(f"unknown metric type: {metric_type}")
+          cloudlog.event("unknown metric type", metric_type=metric_type)
       except Exception:
-        cloudlog.error(f"malformed metric: {metric}")
+        cloudlog.event("malformed metric", metric=metric)
     except zmq.error.Again:
       time.sleep(1e-3)
 
-    started = sm['deviceState'].started
+    started_prev = sm['deviceState'].started
+    sm.update(0)
+
     # flush when started state changes or after FLUSH_TIME_S
-    if (time.monotonic() > last_flush_time + FLUSH_TIME_S) or (started != started_prev):
-      flush_result = {
-        'time_utc': int(datetime.utcnow().timestamp()),
-        'started': started,
-        'gauges': {**gauges},
-      }
+    if (time.monotonic() > last_flush_time + STATS_FLUSH_TIME_S) or (sm['deviceState'].started != started_prev):
+      result = ""
+      current_time = datetime.utcnow()
+      tags['started'] = sm['deviceState'].started
+
+      for gauge_key in gauges.keys():
+        result += get_influxdb_line(f"gauge.{gauge_key}", gauges[gauge_key], current_time, tags)
 
       # clear intermediate data
       gauges = {}
+      last_flush_time = time.monotonic()
 
       # check that we aren't filling up the drive
       if len(os.listdir(STATS_DIR)) < STATS_DIR_FILE_LIMIT:
-        stats_path = os.path.join(STATS_DIR, str(flush_result['time_utc']))
-        with atomic_write_in_dir(stats_path) as f:
-          json.dump(flush_result, f)
+        if len(result) > 0:
+          stats_path = os.path.join(STATS_DIR, str(int(current_time.timestamp())))
+          with atomic_write_in_dir(stats_path) as f:
+            f.write(result)
       else:
         cloudlog.error("stats dir full")
-
-      last_flush_time = time.monotonic()
-    started_prev = started
 
 
 if __name__ == "__main__":

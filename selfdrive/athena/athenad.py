@@ -491,16 +491,15 @@ def stat_handler(end_event):
         if len(stat_filenames) > 0:
           stat_path = os.path.join(STATS_DIR, stat_filenames[0])
           with open(stat_path) as f:
-            stats = json.load(f)
-          jsonrpc = {
-            "method": "storeStats",
-            "params": {
-              **stats
-            },
-            "jsonrpc": "2.0",
-            "id": stat_filenames[0]
-          }
-          low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
+            jsonrpc = {
+              "method": "storeStats",
+              "params": {
+                "stats": f.read()
+              },
+              "jsonrpc": "2.0",
+              "id": stat_filenames[0]
+            }
+            low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
           os.remove(stat_path)
     except Exception:
       cloudlog.exception("athena.stat_handler.exception")

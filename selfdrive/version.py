@@ -59,6 +59,9 @@ def get_version() -> str:
     version = _versionf.read().split('"')[1]
   return version
 
+@cache
+def get_short_version() -> str:
+  return get_version().split('-')[0]
 
 @cache
 def is_prebuilt() -> bool:
@@ -117,6 +120,7 @@ if __name__ == "__main__":
 
   print(f"Dirty: {is_dirty()}")
   print(f"Version: {get_version()}")
+  print(f"Short version: {get_short_version()}")
   print(f"Origin: {get_origin()}")
   print(f"Branch: {get_branch()}")
   print(f"Short branch: {get_short_branch()}")
