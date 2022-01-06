@@ -90,11 +90,9 @@ jobs:
         path: |
           ~/.pyenv
           ~/.local/share/virtualenvs/
-          ~/Library/Caches/pip
-          ~/Library/Caches/pipenv
           /usr/local/Cellar
           ~/github_brew_cache_entries.txt
-        key: macos-cache-${{ hashFiles('tools/mac_setup.sh') }}-v2
+        key: macos-cache-${{ hashFiles('tools/mac_setup.sh') }}-v3
     - name: Brew link restored dependencies
       if: steps.dependency-cache.outputs.cache-hit == 'true'
       run: |
