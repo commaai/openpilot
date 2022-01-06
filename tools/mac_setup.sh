@@ -60,7 +60,7 @@ if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
 fi
 
 # install python dependencies
-$ROOT/update_requirements.sh || true
+$ROOT/update_requirements.sh
 eval "$(pyenv init --path)"
 
 # install casadi
@@ -82,12 +82,10 @@ if [ ! -f "$VENV/include/casadi/casadi.hpp" ]; then
     -DCMAKE_CXX_FLAGS="-ferror-limit=0" -DCMAKE_C_FLAGS="-ferror-limit=0"
   CFLAGS="-ferror-limit=0" make -j$(nproc) && make install
 else
-  echo "----   'casadi found in venv. skipping build   ----"
+  echo "----   casadi found in venv. skipping build   ----"
 fi
 
-cd $ROOT
-
 echo
-echo "----   FINISH OPENPILOT SETUP   ----"
-echo "Configure your active shell env by running:"
+echo "----   OPENPILOT SETUP DONE   ----"
+echo "Open a new shell or configure your active shell env by running:"
 echo "source $RC_FILE"

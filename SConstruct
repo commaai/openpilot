@@ -238,6 +238,9 @@ env = Environment(
   tools=["default", "cython", "compilation_db"],
 )
 
+if arch == "Darwin":
+  env['RPATHPREFIX'] = "-rpath,"
+
 if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
