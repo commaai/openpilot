@@ -96,7 +96,6 @@ jobs:
     - name: Brew link restored dependencies
       if: steps.dependency-cache.outputs.cache-hit == 'true'
       run: |
-        du -hs ~/.pyenv ~/.local/share/virtualenvs/ /usr/local/Cellar ~/github_brew_cache_entries.txt
         while read pkg; do
           brew link --force "$pkg" # `--force` for keg-only packages
         done < ~/github_brew_cache_entries.txt
@@ -118,6 +117,20 @@ jobs:
           fi
         done
         comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
+        du -hs ~/.pyenv ~/.local/share/virtualenvs/ /usr/local/Cellar ~/github_brew_cache_entries.txt
+
+        echo ""
+        echo ""
+        echo "***************** pyenv"
+        du -hs ~/.pyenv/*
+        echo ""
+        echo ""
+        echo "***************** virtualenvs"
+        du -hs ~/.local/share/virtualenvs/*
+        echo ""
+        echo ""
+        echo "***************** cellar"
+        du -hs /usr/local/Cellar/*
 
   build_webcam:
     name: build webcam
