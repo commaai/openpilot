@@ -217,7 +217,8 @@ class CarController():
         if CS.CP.carFingerprint in HONDA_BOSCH:
           self.accel = clip(accel, P.BOSCH_ACCEL_MIN, P.BOSCH_ACCEL_MAX)
           self.gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
-          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, active, accel, self.gas, idx, stopping, CS.CP.carFingerprint))
+          starting = CS.out.standstill and not stopping
+          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, active, accel, self.gas, idx, starting, stopping, CS.CP.carFingerprint))
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * P.NIDEC_BRAKE_MAX, 0, P.NIDEC_BRAKE_MAX - 1))
