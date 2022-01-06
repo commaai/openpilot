@@ -1049,7 +1049,7 @@ DBC = {
   CAR.KONA_HEV: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.SANTA_FE_2022: dbc_dict('hyundai_kia_generic', None),
-  CAR.SANTA_FE_HEV_2022: dbc_dict('hyundai_kia_generic', None),
+  CAR.SANTA_FE_HEV_2022: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.SANTA_FE_PHEV_2022: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.SONATA_LF: dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
