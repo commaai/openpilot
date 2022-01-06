@@ -487,7 +487,7 @@ def stat_handler(end_event):
     curr_scan = sec_since_boot()
     try:
       if curr_scan - last_scan > 10:
-        stat_filenames = filter(lambda name: not name.startswith(tempfile.gettempprefix()), os.listdir(STATS_DIR))
+        stat_filenames = list(filter(lambda name: not name.startswith(tempfile.gettempprefix()), os.listdir(STATS_DIR)))
         if len(stat_filenames) > 0:
           stat_path = os.path.join(STATS_DIR, stat_filenames[0])
           with open(stat_path) as f:
