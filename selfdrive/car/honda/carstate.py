@@ -363,7 +363,7 @@ class CarState(CarStateBase):
               ]
       checks += [
         ("ACC_HUD", 10),
-        ("LKAS_HUD2", 20),
+        ("LKAS_HUD_2", 20),
       ]
 
     elif CP.carFingerprint not in HONDA_BOSCH:
