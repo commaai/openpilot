@@ -501,9 +501,9 @@ def stat_handler(end_event):
             }
             low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
           os.remove(stat_path)
+        last_scan = curr_scan
     except Exception:
       cloudlog.exception("athena.stat_handler.exception")
-    last_scan = curr_scan
     time.sleep(0.1)
 
 
