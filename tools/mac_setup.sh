@@ -74,6 +74,7 @@ if [ ! -f "$VENV/include/casadi/casadi.hpp" ]; then
   cd casadi-ge6/ && mkdir -p build && cd build
   cmake .. \
     -DWITH_PYTHON=ON \
+    -DWITH_EXAMPLES=OFF \
     -DCMAKE_INSTALL_PREFIX:PATH=$VENV \
     -DPYTHON_PREFIX:PATH=$VENV/lib/python$PYTHON_VER/site-packages \
     -DPYTHON_LIBRARY:FILEPATH=$HOME/.pyenv/versions/$PYTHON_VERSION/lib/libpython$PYTHON_VER.dylib \

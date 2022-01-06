@@ -105,9 +105,6 @@ jobs:
     - name: Build openpilot
       run: |
        source tools/openpilot_env.sh
-       pwd
-       ls -la
-       env
        pipenv run scons --version
        pipenv run scons -j$(nproc)
     - name: Remove pre-existing Homebrew packages for caching
