@@ -19,7 +19,7 @@ if PC:
   STATS_DIR = os.path.join(str(Path.home()), ".comma", "stats")
 else:
   STATS_DIR = "/data/stats/"
-STATS_FLUSH_TIME_S = 6
+STATS_FLUSH_TIME_S = 60
 
 def get_available_percent(default=None):
   try:
