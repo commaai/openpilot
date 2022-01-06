@@ -50,4 +50,5 @@ if [ -f "$DIR/.pre-commit-config.yaml" ]; then
   $RUN pre-commit install
   [ -d "./xx" ] && (cd xx && $RUN pre-commit install)
   [ -d "./notebooks" ] && (cd notebooks && $RUN pre-commit install)
+  echo "pre-commit hooks installed"
 fi
