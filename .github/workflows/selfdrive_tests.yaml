@@ -96,6 +96,7 @@ jobs:
     - name: Brew link restored dependencies
       if: steps.dependency-cache.outputs.cache-hit == 'true'
       run: |
+        du -hs ~/.pyenv ~/.local/share/virtualenvs/ /usr/local/Cellar ~/github_brew_cache_entries.txt
         while read pkg; do
           brew link --force "$pkg" # `--force` for keg-only packages
         done < ~/github_brew_cache_entries.txt

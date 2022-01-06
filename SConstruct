@@ -239,7 +239,7 @@ env = Environment(
 )
 
 if arch == "Darwin":
-  env['RPATHPREFIX'] = "-rpath,"
+  env['RPATHPREFIX'] = "-rpath "
 
 if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
