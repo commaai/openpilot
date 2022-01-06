@@ -92,7 +92,9 @@ jobs:
           ~/.local/share/virtualenvs/
           /usr/local/Cellar
           ~/github_brew_cache_entries.txt
+          /tmp/scons_cache
         key: macos-cache-${{ hashFiles('tools/mac_setup.sh') }}-v3
+        restore-keys: macos-cache-
     - name: Brew link restored dependencies
       if: steps.dependency-cache.outputs.cache-hit == 'true'
       run: |
@@ -101,13 +103,16 @@ jobs:
         done < ~/github_brew_cache_entries.txt
     - name: Install dependencies
       run: ./tools/mac_setup.sh
-    #- name: Build openpilot
-    #  run: |
-    #   source tools/openpilot_env.sh
-    #   pipenv run scons --version
-    #   pipenv run scons -j$(nproc)
+    - name: Build openpilot
+      run: |
+        source tools/openpilot_env.sh
+        pipenv run selfdrive/manager/build.py
+
+        # cleanup scons cache
+        rm -rf /tmp/scons_cache/
+        pipenv run scons -j$(nproc) --cache-populate
     - name: Remove pre-existing Homebrew packages for caching
-      #if: steps.dependency-cache.outputs.cache-hit != 'true'
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
         cd /usr/local/Cellar
         new_cellar=$(ls -1)
@@ -117,20 +122,6 @@ jobs:
           fi
         done
         comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
-        du -hs ~/.pyenv ~/.local/share/virtualenvs/ /usr/local/Cellar ~/github_brew_cache_entries.txt
-
-        echo ""
-        echo ""
-        echo "***************** pyenv"
-        du -hs ~/.pyenv/*
-        echo ""
-        echo ""
-        echo "***************** virtualenvs"
-        du -hs ~/.local/share/virtualenvs/*
-        echo ""
-        echo ""
-        echo "***************** cellar"
-        du -hs /usr/local/Cellar/*
 
   build_webcam:
     name: build webcam
