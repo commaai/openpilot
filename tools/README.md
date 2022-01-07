@@ -20,10 +20,10 @@ Then, run the setup script:
 
 ``` bash
 # for Ubuntu 20.04 LTS
-openpilot/tools/ubuntu_setup.sh
+tools/ubuntu_setup.sh
 
 # for macOS
-openpilot/tools/mac_setup.sh
+tools/mac_setup.sh
 ```
 
 Activate a shell with the install Python dependencies:
