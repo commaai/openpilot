@@ -134,6 +134,6 @@ if [ -z "$OPENPILOT_ENV" ]; then
 fi
 
 echo
-echo "----   FINISH OPENPILOT SETUP   ----"
-echo "Configure your active shell env by running:"
+echo "----   OPENPILOT SETUP DONE   ----"
+echo "Open a new shell or configure your active shell env by running:"
 echo "source ~/.bashrc"
