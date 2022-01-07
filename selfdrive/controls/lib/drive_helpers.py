@@ -9,7 +9,6 @@ from selfdrive.modeld.constants import T_IDXS
 #          model predictions above this speed can be unpredictable
 V_CRUISE_MAX = 145  # kph
 V_CRUISE_MIN = 8  # kph
-V_CRUISE_ENABLE_MIN = 40  # kph
 
 LAT_MPC_N = 16
 LON_MPC_N = 32
@@ -78,15 +77,6 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled, metric):
     v_cruise_kph = clip(round(v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
 
   return v_cruise_kph
-
-
-def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
-  for b in buttonEvents:
-    # 250kph or above probably means we never had a set speed
-    if b.type == car.CarState.ButtonEvent.Type.accelCruise and v_cruise_last < 250:
-      return v_cruise_last
-
-  return int(round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
 
 
 def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
