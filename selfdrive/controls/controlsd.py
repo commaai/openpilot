@@ -4,6 +4,7 @@ import math
 from numbers import Number
 
 from cereal import car, log
+from common.namedtuple import create_namedtuple_from_capnp
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
@@ -94,7 +95,7 @@ class Controls:
     print("Waiting for CAN messages...")
     get_one_can(self.can_sock)
 
-    self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
+    self.CI, self.CP_CAPNP = get_car(self.can_sock, self.pm.sock['sendcan'])
 
     # read params
     self.is_metric = params.get_bool("IsMetric")
@@ -106,24 +107,25 @@ class Controls:
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
 
-    car_recognized = self.CP.carName != 'mock'
+    car_recognized = self.CP_CAPNP.carName != 'mock'
 
-    controller_available = self.CI.CC is not None and not passive and not self.CP.dashcamOnly
-    community_feature = self.CP.communityFeature or \
-                        self.CP.fingerprintSource == car.CarParams.FingerprintSource.can
+    controller_available = self.CI.CC is not None and not passive and not self.CP_CAPNP.dashcamOnly
+    community_feature = self.CP_CAPNP.communityFeature or \
+                        self.CP_CAPNP.fingerprintSource == car.CarParams.FingerprintSource.can
     community_feature_disallowed = community_feature and (not community_feature_toggle)
     self.read_only = not car_recognized or not controller_available or \
-                       self.CP.dashcamOnly or community_feature_disallowed
+                       self.CP_CAPNP.dashcamOnly or community_feature_disallowed
     if self.read_only:
       safety_config = car.CarParams.SafetyConfig.new_message()
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
-      self.CP.safetyConfigs = [safety_config]
+      self.CP_CAPNP.safetyConfigs = [safety_config]
 
     # Write CarParams for radard
-    cp_bytes = self.CP.to_bytes()
+    cp_bytes = self.CP_CAPNP.to_bytes()
     params.put("CarParams", cp_bytes)
     put_nonblocking("CarParamsCache", cp_bytes)
 
+    self.CP = create_namedtuple_from_capnp(self.CP_CAPNP)
     self.CC = car.CarControl.new_message()
     self.AM = AlertManager()
     self.events = Events()
@@ -131,13 +133,14 @@ class Controls:
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
 
-    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+    self.lat_tuning = self.CP_CAPNP.lateralTuning.which()
+    if self.CP.steerControlType == 'angle':
       self.LaC = LatControlAngle(self.CP)
-    elif self.CP.lateralTuning.which() == 'pid':
+    elif self.lat_tuning == 'pid':
       self.LaC = LatControlPID(self.CP, self.CI)
-    elif self.CP.lateralTuning.which() == 'indi':
+    elif self.lat_tuning == 'indi':
       self.LaC = LatControlINDI(self.CP)
-    elif self.CP.lateralTuning.which() == 'lqr':
+    elif self.lat_tuning == 'lqr':
       self.LaC = LatControlLQR(self.CP)
 
     self.initialized = False
@@ -525,7 +528,7 @@ class Controls:
         lac_log.saturated = abs(steer) >= 0.9
 
     # Check for difference between desired angle and angle for angle based control
-    angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
+    angle_control_saturated = self.CP.steerControlType == 'angle' and \
       abs(actuators.steeringAngleDeg - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
 
     if angle_control_saturated and not CS.steeringPressed and self.active:
@@ -670,16 +673,15 @@ class Controls:
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.can_rcv_error_counter
 
-    lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
       controlsState.lateralControlState.debugState = lac_log
-    elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+    elif self.CP.steerControlType == 'angle':
       controlsState.lateralControlState.angleState = lac_log
-    elif lat_tuning == 'pid':
+    elif self.lat_tuning == 'pid':
       controlsState.lateralControlState.pidState = lac_log
-    elif lat_tuning == 'lqr':
+    elif self.lat_tuning == 'lqr':
       controlsState.lateralControlState.lqrState = lac_log
-    elif lat_tuning == 'indi':
+    elif self.lat_tuning == 'indi':
       controlsState.lateralControlState.indiState = lac_log
 
     self.pm.send('controlsState', dat)
@@ -702,7 +704,7 @@ class Controls:
     # carParams - logged every 50 seconds (> 1 per segment)
     if (self.sm.frame % int(50. / DT_CTRL) == 0):
       cp_send = messaging.new_message('carParams')
-      cp_send.carParams = self.CP
+      cp_send.carParams = self.CP_CAPNP
       self.pm.send('carParams', cp_send)
 
     # carControl

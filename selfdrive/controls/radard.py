@@ -5,6 +5,7 @@ from collections import defaultdict, deque
 
 import cereal.messaging as messaging
 from cereal import car
+from common.namedtuple import create_namedtuple_from_capnp
 from common.numpy_fast import interp
 from common.params import Params
 from common.realtime import Ratekeeper, Priority, config_realtime_process
@@ -185,7 +186,8 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
-  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  car_params = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  CP = create_namedtuple_from_capnp(car_params)
   cloudlog.info("radard got CarParams")
 
   # import the radar from the fingerprint

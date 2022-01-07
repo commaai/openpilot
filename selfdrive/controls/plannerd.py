@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
+from common.namedtuple import create_namedtuple_from_capnp
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
 from selfdrive.swaglog import cloudlog
@@ -14,7 +15,8 @@ def plannerd_thread(sm=None, pm=None):
 
   cloudlog.info("plannerd is waiting for CarParams")
   params = Params()
-  CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
+  car_params = car.CarParams.from_bytes(params.get("CarParams", block=True))
+  CP = create_namedtuple_from_capnp(car_params)
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
 
   use_lanelines = not params.get_bool('EndToEndToggle')

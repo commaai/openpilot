@@ -7,6 +7,7 @@ import numpy as np
 
 import cereal.messaging as messaging
 from cereal import car
+from common.namedtuple import create_namedtuple_from_capnp
 from common.params import Params, put_nonblocking
 from common.realtime import set_realtime_priority, DT_MDL
 from common.numpy_fast import clip
@@ -104,7 +105,8 @@ def main(sm=None, pm=None):
   params_reader = Params()
   # wait for stats about the car to come in from controls
   cloudlog.info("paramsd is waiting for CarParams")
-  CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
+  car_params = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
+  CP = create_namedtuple_from_capnp(car_params)
   cloudlog.info("paramsd got CarParams")
 
   min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
