@@ -9,6 +9,7 @@ ROOT="$(cd $DIR/../ && pwd)"
 if [[ $(command -v brew) == "" ]]; then
   echo "Installing Hombrew"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+  echo "[ ] installed brew t=$SECONDS"
 fi
 
 # TODO: remove protobuf,protobuf-c,swig when casadi can be pip installed
@@ -37,6 +38,8 @@ brew "swig"
 cask "gcc-arm-embedded"
 EOS
 
+echo "[ ] finished brew install t=$SECONDS"
+
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
 elif [[ $SHELL == "/bin/bash" ]]; then
@@ -62,6 +65,7 @@ fi
 # install python dependencies
 $ROOT/update_requirements.sh
 eval "$(pyenv init --path)"
+echo "[ ] installed python dependencies t=$SECONDS"
 
 # install casadi
 VENV=`pipenv --venv`
