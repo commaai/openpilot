@@ -5,8 +5,9 @@ import time
 from pathlib import Path
 from datetime import datetime, timezone
 from common.params import Params
-from selfdrive.swaglog import cloudlog
 from cereal.messaging import SubMaster
+from selfdrive.swaglog import cloudlog
+from selfdrive.hardware import HARDWARE
 from common.file_helpers import atomic_write_in_dir
 from selfdrive.version import get_normalized_origin, get_short_branch, get_short_version, is_dirty
 from selfdrive.loggerd.config import STATS_DIR, STATS_DIR_FILE_LIMIT, STATS_SOCKET, STATS_FLUSH_TIME_S
@@ -64,6 +65,7 @@ def main():
     'branch': get_short_branch(),
     'dirty': is_dirty(),
     'origin': get_normalized_origin(),
+    'deviceType': HARDWARE.get_device_type(),
   }
 
   # subscribe to deviceState for started state
