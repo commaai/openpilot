@@ -8,6 +8,7 @@ import subprocess
 from typing import List, Union
 
 from cereal import log
+from common.params import Params
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
 
 NetworkType = log.DeviceState.NetworkType
@@ -70,6 +71,9 @@ class Android(HardwareBase):
       return f.read().strip()
 
   def get_device_type(self):
+    peripheral_panda = Params().get("LastPeripheralPandaType")
+    if peripheral_panda is not None and int(peripheral_panda) == log.PandaState.PandaType.uno:
+      return "two"
     return "eon"
 
   def get_sound_card_online(self):
