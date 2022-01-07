@@ -96,11 +96,14 @@ jobs:
         key: macos-cache-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'Pipfile*') }}-v3
         restore-keys: macos-cache-
     - name: Brew link restored dependencies
-      if: steps.dependency-cache.outputs.cache-hit == 'true'
       run: |
-        while read pkg; do
-          brew link --force "$pkg" # `--force` for keg-only packages
-        done < ~/github_brew_cache_entries.txt
+        if [ -f ~/github_brew_cache_entries.txt ]; then
+          while read pkg; do
+            brew link --force "$pkg" # `--force` for keg-only packages
+          done < ~/github_brew_cache_entries.txt
+        else
+          echo "Cache entries not found"
+        fi
     - name: Install dependencies
       run: ./tools/mac_setup.sh
     - name: Build openpilot
