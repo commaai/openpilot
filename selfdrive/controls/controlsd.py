@@ -686,7 +686,8 @@ class Controls:
     self.pm.send('controlsState', dat)
 
     # carState
-    if events_changed := (self.events.names != self.events_prev):
+    events_changed = self.events.names != self.events_prev
+    if events_changed:
       self.car_events = self.events.to_msg()
       self.events_prev = self.events.names.copy()
 
