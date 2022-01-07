@@ -292,8 +292,12 @@ def thermald_thread() -> NoReturn:
       msg.deviceState.networkInfo = network_info
     if nvme_temps is not None:
       msg.deviceState.nvmeTempC = nvme_temps
+      for i, temp in enumerate(nvme_temps):
+        statlog.gauge(f"nvme_temperature{i}", temp)
     if modem_temps is not None:
       msg.deviceState.modemTempC = modem_temps
+      for i, temp in enumerate(modem_temps):
+        statlog.gauge(f"modem_temperature{i}", temp)
 
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
     msg.deviceState.batteryPercent = HARDWARE.get_battery_capacity()
@@ -410,9 +414,22 @@ def thermald_thread() -> NoReturn:
     should_start_prev = should_start
     startup_conditions_prev = startup_conditions.copy()
 
-    # stats
-    # TODO: add more here!
+    # log more stats
+    statlog.gauge("free_space_percent", msg.deviceState.freeSpacePercent)
+    statlog.gauge("gpu_usage_percent", msg.deviceState.gpuUsagePercent)
     statlog.gauge("memory_usage_percent", msg.deviceState.memoryUsagePercent)
+    for i, usage in enumerate(msg.deviceState.cpuUsagePercent):
+      statlog.gauge(f"cpu{i}_usage_percent", usage)
+    for i, temp in enumerate(msg.deviceState.cpuTempC):
+      statlog.gauge(f"cpu{i}_temperature", temp)
+    for i, temp in enumerate(msg.deviceState.gpuTempC):
+      statlog.gauge(f"gpu{i}_temperature", temp)
+    statlog.gauge("memory_temperature", msg.deviceState.memoryTempC)
+    statlog.gauge("ambient_temperature", msg.deviceState.ambientTempC)
+    for i, temp in enumerate(msg.deviceState.pmicTempC):
+      statlog.gauge(f"pmic{i}_temperature", temp)
+    statlog.gauge("fan_speed_percent_desired", msg.deviceState.fanSpeedPercentDesired)
+    statlog.gauge("screen_brightness_percent", msg.deviceState.screenBrightnessPercent)
 
     # report to server once every 10 minutes
     if (count % int(600. / DT_TRML)) == 0:
