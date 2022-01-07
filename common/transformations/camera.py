@@ -125,7 +125,7 @@ def normalize(img_pts, intrinsics=fcam_intrinsics):
   return img_pts_normalized[:, :2].reshape(input_shape)
 
 
-def denormalize(img_pts, intrinsics=fcam_intrinsics, width=W, height=H):
+def denormalize(img_pts, intrinsics=fcam_intrinsics, width=np.inf, height=np.inf):
   # denormalizes image coordinates
   # accepts single pt or array of pts
   img_pts = np.array(img_pts)
