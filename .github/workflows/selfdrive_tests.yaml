@@ -93,7 +93,7 @@ jobs:
           /usr/local/Cellar
           ~/github_brew_cache_entries.txt
           /tmp/scons_cache
-        key: macos-cache-${{ hashFiles('tools/mac_setup.sh') }}-v3
+        key: macos-cache-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'Pipfile*') }}-v3
         restore-keys: macos-cache-
     - name: Brew link restored dependencies
       if: steps.dependency-cache.outputs.cache-hit == 'true'
