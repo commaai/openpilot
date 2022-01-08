@@ -163,7 +163,7 @@ class SwagLogger(logging.Logger):
     else:
       self.info(evt)
 
-  def blocking_info(self, msg, *args, **kwargs):
+  def blocking_info(self, msg):
     def run():
       self.info(msg)
 
