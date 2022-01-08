@@ -39,8 +39,8 @@ void WifiManager::setup() {
   bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "NewConnection", this, SLOT(newConnection(QDBusObjectPath)));
 
   raw_adapter_state = call<uint>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "State");
-
-  initActiveAp();
+  activeAp = call<QDBusObjectPath>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint").path();
+  
   initConnections();
   requestScan();
 }
@@ -71,6 +71,7 @@ void WifiManager::refreshNetworks() {
     }
     seenNetworks[ssid] = {ssid, strength, ctype, security};
   }
+  emit refreshSignal();
 }
 
 QString WifiManager::get_ipv4_address() {
@@ -179,16 +180,8 @@ uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
   return call<uint>(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "DeviceType");
 }
 
-bool WifiManager::isWirelessAdapter(const QDBusObjectPath &path) {
-  return getAdapterType(path) == NM_DEVICE_TYPE_WIFI;
-}
-
 void WifiManager::requestScan() {
   call(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
-}
-
-uint WifiManager::get_wifi_device_state() {
-  return call<uint>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "State");
 }
 
 QByteArray WifiManager::get_property(const QString &network_path , const QString &property) {
@@ -218,7 +211,6 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     connecting_to_network = "";
     if (!stop_) {
       refreshNetworks();
-      emit refreshSignal();
     }
   }
 }
@@ -228,7 +220,6 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
   if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
     if (!stop_ || firstScan) {
       refreshNetworks();
-      emit refreshSignal();
       firstScan = false;
     }
   } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("ActiveAccessPoint")) {
@@ -237,7 +228,7 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
 }
 
 void WifiManager::deviceAdded(const QDBusObjectPath &path) {
-  if (isWirelessAdapter(path) && (adapter.isEmpty() || adapter == "/")) {
+  if (getAdapterType(path) == NM_DEVICE_TYPE_WIFI && (adapter.isEmpty() || adapter == "/")) {
     adapter = path.path();
     setup();
   }
@@ -389,10 +380,6 @@ void WifiManager::setTetheringEnabled(bool enabled) {
   } else {
     deactivateConnectionBySsid(tethering_ssid);
   }
-}
-
-void WifiManager::initActiveAp() {
-  activeAp = call<QDBusObjectPath>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint").path();
 }
 
 bool WifiManager::isTetheringEnabled() {

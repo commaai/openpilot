@@ -77,14 +77,11 @@ private:
   bool firstScan = true;
   QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
-  bool isWirelessAdapter(const QDBusObjectPath &path);
   QString get_ipv4_address();
   QString activeAp;
-  void initActiveAp();
   void deactivateConnectionBySsid(const QString &ssid);
   void deactivateConnection(const QDBusObjectPath &path);
   QVector<QDBusObjectPath> get_active_connections();
-  uint get_wifi_device_state();
   QByteArray get_property(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
