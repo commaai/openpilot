@@ -77,6 +77,6 @@ class PIController():
 
     control = self.p + self.i + self.f
 
+    self.control_last = control
     self.control = clip(control, self.neg_limit, self.pos_limit)
-    self.control_last = self.control
     return self.control
