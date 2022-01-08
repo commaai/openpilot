@@ -41,7 +41,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
     ret.stopAccel = 0.0
-    ret.startAccel = 0.0
 
     ret.longitudinalActuatorDelayUpperBound = 1.0 # s
 
@@ -347,8 +346,9 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
+    hud_control = c.hudControl
     ret = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                         c.cruiseControl.cancel, c.hudControl.visualAlert, c.hudControl.setSpeed, c.hudControl.leftLaneVisible,
-                         c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
+                         c.cruiseControl.cancel, hud_control.visualAlert, hud_control.setSpeed, hud_control.leftLaneVisible,
+                         hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart)
     self.frame += 1
     return ret

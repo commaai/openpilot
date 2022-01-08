@@ -84,12 +84,10 @@ class CarInterfaceBase(ABC):
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
     ret.steerRatioRear = 0.  # no rear steering, at least on the listed cars aboveA
     ret.openpilotLongitudinalControl = False
-    ret.startAccel = -0.8
     ret.stopAccel = -2.0
-    ret.startingAccelRate = 3.2 # brake_travel/s while releasing on restart
     ret.stoppingDecelRate = 0.8 # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.5
-    ret.vEgoStarting = 0.5
+    ret.vEgoStarting = 0.5  # needs to be >= vEgoStopping to avoid state transition oscillation
     ret.stoppingControl = True
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.]

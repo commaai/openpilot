@@ -62,7 +62,7 @@
 | Toyota    | Highlander Hybrid 2020-22     | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Mirai 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Prius 2016-20                 | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Toyota    | Prius 2021                    | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Prius 2021-22                 | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Prius Prime 2017-20           | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Prius Prime 2021-22           | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Rav4 2016-18                  | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
@@ -124,7 +124,7 @@
 | Kia       | Ceed 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Forte 2018-21                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | K5 2021-22                    | SCC + LFA         | Stock            | 0mph               | 0mph         |
-| Kia       | Niro EV 2019-22               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Niro EV 2019-22               | All               | Stock            | 0mph               | 0mph         |
 | Kia       | Niro Hybrid 2021              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Niro PHEV 2019                | SCC + LKAS        | Stock            | 10mph              | 32mph        |
 | Kia       | Optima 2017                   | SCC + LKAS        | Stock            | 0mph               | 32mph        |

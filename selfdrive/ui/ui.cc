@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cmath>
 
+#include <QtConcurrent>
+
 #include "common/transformations/orientation.hpp"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
@@ -36,7 +38,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
 static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
   int max_idx = 0;
-  for (int i = 0; i < TRAJECTORY_SIZE && line_x[i] < path_height; ++i) {
+  for (int i = 1; i < TRAJECTORY_SIZE && line_x[i] <= path_height; ++i) {
     max_idx = i;
   }
   return max_idx;
@@ -290,9 +292,11 @@ void Device::updateBrightness(const UIState &s) {
   }
 
   if (brightness != last_brightness) {
-    std::thread{Hardware::set_brightness, brightness}.detach();
+    if (!brightness_future.isRunning()) {
+      brightness_future = QtConcurrent::run(Hardware::set_brightness, brightness);
+      last_brightness = brightness;
+    }
   }
-  last_brightness = brightness;
 }
 
 bool Device::motionTriggered(const UIState &s) {
