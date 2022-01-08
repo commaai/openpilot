@@ -96,13 +96,14 @@ private:
     if constexpr (std::is_same_v<T, QDBusMessage>) {
       return response;
     } else {
-      QVariant vFirst = response.arguments().at(0).value<QDBusVariant>().variant();
-      if (vFirst.canConvert<T>()) {
-        return vFirst.value<T>();
-      } else {
-        LOGE("Variant unpacking failure");
-        return T();
+      if (response.arguments().count() >= 1) {
+        QVariant vFirst = response.arguments().at(0).value<QDBusVariant>().variant();
+        if (vFirst.canConvert<T>()) {
+          return vFirst.value<T>();
+        }
       }
+      LOGE("Variant unpacking failure");
+      return T();
     }
   }
 
