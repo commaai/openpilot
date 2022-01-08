@@ -29,17 +29,26 @@ typedef QVector<QMap<QString, QVariant>> IpConfig;
 
 struct Network {
   QByteArray ssid;
-  uint32_t strength;
+  unsigned int strength;
   ConnectedType connected;
   SecurityType security_type;
 };
-bool compare_by_strength(const Network &a, const Network &b);
+inline bool compare_by_strength(const Network &a, const Network &b) {
+  return a.connected > b.connected || a.strength > b.strength;
+}
 
 class WifiManager : public QObject {
   Q_OBJECT
 
 public:
-  explicit WifiManager(QObject* parent);
+  explicit WifiManager(QObject *parent);
+  void requestScan();
+  QMap<QString, Network> seenNetworks;
+  QMap<QDBusObjectPath, QString> knownConnections;
+  QDBusObjectPath lteConnectionPath;
+  QString ipv4_address;
+
+  void refreshNetworks();
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
@@ -57,22 +66,15 @@ public:
   void changeTetheringPassword(const QString &newPassword);
   QString getTetheringPassword();
 
-  QMap<QString, Network> seenNetworks;
-  QString ipv4_address;
-
 private:
   QString adapter;  // Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
-  uint32_t raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
+  unsigned int raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString connecting_to_network;
   QString tethering_ssid;
   const QString defaultTetheringPassword = "swagswagcomma";
   bool stop_ = true;
-  QMap<QDBusObjectPath, QString> knownConnections;
-  QDBusObjectPath lteConnectionPath;
   bool firstScan = true;
-  void refreshNetworks();
-  void requestScan();
   QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
   bool isWirelessAdapter(const QDBusObjectPath &path);
@@ -84,7 +86,7 @@ private:
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();
   QByteArray get_property(const QString &network_path, const QString &property);
-  uint32_t get_ap_strength(const QString &network_path);
+  unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
   std::optional<QDBusObjectPath> getConnectionPath(const QString &ssid);
   Connection getConnectionSettings(const QDBusObjectPath &path);
