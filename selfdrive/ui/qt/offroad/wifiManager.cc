@@ -153,12 +153,11 @@ void WifiManager::connect(const Network &n, const QString &password, const QStri
 }
 
 void WifiManager::deactivateConnectionBySsid(const QString &ssid) {
-  for (QDBusObjectPath active_connection_raw : get_active_connections()) {
-    QString active_connection = active_connection_raw.path();
-    auto pth = call<QDBusObjectPath>(active_connection, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
+  for (QDBusObjectPath active_connection : get_active_connections()) {
+    auto pth = call<QDBusObjectPath>(active_connection.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
     if (pth.path() != "" && pth.path() != "/") {
       if (ssid == get_property(pth.path(), "Ssid")) {
-        deactivateConnection(active_connection_raw);
+        deactivateConnection(active_connection);
       }
     }
   }
@@ -182,12 +181,12 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 }
 
 bool WifiManager::isKnownConnection(const QString &ssid) {
-  return !getConnectionPath(ssid).path().isEmpty();
+  return (bool)getConnectionPath(ssid);
 }
 
 void WifiManager::forgetConnection(const QString &ssid) {
-  if (auto path = getConnectionPath(ssid).path(); !path.isEmpty()) {
-    call(path, NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Delete");
+  if (auto path = getConnectionPath(ssid)) {
+    call(path->path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Delete");
   }
 }
 
@@ -279,13 +278,9 @@ void WifiManager::disconnect() {
   }
 }
 
-QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
-  for (const QString &conn_ssid : knownConnections) {
-    if (ssid == conn_ssid) {
-      return knownConnections.key(conn_ssid);
-    }
-  }
-  return QDBusObjectPath();
+std::optional<QDBusObjectPath> WifiManager::getConnectionPath(const QString &ssid) {
+  auto path = knownConnections.key(ssid);
+  return path.path().isEmpty() ? std::nullopt : std::make_optional(path);
 }
 
 Connection WifiManager::getConnectionSettings(const QDBusObjectPath &path) {
@@ -305,9 +300,9 @@ void WifiManager::initConnections() {
 }
 
 void WifiManager::activateWifiConnection(const QString &ssid) {
-  if (auto path = getConnectionPath(ssid); !path.path().isEmpty()) {
+  if (auto path = getConnectionPath(ssid)) {
     connecting_to_network = ssid;
-    call(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
+    call(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(*path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
 }
 
@@ -427,20 +422,18 @@ QString WifiManager::getTetheringPassword() {
   if (!isKnownConnection(tethering_ssid)) {
     addTetheringConnection();
   }
-  auto path = getConnectionPath(tethering_ssid).path();
-  if (!path.isEmpty()) {
-    const QDBusReply<QMap<QString, QMap<QString, QVariant>>> response = call(path, NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "GetSecrets", "802-11-wireless-security");
+  if (auto path = getConnectionPath(tethering_ssid)) {
+    const QDBusReply<QMap<QString, QMap<QString, QVariant>>> response = call(path->path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "GetSecrets", "802-11-wireless-security");
     return response.value().value("802-11-wireless-security").value("psk").toString();
   }
   return "";
 }
 
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
-  auto path = getConnectionPath(tethering_ssid).path();
-  if (!path.isEmpty()) {
-    Connection settings = QDBusReply<Connection>(call(path, NM_DBUS_INTERFACE_SETTINGS_CONNECTION,"GetSettings")).value();
+  if (auto path = getConnectionPath(tethering_ssid)) {
+    Connection settings = QDBusReply<Connection>(call(path->path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION,"GetSettings")).value();
     settings["802-11-wireless-security"]["psk"] = newPassword;
-    call(path, NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
+    call(path->path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
 
     if (isTetheringEnabled()) {
       activateWifiConnection(tethering_ssid);

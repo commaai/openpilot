@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <QtDBus>
 
 #include "selfdrive/common/swaglog.h"
@@ -84,7 +86,7 @@ private:
   QByteArray get_property(const QString &network_path, const QString &property);
   uint32_t get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
-  QDBusObjectPath getConnectionPath(const QString &ssid);
+  std::optional<QDBusObjectPath> getConnectionPath(const QString &ssid);
   Connection getConnectionSettings(const QDBusObjectPath &path);
   void initConnections();
   void setup();
