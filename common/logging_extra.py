@@ -169,7 +169,7 @@ class SwagLogger(logging.Logger):
 
     t = Thread(target=run)
     t.start()
-    t.join()
+    t.join(timeout=10)
 
   def findCaller(self, stack_info=False, stacklevel=1):
     """
