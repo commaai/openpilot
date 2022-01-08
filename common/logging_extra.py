@@ -163,6 +163,9 @@ class SwagLogger(logging.Logger):
     else:
       self.info(evt)
 
+  def blocking_info(self, msg, *args, **kwargs):
+    self.info(msg)
+
   def findCaller(self, stack_info=False, stacklevel=1):
     """
     Find the stack frame of the caller so that we can note the source
