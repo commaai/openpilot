@@ -14,7 +14,7 @@ def plannerd_thread(sm=None, pm=None):
 
   cloudlog.info("plannerd is waiting for CarParams")
   params = Params()
-  CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
+  CP = messaging.CapnpReaderWrapper(car.CarParams.from_bytes(params.get("CarParams", block=True)))
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
 
   use_lanelines = not params.get_bool('EndToEndToggle')

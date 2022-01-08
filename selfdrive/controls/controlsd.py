@@ -95,7 +95,8 @@ class Controls:
     print("Waiting for CAN messages...")
     get_one_can(self.can_sock)
 
-    self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
+    self.CI, CP = get_car(self.can_sock, self.pm.sock['sendcan'])
+    self.CP = messaging.CapnpReaderWrapper(CP)
 
     # read params
     self.is_metric = params.get_bool("IsMetric")
@@ -705,7 +706,7 @@ class Controls:
     # carParams - logged every 50 seconds (> 1 per segment)
     if (self.sm.frame % int(50. / DT_CTRL) == 0):
       cp_send = messaging.new_message('carParams')
-      cp_send.carParams = self.CP
+      cp_send.carParams = self.CP.message()
       self.pm.send('carParams', cp_send)
 
     # carControl
