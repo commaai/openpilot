@@ -16,7 +16,7 @@ class TestCalibrationd(unittest.TestCase):
     Params().put("CalibrationParams", msg.to_bytes())
     c = Calibrator(param_put=True)
 
-    self.assertEqual(list(msg.liveCalibration.rpyCalib), c.rpy)
+    self.assertEqual(list(msg.liveCalibration.rpyCalib), list(c.rpy))
     self.assertEqual(msg.liveCalibration.validBlocks, c.valid_blocks)
 
 
