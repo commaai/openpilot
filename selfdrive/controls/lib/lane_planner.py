@@ -9,6 +9,8 @@ from selfdrive.swaglog import cloudlog
 
 TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
+# model path is in the frame of EON's camera. TICI is 0.1 m away,
+# however the average measured path offset difference is -0.04 m
 if EON:
   CAMERA_OFFSET = 0.06
   PATH_OFFSET = 0.0
@@ -49,7 +51,6 @@ class LanePlanner:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
       # left and right ll x is the same
       self.ll_x = lane_lines[1].x
-      # only offset left and right lane lines; offsetting path does not make sense
       self.lll_y = np.array(lane_lines[1].y) - self.camera_offset
       self.rll_y = np.array(lane_lines[2].y) - self.camera_offset
       self.lll_prob = md.laneLineProbs[1]
