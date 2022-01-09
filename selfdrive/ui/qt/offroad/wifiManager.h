@@ -3,8 +3,10 @@
 #include <optional>
 
 #include <QtDBus>
+#include <QTimer>
 
 #include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/offroad/networkmanager.h"
 
 enum class SecurityType {
@@ -56,7 +58,7 @@ public:
   NetworkType currentNetworkType();
   void updateGsmSettings(bool roaming, QString apn);
   void start();
-  inline void stop() { stop_ = true; }
+  void stop();
   void connect(const Network &ssid, const QString &password = {}, const QString &username = {});
   void disconnect();
   // Tethering functions
@@ -75,6 +77,7 @@ private:
   const QString defaultTetheringPassword = "swagswagcomma";
   bool stop_ = true;
   bool firstScan = true;
+  QTimer timer;
   QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
   QString get_ipv4_address();
@@ -90,7 +93,7 @@ private:
   void initConnections();
   void setup();
   template <typename T = QDBusMessage, typename... Args>
-  T call(const QString &path, const QString &interface, const QString &method, Args... args) {
+  T call(const QString &path, const QString &interface, const QString &method, Args&&... args) {
     QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, bus);
     nm.setTimeout(DBUS_TIMEOUT);
     QDBusMessage response = nm.call(method, args...);
@@ -102,8 +105,11 @@ private:
         if (vFirst.canConvert<T>()) {
           return vFirst.value<T>();
         }
+        QDebug critical = qCritical();
+        critical << "Variant unpacking failure :" << method << ',';
+        (critical << ... << args);
       }
-      LOGE("Variant unpacking failure");
+
       return T();
     }
   }

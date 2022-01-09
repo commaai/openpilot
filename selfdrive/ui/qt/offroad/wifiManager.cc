@@ -21,14 +21,7 @@ WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   } else {
     bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
   }
-
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, [=]() {
-    if (!adapter.isEmpty() && !stop_) {
-      requestScan();
-    }
-  });
-  timer->start(5000);
+  timer.callOnTimeout(this, &WifiManager::requestScan);
 }
 
 void WifiManager::setup() {
@@ -47,7 +40,13 @@ void WifiManager::setup() {
 
 void WifiManager::start() {
   stop_ = false;
+  timer.start(5000);
   refreshNetworks();
+}
+
+void WifiManager::stop() {
+  stop_ = true;
+  timer.stop();
 }
 
 void WifiManager::refreshNetworks() {
@@ -181,7 +180,7 @@ uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
 }
 
 void WifiManager::requestScan() {
-  call(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
+  if (!adapter.isEmpty()) call(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
 }
 
 QByteArray WifiManager::get_property(const QString &network_path , const QString &property) {
