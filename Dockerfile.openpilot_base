@@ -17,17 +17,17 @@ COPY Pipfile Pipfile.lock .python-version update_requirements.sh /tmp/
 COPY tools/ubuntu_setup.sh /tmp/tools/
 RUN cd /tmp && \
     tools/ubuntu_setup.sh && \
-    pip uninstall -y pipenv && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* && \
     rm -rf /root/.cache && \
+
+    # uninstall unnecessary, massive python packages
+    pip uninstall -y pipenv onnxruntime-gpu && \
 
     # remove unused architectures from gcc for panda
     cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
     rm -rf arm/ && \
     rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
-
-
 
 ENV PYENV_VERSION=3.8.10
 ENV PYENV_ROOT="/root/.pyenv"
