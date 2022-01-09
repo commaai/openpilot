@@ -190,6 +190,7 @@ class Controls:
     """Compute carEvents from carState"""
 
     self.events.clear()
+
     # Handle startup event
     if self.startup_event is not None:
       self.events.add(self.startup_event)
