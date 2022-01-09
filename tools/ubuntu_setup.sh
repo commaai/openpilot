@@ -67,7 +67,6 @@ function install_ubuntu_common_requirements() {
     python3-pip \
     qml-module-qtquick2 \
     qtmultimedia5-dev \
-    qtwebengine5-dev \
     qtlocation5-dev \
     qtpositioning5-dev \
     libqt5sql5-sqlite \
