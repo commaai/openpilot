@@ -167,7 +167,7 @@ class CarController():
         hud_lanes = 0
 
       if (frame % 20) == 0:
-        idx = frame // 20
+        idx = frame // 5
         hud = AHUDData(hud_lanes)
         can_sends.append(hondacan.create_lkas_command(self.packer, hud, idx))
 
