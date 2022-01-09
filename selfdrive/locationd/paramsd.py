@@ -6,7 +6,7 @@ import json
 import numpy as np
 
 import cereal.messaging as messaging
-from cereal import car
+from cereal import car, log
 from common.params import Params, put_nonblocking
 from common.realtime import set_realtime_priority, DT_MDL
 from common.numpy_fast import clip
@@ -103,52 +103,42 @@ def main(sm=None, pm=None):
   if pm is None:
     pm = messaging.PubMaster(['liveParameters'])
 
-  params_reader = Params()
   # wait for stats about the car to come in from controls
   cloudlog.info("paramsd is waiting for CarParams")
-  CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
+  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
   cloudlog.info("paramsd got CarParams")
 
   min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
 
-  params = params_reader.get("LiveParameters")
+  try:
+    dat = json.loads(Params().get("LiveParameters"))
+    # Check if car model matches
+    if dat['carFingerprint'] != CP.carFingerprint:
+      raise Exception('Parameter learner found parameters for wrong car.')
 
-  # Check if car model matches
-  if params is not None:
-    params = json.loads(params)
-    if params.get('carFingerprint', None) != CP.carFingerprint:
-      cloudlog.info("Parameter learner found parameters for wrong car.")
-      params = None
+    msg = log.Event.new_message()
+    msg.from_dict(dat['parameters'])
+    params = msg.liveParameters
 
-  # Check if starting values are sane
-  if params is not None:
-    try:
-      angle_offset_sane = abs(params.get('angleOffsetAverageDeg')) < 10.0
-      steer_ratio_sane = min_sr <= params['steerRatio'] <= max_sr
-      params_sane = angle_offset_sane and steer_ratio_sane
-      if not params_sane:
-        cloudlog.info(f"Invalid starting values found {params}")
-        params = None
-    except Exception as e:
-      cloudlog.info(f"Error reading params {params}: {str(e)}")
-      params = None
-
-  # TODO: cache the params with the capnp struct
-  if params is None:
-    params = {
-      'carFingerprint': CP.carFingerprint,
-      'steerRatio': CP.steerRatio,
-      'stiffnessFactor': 1.0,
-      'angleOffsetAverageDeg': 0.0,
-    }
-    cloudlog.info("Parameter learner resetting to default values")
+    # Check if starting values are sane
+    angle_offset_sane = abs(params.angleOffsetAverageDeg) < 10.0
+    steer_ratio_sane = min_sr <= params.steerRatio <= max_sr
+    params_sane = angle_offset_sane and steer_ratio_sane
+    if not params_sane:
+      raise Exception(f"Invalid starting values found {params}")
+  except Exception as e:
+    cloudlog.info(f"Error reading LiveParameters: {e}. resetting to default values")
+    msg = messaging.new_message('liveParameters')
+    params = msg.liveParameters
+    params.steerRatio = CP.steerRatio
+    params.stiffnessFactor = 1.0
+    params.angleOffsetAverageDeg = 0.0
 
   # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
   # Without a way to detect this we have to reset the stiffness every drive
-  params['stiffnessFactor'] = 1.0
-  learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']))
-  angle_offset_average = params['angleOffsetAverageDeg']
-  angle_offset = angle_offset_average
+  params.stiffnessFactor = 1.0
+  learner = ParamsLearner(CP, params.steerRatio, params.stiffnessFactor, math.radians(params.angleOffsetAverageDeg))
+  angle_offset = angle_offset_average = params.angleOffsetAverageDeg
 
   while True:
     sm.update()
@@ -191,13 +181,8 @@ def main(sm=None, pm=None):
       liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
 
       if sm.frame % 1200 == 0:  # once a minute
-        params = {
-          'carFingerprint': CP.carFingerprint,
-          'steerRatio': liveParameters.steerRatio,
-          'stiffnessFactor': liveParameters.stiffnessFactor,
-          'angleOffsetAverageDeg': liveParameters.angleOffsetAverageDeg,
-        }
-        put_nonblocking("LiveParameters", json.dumps(params))
+        put_nonblocking("LiveParameters", json.dumps(
+            {'carFingerprint': CP.carFingerprint, 'parameters': msg.to_dict()}))
 
       pm.send('liveParameters', msg)
 
