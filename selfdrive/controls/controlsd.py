@@ -190,9 +190,6 @@ class Controls:
     """Compute carEvents from carState"""
 
     self.events.clear()
-    self.events.add_from_msg(CS.events)
-    self.events.add_from_msg(self.sm['driverMonitoringState'].events)
-
     # Handle startup event
     if self.startup_event is not None:
       self.events.add(self.startup_event)
@@ -202,6 +199,9 @@ class Controls:
     if not self.initialized:
       self.events.add(EventName.controlsInitializing)
       return
+
+    self.events.add_from_msg(CS.events)
+    self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
     # Create events for battery, temperature, disk space, and memory
     if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
@@ -598,7 +598,7 @@ class Controls:
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
                     and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
-    model_v2 = self.sm['modelV2'] 
+    model_v2 = self.sm['modelV2']
     desire_prediction = model_v2.meta.desirePrediction
     if len(desire_prediction) and ldw_allowed:
       right_lane_visible = self.sm['lateralPlan'].rProb > 0.5
