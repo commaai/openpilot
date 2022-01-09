@@ -100,7 +100,7 @@ class Calibrator():
       self.old_rpy = smooth_from
       self.old_rpy_weight = 1.0
 
-  def get_valid_idxs(self, ):
+  def get_valid_idxs(self):
     # exclude current block_idx from validity window
     before_current = list(range(self.block_idx))
     after_current = list(range(min(self.valid_blocks, self.block_idx + 1), self.valid_blocks))
