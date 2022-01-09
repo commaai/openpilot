@@ -12,11 +12,11 @@ TRAJECTORY_SIZE = 33
 # model path is in the frame of EON's camera. TICI is 0.1 m away,
 # however the average measured path offset difference is -0.04 m
 if EON:
-  CAMERA_OFFSET = 0.06
+  CAMERA_OFFSET = -0.06
   PATH_OFFSET = 0.0
 elif TICI:
-  CAMERA_OFFSET = -0.04
-  PATH_OFFSET = -0.04
+  CAMERA_OFFSET = 0.04
+  PATH_OFFSET = 0.04
 else:
   CAMERA_OFFSET = 0.0
   PATH_OFFSET = 0.0
@@ -51,8 +51,8 @@ class LanePlanner:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
       # left and right ll x is the same
       self.ll_x = lane_lines[1].x
-      self.lll_y = np.array(lane_lines[1].y) - self.camera_offset
-      self.rll_y = np.array(lane_lines[2].y) - self.camera_offset
+      self.lll_y = np.array(lane_lines[1].y) + self.camera_offset
+      self.rll_y = np.array(lane_lines[2].y) + self.camera_offset
       self.lll_prob = md.laneLineProbs[1]
       self.rll_prob = md.laneLineProbs[2]
       self.lll_std = md.laneLineStds[1]
@@ -66,7 +66,7 @@ class LanePlanner:
   def get_d_path(self, v_ego, path_t, path_xyz):
     # Reduce reliance on lanelines that are too far apart or
     # will be in a few seconds
-    path_xyz[:, 1] -= self.path_offset
+    path_xyz[:, 1] += self.path_offset
     l_prob, r_prob = self.lll_prob, self.rll_prob
     width_pts = self.rll_y - self.lll_y
     prob_mods = []
