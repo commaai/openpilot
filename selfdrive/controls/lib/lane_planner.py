@@ -10,7 +10,7 @@ from selfdrive.swaglog import cloudlog
 TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
 # model path is in the frame of EON's camera. TICI is 0.1 m away,
-# however the average measured path offset difference is -0.04 m
+# however the average measured path difference is 0.04 m
 if EON:
   CAMERA_OFFSET = -0.06
   PATH_OFFSET = 0.0
