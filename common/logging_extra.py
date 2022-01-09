@@ -163,13 +163,13 @@ class SwagLogger(logging.Logger):
     else:
       self.info(evt)
 
-  def blocking_info(self, msg):
+  def blocking_info(self, msg, timeout=10):
     def run():
       self.info(msg)
 
     t = Thread(target=run)
     t.start()
-    t.join(timeout=10)
+    t.join(timeout=timeout)
 
   def findCaller(self, stack_info=False, stacklevel=1):
     """
