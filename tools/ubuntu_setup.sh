@@ -13,6 +13,7 @@ function install_ubuntu_common_requirements() {
   sudo apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
+    ca-certificates \
     clang \
     cmake \
     make \
@@ -48,11 +49,6 @@ function install_ubuntu_common_requirements() {
     libsqlite3-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
-    libsdl1.2-dev \
-    libsdl-image1.2-dev \
-    libsdl-mixer1.2-dev \
-    libsdl-ttf2.0-dev \
-    libsmpeg-dev \
     libsystemd-dev \
     locales \
     opencl-headers \
