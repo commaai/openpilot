@@ -42,7 +42,7 @@ RUN pip install --upgrade pip && \
 
 # get same tmux config used on NEOS for debugging
 RUN cd $HOME && \
-    wget https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
+    curl -O https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
 
 ENV PYTHONPATH $HOME/openpilot:${PYTHONPATH}
 RUN mkdir -p $HOME/openpilot

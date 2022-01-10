@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     mkdir /tmp/opencv_build && \
     cd /tmp/opencv_build && \
 
-    wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz && \
+    curl -O https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz && \
     tar -xvf ${OPENCV_VERSION}.tar.gz && \
     mv opencv-${OPENCV_VERSION} OpenCV && \
     cd OpenCV && mkdir build && cd build && \
