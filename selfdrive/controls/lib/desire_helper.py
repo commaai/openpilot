@@ -9,21 +9,12 @@ LANE_CHANGE_SPEED_MIN = 30 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
-  LaneChangeDirection.none: {
-    LaneChangeState.off: log.LateralPlan.Desire.none,
-    LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.none,
-    LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.none,
-  },
+  LaneChangeDirection.none: {},
   LaneChangeDirection.left: {
-    LaneChangeState.off: log.LateralPlan.Desire.none,
-    LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
     LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.laneChangeLeft,
     LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.laneChangeLeft,
   },
   LaneChangeDirection.right: {
-    LaneChangeState.off: log.LateralPlan.Desire.none,
-    LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
     LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.laneChangeRight,
     LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.laneChangeRight,
   },
@@ -100,7 +91,8 @@ class DesireHelper:
 
     self.prev_one_blinker = one_blinker
 
-    self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
+    self.desire = DESIRES[self.lane_change_direction].get(self.lane_change_state,
+                                                          log.LateralPlan.Desire.none)
 
     # Send keep pulse once per second during LaneChangeStart.preLaneChange
     if self.lane_change_state in (LaneChangeState.off, LaneChangeState.laneChangeStarting):
