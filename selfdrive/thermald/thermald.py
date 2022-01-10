@@ -159,7 +159,7 @@ def thermald_thread() -> NoReturn:
 
   pandaState_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
   pandaState_sock = messaging.sub_sock('pandaStates', timeout=pandaState_timeout)
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "managerState"])
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "managerState", "controlsState"])
 
   fan_speed = 0
   count = 0
@@ -192,6 +192,7 @@ def thermald_thread() -> NoReturn:
   handle_fan = None
   is_uno = False
   ui_running_prev = False
+  engaged_prev = False
 
   params = Params()
   power_monitor = PowerMonitoring()
@@ -202,10 +203,6 @@ def thermald_thread() -> NoReturn:
 
   # TODO: use PI controller for UNO
   controller = PIController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
-
-  # Leave flag for loggerd to indicate device was left onroad
-  if params.get_bool("IsOnroad"):
-    params.put_bool("BootedOnroad", True)
 
   while True:
     pandaStates = messaging.recv_sock(pandaState_sock, wait=True)
@@ -359,7 +356,22 @@ def thermald_thread() -> NoReturn:
     if should_start != should_start_prev or (count == 0):
       params.put_bool("IsOnroad", should_start)
       params.put_bool("IsOffroad", not should_start)
+
+      params.put_bool("IsEngaged", False)
+      engaged_prev = False
       HARDWARE.set_power_save(not should_start)
+
+    if sm.updated['controlsState']:
+      engaged = sm['controlsState'].enabled
+      if engaged != engaged_prev:
+        params.put_bool("IsEngaged", engaged)
+        engaged_prev = engaged
+
+      try:
+        with open('/dev/kmsg', 'w') as kmsg:
+          kmsg.write(f"[thermald] engaged: {engaged}")
+      except Exception:
+        pass
 
     if should_start:
       off_ts = None
