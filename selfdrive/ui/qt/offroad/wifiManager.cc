@@ -63,9 +63,8 @@ void WifiManager::refreshNetworks() {
       continue;
     }
     SecurityType security = getSecurityType(path.path());
-    QString activeSsid = (activeAp != "" && activeAp != "/") ? get_property(activeAp, "Ssid") : "";
     ConnectedType ctype = ConnectedType::DISCONNECTED;
-    if (ssid == activeSsid) {
+    if (path.path() == activeAp) {
       ctype = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
     }
     seenNetworks[ssid] = {ssid, strength, ctype, security};
