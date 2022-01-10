@@ -335,6 +335,11 @@ class CarState(CarStateBase):
       self.stock_hud = cp_cam.vl["ACC_HUD"]
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
 
+    if self.CP.carFingerprint in HONDA_RADARLESS:
+      self.boh_1 = cp_cam.vl["LKAS_BOH_1"]["LKAS_HUD_2"]
+      self.boh_2 = cp_cam.vl["LKAS_BOH_2"]["LKAS_HUD_2"]
+      self.hud_counter = cp.cam.vl["COUNTER_2"]["LKAS_HUD_2"]
+
     if self.CP.enableBsm and self.CP.carFingerprint in (CAR.CRV_5G, ):
       # BSM messages are on B-CAN, requires a panda forwarding B-CAN messages to CAN 0
       # more info here: https://github.com/commaai/openpilot/pull/1867
@@ -360,6 +365,9 @@ class CarState(CarStateBase):
                   ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
                   ("RIGHT_LANE", "LKAS_HUD_2" , 0),
                   ("LEFT_LANE", "LKAS_HUD_2", 0),
+                  ("COUNTER_2", "LKAS_HUD_2", 0),
+                  ("LKAS_BOH_1", "LKAS_HUD_2", 0),
+                  ("LKAS_BOH_2", "LKAS_BOH_2", 0),
               ]
       checks += [
         ("ACC_HUD", 10),

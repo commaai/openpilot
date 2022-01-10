@@ -1,4 +1,5 @@
 from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_RADARLESS, CAR, CarControllerParams
+from selfdrive.car.honda.carstate import CarState as CS
 from selfdrive.config import Conversions as CV
 
 # CAN bus layout with relay
@@ -185,6 +186,9 @@ def create_lkas_command(packer, hud, idx):
       "RIGHT_LANE" : hud.lanes,
       "LEFT_LANE" : hud.lanes,
       "SET_ME_X01" : 0x01,
+      "COUNTER_2" : CS.hud_counter,
+      "LKAS_BOH_1" : CS.boh_1,
+      "LKAS_BOH_2" : CS.boh_2,
     }
     bus = 0
     return packer.make_can_msg("LKAS_HUD_2", bus, values, idx)
