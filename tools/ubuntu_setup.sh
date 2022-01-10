@@ -13,12 +13,12 @@ function install_ubuntu_common_requirements() {
   sudo apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
+    ca-certificates \
     clang \
     cmake \
     make \
     cppcheck \
     libtool \
-    libstdc++-arm-none-eabi-newlib \
     gcc-arm-none-eabi \
     bzip2 \
     liblzma-dev \
@@ -28,7 +28,6 @@ function install_ubuntu_common_requirements() {
     libcapnp-dev \
     curl \
     libcurl4-openssl-dev \
-    wget \
     git \
     git-lfs \
     ffmpeg \
@@ -50,13 +49,6 @@ function install_ubuntu_common_requirements() {
     libsqlite3-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
-    libsdl1.2-dev \
-    libsdl-image1.2-dev \
-    libsdl-mixer1.2-dev \
-    libsdl-ttf2.0-dev \
-    libsmpeg-dev \
-    libportmidi-dev \
-    libfreetype6-dev \
     libsystemd-dev \
     locales \
     opencl-headers \
@@ -64,10 +56,8 @@ function install_ubuntu_common_requirements() {
     ocl-icd-opencl-dev \
     clinfo \
     python-dev \
-    python3-pip \
     qml-module-qtquick2 \
     qtmultimedia5-dev \
-    qtwebengine5-dev \
     qtlocation5-dev \
     qtpositioning5-dev \
     libqt5sql5-sqlite \
