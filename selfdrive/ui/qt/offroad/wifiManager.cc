@@ -52,23 +52,29 @@ void WifiManager::stop() {
 void WifiManager::refreshNetworks() {
   if (adapter.isEmpty()) return;
 
-  seenNetworks.clear();
   ipv4_address = get_ipv4_address();
 
+  QMap<QString, Network> networks;
   const QDBusReply<QList<QDBusObjectPath>> &response = call(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "GetAllAccessPoints");
   for (const QDBusObjectPath &path : response.value()) {
     const QByteArray &ssid = get_property(path.path(), "Ssid");
+    if (ssid.isEmpty()) continue;
+
     uint32_t strength = get_ap_strength(path.path());
-    if (ssid.isEmpty() || (seenNetworks.contains(ssid) && strength <= seenNetworks.value(ssid).strength)) {
+    bool exists = seenNetworks.contains(ssid);
+    if ((exists && strength <= seenNetworks[ssid].strength)) {
+      networks[ssid] = seenNetworks[ssid];
       continue;
     }
-    SecurityType security = getSecurityType(path.path());
+
+    SecurityType security = exists ? seenNetworks[ssid].security_type : getSecurityType(path.path());
     ConnectedType ctype = ConnectedType::DISCONNECTED;
     if (path.path() == activeAp) {
       ctype = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
     }
-    seenNetworks[ssid] = {ssid, strength, ctype, security};
+    networks[ssid] = {ssid, strength, ctype, security};
   }
+  seenNetworks = networks;
   emit refreshSignal();
 }
 
