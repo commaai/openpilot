@@ -100,8 +100,7 @@ void Networking::wrongPassword(const QString &ssid) {
 }
 
 void Networking::showEvent(QShowEvent* event) {
-  // Wait to refresh to avoid delay when showing Networking widget
-  QTimer::singleShot(300, this, [this]() { wifi->start(); });
+  wifi->start();
 }
 
 void Networking::hideEvent(QHideEvent* event) {
