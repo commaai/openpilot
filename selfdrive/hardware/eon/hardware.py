@@ -12,7 +12,7 @@ from selfdrive.hardware.base import HardwareBase, ThermalConfig
 
 try:
   from common.params import Params
-except ModuleNotFoundError:
+except Exception:
   # openpilot is not built yet
   Params = None
 
