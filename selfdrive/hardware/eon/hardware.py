@@ -76,10 +76,11 @@ class Android(HardwareBase):
       return f.read().strip()
 
   def get_device_type(self):
-    if Params is not None:
-      peripheral_panda = Params().get("LastPeripheralPandaType")
-      if peripheral_panda is not None and int(peripheral_panda) == log.PandaState.PandaType.uno:
+    try:
+      if int(Params().get("LastPeripheralPandaType")) == log.PandaState.PandaType.uno:
         return "two"
+    except Exception:
+      pass
     return "eon"
 
   def get_sound_card_online(self):
