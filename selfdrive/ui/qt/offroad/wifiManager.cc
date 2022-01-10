@@ -56,7 +56,7 @@ void WifiManager::stop() {
 }
 
 void WifiManager::refreshNetworks() {
-  if (adapter.isEmpty()) return;
+  if (adapter.isEmpty() || stop_) return;
 
   QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
   nm.setTimeout(DBUS_TIMEOUT);
@@ -206,9 +206,7 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     emit wrongPassword(connecting_to_network);
   } else if (new_state == NM_DEVICE_STATE_ACTIVATED) {
     connecting_to_network = "";
-    if (!stop_) {
-      refreshNetworks();
-    }
+    refreshNetworks();
   }
 }
 
@@ -216,10 +214,7 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS) {
     if (props.contains("LastScan")) {
-      if (!stop_ || firstScan) {
-        refreshNetworks();
-        firstScan = false;
-      }
+      refreshNetworks();
     } else if (props.contains("ActiveAccessPoint")) {
       activeAp = props.value("ActiveAccessPoint").value<QDBusObjectPath>().path();
     }

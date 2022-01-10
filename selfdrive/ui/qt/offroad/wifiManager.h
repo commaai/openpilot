@@ -77,7 +77,6 @@ private:
   QString tethering_ssid;
   const QString defaultTetheringPassword = "swagswagcomma";
   bool stop_ = true;
-  bool firstScan = true;
   QTimer timer;
   QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
