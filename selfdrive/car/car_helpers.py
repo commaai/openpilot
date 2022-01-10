@@ -131,7 +131,7 @@ def fingerprint(logcan, sendcan):
 
       for b in candidate_cars:
         # Ignore extended messages and VIN query response.
-        if can.src == b and can.address < 0x800 and can.address not in [0x7df, 0x7e0, 0x7e8]:
+        if can.src == b and can.address < 0x800 and can.address not in (0x7df, 0x7e0, 0x7e8):
           candidate_cars[b] = eliminate_incompatible_cars(can, candidate_cars[b])
 
     # if we only have one car choice and the time since we got our first
