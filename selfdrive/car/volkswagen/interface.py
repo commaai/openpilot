@@ -38,7 +38,7 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.transmissionType = TransmissionType.manual
 
-      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2, 0xFD]):  # Airbag_01, LWI_01, ESP_19, ESP_21
+      if any(msg in fingerprint[1] for msg in (0x40, 0x86, 0xB2, 0xFD)):  # Airbag_01, LWI_01, ESP_19, ESP_21
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
@@ -194,7 +194,7 @@ class CarInterface(CarInterfaceBase):
     # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:
       events.add(EventName.parkBrake)
-    if self.CS.tsk_status in [6, 7]:
+    if self.CS.tsk_status in (6, 7):
       events.add(EventName.accFaulted)
 
     # Low speed steer alert hysteresis logic
