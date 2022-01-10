@@ -364,7 +364,7 @@ def thermald_thread() -> NoReturn:
 
       try:
         with open('/dev/kmsg', 'w') as kmsg:
-          kmsg.write("[thermald] engaged: {engaged}")
+          kmsg.write(f"[thermald] engaged: {engaged}")
       except Exception:
         pass
 
