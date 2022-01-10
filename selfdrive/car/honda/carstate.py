@@ -367,7 +367,7 @@ class CarState(CarStateBase):
                   ("LEFT_LANE", "LKAS_HUD_2", 0),
                   ("COUNTER_2", "LKAS_HUD_2", 0),
                   ("LKAS_BOH_1", "LKAS_HUD_2", 0),
-                  ("LKAS_BOH_2", "LKAS_BOH_2", 0),
+                  ("LKAS_BOH_2", "LKAS_HUD_2", 0),
               ]
       checks += [
         ("ACC_HUD", 10),
