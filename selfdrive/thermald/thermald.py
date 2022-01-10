@@ -362,6 +362,12 @@ def thermald_thread() -> NoReturn:
         params.put_bool("IsEngaged", engaged)
         engaged_prev = engaged
 
+      try:
+        with open('/dev/kmsg', 'w') as kmsg:
+          kmsg.write("[thermald] engaged: {engaged}")
+      except Exception:
+        pass
+
     if should_start:
       off_ts = None
       if started_ts is None:
