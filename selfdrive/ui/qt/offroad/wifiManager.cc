@@ -45,18 +45,16 @@ void WifiManager::setup() {
 }
 
 void WifiManager::start() {
-  stop_ = false;
   timer.start(5000);
   refreshNetworks();
 }
 
 void WifiManager::stop() {
-  stop_ = true;
   timer.stop();
 }
 
 void WifiManager::refreshNetworks() {
-  if (adapter.isEmpty() || stop_) return;
+  if (adapter.isEmpty() || !timer.isActive()) return;
 
   QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
   nm.setTimeout(DBUS_TIMEOUT);
