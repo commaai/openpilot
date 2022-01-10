@@ -81,7 +81,7 @@ private:
   QTimer timer;
   QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
-  QString get_ipv4_address();
+  void setIP4Address(uint address);
   QString activeAp;
   void deactivateConnectionBySsid(const QString &ssid);
   void deactivateConnection(const QDBusObjectPath &path);
@@ -117,6 +117,7 @@ private:
 signals:
   void wrongPassword(const QString &ssid);
   void refreshSignal();
+  void ipAddressChanged(const QString &ip4_address);
 
 private slots:
   void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);

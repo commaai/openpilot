@@ -1,7 +1,9 @@
 #include "selfdrive/ui/qt/offroad/wifiManager.h"
 
+#include <arpa/inet.h>
 #include <algorithm>
 
+#include <QHostAddress>
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/util.h"
 
@@ -31,9 +33,13 @@ void WifiManager::setup() {
   bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "ConnectionRemoved", this, SLOT(connectionRemoved(QDBusObjectPath)));
   bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "NewConnection", this, SLOT(newConnection(QDBusObjectPath)));
 
-  raw_adapter_state = call<uint>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "State");
   activeAp = call<QDBusObjectPath>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint").path();
-  
+
+  QDBusReply<QMap<QString, QVariant>> replay = call(adapter, NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_DEVICE);
+  auto properties = replay.value();
+  raw_adapter_state = properties["State"].toUInt();
+  setIP4Address(properties["Ip4Address"].toUInt());
+
   initConnections();
   requestScan();
 }
@@ -78,28 +84,13 @@ void WifiManager::activationFinished(QDBusPendingCallWatcher *watcher) {
     seenNetworks[ssid] = {ssid, strength, ctype, security};
   }
 
-  ipv4_address = get_ipv4_address();
   emit refreshSignal();
   watcher->deleteLater();
 }
 
-QString WifiManager::get_ipv4_address() {
-  for (const auto &p : get_active_connections()) {
-    QString type = call<QString>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
-    if (type == "802-11-wireless") {
-      auto ip4config = call<QDBusObjectPath>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Ip4Config");
-      const auto &arr = call<QDBusArgument>(ip4config.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_IP4_CONFIG, "AddressData");
-      QMap<QString, QVariant> pth2;
-      arr.beginArray();
-      while (!arr.atEnd()) {
-        arr >> pth2;
-        arr.endArray();
-        return pth2.value("address").value<QString>();
-      }
-      arr.endArray();
-    }
-  }
-  return "";
+void WifiManager::setIP4Address(uint address) {
+  ipv4_address = QHostAddress(htonl(address)).toString();
+  emit ipAddressChanged(ipv4_address);
 }
 
 SecurityType WifiManager::getSecurityType(const QMap<QString,QVariant> &properties) {
@@ -223,13 +214,17 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
-  if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
-    if (!stop_ || firstScan) {
-      refreshNetworks();
-      firstScan = false;
+  if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS) {
+    if (props.contains("LastScan")) {
+      if (!stop_ || firstScan) {
+        refreshNetworks();
+        firstScan = false;
+      }
+    } else if (props.contains("ActiveAccessPoint")) {
+      activeAp = props.value("ActiveAccessPoint").value<QDBusObjectPath>().path();
     }
-  } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("ActiveAccessPoint")) {
-    activeAp = props.value("ActiveAccessPoint").value<QDBusObjectPath>().path();
+  } else if (props.contains("Ip4Address")) {
+    setIP4Address(props["Ip4Address"].toUInt());
   }
 }
 

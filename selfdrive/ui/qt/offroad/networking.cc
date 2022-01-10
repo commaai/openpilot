@@ -139,7 +139,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(editPasswordButton);
 
   // IP address
-  ipLabel = new LabelControl("IP Address", wifi->ipv4_address);
+  ipLabel = new LabelControl("IP Address");
   list->addItem(ipLabel);
 
   // SSH keys
