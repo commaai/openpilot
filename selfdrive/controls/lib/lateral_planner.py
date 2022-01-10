@@ -37,6 +37,7 @@ class LateralPlanner:
     v_ego = sm['carState'].vEgo
     measured_curvature = sm['controlsState'].curvature
 
+    # Parse model predictions
     md = sm['modelV2']
     self.LP.parse_model(md)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
@@ -55,6 +56,7 @@ class LateralPlanner:
       self.LP.lll_prob *= self.DH.lane_change_ll_prob
       self.LP.rll_prob *= self.DH.lane_change_ll_prob
 
+    # Calculate final driving path and set MPC costs
     if self.use_lanelines:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, self.steer_rate_cost)
