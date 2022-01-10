@@ -59,32 +59,28 @@ void WifiManager::refreshNetworks() {
   QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, &WifiManager::activationFinished);
 }
 
-void WifiManager::activationFinished(QDBusPendingCallWatcher *call) {
-  QMap<QString, Network> networks;
-  const QDBusReply<QList<QDBusObjectPath>> reply = *call;
-  for (const QDBusObjectPath &path : reply.value()) {
-    const QByteArray &ssid = get_property(path.path(), "Ssid");
-    if (ssid.isEmpty()) continue;
+void WifiManager::activationFinished(QDBusPendingCallWatcher *watcher) {
+  seenNetworks.clear();
+  const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
 
-    uint32_t strength = get_ap_strength(path.path());
-    bool exists = seenNetworks.contains(ssid);
-    if ((exists && strength <= seenNetworks[ssid].strength)) {
-      networks[ssid] = seenNetworks[ssid];
-      continue;
-    }
+  for (const QDBusObjectPath &path : wather_reply.value()) {
+    QDBusReply<QMap<QString, QVariant>> replay = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
+    auto properties = replay.value();
+    const QByteArray ssid = properties["Ssid"].toByteArray();
+    uint32_t strength = properties["Strength"].toUInt();
+    if (ssid.isEmpty() || (seenNetworks.contains(ssid) && strength <= seenNetworks[ssid].strength)) continue;
 
-    SecurityType security = exists ? seenNetworks[ssid].security_type : getSecurityType(path.path());
+    SecurityType security = getSecurityType(properties);
     ConnectedType ctype = ConnectedType::DISCONNECTED;
     if (path.path() == activeAp) {
       ctype = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
     }
-    networks[ssid] = {ssid, strength, ctype, security};
+    seenNetworks[ssid] = {ssid, strength, ctype, security};
   }
 
-  seenNetworks = networks;
   ipv4_address = get_ipv4_address();
   emit refreshSignal();
-  call->deleteLater();
+  watcher->deleteLater();
 }
 
 QString WifiManager::get_ipv4_address() {
@@ -106,10 +102,10 @@ QString WifiManager::get_ipv4_address() {
   return "";
 }
 
-SecurityType WifiManager::getSecurityType(const QString &path) {
-  int sflag = get_property(path, "Flags").toInt();
-  int wpaflag = get_property(path, "WpaFlags").toInt();
-  int rsnflag = get_property(path, "RsnFlags").toInt();
+SecurityType WifiManager::getSecurityType(const QMap<QString,QVariant> &properties) {
+  int sflag = properties["Flags"].toUInt();
+  int wpaflag = properties["WpaFlags"].toUInt();
+  int rsnflag = properties["RsnFlags"].toUInt();
   int wpa_props = wpaflag | rsnflag;
 
   // obtained by looking at flags of networks in the office as reported by an Android phone
@@ -200,10 +196,6 @@ void WifiManager::requestScan() {
 
 QByteArray WifiManager::get_property(const QString &network_path , const QString &property) {
   return call<QByteArray>(network_path, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACCESS_POINT, property);
-}
-
-unsigned int WifiManager::get_ap_strength(const QString &network_path) {
-  return call<unsigned int>(network_path, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACCESS_POINT, "Strength");
 }
 
 QString WifiManager::getAdapter(const uint adapter_type) {

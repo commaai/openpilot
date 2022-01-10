@@ -87,8 +87,7 @@ private:
   void deactivateConnection(const QDBusObjectPath &path);
   QVector<QDBusObjectPath> get_active_connections();
   QByteArray get_property(const QString &network_path, const QString &property);
-  unsigned int get_ap_strength(const QString &network_path);
-  SecurityType getSecurityType(const QString &path);
+  SecurityType getSecurityType(const QMap<QString,QVariant> &properties);
   std::optional<QDBusObjectPath> getConnectionPath(const QString &ssid);
   Connection getConnectionSettings(const QDBusObjectPath &path);
   void initConnections();
