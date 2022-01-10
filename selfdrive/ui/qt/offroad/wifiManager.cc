@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include <QHostAddress>
+
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/util.h"
 
@@ -91,7 +92,7 @@ void WifiManager::setIP4Address(uint address) {
   emit ipAddressChanged(ipv4_address);
 }
 
-SecurityType WifiManager::getSecurityType(const QMap<QString,QVariant> &properties) {
+SecurityType WifiManager::getSecurityType(const QMap<QString, QVariant> &properties) {
   int sflag = properties["Flags"].toUInt();
   int wpaflag = properties["WpaFlags"].toUInt();
   int rsnflag = properties["RsnFlags"].toUInt();
@@ -113,11 +114,11 @@ SecurityType WifiManager::getSecurityType(const QMap<QString,QVariant> &properti
 void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
   connecting_to_network = n.ssid;
   // disconnect();
-  forgetConnection(n.ssid); //Clear all connections that may already exist to the network we are connecting
+  forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-  connection["connection"]["id"] = "openpilot connection "+QString::fromStdString(n.ssid.toStdString());
+  connection["connection"]["id"] = "openpilot connection " + QString::fromStdString(n.ssid.toStdString());
   connection["connection"]["autoconnect-retries"] = 0;
 
   connection["802-11-wireless"]["ssid"] = n.ssid;
@@ -183,7 +184,7 @@ void WifiManager::requestScan() {
   }
 }
 
-QByteArray WifiManager::get_property(const QString &network_path , const QString &property) {
+QByteArray WifiManager::get_property(const QString &network_path, const QString &property) {
   return call<QByteArray>(network_path, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACCESS_POINT, property);
 }
 
@@ -354,7 +355,7 @@ void WifiManager::addTetheringConnection() {
   connection["802-11-wireless-security"]["psk"] = defaultTetheringPassword;
 
   connection["ipv4"]["method"] = "shared";
-  QMap<QString,QVariant> address;
+  QMap<QString, QVariant> address;
   address["address"] = "192.168.43.1";
   address["prefix"] = 24u;
   connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
@@ -396,7 +397,7 @@ QString WifiManager::getTetheringPassword() {
 
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
   if (auto path = getConnectionPath(tethering_ssid)) {
-    Connection settings = QDBusReply<Connection>(call(path->path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION,"GetSettings")).value();
+    Connection settings = QDBusReply<Connection>(call(path->path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "GetSettings")).value();
     settings["802-11-wireless-security"]["psk"] = newPassword;
     call(path->path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
     if (isTetheringEnabled()) {
