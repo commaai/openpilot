@@ -104,9 +104,6 @@ function tici_init {
     sleep 3
   fi
 
-  # Allow thermald to write engagement status to kmsg
-  sudo chmod a+w /dev/kmsg
-
   # setup governors
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
