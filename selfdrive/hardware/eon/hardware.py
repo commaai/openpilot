@@ -8,8 +8,13 @@ import subprocess
 from typing import List, Union
 
 from cereal import log
-from common.params import Params
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
+
+try:
+  from common.params import Params
+except ModuleNotFoundError:
+  # openpilot is not built yet
+  Params = None
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -71,9 +76,10 @@ class Android(HardwareBase):
       return f.read().strip()
 
   def get_device_type(self):
-    peripheral_panda = Params().get("LastPeripheralPandaType")
-    if peripheral_panda is not None and int(peripheral_panda) == log.PandaState.PandaType.uno:
-      return "two"
+    if Params is not None:
+      peripheral_panda = Params().get("LastPeripheralPandaType")
+      if peripheral_panda is not None and int(peripheral_panda) == log.PandaState.PandaType.uno:
+        return "two"
     return "eon"
 
   def get_sound_card_online(self):
