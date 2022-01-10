@@ -179,9 +179,9 @@ class Calibrator():
     msg.liveCalibration.validBlocks = self.valid_blocks
     msg.liveCalibration.calStatus = self.cal_status
     msg.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
-    msg.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
-    msg.liveCalibration.rpyCalib = [float(x) for x in smooth_rpy]
-    msg.liveCalibration.rpyCalibSpread = [float(x) for x in self.calib_spread]
+    msg.liveCalibration.extrinsicMatrix = extrinsic_matrix.flatten().tolist()
+    msg.liveCalibration.rpyCalib = smooth_rpy.tolist()
+    msg.liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
     return msg
 
   def send_data(self, pm) -> None:
