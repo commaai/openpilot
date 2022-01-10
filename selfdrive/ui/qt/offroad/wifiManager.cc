@@ -52,11 +52,17 @@ void WifiManager::stop() {
 void WifiManager::refreshNetworks() {
   if (adapter.isEmpty()) return;
 
-  ipv4_address = get_ipv4_address();
+  QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
+  nm.setTimeout(DBUS_TIMEOUT);
+  QDBusPendingCall pending_call = nm.asyncCall("GetAllAccessPoints");
+  QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pending_call);
+  QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, &WifiManager::activationFinished);
+}
 
+void WifiManager::activationFinished(QDBusPendingCallWatcher *call) {
   QMap<QString, Network> networks;
-  const QDBusReply<QList<QDBusObjectPath>> &response = call(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "GetAllAccessPoints");
-  for (const QDBusObjectPath &path : response.value()) {
+  const QDBusReply<QList<QDBusObjectPath>> reply = *call;
+  for (const QDBusObjectPath &path : reply.value()) {
     const QByteArray &ssid = get_property(path.path(), "Ssid");
     if (ssid.isEmpty()) continue;
 
@@ -74,13 +80,14 @@ void WifiManager::refreshNetworks() {
     }
     networks[ssid] = {ssid, strength, ctype, security};
   }
+
   seenNetworks = networks;
+  ipv4_address = get_ipv4_address();
   emit refreshSignal();
+  call->deleteLater();
 }
 
 QString WifiManager::get_ipv4_address() {
-  if (raw_adapter_state != NM_DEVICE_STATE_ACTIVATED) return {};
-
   for (const auto &p : get_active_connections()) {
     QString type = call<QString>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
     if (type == "802-11-wireless") {

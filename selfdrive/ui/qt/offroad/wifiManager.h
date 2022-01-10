@@ -2,6 +2,7 @@
 
 #include <optional>
 
+#include <QDBusPendingCallWatcher>
 #include <QtDBus>
 #include <QTimer>
 
@@ -124,4 +125,5 @@ private slots:
   void deviceAdded(const QDBusObjectPath &path);
   void connectionRemoved(const QDBusObjectPath &path);
   void newConnection(const QDBusObjectPath &path);
+  void activationFinished(QDBusPendingCallWatcher *call);
 };
