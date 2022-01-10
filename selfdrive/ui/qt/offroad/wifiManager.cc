@@ -138,9 +138,9 @@ void WifiManager::connect(const Network &n, const QString &password, const QStri
 }
 
 void WifiManager::deactivateConnectionBySsid(const QString &ssid) {
-  for (QDBusObjectPath active_connection : get_active_connections()) {
+  for (QDBusObjectPath active_connection : getActiveConnections()) {
     auto pth = call<QDBusObjectPath>(active_connection.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
-    if (pth.path() != "" && pth.path() != "/" && get_property(pth.path(), "Ssid") == ssid) {
+    if (pth.path() != "" && pth.path() != "/" && getProperty(pth.path(), "Ssid") == ssid) {
       deactivateConnection(active_connection);
     }
   }
@@ -150,7 +150,7 @@ void WifiManager::deactivateConnection(const QDBusObjectPath &path) {
   call(NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeactivateConnection", QVariant::fromValue(path));
 }
 
-QVector<QDBusObjectPath> WifiManager::get_active_connections() {
+QVector<QDBusObjectPath> WifiManager::getActiveConnections() {
   QVector<QDBusObjectPath> conns;
   QDBusObjectPath path;
   const QDBusArgument &arr = call<QDBusArgument>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "ActiveConnections");
@@ -164,7 +164,7 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 }
 
 bool WifiManager::isKnownConnection(const QString &ssid) {
-  return (bool)getConnectionPath(ssid);
+  return !knownConnections.key(ssid).path().isEmpty();
 }
 
 void WifiManager::forgetConnection(const QString &ssid) {
@@ -184,7 +184,7 @@ void WifiManager::requestScan() {
   }
 }
 
-QByteArray WifiManager::get_property(const QString &network_path, const QString &property) {
+QByteArray WifiManager::getProperty(const QString &network_path, const QString &property) {
   return call<QByteArray>(network_path, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACCESS_POINT, property);
 }
 
@@ -245,7 +245,7 @@ void WifiManager::newConnection(const QDBusObjectPath &path) {
 
 void WifiManager::disconnect() {
   if (activeAp != "" && activeAp != "/") {
-    deactivateConnectionBySsid(get_property(activeAp, "Ssid"));
+    deactivateConnectionBySsid(getProperty(activeAp, "Ssid"));
   }
 }
 
@@ -294,7 +294,7 @@ NetworkType WifiManager::currentNetworkType() {
   } else if (primary_type == "802-11-wireless" && !isTetheringEnabled()) {
     return NetworkType::WIFI;
   } else {
-    for (const QDBusObjectPath &conn : get_active_connections()) {
+    for (const QDBusObjectPath &conn : getActiveConnections()) {
       auto type = call<QString>(conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
       if (type == "gsm") {
         return NetworkType::CELL;
@@ -379,7 +379,7 @@ void WifiManager::setTetheringEnabled(bool enabled) {
 
 bool WifiManager::isTetheringEnabled() {
   if (activeAp != "" && activeAp != "/") {
-    return get_property(activeAp, "Ssid") == tethering_ssid;
+    return getProperty(activeAp, "Ssid") == tethering_ssid;
   }
   return false;
 }

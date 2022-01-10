@@ -36,8 +36,13 @@ struct Network {
   ConnectedType connected;
   SecurityType security_type;
 };
-inline bool compare_by_strength(const Network &a, const Network &b) {
-  return a.connected > b.connected || a.strength > b.strength;
+inline bool compare_network(const Network &a, const Network &b) {
+  if (a.connected > b.connected) return true;
+  if (a.connected == b.connected) {
+    if (a.strength > b.strength) return true;
+    if (a.strength == b.strength && a.ssid > b.ssid) return true;
+  }
+  return false;
 }
 
 class WifiManager : public QObject {
@@ -74,8 +79,8 @@ private:
   void addTetheringConnection();
   void deactivateConnectionBySsid(const QString &ssid);
   void deactivateConnection(const QDBusObjectPath &path);
-  QVector<QDBusObjectPath> get_active_connections();
-  QByteArray get_property(const QString &network_path, const QString &property);
+  QVector<QDBusObjectPath> getActiveConnections();
+  QByteArray getProperty(const QString &network_path, const QString &property);
   SecurityType getSecurityType(const QMap<QString,QVariant> &properties);
   std::optional<QDBusObjectPath> getConnectionPath(const QString &ssid);
   Connection getConnectionSettings(const QDBusObjectPath &path);
