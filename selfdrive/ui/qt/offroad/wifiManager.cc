@@ -192,7 +192,10 @@ uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
 }
 
 void WifiManager::requestScan() {
-  if (!adapter.isEmpty()) call(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
+  if (!adapter.isEmpty()) {
+    QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
+    nm.asyncCall("RequestScan", QVariantMap());
+  }
 }
 
 QByteArray WifiManager::get_property(const QString &network_path , const QString &property) {
