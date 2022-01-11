@@ -244,11 +244,9 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptor:
       set_long_tune(ret.longitudinalTuning, LongTunes.PEDAL)
-    elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2,
-                       CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2]:
+    elif candidate in TSS2_CAR:
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS2)
       ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
-      ret.startingAccelRate = 6.0  # release brakes fast
     else:
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS)
 
@@ -287,11 +285,12 @@ class CarInterface(CarInterfaceBase):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
+    hud_control = c.hudControl
     ret = self.CC.update(c.enabled, c.active, self.CS, self.frame,
                          c.actuators, c.cruiseControl.cancel,
-                         c.hudControl.visualAlert, c.hudControl.leftLaneVisible,
-                         c.hudControl.rightLaneVisible, c.hudControl.leadVisible,
-                         c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
+                         hud_control.visualAlert, hud_control.leftLaneVisible,
+                         hud_control.rightLaneVisible, hud_control.leadVisible,
+                         hud_control.leftLaneDepart, hud_control.rightLaneDepart)
 
     self.frame += 1
     return ret

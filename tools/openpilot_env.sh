@@ -1,6 +1,4 @@
 if [ -z "$OPENPILOT_ENV" ]; then
-  OP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
-  export PYTHONPATH="$OP_ROOT:$PYTHONPATH"
   export PATH="$HOME/.pyenv/bin:$PATH"
 
   # Pyenv suggests we place the below two lines in .profile before we source
@@ -11,13 +9,13 @@ if [ -z "$OPENPILOT_ENV" ]; then
   export PYENV_ROOT="$HOME/.pyenv"
 
   if [[ "$(uname)" == 'Linux' ]]; then
-    eval "$(pyenv init --path)"
     eval "$(pyenv virtualenv-init -)"
   elif [[ "$(uname)" == 'Darwin' ]]; then
     # msgq doesn't work on mac
     export ZMQ=1
     export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
   fi
+  eval "$(pyenv init --path)"
   eval "$(pyenv init -)"
 
   export OPENPILOT_ENV=1
