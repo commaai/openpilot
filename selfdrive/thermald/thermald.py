@@ -380,7 +380,7 @@ def thermald_thread() -> NoReturn:
 
     # Check if we need to shut down
     if power_monitor.should_shutdown(peripheralState, onroad_conditions["ignition"], in_car, off_ts, started_seen):
-      cloudlog.fsync_info(f"shutting device down, offroad since {off_ts}", SWAGLOG_DIR)
+      cloudlog.blocking_info(f"shutting device down, offroad since {off_ts}", SWAGLOG_DIR)
       HARDWARE.shutdown()
 
     # If UI has crashed, set the brightness to reasonable non-zero value

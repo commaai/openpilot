@@ -163,7 +163,7 @@ class SwagLogger(logging.Logger):
     else:
       self.info(evt)
 
-  def fsync_info(self, msg, fsync_dir):
+  def blocking_info(self, msg, fsync_dir):
     self.info(msg)
     fd = os.open(fsync_dir, os.O_RDONLY)
     os.fsync(fd)
