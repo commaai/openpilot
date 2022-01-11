@@ -164,7 +164,10 @@ class SwagLogger(logging.Logger):
       self.info(evt)
 
   def blocking_info(self, msg, fsync_dir):
+    # if logmessaged is running
     self.info(msg)
+    # else get_file_handler().emit(msg)
+    #   pass
     fd = os.open(fsync_dir, os.O_RDONLY)
     if fd >= 0:
       os.fsync(fd)
