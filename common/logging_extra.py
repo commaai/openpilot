@@ -7,7 +7,7 @@ import uuid
 import socket
 import logging
 import traceback
-from threading import local, Thread
+from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
 
@@ -163,13 +163,11 @@ class SwagLogger(logging.Logger):
     else:
       self.info(evt)
 
-  def blocking_info(self, msg, timeout=10):
-    def run():
-      self.info(msg)
-
-    t = Thread(target=run)
-    t.start()
-    t.join(timeout=timeout)
+  def fsync_info(self, msg, fsync_dir):
+    self.info(msg)
+    fd = os.open(fsync_dir, os.O_RDONLY)
+    os.fsync(fd)
+    os.close(fd)
 
   def findCaller(self, stack_info=False, stacklevel=1):
     """
