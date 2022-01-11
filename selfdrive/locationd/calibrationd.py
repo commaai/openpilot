@@ -7,7 +7,6 @@ and the image input into the neural network is not corrected for roll.
 '''
 
 import os
-import copy
 from typing import NoReturn
 import numpy as np
 import cereal.messaging as messaging
@@ -70,7 +69,7 @@ class Calibrator():
     if param_put and calibration_params:
       try:
         msg = log.Event.from_bytes(calibration_params)
-        rpy_init = list(msg.liveCalibration.rpyCalib)
+        rpy_init = np.array(msg.liveCalibration.rpyCalib)
         valid_blocks = msg.liveCalibration.validBlocks
       except Exception:
         cloudlog.exception("Error reading cached CalibrationParams")
@@ -80,13 +79,15 @@ class Calibrator():
 
   def reset(self, rpy_init=RPY_INIT, valid_blocks=0, smooth_from=None):
     if not np.isfinite(rpy_init).all():
-        self.rpy = copy.copy(RPY_INIT)
+        self.rpy = RPY_INIT.copy()
     else:
-      self.rpy = rpy_init
+      self.rpy = rpy_init.copy()
+
     if not np.isfinite(valid_blocks) or valid_blocks < 0:
         self.valid_blocks = 0
     else:
       self.valid_blocks = valid_blocks
+
     self.rpys = np.tile(self.rpy, (INPUTS_WANTED, 1))
 
     self.idx = 0
