@@ -207,9 +207,9 @@ class LateralPlanner:
 
     lateralPlan = plan_send.lateralPlan
     lateralPlan.laneWidth = float(self.LP.lane_width)
-    lateralPlan.dPathPoints = [float(x) for x in self.y_pts]
-    lateralPlan.psis = [float(x) for x in self.lat_mpc.x_sol[0:CONTROL_N, 2]]
-    lateralPlan.curvatures = [float(x) for x in self.lat_mpc.x_sol[0:CONTROL_N, 3]]
+    lateralPlan.dPathPoints = self.y_pts.tolist()
+    lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()
+    lateralPlan.curvatures = self.lat_mpc.x_sol[0:CONTROL_N, 3].tolist()
     lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
     lateralPlan.lProb = float(self.LP.lll_prob)
     lateralPlan.rProb = float(self.LP.rll_prob)
