@@ -67,6 +67,7 @@ class ManagerProcess(ABC):
   daemon = False
   sigkill = False
   persistent = False
+  driverview = False
   proc: Optional[Process] = None
   enabled = True
   name = ""
@@ -291,8 +292,7 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, driverview:
       p.stop(block=False)
     elif p.persistent:
       p.start()
-    elif getattr(p, 'driverview', False) and driverview:
-      # TODO: why is driverview an argument here? can this be done with the name?
+    elif p.driverview and driverview:
       p.start()
     elif started:
       p.start()
