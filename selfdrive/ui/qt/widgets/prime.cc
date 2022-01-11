@@ -293,7 +293,9 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &SetupWidget::replyFinished);
   }
-  hide(); // Only show when first request comes back
+  if (!Hardware::PC()) {
+    hide(); // Only show when first request comes back
+  }
 }
 
 void SetupWidget::replyFinished(const QString &response, bool success) {
