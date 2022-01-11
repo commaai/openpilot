@@ -22,7 +22,7 @@ def can_printer(bus, max_msg, addr):
 
     if sec_since_boot() - lp > 0.1:
       dd = chr(27) + "[2J"
-      dd += "%5.2f\n" % (sec_since_boot() - start)
+      dd += f"{sec_since_boot() - start:5.2f}\n"
       for addr in sorted(msgs.keys()):
         a = msgs[addr][-1].decode('ascii', 'backslashreplace')
         x = binascii.hexlify(msgs[addr][-1]).decode('ascii')

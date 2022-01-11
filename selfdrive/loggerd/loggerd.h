@@ -108,7 +108,6 @@ const LogCameraInfo qcam_info = {
 };
 
 struct LoggerdState {
-  Context *ctx;
   LoggerState logger = {};
   char segment_path[4096];
   std::mutex rotate_lock;

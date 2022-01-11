@@ -41,7 +41,7 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.transmissionType = TransmissionType.manual
 
-      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2, 0xFD]):  # Airbag_01, LWI_01, ESP_19, ESP_21
+      if any(msg in fingerprint[1] for msg in (0x40, 0x86, 0xB2, 0xFD)):  # Airbag_01, LWI_01, ESP_19, ESP_21
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
@@ -171,7 +171,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.84
 
     else:
-      raise ValueError("unsupported car %s" % candidate)
+      raise ValueError(f"unsupported car {candidate}")
 
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.45
@@ -214,7 +214,7 @@ class CarInterface(CarInterfaceBase):
     # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:
       events.add(EventName.parkBrake)
-    if self.CS.tsk_status in [6, 7]:
+    if self.CS.tsk_status in (6, 7):
       events.add(EventName.accFaulted)
 
     # Low speed steer alert hysteresis logic
@@ -228,7 +228,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.CP.openpilotLongitudinalControl:
       for b in buttonEvents:
         # do enable on falling edge of both accel and decel buttons
-        if b.type in [ButtonType.setCruise, ButtonType.resumeCruise] and not b.pressed:
+        if b.type in (ButtonType.setCruise, ButtonType.resumeCruise) and not b.pressed:
           events.add(EventName.buttonEnable)
         # do disable on rising edge of cancel
         if b.type == "cancel" and b.pressed:
@@ -245,14 +245,15 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
-                   c.hudControl.visualAlert,
-                   c.hudControl.leftLaneVisible,
-                   c.hudControl.rightLaneVisible,
-                   c.hudControl.leftLaneDepart,
-                   c.hudControl.rightLaneDepart,
-                   c.hudControl.leadVisible,
-                   c.hudControl.setSpeed,
-                   c.hudControl.speedVisible)
+    hud_control = c.hudControl
+    ret = self.CC.update(c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
+                         hud_control.visualAlert,
+                         hud_control.leftLaneVisible,
+                         hud_control.rightLaneVisible,
+                         hud_control.leftLaneDepart,
+                         hud_control.rightLaneDepart,
+                         hud_control.leadVisible,
+                         hud_control.setSpeed,
+                         hud_control.speedVisible)
     self.frame += 1
-    return can_sends
+    return ret

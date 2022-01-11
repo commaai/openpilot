@@ -77,6 +77,7 @@ selfdrive/tombstoned.py
 selfdrive/pandad.py
 selfdrive/updated.py
 selfdrive/rtshield.py
+selfdrive/statsd.py
 
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
@@ -596,7 +597,6 @@ opendbc/lexus_rx_350_2016_pt_generated.dbc
 opendbc/lexus_rx_hybrid_2017_pt_generated.dbc
 opendbc/toyota_nodsu_pt_generated.dbc
 opendbc/toyota_nodsu_hybrid_pt_generated.dbc
-opendbc/toyota_camry_hybrid_2018_pt_generated.dbc
 opendbc/toyota_highlander_2017_pt_generated.dbc
 opendbc/toyota_highlander_hybrid_2018_pt_generated.dbc
 opendbc/toyota_avalon_2017_pt_generated.dbc

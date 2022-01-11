@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+import os
 import argparse
+from inputs import get_gamepad
 
 import cereal.messaging as messaging
 from common.numpy_fast import interp, clip
 from common.params import Params
-from inputs import get_gamepad
 from tools.lib.kbhit import KBHit
 
 
@@ -34,7 +35,8 @@ class Keyboard:
 
 class Joystick:
   def __init__(self):
-    self.max_axis_value = 255  # tune based on your joystick, 0 to this
+    self.min_axis_value = 0
+    self.max_axis_value = 255
     self.cancel_button = 'BTN_TRIGGER'
     self.axes_values = {'ABS_Y': 0., 'ABS_RZ': 0.}  # gb, steer
 
@@ -45,7 +47,10 @@ class Joystick:
     if event[0] == self.cancel_button and event[1] == 0:  # state 0 is falling edge
       self.cancel = True
     elif event[0] in self.axes_values:
-      norm = -interp(event[1], [0, self.max_axis_value], [-1., 1.])
+      self.max_axis_value = max(event[1], self.max_axis_value)
+      self.min_axis_value = min(event[1], self.min_axis_value)
+
+      norm = -interp(event[1], [self.min_axis_value, self.max_axis_value], [-1., 1.])
       self.axes_values[event[0]] = norm if abs(norm) > 0.05 else 0.  # center can be noisy, deadzone of 5%
     else:
       return False
@@ -58,7 +63,7 @@ def joystick_thread(use_keyboard):
   joystick = Keyboard() if use_keyboard else Joystick()
 
   while True:
-    ret = joystick.update()  # processes joystick/key events and handles state of axes
+    ret = joystick.update()
     if ret:
       dat = messaging.new_message('testJoystick')
       dat.testJoystick.axes = [joystick.axes_values[a] for a in joystick.axes_values]
@@ -68,19 +73,24 @@ def joystick_thread(use_keyboard):
 
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(
-    description='Publishes events from your joystick to control your car',
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser = argparse.ArgumentParser(description='Publishes events from your joystick to control your car.\n'
+                                               'openpilot must be offroad before starting joysticked.',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument('--keyboard', action='store_true', help='Use your keyboard instead of a joystick')
   args = parser.parse_args()
 
+  if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ:
+    print("The car must be off before running joystickd.")
+    exit()
+
+  print()
   if args.keyboard:
-    print('\nGas/brake control: `W` and `S` keys\n'
+    print('Gas/brake control: `W` and `S` keys\n'
           'Steering control: `A` and `D` keys')
     print('Buttons:\n'
           '- `R`: Resets axes\n'
           '- `C`: Cancel cruise control')
   else:
-    print('\nUsing joystick, make sure to run bridge on your device if running over the network!')
+    print('Using joystick, make sure to run cereal/messaging/bridge on your device if running over the network!')
 
   joystick_thread(args.keyboard)

@@ -91,16 +91,16 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 Segment::Segment(int n, const SegmentFile &files, uint32_t flags) : seg_num(n), flags(flags) {
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
-  const QString file_list[] = {
+  const std::array file_list = {
       (flags & REPLAY_FLAG_QCAMERA) || files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
       flags & REPLAY_FLAG_DCAM ? files.driver_cam : "",
       flags & REPLAY_FLAG_ECAM ? files.wide_road_cam : "",
       files.rlog.isEmpty() ? files.qlog : files.rlog,
   };
-  for (int i = 0; i < std::size(file_list); i++) {
-    if (!file_list[i].isEmpty()) {
-      loading_++;
-      synchronizer_.addFuture(QtConcurrent::run([=] { loadFile(i, file_list[i].toStdString()); }));
+  for (int i = 0; i < file_list.size(); ++i) {
+    if (!file_list[i].isEmpty() && (!(flags & REPLAY_FLAG_NO_VIPC) || i >= MAX_CAMERAS)) {
+      ++loading_;
+      synchronizer_.addFuture(QtConcurrent::run(this, &Segment::loadFile, i, file_list[i].toStdString()));
     }
   }
 }

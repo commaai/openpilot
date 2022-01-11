@@ -52,7 +52,7 @@ def cycle_alerts(duration=200, is_metric=False):
       events.clear()
       events.add(alert)
 
-      a = events.create_alerts([et, ], [CP, sm, is_metric])
+      a = events.create_alerts([et, ], [CP, sm, is_metric, 0])
       AM.add_many(frame, a)
       AM.process_alerts(frame)
       print(AM.alert)
