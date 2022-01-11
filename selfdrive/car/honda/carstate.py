@@ -337,7 +337,7 @@ class CarState(CarStateBase):
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
 
     if self.CP.carFingerprint in HONDA_RADARLESS:
-      self.lkas_boh_1 = copy.copy(cp_cam.vl["LKAS_BOH_1"]["LKAS_HUD_2"])
+      #self.lkas_boh_1 = copy.copy(cp_cam.vl["LKAS_BOH_1"]["LKAS_HUD_2"])
       self.lkas_boh_2 = copy.copy(cp_cam.vl["LKAS_BOH_2"]["LKAS_HUD_2"])
       self.hud_counter = copy.copy(cp_cam.vl["COUNTER_2"]["LKAS_HUD_2"])
 
