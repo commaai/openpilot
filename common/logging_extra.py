@@ -166,8 +166,9 @@ class SwagLogger(logging.Logger):
   def blocking_info(self, msg, fsync_dir):
     self.info(msg)
     fd = os.open(fsync_dir, os.O_RDONLY)
-    os.fsync(fd)
-    os.close(fd)
+    if fd >= 0:
+      os.fsync(fd)
+      os.close(fd)
 
   def findCaller(self, stack_info=False, stacklevel=1):
     """
