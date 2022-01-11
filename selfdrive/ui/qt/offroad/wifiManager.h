@@ -86,6 +86,7 @@ private:
   Connection getConnectionSettings(const QDBusObjectPath &path);
   void initConnections();
   void setup();
+
   template <typename T = QDBusMessage, typename... Args>
   T call(const QString &path, const QString &interface, const QString &method, Args&&... args) {
     QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, bus);
@@ -106,6 +107,12 @@ private:
 
       return T();
     }
+  }
+
+  template <typename... Args>
+  QDBusPendingCall asyncCall(const QString &path, const QString &interface, const QString &method, Args &&...args) {
+    QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, bus);
+    return nm.asyncCall(method, args...);
   }
 
   QString adapter;  // Path to network manager wifi-device

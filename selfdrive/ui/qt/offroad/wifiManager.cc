@@ -57,9 +57,7 @@ void WifiManager::stop() {
 void WifiManager::refreshNetworks() {
   if (adapter.isEmpty() || !timer.isActive()) return;
 
-  QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
-  QDBusPendingCall pending_call = nm.asyncCall("GetAllAccessPoints");
+  QDBusPendingCall pending_call = asyncCall(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "GetAllAccessPoints");
   QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pending_call);
   QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, &WifiManager::activationFinished);
 }
@@ -148,7 +146,7 @@ void WifiManager::deactivateConnectionBySsid(const QString &ssid) {
 }
 
 void WifiManager::deactivateConnection(const QDBusObjectPath &path) {
-  call(NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeactivateConnection", QVariant::fromValue(path));
+  asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeactivateConnection", QVariant::fromValue(path));
 }
 
 QVector<QDBusObjectPath> WifiManager::getActiveConnections() {
@@ -180,8 +178,7 @@ uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
 
 void WifiManager::requestScan() {
   if (!adapter.isEmpty()) {
-    QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
-    nm.asyncCall("RequestScan", QVariantMap());
+    asyncCall(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
   }
 }
 
@@ -274,14 +271,14 @@ void WifiManager::initConnections() {
 void WifiManager::activateWifiConnection(const QString &ssid) {
   if (auto path = getConnectionPath(ssid)) {
     connecting_to_network = ssid;
-    call(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(*path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
+    asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(*path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
 }
 
 void WifiManager::activateModemConnection(const QDBusObjectPath &path) {
   QString modem = getAdapter(NM_DEVICE_TYPE_MODEM);
   if (!path.path().isEmpty() && !modem.isEmpty()) {
-    call(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(modem)), QVariant::fromValue(QDBusObjectPath("/")));
+    asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(modem)), QVariant::fromValue(QDBusObjectPath("/")));
   }
 }
 
