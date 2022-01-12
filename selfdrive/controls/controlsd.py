@@ -700,7 +700,7 @@ class Controls:
       ce_send = messaging.new_message('carEvents', len(self.events))
       ce_send.carEvents = car_events
       self.pm.send('carEvents', ce_send)
-    self.events_prev = self.events.names.copy()
+    self.events_prev = self.events.names
 
     # carParams - logged every 50 seconds (> 1 per segment)
     if (self.sm.frame % int(50. / DT_CTRL) == 0):

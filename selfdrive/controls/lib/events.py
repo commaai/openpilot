@@ -48,10 +48,10 @@ class Events:
 
   @property
   def names(self) -> List[int]:
-    return self.events
+    return list(chain(self.static_events, self.events))
 
   def __len__(self) -> int:
-    return len(self.events)
+    return len(self.static_events) + len(self.events)
 
   def add(self, event_name: int, static: bool=False) -> None:
     if static:
