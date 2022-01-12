@@ -266,6 +266,7 @@ void WifiUI::refresh() {
   std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_network);
 
   // add networks
+  const bool is_tethering_enabled = wifi->isTetheringEnabled();
   ListWidget *list = new ListWidget(this);
   for (Network &network : sortedNetworks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
@@ -289,7 +290,7 @@ void WifiUI::refresh() {
     }
 
     // Forget button
-    if (wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled()) {
+    if (wifi->isKnownConnection(network.ssid) && !is_tethering_enabled) {
       QPushButton *forgetBtn = new QPushButton("FORGET");
       forgetBtn->setObjectName("forgetBtn");
       QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
