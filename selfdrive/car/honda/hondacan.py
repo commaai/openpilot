@@ -180,14 +180,14 @@ def spam_buttons_command(packer, button_val, idx, car_fingerprint):
   return packer.make_can_msg("SCM_BUTTONS", bus, values, idx)
 
 def create_lkas_command(packer, hud, lkas_boh_1, lkas_boh_2, hud_counter, idx):
-    # 2022 Honda civic only
-    values = {
-      "RIGHT_LANE" : hud.lanes,
-      "LEFT_LANE" : hud.lanes,
-      "SET_ME_X01" : 0x01,
-      "LKAS_HUD_1" : lkas_boh_1,
-      "LKAS_HUD_2" : lkas_boh_2,
-      "COUNTER_2" : hud_counter,
-    }
-    bus = 0
-    return packer.make_can_msg("LKAS_HUD_2", bus, values, idx)
+  # 2022 Honda civic only
+  values = {
+    "RIGHT_LANE" : hud.lanes,
+    "LEFT_LANE" : hud.lanes,
+    "SET_ME_X01" : 0x01,
+    "LKAS_HUD_1" : lkas_boh_1,
+    "LKAS_HUD_2" : lkas_boh_2,
+    "COUNTER_2" : hud_counter,
+  }
+  bus = 0
+  return packer.make_can_msg("LKAS_HUD_2", bus, values, idx)
