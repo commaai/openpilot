@@ -185,6 +185,9 @@ def create_lkas_command(packer, hud, lkas_boh_1, lkas_boh_2, hud_counter, idx):
       "RIGHT_LANE" : hud.lanes,
       "LEFT_LANE" : hud.lanes,
       "SET_ME_X01" : 0x01,
+      "LKAS_HUD_1" : lkas_boh_1,
+      "LKAS_HUD_2" : lkas_boh_2,
+      "COUNTER_2" : hud_counter,
     }
     bus = 0
     return packer.make_can_msg("LKAS_HUD_2", bus, values, idx)
