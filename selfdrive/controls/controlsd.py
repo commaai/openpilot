@@ -316,7 +316,7 @@ class Controls:
           msg = m.androidLog.message
           if any(err in msg for err in ("ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED")):
             csid = msg.split("CSID:")[-1].split(" ")[0]
-            if (evt := CSID_MAP.get(csid, None)) is not None:
+            if evt := CSID_MAP.get(csid, None):
               self.events.add(evt)
         except UnicodeDecodeError:
           pass
