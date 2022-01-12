@@ -41,6 +41,9 @@ void WifiManager::setup() {
 }
 
 void WifiManager::start() {
+  if ((millis_since_boot() - last_scan_tm) > 5000) {
+    requestScan();
+  }
   timer.start(5000);
   refreshNetworks();
 }
@@ -188,6 +191,7 @@ uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
 void WifiManager::requestScan() {
   if (!adapter.isEmpty()) {
     asyncCall(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
+    last_scan_tm = millis_since_boot();
   }
 }
 

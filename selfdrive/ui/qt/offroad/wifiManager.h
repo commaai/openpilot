@@ -123,6 +123,7 @@ private:
   QTimer timer;
   QString activeAp;
   QDBusObjectPath lteConnectionPath;
+  double last_scan_tm = 0;
 
 signals:
   void wrongPassword(const QString &ssid);
