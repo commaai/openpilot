@@ -26,8 +26,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target_fut
 
   else:
     if long_control_state == LongCtrlState.off:
-      if active:
-        long_control_state = LongCtrlState.pid
+      long_control_state = LongCtrlState.pid
 
     elif long_control_state == LongCtrlState.pid:
       if stopping_condition:
