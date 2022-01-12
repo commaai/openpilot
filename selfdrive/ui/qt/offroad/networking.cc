@@ -188,7 +188,7 @@ void AdvancedNetworking::toggleTethering(bool enabled) {
   tetheringToggle->setEnabled(false);
 }
 
-// WifiUI functions
+// WifiItem
 
 WifiItem::WifiItem(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *hlayout = new QHBoxLayout(this);
@@ -243,6 +243,8 @@ void WifiItem::update(WifiUI *wifi_ui, const Network &n) {
   }
   strengthLabel->setPixmap(wifi_ui->strength_icons[std::clamp((int)round(n.strength / 33.), 0, 3)]);
 }
+
+// WifiUI functions
 
 WifiUI::WifiUI(QWidget *parent, WifiManager *wifi) : QWidget(parent), wifi(wifi) {
   main_layout = new QVBoxLayout(this);
