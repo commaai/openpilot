@@ -17,7 +17,7 @@ class CarController():
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, enabled, CS, actuators, pcm_cancel_cmd, hud_alert):
+  def update(self, active, CS, actuators, pcm_cancel_cmd, hud_alert):
     # this seems needed to avoid steering faults and to force the sync with the EPS counter
     frame = CS.lkas_counter
     if self.prev_frame == frame:
@@ -35,7 +35,7 @@ class CarController():
     elif self.car_fingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
       if CS.out.vEgo < (CS.CP.minSteerSpeed - 3.0):
         self.gone_fast_yet = False  # < 14.5m/s stock turns off this bit, but fine down to 13.5
-    lkas_active = moving_fast and enabled
+    lkas_active = moving_fast and active and not CS.out.gasPressed
 
     if not lkas_active:
       apply_steer = 0
