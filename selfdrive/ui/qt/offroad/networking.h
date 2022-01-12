@@ -14,8 +14,8 @@ class WifiUI;
 class WifiItem : public QWidget {
   Q_OBJECT
 public:
-  explicit WifiItem(WifiUI* wifi_ui);
-  void update(const Network& n);
+  explicit WifiItem(QWidget* parent = nullptr);
+  void update(WifiUI *wifi_ui, const Network& n);
 
 signals:
   void connectToNetwork(const Network &n);
@@ -25,10 +25,9 @@ protected:
   ElidedLabel* ssidLabel;
   QPushButton* connecting;
   QPushButton* forgetBtn;
-  QLabel* icon;
-  QLabel* strength;
+  QLabel* iconLabel;
+  QLabel* strengthLabel;
   Network network;
-  WifiUI* wifi_ui;
 };
 
 class WifiUI : public QWidget {

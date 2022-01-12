@@ -190,7 +190,7 @@ void AdvancedNetworking::toggleTethering(bool enabled) {
 
 // WifiUI functions
 
-WifiItem::WifiItem(WifiUI *ui) : wifi_ui(ui), QWidget(ui) {
+WifiItem::WifiItem(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *hlayout = new QHBoxLayout(this);
   hlayout->setContentsMargins(44, 0, 73, 0);
   hlayout->setSpacing(50);
@@ -214,16 +214,16 @@ WifiItem::WifiItem(WifiUI *ui) : wifi_ui(ui), QWidget(ui) {
   });
   hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
 
-  icon = new QLabel();
-  hlayout->addWidget(icon, 0, Qt::AlignRight);
+  iconLabel = new QLabel();
+  hlayout->addWidget(iconLabel, 0, Qt::AlignRight);
 
-  strength = new QLabel();
-  hlayout->addWidget(strength, 0, Qt::AlignRight);
+  strengthLabel = new QLabel();
+  hlayout->addWidget(strengthLabel, 0, Qt::AlignRight);
 
   setVisible(false);
 }
 
-void WifiItem::update(const Network &n) {
+void WifiItem::update(WifiUI *wifi_ui, const Network &n) {
   network = n;
   ssidLabel->setText(n.ssid);
   ssidLabel->setEnabled(n.security_type != SecurityType::UNSUPPORTED);
@@ -233,15 +233,15 @@ void WifiItem::update(const Network &n) {
   forgetBtn->setVisible(wifi_ui->wifi->isKnownConnection(n.ssid) && !wifi_ui->wifi->isTetheringEnabled());
 
   if (n.connected == ConnectedType::CONNECTED) {
-    icon->setPixmap(wifi_ui->checkmark);
+    iconLabel->setPixmap(wifi_ui->checkmark);
   } else if (n.security_type == SecurityType::UNSUPPORTED) {
-    icon->setPixmap(wifi_ui->circled_slash);
+    iconLabel->setPixmap(wifi_ui->circled_slash);
   } else if (n.security_type == SecurityType::WPA) {
-    icon->setPixmap(wifi_ui->lock);
+    iconLabel->setPixmap(wifi_ui->lock);
   } else {
-    icon->setPixmap(QPixmap());
+    iconLabel->setPixmap(QPixmap());
   }
-  strength->setPixmap(wifi_ui->strengths[std::clamp((int)round(n.strength / 33.), 0, 3)]);
+  strengthLabel->setPixmap(wifi_ui->strengths[std::clamp((int)round(n.strength / 33.), 0, 3)]);
 }
 
 WifiUI::WifiUI(QWidget *parent, WifiManager *wifi) : QWidget(parent), wifi(wifi) {
@@ -334,7 +334,7 @@ void WifiUI::refresh() {
       wifi_items.push_back(item);
       wifi_list->addItem(item);
     }
-    item->update(network);
+    item->update(this, network);
     item->setVisible(true);
 
     ++cnt;
