@@ -70,7 +70,7 @@ class CarController():
         idx = (frame / P.ACC_CONTROL_STEP) % 16
         can_sends.append(volkswagencan.create_mqb_acc_06_control(self.packer_pt, CANBUS.pt, enabled, acc_status,
                                                                  accel, self.acc_stopping, self.acc_starting,
-                                                                 cb_pos, cb_neg, idx))
+                                                                 cb_pos, cb_neg, CS.acc_type, idx))
         can_sends.append(volkswagencan.create_mqb_acc_07_control(self.packer_pt, CANBUS.pt, enabled,
                                                                  accel, acc_hold_request, acc_hold_release,
                                                                  acc_hold_type, stopping_distance, idx))

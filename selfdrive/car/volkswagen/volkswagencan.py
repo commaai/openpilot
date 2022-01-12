@@ -69,9 +69,9 @@ def create_mqb_acc_04_control(packer, bus, acc_04_stock_values, idx):
   return packer.make_can_msg("ACC_04", bus, values, idx)
 
 def create_mqb_acc_06_control(packer, bus, enabled, acc_status, accel, acc_stopping, acc_starting,
-                              cb_pos, cb_neg, idx):
+                              cb_pos, cb_neg, acc_type, idx):
   values = {
-    "ACC_Typ": 2,  # FIXME: locked to stop and go, need to tweak for cars that only support follow-to-stop
+    "ACC_Typ": acc_type,
     "ACC_Status_ACC": acc_status,
     "ACC_StartStopp_Info": enabled,
     "ACC_Sollbeschleunigung_02": accel if enabled else 3.01,
