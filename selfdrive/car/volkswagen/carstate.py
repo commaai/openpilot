@@ -99,6 +99,7 @@ class CarState(CarStateBase):
     # Update ACC radar status.
     self.acc_04_stock_values = ext_cp.vl["ACC_04"]
     self.acc_13_stock_values = ext_cp.vl["ACC_13"]
+    self.acc_type = ext_cp.vl["ACC_06"]["ACC_Typ"]
     self.tsk_status = pt_cp.vl["TSK_06"]["TSK_Status"]
     if self.tsk_status == 2:
       # ACC okay and enabled, but not currently engaged
@@ -270,7 +271,8 @@ class MqbExtraSignals:
     ("ACC_Charisma_FahrPr", "ACC_04", 0),           # Driving profile selection
     ("ACC_Charisma_Status", "ACC_04", 0),           # Driving profile status
     ("ACC_Charisma_Umschaltung", "ACC_04", 0),      # Driving profile switching
-    ("ACC_Texte_braking_guard","ACC_04",0),         # Part of ACC driver alerts in instrument cluster
+    ("ACC_Texte_braking_guard", "ACC_04", 0),       # Part of ACC driver alerts in instrument cluster
+    ("ACC_Typ", "ACC_06", 0),                       # Basic vs F2S vs SNG
     ("AWV2_Freigabe", "ACC_10", 0),                 # FCW brake jerk release
     ("ANB_Teilbremsung_Freigabe", "ACC_10", 0),     # AEB partial braking release
     ("ANB_Zielbremsung_Freigabe", "ACC_10", 0),     # AEB target braking release
@@ -278,6 +280,7 @@ class MqbExtraSignals:
     ("Unknown_Osc_2", "ACC_13", 0),                 # Unknown oscillating value (checksum/xor?)
   ]
   fwd_radar_checks = [
+    ("ACC_06", 50),                                 # From J428 ACC radar control module
     ("ACC_10", 50),                                 # From J428 ACC radar control module
     ("ACC_02", 17),                                 # From J428 ACC radar control module
     ("ACC_04", 17),                                 # From J428 ACC radar control module

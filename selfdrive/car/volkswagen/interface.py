@@ -49,6 +49,8 @@ class CarInterface(CarInterfaceBase):
       if Params().get_bool("DisableRadar") and ret.networkLocation == NetworkLocation.gateway:
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONGITUDINAL
+        if ret.transmissionType == TransmissionType.manual:
+          ret.minEnableSpeed = 4.5  # FIXME: estimated, fine-tune
 
     # Global lateral tuning defaults, can be overridden per-vehicle
 
@@ -225,6 +227,10 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowSteerSpeed)
 
     if self.CS.CP.openpilotLongitudinalControl:
+      if ret.vEgo < self.CP.minEnableSpeed + 2.:
+        events.add(EventName.belowEngageSpeed)
+      if c.enabled and ret.vEgo < self.CP.minEnableSpeed:
+        events.add(EventName.speedTooLow)
       for b in buttonEvents:
         # do enable on falling edge of both accel and decel buttons
         if b.type in (ButtonType.setCruise, ButtonType.resumeCruise) and not b.pressed:
