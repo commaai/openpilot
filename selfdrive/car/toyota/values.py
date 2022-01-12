@@ -526,6 +526,7 @@ FW_VERSIONS = {
       b'\x01896630ZG5100\x00\x00\x00\x00',
       b'\x01896630ZG5200\x00\x00\x00\x00',
       b'\x01896630ZG5300\x00\x00\x00\x00',
+      b'\x01896630ZP1000\x00\x00\x00\x00',
       b'\x01896630ZP2000\x00\x00\x00\x00',
       b'\x01896630ZQ5000\x00\x00\x00\x00',
       b'\x018966312L8000\x00\x00\x00\x00',
@@ -800,6 +801,7 @@ FW_VERSIONS = {
       b'\x02896630E66000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x02896630EB3000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x02896630EB3100\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
+      b'\x02896630E66100\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301400\x00\x00\x00\x00',
@@ -1555,6 +1557,7 @@ FW_VERSIONS = {
   },
   CAR.PRIUS_TSS2: {
     (Ecu.engine, 0x700, None): [
+      b'\x028966347B1000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C6000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x038966347C0000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF4710101\x00\x00\x00\x00',
@@ -1567,6 +1570,7 @@ FW_VERSIONS = {
       b'F152647510\x00\x00\x00\x00\x00\x00',
       b'F152647520\x00\x00\x00\x00\x00\x00',
       b'F152647521\x00\x00\x00\x00\x00\x00',
+      b'F152647531\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B47070\x00\x00\x00\x00\x00\x00',
@@ -1609,7 +1613,7 @@ DBC = {
   CAR.CHR: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CHRH: dbc_dict('toyota_nodsu_hybrid_pt_generated', 'toyota_adas'),
   CAR.CAMRY: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-  CAR.CAMRYH: dbc_dict('toyota_camry_hybrid_2018_pt_generated', 'toyota_adas'),
+  CAR.CAMRYH: dbc_dict('toyota_nodsu_hybrid_pt_generated', 'toyota_adas'),
   CAR.CAMRY_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.CAMRYH_TSS2: dbc_dict('toyota_nodsu_hybrid_pt_generated', 'toyota_tss2_adas'),
   CAR.HIGHLANDER: dbc_dict('toyota_highlander_2017_pt_generated', 'toyota_adas'),

@@ -34,7 +34,7 @@ PROCS = {
   "./_modeld": 4.48,
   "./boardd": 3.63,
   "./_dmonitoringmodeld": 2.67,
-  "selfdrive.thermald.thermald": 2.41,
+  "selfdrive.thermald.thermald": 7.73,
   "selfdrive.locationd.calibrationd": 2.0,
   "./_soundd": 1.0,
   "selfdrive.monitoring.dmonitoringd": 1.90,
@@ -56,12 +56,12 @@ if TICI:
     "./loggerd": 70.0,
     "selfdrive.controls.controlsd": 28.0,
     "./camerad": 31.0,
-    "./_ui": 30.2,
+    "./_ui": 33.0,
     "selfdrive.controls.plannerd": 11.7,
     "./_dmonitoringmodeld": 10.0,
     "selfdrive.locationd.paramsd": 5.0,
     "selfdrive.controls.radard": 3.6,
-    "selfdrive.thermald.thermald": 1.5,
+    "selfdrive.thermald.thermald": 4.75,
   })
 
 
