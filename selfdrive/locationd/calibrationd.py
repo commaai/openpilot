@@ -7,7 +7,6 @@ and the image input into the neural network is not corrected for roll.
 '''
 
 import os
-import copy
 from typing import NoReturn
 import numpy as np
 import cereal.messaging as messaging
@@ -70,7 +69,7 @@ class Calibrator():
     if param_put and calibration_params:
       try:
         msg = log.Event.from_bytes(calibration_params)
-        rpy_init = list(msg.liveCalibration.rpyCalib)
+        rpy_init = np.array(msg.liveCalibration.rpyCalib)
         valid_blocks = msg.liveCalibration.validBlocks
       except Exception:
         cloudlog.exception("Error reading cached CalibrationParams")
@@ -80,13 +79,15 @@ class Calibrator():
 
   def reset(self, rpy_init=RPY_INIT, valid_blocks=0, smooth_from=None):
     if not np.isfinite(rpy_init).all():
-        self.rpy = copy.copy(RPY_INIT)
+        self.rpy = RPY_INIT.copy()
     else:
-      self.rpy = rpy_init
+      self.rpy = rpy_init.copy()
+
     if not np.isfinite(valid_blocks) or valid_blocks < 0:
         self.valid_blocks = 0
     else:
       self.valid_blocks = valid_blocks
+
     self.rpys = np.tile(self.rpy, (INPUTS_WANTED, 1))
 
     self.idx = 0
@@ -100,7 +101,7 @@ class Calibrator():
       self.old_rpy = smooth_from
       self.old_rpy_weight = 1.0
 
-  def get_valid_idxs(self, ):
+  def get_valid_idxs(self):
     # exclude current block_idx from validity window
     before_current = list(range(self.block_idx))
     after_current = list(range(min(self.valid_blocks, self.block_idx + 1), self.valid_blocks))
@@ -179,9 +180,9 @@ class Calibrator():
     msg.liveCalibration.validBlocks = self.valid_blocks
     msg.liveCalibration.calStatus = self.cal_status
     msg.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
-    msg.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
-    msg.liveCalibration.rpyCalib = [float(x) for x in smooth_rpy]
-    msg.liveCalibration.rpyCalibSpread = [float(x) for x in self.calib_spread]
+    msg.liveCalibration.extrinsicMatrix = extrinsic_matrix.flatten().tolist()
+    msg.liveCalibration.rpyCalib = smooth_rpy.tolist()
+    msg.liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
     return msg
 
   def send_data(self, pm) -> None:

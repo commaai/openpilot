@@ -40,12 +40,12 @@ class AlertManager:
 
   def add_many(self, frame: int, alerts: List[Alert]) -> None:
     for alert in alerts:
-      key = alert.alert_type
-      self.alerts[key].alert = alert
-      if not self.alerts[key].active(frame):
-        self.alerts[key].start_frame = frame
-      min_end_frame = self.alerts[key].start_frame + alert.duration
-      self.alerts[key].end_frame = max(frame + 1, min_end_frame)
+      entry = self.alerts[alert.alert_type]
+      entry.alert = alert
+      if not entry.active(frame):
+        entry.start_frame = frame
+      min_end_frame = entry.start_frame + alert.duration
+      entry.end_frame = max(frame + 1, min_end_frame)
 
   def process_alerts(self, frame: int, clear_event_type=None) -> Optional[Alert]:
     current_alert = AlertEntry()
