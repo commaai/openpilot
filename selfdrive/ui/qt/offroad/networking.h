@@ -38,15 +38,15 @@ public:
 
 private:
   QWidget *list_container = nullptr;
-  ListWidget *wifi_list = nullptr;
+  ListWidget *wifi_list_widget = nullptr;
   std::vector<WifiItem*> wifi_items;
   WifiManager *wifi = nullptr;
-  QLabel *scanning = nullptr;
+  QLabel *scanning_label = nullptr;
   QVBoxLayout* main_layout;
-  QPixmap lock;
-  QPixmap checkmark;
-  QPixmap circled_slash;
-  QVector<QPixmap> strengths;
+  QPixmap lock_icon;
+  QPixmap checkmark_icon;
+  QPixmap circled_slash_icon;
+  QVector<QPixmap> strength_icons;
 
 signals:
   void connectToNetwork(const Network &n);

@@ -233,15 +233,15 @@ void WifiItem::update(WifiUI *wifi_ui, const Network &n) {
   forgetBtn->setVisible(wifi_ui->wifi->isKnownConnection(n.ssid) && !wifi_ui->wifi->isTetheringEnabled());
 
   if (n.connected == ConnectedType::CONNECTED) {
-    iconLabel->setPixmap(wifi_ui->checkmark);
+    iconLabel->setPixmap(wifi_ui->checkmark_icon);
   } else if (n.security_type == SecurityType::UNSUPPORTED) {
-    iconLabel->setPixmap(wifi_ui->circled_slash);
+    iconLabel->setPixmap(wifi_ui->circled_slash_icon);
   } else if (n.security_type == SecurityType::WPA) {
-    iconLabel->setPixmap(wifi_ui->lock);
+    iconLabel->setPixmap(wifi_ui->lock_icon);
   } else {
     iconLabel->setPixmap(QPixmap());
   }
-  strengthLabel->setPixmap(wifi_ui->strengths[std::clamp((int)round(n.strength / 33.), 0, 3)]);
+  strengthLabel->setPixmap(wifi_ui->strength_icons[std::clamp((int)round(n.strength / 33.), 0, 3)]);
 }
 
 WifiUI::WifiUI(QWidget *parent, WifiManager *wifi) : QWidget(parent), wifi(wifi) {
@@ -252,20 +252,20 @@ WifiUI::WifiUI(QWidget *parent, WifiManager *wifi) : QWidget(parent), wifi(wifi)
   // load imgs
   for (const auto &s : {"low", "medium", "high", "full"}) {
     QPixmap pix(ASSET_PATH + "/offroad/icon_wifi_strength_" + s + ".svg");
-    strengths.push_back(pix.scaledToHeight(68, Qt::SmoothTransformation));
+    strength_icons.push_back(pix.scaledToHeight(68, Qt::SmoothTransformation));
   }
-  lock = QPixmap(ASSET_PATH + "offroad/icon_lock_closed.svg").scaledToWidth(49, Qt::SmoothTransformation);
-  checkmark = QPixmap(ASSET_PATH + "offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
-  circled_slash = QPixmap(ASSET_PATH + "img_circled_slash.svg").scaledToWidth(49, Qt::SmoothTransformation);
+  lock_icon = QPixmap(ASSET_PATH + "offroad/icon_lock_closed.svg").scaledToWidth(49, Qt::SmoothTransformation);
+  checkmark_icon = QPixmap(ASSET_PATH + "offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
+  circled_slash_icon = QPixmap(ASSET_PATH + "img_circled_slash.svg").scaledToWidth(49, Qt::SmoothTransformation);
 
-  scanning = new QLabel("Scanning for networks...");
-  scanning->setStyleSheet("font-size: 65px;");
-  main_layout->addWidget(scanning, 0, Qt::AlignCenter);
+  scanning_label = new QLabel("Scanning for networks...");
+  scanning_label->setStyleSheet("font-size: 65px;");
+  main_layout->addWidget(scanning_label, 0, Qt::AlignCenter);
 
   list_container = new QWidget(this);
   QVBoxLayout *list_layout = new QVBoxLayout(list_container);
-  wifi_list = new ListWidget(list_container);
-  list_layout->addWidget(wifi_list);
+  wifi_list_widget = new ListWidget(list_container);
+  list_layout->addWidget(wifi_list_widget);
   list_layout->addStretch(1);
   main_layout->addWidget(list_container);
 
@@ -312,7 +312,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager *wifi) : QWidget(parent), wifi(wifi)
 
 void WifiUI::refresh() {
   bool is_empty = wifi->seenNetworks.isEmpty();
-  scanning->setVisible(is_empty);
+  scanning_label->setVisible(is_empty);
   list_container->setVisible(!is_empty);
   if (is_empty) return;
 
@@ -332,7 +332,7 @@ void WifiUI::refresh() {
         }
       });
       wifi_items.push_back(item);
-      wifi_list->addItem(item);
+      wifi_list_widget->addItem(item);
     }
     item->update(this, network);
     item->setVisible(true);

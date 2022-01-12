@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-#include <QHostAddress>
-
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/util.h"
 
