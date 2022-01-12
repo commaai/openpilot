@@ -18,8 +18,8 @@ public:
   void update(const Network& n);
 
 signals:
-  void connectToNetwork(const Network &ssid);
-  void forgotNetwork(const Network &ssid);
+  void connectToNetwork(const Network &n);
+  void forgotNetwork(const Network &n);
 
 protected:
   ElidedLabel* ssidLabel;
