@@ -179,7 +179,6 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 }
 
 void AdvancedNetworking::refresh() {
-  ipLabel->setText(wifi->ipv4_address);
   tetheringToggle->setEnabled(true);
   update();
 }

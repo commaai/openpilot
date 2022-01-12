@@ -51,10 +51,10 @@ class WifiManager : public QObject {
 public:
   QMap<QString, Network> seenNetworks;
   QMap<QDBusObjectPath, QString> knownConnections;
-  QString ipv4_address;
 
   explicit WifiManager(QObject *parent);
   void requestScan();
+  QString getIP4Address();
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
@@ -73,7 +73,6 @@ public:
 private:
   QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
-  void setIP4Address(uint address);
   void refreshNetworks();
   void activateModemConnection(const QDBusObjectPath &path);
   void addTetheringConnection();

@@ -1,6 +1,5 @@
 #include "selfdrive/ui/qt/offroad/wifiManager.h"
 
-#include <arpa/inet.h>
 #include <algorithm>
 
 #include <QHostAddress>
@@ -35,11 +34,7 @@ void WifiManager::setup() {
   bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "NewConnection", this, SLOT(newConnection(QDBusObjectPath)));
 
   activeAp = call<QDBusObjectPath>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint").path();
-
-  QDBusReply<QMap<QString, QVariant>> replay = call(adapter, NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_DEVICE);
-  auto properties = replay.value();
-  raw_adapter_state = properties["State"].toUInt();
-  setIP4Address(properties["Ip4Address"].toUInt());
+  raw_adapter_state = call<uint>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "State");
 
   initConnections();
   requestScan();
@@ -85,9 +80,23 @@ void WifiManager::activationFinished(QDBusPendingCallWatcher *watcher) {
   watcher->deleteLater();
 }
 
-void WifiManager::setIP4Address(uint address) {
-  ipv4_address = QHostAddress(htonl(address)).toString();
-  emit ipAddressChanged(ipv4_address);
+QString WifiManager::getIP4Address() {
+  for (const auto &p : getActiveConnections()) {
+    QString type = call<QString>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
+    if (type == "802-11-wireless") {
+      auto ip4config = call<QDBusObjectPath>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Ip4Config");
+      const auto &arr = call<QDBusArgument>(ip4config.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_IP4_CONFIG, "AddressData");
+      QMap<QString, QVariant> pth2;
+      arr.beginArray();
+      while (!arr.atEnd()) {
+        arr >> pth2;
+        arr.endArray();
+        return pth2.value("address").value<QString>();
+      }
+      arr.endArray();
+    }
+  }
+  return "";
 }
 
 SecurityType WifiManager::getSecurityType(const QMap<QString, QVariant> &properties) {
@@ -215,8 +224,6 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
     } else if (props.contains("ActiveAccessPoint")) {
       activeAp = props.value("ActiveAccessPoint").value<QDBusObjectPath>().path();
     }
-  } else if (props.contains("Ip4Address")) {
-    setIP4Address(props["Ip4Address"].toUInt());
   }
 }
 
