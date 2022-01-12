@@ -69,52 +69,62 @@ jobs:
                           rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
 
-  #build_mac:
-  #  name: build macos
-  #  runs-on: macos-10.15
-  #  timeout-minutes: 60
-  #  steps:
-  #  - uses: actions/checkout@v2
-  #    with:
-  #      submodules: true
-  #  - name: Determine pre-existing Homebrew packages
-  #    if: steps.dependency-cache.outputs.cache-hit != 'true'
-  #    run: |
-  #      echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
-  #      ls -1 /usr/local/Cellar >> $GITHUB_ENV
-  #      echo 'EOF' >> $GITHUB_ENV
-  #  - name: Cache dependencies
-  #    id: dependency-cache
-  #    uses: actions/cache@v2
-  #    with:
-  #      path: |
-  #        ~/.pyenv
-  #        ~/Library/Caches/pip
-  #        ~/Library/Caches/pipenv
-  #        /usr/local/Cellar
-  #        ~/github_brew_cache_entries.txt
-  #      key: macos-cache-${{ hashFiles('tools/mac_setup.sh') }}
-  #  - name: Brew link restored dependencies
-  #    if: steps.dependency-cache.outputs.cache-hit == 'true'
-  #    run: |
-  #      while read pkg; do
-  #        brew link --force "$pkg" # `--force` for keg-only packages
-  #      done < ~/github_brew_cache_entries.txt
-  #  - name: Install dependencies
-  #    run: ./tools/mac_setup.sh
-  #  - name: Build openpilot
-  #    run: eval "$(pyenv init -)" && scons -j$(nproc)
-  #  - name: Remove pre-existing Homebrew packages for caching
-  #    if: steps.dependency-cache.outputs.cache-hit != 'true'
-  #    run: |
-  #      cd /usr/local/Cellar
-  #      new_cellar=$(ls -1)
-  #      comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
-  #        if [[ $pkg != "zstd" ]]; then # caching step needs zstd
-  #          rm -rf "$pkg"
-  #        fi
-  #      done
-  #      comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
+  build_mac:
+    name: build macos
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Determine pre-existing Homebrew packages
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
+      run: |
+        echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
+        ls -1 /usr/local/Cellar >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.pyenv
+          ~/.local/share/virtualenvs/
+          /usr/local/Cellar
+          ~/github_brew_cache_entries.txt
+          /tmp/scons_cache
+        key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'Pipfile*') }}
+        restore-keys: macos-
+    - name: Brew link restored dependencies
+      run: |
+        if [ -f ~/github_brew_cache_entries.txt ]; then
+          while read pkg; do
+            brew link --force "$pkg" # `--force` for keg-only packages
+          done < ~/github_brew_cache_entries.txt
+        else
+          echo "Cache entries not found"
+        fi
+    - name: Install dependencies
+      run: ./tools/mac_setup.sh
+    - name: Build openpilot
+      run: |
+        source tools/openpilot_env.sh
+        pipenv run selfdrive/manager/build.py
+
+        # cleanup scons cache
+        rm -rf /tmp/scons_cache/
+        pipenv run scons -j$(nproc) --cache-populate
+    - name: Remove pre-existing Homebrew packages for caching
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
+      run: |
+        cd /usr/local/Cellar
+        new_cellar=$(ls -1)
+        comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
+          if [[ $pkg != "zstd" ]]; then # caching step needs zstd
+            rm -rf "$pkg"
+          fi
+        done
+        comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
 
   build_webcam:
     name: build webcam
@@ -351,11 +361,12 @@ jobs:
         name: longitudinal
         path: selfdrive/test/longitudinal_maneuvers/out/longitudinal/
 
-  test_car_models:
-    name: car models
+  test_cars:
+    name: cars
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     strategy:
+      fail-fast: false
       matrix:
         job: [0, 1, 2, 3]
     steps:
@@ -385,7 +396,7 @@ jobs:
     - name: Test car models
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test && \
-                        FILEREADER_CACHE=1 coverage run selfdrive/test/test_models.py && \
+                        FILEREADER_CACHE=1 pytest selfdrive/test/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4

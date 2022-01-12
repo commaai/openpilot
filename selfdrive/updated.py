@@ -370,7 +370,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
   return new_version
 
 
-def main():
+def main() -> None:
   params = Params()
 
   if params.get_bool("DisableUpdates"):
@@ -400,7 +400,7 @@ def main():
   overlay_init.unlink(missing_ok=True)
 
   first_run = True
-  last_fetch_time = 0
+  last_fetch_time = 0.0
   update_failed_count = 0
 
   # Set initial params for offroad alerts
