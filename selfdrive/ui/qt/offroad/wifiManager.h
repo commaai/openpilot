@@ -136,5 +136,5 @@ private slots:
   void deviceAdded(const QDBusObjectPath &path);
   void connectionRemoved(const QDBusObjectPath &path);
   void newConnection(const QDBusObjectPath &path);
-  void activationFinished(QDBusPendingCallWatcher *call);
+  void refreshFinished(QDBusPendingCallWatcher *call);
 };

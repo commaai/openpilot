@@ -57,10 +57,10 @@ void WifiManager::refreshNetworks() {
 
   QDBusPendingCall pending_call = asyncCall(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "GetAllAccessPoints");
   QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pending_call);
-  QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, &WifiManager::activationFinished);
+  QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, &WifiManager::refreshFinished);
 }
 
-void WifiManager::activationFinished(QDBusPendingCallWatcher *watcher) {
+void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   seenNetworks.clear();
   const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
 
