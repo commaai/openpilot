@@ -78,7 +78,7 @@ class Events:
         if not isinstance(alert, Alert):
           alert = alert(*callback_args)
 
-        if DT_CTRL * (self.events_prev[e]) >= alert.creation_delay:
+        if (DT_CTRL * self.events_prev[e]) >= alert.creation_delay:
           alert.alert_type = f"{EVENT_NAME[e]}/{et}"
           alert.event_type = et
           ret.append(alert)
