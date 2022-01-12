@@ -1,5 +1,6 @@
 from enum import IntEnum
-from typing import Dict, Union, Callable, List, Optional
+from itertools import chain
+from typing import DefaultDict, Dict, Union, Callable, List, Optional
 
 from cereal import log, car
 import cereal.messaging as messaging
@@ -39,12 +40,11 @@ class ET:
 # get event name from enum
 EVENT_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
 
-
 class Events:
   def __init__(self):
     self.events: List[int] = []
     self.static_events: List[int] = []
-    self.events_prev = dict.fromkeys(EVENTS.keys(), 0)
+    self.events_prev = DefaultDict(int)
 
   @property
   def names(self) -> List[int]:
@@ -57,10 +57,12 @@ class Events:
     if static:
       self.static_events.append(event_name)
     self.events.append(event_name)
+    self.events_prev[event_name] += 1
 
   def clear(self) -> None:
-    self.events_prev = {k: (v + 1 if k in self.events else 0) for k, v in self.events_prev.items()}
-    self.events = self.static_events.copy()
+    for k in [k for k in self.events_prev if k not in self.events]:
+      del self.events_prev[k]
+    self.events.clear()
 
   def any(self, event_type: str) -> bool:
     return any(event_type in EVENTS.get(e, {}) for e in self.events)
@@ -70,27 +72,25 @@ class Events:
       callback_args = []
 
     ret = []
-    for e in self.events:
-      types = EVENTS[e].keys()
-      for et in event_types:
-        if et in types:
-          alert = EVENTS[e][et]
-          if not isinstance(alert, Alert):
-            alert = alert(*callback_args)
+    for e in chain(self.static_events, self.events):
+      for et in (et for et in event_types if et in EVENTS[e]):
+        alert = EVENTS[e][et]
+        if not isinstance(alert, Alert):
+          alert = alert(*callback_args)
 
-          if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
-            alert.alert_type = f"{EVENT_NAME[e]}/{et}"
-            alert.event_type = et
-            ret.append(alert)
+        if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
+          alert.alert_type = f"{EVENT_NAME[e]}/{et}"
+          alert.event_type = et
+          ret.append(alert)
     return ret
 
   def add_from_msg(self, events):
     for e in events:
-      self.events.append(e.name.raw)
+      self.add(e.name.raw)
 
   def to_msg(self):
     ret = []
-    for event_name in self.events:
+    for event_name in chain(self.static_events, self.events):
       event = car.CarEvent.new_message()
       event.name = event_name
       for event_type in EVENTS.get(event_name, {}).keys():
