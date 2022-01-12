@@ -42,7 +42,6 @@ private:
   std::vector<WifiItem*> wifi_items;
   WifiManager *wifi = nullptr;
   QLabel *scanning_label = nullptr;
-  QVBoxLayout* main_layout;
   QPixmap lock_icon;
   QPixmap checkmark_icon;
   QPixmap circled_slash_icon;

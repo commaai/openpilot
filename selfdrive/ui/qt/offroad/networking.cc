@@ -247,7 +247,7 @@ void WifiItem::update(WifiUI *wifi_ui, const Network &n) {
 // WifiUI functions
 
 WifiUI::WifiUI(QWidget *parent, WifiManager *wifi) : QWidget(parent), wifi(wifi) {
-  main_layout = new QVBoxLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
 
