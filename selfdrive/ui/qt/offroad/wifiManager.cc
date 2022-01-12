@@ -76,7 +76,7 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
     if (path.path() == activeAp) {
       ctype = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
     }
-    seenNetworks[ssid] = {ssid, strength, ctype, security};
+    seenNetworks[ssid] = {ssid, strength, ctype, security, path.path()};
   }
 
   emit refreshSignal();
@@ -123,7 +123,6 @@ SecurityType WifiManager::getSecurityType(const QMap<QString, QVariant> &propert
 
 void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
   connecting_to_network = n.ssid;
-  // disconnect();
   forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
@@ -249,12 +248,6 @@ void WifiManager::newConnection(const QDBusObjectPath &path) {
     if (knownConnections[path] != tethering_ssid) {
       activateWifiConnection(knownConnections[path]);
     }
-  }
-}
-
-void WifiManager::disconnect() {
-  if (activeAp != "" && activeAp != "/") {
-    deactivateConnectionBySsid(getProperty(activeAp, "Ssid"));
   }
 }
 
@@ -387,8 +380,10 @@ void WifiManager::setTetheringEnabled(bool enabled) {
 }
 
 bool WifiManager::isTetheringEnabled() {
-  if (activeAp != "" && activeAp != "/") {
-    return getProperty(activeAp, "Ssid") == tethering_ssid;
+  for (const Network &n : seenNetworks) {
+    if (n.ssid == tethering_ssid && n.access_point == activeAp) {
+      return true;
+    }
   }
   return false;
 }

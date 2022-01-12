@@ -35,6 +35,7 @@ struct Network {
   unsigned int strength;
   ConnectedType connected;
   SecurityType security_type;
+  QString access_point;
 };
 inline bool compare_network(const Network &a, const Network &b) {
   if (a.connected > b.connected) return true;
@@ -63,7 +64,6 @@ public:
   void start();
   void stop();
   void connect(const Network &ssid, const QString &password = {}, const QString &username = {});
-  void disconnect();
   // Tethering functions
   void setTetheringEnabled(bool enabled);
   bool isTetheringEnabled();
