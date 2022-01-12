@@ -15,7 +15,6 @@
 #include <cstdlib>
 #include <future>
 #include <thread>
-#include <unordered_map>
 
 #include <libusb-1.0/libusb.h>
 
@@ -26,7 +25,6 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
-#include "selfdrive/locationd/ublox_msg.h"
 
 #include "selfdrive/boardd/panda.h"
 #include "selfdrive/boardd/pigeon.h"
