@@ -563,7 +563,7 @@ class Controls:
 
   def update_button_timers(self, buttonEvents):
     # increment timer for buttons still pressed
-    for k in self.button_timers.keys():
+    for k in self.button_timers:
       if self.button_timers[k] > 0:
         self.button_timers[k] += 1
 
