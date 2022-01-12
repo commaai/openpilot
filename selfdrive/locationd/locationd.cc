@@ -80,12 +80,10 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd vel_ecef = predicted_state.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START);
   VectorXd vel_ecef_std = predicted_std.segment<STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START);
   VectorXd fix_pos_geo_vec = this->get_position_geodetic();
-  //fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
   VectorXd orientation_ecef = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ecef_std = predicted_std.segment<STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START);
   MatrixXdr orientation_ecef_cov = predicted_cov.block<STATE_ECEF_ORIENTATION_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START, STATE_ECEF_ORIENTATION_ERR_START);
   MatrixXdr device_from_ecef = euler2rot(orientation_ecef).transpose();
-  //VectorXd calibrated_orientation_ecef = rot2euler(device_from_ecef);
   VectorXd calibrated_orientation_ecef = rot2euler((this->calib_from_device * device_from_ecef).transpose());
 
   VectorXd acc_calib = this->calib_from_device * predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
@@ -121,7 +119,6 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd calibrated_orientation_ned = ned_euler_from_ecef(fix_ecef_ecef, calibrated_orientation_ecef);
   VectorXd nextfix_ecef = fix_ecef + vel_ecef;
   VectorXd ned_vel = this->converter->ecef2ned((ECEF) { .x = nextfix_ecef(0), .y = nextfix_ecef(1), .z = nextfix_ecef(2) }).to_vector() - converter->ecef2ned(fix_ecef_ecef).to_vector();
-  //ned_vel_std = self.converter->ecef2ned(fix_ecef + vel_ecef + vel_ecef_std) - self.converter->ecef2ned(fix_ecef + vel_ecef)
 
   VectorXd accDevice = predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
   VectorXd accDeviceErr = predicted_std.segment<STATE_ACCELERATION_ERR_LEN>(STATE_ACCELERATION_ERR_START);
@@ -131,6 +128,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
 
   Vector3d nans = Vector3d(NAN, NAN, NAN);
 
+  // TODO fill in NED and Calibrated stds
   // write measurements to msg
   init_measurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, this->gps_mode);
   init_measurement(fix.initPositionECEF(), fix_ecef, fix_ecef_std, this->gps_mode);
