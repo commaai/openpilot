@@ -93,7 +93,7 @@ class Events:
     for event_name in self.events:
       event = car.CarEvent.new_message()
       event.name = event_name
-      for event_type in EVENTS.get(event_name, {}).keys():
+      for event_type in EVENTS.get(event_name, {}):
         setattr(event, event_type, True)
       ret.append(event)
     return ret
