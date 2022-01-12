@@ -198,9 +198,10 @@ WifiItem::WifiItem(WifiUI *ui) : wifi_ui(ui), QWidget(ui) {
   // Clickable SSID label
   ssidLabel = new ElidedLabel();
   ssidLabel->setObjectName("ssidLabel");
+  ssidLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  ssidLabel->setStyleSheet("background-color:red;");
   QObject::connect(ssidLabel, &ElidedLabel::clicked, this, [this]() { emit connectToNetwork(network); });
   hlayout->addWidget(ssidLabel);
-  hlayout->addStretch(1);
 
   connecting = new QPushButton("CONNECTING...");
   connecting->setObjectName("connecting");
@@ -214,7 +215,6 @@ WifiItem::WifiItem(WifiUI *ui) : wifi_ui(ui), QWidget(ui) {
   hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
 
   icon = new QLabel();
-  icon->setFixedSize(49, 49);
   hlayout->addWidget(icon, 0, Qt::AlignRight);
 
   strength = new QLabel();
