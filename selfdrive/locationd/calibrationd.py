@@ -110,10 +110,10 @@ class Calibrator():
   def update_status(self):
     valid_idxs = self.get_valid_idxs()
     if valid_idxs:
-      rpy = self.rpys[valid_idxs]
-      self.rpy = np.mean(rpy, axis=0)
-      max_rpy_calib = np.array(np.max(rpy, axis=0))
-      min_rpy_calib = np.array(np.min(rpy, axis=0))
+      rpys = self.rpys[valid_idxs]
+      self.rpy = np.mean(rpys, axis=0)
+      max_rpy_calib = np.array(np.max(rpys, axis=0))
+      min_rpy_calib = np.array(np.min(rpys, axis=0))
       self.calib_spread = np.abs(max_rpy_calib - min_rpy_calib)
     else:
       self.calib_spread = np.zeros(3)
