@@ -190,7 +190,63 @@ void AdvancedNetworking::toggleTethering(bool enabled) {
 
 // WifiUI functions
 
-WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
+WifiItem::WifiItem(WifiUI *ui) : wifi_ui(ui), QWidget(ui) {
+  QHBoxLayout *hlayout = new QHBoxLayout(this);
+  hlayout->setContentsMargins(44, 0, 73, 0);
+  hlayout->setSpacing(50);
+
+  // Clickable SSID label
+  ssidLabel = new ElidedLabel();
+  ssidLabel->setObjectName("ssidLabel");
+  QObject::connect(ssidLabel, &ElidedLabel::clicked, this, [this]() { emit wifi_ui->connectToNetwork(network); });
+  hlayout->addWidget(ssidLabel);
+  hlayout->addStretch(1);
+
+  connecting = new QPushButton("CONNECTING...");
+  connecting->setObjectName("connecting");
+  hlayout->addWidget(connecting, 2, Qt::AlignLeft);
+
+  forgetBtn = new QPushButton("FORGET");
+  forgetBtn->setObjectName("forgetBtn");
+  QObject::connect(forgetBtn, &QPushButton::clicked, [this]() {
+    if (ConfirmationDialog::confirm("Forget Wi-Fi Network \"" + QString::fromUtf8(network.ssid) + "\"?", this)) {
+      wifi_ui->wifi->forgetConnection(network.ssid);
+    }
+  });
+  hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
+
+  icon = new QLabel();
+  icon->setFixedSize(49, 49);
+  hlayout->addWidget(icon, 0, Qt::AlignRight);
+
+  strength = new QLabel();
+  hlayout->addWidget(strength, 0, Qt::AlignRight);
+
+  setVisible(false);
+}
+
+void WifiItem::update(const Network &n) {
+  network = n;
+  ssidLabel->setText(network.ssid);
+  ssidLabel->setEnabled(network.security_type != SecurityType::UNSUPPORTED);
+  ssidLabel->setStyleSheet(network.connected == ConnectedType::DISCONNECTED ? "font-weight:500" : "font-weight:300");
+
+  connecting->setVisible(network.connected == ConnectedType::CONNECTING);
+  forgetBtn->setVisible(wifi_ui->wifi->isKnownConnection(network.ssid) && !wifi_ui->wifi->isTetheringEnabled());
+
+  if (network.connected == ConnectedType::CONNECTED) {
+    icon->setPixmap(wifi_ui->checkmark);
+  } else if (network.security_type == SecurityType::UNSUPPORTED) {
+    icon->setPixmap(wifi_ui->circled_slash);
+  } else if (network.security_type == SecurityType::WPA) {
+    icon->setPixmap(wifi_ui->lock);
+  } else {
+    icon->setPixmap(QPixmap());
+  }
+  strength->setPixmap(wifi_ui->strengths[std::clamp((int)round(network.strength / 33.), 0, 3)]);
+}
+
+WifiUI::WifiUI(QWidget *parent, WifiManager *wifi) : QWidget(parent), wifi(wifi) {
   main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
@@ -204,9 +260,16 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   checkmark = QPixmap(ASSET_PATH + "offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
   circled_slash = QPixmap(ASSET_PATH + "img_circled_slash.svg").scaledToWidth(49, Qt::SmoothTransformation);
 
-  QLabel *scanning = new QLabel("Scanning for networks...");
+  scanning = new QLabel("Scanning for networks...");
   scanning->setStyleSheet("font-size: 65px;");
   main_layout->addWidget(scanning, 0, Qt::AlignCenter);
+
+  list_container = new QWidget(this);
+  QVBoxLayout *list_layout = new QVBoxLayout(list_container);
+  wifi_list = new ListWidget(list_container);
+  list_layout->addWidget(wifi_list);
+  list_layout->addStretch(1);
+  main_layout->addWidget(list_container);
 
   setStyleSheet(R"(
     QScrollBar::handle:vertical {
@@ -253,78 +316,30 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 }
 
 void WifiUI::refresh() {
-  // TODO: don't rebuild this every time
-  clearLayout(main_layout);
+  bool is_empty = wifi->seenNetworks.isEmpty();
+  scanning->setVisible(is_empty);
+  list_container->setVisible(!is_empty);
+  if (is_empty) return;
 
-  if (wifi->seenNetworks.size() == 0) {
-    QLabel *scanning = new QLabel("Scanning for networks...");
-    scanning->setStyleSheet("font-size: 65px;");
-    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
-    return;
-  }
   QList<Network> sortedNetworks = wifi->seenNetworks.values();
   std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_network);
-
-  // add networks
-  const bool is_tethering_enabled = wifi->isTetheringEnabled();
-  ListWidget *list = new ListWidget(this);
-  for (Network &network : sortedNetworks) {
-    QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setContentsMargins(44, 0, 73, 0);
-    hlayout->setSpacing(50);
-
-    // Clickable SSID label
-    ElidedLabel *ssidLabel = new ElidedLabel(network.ssid);
-    ssidLabel->setObjectName("ssidLabel");
-    ssidLabel->setEnabled(network.security_type != SecurityType::UNSUPPORTED);
-    ssidLabel->setProperty("disconnected", network.connected == ConnectedType::DISCONNECTED);
-    if (network.connected == ConnectedType::DISCONNECTED) {
-      QObject::connect(ssidLabel, &ElidedLabel::clicked, this, [=]() { emit connectToNetwork(network); });
-    }
-    hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
-
-    if (network.connected == ConnectedType::CONNECTING) {
-      QPushButton *connecting = new QPushButton("CONNECTING...");
-      connecting->setObjectName("connecting");
-      hlayout->addWidget(connecting, 2, Qt::AlignLeft);
-    }
-
-    // Forget button
-    if (wifi->isKnownConnection(network.ssid) && !is_tethering_enabled) {
-      QPushButton *forgetBtn = new QPushButton("FORGET");
-      forgetBtn->setObjectName("forgetBtn");
-      QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
-        if (ConfirmationDialog::confirm("Forget Wi-Fi Network \"" + QString::fromUtf8(network.ssid) + "\"?", this)) {
-          wifi->forgetConnection(network.ssid);
-        }
-      });
-      hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
-    }
-
-    // Status icon
-    if (network.connected == ConnectedType::CONNECTED) {
-      QLabel *connectIcon = new QLabel();
-      connectIcon->setPixmap(checkmark);
-      hlayout->addWidget(connectIcon, 0, Qt::AlignRight);
-    } else if (network.security_type == SecurityType::UNSUPPORTED) {
-      QLabel *unsupportedIcon = new QLabel();
-      unsupportedIcon->setPixmap(circled_slash);
-      hlayout->addWidget(unsupportedIcon, 0, Qt::AlignRight);
-    } else if (network.security_type == SecurityType::WPA) {
-      QLabel *lockIcon = new QLabel();
-      lockIcon->setPixmap(lock);
-      hlayout->addWidget(lockIcon, 0, Qt::AlignRight);
+  int cnt = 0;
+  for (const Network &network : sortedNetworks) {
+    WifiItem *item = nullptr;
+    if (cnt < wifi_items.size()) {
+      item = wifi_items[cnt];
     } else {
-      hlayout->addSpacing(lock.width() + hlayout->spacing());
+      item = new WifiItem(this);
+      wifi_items.push_back(item);
+      wifi_list->addItem(item);
     }
+    item->update(network);
+    item->setVisible(true);
 
-    // Strength indicator
-    QLabel *strength = new QLabel();
-    strength->setPixmap(strengths[std::clamp((int)round(network.strength / 33.), 0, 3)]);
-    hlayout->addWidget(strength, 0, Qt::AlignRight);
-
-    list->addItem(hlayout);
+    ++cnt;
   }
-  main_layout->addWidget(list);
-  main_layout->addStretch(1);
+
+  for (int i = cnt; i < wifi_items.size(); ++i) {
+    wifi_items[i]->setVisible(false);
+  }
 }
