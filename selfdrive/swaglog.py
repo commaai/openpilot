@@ -102,14 +102,14 @@ def add_file_handler(log):
   handler.setFormatter(SwagLogFileFormatter(log))
   log.addHandler(handler)
 
-def blocking_info(log, msg, fsync_dir=SWAGLOG_DIR):
+def blocking_cloudlog_info(msg):
   """
   Performs a blocking info by writing to swaglog file stream
   and bypassing logmessaged IPC.
   """
-  add_file_handler(log)
-  log.handle(msg)
-  fd = os.open(fsync_dir, os.O_RDONLY)
+  add_file_handler(cloudlog)
+  cloudlog.handle(msg)
+  fd = os.open(SWAGLOG_DIR, os.O_RDONLY)
   if fd >= 0:
     os.fsync(fd)
     os.close(fd)

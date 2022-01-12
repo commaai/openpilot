@@ -19,7 +19,7 @@ from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.hardware import EON, TICI, PC, HARDWARE
 from selfdrive.loggerd.config import get_available_percent
-from selfdrive.swaglog import cloudlog, blocking_info
+from selfdrive.swaglog import cloudlog, blocking_cloudlog_info
 from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import terms_version, training_version
 from selfdrive.statsd import statlog
@@ -397,7 +397,7 @@ def thermald_thread() -> NoReturn:
 
     # Check if we need to shut down
     if power_monitor.should_shutdown(peripheralState, onroad_conditions["ignition"], in_car, off_ts, started_seen):
-      blocking_info(cloudlog, f"shutting device down, offroad since {off_ts}")
+      blocking_cloudlog_info(f"shutting device down, offroad since {off_ts}")
       HARDWARE.shutdown()
 
     # If UI has crashed, set the brightness to reasonable non-zero value
