@@ -11,7 +11,7 @@ from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
 
-from selfdrive.swaglog import add_file_handler, SWAGLOG_DIR
+from selfdrive.swaglog import get_file_handler, SWAGLOG_DIR
 
 def json_handler(obj):
   # if isinstance(obj, (datetime.date, datetime.time)):
@@ -166,7 +166,9 @@ class SwagLogger(logging.Logger):
       self.info(evt)
 
   def blocking_info(self, msg):
-    add_file_handler(self)
+    handler = get_file_handler()
+    handler.setFormatter(SwagLogFileFormatter(log))
+    self.addHandler(handler)
     self.handle(msg)
     fsync_dir = SWAGLOG_DIR
     fd = os.open(fsync_dir, os.O_RDONLY)
