@@ -125,7 +125,7 @@ def fingerprint(logcan, sendcan):
       # The fingerprint dict is generated for all buses, this way the car interface
       # can use it to detect a (valid) multipanda setup and initialize accordingly
       if can.src < 128:
-        if can.src not in finger.keys():
+        if can.src not in finger:
           finger[can.src] = {}
         finger[can.src][can.address] = len(can.dat)
 

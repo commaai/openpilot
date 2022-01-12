@@ -44,8 +44,8 @@ class StatLog:
 def main():
   def get_influxdb_line(measurement: str, value: float, timestamp: datetime, tags: dict):
     res = f"{measurement}"
-    for tag_key in tags.keys():
-      res += f",{tag_key}={str(tags[tag_key])}"
+    for k, v in tags.items():
+      res += f",{k}={str(v)}"
     res += f" value={value} {int(timestamp.timestamp() * 1e9)}\n"
     return res
 
@@ -101,7 +101,7 @@ def main():
       current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
       tags['started'] = sm['deviceState'].started
 
-      for gauge_key in gauges.keys():
+      for gauge_key in gauges:
         result += get_influxdb_line(f"gauge.{gauge_key}", gauges[gauge_key], current_time, tags)
 
       # clear intermediate data
