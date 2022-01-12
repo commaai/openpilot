@@ -17,6 +17,10 @@ public:
   explicit WifiItem(WifiUI* wifi_ui);
   void update(const Network& n);
 
+signals:
+  void connectToNetwork(const Network &ssid);
+  void forgotNetwork(const Network &ssid);
+
 protected:
   ElidedLabel* ssidLabel;
   QPushButton* connecting;
