@@ -658,6 +658,8 @@ int main(int argc, char *argv[]) {
     Panda *peripheral_panda = pandas[0];
     std::vector<std::thread> threads;
 
+    Params().put("LastPeripheralPandaType", std::to_string((int) peripheral_panda->get_hw_type()));
+
     threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
     threads.emplace_back(peripheral_control_thread, peripheral_panda);
     threads.emplace_back(pigeon_thread, peripheral_panda);
