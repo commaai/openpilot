@@ -1,5 +1,3 @@
-# flake8: noqa
-
 from collections import defaultdict
 from typing import Dict
 

@@ -1,5 +1,3 @@
-# flake8: noqa
-
 from cereal import car
 from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
@@ -672,7 +670,7 @@ FW_VERSIONS = {
       b'\xf1\x00IK  MDPS R 1.00 1.07 57700-G9220 4I2VL107',
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x87VCJLP18407832DN3\x88vXfvUVT\x97eFU\x87d7v\x88eVeveFU\x89\x98\x7f\xff\xb2\xb0\xf1\x81E25\x00\x00\x00'
+      b'\xf1\x87VCJLP18407832DN3\x88vXfvUVT\x97eFU\x87d7v\x88eVeveFU\x89\x98\x7f\xff\xb2\xb0\xf1\x81E25\x00\x00\x00',
       b'\x00\x00\x00\x00\xf1\x00bcsh8p54  E25\x00\x00\x00\x00\x00\x00\x00SIK0T33NB4\xecE\xefL',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [

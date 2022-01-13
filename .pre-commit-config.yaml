@@ -1,4 +1,8 @@
 repos:
+-   repo: meta
+    hooks:
+    -   id: check-hooks-apply
+    -   id: check-useless-excludes
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
     hooks:
@@ -23,9 +27,13 @@ repos:
     hooks:
     -   id: flake8
         exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(selfdrive/debug/)/'
+        additional_dependencies: ['flake8-no-implicit-concat']
         args:
+        - --indent-size=2
+        - --enable-extensions=NIC
         - --select=F,E112,E113,E304,E502,E701,E702,E703,E71,E72,E731,W191,W6
         - --statistics
+        - -j4
 -   repo: local
     hooks:
     -   id: pylint
@@ -33,7 +41,7 @@ repos:
         entry: pylint
         language: system
         types: [python]
-        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)/'
+        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)'
 -   repo: local
     hooks:
     -   id: cppcheck
