@@ -250,6 +250,10 @@ WifiUI::WifiUI(QWidget *parent, WifiManager *wifi) : QWidget(parent), wifi(wifi)
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
 
+  scanning_label = new QLabel("Scanning for networks...");
+  scanning_label->setStyleSheet("font-size: 65px;");
+  main_layout->addWidget(scanning_label, 0, Qt::AlignCenter);
+
   list_container = new QWidget(this);
   QVBoxLayout *list_layout = new QVBoxLayout(list_container);
   wifi_list_widget = new ListWidget(list_container);
@@ -266,10 +270,6 @@ WifiUI::WifiUI(QWidget *parent, WifiManager *wifi) : QWidget(parent), wifi(wifi)
   pixmaps["lock"] = QPixmap(ASSET_PATH + "offroad/icon_lock_closed.svg").scaledToWidth(49, Qt::SmoothTransformation);
   pixmaps["checkmark"] = QPixmap(ASSET_PATH + "offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
   pixmaps["circled_slash"] = QPixmap(ASSET_PATH + "img_circled_slash.svg").scaledToWidth(49, Qt::SmoothTransformation);
-
-  scanning_label = new QLabel("Scanning for networks...");
-  scanning_label->setStyleSheet("font-size: 65px;");
-  main_layout->addWidget(scanning_label, 0, Qt::AlignCenter);
 
   setStyleSheet(R"(
     QScrollBar::handle:vertical {
