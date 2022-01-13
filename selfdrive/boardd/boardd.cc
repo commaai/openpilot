@@ -110,13 +110,13 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
 bool safety_setter_thread(std::vector<Panda *> pandas) {
   LOGD("Starting safety setter thread");
 
-  Params p = Params();
+  Params params = Params();
   Panda *peripheral_panda = pandas[0];
   peripheral_panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
 
   // switch to SILENT when CarVin param is read
   while (!do_exit && check_all_connected(pandas) && ignition) {
-    std::string value_vin = p.get("CarVin");
+    std::string value_vin = params.get("CarVin");
     if (value_vin.size() > 0) {
       // sanity check VIN format
       assert(value_vin.size() == 17);
@@ -128,24 +128,23 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
 
   peripheral_panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1);
 
-  std::string params;
+  std::string car_params;
   LOGW("waiting for params to set safety model");
   while (!do_exit && check_all_connected(pandas) && ignition) {
-    if (p.getBool("ControlsReady")) {
-      params = p.get("CarParams");
-      if (params.size() > 0) break;
+    if (params.getBool("ControlsReady")) {
+      car_params = params.get("CarParams");
+      if (car_params.size() > 0) break;
     }
     util::sleep_for(100);
   }
-  LOGW("got %d bytes CarParams", params.size());
+  LOGW("got %d bytes CarParams", car_params.size());
 
   AlignedBuffer aligned_buf;
-  capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
-  cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
+  capnp::FlatArrayMessageReader cmsg(aligned_buf.align(car_params.data(), car_params.size()));
+  auto safety_configs = cmsg.getRoot<cereal::CarParams>().getSafetyConfigs();
   cereal::CarParams::SafetyModel safety_model;
   int safety_param;
 
-  auto safety_configs = car_params.getSafetyConfigs();
   for (uint32_t i=0; i<pandas.size(); i++) {
     auto panda = pandas[i];
 
