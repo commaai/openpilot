@@ -120,11 +120,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   Params p = Params();
 
   // switch to SILENT when CarVin param is read
-  while (true) {
-    if (do_exit || !check_all_connected(pandas) || !ignition) {
-      return false;
-    }
-
+  while (!do_exit && check_all_connected(pandas) && ignition) {
     std::string value_vin = p.get("CarVin");
     if (value_vin.size() > 0) {
       // sanity check VIN format
@@ -139,13 +135,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
 
   std::string params;
   LOGW("waiting for params to set safety model");
-  while (true) {
-    for (const auto& panda : pandas) {
-      if (do_exit || !panda->connected || !ignition) {
-        return false;
-      }
-    }
-
+  while (!do_exit && check_all_connected(pandas) && ignition) {
     if (p.getBool("ControlsReady")) {
       params = p.get("CarParams");
       if (params.size() > 0) break;
