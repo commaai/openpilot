@@ -348,4 +348,7 @@ void WifiUI::refresh() {
   for (int i = cnt; i < wifi_items.size(); ++i) {
     wifi_items[i]->setVisible(false);
   }
+
+  // repaint bottom line
+  wifi_list_widget->update();
 }
