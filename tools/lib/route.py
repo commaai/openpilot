@@ -6,11 +6,7 @@ from itertools import chain
 
 from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
-
-ROUTE_NAME_RE = r'(?P<dongle_id>[a-z0-9]{16})[|_/](?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2})'
-SEGMENT_NAME_RE = r'{}(?:--|/)(?P<segment_num>[0-9]+)'.format(ROUTE_NAME_RE)
-EXPLORER_FILE_RE = r'^(?P<segment_name>{})--(?P<file_name>[a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME_RE)
-OP_SEGMENT_DIR_RE = r'^(?P<segment_name>{})$'.format(SEGMENT_NAME_RE)
+from tools.lib.helpers import RE
 
 QLOG_FILENAMES = ['qlog.bz2']
 QCAMERA_FILENAMES = ['qcamera.ts']
@@ -100,8 +96,8 @@ class Route:
 
     for f in files:
       fullpath = os.path.join(data_dir, f)
-      explorer_match = re.match(EXPLORER_FILE_RE, f)
-      op_match = re.match(OP_SEGMENT_DIR_RE, f)
+      explorer_match = re.match(RE.EXPLORER_FILE, f)
+      op_match = re.match(RE.OP_SEGMENT_DIR, f)
 
       if explorer_match:
         segment_name = explorer_match.group('segment_name')
