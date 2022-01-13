@@ -45,10 +45,12 @@ class ParamsLearner:
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
 
       localizer_roll = msg.orientationNED.value[0]
+      localizer_roll_std = msg.orientationNED.std[0]
       roll_valid = msg.orientationNED.valid and ROLL_MIN < localizer_roll < ROLL_MAX
       if roll_valid:
         roll = localizer_roll
-        roll_std = np.radians(1.0)
+        # Experimentally found multiplier of 2 to be best trade-off between stability and accuracy or similar?
+        roll_std = 2 * localizer_roll_std
       else:
         # This is done to bound the road roll estimate when localizer values are invalid
         roll = 0.0
