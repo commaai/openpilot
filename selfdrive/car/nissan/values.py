@@ -1,5 +1,3 @@
-# flake8: noqa
-
 from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -71,7 +69,7 @@ FW_VERSIONS = {
     (Ecu.gateway, 0x18dad0f1, None): [
       b'284U29HE0A',
     ],
-  },  
+  },
   CAR.LEAF_IC: {
     (Ecu.fwdCamera, 0x707, None): [
       b'5SH1BDB\x04\x18\x00\x00\x00\x00\x00_-?\x04\x91\xf2\x00\x00\x00\x80',
