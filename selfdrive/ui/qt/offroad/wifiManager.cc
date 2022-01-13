@@ -22,12 +22,11 @@ T get_response(const QDBusMessage &response) {
 }
 
 bool compare_network(const Network &a, const Network &b) {
-  if (a.connected > b.connected) return true;
-  if (a.connected == b.connected) {
-    if (a.strength > b.strength) return true;
-    if (a.strength == b.strength && a.ssid > b.ssid) return true;
-  }
-  return false;
+  if (a.connected == ConnectedType::CONNECTED) return true;
+  if (b.connected == ConnectedType::CONNECTED) return false;
+  if (a.connected == ConnectedType::CONNECTING) return true;
+  if (b.connected == ConnectedType::CONNECTING) return false;
+  return a.strength > b.strength;
 }
 
 WifiManager::WifiManager(QObject *parent) : QObject(parent) {

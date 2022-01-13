@@ -41,7 +41,7 @@ private:
   QLabel *scanning_label = nullptr;
   QMap<QString, QPixmap> pixmaps;
 
- signals:
+signals:
   void connectToNetwork(const Network &n);
 
 public slots:
@@ -54,9 +54,8 @@ public:
   explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
 
 private:
-  void showEvent(QShowEvent* event) override {
-    ipLabel->setText(wifi->getIp4Address());
-  }
+  void showEvent(QShowEvent* event) override;
+
   LabelControl* ipLabel;
   ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
