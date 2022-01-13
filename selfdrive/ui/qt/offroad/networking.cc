@@ -200,7 +200,9 @@ WifiItem::WifiItem(QWidget *parent) : QWidget(parent) {
   ssidLabel->setObjectName("ssidLabel");
   ssidLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   ssidLabel->setStyleSheet("background-color:red;");
-  QObject::connect(ssidLabel, &ElidedLabel::clicked, this, [this]() { emit connectToNetwork(network); });
+  QObject::connect(ssidLabel, &ElidedLabel::clicked, this, [this]() {
+    emit connectToNetwork(network);
+  });
   hlayout->addWidget(ssidLabel);
 
   connecting = new QPushButton("CONNECTING...");
