@@ -121,6 +121,7 @@ SecurityType WifiManager::getSecurityType(const QMap<QString, QVariant> &propert
 
 void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
   connecting_to_network = n.ssid;
+  seenNetworks[n.ssid].connected = ConnectedType::CONNECTING;
   forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
