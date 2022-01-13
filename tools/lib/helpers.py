@@ -1,5 +1,7 @@
 import datetime
 
+TIME_FMT = "%Y-%m-%d--%H-%M-%S"
+
 # regex patterns
 class RE:
   DONGLE_ID =  r'(?P<dongle_id>[a-z0-9]{16})'
@@ -11,8 +13,8 @@ class RE:
   EXPLORER_FILE = r'^(?P<segment_name>{})--(?P<file_name>[a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME)
   OP_SEGMENT_DIR = r'^(?P<segment_name>{})$'.format(SEGMENT_NAME)
 
-def timestamp_to_datetime(t: str):
+def timestamp_to_datetime(t: str) -> datetime.datetime:
   """
     Convert an openpilot route timestamp to a python datetime
   """
-  return datetime.datetime.strptime(t, '%Y-%m-%d--%H-%M-%S')
+  return datetime.datetime.strptime(t, TIME_FMT)

@@ -6,6 +6,7 @@ from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
 from tools.lib.helpers import RE, timestamp_to_datetime
 
+
 @functools.total_ordering
 class Bootlog:
   def __init__(self, url: str):
