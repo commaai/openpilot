@@ -5,10 +5,11 @@ from common.realtime import DT_MDL
 from selfdrive.config import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
 
-# kph
-V_CRUISE_MAX = 135
-V_CRUISE_MIN = 8
-V_CRUISE_ENABLE_MIN = 40
+# WARNING: this value was determined based on the model's training distribution,
+#          model predictions above this speed can be unpredictable
+V_CRUISE_MAX = 145  # kph
+V_CRUISE_MIN = 8  # kph
+V_CRUISE_ENABLE_MIN = 40  # kph
 
 LAT_MPC_N = 16
 LON_MPC_N = 32
@@ -118,6 +119,6 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
                                           -max_curvature_rate,
                                           max_curvature_rate)
   safe_desired_curvature = clip(desired_curvature,
-                                     current_curvature - max_curvature_rate/DT_MDL,
-                                     current_curvature + max_curvature_rate/DT_MDL)
+                                     current_curvature - max_curvature_rate * DT_MDL,
+                                     current_curvature + max_curvature_rate * DT_MDL)
   return safe_desired_curvature, safe_desired_curvature_rate

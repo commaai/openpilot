@@ -1,4 +1,3 @@
-import math
 import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
@@ -138,7 +137,7 @@ class LateralPlanner:
           else:
             self.lane_change_state = LaneChangeState.off
 
-    if self.lane_change_state in [LaneChangeState.off, LaneChangeState.preLaneChange]:
+    if self.lane_change_state in (LaneChangeState.off, LaneChangeState.preLaneChange):
       self.lane_change_timer = 0.0
     else:
       self.lane_change_timer += DT_MDL
@@ -148,13 +147,13 @@ class LateralPlanner:
     self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
     # Send keep pulse once per second during LaneChangeStart.preLaneChange
-    if self.lane_change_state in [LaneChangeState.off, LaneChangeState.laneChangeStarting]:
+    if self.lane_change_state in (LaneChangeState.off, LaneChangeState.laneChangeStarting):
       self.keep_pulse_timer = 0.0
     elif self.lane_change_state == LaneChangeState.preLaneChange:
       self.keep_pulse_timer += DT_MDL
       if self.keep_pulse_timer > 1.0:
         self.keep_pulse_timer = 0.0
-      elif self.desire in [log.LateralPlan.Desire.keepLeft, log.LateralPlan.Desire.keepRight]:
+      elif self.desire in (log.LateralPlan.Desire.keepLeft, log.LateralPlan.Desire.keepRight):
         self.desire = log.LateralPlan.Desire.none
 
     # Turn off lanes during lane change
@@ -186,7 +185,7 @@ class LateralPlanner:
     self.x0[3] = interp(DT_MDL, self.t_idxs[:LAT_MPC_N + 1], self.lat_mpc.x_sol[:, 3])
 
     #  Check for infeasible MPC solution
-    mpc_nans = any(math.isnan(x) for x in self.lat_mpc.x_sol[:, 3])
+    mpc_nans = np.isnan(self.lat_mpc.x_sol[:, 3]).any()
     t = sec_since_boot()
     if mpc_nans or self.lat_mpc.solution_status != 0:
       self.reset_mpc()
@@ -204,20 +203,22 @@ class LateralPlanner:
     plan_solution_valid = self.solution_invalid_cnt < 2
     plan_send = messaging.new_message('lateralPlan')
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'modelV2'])
-    plan_send.lateralPlan.laneWidth = float(self.LP.lane_width)
-    plan_send.lateralPlan.dPathPoints = [float(x) for x in self.y_pts]
-    plan_send.lateralPlan.psis = [float(x) for x in self.lat_mpc.x_sol[0:CONTROL_N, 2]]
-    plan_send.lateralPlan.curvatures = [float(x) for x in self.lat_mpc.x_sol[0:CONTROL_N, 3]]
-    plan_send.lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
-    plan_send.lateralPlan.lProb = float(self.LP.lll_prob)
-    plan_send.lateralPlan.rProb = float(self.LP.rll_prob)
-    plan_send.lateralPlan.dProb = float(self.LP.d_prob)
 
-    plan_send.lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
+    lateralPlan = plan_send.lateralPlan
+    lateralPlan.laneWidth = float(self.LP.lane_width)
+    lateralPlan.dPathPoints = self.y_pts.tolist()
+    lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()
+    lateralPlan.curvatures = self.lat_mpc.x_sol[0:CONTROL_N, 3].tolist()
+    lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
+    lateralPlan.lProb = float(self.LP.lll_prob)
+    lateralPlan.rProb = float(self.LP.rll_prob)
+    lateralPlan.dProb = float(self.LP.d_prob)
 
-    plan_send.lateralPlan.desire = self.desire
-    plan_send.lateralPlan.useLaneLines = self.use_lanelines
-    plan_send.lateralPlan.laneChangeState = self.lane_change_state
-    plan_send.lateralPlan.laneChangeDirection = self.lane_change_direction
+    lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
+
+    lateralPlan.desire = self.desire
+    lateralPlan.useLaneLines = self.use_lanelines
+    lateralPlan.laneChangeState = self.lane_change_state
+    lateralPlan.laneChangeDirection = self.lane_change_direction
 
     pm.send('lateralPlan', plan_send)

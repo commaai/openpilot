@@ -22,7 +22,7 @@ class CarController():
   def update(self, enabled, CS, frame, actuators, visual_alert, pcm_cancel):
 
     can_sends = []
-    steer_alert = visual_alert in [VisualAlert.steerRequired, VisualAlert.ldw]
+    steer_alert = visual_alert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
     apply_steer = actuators.steer
 
@@ -32,7 +32,7 @@ class CarController():
 
     if (frame % 3) == 0:
 
-      curvature = self.vehicle_model.calc_curvature(actuators.steeringAngleDeg*math.pi/180., CS.out.vEgo)
+      curvature = self.vehicle_model.calc_curvature(math.radians(actuators.steeringAngleDeg), CS.out.vEgo, 0.0)
 
       # The use of the toggle below is handy for trying out the various LKAS modes
       if TOGGLE_DEBUG:
@@ -83,4 +83,4 @@ class CarController():
     self.main_on_last = CS.out.cruiseState.available
     self.steer_alert_last = steer_alert
 
-    return can_sends
+    return actuators, can_sends

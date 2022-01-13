@@ -134,7 +134,7 @@ class TestCarModel(unittest.TestCase):
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
-    RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % self.CP.carName).RadarInterface
+    RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
     RI = RadarInterface(self.CP)
     assert RI
 
@@ -221,7 +221,7 @@ class TestCarModel(unittest.TestCase):
 
     # TODO: use the same signal in panda and carState
     # tolerate a small delay between the button press and PCM entering a cruise state
-    if self.car_model == HONDA.ACCORD_2021:
+    if self.car_model == HONDA.ACCORD:
       if failed_checks['controlsAllowed'] < 500:
         del failed_checks['controlsAllowed']
 

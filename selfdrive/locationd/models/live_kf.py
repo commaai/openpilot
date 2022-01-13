@@ -158,7 +158,7 @@ class LiveKalman():
     delta_x = sp.MatrixSymbol('delta_x', dim_state_err, 1)
 
     err_function_sym = sp.Matrix(np.zeros((dim_state, 1)))
-    delta_quat = sp.Matrix(np.ones((4)))
+    delta_quat = sp.Matrix(np.ones(4))
     delta_quat[1:, :] = sp.Matrix(0.5 * delta_x[States.ECEF_ORIENTATION_ERR, :])
     err_function_sym[States.ECEF_POS, :] = sp.Matrix(nom_x[States.ECEF_POS, :] + delta_x[States.ECEF_POS_ERR, :])
     err_function_sym[States.ECEF_ORIENTATION, 0] = quat_matrix_r(nom_x[States.ECEF_ORIENTATION, 0]) * delta_quat

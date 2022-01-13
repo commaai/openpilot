@@ -26,7 +26,7 @@ PROCS = {
   "./loggerd": 45.0,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 22.6,
-  "./_ui": 15.0,
+  "./_ui": 20.0,
   "selfdrive.locationd.paramsd": 9.1,
   "./camerad": 7.07,
   "./_sensord": 6.17,
@@ -34,7 +34,7 @@ PROCS = {
   "./_modeld": 4.48,
   "./boardd": 3.63,
   "./_dmonitoringmodeld": 2.67,
-  "selfdrive.thermald.thermald": 2.41,
+  "selfdrive.thermald.thermald": 7.73,
   "selfdrive.locationd.calibrationd": 2.0,
   "./_soundd": 1.0,
   "selfdrive.monitoring.dmonitoringd": 1.90,
@@ -56,12 +56,12 @@ if TICI:
     "./loggerd": 70.0,
     "selfdrive.controls.controlsd": 28.0,
     "./camerad": 31.0,
-    "./_ui": 30.2,
+    "./_ui": 33.0,
     "selfdrive.controls.plannerd": 11.7,
     "./_dmonitoringmodeld": 10.0,
     "selfdrive.locationd.paramsd": 5.0,
     "selfdrive.controls.radard": 3.6,
-    "selfdrive.thermald.thermald": 1.5,
+    "selfdrive.thermald.thermald": 4.75,
   })
 
 
@@ -138,20 +138,17 @@ class TestOnroad(unittest.TestCase):
       cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.bz2")))
       return
 
+    # setup env
     os.environ['REPLAY'] = "1"
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
+
+    params = Params()
+    params.clear_all()
     set_params_enabled()
 
     # Make sure athena isn't running
-    Params().delete("DongleId")
-    Params().delete("AthenadPid")
     os.system("pkill -9 -f athena")
-
-    logger_root = Path(ROOT)
-    initial_segments = set()
-    if logger_root.exists():
-      initial_segments = set(Path(ROOT).iterdir())
 
     # start manager and run openpilot for a minute
     try:
@@ -164,15 +161,22 @@ class TestOnroad(unittest.TestCase):
           sm.update(1000)
 
       # make sure we get at least two full segments
+      route = None
       cls.segments = []
       with Timeout(300, "timed out waiting for logs"):
+        while route is None:
+          route = params.get("CurrentRoute", encoding="utf-8")
+          time.sleep(0.1)
+
         while len(cls.segments) < 3:
-          new_paths = set()
-          if logger_root.exists():
-            new_paths = set(logger_root.iterdir()) - initial_segments
-          segs = [p for p in new_paths if "--" in str(p)]
+          segs = set()
+          if Path(ROOT).exists():
+            segs = set(Path(ROOT).glob(f"{route}--*"))
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
-          time.sleep(5)
+          time.sleep(2)
+
+      # chop off last, incomplete segment
+      cls.segments = cls.segments[:-1]
 
     finally:
       proc.terminate()

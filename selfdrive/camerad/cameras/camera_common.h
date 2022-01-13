@@ -30,7 +30,6 @@
 const int UI_BUF_COUNT = 4;
 const int YUV_BUFFER_COUNT = Hardware::EON() ? 100 : 40;
 
-
 enum CameraType {
   RoadCam = 0,
   DriverCam,
@@ -52,23 +51,6 @@ typedef struct CameraInfo {
   bool hdr;
 } CameraInfo;
 
-typedef struct LogCameraInfo {
-  CameraType type;
-  const char* filename;
-  const char* frame_packet_name;
-  const char* encode_idx_name;
-  VisionStreamType stream_type;
-  int frame_width, frame_height;
-  int fps;
-  int bitrate;
-  bool is_h265;
-  bool downscale;
-  bool has_qcamera;
-  bool trigger_rotate;
-  bool enable;
-  bool record;
-} LogCameraInfo;
-
 typedef struct FrameMetadata {
   uint32_t frame_id;
   unsigned int frame_length;
@@ -86,7 +68,6 @@ typedef struct FrameMetadata {
 
   // Focus
   unsigned int lens_pos;
-  float lens_sag;
   float lens_err;
   float lens_true_pos;
 } FrameMetadata;
@@ -141,7 +122,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);
+void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt);
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
 void cameras_open(MultiCameraState *s);

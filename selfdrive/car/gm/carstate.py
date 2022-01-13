@@ -36,7 +36,7 @@ class CarState(CarStateBase):
     if ret.brake < 10/0xd0:
       ret.brake = 0.
 
-    ret.gas = pt_cp.vl["AcceleratorPedal"]["AcceleratorPedal"] / 254.
+    ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
@@ -90,7 +90,7 @@ class CarState(CarStateBase):
       ("LeftSeatBelt", "BCMDoorBeltStatus", 0),
       ("RightSeatBelt", "BCMDoorBeltStatus", 0),
       ("TurnSignals", "BCMTurnSignals", 0),
-      ("AcceleratorPedal", "AcceleratorPedal", 0),
+      ("AcceleratorPedal2", "AcceleratorPedal2", 0),
       ("CruiseState", "AcceleratorPedal2", 0),
       ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
       ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
@@ -117,7 +117,6 @@ class CarState(CarStateBase):
       ("EPBStatus", 20),
       ("EBCMWheelSpdFront", 20),
       ("EBCMWheelSpdRear", 20),
-      ("AcceleratorPedal", 33),
       ("AcceleratorPedal2", 33),
       ("ASCMSteeringButton", 33),
       ("ECMEngineStatus", 100),

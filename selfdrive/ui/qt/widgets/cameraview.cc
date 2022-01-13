@@ -1,12 +1,18 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#else
+#include <GLES3/gl3.h>
+#endif
+
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>
 
 namespace {
 
 const char frame_vertex_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
+#ifdef __APPLE__
   "#version 150 core\n"
 #else
   "#version 300 es\n"
@@ -21,12 +27,12 @@ const char frame_vertex_shader[] =
   "}\n";
 
 const char frame_fragment_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
+#ifdef __APPLE__
   "#version 150 core\n"
 #else
   "#version 300 es\n"
-#endif
   "precision mediump float;\n"
+#endif
   "uniform sampler2D uTexture;\n"
   "in vec4 vTexCoord;\n"
   "out vec4 colorOut;\n"
@@ -45,28 +51,22 @@ const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
-mat4 get_driver_view_transform() {
+mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 1.333;
   mat4 transform;
-  if (Hardware::TICI()) {
-    // from dmonitoring.cc
-    const int full_width_tici = 1928;
-    const int full_height_tici = 1208;
-    const int adapt_width_tici = 954;
-    const int crop_x_offset = -72;
-    const int crop_y_offset = -144;
-    const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
-    const float xscale = yscale*(1080)/(2160)*full_width_tici/full_height_tici;
+  if (stream_width == TICI_CAM_WIDTH) {
+    const float yscale = stream_height * driver_view_ratio / tici_dm_crop::width;
+    const float xscale = yscale*screen_height/screen_width*stream_width/stream_height;
     transform = (mat4){{
-      xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
-      0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
+      xscale,  0.0, 0.0, xscale*tici_dm_crop::x_offset/stream_width*2,
+      0.0,  yscale, 0.0, yscale*tici_dm_crop::y_offset/stream_height*2,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
     }};
   } else {
     // frame from 4/3 to 16/9 display
     transform = (mat4){{
-      driver_view_ratio*(1080)/(1920),  0.0, 0.0, 0.0,
+      driver_view_ratio * screen_height / screen_width,  0.0, 0.0, 0.0,
       0.0,  1.0, 0.0, 0.0,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
@@ -172,7 +172,7 @@ void CameraViewWidget::hideEvent(QHideEvent *event) {
 void CameraViewWidget::updateFrameMat(int w, int h) {
   if (zoomed_view) {
     if (stream_type == VISION_STREAM_RGB_FRONT) {
-      frame_mat = matmul(device_transform, get_driver_view_transform());
+      frame_mat = matmul(device_transform, get_driver_view_transform(w, h, stream_width, stream_height));
     } else {
       auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
       float zoom = ZOOM / intrinsic_matrix.v[0];
@@ -199,13 +199,18 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
 }
 
 void CameraViewWidget::paintGL() {
-  if (latest_texture_id == -1) {
-    glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
-    glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    return;
-  }
+  glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
+  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+  std::lock_guard lk(lock);
+
+  if (latest_texture_id == -1) return;
 
   glViewport(0, 0, width(), height());
+  // sync with the PBO
+  if (wait_fence) {
+    wait_fence->wait();
+  }
 
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
@@ -290,20 +295,33 @@ void CameraViewWidget::vipcThread() {
     }
 
     if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
-      if (!Hardware::EON()) {
-        void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
-        memcpy(texture_buffer, buf->addr, buf->len);
-        gl_buffer->unmap();
+      {
+        std::lock_guard lk(lock);
+        if (!Hardware::EON()) {
+          void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
+          
+          if (texture_buffer == nullptr) {
+            LOGE("gl_buffer->map returned nullptr");
+            continue;
+          }
+          
+          memcpy(texture_buffer, buf->addr, buf->len);
+          gl_buffer->unmap();
 
-        // copy pixels from PBO to texture object
-        glBindTexture(GL_TEXTURE_2D, texture[buf->idx]->frame_tex);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        assert(glGetError() == GL_NO_ERROR);
-        // use glFinish to ensure that the texture has been uploaded.
-        glFinish();
+          // copy pixels from PBO to texture object
+          glBindTexture(GL_TEXTURE_2D, texture[buf->idx]->frame_tex);
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+          glBindTexture(GL_TEXTURE_2D, 0);
+          assert(glGetError() == GL_NO_ERROR);
+
+          wait_fence.reset(new WaitFence());
+
+          // Ensure the fence is in the GPU command queue, or waiting on it might block
+          // https://www.khronos.org/opengl/wiki/Sync_Object#Flushing_and_contexts
+          glFlush();
+        }
+        latest_texture_id = buf->idx;
       }
-      latest_texture_id = buf->idx;
       // Schedule update. update() will be invoked on the gui thread.
       QMetaObject::invokeMethod(this, "update");
 

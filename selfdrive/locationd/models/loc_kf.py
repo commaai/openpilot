@@ -232,7 +232,7 @@ class LocKalman():
 
     err_function_sym = sp.Matrix(np.zeros((dim_state, 1)))
     for q_idx, q_err_idx in zip(q_idxs, q_err_idxs):
-      delta_quat = sp.Matrix(np.ones((4)))
+      delta_quat = sp.Matrix(np.ones(4))
       delta_quat[1:, :] = sp.Matrix(0.5 * delta_x[q_err_idx[0]: q_err_idx[1], :])
       err_function_sym[q_idx[0]:q_idx[1], 0] = quat_matrix_r(nom_x[q_idx[0]:q_idx[1], 0]) * delta_quat
     for p_idx, p_err_idx in zip(p_idxs, p_err_idxs):
