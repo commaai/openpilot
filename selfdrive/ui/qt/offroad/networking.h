@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QButtonGroup>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -80,7 +79,6 @@ public:
 
 private:
   QStackedLayout* main_layout = nullptr;
-  QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
 
   WifiUI* wifiWidget;
