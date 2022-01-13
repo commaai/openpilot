@@ -150,7 +150,7 @@ void WifiManager::deactivateConnectionBySsid(const QString &ssid) {
     auto pth = call<QDBusObjectPath>(active_connection.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
     if (pth.path() != "" && pth.path() != "/" && getProperty(pth.path(), "Ssid") == ssid) {
       deactivateConnection(active_connection);
-      break;
+      return;
     }
   }
 }
