@@ -1,3 +1,4 @@
+import datetime
 
 # regex patterns
 class RE:
@@ -9,3 +10,9 @@ class RE:
 
   EXPLORER_FILE = r'^(?P<segment_name>{})--(?P<file_name>[a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME)
   OP_SEGMENT_DIR = r'^(?P<segment_name>{})$'.format(SEGMENT_NAME)
+
+def timestamp_to_datetime(t: str):
+  """
+    Convert an openpilot route timestamp to a python datetime
+  """
+  return datetime.datetime.strptime(t, '%Y-%m-%d--%H-%M-%S')
