@@ -46,14 +46,13 @@ private:
   QPixmap checkmark_icon;
   QPixmap circled_slash_icon;
   QVector<QPixmap> strength_icons;
+  friend WifiItem;
 
 signals:
   void connectToNetwork(const Network &n);
 
 public slots:
   void refresh();
-
-  friend class WifiItem;
 };
 
 class AdvancedNetworking : public QWidget {
