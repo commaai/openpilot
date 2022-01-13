@@ -110,14 +110,9 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
 bool safety_setter_thread(std::vector<Panda *> pandas) {
   LOGD("Starting safety setter thread");
 
-  // there should be at least one panda connected
-  if (pandas.size() == 0) {
-    return false;
-  }
-
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
-
   Params p = Params();
+  Panda *peripheral_panda = pandas[0];
+  peripheral_panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
 
   // switch to SILENT when CarVin param is read
   while (!do_exit && check_all_connected(pandas) && ignition) {
@@ -131,7 +126,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     util::sleep_for(20);
   }
 
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1);
+  peripheral_panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1);
 
   std::string params;
   LOGW("waiting for params to set safety model");
