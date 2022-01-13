@@ -81,7 +81,7 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   watcher->deleteLater();
 }
 
-QString WifiManager::getIP4Address() {
+QString WifiManager::getIp4Address() {
   for (const auto &p : getActiveConnections()) {
     QString type = call<QString>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
     if (type == "802-11-wireless") {

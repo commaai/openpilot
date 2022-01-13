@@ -9,13 +9,11 @@
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
-class WifiUI;
-
 class WifiItem : public QWidget {
   Q_OBJECT
 public:
   explicit WifiItem(QWidget* parent = nullptr);
-  void update(WifiUI *wifi_ui, const Network& n);
+  void update(const Network& n, const QMap<QString, QPixmap> &pixmaps, bool has_forgot_btn);
 
 signals:
   void connectToNetwork(const Network &n);
@@ -42,13 +40,9 @@ private:
   std::vector<WifiItem*> wifi_items;
   WifiManager *wifi = nullptr;
   QLabel *scanning_label = nullptr;
-  QPixmap lock_icon;
-  QPixmap checkmark_icon;
-  QPixmap circled_slash_icon;
-  QVector<QPixmap> strength_icons;
-  friend WifiItem;
+  QMap<QString, QPixmap> pixmaps;
 
-signals:
+ signals:
   void connectToNetwork(const Network &n);
 
 public slots:
@@ -62,7 +56,7 @@ public:
 
 private:
   void showEvent(QShowEvent* event) override {
-    ipLabel->setText(wifi->getIP4Address());
+    ipLabel->setText(wifi->getIp4Address());
   }
   LabelControl* ipLabel;
   ToggleControl* tetheringToggle;

@@ -55,7 +55,7 @@ public:
 
   explicit WifiManager(QObject *parent);
   void requestScan();
-  QString getIP4Address();
+  QString getIp4Address();
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
