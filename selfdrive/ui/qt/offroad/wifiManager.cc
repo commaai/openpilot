@@ -21,12 +21,13 @@ T get_response(const QDBusMessage &response) {
   }
 }
 
-bool compare_by_strength(const Network &a, const Network &b) {
-  if (a.connected == ConnectedType::CONNECTED) return true;
-  if (b.connected == ConnectedType::CONNECTED) return false;
-  if (a.connected == ConnectedType::CONNECTING) return true;
-  if (b.connected == ConnectedType::CONNECTING) return false;
-  return a.strength > b.strength;
+bool compare_network(const Network &a, const Network &b) {
+  if (a.connected > b.connected) return true;
+  if (a.connected == b.connected) {
+    if (a.strength > b.strength) return true;
+    if (a.strength == b.strength && a.ssid > b.ssid) return true;
+  }
+  return false;
 }
 
 WifiManager::WifiManager(QObject *parent) : QObject(parent) {
@@ -81,7 +82,6 @@ void WifiManager::refreshNetworks() {
   if (adapter.isEmpty() || !timer.isActive()) return;
 
   seenNetworks.clear();
-  ipv4_address = get_ipv4_address();
 
   QDBusInterface nm(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
   nm.setTimeout(DBUS_TIMEOUT);
@@ -112,7 +112,7 @@ void WifiManager::refreshNetworks() {
   emit refreshSignal();
 }
 
-QString WifiManager::get_ipv4_address() {
+QString WifiManager::getIp4Address() {
   if (raw_adapter_state != NM_DEVICE_STATE_ACTIVATED) {
     return "";
   }

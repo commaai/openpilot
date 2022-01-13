@@ -9,6 +9,25 @@
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
+class WifiItem : public QWidget {
+  Q_OBJECT
+public:
+  explicit WifiItem(QWidget* parent = nullptr);
+  void update(const Network& n, const QMap<QString, QPixmap> &pixmaps, bool has_forgot_btn);
+
+signals:
+  void connectToNetwork(const Network &n);
+  void forgotNetwork(const Network &n);
+
+protected:
+  ElidedLabel* ssidLabel;
+  QPushButton* connecting;
+  QPushButton* forgetBtn;
+  QLabel* iconLabel;
+  QLabel* strengthLabel;
+  Network network;
+};
+
 class WifiUI : public QWidget {
   Q_OBJECT
 
@@ -16,14 +35,14 @@ public:
   explicit WifiUI(QWidget *parent = 0, WifiManager* wifi = 0);
 
 private:
+  QWidget *list_container = nullptr;
+  ListWidget *wifi_list_widget = nullptr;
+  std::vector<WifiItem*> wifi_items;
   WifiManager *wifi = nullptr;
-  QVBoxLayout* main_layout;
-  QPixmap lock;
-  QPixmap checkmark;
-  QPixmap circled_slash;
-  QVector<QPixmap> strengths;
+  QLabel *scanning_label = nullptr;
+  QMap<QString, QPixmap> pixmaps;
 
-signals:
+ signals:
   void connectToNetwork(const Network &n);
 
 public slots:
@@ -36,6 +55,9 @@ public:
   explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
 
 private:
+  void showEvent(QShowEvent* event) override {
+    ipLabel->setText(wifi->getIp4Address());
+  }
   LabelControl* ipLabel;
   ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
