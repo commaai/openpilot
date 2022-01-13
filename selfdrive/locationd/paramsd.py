@@ -93,23 +93,7 @@ class ParamsLearner:
       self.kf.filter.set_filter_time(t)
       self.kf.filter.reset_rewind()
 
-
-def main(sm=None, pm=None):
-  gc.disable()
-  set_realtime_priority(5)
-
-  if sm is None:
-    sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
-  if pm is None:
-    pm = messaging.PubMaster(['liveParameters'])
-
-  # wait for stats about the car to come in from controls
-  cloudlog.info("paramsd is waiting for CarParams")
-  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
-  cloudlog.info("paramsd got CarParams")
-
-  min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
-
+def load_params(CP, min_sr, max_sr) :
   try:
     dat = json.loads(Params().get("LiveParameters"))
     # Check if car model matches
@@ -134,6 +118,24 @@ def main(sm=None, pm=None):
     params.stiffnessFactor = 1.0
     params.angleOffsetAverageDeg = 0.0
 
+  return params
+
+def main(sm=None, pm=None):
+  gc.disable()
+  set_realtime_priority(5)
+
+  if sm is None:
+    sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
+  if pm is None:
+    pm = messaging.PubMaster(['liveParameters'])
+
+  # wait for stats about the car to come in from controls
+  cloudlog.info("paramsd is waiting for CarParams")
+  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  cloudlog.info("paramsd got CarParams")
+
+  min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
+  params = load_params(CP, min_sr, max_sr)
   # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
   # Without a way to detect this we have to reset the stiffness every drive
   params.stiffnessFactor = 1.0
