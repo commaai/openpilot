@@ -142,25 +142,19 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   AlignedBuffer aligned_buf;
   capnp::FlatArrayMessageReader cmsg(aligned_buf.align(car_params.data(), car_params.size()));
   auto safety_configs = cmsg.getRoot<cereal::CarParams>().getSafetyConfigs();
-  cereal::CarParams::SafetyModel safety_model;
-  int safety_param;
 
-  for (uint32_t i=0; i<pandas.size(); i++) {
-    auto panda = pandas[i];
-
+  for (uint32_t i = 0; i < pandas.size(); i++) {
+    // If no safety mode is specified, default to silent
+    int safety_param = 0;
+    auto safety_model = cereal::CarParams::SafetyModel::SILENT;
     if (safety_configs.size() > i) {
       safety_model = safety_configs[i].getSafetyModel();
       safety_param = safety_configs[i].getSafetyParam();
-    } else {
-      // If no safety mode is specified, default to silent
-      safety_model = cereal::CarParams::SafetyModel::SILENT;
-      safety_param = 0;
     }
 
     LOGW("panda %d: setting safety model: %d with param %d", i, (int)safety_model, safety_param);
-
-    panda->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
-    panda->set_safety_model(safety_model, safety_param);
+    pandas[i]->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
+    pandas[i]->set_safety_model(safety_model, safety_param);
   }
 
   return true;
