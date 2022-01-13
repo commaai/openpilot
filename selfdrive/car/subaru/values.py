@@ -131,7 +131,6 @@ FW_VERSIONS = {
       b'\xe3\xf5G\x00\x00',
       b'\xe3\xf5\a\x00\x00',
       b'\xe3\xf5C\x00\x00',
-      b'\xf1\x00\xa4\x10@',
       b'\xe5\xf5B\x00\x00',
       b'\xe5\xf5$\000\000',
       b'\xe4\xf5\a\000\000',
