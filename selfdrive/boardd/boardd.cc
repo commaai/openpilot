@@ -147,7 +147,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     // If no safety mode is specified, default to silent
     int safety_param = 0;
     auto safety_model = cereal::CarParams::SafetyModel::SILENT;
-    if (safety_configs.size() > i) {
+    if (i < safety_configs.size()) {
       safety_model = safety_configs[i].getSafetyModel();
       safety_param = safety_configs[i].getSafetyParam();
     }
