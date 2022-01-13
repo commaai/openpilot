@@ -26,6 +26,8 @@ class TestPramsd(unittest.TestCase):
 
     params = load_params(cp, 0, 1)
 
+    Params().delete('LiveParameters')
+
     self.assertEqual(params.steerRatio, liveParameters.steerRatio)
     self.assertEqual(params.stiffnessFactor, liveParameters.stiffnessFactor)
     self.assertEqual(params.angleOffsetAverageDeg, liveParameters.angleOffsetAverageDeg)
