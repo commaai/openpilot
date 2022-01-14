@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import datetime
 import os
-import time
 from pathlib import Path
 from typing import Dict, NoReturn, Optional, Tuple
 from collections import namedtuple, OrderedDict
@@ -392,9 +391,7 @@ def thermald_thread() -> NoReturn:
     # Check if we need to shut down
     if power_monitor.should_shutdown(peripheralState, onroad_conditions["ignition"], in_car, off_ts, started_seen):
       cloudlog.info(f"shutting device down, offroad since {off_ts}")
-      # TODO: add function for blocking cloudlog instead of sleep
-      time.sleep(10)
-      HARDWARE.shutdown()
+      params.put_bool("DoShutdown", True)
 
     # If UI has crashed, set the brightness to reasonable non-zero value
     ui_running = "ui" in (p.name for p in sm["managerState"].processes if p.running)
