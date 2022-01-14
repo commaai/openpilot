@@ -12,6 +12,25 @@ bool compare_by_strength(const Network &a, const Network &b) {
   return a.strength > b.strength;
 }
 
+template <typename T = QDBusMessage, typename... Args>
+T call(const QString &path, const QString &interface, const QString &method, Args &&...args) {
+  QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, QDBusConnection::systemBus());
+  nm.setTimeout(DBUS_TIMEOUT);
+  QDBusMessage response = nm.call(method, args...);
+  if constexpr (std::is_same_v<T, QDBusMessage>) {
+    return response;
+  } else if (response.arguments().count() >= 1) {
+    QVariant vFirst = response.arguments().at(0).value<QDBusVariant>().variant();
+    if (vFirst.canConvert<T>()) {
+      return vFirst.value<T>();
+    }
+    QDebug critical = qCritical();
+    critical << "Variant unpacking failure :" << method << ',';
+    (critical << ... << args);
+  }
+  return T();
+}
+
 WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
@@ -26,13 +45,14 @@ WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   if (!adapter.isEmpty()) {
     setup();
   } else {
-    bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
+    QDBusConnection::systemBus().connect(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
   }
 
   timer.callOnTimeout(this, &WifiManager::requestScan);
 }
 
 void WifiManager::setup() {
+  auto bus = QDBusConnection::systemBus();
   bus.connect(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
   bus.connect(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_PROPERTIES, "PropertiesChanged", this, SLOT(propertyChange(QString, QVariantMap, QStringList)));
 

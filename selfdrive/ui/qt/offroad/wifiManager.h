@@ -66,7 +66,6 @@ public:
 private:
   QString adapter;  // Path to network manager wifi-device
   QTimer timer;
-  QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString connecting_to_network;
   QString tethering_ssid;
@@ -88,25 +87,6 @@ private:
   Connection getConnectionSettings(const QDBusObjectPath &path);
   void initConnections();
   void setup();
-
-  template <typename T = QDBusMessage, typename... Args>
-  T call(const QString &path, const QString &interface, const QString &method, Args&&... args) {
-    QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
-    QDBusMessage response = nm.call(method, args...);
-    if constexpr (std::is_same_v<T, QDBusMessage>) {
-      return response;
-    } else if (response.arguments().count() >= 1) {
-      QVariant vFirst = response.arguments().at(0).value<QDBusVariant>().variant();
-      if (vFirst.canConvert<T>()) {
-        return vFirst.value<T>();
-      }
-      QDebug critical = qCritical();
-      critical << "Variant unpacking failure :" << method << ',';
-      (critical << ... << args);
-    }
-    return T();
-  }
 
 signals:
   void wrongPassword(const QString &ssid);
