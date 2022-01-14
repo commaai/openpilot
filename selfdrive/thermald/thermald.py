@@ -465,7 +465,9 @@ def main():
   try:
     while True:
       time.sleep(1)
-  except (KeyboardInterrupt, SystemExit):
+      if not all(t.is_alive() for t in threads):
+        break
+  finally:
     end_event.set()
 
   for t in threads:
