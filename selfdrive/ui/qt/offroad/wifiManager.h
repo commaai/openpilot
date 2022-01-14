@@ -53,10 +53,7 @@ public:
   void activateModemConnection(const QDBusObjectPath &path);
   NetworkType currentNetworkType();
   void updateGsmSettings(bool roaming, QString apn);
-
-  void connect(const Network &ssid);
-  void connect(const Network &ssid, const QString &password);
-  void connect(const Network &ssid, const QString &username, const QString &password);
+  void connect(const Network &ssid, const QString &password = {}, const QString &username = {});
   void disconnect();
 
   // Tethering functions
