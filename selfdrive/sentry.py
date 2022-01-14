@@ -51,7 +51,7 @@ def init(project: SentryProject) -> None:
   else:
     sentry_sdk.utils.MAX_STRING_LENGTH = 8192
 
-  sentry_sdk.init(project,
+  sentry_sdk.init(project.value,
                   default_integrations=False,
                   release=get_version(),
                   integrations=integrations,
