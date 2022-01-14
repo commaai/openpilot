@@ -41,10 +41,10 @@ public:
   void start();
   void stop();
   void requestScan();
+  QString getIp4Address();
   QMap<QString, Network> seenNetworks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QDBusObjectPath lteConnectionPath;
-  QString ipv4_address;
 
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
@@ -74,7 +74,6 @@ private:
   QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
   bool isWirelessAdapter(const QDBusObjectPath &path);
-  QString get_ipv4_address();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString activeAp;
   void deactivateConnectionBySsid(const QString &ssid);

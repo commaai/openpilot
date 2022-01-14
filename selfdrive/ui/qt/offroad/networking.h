@@ -36,6 +36,8 @@ public:
   explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
 
 private:
+  void showEvent(QShowEvent* event) override;
+
   LabelControl* ipLabel;
   ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
