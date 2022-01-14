@@ -39,7 +39,7 @@ cdef class LogReader:
     return self.__get_event(self.lr.at(item))
 
   def __iter__(self):
-    for i in xrange(self.lr.size()):
+    for i in range(self.lr.size()):
       yield self.__get_event(self.lr.at(i))
 
   def __len__(self):
