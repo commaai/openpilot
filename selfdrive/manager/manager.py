@@ -141,9 +141,6 @@ def manager_thread() -> None:
     sm.update()
     not_run = ignore[:]
 
-    if sm['deviceState'].freeSpacePercent < 5:
-      not_run.append("loggerd")
-
     started = sm['deviceState'].started
     driverview = params.get_bool("IsDriverViewEnabled")
     ensure_running(managed_processes.values(), started, driverview, not_run)

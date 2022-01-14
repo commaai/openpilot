@@ -23,6 +23,7 @@ from selfdrive.loggerd.config import get_available_percent
 from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import terms_version, training_version
+from selfdrive.statsd import statlog
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -158,7 +159,7 @@ def thermald_thread() -> NoReturn:
 
   pandaState_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
   pandaState_sock = messaging.sub_sock('pandaStates', timeout=pandaState_timeout)
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "managerState"])
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "managerState", "controlsState"])
 
   fan_speed = 0
   count = 0
@@ -191,6 +192,7 @@ def thermald_thread() -> NoReturn:
   handle_fan = None
   is_uno = False
   ui_running_prev = False
+  engaged_prev = False
 
   params = Params()
   power_monitor = PowerMonitoring()
@@ -201,10 +203,6 @@ def thermald_thread() -> NoReturn:
 
   # TODO: use PI controller for UNO
   controller = PIController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
-
-  # Leave flag for loggerd to indicate device was left onroad
-  if params.get_bool("IsOnroad"):
-    params.put_bool("BootedOnroad", True)
 
   while True:
     pandaStates = messaging.recv_sock(pandaState_sock, wait=True)
@@ -291,8 +289,12 @@ def thermald_thread() -> NoReturn:
       msg.deviceState.networkInfo = network_info
     if nvme_temps is not None:
       msg.deviceState.nvmeTempC = nvme_temps
+      for i, temp in enumerate(nvme_temps):
+        statlog.gauge(f"nvme_temperature{i}", temp)
     if modem_temps is not None:
       msg.deviceState.modemTempC = modem_temps
+      for i, temp in enumerate(modem_temps):
+        statlog.gauge(f"modem_temperature{i}", temp)
 
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
     msg.deviceState.batteryPercent = HARDWARE.get_battery_capacity()
@@ -354,7 +356,22 @@ def thermald_thread() -> NoReturn:
     if should_start != should_start_prev or (count == 0):
       params.put_bool("IsOnroad", should_start)
       params.put_bool("IsOffroad", not should_start)
+
+      params.put_bool("IsEngaged", False)
+      engaged_prev = False
       HARDWARE.set_power_save(not should_start)
+
+    if sm.updated['controlsState']:
+      engaged = sm['controlsState'].enabled
+      if engaged != engaged_prev:
+        params.put_bool("IsEngaged", engaged)
+        engaged_prev = engaged
+
+      try:
+        with open('/dev/kmsg', 'w') as kmsg:
+          kmsg.write(f"[thermald] engaged: {engaged}")
+      except Exception:
+        pass
 
     if should_start:
       off_ts = None
@@ -408,6 +425,23 @@ def thermald_thread() -> NoReturn:
 
     should_start_prev = should_start
     startup_conditions_prev = startup_conditions.copy()
+
+    # log more stats
+    statlog.gauge("free_space_percent", msg.deviceState.freeSpacePercent)
+    statlog.gauge("gpu_usage_percent", msg.deviceState.gpuUsagePercent)
+    statlog.gauge("memory_usage_percent", msg.deviceState.memoryUsagePercent)
+    for i, usage in enumerate(msg.deviceState.cpuUsagePercent):
+      statlog.gauge(f"cpu{i}_usage_percent", usage)
+    for i, temp in enumerate(msg.deviceState.cpuTempC):
+      statlog.gauge(f"cpu{i}_temperature", temp)
+    for i, temp in enumerate(msg.deviceState.gpuTempC):
+      statlog.gauge(f"gpu{i}_temperature", temp)
+    statlog.gauge("memory_temperature", msg.deviceState.memoryTempC)
+    statlog.gauge("ambient_temperature", msg.deviceState.ambientTempC)
+    for i, temp in enumerate(msg.deviceState.pmicTempC):
+      statlog.gauge(f"pmic{i}_temperature", temp)
+    statlog.gauge("fan_speed_percent_desired", msg.deviceState.fanSpeedPercentDesired)
+    statlog.gauge("screen_brightness_percent", msg.deviceState.screenBrightnessPercent)
 
     # report to server once every 10 minutes
     if (count % int(600. / DT_TRML)) == 0:
