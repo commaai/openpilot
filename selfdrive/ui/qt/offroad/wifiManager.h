@@ -82,7 +82,7 @@ private:
   QVector<QDBusObjectPath> getActiveConnections();
   QByteArray get_property(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
-  SecurityType getSecurityType(const QString &path);
+  SecurityType getSecurityType(const QVariantMap &properties);
   QDBusObjectPath getConnectionPath(const QString &ssid);
   Connection getConnectionSettings(const QDBusObjectPath &path);
   void initConnections();
@@ -98,4 +98,5 @@ private slots:
   void deviceAdded(const QDBusObjectPath &path);
   void connectionRemoved(const QDBusObjectPath &path);
   void newConnection(const QDBusObjectPath &path);
+  void refreshFinished(QDBusPendingCallWatcher *call);
 };
