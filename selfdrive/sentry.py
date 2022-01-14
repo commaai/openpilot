@@ -1,5 +1,6 @@
 """Install exception handler for process crash."""
 import sentry_sdk
+from enum import Enum
 from sentry_sdk.integrations.threading import ThreadingIntegration
 
 from common.params import Params
@@ -9,7 +10,7 @@ from selfdrive.version import get_branch, get_commit, get_origin, get_version, \
                               is_comma_remote, is_dirty, is_tested_branch
 
 
-class SentryProject:
+class SentryProject(Enum):
   # python project
   SELFDRIVE = "https://a8dc76b5bfb34908a601d67e2aa8bcf9@o33823.ingest.sentry.io/77924"
   # native project
@@ -64,4 +65,5 @@ def init(project: SentryProject) -> None:
   sentry_sdk.set_tag("commit", get_commit())
   sentry_sdk.set_tag("device", HARDWARE.get_device_type())
 
-  sentry_sdk.start_session()
+  if project == SentryProject.SELFDRIVE:
+    sentry_sdk.Hub.current.start_session()
