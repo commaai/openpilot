@@ -80,12 +80,10 @@ void MainWindow::closeSettings() {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-  const static QSet<QEvent::Type> filter_events(
-      {QEvent::MouseButtonPress, QEvent::MouseMove,
-       QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
+  const QSet<QEvent::Type> evts({QEvent::MouseButtonPress, QEvent::MouseMove,
+                                 QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
 
-  const bool touched = filter_events.contains(event->type());
-  if (touched) {
+  if (evts.contains(event->type())) {
     device.resetInteractiveTimout();
 #ifdef QCOM
     // filter out touches while in android activity
