@@ -181,7 +181,7 @@ def hw_state_thread(end_event, hw_queue):
         except queue.Full:
           pass
 
-        if TICI and (hw_state.network_info.get('state', None) == "REGISTERED"):
+        if TICI and (hw_state.network_info is not None) and (hw_state.network_info.get('state', None) == "REGISTERED"):
           registered_count += 1
         else:
           registered_count = 0
