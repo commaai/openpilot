@@ -93,7 +93,7 @@ if __name__ == "__main__":
   for i in tqdm(REPLAY_SEGS):
     log_url = f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2"
     lr = LogReader(log_url)
-    CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr.findAll(['can'])]
+    CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
 
 
   # set both to cycle ignition

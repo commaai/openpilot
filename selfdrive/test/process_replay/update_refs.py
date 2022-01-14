@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
   for car_brand, segment in segments:
     r, n = segment.rsplit("--", 1)
-    lr = LogReader(get_url(r, n), sort_by_time=True)
+    lr = LogReader(get_url(r, n))
 
     for cfg in CONFIGS:
       log_msgs = replay_process(cfg, lr)

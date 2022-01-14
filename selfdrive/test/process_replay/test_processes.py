@@ -162,7 +162,7 @@ if __name__ == "__main__":
     results[segment] = {}
 
     r, n = segment.rsplit("--", 1)
-    lr = LogReader(get_url(r, n), sort_by_time=True)
+    lr = LogReader(get_url(r, n))
 
     for cfg in CONFIGS:
       if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
