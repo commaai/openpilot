@@ -250,8 +250,8 @@ def thermald_thread(end_event, hw_queue):
 
     msg = read_thermal(thermal_config)
 
-    if sm.updated['pandaStates'] and len(pandaStates.pandaStates) > 0:
-      pandaState = pandaStates.pandaStates[0]
+    if sm.updated['pandaStates'] and len(pandaStates) > 0:
+      pandaState = pandaStates[0]
 
       if pandaState.pandaType != log.PandaState.PandaType.unknown:
         onroad_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
