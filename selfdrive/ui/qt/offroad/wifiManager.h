@@ -31,7 +31,7 @@ struct Network {
   ConnectedType connected;
   SecurityType security_type;
 };
-bool compare_network(const Network &a, const Network &b);
+bool compare_by_strength(const Network &a, const Network &b);
 
 class WifiManager : public QObject {
   Q_OBJECT
@@ -44,6 +44,7 @@ public:
   QMap<QString, Network> seenNetworks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QDBusObjectPath lteConnectionPath;
+  QString ipv4_address;
 
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
@@ -61,7 +62,6 @@ public:
   void addTetheringConnection();
   void changeTetheringPassword(const QString &newPassword);
   QString getTetheringPassword();
-  QString getIp4Address();
 
 private:
   QString adapter;  // Path to network manager wifi-device
@@ -74,6 +74,7 @@ private:
   QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
   bool isWirelessAdapter(const QDBusObjectPath &path);
+  QString get_ipv4_address();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString activeAp;
   void deactivateConnectionBySsid(const QString &ssid);

@@ -4,7 +4,7 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
 
-bool compare_network(const Network &a, const Network &b) {
+bool compare_by_strength(const Network &a, const Network &b) {
   if (a.connected == ConnectedType::CONNECTED) return true;
   if (b.connected == ConnectedType::CONNECTED) return false;
   if (a.connected == ConnectedType::CONNECTING) return true;
@@ -79,6 +79,7 @@ void WifiManager::refreshNetworks() {
   if (adapter.isEmpty() || !timer.isActive()) return;
 
   seenNetworks.clear();
+  ipv4_address = get_ipv4_address();
 
   QDBusReply<QList<QDBusObjectPath>> response = call(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "GetAllAccessPoints");
   for (const QDBusObjectPath &path : response.value()) {
@@ -106,7 +107,7 @@ void WifiManager::refreshNetworks() {
   emit refreshSignal();
 }
 
-QString WifiManager::getIp4Address() {
+QString WifiManager::get_ipv4_address() {
   if (raw_adapter_state != NM_DEVICE_STATE_ACTIVATED) {
     return "";
   }
