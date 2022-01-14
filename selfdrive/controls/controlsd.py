@@ -55,7 +55,7 @@ ButtonEvent = car.CarState.ButtonEvent
 SafetyModel = car.CarParams.SafetyModel
 
 IGNORED_SAFETY_MODES = [SafetyModel.silent, SafetyModel.noOutput]
-
+CSID_MAP = {"0": EventName.roadCameraError, "1": EventName.wideRoadCameraError, "2": EventName.driverCameraError}
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
@@ -311,24 +311,16 @@ class Controls:
       self.events.add(EventName.fcw)
 
     if TICI:
-      logs = messaging.drain_sock(self.log_sock, wait_for_one=False)
-      messages = []
-      for m in logs:
+      for m in  messaging.drain_sock(self.log_sock, wait_for_one=False):
         try:
-          messages.append(m.androidLog.message)
+          msg = m.androidLog.message
+          if any(err in msg for err in ("ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED")):
+            csid = msg.split("CSID:")[-1].split(" ")[0]
+            evt = CSID_MAP.get(csid, None)
+            if evt is not None:
+              self.events.add(evt)
         except UnicodeDecodeError:
           pass
-
-      for err in ("ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED"):
-        for m in messages:
-          if err not in m:
-            continue
-
-          csid = m.split("CSID:")[-1].split(" ")[0]
-          evt = {"0": EventName.roadCameraError, "1": EventName.wideRoadCameraError,
-                 "2": EventName.driverCameraError}.get(csid, None)
-          if evt is not None:
-            self.events.add(evt)
 
     # TODO: fix simulator
     if not SIMULATION:
