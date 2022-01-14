@@ -10,6 +10,7 @@
 #include "selfdrive/hardware/hw.h"
 
 const char *SWAGLOG_ADDR = "ipc:///tmp/logmessage";
+std::string daemon_name = "testy";
 std::string dongle_id = "test_dongle_id";
 
 void log_thread(int msg, int msg_cnt) {
@@ -43,9 +44,10 @@ void recv_log(void *zctx, int thread_cnt, int thread_msg_cnt) {
     REQUIRE(msg["levelnum"].int_value() == CLOUDLOG_DEBUG);
     REQUIRE_THAT(msg["filename"].string_value(), Catch::Contains("test_swaglog.cc"));
     REQUIRE(msg["funcname"].string_value() == "log_thread");
-    REQUIRE(msg["lineno"].int_value() == 17);
+    REQUIRE(msg["lineno"].int_value() == 18);  // TODO: do this automatically
 
     auto ctx = msg["ctx"];
+    REQUIRE(ctx["daemon"].string_value() == daemon_name);
     REQUIRE(ctx["dongle_id"].string_value() == dongle_id);
     REQUIRE(ctx["version"].string_value() == COMMA_VERSION);
     REQUIRE(ctx["dirty"].bool_value() == true);
@@ -68,6 +70,7 @@ void recv_log(void *zctx, int thread_cnt, int thread_msg_cnt) {
 }
 
 TEST_CASE("swaglog") {
+  setenv("MANAGER_DAEMON", daemon_name.c_str(), 1);
   setenv("DONGLE_ID", dongle_id.c_str(), 1);
   setenv("dirty", "1", 1);
   const int thread_cnt = 5;
