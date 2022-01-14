@@ -80,7 +80,7 @@ void MainWindow::closeSettings() {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-  const QSet<QEvent::Type> evts({QEvent::MouseButtonPress, QEvent::MouseMove,
+  const static QSet<QEvent::Type> evts({QEvent::MouseButtonPress, QEvent::MouseMove,
                                  QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
 
   if (evts.contains(event->type())) {
