@@ -159,7 +159,7 @@ def thermald_thread() -> NoReturn:
 
   pandaState_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
   pandaState_sock = messaging.sub_sock('pandaStates', timeout=pandaState_timeout)
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "managerState", "controlsState"])
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState"])
 
   fan_speed = 0
   count = 0
@@ -190,7 +190,6 @@ def thermald_thread() -> NoReturn:
   in_car = False
   handle_fan = None
   is_uno = False
-  ui_running_prev = False
   engaged_prev = False
 
   params = Params()
@@ -395,12 +394,6 @@ def thermald_thread() -> NoReturn:
       # TODO: add function for blocking cloudlog instead of sleep
       time.sleep(10)
       HARDWARE.shutdown()
-
-    # If UI has crashed, set the brightness to reasonable non-zero value
-    ui_running = "ui" in (p.name for p in sm["managerState"].processes if p.running)
-    if ui_running_prev and not ui_running:
-      HARDWARE.set_screen_brightness(20)
-    ui_running_prev = ui_running
 
     msg.deviceState.chargingError = current_filter.x > 0. and msg.deviceState.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.deviceState.started = started_ts is not None
