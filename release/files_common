@@ -255,6 +255,7 @@ selfdrive/hardware/base.py
 selfdrive/hardware/hw.h
 selfdrive/hardware/eon/__init__.py
 selfdrive/hardware/eon/androidd.py
+selfdrive/hardware/eon/shutdownd.py
 selfdrive/hardware/eon/hardware.h
 selfdrive/hardware/eon/hardware.py
 selfdrive/hardware/eon/neos.py
