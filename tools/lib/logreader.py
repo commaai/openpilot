@@ -27,7 +27,7 @@ class MultiLogIterator:
 
   def _inc(self):
     lr = self._log_reader(self._current_log)
-    if self._idx < len(lr) -1:
+    if self._idx < len(lr)-1:
       self._idx += 1
     else:
       self._idx = 0
