@@ -195,7 +195,7 @@ def hw_state_thread(end_event, hw_queue):
         cloudlog.exception("Error getting network status")
 
     count += 1
-    time.sleep(1)
+    time.sleep(DT_TRML)
 
 
 def thermald_thread(end_event, hw_queue):
