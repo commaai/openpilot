@@ -22,8 +22,8 @@ enum class NetworkType {
   ETHERNET
 };
 
-typedef QMap<QString, QMap<QString, QVariant>> Connection;
-typedef QVector<QMap<QString, QVariant>> IpConfig;
+typedef QMap<QString, QVariantMap> Connection;
+typedef QVector<QVariantMap> IpConfig;
 
 struct Network {
   QByteArray ssid;
@@ -78,11 +78,9 @@ private:
   QString get_ipv4_address();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString activeAp;
-  void initActiveAp();
   void deactivateConnectionBySsid(const QString &ssid);
   void deactivateConnection(const QDBusObjectPath &path);
-  QVector<QDBusObjectPath> get_active_connections();
-  uint get_wifi_device_state();
+  QVector<QDBusObjectPath> getActiveConnections();
   QByteArray get_property(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
@@ -90,6 +88,25 @@ private:
   Connection getConnectionSettings(const QDBusObjectPath &path);
   void initConnections();
   void setup();
+
+  template <typename T = QDBusMessage, typename... Args>
+  T call(const QString &path, const QString &interface, const QString &method, Args&&... args) {
+    QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, bus);
+    nm.setTimeout(DBUS_TIMEOUT);
+    QDBusMessage response = nm.call(method, args...);
+    if constexpr (std::is_same_v<T, QDBusMessage>) {
+      return response;
+    } else if (response.arguments().count() >= 1) {
+      QVariant vFirst = response.arguments().at(0).value<QDBusVariant>().variant();
+      if (vFirst.canConvert<T>()) {
+        return vFirst.value<T>();
+      }
+      QDebug critical = qCritical();
+      critical << "Variant unpacking failure :" << method << ',';
+      (critical << ... << args);
+    }
+    return T();
+  }
 
 signals:
   void wrongPassword(const QString &ssid);
