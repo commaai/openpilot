@@ -295,7 +295,7 @@ void WifiManager::updateGsmSettings(bool roaming, QString apn) {
   if (!lteConnectionPath.path().isEmpty()) {
     bool changes = false;
     bool auto_config = apn.isEmpty();
-    Connection settings = QDBusReply<Connection>(call(lteConnectionPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "GetSettings")).value();
+    Connection settings = getConnectionSettings(lteConnectionPath);
     if (settings.value("gsm").value("auto-config").toBool() != auto_config) {
       qWarning() << "Changing gsm.auto-config to" << auto_config;
       settings["gsm"]["auto-config"] = auto_config;
@@ -386,7 +386,7 @@ QString WifiManager::getTetheringPassword() {
 
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
   if (auto path = getConnectionPath(tethering_ssid)) {
-    Connection settings = QDBusReply<Connection>(call(path->path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "GetSettings")).value();
+    Connection settings = getConnectionSettings(*path);
     settings["802-11-wireless-security"]["psk"] = newPassword;
     call(path->path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
     if (isTetheringEnabled()) {
