@@ -320,7 +320,7 @@ void WifiUI::refresh() {
 
   const bool is_tethering_enabled = wifi->isTetheringEnabled();
   QList<Network> sortedNetworks = wifi->seenNetworks.values();
-  std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_network);
+  std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
   int cnt = 0;
   for (const Network &network : sortedNetworks) {
     WifiItem *item = nullptr;

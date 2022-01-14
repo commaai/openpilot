@@ -37,14 +37,7 @@ struct Network {
   SecurityType security_type;
   QString access_point;
 };
-inline bool compare_network(const Network &a, const Network &b) {
-  if (a.connected > b.connected) return true;
-  if (a.connected == b.connected) {
-    if (a.strength > b.strength) return true;
-    if (a.strength == b.strength && a.ssid > b.ssid) return true;
-  }
-  return false;
-}
+bool compare_by_strength(const Network &a, const Network &b);
 
 class WifiManager : public QObject {
   Q_OBJECT
@@ -88,35 +81,7 @@ private:
   void initConnections();
   void setup();
 
-  template <typename T = QDBusMessage, typename... Args>
-  T call(const QString &path, const QString &interface, const QString &method, Args&&... args) {
-    QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
-    QDBusMessage response = nm.call(method, args...);
-    if constexpr (std::is_same_v<T, QDBusMessage>) {
-      return response;
-    } else {
-      if (response.arguments().count() >= 1) {
-        QVariant vFirst = response.arguments().at(0).value<QDBusVariant>().variant();
-        if (vFirst.canConvert<T>()) {
-          return vFirst.value<T>();
-        }
-        QDebug critical = qCritical();
-        critical << "Variant unpacking failure :" << method << ',';
-        (critical << ... << args);
-      }
-      return T();
-    }
-  }
-
-  template <typename... Args>
-  QDBusPendingCall asyncCall(const QString &path, const QString &interface, const QString &method, Args &&...args) {
-    QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, bus);
-    return nm.asyncCall(method, args...);
-  }
-
   QString adapter;  // Path to network manager wifi-device
-  QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString connecting_to_network;
   QString tethering_ssid;

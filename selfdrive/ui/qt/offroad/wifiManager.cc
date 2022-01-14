@@ -8,6 +8,39 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/util.h"
 
+bool compare_by_strength(const Network &a, const Network &b) {
+  if (a.connected == ConnectedType::CONNECTED) return true;
+  if (b.connected == ConnectedType::CONNECTED) return false;
+  if (a.connected == ConnectedType::CONNECTING) return true;
+  if (b.connected == ConnectedType::CONNECTING) return false;
+  return a.strength > b.strength;
+}
+
+template <typename T = QDBusMessage, typename... Args>
+T call(const QString &path, const QString &interface, const QString &method, Args &&...args) {
+  QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, QDBusConnection::systemBus());
+  nm.setTimeout(DBUS_TIMEOUT);
+  QDBusMessage response = nm.call(method, args...);
+  if constexpr (std::is_same_v<T, QDBusMessage>) {
+    return response;
+  } else if (response.arguments().count() >= 1) {
+    QVariant vFirst = response.arguments().at(0).value<QDBusVariant>().variant();
+    if (vFirst.canConvert<T>()) {
+      return vFirst.value<T>();
+    }
+    QDebug critical = qCritical();
+    critical << "Variant unpacking failure :" << method << ',';
+    (critical << ... << args);
+  }
+  return T();
+}
+
+template <typename... Args>
+QDBusPendingCall asyncCall(const QString &path, const QString &interface, const QString &method, Args &&...args) {
+  QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, QDBusConnection::systemBus());
+  return nm.asyncCall(method, args...);
+}
+
 WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
@@ -22,21 +55,22 @@ WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   if (!adapter.isEmpty()) {
     setup();
   } else {
-    bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
+    QDBusConnection::systemBus().connect(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
   }
 
   timer.callOnTimeout(this, &WifiManager::requestScan);
 }
 
 void WifiManager::setup() {
+  auto bus = QDBusConnection::systemBus();
   bus.connect(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
   bus.connect(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_PROPERTIES, "PropertiesChanged", this, SLOT(propertyChange(QString, QVariantMap, QStringList)));
 
   bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "ConnectionRemoved", this, SLOT(connectionRemoved(QDBusObjectPath)));
   bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "NewConnection", this, SLOT(newConnection(QDBusObjectPath)));
 
-  activeAp = call<QDBusObjectPath>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint").path();
   raw_adapter_state = call<uint>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "State");
+  activeAp = call<QDBusObjectPath>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint").path();
 
   initConnections();
   requestScan();
@@ -174,17 +208,15 @@ uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
 }
 
 void WifiManager::requestScan() {
-  if (!adapter.isEmpty()) {
-    asyncCall(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
-  }
+  call(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
 }
 
-QByteArray WifiManager::getProperty(const QString &network_path, const QString &property) {
+QByteArray WifiManager::getProperty(const QString &network_path , const QString &property) {
   return call<QByteArray>(network_path, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACCESS_POINT, property);
 }
 
 QString WifiManager::getAdapter(const uint adapter_type) {
-  const QDBusReply<QList<QDBusObjectPath>> &response = call(NM_DBUS_PATH, NM_DBUS_INTERFACE, "GetDevices");
+  QDBusReply<QList<QDBusObjectPath>> response = call(NM_DBUS_PATH, NM_DBUS_INTERFACE, "GetDevices");
   for (const QDBusObjectPath &path : response.value()) {
     if (getAdapterType(path) == adapter_type) {
       return path.path();
@@ -227,7 +259,7 @@ void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
 }
 
 void WifiManager::newConnection(const QDBusObjectPath &path) {
-  const Connection &settings = getConnectionSettings(path);
+  Connection settings = getConnectionSettings(path);
   if (settings.value("connection").value("type") == "802-11-wireless") {
     knownConnections[path] = settings.value("802-11-wireless").value("ssid").toString();
     if (knownConnections[path] != tethering_ssid) {
@@ -248,7 +280,7 @@ Connection WifiManager::getConnectionSettings(const QDBusObjectPath &path) {
 void WifiManager::initConnections() {
   const QDBusReply<QList<QDBusObjectPath>> response = call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "ListConnections");
   for (const QDBusObjectPath &path : response.value()) {
-    const Connection &settings = getConnectionSettings(path);
+    const Connection settings = getConnectionSettings(path);
     if (settings.value("connection").value("type") == "802-11-wireless") {
       knownConnections[path] = settings.value("802-11-wireless").value("ssid").toString();
     } else if (path.path() != "/") {
