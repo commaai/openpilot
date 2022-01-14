@@ -64,6 +64,7 @@ void recv_log(void *zctx, int thread_cnt, int thread_msg_cnt) {
     thread_msgs[thread_id]++;
   }
   for (int i = 0; i < thread_cnt; ++i) {
+    INFO("thread :" << i);
     REQUIRE(thread_msgs[i] == thread_msg_cnt);
   }
   zmq_close(sock);
