@@ -65,6 +65,7 @@ private:
 
 protected:
   void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
 public slots:
   void refresh();
