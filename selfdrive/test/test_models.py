@@ -12,7 +12,6 @@ from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import HONDA_BOSCH, CAR as HONDA
-from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.test.test_routes import routes, non_tested_cars
 from selfdrive.test.openpilotci import get_url
@@ -31,11 +30,6 @@ ROUTES = {rt.car_fingerprint: rt.route for rt in routes}
 # TODO: get updated routes for these cars
 ignore_can_valid = [
   HYUNDAI.SANTA_FE,
-]
-
-ignore_carstate_check = [
-  # TODO: chrysler gas state in panda also checks wheel speed, refactor so it's only gas
-  CHRYSLER.PACIFICA_2017_HYBRID,
 ]
 
 ignore_addr_checks_valid = [
@@ -179,8 +173,6 @@ class TestCarModel(unittest.TestCase):
     """
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
-    if self.car_model in ignore_carstate_check:
-      self.skipTest("see comments in test_models.py")
 
     checks = defaultdict(lambda: 0)
     CC = car.CarControl.new_message()
