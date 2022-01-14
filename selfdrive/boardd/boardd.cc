@@ -420,6 +420,8 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
   // run at 2hz
   while (!do_exit && check_all_connected(pandas)) {
+    uint64_t start_time = nanos_since_boot();
+
     // send out peripheralState
     send_peripheral_state(pm, peripheral_panda);
     ignition = send_panda_states(pm, pandas, spoofing_started);
@@ -452,7 +454,9 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
     for (const auto &panda : pandas) {
       panda->send_heartbeat(engaged);
     }
-    util::sleep_for(500);
+
+    uint64_t dt = nanos_since_boot() - start_time;
+    util::sleep_for(500 - dt / 1000000ULL);
   }
 }
 
