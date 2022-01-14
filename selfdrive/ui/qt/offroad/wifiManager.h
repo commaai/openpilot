@@ -54,6 +54,8 @@ public:
   QMap<QDBusObjectPath, QString> knownConnections;
 
   explicit WifiManager(QObject *parent);
+  void start();
+  void stop();
   void requestScan();
   QString getIp4Address();
   void forgetConnection(const QString &ssid);
@@ -61,9 +63,9 @@ public:
   void activateWifiConnection(const QString &ssid);
   NetworkType currentNetworkType();
   void updateGsmSettings(bool roaming, QString apn);
-  void start();
-  void stop();
   void connect(const Network &ssid, const QString &password = {}, const QString &username = {});
+  void disconnect();
+
   // Tethering functions
   void setTetheringEnabled(bool enabled);
   bool isTetheringEnabled();

@@ -21,6 +21,7 @@ WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   } else {
     bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
   }
+
   timer.callOnTimeout(this, &WifiManager::requestScan);
 }
 
@@ -39,9 +40,6 @@ void WifiManager::setup() {
 }
 
 void WifiManager::start() {
-  if ((millis_since_boot() - last_scan_tm) > 5000) {
-    requestScan();
-  }
   timer.start(5000);
   refreshNetworks();
 }

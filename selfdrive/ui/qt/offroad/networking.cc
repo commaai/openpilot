@@ -99,11 +99,11 @@ void Networking::wrongPassword(const QString &ssid) {
   }
 }
 
-void Networking::showEvent(QShowEvent* event) {
+void Networking::showEvent(QShowEvent *event) {
   wifi->start();
 }
 
-void Networking::hideEvent(QHideEvent* event) {
+void Networking::hideEvent(QHideEvent *event) {
   wifi->stop();
 }
 

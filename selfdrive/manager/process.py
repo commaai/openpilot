@@ -48,7 +48,9 @@ def launcher(proc: str, name: str) -> None:
     raise
 
 
-def nativelauncher(pargs: List[str], cwd: str) -> None:
+def nativelauncher(pargs: List[str], cwd: str, name: str) -> None:
+  os.environ['MANAGER_DAEMON'] = name
+
   # exec the process
   os.chdir(cwd)
   os.execvp(pargs[0], pargs)
@@ -203,7 +205,7 @@ class NativeProcess(ManagerProcess):
 
     cwd = os.path.join(BASEDIR, self.cwd)
     cloudlog.info(f"starting process {self.name}")
-    self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd))
+    self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd, self.name))
     self.proc.start()
     self.watchdog_seen = False
     self.shutting_down = False

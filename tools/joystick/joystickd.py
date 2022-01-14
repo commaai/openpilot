@@ -73,7 +73,7 @@ def joystick_thread(use_keyboard):
 
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description='Publishes events from your joystick to control your car.\n'
+  parser = argparse.ArgumentParser(description='Publishes events from your joystick to control your car.\n' +
                                                'openpilot must be offroad before starting joysticked.',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument('--keyboard', action='store_true', help='Use your keyboard instead of a joystick')
@@ -85,11 +85,11 @@ if __name__ == '__main__':
 
   print()
   if args.keyboard:
-    print('Gas/brake control: `W` and `S` keys\n'
-          'Steering control: `A` and `D` keys')
-    print('Buttons:\n'
-          '- `R`: Resets axes\n'
-          '- `C`: Cancel cruise control')
+    print('Gas/brake control: `W` and `S` keys')
+    print('Steering control: `A` and `D` keys')
+    print('Buttons')
+    print('- `R`: Resets axes')
+    print('- `C`: Cancel cruise control')
   else:
     print('Using joystick, make sure to run cereal/messaging/bridge on your device if running over the network!')
 

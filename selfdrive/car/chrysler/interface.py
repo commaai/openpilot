@@ -60,8 +60,7 @@ class CarInterface(CarInterfaceBase):
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # events
-    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low],
-                                       gas_resume_speed=2.)
+    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
 
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
