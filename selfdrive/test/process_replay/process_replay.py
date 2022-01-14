@@ -156,7 +156,7 @@ def fingerprint(msgs, fsm, can_sock, fingerprint):
   fsm.wait_on_getitem = True
 
   # populate fake socket with data for fingerprinting
-  canmsgs = msgs.findAll(["can"])
+  canmsgs = [msg for msg in msgs if msg.which() == "can"]
   wait_for_event(can_sock.recv_called)
   can_sock.recv_called.clear()
   can_sock.data = [msg.as_builder().to_bytes() for msg in canmsgs[:300]]
@@ -183,7 +183,7 @@ def get_car_params(msgs, fsm, can_sock, fingerprint):
     can = FakeSocket(wait=False)
     sendcan = FakeSocket(wait=False)
 
-    canmsgs = msgs.findAll(["can"])
+    canmsgs = [msg for msg in msgs if msg.which() == 'can']
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan)
@@ -362,7 +362,8 @@ def python_replay_process(cfg, lr, fingerprint=None):
     can_sock = FakeSocket()
     args = (fsm, fpm, can_sock)
 
-  pub_msgs = lr.findAll(list(cfg.pub_sub.keys()))
+  all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
+  pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
   setup_env()
 
@@ -380,13 +381,14 @@ def python_replay_process(cfg, lr, fingerprint=None):
   else:
     os.environ['SKIP_FW_QUERY'] = ""
     os.environ['FINGERPRINT'] = ""
-    for msg in lr.findAll(['carParams']):
-      car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
-        Params().put("CarParamsCache", msg.carParams.as_builder().to_bytes())
-      else:
-        os.environ['SKIP_FW_QUERY'] = "1"
-        os.environ['FINGERPRINT'] = car_fingerprint
+    for msg in lr:
+      if msg.which() == 'carParams':
+        car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
+        if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
+          Params().put("CarParamsCache", msg.carParams.as_builder().to_bytes())
+        else:
+          os.environ['SKIP_FW_QUERY'] = "1"
+          os.environ['FINGERPRINT'] = car_fingerprint
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
@@ -399,7 +401,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
   if cfg.init_callback is not None:
     if 'can' not in list(cfg.pub_sub.keys()):
       can_sock = None
-    cfg.init_callback(lr, fsm, can_sock, fingerprint)
+    cfg.init_callback(all_msgs, fsm, can_sock, fingerprint)
 
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
@@ -442,7 +444,8 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(cfg.pub_sub.keys())
 
-  pub_msgs = [msg for msg in lr if msg.which() in list(cfg.pub_sub.keys())]
+  all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
+  pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
   log_msgs = []
 
   setup_env()

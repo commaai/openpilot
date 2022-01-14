@@ -78,7 +78,7 @@ class TestValgrind(unittest.TestCase):
     pm = messaging.PubMaster(pub_sockets)
     sm = messaging.SubMaster(sub_sockets)
 
-    pub_msgs = logreader.findAll(list(config.pub_sub.keys()))
+    pub_msgs = [msg for msg in logreader if msg.which() in list(config.pub_sub.keys())]
 
     thread = threading.Thread(target=self.valgrindlauncher, args=(config.command, config.path))
     thread.daemon = True
