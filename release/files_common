@@ -70,7 +70,7 @@ selfdrive/version.py
 
 selfdrive/__init__.py
 selfdrive/config.py
-selfdrive/crash.py
+selfdrive/sentry.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py

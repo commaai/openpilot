@@ -11,7 +11,7 @@ from multiprocessing import Process
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
 import cereal.messaging as messaging
-import selfdrive.crash as crash
+import selfdrive.sentry as sentry
 from common.basedir import BASEDIR
 from common.params import Params
 from common.realtime import sec_since_boot
@@ -44,7 +44,7 @@ def launcher(proc: str, name: str) -> None:
   except Exception:
     # can't install the crash handler because sys.excepthook doesn't play nice
     # with threads, so catch it here.
-    crash.capture_exception()
+    sentry.capture_exception()
     raise
 
 
