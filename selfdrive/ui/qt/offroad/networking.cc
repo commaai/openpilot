@@ -139,7 +139,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(editPasswordButton);
 
   // IP address
-  ipLabel = new LabelControl("IP Address");
+  ipLabel = new LabelControl("IP Address", wifi->ipv4_address);
   list->addItem(ipLabel);
 
   // SSH keys
@@ -178,11 +178,8 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addStretch(1);
 }
 
-void AdvancedNetworking::showEvent(QShowEvent *event) {
-  ipLabel->setText(wifi->getIp4Address());
-}
-
 void AdvancedNetworking::refresh() {
+  ipLabel->setText(wifi->ipv4_address);
   tetheringToggle->setEnabled(true);
   update();
 }

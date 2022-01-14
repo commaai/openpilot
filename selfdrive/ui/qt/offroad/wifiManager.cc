@@ -1,9 +1,5 @@
 #include "selfdrive/ui/qt/offroad/wifiManager.h"
 
-#include <arpa/inet.h>
-
-#include <QHostAddress>
-
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
@@ -94,6 +90,7 @@ void WifiManager::refreshNetworks() {
 }
 
 void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
+  ipv4_address = get_ipv4_address();
   seenNetworks.clear();
 
   const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
@@ -116,9 +113,26 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   watcher->deleteLater();
 }
 
-QString WifiManager::getIp4Address() {
-  uint address = call<uint>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "Ip4Address");
-  return QHostAddress(htonl(address)).toString();
+QString WifiManager::get_ipv4_address() {
+  if (raw_adapter_state != NM_DEVICE_STATE_ACTIVATED) {
+    return "";
+  }
+  for (const auto &p : getActiveConnections()) {
+    QString type = call<QString>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
+    if (type == "802-11-wireless") {
+      auto ip4config = call<QDBusObjectPath>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Ip4Config");
+      const auto &arr = call<QDBusArgument>(ip4config.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_IP4_CONFIG, "AddressData");
+      QVariantMap path;
+      arr.beginArray();
+      while (!arr.atEnd()) {
+        arr >> path;
+        arr.endArray();
+        return path.value("address").value<QString>();
+      }
+      arr.endArray();
+    }
+  }
+  return "";
 }
 
 SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
