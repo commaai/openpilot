@@ -1,6 +1,9 @@
 #include "selfdrive/ui/qt/offroad/wifiManager.h"
 
+#include <arpa/inet.h>
 #include <algorithm>
+
+#include <QHostAddress>
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/util.h"
@@ -58,10 +61,10 @@ void WifiManager::refreshNetworks() {
 
 void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   seenNetworks.clear();
-  const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
 
+  const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
   for (const QDBusObjectPath &path : wather_reply.value()) {
-    QDBusReply<QMap<QString, QVariant>> replay = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
+    QDBusReply<QVariantMap> replay = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
     auto properties = replay.value();
     const QByteArray ssid = properties["Ssid"].toByteArray();
     uint32_t strength = properties["Strength"].toUInt();
@@ -80,25 +83,11 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
 }
 
 QString WifiManager::getIp4Address() {
-  for (const auto &p : getActiveConnections()) {
-    QString type = call<QString>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
-    if (type == "802-11-wireless") {
-      auto ip4config = call<QDBusObjectPath>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Ip4Config");
-      const auto &arr = call<QDBusArgument>(ip4config.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_IP4_CONFIG, "AddressData");
-      QMap<QString, QVariant> pth2;
-      arr.beginArray();
-      while (!arr.atEnd()) {
-        arr >> pth2;
-        arr.endArray();
-        return pth2.value("address").value<QString>();
-      }
-      arr.endArray();
-    }
-  }
-  return "";
+  uint address = call<uint>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "Ip4Address");
+  return QHostAddress(htonl(address)).toString();
 }
 
-SecurityType WifiManager::getSecurityType(const QMap<QString, QVariant> &properties) {
+SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
   int sflag = properties["Flags"].toUInt();
   int wpaflag = properties["WpaFlags"].toUInt();
   int rsnflag = properties["RsnFlags"].toUInt();
@@ -187,7 +176,6 @@ uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
 void WifiManager::requestScan() {
   if (!adapter.isEmpty()) {
     asyncCall(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
-    last_scan_tm = millis_since_boot();
   }
 }
 
@@ -354,7 +342,7 @@ void WifiManager::addTetheringConnection() {
   connection["802-11-wireless-security"]["psk"] = defaultTetheringPassword;
 
   connection["ipv4"]["method"] = "shared";
-  QMap<QString, QVariant> address;
+  QVariantMap address;
   address["address"] = "192.168.43.1";
   address["prefix"] = 24u;
   connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
@@ -390,7 +378,7 @@ QString WifiManager::getTetheringPassword() {
     addTetheringConnection();
   }
   if (auto path = getConnectionPath(tethering_ssid)) {
-    const QDBusReply<QMap<QString, QMap<QString, QVariant>>> response = call(path->path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "GetSecrets", "802-11-wireless-security");
+    const QDBusReply<QMap<QString, QVariantMap>> response = call(path->path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "GetSecrets", "802-11-wireless-security");
     return response.value().value("802-11-wireless-security").value("psk").toString();
   }
   return "";

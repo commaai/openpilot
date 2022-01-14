@@ -27,8 +27,8 @@ enum class NetworkType {
   ETHERNET
 };
 
-typedef QMap<QString, QMap<QString, QVariant>> Connection;
-typedef QVector<QMap<QString, QVariant>> IpConfig;
+typedef QMap<QString, QVariantMap> Connection;
+typedef QVector<QVariantMap> IpConfig;
 
 struct Network {
   QByteArray ssid;
@@ -105,7 +105,6 @@ private:
         critical << "Variant unpacking failure :" << method << ',';
         (critical << ... << args);
       }
-
       return T();
     }
   }
@@ -125,12 +124,10 @@ private:
   QTimer timer;
   QString activeAp;
   QDBusObjectPath lteConnectionPath;
-  double last_scan_tm = 0;
 
 signals:
   void wrongPassword(const QString &ssid);
   void refreshSignal();
-  void ipAddressChanged(const QString &ip4_address);
 
 private slots:
   void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
