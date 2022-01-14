@@ -164,32 +164,20 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
   }
 }
 
-void WifiManager::connect(const Network &n) {
-  return connect(n, "", "");
-}
-
-void WifiManager::connect(const Network &n, const QString &password) {
-  return connect(n, "", password);
-}
-
-void WifiManager::connect(const Network &n, const QString &username, const QString &password) {
+void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
   connecting_to_network = n.ssid;
-  // disconnect();
-  forgetConnection(n.ssid); //Clear all connections that may already exist to the network we are connecting
-  connect(n.ssid, username, password, n.security_type);
-}
-
-void WifiManager::connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type) {
+  seenNetworks[n.ssid].connected = ConnectedType::CONNECTING;
+  forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-  connection["connection"]["id"] = "openpilot connection "+QString::fromStdString(ssid.toStdString());
+  connection["connection"]["id"] = "openpilot connection " + QString::fromStdString(n.ssid.toStdString());
   connection["connection"]["autoconnect-retries"] = 0;
 
-  connection["802-11-wireless"]["ssid"] = ssid;
+  connection["802-11-wireless"]["ssid"] = n.ssid;
   connection["802-11-wireless"]["mode"] = "infrastructure";
 
-  if (security_type == SecurityType::WPA) {
+  if (n.security_type == SecurityType::WPA) {
     connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
     connection["802-11-wireless-security"]["auth-alg"] = "open";
     connection["802-11-wireless-security"]["psk"] = password;
