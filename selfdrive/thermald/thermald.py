@@ -178,7 +178,7 @@ def hw_state_thread(end_event, hw_queue):
 
         try:
           hw_queue.put_nowait(hw_state)
-        except queue.Full():
+        except queue.Full:
           pass
 
         if TICI and (hw_state.network_info.get('state', None) == "REGISTERED"):
