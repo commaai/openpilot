@@ -10,6 +10,7 @@ from selfdrive.swaglog import cloudlog
 def main():
   params = Params()
   while True:
+    # 0 for shutdown, 1 for reboot
     prop = getprop("sys.shutdown.requested")
     if prop is not None and len(prop) > 0:
       os.system("pkill -9 loggerd")
