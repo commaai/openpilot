@@ -63,9 +63,9 @@ static void cloudlog_init() {
   if (dongle_id) {
     s.ctx_j["dongle_id"] = dongle_id;
   }
-  char* daemon = getenv("MANAGER_DAEMON");
-  if (daemon) {
-    s.ctx_j["daemon"] = daemon;
+  char* daemon_name = getenv("MANAGER_DAEMON");
+  if (daemon_name) {
+    s.ctx_j["daemon"] = daemon_name;
   }
   s.ctx_j["version"] = COMMA_VERSION;
   s.ctx_j["dirty"] = !getenv("CLEAN");
