@@ -212,7 +212,8 @@ def thermald_thread() -> NoReturn:
     if pandaStates is not None and len(pandaStates.pandaStates) > 0:
       pandaState = pandaStates.pandaStates[0]
 
-      onroad_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
+      if pandaState.pandaType != log.PandaState.PandaType.unknown:
+        onroad_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
 
       in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
       usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
