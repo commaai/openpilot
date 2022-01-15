@@ -233,10 +233,6 @@ QByteArray WifiManager::get_property(const QString &network_path , const QString
   return call<QByteArray>(network_path, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACCESS_POINT, property);
 }
 
-unsigned int WifiManager::get_ap_strength(const QString &network_path) {
-  return call<unsigned int>(network_path, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACCESS_POINT, "Strength");
-}
-
 QString WifiManager::getAdapter(const uint adapter_type) {
   QDBusReply<QList<QDBusObjectPath>> response = call(NM_DBUS_PATH, NM_DBUS_INTERFACE, "GetDevices");
   for (const QDBusObjectPath &path : response.value()) {
@@ -285,12 +281,6 @@ void WifiManager::newConnection(const QDBusObjectPath &path) {
     if (knownConnections[path] != tethering_ssid) {
       activateWifiConnection(knownConnections[path]);
     }
-  }
-}
-
-void WifiManager::disconnect() {
-  if (activeAp != "" && activeAp != "/") {
-    deactivateConnectionBySsid(get_property(activeAp, "Ssid"));
   }
 }
 

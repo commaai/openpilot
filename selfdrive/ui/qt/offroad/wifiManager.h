@@ -54,7 +54,6 @@ public:
   NetworkType currentNetworkType();
   void updateGsmSettings(bool roaming, QString apn);
   void connect(const Network &ssid, const QString &password = {}, const QString &username = {});
-  void disconnect();
 
   // Tethering functions
   void setTetheringEnabled(bool enabled);
@@ -81,7 +80,6 @@ private:
   void deactivateConnection(const QDBusObjectPath &path);
   QVector<QDBusObjectPath> getActiveConnections();
   QByteArray get_property(const QString &network_path, const QString &property);
-  unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QVariantMap &properties);
   QDBusObjectPath getConnectionPath(const QString &ssid);
   Connection getConnectionSettings(const QDBusObjectPath &path);
