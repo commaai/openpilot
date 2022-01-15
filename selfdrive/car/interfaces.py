@@ -11,6 +11,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
+from common.params import Params
 
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
@@ -32,7 +33,7 @@ class CarInterfaceBase(ABC):
     self.steering_unpressed = 0
     self.low_speed_alert = False
     self.silent_steer_warning = True
-    self.disengage_on_gas = params.get("DisengageOnGas", encoding='utf8')
+    self.disengage_on_gas = Params().get("DisengageOnGas", encoding='utf8')
 
     if CarState is not None:
       self.CS = CarState(CP)
