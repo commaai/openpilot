@@ -97,6 +97,7 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   for (const QDBusObjectPath &path : wather_reply.value()) {
     QDBusReply<QVariantMap> replay = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
     auto properties = replay.value();
+
     const QByteArray ssid = properties["Ssid"].toByteArray();
     uint32_t strength = properties["Strength"].toUInt();
     if (ssid.isEmpty() || (seenNetworks.contains(ssid) && strength <= seenNetworks[ssid].strength)) continue;
@@ -114,9 +115,8 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
 }
 
 QString WifiManager::get_ipv4_address() {
-  if (raw_adapter_state != NM_DEVICE_STATE_ACTIVATED) {
-    return "";
-  }
+  if (raw_adapter_state != NM_DEVICE_STATE_ACTIVATED) return "";
+
   for (const auto &p : getActiveConnections()) {
     QString type = call<QString>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
     if (type == "802-11-wireless") {
