@@ -295,12 +295,7 @@ void WifiManager::disconnect() {
 }
 
 QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
-  for (const QString &conn_ssid : knownConnections) {
-    if (ssid == conn_ssid) {
-      return knownConnections.key(conn_ssid);
-    }
-  }
-  return QDBusObjectPath();
+  return knownConnections.key(ssid);
 }
 
 Connection WifiManager::getConnectionSettings(const QDBusObjectPath &path) {
