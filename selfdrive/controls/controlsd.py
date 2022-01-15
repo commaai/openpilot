@@ -38,7 +38,8 @@ REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
 IGNORE_PROCESSES = {"rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned",
-                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad"} | \
+                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad",
+                    "statsd", "shutdownd"} | \
                     {k for k, v in managed_processes.items() if not v.enabled}
 
 ACTUATOR_FIELDS = set(car.CarControl.Actuators.schema.fields.keys())
@@ -54,7 +55,7 @@ ButtonEvent = car.CarState.ButtonEvent
 SafetyModel = car.CarParams.SafetyModel
 
 IGNORED_SAFETY_MODES = [SafetyModel.silent, SafetyModel.noOutput]
-
+CSID_MAP = {"0": EventName.roadCameraError, "1": EventName.wideRoadCameraError, "2": EventName.driverCameraError}
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
@@ -223,7 +224,7 @@ class Controls:
     #  self.events.add(EventName.highCpuUsage)
 
     # Alert if fan isn't spinning for 5 seconds
-    if self.sm['peripheralState'].pandaType in [PandaType.uno, PandaType.dos]:
+    if self.sm['peripheralState'].pandaType in (PandaType.uno, PandaType.dos):
       if self.sm['peripheralState'].fanSpeedRpm == 0 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
         if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
           self.events.add(EventName.fanMalfunction)
@@ -249,8 +250,8 @@ class Controls:
           self.events.add(EventName.preLaneChangeLeft)
         else:
           self.events.add(EventName.preLaneChangeRight)
-    elif self.sm['lateralPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
-                                                 LaneChangeState.laneChangeFinishing]:
+    elif self.sm['lateralPlan'].laneChangeState in (LaneChangeState.laneChangeStarting,
+                                                    LaneChangeState.laneChangeFinishing):
       self.events.add(EventName.laneChange)
 
       # TODO: JJS - figure out why - CS.canValid is false so much
@@ -312,24 +313,16 @@ class Controls:
       self.events.add(EventName.fcw)
 
     if TICI:
-      logs = messaging.drain_sock(self.log_sock, wait_for_one=False)
-      messages = []
-      for m in logs:
+      for m in  messaging.drain_sock(self.log_sock, wait_for_one=False):
         try:
-          messages.append(m.androidLog.message)
+          msg = m.androidLog.message
+          if any(err in msg for err in ("ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED")):
+            csid = msg.split("CSID:")[-1].split(" ")[0]
+            evt = CSID_MAP.get(csid, None)
+            if evt is not None:
+              self.events.add(evt)
         except UnicodeDecodeError:
           pass
-
-      for err in ["ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED"]:
-        for m in messages:
-          if err not in m:
-            continue
-
-          csid = m.split("CSID:")[-1].split(" ")[0]
-          evt = {"0": EventName.roadCameraError, "1": EventName.wideRoadCameraError,
-                 "2": EventName.driverCameraError}.get(csid, None)
-          if evt is not None:
-            self.events.add(evt)
 
     # TODO: fix simulator
     if not SIMULATION:
@@ -368,12 +361,13 @@ class Controls:
 
     self.sm.update(0)
 
-    all_valid = CS.canValid and self.sm.all_alive_and_valid()
-    if not self.initialized and (all_valid or self.sm.frame * DT_CTRL > 3.5 or SIMULATION):
-      if not self.read_only:
-        self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
-      self.initialized = True
-      Params().put_bool("ControlsReady", True)
+    if not self.initialized:
+      all_valid = CS.canValid and self.sm.all_alive_and_valid()
+      if all_valid or self.sm.frame * DT_CTRL > 3.5 or SIMULATION:
+        if not self.read_only:
+          self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+        self.initialized = True
+        Params().put_bool("ControlsReady", True)
 
     # Check for CAN timeout
     if not can_strs:
@@ -392,7 +386,7 @@ class Controls:
       self.mismatch_counter = 0
 
     # All pandas not in silent mode must have controlsAllowed when openpilot is enabled
-    if any(not ps.controlsAllowed and self.enabled for ps in self.sm['pandaStates']
+    if self.enabled and any(not ps.controlsAllowed for ps in self.sm['pandaStates']
            if ps.safetyModel not in IGNORED_SAFETY_MODES):
       self.mismatch_counter += 1
     else:
@@ -543,11 +537,12 @@ class Controls:
     if (lac_log.saturated and not CS.steeringPressed) or \
        (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
 
-      if len(lat_plan.dPathPoints):
+      dpath_points = lat_plan.dPathPoints
+      if len(dpath_points):
         # Check if we deviated from the path
         # TODO use desired vs actual curvature
-        left_deviation = actuators.steer > 0 and lat_plan.dPathPoints[0] < -0.20
-        right_deviation = actuators.steer < 0 and lat_plan.dPathPoints[0] > 0.20
+        left_deviation = actuators.steer > 0 and dpath_points[0] < -0.20
+        right_deviation = actuators.steer < 0 and dpath_points[0] > 0.20
 
         if left_deviation or right_deviation:
           self.events.add(EventName.steerSaturated)
@@ -566,7 +561,7 @@ class Controls:
 
   def update_button_timers(self, buttonEvents):
     # increment timer for buttons still pressed
-    for k in self.button_timers.keys():
+    for k in self.button_timers:
       if self.button_timers[k] > 0:
         self.button_timers[k] += 1
 

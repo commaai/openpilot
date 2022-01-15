@@ -11,6 +11,7 @@ import select
 import socket
 import threading
 import time
+import tempfile
 from collections import namedtuple
 from functools import partial
 from typing import Any
@@ -31,6 +32,7 @@ from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
 from selfdrive.version import get_version, get_origin, get_short_branch, get_commit
+from selfdrive.statsd import STATS_DIR
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -48,7 +50,7 @@ dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
 send_queue: Any = queue.Queue()
 upload_queue: Any = queue.Queue()
-log_send_queue: Any = queue.Queue()
+low_priority_send_queue: Any = queue.Queue()
 log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress'], defaults=(0, False, 0))
@@ -86,6 +88,7 @@ def handle_long_poll(ws):
     threading.Thread(target=ws_send, args=(ws, end_event), name='ws_send'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
     threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
+    threading.Thread(target=stat_handler, args=(end_event,), name='stat_handler'),
   ] + [
     threading.Thread(target=jsonrpc_handler, args=(end_event,), name=f'worker_{x}')
     for x in range(HANDLER_THREADS)
@@ -447,7 +450,7 @@ def log_handler(end_event):
               "jsonrpc": "2.0",
               "id": log_entry
             }
-            log_send_queue.put_nowait(json.dumps(jsonrpc))
+            low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
             curr_log = log_entry
         except OSError:
           pass  # file could be deleted by log rotation
@@ -476,6 +479,32 @@ def log_handler(end_event):
 
     except Exception:
       cloudlog.exception("athena.log_handler.exception")
+
+
+def stat_handler(end_event):
+  while not end_event.is_set():
+    last_scan = 0
+    curr_scan = sec_since_boot()
+    try:
+      if curr_scan - last_scan > 10:
+        stat_filenames = list(filter(lambda name: not name.startswith(tempfile.gettempprefix()), os.listdir(STATS_DIR)))
+        if len(stat_filenames) > 0:
+          stat_path = os.path.join(STATS_DIR, stat_filenames[0])
+          with open(stat_path) as f:
+            jsonrpc = {
+              "method": "storeStats",
+              "params": {
+                "stats": f.read()
+              },
+              "jsonrpc": "2.0",
+              "id": stat_filenames[0]
+            }
+            low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
+          os.remove(stat_path)
+        last_scan = curr_scan
+    except Exception:
+      cloudlog.exception("athena.stat_handler.exception")
+    time.sleep(0.1)
 
 
 def ws_proxy_recv(ws, local_sock, ssock, end_event, global_end_event):
@@ -550,7 +579,7 @@ def ws_send(ws, end_event):
       try:
         data = send_queue.get_nowait()
       except queue.Empty:
-        data = log_send_queue.get(timeout=1)
+        data = low_priority_send_queue.get(timeout=1)
       for i in range(0, len(data), WS_FRAME_SIZE):
         frame = data[i:i+WS_FRAME_SIZE]
         last = i + WS_FRAME_SIZE >= len(data)
