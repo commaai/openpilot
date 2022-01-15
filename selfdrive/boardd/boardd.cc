@@ -174,7 +174,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
 
     LOGW("panda %d: setting safety model: %d with param %d", i, (int)safety_model, safety_param);
 
-    panda->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
+    panda->set_unsafe_mode(p.getBool("DisengageOnGas") ? 0 : 1);  // see safety_declarations.h for allowed values
     panda->set_safety_model(safety_model, safety_param);
   }
 
