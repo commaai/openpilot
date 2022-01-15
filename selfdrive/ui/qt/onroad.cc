@@ -299,13 +299,19 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {
   if (!scene.end_to_end) {
     // lanelines
     for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
-      painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, scene.lane_line_probs[i]));
-      painter.drawPolygon(scene.lane_line_vertices[i].v, scene.lane_line_vertices[i].cnt);
+      float alpha = scene.lane_line_probs[i];
+      if (alpha > 0.01) {
+        painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, alpha));
+        painter.drawPolygon(scene.lane_line_vertices[i].v, scene.lane_line_vertices[i].cnt);
+      }
     }
     // road edges
     for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
-      painter.setBrush(QColor::fromRgbF(1.0, 0, 0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0)));
-      painter.drawPolygon(scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt);
+      float alpha = std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0);
+      if (alpha > 0.01) {
+        painter.setBrush(QColor::fromRgbF(1.0, 0, 0, alpha));
+        painter.drawPolygon(scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt);
+      }
     }
   }
   // paint path
