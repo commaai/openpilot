@@ -84,3 +84,9 @@ void CameraServer::pushFrame(CameraType type, FrameReader *fr, const cereal::Enc
   ++publishing_;
   cam.queue.push({fr, eidx});
 }
+
+void CameraServer::waitFinish() {
+  while (publishing_ > 0) {
+    std::this_thread::yield();
+  }
+}
