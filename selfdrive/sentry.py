@@ -42,7 +42,7 @@ def init(project: SentryProject) -> None:
   if not (is_comma_remote() and "commaai" in get_origin(default="")):
     return
 
-  env = "production" if is_tested_branch() else "master"
+  env = "release" if is_tested_branch() else "master"
   dongle_id = Params().get("DongleId", encoding='utf-8')
 
   integrations = []
