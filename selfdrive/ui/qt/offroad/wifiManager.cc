@@ -90,7 +90,7 @@ void WifiManager::refreshNetworks() {
 }
 
 void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
-  ipv4_address = get_ipv4_address();
+  ipv4_address = getIp4Address();
   seenNetworks.clear();
 
   const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
@@ -114,7 +114,7 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   watcher->deleteLater();
 }
 
-QString WifiManager::get_ipv4_address() {
+QString WifiManager::getIp4Address() {
   if (raw_adapter_state != NM_DEVICE_STATE_ACTIVATED) return "";
 
   for (const auto &p : getActiveConnections()) {
