@@ -180,4 +180,8 @@ def get_car(logcan, sendcan):
   car_params.fingerprintSource = source
   car_params.fuzzyFingerprint = not exact_match
 
+  CI = CarInterface(car_params, CarController, CarState)
+  if car_params.carName == "toyota":
+    car_params.safetyConfigs[0].safetyParam = CI.cp.toyota_eps_scale
+
   return CarInterface(car_params, CarController, CarState), car_params
