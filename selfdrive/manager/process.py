@@ -11,7 +11,7 @@ from multiprocessing import Process
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
 import cereal.messaging as messaging
-import selfdrive.crash as crash
+import selfdrive.sentry as sentry
 from common.basedir import BASEDIR
 from common.params import Params
 from common.realtime import sec_since_boot
@@ -44,11 +44,13 @@ def launcher(proc: str, name: str) -> None:
   except Exception:
     # can't install the crash handler because sys.excepthook doesn't play nice
     # with threads, so catch it here.
-    crash.capture_exception()
+    sentry.capture_exception()
     raise
 
 
-def nativelauncher(pargs: List[str], cwd: str) -> None:
+def nativelauncher(pargs: List[str], cwd: str, name: str) -> None:
+  os.environ['MANAGER_DAEMON'] = name
+
   # exec the process
   os.chdir(cwd)
   os.execvp(pargs[0], pargs)
@@ -67,6 +69,7 @@ class ManagerProcess(ABC):
   daemon = False
   sigkill = False
   persistent = False
+  driverview = False
   proc: Optional[Process] = None
   enabled = True
   name = ""
@@ -202,7 +205,7 @@ class NativeProcess(ManagerProcess):
 
     cwd = os.path.join(BASEDIR, self.cwd)
     cloudlog.info(f"starting process {self.name}")
-    self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd))
+    self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd, self.name))
     self.proc.start()
     self.watchdog_seen = False
     self.shutting_down = False
@@ -291,8 +294,7 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, driverview:
       p.stop(block=False)
     elif p.persistent:
       p.start()
-    elif getattr(p, 'driverview', False) and driverview:
-      # TODO: why is driverview an argument here? can this be done with the name?
+    elif p.driverview and driverview:
       p.start()
     elif started:
       p.start()

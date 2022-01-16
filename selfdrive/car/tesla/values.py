@@ -1,5 +1,3 @@
-# flake8: noqa
-
 from collections import namedtuple
 from selfdrive.car import dbc_dict
 from cereal import car

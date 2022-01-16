@@ -47,9 +47,11 @@ signals:
   void segmentChanged();
   void seekTo(int seconds, bool relative);
   void seekToFlag(FindFlag flag);
+  void stop();
 
 protected slots:
   void queueSegment();
+  void doStop();
   void doSeek(int seconds, bool relative);
   void doSeekToFlag(FindFlag flag);
   void segmentLoadFinished(bool sucess);
