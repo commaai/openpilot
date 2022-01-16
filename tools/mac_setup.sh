@@ -68,9 +68,6 @@ export CURL_SSL_BACKEND=secure-transport
 
 # openpilot environment
 if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
-  echo "export PATH=${BREW_PREFIX}/opt/openssl@3/bin:$"PATH"" >> $RC_FILE
-  echo "export PATH=${BREW_PREFIX}/opt/curl/bin:$"PATH"" >> $RC_FILE
-  echo "export CURL_SSL_BACKEND=secure-transport" >> $RC_FILE
   echo "source $ROOT/tools/openpilot_env.sh" >> $RC_FILE
   source "$ROOT/tools/openpilot_env.sh"
   echo "-- [✔] Added openpilot env params to RC file: $RC_FILE"
