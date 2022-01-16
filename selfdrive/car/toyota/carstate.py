@@ -28,9 +28,9 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    ret.doorOpen = any([cp.vl["SEATS_DOORS"]["DOOR_OPEN_FL"], cp.vl["SEATS_DOORS"]["DOOR_OPEN_FR"],
-                        cp.vl["SEATS_DOORS"]["DOOR_OPEN_RL"], cp.vl["SEATS_DOORS"]["DOOR_OPEN_RR"]])
-    ret.seatbeltUnlatched = cp.vl["SEATS_DOORS"]["SEATBELT_DRIVER_UNLATCHED"] != 0
+    ret.doorOpen = any([cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FR"],
+                        cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RR"]])
+    ret.seatbeltUnlatched = cp.vl["BODY_CONTROL_STATE"]["SEATBELT_DRIVER_UNLATCHED"] != 0
 
     ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
     ret.brakeHoldActive = cp.vl["ESP_CONTROL"]["BRAKE_HOLD_ACTIVE"] == 1
@@ -72,16 +72,16 @@ class CarState(CarStateBase):
 
     can_gear = int(cp.vl["GEAR_PACKET"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
-    ret.leftBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 1
-    ret.rightBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 2
+    ret.leftBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 1
+    ret.rightBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 2
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_EPS"]
     # we could use the override bit from dbc, but it's triggered at too high torque values
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
-    ret.steerWarning = cp.vl["EPS_STATUS"]["LKA_STATE"] not in [1, 5]
+    ret.steerWarning = cp.vl["EPS_STATUS"]["LKA_STATE"] not in (1, 5)
 
-    if self.CP.carFingerprint in [CAR.LEXUS_IS, CAR.LEXUS_RC]:
+    if self.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["DSU_CRUISE"]["SET_SPEED"] * CV.KPH_TO_MS
     else:
@@ -95,7 +95,7 @@ class CarState(CarStateBase):
     # these cars are identified by an ACC_TYPE value of 2.
     # TODO: it is possible to avoid the lockout and gain stop and go if you
     # send your own ACC_CONTROL msg on startup with ACC_TYPE set to 1
-    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint not in [CAR.LEXUS_IS, CAR.LEXUS_RC]) or \
+    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint not in (CAR.LEXUS_IS, CAR.LEXUS_RC)) or \
        (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
@@ -107,7 +107,7 @@ class CarState(CarStateBase):
     else:
       ret.cruiseState.standstill = self.pcm_acc_status == 7
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
-    ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in [1, 2, 3, 4, 5, 6]
+    ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
     ret.stockAeb = bool(cp_cam.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cam.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
@@ -135,11 +135,11 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
       ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
       ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
-      ("DOOR_OPEN_FL", "SEATS_DOORS", 1),
-      ("DOOR_OPEN_FR", "SEATS_DOORS", 1),
-      ("DOOR_OPEN_RL", "SEATS_DOORS", 1),
-      ("DOOR_OPEN_RR", "SEATS_DOORS", 1),
-      ("SEATBELT_DRIVER_UNLATCHED", "SEATS_DOORS", 1),
+      ("DOOR_OPEN_FL", "BODY_CONTROL_STATE", 1),
+      ("DOOR_OPEN_FR", "BODY_CONTROL_STATE", 1),
+      ("DOOR_OPEN_RL", "BODY_CONTROL_STATE", 1),
+      ("DOOR_OPEN_RR", "BODY_CONTROL_STATE", 1),
+      ("SEATBELT_DRIVER_UNLATCHED", "BODY_CONTROL_STATE", 1),
       ("TC_DISABLED", "ESP_CONTROL", 1),
       ("BRAKE_HOLD_ACTIVE", "ESP_CONTROL", 1),
       ("STEER_FRACTION", "STEER_ANGLE_SENSOR", 0),
@@ -150,7 +150,7 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
       ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
       ("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0),
-      ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
+      ("TURN_SIGNALS", "BLINKERS_STATE", 3),   # 3 is no blinkers
       ("LKA_STATE", "EPS_STATUS", 0),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
     ]
@@ -158,8 +158,8 @@ class CarState(CarStateBase):
     checks = [
       ("GEAR_PACKET", 1),
       ("LIGHT_STALK", 1),
-      ("STEERING_LEVERS", 0.15),
-      ("SEATS_DOORS", 3),
+      ("BLINKERS_STATE", 0.15),
+      ("BODY_CONTROL_STATE", 3),
       ("ESP_CONTROL", 3),
       ("EPS_STATUS", 25),
       ("BRAKE_MODULE", 40),
@@ -170,7 +170,7 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_SENSOR", 50),
     ]
 
-    if CP.carFingerprint in [CAR.LEXUS_IS, CAR.LEXUS_RC]:
+    if CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
       signals.append(("MAIN_ON", "DSU_CRUISE", 0))
       signals.append(("SET_SPEED", "DSU_CRUISE", 0))
       checks.append(("DSU_CRUISE", 5))

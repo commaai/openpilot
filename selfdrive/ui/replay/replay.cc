@@ -34,10 +34,15 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   qRegisterMetaType<FindFlag>("FindFlag");
   connect(this, &Replay::seekTo, this, &Replay::doSeek);
   connect(this, &Replay::seekToFlag, this, &Replay::doSeekToFlag);
+  connect(this, &Replay::stop, this, &Replay::doStop);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
 
 Replay::~Replay() {
+  doStop();
+}
+
+void Replay::doStop() {
   if (!stream_thread_ && segments_.empty()) return;
 
   qDebug() << "shutdown: in progress...";

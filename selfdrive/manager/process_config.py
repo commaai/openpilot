@@ -1,7 +1,7 @@
 import os
 
-from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 from selfdrive.hardware import EON, TICI, PC
+from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
@@ -36,9 +36,11 @@ procs = [
   PythonProcess("tombstoned", "selfdrive.tombstoned", enabled=not PC, persistent=True),
   PythonProcess("updated", "selfdrive.updated", enabled=not PC, persistent=True),
   PythonProcess("uploader", "selfdrive.loggerd.uploader", persistent=True),
+  PythonProcess("statsd", "selfdrive.statsd", persistent=True),
 
   # EON only
   PythonProcess("rtshield", "selfdrive.rtshield", enabled=EON),
+  PythonProcess("shutdownd", "selfdrive.hardware.eon.shutdownd", enabled=EON),
   PythonProcess("androidd", "selfdrive.hardware.eon.androidd", enabled=EON, persistent=True),
 ]
 

@@ -63,10 +63,7 @@ class Events:
     self.events = self.static_events.copy()
 
   def any(self, event_type: str) -> bool:
-    for e in self.events:
-      if event_type in EVENTS.get(e, {}).keys():
-        return True
-    return False
+    return any(event_type in EVENTS.get(e, {}) for e in self.events)
 
   def create_alerts(self, event_types: List[str], callback_args=None):
     if callback_args is None:
@@ -96,7 +93,7 @@ class Events:
     for event_name in self.events:
       event = car.CarEvent.new_message()
       event.name = event_name
-      for event_type in EVENTS.get(event_name, {}).keys():
+      for event_type in EVENTS.get(event_name, {}):
         setattr(event, event_type, True)
       ret.append(event)
     return ret
@@ -239,7 +236,7 @@ def calibration_incomplete_alert(CP: car.CarParams, sm: messaging.SubMaster, met
 
 
 def no_gps_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  gps_integrated = sm['peripheralState'].pandaType in [log.PandaState.PandaType.uno, log.PandaState.PandaType.dos]
+  gps_integrated = sm['peripheralState'].pandaType in (log.PandaState.PandaType.uno, log.PandaState.PandaType.dos)
   return Alert(
     "Poor GPS reception",
     "If sky is visible, contact support" if gps_integrated else "Check GPS antenna placement",
