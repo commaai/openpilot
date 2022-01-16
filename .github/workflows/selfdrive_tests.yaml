@@ -210,7 +210,8 @@ jobs:
     - name: Run valgrind
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 python selfdrive/test/test_valgrind_replay.py"
+                        FILEREADER_CACHE=1 python selfdrive/test/test_valgrind_replay.py \
+                        && cat selfdrive/test/valgrind_logs.txt"
     - name: Print logs
       if: always()
       run: cat selfdrive/test/valgrind_logs.txt
