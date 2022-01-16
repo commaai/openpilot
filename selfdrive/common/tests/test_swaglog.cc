@@ -12,10 +12,12 @@
 const char *SWAGLOG_ADDR = "ipc:///tmp/logmessage";
 std::string daemon_name = "testy";
 std::string dongle_id = "test_dongle_id";
+int LINE_NO = 0;
 
 void log_thread(int msg, int msg_cnt) {
   for (int i = 0; i < msg_cnt; ++i) {
     LOGD("%d", msg);
+    LINE_NO = __LINE__ - 1;
     usleep(1);
   }
 }
@@ -48,7 +50,7 @@ void recv_log(void *zctx, int thread_cnt, int thread_msg_cnt) {
     REQUIRE(msg["levelnum"].int_value() == CLOUDLOG_DEBUG);
     REQUIRE_THAT(msg["filename"].string_value(), Catch::Contains("test_swaglog.cc"));
     REQUIRE(msg["funcname"].string_value() == "log_thread");
-    REQUIRE(msg["lineno"].int_value() == 18);  // TODO: do this automatically
+    REQUIRE(msg["lineno"].int_value() == LINE_NO);
 
     auto ctx = msg["ctx"];
     REQUIRE(ctx["daemon"].string_value() == daemon_name);
