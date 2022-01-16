@@ -10,6 +10,9 @@ EventName = car.CarEvent.EventName
 
 
 class CarInterface(CarInterfaceBase):
+  def set_safety_param(self, CP):
+    CP.safetyConfigs[0].safetyParam = self.cp.toyota_eps_scale
+
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
