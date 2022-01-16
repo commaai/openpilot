@@ -155,8 +155,8 @@ class TestValgrind(unittest.TestCase):
   def valgrindlauncher(self, arg, cwd):
     os.chdir(os.path.join(BASEDIR, cwd))
     # Run valgrind on a process
-    #supp_path = os.path.join(BASEDIR, "selfdrive/test/suppressions.supp")
-    command = "valgrind --leak-check=full --gen-suppressions=all " + arg
+    supp_path = os.path.join(BASEDIR, "selfdrive/test/suppressions.supp")
+    command = "valgrind --leak-check=full --suppressions= " + supp_path + " " + arg
     p = subprocess.Popen(command, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid)  # pylint: disable=W1509
 
     while not self.replay_done:
