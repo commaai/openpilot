@@ -1,8 +1,8 @@
 #include <zmq.h>
+
 #include <iostream>
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
-
 #include "json11.hpp"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
@@ -23,7 +23,7 @@ void log_thread(int msg, int msg_cnt) {
 void send_stop_msg(void *zctx) {
   void *sock = zmq_socket(zctx, ZMQ_PUSH);
   zmq_connect(sock, SWAGLOG_ADDR);
-  zmq_send(sock, "", 0, ZMQ_NOBLOCK);
+  zmq_send(sock, "stop", 4, ZMQ_NOBLOCK);
   zmq_close(sock);
 }
 
@@ -34,7 +34,11 @@ void recv_log(void *zctx, int thread_cnt, int thread_msg_cnt) {
 
   while (true) {
     char buf[4096] = {};
-    if (zmq_recv(sock, buf, sizeof(buf), 0) == 0) break;
+    if (zmq_recv(sock, buf, sizeof(buf), 0) < 0) {
+      if (errno == EAGAIN || errno == EINTR || errno == EFSM) continue;
+      break;
+    }
+    if (strcmp(buf, "stop") == 0) break;
 
     REQUIRE(buf[0] == CLOUDLOG_DEBUG);
     std::string err;
@@ -79,12 +83,13 @@ TEST_CASE("swaglog") {
 
   void *zctx = zmq_ctx_new();
   send_stop_msg(zctx);
+
   std::vector<std::thread> log_threads;
   for (int i = 0; i < thread_cnt; ++i) {
     log_threads.push_back(std::thread(log_thread, i, thread_msg_cnt));
   }
-
   for (auto &t : log_threads) t.join();
+
   recv_log(zctx, thread_cnt, thread_msg_cnt);
   zmq_ctx_destroy(zctx);
 }
