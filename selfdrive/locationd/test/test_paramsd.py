@@ -6,7 +6,6 @@ import unittest
 import cereal.messaging as messaging
 from cereal import car
 from common.params import Params
-from selfdrive.locationd.paramsd import load_params
 
 
 class TestPramsd(unittest.TestCase):
@@ -24,13 +23,14 @@ class TestPramsd(unittest.TestCase):
     Params().put("LiveParameters", json.dumps(
         {'carFingerprint': cp.carFingerprint, 'parameters': msg.to_dict()}))
 
+    from selfdrive.locationd.paramsd import load_params
     params = load_params(cp, 0, 1)
-
-    Params().delete('LiveParameters')
 
     self.assertEqual(params.steerRatio, liveParameters.steerRatio)
     self.assertEqual(params.stiffnessFactor, liveParameters.stiffnessFactor)
     self.assertEqual(params.angleOffsetAverageDeg, liveParameters.angleOffsetAverageDeg)
+
+    Params().delete('LiveParameters')
 
 
 if __name__ == "__main__":
