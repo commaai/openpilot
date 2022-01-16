@@ -146,6 +146,7 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
     'STEERING_REQUIRED': hud.steer_required,
     'SOLID_LANES' : hud.lanes,
     'LANE_LINES': 3,
+    'DASHED_LANES': 1,
     'BEEP': 0,
   }
 
