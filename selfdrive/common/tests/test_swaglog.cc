@@ -1,8 +1,8 @@
 #include <zmq.h>
-
 #include <iostream>
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
+
 #include "json11.hpp"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
@@ -36,7 +36,7 @@ void recv_log(void *zctx, int thread_cnt, int thread_msg_cnt) {
 
   while (true) {
     char buf[4096] = {};
-    if (zmq_recv(sock, buf, sizeof(buf), 0) < 0) {
+    if (zmq_recv(sock, buf, sizeof(buf), 0) <= 0) {
       if (errno == EAGAIN || errno == EINTR || errno == EFSM) continue;
       break;
     }
