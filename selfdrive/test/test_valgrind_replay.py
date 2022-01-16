@@ -73,6 +73,17 @@ CONFIGS = [
     segment="0375fdf7b1ce594d|2019-06-13--08-32-25--3",
     wait_for_response=True
    ),
+  ProcessConfig(
+    proc_name="dmonitoringmodeld",
+    pub=service_list,
+    sub=service_list,
+    ignore=[],
+    command="./dmonitoringmodeld",
+    path="selfdrive/modeld/",
+    segment="0375fdf7b1ce594d|2019-06-13--08-32-25--3",
+    wait_for_response=True
+   ),
+
 ]
 
 
