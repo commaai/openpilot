@@ -6,7 +6,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, TSS2_CAR
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR
 
 
 class CarState(CarStateBase):
@@ -100,7 +100,12 @@ class CarState(CarStateBase):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
-    ret.cruiseState.standstill = self.pcm_acc_status == 7
+    if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
+      # ignore standstill in hybrid vehicles, since pcm allows to restart without
+      # receiving any special command. Also if interceptor is detected
+      ret.cruiseState.standstill = False
+    else:
+      ret.cruiseState.standstill = self.pcm_acc_status == 7
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
     ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
 
