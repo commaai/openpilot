@@ -44,7 +44,6 @@ class CarInterfaceBase(ABC):
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
 
-  @abstractmethod
   def set_safety_param(self, CP: car.CarParams) -> None:
     pass
 
