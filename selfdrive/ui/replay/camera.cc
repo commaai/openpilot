@@ -77,7 +77,7 @@ void CameraServer::pushFrame(CameraType type, FrameReader *fr, const cereal::Enc
   if (cam.width != fr->width || cam.height != fr->height) {
     cam.width = fr->width;
     cam.height = fr->height;
-    waitFinish();
+    waitForSent();
     startVipcServer();
   }
 
@@ -85,7 +85,7 @@ void CameraServer::pushFrame(CameraType type, FrameReader *fr, const cereal::Enc
   cam.queue.push({fr, eidx});
 }
 
-void CameraServer::waitFinish() {
+void CameraServer::waitForSent() {
   while (publishing_ > 0) {
     std::this_thread::yield();
   }
