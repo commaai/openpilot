@@ -18,20 +18,123 @@ from tools.lib.logreader import LogReader
 from selfdrive.test.openpilotci import get_url
 from common.basedir import BASEDIR
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'command', 'path', 'segment', 'wait_for_response'])
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub', 'sub', 'ignore', 'command', 'path', 'segment', 'wait_for_response'])
 
 CONFIGS = [
   ProcessConfig(
     proc_name="ubloxd",
-    pub_sub={
-      "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
-    },
+    pub=["ubloxRaw"],
+    sub=["ubloxGnss", "gpsLocationExternal"],
     ignore=[],
     command="./ubloxd",
     path="selfdrive/locationd/",
     segment="0375fdf7b1ce594d|2019-06-13--08-32-25--3",
     wait_for_response=True
   ),
+  ProcessConfig(
+    proc_name="logcatd",
+    pub=["androidLog"],
+    sub=["androidLog"],
+    ignore=[],
+    command="./logcatd",
+    path="selfdrive/logcatd/",
+    segment="0375fdf7b1ce594d|2019-06-13--08-32-25--3",
+    wait_for_response=True
+  ),
+  ProcessConfig(
+    proc_name="loggerd",
+    pub=["sensorEvents",
+      "gpsNMEA",
+      "deviceState",
+      "can",
+      "controlsState",
+      "pandaStates",
+      "peripheralState",
+      "radarState",
+      "roadEncodeIdx",
+      "liveTracks",
+      "sendcan",
+      "logMessage",
+      "liveCalibration",
+      "androidLog",
+      "carState",
+      "carControl",
+      "longitudinalPlan",
+      "procLog",
+      "gpsLocationExternal",
+      "ubloxGnss",
+      "clocks",
+      "ubloxRaw",
+      "liveLocationKalman",
+      "liveParameters",
+      "cameraOdometry",
+      "lateralPlan",
+      "thumbnail",
+      "carEvents",
+      "carParams",
+      "roadCameraState",
+      "driverCameraState",
+      "driverEncodeIdx",
+      "driverState",
+      "driverMonitoringState",
+      "wideRoadEncodeIdx",
+      "wideRoadCameraState",
+      "modelV2",
+      "managerState",
+      "uploaderState",
+      "navInstruction",
+      "navRoute",
+      "navThumbnail",
+      "testJoystick"],
+    sub=["sensorEvents",
+      "gpsNMEA",
+      "deviceState",
+      "can",
+      "controlsState",
+      "pandaStates",
+      "peripheralState",
+      "radarState",
+      "roadEncodeIdx",
+      "liveTracks",
+      "sendcan",
+      "logMessage",
+      "liveCalibration",
+      "androidLog",
+      "carState",
+      "carControl",
+      "longitudinalPlan",
+      "procLog",
+      "gpsLocationExternal",
+      "ubloxGnss",
+      "clocks",
+      "ubloxRaw",
+      "liveLocationKalman",
+      "liveParameters",
+      "cameraOdometry",
+      "lateralPlan",
+      "thumbnail",
+      "carEvents",
+      "carParams",
+      "roadCameraState",
+      "driverCameraState",
+      "driverEncodeIdx",
+      "driverState",
+      "driverMonitoringState",
+      "wideRoadEncodeIdx",
+      "wideRoadCameraState",
+      "modelV2",
+      "managerState",
+      "uploaderState",
+      "navInstruction",
+      "navRoute",
+      "navThumbnail",
+      "testJoystick"],
+     ignore=[],
+     command="./loggerd",
+     path="selfdrive/loggerd/",
+     segment="0375fdf7b1ce594d|2019-06-13--08-32-25--3",
+     wait_for_response=True
+   ),
 ]
 
 
@@ -52,7 +155,8 @@ class TestValgrind(unittest.TestCase):
   def valgrindlauncher(self, arg, cwd):
     os.chdir(os.path.join(BASEDIR, cwd))
     # Run valgrind on a process
-    command = "valgrind --leak-check=full " + arg
+    #supp_path = os.path.join(BASEDIR, "selfdrive/test/suppressions.supp")
+    command = "valgrind --leak-check=full --gen-suppressions=all " + arg
     p = subprocess.Popen(command, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid)  # pylint: disable=W1509
 
     while not self.replay_done:
@@ -73,20 +177,18 @@ class TestValgrind(unittest.TestCase):
       self.leak = False
 
   def replay_process(self, config, logreader):
-    pub_sockets = [s for s in config.pub_sub.keys()]  # We dump data from logs here
-    sub_sockets = [s for _, sub in config.pub_sub.items() for s in sub]  # We get responses here
-    pm = messaging.PubMaster(pub_sockets)
-    sm = messaging.SubMaster(sub_sockets)
+    pm = messaging.PubMaster(config.pub) # We dump data from logs here
+    sm = messaging.SubMaster(config.sub) # We get responses here
 
     print("Sorting logs")
     all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
-    pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
+    pub_msgs = [msg for msg in all_msgs if msg.which() in config.pub]
 
     thread = threading.Thread(target=self.valgrindlauncher, args=(config.command, config.path))
     thread.daemon = True
     thread.start()
 
-    while not all(pm.all_readers_updated(s) for s in config.pub_sub.keys()):
+    while not all(pm.all_readers_updated(s) for s in config.pub):
       time.sleep(0)
 
     for msg in tqdm(pub_msgs):
