@@ -7,12 +7,13 @@ ROOT="$(cd $DIR/../ && pwd)"
 
 # Install brew if required
 if [[ $(command -v brew) == "" ]]; then
-  echo "Installing Hombrew"
+  echo "-- Installing Hombrew"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-  echo "[ ] installed brew t=$SECONDS"
+  echo "-- [✔] installed brew t=$SECONDS"
 fi
 
 # TODO: remove protobuf,protobuf-c,swig when casadi can be pip installed
+echo "-- installing brew packages ..."
 brew bundle --file=- <<-EOS
 brew "cmake"
 brew "cppcheck"
@@ -28,8 +29,8 @@ brew "libarchive"
 brew "libusb"
 brew "libtool"
 brew "llvm"
+brew "curl"`
 brew "openssl"
-brew "pyenv"
 brew "qt@5"
 brew "zeromq"
 brew "protobuf"
@@ -38,7 +39,7 @@ brew "swig"
 cask "gcc-arm-embedded"
 EOS
 
-echo "[ ] finished brew install t=$SECONDS"
+echo "-- [✔] finished brew install t=$SECONDS"
 
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
@@ -46,26 +47,39 @@ elif [[ $SHELL == "/bin/bash" ]]; then
   RC_FILE="$HOME/.bash_profile"
 fi
 
-export LDFLAGS="$LDFLAGS -L/usr/local/opt/zlib/lib"
-export LDFLAGS="$LDFLAGS -L/usr/local/opt/bzip2/lib"
-export LDFLAGS="$LDFLAGS -L/usr/local/opt/openssl@1.1/lib"
-export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/zlib/include"
-export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/bzip2/include"
-export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/openssl@1.1/include"
-export PATH="$PATH:/usr/local/opt/openssl@1.1/bin"
-export PATH="$PATH:/usr/local/bin"
+BREW_PREFIX=$(brew --prefix)
+
+# archive backend tools for pip dependencies
+export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/zlib/lib"
+export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/bzip2/lib"
+export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/zlib/include"
+export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/bzip2/include"
+
+# pycurl curl/openssl backend dependencies
+export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/openssl@3/lib"
+export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/curl/lib"
+export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/openssl@3/include"
+export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/curl/include"
+export PATH="${BREW_PREFIX}/opt/openssl@3/bin:$PATH"
+export PATH="${BREW_PREFIX}/opt/curl/bin:$PATH"
+
+# newer (brew-installed) curl doesn't use LibreSSL backend
+export CURL_SSL_BACKEND=secure-transport
 
 # openpilot environment
 if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
+  echo "export PATH=${BREW_PREFIX}/opt/openssl@3/bin:$"PATH"" >> $RC_FILE
+  echo "export PATH=${BREW_PREFIX}/opt/curl/bin:$"PATH"" >> $RC_FILE
+  echo "export CURL_SSL_BACKEND=secure-transport" >> $RC_FILE
   echo "source $ROOT/tools/openpilot_env.sh" >> $RC_FILE
   source "$ROOT/tools/openpilot_env.sh"
-  echo "Added openpilot_env to RC file: $RC_FILE"
+  echo "-- [✔] Added openpilot env params to RC file: $RC_FILE"
 fi
 
-# install python dependencies
+# install python & dependencies
 $ROOT/update_requirements.sh
 eval "$(pyenv init --path)"
-echo "[ ] installed python dependencies t=$SECONDS"
+echo "-- [✔] installed python dependencies t=$SECONDS"
 
 # install casadi
 VENV=`pipenv --venv`
@@ -86,6 +100,7 @@ if [ ! -f "$VENV/include/casadi/casadi.hpp" ]; then
     -DPYTHON_INCLUDE_DIR:PATH=$HOME/.pyenv/versions/$PYTHON_VERSION/include/python$PYTHON_VER \
     -DCMAKE_CXX_FLAGS="-ferror-limit=0" -DCMAKE_C_FLAGS="-ferror-limit=0"
   CFLAGS="-ferror-limit=0" make -j$(nproc) && make install
+  echo "-- [✔] installed casadi t=$SECONDS"
 else
   echo "----   casadi found in venv. skipping build   ----"
 fi
