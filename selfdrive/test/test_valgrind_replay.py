@@ -13,54 +13,14 @@ else:
   from tqdm import tqdm   # type: ignore
 
 import cereal.messaging as messaging
+import cereal.services as services
 from collections import namedtuple
 from tools.lib.logreader import LogReader
 from selfdrive.test.openpilotci import get_url
 from common.basedir import BASEDIR
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub', 'sub', 'ignore', 'command', 'path', 'segment', 'wait_for_response'])
-services = ["sensorEvents",
-      "gpsNMEA",
-      "deviceState",
-      "can",
-      "controlsState",
-      "pandaStates",
-      "peripheralState",
-      "radarState",
-      "roadEncodeIdx",
-      "liveTracks",
-      "sendcan",
-      "logMessage",
-      "liveCalibration",
-      "androidLog",
-      "carState",
-      "carControl",
-      "longitudinalPlan",
-      "gpsLocationExternal",
-      "ubloxGnss",
-      "clocks",
-      "ubloxRaw",
-      "liveLocationKalman",
-      "liveParameters",
-      "cameraOdometry",
-      "lateralPlan",
-      "thumbnail",
-      "carEvents",
-      "carParams",
-      "roadCameraState",
-      "driverCameraState",
-      "driverEncodeIdx",
-      "driverState",
-      "driverMonitoringState",
-      "wideRoadEncodeIdx",
-      "wideRoadCameraState",
-      "modelV2",
-      "managerState",
-      "uploaderState",
-      "navInstruction",
-      "navRoute",
-      "navThumbnail",
-      "testJoystick"]
+service_list= services.services.keys()
 
 CONFIGS = [
   ProcessConfig(
@@ -75,8 +35,8 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="logcatd",
-    pub=list(set(services) - set(["androidLog"])),
-    sub=services,
+    pub=list(set(service_list) - set(["androidLog"])),
+    sub=service_list,
     ignore=[],
     command="./logcatd",
     path="selfdrive/logcatd/",
@@ -85,8 +45,8 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="proclogd",
-    pub=services,
-    sub=services,
+    pub=list(set(service_list) - set(["procLog"])),
+    sub=service_list,
     ignore=[],
     command="./proclogd",
     path="selfdrive/proclogd/",
@@ -95,8 +55,8 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="loggerd",
-    pub=services,
-    sub=services, 
+    pub=service_list,
+    sub=service_list,
     ignore=[],
     command="./loggerd",
     path="selfdrive/loggerd/",
