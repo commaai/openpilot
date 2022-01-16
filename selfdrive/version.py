@@ -79,6 +79,8 @@ def is_prebuilt() -> bool:
 
 @cache
 def is_comma_remote() -> bool:
+  # note to fork maintainers, this is used for release metrics. please do not
+  # touch this to get rid of the orange startup alert. there's better ways to do that
   origin = get_origin()
   if origin is None:
     return False
