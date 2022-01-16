@@ -29,7 +29,7 @@ brew "libarchive"
 brew "libusb"
 brew "libtool"
 brew "llvm"
-brew "curl"`
+brew "curl"
 brew "openssl"
 brew "qt@5"
 brew "zeromq"
