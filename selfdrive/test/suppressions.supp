@@ -94,5 +94,23 @@
    fun:_dl_sysdep_start
    fun:_dl_start_final
    fun:_dl_start
-   obj:/usr/lib/x86_64-linux-gnu/ld-2.31.so
+   obj:*
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Jump
+   obj:*
+   fun:__open_nocancel
+   fun:open_verify.constprop.0
+   fun:open_path
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_main
+   fun:_dl_sysdep_start
+   fun:_dl_start_final
+   fun:_dl_start
+   obj:*
 }
