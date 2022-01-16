@@ -14,9 +14,9 @@ std::string daemon_name = "testy";
 std::string dongle_id = "test_dongle_id";
 int LINE_NO = 0;
 
-void log_thread(int msg, int msg_cnt) {
+void log_thread(int thread_id, int msg_cnt) {
   for (int i = 0; i < msg_cnt; ++i) {
-    LOGD("%d", msg);
+    LOGD("%d", thread_id);
     LINE_NO = __LINE__ - 1;
     usleep(1);
   }
