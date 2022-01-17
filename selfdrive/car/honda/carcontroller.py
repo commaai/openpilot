@@ -5,7 +5,7 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
 from selfdrive.car import create_gas_interceptor_command
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_NIDEC_ALT_PCM_ACCEL, HONDA_RADARLESS, CarControllerParams
+from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -95,9 +95,6 @@ HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise", "car",
                      "lanes", "fcw", "acc_alert", "steer_required"])
 
-AHUDData = namedtuple("AHUDData",
-                      ["lanes"])
-
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.braking = False
@@ -158,18 +155,6 @@ class CarController():
 
     # Send CAN commands.
     can_sends = []
-
-    # 2022 Honda Civic LKAS HUD
-    if CS.CP.carFingerprint in HONDA_RADARLESS:
-      if hud_show_lanes:
-        hud_lanes = 3
-      else:
-        hud_lanes = 0
-
-      if (frame % 20) == 0:
-        idx = frame // 5
-        hud = AHUDData(hud_lanes)
-        can_sends.append(hondacan.create_lkas_command(self.packer, hud, CS.lkas_hud_2, idx))
 
     # tester present - w/ no response (keeps radar disabled)
     if CS.CP.carFingerprint in HONDA_BOSCH and CS.CP.openpilotLongitudinalControl:

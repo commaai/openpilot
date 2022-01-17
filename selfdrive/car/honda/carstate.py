@@ -329,7 +329,6 @@ class CarState(CarStateBase):
       ret.stockFcw = False
     elif self.CP.carFingerprint in HONDA_RADARLESS:
       self.stock_hud = cp_cam.vl["ACC_HUD"]
-      self.lkas_hud_2 = cp_cam.vl["LKAS_HUD_2"]
       ret.stockFcw = False
     else:
       ret.stockFcw = cp_cam.vl["BRAKE_COMMAND"]["FCW"] != 0
@@ -359,15 +358,9 @@ class CarState(CarStateBase):
     if CP.carFingerprint in HONDA_RADARLESS:
       signals += [("CRUISE_SPEED", "ACC_HUD", 255),
                   ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
-                  ("RIGHT_LANE", "LKAS_HUD_2" , 0),
-                  ("LEFT_LANE", "LKAS_HUD_2", 0),
-                  ("COUNTER_2", "LKAS_HUD_2", 0),
-                  ("LKAS_BOH_1", "LKAS_HUD_2", 0),
-                  ("LKAS_BOH_2", "LKAS_HUD_2", 0),
               ]
       checks += [
         ("ACC_HUD", 10),
-        ("LKAS_HUD_2", 5),
       ]
 
     elif CP.carFingerprint not in HONDA_BOSCH:
