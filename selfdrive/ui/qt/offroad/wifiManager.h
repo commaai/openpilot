@@ -37,29 +37,24 @@ class WifiManager : public QObject {
   Q_OBJECT
 
 public:
+  QMap<QString, Network> seenNetworks;
+  QMap<QDBusObjectPath, QString> knownConnections;
+  QString ipv4_address;
+
   explicit WifiManager(QObject* parent);
   void start();
   void stop();
   void requestScan();
-  QMap<QString, Network> seenNetworks;
-  QMap<QDBusObjectPath, QString> knownConnections;
-  QDBusObjectPath lteConnectionPath;
-  QString ipv4_address;
-
-  void refreshNetworks();
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
-  void activateModemConnection(const QDBusObjectPath &path);
   NetworkType currentNetworkType();
   void updateGsmSettings(bool roaming, QString apn);
   void connect(const Network &ssid, const QString &password = {}, const QString &username = {});
-  void disconnect();
 
   // Tethering functions
   void setTetheringEnabled(bool enabled);
   bool isTetheringEnabled();
-  void addTetheringConnection();
   void changeTetheringPassword(const QString &newPassword);
   QString getTetheringPassword();
 
@@ -70,23 +65,26 @@ private:
   QString connecting_to_network;
   QString tethering_ssid;
   const QString defaultTetheringPassword = "swagswagcomma";
+  QString activeAp;
+  QDBusObjectPath lteConnectionPath;
 
   QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
   bool isWirelessAdapter(const QDBusObjectPath &path);
-  QString get_ipv4_address();
+  QString getIp4Address();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
-  QString activeAp;
   void deactivateConnectionBySsid(const QString &ssid);
   void deactivateConnection(const QDBusObjectPath &path);
   QVector<QDBusObjectPath> getActiveConnections();
   QByteArray get_property(const QString &network_path, const QString &property);
-  unsigned int get_ap_strength(const QString &network_path);
-  SecurityType getSecurityType(const QString &path);
+  SecurityType getSecurityType(const QVariantMap &properties);
   QDBusObjectPath getConnectionPath(const QString &ssid);
   Connection getConnectionSettings(const QDBusObjectPath &path);
   void initConnections();
   void setup();
+  void refreshNetworks();
+  void activateModemConnection(const QDBusObjectPath &path);
+  void addTetheringConnection();
 
 signals:
   void wrongPassword(const QString &ssid);
@@ -98,4 +96,5 @@ private slots:
   void deviceAdded(const QDBusObjectPath &path);
   void connectionRemoved(const QDBusObjectPath &path);
   void newConnection(const QDBusObjectPath &path);
+  void refreshFinished(QDBusPendingCallWatcher *call);
 };
