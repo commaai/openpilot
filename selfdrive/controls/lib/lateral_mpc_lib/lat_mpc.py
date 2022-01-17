@@ -144,12 +144,13 @@ class LateralMpc():
     #TODO hacky weights to keep behavior the same
     self.solver.cost_set(N, 'W', (3/20.)*W[:2,:2])
 
-  def run(self, x0, p, car_rotation_radius, y_pts, heading_pts):
+  def run(self, x0, p, y_pts, heading_pts):
     x0_cp = np.copy(x0)
     self.solver.constraints_set(0, "lbx", x0_cp)
     self.solver.constraints_set(0, "ubx", x0_cp)
     self.yref[:,0] = y_pts
     v_ego = p[0]
+    # rotation_radius = p[1]
     self.yref[:,1] = heading_pts*(v_ego+5.0)
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])

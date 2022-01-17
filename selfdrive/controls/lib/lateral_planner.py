@@ -179,7 +179,6 @@ class LateralPlanner:
     p = np.array([v_ego, CAR_ROTATION_RADIUS])
     self.lat_mpc.run(self.x0,
                      p,
-                     CAR_ROTATION_RADIUS,
                      y_pts,
                      heading_pts)
     # init state for next
