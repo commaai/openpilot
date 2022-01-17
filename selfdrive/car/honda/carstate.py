@@ -1,4 +1,3 @@
-import copy
 from cereal import car
 from collections import defaultdict
 from common.numpy_fast import interp
