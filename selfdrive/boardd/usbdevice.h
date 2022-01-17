@@ -1,10 +1,11 @@
 #pragma once
 
+#include <libusb-1.0/libusb.h>
+
 #include <atomic>
 #include <mutex>
 #include <vector>
 
-#include <libusb-1.0/libusb.h>
 #include "panda/board/panda.h"
 
 #define TIMEOUT 0
@@ -30,7 +31,8 @@ public:
   std::string usb_serial;
 
 private:
-  int control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t length, uint32_t timeout = TIMEOUT);
+  int control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
+                       uint8_t *data, uint16_t length, uint32_t timeout = TIMEOUT);
   void handle_usb_issue(int err, const char func[]);
 
   std::mutex usb_lock;

@@ -99,15 +99,15 @@ std::vector<std::string> USBDevice::list() {
 int USBDevice::control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t length, uint32_t timeout) {
   std::lock_guard lk(usb_lock);
 
-  int ret = LIBUSB_ERROR_NO_DEVICE;
+  int err = LIBUSB_ERROR_NO_DEVICE;
   const uint8_t bmRequestType = dir | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
   while (connected) {
-    ret = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, length, timeout);
-    if (ret >= 0) break;
+    err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, length, timeout);
+    if (err >= 0) break;
 
-    handle_usb_issue(ret, __func__);
+    handle_usb_issue(err, __func__);
   }
-  return ret;
+  return err;
 }
 
 int USBDevice::bulk_read(uint8_t endpoint, uint8_t *data, int length, uint32_t timeout) {
@@ -123,7 +123,7 @@ int USBDevice::bulk_read(uint8_t endpoint, uint8_t *data, int length, uint32_t t
     } else if (err == LIBUSB_ERROR_OVERFLOW) {
       comms_healthy = false;
       LOGE_100("overflow got 0x%x", transferred);
-    } else if (err != 0) {
+    } else {
       handle_usb_issue(err, __func__);
     }
   }
@@ -141,7 +141,7 @@ int USBDevice::bulk_write(uint8_t endpoint, uint8_t *data, int length, uint32_t 
     if (err == LIBUSB_ERROR_TIMEOUT) {
       LOGW("Transmit buffer full");
       break;
-    } else if (err != 0 || length != transferred) {
+    } else {
       handle_usb_issue(err, __func__);
     }
   }
