@@ -9,7 +9,7 @@ ROOT="$(cd $DIR/../ && pwd)"
 if [[ $(command -v brew) == "" ]]; then
   echo "-- Installing Hombrew"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-  echo "-- [✔] installed brew t=$SECONDS"
+  echo "[ ] installed brew t=$SECONDS"
 fi
 
 # TODO: remove protobuf,protobuf-c,swig when casadi can be pip installed
@@ -39,7 +39,7 @@ brew "swig"
 cask "gcc-arm-embedded"
 EOS
 
-echo "-- [✔] finished brew install t=$SECONDS"
+echo "[ ] finished brew install t=$SECONDS"
 
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
@@ -70,13 +70,13 @@ export CURL_SSL_BACKEND=secure-transport
 if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
   echo "source $ROOT/tools/openpilot_env.sh" >> $RC_FILE
   source "$ROOT/tools/openpilot_env.sh"
-  echo "-- [✔] Added openpilot env params to RC file: $RC_FILE"
+  echo "[ ] Added openpilot env params to RC file: $RC_FILE"
 fi
 
 # install python & dependencies
 $ROOT/update_requirements.sh
 eval "$(pyenv init --path)"
-echo "-- [✔] installed python dependencies t=$SECONDS"
+echo "[ ] installed python dependencies t=$SECONDS"
 
 # install casadi
 VENV=`pipenv --venv`
@@ -97,7 +97,7 @@ if [ ! -f "$VENV/include/casadi/casadi.hpp" ]; then
     -DPYTHON_INCLUDE_DIR:PATH=$HOME/.pyenv/versions/$PYTHON_VERSION/include/python$PYTHON_VER \
     -DCMAKE_CXX_FLAGS="-ferror-limit=0" -DCMAKE_C_FLAGS="-ferror-limit=0"
   CFLAGS="-ferror-limit=0" make -j$(nproc) && make install
-  echo "-- [✔] installed casadi t=$SECONDS"
+  echo "[ ] installed casadi t=$SECONDS"
 else
   echo "----   casadi found in venv. skipping build   ----"
 fi
