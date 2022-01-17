@@ -16,26 +16,22 @@ public:
   bool open(const std::string &serial);
   static std::vector<std::string> list();
 
-  inline int write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout = TIMEOUT) {
-    return control_transfer(LIBUSB_ENDPOINT_OUT, bRequest, wValue, wIndex, timeout);
+  inline int write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint32_t timeout = TIMEOUT) {
+    return control_transfer(LIBUSB_ENDPOINT_OUT, bRequest, wValue, wIndex, nullptr, 0, timeout);
   }
-  inline int read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t wLength, unsigned int timeout = TIMEOUT) {
-    return control_transfer(LIBUSB_ENDPOINT_IN, bRequest, wValue, wIndex, timeout);
+  inline int read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t length, uint32_t timeout = TIMEOUT) {
+    return control_transfer(LIBUSB_ENDPOINT_IN, bRequest, wValue, wIndex, data, length, timeout);
   }
-  inline int bulk_write(uint8_t endpoint, uint8_t *data, int length, unsigned int timeout = TIMEOUT) {
-    return bulk_transfer(LIBUSB_ENDPOINT_OUT | endpoint, data, length, timeout);
-  }
-  inline int bulk_read(uint8_t endpoint, uint8_t *data, int length, unsigned int timeout = TIMEOUT) {
-    return bulk_transfer(LIBUSB_ENDPOINT_IN | endpoint, data, length, timeout);
-  }
+  int bulk_write(uint8_t endpoint, uint8_t *data, int length, uint32_t timeout = TIMEOUT);
+  int bulk_read(uint8_t endpoint, uint8_t *data, int length, uint32_t timeout = TIMEOUT);
 
   std::atomic<bool> comms_healthy = true;
   std::atomic<bool> connected = true;
   std::string usb_serial;
 
 private:
-  int control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout = TIMEOUT);
-  int bulk_transfer(uint8_t endpoint, uint8_t *data, int length, unsigned int timeout = TIMEOUT);
+  int control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t length, uint32_t timeout = TIMEOUT);
+  void handle_usb_issue(int err, const char func[]);
 
   std::mutex usb_lock;
   libusb_context *ctx = nullptr;

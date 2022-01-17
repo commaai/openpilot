@@ -96,47 +96,63 @@ std::vector<std::string> USBDevice::list() {
   return serials;
 }
 
-int USBDevice::control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
+int USBDevice::control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t length, uint32_t timeout) {
   std::lock_guard lk(usb_lock);
 
   int ret = LIBUSB_ERROR_NO_DEVICE;
   const uint8_t bmRequestType = dir | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
   while (connected) {
-    ret = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
+    ret = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, length, timeout);
     if (ret >= 0) break;
 
-    LOGE_100("usb control_transfer error %d, \"%s\"", ret, libusb_strerror((enum libusb_error)ret));
-    if (ret == LIBUSB_ERROR_NO_DEVICE) {
-      LOGE("lost connection");
-      connected = false;
-    }
-    // TODO: check other errors, is simply retrying okay?
+    handle_usb_issue(ret, __func__);
   }
   return ret;
 }
 
-int USBDevice::bulk_transfer(uint8_t endpoint, uint8_t *data, int length, unsigned int timeout) {
+int USBDevice::bulk_read(uint8_t endpoint, uint8_t *data, int length, uint32_t timeout) {
   std::lock_guard lk(usb_lock);
 
   int transferred = 0;
   while (connected) {
-    int ret = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
-    if (ret == 0 && length == transferred) break;
+    int err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
+    if (err == 0) break;
 
-    if (ret != 0) {
-      LOGE_100("usb bulk_transfer error %d, \"%s\"", ret, libusb_strerror((enum libusb_error)ret));
-      if (ret == LIBUSB_ERROR_NO_DEVICE) {
-        LOGE("lost connection");
-        connected = false;
-      } else if (ret == LIBUSB_ERROR_OVERFLOW) {
-        comms_healthy = false;
-        LOGE_100("overflow got 0x%x", transferred);
-      } else if (ret == LIBUSB_ERROR_TIMEOUT && (endpoint & LIBUSB_ENDPOINT_OUT)) {
-        // timeout is okay to exit, recv still happened
-        LOGW("bulk_transfer timeout");
-        break;
-      }
+    if (err == LIBUSB_ERROR_TIMEOUT) {
+      break;  // timeout is okay to exit, recv still happened
+    } else if (err == LIBUSB_ERROR_OVERFLOW) {
+      comms_healthy = false;
+      LOGE_100("overflow got 0x%x", transferred);
+    } else if (err != 0) {
+      handle_usb_issue(err, __func__);
     }
-  };
+  }
   return transferred;
+}
+
+int USBDevice::bulk_write(uint8_t endpoint, uint8_t *data, int length, uint32_t timeout) {
+  std::lock_guard lk(usb_lock);
+
+  int transferred = 0;
+  while (connected) {
+    int err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
+    if (err == 0 && transferred == length) break;
+
+    if (err == LIBUSB_ERROR_TIMEOUT) {
+      LOGW("Transmit buffer full");
+      break;
+    } else if (err != 0 || length != transferred) {
+      handle_usb_issue(err, __func__);
+    }
+  }
+  return transferred;
+}
+
+void USBDevice::handle_usb_issue(int err, const char func[]) {
+  LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
+  if (err == LIBUSB_ERROR_NO_DEVICE) {
+    LOGE("lost connection");
+    connected = false;
+  }
+  // TODO: check other errors, is simply retrying okay?
 }
