@@ -18,6 +18,7 @@ LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
 JSON_FILE = "acados_ocp_lat.json"
 X_DIM = 4
+P_DIM = 2
 
 def gen_lat_model():
   model = AcadosModel()
@@ -80,7 +81,7 @@ def gen_lat_mpc_solver():
   curv_rate = ocp.model.u[0]
   v_ego = ocp.model.p[0]
 
-  ocp.parameter_values = np.zeros((2, ))
+  ocp.parameter_values = np.zeros((P_DIM, ))
 
   ocp.cost.yref = np.zeros((3, ))
   ocp.cost.yref_e = np.zeros((2, ))
@@ -130,6 +131,7 @@ class LateralMpc():
     # Somehow needed for stable init
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(X_DIM))
+      self.solver.set(i, 'p', np.zeros(P_DIM))
     self.solver.constraints_set(0, "lbx", x0)
     self.solver.constraints_set(0, "ubx", x0)
     self.solver.solve()
@@ -146,16 +148,17 @@ class LateralMpc():
 
   def run(self, x0, p, y_pts, heading_pts):
     x0_cp = np.copy(x0)
+    p_cp = np.copy(p)
     self.solver.constraints_set(0, "lbx", x0_cp)
     self.solver.constraints_set(0, "ubx", x0_cp)
     self.yref[:,0] = y_pts
-    v_ego = p[0]
-    # rotation_radius = p[1]
+    v_ego = p_cp[0]
+    # rotation_radius = p_cp[1]
     self.yref[:,1] = heading_pts*(v_ego+5.0)
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
-      self.solver.set(i, "p", p)
-    self.solver.set(N, "p", p)
+      self.solver.set(i, "p", p_cp)
+    self.solver.set(N, "p", p_cp)
     self.solver.cost_set(N, "yref", self.yref[N][:2])
 
     t = sec_since_boot()
