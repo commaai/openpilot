@@ -17,6 +17,7 @@ from selfdrive.loggerd.config import STATS_DIR, STATS_DIR_FILE_LIMIT, STATS_SOCK
 
 class METRIC_TYPE:
   GAUGE = 'g'
+  SAMPLE = 'sa'
 
 class StatLog:
   def __init__(self):
@@ -41,6 +42,11 @@ class StatLog:
 
   def gauge(self, name: str, value: float) -> None:
     self._send(f"{name}:{value}|{METRIC_TYPE.GAUGE}")
+
+  # Samples will be recorded in a buffer and at aggregation time,
+  # statistical properties will be logged (mean, count, percentiles, ...)
+  def sample(self, name: str, value: float):
+    self._send(f"{name}:{value}|{METRIC_TYPE.SAMPLE}")
 
 
 def main() -> NoReturn:
@@ -75,6 +81,7 @@ def main() -> NoReturn:
 
   last_flush_time = time.monotonic()
   gauges = {}
+  samples = {}
   while True:
     started_prev = sm['deviceState'].started
     sm.update()
@@ -86,10 +93,14 @@ def main() -> NoReturn:
         try:
           metric_type = metric.split('|')[1]
           metric_name = metric.split(':')[0]
-          metric_value = metric.split('|')[0].split(':')[1]
+          metric_value = float(metric.split('|')[0].split(':')[1])
 
           if metric_type == METRIC_TYPE.GAUGE:
             gauges[metric_name] = metric_value
+          if metric_type == METRIC_TYPE.SAMPLE:
+            if metric_name not in samples.keys():
+              samples[metric_name] = []
+            samples[metric_name].append(metric_value)
           else:
             cloudlog.event("unknown metric type", metric_type=metric_type)
         except Exception:
@@ -106,8 +117,22 @@ def main() -> NoReturn:
       for gauge_key in gauges:
         result += get_influxdb_line(f"gauge.{gauge_key}", gauges[gauge_key], current_time, tags)
 
+      for sample_key in samples:
+        samples[sample_key].sort()
+        sample_count = len(samples[sample_key])
+        sample_sum = sum(samples[sample_key])
+
+        result += get_influxdb_line(f"sample.{sample_key}.count", sample_count, current_time, tags)
+        result += get_influxdb_line(f"sample.{sample_key}.min", samples[sample_key][0], current_time, tags)
+        result += get_influxdb_line(f"sample.{sample_key}.max", samples[sample_key][-1], current_time, tags)
+        result += get_influxdb_line(f"sample.{sample_key}.mean", sample_sum / sample_count, current_time, tags)
+        for percentile in [0.05, 0.5, 0.95]:
+          value = samples[sample_key][int(round(percentile * (sample_count - 1)))]
+          result += get_influxdb_line(f"sample.{sample_key}.p{int(percentile * 100)}", value, current_time, tags)
+
       # clear intermediate data
       gauges = {}
+      samples = {}
       last_flush_time = time.monotonic()
 
       # check that we aren't filling up the drive
