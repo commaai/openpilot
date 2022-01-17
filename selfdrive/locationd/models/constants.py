@@ -38,6 +38,7 @@ class ObservationKind:
   STIFFNESS = 28  # [-]
   STEER_RATIO = 29  # [-]
   ROAD_FRAME_X_SPEED = 30  # (x) [m/s]
+  ROAD_ROLL = 31  # [rad]
 
   names = [
     'Unknown',
@@ -69,6 +70,8 @@ class ObservationKind:
     'Fast Angle Offset',
     'Stiffness',
     'Steer Ratio',
+    'Road Frame x speed',
+    'Road Roll',
   ]
 
   @classmethod

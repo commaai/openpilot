@@ -40,7 +40,7 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.INDI_PRIUS)
       ret.steerActuatorDelay = 0.3
 
-    elif candidate in [CAR.RAV4, CAR.RAV4H]:
+    elif candidate in (CAR.RAV4, CAR.RAV4H):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
       ret.wheelbase = 2.65
       ret.steerRatio = 16.88   # 14.5 is spec end-to-end
@@ -57,41 +57,16 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_A)
 
-    elif candidate == CAR.LEXUS_RX:
-      stop_and_go = True
-      ret.wheelbase = 2.79
-      ret.steerRatio = 14.8
-      tire_stiffness_factor = 0.5533
-      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_B)
-
-    elif candidate == CAR.LEXUS_RXH:
+    elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
-      tire_stiffness_factor = 0.444  # not optimized yet
+      ret.wheelSpeedFactor = 1.035
+      tire_stiffness_factor = 0.5533
       ret.mass = 4481. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
       set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
-    elif candidate == CAR.LEXUS_RX_TSS2:
-      stop_and_go = True
-      ret.wheelbase = 2.79
-      ret.steerRatio = 14.8
-      tire_stiffness_factor = 0.5533  # not optimized yet
-      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
-      ret.wheelSpeedFactor = 1.035
-
-    elif candidate == CAR.LEXUS_RXH_TSS2:
-      stop_and_go = True
-      ret.wheelbase = 2.79
-      ret.steerRatio = 16.0  # 14.8 is spec end-to-end
-      tire_stiffness_factor = 0.444  # not optimized yet
-      ret.mass = 4481.0 * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_E)
-      ret.wheelSpeedFactor = 1.035
-
-    elif candidate in [CAR.CHR, CAR.CHRH]:
+    elif candidate in (CAR.CHR, CAR.CHRH):
       stop_and_go = True
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
@@ -99,7 +74,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3300. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_F)
 
-    elif candidate in [CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2]:
+    elif candidate in (CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
@@ -107,7 +82,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
-    elif candidate in [CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2]:
+    elif candidate in (CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.84988  # 112.2 in = 2.84988 m
       ret.steerRatio = 16.0
@@ -115,7 +90,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4700. * CV.LB_TO_KG + STD_CARGO_KG  # 4260 + 4-5 people
       set_lat_tune(ret.lateralTuning, LatTunes.PID_G)
 
-    elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
+    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH):
       stop_and_go = True
       ret.wheelbase = 2.78
       ret.steerRatio = 16.0
@@ -123,7 +98,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4607. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid limited
       set_lat_tune(ret.lateralTuning, LatTunes.PID_G)
 
-    elif candidate in [CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019]:
+    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2):
       stop_and_go = False
       ret.wheelbase = 2.82
       ret.steerRatio = 14.8  # Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
@@ -131,7 +106,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3505. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_H)
 
-    elif candidate in [CAR.RAV4_TSS2, CAR.RAV4H_TSS2]:
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4H_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
@@ -146,7 +121,7 @@ class CarInterface(CarInterfaceBase):
           set_lat_tune(ret.lateralTuning, LatTunes.PID_I)
           break
 
-    elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2]:
+    elif candidate in (CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
       ret.steerRatio = 13.9
@@ -154,7 +129,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
 
-    elif candidate in [CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2]:
+    elif candidate in (CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.8702
       ret.steerRatio = 16.0  # not optimized
@@ -205,7 +180,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3108 * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
       set_lat_tune(ret.lateralTuning, LatTunes.PID_M)
 
-    elif candidate in [CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2]:
+    elif candidate in (CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
@@ -269,11 +244,9 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptor:
       set_long_tune(ret.longitudinalTuning, LongTunes.PEDAL)
-    elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2,
-                       CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2]:
+    elif candidate in TSS2_CAR:
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS2)
       ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
-      ret.startingAccelRate = 6.0  # release brakes fast
     else:
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS)
 
@@ -312,12 +285,12 @@ class CarInterface(CarInterfaceBase):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-
-    can_sends = self.CC.update(c.enabled, c.active, self.CS, self.frame,
-                               c.actuators, c.cruiseControl.cancel,
-                               c.hudControl.visualAlert, c.hudControl.leftLaneVisible,
-                               c.hudControl.rightLaneVisible, c.hudControl.leadVisible,
-                               c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
+    hud_control = c.hudControl
+    ret = self.CC.update(c.enabled, c.active, self.CS, self.frame,
+                         c.actuators, c.cruiseControl.cancel,
+                         hud_control.visualAlert, hud_control.leftLaneVisible,
+                         hud_control.rightLaneVisible, hud_control.leadVisible,
+                         hud_control.leftLaneDepart, hud_control.rightLaneDepart)
 
     self.frame += 1
-    return can_sends
+    return ret

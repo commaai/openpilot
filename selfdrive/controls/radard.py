@@ -135,7 +135,7 @@ class RadarD():
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
 
     idens = list(sorted(self.tracks.keys()))
-    track_pts = list([self.tracks[iden].get_key_for_cluster() for iden in idens])
+    track_pts = [self.tracks[iden].get_key_for_cluster() for iden in idens]
 
     # If we have multiple points, cluster them
     if len(track_pts) > 1:
@@ -172,9 +172,10 @@ class RadarD():
     radarState.carStateMonoTime = sm.logMonoTime['carState']
 
     if enable_lead:
-      if len(sm['modelV2'].leadsV3) > 1:
-        radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[0], low_speed_override=True)
-        radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[1], low_speed_override=False)
+      leads_v3 = sm['modelV2'].leadsV3 
+      if len(leads_v3) > 1:
+        radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, leads_v3[0], low_speed_override=True)
+        radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, leads_v3[1], low_speed_override=False)
     return dat
 
 
@@ -189,7 +190,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
   # import the radar from the fingerprint
   cloudlog.info("radard is importing %s", CP.carName)
-  RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
+  RadarInterface = importlib.import_module(f'selfdrive.car.{CP.carName}.radar_interface').RadarInterface
 
   # *** setup messaging
   if can_sock is None:

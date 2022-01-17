@@ -10,6 +10,12 @@ from typing import List, Union
 from cereal import log
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
 
+try:
+  from common.params import Params
+except Exception:
+  # openpilot is not built yet
+  Params = None
+
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 
@@ -70,6 +76,11 @@ class Android(HardwareBase):
       return f.read().strip()
 
   def get_device_type(self):
+    try:
+      if int(Params().get("LastPeripheralPandaType")) == log.PandaState.PandaType.uno:
+        return "two"
+    except Exception:
+      pass
     return "eon"
 
   def get_sound_card_online(self):

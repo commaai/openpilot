@@ -25,7 +25,7 @@ class CarState(CarStateBase):
     ret.steeringPressed = not cp.vl["Lane_Keep_Assist_Status"]["LaHandsOff_B_Actl"]
     ret.steerError = cp.vl["Lane_Keep_Assist_Status"]["LaActDeny_B_Actl"] == 1
     ret.cruiseState.speed = cp.vl["Cruise_Status"]["Set_Speed"] * CV.MPH_TO_MS
-    ret.cruiseState.enabled = not (cp.vl["Cruise_Status"]["Cruise_State"] in [0, 3])
+    ret.cruiseState.enabled = not (cp.vl["Cruise_Status"]["Cruise_State"] in (0, 3))
     ret.cruiseState.available = cp.vl["Cruise_Status"]["Cruise_State"] != 0
     ret.gas = cp.vl["EngineData_14"]["ApedPosScal_Pc_Actl"] / 100.
     ret.gasPressed = ret.gas > 1e-6

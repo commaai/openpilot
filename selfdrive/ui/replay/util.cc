@@ -17,12 +17,13 @@
 
 namespace {
 
-static std::atomic<bool> enable_http_logging = false;
-
 struct CURLGlobalInitializer {
   CURLGlobalInitializer() { curl_global_init(CURL_GLOBAL_DEFAULT); }
   ~CURLGlobalInitializer() { curl_global_cleanup(); }
 };
+
+static CURLGlobalInitializer curl_initializer;
+static std::atomic<bool> enable_http_logging = false;
 
 template <class T>
 struct MultiPartWriter {
@@ -68,7 +69,7 @@ std::string formattedDataSize(size_t size) {
 
 } // namespace
 
-size_t getRemoteFileSize(const std::string &url) {
+size_t getRemoteFileSize(const std::string &url, std::atomic<bool> *abort) {
   CURL *curl = curl_easy_init();
   if (!curl) return -1;
 
@@ -76,14 +77,20 @@ size_t getRemoteFileSize(const std::string &url) {
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, dumy_write_cb);
   curl_easy_setopt(curl, CURLOPT_HEADER, 1);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
-  CURLcode res = curl_easy_perform(curl);
-  double content_length = -1;
-  if (res == CURLE_OK) {
-    curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
-  } else {
-    std::cout << "Download failed: error code: " << res << std::endl;
+
+  CURLM *cm = curl_multi_init();
+  curl_multi_add_handle(cm, curl);
+  int still_running = 1;
+  while (still_running > 0 && !(abort && *abort)) {
+    CURLMcode mc = curl_multi_perform(cm, &still_running);
+    if (!mc) curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
   }
+
+  double content_length = -1;
+  curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
+  curl_multi_remove_handle(cm, curl);
   curl_easy_cleanup(curl);
+  curl_multi_cleanup(cm);
   return content_length > 0 ? (size_t)content_length : 0;
 }
 
@@ -98,8 +105,6 @@ void enableHttpLogging(bool enable) {
 
 template <class T>
 bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
-  static CURLGlobalInitializer curl_initializer;
-
   int parts = 1;
   if (chunk_size > 0 && content_length > 10 * 1024 * 1024) {
     parts = std::nearbyint(content_length / (float)chunk_size);
@@ -177,7 +182,7 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
 }
 
 std::string httpGet(const std::string &url, size_t chunk_size, std::atomic<bool> *abort) {
-  size_t size = getRemoteFileSize(url);
+  size_t size = getRemoteFileSize(url, abort);
   if (size == 0) return {};
 
   std::string result(size, '\0');
@@ -185,7 +190,7 @@ std::string httpGet(const std::string &url, size_t chunk_size, std::atomic<bool>
 }
 
 bool httpDownload(const std::string &url, const std::string &file, size_t chunk_size, std::atomic<bool> *abort) {
-  size_t size = getRemoteFileSize(url);
+  size_t size = getRemoteFileSize(url, abort);
   if (size == 0) return false;
 
   std::ofstream of(file, std::ios::binary | std::ios::out);
@@ -193,11 +198,11 @@ bool httpDownload(const std::string &url, const std::string &file, size_t chunk_
   return httpDownload(url, of, chunk_size, size, abort);
 }
 
-std::string decompressBZ2(const std::string &in) {
-  return decompressBZ2((std::byte *)in.data(), in.size());
+std::string decompressBZ2(const std::string &in, std::atomic<bool> *abort) {
+  return decompressBZ2((std::byte *)in.data(), in.size(), abort);
 }
 
-std::string decompressBZ2(const std::byte *in, size_t in_size) {
+std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool> *abort) {
   if (in_size == 0) return {};
 
   bz_stream strm = {};
@@ -223,10 +228,10 @@ std::string decompressBZ2(const std::byte *in, size_t in_size) {
     if (bzerror == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
       out.resize(out.size() * 2);
     }
-  } while (bzerror == BZ_OK);
+  } while (bzerror == BZ_OK && !(abort && *abort));
 
   BZ2_bzDecompressEnd(&strm);
-  if (bzerror == BZ_STREAM_END) {
+  if (bzerror == BZ_STREAM_END && !(abort && *abort)) {
     out.resize(strm.total_out_lo32);
     return out;
   }

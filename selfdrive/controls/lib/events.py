@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Dict, Union, Callable
+from typing import Dict, Union, Callable, List, Optional
 
 from cereal import log, car
 import cereal.messaging as messaging
@@ -42,33 +42,30 @@ EVENT_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
 
 class Events:
   def __init__(self):
-    self.events = []
-    self.static_events = []
+    self.events: List[int] = []
+    self.static_events: List[int] = []
     self.events_prev = dict.fromkeys(EVENTS.keys(), 0)
 
   @property
-  def names(self):
+  def names(self) -> List[int]:
     return self.events
 
-  def __len__(self):
+  def __len__(self) -> int:
     return len(self.events)
 
-  def add(self, event_name, static=False):
+  def add(self, event_name: int, static: bool=False) -> None:
     if static:
       self.static_events.append(event_name)
     self.events.append(event_name)
 
-  def clear(self):
+  def clear(self) -> None:
     self.events_prev = {k: (v + 1 if k in self.events else 0) for k, v in self.events_prev.items()}
     self.events = self.static_events.copy()
 
-  def any(self, event_type):
-    for e in self.events:
-      if event_type in EVENTS.get(e, {}).keys():
-        return True
-    return False
+  def any(self, event_type: str) -> bool:
+    return any(event_type in EVENTS.get(e, {}) for e in self.events)
 
-  def create_alerts(self, event_types, callback_args=None):
+  def create_alerts(self, event_types: List[str], callback_args=None):
     if callback_args is None:
       callback_args = []
 
@@ -96,7 +93,7 @@ class Events:
     for event_name in self.events:
       event = car.CarEvent.new_message()
       event.name = event_name
-      for event_type in EVENTS.get(event_name, {}).keys():
+      for event_type in EVENTS.get(event_name, {}):
         setattr(event, event_type, True)
       ret.append(event)
     return ret
@@ -129,7 +126,7 @@ class Alert:
     self.creation_delay = creation_delay
 
     self.alert_type = ""
-    self.event_type = None
+    self.event_type: Optional[str] = None
 
   def __str__(self) -> str:
     return f"{self.alert_text_1}/{self.alert_text_2} {self.priority} {self.visual_alert} {self.audible_alert}"
@@ -139,14 +136,14 @@ class Alert:
 
 
 class NoEntryAlert(Alert):
-  def __init__(self, alert_text_2, visual_alert=VisualAlert.none):
+  def __init__(self, alert_text_2: str, visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none):
     super().__init__("openpilot Unavailable", alert_text_2, AlertStatus.normal,
                      AlertSize.mid, Priority.LOW, visual_alert,
                      AudibleAlert.refuse, 3.)
 
 
 class SoftDisableAlert(Alert):
-  def __init__(self, alert_text_2):
+  def __init__(self, alert_text_2: str):
     super().__init__("TAKE CONTROL IMMEDIATELY", alert_text_2,
                      AlertStatus.userPrompt, AlertSize.full,
                      Priority.MID, VisualAlert.steerRequired,
@@ -155,13 +152,13 @@ class SoftDisableAlert(Alert):
 
 # less harsh version of SoftDisable, where the condition is user-triggered
 class UserSoftDisableAlert(SoftDisableAlert):
-  def __init__(self, alert_text_2):
+  def __init__(self, alert_text_2: str):
     super().__init__(alert_text_2),
     self.alert_text_1 = "openpilot will disengage"
 
 
 class ImmediateDisableAlert(Alert):
-  def __init__(self, alert_text_2):
+  def __init__(self, alert_text_2: str):
     super().__init__("TAKE CONTROL IMMEDIATELY", alert_text_2,
                      AlertStatus.critical, AlertSize.full,
                      Priority.HIGHEST, VisualAlert.steerRequired,
@@ -239,7 +236,7 @@ def calibration_incomplete_alert(CP: car.CarParams, sm: messaging.SubMaster, met
 
 
 def no_gps_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  gps_integrated = sm['peripheralState'].pandaType in [log.PandaState.PandaType.uno, log.PandaState.PandaType.dos]
+  gps_integrated = sm['peripheralState'].pandaType in (log.PandaState.PandaType.uno, log.PandaState.PandaType.dos)
   return Alert(
     "Poor GPS reception",
     "If sky is visible, contact support" if gps_integrated else "Check GPS antenna placement",
@@ -266,6 +263,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # ********** events with no alerts **********
 
   EventName.stockFcw: {},
+
+  EventName.lkasDisabled: {},
 
   # ********** events only containing alerts displayed in all states **********
 

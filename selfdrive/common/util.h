@@ -91,7 +91,9 @@ bool create_directories(const std::string &dir, mode_t mode);
 std::string check_output(const std::string& command);
 
 inline void sleep_for(const int milliseconds) {
-  std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+  if (milliseconds > 0) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+  }
 }
 
 }  // namespace util

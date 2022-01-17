@@ -11,7 +11,7 @@ def get_attr_from_cars(attr, result=dict, combine_brands=True):
   for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
     try:
       car_name = car_folder.split('/')[-1]
-      values = __import__('selfdrive.car.%s.values' % car_name, fromlist=[attr])
+      values = __import__(f'selfdrive.car.{car_name}.values', fromlist=[attr])
       if hasattr(values, attr):
         attr_values = getattr(values, attr)
       else:
@@ -28,7 +28,7 @@ def get_attr_from_cars(attr, result=dict, combine_brands=True):
       elif isinstance(attr_values, list):
         result += attr_values
 
-    except (ImportError, IOError):
+    except (ImportError, OSError):
       pass
 
   return result
