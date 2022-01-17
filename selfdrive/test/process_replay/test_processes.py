@@ -65,9 +65,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   log_msgs = replay_process(cfg, lr)
 
   # check to make sure openpilot is engaged in the route
-  # TODO: update routes so enable check can run
-  #       failed enable check: honda bosch, hyundai, chrysler, and subaru
-  if cfg.proc_name == "controlsd" and FULL_TEST and False:
+  if cfg.proc_name == "controlsd":
     for msg in log_msgs:
       if msg.which() == "controlsState":
         if msg.controlsState.active:
