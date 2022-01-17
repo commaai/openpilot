@@ -211,11 +211,11 @@ class Controls:
       self.events.add(EventName.lowBattery)
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
-    if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
+    if self.sm['deviceState'].freeSpacePercent < 7 and not (SIMULATION or REPLAY):  # TODO: handle migration from 0-1 to percent in regen_segments
       # under 7% of space free no enable allowed
       self.events.add(EventName.outOfSpace)
     # TODO: make tici threshold the same
-    if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not SIMULATION:
+    if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not (SIMULATION or REPLAY):  # TODO: replace segment in process replay
       self.events.add(EventName.lowMemory)
 
     # TODO: enable this once loggerd CPU usage is more reasonable
@@ -233,11 +233,12 @@ class Controls:
 
     # Handle calibration status
     cal_status = self.sm['liveCalibration'].calStatus
-    if cal_status != Calibration.CALIBRATED:
-      if cal_status == Calibration.UNCALIBRATED:
-        self.events.add(EventName.calibrationIncomplete)
-      else:
-        self.events.add(EventName.calibrationInvalid)
+    if not REPLAY:  # TODO: Fix calibration state in regen segments
+      if (cal_status != Calibration.CALIBRATED):
+        if cal_status == Calibration.UNCALIBRATED:
+          self.events.add(EventName.calibrationIncomplete)
+        else:
+          self.events.add(EventName.calibrationInvalid)
 
     # Handle lane change
     if self.sm['lateralPlan'].laneChangeState == LaneChangeState.preLaneChange:
@@ -286,7 +287,7 @@ class Controls:
 
     if not self.sm['liveParameters'].valid:
       self.events.add(EventName.vehicleModelInvalid)
-    if not self.sm['lateralPlan'].mpcSolutionValid:
+    if not self.sm['lateralPlan'].mpcSolutionValid and not REPLAY:  # TODO: Fix planner in replay
       self.events.add(EventName.plannerError)
     if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
@@ -365,6 +366,10 @@ class Controls:
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
         self.initialized = True
+
+        if REPLAY:
+          self.state = State.enabled  # TODO: set initial state based on pandaStates[0] controls allowed
+
         Params().put_bool("ControlsReady", True)
 
     # Check for CAN timeout
@@ -593,7 +598,7 @@ class Controls:
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
                     and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
-    model_v2 = self.sm['modelV2'] 
+    model_v2 = self.sm['modelV2']
     desire_prediction = model_v2.meta.desirePrediction
     if len(desire_prediction) and ldw_allowed:
       right_lane_visible = self.sm['lateralPlan'].rProb > 0.5

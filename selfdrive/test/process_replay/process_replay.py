@@ -348,8 +348,8 @@ def setup_env():
   params.put_bool("Passive", False)
   params.put_bool("CommunityFeaturesToggle", True)
 
-  os.environ['NO_RADAR_SLEEP'] = "1"
-  os.environ["SIMULATION"] = "1"
+  os.environ["NO_RADAR_SLEEP"] = "1"
+  os.environ["REPLAY"] = "1"
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
