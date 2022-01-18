@@ -1,18 +1,15 @@
 #pragma once
 
 #include <atomic>
-#include <cstdint>
 #include <ctime>
 #include <functional>
-#include <list>
 #include <mutex>
 #include <optional>
 #include <vector>
 
-#include <libusb-1.0/libusb.h>
-
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
+#include "selfdrive/boardd/usbdevice.h"
 
 #define TIMEOUT 0
 #define PANDA_BUS_CNT 4
@@ -66,7 +63,7 @@ struct can_frame {
 
 class Panda {
  private:
-  libusb_context *ctx = NULL;
+  USBContext ctx;
   libusb_device_handle *dev_handle = NULL;
   std::mutex usb_lock;
   std::vector<uint8_t> recv_buf;
@@ -83,9 +80,6 @@ class Panda {
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
   const uint32_t bus_offset;
-
-  // Static functions
-  static std::vector<std::string> list();
 
   // HW communication
   int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout=TIMEOUT);
