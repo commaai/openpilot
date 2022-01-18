@@ -204,6 +204,22 @@ class TestOnroad(unittest.TestCase):
     cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
 
+  def test_mpc_execution_timings(self):
+    result = "\n"
+    result += "------------------------------------------------\n"
+    result += "-----------------  MPC Timing ------------------\n"
+    result += "------------------------------------------------\n"
+
+    cfgs = [("lateralPlan", 0.05, 0.05), ("longitudinalPlan", 0.05, 0.05)]
+    for (s, instant_max, avg_max) in cfgs:
+      ts = [getattr(getattr(m, s), "solverExecutionTime") for m in self.lr if m.which() == s]
+      self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
+      self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
+      result += f"'{s}' execution time: {min(ts)}\n"
+      result += f"'{s}' avg execution time: {np.mean(ts)}\n"
+    result += "------------------------------------------------\n"
+    print(result)
+
   def test_model_execution_timings(self):
     result = "\n"
     result += "------------------------------------------------\n"

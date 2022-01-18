@@ -215,6 +215,7 @@ class LateralPlanner:
     lateralPlan.dProb = float(self.LP.d_prob)
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
+    lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
 
     lateralPlan.desire = self.desire
     lateralPlan.useLaneLines = self.use_lanelines

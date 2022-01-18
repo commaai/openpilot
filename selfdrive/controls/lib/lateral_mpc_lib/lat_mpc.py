@@ -3,6 +3,8 @@ import os
 import numpy as np
 
 from casadi import SX, vertcat, sin, cos
+
+from common.realtime import sec_since_boot
 from selfdrive.controls.lib.drive_helpers import LAT_MPC_N as N
 from selfdrive.controls.lib.drive_helpers import T_IDXS
 
@@ -132,6 +134,7 @@ class LateralMpc():
     self.solver.constraints_set(0, "ubx", x0)
     self.solver.solve()
     self.solution_status = 0
+    self.solve_time = 0.0
     self.cost = 0
 
   def set_weights(self, path_weight, heading_weight, steer_rate_weight):
@@ -151,7 +154,10 @@ class LateralMpc():
       self.solver.cost_set(i, "yref", self.yref[i])
     self.solver.cost_set(N, "yref", self.yref[N][:2])
 
+    t = sec_since_boot()
     self.solution_status = self.solver.solve()
+    self.solve_time = sec_since_boot() - t
+
     for i in range(N+1):
       self.x_sol[i] = self.solver.get(i, 'x')
     for i in range(N):
