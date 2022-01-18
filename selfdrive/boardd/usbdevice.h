@@ -10,12 +10,30 @@
 
 #define TIMEOUT 0
 
+struct USBContext {
+  USBContext();
+  ~USBContext();
+  libusb_context *context;
+};
+
+class USBDeviceList {
+public:
+  USBDeviceList(libusb_context *ctx);
+  ~USBDeviceList();
+  libusb_device_handle *open(const std::string &serial);
+  int size();
+
+private:
+  libusb_device **dev_list = nullptr;
+  ssize_t num_devices = 0;
+};
+
+
 class USBDevice {
 public:
   USBDevice() = default;
   ~USBDevice();
   bool open(const std::string &serial);
-  static std::vector<std::string> list();
 
   inline int write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint32_t timeout = TIMEOUT) {
     return control_transfer(LIBUSB_ENDPOINT_OUT, bRequest, wValue, wIndex, nullptr, 0, timeout);
@@ -36,6 +54,6 @@ private:
   void handle_usb_issue(int err, const char func[]);
 
   std::mutex usb_lock;
-  libusb_context *ctx = nullptr;
+  USBContext ctx;
   libusb_device_handle *dev_handle = nullptr;
 };

@@ -1,68 +1,67 @@
 #include "selfdrive/boardd/usbdevice.h"
 
+#include <cassert>
 #include <map>
 #include <memory>
 
 #include "selfdrive/common/swaglog.h"
 
-namespace {
-
-libusb_context *init_usb_ctx() {
-  libusb_context *context = nullptr;
+USBContext::USBContext() {
   int err = libusb_init(&context);
   if (err != 0) {
     LOGE("libusb initialization error %d", err);
-    return nullptr;
+    assert(0);
   }
 #if LIBUSB_API_VERSION >= 0x01000106
   libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
 #else
   libusb_set_debug(context, 3);
 #endif
-  return context;
 }
 
-struct DeviceIterator {
-  DeviceIterator(libusb_context *ctx) {
-    ssize_t num_devices = libusb_get_device_list(ctx, &dev_list);
-    for (ssize_t i = 0; i < num_devices; ++i) {
-      libusb_device_descriptor desc = {};
-      int ret = libusb_get_device_descriptor(dev_list[i], &desc);
-      if (ret < 0 || desc.idVendor != USB_VID || desc.idProduct != USB_PID) continue;
+USBContext::~USBContext() {
+  libusb_exit(context);
+}
 
-      libusb_device_handle *handle = nullptr;
-      if (libusb_open(dev_list[i], &handle) == 0) {
-        unsigned char serial[256] = {'\0'};
-        libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, std::size(serial) - 1);
-        devices[(const char *)serial] = dev_list[i];
-        libusb_close(handle);
+USBDeviceList::USBDeviceList(libusb_context *ctx) {
+  num_devices = libusb_get_device_list(ctx, &dev_list);
+}
+
+USBDeviceList::~USBDeviceList() {
+  if (dev_list) libusb_free_device_list(dev_list, 1);
+}
+
+libusb_device_handle *USBDeviceList::open(const std::string &serial) {
+  for (ssize_t i = 0; i < num_devices; ++i) {
+    libusb_device_descriptor desc = {};
+    int ret = libusb_get_device_descriptor(dev_list[i], &desc);
+    if (ret < 0 || desc.idVendor != USB_VID || desc.idProduct != USB_PID) continue;
+
+    libusb_device_handle *handle = nullptr;
+    if (libusb_open(dev_list[i], &handle) == 0) {
+      unsigned char s[256] = {'\0'};
+      libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, s, std::size(s) - 1);
+      if (serial.empty() || serial == (char *)s) {
+        return handle;
       }
+      libusb_close(handle);
     }
   }
+  return nullptr;
+}
 
-  ~DeviceIterator() {
-    if (dev_list) libusb_free_device_list(dev_list, 1);
+int USBDeviceList::size() {
+  int cnt = 0;
+  for (ssize_t i = 0; i < num_devices; ++i) {
+    libusb_device_descriptor desc = {};
+    int ret = libusb_get_device_descriptor(dev_list[i], &desc);
+    cnt += ret >= 0 && desc.idVendor == USB_VID && desc.idProduct == USB_PID;
   }
-
-  std::map<std::string, libusb_device *>::iterator begin() { return devices.begin(); }
-  std::map<std::string, libusb_device *>::iterator end() { return devices.end(); }
-  std::map<std::string, libusb_device *> devices;
-  libusb_device **dev_list = nullptr;
-};
-
-}  // namespace
+  return cnt;
+}
 
 bool USBDevice::open(const std::string &serial) {
-  ctx = init_usb_ctx();
-  if (!ctx) return false;
-
-  for (const auto &[s, device] : DeviceIterator(ctx)) {
-    if (serial.empty() || serial == s) {
-      usb_serial = s;
-      libusb_open(device, &dev_handle);
-      break;
-    }
-  }
+  dev_handle = USBDeviceList(ctx.context).open(serial);
   if (!dev_handle) return false;
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
@@ -82,18 +81,6 @@ USBDevice::~USBDevice() {
     libusb_release_interface(dev_handle, 0);
     libusb_close(dev_handle);
   }
-  if (ctx) libusb_exit(ctx);
-}
-
-std::vector<std::string> USBDevice::list() {
-  std::vector<std::string> serials;
-  if (libusb_context *ctx = init_usb_ctx()) {
-    for (auto it : DeviceIterator(ctx)) {
-      serials.push_back(it.first);
-    }
-    libusb_exit(ctx);
-  }
-  return serials;
 }
 
 int USBDevice::control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t length, uint32_t timeout) {
