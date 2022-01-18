@@ -1,3 +1,36 @@
+#include "selfdrive/boardd/boardd.h"
+
+#include <sched.h>
+#include <sys/cdefs.h>
+#include <sys/resource.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <atomic>
+#include <bitset>
+#include <cassert>
+#include <cerrno>
+#include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <future>
+#include <thread>
+
+#include <libusb-1.0/libusb.h>
+
+#include "cereal/gen/cpp/car.capnp.h"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
+
+#include "selfdrive/boardd/pigeon.h"
+
 // -- Multi-panda conventions --
 // Ordering:
 // - The internal panda will always be the first panda
@@ -16,8 +49,6 @@
 //   the excess pandas will remain in "silent" ot "noOutput" mode
 // Ignition:
 // - If any of the ignition sources in any panda is high, ignition is high
-
-#include "selfdrive/boardd/boardd.h"
 
 #define MAX_IR_POWER 0.5f
 #define MIN_IR_POWER 0.0f
