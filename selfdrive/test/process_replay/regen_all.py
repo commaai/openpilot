@@ -13,7 +13,7 @@ if __name__ == "__main__":
     print("\n\n", "*"*30, "\n\n")
     print("New route:", relr, "\n")
     relr = relr.replace('/', '|')
-    new_segments.append(f'("{segment[0]}", "{relr}"), ')
+    new_segments.append(f'  ("{segment[0]}", "{relr}"), ')
   print()
   print()
   print()

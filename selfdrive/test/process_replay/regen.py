@@ -11,7 +11,7 @@ import cereal.messaging as messaging
 from cereal.services import service_list
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.params import Params
-from common.realtime import Ratekeeper, DT_MDL, DT_DMON
+from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
@@ -36,10 +36,12 @@ def replay_panda_states(s, msgs):
       if m.which() == 'pandaStateDEPRECATED':
         new_m = messaging.new_message('pandaStates', 1)
         new_m.pandaStates[0] = m.pandaStateDEPRECATED
-        new_m.logMonoTime = m.logMonoTime
         pm.send(s, new_m)
       else:
-        pm.send(s, m.as_builder())
+        new_m = m.as_builder()
+        new_m.logMonoTime = int(sec_since_boot() * 1e9)
+
+      pm.send(s, new_m)
 
       rk.keep_time()
 
@@ -50,8 +52,9 @@ def replay_service(s, msgs):
   smsgs = [m for m in msgs if m.which() == s]
   while True:
     for m in smsgs:
-      # TODO: use logMonoTime
-      pm.send(s, m.as_builder())
+      new_m = m.as_builder()
+      new_m.logMonoTime = int(sec_since_boot() * 1e9)
+      pm.send(s, new_m)
       rk.keep_time()
 
 def replay_cameras(lr, frs):
@@ -115,10 +118,6 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   params.put_bool("OpenpilotEnabledToggle", True)
   params.put_bool("CommunityFeaturesToggle", True)
   params.put_bool("CommunityFeaturesToggle", True)
-  cal = messaging.new_message('liveCalibration')
-  cal.liveCalibration.validBlocks = 20
-  cal.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
-  params.put("CalibrationParams", cal.to_bytes())
 
   os.environ["LOG_ROOT"] = outdir
   os.environ["SIMULATION"] = "1"
@@ -139,6 +138,8 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
       else:
         os.environ['SKIP_FW_QUERY'] = "1"
         os.environ['FINGERPRINT'] = car_fingerprint
+    elif msg.which() == 'liveCalibration':
+      params.put("CalibrationParams", msg.as_builder().to_bytes())
 
   # TODO: init car, make sure starts engaged when segment is engaged
   vs, cam_procs = replay_cameras(lr, frs)
