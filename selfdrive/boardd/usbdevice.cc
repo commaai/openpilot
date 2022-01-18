@@ -31,7 +31,7 @@ USBDeviceList::~USBDeviceList() {
   if (dev_list) libusb_free_device_list(dev_list, 1);
 }
 
-libusb_device_handle *USBDeviceList::open(const std::string &serial) {
+libusb_device_handle *USBDeviceList::open(const std::string &serial, std::string &out_serial) {
   for (ssize_t i = 0; i < num_devices; ++i) {
     libusb_device_descriptor desc = {};
     int ret = libusb_get_device_descriptor(dev_list[i], &desc);
@@ -42,6 +42,7 @@ libusb_device_handle *USBDeviceList::open(const std::string &serial) {
       unsigned char s[256] = {'\0'};
       libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, s, std::size(s) - 1);
       if (serial.empty() || serial == (char *)s) {
+        out_serial = (char *)s;
         return handle;
       }
       libusb_close(handle);
@@ -61,7 +62,7 @@ int USBDeviceList::size() {
 }
 
 bool USBDevice::open(const std::string &serial) {
-  dev_handle = USBDeviceList(ctx.context).open(serial);
+  dev_handle = USBDeviceList(ctx.context).open(serial, usb_serial);
   if (!dev_handle) return false;
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {

@@ -20,7 +20,7 @@ class USBDeviceList {
 public:
   USBDeviceList(libusb_context *ctx);
   ~USBDeviceList();
-  libusb_device_handle *open(const std::string &serial);
+  libusb_device_handle *open(const std::string &serial, std::string &out_serial);
   int size();
 
 private:
