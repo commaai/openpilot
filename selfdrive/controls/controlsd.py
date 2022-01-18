@@ -262,8 +262,10 @@ class Controls:
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
       if i < len(self.CP.safetyConfigs):
         safety_mismatch = pandaState.safetyModel != self.CP.safetyConfigs[i].safetyModel or pandaState.safetyParam != self.CP.safetyConfigs[i].safetyParam
+        safety_mismatch = safety_mismatch and not REPLAY  # TODO: remove when migrated in regen_segments
       else:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
+
       if safety_mismatch or self.mismatch_counter >= 200:
         self.events.add(EventName.controlsMismatch)
 

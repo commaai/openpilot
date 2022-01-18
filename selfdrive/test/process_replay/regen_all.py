@@ -7,6 +7,7 @@ if __name__ == "__main__":
   for segment in segments:
     route = segment[1].rsplit('--', 1)[0]
     sidx = int(segment[1].rsplit('--', 1)[1])
+    print("Regen", route, sidx)
     relr = regen_and_save(route, sidx, upload=True, use_route_meta=False)
 
     print("\n\n", "*"*30, "\n\n")

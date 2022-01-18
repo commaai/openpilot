@@ -12,7 +12,7 @@ from cereal.services import service_list
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON
-from common.transformations.camera import eon_f_frame_size, eon_d_frame_size
+from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
@@ -26,6 +26,24 @@ process_replay_dir = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(process_replay_dir, "fakedata/")
 
 
+def replay_panda_states(s, msgs):
+  pm = messaging.PubMaster([s, ])
+  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
+  smsgs = [m for m in msgs if m.which() in ['pandaStates', 'pandaStateDEPRECATED']]
+
+  while True:
+    for m in smsgs:
+      if m.which() == 'pandaStateDEPRECATED':
+        new_m = messaging.new_message('pandaStates', 1)
+        new_m.pandaStates[0] = m.pandaStateDEPRECATED
+        new_m.logMonoTime = m.logMonoTime
+        pm.send(s, new_m)
+      else:
+        pm.send(s, m.as_builder())
+
+      rk.keep_time()
+
+
 def replay_service(s, msgs):
   pm = messaging.PubMaster([s, ])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
@@ -36,11 +54,14 @@ def replay_service(s, msgs):
       pm.send(s, m.as_builder())
       rk.keep_time()
 
-vs = None
 def replay_cameras(lr, frs):
-  cameras = [
+  eon_cameras = [
     ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
     ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
+  ]
+  tici_cameras = [
+    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
+    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
   ]
 
   def replay_camera(s, stream, dt, vipc_server, fr, size):
@@ -53,6 +74,7 @@ def replay_cameras(lr, frs):
         img = fr.get(rk.frame % fr.frame_count, pix_fmt='yuv420p')[0]
         img = img.flatten().tobytes()
 
+      # TODO: this is super laggy, get the frames beforehand
       rk.keep_time()
 
       m = messaging.new_message(s)
@@ -62,9 +84,11 @@ def replay_cameras(lr, frs):
 
       vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
 
+  init_data = [m for m in lr if m.which() == 'initData'][0]
+  cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
+
   # init vipc server and cameras
   p = []
-  global vs
   vs = VisionIpcServer("camerad")
   for (s, dt, size, stream) in cameras:
     fr = frs.get(s, None)
@@ -75,7 +99,7 @@ def replay_cameras(lr, frs):
   # hack to make UI work
   vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
   vs.start_listener()
-  return p
+  return vs, p
 
 
 def regen_segment(lr, frs=None, outdir=FAKEDATA):
@@ -101,16 +125,23 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
 
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
+
+  # TODO: remove after getting new route for mazda
+  migration = {
+    "Mazda CX-9 2021": "MAZDA CX-9 2021",
+  }
+
   for msg in lr:
     if msg.which() == 'carParams':
-      car_fingerprint = msg.carParams.carFingerprint
+      car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
       if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
         params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
       else:
         os.environ['SKIP_FW_QUERY'] = "1"
         os.environ['FINGERPRINT'] = car_fingerprint
 
-  #TODO: init car, make sure starts engaged when segment is engaged
+  # TODO: init car, make sure starts engaged when segment is engaged
+  vs, cam_procs = replay_cameras(lr, frs)
 
   fake_daemons = {
     'sensord': [
@@ -118,7 +149,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
     ],
     'pandad': [
       multiprocessing.Process(target=replay_service, args=('can', lr)),
-      multiprocessing.Process(target=replay_service, args=('pandaStates', lr)),
+      multiprocessing.Process(target=replay_panda_states, args=('pandaStates', lr)),
     ],
     #'managerState': [
     #  multiprocessing.Process(target=replay_service, args=('managerState', lr)),
@@ -127,10 +158,8 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
       multiprocessing.Process(target=replay_service, args=('deviceState', lr)),
     ],
     'camerad': [
-      *replay_cameras(lr, frs),
+      *cam_procs,
     ],
-
-    # TODO: fix these and run them
     'paramsd': [
       multiprocessing.Process(target=replay_service, args=('liveParameters', lr)),
     ],
@@ -162,11 +191,13 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
       for p in procs:
         p.terminate()
 
+  del vs
+
   r = params.get("CurrentRoute", encoding='utf-8')
   return os.path.join(outdir, r + "--0")
 
 
-def regen_and_save(route, sidx, upload=False, use_route_meta=True):
+def regen_and_save(route, sidx, upload=False, use_route_meta=False):
   if use_route_meta:
     r = Route(args.route)
     lr = LogReader(r.log_paths()[args.seg])
