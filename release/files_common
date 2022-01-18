@@ -88,6 +88,8 @@ selfdrive/boardd/.gitignore
 selfdrive/boardd/SConscript
 selfdrive/boardd/__init__.py
 selfdrive/boardd/boardd.cc
+selfdrive/boardd/boardd.h
+selfdrive/boardd/main.cc
 selfdrive/boardd/boardd.py
 selfdrive/boardd/boardd_api_impl.pyx
 selfdrive/boardd/can_list_to_can_capnp.cc
