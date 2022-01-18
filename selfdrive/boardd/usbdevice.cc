@@ -59,7 +59,7 @@ int USBDeviceList::size() {
   for (ssize_t i = 0; i < num_devices; ++i) {
     libusb_device_descriptor desc = {};
     int ret = libusb_get_device_descriptor(dev_list[i], &desc);
-    cnt += ret >= 0 && desc.idVendor == USB_VID && desc.idProduct == USB_PID;
+    cnt += ret == 0 && desc.idVendor == USB_VID && desc.idProduct == USB_PID;
   }
   return cnt;
 }
