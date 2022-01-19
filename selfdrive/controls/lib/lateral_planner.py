@@ -61,9 +61,9 @@ class LateralPlanner:
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
 
     self.lat_mpc = LateralMpc()
-    self.reset_mpc(np.zeros(6))
+    self.reset_mpc(np.zeros(4))
 
-  def reset_mpc(self, x0=np.zeros(6)):
+  def reset_mpc(self, x0=np.zeros(4)):
     self.x0 = x0
     self.lat_mpc.reset(x0=self.x0)
 
@@ -175,10 +175,10 @@ class LateralPlanner:
 
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
-    self.x0[4] = v_ego
+    # self.x0[4] = v_ego
+    p = np.array([v_ego, CAR_ROTATION_RADIUS])
     self.lat_mpc.run(self.x0,
-                     v_ego,
-                     CAR_ROTATION_RADIUS,
+                     p,
                      y_pts,
                      heading_pts)
     # init state for next
@@ -215,6 +215,7 @@ class LateralPlanner:
     lateralPlan.dProb = float(self.LP.d_prob)
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
+    lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
 
     lateralPlan.desire = self.desire
     lateralPlan.useLaneLines = self.use_lanelines

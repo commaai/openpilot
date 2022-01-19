@@ -34,7 +34,7 @@ class TestAlertManager(unittest.TestCase):
         for frame in range(duration+10):
           if frame < add_duration:
             AM.add_many(frame, [alert, ])
-          current_alert = AM.process_alerts(frame)
+          current_alert = AM.process_alerts(frame, {})
 
           shown = current_alert is not None
           should_show = frame <= show_duration
