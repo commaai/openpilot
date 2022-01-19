@@ -9,6 +9,7 @@ from common.params import Params, put_nonblocking
 from common.realtime import sec_since_boot
 from selfdrive.hardware import HARDWARE
 from selfdrive.swaglog import cloudlog
+from selfdrive.statsd import statlog
 
 CAR_VOLTAGE_LOW_PASS_K = 0.091 # LPF gain for 5s tau (dt/tau / (dt/tau + 1))
 
@@ -56,6 +57,7 @@ class PowerMonitoring:
       # Low-pass battery voltage
       self.car_voltage_instant_mV = peripheralState.voltage
       self.car_voltage_mV = ((peripheralState.voltage * CAR_VOLTAGE_LOW_PASS_K) + (self.car_voltage_mV * (1 - CAR_VOLTAGE_LOW_PASS_K)))
+      statlog.gauge("car_voltage", self.car_voltage_mV / 1e3)
 
       # Cap the car battery power and save it in a param every 10-ish seconds
       self.car_battery_capacity_uWh = max(self.car_battery_capacity_uWh, 0)

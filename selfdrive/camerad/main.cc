@@ -65,4 +65,5 @@ int main(int argc, char *argv[]) {
   party(device_id, context);
 
   CL_CHECK(clReleaseContext(context));
+  return 0;
 }

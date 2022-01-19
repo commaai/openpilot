@@ -194,9 +194,6 @@ class LongitudinalMpc:
   def __init__(self, e2e=False):
     self.e2e = e2e
     self.reset()
-    self.accel_limit_arr = np.zeros((N+1, 2))
-    self.accel_limit_arr[:,0] = -1.2
-    self.accel_limit_arr[:,1] = 1.2
     self.source = SOURCES[2]
 
   def reset(self):
@@ -218,12 +215,16 @@ class LongitudinalMpc:
     self.status = False
     self.crash_cnt = 0.0
     self.solution_status = 0
+    self.solve_time = 0.0
     self.x0 = np.zeros(X_DIM)
     self.set_weights()
 
   def set_weights(self):
     if self.e2e:
       self.set_weights_for_xva_policy()
+      self.params[:,0] = -10.
+      self.params[:,1] = 10.
+      self.params[:,2] = 1e5
     else:
       self.set_weights_for_lead_policy()
 
@@ -348,21 +349,19 @@ class LongitudinalMpc:
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
     self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
-    self.accel_limit_arr[:,0] = -10.
-    self.accel_limit_arr[:,1] = 10.
-    x_obstacle = 1e5*np.ones(N+1)
-    self.params = np.concatenate([self.accel_limit_arr,
-                                  x_obstacle[:, None],
-                                  self.prev_a[:,None]], axis=1)
+    self.params[:,3] = np.copy(self.prev_a)
     self.run()
-
 
   def run(self):
     for i in range(N+1):
       self.solver.set(i, 'p', self.params[i])
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
+
+    t = sec_since_boot()
     self.solution_status = self.solver.solve()
+    self.solve_time = sec_since_boot() - t
+
     for i in range(N+1):
       self.x_sol[i] = self.solver.get(i, 'x')
     for i in range(N):
@@ -374,7 +373,6 @@ class LongitudinalMpc:
 
     self.prev_a = np.interp(T_IDXS + 0.05, T_IDXS, self.a_solution)
 
-    t = sec_since_boot()
     if self.solution_status != 0:
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
