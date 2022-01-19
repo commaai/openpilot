@@ -106,7 +106,7 @@ class CarController():
       can_sends.append(create_gas_interceptor_command(self.packer, interceptor_gas_cmd, frame // 2))
       self.gas = interceptor_gas_cmd
 
-    # ui mesg is at 100Hz but we send asap if:
+    # ui mesg is at 1Hz but we send asap if:
     # - there is something to display
     # - there is something to stop displaying
     fcw_alert = hud_alert == VisualAlert.fcw

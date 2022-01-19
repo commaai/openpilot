@@ -43,7 +43,7 @@
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RX Hybrid 2020-21             | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | UX Hybrid 2019-21             | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Alphard 2020                  | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Alphard 2019-20               | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon 2016-21                | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Avalon 2022                   | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon Hybrid 2019-21         | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
@@ -141,6 +141,10 @@
 | Nissan    | X-Trail 2017                    | ProPILOT          | Stock            | 0mph               | 0mph         |
 | SEAT      | Ateca 2018                      | Driver Assistance | Stock            | 0mph               | 0mph         |
 | SEAT      | Leon 2014-2020                  | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Subaru    | Ascent 2019                     | EyeSight          | Stock            | 0mph               | 0mph         |
+| Subaru    | Crosstrek 2018-20               | EyeSight          | Stock            | 0mph               | 0mph         |
+| Subaru    | Forester 2019-21                | EyeSight          | Stock            | 0mph               | 0mph         |
+| Subaru    | Impreza 2017-19                 | EyeSight          | Stock            | 0mph               | 0mph         |
 | Škoda     | Kamiq 2021<sup>2</sup>          | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Karoq 2019                      | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Kodiaq 2018-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
@@ -148,10 +152,6 @@
 | Škoda     | Octavia RS 2016                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Scala 2020                      | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Superb 2015-18                  | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Subaru    | Ascent 2019                     | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Crosstrek 2018-20               | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Forester 2019-21                | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Impreza 2017-19                 | EyeSight          | Stock            | 0mph               | 0mph         |
 | Volkswagen| Arteon 2018, 2021<sup>4</sup>   | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Atlas 2018-19, 2022<sup>4</sup> | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| California 2021<sup>4</sup>     | Driver Assistance | Stock            | 0mph               | 32mph        |

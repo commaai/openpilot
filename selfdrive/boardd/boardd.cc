@@ -1,3 +1,5 @@
+#include "selfdrive/boardd/boardd.h"
+
 #include <sched.h>
 #include <sys/cdefs.h>
 #include <sys/resource.h>
@@ -27,7 +29,6 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-#include "selfdrive/boardd/panda.h"
 #include "selfdrive/boardd/pigeon.h"
 
 // -- Multi-panda conventions --
@@ -590,22 +591,11 @@ void pigeon_thread(Panda *panda) {
   }
 }
 
-int main(int argc, char *argv[]) {
-  LOGW("starting boardd");
-
-  if (!Hardware::PC()) {
-    int err;
-    err = util::set_realtime_priority(54);
-    assert(err == 0);
-    err = util::set_core_affinity({Hardware::TICI() ? 4 : 3});
-    assert(err == 0);
-  }
-
-  LOGW("attempting to connect");
-  PubMaster pm({"pandaStates", "peripheralState"});
-
-  std::vector<std::string> serials(argv + 1, argv + argc);
+void boardd_main_thread(std::vector<std::string> serials) {
   if (serials.size() == 0) serials.push_back("");
+
+  PubMaster pm({"pandaStates", "peripheralState"});
+  LOGW("attempting to connect");
 
   // connect to all provided serials
   std::vector<Panda *> pandas;
