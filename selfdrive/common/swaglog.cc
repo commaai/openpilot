@@ -43,6 +43,11 @@ static void cloudlog_init() {
 
   int timeout = 100; // 100 ms timeout on shutdown for messages to be received by logmessaged
   zmq_setsockopt(s.sock, ZMQ_LINGER, &timeout, sizeof(timeout));
+  int t = 0;
+  size_t t_s = sizeof(t);
+  zmq_getsockopt(s.sock, ZMQ_SNDHWM, &t, &t_s);
+  printf("size %d\n", t);
+  // assert(0);
 
   zmq_connect(s.sock, "ipc:///tmp/logmessage");
 
@@ -92,7 +97,7 @@ static void log(char levelnum, const char* filename, int lineno, const char* fun
   while (true) {
     int err = zmq_send(s.sock, buf.c_str(), buf.length(), ZMQ_NOBLOCK);
     if (err == -1 && errno == EAGAIN && retries++ < 10) {
-      // retry 10 times if the underline queue is full.
+      // retry 10 times if the underlying queue is full.
       continue;
     }
     break;
