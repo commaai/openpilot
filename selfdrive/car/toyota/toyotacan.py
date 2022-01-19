@@ -77,7 +77,7 @@ def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_dep
     "SET_ME_X38": 0x38,
     "SET_ME_X02": 0x02,
     "SET_ME_X01": 1,
-    "SET_ME_X01_2": 1,
+    "LKAS_STATUS": 1,
     "REPEATED_BEEPS": 0,
     "TWO_BEEPS": chime,
     "LDA_ALERT": steer,

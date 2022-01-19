@@ -43,7 +43,7 @@
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RX Hybrid 2020-21             | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | UX Hybrid 2019-21             | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Alphard 2020                  | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Alphard 2019-20               | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon 2016-21                | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Avalon 2022                   | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon Hybrid 2019-21         | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
