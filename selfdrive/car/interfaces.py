@@ -33,7 +33,7 @@ class CarInterfaceBase(ABC):
     self.steering_unpressed = 0
     self.low_speed_alert = False
     self.silent_steer_warning = True
-    self.disengage_on_gas = Params().get("DisengageOnGas", encoding='utf8')
+    self.disengage_on_gas = Params().get_bool("DisengageOnGas")
 
     if CarState is not None:
       self.CS = CarState(CP)
