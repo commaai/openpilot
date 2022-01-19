@@ -18,8 +18,8 @@ def _get_fingerprints():
   for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
     car_name = car_folder.split('/')[-1]
     try:
-      fingerprints[car_name] = __import__('selfdrive.car.%s.values' % car_name, fromlist=['FINGERPRINTS']).FINGERPRINTS
-    except (ImportError, IOError, AttributeError):
+      fingerprints[car_name] = __import__(f'selfdrive.car.{car_name}.values', fromlist=['FINGERPRINTS']).FINGERPRINTS
+    except (ImportError, OSError, AttributeError):
       pass
 
   return fingerprints
@@ -80,14 +80,14 @@ if __name__ == "__main__":
     for idx2, f2 in enumerate(fingerprints_flat):
       if idx1 < idx2 and not check_fingerprint_consistency(f1, f2):
         valid = False
-        print("Those two fingerprints are inconsistent {0} {1}".format(car_names[idx1], car_names[idx2]))
+        print(f"Those two fingerprints are inconsistent {car_names[idx1]} {car_names[idx2]}")
         print("")
         print(', '.join("%d: %d" % v for v in sorted(f1.items())))
         print("")
         print(', '.join("%d: %d" % v for v in sorted(f2.items())))
         print("")
 
-  print("Found {0} individual fingerprints".format(len(fingerprints_flat)))
+  print(f"Found {len(fingerprints_flat)} individual fingerprints")
   if not valid or len(fingerprints_flat) == 0:
     print("TEST FAILED")
     sys.exit(1)

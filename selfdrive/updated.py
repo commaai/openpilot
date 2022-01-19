@@ -40,7 +40,7 @@ from common.params import Params
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.version import get_tested_branch
+from selfdrive.version import is_tested_branch
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -142,7 +142,7 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
   now = datetime.datetime.utcnow()
   dt = now - last_update
   if failed_count > 15 and exception is not None:
-    if get_tested_branch():
+    if is_tested_branch():
       extra_text = "Ensure the software is correctly installed"
     else:
       extra_text = exception
@@ -342,7 +342,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
   new_version = cur_hash != upstream_hash
   git_fetch_result = check_git_fetch_result(git_fetch_output)
 
-  cloudlog.info("comparing %s to %s" % (cur_hash, upstream_hash))
+  cloudlog.info(f"comparing {cur_hash} to {upstream_hash}")
   if new_version or git_fetch_result:
     cloudlog.info("Running update")
 
@@ -370,7 +370,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
   return new_version
 
 
-def main():
+def main() -> None:
   params = Params()
 
   if params.get_bool("DisableUpdates"):
@@ -380,7 +380,7 @@ def main():
   ov_lock_fd = open(LOCK_FILE, 'w')
   try:
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-  except IOError as e:
+  except OSError as e:
     raise RuntimeError("couldn't get overlay lock; is another instance running?") from e
 
   # Set low io priority
@@ -400,7 +400,7 @@ def main():
   overlay_init.unlink(missing_ok=True)
 
   first_run = True
-  last_fetch_time = 0
+  last_fetch_time = 0.0
   update_failed_count = 0
 
   # Set initial params for offroad alerts

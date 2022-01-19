@@ -61,7 +61,7 @@ class TestAlerts(unittest.TestCase):
     for alert in ALERTS:
       # for full size alerts, both text fields wrap the text,
       # so it's unlikely that they  would go past the max width
-      if alert.alert_size in [AlertSize.none, AlertSize.full]:
+      if alert.alert_size in (AlertSize.none, AlertSize.full):
         continue
 
       for i, txt in enumerate([alert.alert_text_1, alert.alert_text_2]):
@@ -70,7 +70,7 @@ class TestAlerts(unittest.TestCase):
 
         font = fonts[alert.alert_size][i]
         w, _ = draw.textsize(txt, font)
-        msg = "type: %s msg: %s" % (alert.alert_type, txt)
+        msg = f"type: {alert.alert_type} msg: {txt}"
         self.assertLessEqual(w, max_text_width, msg=msg)
 
   def test_alert_sanity_check(self):

@@ -37,7 +37,7 @@ class CarController():
     can_sends.append(self.tesla_can.create_steering_control(apply_angle, lkas_enabled, frame))
 
     # Longitudinal control (40Hz)
-    if self.CP.openpilotLongitudinalControl and ((frame % 5) in [0, 2]):
+    if self.CP.openpilotLongitudinalControl and ((frame % 5) in (0, 2)):
       target_accel = actuators.accel
       target_speed = max(CS.out.vEgo + (target_accel * CarControllerParams.ACCEL_TO_SPEED_MULTIPLIER), 0)
       max_accel = 0 if target_accel < 0 else target_accel
@@ -62,4 +62,7 @@ class CarController():
 
     # TODO: HUD control
 
-    return can_sends
+    new_actuators = actuators.copy()
+    new_actuators.steeringAngleDeg = apply_angle
+
+    return actuators, can_sends

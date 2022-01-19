@@ -66,7 +66,7 @@ lenv = {
   "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
   "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
 
-  "ACADOS_SOURCE_DIR": Dir("#third_party/acados/acados").abspath,
+  "ACADOS_SOURCE_DIR": Dir("#third_party/acados/include/acados").abspath,
   "ACADOS_PYTHON_INTERFACE_PATH": Dir("#pyextra/acados_template").abspath,
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer",
 }
@@ -125,14 +125,18 @@ else:
       f"#third_party/libyuv/{yuv_dir}/lib",
       "/usr/local/lib",
       "/opt/homebrew/lib",
+      "/usr/local/Homebrew/Library",
       "/usr/local/opt/openssl/lib",
       "/opt/homebrew/opt/openssl/lib",
+      "/usr/local/Cellar",
+      f"#third_party/acados/{arch}/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
       "/opt/homebrew/include",
+      "/usr/local/include",
       "/usr/local/opt/openssl/include",
       "/opt/homebrew/opt/openssl/include"
     ]
@@ -234,6 +238,9 @@ env = Environment(
   tools=["default", "cython", "compilation_db"],
 )
 
+if arch == "Darwin":
+  env['RPATHPREFIX'] = "-rpath "
+
 if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
@@ -298,6 +305,7 @@ if arch == "Darwin":
   qt_dirs += [f"{qt_env['QTDIR']}/include/Qt{m}" for m in qt_modules]
   qt_env["LINKFLAGS"] += ["-F" + os.path.join(qt_env['QTDIR'], "lib")]
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
+  qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
 elif arch == "aarch64":
   qt_env['QTDIR'] = "/system/comma/usr"
   qt_dirs = [

@@ -7,7 +7,6 @@ from functools import lru_cache
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
-
 TESTED_BRANCHES = ['devel', 'release2-staging', 'release3-staging', 'dashcam-staging', 'release2', 'release3', 'dashcam']
 
 training_version: bytes = b"0.2.0"
@@ -55,19 +54,33 @@ def get_origin(default: Optional[str] = None) -> Optional[str]:
 
 
 @cache
+def get_normalized_origin(default: Optional[str] = None) -> Optional[str]:
+  return get_origin()\
+          .replace("git@", "", 1)\
+          .replace(".git", "", 1)\
+          .replace("https://", "", 1)\
+          .replace(":", "/", 1)
+
+
+@cache
 def get_version() -> str:
   with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")) as _versionf:
     version = _versionf.read().split('"')[1]
   return version
 
+@cache
+def get_short_version() -> str:
+  return get_version().split('-')[0]
 
 @cache
-def get_prebuilt() -> bool:
+def is_prebuilt() -> bool:
   return os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 
 @cache
-def get_comma_remote() -> bool:
+def is_comma_remote() -> bool:
+  # note to fork maintainers, this is used for release metrics. please do not
+  # touch this to get rid of the orange startup alert. there's better ways to do that
   origin = get_origin()
   if origin is None:
     return False
@@ -76,12 +89,12 @@ def get_comma_remote() -> bool:
 
 
 @cache
-def get_tested_branch() -> bool:
+def is_tested_branch() -> bool:
   return get_short_branch() in TESTED_BRANCHES
 
 
 @cache
-def get_dirty() -> bool:
+def is_dirty() -> bool:
   origin = get_origin()
   branch = get_branch()
   if (origin is None) or (branch is None):
@@ -90,7 +103,7 @@ def get_dirty() -> bool:
   dirty = False
   try:
     # Actually check dirty files
-    if not get_prebuilt():
+    if not is_prebuilt():
       # This is needed otherwise touched files might show up as modified
       try:
         subprocess.check_call(["git", "update-index", "--refresh"])
@@ -98,19 +111,6 @@ def get_dirty() -> bool:
         pass
 
       dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
-
-      # Log dirty files
-      if dirty and get_comma_remote():
-        try:
-          dirty_files = run_cmd(["git", "diff-index", branch, "--"])
-          cloudlog.event("dirty comma branch", version=get_version(), dirty=dirty, origin=origin, branch=branch,
-                          dirty_files=dirty_files, commit=get_commit(), origin_commit=get_commit(branch))
-        except subprocess.CalledProcessError:
-          pass
-
-    dirty = dirty or (not get_comma_remote())
-    dirty = dirty or ('master' in branch)
-
   except subprocess.CalledProcessError:
     cloudlog.exception("git subprocess failed while checking dirty")
     dirty = True
@@ -125,9 +125,11 @@ if __name__ == "__main__":
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
 
-  print("Dirty: %s" % get_dirty())
-  print("Version: %s" % get_version())
-  print("Origin: %s" % get_origin())
-  print("Branch: %s" % get_branch())
-  print("Short branch: %s" % get_short_branch())
-  print("Prebuilt: %s" % get_prebuilt())
+  print(f"Dirty: {is_dirty()}")
+  print(f"Version: {get_version()}")
+  print(f"Short version: {get_short_version()}")
+  print(f"Origin: {get_origin()}")
+  print(f"Normalized origin: {get_normalized_origin()}")
+  print(f"Branch: {get_branch()}")
+  print(f"Short branch: {get_short_branch()}")
+  print(f"Prebuilt: {is_prebuilt()}")

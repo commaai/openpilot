@@ -9,12 +9,14 @@ from selfdrive.swaglog import cloudlog
 
 TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
+# model path is in the frame of EON's camera. TICI is 0.1 m away,
+# however the average measured path difference is 0.04 m
 if EON:
-  CAMERA_OFFSET = 0.06
+  CAMERA_OFFSET = -0.06
   PATH_OFFSET = 0.0
 elif TICI:
-  CAMERA_OFFSET = -0.04
-  PATH_OFFSET = -0.04
+  CAMERA_OFFSET = 0.04
+  PATH_OFFSET = 0.04
 else:
   CAMERA_OFFSET = 0.0
   PATH_OFFSET = 0.0
@@ -44,30 +46,31 @@ class LanePlanner:
     self.path_offset = -PATH_OFFSET if wide_camera else PATH_OFFSET
 
   def parse_model(self, md):
-    if len(md.laneLines) == 4 and len(md.laneLines[0].t) == TRAJECTORY_SIZE:
-      self.ll_t = (np.array(md.laneLines[1].t) + np.array(md.laneLines[2].t))/2
+    lane_lines = md.laneLines
+    if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
+      self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
       # left and right ll x is the same
-      self.ll_x = md.laneLines[1].x
-      # only offset left and right lane lines; offsetting path does not make sense
-      self.lll_y = np.array(md.laneLines[1].y) - self.camera_offset
-      self.rll_y = np.array(md.laneLines[2].y) - self.camera_offset
+      self.ll_x = lane_lines[1].x
+      self.lll_y = np.array(lane_lines[1].y) + self.camera_offset
+      self.rll_y = np.array(lane_lines[2].y) + self.camera_offset
       self.lll_prob = md.laneLineProbs[1]
       self.rll_prob = md.laneLineProbs[2]
       self.lll_std = md.laneLineStds[1]
       self.rll_std = md.laneLineStds[2]
 
-    if len(md.meta.desireState):
-      self.l_lane_change_prob = md.meta.desireState[log.LateralPlan.Desire.laneChangeLeft]
-      self.r_lane_change_prob = md.meta.desireState[log.LateralPlan.Desire.laneChangeRight]
+    desire_state = md.meta.desireState
+    if len(desire_state):
+      self.l_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeLeft]
+      self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
 
   def get_d_path(self, v_ego, path_t, path_xyz):
     # Reduce reliance on lanelines that are too far apart or
     # will be in a few seconds
-    path_xyz[:, 1] -= self.path_offset
+    path_xyz[:, 1] += self.path_offset
     l_prob, r_prob = self.lll_prob, self.rll_prob
     width_pts = self.rll_y - self.lll_y
     prob_mods = []
-    for t_check in [0.0, 1.5, 3.0]:
+    for t_check in (0.0, 1.5, 3.0):
       width_at_t = interp(t_check * (v_ego + 7), self.ll_x, width_pts)
       prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
     mod = min(prob_mods)

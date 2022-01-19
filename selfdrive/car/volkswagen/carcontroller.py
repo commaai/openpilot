@@ -72,7 +72,7 @@ class CarController():
     # **** HUD Controls ***************************************************** #
 
     if frame % P.LDW_STEP == 0:
-      if visual_alert in [VisualAlert.steerRequired, VisualAlert.ldw]:
+      if visual_alert in (VisualAlert.steerRequired, VisualAlert.ldw):
         hud_alert = MQB_LDW_MESSAGES["laneAssistTakeOverSilent"]
       else:
         hud_alert = MQB_LDW_MESSAGES["none"]
@@ -110,4 +110,7 @@ class CarController():
             self.graButtonStatesToSend = None
             self.graMsgSentCount = 0
 
-    return can_sends
+    new_actuators = actuators.copy()
+    new_actuators.steer = self.apply_steer_last / P.STEER_MAX
+
+    return new_actuators, can_sends
