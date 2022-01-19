@@ -88,10 +88,15 @@ static void log(char levelnum, const char* filename, int lineno, const char* fun
   }
 
   const std::string buf = levelnum + log_s;
-  int err = 0;
-  do {
-    err = zmq_send(s.sock, buf.c_str(), buf.length(), ZMQ_NOBLOCK);
-  } while (err == -1 && errno == EAGAIN);
+  int retries = 0;
+  while (true) {
+    int err = zmq_send(s.sock, buf.c_str(), buf.length(), ZMQ_NOBLOCK);
+    if (err == -1 && errno == EAGAIN && retries++ < 10) {
+      // retry 10 times if the underline queue is full.
+      continue;
+    }
+    break;
+  }
 }
 
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
