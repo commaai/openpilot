@@ -67,17 +67,15 @@ def replay_cameras(lr, frs):
     ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
   ]
 
-  def replay_camera(s, stream, dt, vipc_server, fr, size):
+  def replay_camera(s, stream, dt, vipc_server, frames, size):
     pm = messaging.PubMaster([s, ])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
 
     img = b"\x00" * int(size[0]*size[1]*3/2)
     while True:
-      if fr is not None:
-        img = fr.get(rk.frame % fr.frame_count, pix_fmt='yuv420p')[0]
-        img = img.flatten().tobytes()
+      if frames is not None:
+        img = frames[rk.frame % len(frames)]
 
-      # TODO: this is super laggy, get the frames beforehand
       rk.keep_time()
 
       m = messaging.new_message(s)
@@ -95,9 +93,18 @@ def replay_cameras(lr, frs):
   vs = VisionIpcServer("camerad")
   for (s, dt, size, stream) in cameras:
     fr = frs.get(s, None)
+
+    frames = None
+    if fr is not None:
+      print(f"Decomressing frames {s}")
+      frames = []
+      for i in tqdm(range(fr.frame_count)):
+        img = fr.get(i, pix_fmt='yuv420p')[0]
+        frames.append(img.flatten().tobytes())
+
     vs.create_buffers(stream, 40, False, size[0], size[1])
     p.append(multiprocessing.Process(target=replay_camera,
-                                     args=(s, stream, dt, vs, fr, size)))
+                                     args=(s, stream, dt, vs, frames, size)))
 
   # hack to make UI work
   vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
