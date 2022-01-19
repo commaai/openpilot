@@ -141,6 +141,8 @@ class TestLoggerd(unittest.TestCase):
           dat = np.empty(int(frame_size[0]*frame_size[1]*3/2), dtype=np.uint8)
           vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n/fps, n/fps)
           camera_state = messaging.new_message(state)
+          frame = getattr(camera_state, state)
+          frame.frameId = n
           pm.send(state, camera_state)
         time.sleep(1.0/fps)
 
