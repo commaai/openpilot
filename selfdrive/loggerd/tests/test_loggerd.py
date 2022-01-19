@@ -31,11 +31,6 @@ CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in service_list
 
 
 class TestLoggerd(unittest.TestCase):
-  # TODO: all tests should work on PC
-  @classmethod
-  def setUpClass(cls):
-    pass
-
   def _get_latest_log_dir(self):
     log_dirs = sorted(Path(ROOT).iterdir(), key=lambda f: f.stat().st_mtime)
     return log_dirs[-1]
