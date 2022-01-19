@@ -107,11 +107,8 @@ class TestLoggerd(unittest.TestCase):
   def test_rotation(self):
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
-    if PC:
-      expected_files = {"rlog.bz2", "qlog.bz2", "qcamera.ts.mkv", "fcamera.hevc.mkv", "dcamera.hevc.mkv"}
-    else:
-      expected_files = {"rlog.bz2", "qlog.bz2", "qcamera.ts", "fcamera.hevc", "dcamera.hevc"}
 
+    expected_files = {"rlog.bz2", "qlog.bz2", "qcamera.ts", "fcamera.hevc", "dcamera.hevc"}
     streams = [(VisionStreamType.VISION_STREAM_ROAD, tici_f_frame_size if TICI else eon_f_frame_size, "roadCameraState"),
               (VisionStreamType.VISION_STREAM_DRIVER, tici_d_frame_size if TICI else eon_d_frame_size, "driverCameraState")]
     if TICI:
@@ -135,6 +132,7 @@ class TestLoggerd(unittest.TestCase):
         for stream_type, frame_size, state in streams:
           dat = np.empty(int(frame_size[0]*frame_size[1]*3/2), dtype=np.uint8)
           vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n/fps, n/fps)
+
           camera_state = messaging.new_message(state)
           frame = getattr(camera_state, state)
           frame.frameId = n
