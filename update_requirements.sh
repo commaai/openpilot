@@ -16,9 +16,12 @@ export MAKEFLAGS="-j$(nproc)"
 
 PYENV_PYTHON_VERSION=$(cat .python-version)
 if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
-  echo "-- pyenv update ..."
-  pyenv update
-  echo "[ ] updated pyenv to $(pyenv --version) "
+  # no pyenv update on mac
+  if [ "$(uname)" == "Linux" ]; then
+    echo "pyenv update ..."
+    pyenv update
+    echo "[ ] updated pyenv to $(pyenv --version) "
+  fi
   echo "-- pyenv python ${PYENV_PYTHON_VERSION} install ..."
   CONFIGURE_OPTS="--enable-shared" pyenv install -f ${PYENV_PYTHON_VERSION}
   echo "[ ] installed python ${PYENV_PYTHON_VERSION}"
