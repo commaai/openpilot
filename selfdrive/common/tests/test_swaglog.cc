@@ -81,7 +81,7 @@ TEST_CASE("swaglog") {
   setenv("DONGLE_ID", dongle_id.c_str(), 1);
   setenv("dirty", "1", 1);
   const int thread_cnt = 5;
-  const int thread_msg_cnt = 1000;
+  const int thread_msg_cnt = 100;
 
   void *zctx = zmq_ctx_new();
   send_stop_msg(zctx);

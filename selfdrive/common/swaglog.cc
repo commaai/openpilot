@@ -43,11 +43,6 @@ static void cloudlog_init() {
 
   int timeout = 100; // 100 ms timeout on shutdown for messages to be received by logmessaged
   zmq_setsockopt(s.sock, ZMQ_LINGER, &timeout, sizeof(timeout));
-  int t = 0;
-  size_t t_s = sizeof(t);
-  zmq_getsockopt(s.sock, ZMQ_SNDHWM, &t, &t_s);
-  printf("size %d\n", t);
-  // assert(0);
 
   zmq_connect(s.sock, "ipc:///tmp/logmessage");
 
