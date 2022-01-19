@@ -64,7 +64,7 @@ RawLogger::~RawLogger() {
 }
 
 void RawLogger::encoder_open(const char* path) {
-  vid_path = util::string_format("%s/%s.mkv", path, filename);
+  vid_path = util::string_format("%s/%s", path, filename);
 
   // create camera lock file
   lock_path = util::string_format("%s/%s.lock", path, filename);
