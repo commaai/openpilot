@@ -18,7 +18,7 @@ struct USBContext {
 
 class USBDeviceList {
 public:
-  USBDeviceList(libusb_context *ctx);
+  USBDeviceList(const USBContext &ctx);
   ~USBDeviceList();
   libusb_device_handle *open(const std::string &serial, std::string &out_serial);
   int size();

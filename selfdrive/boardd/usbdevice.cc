@@ -6,6 +6,8 @@
 
 #include "selfdrive/common/swaglog.h"
 
+// USBContext
+
 USBContext::USBContext() {
   int err = libusb_init(&context);
   if (err != 0) {
@@ -23,8 +25,10 @@ USBContext::~USBContext() {
   libusb_exit(context);
 }
 
-USBDeviceList::USBDeviceList(libusb_context *ctx) {
-  num_devices = libusb_get_device_list(ctx, &dev_list);
+// USBDeviceList
+
+USBDeviceList::USBDeviceList(const USBContext &ctx) {
+  num_devices = libusb_get_device_list(ctx.context, &dev_list);
 }
 
 USBDeviceList::~USBDeviceList() {
@@ -39,10 +43,10 @@ libusb_device_handle *USBDeviceList::open(const std::string &serial, std::string
 
     libusb_device_handle *handle = nullptr;
     if (libusb_open(dev_list[i], &handle) == 0) {
-      unsigned char s[256] = {'\0'};
-      libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, s, std::size(s) - 1);
-      if (serial.empty() || serial == (char *)s) {
-        out_serial = (char *)s;
+      char s[256] = {'\0'};
+      libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, (uint8_t*)s, std::size(s) - 1);
+      if (serial.empty() || serial == s) {
+        out_serial = s;
         return handle;
       }
       libusb_close(handle);
@@ -56,13 +60,13 @@ int USBDeviceList::size() {
   for (ssize_t i = 0; i < num_devices; ++i) {
     libusb_device_descriptor desc = {};
     int ret = libusb_get_device_descriptor(dev_list[i], &desc);
-    cnt += ret >= 0 && desc.idVendor == USB_VID && desc.idProduct == USB_PID;
+    cnt += ret == 0 && desc.idVendor == USB_VID && desc.idProduct == USB_PID;
   }
   return cnt;
 }
 
 bool USBDevice::open(const std::string &serial) {
-  dev_handle = USBDeviceList(ctx.context).open(serial, usb_serial);
+  dev_handle = USBDeviceList(ctx).open(serial, usb_serial);
   if (!dev_handle) return false;
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {

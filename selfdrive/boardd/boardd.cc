@@ -429,7 +429,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
     // TODO: make this check fast, currently takes 16ms
     // check if we have new pandas and are offroad
-    if (!ignition && (pandas.size() != USBDeviceList(usb_ctx.context).size())) {
+    if (!ignition && (pandas.size() != USBDeviceList(usb_ctx).size())) {
       LOGW("Reconnecting to changed amount of pandas!");
       do_exit = true;
       break;
