@@ -131,7 +131,6 @@ class CarState(CarStateBase):
       ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
       ("GEAR", "GEAR_PACKET", 0),
       ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
-      ("GAS_PEDAL", "GAS_PEDAL", 0),
       ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
       ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
       ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
@@ -164,12 +163,18 @@ class CarState(CarStateBase):
       ("ESP_CONTROL", 3),
       ("EPS_STATUS", 25),
       ("BRAKE_MODULE", 40),
-      ("GAS_PEDAL", 33),
       ("WHEEL_SPEEDS", 80),
       ("STEER_ANGLE_SENSOR", 80),
       ("PCM_CRUISE", 33),
       ("STEER_TORQUE_SENSOR", 50),
     ]
+
+    if CP.carFingerprint in HYBRID_CAR:
+      signals.append(("GAS_PEDAL", "GAS_PEDAL_HYBRID", 0))
+      checks.append(("GAS_PEDAL_HYBRID", 33))
+    else:
+      signals.append(("GAS_PEDAL", "GAS_PEDAL", 0))
+      checks.append(("GAS_PEDAL", 33))
 
     if CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
       signals.append(("MAIN_ON", "DSU_CRUISE", 0))
