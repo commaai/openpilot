@@ -82,12 +82,16 @@ static void cloudlog_init() {
   s.inited = true;
 }
 
-static void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
+static void log(char levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
   if (levelnum >= s.print_level) {
     printf("%s: %s\n", filename, msg);
   }
-  char levelnum_c = levelnum;
-  zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
+
+  const std::string buf = levelnum + log_s;
+  int err = 0;
+  do {
+    err = zmq_send(s.sock, buf.c_str(), buf.length(), ZMQ_NOBLOCK);
+  } while (err == -1 && errno == EAGAIN);
 }
 
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
