@@ -15,7 +15,7 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.hardware import PC, TICI
+from selfdrive.hardware import TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.version import get_version
