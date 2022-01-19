@@ -55,7 +55,6 @@ function install_ubuntu_common_requirements() {
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
     clinfo \
-    python-dev \
     qml-module-qtquick2 \
     qtmultimedia5-dev \
     qtlocation5-dev \
@@ -68,11 +67,20 @@ function install_ubuntu_common_requirements() {
     valgrind
 }
 
-# Install Ubuntu 21.10 packages
-function install_ubuntu_latest_requirements() {
+# Install Ubuntu 22.04 packages
+function install_ubuntu_2204_requirements() {
   install_ubuntu_common_requirements
 
   sudo apt-get install -y --no-install-recommends \
+    python-dev-is-python3
+}
+
+# Install Ubuntu 21.10 packages
+function install_ubuntu_2110_requirements() {
+  install_ubuntu_common_requirements
+
+  sudo apt-get install -y --no-install-recommends \
+    python-dev \
     qtbase5-dev \
     qtchooser \
     qt5-qmake \
@@ -84,6 +92,7 @@ function install_ubuntu_lts_requirements() {
   install_ubuntu_common_requirements
 
   sudo apt-get install -y --no-install-recommends \
+    python-dev \
     libavresample-dev \
     qt5-default
 }
@@ -92,8 +101,11 @@ function install_ubuntu_lts_requirements() {
 if [ -f "/etc/os-release" ]; then
   source /etc/os-release
   case "$ID $VERSION_ID" in
+    "ubuntu 22.04")
+      install_ubuntu_2204_requirements
+      ;;
     "ubuntu 21.10")
-      install_ubuntu_latest_requirements
+      install_ubuntu_2110_requirements
       ;;
     "ubuntu 20.04")
       install_ubuntu_lts_requirements
