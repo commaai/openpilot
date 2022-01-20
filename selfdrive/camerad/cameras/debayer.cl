@@ -1,3 +1,15 @@
+#define Y_WIDTH RGB_WIDTH
+#define Y_HEIGHT RGB_HEIGHT
+#define UV_WIDTH RGB_WIDTH / 2
+#define UV_HEIGHT RGB_HEIGHT / 2
+#define HALF_UV_WIDTH UV_WIDTH / 2
+#define U_OFFSET Y_WIDTH * Y_HEIGHT
+#define V_OFFSET Y_WIDTH * Y_HEIGHT + UV_WIDTH * UV_HEIGHT
+
+#define RGB_TO_Y(r, g, b) ((((mul24(b, 13) + mul24(g, 65) + mul24(r, 33)) + 64) >> 7) + 16)
+#define RGB_TO_U(r, g, b) ((mul24(b, 56) - mul24(g, 37) - mul24(r, 19) + 0x8080) >> 8)
+#define RGB_TO_V(r, g, b) ((mul24(r, 56) - mul24(g, 47) - mul24(b, 9) + 0x8080) >> 8)
+
 const __constant float3 color_correction[3] = {
   // Matrix from WBraw -> sRGBD65 (normalized)
   (float3)( 1.62393627, -0.2092988,  0.00119886),
@@ -5,21 +17,19 @@ const __constant float3 color_correction[3] = {
   (float3)(-0.16659312, -0.3441688,  1.59176912),
 };
 
-float3 color_correct(float3 x) {
-  float3 ret = (0,0,0);
-
+inline float3 color_correct(float3 x) {
   // white balance of daylight
   x /= (float3)(0.4609375, 1.0, 0.546875);
-  x = max(0.0, min(1.0, x));
+  x = clamp(x, 0.0, 1.0);
 
   // fix up the colors
-  ret += x.x * color_correction[0];
+  float3 ret = x.x * color_correction[0];
   ret += x.y * color_correction[1];
   ret += x.z * color_correction[2];
   return ret;
 }
 
-float3 srgb_gamma(float3 p) {
+inline float3 srgb_gamma(float3 p) {
   // go all out and add an sRGB gamma curve
   const float3 ph = (1.0f + 0.055f)*pow(p, 1/2.4f) - 0.055f;
 	const float3 pl = p*12.92f;
@@ -36,26 +46,29 @@ inline uint4 decompress(uint4 p, uint4 pl) {
 }
 
 __kernel void debayer10(__global uchar const * const in,
-                        __global uchar * out, float digital_gain)
+                        __global uchar * out, float digital_gain, __local uchar * us, __local uchar * vs)
 {
-  const int oy = get_global_id(0);
-  if (oy >= RGB_HEIGHT) return;
-  const int iy = oy * 2;
+  const int rgby_y = get_global_id(0);
+  const int lid = get_local_id(0);
+  const int uv_y = rgby_y / 2;
+  const int frame_y = rgby_y * 2;
 
   uint4 pint_last;
-  for (int ox = 0; ox < RGB_WIDTH; ox += 2) {
-    const int ix = (ox/2) * 5;
+  uchar3 rgbs[2];
+
+  for (int uv_x = 0; uv_x < UV_WIDTH; uv_x++) {
+    const int frame_x = mul24(uv_x, 5);
 
     // TODO: why doesn't this work for the frontview
-    /*const uchar8 v1 = vload8(0, &in[iy * FRAME_STRIDE + ix]);
+    /*const uchar8 v1 = vload8(0, &in[frame_y * FRAME_STRIDE + frame_x]);
     const uchar ex1 = v1.s4;
-    const uchar8 v2 = vload8(0, &in[(iy+1) * FRAME_STRIDE + ix]);
+    const uchar8 v2 = vload8(0, &in[(frame_y+1) * FRAME_STRIDE + frame_x]);
     const uchar ex2 = v2.s4;*/
 
-    const uchar4 v1 = vload4(0, &in[iy * FRAME_STRIDE + ix]);
-    const uchar ex1 = in[iy * FRAME_STRIDE + ix + 4];
-    const uchar4 v2 = vload4(0, &in[(iy+1) * FRAME_STRIDE + ix]);
-    const uchar ex2 = in[(iy+1) * FRAME_STRIDE + ix + 4];
+    const uchar4 v1 = vload4(0, &in[mad24(frame_y, FRAME_STRIDE, frame_x)]);
+    const uchar ex1 = in[mad24(frame_y, FRAME_STRIDE, frame_x + 4)];
+    const uchar4 v2 = vload4(0, &in[mad24(frame_y + 1, FRAME_STRIDE, frame_x)]);
+    const uchar ex2 = in[mad24(frame_y + 1, FRAME_STRIDE, frame_x + 4)];
 
     uint4 pinta[2];
     pinta[0] = (uint4)(
@@ -70,12 +83,13 @@ __kernel void debayer10(__global uchar const * const in,
       (((uint)v2.s3 << 2) + ( (ex2 >> 6) & 3)));
 
     #pragma unroll
-    for (uint px = 0; px < 2; px++) {
+    for (int px = 0; px < 2; px++) {
+      const int rgby_x = mad24(uv_x, 2, px);
       uint4 pint = pinta[px];
 
 #if HDR
       // decompress HDR
-      pint = (ox == 0 && px == 0) ? ((pint<<4) | 8) : decompress(pint, pint_last);
+      pint = (rgby_x == 0) ? ((pint<<4) | 8) : decompress(pint, pint_last);
       pint_last = pint;
 #endif
 
@@ -89,7 +103,7 @@ __kernel void debayer10(__global uchar const * const in,
 
       // correct vignetting (no pow function?)
       // see https://www.eecis.udel.edu/~jye/lab_research/09/JiUp.pdf the A (4th order)
-      const float r = ((oy - RGB_HEIGHT/2)*(oy - RGB_HEIGHT/2) + (ox - RGB_WIDTH/2)*(ox - RGB_WIDTH/2));
+      const float r = ((rgby_y - RGB_HEIGHT/2)*(rgby_y - RGB_HEIGHT/2) + (rgby_x - RGB_WIDTH/2)*(rgby_x - RGB_WIDTH/2));
       const float fake_f = 700.0f;    // should be 910, but this fits...
       const float lil_a = (1.0f + r/(fake_f*fake_f));
       p = p * lil_a * lil_a;
@@ -124,8 +138,38 @@ __kernel void debayer10(__global uchar const * const in,
 #endif
 
       // output BGR
-      const int ooff = oy * RGB_STRIDE/3 + ox;
-      vstore3(convert_uchar3_sat(c1.zyx * 255.0f), ooff+px, out);
+      rgbs[px] = convert_uchar3_sat(c1.zyx * 255.0f);
+    }
+
+    const int yi_start = mad24(rgby_y, RGB_WIDTH, uv_x * 2);
+    uchar2 yy = (uchar2)(
+      RGB_TO_Y(rgbs[0].s2, rgbs[0].s1, rgbs[0].s0),
+      RGB_TO_Y(rgbs[1].s2, rgbs[1].s1, rgbs[1].s0)
+    );
+    vstore2(yy, 0, out + yi_start);
+
+    uchar3 argb = hadd(rgbs[0], rgbs[1]);
+    us[mad24(lid, UV_WIDTH, uv_x)] = RGB_TO_U(argb.s0, argb.s1, argb.s2);
+    vs[mad24(lid, UV_WIDTH, uv_x)] = RGB_TO_V(argb.s0, argb.s1, argb.s2);
+  }
+
+  barrier(CLK_LOCAL_MEM_FENCE);
+
+  if (lid & 1) {
+    for (int uv_x = 0; uv_x < HALF_UV_WIDTH; uv_x++) {
+      int ui = mad24(uv_y, UV_WIDTH, U_OFFSET + uv_x);
+      int vi = mad24(uv_y, UV_WIDTH, V_OFFSET + uv_x);
+
+      out[vi] = hadd(us[mad24(lid-1, UV_WIDTH, uv_x)], us[mad24(lid, UV_WIDTH, uv_x)]);
+      out[ui] = hadd(vs[mad24(lid-1, UV_WIDTH, uv_x)], vs[mad24(lid, UV_WIDTH, uv_x)]);
+    }
+  } else {
+    for (int uv_x = HALF_UV_WIDTH; uv_x < UV_WIDTH; uv_x++) {
+      int ui = mad24(uv_y, UV_WIDTH, U_OFFSET + uv_x);
+      int vi = mad24(uv_y, UV_WIDTH, V_OFFSET + uv_x);
+
+      out[vi] = hadd(us[mad24(lid, UV_WIDTH, uv_x)], us[mad24(lid+1, UV_WIDTH, uv_x)]);
+      out[ui] = hadd(vs[mad24(lid, UV_WIDTH, uv_x)], vs[mad24(lid+1, UV_WIDTH, uv_x)]);
     }
   }
 }
