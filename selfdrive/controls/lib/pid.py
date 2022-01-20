@@ -55,7 +55,7 @@ class PIController():
 
     # Clip integrator based on the last output value
     #TODO require last_output by position only
-    #TODO test long performance (freeze integrator performance)
+    #TODO test long performance (freeze integrator removal)
     #TODO (option) i_unwind_rate can be used instead of i_backfeed_rate
     if last_output is not None:
       if not freeze_integrator:
