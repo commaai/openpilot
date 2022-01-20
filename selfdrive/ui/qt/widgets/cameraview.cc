@@ -33,7 +33,7 @@ const char yuv_fragment_shader[] =
   "#version 300 es\n"
   "precision mediump float;\n"
 #endif
-  "in vec4 vTexCoord;\n"
+  "in vec2 vTexCoord;\n"
   "out vec4 colorOut;\n"
   "uniform sampler2D texture_y;\n"
   "uniform sampler2D texture_u;\n"
