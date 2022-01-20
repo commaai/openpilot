@@ -34,8 +34,7 @@ private:
   static void handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf);
 
   int in_width, in_height, fps;
-  int out_width;
-  int out_height;
+  int out_width, out_height;
   char vid_path[1024];
   char lock_path[1024];
   bool is_open = false;

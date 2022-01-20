@@ -183,7 +183,6 @@ OmxEncoder::OmxEncoder(const char *filename, int in_width, int in_height, int fp
   in_port.format.video.nFrameHeight = in_height;
   in_port.format.video.nStride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
   in_port.format.video.nSliceHeight = in_height;
-  // in_port.nBufferSize = (this->width * this->height * 3) / 2;
   in_port.nBufferSize = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, in_width, in_height);
   in_port.format.video.xFramerate = (this->fps * 65536);
   in_port.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
@@ -206,7 +205,6 @@ OmxEncoder::OmxEncoder(const char *filename, int in_width, int in_height, int fp
   out_port.format.video.nBitrate = bitrate;
   out_port.format.video.eCompressionFormat = h265 ? OMX_VIDEO_CodingHEVC : OMX_VIDEO_CodingAVC;
   out_port.format.video.eColorFormat = OMX_COLOR_FormatUnused;
-
   OMX_CHECK(OMX_SetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR) &out_port));
 
   OMX_CHECK(OMX_GetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR) &out_port));
@@ -392,9 +390,6 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
     return -1;
   }
 
-  // this sometimes freezes... put it outside the encoder lock so we can still trigger rotates...
-  // THIS IS A REALLY BAD IDEA, but apparently the race has to happen 30 times to trigger this
-  //pthread_mutex_unlock(&this->lock);
   OMX_BUFFERHEADERTYPE* in_buf = nullptr;
   while (!this->free_in.try_pop(in_buf, 20)) {
     if (do_exit) {
@@ -402,13 +397,10 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
     }
   }
 
-  int ret = this->counter;
-
-  uint8_t *in_buf_ptr = in_buf->pBuffer;
-  uint8_t *in_y_ptr = in_buf_ptr;
+  uint8_t *in_y_ptr = in_buf->pBuffer;
   int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
   int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, in_width);
-  uint8_t *in_uv_ptr = in_buf_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, in_height));
+  uint8_t *in_uv_ptr = in_y_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, in_height));
   int err = libyuv::I420ToNV12(y_ptr, in_width,
                    u_ptr, in_width/2,
                    v_ptr, in_width/2,
@@ -435,15 +427,10 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   }
 
   this->dirty = true;
-
-  this->counter++;
-
-  return ret;
+  return this->counter++;
 }
 
 void OmxEncoder::encoder_open(const char* path) {
-  int err;
-
   snprintf(this->vid_path, sizeof(this->vid_path), "%s/%s", path, this->filename);
   LOGD("encoder_open %s remuxing:%d", this->vid_path, this->remuxing);
 
@@ -468,7 +455,7 @@ void OmxEncoder::encoder_open(const char* path) {
     this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
     this->codec_ctx->time_base = (AVRational){ 1, this->fps };
 
-    err = avio_open(&this->ofmt_ctx->pb, this->vid_path, AVIO_FLAG_WRITE);
+    int err = avio_open(&this->ofmt_ctx->pb, this->vid_path, AVIO_FLAG_WRITE);
     assert(err >= 0);
 
     this->wrote_codec_config = false;
