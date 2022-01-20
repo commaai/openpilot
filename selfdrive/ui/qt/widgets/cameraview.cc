@@ -27,26 +27,30 @@ const char frame_vertex_shader[] =
   "}\n";
 
 const char yuv_fragment_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
-    "#version 150 core\n"
+#ifdef __APPLE__
+  "#version 150 core\n"
 #else
-    "#version 300 es\n"
+  "#version 300 es\n"
+  "precision mediump float;\n"
 #endif
-    "precision mediump float;\n"
-    "in vec2 vTexCoord;\n"
-    "out vec4 fragColor;\n"
-    "uniform sampler2D texture_y;\n"
-    "uniform sampler2D texture_u;\n"
-    "uniform sampler2D texture_v;\n"
-    "void main() {\n"
-    "  float y = texture(texture_y, vTexCoord).r;\n"
-    "  float u = texture(texture_u, vTexCoord).r - 0.5;\n"
-    "  float v = texture(texture_v, vTexCoord).r - 0.5;\n"
-    "  float r = y + 1.402 * v;\n"
-    "  float g = y - 0.344 * u - 0.714 * v;\n"
-    "  float b = y + 1.772 * u;\n"
-    "  fragColor = vec4(r, g, b, 1.0);\n"
-    "}\n";
+  "in vec4 vTexCoord;\n"
+  "out vec4 colorOut;\n"
+  "uniform sampler2D texture_y;\n"
+  "uniform sampler2D texture_u;\n"
+  "uniform sampler2D texture_v;\n"
+  "void main() {\n"
+  "  float y = texture(texture_y, vTexCoord).r;\n"
+  "  float u = texture(texture_u, vTexCoord).r - 0.5;\n"
+  "  float v = texture(texture_v, vTexCoord).r - 0.5;\n"
+  "  float r = y + 1.402 * v;\n"
+  "  float g = y - 0.344 * u - 0.714 * v;\n"
+  "  float b = y + 1.772 * u;\n"
+  "  colorOut = vec4(r, g, b, 1.0);\n"
+#ifdef QCOM
+  "  vec3 dz = vec3(0.0627f, 0.0627f, 0.0627f);\n"
+  "  colorOut.rgb = ((vec3(1.0f, 1.0f, 1.0f) - dz) * colorOut.rgb / vec3(1.0f, 1.0f, 1.0f)) + dz;\n"
+#endif
+  "}\n";
 
 const mat4 device_transform = {{
   1.0,  0.0, 0.0, 0.0,
@@ -185,7 +189,7 @@ void CameraViewWidget::hideEvent(QHideEvent *event) {
 
 void CameraViewWidget::updateFrameMat(int w, int h) {
   if (zoomed_view) {
-    if (stream_type == VISION_STREAM_YUV_FRONT) {
+    if (stream_type == VISION_STREAM_DRIVER) {
       frame_mat = matmul(device_transform, get_driver_view_transform(w, h, stream_width, stream_height));
     } else {
       auto intrinsic_matrix = stream_type == VISION_STREAM_WIDE_ROAD ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
@@ -226,7 +230,6 @@ void CameraViewWidget::paintGL() {
     wait_fence->wait();
   }
 
-  glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
 
   glUseProgram(program->programId());

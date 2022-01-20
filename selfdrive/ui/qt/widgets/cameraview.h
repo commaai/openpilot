@@ -43,7 +43,7 @@ protected:
 
   bool zoomed_view;
   std::mutex lock;
-  int latest_texture_id = -1;
+  VisionBuf *latest_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
   std::unique_ptr<WaitFence> wait_fence;
