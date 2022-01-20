@@ -30,19 +30,18 @@ original_segments = [
 ]
 
 segments = [
-  ("HYUNDAI", "fakedata|2022-01-19--14-44-48--0"),
-  ("TOYOTA", "fakedata|2022-01-19--14-46-30--0"),
-  ("TOYOTA2", "fakedata|2022-01-19--14-48-09--0"),
-  ("TOYOTA3", "fakedata|2022-01-19--14-50-18--0"),
-  ("HONDA", "fakedata|2022-01-19--14-52-08--0"),
-  ("HONDA2", "fakedata|2022-01-19--14-53-50--0"),
-  ("CHRYSLER", "fakedata|2022-01-19--14-55-33--0"),
-  ("SUBARU", "fakedata|2022-01-19--14-57-13--0"),
-  ("GM", "fakedata|2022-01-19--14-58-57--0"),
-  ("NISSAN", "fakedata|2022-01-19--15-00-39--0"),
-  ("VOLKSWAGEN", "fakedata|2022-01-19--15-02-29--0"),
-  ("MAZDA", "fakedata|2022-01-19--15-04-42--0"),
-
+  ("HYUNDAI", "fakedata|2022-01-20--14-23-18--0"),
+  ("TOYOTA", "fakedata|2022-01-20--14-25-06--0"),
+  ("TOYOTA2", "fakedata|2022-01-20--14-26-52--0"),
+  ("TOYOTA3", "fakedata|2022-01-20--14-29-09--0"),
+  ("HONDA", "fakedata|2022-01-20--14-31-04--0"),
+  ("HONDA2", "fakedata|2022-01-20--14-32-56--0"),
+  ("CHRYSLER", "fakedata|2022-01-20--14-34-49--0"),
+  ("SUBARU", "fakedata|2022-01-20--14-36-38--0"),
+  ("GM", "fakedata|2022-01-20--14-38-26--0"),
+  ("NISSAN", "fakedata|2022-01-20--14-40-21--0"),
+  ("VOLKSWAGEN", "fakedata|2022-01-20--14-42-12--0"),
+  ("MAZDA", "fakedata|2022-01-20--14-44-35--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done

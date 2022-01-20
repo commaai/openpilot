@@ -27,22 +27,57 @@ FAKEDATA = os.path.join(process_replay_dir, "fakedata/")
 
 
 def replay_panda_states(s, msgs):
-  pm = messaging.PubMaster([s, ])
+  pm = messaging.PubMaster([s, 'peripheralState'])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() in ['pandaStates', 'pandaStateDEPRECATED']]
+
+  # Migrate safety param base on carState
+  cp = [m for m in msgs if m.which() == 'carParams'][0].carParams
+  if len(cp.safetyConfigs):
+    safety_param = cp.safetyConfigs[0].safetyParam
+  else:
+    safety_param = cp.safetyParamDEPRECATED
 
   while True:
     for m in smsgs:
       if m.which() == 'pandaStateDEPRECATED':
         new_m = messaging.new_message('pandaStates', 1)
         new_m.pandaStates[0] = m.pandaStateDEPRECATED
+        new_m.pandaStates[0].safetyParam = safety_param
         pm.send(s, new_m)
       else:
         new_m = m.as_builder()
         new_m.logMonoTime = int(sec_since_boot() * 1e9)
-
       pm.send(s, new_m)
 
+      new_m = messaging.new_message('peripheralState')
+      pm.send('peripheralState', new_m)
+
+      rk.keep_time()
+
+
+def replay_manager_state(s, msgs):
+  pm = messaging.PubMaster([s, ])
+  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
+
+  while True:
+      new_m = messaging.new_message('managerState')
+      new_m.managerState.processes = [{'name': name, 'running': True} for name in managed_processes]
+      pm.send(s, new_m)
+      rk.keep_time()
+
+
+def replay_device_state(s, msgs):
+  pm = messaging.PubMaster([s, ])
+  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
+  smsgs = [m for m in msgs if m.which() == s]
+  while True:
+    for m in smsgs:
+      new_m = m.as_builder()
+      new_m.logMonoTime = int(sec_since_boot() * 1e9)
+      new_m.deviceState.freeSpacePercent = 50
+      new_m.deviceState.memoryUsagePercent = 50
+      pm.send(s, new_m)
       rk.keep_time()
 
 
@@ -159,11 +194,11 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
       multiprocessing.Process(target=replay_service, args=('can', lr)),
       multiprocessing.Process(target=replay_panda_states, args=('pandaStates', lr)),
     ],
-    #'managerState': [
-    #  multiprocessing.Process(target=replay_service, args=('managerState', lr)),
-    #],
+    'managerState': [
+     multiprocessing.Process(target=replay_manager_state, args=('managerState', lr)),
+    ],
     'thermald': [
-      multiprocessing.Process(target=replay_service, args=('deviceState', lr)),
+      multiprocessing.Process(target=replay_device_state, args=('deviceState', lr)),
     ],
     'camerad': [
       *cam_procs,
@@ -214,6 +249,11 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
   rpath = regen_segment(lr, {'roadCameraState': fr})
+
+  lr = LogReader(os.path.join(rpath, 'rlog.bz2'))
+  controls_state_active = [m.controlsState.active for m in lr if m.which() == 'controlsState']
+  assert any(controls_state_active), "Segment did not engage"
+
   relr = os.path.relpath(rpath)
 
   print("\n\n", "*"*30, "\n\n")

@@ -211,11 +211,11 @@ class Controls:
       self.events.add(EventName.lowBattery)
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
-    if self.sm['deviceState'].freeSpacePercent < 7 and not (SIMULATION or REPLAY):  # TODO: handle migration from 0-1 to percent in regen_segments
+    if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
       # under 7% of space free no enable allowed
       self.events.add(EventName.outOfSpace)
     # TODO: make tici threshold the same
-    if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not (SIMULATION or REPLAY):  # TODO: replace segment in process replay
+    if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not SIMULATION:
       self.events.add(EventName.lowMemory)
 
     # TODO: enable this once loggerd CPU usage is more reasonable
@@ -261,7 +261,6 @@ class Controls:
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
       if i < len(self.CP.safetyConfigs):
         safety_mismatch = pandaState.safetyModel != self.CP.safetyConfigs[i].safetyModel or pandaState.safetyParam != self.CP.safetyConfigs[i].safetyParam
-        safety_mismatch = safety_mismatch and not REPLAY  # TODO: remove when migrated in regen_segments
       else:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
 
