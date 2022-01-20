@@ -241,7 +241,7 @@ CONFIGS = [
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
       "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
-      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "ubloxRaw": [], "managerState": [],
+      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "managerState": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
@@ -355,12 +355,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']
 
-  # TODO: Add to regen
-  ignore_alive = None
-  if cfg.proc_name == 'controlsd':
-    ignore_alive = ["peripheralState", "ubloxRaw", "managerState"]
-
-  fsm = FakeSubMaster(pub_sockets, ignore_alive=ignore_alive)
+  fsm = FakeSubMaster(pub_sockets)
   fpm = FakePubMaster(sub_sockets)
   args = (fsm, fpm)
   if 'can' in list(cfg.pub_sub.keys()):
