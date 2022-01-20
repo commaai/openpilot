@@ -81,6 +81,22 @@ def replay_device_state(s, msgs):
       rk.keep_time()
 
 
+def replay_sensor_events(s, msgs):
+  pm = messaging.PubMaster([s, ])
+  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
+  smsgs = [m for m in msgs if m.which() == s]
+  while True:
+    for m in smsgs:
+      new_m = m.as_builder()
+      new_m.logMonoTime = int(sec_since_boot() * 1e9)
+
+      for evt in new_m.sensorEvents:
+        evt.timestamp = new_m.logMonoTime
+
+      pm.send(s, new_m)
+      rk.keep_time()
+
+
 def replay_service(s, msgs):
   pm = messaging.PubMaster([s, ])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
@@ -91,6 +107,7 @@ def replay_service(s, msgs):
       new_m.logMonoTime = int(sec_since_boot() * 1e9)
       pm.send(s, new_m)
       rk.keep_time()
+
 
 def replay_cameras(lr, frs):
   eon_cameras = [
@@ -148,7 +165,6 @@ def replay_cameras(lr, frs):
 
 
 def regen_segment(lr, frs=None, outdir=FAKEDATA):
-
   lr = list(lr)
   if frs is None:
     frs = dict()
@@ -183,15 +199,15 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
     elif msg.which() == 'liveCalibration':
       params.put("CalibrationParams", msg.as_builder().to_bytes())
 
-  # TODO: init car, make sure starts engaged when segment is engaged
   vs, cam_procs = replay_cameras(lr, frs)
 
   fake_daemons = {
     'sensord': [
-      multiprocessing.Process(target=replay_service, args=('sensorEvents', lr)),
+      multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr)),
     ],
     'pandad': [
       multiprocessing.Process(target=replay_service, args=('can', lr)),
+      multiprocessing.Process(target=replay_service, args=('ubloxRaw', lr)),
       multiprocessing.Process(target=replay_panda_states, args=('pandaStates', lr)),
     ],
     'managerState': [
@@ -202,12 +218,6 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
     ],
     'camerad': [
       *cam_procs,
-    ],
-    'paramsd': [
-      multiprocessing.Process(target=replay_service, args=('liveParameters', lr)),
-    ],
-    'locationd': [
-      multiprocessing.Process(target=replay_service, args=('liveLocationKalman', lr)),
     ],
   }
 
