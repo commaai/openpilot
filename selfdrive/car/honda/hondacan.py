@@ -148,6 +148,7 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
     'LANE_LINES': 3,
     'DASHED_LANES': hud.lanes,
     'BEEP': 0,
+    'LKAS_PROBLEM': 0,
   }
 
   if not (CP.flags & HondaFlags.BOSCH_EXT_HUD):
