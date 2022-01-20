@@ -127,7 +127,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ["LOG_ROOT"] = outdir
-  os.environ["SIMULATION"] = "1"
+  os.environ["REPLAY"] = "1"
 
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""

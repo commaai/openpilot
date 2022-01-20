@@ -88,8 +88,8 @@ class DumbSocket:
 
 
 class FakeSubMaster(messaging.SubMaster):
-  def __init__(self, services):
-    super().__init__(services, addr=None)
+  def __init__(self, services, ignore_alive=None):
+    super().__init__(services, ignore_alive=ignore_alive, addr=None)
     self.sock = {s: DumbSocket(s) for s in services}
     self.update_called = threading.Event()
     self.update_ready = threading.Event()
@@ -355,7 +355,12 @@ def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']
 
-  fsm = FakeSubMaster(pub_sockets)
+  # TODO: Add to regen
+  ignore_alive = None
+  if cfg.proc_name == 'controlsd':
+    ignore_alive = ["peripheralState", "ubloxRaw", "managerState"]
+
+  fsm = FakeSubMaster(pub_sockets, ignore_alive=ignore_alive)
   fpm = FakePubMaster(sub_sockets)
   args = (fsm, fpm)
   if 'can' in list(cfg.pub_sub.keys()):
@@ -426,7 +431,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
       msg_queue.append(msg.as_builder())
 
     if should_recv:
-      fsm.update_msgs(0, msg_queue)
+      fsm.update_msgs(msg.logMonoTime / 1e9, msg_queue)
       msg_queue = []
 
       recv_cnt = len(recv_socks)
