@@ -156,20 +156,13 @@ static const char* omx_color_fomat_name(uint32_t format) {
 
 // ***** encoder functions *****
 
-OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write) {
+OmxEncoder::OmxEncoder(const char *filename, int in_width, int in_height, int fps, int bitrate,
+                       bool h265, int out_width, int out_height, bool write)
+    : in_width(in_width), in_height(in_height), out_width(out_width), out_height(out_height) {
   this->filename = filename;
   this->write = write;
-  this->width = width;
-  this->height = height;
   this->fps = fps;
   this->remuxing = !h265;
-
-  this->downscale = downscale;
-  if (this->downscale) {
-    this->y_ptr2 = (uint8_t *)malloc(this->width*this->height);
-    this->u_ptr2 = (uint8_t *)malloc(this->width*this->height/4);
-    this->v_ptr2 = (uint8_t *)malloc(this->width*this->height/4);
-  }
 
   auto component = (OMX_STRING)(h265 ? "OMX.qcom.video.encoder.hevc" : "OMX.qcom.video.encoder.avc");
   int err = OMX_GetHandle(&this->handle, component, this, &omx_callbacks);
@@ -186,12 +179,12 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   in_port.nPortIndex = (OMX_U32) PORT_INDEX_IN;
   OMX_CHECK(OMX_GetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR) &in_port));
 
-  in_port.format.video.nFrameWidth = this->width;
-  in_port.format.video.nFrameHeight = this->height;
-  in_port.format.video.nStride = VENUS_Y_STRIDE(COLOR_FMT_NV12, this->width);
-  in_port.format.video.nSliceHeight = this->height;
+  in_port.format.video.nFrameWidth = in_width;
+  in_port.format.video.nFrameHeight = in_height;
+  in_port.format.video.nStride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
+  in_port.format.video.nSliceHeight = in_height;
   // in_port.nBufferSize = (this->width * this->height * 3) / 2;
-  in_port.nBufferSize = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, this->width, this->height);
+  in_port.nBufferSize = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, in_width, in_height);
   in_port.format.video.xFramerate = (this->fps * 65536);
   in_port.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
   // in_port.format.video.eColorFormat = OMX_COLOR_FormatYUV420SemiPlanar;
@@ -207,15 +200,11 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   out_port.nSize = sizeof(out_port);
   out_port.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
   OMX_CHECK(OMX_GetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR)&out_port));
-  out_port.format.video.nFrameWidth = this->width;
-  out_port.format.video.nFrameHeight = this->height;
+  out_port.format.video.nFrameWidth = out_width;
+  out_port.format.video.nFrameHeight = out_height;
   out_port.format.video.xFramerate = 0;
   out_port.format.video.nBitrate = bitrate;
-  if (h265) {
-    out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingHEVC;
-  } else {
-    out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
-  }
+  out_port.format.video.eCompressionFormat = h265 ? OMX_VIDEO_CodingHEVC : OMX_VIDEO_CodingAVC;
   out_port.format.video.eColorFormat = OMX_COLOR_FormatUnused;
 
   OMX_CHECK(OMX_SetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR) &out_port));
@@ -398,9 +387,7 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
   OMX_CHECK(OMX_FillThisBuffer(e->handle, out_buf));
 }
 
-int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                             int in_width, int in_height, uint64_t ts) {
-  int err;
+int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, uint64_t ts) {
   if (!this->is_open) {
     return -1;
   }
@@ -415,43 +402,22 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
     }
   }
 
-  //pthread_mutex_lock(&this->lock);
-
   int ret = this->counter;
 
   uint8_t *in_buf_ptr = in_buf->pBuffer;
-  // printf("in_buf ptr %p\n", in_buf_ptr);
-
   uint8_t *in_y_ptr = in_buf_ptr;
-  int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, this->width);
-  int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, this->width);
-  // uint8_t *in_uv_ptr = in_buf_ptr + (this->width * this->height);
-  uint8_t *in_uv_ptr = in_buf_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, this->height));
-
-  if (this->downscale) {
-    I420Scale(y_ptr, in_width,
-              u_ptr, in_width/2,
-              v_ptr, in_width/2,
-              in_width, in_height,
-              this->y_ptr2, this->width,
-              this->u_ptr2, this->width/2,
-              this->v_ptr2, this->width/2,
-              this->width, this->height,
-              libyuv::kFilterNone);
-    y_ptr = this->y_ptr2;
-    u_ptr = this->u_ptr2;
-    v_ptr = this->v_ptr2;
-  }
-  err = libyuv::I420ToNV12(y_ptr, this->width,
-                   u_ptr, this->width/2,
-                   v_ptr, this->width/2,
+  int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
+  int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, in_width);
+  uint8_t *in_uv_ptr = in_buf_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, in_height));
+  int err = libyuv::I420ToNV12(y_ptr, in_width,
+                   u_ptr, in_width/2,
+                   v_ptr, in_width/2,
                    in_y_ptr, in_y_stride,
                    in_uv_ptr, in_uv_stride,
-                   this->width, this->height);
+                   in_width, in_height);
   assert(err == 0);
 
-  // in_buf->nFilledLen = (this->width*this->height) + (this->width*this->height/2);
-  in_buf->nFilledLen = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, this->width, this->height);
+  in_buf->nFilledLen = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, in_width, in_height);
   in_buf->nFlags = OMX_BUFFERFLAG_ENDOFFRAME;
   in_buf->nOffset = 0;
   in_buf->nTimeStamp = ts/1000LL;  // OMX_TICKS, in microseconds
@@ -497,8 +463,8 @@ void OmxEncoder::encoder_open(const char* path) {
 
     this->codec_ctx = avcodec_alloc_context3(codec);
     assert(this->codec_ctx);
-    this->codec_ctx->width = this->width;
-    this->codec_ctx->height = this->height;
+    this->codec_ctx->width = out_width;
+    this->codec_ctx->height = out_height;
     this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
     this->codec_ctx->time_base = (AVRational){ 1, this->fps };
 
@@ -597,11 +563,5 @@ OmxEncoder::~OmxEncoder() {
 
   if (this->codec_config) {
     free(this->codec_config);
-  }
-
-  if (this->downscale) {
-    free(this->y_ptr2);
-    free(this->u_ptr2);
-    free(this->v_ptr2);
   }
 }
