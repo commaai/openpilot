@@ -169,7 +169,7 @@ void CameraViewWidget::initializeGL() {
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  latest_texture_id = -1;
+  latest_frame = nullptr;
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
