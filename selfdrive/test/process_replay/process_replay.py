@@ -25,7 +25,7 @@ NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster'])
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config'], defaults=({},))
 
 
 def wait_for_event(evt):
@@ -88,8 +88,8 @@ class DumbSocket:
 
 
 class FakeSubMaster(messaging.SubMaster):
-  def __init__(self, services, ignore_alive=None):
-    super().__init__(services, ignore_alive=ignore_alive, addr=None)
+  def __init__(self, services, ignore_alive=None, ignore_avg_freq=None):
+    super().__init__(services, ignore_alive=ignore_alive, ignore_avg_freq=ignore_avg_freq, addr=None)
     self.sock = {s: DumbSocket(s) for s in services}
     self.update_called = threading.Event()
     self.update_ready = threading.Event()
@@ -248,6 +248,7 @@ CONFIGS = [
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
+    submaster_config={'ignore_avg_freq': ['radarState', 'longitudinalPlan']}
   ),
   ProcessConfig(
     proc_name="radard",
@@ -355,7 +356,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']
 
-  fsm = FakeSubMaster(pub_sockets)
+  fsm = FakeSubMaster(pub_sockets, **cfg.submaster_config)
   fpm = FakePubMaster(sub_sockets)
   args = (fsm, fpm)
   if 'can' in list(cfg.pub_sub.keys()):

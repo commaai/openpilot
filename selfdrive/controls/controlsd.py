@@ -367,8 +367,8 @@ class Controls:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
         self.initialized = True
 
-        if REPLAY:
-          self.state = State.enabled  # TODO: set initial state based on pandaStates[0] controls allowed
+        if REPLAY and self.sm['pandaStates'][0].controlsAllowed:
+          self.state = State.enabled
 
         Params().put_bool("ControlsReady", True)
 
