@@ -27,7 +27,7 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
   // TODO: respect write arg
 
   av_register_all();
-  codec = avcodec_find_encoder(h265 ? AV_CODEC_ID_HEVC : AV_CODEC_ID_FFVHUFF);
+  codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
   // codec = avcodec_find_encoder(AV_CODEC_ID_FFV1);
   assert(codec);
 
@@ -76,7 +76,7 @@ void RawLogger::encoder_open(const char* path) {
   close(lock_fd);
 
   format_ctx = NULL;
-  avformat_alloc_output_context2(&format_ctx, NULL, NULL, vid_path.c_str());
+  avformat_alloc_output_context2(&format_ctx, NULL, "matroska", vid_path.c_str());
   assert(format_ctx);
 
   stream = avformat_new_stream(format_ctx, codec);
