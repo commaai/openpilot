@@ -4,7 +4,7 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
 
-bool compare_by_strength(const Network &a, const Network &b) {
+bool compare_network(const Network &a, const Network &b) {
   return std::tie(a.connected, a.strength, a.ssid) >
          std::tie(b.connected, b.strength, b.ssid);
 }

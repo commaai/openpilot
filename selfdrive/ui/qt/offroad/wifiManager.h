@@ -31,7 +31,7 @@ struct Network {
   ConnectedType connected;
   SecurityType security_type;
 };
-bool compare_by_strength(const Network &a, const Network &b);
+bool compare_network(const Network &a, const Network &b);
 
 class WifiManager : public QObject {
   Q_OBJECT

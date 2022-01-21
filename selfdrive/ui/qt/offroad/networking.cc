@@ -264,7 +264,7 @@ void WifiUI::refresh() {
     return;
   }
   QList<Network> sortedNetworks = wifi->seenNetworks.values();
-  std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
+  std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_network);
 
   // add networks
   ListWidget *list = new ListWidget(this);
