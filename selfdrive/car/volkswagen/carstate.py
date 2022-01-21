@@ -33,7 +33,7 @@ class CarState(CarStateBase):
 
     # Update steering angle, rate, yaw rate, and driver input torque. VW send
     # the sign/direction in a separate signal so they must be recombined.
-    ret.steeringAngleDeg = pt_cp.vl["LH_EPS_03"]["EPS_Berechneter_LW"] * (1, -1)[int(pt_cp.vl["LH_EPS_03"]["EPS_VZ_BLW"])]
+    ret.steeringAngleDeg = pt_cp.vl["LWI_01"]["LWI_Lenkradwinkel"] * (1, -1)[int(pt_cp.vl["LWI_01"]["LWI_VZ_Lenkradwinkel"])]
     ret.steeringRateDeg = pt_cp.vl["LWI_01"]["LWI_Lenkradw_Geschw"] * (1, -1)[int(pt_cp.vl["LWI_01"]["LWI_VZ_Lenkradw_Geschw"])]
     ret.steeringTorque = pt_cp.vl["LH_EPS_03"]["EPS_Lenkmoment"] * (1, -1)[int(pt_cp.vl["LH_EPS_03"]["EPS_VZ_Lenkmoment"])]
     ret.steeringPressed = abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE
@@ -150,8 +150,8 @@ class CarState(CarStateBase):
     # this function generates lists for signal, messages and initial values
     signals = [
       # sig_name, sig_address, default
-      ("EPS_Berechneter_LW", "LH_EPS_03", 0),       # Absolute steering angle
-      ("EPS_VZ_BLW", "LH_EPS_03", 0),               # Steering angle sign
+      ("LWI_Lenkradwinkel", "LWI_01", 0),           # Absolute steering angle
+      ("LWI_VZ_Lenkradwinkel", "LWI_01", 0),        # Steering angle sign
       ("LWI_Lenkradw_Geschw", "LWI_01", 0),         # Absolute steering rate
       ("LWI_VZ_Lenkradw_Geschw", "LWI_01", 0),      # Steering rate sign
       ("ESP_VL_Radgeschw_02", "ESP_19", 0),         # ABS wheel speed, front left

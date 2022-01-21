@@ -30,18 +30,18 @@ original_segments = [
 ]
 
 segments = [
-  ("HYUNDAI", "fakedata|2021-10-07--15-56-26--0"),
-  ("TOYOTA", "fakedata|2021-10-07--15-57-47--0"),
-  ("TOYOTA2", "fakedata|2021-10-07--15-59-03--0"),
-  ("TOYOTA3", "fakedata|2021-10-07--15-53-21--0"),
-  ("HONDA", "fakedata|2021-10-07--16-00-19--0"),
-  ("HONDA2", "fakedata|2021-10-07--16-01-35--0"),
-  ("CHRYSLER", "fakedata|2021-10-07--16-02-52--0"),
-  ("SUBARU", "fakedata|2021-10-07--16-04-09--0"),
-  ("GM", "fakedata|2021-10-07--16-05-26--0"),
-  ("NISSAN", "fakedata|2021-10-07--16-09-53--0"),
-  ("VOLKSWAGEN", "fakedata|2021-10-07--16-11-11--0"),
-  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--2"),
+  ("HYUNDAI", "fakedata|2022-01-20--17-49-04--0"),
+  ("TOYOTA", "fakedata|2022-01-20--17-50-51--0"),
+  ("TOYOTA2", "fakedata|2022-01-20--17-52-36--0"),
+  ("TOYOTA3", "fakedata|2022-01-20--17-54-50--0"),
+  ("HONDA", "fakedata|2022-01-20--17-56-40--0"),
+  ("HONDA2", "fakedata|2022-01-20--17-58-25--0"),
+  ("CHRYSLER", "fakedata|2022-01-20--18-00-11--0"),
+  ("SUBARU", "fakedata|2022-01-20--18-01-57--0"),
+  ("GM", "fakedata|2022-01-20--18-03-41--0"),
+  ("NISSAN", "fakedata|2022-01-20--18-05-29--0"),
+  ("VOLKSWAGEN", "fakedata|2022-01-20--18-07-15--0"),
+  ("MAZDA", "fakedata|2022-01-20--18-09-32--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -65,9 +65,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   log_msgs = replay_process(cfg, lr)
 
   # check to make sure openpilot is engaged in the route
-  # TODO: update routes so enable check can run
-  #       failed enable check: honda bosch, hyundai, chrysler, and subaru
-  if cfg.proc_name == "controlsd" and FULL_TEST and False:
+  if cfg.proc_name == "controlsd":
     for msg in log_msgs:
       if msg.which() == "controlsState":
         if msg.controlsState.active:

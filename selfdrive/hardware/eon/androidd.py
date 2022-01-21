@@ -10,7 +10,7 @@ from selfdrive.swaglog import cloudlog
 
 MAX_MODEM_CRASHES = 3
 MODEM_PATH = "/sys/devices/soc/2080000.qcom,mss/subsys5"
-WATCHED_PROCS = ["zygote", "zygote64", "/system/bin/servicemanager", "/system/bin/surfaceflinger"]
+WATCHED_PROCS = ["zygote", "zygote64", "system_server", "/system/bin/servicemanager", "/system/bin/surfaceflinger"]
 
 
 def get_modem_crash_count() -> Optional[int]:
