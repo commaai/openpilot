@@ -37,7 +37,7 @@ public:
     char args[4096];
     const CameraInfo *ci = &s->ci;
     snprintf(args, sizeof(args),
-             "-cl-fast-relaxed-math -cl-denorms-are-zero -cl-single-precision-constant "
+             "-cl-fast-relaxed-math -cl-denorms-are-zero -cl-single-precision-constant -cl-strict-aliasing "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
              "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d",

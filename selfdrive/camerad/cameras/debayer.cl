@@ -153,21 +153,32 @@ __kernel void debayer10(__global uchar const * const in,
 
   barrier(CLK_LOCAL_MEM_FENCE);
 
+  uchar2 r0, r1;
   if (lid & 1) {
-    for (int uv_x = 0; uv_x < HALF_UV_WIDTH; uv_x++) {
+    for (int uv_x = 0; uv_x < HALF_UV_WIDTH; uv_x += 2) {
       int ui = mad24(uv_y, UV_WIDTH, U_OFFSET + uv_x);
       int vi = mad24(uv_y, UV_WIDTH, V_OFFSET + uv_x);
 
-      out[vi] = hadd(us[mad24(lid-1, UV_WIDTH, uv_x)], us[mad24(lid, UV_WIDTH, uv_x)]);
-      out[ui] = hadd(vs[mad24(lid-1, UV_WIDTH, uv_x)], vs[mad24(lid, UV_WIDTH, uv_x)]);
+      r0 = vload2(0, us + mad24(lid-1, UV_WIDTH, uv_x));
+      r1 = vload2(0, us + mad24(lid, UV_WIDTH, uv_x));
+      vstore2(hadd(r0, r1), 0, out + vi);
+
+      r0 = vload2(0, vs + mad24(lid-1, UV_WIDTH, uv_x));
+      r1 = vload2(0, vs + mad24(lid, UV_WIDTH, uv_x));
+      vstore2(hadd(r0, r1), 0, out + ui);
     }
   } else {
-    for (int uv_x = HALF_UV_WIDTH; uv_x < UV_WIDTH; uv_x++) {
+    for (int uv_x = HALF_UV_WIDTH; uv_x < UV_WIDTH; uv_x += 2) {
       int ui = mad24(uv_y, UV_WIDTH, U_OFFSET + uv_x);
       int vi = mad24(uv_y, UV_WIDTH, V_OFFSET + uv_x);
 
-      out[vi] = hadd(us[mad24(lid, UV_WIDTH, uv_x)], us[mad24(lid+1, UV_WIDTH, uv_x)]);
-      out[ui] = hadd(vs[mad24(lid, UV_WIDTH, uv_x)], vs[mad24(lid+1, UV_WIDTH, uv_x)]);
+      r0 = vload2(0, us + mad24(lid, UV_WIDTH, uv_x));
+      r1 = vload2(0, us + mad24(lid+1, UV_WIDTH, uv_x));
+      vstore2(hadd(r0, r1), 0, out + vi);
+
+      r0 = vload2(0, vs + mad24(lid, UV_WIDTH, uv_x));
+      r1 = vload2(0, vs + mad24(lid+1, UV_WIDTH, uv_x));
+      vstore2(hadd(r0, r1), 0, out + ui);
     }
   }
 }
