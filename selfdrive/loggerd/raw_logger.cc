@@ -27,7 +27,7 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
   // TODO: respect write arg
 
   av_register_all();
-  codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
+  codec = avcodec_find_encoder(h265 ? AV_CODEC_ID_HEVC : AV_CODEC_ID_FFVHUFF);
   // codec = avcodec_find_encoder(AV_CODEC_ID_FFV1);
   assert(codec);
 
@@ -64,7 +64,7 @@ RawLogger::~RawLogger() {
 }
 
 void RawLogger::encoder_open(const char* path) {
-  vid_path = util::string_format("%s/%s.mkv", path, filename);
+  vid_path = util::string_format("%s/%s", path, filename);
 
   // create camera lock file
   lock_path = util::string_format("%s/%s.lock", path, filename);
