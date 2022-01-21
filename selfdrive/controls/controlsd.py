@@ -254,7 +254,6 @@ class Controls:
                                                     LaneChangeState.laneChangeFinishing):
       self.events.add(EventName.laneChange)
 
-      # TODO: JJS - figure out why - CS.canValid is false so much
     if not CS.canValid:
       self.events.add(EventName.canError)
 
@@ -275,7 +274,6 @@ class Controls:
       self.events.add(EventName.radarFault)
     elif not self.sm.valid["pandaStates"]:
       self.events.add(EventName.usbError)
-    # TODO: JJS - Silverado is throwing this on engage. Shock and awe campaign to stop it...  
     elif not self.sm.all_alive_and_valid() or self.can_rcv_error:
       self.events.add(EventName.commIssue)
       if not self.logged_comm_issue:
@@ -373,8 +371,6 @@ class Controls:
     if not can_strs:
       self.can_rcv_error_counter += 1
       self.can_rcv_error = True
-      cloudlog.error("###@@@ gm controlsd.py can_strs (timeout?) false")
-      
     else:
       self.can_rcv_error = False
 
@@ -389,8 +385,6 @@ class Controls:
     if self.enabled and any(not ps.controlsAllowed for ps in self.sm['pandaStates']
            if ps.safetyModel not in IGNORED_SAFETY_MODES):
       self.mismatch_counter += 1
-    else:
-      self.mismatch_counter = 0 # Reset mismatch couter when mismatch is cleared
 
     self.distance_traveled += CS.vEgo * DT_CTRL
 
