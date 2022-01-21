@@ -263,6 +263,7 @@ class Controls:
         safety_mismatch = pandaState.safetyModel != self.CP.safetyConfigs[i].safetyModel or pandaState.safetyParam != self.CP.safetyConfigs[i].safetyParam
       else:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
+
       if safety_mismatch or self.mismatch_counter >= 200:
         self.events.add(EventName.controlsMismatch)
 
@@ -279,7 +280,7 @@ class Controls:
       if not self.logged_comm_issue:
         invalid = [s for s, valid in self.sm.valid.items() if not valid]
         not_alive = [s for s, alive in self.sm.alive.items() if not alive]
-        cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive)
+        cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive, can_error=self.can_rcv_error, error=True)
         self.logged_comm_issue = True
     else:
       self.logged_comm_issue = False
@@ -365,6 +366,10 @@ class Controls:
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
         self.initialized = True
+
+        if REPLAY and self.sm['pandaStates'][0].controlsAllowed:
+          self.state = State.enabled
+
         Params().put_bool("ControlsReady", True)
 
     # Check for CAN timeout
@@ -593,7 +598,7 @@ class Controls:
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
                     and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
-    model_v2 = self.sm['modelV2'] 
+    model_v2 = self.sm['modelV2']
     desire_prediction = model_v2.meta.desirePrediction
     if len(desire_prediction) and ldw_allowed:
       right_lane_visible = self.sm['lateralPlan'].rProb > 0.5
