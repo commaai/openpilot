@@ -159,26 +159,36 @@ __kernel void debayer10(__global uchar const * const in,
       int ui = mad24(uv_y, UV_WIDTH, U_OFFSET + uv_x);
       int vi = mad24(uv_y, UV_WIDTH, V_OFFSET + uv_x);
 
-      r0 = vload2(0, us + mad24(lid-1, UV_WIDTH, uv_x));
-      r1 = vload2(0, us + mad24(lid, UV_WIDTH, uv_x));
-      vstore2(hadd(r0, r1), 0, out + vi);
+      if (uv_x + 1 < HALF_UV_WIDTH) {
+        r0 = vload2(0, us + mad24(lid-1, UV_WIDTH, uv_x));
+        r1 = vload2(0, us + mad24(lid, UV_WIDTH, uv_x));
+        vstore2(hadd(r0, r1), 0, out + vi);
 
-      r0 = vload2(0, vs + mad24(lid-1, UV_WIDTH, uv_x));
-      r1 = vload2(0, vs + mad24(lid, UV_WIDTH, uv_x));
-      vstore2(hadd(r0, r1), 0, out + ui);
+        r0 = vload2(0, vs + mad24(lid-1, UV_WIDTH, uv_x));
+        r1 = vload2(0, vs + mad24(lid, UV_WIDTH, uv_x));
+        vstore2(hadd(r0, r1), 0, out + ui);
+      } else {
+        out[vi] = hadd(us[mad24(lid-1, UV_WIDTH, uv_x)], us[mad24(lid, UV_WIDTH, uv_x)]);
+        out[ui] = hadd(vs[mad24(lid-1, UV_WIDTH, uv_x)], vs[mad24(lid, UV_WIDTH, uv_x)]);
+      }
     }
   } else {
     for (int uv_x = HALF_UV_WIDTH; uv_x < UV_WIDTH; uv_x += 2) {
       int ui = mad24(uv_y, UV_WIDTH, U_OFFSET + uv_x);
       int vi = mad24(uv_y, UV_WIDTH, V_OFFSET + uv_x);
 
-      r0 = vload2(0, us + mad24(lid, UV_WIDTH, uv_x));
-      r1 = vload2(0, us + mad24(lid+1, UV_WIDTH, uv_x));
-      vstore2(hadd(r0, r1), 0, out + vi);
+      if (uv_x + 1 < UV_WIDTH) {
+        r0 = vload2(0, us + mad24(lid, UV_WIDTH, uv_x));
+        r1 = vload2(0, us + mad24(lid+1, UV_WIDTH, uv_x));
+        vstore2(hadd(r0, r1), 0, out + vi);
 
-      r0 = vload2(0, vs + mad24(lid, UV_WIDTH, uv_x));
-      r1 = vload2(0, vs + mad24(lid+1, UV_WIDTH, uv_x));
-      vstore2(hadd(r0, r1), 0, out + ui);
+        r0 = vload2(0, vs + mad24(lid, UV_WIDTH, uv_x));
+        r1 = vload2(0, vs + mad24(lid+1, UV_WIDTH, uv_x));
+        vstore2(hadd(r0, r1), 0, out + ui);
+      } else {
+        out[vi] = hadd(us[mad24(lid, UV_WIDTH, uv_x)], us[mad24(lid+1, UV_WIDTH, uv_x)]);
+        out[ui] = hadd(vs[mad24(lid, UV_WIDTH, uv_x)], vs[mad24(lid+1, UV_WIDTH, uv_x)]);
+      }
     }
   }
 }
