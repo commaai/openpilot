@@ -76,7 +76,7 @@ void RawLogger::encoder_open(const char* path) {
   close(lock_fd);
 
   format_ctx = NULL;
-  avformat_alloc_output_context2(&format_ctx, NULL, NULL, vid_path.c_str());
+  avformat_alloc_output_context2(&format_ctx, NULL, "matroska", vid_path.c_str());
   assert(format_ctx);
 
   stream = avformat_new_stream(format_ctx, codec);
