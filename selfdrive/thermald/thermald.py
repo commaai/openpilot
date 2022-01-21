@@ -313,11 +313,10 @@ def thermald_thread(end_event, hw_queue):
       thermal_status = ThermalStatus.danger
     else:
       current_band = THERMAL_BANDS[thermal_status]
-      band_idx = list(THERMAL_BANDS.keys()).index(thermal_status)
       if current_band.min_temp is not None and max_comp_temp < current_band.min_temp:
-        thermal_status = list(THERMAL_BANDS.keys())[band_idx - 1]
+        thermal_status -= 1
       elif current_band.max_temp is not None and max_comp_temp > current_band.max_temp:
-        thermal_status = list(THERMAL_BANDS.keys())[band_idx + 1]
+        thermal_status += 1
 
     # **** starting logic ****
 
