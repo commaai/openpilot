@@ -29,7 +29,7 @@ public:
   void execute(float *net_input_buf, int buf_size);
 
 #ifdef USE_THNEED
-  Thneed *thneed = NULL;
+  std::unique_ptr<Thneed> thneed;
 #endif
 
 private:

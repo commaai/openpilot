@@ -12,7 +12,7 @@ public:
   void execute(float *net_input_buf, int buf_size);
   void* getInputBuf();
 private:
-  Thneed *thneed = NULL;
+  std::unique_ptr<Thneed> thneed;
   bool recorded;
 
   float *output;

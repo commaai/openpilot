@@ -3,7 +3,7 @@
 #include <cassert>
 
 ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime) {
-  thneed = new Thneed(true);
+  thneed = std::make_unique<Thneed>(true);
   thneed->record = 0;
   thneed->load(path);
   thneed->clexec();

@@ -147,7 +147,7 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
         PrintErrorStringAndExit();
       }
       memset(recurrent, 0, recurrent_size*sizeof(float));
-      thneed = new Thneed();
+      thneed = std::make_unique<Thneed>();
       if (!snpe->execute(inputMap, outputMap)) {
         PrintErrorStringAndExit();
       }
