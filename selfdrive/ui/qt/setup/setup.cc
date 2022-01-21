@@ -37,7 +37,9 @@ void Setup::download(QString url) {
   curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
 
   int ret = curl_easy_perform(curl);
-  if (ret != CURLE_OK) {
+  long res_status = 0;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_status);
+  if (ret != CURLE_OK || res_status != 200) {
     emit finished(false);
     return;
   }
