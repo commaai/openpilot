@@ -2,6 +2,7 @@
 import os
 import sys
 from common.basedir import BASEDIR
+from typing import Dict, List
 
 # messages reserved for CAN based ignition (see can_ignition_hook function in panda/board/drivers/can)
 # (addr, len)
@@ -62,7 +63,7 @@ def check_can_ignition_conflicts(fingerprints, brands):
 if __name__ == "__main__":
   fingerprints = _get_fingerprints()
 
-  fingerprints_flat = []
+  fingerprints_flat: List[Dict] = []
   car_names = []
   brand_names = []
   for brand in fingerprints:
