@@ -34,7 +34,11 @@ class TestLogcatdAndroid(unittest.TestCase):
         self.assertTrue(m.valid)
         self.assertLess(time.monotonic() - (m.logMonoTime / 1e9), 30)
 
-        recv_msg = m.androidLog.message.strip()
+        try:
+          recv_msg = m.androidLog.message.strip()
+        except UnicodeDecodeError:
+          continue
+
         if recv_msg not in sent_msgs:
           continue
 

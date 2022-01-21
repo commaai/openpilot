@@ -44,6 +44,11 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.pcmCruise = False  # stock cruise control is kept off
 
+    # These cars have been put into dashcam only due to both a lack of users and test coverage.
+    # These cars likely still work fine. Once a user confirms each car works and a test route is
+    # added to selfdrive/test/test_routes, we can remove it from this list.
+    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU}
+
     # Presence of a camera on the object bus is ok.
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
@@ -198,7 +203,7 @@ class CarInterface(CarInterfaceBase):
     # handle button presses
     for b in ret.buttonEvents:
       # do enable on both accel and decel buttons
-      if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
+      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
         events.add(EventName.buttonEnable)
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
@@ -212,7 +217,8 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    hud_v_cruise = c.hudControl.setSpeed
+    hud_control = c.hudControl
+    hud_v_cruise = hud_control.setSpeed
     if hud_v_cruise > 70:
       hud_v_cruise = 0
 
@@ -222,8 +228,8 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CC.update(enabled, self.CS, self.frame,
                          c.actuators,
-                         hud_v_cruise, c.hudControl.lanesVisible,
-                         c.hudControl.leadVisible, c.hudControl.visualAlert)
+                         hud_v_cruise, hud_control.lanesVisible,
+                         hud_control.leadVisible, hud_control.visualAlert)
 
     self.frame += 1
     return ret
