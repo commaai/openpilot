@@ -1,10 +1,8 @@
-#define Y_WIDTH RGB_WIDTH
-#define Y_HEIGHT RGB_HEIGHT
 #define UV_WIDTH RGB_WIDTH / 2
 #define UV_HEIGHT RGB_HEIGHT / 2
 #define HALF_UV_WIDTH UV_WIDTH / 2
-#define U_OFFSET Y_WIDTH * Y_HEIGHT
-#define V_OFFSET Y_WIDTH * Y_HEIGHT + UV_WIDTH * UV_HEIGHT
+#define U_OFFSET RGB_WIDTH * RGB_HEIGHT
+#define V_OFFSET RGB_WIDTH * RGB_HEIGHT + UV_WIDTH * UV_HEIGHT
 
 #define RGB_TO_Y(r, g, b) ((((mul24(b, 13) + mul24(g, 65) + mul24(r, 33)) + 64) >> 7) + 16)
 #define RGB_TO_U(r, g, b) ((mul24(b, 56) - mul24(g, 37) - mul24(r, 19) + 0x8080) >> 8)

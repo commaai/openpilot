@@ -62,8 +62,8 @@ public:
       CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
       CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
     } else {
-      const size_t debayer_global_work_size = height;  // doesn't divide evenly, is this okay?
-      const size_t debayer_work_size = 28;
+      const size_t debayer_global_work_size = height;
+      const size_t debayer_work_size = 28;  // maximum value that fits in local memory (32 KiB)
       const int local_mem_size = (width / 2) * debayer_work_size * sizeof(uint8_t);
       CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
       CL_CHECK(clSetKernelArg(krnl_, 3, local_mem_size, 0));
@@ -106,7 +106,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   if (!Hardware::TICI() && ci->bayer) {
     // debayering does a 2x downscale
     rgb_width = ci->frame_width / 2;
-    rgb_height = 868; //ci->frame_height / 2 - 2;
+    rgb_height = ci->frame_height / 2;
   }
 
   yuv_transform = get_model_yuv_transform(ci->bayer);
