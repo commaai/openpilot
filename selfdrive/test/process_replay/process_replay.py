@@ -25,7 +25,7 @@ NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster'])
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config'], defaults=({},))
 
 
 def wait_for_event(evt):
@@ -88,8 +88,8 @@ class DumbSocket:
 
 
 class FakeSubMaster(messaging.SubMaster):
-  def __init__(self, services):
-    super().__init__(services, addr=None)
+  def __init__(self, services, ignore_alive=None, ignore_avg_freq=None):
+    super().__init__(services, ignore_alive=ignore_alive, ignore_avg_freq=ignore_avg_freq, addr=None)
     self.sock = {s: DumbSocket(s) for s in services}
     self.update_called = threading.Event()
     self.update_ready = threading.Event()
@@ -241,13 +241,14 @@ CONFIGS = [
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
       "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
-      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "ubloxRaw": [], "managerState": [],
+      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "managerState": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
+    submaster_config={'ignore_avg_freq': ['radarState', 'longitudinalPlan']}
   ),
   ProcessConfig(
     proc_name="radard",
@@ -348,14 +349,14 @@ def setup_env():
   params.put_bool("Passive", False)
   params.put_bool("CommunityFeaturesToggle", True)
 
-  os.environ['NO_RADAR_SLEEP'] = "1"
-  os.environ["SIMULATION"] = "1"
+  os.environ["NO_RADAR_SLEEP"] = "1"
+  os.environ["REPLAY"] = "1"
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']
 
-  fsm = FakeSubMaster(pub_sockets)
+  fsm = FakeSubMaster(pub_sockets, **cfg.submaster_config)
   fpm = FakePubMaster(sub_sockets)
   args = (fsm, fpm)
   if 'can' in list(cfg.pub_sub.keys()):
@@ -426,7 +427,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
       msg_queue.append(msg.as_builder())
 
     if should_recv:
-      fsm.update_msgs(0, msg_queue)
+      fsm.update_msgs(msg.logMonoTime / 1e9, msg_queue)
       msg_queue = []
 
       recv_cnt = len(recv_socks)

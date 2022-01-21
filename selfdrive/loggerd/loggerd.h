@@ -80,7 +80,7 @@ const LogCameraInfo cameras_logged[] = {
     .downscale = false,
     .has_qcamera = false,
     .trigger_rotate = Hardware::TICI(),
-    .enable = !Hardware::PC(),
+    .enable = true,
     .record = Params().getBool("RecordFront"),
   },
   {

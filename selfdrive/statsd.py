@@ -42,11 +42,12 @@ class StatLog:
 
 
 def main():
+  dongle_id = Params().get("DongleId", encoding='utf-8')
   def get_influxdb_line(measurement: str, value: float, timestamp: datetime, tags: dict):
     res = f"{measurement}"
     for k, v in tags.items():
       res += f",{k}={str(v)}"
-    res += f" value={value} {int(timestamp.timestamp() * 1e9)}\n"
+    res += f" value={value},dongle_id=\"{dongle_id}\" {int(timestamp.timestamp() * 1e9)}\n"
     return res
 
   # open statistics socket
@@ -59,7 +60,6 @@ def main():
 
   # initialize tags
   tags = {
-    'dongleId': Params().get("DongleId", encoding='utf-8'),
     'started': False,
     'version': get_short_version(),
     'branch': get_short_branch(),
