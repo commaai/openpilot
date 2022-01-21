@@ -227,6 +227,17 @@ Thneed::Thneed(bool do_clinit) {
   g_thneed = this;
 }
 
+Thneed::~Thneed() {
+  // TODO: free all resources
+
+  if (command_queue) {
+    clReleaseCommandQueue(command_queue);
+  }
+  if (context) {
+    CL_CHECK(clReleaseContext(context));
+  }
+}
+
 void Thneed::stop() {
   find_inputs_outputs();
   printf("Thneed::stop: recorded %lu commands\n", cmds.size());
