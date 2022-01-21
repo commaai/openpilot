@@ -31,7 +31,10 @@ class GPUMalloc {
     ~GPUMalloc();
     void *alloc(int size);
   private:
-    uint64_t base;
+    int fd;
+    void *addr;
+    void *base;
+    size_t mmap_size;
     int remaining;
 };
 
