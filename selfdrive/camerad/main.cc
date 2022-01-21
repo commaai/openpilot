@@ -6,8 +6,6 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-ExitHandler do_exit;
-
 int main(int argc, char *argv[]) {
   if (!Hardware::PC()) {
     int ret;

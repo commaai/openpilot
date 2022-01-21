@@ -29,6 +29,8 @@
 #include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
 
+ExitHandler do_exit;
+
 class Debayer {
 public:
   Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s) {
@@ -339,8 +341,6 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
 
   return lum_med / 256.0;
 }
-
-extern ExitHandler do_exit;
 
 void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
   const char *thread_name = nullptr;
