@@ -18,7 +18,8 @@
 
 class SwaglogState : public LogState {
  public:
-  inline SwaglogState() : LogState("ipc:///tmp/logmessage") {
+  SwaglogState() : LogState("ipc:///tmp/logmessage") {
+    ctx_j = json11::Json::object {};
     print_level = CLOUDLOG_WARNING;
     const char* print_lvl = getenv("LOGPRINT");
     if (print_lvl) {
