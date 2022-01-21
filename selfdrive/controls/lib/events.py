@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Dict, Union, Callable, List, Optional, Tuple
+from typing import Dict, Union, Callable, List, Optional
 
 from cereal import log, car
 import cereal.messaging as messaging
@@ -252,8 +252,8 @@ def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
 
 
 def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  axes: List[float] = sm['testJoystick'].axes
-  gb, steer = list(axes)[:2] if len(axes) else Tuple[float]((0., 0.))
+  axes = sm['testJoystick'].axes
+  gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
   vals = f"Gas: {round(gb * 100.)}%, Steer: {round(steer * 100.)}%"
   return NormalPermanentAlert("Joystick Mode", vals)
 
