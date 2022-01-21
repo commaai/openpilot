@@ -1,4 +1,4 @@
-Version 0.8.13-GM.4 (2021-11-21)
+Version 0.8.13-GM.5 (2022-01-21)
 ========================
  * Chevy Bolt EV Support (And several others)
  * TEST ready for cross-flashed Bolt Brake controller
@@ -7,6 +7,7 @@ Version 0.8.13-GM.4 (2021-11-21)
  * Grey & White Panda Support restored
  * WARNING: Pedal firmware is GM specific
  * Silverado with Cam ACC passthrough
+ * Suburban & Tahoe
  * Robust and efficient camera detection for forwarding on Panda
  * DBC groundwork for friction braking and AEB
  * Reworked GM values.py with capability for conditional limits
