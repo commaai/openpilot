@@ -17,7 +17,6 @@ class CarState(CarStateBase):
 
   def update(self, pt_cp, loopback_cp):
     ret = car.CarState.new_message()
-
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
 
@@ -68,7 +67,7 @@ class CarState(CarStateBase):
     ret.leftBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 1
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
     if self.car_fingerprint not in MISSING_MESSAGES:
-    self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
+      self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
 
     ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"])
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
