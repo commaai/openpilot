@@ -8,8 +8,6 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-#include <curl/curl.h>
-
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/qt_window.h"
@@ -35,6 +33,9 @@ void Setup::download(QString url) {
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
+  curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+  curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
+  curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &Setup::download_file_xferinfo);
 
   int ret = curl_easy_perform(curl);
   if (ret != CURLE_OK) {
@@ -46,6 +47,17 @@ void Setup::download(QString url) {
 
   rename(tmpfile, "/tmp/installer");
   emit finished(true);
+}
+
+int Setup::download_file_xferinfo(curl_off_t dltotal, curl_off_t dlno, curl_off_t ultotal, curl_off_t ulnow) {
+  if (dltotal != 0) {
+    int value = ((float)dlno / dltotal) * 100;
+    if (value != progress_bar->value()) {
+      progress_bar->setValue(value);
+      progress_bar->repaint();
+    }
+  }
+  return 0; // all is good
 }
 
 QWidget * Setup::low_voltage() {
@@ -293,10 +305,19 @@ QWidget * Setup::software_selection() {
 
 QWidget * Setup::downloading() {
   QWidget *widget = new QWidget();
-  QVBoxLayout *main_layout = new QVBoxLayout(widget);
+  QGridLayout *main_layout = new QGridLayout(widget);
+  main_layout->setMargin(200);
+
   QLabel *txt = new QLabel("Downloading...");
   txt->setStyleSheet("font-size: 90px; font-weight: 500;");
-  main_layout->addWidget(txt, 0, Qt::AlignCenter);
+  main_layout->addWidget(txt, 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
+
+  progress_bar = new QProgressBar();
+  progress_bar->setRange(0, 100);
+  progress_bar->setTextVisible(false);
+  progress_bar->setFixedHeight(25);
+  main_layout->addWidget(progress_bar, 1, 0, Qt::AlignHCenter);
+
   return widget;
 }
 
@@ -381,6 +402,7 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
       QTimer::singleShot(3000, this, &QWidget::hide);
     } else {
       setCurrentWidget(failed_widget);
+      progress_bar->setValue(0);
     }
   });
 
@@ -412,6 +434,16 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
     }
     QPushButton[primary='true']:pressed, #navBtn:pressed[primary='true'] {
       background-color: #3049F4;
+    }
+    QProgressBar {
+      background-color: #373737;
+      width: 1000px;
+      border solid white;
+      border-radius: 10px;
+    }
+    QProgressBar::chunk {
+      border-radius: 10px;
+      background-color: white;
     }
   )");
 }
