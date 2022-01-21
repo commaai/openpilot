@@ -49,7 +49,7 @@ def main():
       if len(procs):
         for p in WATCHED_PROCS:
           if cur[p] != procs[p]:
-            cloudlog.event("android service pid changed", proc=p, cur=cur[p], prev=procs[p])
+            cloudlog.event("android service pid changed", proc=p, cur=cur[p], prev=procs[p], error=True)
       procs.update(cur)
 
     if os.path.exists(MODEM_PATH):
@@ -68,7 +68,7 @@ def main():
 
       # handle excessive modem crashes
       if crash_count > MAX_MODEM_CRASHES and not modem_killed:
-        cloudlog.event("killing modem")
+        cloudlog.event("killing modem", error=True)
         with open("/sys/kernel/debug/msm_subsys/modem", "w") as f:
           f.write("put")
         modem_killed = True

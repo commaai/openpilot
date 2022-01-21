@@ -1,28 +1,31 @@
 #!/usr/bin/env python3
 import datetime
 import os
+import queue
+import threading
+import time
+from collections import OrderedDict, namedtuple
 from pathlib import Path
-from typing import Dict, NoReturn, Optional, Tuple
-from collections import namedtuple, OrderedDict
+from typing import Dict, Optional, Tuple
 
 import psutil
 from smbus2 import SMBus
 
 import cereal.messaging as messaging
 from cereal import log
+from common.dict_helpers import strip_deprecated_keys
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import interp
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
-from common.dict_helpers import strip_deprecated_keys
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.controls.lib.pid import PIController
-from selfdrive.hardware import EON, TICI, PC, HARDWARE
+from selfdrive.hardware import EON, HARDWARE, PC, TICI
 from selfdrive.loggerd.config import get_available_percent
+from selfdrive.statsd import statlog
 from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import terms_version, training_version
-from selfdrive.statsd import statlog
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -30,8 +33,10 @@ NetworkStrength = log.DeviceState.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
 TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
+PANDA_STATES_TIMEOUT = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
+HardwareState = namedtuple("HardwareState", ['network_type', 'network_strength', 'network_info', 'nvme_temps', 'modem_temps'])
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
@@ -152,13 +157,50 @@ def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_tex
   set_offroad_alert(offroad_alert, show_alert, extra_text)
 
 
-def thermald_thread() -> NoReturn:
+def hw_state_thread(end_event, hw_queue):
+  """Handles non critical hardware state, and sends over queue"""
+  count = 0
+  registered_count = 0
 
+  while not end_event.is_set():
+    # these are expensive calls. update every 10s
+    if (count % int(10. / DT_TRML)) == 0:
+      try:
+        network_type = HARDWARE.get_network_type()
+
+        hw_state = HardwareState(
+          network_type=network_type,
+          network_strength=HARDWARE.get_network_strength(network_type),
+          network_info=HARDWARE.get_network_info(),
+          nvme_temps=HARDWARE.get_nvme_temperatures(),
+          modem_temps=HARDWARE.get_modem_temperatures(),
+        )
+
+        try:
+          hw_queue.put_nowait(hw_state)
+        except queue.Full:
+          pass
+
+        if TICI and (hw_state.network_info is not None) and (hw_state.network_info.get('state', None) == "REGISTERED"):
+          registered_count += 1
+        else:
+          registered_count = 0
+
+        if registered_count > 10:
+          cloudlog.warning(f"Modem stuck in registered state {hw_state.network_info}. nmcli conn up lte")
+          os.system("nmcli conn up lte")
+          registered_count = 0
+
+      except Exception:
+        cloudlog.exception("Error getting network status")
+
+    count += 1
+    time.sleep(DT_TRML)
+
+
+def thermald_thread(end_event, hw_queue):
   pm = messaging.PubMaster(['deviceState'])
-
-  pandaState_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
-  pandaState_sock = messaging.sub_sock('pandaStates', timeout=pandaState_timeout)
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState"])
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll=["pandaStates"])
 
   fan_speed = 0
   count = 0
@@ -175,12 +217,13 @@ def thermald_thread() -> NoReturn:
   thermal_status = ThermalStatus.green
   usb_power = True
 
-  network_type = NetworkType.none
-  network_strength = NetworkStrength.unknown
-  network_info = None
-  registered_count = 0
-  nvme_temps = None
-  modem_temps = None
+  last_hw_state = HardwareState(
+    network_type=NetworkType.none,
+    network_strength=NetworkStrength.unknown,
+    network_info=None,
+    nvme_temps=[],
+    modem_temps=[],
+  )
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
@@ -199,16 +242,16 @@ def thermald_thread() -> NoReturn:
   # TODO: use PI controller for UNO
   controller = PIController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
 
-  while True:
-    pandaStates = messaging.recv_sock(pandaState_sock, wait=True)
+  while not end_event.is_set():
+    sm.update(PANDA_STATES_TIMEOUT)
 
-    sm.update(0)
+    pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
 
     msg = read_thermal(thermal_config)
 
-    if pandaStates is not None and len(pandaStates.pandaStates) > 0:
-      pandaState = pandaStates.pandaStates[0]
+    if sm.updated['pandaStates'] and len(pandaStates) > 0:
+      pandaState = pandaStates[0]
 
       if pandaState.pandaType != log.PandaState.PandaType.unknown:
         onroad_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
@@ -231,44 +274,23 @@ def thermald_thread() -> NoReturn:
           setup_eon_fan()
           handle_fan = handle_fan_eon
 
-    # these are expensive calls. update every 10s
-    if (count % int(10. / DT_TRML)) == 0:
-      try:
-        network_type = HARDWARE.get_network_type()
-        network_strength = HARDWARE.get_network_strength(network_type)
-        network_info = HARDWARE.get_network_info()  # pylint: disable=assignment-from-none
-        nvme_temps = HARDWARE.get_nvme_temperatures()
-        modem_temps = HARDWARE.get_modem_temperatures()
-
-        if TICI and (network_info.get('state', None) == "REGISTERED"):
-          registered_count += 1
-        else:
-          registered_count = 0
-
-        if registered_count > 10:
-          cloudlog.warning(f"Modem stuck in registered state {network_info}. nmcli conn up lte")
-          os.system("nmcli conn up lte")
-          registered_count = 0
-
-      except Exception:
-        cloudlog.exception("Error getting network status")
+    try:
+      last_hw_state = hw_queue.get_nowait()
+    except queue.Empty:
+      pass
 
     msg.deviceState.freeSpacePercent = get_available_percent(default=100.0)
     msg.deviceState.memoryUsagePercent = int(round(psutil.virtual_memory().percent))
     msg.deviceState.cpuUsagePercent = [int(round(n)) for n in psutil.cpu_percent(percpu=True)]
     msg.deviceState.gpuUsagePercent = int(round(HARDWARE.get_gpu_usage_percent()))
-    msg.deviceState.networkType = network_type
-    msg.deviceState.networkStrength = network_strength
-    if network_info is not None:
-      msg.deviceState.networkInfo = network_info
-    if nvme_temps is not None:
-      msg.deviceState.nvmeTempC = nvme_temps
-      for i, temp in enumerate(nvme_temps):
-        statlog.gauge(f"nvme_temperature{i}", temp)
-    if modem_temps is not None:
-      msg.deviceState.modemTempC = modem_temps
-      for i, temp in enumerate(modem_temps):
-        statlog.gauge(f"modem_temperature{i}", temp)
+
+    msg.deviceState.networkType = last_hw_state.network_type
+    msg.deviceState.networkStrength = last_hw_state.network_strength
+    if last_hw_state.network_info is not None:
+      msg.deviceState.networkInfo = last_hw_state.network_info
+
+    msg.deviceState.nvmeTempC = last_hw_state.nvme_temps
+    msg.deviceState.modemTempC = last_hw_state.modem_temps
 
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
     msg.deviceState.batteryPercent = HARDWARE.get_battery_capacity()
@@ -392,7 +414,7 @@ def thermald_thread() -> NoReturn:
     should_start_prev = should_start
     startup_conditions_prev = startup_conditions.copy()
 
-    # log more stats
+    # Log to statsd
     statlog.gauge("free_space_percent", msg.deviceState.freeSpacePercent)
     statlog.gauge("gpu_usage_percent", msg.deviceState.gpuUsagePercent)
     statlog.gauge("memory_usage_percent", msg.deviceState.memoryUsagePercent)
@@ -406,6 +428,10 @@ def thermald_thread() -> NoReturn:
     statlog.gauge("ambient_temperature", msg.deviceState.ambientTempC)
     for i, temp in enumerate(msg.deviceState.pmicTempC):
       statlog.gauge(f"pmic{i}_temperature", temp)
+    for i, temp in enumerate(last_hw_state.nvme_temps):
+      statlog.gauge(f"nvme_temperature{i}", temp)
+    for i, temp in enumerate(last_hw_state.modem_temps):
+      statlog.gauge(f"modem_temperature{i}", temp)
     statlog.gauge("fan_speed_percent_desired", msg.deviceState.fanSpeedPercentDesired)
     statlog.gauge("screen_brightness_percent", msg.deviceState.screenBrightnessPercent)
 
@@ -416,7 +442,7 @@ def thermald_thread() -> NoReturn:
 
       cloudlog.event("STATUS_PACKET",
                      count=count,
-                     pandaStates=(strip_deprecated_keys(pandaStates.to_dict()) if pandaStates else None),
+                     pandaStates=[strip_deprecated_keys(p.to_dict()) for p in pandaStates],
                      peripheralState=strip_deprecated_keys(peripheralState.to_dict()),
                      location=(strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
                      deviceState=strip_deprecated_keys(msg.to_dict()))
@@ -424,8 +450,28 @@ def thermald_thread() -> NoReturn:
     count += 1
 
 
-def main() -> NoReturn:
-  thermald_thread()
+def main():
+  hw_queue = queue.Queue(maxsize=1)
+  end_event = threading.Event()
+
+  threads = [
+    threading.Thread(target=hw_state_thread, args=(end_event, hw_queue)),
+    threading.Thread(target=thermald_thread, args=(end_event, hw_queue)),
+  ]
+
+  for t in threads:
+    t.start()
+
+  try:
+    while True:
+      time.sleep(1)
+      if not all(t.is_alive() for t in threads):
+        break
+  finally:
+    end_event.set()
+
+  for t in threads:
+    t.join()
 
 
 if __name__ == "__main__":

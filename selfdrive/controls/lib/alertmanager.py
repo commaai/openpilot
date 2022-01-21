@@ -47,13 +47,13 @@ class AlertManager:
       min_end_frame = entry.start_frame + alert.duration
       entry.end_frame = max(frame + 1, min_end_frame)
 
-  def process_alerts(self, frame: int, clear_event_type=None) -> Optional[Alert]:
+  def process_alerts(self, frame: int, clear_event_types: set) -> Optional[Alert]:
     current_alert = AlertEntry()
     for v in self.alerts.values():
       if not v.alert:
         continue
 
-      if clear_event_type and v.alert.event_type == clear_event_type:
+      if v.alert.event_type in clear_event_types:
         v.end_frame = -1
 
       # sort by priority first and then by start_frame

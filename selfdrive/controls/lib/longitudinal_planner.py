@@ -120,4 +120,6 @@ class Planner:
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
 
+    longitudinalPlan.solverExecutionTime = self.mpc.solve_time
+
     pm.send('longitudinalPlan', plan_send)
