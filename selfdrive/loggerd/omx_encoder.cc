@@ -397,9 +397,9 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
     }
   }
 
-  uint8_t *in_y_ptr = in_buf->pBuffer;
   int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
   int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, in_width);
+  uint8_t *in_y_ptr = in_buf->pBuffer;
   uint8_t *in_uv_ptr = in_y_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, in_height));
   int err = libyuv::I420ToNV12(y_ptr, in_width,
                    u_ptr, in_width/2,
