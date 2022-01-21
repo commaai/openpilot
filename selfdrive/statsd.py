@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import NoReturn
+
 from common.params import Params
 from cereal.messaging import SubMaster
 from selfdrive.swaglog import cloudlog
