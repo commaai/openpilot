@@ -46,11 +46,11 @@ void Setup::download(QString url) {
 
   long res_status = 0;
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_status);
-  if (ret != CURLE_OK || res_status != 200) {
-    emit finished(false);
-  } else {
+  if (ret == CURLE_OK && res_status == 200) {
     rename(tmpfile, "/tmp/installer");
     emit finished(true);
+  } else {
+    emit finished(false);
   }
 
   curl_easy_cleanup(curl);
