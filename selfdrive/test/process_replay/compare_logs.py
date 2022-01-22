@@ -87,8 +87,8 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       def outside_tolerance(diff):
         if diff[0] == "change":
           a, b = diff[2]
-          finite = math.isfinite(a) and math.isfinite(b)
-          if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
+          is_numbers = isinstance(a, numbers.Number) and isinstance(b, numbers.Number)
+          if is_numbers and math.isfinite(a) and math.isfinite(b):
             return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
         return True
 
