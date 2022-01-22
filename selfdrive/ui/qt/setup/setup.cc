@@ -19,13 +19,7 @@
 const char* USER_AGENT = "AGNOSSetup-0.1";
 const QString DASHCAM_URL = "https://dashcam.comma.ai";
 
-struct CURLGlobalInitializer {
-  CURLGlobalInitializer() { curl_global_init(CURL_GLOBAL_DEFAULT); }
-  ~CURLGlobalInitializer() { curl_global_cleanup(); }
-};
-
 void Setup::download(QString url) {
-  static CURLGlobalInitializer curl_initializer;
   CURL *curl = curl_easy_init();
   if (!curl) {
     emit finished(false);
