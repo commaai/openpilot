@@ -29,7 +29,7 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
   for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
     if (*p == *hw_pix_fmt) return *p;
   }
-  printf("Please run replay with the --no-cuda flag!\n");
+  // printf("Please run replay with the --no-cuda flag!\n");
   // fallback to YUV420p
   *hw_pix_fmt = AV_PIX_FMT_NONE;
   return AV_PIX_FMT_YUV420P;
@@ -37,7 +37,10 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
 
 }  // namespace
 
-FrameReader::FrameReader() {}
+FrameReader::FrameReader() {
+  av_log_set_level(AV_LOG_QUIET);
+  // av_log_default_callback
+}
 
 FrameReader::~FrameReader() {
   for (AVPacket *pkt : packets) {
@@ -81,13 +84,13 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
   if (ret != 0) {
     char err_str[1024] = {0};
     av_strerror(ret, err_str, std::size(err_str));
-    printf("Error loading video - %s\n", err_str);
+    // printf("Error loading video - %s\n", err_str);
     return false;
   }
 
   ret = avformat_find_stream_info(input_ctx, nullptr);
   if (ret < 0) {
-    printf("cannot find a video stream in the input file\n");
+    // printf("cannot find a video stream in the input file\n");
     return false;
   }
 
@@ -105,7 +108,7 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
 
   if (has_cuda_device && !no_cuda) {
     if (!initHardwareDecoder(AV_HWDEVICE_TYPE_CUDA)) {
-      printf("No CUDA capable device was found. fallback to CPU decoding.\n");
+      // printf("No CUDA capable device was found. fallback to CPU decoding.\n");
     } else {
       nv12toyuv_buffer.resize(getYUVSize());
     }
@@ -135,8 +138,8 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   for (int i = 0;; i++) {
     const AVCodecHWConfig *config = avcodec_get_hw_config(decoder_ctx->codec, i);
     if (!config) {
-      printf("decoder %s does not support hw device type %s.\n",
-             decoder_ctx->codec->name, av_hwdevice_get_type_name(hw_device_type));
+      // printf("decoder %s does not support hw device type %s.\n",
+      //       decoder_ctx->codec->name, av_hwdevice_get_type_name(hw_device_type));
       return false;
     }
     if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hw_device_type) {
@@ -149,7 +152,7 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   if (ret < 0) {
     hw_pix_fmt = AV_PIX_FMT_NONE;
     has_cuda_device = false;
-    printf("Failed to create specified HW device %d.\n", ret);
+    // printf("Failed to create specified HW device %d.\n", ret);
     return false;
   }
 
@@ -192,7 +195,7 @@ bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
 AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
   int ret = avcodec_send_packet(decoder_ctx, pkt);
   if (ret < 0) {
-    printf("Error sending a packet for decoding\n");
+    // printf("Error sending a packet for decoding\n");
     return nullptr;
   }
 
@@ -205,7 +208,7 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
   if (av_frame_->format == hw_pix_fmt) {
     hw_frame.reset(av_frame_alloc());
     if ((ret = av_hwframe_transfer_data(hw_frame.get(), av_frame_.get(), 0)) < 0) {
-      printf("error transferring the data from GPU to CPU\n");
+      // printf("error transferring the data from GPU to CPU\n");
       return nullptr;
     }
     return hw_frame.get();

@@ -24,7 +24,7 @@ void CameraServer::startVipcServer() {
   vipc_server_.reset(new VisionIpcServer("camerad"));
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
-      std::cout << "camera[" << cam.type << "] frame size " << cam.width << "x" << cam.height << std::endl;
+      // std::cout << "camera[" << cam.type << "] frame size " << cam.width << "x" << cam.height << std::endl;
       vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
       if (send_yuv) {
         vipc_server_->create_buffers(cam.yuv_type, YUV_BUFFER_COUNT, false, cam.width, cam.height);
@@ -61,7 +61,7 @@ void CameraServer::cameraThread(Camera &cam) {
       if (rgb) vipc_server_->send(rgb, &extra, false);
       if (yuv) vipc_server_->send(yuv, &extra, false);
     } else {
-      std::cout << "camera[" << cam.type << "] failed to get frame:" << eidx.getSegmentId() << std::endl;
+      // std::cout << "camera[" << cam.type << "] failed to get frame:" << eidx.getSegmentId() << std::endl;
     }
 
     cam.cached_id = id + 1;
