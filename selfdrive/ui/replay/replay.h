@@ -43,6 +43,14 @@ public:
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
   inline const Route* route() const { return route_.get(); }
+  inline const std::vector<std::pair<int, int>> getSummary() { 
+    std::lock_guard lk(summary_lock);
+    return summary; 
+  }
+  inline const std::vector<std::tuple<int, int, cereal::ControlsState::AlertStatus>> getCarEvents() { 
+    std::lock_guard lk(summary_lock);
+    return car_events; 
+  }
 
 signals:
   void updateProgress(int cur, int total);
@@ -50,6 +58,7 @@ signals:
   void seekTo(int seconds, bool relative);
   void seekToFlag(FindFlag flag);
   void stop();
+  void updateSummary(int cur, int total);
 
 protected slots:
   void queueSegment();
@@ -68,6 +77,7 @@ protected:
   void updateEvents(const std::function<bool()>& lambda);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
+  void buildSummary();
   inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
   inline bool isSegmentMerged(int n) {
     return std::find(segments_merged_.begin(), segments_merged_.end(), n) != segments_merged_.end();
@@ -82,7 +92,7 @@ protected:
   std::atomic<int> current_segment_ = 0;
   SegmentMap segments_;
   // the following variables must be protected with stream_lock_
-  bool exit_ = false;
+  std::atomic<bool> exit_ = false;
   bool paused_ = false;
   bool events_updated_ = false;
   uint64_t route_start_ts_ = 0;
@@ -98,4 +108,9 @@ protected:
   std::unique_ptr<Route> route_;
   std::unique_ptr<CameraServer> camera_server_;
   std::atomic<uint32_t> flags_ = REPLAY_FLAG_NONE;
+
+  std::mutex summary_lock;
+  QFuture<void> summary_future;
+  std::vector<std::pair<int, int>> summary;
+  std::vector<std::tuple<int, int, cereal::ControlsState::AlertStatus>> car_events;
 };

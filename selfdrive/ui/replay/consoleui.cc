@@ -4,6 +4,9 @@
 #include <iostream>
 #include <QApplication>
 
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/version.h"
+
 using namespace std::placeholders;
 enum class Color {
   Info,
@@ -13,9 +16,13 @@ enum class Color {
   bgTimeLine,
   bgTitle,
   Played,
+  Engaged,
+  EngagedPlayed,
+  CarEvent,
+  CarEventPlayed,
 };
 
-ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), QObject(parent) {
+ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"carState", "liveParameters"}), QObject(parent) {
   installMessageHandler(std::bind(&ConsoleUI::replayMessageOutput, this, _1, _2));
   installDownloadProgressHandler(std::bind(&ConsoleUI::downloadProgressHandler, this, _1, _2));
 
@@ -35,21 +42,28 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), QObject(
   init_pair((int)Color::bgTimeLine, COLOR_BLACK, 8);
   init_pair((int)Color::bgTitle, COLOR_BLACK, COLOR_WHITE);
   init_pair((int)Color::Played, COLOR_GREEN, COLOR_GREEN);
+  init_pair((int)Color::Engaged, COLOR_BLUE, COLOR_BLUE);
+  init_pair((int)Color::EngagedPlayed, 22, 22);
+  init_pair((int)Color::CarEvent, 10, 10);
+  init_pair((int)Color::CarEventPlayed, COLOR_YELLOW, COLOR_YELLOW);
 
   int height, width;
   getmaxyx(stdscr, height, width);
 
   title = newwin(1, width , 0, 0);
-  timeline_win = newwin(3, 100, 4, 3);
+  stats_win = newwin(2, width, 2, 3);
+
+  timeline_win = newwin(2, 100, 5, 3);
   wbkgd(timeline_win, COLOR_PAIR(Color::bgTimeLine));
+  timeline_desc_win = newwin(1, 100, 8, 3);
 
-  progress_bar_window = newwin(3, 60, 12, 3);
-  log_window = newwin(height - 25, 100, 15, 3);
-  box(log_window, 0, 0);
+  progress_bar_window = newwin(1, 60, 10, 3);
+  car_state_win = newwin(5, 100, 11, 3);
+  
+  log_window = newwin(height - 30, 100, 17, 3);
   scrollok(log_window, true);
-  // wrefresh(log_window);
 
-  help_win = newwin(7, 50, height-7, 3);
+  help_win = newwin(8, 50, height-10, 3);
   
 
   refresh();
@@ -60,13 +74,30 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), QObject(
   displayHelp();
 
   QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateTimeline);
-  connect(&m_notifier, SIGNAL(activated(int)), SLOT(readyRead()));
+  QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateStats);
+  // QObject::connect(replay, &Replay::updateSummary, this, &ConsoleUI::updateTimeline);
+  QObject::connect(&m_notifier, SIGNAL(activated(int)), SLOT(readyRead()));
   readyRead();
   m_timer.start(1000, this);
 
+  sm_timer.callOnTimeout(this, &ConsoleUI::update);
+  sm_timer.start(50);
+  
+
   wbkgd(title, COLOR_PAIR(Color::bgTitle));
-  mvwprintw(title, 0, 3, "Replaying %s", qPrintable(replay->route()->name()));
+  mvwprintw(title, 0, 3, "openpilot replay %s", COMMA_VERSION);
   wrefresh(title);
+
+  wattron(timeline_desc_win, COLOR_PAIR(Color::Engaged));
+  waddstr(timeline_desc_win, "  ");
+  wattroff(timeline_desc_win, COLOR_PAIR(Color::Engaged));
+  waddstr(timeline_desc_win, " engaged ");
+  wattron(timeline_desc_win, COLOR_PAIR(Color::CarEvent));
+  waddstr(timeline_desc_win, "  ");
+  wattroff(timeline_desc_win, COLOR_PAIR(Color::CarEvent));
+  waddstr(timeline_desc_win, " alert");
+  wrefresh(timeline_desc_win);
+  wrefresh(timeline_win);
 }
 
 ConsoleUI::~ConsoleUI() {
@@ -78,6 +109,21 @@ ConsoleUI::~ConsoleUI() {
 void ConsoleUI::timerEvent(QTimerEvent *ev) {
   if (ev->timerId() != m_timer.timerId()) return;
   refresh();
+}
+
+void ConsoleUI::update() {
+  sm.update(0);
+  if (sm.updated("carState")) {
+    mvwprintw(car_state_win, 0, 0, "SPEED: %.2f m/s", sm["carState"].getCarState().getVEgo());
+  }
+  if (sm.updated("liveParameters")) {
+    auto p = sm["liveParameters"].getLiveParameters();
+    mvwprintw(car_state_win, 1, 0, "ANGLE OFFSET (AVG): %.2f deg", p.getAngleOffsetAverageDeg());
+    mvwprintw(car_state_win, 2, 0, "ANGLE OFFSET (INSTANT): %.2f deg", p.getAngleOffsetDeg());
+    mvwprintw(car_state_win, 3, 0, "STIFFNESS: %.2f %%", p.getStiffnessFactor() * 100);
+    mvwprintw(car_state_win, 4, 0, "STEER RATIO: %.2f", p.getSteerRatio());
+  }
+  wrefresh(car_state_win);
 }
 
 void ConsoleUI::replayMessageOutput(ReplyMsgType type, const char *msg) {
@@ -101,10 +147,12 @@ void ConsoleUI::displayHelp() {
   };
 
   std::initializer_list<std::pair<const char *, const char*>> multi_line_keys = {
-    {"f", "full speed"},
     {"e", "next engagement"},
-    {"d", "next disengagements"},
-    {"q", "exit"}
+    {"d", "next disengagement"},
+    {"x", "play at full speed"},
+    {"q", "exit"},
+    {"enter", "enter seek request"},
+    {"shift + g", "play from start"},
   };
   
   wclear(help_win);
@@ -146,25 +194,56 @@ void ConsoleUI::downloadProgressHandler(uint64_t cur, uint64_t total) {
   }
 }
 
+void ConsoleUI::updateStats(int cur_sec, int total_sec) {
+  mvwprintw(stats_win, 0, 0, "Route: %s", qPrintable(replay->route()->name()));
+  mvwprintw(stats_win, 1, 0, "Current: %ds  Total %ds         ", cur_sec, total_sec);
+  wrefresh(stats_win);
+}
+
 void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
-  // wclear(timeline_win);
-  // std::vector<std::tuple<uint32_t, uint32_t>> timelines;
-  std::string bar(200, ' ');
-  // for (auto [start, end] : timelines) {
+  auto draw_at = [=](int x, char c = ' ') {
+    mvwaddch(timeline_win, 0, x, c);
+    mvwaddch(timeline_win, 1, x, c);
+  };
+  auto remove_at = [=](int x) {
+    mvwdelch(timeline_win, 0, x);
+    mvwdelch(timeline_win, 1, x);
+  };
+
   int width = getmaxx(timeline_win);
   int cur_pos = ((double)cur_sec / total_sec) * width;
   wattron(timeline_win, COLOR_PAIR(Color::Played));
-  for (int i = 0; i < cur_pos; ++i) {
-    mvwaddch(timeline_win, 0, i, ' ');
-    mvwaddch(timeline_win, 1, i, ' ');
-    mvwaddch(timeline_win, 2, i, ' ');
-  }
-  for (int i = cur_pos; i < width; ++i) {
-    mvwdelch(timeline_win, 0, i);
-    mvwdelch(timeline_win, 1, i);
-    mvwdelch(timeline_win, 2, i);
+  for (int i = 0; i < width; ++i) {
+    remove_at(i);
+    if (i <= cur_pos) {
+      draw_at(i, ' ');
+    }
   }
   wattroff(timeline_win, COLOR_PAIR(Color::Played));
+  
+  auto summary = replay->getSummary();
+  for (auto [engage_sec, disengage_sec] : summary) {
+    int start_pos = ((double)engage_sec/total_sec) * width;
+    int end_pos = ((double)disengage_sec/total_sec) * width;
+    for (int i = start_pos; i < end_pos; ++i) {
+      wattron(timeline_win, COLOR_PAIR(i < cur_pos ? Color::EngagedPlayed : Color::Engaged));
+      remove_at(i);
+      draw_at(i, ' ');
+    }
+  }
+
+  auto car_events = replay->getCarEvents();
+  for (auto [start_sec, end_sec, status] : car_events) {
+    int start_pos = ((double)start_sec / total_sec) * width;
+    int end_pos = ((double)end_sec / total_sec) * width;
+    for (int i = start_pos; i < end_pos; ++i) {
+      wattron(timeline_win, COLOR_PAIR(i < cur_pos ? Color::CarEventPlayed : Color::CarEvent));
+      remove_at(i);
+      draw_at(i, ' ');
+    }
+  }
+
+  // wattroff(timeline_win, COLOR_PAIR(Color::EngagedPlayed));
   wrefresh(timeline_win);
 }
 
@@ -214,8 +293,8 @@ void ConsoleUI::handle_key(char c) {
     case 'S':
       replay->seekTo(-10, true);
       break;
-    case 'G':
-      replay->seekTo(0, true);
+    case 'g':
+      replay->seekTo(0, false);
       break;
     case 'x':
       if (replay->hasFlag(REPLAY_FLAG_FULL_SPEED)) {

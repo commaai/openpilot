@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QtConcurrent>
 
 #include <capnp/dynamic.h>
 #include "cereal/services.h"
@@ -55,6 +56,7 @@ void Replay::doStop() {
   }
   segments_.clear();
   camera_server_.reset(nullptr);
+  summary_future.waitForFinished();
   rDebug("shutdown: done");
 }
 
@@ -142,6 +144,46 @@ void Replay::doSeekToFlag(FindFlag flag) {
   queueSegment();
 }
 
+void Replay::buildSummary() {
+  // Search in all segments
+  int engage_sec = -1, disengage_sec = -1;
+  int car_event_start = -1, car_event_end = -1;
+  cereal::ControlsState::AlertStatus alert_status;
+  for (const auto &[n, _] : segments_) {
+    if (exit_) break;
+
+    LogReader log;
+    bool cache_to_local = true;  // cache qlog to local for fast seek
+    if (!log.load(route_->at(n).qlog.toStdString(), &exit_, cache_to_local, 0, 3)) continue;
+
+    for (const Event *e : log.events) {
+      if (e->which == cereal::Event::Which::CONTROLS_STATE) {
+        auto cs = e->event.getControlsState();
+        bool engaged = cs.getEnabled();
+        if (engaged && engage_sec == -1) {
+          engage_sec = (e->mono_time - route_start_ts_) / 1e9;
+        } else if (!engaged && engage_sec != -1) {
+          disengage_sec = (e->mono_time - route_start_ts_) / 1e9;
+          std::lock_guard lk(summary_lock);
+          summary.push_back({engage_sec, disengage_sec});
+          engage_sec = disengage_sec = -1;
+        }
+
+        auto alert_type = cs.getAlertType();
+        alert_status = cs.getAlertStatus();
+        if (car_event_start == -1 && alert_type.size() > 0) {
+          car_event_start = (e->mono_time - route_start_ts_) / 1e9;
+        } else if (car_event_start != -1 && alert_type.size() == 0) {
+          std::lock_guard lk(summary_lock);
+          car_event_end = (e->mono_time - route_start_ts_) / 1e9;
+          car_events.push_back({car_event_start, car_event_end, alert_status});
+          car_event_start = car_event_end = -1;
+        }
+      }
+    }
+  }
+}
+
 std::optional<uint64_t> Replay::find(FindFlag flag) {
   // Search in all segments
   for (const auto &[n, _] : segments_) {
@@ -155,6 +197,8 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
       if (e->mono_time > cur_mono_time_ && e->which == cereal::Event::Which::CONTROLS_STATE) {
         const auto cs = e->event.getControlsState();
         if (flag == FindFlag::nextEngagement && cs.getEnabled()) {
+          // printf("started %f\n", (e->mono_time - route_start_ts_) / 1e9);
+          printf("started %lu\n", e->mono_time);
           return e->mono_time;
         } else if (flag == FindFlag::nextDisEngagement && !cs.getEnabled()) {
           return e->mono_time;
@@ -169,7 +213,7 @@ void Replay::pause(bool pause) {
   updateEvents([=]() {
     rInfo(pause ? "paused..." : "resuming");
     if (pause) {
-      rInfo("at %d s", currentSeconds());
+      // rInfo("at %d s", currentSeconds());
     }
     paused_ = pause;
     return true;
@@ -291,6 +335,8 @@ void Replay::startStream(const Segment *cur_segment) {
   QObject::connect(stream_thread_, &QThread::started, [=]() { stream(); });
   QObject::connect(stream_thread_, &QThread::finished, stream_thread_, &QThread::deleteLater);
   stream_thread_->start();
+
+  summary_future = QtConcurrent::run(this, &Replay::buildSummary);
 }
 
 void Replay::publishMessage(const Event *e) {
@@ -324,7 +370,6 @@ void Replay::publishFrame(const Event *e) {
 }
 
 void Replay::stream() {
-  int last_print = 0;
   int last_emit_update = 0;
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
 
@@ -350,10 +395,6 @@ void Replay::stream() {
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
       const int current_ts = currentSeconds();
-      if (last_print > current_ts || (current_ts - last_print) > 5) {
-        last_print = current_ts;
-        rInfo("at %d s", current_ts);
-      }
       if (last_emit_update > current_ts || (current_ts - last_emit_update) > 1) {
         emit updateProgress(current_ts, segments_.size() * 60);
       }
