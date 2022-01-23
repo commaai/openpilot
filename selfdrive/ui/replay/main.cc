@@ -13,25 +13,16 @@ Replay *replay = nullptr;
 
 
 WINDOW *window = nullptr;
-void replayMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+void replayMessageOutput(ReplyMsgType type, const char *msg) {
   if (!window) return;
-
-  QByteArray localMsg = msg.toLocal8Bit();
-  wprintw(window, "%s\n", localMsg.constData());
+  wattron(window, COLOR_PAIR(type));
+  wprintw(window, "%s\n", msg);
+  wattroff(window, COLOR_PAIR(type));
   wrefresh(window);
-  // if (type == QtDebugMsg) {
-  //   std::cout << "\033[38;5;248m" << localMsg.constData() << "\033[00m" << std::endl;
-  // } else if (type == QtWarningMsg) {
-  //   std::cout << "\033[38;5;227m" << localMsg.constData() << "\033[00m" << std::endl;
-  // } else if (type == QtCriticalMsg) {
-  //   std::cout << "\033[38;5;196m" << localMsg.constData() << "\033[00m" << std::endl;
-  // } else {
-  //   std::cout << localMsg.constData() << std::endl;
-  // }
 }
 
 int main(int argc, char *argv[]) {
-  qInstallMessageHandler(replayMessageOutput);
+  installMessageHandler(replayMessageOutput);
   QApplication app(argc, argv);
 
   const std::tuple<QString, REPLAY_FLAGS, QString> flags[] = {
@@ -82,6 +73,11 @@ int main(int argc, char *argv[]) {
 
   system("clear");
   auto win = initscr();
+  start_color();
+  init_pair((int)ReplyMsgType::Info, COLOR_WHITE, COLOR_BLACK);
+  init_pair((int)ReplyMsgType::Debug, 8, COLOR_BLACK);
+  init_pair((int)ReplyMsgType::Warning, COLOR_YELLOW, COLOR_BLACK);
+  init_pair((int)ReplyMsgType::Critical, COLOR_RED, COLOR_BLACK);
   clear();
   cbreak();
   noecho();

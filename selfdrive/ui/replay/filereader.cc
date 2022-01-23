@@ -40,7 +40,7 @@ std::string FileReader::download(const std::string &url, std::atomic<bool> *abor
       return result;
     }
     if (i != max_retries_ && !(abort && *abort)) {
-      std::cout << "download failed, retrying " << i + 1 << std::endl;
+      rWarning("download failed, retrying %d", i + 1);
     }
   }
   return {};

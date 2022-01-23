@@ -1,11 +1,11 @@
 #include "selfdrive/ui/replay/consoleui.h"
 
-#include <QApplication>
-
 #include <ncurses.h>
+
+#include <QApplication>
 #include <iostream>
 
-Keyboard::Keyboard(Replay* replay, QObject *parent) : replay(replay), QObject(parent) {
+Keyboard::Keyboard(Replay *replay, QObject *parent) : replay(replay), QObject(parent) {
   connect(&m_notifier, SIGNAL(activated(int)), SLOT(readyRead()));
   readyRead();  // data might be already available without notification
   m_timer.start(1000, this);
