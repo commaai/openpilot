@@ -40,7 +40,6 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
 
 FrameReader::FrameReader() {
   av_log_set_level(AV_LOG_QUIET);
-  // av_log_default_callback
 }
 
 FrameReader::~FrameReader() {

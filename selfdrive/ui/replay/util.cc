@@ -28,7 +28,6 @@ void logMessage(ReplyMsgType type, const char *fmt, ...) {
   va_start(args, fmt);
   int ret = vasprintf(&msg_buf, fmt, args);
   va_end(args);
-
   if (ret <= 0 || !msg_buf) return;
 
   if (message_handler) {

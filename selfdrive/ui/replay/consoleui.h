@@ -38,6 +38,7 @@ private:
   WINDOW *help_win;
   WINDOW *car_state_win;
   WINDOW *timeline_desc_win;
+  WINDOW *seek_win;
   SubMaster sm;
 
  private slots:

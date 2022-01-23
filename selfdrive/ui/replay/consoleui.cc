@@ -67,11 +67,12 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   log_window = newwin(height - 30, 100, 17, 3);
   scrollok(log_window, true);
 
+  seek_win = newwin(1, 50, height-12, 3);
   help_win = newwin(8, 50, height-10, 3);
   
 
   refresh();
-  keypad(main_window, true);
+  keypad(seek_win, true);
   nodelay(main_window, true);  // non-blocking getchar()
 
   displayHelp();
@@ -227,7 +228,7 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
     int start_pos = ((double)engage_sec/total_sec) * width;
     int end_pos = ((double)disengage_sec/total_sec) * width;
     for (int i = start_pos; i < end_pos; ++i) {
-      wattron(timeline_win, COLOR_PAIR(i < cur_pos ? Color::EngagedPlayed : Color::Engaged));
+      wattron(timeline_win, COLOR_PAIR((int)(i < cur_pos ? Color::EngagedPlayed : Color::Engaged)));
       remove_at(i);
       draw_at(i, ' ');
     }
@@ -238,7 +239,7 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
     int start_pos = ((double)start_sec / total_sec) * width;
     int end_pos = ((double)end_sec / total_sec) * width;
     for (int i = start_pos; i < end_pos; ++i) {
-      wattron(timeline_win, COLOR_PAIR(i < cur_pos ? Color::CarEventPlayed : Color::CarEvent));
+      wattron(timeline_win, COLOR_PAIR(int(i < cur_pos ? Color::CarEventPlayed : Color::CarEvent)));
       remove_at(i);
       draw_at(i, ' ');
     }
@@ -257,24 +258,26 @@ void ConsoleUI::readyRead() {
 void ConsoleUI::handle_key(char c) {
   switch (c) {
     case '\n': {
-      printf("Enter seek request: ");
-      std::string r;
-      std::cin >> r;
+      // curs_set(1);
+      // mvwprintw(seek_win, 0, 0, "Enter seek request: ");
+      // wrefresh(seek_win);
+      // int choice = 0;
+      // echo();
+		  // scanw("%d", &choice);
+		  // noecho();
 
-      try {
-        if (r[0] == '#') {
-          r.erase(0, 1);
-          replay->seekTo(std::stoi(r) * 60, false);
-        } else {
-          replay->seekTo(std::stoi(r), false);
-        }
-      } catch (std::invalid_argument) {
-        qDebug() << "invalid argument";
-      }
+      // try {
+      //   if (r[0] == '#') {
+      //     r.erase(0, 1);
+      //     replay->seekTo(std::stoi(r) * 60, false);
+      //   } else {
+      //     replay->seekTo(std::stoi(r), false);
+      //   }
+      // } catch (std::invalid_argument) {
+      //   rDebug("invalid argument");
+      // }
       break;
     }
-      // getch2();  // remove \n from entering seek
-
     case 'e':
       replay->seekToFlag(FindFlag::nextEngagement);
       break;

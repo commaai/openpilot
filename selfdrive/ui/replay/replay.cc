@@ -198,8 +198,6 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
       if (e->mono_time > cur_mono_time_ && e->which == cereal::Event::Which::CONTROLS_STATE) {
         const auto cs = e->event.getControlsState();
         if (flag == FindFlag::nextEngagement && cs.getEnabled()) {
-          // printf("started %f\n", (e->mono_time - route_start_ts_) / 1e9);
-          printf("started %lu\n", e->mono_time);
           return e->mono_time;
         } else if (flag == FindFlag::nextDisEngagement && !cs.getEnabled()) {
           return e->mono_time;
@@ -214,7 +212,7 @@ void Replay::pause(bool pause) {
   updateEvents([=]() {
     rInfo(pause ? "paused..." : "resuming");
     if (pause) {
-      // rInfo("at %d s", currentSeconds());
+      rInfo("at %d s", currentSeconds());
     }
     paused_ = pause;
     return true;
