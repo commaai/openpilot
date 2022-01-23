@@ -234,8 +234,6 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptor and candidate == CAR.BOLT_NR:
       # Assumes the Bolt is using L-Mode for regen braking.
-      ret.gasMaxBP = [0.0, 5.0, 9.0, 35.0]
-      ret.gasMaxV =  [0.4, 0.5, 0.7, 0.7]
       ret.longitudinalTuning.kpBP = [0.0, 5.0, 10.0, 20.0, 35.0]
       ret.longitudinalTuning.kpV = [0.6, 0.95, 1.19, 1.27, 1.18]
       ret.longitudinalTuning.kiBP = [0., 35.]
