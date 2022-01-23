@@ -1,7 +1,7 @@
 openpilot - GM Vehicle Extensions
 ------
 
-Provides basic support for GM vehicles with LKAS that lack radar, including (but not limited to):
+Provides basic support for GM vehicles with LKAS that do not have an ASCM, including (but not limited to):
 * Chevy Bolt EV
 * Chevy Volt
 * Chevy Equinox
@@ -10,8 +10,9 @@ Provides basic support for GM vehicles with LKAS that lack radar, including (but
 * Chevy Malibu
 * Chevy Tahoe
 * Chevy Silverado
+* Chevy Suburban
 
-Attempts to restore support for the Grey and White Panda.
+Restores support for the Grey and White Panda (although you will get bad GPS warnings with a white panda).
 
 Port is intended to be upstreamed when complete, thus _should_ work with all vehicles normally supported by openpilot. However, it presently contains firmware for the Pedal Interceptor that is GM-specific.
 
