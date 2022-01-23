@@ -1,6 +1,5 @@
 #include <QApplication>
 #include <QCommandLineParser>
-#include <QDebug>
 #include <QThread>
 
 #include "selfdrive/ui/replay/replay.h"
@@ -11,18 +10,40 @@
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 Replay *replay = nullptr;
 
-
+// WINDOW *main_window = nullptr;
 WINDOW *window = nullptr;
+WINDOW *download_bar_window = nullptr;
 void replayMessageOutput(ReplyMsgType type, const char *msg) {
-  if (!window) return;
-  wattron(window, COLOR_PAIR(type));
-  wprintw(window, "%s\n", msg);
-  wattroff(window, COLOR_PAIR(type));
-  wrefresh(window);
+  if (window) {
+    wattron(window, COLOR_PAIR(type));
+    wprintw(window, "%s\n", msg);
+    wattroff(window, COLOR_PAIR(type));
+    wrefresh(window);
+  }
+}
+
+void downloadProgressHandler(uint64_t cur, uint64_t total) {
+  if (download_bar_window) {
+    const int width = 70;
+    const float progress = cur / (double)total;
+    const int pos = width * progress;
+    wclear(download_bar_window);
+    wborder(download_bar_window, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+    std::string s =
+        util::string_format("Downloading [%s>%s]  %d%% %s", std::string(pos, '=').c_str(), std::string(width - pos, ' ').c_str(),
+                            int(progress * 100.0), formattedDataSize(total).c_str());
+    waddstr(download_bar_window, s.c_str());
+    if (cur >= total) {
+      wclear(download_bar_window);
+    }
+    wrefresh(download_bar_window);
+  }
 }
 
 int main(int argc, char *argv[]) {
   installMessageHandler(replayMessageOutput);
+  installDownloadProgressHandler(downloadProgressHandler);
+
   QApplication app(argc, argv);
 
   const std::tuple<QString, REPLAY_FLAGS, QString> flags[] = {
@@ -85,6 +106,7 @@ int main(int argc, char *argv[]) {
   int height, width;
   getmaxyx(stdscr, height, width);
   window = newwin(height - 2, width - 2, 5, 1);
+  download_bar_window = newwin(3, 150, 3, 1);
   scrollok(window, true);
   refresh();
   keypad(win, true);

@@ -16,6 +16,8 @@
 #include "selfdrive/common/util.h"
 
 ReplayMessageHandler message_handler = nullptr;
+DownloadProgressHandler download_progress_handler = nullptr;
+
 void installMessageHandler(ReplayMessageHandler handler) {
   message_handler = handler;
 }
@@ -45,6 +47,10 @@ void logMessage(ReplyMsgType type, const char *fmt, ...) {
   free(msg_buf);
 }
 
+void installDownloadProgressHandler(DownloadProgressHandler handler) {
+  download_progress_handler = handler;
+}
+
 namespace {
 
 struct CURLGlobalInitializer {
@@ -53,7 +59,6 @@ struct CURLGlobalInitializer {
 };
 
 static CURLGlobalInitializer curl_initializer;
-static std::atomic<bool> enable_http_logging = false;
 
 template <class T>
 struct MultiPartWriter {
@@ -87,6 +92,46 @@ size_t write_cb(char *data, size_t size, size_t count, void *userp) {
 
 size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
 
+struct DownloadProgressBar {
+  void addDownload(const std::string &url, uint64_t total_bytes) {
+    std::lock_guard lk(lock);
+    items[url] = {.downloaded = 0, .total = total_bytes};
+  }
+
+  void removeDownload(const std::string &url) {
+    std::lock_guard lk(lock);
+    if (auto it = items.find(url); it != items.end()) {
+      items.erase(it);
+    }
+  }
+
+  void update(const std::string &url, uint64_t downloaded) {
+    std::lock_guard lk(lock);
+
+    items[url].downloaded = downloaded;
+
+    uint64_t total_bytes = 0;
+    uint64_t total_downloaded = 0;
+    for (const auto &[url, item] : items) {
+      total_bytes += item.total;
+      total_downloaded += item.downloaded;
+    }
+    if (!enable_http_logging || !download_progress_handler) return;
+
+    download_progress_handler(total_downloaded, total_bytes);
+  }
+
+  struct Item {
+    uint64_t total = 0;
+    uint64_t downloaded = 0;
+  };
+  std::mutex lock;
+  std::map<std::string, Item> items;
+  inline static std::atomic<bool> enable_http_logging = false;
+};
+
+} // namespace
+
 std::string formattedDataSize(size_t size) {
   if (size < 1024) {
     return std::to_string(size) + " B";
@@ -96,8 +141,6 @@ std::string formattedDataSize(size_t size) {
     return util::string_format("%.2f MB", (float)size / (1024 * 1024));
   }
 }
-
-} // namespace
 
 size_t getRemoteFileSize(const std::string &url, std::atomic<bool> *abort) {
   CURL *curl = curl_easy_init();
@@ -130,11 +173,14 @@ std::string getUrlWithoutQuery(const std::string &url) {
 }
 
 void enableHttpLogging(bool enable) {
-  enable_http_logging = enable;
+  DownloadProgressBar::enable_http_logging = enable;
 }
 
 template <class T>
 bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
+  static DownloadProgressBar progress_bar;
+  progress_bar.addDownload(url, content_length);
+
   int parts = 1;
   if (chunk_size > 0 && content_length > 10 * 1024 * 1024) {
     parts = std::nearbyint(content_length / (float)chunk_size);
@@ -164,24 +210,15 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
     curl_multi_add_handle(cm, eh);
   }
 
-  size_t prev_written = 0;
-  double last_print = millis_since_boot();
   int still_running = 1;
   while (still_running > 0 && !(abort && *abort)) {
     curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
     curl_multi_perform(cm, &still_running);
-
-    if (enable_http_logging) {
-      if (double ts = millis_since_boot(); (ts - last_print) > 2 * 1000) {
-        size_t average = (written - prev_written) / ((ts - last_print) / 1000.);
-        int progress = std::min<int>(100, 100.0 * (double)written / (double)content_length);
-        std::cout << "downloading " << getUrlWithoutQuery(url) << " - " << progress
-                  << "% (" << formattedDataSize(average) << "/s)" << std::endl;
-        last_print = ts;
-        prev_written = written;
-      }
-    }
+    progress_bar.update(url, written);
   }
+
+  progress_bar.update(url, written);
+  progress_bar.removeDownload(url);
 
   CURLMsg *msg;
   int msgs_left = -1;
