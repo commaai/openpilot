@@ -1,22 +1,80 @@
 #include "selfdrive/ui/replay/consoleui.h"
 
-#include <ncurses.h>
-
-#include <QApplication>
 #include <iostream>
 
-Keyboard::Keyboard(Replay *replay, QObject *parent) : replay(replay), QObject(parent) {
+using namespace std::placeholders;
+
+void ConsoleUI::replayMessageOutput(ReplyMsgType type, const char *msg) {
+  if (log_window) {
+    wattron(log_window, COLOR_PAIR(type));
+    wprintw(log_window, "%s\n", msg);
+    wattroff(log_window, COLOR_PAIR(type));
+    wrefresh(log_window);
+  }
+}
+
+void ConsoleUI::downloadProgressHandler(uint64_t cur, uint64_t total) {
+  if (progress_bar_window) {
+    const int width = 70;
+    const float progress = cur / (double)total;
+    const int pos = width * progress;
+    wclear(progress_bar_window);
+    wborder(progress_bar_window, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    std::string s = util::string_format("Downloading [%s>%s]  %d%% %s", std::string(pos, '=').c_str(),
+                                        std::string(width - pos, ' ').c_str(), int(progress * 100.0),
+                                        formattedDataSize(total).c_str());
+    waddstr(progress_bar_window, s.c_str());
+    if (cur >= total) {
+      wclear(progress_bar_window);
+    }
+    wrefresh(progress_bar_window);
+  }
+}
+
+ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), QObject(parent) {
+  installMessageHandler(std::bind(&ConsoleUI::replayMessageOutput, this, _1, _2));
+  installDownloadProgressHandler(std::bind(&ConsoleUI::downloadProgressHandler, this, _1, _2));
+
+  system("clear");
+  main_window = initscr();
+
+  start_color();
+  init_pair((int)ReplyMsgType::Info, COLOR_WHITE, COLOR_BLACK);
+  init_pair((int)ReplyMsgType::Debug, 8, COLOR_BLACK);
+  init_pair((int)ReplyMsgType::Warning, COLOR_YELLOW, COLOR_BLACK);
+  init_pair((int)ReplyMsgType::Critical, COLOR_RED, COLOR_BLACK);
+
+  clear();
+  cbreak();
+  noecho();
+  // printw("Route %s\n", qPrintable(route));
+  int height, width;
+  getmaxyx(stdscr, height, width);
+  progress_bar_window = newwin(3, 150, 3, 1);
+  log_window = newwin(height - 2, width - 2, 5, 1);
+  scrollok(log_window, true);
+
+  refresh();
+  keypad(main_window, true);
+  nodelay(main_window, true);  // non-blocking getchar()
+
   connect(&m_notifier, SIGNAL(activated(int)), SLOT(readyRead()));
-  readyRead();  // data might be already available without notification
+  readyRead();
   m_timer.start(1000, this);
 }
 
-void Keyboard::timerEvent(QTimerEvent *ev) {
+ConsoleUI::~ConsoleUI() {
+  clrtoeol();
+  refresh();
+  endwin();
+}
+
+void ConsoleUI::timerEvent(QTimerEvent *ev) {
   if (ev->timerId() != m_timer.timerId()) return;
   refresh();
 }
 
-void Keyboard::handle_key(char c) {
+void ConsoleUI::handle_key(char c) {
   if (c == '\n') {
     printf("Enter seek request: ");
     std::string r;
@@ -60,7 +118,7 @@ void Keyboard::handle_key(char c) {
   }
 }
 
-void Keyboard::readyRead() {
+void ConsoleUI::readyRead() {
   int c;
   while ((c = getch()) != ERR) {
     handle_key(c);

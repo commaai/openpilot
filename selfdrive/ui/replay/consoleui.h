@@ -6,21 +6,28 @@
 #include <QTimerEvent>
 
 #include "selfdrive/ui/replay/replay.h"
+#include <ncurses.h>
 
-class Keyboard : public QObject {
+class ConsoleUI : public QObject {
   Q_OBJECT
 
- public:
-  Keyboard(Replay *replay, QObject *parent = 0);
+public:
+  ConsoleUI(Replay *replay, QObject *parent = 0);
+  ~ConsoleUI();
 
- private:
+private:
   void handle_key(char c);
+  void replayMessageOutput(ReplyMsgType type, const char *msg);
+  void downloadProgressHandler(uint64_t cur, uint64_t total);
 
   QSocketNotifier m_notifier{0, QSocketNotifier::Read, this};
   QBasicTimer m_timer;
   Replay *replay;
+  WINDOW *main_window;
+  WINDOW *log_window;
+  WINDOW *progress_bar_window;
 
-  private slots:
+ private slots:
   void readyRead();
   void timerEvent(QTimerEvent *ev);
 };

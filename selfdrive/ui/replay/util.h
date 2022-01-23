@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
 #include <string>
 
 enum class ReplyMsgType {
@@ -10,7 +11,7 @@ enum class ReplyMsgType {
   Critical
 };
 
-typedef void (*ReplayMessageHandler)(ReplyMsgType type, const char *msg);
+typedef std::function<void(ReplyMsgType type, const char *msg)> ReplayMessageHandler;
 void installMessageHandler(ReplayMessageHandler);
 void logMessage(ReplyMsgType type, const char* fmt, ...);
 
@@ -28,7 +29,7 @@ std::string getUrlWithoutQuery(const std::string &url);
 size_t getRemoteFileSize(const std::string &url, std::atomic<bool> *abort = nullptr);
 std::string httpGet(const std::string &url, size_t chunk_size = 0, std::atomic<bool> *abort = nullptr);
 
-typedef void (*DownloadProgressHandler)(uint64_t cur, uint64_t total);
+typedef std::function<void(uint64_t cur, uint64_t total)> DownloadProgressHandler;
 void installDownloadProgressHandler(DownloadProgressHandler);
 bool httpDownload(const std::string &url, const std::string &file, size_t chunk_size = 0, std::atomic<bool> *abort = nullptr);
 std::string formattedDataSize(size_t size);
