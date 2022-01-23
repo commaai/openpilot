@@ -90,6 +90,15 @@ else
   echo "----   casadi found in venv. skipping build   ----"
 fi
 
+PYVENV_ACTIVATE_DIR="${HOME}/.sh-plugins/pyvenv-activate"
+if [ ! -d "$PYVENV_ACTIVATE_DIR" ] && [ -z "$CI" ]; then
+  # https://github.com/Intersec/pyvenv-activate#manual-installation
+  mkdir -p "$PYVENV_ACTIVATE_DIR"
+  git clone "https://github.com/Intersec/pipenv-activate.git" "$PYVENV_ACTIVATE_DIR"
+  echo -e "\n. ${PYVENV_ACTIVATE_DIR}/pyvenv-activate.sh\npyvenv_auto_activate_enable" >> "$RC_FILE"
+  source "$RC_FILE"
+fi
+
 echo
 echo "----   OPENPILOT SETUP DONE   ----"
 echo "Open a new shell or configure your active shell env by running:"
