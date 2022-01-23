@@ -154,15 +154,25 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
 
     elif candidate == CAR.BOLT_NR:
-      ret.minEnableSpeed = 25 * CV.MPH_TO_MS
-      if ret.enableGasInterceptor:
-        ret.minEnableSpeed = 5 * CV.MPH_TO_MS #steering works down to 5mph; pedal to 0
+      ret.minEnableSpeed = -1
+      ret.minSteerSpeed = 5 * CV.MPH_TO_MS
       ret.mass = 1616. + STD_CARGO_KG
       ret.wheelbase = 2.60096
       ret.steerRatio = 16.8
       ret.steerRatioRear = 0.
       ret.centerToFront = 2.0828 #ret.wheelbase * 0.4 # wild guess
       tire_stiffness_factor = 1.0
+      # still working on improving lateral
+      ret.steerRateCost = 0.5
+      ret.steerActuatorDelay = 0.
+      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.26], [0.01, 0.021]]
+      ret.lateralTuning.pid.kdBP = [0.]
+      ret.lateralTuning.pid.kdV = [0.315]  # very sensitive to changes greater than 0.001
+      ret.lateralTuning.pid.kf = 0.0001
+      #steering parameters from Geniuth
+      ret.steerMaxBP = [10., 25.]
+      ret.steerMaxV = [1., 1.2]
       
     elif candidate == CAR.EQUINOX_NR:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -221,6 +231,18 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [2.4, 1.5]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.36]
+
+    if ret.enableGasInterceptor and candidate == CAR.BOLT_NR:
+      # Assumes the Bolt is using L-Mode for regen braking.
+      ret.gasMaxBP = [0.0, 5.0, 9.0, 35.0]
+      ret.gasMaxV =  [0.4, 0.5, 0.7, 0.7]
+      ret.longitudinalTuning.kpBP = [0.0, 5.0, 10.0, 20.0, 35.0]
+      ret.longitudinalTuning.kpV = [0.6, 0.95, 1.19, 1.27, 1.18]
+      ret.longitudinalTuning.kiBP = [0., 35.]
+      ret.longitudinalTuning.kiV = [0.31, 0.26]
+      ret.stoppingDecelRate = 0.2
+      ret.stopAccel = 0.
+      ret.stoppingControl = True
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
