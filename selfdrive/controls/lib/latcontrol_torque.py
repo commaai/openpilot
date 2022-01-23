@@ -92,4 +92,4 @@ class LatControlTorque(LatControl):
       pid_log.desiredLateralAccel = desired_lateral_accel
 
     # TODO left is positive in this convention
-    return -output_torque, 0.0, pid_log
+    return -output_torque, 0, 0, 0, pid_log

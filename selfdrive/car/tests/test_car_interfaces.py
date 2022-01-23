@@ -35,7 +35,7 @@ class TestCarInterfaces(unittest.TestCase):
     self.assertGreater(car_params.mass, 1)
     self.assertGreater(car_params.steerRateCost, 1e-3)
 
-    if car_params.steerControlType != car.CarParams.SteerControlType.angle:
+    if car_params.steerControlType not in (car.CarParams.SteerControlType.angle, car.CarParams.SteerControlType.curvature):
       tuning = car_params.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(car_params.lateralTuning.pid.kpV))

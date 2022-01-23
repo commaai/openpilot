@@ -117,4 +117,4 @@ class LatControlINDI(LatControl):
       indi_log.output = float(output_steer)
       indi_log.saturated = self._check_saturation(self.steer_max - abs(output_steer) < 1e-3, CS)
 
-    return float(output_steer), float(steers_des), indi_log
+    return float(output_steer), float(steers_des), 0, 0, indi_log
