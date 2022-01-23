@@ -7,7 +7,7 @@ STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 
 class LatControlAngle(LatControl):
-  def update(self, active, CS, VM, params, last_actuators, desired_curvature, desired_curvature_rate, llk):
+  def update(self, active, CS, VM, params, last_actuators, lat_plan, desired_curvature, desired_curvature_rate, llk):
     angle_log = log.ControlsState.LateralAngleState.new_message()
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
@@ -22,4 +22,4 @@ class LatControlAngle(LatControl):
     angle_log.saturated = self._check_saturation(angle_control_saturated, CS)
     angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     angle_log.steeringAngleDesiredDeg = angle_steers_des
-    return 0, float(angle_steers_des), angle_log
+    return 0, float(angle_steers_des), 0, 0, 0, 0, angle_log

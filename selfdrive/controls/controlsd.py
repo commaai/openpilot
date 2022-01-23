@@ -24,6 +24,7 @@ from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
 from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
+from selfdrive.controls.lib.latcontrol_curvature import LatControlCurvature
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -142,6 +143,8 @@ class Controls:
     self.LaC: LatControl
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       self.LaC = LatControlAngle(self.CP, self.CI)
+    elif self.CP.steerControlType == car.CarParams.SteerControlType.curvature:
+      self.LaC = LatControlCurvature(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'pid':
       self.LaC = LatControlPID(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'indi':
@@ -581,9 +584,11 @@ class Controls:
                                                                                        lat_plan.psis,
                                                                                        lat_plan.curvatures,
                                                                                        lat_plan.curvatureRates)
-      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, params,
-                                                                             self.last_actuators, self.desired_curvature,
-                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'])
+      actuators.steer, actuators.steeringAngleDeg, \
+      actuators.curvature, actuators.curvatureRate, \
+      actuators.pathAngle, actuators.pathDeviation, lac_log = self.LaC.update(CC.latActive, CS, self.VM, params,
+                                                                              self.last_actuators, lat_plan, self.desired_curvature,
+                                                                              self.desired_curvature_rate, self.sm['liveLocationKalman'])
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
@@ -593,7 +598,9 @@ class Controls:
         if CC.latActive:
           steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
           # max angle is 45 for angle-based cars
-          actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
+          steer_angle = steer * 45.
+          curvature = self.VM.calc_curvature(math.radians(steer_angle), CS.vEgo, params.roll)
+          actuators.steer, actuators.steeringAngleDeg, actuators.curvature = steer, steer_angle, curvature
 
         lac_log.active = self.active
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
@@ -747,6 +754,8 @@ class Controls:
       controlsState.lateralControlState.debugState = lac_log
     elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       controlsState.lateralControlState.angleState = lac_log
+    elif self.CP.steerControlType == car.CarParams.SteerControlType.curvature:
+      controlsState.lateralControlState.curvatureState = lac_log
     elif lat_tuning == 'pid':
       controlsState.lateralControlState.pidState = lac_log
     elif lat_tuning == 'torque':
