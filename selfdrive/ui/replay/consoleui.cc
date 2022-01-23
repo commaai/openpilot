@@ -20,6 +20,9 @@ enum class Color {
   EngagedPlayed,
   CarEvent,
   CarEventPlayed,
+  AlertWarning,
+  AlertWarningPlayed,
+
 };
 
 ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"carState", "liveParameters"}), QObject(parent) {
@@ -46,6 +49,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   init_pair((int)Color::EngagedPlayed, 22, 22);
   init_pair((int)Color::CarEvent, 10, 10);
   init_pair((int)Color::CarEventPlayed, COLOR_YELLOW, COLOR_YELLOW);
+  init_pair((int)Color::AlertWarning, COLOR_RED, COLOR_RED);
 
   int height, width;
   getmaxyx(stdscr, height, width);
@@ -70,12 +74,10 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   keypad(main_window, true);
   nodelay(main_window, true);  // non-blocking getchar()
 
-  // displayTimeline();
   displayHelp();
 
   QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateTimeline);
   QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateStats);
-  // QObject::connect(replay, &Replay::updateSummary, this, &ConsoleUI::updateTimeline);
   QObject::connect(&m_notifier, SIGNAL(activated(int)), SLOT(readyRead()));
   readyRead();
   m_timer.start(1000, this);
@@ -88,14 +90,17 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   mvwprintw(title, 0, 3, "openpilot replay %s", COMMA_VERSION);
   wrefresh(title);
 
-  wattron(timeline_desc_win, COLOR_PAIR(Color::Engaged));
-  waddstr(timeline_desc_win, "  ");
-  wattroff(timeline_desc_win, COLOR_PAIR(Color::Engaged));
-  waddstr(timeline_desc_win, " engaged ");
-  wattron(timeline_desc_win, COLOR_PAIR(Color::CarEvent));
-  waddstr(timeline_desc_win, "  ");
-  wattroff(timeline_desc_win, COLOR_PAIR(Color::CarEvent));
-  waddstr(timeline_desc_win, " alert");
+  std::pair<Color, const char *> indicators[] {
+    {Color::Engaged, " engaged "},
+    {Color::CarEvent, " alert "},
+    {Color::AlertWarning, " warning "},
+  };
+  for (auto [color, name] : indicators) {
+    wattron(timeline_desc_win, COLOR_PAIR(color));
+    waddstr(timeline_desc_win, "  ");
+    wattroff(timeline_desc_win, COLOR_PAIR(color));
+    waddstr(timeline_desc_win, name);
+  }
   wrefresh(timeline_desc_win);
   wrefresh(timeline_win);
 }
@@ -127,13 +132,10 @@ void ConsoleUI::update() {
 }
 
 void ConsoleUI::replayMessageOutput(ReplyMsgType type, const char *msg) {
-  // static int y = 1;
   if (log_window) {
-    // box(log_window, 0, 0);
     wattron(log_window, COLOR_PAIR(type));
     wprintw(log_window, "%s\n", msg);
     wattroff(log_window, COLOR_PAIR(type));
-    // scroll(log_window);
     wrefresh(log_window);
   }
 }
@@ -155,7 +157,6 @@ void ConsoleUI::displayHelp() {
     {"shift + g", "play from start"},
   };
   
-  wclear(help_win);
   auto write_shortcut = [=](std::string key, const char *desc) {
     wattron(help_win, COLOR_PAIR(Color::bgTitle));
     waddstr(help_win, (' ' + key + ' ').c_str());
@@ -196,7 +197,7 @@ void ConsoleUI::downloadProgressHandler(uint64_t cur, uint64_t total) {
 
 void ConsoleUI::updateStats(int cur_sec, int total_sec) {
   mvwprintw(stats_win, 0, 0, "Route: %s", qPrintable(replay->route()->name()));
-  mvwprintw(stats_win, 1, 0, "Current: %ds  Total %ds         ", cur_sec, total_sec);
+  mvwprintw(stats_win, 1, 0, "Current: %d s  Total %d s         ", cur_sec, total_sec);
   wrefresh(stats_win);
 }
 
@@ -243,7 +244,6 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
     }
   }
 
-  // wattroff(timeline_win, COLOR_PAIR(Color::EngagedPlayed));
   wrefresh(timeline_win);
 }
 

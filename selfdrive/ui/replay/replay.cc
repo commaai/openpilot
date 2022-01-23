@@ -23,7 +23,8 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
       s.push_back(it.name);
     }
   }
-  // qDebug() << "services " << s;
+  qDebug() << "services " << s;
+  qDebug() << "loading route " << route;
 
   if (sm == nullptr) {
     pm = std::make_unique<PubMaster>(s);
