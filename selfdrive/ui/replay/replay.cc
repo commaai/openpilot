@@ -324,7 +324,8 @@ void Replay::publishFrame(const Event *e) {
 }
 
 void Replay::stream() {
-  float last_print = 0;
+  int last_print = 0;
+  int last_emit_update = 0;
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
 
   std::unique_lock lk(stream_lock_);
@@ -349,9 +350,12 @@ void Replay::stream() {
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
       const int current_ts = currentSeconds();
-      if (last_print > current_ts || (current_ts - last_print) > 5.0) {
+      if (last_print > current_ts || (current_ts - last_print) > 5) {
         last_print = current_ts;
         rInfo("at %d s", current_ts);
+      }
+      if (last_emit_update > current_ts || (current_ts - last_emit_update) > 1) {
+        emit updateProgress(current_ts, segments_.size() * 60);
       }
       setCurrentSegment(current_ts / 60);
 

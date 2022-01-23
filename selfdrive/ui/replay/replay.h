@@ -42,8 +42,10 @@ public:
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
+  inline const Route* route() const { return route_.get(); }
 
 signals:
+  void updateProgress(int cur, int total);
   void segmentChanged();
   void seekTo(int seconds, bool relative);
   void seekToFlag(FindFlag flag);
