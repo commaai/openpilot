@@ -117,11 +117,6 @@ fi
 $ROOT/update_requirements.sh
 
 source ~/.bashrc
-if [ -z "$OPENPILOT_ENV" ]; then
-  printf "\nsource %s/tools/openpilot_env.sh" "$ROOT" >> ~/.bashrc
-  source ~/.bashrc
-  echo "added openpilot_env to bashrc"
-fi
 
 echo
 echo "----   OPENPILOT SETUP DONE   ----"
