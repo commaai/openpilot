@@ -365,7 +365,7 @@ def thermald_thread(end_event, hw_queue):
 
       try:
         with open('/dev/kmsg', 'w') as kmsg:
-          kmsg.write(f"[thermald] engaged: {engaged}")
+          kmsg.write(f"<3>[thermald] engaged: {engaged}\n")
       except Exception:
         pass
 
