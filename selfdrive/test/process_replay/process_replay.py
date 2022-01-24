@@ -342,7 +342,7 @@ def replay_process(cfg, lr, fingerprint=None):
   else:
     return cpp_replay_process(cfg, lr, fingerprint)
 
-def setup_env():
+def setup_env(simulation=False):
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
@@ -351,6 +351,11 @@ def setup_env():
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
+
+  if simulation:
+    os.environ["SIMULATION"] = "1"
+  elif "SIMULATION" in os.environ:
+    del os.environ["SIMULATION"]
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
@@ -449,7 +454,8 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
   log_msgs = []
 
-  setup_env()
+  # We need to fake SubMaster alive since we can't inject a fake clock
+  setup_env(simulation=True)
 
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
