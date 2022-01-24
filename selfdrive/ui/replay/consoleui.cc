@@ -209,7 +209,6 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
   int cur_pos = ((double)cur_sec / total_sec) * width;
   wattron(w[Win::Timeline], COLOR_PAIR(Color::Played));
   for (int i = 0; i < width; ++i) {
-    // remove_at(i);
     if (i <= cur_pos) {
       draw_at(i, ' ');
     }
@@ -222,8 +221,8 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
     int end_pos = ((double)disengage_sec/total_sec) * width;
     for (int i = start_pos; i < end_pos; ++i) {
       wattron(w[Win::Timeline], COLOR_PAIR((int)(i < cur_pos ? Color::EngagedPlayed : Color::Engaged)));
-      // remove_at(i);
       draw_at(i, ' ');
+      wattroff(w[Win::Timeline], COLOR_PAIR((int)(i < cur_pos ? Color::EngagedPlayed : Color::Engaged)));
     }
   }
 
@@ -233,8 +232,8 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
     int end_pos = ((double)end_sec / total_sec) * width;
     for (int i = start_pos; i < end_pos; ++i) {
       wattron(w[Win::Timeline], COLOR_PAIR(int(i < cur_pos ? Color::CarEventPlayed : Color::CarEvent)));
-      // remove_at(i);
       draw_at(i, ' ');
+      wattroff(w[Win::Timeline], COLOR_PAIR(int(i < cur_pos ? Color::CarEventPlayed : Color::CarEvent)));
     }
   }
 
