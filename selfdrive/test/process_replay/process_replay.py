@@ -347,7 +347,6 @@ def setup_env(simulation=False):
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
   params.put_bool("Passive", False)
-  params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
