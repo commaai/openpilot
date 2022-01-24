@@ -13,15 +13,12 @@ enum Color {
   Debug,
   Warning,
   Critical,
-  bgTimeLine,
   bgTitle,
-  Played,
   Engaged,
-  EngagedPlayed,
-  CarEvent,
-  CarEventPlayed,
+  Disengaged,
+  Alert,
   AlertWarning,
-  AlertWarningPlayed,
+  PosIndicator,
 };
 
 ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"carState", "liveParameters"}), QObject(parent) {
@@ -44,42 +41,42 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   init_pair(Color::Debug, 8, COLOR_BLACK);
   init_pair(Color::Warning, COLOR_YELLOW, COLOR_BLACK);
   init_pair(Color::Critical, COLOR_RED, COLOR_BLACK);
-  init_pair(Color::bgTimeLine, COLOR_BLACK, 8);
+  init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
   init_pair(Color::bgTitle, COLOR_BLACK, COLOR_WHITE);
-  init_pair(Color::Played, COLOR_GREEN, COLOR_GREEN);
-  init_pair(Color::Engaged, COLOR_BLUE, COLOR_BLUE);
-  init_pair(Color::EngagedPlayed, 22, 22);
-  init_pair(Color::CarEvent, 10, 10);
-  init_pair(Color::CarEventPlayed, COLOR_YELLOW, COLOR_YELLOW);
+  init_pair(Color::Engaged, 28, 28);
+  init_pair(Color::Alert, 11, 11);
   init_pair(Color::AlertWarning, COLOR_RED, COLOR_RED);
+  init_pair(Color::PosIndicator, 15, COLOR_BLACK);
+  
 
   int height, width;
   getmaxyx(stdscr, height, width);
 
   w[Win::Title] = newwin(1, width , 0, 0);
   w[Win::Stats] = newwin(2, width, 2, 3);
-  w[Win::Timeline] = newwin(2, 100, 5, 3);
-  w[Win::TimelineDesc]= newwin(1, 100, 8, 3);
-  w[Win::DownloadBar] = newwin(1, 100, 10, 3);
-  w[Win::CarState] = newwin(5, 100, 11, 3);
-  w[Win::LogBorder] = newwin(height - 30, 100, 17, 2);
-  w[Win::Log] = newwin(height - 34, 98, 18, 3);
-  w[Win::Help] = newwin(9, 100, height-10, 3);
+  w[Win::Timeline] = newwin(4, 100, 5, 3);
+  w[Win::TimelineDesc]= newwin(1, 100, 10, 3);
+  w[Win::DownloadBar] = newwin(1, 100, 11, 3);
+  w[Win::CarState] = newwin(5, 100, 13, 3);
+  if (int log_height = height - 29; log_height > 5) {
+    w[Win::LogBorder] = newwin(log_height, 100, 19, 2);
+    box(w[Win::LogBorder], 0, 0);
+    w[Win::Log] = newwin(log_height - 2, 98, 20, 3);
+    scrollok(w[Win::Log], true);
+  }
+  w[Win::Help] = newwin(5, 100, height-6, 3);
   
   wbkgd(w[Win::Title], COLOR_PAIR(Color::bgTitle));
-  scrollok(w[Win::Log], true);
-  box(w[Win::LogBorder], 0, 0);
-  wbkgd(w[Win::Timeline], COLOR_PAIR(Color::bgTimeLine));
   
   refresh();
 
   mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
 
   std::pair<Color, const char *> indicators[] {
-    {Color::Engaged, " engaged "},
-    {Color::bgTimeLine, " disengaged "},
-    {Color::CarEvent, " alert "},
-    {Color::AlertWarning, " warning "},
+    {Color::Engaged, " Engaged "},
+    {Color::Disengaged, " Disengaged "},
+    {Color::Alert, " Alert "},
+    {Color::AlertWarning, " Warning "},
   };
   for (auto [color, name] : indicators) {
     wattron(w[Win::TimelineDesc], COLOR_PAIR(color));
@@ -91,9 +88,13 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   wrefresh(w[Win::Title]);
   wrefresh(w[Win::TimelineDesc]);
   wrefresh(w[Win::Timeline]);
-  wrefresh(w[Win::LogBorder]);
+  if (w[Win::Log]) {
+    wrefresh(w[Win::LogBorder]);
+    wrefresh(w[Win::Log]);
+  }
   displayHelp();
   updateStats(0, replay->route()->segments().size() * 60);
+  updateTimeline(0, replay->route()->segments().size() * 60);
 
   QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateTimeline);
   QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateStats);
@@ -132,27 +133,20 @@ void ConsoleUI::update() {
   wrefresh(w[Win::CarState]);
 }
 
-void ConsoleUI::logMessage(ReplyMsgType type, const char *msg) {
-  wattron(w[Win::Log], COLOR_PAIR((int)type));
-  wprintw(w[Win::Log], "%s\n", msg);
-  wattroff(w[Win::Log], COLOR_PAIR((int)type));
-  wrefresh(w[Win::Log]);
-}
-
 void ConsoleUI::displayHelp() {
   std::initializer_list<std::pair<const char *, const char*>> single_line_keys {
     {"s", "+10s"},
     {"shift+s", "-10s"},
     {"m", "+60s"},
     {"shift+m", "+60s"},
-    {"p", "pause/resume"},
+    {"p", "Pause/Resume"},
+    {"e", "Next Engmt"},
+    {"d", "Next DisEngmt"},
   };
   std::initializer_list<std::pair<const char *, const char*>> multi_line_keys = {
-    {"e", "next engagement"},
-    {"d", "next disengagement"},
-    {"enter", "enter seek request"},
-    {"x", "replay at full speed"},
-    {"q", "exit"},
+    {"enter", "Enter seek request"},
+    {"x", "Replay at full speed"},
+    {"q", "Exit"},
   };
   
   auto write_shortcut = [=](std::string key, std::string desc) {
@@ -174,11 +168,20 @@ void ConsoleUI::displayHelp() {
 }
 
 void ConsoleUI::logMessageHandler(ReplyMsgType type, const char *msg) {
-  emit logMessageSignal(type ,msg);
+  emit logMessageSignal((int)type ,msg);
 }
 
 void ConsoleUI::downloadProgressHandler(uint64_t cur, uint64_t total) {
   emit updateProgressBarSignal(cur, total);
+}
+
+void ConsoleUI::logMessage(int type, const char *msg) {
+  if (w[Win::Log]) {
+    wattron(w[Win::Log], COLOR_PAIR((int)type));
+    wprintw(w[Win::Log], "%s\n", msg);
+    wattroff(w[Win::Log], COLOR_PAIR((int)type));
+    wrefresh(w[Win::Log]);
+  }
 }
 
 void ConsoleUI::updateProgressBar(uint64_t cur, uint64_t total) {
@@ -204,40 +207,45 @@ void ConsoleUI::updateStats(int cur_sec, int total_sec) {
 
 void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
   auto draw_at = [=](int x, char c = ' ') {
-    mvwaddch(w[Win::Timeline], 0, x, c);
     mvwaddch(w[Win::Timeline], 1, x, c);
+    mvwaddch(w[Win::Timeline], 2, x, c);
   };
   werase(w[Win::Timeline]); 
 
   int width = getmaxx(w[Win::Timeline]);
-  int cur_pos = ((double)cur_sec / total_sec) * width;
-  wattron(w[Win::Timeline], COLOR_PAIR(Color::Played));
-  for (int i = 0; i <= cur_pos; ++i) {
+  wattron(w[Win::Timeline], COLOR_PAIR(Color::Disengaged));
+  for (int i = 0; i < width; ++i) {
     draw_at(i, ' ');
   }
-  wattroff(w[Win::Timeline], COLOR_PAIR(Color::Played));
+  wattroff(w[Win::Timeline], COLOR_PAIR(Color::Disengaged));
   
   auto summary = replay->getSummary();
   for (auto [engage_sec, disengage_sec] : summary) {
     int start_pos = ((double)engage_sec/total_sec) * width;
     int end_pos = ((double)disengage_sec/total_sec) * width;
+    wattron(w[Win::Timeline], COLOR_PAIR(Color::Engaged));
     for (int i = start_pos; i <= end_pos; ++i) {
-      wattron(w[Win::Timeline], COLOR_PAIR((int)(i < cur_pos ? Color::EngagedPlayed : Color::Engaged)));
       draw_at(i, ' ');
-      wattroff(w[Win::Timeline], COLOR_PAIR((int)(i < cur_pos ? Color::EngagedPlayed : Color::Engaged)));
     }
+    wattroff(w[Win::Timeline], COLOR_PAIR(Color::Engaged));
   }
 
   auto car_events = replay->getCarEvents();
   for (auto [start_sec, end_sec, status] : car_events) {
     int start_pos = ((double)start_sec / total_sec) * width;
     int end_pos = ((double)end_sec / total_sec) * width;
+    wattron(w[Win::Timeline], COLOR_PAIR(Color::Alert));
     for (int i = start_pos; i <= end_pos; ++i) {
-      wattron(w[Win::Timeline], COLOR_PAIR(int(i < cur_pos ? Color::CarEventPlayed : Color::CarEvent)));
       draw_at(i, ' ');
-      wattroff(w[Win::Timeline], COLOR_PAIR(int(i < cur_pos ? Color::CarEventPlayed : Color::CarEvent)));
     }
+    wattroff(w[Win::Timeline], COLOR_PAIR(Color::Alert));
   }
+
+  int cur_pos = ((double)cur_sec / total_sec) * width;
+  wattron(w[Win::Timeline], COLOR_PAIR(Color::PosIndicator));
+  mvwaddch(w[Win::Timeline], 0, cur_pos, ACS_VLINE);
+  mvwaddch(w[Win::Timeline], 3, cur_pos, ACS_VLINE);
+  wattroff(w[Win::Timeline], COLOR_PAIR(Color::PosIndicator));
 
   wrefresh(w[Win::Timeline]);
 }
@@ -257,7 +265,7 @@ void ConsoleUI::handle_key(char c) {
       
       curs_set(1);
       nodelay(stdscr, false);
-      int y = getmaxy(stdscr) - 12;
+      int y = getmaxy(stdscr) - 8;
       mvprintw(y, 3, "Enter seek request: ");
       refresh();
       echo();

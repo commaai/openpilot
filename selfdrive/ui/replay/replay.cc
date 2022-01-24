@@ -226,9 +226,9 @@ void Replay::queueSegment() {
     if (!it->second) {
       if (it == cur || std::prev(it)->second->isLoaded()) {
         auto &[n, seg] = *it;
+        rDebug("loading segment %d...", n);
         seg = std::make_unique<Segment>(n, route_->at(n), flags_);
         QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
-        rDebug("loading segment %d...", n);
       }
       break;
     }
