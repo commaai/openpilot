@@ -28,8 +28,15 @@ overview.rst
 - {ref}`search`
 
 ```{toctree}
-:caption: 'Modules'
+:caption: 'Python API'
 :maxdepth: 2
 
 modules.rst
+```
+
+```{toctree}
+:caption: 'C/C++ API'
+:maxdepth: 4
+
+c_docs.rst
 ```

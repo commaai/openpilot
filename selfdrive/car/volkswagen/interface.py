@@ -38,14 +38,14 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.transmissionType = TransmissionType.manual
 
-      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2, 0xFD]):  # Airbag_01, LWI_01, ESP_19, ESP_21
+      if any(msg in fingerprint[1] for msg in (0x40, 0x86, 0xB2, 0xFD)):  # Airbag_01, LWI_01, ESP_19, ESP_21
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
     # Global lateral tuning defaults, can be overridden per-vehicle
 
-    ret.steerActuatorDelay = 0.05
+    ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.6  # Let the params learner figure this out
@@ -194,7 +194,7 @@ class CarInterface(CarInterfaceBase):
     # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:
       events.add(EventName.parkBrake)
-    if self.CS.tsk_status in [6, 7]:
+    if self.CS.tsk_status in (6, 7):
       events.add(EventName.accFaulted)
 
     # Low speed steer alert hysteresis logic
@@ -216,11 +216,12 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
+    hud_control = c.hudControl
     ret = self.CC.update(c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
-                         c.hudControl.visualAlert,
-                         c.hudControl.leftLaneVisible,
-                         c.hudControl.rightLaneVisible,
-                         c.hudControl.leftLaneDepart,
-                         c.hudControl.rightLaneDepart)
+                         hud_control.visualAlert,
+                         hud_control.leftLaneVisible,
+                         hud_control.rightLaneVisible,
+                         hud_control.leftLaneDepart,
+                         hud_control.rightLaneDepart)
     self.frame += 1
     return ret

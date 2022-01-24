@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <QThread>
 
 #include "selfdrive/ui/replay/camera.h"
@@ -18,6 +20,12 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_SEND_YUV = 0x0080,
   REPLAY_FLAG_NO_CUDA = 0x0100,
   REPLAY_FLAG_FULL_SPEED = 0x0200,
+  REPLAY_FLAG_NO_VIPC = 0x0400,
+};
+
+enum class FindFlag {
+  nextEngagement,
+  nextDisEngagement
 };
 
 class Replay : public QObject {
@@ -38,14 +46,19 @@ public:
 signals:
   void segmentChanged();
   void seekTo(int seconds, bool relative);
+  void seekToFlag(FindFlag flag);
+  void stop();
 
 protected slots:
   void queueSegment();
+  void doStop();
   void doSeek(int seconds, bool relative);
+  void doSeekToFlag(FindFlag flag);
   void segmentLoadFinished(bool sucess);
 
 protected:
   typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
+  std::optional<uint64_t> find(FindFlag flag);
   void startStream(const Segment *cur_segment);
   void stream();
   void setCurrentSegment(int n);
