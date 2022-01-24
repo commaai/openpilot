@@ -22,10 +22,10 @@ class TestLogcatdAndroid(unittest.TestCase):
       # write some log messages
       sent_msgs = {}
       for __ in range(random.randint(5, 50)):
-        msg = ''.join([random.choice(string.ascii_letters) for _ in range(random.randrange(2, 50))])
+        msg = ''.join(random.choice(string.ascii_letters) for _ in range(random.randrange(2, 50)))
         if msg in sent_msgs:
           continue
-        sent_msgs[msg] = ''.join([random.choice(string.ascii_letters) for _ in range(random.randrange(2, 20))])
+        sent_msgs[msg] = ''.join(random.choice(string.ascii_letters) for _ in range(random.randrange(2, 20)))
         os.system(f"log -t '{sent_msgs[msg]}' '{msg}'")
 
       time.sleep(1)
@@ -34,7 +34,11 @@ class TestLogcatdAndroid(unittest.TestCase):
         self.assertTrue(m.valid)
         self.assertLess(time.monotonic() - (m.logMonoTime / 1e9), 30)
 
-        recv_msg = m.androidLog.message.strip()
+        try:
+          recv_msg = m.androidLog.message.strip()
+        except UnicodeDecodeError:
+          continue
+
         if recv_msg not in sent_msgs:
           continue
 

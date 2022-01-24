@@ -96,6 +96,9 @@ class AcadosModel():
         self.cost_expr_ext_cost = None  #: CasADi expression for external cost; Default: :code:`None`
         self.cost_expr_ext_cost_e = None  #: CasADi expression for external cost, terminal; Default: :code:`None`
         self.cost_expr_ext_cost_0 = None  #: CasADi expression for external cost, initial; Default: :code:`None`
+        self.cost_expr_ext_cost_custom_hess = None  #: CasADi expression for custom hessian (only for external cost); Default: :code:`None`
+        self.cost_expr_ext_cost_custom_hess_e = None  #: CasADi expression for custom hessian (only for external cost), terminal; Default: :code:`None`
+        self.cost_expr_ext_cost_custom_hess_0 = None  #: CasADi expression for custom hessian (only for external cost), initial; Default: :code:`None`
 
 
 def acados_model_strip_casadi_symbolics(model):
@@ -147,5 +150,11 @@ def acados_model_strip_casadi_symbolics(model):
         del out['cost_expr_ext_cost_e']
     if 'cost_expr_ext_cost_0' in out.keys():
         del out['cost_expr_ext_cost_0']
+    if 'cost_expr_ext_cost_custom_hess' in out.keys():
+        del out['cost_expr_ext_cost_custom_hess']
+    if 'cost_expr_ext_cost_custom_hess_e' in out.keys():
+        del out['cost_expr_ext_cost_custom_hess_e']
+    if 'cost_expr_ext_cost_custom_hess_0' in out.keys():
+        del out['cost_expr_ext_cost_custom_hess_0']
 
     return out

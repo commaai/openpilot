@@ -5,7 +5,7 @@ Dynamic bicycle model from "The Science of Vehicle Dynamics (2014), M. Guiggiani
 The state is x = [v, r]^T
 with v lateral speed [m/s], and r rotational speed [rad/s]
 
-The input u is the steering angle [rad]
+The input u is the steering angle [rad], and roll [rad]
 
 The system is defined by
 x_dot = A*x + B*u
@@ -18,6 +18,9 @@ import numpy as np
 from numpy.linalg import solve
 
 from cereal import car
+
+ACCELERATION_DUE_TO_GRAVITY = 9.8
+
 
 class VehicleModel:
   def __init__(self, CP: car.CarParams):
@@ -43,7 +46,7 @@ class VehicleModel:
     self.cR = stiffness_factor * self.cR_orig
     self.sR = steer_ratio
 
-  def steady_state_sol(self, sa: float, u: float) -> np.ndarray:
+  def steady_state_sol(self, sa: float, u: float, roll: float) -> np.ndarray:
     """Returns the steady state solution.
 
     If the speed is too low we can't use the dynamic model (tire slip is undefined),
@@ -52,26 +55,28 @@ class VehicleModel:
     Args:
       sa: Steering wheel angle [rad]
       u: Speed [m/s]
+      roll: Road Roll [rad]
 
     Returns:
       2x1 matrix with steady state solution (lateral speed, rotational speed)
     """
     if u > 0.1:
-      return dyn_ss_sol(sa, u, self)
+      return dyn_ss_sol(sa, u, roll, self)
     else:
       return kin_ss_sol(sa, u, self)
 
-  def calc_curvature(self, sa: float, u: float) -> float:
+  def calc_curvature(self, sa: float, u: float, roll: float) -> float:
     """Returns the curvature. Multiplied by the speed this will give the yaw rate.
 
     Args:
       sa: Steering wheel angle [rad]
       u: Speed [m/s]
+      roll: Road Roll [rad]
 
     Returns:
       Curvature factor [1/m]
     """
-    return self.curvature_factor(u) * sa / self.sR
+    return (self.curvature_factor(u) * sa / self.sR) + self.roll_compensation(roll, u)
 
   def curvature_factor(self, u: float) -> float:
     """Returns the curvature factor.
@@ -86,43 +91,63 @@ class VehicleModel:
     sf = calc_slip_factor(self)
     return (1. - self.chi) / (1. - sf * u**2) / self.l
 
-  def get_steer_from_curvature(self, curv: float, u: float) -> float:
+  def get_steer_from_curvature(self, curv: float, u: float, roll: float) -> float:
     """Calculates the required steering wheel angle for a given curvature
 
     Args:
       curv: Desired curvature [1/m]
       u: Speed [m/s]
+      roll: Road Roll [rad]
 
     Returns:
       Steering wheel angle [rad]
     """
 
-    return curv * self.sR * 1.0 / self.curvature_factor(u)
+    return (curv - self.roll_compensation(roll, u)) * self.sR * 1.0 / self.curvature_factor(u)
 
-  def get_steer_from_yaw_rate(self, yaw_rate: float, u: float) -> float:
+  def roll_compensation(self, roll: float, u: float) -> float:
+    """Calculates the roll-compensation to curvature
+
+    Args:
+      roll: Road Roll [rad]
+      u: Speed [m/s]
+
+    Returns:
+      Roll compensation curvature [rad]
+    """
+    sf = calc_slip_factor(self)
+
+    if abs(sf) < 1e-6:
+      return 0
+    else:
+      return (ACCELERATION_DUE_TO_GRAVITY * roll) / ((1 / sf) - u**2)
+
+  def get_steer_from_yaw_rate(self, yaw_rate: float, u: float, roll: float) -> float:
     """Calculates the required steering wheel angle for a given yaw_rate
 
     Args:
       yaw_rate: Desired yaw rate [rad/s]
       u: Speed [m/s]
+      roll: Road Roll [rad]
 
     Returns:
       Steering wheel angle [rad]
     """
     curv = yaw_rate / u
-    return self.get_steer_from_curvature(curv, u)
+    return self.get_steer_from_curvature(curv, u, roll)
 
-  def yaw_rate(self, sa: float, u: float) -> float:
+  def yaw_rate(self, sa: float, u: float, roll: float) -> float:
     """Calculate yaw rate
 
     Args:
       sa: Steering wheel angle [rad]
       u: Speed [m/s]
+      roll: Road Roll [rad]
 
     Returns:
       Yaw rate [rad/s]
     """
-    return self.calc_curvature(sa, u) * u
+    return self.calc_curvature(sa, u, roll) * u
 
 
 def kin_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
@@ -152,7 +177,7 @@ def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, n
     VM: Vehicle model
 
   Returns:
-    A tuple with the 2x2 A matrix, and 2x1 B matrix
+    A tuple with the 2x2 A matrix, and 2x2 B matrix
 
   Parameters in the vehicle model:
     cF: Tire stiffness Front [N/rad]
@@ -165,30 +190,38 @@ def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, n
     chi: Steer ratio rear [-]
   """
   A = np.zeros((2, 2))
-  B = np.zeros((2, 1))
+  B = np.zeros((2, 2))
   A[0, 0] = - (VM.cF + VM.cR) / (VM.m * u)
   A[0, 1] = - (VM.cF * VM.aF - VM.cR * VM.aR) / (VM.m * u) - u
   A[1, 0] = - (VM.cF * VM.aF - VM.cR * VM.aR) / (VM.j * u)
   A[1, 1] = - (VM.cF * VM.aF**2 + VM.cR * VM.aR**2) / (VM.j * u)
+
+  # Steering input
   B[0, 0] = (VM.cF + VM.chi * VM.cR) / VM.m / VM.sR
   B[1, 0] = (VM.cF * VM.aF - VM.chi * VM.cR * VM.aR) / VM.j / VM.sR
+
+  # Roll input
+  B[0, 1] = -ACCELERATION_DUE_TO_GRAVITY
+
   return A, B
 
 
-def dyn_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
+def dyn_ss_sol(sa: float, u: float, roll: float, VM: VehicleModel) -> np.ndarray:
   """Calculate the steady state solution when x_dot = 0,
   Ax + Bu = 0 => x = -A^{-1} B u
 
   Args:
     sa: Steering angle [rad]
     u: Speed [m/s]
+    roll: Road Roll [rad]
     VM: Vehicle model
 
   Returns:
     2x1 matrix with steady state solution
   """
   A, B = create_dyn_state_matrices(u, VM)
-  return -solve(A, B) * sa
+  inp = np.array([[sa], [roll]])
+  return -solve(A, B) @ inp
 
 
 def calc_slip_factor(VM):

@@ -51,6 +51,7 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
     liveloc = self.localizer_get_msg()
     self.assertTrue(liveloc is not None)
 
+  @unittest.skip("temporarily disabled due to false positives")
   def test_device_fell(self):
     msg = messaging.new_message('sensorEvents', 1)
     msg.sensorEvents[0].sensor = 1

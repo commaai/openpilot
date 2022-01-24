@@ -29,6 +29,7 @@ class ObservationKind:
   PSEUDORANGE_RATE = 23
   ECEF_VEL = 31
   ECEF_ORIENTATION_FROM_GPS = 32
+  NO_ACCEL = 33
 
   ROAD_FRAME_XY_SPEED = 24  # (x, y) [m/s]
   ROAD_FRAME_YAW_RATE = 25  # [rad/s]
@@ -37,6 +38,7 @@ class ObservationKind:
   STIFFNESS = 28  # [-]
   STEER_RATIO = 29  # [-]
   ROAD_FRAME_X_SPEED = 30  # (x) [m/s]
+  ROAD_ROLL = 31  # [rad]
 
   names = [
     'Unknown',
@@ -68,6 +70,8 @@ class ObservationKind:
     'Fast Angle Offset',
     'Stiffness',
     'Steer Ratio',
+    'Road Frame x speed',
+    'Road Roll',
   ]
 
   @classmethod

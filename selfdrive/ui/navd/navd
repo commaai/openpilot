@@ -1,0 +1,4 @@
+#!/bin/sh
+cd "$(dirname "$0")"
+export QT_PLUGIN_PATH="../../../third_party/qt-plugins/$(uname -m)"
+exec ./_navd

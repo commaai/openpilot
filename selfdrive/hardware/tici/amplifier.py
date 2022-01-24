@@ -31,17 +31,18 @@ BASE_CONFIG = [
   AmpConfig("Enable PLL2", 0b1, 0x1A, 7, 0b10000000),
   AmpConfig("DAI1: I2S mode", 0b00100, 0x14, 2, 0b01111100),
   AmpConfig("DAI2: I2S mode", 0b00100, 0x1C, 2, 0b01111100),
-  AmpConfig("Right speaker output volume", 0x1a, 0x3E, 0, 0b00011111),
+  AmpConfig("Right speaker output volume", 0x1c, 0x3E, 0, 0b00011111),
   AmpConfig("DAI1 Passband filtering: music mode", 0b1, 0x18, 7, 0b10000000),
   AmpConfig("DAI1 voice mode gain (DV1G)", 0b00, 0x2F, 4, 0b00110000),
   AmpConfig("DAI1 attenuation (DV1)", 0x0, 0x2F, 0, 0b00001111),
   AmpConfig("DAI2 attenuation (DV2)", 0x0, 0x31, 0, 0b00001111),
   AmpConfig("DAI2: DC blocking", 0b1, 0x20, 0, 0b00000001),
   AmpConfig("DAI2: High sample rate", 0b0, 0x20, 3, 0b00001000),
-  AmpConfig("ALC enable", 0b0, 0x43, 7, 0b10000000),
+  AmpConfig("ALC enable", 0b1, 0x43, 7, 0b10000000),
   AmpConfig("ALC/excursion limiter release time", 0b101, 0x43, 4, 0b01110000),
+  AmpConfig("ALC multiband enable", 0b1, 0x43, 3, 0b00001000),
   AmpConfig("DAI1 EQ enable", 0b0, 0x49, 0, 0b00000001),
-  AmpConfig("DAI2 EQ enable", 0b0, 0x49, 1, 0b00000010),
+  AmpConfig("DAI2 EQ enable", 0b1, 0x49, 1, 0b00000010),
   AmpConfig("DAI2 EQ clip detection disabled", 0b1, 0x32, 4, 0b00010000),
   AmpConfig("DAI2 EQ attenuation", 0x5, 0x32, 0, 0b00001111),
   AmpConfig("Excursion limiter upper corner freq", 0b100, 0x41, 4, 0b01110000),
@@ -62,11 +63,11 @@ BASE_CONFIG = [
   AmpConfig("Zero-crossing detection disabled", 0b0, 0x49, 5, 0b00100000),
 ]
 
-BASE_CONFIG += configs_from_eq_params(0x84, EQParams(0x65C4, 0xC07C, 0x3D66, 0x07D9, 0x120F))
+BASE_CONFIG += configs_from_eq_params(0x84, EQParams(0x274F, 0xC0FF, 0x3BF9, 0x0B3C, 0x1656))
 BASE_CONFIG += configs_from_eq_params(0x8E, EQParams(0x1009, 0xC6BF, 0x2952, 0x1C97, 0x30DF))
-BASE_CONFIG += configs_from_eq_params(0x98, EQParams(0x2822, 0xC1C7, 0x3B50, 0x0EF8, 0x180A))
-BASE_CONFIG += configs_from_eq_params(0xA2, EQParams(0x1009, 0xC5C2, 0x271F, 0x1A87, 0x32A6))
-BASE_CONFIG += configs_from_eq_params(0xAC, EQParams(0x2000, 0xCA1E, 0x4000, 0x2287, 0x0000))
+BASE_CONFIG += configs_from_eq_params(0x98, EQParams(0x0F75, 0xCBE5, 0x0ED2, 0x2528, 0x3E42))
+BASE_CONFIG += configs_from_eq_params(0xA2, EQParams(0x091F, 0x3D4C, 0xCE11, 0x1266, 0x2807))
+BASE_CONFIG += configs_from_eq_params(0xAC, EQParams(0x0A9E, 0x3F20, 0xE573, 0x0A8B, 0x3A3B))
 
 class Amplifier:
   AMP_I2C_BUS = 0

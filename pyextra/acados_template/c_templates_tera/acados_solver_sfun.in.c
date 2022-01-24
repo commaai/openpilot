@@ -377,7 +377,7 @@ static void mdlInitializeSampleTimes(SimStruct *S)
 
 static void mdlStart(SimStruct *S)
 {
-    nlp_solver_capsule *capsule = {{ model.name }}_acados_create_capsule();
+    {{ model.name }}_solver_capsule *capsule = {{ model.name }}_acados_create_capsule();
     {{ model.name }}_acados_create(capsule);
 
     ssSetUserData(S, (void*)capsule);
@@ -386,7 +386,7 @@ static void mdlStart(SimStruct *S)
 
 static void mdlOutputs(SimStruct *S, int_T tid)
 {
-    nlp_solver_capsule *capsule = ssGetUserData(S);
+    {{ model.name }}_solver_capsule *capsule = ssGetUserData(S);
     ocp_nlp_config *nlp_config = {{ model.name }}_acados_get_nlp_config(capsule);
     ocp_nlp_dims *nlp_dims = {{ model.name }}_acados_get_nlp_dims(capsule);
     ocp_nlp_in *nlp_in = {{ model.name }}_acados_get_nlp_in(capsule);
@@ -747,7 +747,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
 static void mdlTerminate(SimStruct *S)
 {
-    nlp_solver_capsule *capsule = ssGetUserData(S);
+    {{ model.name }}_solver_capsule *capsule = ssGetUserData(S);
 
     {{ model.name }}_acados_free(capsule);
     {{ model.name }}_acados_free_capsule(capsule);

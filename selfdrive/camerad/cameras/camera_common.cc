@@ -19,6 +19,7 @@
 #include "selfdrive/hardware/hw.h"
 
 #ifdef QCOM
+#include "CL/cl_ext_qcom.h"
 #include "selfdrive/camerad/cameras/camera_qcom.h"
 #elif QCOM2
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
@@ -28,7 +29,7 @@
 #include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
 
-const int YUV_COUNT = 100;
+ExitHandler do_exit;
 
 class Debayer {
 public:
@@ -109,7 +110,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
   rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
 
-  vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
+  vipc_server->create_buffers(yuv_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
     debayer = new Debayer(device_id, context, this, s);
@@ -202,7 +203,6 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setMeasuredGreyFraction(frame_data.measured_grey_fraction);
   framed.setTargetGreyFraction(frame_data.target_grey_fraction);
   framed.setLensPos(frame_data.lens_pos);
-  framed.setLensSag(frame_data.lens_sag);
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
 }
@@ -342,8 +342,6 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
   return lum_med / 256.0;
 }
 
-extern ExitHandler do_exit;
-
 void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
   const char *thread_name = nullptr;
   if (cs == &cameras->road_cam) {
@@ -353,7 +351,7 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   } else {
     thread_name = "WideRoadCamera";
   }
-  set_thread_name(thread_name);
+  util::set_thread_name(thread_name);
 
   uint32_t cnt = 0;
   while (!do_exit) {
@@ -410,11 +408,11 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
 }
 
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
   int j = Hardware::TICI() ? 1 : 3;
   if (cnt % j == 0) {
-    sm->update(0);
-    driver_cam_auto_exposure(c, *sm);
+    s->sm->update(0);
+    driver_cam_auto_exposure(c, *(s->sm));
   }
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
@@ -423,5 +421,29 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
   if (env_send_driver) {
     framed.setImage(get_frame_image(&c->buf));
   }
-  pm->send("driverCameraState", msg);
+  s->pm->send("driverCameraState", msg);
+}
+
+
+void camerad_thread() {
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+   // TODO: do this for QCOM2 too
+#if defined(QCOM)
+  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
+  cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
+#else
+  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+#endif
+
+  MultiCameraState cameras = {};
+  VisionIpcServer vipc_server("camerad", device_id, context);
+
+  cameras_init(&vipc_server, &cameras, device_id, context);
+  cameras_open(&cameras);
+
+  vipc_server.start_listener();
+
+  cameras_run(&cameras);
+
+  CL_CHECK(clReleaseContext(context));
 }
