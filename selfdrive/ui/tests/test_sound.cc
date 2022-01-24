@@ -11,11 +11,7 @@ public:
     for (auto i = sounds.constBegin(); i != sounds.constEnd(); ++i) {
       sound_stats[i.key()] = {0, 0};
       QObject::connect(i.value().first, &QSoundEffect::playingChanged, [=, s = i.value().first, a = i.key()]() {
-        if (s->isPlaying()) {
-          sound_stats[a].first++;
-        } else {
-          sound_stats[a].second++;
-        }
+        s->isPlaying() ? sound_stats[a].first++ : sound_stats[a].second++;
       });
     }
   }
