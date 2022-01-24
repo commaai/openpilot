@@ -1,6 +1,5 @@
 #include "selfdrive/ui/replay/replay.h"
 
-#include <QApplication>
 #include <QDebug>
 #include <QtConcurrent>
 

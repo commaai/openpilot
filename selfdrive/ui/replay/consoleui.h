@@ -25,21 +25,13 @@ private:
   void updateStats(int cur_sec, int total_sec);
   void update();
 
-  QSocketNotifier m_notifier{0, QSocketNotifier::Read, this};
+  enum Win { Title, Stats, Log, DownloadBar, Timeline, TimelineDesc, Help, CarState, Seek };
+  WINDOW* w[Win::Seek + 1] = {};
+  SubMaster sm;
+  Replay *replay;
   QBasicTimer m_timer;
   QTimer sm_timer;
-  Replay *replay;
-  WINDOW *title;
-  WINDOW *main_window;
-  WINDOW *stats_win;
-  WINDOW *log_window;
-  WINDOW *progress_bar_window;
-  WINDOW *timeline_win;
-  WINDOW *help_win;
-  WINDOW *car_state_win;
-  WINDOW *timeline_desc_win;
-  WINDOW *seek_win;
-  SubMaster sm;
+  QSocketNotifier m_notifier{0, QSocketNotifier::Read, this};
 
  private slots:
   void readyRead();

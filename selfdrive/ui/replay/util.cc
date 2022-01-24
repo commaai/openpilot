@@ -18,9 +18,8 @@
 ReplayMessageHandler message_handler = nullptr;
 DownloadProgressHandler download_progress_handler = nullptr;
 
-void installMessageHandler(ReplayMessageHandler handler) {
-  message_handler = handler;
-}
+void installMessageHandler(ReplayMessageHandler handler) { message_handler = handler; }
+void installDownloadProgressHandler(DownloadProgressHandler handler) { download_progress_handler = handler; }
 
 void logMessage(ReplyMsgType type, const char *fmt, ...) {
   char *msg_buf = nullptr;
@@ -45,10 +44,6 @@ void logMessage(ReplyMsgType type, const char *fmt, ...) {
   }
 
   free(msg_buf);
-}
-
-void installDownloadProgressHandler(DownloadProgressHandler handler) {
-  download_progress_handler = handler;
 }
 
 namespace {
@@ -92,7 +87,7 @@ size_t write_cb(char *data, size_t size, size_t count, void *userp) {
 
 size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
 
-struct DownloadProgressBar {
+struct DownloadStats {
   void addDownload(const std::string &url, uint64_t total_bytes) {
     std::lock_guard lk(lock);
     items[url] = {.downloaded = 0, .total = total_bytes};
@@ -107,7 +102,6 @@ struct DownloadProgressBar {
 
   void update(const std::string &url, uint64_t downloaded) {
     std::lock_guard lk(lock);
-
     items[url].downloaded = downloaded;
 
     uint64_t total_bytes = 0;
@@ -116,9 +110,9 @@ struct DownloadProgressBar {
       total_bytes += item.total;
       total_downloaded += item.downloaded;
     }
-    if (!enable_http_logging || !download_progress_handler) return;
-
-    download_progress_handler(total_downloaded, total_bytes);
+    if (enable_http_logging && download_progress_handler) {
+      download_progress_handler(total_downloaded, total_bytes);
+    }
   }
 
   struct Item {
@@ -172,14 +166,12 @@ std::string getUrlWithoutQuery(const std::string &url) {
   return (idx == std::string::npos ? url : url.substr(0, idx));
 }
 
-void enableHttpLogging(bool enable) {
-  DownloadProgressBar::enable_http_logging = enable;
-}
+void enableHttpLogging(bool enable) { DownloadStats::enable_http_logging = enable; }
 
 template <class T>
 bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
-  static DownloadProgressBar progress_bar;
-  progress_bar.addDownload(url, content_length);
+  static DownloadStats download_stats;
+  download_stats.addDownload(url, content_length);
 
   int parts = 1;
   if (chunk_size > 0 && content_length > 10 * 1024 * 1024) {
@@ -214,11 +206,11 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
   while (still_running > 0 && !(abort && *abort)) {
     curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
     curl_multi_perform(cm, &still_running);
-    progress_bar.update(url, written);
+    download_stats.update(url, written);
   }
 
-  progress_bar.update(url, written);
-  progress_bar.removeDownload(url);
+  download_stats.update(url, written);
+  download_stats.removeDownload(url);
 
   CURLMsg *msg;
   int msgs_left = -1;
