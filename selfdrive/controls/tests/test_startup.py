@@ -45,10 +45,6 @@ class TestStartup(unittest.TestCase):
     (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS),
     (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS),
 
-    # DSU unplugged
-    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_NO_DSU),
-    (EventName.communityFeatureDisallowed, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_NO_DSU),
-
     # dashcamOnly car
     (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS),
     (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS),
