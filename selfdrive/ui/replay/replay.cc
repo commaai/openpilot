@@ -162,9 +162,9 @@ void Replay::buildTimeline() {
         }
 
         auto alert_type = cs.getAlertType();
-        alert_status = cs.getAlertStatus();
         if (car_event_start == -1 && alert_type.size() > 0) {
           car_event_start = (e->mono_time - route_start_ts_) / 1e9;
+          alert_status = cs.getAlertStatus();
         } else if (car_event_start != -1 && alert_type.size() == 0) {
           std::lock_guard lk(timeline_lock);
           car_event_end = (e->mono_time - route_start_ts_) / 1e9;
@@ -378,8 +378,8 @@ void Replay::stream() {
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
       const int current_ts = currentSeconds();
-      if (last_emit_update > current_ts || (current_ts - last_emit_update) > 1) {
-        emit updateProgress(current_ts, segments_.size() * 60);
+      if (last_emit_update > current_ts || (current_ts - last_emit_update) >= 1) {
+        emit updateTime(current_ts, segments_.size() * 60);
       }
       setCurrentSegment(current_ts / 60);
 

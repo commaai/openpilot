@@ -96,7 +96,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   updateStats();
   updateTimeline(0, replay->route()->segments().size() * 60);
 
-  QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateTimeline);
+  QObject::connect(replay, &Replay::updateTime, this, &ConsoleUI::updateTimeline);
   QObject::connect(replay, &Replay::streamStarted, this, &ConsoleUI::updateStats);
   QObject::connect(&notifier, SIGNAL(activated(int)), SLOT(readyRead()));
   QObject::connect(this, &ConsoleUI::updateProgressBarSignal, this, &ConsoleUI::updateProgressBar);
@@ -105,7 +105,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   readyRead();
 
   getch_timer.start(1000, this);
-  sm_timer.callOnTimeout(this, &ConsoleUI::update);
+  sm_timer.callOnTimeout(this, &ConsoleUI::updateSubmaster);
   sm_timer.start(50);
 }
 
@@ -118,7 +118,7 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
   refresh();
 }
 
-void ConsoleUI::update() {
+void ConsoleUI::updateSubmaster() {
   auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit) {
     auto win = w[Win::CarState];
     mvwaddstr(win, y, x, key);
@@ -270,13 +270,13 @@ void ConsoleUI::handleKey(char c) {
     case '\n': {
       replay->pause(true);
       getch_timer.stop();
-
       curs_set(1);
       nodelay(stdscr, false);
+
+      rWarning("Waiting for input...");
       int y = getmaxy(stdscr) - 9;
       attron(COLOR_PAIR(Color::BrightWhite));
       attron(A_BOLD);
-      rWarning("Waiting for input...");
       mvprintw(y, 3, "Enter seek request: ");
       attroff(A_BOLD);
       attroff(COLOR_PAIR(Color::BrightWhite));

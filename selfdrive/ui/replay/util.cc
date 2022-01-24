@@ -114,7 +114,7 @@ struct DownloadStats {
       total_downloaded += item.downloaded;
     }
     double tm = millis_since_boot();
-    if (download_progress_handler && (tm - prev_tm) > 500) {
+    if (download_progress_handler && ((tm - prev_tm) > 500 || !success || total_downloaded >= total_bytes)) {
       download_progress_handler(total_downloaded, total_bytes, success);
       prev_tm = tm;
     }

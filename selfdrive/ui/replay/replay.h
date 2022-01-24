@@ -57,7 +57,7 @@ public:
   inline const std::string &carName() const { return car_name_; }
 
 signals:
-  void updateProgress(int cur, int total);
+  void updateTime(int cur, int total);
   void segmentChanged();
   void seekTo(int seconds, bool relative);
   void streamStarted();

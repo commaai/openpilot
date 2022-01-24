@@ -21,7 +21,7 @@ private:
   void displayHelp();
   void updateTimeline(int cur_sec, int total_sec);
   void updateStats();
-  void update();
+  void updateSubmaster();
 
   enum Win { Title, Stats, Log, LogBorder, DownloadBar, Timeline, TimelineDesc, Help, CarState, Max};
   WINDOW* w[Win::Max] = {};
