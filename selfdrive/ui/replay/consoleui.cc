@@ -25,7 +25,7 @@ enum Color {
 };
 
 ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"carState", "liveParameters"}), QObject(parent) {
-  installMessageHandler(std::bind(&ConsoleUI::replayMessageOutput, this, _1, _2));
+  installMessageHandler(std::bind(&ConsoleUI::LogMessage, this, _1, _2));
   installDownloadProgressHandler(std::bind(&ConsoleUI::downloadProgressHandler, this, _1, _2));
 
   system("clear");
@@ -61,18 +61,18 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   w[Win::TimelineDesc]= newwin(1, 100, 8, 3);
   w[Win::DownloadBar] = newwin(1, 100, 10, 3);
   w[Win::CarState] = newwin(5, 100, 11, 3);
-  w[Win::Log] = newwin(height - 30, 100, 17, 3);
+  w[Win::LogBorder] = newwin(height - 30, 100, 17, 2);
+  w[Win::Log] = newwin(height - 34, 98, 18, 3);
   w[Win::Help] = newwin(9, 100, height-10, 3);
   
   wbkgd(w[Win::Title], COLOR_PAIR(Color::bgTitle));
   scrollok(w[Win::Log], true);
+  box(w[Win::LogBorder], 0, 0);
   wbkgd(w[Win::Timeline], COLOR_PAIR(Color::bgTimeLine));
   
   refresh();
-  displayHelp();
 
   mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
-  wrefresh(w[Win::Title]);
 
   std::pair<Color, const char *> indicators[] {
     {Color::Engaged, " engaged "},
@@ -86,9 +86,12 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
     wattroff(w[Win::TimelineDesc], COLOR_PAIR(color));
     waddstr(w[Win::TimelineDesc], name);
   }
+
+  wrefresh(w[Win::Title]);
   wrefresh(w[Win::TimelineDesc]);
   wrefresh(w[Win::Timeline]);
-
+  wrefresh(w[Win::LogBorder]);
+  displayHelp();
   updateStats(0, replay->route()->segments().size() * 60);
 
   QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateTimeline);
@@ -125,7 +128,7 @@ void ConsoleUI::update() {
   wrefresh(w[Win::CarState]);
 }
 
-void ConsoleUI::replayMessageOutput(ReplyMsgType type, const char *msg) {
+void ConsoleUI::LogMessage(ReplyMsgType type, const char *msg) {
   if (w[Win::Log]) {
     wattron(w[Win::Log], COLOR_PAIR((int)type));
     wprintw(w[Win::Log], "%s\n", msg);
@@ -281,9 +284,6 @@ void ConsoleUI::handle_key(char c) {
       break;
     case 'S':
       replay->seekTo(-10, true);
-      break;
-    case 'g':
-      replay->seekTo(0, false);
       break;
     case 'x':
       if (replay->hasFlag(REPLAY_FLAG_FULL_SPEED)) {

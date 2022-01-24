@@ -18,14 +18,14 @@ public:
 
 private:
   void handle_key(char c);
-  void replayMessageOutput(ReplyMsgType type, const char *msg);
+  void LogMessage(ReplyMsgType type, const char *msg);
   void downloadProgressHandler(uint64_t cur, uint64_t total);
   void displayHelp();
   void updateTimeline(int cur_sec, int total_sec);
   void updateStats(int cur_sec, int total_sec);
   void update();
 
-  enum Win { Title, Stats, Log, DownloadBar, Timeline, TimelineDesc, Help, CarState, Max};
+  enum Win { Title, Stats, Log, LogBorder, DownloadBar, Timeline, TimelineDesc, Help, CarState, Max};
   WINDOW* w[Win::Max] = {};
   SubMaster sm;
   Replay *replay;
