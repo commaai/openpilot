@@ -4,6 +4,8 @@ import zmq
 import time
 from pathlib import Path
 from datetime import datetime, timezone
+from typing import NoReturn
+
 from common.params import Params
 from cereal.messaging import SubMaster
 from selfdrive.swaglog import cloudlog
@@ -20,14 +22,14 @@ class StatLog:
   def __init__(self):
     self.pid = None
 
-  def connect(self):
+  def connect(self) -> None:
     self.zctx = zmq.Context()
     self.sock = self.zctx.socket(zmq.PUSH)
     self.sock.setsockopt(zmq.LINGER, 10)
     self.sock.connect(STATS_SOCKET)
     self.pid = os.getpid()
 
-  def _send(self, metric: str):
+  def _send(self, metric: str) -> None:
     if os.getpid() != self.pid:
       self.connect()
 
@@ -37,16 +39,17 @@ class StatLog:
       # drop :/
       pass
 
-  def gauge(self, name: str, value: float):
+  def gauge(self, name: str, value: float) -> None:
     self._send(f"{name}:{value}|{METRIC_TYPE.GAUGE}")
 
 
-def main():
-  def get_influxdb_line(measurement: str, value: float, timestamp: datetime, tags: dict):
+def main() -> NoReturn:
+  dongle_id = Params().get("DongleId", encoding='utf-8')
+  def get_influxdb_line(measurement: str, value: float, timestamp: datetime, tags: dict) -> str:
     res = f"{measurement}"
     for k, v in tags.items():
       res += f",{k}={str(v)}"
-    res += f" value={value} {int(timestamp.timestamp() * 1e9)}\n"
+    res += f" value={value},dongle_id=\"{dongle_id}\" {int(timestamp.timestamp() * 1e9)}\n"
     return res
 
   # open statistics socket
@@ -59,7 +62,6 @@ def main():
 
   # initialize tags
   tags = {
-    'dongleId': Params().get("DongleId", encoding='utf-8'),
     'started': False,
     'version': get_short_version(),
     'branch': get_short_branch(),
