@@ -966,6 +966,35 @@ FW_VERSIONS = {
     ],
   },
   CAR.PILOT: {
+    (Ecu.shiftByWire, 0x18da0bf1, None): [
+      b'54008-TG7-A520\x00\x00',
+      b'54008-TG7-A530\x00\x00',
+    ],
+    (Ecu.transmission, 0x18da1ef1, None): [
+      b'28101-5EY-A050\x00\x00',
+      b'28101-5EY-A100\x00\x00',
+      b'28101-5EZ-A050\x00\x00',
+      b'28101-5EZ-A060\x00\x00',
+      b'28101-5EZ-A100\x00\x00',
+      b'28101-5EZ-A210\x00\x00',
+    ],
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-RLV-4060\x00\x00',
+      b'37805-RLV-4070\x00\x00',
+      b'37805-RLV-A830\x00\x00',
+      b'37805-RLV-A840\x00\x00',
+      b'37805-RLV-C430\x00\x00',
+      b'37805-RLV-C510\x00\x00',
+      b'37805-RLV-C520\x00\x00',
+      b'37805-RLV-C530\x00\x00',
+      b'37805-RLV-C910\x00\x00',
+    ],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-TG7-A030\x00\x00',
+      b'38897-TG7-A040\x00\x00',
+      b'38897-TG7-A110\x00\x00',
+      b'38897-TG7-A210\x00\x00',
+    ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TG7-A030\x00\x00',
       b'39990-TG7-A040\x00\x00',
