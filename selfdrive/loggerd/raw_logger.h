@@ -39,4 +39,5 @@ private:
   AVFormatContext *format_ctx = NULL;
 
   AVFrame *frame = NULL;
+  std::vector<uint8_t> downscale_buf;
 };

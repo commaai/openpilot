@@ -11,6 +11,8 @@
 
 #define __STDC_CONSTANT_MACROS
 
+#include "libyuv.h"
+
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -55,6 +57,10 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
   frame->linesize[0] = width;
   frame->linesize[1] = width/2;
   frame->linesize[2] = width/2;
+
+  if (downscale) {
+    downscale_buf.resize(width * height * 3 / 2);
+  }
 }
 
 RawLogger::~RawLogger() {
@@ -124,9 +130,27 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
   pkt.data = NULL;
   pkt.size = 0;
 
-  frame->data[0] = (uint8_t*)y_ptr;
-  frame->data[1] = (uint8_t*)u_ptr;
-  frame->data[2] = (uint8_t*)v_ptr;
+  if (downscale_buf.size() > 0) {
+    uint8_t *out_y = downscale_buf.data();
+    uint8_t *out_u = out_y + codec_ctx->width * codec_ctx->height;
+    uint8_t *out_v = out_u + (codec_ctx->width / 2) * (codec_ctx->height / 2);
+    libyuv::I420Scale(y_ptr, in_width,
+                      u_ptr, in_width/2,
+                      v_ptr, in_width/2,
+                      in_width, in_height,
+                      out_y, codec_ctx->width,
+                      out_u, codec_ctx->width/2,
+                      out_v, codec_ctx->width/2,
+                      codec_ctx->width, codec_ctx->height,
+                      libyuv::kFilterNone);
+    frame->data[0] = out_y;
+    frame->data[1] = out_u;
+    frame->data[2] = out_v;
+  } else {
+    frame->data[0] = (uint8_t*)y_ptr;
+    frame->data[1] = (uint8_t*)u_ptr;
+    frame->data[2] = (uint8_t*)v_ptr;
+  }
   frame->pts = counter;
 
   int ret = counter;
