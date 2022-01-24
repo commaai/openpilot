@@ -85,13 +85,12 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   refresh();
   displayHelp();
   updateSummary();
-  updateTimeline(0, replay->route()->segments().size() * 60);
+  updateTimeline();
 
   for (auto win : w) {
     wrefresh(win);
   }
 
-  QObject::connect(replay, &Replay::updateTime, this, &ConsoleUI::updateTimeline);
   QObject::connect(replay, &Replay::streamStarted, this, &ConsoleUI::updateSummary);
   QObject::connect(&notifier, SIGNAL(activated(int)), SLOT(readyRead()));
   QObject::connect(this, &ConsoleUI::updateProgressBarSignal, this, &ConsoleUI::updateProgressBar);
@@ -109,6 +108,7 @@ ConsoleUI::~ConsoleUI() {
 
 void ConsoleUI::timerEvent(QTimerEvent *ev) {
   if (ev->timerId() != getch_timer.timerId()) return;
+  updateTimeline();
   refresh();
 }
 
@@ -203,7 +203,8 @@ void ConsoleUI::updateSummary() {
   wrefresh(w[Win::Stats]);
 }
 
-void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
+void ConsoleUI::updateTimeline() {
+  const int total_sec = replay->totalSeconds();
   auto win = w[Win::Timeline];
   int width = getmaxx(win);
   werase(win);
@@ -241,7 +242,7 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
     wattroff(win, COLOR_PAIR(critical ? Color::Critical : Color::Warning));
   }
 
-  int cur_pos = ((double)cur_sec / total_sec) * width;
+  int cur_pos = ((double)replay->currentSeconds() / total_sec) * width;
   wattron(win, COLOR_PAIR(Color::BrightWhite));
   mvwaddch(win, 0, cur_pos, ACS_VLINE);
   mvwaddch(win, 3, cur_pos, ACS_VLINE);

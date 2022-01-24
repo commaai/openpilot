@@ -19,7 +19,7 @@ public:
 private:
   void handleKey(char c);
   void displayHelp();
-  void updateTimeline(int cur_sec, int total_sec);
+  void updateTimeline();
   void updateSummary();
   void updateStatus();
 

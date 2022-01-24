@@ -54,10 +54,10 @@ public:
     return car_events; 
   }
   inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
+  inline int totalSeconds() const { return segments_.size() * 60; }
   inline const std::string &carName() const { return car_name_; }
 
 signals:
-  void updateTime(int cur, int total);
   void segmentChanged();
   void seekTo(int seconds, bool relative);
   void streamStarted();
