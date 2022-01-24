@@ -22,6 +22,9 @@ void installMessageHandler(ReplayMessageHandler handler) { message_handler = han
 void installDownloadProgressHandler(DownloadProgressHandler handler) { download_progress_handler = handler; }
 
 void logMessage(ReplyMsgType type, const char *fmt, ...) {
+  static std::mutex lock;
+  std::lock_guard lk(lock);
+
   char *msg_buf = nullptr;
   va_list args;
   va_start(args, fmt);
@@ -110,18 +113,16 @@ struct DownloadStats {
       total_bytes += item.total;
       total_downloaded += item.downloaded;
     }
-    if (enable_http_logging && download_progress_handler) {
+    if (download_progress_handler) {
       download_progress_handler(total_downloaded, total_bytes);
     }
   }
 
   struct Item {
-    uint64_t total = 0;
-    uint64_t downloaded = 0;
+    uint64_t total = 0, downloaded = 0;
   };
   std::mutex lock;
   std::map<std::string, Item> items;
-  inline static std::atomic<bool> enable_http_logging = false;
 };
 
 } // namespace
@@ -165,8 +166,6 @@ std::string getUrlWithoutQuery(const std::string &url) {
   size_t idx = url.find("?");
   return (idx == std::string::npos ? url : url.substr(0, idx));
 }
-
-void enableHttpLogging(bool enable) { DownloadStats::enable_http_logging = enable; }
 
 template <class T>
 bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
@@ -223,10 +222,10 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
         if (res_status == 206) {
           complete++;
         } else {
-          std::cout << "Download failed: http error code: " << res_status << std::endl;
+          rWarning("Download failed: http error code: %d", res_status);
         }
       } else {
-        std::cout << "Download failed: connection failure: " << msg->data.result << std::endl;
+        rWarning("Download failed: connection failure: %d",  msg->data.result);
       }
     }
   }
@@ -280,7 +279,7 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
     if (bzerror == BZ_OK && prev_write_pos == strm.next_out) {
       // content is corrupt
       bzerror = BZ_STREAM_END;
-      std::cout << "decompressBZ2 error : content is corrupt" << std::endl;
+      rWarning("decompressBZ2 error : content is corrupt");
       break;
     }
 

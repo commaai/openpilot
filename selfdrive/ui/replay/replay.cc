@@ -233,9 +233,8 @@ void Replay::queueSegment() {
       break;
     }
   }
-  const auto &cur_segment = cur->second;
-  enableHttpLogging(!cur_segment->isLoaded());
 
+  const auto &cur_segment = cur->second;
   // merge the previous adjacent segment if it's loaded
   auto begin = segments_.find(cur_segment->seg_num - 1);
   if (begin == segments_.end() || !(begin->second && begin->second->isLoaded())) {

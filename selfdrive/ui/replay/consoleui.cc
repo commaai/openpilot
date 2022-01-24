@@ -254,8 +254,8 @@ void ConsoleUI::handle_key(char c) {
       refresh();
       echo();
       int choice = 0;
-      scanw("%d", &choice);
-		  noecho();
+      scanw((char *)"%d", &choice);
+      noecho();
       nodelay(stdscr, true);
       curs_set(0);
       move(y, 0);
