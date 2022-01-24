@@ -25,7 +25,8 @@ enum Color {
 };
 
 ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"carState", "liveParameters"}), QObject(parent) {
-  installMessageHandler(std::bind(&ConsoleUI::LogMessage, this, _1, _2));
+  qRegisterMetaType<uint64_t>("uint64_t");
+  installMessageHandler(std::bind(&ConsoleUI::logMessageHandler, this, _1, _2));
   installDownloadProgressHandler(std::bind(&ConsoleUI::downloadProgressHandler, this, _1, _2));
 
   system("clear");
@@ -97,6 +98,9 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateTimeline);
   QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateStats);
   QObject::connect(&m_notifier, SIGNAL(activated(int)), SLOT(readyRead()));
+  QObject::connect(this, &ConsoleUI::updateProgressBarSignal, this, &ConsoleUI::updateProgressBar);
+  QObject::connect(this, &ConsoleUI::logMessageSignal, this, &ConsoleUI::logMessage);
+
   readyRead();
 
   getch_timer.start(1000, this);
@@ -128,13 +132,11 @@ void ConsoleUI::update() {
   wrefresh(w[Win::CarState]);
 }
 
-void ConsoleUI::LogMessage(ReplyMsgType type, const char *msg) {
-  if (w[Win::Log]) {
-    wattron(w[Win::Log], COLOR_PAIR((int)type));
-    wprintw(w[Win::Log], "%s\n", msg);
-    wattroff(w[Win::Log], COLOR_PAIR((int)type));
-    wrefresh(w[Win::Log]);
-  }
+void ConsoleUI::logMessage(ReplyMsgType type, const char *msg) {
+  wattron(w[Win::Log], COLOR_PAIR((int)type));
+  wprintw(w[Win::Log], "%s\n", msg);
+  wattroff(w[Win::Log], COLOR_PAIR((int)type));
+  wrefresh(w[Win::Log]);
 }
 
 void ConsoleUI::displayHelp() {
@@ -171,21 +173,27 @@ void ConsoleUI::displayHelp() {
   wrefresh(w[Win::Help]);
 }
 
+void ConsoleUI::logMessageHandler(ReplyMsgType type, const char *msg) {
+  emit logMessageSignal(type ,msg);
+}
+
 void ConsoleUI::downloadProgressHandler(uint64_t cur, uint64_t total) {
-  if (w[Win::DownloadBar]) {
-    const int width = 30;
-    const float progress = cur / (double)total;
-    const int pos = width * progress;
+  emit updateProgressBarSignal(cur, total);
+}
+
+void ConsoleUI::updateProgressBar(uint64_t cur, uint64_t total) {
+  const int width = 30;
+  const float progress = cur / (double)total;
+  const int pos = width * progress;
+  werase(w[Win::DownloadBar]);
+  std::string s = util::string_format("Downloading [%s>%s]  %d%% %s", std::string(pos, '=').c_str(),
+                                      std::string(width - pos, ' ').c_str(), int(progress * 100.0),
+                                      formattedDataSize(total).c_str());
+  waddstr(w[Win::DownloadBar], s.c_str());
+  if (cur >= total) {
     werase(w[Win::DownloadBar]);
-    std::string s = util::string_format("Downloading [%s>%s]  %d%% %s", std::string(pos, '=').c_str(),
-                                        std::string(width - pos, ' ').c_str(), int(progress * 100.0),
-                                        formattedDataSize(total).c_str());
-    waddstr(w[Win::DownloadBar], s.c_str());
-    if (cur >= total) {
-      werase(w[Win::DownloadBar]);
-    }
-    wrefresh(w[Win::DownloadBar]);
   }
+  wrefresh(w[Win::DownloadBar]);
 }
 
 void ConsoleUI::updateStats(int cur_sec, int total_sec) {

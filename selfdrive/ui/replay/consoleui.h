@@ -18,7 +18,7 @@ public:
 
 private:
   void handle_key(char c);
-  void LogMessage(ReplyMsgType type, const char *msg);
+  void logMessageHandler(ReplyMsgType type, const char *msg);
   void downloadProgressHandler(uint64_t cur, uint64_t total);
   void displayHelp();
   void updateTimeline(int cur_sec, int total_sec);
@@ -33,7 +33,13 @@ private:
   QTimer sm_timer;
   QSocketNotifier m_notifier{0, QSocketNotifier::Read, this};
 
- private slots:
+signals:
+  void updateProgressBarSignal(uint64_t cur, uint64_t total);
+  void logMessageSignal(ReplyMsgType type, const char *msg);
+
+private slots:
   void readyRead();
   void timerEvent(QTimerEvent *ev);
+  void updateProgressBar(uint64_t cur, uint64_t total);
+  void logMessage(ReplyMsgType type, const char *msg);
 };
