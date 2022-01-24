@@ -9,7 +9,8 @@
 
 using namespace std::placeholders;
 enum Color {
-  Info,Debug,
+  Info,
+  Debug,
   Warning,
   Critical,
   bgTimeLine,
@@ -36,52 +37,39 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   noecho();
 
   // Initialize all the colors
-  init_pair((int)Color::Info, COLOR_WHITE, COLOR_BLACK);
-  init_pair((int)Color::Debug, 8, COLOR_BLACK);
-  init_pair((int)Color::Warning, COLOR_YELLOW, COLOR_BLACK);
-  init_pair((int)Color::Critical, COLOR_RED, COLOR_BLACK);
-  init_pair((int)Color::bgTimeLine, COLOR_BLACK, 8);
-  init_pair((int)Color::bgTitle, COLOR_BLACK, COLOR_WHITE);
-  init_pair((int)Color::Played, COLOR_GREEN, COLOR_GREEN);
-  init_pair((int)Color::Engaged, COLOR_BLUE, COLOR_BLUE);
-  init_pair((int)Color::EngagedPlayed, 22, 22);
-  init_pair((int)Color::CarEvent, 10, 10);
-  init_pair((int)Color::CarEventPlayed, COLOR_YELLOW, COLOR_YELLOW);
-  init_pair((int)Color::AlertWarning, COLOR_RED, COLOR_RED);
+  init_pair(Color::Info, COLOR_WHITE, COLOR_BLACK);
+  init_pair(Color::Debug, 8, COLOR_BLACK);
+  init_pair(Color::Warning, COLOR_YELLOW, COLOR_BLACK);
+  init_pair(Color::Critical, COLOR_RED, COLOR_BLACK);
+  init_pair(Color::bgTimeLine, COLOR_BLACK, 8);
+  init_pair(Color::bgTitle, COLOR_BLACK, COLOR_WHITE);
+  init_pair(Color::Played, COLOR_GREEN, COLOR_GREEN);
+  init_pair(Color::Engaged, COLOR_BLUE, COLOR_BLUE);
+  init_pair(Color::EngagedPlayed, 22, 22);
+  init_pair(Color::CarEvent, 10, 10);
+  init_pair(Color::CarEventPlayed, COLOR_YELLOW, COLOR_YELLOW);
+  init_pair(Color::AlertWarning, COLOR_RED, COLOR_RED);
 
   int height, width;
   getmaxyx(stdscr, height, width);
 
   w[Win::Title] = newwin(1, width , 0, 0);
   w[Win::Stats] = newwin(2, width, 2, 3);
-
   w[Win::Timeline] = newwin(2, 100, 5, 3);
-  wbkgd(w[Win::Timeline], COLOR_PAIR(Color::bgTimeLine));
-
   w[Win::TimelineDesc]= newwin(1, 100, 8, 3);
-  w[Win::DownloadBar] = newwin(1, 60, 10, 3);
+  w[Win::DownloadBar] = newwin(1, 100, 10, 3);
   w[Win::CarState] = newwin(5, 100, 11, 3);
-  
   w[Win::Log] = newwin(height - 30, 100, 17, 3);
-  scrollok(w[Win::Log], true);
-
   w[Win::Seek] = newwin(1, 50, height-12, 3);
   w[Win::Help] = newwin(8, 50, height-10, 3);
   
+  scrollok(w[Win::Log], true);
+  wbkgd(w[Win::Timeline], COLOR_PAIR(Color::bgTimeLine));
   keypad(w[Win::Seek], true);
   nodelay(stdscr, true);  // non-blocking getchar()
 
+  refresh();
   displayHelp();
-
-  QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateTimeline);
-  QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateStats);
-  QObject::connect(&m_notifier, SIGNAL(activated(int)), SLOT(readyRead()));
-  readyRead();
-  m_timer.start(1000, this);
-
-  sm_timer.callOnTimeout(this, &ConsoleUI::update);
-  sm_timer.start(50);
-  
 
   wbkgd(w[Win::Title], COLOR_PAIR(Color::bgTitle));
   mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
@@ -89,6 +77,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
 
   std::pair<Color, const char *> indicators[] {
     {Color::Engaged, " engaged "},
+    {Color::bgTimeLine, " disengaged "},
     {Color::CarEvent, " alert "},
     {Color::AlertWarning, " warning "},
   };
@@ -100,7 +89,17 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   }
   wrefresh(w[Win::TimelineDesc]);
   wrefresh(w[Win::Timeline]);
-  refresh();
+
+  updateStats(0, replay->route()->segments().size() * 60);
+
+  QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateTimeline);
+  QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateStats);
+  QObject::connect(&m_notifier, SIGNAL(activated(int)), SLOT(readyRead()));
+  readyRead();
+
+  getch_timer.start(1000, this);
+  sm_timer.callOnTimeout(this, &ConsoleUI::update);
+  sm_timer.start(50);
 }
 
 ConsoleUI::~ConsoleUI() {
@@ -110,13 +109,12 @@ ConsoleUI::~ConsoleUI() {
 }
 
 void ConsoleUI::timerEvent(QTimerEvent *ev) {
-  if (ev->timerId() != m_timer.timerId()) return;
+  if (ev->timerId() != getch_timer.timerId()) return;
   refresh();
 }
 
 void ConsoleUI::update() {
   sm.update(0);
-  werase(w[Win::CarState]);
   if (sm.updated("carState")) {
     mvwprintw(w[Win::CarState], 0, 0, "SPEED: %.2f m/s", sm["carState"].getCarState().getVEgo());
   }
@@ -175,26 +173,24 @@ void ConsoleUI::displayHelp() {
 
 void ConsoleUI::downloadProgressHandler(uint64_t cur, uint64_t total) {
   if (w[Win::DownloadBar]) {
-    const int width = 70;
+    const int width = 30;
     const float progress = cur / (double)total;
     const int pos = width * progress;
-    wclear(w[Win::DownloadBar]);
-    wborder(w[Win::DownloadBar], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    werase(w[Win::DownloadBar]);
     std::string s = util::string_format("Downloading [%s>%s]  %d%% %s", std::string(pos, '=').c_str(),
                                         std::string(width - pos, ' ').c_str(), int(progress * 100.0),
                                         formattedDataSize(total).c_str());
     waddstr(w[Win::DownloadBar], s.c_str());
     if (cur >= total) {
-      wclear(w[Win::DownloadBar]);
+      werase(w[Win::DownloadBar]);
     }
     wrefresh(w[Win::DownloadBar]);
   }
 }
 
 void ConsoleUI::updateStats(int cur_sec, int total_sec) {
-  werase(w[Win::Stats]);
-  mvwprintw(w[Win::Stats], 0, 0, "Route: %s", qPrintable(replay->route()->name()));
-  mvwprintw(w[Win::Stats], 1, 0, "Current: %d s  Total %d s", cur_sec, total_sec);
+  mvwprintw(w[Win::Stats], 0, 0, "Route  : %s", qPrintable(replay->route()->name()));
+  mvwprintw(w[Win::Stats], 1, 0, "Current: %d s  Total: %d s       ", cur_sec, total_sec);
   wrefresh(w[Win::Stats]);
 }
 
@@ -208,10 +204,8 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
   int width = getmaxx(w[Win::Timeline]);
   int cur_pos = ((double)cur_sec / total_sec) * width;
   wattron(w[Win::Timeline], COLOR_PAIR(Color::Played));
-  for (int i = 0; i < width; ++i) {
-    if (i <= cur_pos) {
-      draw_at(i, ' ');
-    }
+  for (int i = 0; i < cur_pos; ++i) {
+    draw_at(i, ' ');
   }
   wattroff(w[Win::Timeline], COLOR_PAIR(Color::Played));
   

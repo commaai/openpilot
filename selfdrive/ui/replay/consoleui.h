@@ -29,7 +29,7 @@ private:
   WINDOW* w[Win::Seek + 1] = {};
   SubMaster sm;
   Replay *replay;
-  QBasicTimer m_timer;
+  QBasicTimer getch_timer;
   QTimer sm_timer;
   QSocketNotifier m_notifier{0, QSocketNotifier::Read, this};
 
