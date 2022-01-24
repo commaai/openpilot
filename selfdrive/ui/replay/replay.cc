@@ -34,16 +34,14 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 
   qRegisterMetaType<FindFlag>("FindFlag");
   connect(this, &Replay::seekTo, this, &Replay::doSeek);
-  connect(this, &Replay::seekToFlag, this, &Replay::doSeekToFlag);
-  connect(this, &Replay::stop, this, &Replay::doStop);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
 
 Replay::~Replay() {
-  doStop();
+  stop();
 }
 
-void Replay::doStop() {
+void Replay::stop() {
   if (!stream_thread_ && segments_.empty()) return;
 
   rInfo("shutdown: in progress...");
@@ -56,7 +54,7 @@ void Replay::doStop() {
   }
   segments_.clear();
   camera_server_.reset(nullptr);
-  summary_future.waitForFinished();
+  timeline_future.waitForFinished();
   rInfo("shutdown: done");
 }
 
@@ -118,7 +116,7 @@ void Replay::doSeek(int seconds, bool relative) {
   queueSegment();
 }
 
-void Replay::doSeekToFlag(FindFlag flag) {
+void Replay::seekToFlag(FindFlag flag) {
   if (flag == FindFlag::nextEngagement) {
     rWarning("seeking to the next engagement...");
   } else if (flag == FindFlag::nextDisEngagement) {
@@ -138,7 +136,7 @@ void Replay::doSeekToFlag(FindFlag flag) {
   queueSegment();
 }
 
-void Replay::buildSummary() {
+void Replay::buildTimeline() {
   // Search in all segments
   int engage_sec = -1, disengage_sec = -1;
   int car_event_start = -1, car_event_end = -1;
@@ -158,8 +156,8 @@ void Replay::buildSummary() {
           engage_sec = (e->mono_time - route_start_ts_) / 1e9;
         } else if (!engaged && engage_sec != -1) {
           disengage_sec = (e->mono_time - route_start_ts_) / 1e9;
-          std::lock_guard lk(summary_lock);
-          summary.push_back({engage_sec, disengage_sec});
+          std::lock_guard lk(timeline_lock);
+          timeline.push_back({engage_sec, disengage_sec});
           engage_sec = disengage_sec = -1;
         }
 
@@ -168,7 +166,7 @@ void Replay::buildSummary() {
         if (car_event_start == -1 && alert_type.size() > 0) {
           car_event_start = (e->mono_time - route_start_ts_) / 1e9;
         } else if (car_event_start != -1 && alert_type.size() == 0) {
-          std::lock_guard lk(summary_lock);
+          std::lock_guard lk(timeline_lock);
           car_event_end = (e->mono_time - route_start_ts_) / 1e9;
           car_events.push_back({car_event_start, car_event_end, alert_status});
           car_event_start = car_event_end = -1;
@@ -180,7 +178,7 @@ void Replay::buildSummary() {
 
 std::optional<uint64_t> Replay::find(FindFlag flag) {
   int cur_ts = currentSeconds();
-  for (auto [start_ts, end_ts] : getSummary()) {
+  for (auto [start_ts, end_ts] : getTimeline()) {
     if (flag == FindFlag::nextEngagement && start_ts > cur_ts) {
       return start_ts;
     } else if (flag == FindFlag::nextDisEngagement && end_ts > cur_ts) {
@@ -321,7 +319,7 @@ void Replay::startStream(const Segment *cur_segment) {
   QObject::connect(stream_thread_, &QThread::finished, stream_thread_, &QThread::deleteLater);
   stream_thread_->start();
 
-  summary_future = QtConcurrent::run(this, &Replay::buildSummary);
+  timeline_future = QtConcurrent::run(this, &Replay::buildTimeline);
 }
 
 void Replay::publishMessage(const Event *e) {

@@ -37,18 +37,20 @@ public:
   ~Replay();
   bool load();
   void start(int seconds = 0);
+  void stop();
   void pause(bool pause);
-  bool isPaused() const { return paused_; }
+  void seekToFlag(FindFlag flag);
+  inline bool isPaused() const { return paused_; }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
   inline const Route* route() const { return route_.get(); }
-  inline const std::vector<std::pair<int, int>> getSummary() { 
-    std::lock_guard lk(summary_lock);
-    return summary; 
+  inline const std::vector<std::pair<int, int>> getTimeline() { 
+    std::lock_guard lk(timeline_lock);
+    return timeline; 
   }
   inline const std::vector<std::tuple<int, int, cereal::ControlsState::AlertStatus>> getCarEvents() { 
-    std::lock_guard lk(summary_lock);
+    std::lock_guard lk(timeline_lock);
     return car_events; 
   }
   inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
@@ -58,16 +60,11 @@ signals:
   void updateProgress(int cur, int total);
   void segmentChanged();
   void seekTo(int seconds, bool relative);
-  void seekToFlag(FindFlag flag);
   void streamStarted();
-  void stop();
-  void updateSummary(int cur, int total);
 
 protected slots:
   void queueSegment();
-  void doStop();
   void doSeek(int seconds, bool relative);
-  void doSeekToFlag(FindFlag flag);
   void segmentLoadFinished(bool sucess);
 
 protected:
@@ -80,7 +77,7 @@ protected:
   void updateEvents(const std::function<bool()>& lambda);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
-  void buildSummary();
+  void buildTimeline();
   inline bool isSegmentMerged(int n) {
     return std::find(segments_merged_.begin(), segments_merged_.end(), n) != segments_merged_.end();
   }
@@ -111,9 +108,9 @@ protected:
   std::unique_ptr<CameraServer> camera_server_;
   std::atomic<uint32_t> flags_ = REPLAY_FLAG_NONE;
 
-  std::mutex summary_lock;
-  QFuture<void> summary_future;
-  std::vector<std::pair<int, int>> summary;
+  std::mutex timeline_lock;
+  QFuture<void> timeline_future;
+  std::vector<std::pair<int, int>> timeline;
   std::vector<std::tuple<int, int, cereal::ControlsState::AlertStatus>> car_events;
   std::string car_name_;
 };

@@ -229,7 +229,7 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
   }
   wattroff(win, COLOR_PAIR(Color::Disengaged));
 
-  auto summary = replay->getSummary();
+  auto summary = replay->getTimeline();
   for (auto [engage_sec, disengage_sec] : summary) {
     int start_pos = ((double)engage_sec / total_sec) * width;
     int end_pos = ((double)disengage_sec / total_sec) * width;
@@ -334,6 +334,7 @@ void ConsoleUI::handleKey(char c) {
       break;
     case 'q':
     case 'Q':
+      replay->stop();
       qApp->exit();
       break;
   }
