@@ -204,7 +204,7 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
   int width = getmaxx(w[Win::Timeline]);
   int cur_pos = ((double)cur_sec / total_sec) * width;
   wattron(w[Win::Timeline], COLOR_PAIR(Color::Played));
-  for (int i = 0; i < cur_pos; ++i) {
+  for (int i = 0; i <= cur_pos; ++i) {
     draw_at(i, ' ');
   }
   wattroff(w[Win::Timeline], COLOR_PAIR(Color::Played));
@@ -213,7 +213,7 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
   for (auto [engage_sec, disengage_sec] : summary) {
     int start_pos = ((double)engage_sec/total_sec) * width;
     int end_pos = ((double)disengage_sec/total_sec) * width;
-    for (int i = start_pos; i < end_pos; ++i) {
+    for (int i = start_pos; i <= end_pos; ++i) {
       wattron(w[Win::Timeline], COLOR_PAIR((int)(i < cur_pos ? Color::EngagedPlayed : Color::Engaged)));
       draw_at(i, ' ');
       wattroff(w[Win::Timeline], COLOR_PAIR((int)(i < cur_pos ? Color::EngagedPlayed : Color::Engaged)));
@@ -224,7 +224,7 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
   for (auto [start_sec, end_sec, status] : car_events) {
     int start_pos = ((double)start_sec / total_sec) * width;
     int end_pos = ((double)end_sec / total_sec) * width;
-    for (int i = start_pos; i < end_pos; ++i) {
+    for (int i = start_pos; i <= end_pos; ++i) {
       wattron(w[Win::Timeline], COLOR_PAIR(int(i < cur_pos ? Color::CarEventPlayed : Color::CarEvent)));
       draw_at(i, ' ');
       wattroff(w[Win::Timeline], COLOR_PAIR(int(i < cur_pos ? Color::CarEventPlayed : Color::CarEvent)));
