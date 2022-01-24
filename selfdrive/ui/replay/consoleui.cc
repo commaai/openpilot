@@ -35,6 +35,8 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   clear();
   cbreak();
   noecho();
+  keypad(stdscr, true);
+  nodelay(stdscr, true);  // non-blocking getchar()
 
   // Initialize all the colors
   init_pair(Color::Info, COLOR_WHITE, COLOR_BLACK);
@@ -60,18 +62,15 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   w[Win::DownloadBar] = newwin(1, 100, 10, 3);
   w[Win::CarState] = newwin(5, 100, 11, 3);
   w[Win::Log] = newwin(height - 30, 100, 17, 3);
-  w[Win::Seek] = newwin(1, 50, height-12, 3);
-  w[Win::Help] = newwin(8, 50, height-10, 3);
+  w[Win::Help] = newwin(9, 100, height-10, 3);
   
+  wbkgd(w[Win::Title], COLOR_PAIR(Color::bgTitle));
   scrollok(w[Win::Log], true);
   wbkgd(w[Win::Timeline], COLOR_PAIR(Color::bgTimeLine));
-  keypad(w[Win::Seek], true);
-  nodelay(stdscr, true);  // non-blocking getchar()
-
+  
   refresh();
   displayHelp();
 
-  wbkgd(w[Win::Title], COLOR_PAIR(Color::bgTitle));
   mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
   wrefresh(w[Win::Title]);
 
@@ -103,8 +102,6 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
 }
 
 ConsoleUI::~ConsoleUI() {
-  clrtoeol();
-  refresh();
   endwin();
 }
 
@@ -143,14 +140,14 @@ void ConsoleUI::displayHelp() {
     {"shift+s", "-10s"},
     {"m", "+60s"},
     {"shift+m", "+60s"},
+    {"p", "pause/resume"},
   };
   std::initializer_list<std::pair<const char *, const char*>> multi_line_keys = {
     {"e", "next engagement"},
     {"d", "next disengagement"},
-    {"x", "play at full speed"},
-    {"q", "exit"},
     {"enter", "enter seek request"},
-    {"shift + g", "play from start"},
+    {"x", "replay at full speed"},
+    {"q", "exit"},
   };
   
   auto write_shortcut = [=](std::string key, std::string desc) {
@@ -244,24 +241,27 @@ void ConsoleUI::readyRead() {
 void ConsoleUI::handle_key(char c) {
   switch (c) {
     case '\n': {
-      // curs_set(1);
-      // mvwprintw(w[Win::Seek], 0, 0, "Enter seek request: ");
-      // wrefresh(w[Win::Seek]);
-      // int choice = 0;
-      // echo();
-		  // scanw("%d", &choice);
-		  // noecho();
+      replay->pause(true);
+      getch_timer.stop();
+      
+      curs_set(1);
+      nodelay(stdscr, false);
+      int y = getmaxy(stdscr) - 12;
+      mvprintw(y, 3, "Enter seek request: ");
+      refresh();
+      echo();
+      int choice = 0;
+      scanw("%d", &choice);
+		  noecho();
+      nodelay(stdscr, true);
+      curs_set(0);
+      move(y, 0);
+      clrtoeol(); 
+      refresh();
 
-      // try {
-      //   if (r[0] == '#') {
-      //     r.erase(0, 1);
-      //     replay->seekTo(std::stoi(r) * 60, false);
-      //   } else {
-      //     replay->seekTo(std::stoi(r), false);
-      //   }
-      // } catch (std::invalid_argument) {
-      //   rDebug("invalid argument");
-      // }
+      replay->pause(false);
+      replay->seekTo(choice, false);
+      getch_timer.start(1000, this);
       break;
     }
     case 'e':

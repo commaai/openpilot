@@ -25,8 +25,8 @@ private:
   void updateStats(int cur_sec, int total_sec);
   void update();
 
-  enum Win { Title, Stats, Log, DownloadBar, Timeline, TimelineDesc, Help, CarState, Seek };
-  WINDOW* w[Win::Seek + 1] = {};
+  enum Win { Title, Stats, Log, DownloadBar, Timeline, TimelineDesc, Help, CarState, Max};
+  WINDOW* w[Win::Max] = {};
   SubMaster sm;
   Replay *replay;
   QBasicTimer getch_timer;
