@@ -37,15 +37,18 @@ void Setup::download(QString url) {
   curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
 
   int ret = curl_easy_perform(curl);
-  if (ret != CURLE_OK) {
+
+  long res_status = 0;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_status);
+  if (ret == CURLE_OK && res_status == 200) {
+    rename(tmpfile, "/tmp/installer");
+    emit finished(true);
+  } else {
     emit finished(false);
-    return;
   }
+
   curl_easy_cleanup(curl);
   fclose(fp);
-
-  rename(tmpfile, "/tmp/installer");
-  emit finished(true);
 }
 
 QWidget * Setup::low_voltage() {
@@ -169,7 +172,7 @@ QWidget * Setup::network_setup() {
 
   // setup timer for testing internet connection
   HttpRequest *request = new HttpRequest(this, false, 2500);
-  QObject::connect(request, &HttpRequest::requestDone, [=](bool success) {
+  QObject::connect(request, &HttpRequest::requestDone, [=](const QString &, bool success) {
     cont->setEnabled(success);
     if (success) {
       const bool cell = networking->wifi->currentNetworkType() == NetworkType::CELL;

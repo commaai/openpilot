@@ -9,8 +9,6 @@
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
 
-const double MILE_TO_KM = 1.60934;
-
 static QLabel* newLabel(const QString& text, const QString &type) {
   QLabel* label = new QLabel(text);
   label->setProperty("type", type);
@@ -50,7 +48,7 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
   if (auto dongleId = getDongleId()) {
     QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/stats";
     RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
-    QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &DriveStats::parseResponse);
+    QObject::connect(repeater, &RequestRepeater::requestDone, this, &DriveStats::parseResponse);
   }
 
   setStyleSheet(R"(
@@ -78,7 +76,9 @@ void DriveStats::updateStats() {
   update(json["week"].toObject(), week_);
 }
 
-void DriveStats::parseResponse(const QString& response) {
+void DriveStats::parseResponse(const QString& response, bool success) {
+  if (!success) return;
+
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting past drives statistics";

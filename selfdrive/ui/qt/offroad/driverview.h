@@ -24,7 +24,7 @@ protected:
 private:
   Params params;
   SubMaster sm;
-  QImage face_img;
+  QPixmap face_img;
   bool is_rhd = false;
   bool frame_updated = false;
 };

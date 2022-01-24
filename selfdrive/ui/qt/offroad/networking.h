@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QButtonGroup>
-#include <QMovie>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -66,6 +65,7 @@ private:
 
 protected:
   void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
 public slots:
   void refresh();

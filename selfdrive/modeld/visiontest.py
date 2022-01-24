@@ -62,7 +62,7 @@ class VisionTest():
       disable_model = 0
       temporal_model = 1
     else:
-      raise ValueError("Bad model name: {}".format(model))
+      raise ValueError(f"Bad model name: {model}")
 
     prevdir = os.getcwd()
     os.chdir(_visiond_dir)  # tmp hack to find kernels

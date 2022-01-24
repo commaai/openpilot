@@ -42,8 +42,7 @@ class Plant():
 
     from selfdrive.car.honda.values import CAR
     from selfdrive.car.honda.interface import CarInterface
-    self.CP = CarInterface.get_params(CAR.CIVIC)
-    self.planner = Planner(self.CP, init_v=self.speed)
+    self.planner = Planner(CarInterface.get_params(CAR.CIVIC), init_v=self.speed)
 
   def current_time(self):
     return float(self.rk.frame) / self.rate
@@ -97,8 +96,8 @@ class Plant():
     sm = {'radarState': radar.radarState,
           'carState': car_state.carState,
           'controlsState': control.controlsState}
-    self.planner.update(sm, self.CP)
-    self.speed = self.planner.v_desired
+    self.planner.update(sm)
+    self.speed = self.planner.v_desired_filter.x
     self.acceleration = self.planner.a_desired
     fcw = self.planner.fcw
     self.distance_lead = self.distance_lead + v_lead * self.ts

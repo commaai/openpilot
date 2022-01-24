@@ -35,10 +35,6 @@ LogState::~LogState() {
 
 static LogState s = {};
 
-static void cloudlog_bind_locked(const char* k, const char* v) {
-  s.ctx_j[k] = v;
-}
-
 static void cloudlog_init() {
   if (s.inited) return;
   s.ctx_j = json11::Json::object {};
@@ -65,26 +61,28 @@ static void cloudlog_init() {
   // openpilot bindings
   char* dongle_id = getenv("DONGLE_ID");
   if (dongle_id) {
-    cloudlog_bind_locked("dongle_id", dongle_id);
+    s.ctx_j["dongle_id"] = dongle_id;
   }
-  cloudlog_bind_locked("version", COMMA_VERSION);
+  char* daemon_name = getenv("MANAGER_DAEMON");
+  if (daemon_name) {
+    s.ctx_j["daemon"] = daemon_name;
+  }
+  s.ctx_j["version"] = COMMA_VERSION;
   s.ctx_j["dirty"] = !getenv("CLEAN");
 
   // device type
   if (Hardware::EON()) {
-    cloudlog_bind_locked("device", "eon");
+    s.ctx_j["device"] =  "eon";
   } else if (Hardware::TICI()) {
-    cloudlog_bind_locked("device", "tici");
+    s.ctx_j["device"] =  "tici";
   } else {
-    cloudlog_bind_locked("device", "pc");
+    s.ctx_j["device"] =  "pc";
   }
 
   s.inited = true;
 }
 
-void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
-  std::lock_guard lk(s.lock);
-  cloudlog_init();
+static void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
   if (levelnum >= s.print_level) {
     printf("%s: %s\n", filename, msg);
   }
@@ -97,10 +95,13 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   char* msg_buf = nullptr;
   va_list args;
   va_start(args, fmt);
-  vasprintf(&msg_buf, fmt, args);
+  int ret = vasprintf(&msg_buf, fmt, args);
   va_end(args);
 
-  if (!msg_buf) return;
+  if (ret <= 0 || !msg_buf) return;
+
+  std::lock_guard lk(s.lock);
+  cloudlog_init();
 
   json11::Json log_j = json11::Json::object {
     {"msg", msg_buf},
@@ -114,10 +115,4 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   std::string log_s = log_j.dump();
   log(levelnum, filename, lineno, func, msg_buf, log_s);
   free(msg_buf);
-}
-
-void cloudlog_bind(const char* k, const char* v) {
-  std::lock_guard lk(s.lock);
-  cloudlog_init();
-  cloudlog_bind_locked(k, v);
 }

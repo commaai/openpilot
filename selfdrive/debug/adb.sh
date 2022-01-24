@@ -1,8 +1,16 @@
 #!/usr/bin/bash
+set -e
 
-# then, connect to computer:
-# adb connect 192.168.5.11:5555
+PORT=5555
 
-setprop service.adb.tcp.port 5555
-stop adbd
-start adbd
+setprop service.adb.tcp.port $PORT
+if [ -f /EON ]; then
+  stop adbd
+  start adbd
+else
+  sudo systemctl start adbd
+fi
+
+IP=$(echo $SSH_CONNECTION | awk '{ print $3}')
+echo "then, connect on your computer:"
+echo "adb connect $IP:$PORT"

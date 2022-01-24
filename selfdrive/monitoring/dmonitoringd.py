@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
+import gc
+
+import cereal.messaging as messaging
 from cereal import car
 from common.params import Params
-import cereal.messaging as messaging
+from common.realtime import set_realtime_priority
 from selfdrive.controls.lib.events import Events
-from selfdrive.monitoring.driver_monitor import DriverStatus
 from selfdrive.locationd.calibrationd import Calibration
+from selfdrive.monitoring.driver_monitor import DriverStatus
 
 
 def dmonitoringd_thread(sm=None, pm=None):
+  gc.disable()
+  set_realtime_priority(2)
+
   if pm is None:
     pm = messaging.PubMaster(['driverMonitoringState'])
 
@@ -38,12 +44,10 @@ def dmonitoringd_thread(sm=None, pm=None):
                         v_cruise != v_cruise_last or \
                         sm['carState'].steeringPressed or \
                         sm['carState'].gasPressed
-      if driver_engaged:
-        driver_status.update(Events(), True, sm['controlsState'].enabled, sm['carState'].standstill)
       v_cruise_last = v_cruise
 
     if sm.updated['modelV2']:
-      driver_status.set_policy(sm['modelV2'])
+      driver_status.set_policy(sm['modelV2'], sm['carState'].vEgo)
 
     # Get data from dmonitoringmodeld
     events = Events()
@@ -77,8 +81,10 @@ def dmonitoringd_thread(sm=None, pm=None):
     }
     pm.send('driverMonitoringState', dat)
 
+
 def main(sm=None, pm=None):
   dmonitoringd_thread(sm, pm)
+
 
 if __name__ == '__main__':
   main()

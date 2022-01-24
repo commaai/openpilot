@@ -61,6 +61,13 @@ def configure_ublox(dev):
   dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW, 1)
   dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW2, 1)
 
+  # Query the backup restore status
+  print("backup restore polling message (implement custom response handler!):")
+  dev.configure_poll(0x09, 0x14)
+
+  print("if succesfull, send this to clear the flash:")
+  dev.send_message(0x09, 0x14, b"\x01\x00\x00\x00")
+
   print("send on stop:")
 
   # Save on shutdown

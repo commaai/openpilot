@@ -109,7 +109,7 @@ def login(method):
     if 'code' in web_server.query_params:
       break
     elif 'error' in web_server.query_params:
-      print('Authentication Error: "%s". Description: "%s" ' % (
+      print('Authentication Error: "{}". Description: "{}" '.format(
         web_server.query_params['error'],
         web_server.query_params.get('error_description')), file=sys.stderr)
       break
