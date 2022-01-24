@@ -1,3 +1,5 @@
+from enum import IntFlag
+
 from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.config import Conversions as CV
@@ -15,6 +17,11 @@ class CarControllerParams:
   STEER_DELTA_UP = 10       # 1.5s time to peak torque
   STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+
+
+class ToyotaFlags(IntFlag):
+  HYBRID = 1
+
 
 class CAR:
   # Toyota
