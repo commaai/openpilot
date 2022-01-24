@@ -55,9 +55,9 @@ public:
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
 
     if (Hardware::TICI()) {
+      const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
       const int debayer_local_worksize = 16;
-      constexpr int localMemSize = (debayer_local_worksize + 2 * (3 / 2)) * (debayer_local_worksize + 2 * (3 / 2)) * sizeof(short int);
-      const size_t globalWorkSize[] = {size_t(width), size_t(height)};
+      constexpr int localMemSize = (debayer_local_worksize * 2 + 2) * (debayer_local_worksize * 2 + 2) * 2;
       const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
       CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
       CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
