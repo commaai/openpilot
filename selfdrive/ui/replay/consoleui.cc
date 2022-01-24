@@ -9,8 +9,7 @@
 
 using namespace std::placeholders;
 enum Color {
-  Info,
-  Debug,
+  Info,Debug,
   Warning,
   Critical,
   bgTimeLine,
@@ -117,6 +116,7 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
 
 void ConsoleUI::update() {
   sm.update(0);
+  werase(w[Win::CarState]);
   if (sm.updated("carState")) {
     mvwprintw(w[Win::CarState], 0, 0, "SPEED: %.2f m/s", sm["carState"].getCarState().getVEgo());
   }
@@ -132,9 +132,9 @@ void ConsoleUI::update() {
 
 void ConsoleUI::replayMessageOutput(ReplyMsgType type, const char *msg) {
   if (w[Win::Log]) {
-    wattron(w[Win::Log], COLOR_PAIR(type));
+    wattron(w[Win::Log], COLOR_PAIR((int)type));
     wprintw(w[Win::Log], "%s\n", msg);
-    wattroff(w[Win::Log], COLOR_PAIR(type));
+    wattroff(w[Win::Log], COLOR_PAIR((int)type));
     wrefresh(w[Win::Log]);
   }
 }
@@ -192,8 +192,9 @@ void ConsoleUI::downloadProgressHandler(uint64_t cur, uint64_t total) {
 }
 
 void ConsoleUI::updateStats(int cur_sec, int total_sec) {
+  werase(w[Win::Stats]);
   mvwprintw(w[Win::Stats], 0, 0, "Route: %s", qPrintable(replay->route()->name()));
-  mvwprintw(w[Win::Stats], 1, 0, "Current: %d s  Total %d s         ", cur_sec, total_sec);
+  mvwprintw(w[Win::Stats], 1, 0, "Current: %d s  Total %d s", cur_sec, total_sec);
   wrefresh(w[Win::Stats]);
 }
 
@@ -202,16 +203,13 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
     mvwaddch(w[Win::Timeline], 0, x, c);
     mvwaddch(w[Win::Timeline], 1, x, c);
   };
-  auto remove_at = [=](int x) {
-    mvwdelch(w[Win::Timeline], 0, x);
-    mvwdelch(w[Win::Timeline], 1, x);
-  };
+  werase(w[Win::Timeline]); 
 
   int width = getmaxx(w[Win::Timeline]);
   int cur_pos = ((double)cur_sec / total_sec) * width;
   wattron(w[Win::Timeline], COLOR_PAIR(Color::Played));
   for (int i = 0; i < width; ++i) {
-    remove_at(i);
+    // remove_at(i);
     if (i <= cur_pos) {
       draw_at(i, ' ');
     }
@@ -224,7 +222,7 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
     int end_pos = ((double)disengage_sec/total_sec) * width;
     for (int i = start_pos; i < end_pos; ++i) {
       wattron(w[Win::Timeline], COLOR_PAIR((int)(i < cur_pos ? Color::EngagedPlayed : Color::Engaged)));
-      remove_at(i);
+      // remove_at(i);
       draw_at(i, ' ');
     }
   }
@@ -235,7 +233,7 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
     int end_pos = ((double)end_sec / total_sec) * width;
     for (int i = start_pos; i < end_pos; ++i) {
       wattron(w[Win::Timeline], COLOR_PAIR(int(i < cur_pos ? Color::CarEventPlayed : Color::CarEvent)));
-      remove_at(i);
+      // remove_at(i);
       draw_at(i, ' ');
     }
   }
@@ -297,10 +295,10 @@ void ConsoleUI::handle_key(char c) {
     case 'x':
       if (replay->hasFlag(REPLAY_FLAG_FULL_SPEED)) {
         replay->removeFlag(REPLAY_FLAG_FULL_SPEED);
-        qInfo() << "replay at normal speed";
+        rInfo("replay at normal speed");
       } else {
         replay->addFlag(REPLAY_FLAG_FULL_SPEED);
-        qInfo() << "replay at full speed";
+        rInfo("replay at full speed");
       }
       break;
     case ' ':
