@@ -53,8 +53,8 @@ int main(int argc, char *argv[]) {
   if (!replay->load()) {
     return 0;
   }
-  replay->start(parser.value("start").toInt());
 
   ConsoleUI console_ui(replay);
+  replay->start(parser.value("start").toInt());
   return app.exec();
 }

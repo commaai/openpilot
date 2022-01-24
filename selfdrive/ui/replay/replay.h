@@ -51,12 +51,15 @@ public:
     std::lock_guard lk(summary_lock);
     return car_events; 
   }
+  inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
+  inline const std::string &carName() const { return car_name_; }
 
 signals:
   void updateProgress(int cur, int total);
   void segmentChanged();
   void seekTo(int seconds, bool relative);
   void seekToFlag(FindFlag flag);
+  void streamStarted();
   void stop();
   void updateSummary(int cur, int total);
 
@@ -78,7 +81,6 @@ protected:
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
   void buildSummary();
-  inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
   inline bool isSegmentMerged(int n) {
     return std::find(segments_merged_.begin(), segments_merged_.end(), n) != segments_merged_.end();
   }
@@ -113,4 +115,5 @@ protected:
   QFuture<void> summary_future;
   std::vector<std::pair<int, int>> summary;
   std::vector<std::tuple<int, int, cereal::ControlsState::AlertStatus>> car_events;
+  std::string car_name_;
 };

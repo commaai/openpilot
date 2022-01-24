@@ -46,7 +46,7 @@ Replay::~Replay() {
 void Replay::doStop() {
   if (!stream_thread_ && segments_.empty()) return;
 
-  rDebug("shutdown: in progress...");
+  rInfo("shutdown: in progress...");
   if (stream_thread_ != nullptr) {
     exit_ = updating_events_ = true;
     stream_cv_.notify_one();
@@ -57,7 +57,7 @@ void Replay::doStop() {
   segments_.clear();
   camera_server_.reset(nullptr);
   summary_future.waitForFinished();
-  rDebug("shutdown: done");
+  rInfo("shutdown: done");
 }
 
 bool Replay::load() {
@@ -110,7 +110,7 @@ void Replay::doSeek(int seconds, bool relative) {
       return true;
     }
 
-    rInfo("seeking to %d s, segment %d", seconds, seg);
+    rWarning("seeking to %d s, segment %d", seconds, seg);
     current_segment_ = seg;
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
     return isSegmentMerged(seg);
@@ -120,9 +120,9 @@ void Replay::doSeek(int seconds, bool relative) {
 
 void Replay::doSeekToFlag(FindFlag flag) {
   if (flag == FindFlag::nextEngagement) {
-    rInfo("seeking to the next engagement...");
+    rWarning("seeking to the next engagement...");
   } else if (flag == FindFlag::nextDisEngagement) {
-    rInfo("seeking to the disengagement...");
+    rWarning("seeking to the disengagement...");
   }
   updateEvents([&]() {
     if (auto next = find(flag)) {
@@ -192,7 +192,7 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
 
 void Replay::pause(bool pause) {
   updateEvents([=]() {
-    rInfo("%s at %d s", pause ? "paused..." : "resuming", currentSeconds());
+    rWarning("%s at %d s", pause ? "paused..." : "resuming", currentSeconds());
     paused_ = pause;
     return true;
   });
@@ -223,10 +223,10 @@ void Replay::queueSegment() {
   }
   // load one segment at a time
   for (auto it = cur; it != end; ++it) {
-    if (!it->second) {
-      if (it == cur || std::prev(it)->second->isLoaded()) {
-        auto &[n, seg] = *it;
-        rDebug("loading segment %d...", n);
+    auto &[n, seg] = *it;
+    if ((seg && !seg->isLoaded()) || !seg) {
+      if (!seg) {
+        rInfo("loading segment %d...", n);
         seg = std::make_unique<Segment>(n, route_->at(n), flags_);
         QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
       }
@@ -249,6 +249,7 @@ void Replay::queueSegment() {
   // start stream thread
   if (stream_thread_ == nullptr && cur_segment->isLoaded()) {
     startStream(cur_segment.get());
+    emit streamStarted();
   }
 }
 
@@ -267,7 +268,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
       s += std::to_string(segments_need_merge[i]);
       if (i != segments_need_merge.size() - 1) s += ", ";
     }
-    rDebug("merge segments %s", s.c_str());
+    rInfo("merge segments %s", s.c_str());
 
     new_events_->clear();
     new_events_->reserve(new_events_size);
@@ -296,6 +297,7 @@ void Replay::startStream(const Segment *cur_segment) {
   // write CarParams
   it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::CAR_PARAMS; });
   if (it != events.end()) {
+    car_name_ = (*it)->event.getCarParams().getCarName();
     auto bytes = (*it)->bytes();
     Params().put("CarParams", (const char *)bytes.begin(), bytes.size());
   } else {
@@ -327,7 +329,7 @@ void Replay::publishMessage(const Event *e) {
     auto bytes = e->bytes();
     int ret = pm->send(sockets_[e->which], (capnp::byte *)bytes.begin(), bytes.size());
     if (ret == -1) {
-      rDebug("stop publishing %s due to multiple publishers error", sockets_[e->which]);
+      rWarning("stop publishing %s due to multiple publishers error", sockets_[e->which]);
       sockets_[e->which] = nullptr;
     }
   } else {
@@ -366,7 +368,7 @@ void Replay::stream() {
     Event cur_event(cur_which, cur_mono_time_);
     auto eit = std::upper_bound(events_->begin(), events_->end(), &cur_event, Event::lessThan());
     if (eit == events_->end()) {
-      rDebug("waiting for events...");
+      rInfo("waiting for events...");
       continue;
     }
 

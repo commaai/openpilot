@@ -19,10 +19,10 @@ public:
 private:
   void handle_key(char c);
   void logMessageHandler(ReplyMsgType type, const char *msg);
-  void downloadProgressHandler(uint64_t cur, uint64_t total);
+  void downloadProgressHandler(uint64_t cur, uint64_t total, bool success);
   void displayHelp();
   void updateTimeline(int cur_sec, int total_sec);
-  void updateStats(int cur_sec, int total_sec);
+  void updateStats();
   void update();
 
   enum Win { Title, Stats, Log, LogBorder, DownloadBar, Timeline, TimelineDesc, Help, CarState, Max};
@@ -34,12 +34,12 @@ private:
   QSocketNotifier m_notifier{0, QSocketNotifier::Read, this};
 
 signals:
-  void updateProgressBarSignal(uint64_t cur, uint64_t total);
+  void updateProgressBarSignal(uint64_t cur, uint64_t total, bool success);
   void logMessageSignal(int type, const char *msg);
 
 private slots:
   void readyRead();
   void timerEvent(QTimerEvent *ev);
-  void updateProgressBar(uint64_t cur, uint64_t total);
+  void updateProgressBar(uint64_t cur, uint64_t total, bool success);
   void logMessage(int type, const char *msg);
 };

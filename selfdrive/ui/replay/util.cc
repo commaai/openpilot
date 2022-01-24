@@ -103,7 +103,7 @@ struct DownloadStats {
     }
   }
 
-  void update(const std::string &url, uint64_t downloaded) {
+  void update(const std::string &url, uint64_t downloaded, bool success = true) {
     std::lock_guard lk(lock);
     items[url].downloaded = downloaded;
 
@@ -113,8 +113,10 @@ struct DownloadStats {
       total_bytes += item.total;
       total_downloaded += item.downloaded;
     }
-    if (download_progress_handler) {
-      download_progress_handler(total_downloaded, total_bytes);
+    double tm = millis_since_boot();
+    if (download_progress_handler && (tm - prev_tm) > 500) {
+      download_progress_handler(total_downloaded, total_bytes, success);
+      prev_tm = tm;
     }
   }
 
@@ -123,6 +125,7 @@ struct DownloadStats {
   };
   std::mutex lock;
   std::map<std::string, Item> items;
+  double prev_tm = 0;
 };
 
 } // namespace
@@ -208,9 +211,6 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
     download_stats.update(url, written);
   }
 
-  download_stats.update(url, written);
-  download_stats.removeDownload(url);
-
   CURLMsg *msg;
   int msgs_left = -1;
   int complete = 0;
@@ -230,13 +230,17 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
     }
   }
 
+  bool success = complete == parts;
+  download_stats.update(url, written, success);
+  download_stats.removeDownload(url);
+  
   for (const auto &[e, w] : writers) {
     curl_multi_remove_handle(cm, e);
     curl_easy_cleanup(e);
   }
   curl_multi_cleanup(cm);
 
-  return complete == parts;
+  return success;
 }
 
 std::string httpGet(const std::string &url, size_t chunk_size, std::atomic<bool> *abort) {

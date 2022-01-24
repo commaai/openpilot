@@ -1,8 +1,8 @@
 #include "selfdrive/ui/replay/consoleui.h"
 
+#include <QApplication>
 #include <initializer_list>
 #include <iostream>
-#include <QApplication>
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/version.h"
@@ -13,18 +13,19 @@ enum Color {
   Debug,
   Warning,
   Critical,
-  bgTitle,
+  bgWhite,
   Engaged,
   Disengaged,
   Alert,
   AlertWarning,
-  PosIndicator,
+  BrightWhite,
+  Bold,
 };
 
 ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"carState", "liveParameters"}), QObject(parent) {
   qRegisterMetaType<uint64_t>("uint64_t");
   installMessageHandler(std::bind(&ConsoleUI::logMessageHandler, this, _1, _2));
-  installDownloadProgressHandler(std::bind(&ConsoleUI::downloadProgressHandler, this, _1, _2));
+  installDownloadProgressHandler(std::bind(&ConsoleUI::downloadProgressHandler, this, _1, _2, _3));
 
   system("clear");
   initscr();
@@ -42,45 +43,46 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   init_pair(Color::Warning, COLOR_YELLOW, COLOR_BLACK);
   init_pair(Color::Critical, COLOR_RED, COLOR_BLACK);
   init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
-  init_pair(Color::bgTitle, COLOR_BLACK, COLOR_WHITE);
+  init_pair(Color::bgWhite, COLOR_BLACK, 15);
   init_pair(Color::Engaged, 28, 28);
-  init_pair(Color::Alert, 11, 11);
+  init_pair(Color::Alert, COLOR_YELLOW, COLOR_YELLOW);
   init_pair(Color::AlertWarning, COLOR_RED, COLOR_RED);
-  init_pair(Color::PosIndicator, 15, COLOR_BLACK);
-  
+  init_pair(Color::BrightWhite, 15, COLOR_BLACK);
 
   int height, width;
   getmaxyx(stdscr, height, width);
 
-  w[Win::Title] = newwin(1, width , 0, 0);
+  w[Win::Title] = newwin(1, width, 0, 0);
   w[Win::Stats] = newwin(2, width, 2, 3);
   w[Win::Timeline] = newwin(4, 100, 5, 3);
-  w[Win::TimelineDesc]= newwin(1, 100, 10, 3);
-  w[Win::DownloadBar] = newwin(1, 100, 11, 3);
-  w[Win::CarState] = newwin(5, 100, 13, 3);
-  if (int log_height = height - 29; log_height > 5) {
-    w[Win::LogBorder] = newwin(log_height, 100, 19, 2);
+  w[Win::TimelineDesc] = newwin(1, 100, 10, 3);
+  w[Win::CarState] = newwin(3, 100, 12, 3);
+  w[Win::DownloadBar] = newwin(1, 100, 16, 3);
+  if (int log_height = height - 27; log_height > 5) {
+    w[Win::LogBorder] = newwin(log_height, 100, 17, 2);
     box(w[Win::LogBorder], 0, 0);
-    w[Win::Log] = newwin(log_height - 2, 98, 20, 3);
+    w[Win::Log] = newwin(log_height - 2, 98, 18, 3);
     scrollok(w[Win::Log], true);
   }
-  w[Win::Help] = newwin(5, 100, height-6, 3);
-  
-  wbkgd(w[Win::Title], COLOR_PAIR(Color::bgTitle));
-  
+  w[Win::Help] = newwin(5, 100, height - 6, 3);
+
+  wbkgd(w[Win::Title], COLOR_PAIR(Color::bgWhite));
+
   refresh();
 
   mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
 
-  std::pair<Color, const char *> indicators[] {
-    {Color::Engaged, " Engaged "},
-    {Color::Disengaged, " Disengaged "},
-    {Color::Alert, " Alert "},
-    {Color::AlertWarning, " Warning "},
+  std::tuple<Color, const char *, bool> indicators[]{
+      {Color::Engaged, " Engaged ", false},
+      {Color::Disengaged, " Disengaged ", false},
+      {Color::Warning, " Alert ", true},
+      {Color::Critical, " Warning ", true},
   };
-  for (auto [color, name] : indicators) {
+  for (auto [color, name, bold] : indicators) {
     wattron(w[Win::TimelineDesc], COLOR_PAIR(color));
-    waddstr(w[Win::TimelineDesc], "  ");
+    if (bold) wattron(w[Win::TimelineDesc], A_BOLD);
+    waddstr(w[Win::TimelineDesc], "__");
+    if (bold) wattroff(w[Win::TimelineDesc], A_BOLD);
     wattroff(w[Win::TimelineDesc], COLOR_PAIR(color));
     waddstr(w[Win::TimelineDesc], name);
   }
@@ -93,11 +95,11 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
     wrefresh(w[Win::Log]);
   }
   displayHelp();
-  updateStats(0, replay->route()->segments().size() * 60);
+  updateStats();
   updateTimeline(0, replay->route()->segments().size() * 60);
 
   QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateTimeline);
-  QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateStats);
+  QObject::connect(replay, &Replay::streamStarted, this, &ConsoleUI::updateStats);
   QObject::connect(&m_notifier, SIGNAL(activated(int)), SLOT(readyRead()));
   QObject::connect(this, &ConsoleUI::updateProgressBarSignal, this, &ConsoleUI::updateProgressBar);
   QObject::connect(this, &ConsoleUI::logMessageSignal, this, &ConsoleUI::logMessage);
@@ -119,40 +121,52 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
 }
 
 void ConsoleUI::update() {
+  auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit) {
+    auto win = w[Win::CarState];
+    mvwaddstr(win, y, x, key);
+    wattron(win, COLOR_PAIR(Color::BrightWhite));
+    wattron(win, A_BOLD);
+    waddstr(win, value.c_str());
+    wattroff(win, A_BOLD);
+    wattroff(win, COLOR_PAIR(Color::BrightWhite));
+    waddstr(win, unit);
+  };
+
+  write_item(0, 0, "SECONDS:   ", std::to_string(replay->currentSeconds()), " s");
   sm.update(0);
   if (sm.updated("carState")) {
-    mvwprintw(w[Win::CarState], 0, 0, "SPEED: %.2f m/s", sm["carState"].getCarState().getVEgo());
+    write_item(0, 25, "SPEED:   ", util::string_format("%.2f", sm["carState"].getCarState().getVEgo()), " m/s");
   }
   if (sm.updated("liveParameters")) {
     auto p = sm["liveParameters"].getLiveParameters();
-    mvwprintw(w[Win::CarState], 1, 0, "ANGLE OFFSET (AVG): %.2f deg", p.getAngleOffsetAverageDeg());
-    mvwprintw(w[Win::CarState], 2, 0, "ANGLE OFFSET (INSTANT): %.2f deg", p.getAngleOffsetDeg());
-    mvwprintw(w[Win::CarState], 3, 0, "STIFFNESS: %.2f %%", p.getStiffnessFactor() * 100);
-    mvwprintw(w[Win::CarState], 4, 0, "STEER RATIO: %.2f", p.getSteerRatio());
+    write_item(1, 0, "STIFFNESS: ", util::string_format("%.2f", p.getStiffnessFactor() * 100), " deg");
+    write_item(1, 25, "STEER RATIO: ", util::string_format("%.2f", p.getSteerRatio()), "");
+    auto angle_offsets = util::string_format("%.2f|%.2f", p.getAngleOffsetAverageDeg(), p.getAngleOffsetDeg());
+    write_item(2, 0, "ANGLE OFFSET(AVG|INSTANCE): ", angle_offsets, " deg");
   }
   wrefresh(w[Win::CarState]);
 }
 
 void ConsoleUI::displayHelp() {
-  std::initializer_list<std::pair<const char *, const char*>> single_line_keys {
-    {"s", "+10s"},
-    {"shift+s", "-10s"},
-    {"m", "+60s"},
-    {"shift+m", "+60s"},
-    {"p", "Pause/Resume"},
-    {"e", "Next Engmt"},
-    {"d", "Next DisEngmt"},
+  std::initializer_list<std::pair<const char *, const char *>> single_line_keys{
+      {"s", "+10s"},
+      {"shift+s", "-10s"},
+      {"m", "+60s"},
+      {"shift+m", "+60s"},
+      {"p", "Pause/Resume"},
+      {"e", "Next Engmt"},
+      {"d", "Next DisEngmt"},
   };
-  std::initializer_list<std::pair<const char *, const char*>> multi_line_keys = {
-    {"enter", "Enter seek request"},
-    {"x", "Replay at full speed"},
-    {"q", "Exit"},
+  std::initializer_list<std::pair<const char *, const char *>> multi_line_keys = {
+      {"enter", "Enter seek request"},
+      {"x", "Replay at full speed"},
+      {"q", "Exit"},
   };
-  
+
   auto write_shortcut = [=](std::string key, std::string desc) {
-    wattron(w[Win::Help], COLOR_PAIR(Color::bgTitle));
+    wattron(w[Win::Help], COLOR_PAIR(Color::bgWhite));
     waddstr(w[Win::Help], (' ' + key + ' ').c_str());
-    wattroff(w[Win::Help], COLOR_PAIR(Color::bgTitle));
+    wattroff(w[Win::Help], COLOR_PAIR(Color::bgWhite));
     waddstr(w[Win::Help], (" " + desc + " ").c_str());
   };
 
@@ -168,40 +182,40 @@ void ConsoleUI::displayHelp() {
 }
 
 void ConsoleUI::logMessageHandler(ReplyMsgType type, const char *msg) {
-  emit logMessageSignal((int)type ,msg);
+  emit logMessageSignal((int)type, msg);
 }
 
-void ConsoleUI::downloadProgressHandler(uint64_t cur, uint64_t total) {
-  emit updateProgressBarSignal(cur, total);
+void ConsoleUI::downloadProgressHandler(uint64_t cur, uint64_t total, bool success) {
+  emit updateProgressBarSignal(cur, total, success);
 }
 
 void ConsoleUI::logMessage(int type, const char *msg) {
-  if (w[Win::Log]) {
-    wattron(w[Win::Log], COLOR_PAIR((int)type));
-    wprintw(w[Win::Log], "%s\n", msg);
-    wattroff(w[Win::Log], COLOR_PAIR((int)type));
-    wrefresh(w[Win::Log]);
+  if (auto win = w[Win::Log]) {
+    wattron(win, COLOR_PAIR((int)type));
+    wprintw(win, "%s\n", msg);
+    wattroff(win, COLOR_PAIR((int)type));
+    wrefresh(win);
   }
 }
 
-void ConsoleUI::updateProgressBar(uint64_t cur, uint64_t total) {
-  const int width = 30;
-  const float progress = cur / (double)total;
-  const int pos = width * progress;
+void ConsoleUI::updateProgressBar(uint64_t cur, uint64_t total, bool success) {
   werase(w[Win::DownloadBar]);
-  std::string s = util::string_format("Downloading [%s>%s]  %d%% %s", std::string(pos, '=').c_str(),
-                                      std::string(width - pos, ' ').c_str(), int(progress * 100.0),
-                                      formattedDataSize(total).c_str());
-  waddstr(w[Win::DownloadBar], s.c_str());
-  if (cur >= total) {
-    werase(w[Win::DownloadBar]);
+  if (success && cur < total) {
+    const int width = 30;
+    const float progress = cur / (double)total;
+    const int pos = width * progress;
+    std::string s = util::string_format("Downloading [%s>%s]  %d%% %s", std::string(pos, '=').c_str(),
+                                        std::string(width - pos, ' ').c_str(), int(progress * 100.0),
+                                        formattedDataSize(total).c_str());
+    waddstr(w[Win::DownloadBar], s.c_str());
   }
   wrefresh(w[Win::DownloadBar]);
 }
 
-void ConsoleUI::updateStats(int cur_sec, int total_sec) {
-  mvwprintw(w[Win::Stats], 0, 0, "Route  : %s", qPrintable(replay->route()->name()));
-  mvwprintw(w[Win::Stats], 1, 0, "Current: %d s  Total: %d s       ", cur_sec, total_sec);
+void ConsoleUI::updateStats() {
+  const auto &route = replay->route();
+  mvwprintw(w[Win::Stats], 0, 0, "Route: %s, %d segments", qPrintable(route->name()), route->segments().size());
+  mvwprintw(w[Win::Stats], 1, 0, "Car Name: %s", replay->carName().c_str());
   wrefresh(w[Win::Stats]);
 }
 
@@ -210,44 +224,49 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
     mvwaddch(w[Win::Timeline], 1, x, c);
     mvwaddch(w[Win::Timeline], 2, x, c);
   };
-  werase(w[Win::Timeline]); 
 
-  int width = getmaxx(w[Win::Timeline]);
-  wattron(w[Win::Timeline], COLOR_PAIR(Color::Disengaged));
+  auto win = w[Win::Timeline]; 
+  werase(win);
+
+  int width = getmaxx(win);
+  wattron(win, COLOR_PAIR(Color::Disengaged));
   for (int i = 0; i < width; ++i) {
     draw_at(i, ' ');
   }
-  wattroff(w[Win::Timeline], COLOR_PAIR(Color::Disengaged));
-  
+  wattroff(win, COLOR_PAIR(Color::Disengaged));
+
   auto summary = replay->getSummary();
   for (auto [engage_sec, disengage_sec] : summary) {
-    int start_pos = ((double)engage_sec/total_sec) * width;
-    int end_pos = ((double)disengage_sec/total_sec) * width;
-    wattron(w[Win::Timeline], COLOR_PAIR(Color::Engaged));
+    int start_pos = ((double)engage_sec / total_sec) * width;
+    int end_pos = ((double)disengage_sec / total_sec) * width;
+    wattron(win, COLOR_PAIR(Color::Engaged));
     for (int i = start_pos; i <= end_pos; ++i) {
       draw_at(i, ' ');
     }
-    wattroff(w[Win::Timeline], COLOR_PAIR(Color::Engaged));
+    wattroff(win, COLOR_PAIR(Color::Engaged));
   }
 
   auto car_events = replay->getCarEvents();
   for (auto [start_sec, end_sec, status] : car_events) {
     int start_pos = ((double)start_sec / total_sec) * width;
     int end_pos = ((double)end_sec / total_sec) * width;
-    wattron(w[Win::Timeline], COLOR_PAIR(Color::Alert));
+    const bool critical = status == cereal::ControlsState::AlertStatus::CRITICAL;
+    wattron(win, COLOR_PAIR(critical ? Color::Critical : Color::Warning));
+    wattron(win, A_BOLD);
     for (int i = start_pos; i <= end_pos; ++i) {
-      draw_at(i, ' ');
+      mvwaddch(win, 3, i, ACS_S3);
     }
-    wattroff(w[Win::Timeline], COLOR_PAIR(Color::Alert));
+    wattroff(win, A_BOLD);
+    wattroff(win, COLOR_PAIR(critical ? Color::Critical : Color::Warning));
   }
 
   int cur_pos = ((double)cur_sec / total_sec) * width;
-  wattron(w[Win::Timeline], COLOR_PAIR(Color::PosIndicator));
-  mvwaddch(w[Win::Timeline], 0, cur_pos, ACS_VLINE);
-  mvwaddch(w[Win::Timeline], 3, cur_pos, ACS_VLINE);
-  wattroff(w[Win::Timeline], COLOR_PAIR(Color::PosIndicator));
+  wattron(win, COLOR_PAIR(Color::BrightWhite));
+  mvwaddch(win, 0, cur_pos, ACS_VLINE);
+  mvwaddch(win, 3, cur_pos, ACS_VLINE);
+  wattroff(win, COLOR_PAIR(Color::BrightWhite));
 
-  wrefresh(w[Win::Timeline]);
+  wrefresh(win);
 }
 
 void ConsoleUI::readyRead() {
@@ -262,11 +281,17 @@ void ConsoleUI::handle_key(char c) {
     case '\n': {
       replay->pause(true);
       getch_timer.stop();
-      
+
       curs_set(1);
       nodelay(stdscr, false);
-      int y = getmaxy(stdscr) - 8;
+      int y = getmaxy(stdscr) - 9;
+      attron(COLOR_PAIR(Color::BrightWhite));
+      attron(A_BOLD);
+      rWarning("Waiting for input...");
       mvprintw(y, 3, "Enter seek request: ");
+      attroff(A_BOLD);
+      attroff(COLOR_PAIR(Color::BrightWhite));
+      // mvchgat(y, 1, -1, A_BLINK, 1, NULL);	
       refresh();
       echo();
       int choice = 0;
@@ -275,7 +300,7 @@ void ConsoleUI::handle_key(char c) {
       nodelay(stdscr, true);
       curs_set(0);
       move(y, 0);
-      clrtoeol(); 
+      clrtoeol();
       refresh();
 
       replay->pause(false);
@@ -304,10 +329,10 @@ void ConsoleUI::handle_key(char c) {
     case 'x':
       if (replay->hasFlag(REPLAY_FLAG_FULL_SPEED)) {
         replay->removeFlag(REPLAY_FLAG_FULL_SPEED);
-        rInfo("replay at normal speed");
+        rWarning("replay at normal speed");
       } else {
         replay->addFlag(REPLAY_FLAG_FULL_SPEED);
-        rInfo("replay at full speed");
+        rWarning("replay at full speed");
       }
       break;
     case ' ':
