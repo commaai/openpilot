@@ -18,8 +18,6 @@ public:
 
 private:
   void handleKey(char c);
-  void logMessageHandler(ReplyMsgType type, const std::string msg);
-  void downloadProgressHandler(uint64_t cur, uint64_t total, bool success);
   void displayHelp();
   void updateTimeline(int cur_sec, int total_sec);
   void updateStats();

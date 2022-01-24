@@ -7,7 +7,6 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/version.h"
 
-using namespace std::placeholders;
 enum Color {
   Info,
   Debug,
@@ -21,8 +20,12 @@ enum Color {
 
 ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"carState", "liveParameters"}), QObject(parent) {
   qRegisterMetaType<uint64_t>("uint64_t");
-  installMessageHandler(std::bind(&ConsoleUI::logMessageHandler, this, _1, _2));
-  installDownloadProgressHandler(std::bind(&ConsoleUI::downloadProgressHandler, this, _1, _2, _3));
+  installMessageHandler([this](ReplyMsgType type, const std::string msg) {
+    emit logMessageSignal((int)type, QString::fromStdString(msg));
+  });
+  installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
+    emit updateProgressBarSignal(cur, total, success);
+  });
 
   system("clear");
   initscr();
@@ -174,14 +177,6 @@ void ConsoleUI::displayHelp() {
     write_shortcut(key, desc);
   }
   wrefresh(w[Win::Help]);
-}
-
-void ConsoleUI::logMessageHandler(ReplyMsgType type, const std::string msg) {
-emit logMessageSignal((int)type, QString::fromStdString(msg));
-}
-
-void ConsoleUI::downloadProgressHandler(uint64_t cur, uint64_t total, bool success) {
-  emit updateProgressBarSignal(cur, total, success);
 }
 
 void ConsoleUI::logMessage(int type, const QString &msg) {
