@@ -123,6 +123,10 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
 void ConsoleUI::update() {
   auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit) {
     auto win = w[Win::CarState];
+    if (x == 0) {
+      wmove(win, y, 0);
+      wclrtoeol(win);
+    }
     mvwaddstr(win, y, x, key);
     wattron(win, COLOR_PAIR(Color::BrightWhite));
     wattron(win, A_BOLD);
