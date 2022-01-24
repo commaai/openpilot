@@ -65,9 +65,6 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   w[Win::Help] = newwin(5, 100, height - 6, 3);
 
   wbkgd(w[Win::Title], COLOR_PAIR(Color::bgWhite));
-
-  refresh();
-
   mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
 
   std::tuple<Color, const char *, bool> indicators[]{
@@ -85,28 +82,25 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
     waddstr(w[Win::TimelineDesc], name);
   }
 
-  wrefresh(w[Win::Title]);
-  wrefresh(w[Win::TimelineDesc]);
-  wrefresh(w[Win::Timeline]);
-  if (w[Win::Log]) {
-    wrefresh(w[Win::LogBorder]);
-    wrefresh(w[Win::Log]);
-  }
+  refresh();
   displayHelp();
-  updateStats();
+  updateSummary();
   updateTimeline(0, replay->route()->segments().size() * 60);
 
+  for (auto win : w) {
+    wrefresh(win);
+  }
+
   QObject::connect(replay, &Replay::updateTime, this, &ConsoleUI::updateTimeline);
-  QObject::connect(replay, &Replay::streamStarted, this, &ConsoleUI::updateStats);
+  QObject::connect(replay, &Replay::streamStarted, this, &ConsoleUI::updateSummary);
   QObject::connect(&notifier, SIGNAL(activated(int)), SLOT(readyRead()));
   QObject::connect(this, &ConsoleUI::updateProgressBarSignal, this, &ConsoleUI::updateProgressBar);
   QObject::connect(this, &ConsoleUI::logMessageSignal, this, &ConsoleUI::logMessage);
 
-  readyRead();
-
-  getch_timer.start(1000, this);
-  sm_timer.callOnTimeout(this, &ConsoleUI::updateSubmaster);
+  sm_timer.callOnTimeout(this, &ConsoleUI::updateStatus);
   sm_timer.start(50);
+  getch_timer.start(1000, this);
+  readyRead();
 }
 
 ConsoleUI::~ConsoleUI() {
@@ -118,7 +112,7 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
   refresh();
 }
 
-void ConsoleUI::updateSubmaster() {
+void ConsoleUI::updateStatus() {
   auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit) {
     auto win = w[Win::CarState];
     mvwaddstr(win, y, x, key);
@@ -202,7 +196,7 @@ void ConsoleUI::updateProgressBar(uint64_t cur, uint64_t total, bool success) {
   wrefresh(w[Win::DownloadBar]);
 }
 
-void ConsoleUI::updateStats() {
+void ConsoleUI::updateSummary() {
   const auto &route = replay->route();
   mvwprintw(w[Win::Stats], 0, 0, "Route: %s, %d segments", qPrintable(route->name()), route->segments().size());
   mvwprintw(w[Win::Stats], 1, 0, "Car Name: %s", replay->carName().c_str());
@@ -211,16 +205,13 @@ void ConsoleUI::updateStats() {
 
 void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
   auto win = w[Win::Timeline];
-  auto draw_at = [=](int x, char c = ' ') {
-    mvwaddch(win, 1, x, c);
-    mvwaddch(win, 2, x, c);
-  };
+  int width = getmaxx(win);
   werase(win);
 
-  int width = getmaxx(win);
   wattron(win, COLOR_PAIR(Color::Disengaged));
   for (int i = 0; i < width; ++i) {
-    draw_at(i, ' ');
+    mvwaddch(win, 1, i, ' ');
+    mvwaddch(win, 2, i, ' ');
   }
   wattroff(win, COLOR_PAIR(Color::Disengaged));
 
@@ -230,7 +221,8 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
     int end_pos = ((double)disengage_sec / total_sec) * width;
     wattron(win, COLOR_PAIR(Color::Engaged));
     for (int i = start_pos; i <= end_pos; ++i) {
-      draw_at(i, ' ');
+      mvwaddch(win, 1, i, ' ');
+      mvwaddch(win, 2, i, ' ');
     }
     wattroff(win, COLOR_PAIR(Color::Engaged));
   }

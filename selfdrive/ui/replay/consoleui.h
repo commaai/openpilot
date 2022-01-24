@@ -20,8 +20,8 @@ private:
   void handleKey(char c);
   void displayHelp();
   void updateTimeline(int cur_sec, int total_sec);
-  void updateStats();
-  void updateSubmaster();
+  void updateSummary();
+  void updateStatus();
 
   enum Win { Title, Stats, Log, LogBorder, DownloadBar, Timeline, TimelineDesc, Help, CarState, Max};
   WINDOW* w[Win::Max] = {};

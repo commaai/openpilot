@@ -137,16 +137,14 @@ void Replay::seekToFlag(FindFlag flag) {
 }
 
 void Replay::buildTimeline() {
-  // Search in all segments
   int engage_sec = -1, disengage_sec = -1;
   int car_event_start = -1, car_event_end = -1;
   cereal::ControlsState::AlertStatus alert_status;
-  for (const auto &[n, _] : segments_) {
-    if (exit_) break;
 
-    LogReader log;
+  for (int i = 0; i < segments_.size() && !exit_; ++i) {
     bool cache_to_local = true;  // cache qlog to local for fast seek
-    if (!log.load(route_->at(n).qlog.toStdString(), &exit_, cache_to_local, 0, 3)) continue;
+    LogReader log;
+    if (!log.load(route_->at(i).qlog.toStdString(), &exit_, cache_to_local, 0, 3)) continue;
 
     for (const Event *e : log.events) {
       if (e->which == cereal::Event::Which::CONTROLS_STATE) {
@@ -161,11 +159,11 @@ void Replay::buildTimeline() {
           engage_sec = disengage_sec = -1;
         }
 
-        auto alert_type = cs.getAlertType();
-        if (car_event_start == -1 && alert_type.size() > 0) {
+        bool has_alert = cs.getAlertType().size() > 0;
+        if (has_alert && car_event_start == -1) {
           car_event_start = (e->mono_time - route_start_ts_) / 1e9;
           alert_status = cs.getAlertStatus();
-        } else if (car_event_start != -1 && alert_type.size() == 0) {
+        } else if (!has_alert && car_event_start != -1) {
           std::lock_guard lk(timeline_lock);
           car_event_end = (e->mono_time - route_start_ts_) / 1e9;
           car_events.push_back({car_event_start, car_event_end, alert_status});
