@@ -17,8 +17,8 @@ public:
   ~ConsoleUI();
 
 private:
-  void handle_key(char c);
-  void logMessageHandler(ReplyMsgType type, const char *msg);
+  void handleKey(char c);
+  void logMessageHandler(ReplyMsgType type, const std::string msg);
   void downloadProgressHandler(uint64_t cur, uint64_t total, bool success);
   void displayHelp();
   void updateTimeline(int cur_sec, int total_sec);
@@ -31,15 +31,15 @@ private:
   Replay *replay;
   QBasicTimer getch_timer;
   QTimer sm_timer;
-  QSocketNotifier m_notifier{0, QSocketNotifier::Read, this};
+  QSocketNotifier notifier{0, QSocketNotifier::Read, this};
 
 signals:
   void updateProgressBarSignal(uint64_t cur, uint64_t total, bool success);
-  void logMessageSignal(int type, const char *msg);
+  void logMessageSignal(int type, const QString &msg);
 
 private slots:
   void readyRead();
   void timerEvent(QTimerEvent *ev);
   void updateProgressBar(uint64_t cur, uint64_t total, bool success);
-  void logMessage(int type, const char *msg);
+  void logMessage(int type, const QString &msg);
 };

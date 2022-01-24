@@ -14,12 +14,9 @@ enum Color {
   Warning,
   Critical,
   bgWhite,
+  BrightWhite,
   Engaged,
   Disengaged,
-  Alert,
-  AlertWarning,
-  BrightWhite,
-  Bold,
 };
 
 ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"carState", "liveParameters"}), QObject(parent) {
@@ -45,8 +42,6 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
   init_pair(Color::bgWhite, COLOR_BLACK, 15);
   init_pair(Color::Engaged, 28, 28);
-  init_pair(Color::Alert, COLOR_YELLOW, COLOR_YELLOW);
-  init_pair(Color::AlertWarning, COLOR_RED, COLOR_RED);
   init_pair(Color::BrightWhite, 15, COLOR_BLACK);
 
   int height, width;
@@ -100,7 +95,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
 
   QObject::connect(replay, &Replay::updateProgress, this, &ConsoleUI::updateTimeline);
   QObject::connect(replay, &Replay::streamStarted, this, &ConsoleUI::updateStats);
-  QObject::connect(&m_notifier, SIGNAL(activated(int)), SLOT(readyRead()));
+  QObject::connect(&notifier, SIGNAL(activated(int)), SLOT(readyRead()));
   QObject::connect(this, &ConsoleUI::updateProgressBarSignal, this, &ConsoleUI::updateProgressBar);
   QObject::connect(this, &ConsoleUI::logMessageSignal, this, &ConsoleUI::logMessage);
 
@@ -123,10 +118,6 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
 void ConsoleUI::update() {
   auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit) {
     auto win = w[Win::CarState];
-    if (x == 0) {
-      wmove(win, y, 0);
-      wclrtoeol(win);
-    }
     mvwaddstr(win, y, x, key);
     wattron(win, COLOR_PAIR(Color::BrightWhite));
     wattron(win, A_BOLD);
@@ -136,7 +127,7 @@ void ConsoleUI::update() {
     waddstr(win, unit);
   };
 
-  write_item(0, 0, "SECONDS:   ", std::to_string(replay->currentSeconds()), " s");
+  write_item(0, 0, "SECONDS:   ", std::to_string(replay->currentSeconds()), " s     ");
   sm.update(0);
   if (sm.updated("carState")) {
     write_item(0, 25, "SPEED:   ", util::string_format("%.2f", sm["carState"].getCarState().getVEgo()), " m/s");
@@ -185,18 +176,18 @@ void ConsoleUI::displayHelp() {
   wrefresh(w[Win::Help]);
 }
 
-void ConsoleUI::logMessageHandler(ReplyMsgType type, const char *msg) {
-  emit logMessageSignal((int)type, msg);
+void ConsoleUI::logMessageHandler(ReplyMsgType type, const std::string msg) {
+emit logMessageSignal((int)type, QString::fromStdString(msg));
 }
 
 void ConsoleUI::downloadProgressHandler(uint64_t cur, uint64_t total, bool success) {
   emit updateProgressBarSignal(cur, total, success);
 }
 
-void ConsoleUI::logMessage(int type, const char *msg) {
+void ConsoleUI::logMessage(int type, const QString &msg) {
   if (auto win = w[Win::Log]) {
     wattron(win, COLOR_PAIR((int)type));
-    wprintw(win, "%s\n", msg);
+    wprintw(win, "%s\n", qPrintable(msg));
     wattroff(win, COLOR_PAIR((int)type));
     wrefresh(win);
   }
@@ -224,12 +215,11 @@ void ConsoleUI::updateStats() {
 }
 
 void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
+  auto win = w[Win::Timeline];
   auto draw_at = [=](int x, char c = ' ') {
-    mvwaddch(w[Win::Timeline], 1, x, c);
-    mvwaddch(w[Win::Timeline], 2, x, c);
+    mvwaddch(win, 1, x, c);
+    mvwaddch(win, 2, x, c);
   };
-
-  auto win = w[Win::Timeline]; 
   werase(win);
 
   int width = getmaxx(win);
@@ -276,11 +266,11 @@ void ConsoleUI::updateTimeline(int cur_sec, int total_sec) {
 void ConsoleUI::readyRead() {
   int c;
   while ((c = getch()) != ERR) {
-    handle_key(c);
+    handleKey(c);
   }
 }
 
-void ConsoleUI::handle_key(char c) {
+void ConsoleUI::handleKey(char c) {
   switch (c) {
     case '\n': {
       replay->pause(true);
@@ -295,7 +285,7 @@ void ConsoleUI::handle_key(char c) {
       mvprintw(y, 3, "Enter seek request: ");
       attroff(A_BOLD);
       attroff(COLOR_PAIR(Color::BrightWhite));
-      // mvchgat(y, 1, -1, A_BLINK, 1, NULL);	
+      // mvchgat(y, 1, -1, A_BLINK, 1, NULL);
       refresh();
       echo();
       int choice = 0;

@@ -30,7 +30,7 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
   for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
     if (*p == *hw_pix_fmt) return *p;
   }
-  // rWarning("Please run replay with the --no-cuda flag!");
+  rWarning("Please run replay with the --no-cuda flag!");
   // fallback to YUV420p
   *hw_pix_fmt = AV_PIX_FMT_NONE;
   return AV_PIX_FMT_YUV420P;
@@ -84,13 +84,13 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
   if (ret != 0) {
     char err_str[1024] = {0};
     av_strerror(ret, err_str, std::size(err_str));
-    // rWarning("Error loading video - %s", err_str);
+    rWarning("Error loading video - %s", err_str);
     return false;
   }
 
   ret = avformat_find_stream_info(input_ctx, nullptr);
   if (ret < 0) {
-    // rWarning("cannot find a video stream in the input file");
+    rWarning("cannot find a video stream in the input file");
     return false;
   }
 
@@ -108,7 +108,7 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
 
   if (has_cuda_device && !no_cuda) {
     if (!initHardwareDecoder(AV_HWDEVICE_TYPE_CUDA)) {
-      // rWarning("No CUDA capable device was found. fallback to CPU decoding.");
+      rWarning("No CUDA capable device was found. fallback to CPU decoding.");
     } else {
       nv12toyuv_buffer.resize(getYUVSize());
     }
@@ -138,8 +138,8 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   for (int i = 0;; i++) {
     const AVCodecHWConfig *config = avcodec_get_hw_config(decoder_ctx->codec, i);
     if (!config) {
-      // rWarning("decoder %s does not support hw device type %s.", decoder_ctx->codec->name,
-      //          av_hwdevice_get_type_name(hw_device_type));
+      rWarning("decoder %s does not support hw device type %s.", decoder_ctx->codec->name,
+               av_hwdevice_get_type_name(hw_device_type));
       return false;
     }
     if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hw_device_type) {
@@ -152,7 +152,7 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   if (ret < 0) {
     hw_pix_fmt = AV_PIX_FMT_NONE;
     has_cuda_device = false;
-    // rWarning("Failed to create specified HW device %d.", ret);
+    rWarning("Failed to create specified HW device %d.", ret);
     return false;
   }
 

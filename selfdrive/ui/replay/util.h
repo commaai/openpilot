@@ -11,7 +11,7 @@ enum class ReplyMsgType {
   Critical
 };
 
-typedef std::function<void(ReplyMsgType type, const char *msg)> ReplayMessageHandler;
+typedef std::function<void(ReplyMsgType type, const std::string msg)> ReplayMessageHandler;
 void installMessageHandler(ReplayMessageHandler);
 void logMessage(ReplyMsgType type, const char* fmt, ...);
 

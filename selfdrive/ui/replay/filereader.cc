@@ -1,7 +1,6 @@
 #include "selfdrive/ui/replay/filereader.h"
 
 #include <fstream>
-#include <iostream>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/util.h"

@@ -1,7 +1,6 @@
 #include "selfdrive/ui/replay/logreader.h"
 
 #include <algorithm>
-#include <iostream>
 #include "selfdrive/ui/replay/util.h"
 
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {

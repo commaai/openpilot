@@ -77,7 +77,7 @@ bool Replay::load() {
     qCritical() << "no valid segments in route" << route_->name();
     return false;
   }
-  rInfo("load route %s with %d valid segments", qPrintable(route_->name()), segments_.size());
+  rInfo("load route %s with %zu valid segments", qPrintable(route_->name()), segments_.size());
   return true;
 }
 
