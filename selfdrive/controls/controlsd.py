@@ -115,14 +115,14 @@ class Controls:
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
-    cached_params = Params().get("CarParamsCache")
+    cached_params = params.get("CarParamsCache")
     if cached_params is not None:
       try:
         cached_car_params = car.CarParams.from_bytes(cached_params)
-        if cached_car_params.carFingerprint !=  self.CP.cached_car_params:
+        if cached_car_params.carFingerprint !=  self.CP.carFingerprint:
           params.clear_all(ParamKeyType.CLEAR_ON_CAR_CHANGED)
       except:
-        pass
+        params.clear_all(ParamKeyType.CLEAR_ON_CAR_CHANGED)
 
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
