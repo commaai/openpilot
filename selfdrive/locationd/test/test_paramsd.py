@@ -20,8 +20,7 @@ class TestPramsd(unittest.TestCase):
     liveParameters.stiffnessFactor = random.uniform(0.1, 0.9)
     liveParameters.angleOffsetAverageDeg = random.uniform(0.1, 0.9)
 
-    Params().put("LiveParameters", json.dumps(
-        {'carFingerprint': cp.carFingerprint, 'parameters': msg.to_dict()}))
+    Params().put("LiveParameters", msg.to_bytes())
 
     from selfdrive.locationd.paramsd import load_params
     params = load_params(cp, 0, 1)

@@ -95,13 +95,7 @@ class ParamsLearner:
 
 def load_params(CP, min_sr, max_sr) :
   try:
-    dat = json.loads(Params().get("LiveParameters"))
-    # Check if car model matches
-    if dat['carFingerprint'] != CP.carFingerprint:
-      raise Exception('Parameter learner found parameters for wrong car.')
-
-    msg = log.Event.new_message()
-    msg.from_dict(dat['parameters'])
+    msg = log.Event.from_bytes(Params().get("LiveParameters"))
     params = msg.liveParameters
 
     # Check if starting values are sane
@@ -183,8 +177,7 @@ def main(sm=None, pm=None):
       liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
 
       if sm.frame % 1200 == 0:  # once a minute
-        put_nonblocking("LiveParameters", json.dumps(
-            {'carFingerprint': CP.carFingerprint, 'parameters': msg.to_dict()}))
+        put_nonblocking("LiveParameters", msg.to_bytes())
 
       pm.send('liveParameters', msg)
 
