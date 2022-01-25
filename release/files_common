@@ -552,7 +552,7 @@ opendbc/can/dbc_out/.gitignore
 opendbc/chrysler_pacifica_2017_hybrid.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
 
-opendbc/gm_global_a_powertrain.dbc
+opendbc/gm_global_a_powertrain_generated.dbc
 opendbc/gm_global_a_object.dbc
 opendbc/gm_global_a_chassis.dbc
 
