@@ -265,6 +265,8 @@ jobs:
                         ./selfdrive/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
                         ./selfdrive/camerad/test/ae_gray_test && \
+                        find opendbc/can/dbc_out -name "*.gcda" && \
+                        find rednose/helpers -name "*.gcda" && \
                         lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
                         lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
                         lcov --remove coverage.info '/usr/*' --output-file coverage.info && \
@@ -304,6 +306,8 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --coverage && \
                         FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
+                        find opendbc/can/dbc_out -name "*.gcda" && \
+                        find rednose/helpers -name "*.gcda" && \
                         lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
                         lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
                         lcov --remove coverage.info '/usr/*' --output-file coverage.info && \
@@ -365,6 +369,9 @@ jobs:
                         coverage run ./test_longitudinal.py && \
                         coverage xml && \
                         cd ../../.. && \
+
+                        find opendbc/can/dbc_out -name "*.gcda" && \
+                        find rednose/helpers -name "*.gcda" && \
                         lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
                         lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
                         lcov --remove coverage.info '/usr/*' --output-file coverage.info"
@@ -413,6 +420,8 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test --coverage && \
                         FILEREADER_CACHE=1 coverage run -m pytest selfdrive/test/test_models.py && \
+                        find opendbc/can/dbc_out -name "*.gcda" && \
+                        find rednose/helpers -name "*.gcda" && \
                         lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
                         lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
                         lcov --remove coverage.info '/usr/*' --output-file coverage.info && \
