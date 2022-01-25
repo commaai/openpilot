@@ -91,40 +91,32 @@ size_t write_cb(char *data, size_t size, size_t count, void *userp) {
 size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
 
 struct DownloadStats {
-  void addDownload(const std::string &url, uint64_t total_bytes) {
+  void add(const std::string &url, uint64_t total_bytes) {
     std::lock_guard lk(lock);
-    items[url] = {.downloaded = 0, .total = total_bytes};
+    items[url] = {0, total_bytes};
   }
 
-  void removeDownload(const std::string &url) {
+  void remove(const std::string &url) {
     std::lock_guard lk(lock);
-    if (auto it = items.find(url); it != items.end()) {
-      items.erase(it);
-    }
+    items.erase(url);
   }
 
   void update(const std::string &url, uint64_t downloaded, bool success = true) {
     std::lock_guard lk(lock);
-    items[url].downloaded = downloaded;
+    items[url].first = downloaded;
 
-    uint64_t total_bytes = 0;
-    uint64_t total_downloaded = 0;
-    for (const auto &[url, item] : items) {
-      total_bytes += item.total;
-      total_downloaded += item.downloaded;
-    }
+    auto stat = std::accumulate(items.begin(), items.end(), std::pair<int, int>{}, [=](auto &a, auto &b){
+      return std::pair{a.first + b.second.first, a.second + b.second.second};
+    });
     double tm = millis_since_boot();
-    if (download_progress_handler && ((tm - prev_tm) > 500 || !success || total_downloaded >= total_bytes)) {
-      download_progress_handler(total_downloaded, total_bytes, success);
+    if (download_progress_handler && ((tm - prev_tm) > 500 || !success || stat.first >= stat.second)) {
+      download_progress_handler(stat.first, stat.second, success);
       prev_tm = tm;
     }
   }
 
-  struct Item {
-    uint64_t total = 0, downloaded = 0;
-  };
   std::mutex lock;
-  std::map<std::string, Item> items;
+  std::map<std::string, std::pair<uint64_t, uint64_t>> items;
   double prev_tm = 0;
 };
 
@@ -173,7 +165,7 @@ std::string getUrlWithoutQuery(const std::string &url) {
 template <class T>
 bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
   static DownloadStats download_stats;
-  download_stats.addDownload(url, content_length);
+  download_stats.add(url, content_length);
 
   int parts = 1;
   if (chunk_size > 0 && content_length > 10 * 1024 * 1024) {
@@ -232,7 +224,7 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
 
   bool success = complete == parts;
   download_stats.update(url, written, success);
-  download_stats.removeDownload(url);
+  download_stats.remove(url);
   
   for (const auto &[e, w] : writers) {
     curl_multi_remove_handle(cm, e);
