@@ -410,7 +410,7 @@ jobs:
       run: eval "$BUILD"
     - name: Test car models
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) --test && \
+        ${{ env.RUN }} "scons -j$(nproc) --test --coverage && \
                         FILEREADER_CACHE=1 coverage run -m pytest selfdrive/test/test_models.py && \
                         lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
                         lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
