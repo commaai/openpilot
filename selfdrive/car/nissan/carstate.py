@@ -155,7 +155,7 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
       signals += [
-        ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 1),
+        ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 0),
 
         ("GAS_PEDAL", "GAS_PEDAL", 0),
         ("SEATBELT_DRIVER_LATCHED", "HUD", 0),
@@ -185,7 +185,7 @@ class CarState(CarStateBase):
 
     elif CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
       signals += [
-        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE", 1),
+        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE", 0),
         ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
         ("CRUISE_AVAILABLE", "CRUISE_THROTTLE", 0),
         ("SPEED_MPH", "HUD_SETTINGS", 0),
