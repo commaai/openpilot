@@ -137,37 +137,33 @@ void Replay::seekToFlag(FindFlag flag) {
 }
 
 void Replay::buildTimeline() {
-  int engage_sec = -1, disengage_sec = -1;
-  int car_event_start = -1, car_event_end = -1;
-  cereal::ControlsState::AlertStatus alert_status;
+  uint64_t engaged_begin = 0;
+  uint64_t alert_begin = 0;
+  TimelineType alert_type = TimelineType::None;
 
   for (int i = 0; i < segments_.size() && !exit_; ++i) {
-    bool cache_to_local = true;  // cache qlog to local for fast seek
     LogReader log;
-    if (!log.load(route_->at(i).qlog.toStdString(), &exit_, cache_to_local, 0, 3)) continue;
+    if (!log.load(route_->at(i).qlog.toStdString(), &exit_, !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3)) continue;
 
     for (const Event *e : log.events) {
       if (e->which == cereal::Event::Which::CONTROLS_STATE) {
         auto cs = e->event.getControlsState();
-        bool engaged = cs.getEnabled();
-        if (engaged && engage_sec == -1) {
-          engage_sec = (e->mono_time - route_start_ts_) / 1e9;
-        } else if (!engaged && engage_sec != -1) {
-          disengage_sec = (e->mono_time - route_start_ts_) / 1e9;
+
+        if (!engaged_begin && cs.getEnabled()) {
+          engaged_begin = e->mono_time;
+        } else if (engaged_begin && !cs.getEnabled()) {
           std::lock_guard lk(timeline_lock);
-          timeline.push_back({engage_sec, disengage_sec});
-          engage_sec = disengage_sec = -1;
+          timeline.push_back({toSeconds(engaged_begin), toSeconds(e->mono_time), TimelineType::Engaged});
+          engaged_begin = 0;
         }
 
-        bool has_alert = cs.getAlertType().size() > 0;
-        if (has_alert && car_event_start == -1) {
-          car_event_start = (e->mono_time - route_start_ts_) / 1e9;
-          alert_status = cs.getAlertStatus();
-        } else if (!has_alert && car_event_start != -1) {
+        if (!alert_begin && cs.getAlertType().size() > 0) {
+          alert_begin = e->mono_time;
+          alert_type = cs.getAlertStatus() == cereal::ControlsState::AlertStatus::CRITICAL ? TimelineType::Warning : TimelineType::Alert;
+        } else if (alert_begin && cs.getAlertType().size() == 0) {
           std::lock_guard lk(timeline_lock);
-          car_event_end = (e->mono_time - route_start_ts_) / 1e9;
-          car_events.push_back({car_event_start, car_event_end, alert_status});
-          car_event_start = car_event_end = -1;
+          timeline.push_back({toSeconds(alert_begin), toSeconds(e->mono_time), alert_type});
+          alert_begin = 0;
         }
       }
     }
@@ -176,11 +172,13 @@ void Replay::buildTimeline() {
 
 std::optional<uint64_t> Replay::find(FindFlag flag) {
   int cur_ts = currentSeconds();
-  for (auto [start_ts, end_ts] : getTimeline()) {
-    if (flag == FindFlag::nextEngagement && start_ts > cur_ts) {
-      return start_ts;
-    } else if (flag == FindFlag::nextDisEngagement && end_ts > cur_ts) {
-      return end_ts;
+  for (auto [start_ts, end_ts, type] : getTimeline()) {
+    if (type == TimelineType::Engaged) {
+      if (flag == FindFlag::nextEngagement && start_ts > cur_ts) {
+        return start_ts;
+      } else if (flag == FindFlag::nextDisEngagement && end_ts > cur_ts) {
+        return end_ts;
+      }
     }
   }
   return std::nullopt;

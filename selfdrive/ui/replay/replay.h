@@ -28,6 +28,8 @@ enum class FindFlag {
   nextDisEngagement
 };
 
+enum class TimelineType { None, Engaged, Alert, Warning };
+
 class Replay : public QObject {
   Q_OBJECT
 
@@ -45,17 +47,14 @@ public:
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
   inline const Route* route() const { return route_.get(); }
-  inline const std::vector<std::pair<int, int>> getTimeline() { 
+  inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
+  inline int toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
+  inline int totalSeconds() const { return segments_.size() * 60; }
+  inline const std::string &carName() const { return car_name_; }
+  inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { 
     std::lock_guard lk(timeline_lock);
     return timeline; 
   }
-  inline const std::vector<std::tuple<int, int, cereal::ControlsState::AlertStatus>> getCarEvents() { 
-    std::lock_guard lk(timeline_lock);
-    return car_events; 
-  }
-  inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
-  inline int totalSeconds() const { return segments_.size() * 60; }
-  inline const std::string &carName() const { return car_name_; }
 
 signals:
   void segmentChanged();
@@ -110,7 +109,6 @@ protected:
 
   std::mutex timeline_lock;
   QFuture<void> timeline_future;
-  std::vector<std::pair<int, int>> timeline;
-  std::vector<std::tuple<int, int, cereal::ControlsState::AlertStatus>> car_events;
+  std::vector<std::tuple<int, int, TimelineType>> timeline;
   std::string car_name_;
 };

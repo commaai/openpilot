@@ -204,7 +204,6 @@ void ConsoleUI::updateSummary() {
 }
 
 void ConsoleUI::updateTimeline() {
-  const int total_sec = replay->totalSeconds();
   auto win = w[Win::Timeline];
   int width = getmaxx(win);
   werase(win);
@@ -216,30 +215,27 @@ void ConsoleUI::updateTimeline() {
   }
   wattroff(win, COLOR_PAIR(Color::Disengaged));
 
-  auto summary = replay->getTimeline();
-  for (auto [engage_sec, disengage_sec] : summary) {
-    int start_pos = ((double)engage_sec / total_sec) * width;
-    int end_pos = ((double)disengage_sec / total_sec) * width;
-    wattron(win, COLOR_PAIR(Color::Engaged));
-    for (int i = start_pos; i <= end_pos; ++i) {
-      mvwaddch(win, 1, i, ' ');
-      mvwaddch(win, 2, i, ' ');
-    }
-    wattroff(win, COLOR_PAIR(Color::Engaged));
-  }
+  const int total_sec = replay->totalSeconds();
+  for (auto [begin, end, type] : replay->getTimeline()) {
+    int start_pos = ((double)begin / total_sec) * width;
+    int end_pos = ((double)end / total_sec) * width;
 
-  auto car_events = replay->getCarEvents();
-  for (auto [start_sec, end_sec, status] : car_events) {
-    int start_pos = ((double)start_sec / total_sec) * width;
-    int end_pos = ((double)end_sec / total_sec) * width;
-    const bool critical = status == cereal::ControlsState::AlertStatus::CRITICAL;
-    wattron(win, COLOR_PAIR(critical ? Color::Critical : Color::Warning));
-    wattron(win, A_BOLD);
-    for (int i = start_pos; i <= end_pos; ++i) {
-      mvwaddch(win, 3, i, ACS_S3);
+    if (type == TimelineType::Engaged) {
+      wattron(win, COLOR_PAIR(Color::Engaged));
+      for (int i = start_pos; i <= end_pos; ++i) {
+        mvwaddch(win, 1, i, ' ');
+        mvwaddch(win, 2, i, ' ');
+      }
+      wattroff(win, COLOR_PAIR(Color::Engaged));
+    } else {
+      wattron(win, COLOR_PAIR(type == TimelineType::Warning ? Color::Critical : Color::Warning));
+      wattron(win, A_BOLD);
+      for (int i = start_pos; i <= end_pos; ++i) {
+        mvwaddch(win, 3, i, ACS_S3);
+      }
+      wattroff(win, A_BOLD);
+      wattroff(win, COLOR_PAIR(type == TimelineType::Warning ? Color::Critical : Color::Warning));
     }
-    wattroff(win, A_BOLD);
-    wattroff(win, COLOR_PAIR(critical ? Color::Critical : Color::Warning));
   }
 
   int cur_pos = ((double)replay->currentSeconds() / total_sec) * width;
