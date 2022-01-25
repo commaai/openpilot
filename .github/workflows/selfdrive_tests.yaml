@@ -356,7 +356,10 @@ jobs:
         ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
                         scons -j$(nproc) && \
                         cd selfdrive/test/longitudinal_maneuvers && \
-                        ./test_longitudinal.py"
+                        coverage run ./test_longitudinal.py && \
+                        coverage xml"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
     - uses: actions/upload-artifact@v2
       if: always()
       continue-on-error: true
