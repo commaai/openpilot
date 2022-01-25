@@ -121,7 +121,7 @@ class Controls:
         cached_car_params = car.CarParams.from_bytes(cached_params)
         if cached_car_params.carFingerprint !=  self.CP.carFingerprint:
           params.clear_all(ParamKeyType.CLEAR_ON_CAR_CHANGED)
-      except:
+      except Exception:
         params.clear_all(ParamKeyType.CLEAR_ON_CAR_CHANGED)
 
     # Write CarParams for radard
