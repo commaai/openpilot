@@ -2,9 +2,7 @@
 
 #include <QApplication>
 #include <initializer_list>
-#include <iostream>
 
-#include "selfdrive/common/params.h"
 #include "selfdrive/common/version.h"
 
 enum Color {
@@ -188,10 +186,8 @@ void ConsoleUI::updateProgressBar(uint64_t cur, uint64_t total, bool success) {
     const int width = 30;
     const float progress = cur / (double)total;
     const int pos = width * progress;
-    std::string s = util::string_format("Downloading [%s>%s]  %d%% %s", std::string(pos, '=').c_str(),
-                                        std::string(width - pos, ' ').c_str(), int(progress * 100.0),
-                                        formattedDataSize(total).c_str());
-    waddstr(w[Win::DownloadBar], s.c_str());
+    wprintw(w[Win::DownloadBar], "Downloading [%s>%s]  %d%% %s", std::string(pos, '=').c_str(),
+            std::string(width - pos, ' ').c_str(), int(progress * 100.0), formattedDataSize(total).c_str());
   }
   wrefresh(w[Win::DownloadBar]);
 }
@@ -255,71 +251,57 @@ void ConsoleUI::readyRead() {
 }
 
 void ConsoleUI::handleKey(char c) {
-  switch (c) {
-    case '\n': {
-      replay->pause(true);
-      getch_timer.stop();
-      curs_set(1);
-      nodelay(stdscr, false);
+  if (c == '\n') {
+    replay->pause(true);
+    getch_timer.stop();
+    curs_set(1);
+    nodelay(stdscr, false);
 
-      rWarning("Waiting for input...");
-      int y = getmaxy(stdscr) - 9;
-      attron(COLOR_PAIR(Color::BrightWhite));
-      attron(A_BOLD);
-      mvprintw(y, 3, "Enter seek request: ");
-      attroff(A_BOLD);
-      attroff(COLOR_PAIR(Color::BrightWhite));
-      // mvchgat(y, 1, -1, A_BLINK, 1, NULL);
-      refresh();
-      echo();
-      int choice = 0;
-      scanw((char *)"%d", &choice);
-      noecho();
-      nodelay(stdscr, true);
-      curs_set(0);
-      move(y, 0);
-      clrtoeol();
-      refresh();
+    rWarning("Waiting for input...");
+    int y = getmaxy(stdscr) - 9;
+    attron(COLOR_PAIR(Color::BrightWhite));
+    attron(A_BOLD);
+    mvprintw(y, 3, "Enter seek request: ");
+    attroff(A_BOLD);
+    attroff(COLOR_PAIR(Color::BrightWhite));
+    refresh();
+    echo();
+    int choice = 0;
+    scanw((char *)"%d", &choice);
+    noecho();
+    nodelay(stdscr, true);
+    curs_set(0);
+    move(y, 0);
+    clrtoeol();
+    refresh();
 
-      replay->pause(false);
-      replay->seekTo(choice, false);
-      getch_timer.start(1000, this);
-      break;
+    replay->pause(false);
+    replay->seekTo(choice, false);
+    getch_timer.start(1000, this);
+  } else if (c == 'x') {
+    if (replay->hasFlag(REPLAY_FLAG_FULL_SPEED)) {
+      replay->removeFlag(REPLAY_FLAG_FULL_SPEED);
+      rWarning("replay at normal speed");
+    } else {
+      replay->addFlag(REPLAY_FLAG_FULL_SPEED);
+      rWarning("replay at full speed");
     }
-    case 'e':
-      replay->seekToFlag(FindFlag::nextEngagement);
-      break;
-    case 'd':
-      replay->seekToFlag(FindFlag::nextDisEngagement);
-      break;
-    case 'm':
-      replay->seekTo(+60, true);
-      break;
-    case 'M':
-      replay->seekTo(-60, true);
-      break;
-    case 's':
-      replay->seekTo(+10, true);
-      break;
-    case 'S':
-      replay->seekTo(-10, true);
-      break;
-    case 'x':
-      if (replay->hasFlag(REPLAY_FLAG_FULL_SPEED)) {
-        replay->removeFlag(REPLAY_FLAG_FULL_SPEED);
-        rWarning("replay at normal speed");
-      } else {
-        replay->addFlag(REPLAY_FLAG_FULL_SPEED);
-        rWarning("replay at full speed");
-      }
-      break;
-    case ' ':
-      replay->pause(!replay->isPaused());
-      break;
-    case 'q':
-    case 'Q':
-      replay->stop();
-      qApp->exit();
-      break;
+  } else if (c == 'e') {
+    replay->seekToFlag(FindFlag::nextEngagement);
+  } else if (c == 'd') {
+    replay->seekToFlag(FindFlag::nextDisEngagement);
+  } else if (c == 'm') {
+    replay->seekTo(+60, true);
+  } else if (c == 'M') {
+    replay->seekTo(-60, true);
+  } else if (c == 's') {
+    replay->seekTo(+10, true);
+  } else if (c == 'S') {
+    replay->seekTo(-10, true);
+  } else if (c == ' ') {
+    replay->pause(!replay->isPaused());
+  } else if (c == 'q' || c == 'Q') {
+    replay->stop();
+    qApp->exit();
   }
 }

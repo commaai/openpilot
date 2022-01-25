@@ -249,24 +249,20 @@ void Replay::queueSegment() {
 
 void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end) {
   // merge 3 segments in sequence.
-  std::vector<int> segments_need_merge;
+  std::vector<int> merge;
   size_t new_events_size = 0;
-  for (auto it = begin; it != end && it->second->isLoaded() && segments_need_merge.size() < 3; ++it) {
-    segments_need_merge.push_back(it->first);
+  for (auto it = begin; it != end && it->second && it->second->isLoaded() && merge.size() < 3; ++it) {
+    merge.push_back(it->first);
     new_events_size += it->second->log->events.size();
   }
 
-  if (segments_need_merge != segments_merged_) {
-    std::string s;
-    for (int i = 0; i < segments_need_merge.size(); ++i) {
-      s += std::to_string(segments_need_merge[i]);
-      if (i != segments_need_merge.size() - 1) s += ", ";
-    }
-    rInfo("merge segments %s", s.c_str());
-
+  if (merge != segments_merged_) {
+    rInfo("merge segments %s", std::accumulate(merge.begin(), merge.end(), std::to_string(merge[0]), [](auto &a, int b) {
+                                 return a + ", " + std::to_string(b);
+                               }).c_str());
     new_events_->clear();
     new_events_->reserve(new_events_size);
-    for (int n : segments_need_merge) {
+    for (int n : merge) {
       const auto &e = segments_[n]->log->events;
       auto middle = new_events_->insert(new_events_->end(), e.begin(), e.end());
       std::inplace_merge(new_events_->begin(), middle, new_events_->end(), Event::lessThan());
@@ -274,7 +270,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 
     updateEvents([&]() {
       events_.swap(new_events_);
-      segments_merged_ = segments_need_merge;
+      segments_merged_ = merge;
       return true;
     });
   }
@@ -350,7 +346,6 @@ void Replay::publishFrame(const Event *e) {
 
 void Replay::stream() {
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
-
   std::unique_lock lk(stream_lock_);
 
   while (true) {
@@ -372,8 +367,7 @@ void Replay::stream() {
       const Event *evt = (*eit);
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
-      const int current_ts = currentSeconds();
-      setCurrentSegment(current_ts / 60);
+      setCurrentSegment(toSeconds(cur_mono_time_) / 60);
 
       // migration for pandaState -> pandaStates to keep UI working for old segments
       if (cur_which == cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D) {
