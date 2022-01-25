@@ -244,7 +244,7 @@ jobs:
       run: eval "$BUILD"
     - name: Run unit tests
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) --test && \
+        ${{ env.RUN }} "scons -j$(nproc) --test --coverage && \
                         coverage run selfdrive/test/test_fingerprints.py && \
                         $UNIT_TEST common && \
                         $UNIT_TEST opendbc/can && \
@@ -265,6 +265,9 @@ jobs:
                         ./selfdrive/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
                         ./selfdrive/camerad/test/ae_gray_test && \
+                        lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
+                        lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
+                        lcov --remove coverage.info '/usr/*' --output-file coverage.info && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
@@ -299,8 +302,11 @@ jobs:
       run: eval "$BUILD"
     - name: Run replay
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) --coverage && \
                         FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
+                        lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
+                        lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
+                        lcov --remove coverage.info '/usr/*' --output-file coverage.info && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
@@ -354,9 +360,12 @@ jobs:
     - name: Test longitudinal
       run: |
         ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
-                        scons -j$(nproc) && \
+                        scons -j$(nproc) --coverage && \
                         cd selfdrive/test/longitudinal_maneuvers && \
                         coverage run ./test_longitudinal.py && \
+                        lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
+                        lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
+                        lcov --remove coverage.info '/usr/*' --output-file coverage.info && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
@@ -403,6 +412,9 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test && \
                         FILEREADER_CACHE=1 coverage run -m pytest selfdrive/test/test_models.py && \
+                        lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
+                        lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
+                        lcov --remove coverage.info '/usr/*' --output-file coverage.info && \
                         coverage xml && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
