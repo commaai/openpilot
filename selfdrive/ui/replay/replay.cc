@@ -159,7 +159,12 @@ void Replay::buildTimeline() {
 
         if (!alert_begin && cs.getAlertType().size() > 0) {
           alert_begin = e->mono_time;
-          alert_type = cs.getAlertStatus() == cereal::ControlsState::AlertStatus::CRITICAL ? TimelineType::Warning : TimelineType::Alert;
+          alert_type = TimelineType::AlertInfo;
+          if (cs.getAlertStatus() != cereal::ControlsState::AlertStatus::NORMAL) {
+            alert_type = cs.getAlertStatus() == cereal::ControlsState::AlertStatus::USER_PROMPT
+                             ? TimelineType::AlertWarning
+                             : TimelineType::AlertCritical;
+          }
         } else if (alert_begin && cs.getAlertType().size() == 0) {
           std::lock_guard lk(timeline_lock);
           timeline.push_back({toSeconds(alert_begin), toSeconds(e->mono_time), alert_type});
@@ -249,20 +254,23 @@ void Replay::queueSegment() {
 
 void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end) {
   // merge 3 segments in sequence.
-  std::vector<int> merge;
+  std::vector<int> segments_need_merge;
   size_t new_events_size = 0;
-  for (auto it = begin; it != end && it->second && it->second->isLoaded() && merge.size() < 3; ++it) {
-    merge.push_back(it->first);
+  for (auto it = begin; it != end && it->second && it->second->isLoaded() && segments_need_merge.size() < 3; ++it) {
+    segments_need_merge.push_back(it->first);
     new_events_size += it->second->log->events.size();
   }
 
-  if (merge != segments_merged_) {
-    rInfo("merge segments %s", std::accumulate(merge.begin(), merge.end(), std::to_string(merge[0]), [](auto &a, int b) {
-                                 return a + ", " + std::to_string(b);
-                               }).c_str());
+  if (segments_need_merge != segments_merged_) {
+    std::string s;
+    for (int i = 0; i < segments_need_merge.size(); ++i) {
+      s += std::to_string(segments_need_merge[i]);
+      if (i != segments_need_merge.size() - 1) s += ", ";
+    }
+    rInfo("merge segments %s", s.c_str());
     new_events_->clear();
     new_events_->reserve(new_events_size);
-    for (int n : merge) {
+    for (int n : segments_need_merge) {
       const auto &e = segments_[n]->log->events;
       auto middle = new_events_->insert(new_events_->end(), e.begin(), e.end());
       std::inplace_merge(new_events_->begin(), middle, new_events_->end(), Event::lessThan());
@@ -270,7 +278,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 
     updateEvents([&]() {
       events_.swap(new_events_);
-      segments_merged_ = merge;
+      segments_merged_ = segments_need_merge;
       return true;
     });
   }

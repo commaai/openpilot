@@ -19,6 +19,7 @@ public:
 private:
   void handleKey(char c);
   void displayHelp();
+  void displayTimelineDesc();
   void updateTimeline();
   void updateSummary();
   void updateStatus();

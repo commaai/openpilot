@@ -28,7 +28,7 @@ enum class FindFlag {
   nextDisEngagement
 };
 
-enum class TimelineType { None, Engaged, Alert, Warning };
+enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical };
 
 class Replay : public QObject {
   Q_OBJECT

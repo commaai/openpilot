@@ -14,6 +14,7 @@ enum Color {
   BrightWhite,
   Engaged,
   Disengaged,
+  AlertInfo,
 };
 
 ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"carState", "liveParameters"}), QObject(parent) {
@@ -40,10 +41,11 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   init_pair(Color::Debug, 8, COLOR_BLACK);
   init_pair(Color::Warning, COLOR_YELLOW, COLOR_BLACK);
   init_pair(Color::Critical, COLOR_RED, COLOR_BLACK);
-  init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
   init_pair(Color::bgWhite, COLOR_BLACK, 15);
-  init_pair(Color::Engaged, 28, 28);
   init_pair(Color::BrightWhite, 15, COLOR_BLACK);
+  init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
+  init_pair(Color::Engaged, 28, 28);
+  init_pair(Color::AlertInfo, 28, COLOR_BLACK);
 
   int height, width;
   getmaxyx(stdscr, height, width);
@@ -65,28 +67,14 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   wbkgd(w[Win::Title], COLOR_PAIR(Color::bgWhite));
   mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
 
-  std::tuple<Color, const char *, bool> indicators[]{
-      {Color::Engaged, " Engaged ", false},
-      {Color::Disengaged, " Disengaged ", false},
-      {Color::Warning, " Alert ", true},
-      {Color::Critical, " Warning ", true},
-  };
-  for (auto [color, name, bold] : indicators) {
-    wattron(w[Win::TimelineDesc], COLOR_PAIR(color));
-    if (bold) wattron(w[Win::TimelineDesc], A_BOLD);
-    waddstr(w[Win::TimelineDesc], "__");
-    if (bold) wattroff(w[Win::TimelineDesc], A_BOLD);
-    wattroff(w[Win::TimelineDesc], COLOR_PAIR(color));
-    waddstr(w[Win::TimelineDesc], name);
-  }
-
   refresh();
+  displayTimelineDesc();
   displayHelp();
   updateSummary();
   updateTimeline();
 
   for (auto win : w) {
-    wrefresh(win);
+    if (win) wrefresh(win);
   }
 
   QObject::connect(replay, &Replay::streamStarted, this, &ConsoleUI::updateSummary);
@@ -107,7 +95,6 @@ ConsoleUI::~ConsoleUI() {
 void ConsoleUI::timerEvent(QTimerEvent *ev) {
   if (ev->timerId() != getch_timer.timerId()) return;
   updateTimeline();
-  refresh();
 }
 
 void ConsoleUI::updateStatus() {
@@ -171,6 +158,24 @@ void ConsoleUI::displayHelp() {
   wrefresh(w[Win::Help]);
 }
 
+void ConsoleUI::displayTimelineDesc() {
+  std::tuple<Color, const char *, bool> indicators[]{
+      {Color::Engaged, " Engaged ", false},
+      {Color::Disengaged, " Disengaged ", false},
+      {Color::AlertInfo, " Info ", true},
+      {Color::Warning, " Warning ", true},
+      {Color::Critical, " Critical ", true},
+  };
+  for (auto [color, name, bold] : indicators) {
+    wattron(w[Win::TimelineDesc], COLOR_PAIR(color));
+    if (bold) wattron(w[Win::TimelineDesc], A_BOLD);
+    waddstr(w[Win::TimelineDesc], "__");
+    if (bold) wattroff(w[Win::TimelineDesc], A_BOLD);
+    wattroff(w[Win::TimelineDesc], COLOR_PAIR(color));
+    waddstr(w[Win::TimelineDesc], name);
+  }
+}
+
 void ConsoleUI::logMessage(int type, const QString &msg) {
   if (auto win = w[Win::Log]) {
     wattron(win, COLOR_PAIR((int)type));
@@ -224,13 +229,17 @@ void ConsoleUI::updateTimeline() {
       }
       wattroff(win, COLOR_PAIR(Color::Engaged));
     } else {
-      wattron(win, COLOR_PAIR(type == TimelineType::Warning ? Color::Critical : Color::Warning));
+      auto color_id = Color::AlertInfo;
+      if (type != TimelineType::AlertInfo) {
+        color_id = type == TimelineType::AlertWarning ? Color::Warning : Color::Critical;
+      }
+      wattron(win, COLOR_PAIR(color_id));
       wattron(win, A_BOLD);
       for (int i = start_pos; i <= end_pos; ++i) {
         mvwaddch(win, 3, i, ACS_S3);
       }
       wattroff(win, A_BOLD);
-      wattroff(win, COLOR_PAIR(type == TimelineType::Warning ? Color::Critical : Color::Warning));
+      wattroff(win, COLOR_PAIR(color_id));
     }
   }
 
