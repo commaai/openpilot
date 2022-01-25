@@ -369,7 +369,6 @@ jobs:
                         coverage run ./test_longitudinal.py && \
                         coverage xml && \
                         cd ../../.. && \
-
                         find opendbc/can/dbc_out -name "*.gcda" && \
                         find rednose/helpers -name "*.gcda" && \
                         lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
