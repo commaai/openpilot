@@ -430,7 +430,7 @@ class Controls:
             # no more soft disabling condition, so go back to ENABLED
             self.state = State.enabled
 
-          elif self.events.any(ET.SOFT_DISABLE) and self.soft_disable_timer > 0:
+          elif self.soft_disable_timer > 0:
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
           elif self.soft_disable_timer <= 0:
