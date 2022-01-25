@@ -264,7 +264,8 @@ jobs:
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./selfdrive/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
-                        ./selfdrive/camerad/test/ae_gray_test"
+                        ./selfdrive/camerad/test/ae_gray_test" && \
+                        coverage xml
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
 
@@ -299,7 +300,8 @@ jobs:
     - name: Run replay
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
+                        coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
     - name: Print diff
@@ -398,6 +400,7 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test && \
                         FILEREADER_CACHE=1 coverage run -m pytest selfdrive/test/test_models.py && \
+                        coverage xml && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4
