@@ -80,6 +80,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
 
 def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
   segment_start = 0
+  is_ci_test_route = False
   if 'cabana' in route_or_segment_name:
     query = parse_qs(urlparse(route_or_segment_name).query)
     api = CommaApi(get_token())
@@ -87,7 +88,6 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
   elif route_or_segment_name.startswith("http://") or route_or_segment_name.startswith("https://") or os.path.isfile(route_or_segment_name):
     logs = [route_or_segment_name]
   else:
-    is_ci_test_route = False
     parsed_segment_name = SegmentName(route_or_segment_name, allow_route_name=True)
     route_name = parsed_segment_name.route_name.canonical_name
     segment_start = max(parsed_segment_name.segment_num, 0)
@@ -119,7 +119,9 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
 
       r = Route(route_name)
       logs = r.qlog_paths() if qlog else r.log_paths()
-      logs = logs[segment_start:segment_start + segment_count]
+
+  if not is_ci_test_route:
+    logs = logs[segment_start:segment_start + segment_count]
 
   if None in logs:
     ans = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
