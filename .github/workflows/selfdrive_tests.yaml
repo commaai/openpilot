@@ -209,7 +209,7 @@ jobs:
       run: eval "$BUILD"
     - name: Run valgrind
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) --coverage && \
                         FILEREADER_CACHE=1 python selfdrive/test/test_valgrind_replay.py"
     - name: Print logs
       if: always()
@@ -265,14 +265,7 @@ jobs:
                         ./selfdrive/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
                         ./selfdrive/camerad/test/ae_gray_test && \
-                        find opendbc/can/dbc_out -name "*.gcda" && \
-                        find rednose/helpers -name "*.gcda" && \
-                        find rednose_repo/rednose/helpers -name "*.gcda" && \
-                        find cereal/gen -name "*.gcda" && \
-                        lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
-                        lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
-                        lcov --remove coverage.info '/usr/*' --output-file coverage.info && \
-                        coverage xml"
+                        tools/collect_coverage.sh"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
 
@@ -308,14 +301,7 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --coverage && \
                         FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
-                        find opendbc/can/dbc_out -name "*.gcda" && \
-                        find rednose/helpers -name "*.gcda" && \
-                        find rednose_repo/rednose/helpers -name "*.gcda" && \
-                        find cereal/gen -name "*.gcda" && \
-                        lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
-                        lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
-                        lcov --remove coverage.info '/usr/*' --output-file coverage.info && \
-                        coverage xml"
+                        tools/collect_coverage.sh"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
     - name: Print diff
@@ -373,13 +359,7 @@ jobs:
                         coverage run ./test_longitudinal.py && \
                         coverage xml && \
                         cd ../../.. && \
-                        find opendbc/can/dbc_out -name "*.gcda" && \
-                        find rednose/helpers -name "*.gcda" && \
-                        find rednose_repo/rednose/helpers -name "*.gcda" && \
-                        find cereal/gen -name "*.gcda" && \
-                        lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
-                        lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
-                        lcov --remove coverage.info '/usr/*' --output-file coverage.info"
+                        tools/collect_coverage.sh"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
     - uses: actions/upload-artifact@v2
@@ -425,14 +405,7 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test --coverage && \
                         FILEREADER_CACHE=1 coverage run -m pytest selfdrive/test/test_models.py && \
-                        find opendbc/can/dbc_out -name "*.gcda" && \
-                        find rednose/helpers -name "*.gcda" && \
-                        find rednose_repo/rednose/helpers -name "*.gcda" && \
-                        find cereal/gen -name "*.gcda" && \
-                        lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info && \
-                        lcov --remove coverage.info '*/third_party/*' --output-file coverage.info && \
-                        lcov --remove coverage.info '/usr/*' --output-file coverage.info && \
-                        coverage xml && \
+                        tools/collect_coverage.sh && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4
