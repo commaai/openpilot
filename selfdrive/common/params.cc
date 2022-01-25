@@ -89,7 +89,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CalibrationParams", PERSISTENT},
     {"CarBatteryCapacity", PERSISTENT},
     {"CarParams", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
-    {"CarParamsCache", CLEAR_ON_MANAGER_START},
+    {"CarParamsCache", PERSISTENT},
     {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"CompletedTrainingVersion", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},

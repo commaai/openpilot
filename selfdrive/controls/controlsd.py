@@ -7,7 +7,7 @@ from cereal import car, log
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
-from common.params import Params, put_nonblocking
+from common.params import Params, ParamKeyType, put_nonblocking
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.swaglog import cloudlog
@@ -114,6 +114,15 @@ class Controls:
       safety_config = car.CarParams.SafetyConfig.new_message()
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
+
+    cached_params = Params().get("CarParamsCache")
+    if cached_params is not None:
+      try:
+        cached_car_params = car.CarParams.from_bytes(cached_params)
+        if cached_car_params.carFingerprint !=  self.CP.cached_car_params:
+          params.clear_all(ParamKeyType.CLEAR_ON_CAR_CHANGED)
+      except:
+        pass
 
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()

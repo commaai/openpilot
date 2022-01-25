@@ -10,6 +10,8 @@ cdef extern from "selfdrive/common/params.h":
     CLEAR_ON_MANAGER_START
     CLEAR_ON_IGNITION_ON
     CLEAR_ON_IGNITION_OFF
+    CLEAR_ON_CAR_CHANGED
+    DONT_LOG
     ALL
 
   cdef cppclass c_Params "Params":
