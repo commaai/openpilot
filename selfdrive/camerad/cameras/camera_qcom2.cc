@@ -377,28 +377,65 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   buf_desc[0].mem_handle = buf0_mem_handle;
   buf_desc[0].offset = buf0_offset;
 
-   // cam_isp_packet_generic_blob_handler
-  uint32_t tmp[] = {
-    // size is 0x20, type is 0(CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG)
-    0x2000,
-    0x1, 0x0, CAM_ISP_IFE_OUT_RES_RDI_0, 0x1, 0x0, 0x1, 0x0, 0x0, // 1 port, CAM_ISP_IFE_OUT_RES_RDI_0
-    // size is 0x38, type is 1(CAM_ISP_GENERIC_BLOB_TYPE_CLOCK_CONFIG), clocks
-    0x3801,
-    0x1, 0x4, // Dual mode, 4 RDI wires
-    0x18148d00, 0x0, 0x18148d00, 0x0, 0x18148d00, 0x0, // rdi clock
-    0x0, 0x0, 0x0, 0x0, 0x0, 0x0,  // junk?
-    // offset 0x60
-    // size is 0xe0, type is 2(CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG), bandwidth
-    0xe002,
-    0x1, 0x4, // 4 RDI
-    0x0, 0x0, 0x1ad27480, 0x0, 0x1ad27480, 0x0, // left_pix_vote
-    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, // right_pix_vote
-    0x0, 0x0, 0x6ee11c0, 0x2, 0x6ee11c0, 0x2,  // rdi_vote
-    0x0, 0x0, 0x0, 0x0,
-    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+  // parsed by cam_isp_packet_generic_blob_handler
+  struct isp_packet {
+    uint32_t type_0;
+    cam_isp_resource_hfr_config resource_hfr;
+
+    uint32_t type_1;
+    cam_isp_clock_config clock;
+    uint64_t extra_rdi_hz[3];
+
+    uint32_t type_2;
+    cam_isp_bw_config bw;
+    struct cam_isp_bw_vote extra_rdi_vote[6];
+  } __attribute__((packed)) tmp;
+  memset(&tmp, 0, sizeof(tmp));
+
+  tmp.type_0 = CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG;
+  tmp.type_0 |= sizeof(cam_isp_resource_hfr_config) << 8;
+  static_assert(sizeof(cam_isp_resource_hfr_config) == 0x20);
+  tmp.resource_hfr = {
+    .num_ports = 1,
+    .port_hfr_config[0] = {
+      .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0,
+      .subsample_pattern = 1,
+      .subsample_period = 0,
+      .framedrop_pattern = 1,
+      .framedrop_period = 0,
+    }};
+
+  tmp.type_1 = CAM_ISP_GENERIC_BLOB_TYPE_CLOCK_CONFIG;
+  tmp.type_1 |= (sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) << 8;
+  static_assert((sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) == 0x38);
+  tmp.clock = {
+    .usage_type = 1, // dual mode
+    .num_rdi = 4,
+    .left_pix_hz = 404000000,
+    .right_pix_hz = 404000000,
+    .rdi_hz[0] = 404000000,
+  };
+
+
+  tmp.type_2 = CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG;
+  tmp.type_2 |= (sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) << 8;
+  static_assert((sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) == 0xe0);
+  tmp.bw = {
+    .usage_type = 1, // dual mode
+    .num_rdi = 4,
+    .left_pix_vote = {
+      .resource_id = 0,
+      .cam_bw_bps = 450000000,
+      .ext_bw_bps = 450000000,
+    },
+    .rdi_vote[0] = {
+      .resource_id = 0,
+      .cam_bw_bps = 8706200000,
+      .ext_bw_bps = 8706200000,
+    },
+  };
+
+  static_assert(offsetof(struct isp_packet, type_2) == 0x60);
 
   buf_desc[1].size = sizeof(tmp);
   buf_desc[1].offset = io_mem_handle != 0 ? 0x60 : 0;
@@ -406,7 +443,7 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   buf_desc[1].type = CAM_CMD_BUF_GENERIC;
   buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
   uint32_t *buf2 = (uint32_t *)alloc_w_mmu_hdl(s->multi_cam_state->video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle, 0x20);
-  memcpy(buf2, tmp, sizeof(tmp));
+  memcpy(buf2, &tmp, sizeof(tmp));
 
   if (io_mem_handle != 0) {
     io_cfg[0].mem_handle[0] = io_mem_handle;
@@ -426,7 +463,7 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
 		};
     io_cfg[0].format = CAM_FORMAT_MIPI_RAW_10;
     io_cfg[0].color_pattern = 0x5;
-    io_cfg[0].bpp = 0xc;
+    io_cfg[0].bpp = 0xa;
     io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
