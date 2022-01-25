@@ -50,6 +50,10 @@ Explore live data from your car! Follow these steps to stream from your comma de
 
 If streaming to PlotJuggler from a replay on your PC, simply run: `./juggle.py --stream` and start the cereal subscriber.
 
+## Continuous Integration
+
+For developers that need to see sample data from other cars they don't own, or want to see the before and after effect of car port changes, PlotJuggler can view the most current test route in comma's CI storage bucket for any upstream supported car. Look in `selfdrive/test/test_routes.py` for a list.
+
 ## Demo
 
 For a quick demo, go through the installation step and run this command:

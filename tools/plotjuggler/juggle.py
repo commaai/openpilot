@@ -9,9 +9,12 @@ import tarfile
 import tempfile
 import requests
 import argparse
+import time
 
 from common.basedir import BASEDIR
 from selfdrive.test.process_replay.compare_logs import save_log
+from selfdrive.test.openpilotci import get_url
+from selfdrive.test.test_routes import routes as ci_test_routes
 from tools.lib.api import CommaApi
 from tools.lib.auth_config import get_token
 from tools.lib.robust_logreader import RobustLogReader
@@ -84,22 +87,44 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
   elif route_or_segment_name.startswith("http://") or route_or_segment_name.startswith("https://") or os.path.isfile(route_or_segment_name):
     logs = [route_or_segment_name]
   else:
-    route_or_segment_name = SegmentName(route_or_segment_name, allow_route_name=True)
-    segment_start = max(route_or_segment_name.segment_num, 0)
+    is_ci_test_route = False
+    parsed_segment_name = SegmentName(route_or_segment_name, allow_route_name=True)
+    route_name = parsed_segment_name.route_name.canonical_name
+    segment_start = max(parsed_segment_name.segment_num, 0)
+    for test_route in ci_test_routes:
+      if test_route.route == route_name:
+        is_ci_test_route = True
+        break
+    if is_ci_test_route:
+      print("Route found in test_routes.py, checking CI storage bucket")
+      logs = []
+      check_segment = segment_start
+      get_next = True
+      while get_next:
+        log_url = get_url(route_name, check_segment)
+        ci_fetch = requests.head(log_url)
+        if ci_fetch.status_code == 200:
+          logs.append(log_url)
+          if check_segment < segment_start + segment_count - 1:
+            check_segment += 1
+            time.sleep(0.2)
+          else:
+            get_next = False
+        else:
+          get_next = False
+      print(f"Found CI test route with requested segments {segment_start} through {check_segment}")
+    else:
+      if parsed_segment_name.segment_num != -1 and segment_count is None:
+        segment_count = 1
 
-    if route_or_segment_name.segment_num != -1 and segment_count is None:
-      segment_count = 1
-
-    r = Route(route_or_segment_name.route_name.canonical_name)
-    logs = r.qlog_paths() if qlog else r.log_paths()
-
-  segment_end = segment_start + segment_count if segment_count else -1
-  logs = logs[segment_start:segment_end]
+      r = Route(route_name)
+      logs = r.qlog_paths() if qlog else r.log_paths()
+      logs = logs[segment_start:segment_start + segment_count]
 
   if None in logs:
     ans = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
     if ans == 'y':
-      logs = r.qlog_paths()[segment_start:segment_end]
+      logs = r.qlog_paths()[segment_start:segment_start + segment_count]
     else:
       print("Please try a different route or segment")
       return
@@ -158,4 +183,8 @@ if __name__ == "__main__":
     start_juggler(layout=args.layout)
   else:
     route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-    juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.can, args.layout)
+    if args.segment_count is None:
+      segment_count = 720
+    else:
+      segment_count = args.segment_count
+    juggle_route(route_or_segment_name, segment_count, args.qlog, args.can, args.layout)
