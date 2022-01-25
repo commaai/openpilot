@@ -601,7 +601,7 @@ static void camera_open(CameraState *s) {
   sensors_init(s->multi_cam_state->video0_fd, s->sensor_fd, s->camera_num);
 
   // create session
-  struct cam_req_mgr_session_info session_info = {}; 
+  struct cam_req_mgr_session_info session_info = {};
   int ret = cam_control(s->multi_cam_state->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &session_info, sizeof(session_info));
   LOGD("get session: %d 0x%X", ret, session_info.session_hdl);
   s->session_handle = session_info.session_hdl;
@@ -642,7 +642,7 @@ static void camera_open(CameraState *s) {
 
       .pixel_clk = 0x0,
       .batch_size = 0x0,
-      .dsp_mode = 0x0,
+      .dsp_mode = CAM_ISP_DSP_MODE_NONE,
       .hbi_cnt = 0x0,
       .custom_csid = 0x0,
 
@@ -664,7 +664,7 @@ static void camera_open(CameraState *s) {
 
   auto isp_dev_handle = device_acquire(s->multi_cam_state->isp_fd, s->session_handle, &isp_resource);
   assert(isp_dev_handle);
-  s->isp_dev_handle = *isp_dev_handle; 
+  s->isp_dev_handle = *isp_dev_handle;
   LOGD("acquire isp dev");
 
   struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {.combo_mode = 0};
