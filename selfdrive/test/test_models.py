@@ -197,7 +197,7 @@ class TestCarModel(unittest.TestCase):
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
 
     # TODO: reduce tolerance to 0
-    failed_checks = {k: v for k, v in checks.items() if v > 25}
+    failed_checks = {k: v for k, v in checks.items() if v > 0}
 
     # TODO: the panda and openpilot interceptor thresholds should match
     skip_gas_check = self.CP.carName == 'chrysler'
