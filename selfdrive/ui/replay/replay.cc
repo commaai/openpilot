@@ -287,7 +287,7 @@ void Replay::startStream(const Segment *cur_segment) {
   // write CarParams
   it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::CAR_PARAMS; });
   if (it != events.end()) {
-    car_name_ = (*it)->event.getCarParams().getCarFingerprint();
+    car_fingerprint_ = (*it)->event.getCarParams().getCarFingerprint();
     auto bytes = (*it)->bytes();
     Params().put("CarParams", (const char *)bytes.begin(), bytes.size());
   } else {
