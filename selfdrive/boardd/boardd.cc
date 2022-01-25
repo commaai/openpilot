@@ -353,10 +353,10 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
     ps.setPandaType(panda->hw_type);
     ps.setSafetyModel(cereal::CarParams::SafetyModel(pandaState.safety_model));
     ps.setSafetyParam(pandaState.safety_param);
-    ps.setUnsafeMode(pandaState.unsafe_mode);
     ps.setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
     ps.setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
     ps.setHeartbeatLost((bool)(pandaState.heartbeat_lost));
+    ps.setUnsafeMode(pandaState.unsafe_mode);
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(pandaState.car_harness_status));
 
     // Convert faults bitset to capnp list
