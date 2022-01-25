@@ -12,7 +12,6 @@ class TestPramsd(unittest.TestCase):
 
   def test_read_saved_params(self):
     cp = car.CarParams.new_message()
-    cp.carFingerprint = 'ABC'
 
     msg = messaging.new_message('liveParameters')
     liveParameters = msg.liveParameters
