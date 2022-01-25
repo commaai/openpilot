@@ -7,4 +7,4 @@ find cereal/gen -name "*.gcda"
 lcov --capture --directory . --gcov-tool tools/gcov_for_clang.sh --output-file coverage.info
 lcov --remove coverage.info '*/third_party/*' --output-file coverage.info
 lcov --remove coverage.info '/usr/*' --output-file coverage.info
-coverage xml
+coverage xml || true
