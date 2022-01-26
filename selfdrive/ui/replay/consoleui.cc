@@ -5,7 +5,10 @@
 
 #include "selfdrive/common/version.h"
 
+namespace {
+
 enum Color {
+  None,
   Info,
   Debug,
   Warning,
@@ -17,12 +20,33 @@ enum Color {
   AlertInfo,
 };
 
+template <typename T>
+void add_str(WINDOW *w, T str, Color color = Color::None, bool bold = false) {
+  if (color != Color::None) wattron(w, COLOR_PAIR(color));
+  if (bold) wattron(w, A_BOLD);
+
+  if constexpr (std::is_same<T, const char *>::value) waddstr(w, str);
+  else if constexpr (std::is_same<T, std::string>::value) waddstr(w, str.c_str());
+  else waddch(w, str);
+
+  if (bold) wattroff(w, A_BOLD);
+  if (color != Color::None) wattroff(w, COLOR_PAIR(color));
+}
+
+template <typename T>
+void mv_add_str(WINDOW *w, int y, int x, T str, Color color = Color::None, bool bold = false) {
+  wmove(w, y, x);
+  add_str(w, str, color, bold);
+}
+
+}  // namespace
+
 ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"carState", "liveParameters"}), QObject(parent) {
   // Initialize curses
   initscr();
   clear();
   curs_set(false);
-  cbreak(); // Line buffering disabled. pass on everything
+  cbreak();  // Line buffering disabled. pass on everything
   noecho();
   keypad(stdscr, true);
   nodelay(stdscr, true);  // non-blocking getchar()
@@ -102,13 +126,9 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
 void ConsoleUI::updateStatus() {
   auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit) {
     auto win = w[Win::CarState];
-    mvwaddstr(win, y, x, key);
-    wattron(win, COLOR_PAIR(Color::BrightWhite));
-    wattron(win, A_BOLD);
-    waddstr(win, value.c_str());
-    wattroff(win, A_BOLD);
-    wattroff(win, COLOR_PAIR(Color::BrightWhite));
-    waddstr(win, unit);
+    mv_add_str(win, y, x, key);
+    add_str(win, value, Color::BrightWhite, true);
+    add_str(win, unit);
   };
 
   write_item(0, 0, "SECONDS:   ", std::to_string(replay->currentSeconds()), " s     ");
@@ -143,10 +163,8 @@ void ConsoleUI::displayHelp() {
   };
 
   auto write_shortcut = [=](std::string key, std::string desc) {
-    wattron(w[Win::Help], COLOR_PAIR(Color::bgWhite));
-    waddstr(w[Win::Help], (' ' + key + ' ').c_str());
-    wattroff(w[Win::Help], COLOR_PAIR(Color::bgWhite));
-    waddstr(w[Win::Help], (" " + desc + " ").c_str());
+    add_str(w[Win::Help], ' ' + key + ' ', Color::bgWhite);
+    add_str(w[Win::Help], " " + desc + " ");
   };
 
   for (auto [key, desc] : single_line_keys) {
@@ -169,20 +187,14 @@ void ConsoleUI::displayTimelineDesc() {
       {Color::Critical, " Critical ", true},
   };
   for (auto [color, name, bold] : indicators) {
-    wattron(w[Win::TimelineDesc], COLOR_PAIR(color));
-    if (bold) wattron(w[Win::TimelineDesc], A_BOLD);
-    waddstr(w[Win::TimelineDesc], "__");
-    if (bold) wattroff(w[Win::TimelineDesc], A_BOLD);
-    wattroff(w[Win::TimelineDesc], COLOR_PAIR(color));
-    waddstr(w[Win::TimelineDesc], name);
+    add_str(w[Win::TimelineDesc], "__", color, bold);
+    add_str(w[Win::TimelineDesc], name);
   }
 }
 
 void ConsoleUI::logMessage(int type, const QString &msg) {
   if (auto win = w[Win::Log]) {
-    wattron(win, COLOR_PAIR((int)type));
-    wprintw(win, "%s\n", qPrintable(msg));
-    wattroff(win, COLOR_PAIR((int)type));
+    add_str(win, qPrintable(msg + "\n"), (Color)type);
     wrefresh(win);
   }
 }
@@ -211,12 +223,10 @@ void ConsoleUI::updateTimeline() {
   int width = getmaxx(win);
   werase(win);
 
-  wattron(win, COLOR_PAIR(Color::Disengaged));
   for (int i = 0; i < width; ++i) {
-    mvwaddch(win, 1, i, ' ');
-    mvwaddch(win, 2, i, ' ');
+    mv_add_str(win, 1, i, ' ', Color::Disengaged);
+    mv_add_str(win, 2, i, ' ', Color::Disengaged);
   }
-  wattroff(win, COLOR_PAIR(Color::Disengaged));
 
   const int total_sec = replay->totalSeconds();
   for (auto [begin, end, type] : replay->getTimeline()) {
@@ -224,32 +234,24 @@ void ConsoleUI::updateTimeline() {
     int end_pos = ((double)end / total_sec) * width;
 
     if (type == TimelineType::Engaged) {
-      wattron(win, COLOR_PAIR(Color::Engaged));
       for (int i = start_pos; i <= end_pos; ++i) {
-        mvwaddch(win, 1, i, ' ');
-        mvwaddch(win, 2, i, ' ');
+        mv_add_str(win, 1, i, ' ', Color::Engaged);
+        mv_add_str(win, 2, i, ' ', Color::Engaged);
       }
-      wattroff(win, COLOR_PAIR(Color::Engaged));
     } else {
       auto color_id = Color::AlertInfo;
       if (type != TimelineType::AlertInfo) {
         color_id = type == TimelineType::AlertWarning ? Color::Warning : Color::Critical;
       }
-      wattron(win, COLOR_PAIR(color_id));
-      wattron(win, A_BOLD);
       for (int i = start_pos; i <= end_pos; ++i) {
-        mvwaddch(win, 3, i, ACS_S3);
+        mv_add_str(win, 3, i, ACS_S3, color_id, true);
       }
-      wattroff(win, A_BOLD);
-      wattroff(win, COLOR_PAIR(color_id));
     }
   }
 
   int cur_pos = ((double)replay->currentSeconds() / total_sec) * width;
-  wattron(win, COLOR_PAIR(Color::BrightWhite));
-  mvwaddch(win, 0, cur_pos, ACS_VLINE);
-  mvwaddch(win, 3, cur_pos, ACS_VLINE);
-  wattroff(win, COLOR_PAIR(Color::BrightWhite));
+  mv_add_str(win, 0, cur_pos, ACS_VLINE, Color::BrightWhite);
+  mv_add_str(win, 3, cur_pos, ACS_VLINE, Color::BrightWhite);
 
   wrefresh(win);
 }
@@ -269,32 +271,28 @@ void ConsoleUI::handleKey(char c) {
     curs_set(true);
     nodelay(stdscr, false);
 
+    // Wait for user input
     rWarning("Waiting for input...");
     int y = getmaxy(stdscr) - 9;
-    attron(COLOR_PAIR(Color::BrightWhite));
-    attron(A_BOLD);
-    mvprintw(y, 3, "Enter seek request: ");
-    attroff(A_BOLD);
-    attroff(COLOR_PAIR(Color::BrightWhite));
+    mv_add_str(stdscr, y, 3, "Enter seek request: ", Color::BrightWhite, true);
     refresh();
-    
-    // Wait for user input
+
+    // Seek to choice
     echo();
     int choice = 0;
     scanw((char *)"%d", &choice);
     noecho();
-    
-    // Seek to choice
     replay->pause(false);
     replay->seekTo(choice, false);
-    
+
     // Clean up and turn off the blocking mode
-    nodelay(stdscr, true);
-    curs_set(false);
     move(y, 0);
     clrtoeol();
+    nodelay(stdscr, true);
+    curs_set(false);
     refresh();
     getch_timer.start(1000, this);
+
   } else if (c == 'x') {
     if (replay->hasFlag(REPLAY_FLAG_FULL_SPEED)) {
       replay->removeFlag(REPLAY_FLAG_FULL_SPEED);
