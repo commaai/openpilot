@@ -25,6 +25,7 @@ private:
   void updateTimeline();
   void updateSummary();
   void updateStatus();
+  void pauseReplay(bool pause);
 
   enum Status { Waiting, Playing, Paused };
   enum Win { Title, Stats, Log, LogBorder, DownloadBar, Timeline, TimelineDesc, Help, CarState, Max};

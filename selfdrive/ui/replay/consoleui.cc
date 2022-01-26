@@ -290,11 +290,15 @@ void ConsoleUI::readyRead() {
   }
 }
 
+void ConsoleUI::pauseReplay(bool pause) {
+  replay->pause(pause);
+  status = pause ? Status::Paused : Status::Waiting;
+}
+
 void ConsoleUI::handleKey(char c) {
   if (c == '\n') {
-    // Pausing replay and blocking getchar()
-    replay->pause(true);
-    status = Status::Paused;
+    // pause the replay and blocking getchar()
+    pauseReplay(true);
     updateStatus();
     getch_timer.stop();
     curs_set(true);
@@ -311,9 +315,8 @@ void ConsoleUI::handleKey(char c) {
     int choice = 0;
     scanw((char *)"%d", &choice);
     noecho();
-    replay->pause(false);
+    pauseReplay(false);
     replay->seekTo(choice, false);
-    status = Status::Waiting;
 
     // Clean up and turn off the blocking mode
     move(y, 0);
@@ -344,8 +347,7 @@ void ConsoleUI::handleKey(char c) {
   } else if (c == 'S') {
     replay->seekTo(-10, true);
   } else if (c == ' ') {
-    replay->pause(!replay->isPaused());
-    status = replay->isPaused() ? Status::Paused : Status::Playing;
+    pauseReplay(!replay->isPaused());
   } else if (c == 'q' || c == 'Q') {
     replay->stop();
     qApp->exit();
