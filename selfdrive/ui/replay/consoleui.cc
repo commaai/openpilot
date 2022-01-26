@@ -22,21 +22,15 @@ enum Color {
   Disengaged,
 };
 
-template <typename T>
-void add_str(WINDOW *w, T str, Color color = Color::None, bool bold = false) {
+void add_str(WINDOW *w, const char *str, Color color = Color::None, bool bold = false) {
   if (color != Color::None) wattron(w, COLOR_PAIR(color));
   if (bold) wattron(w, A_BOLD);
-
-  if constexpr (std::is_same<T, const char *>::value) waddstr(w, str);
-  else if constexpr (std::is_same<T, std::string>::value) waddstr(w, str.c_str());
-  else waddch(w, str);
-
+  waddstr(w, str);
   if (bold) wattroff(w, A_BOLD);
   if (color != Color::None) wattroff(w, COLOR_PAIR(color));
 }
 
-template <typename T>
-void mv_add_str(WINDOW *w, int y, int x, T str, Color color = Color::None, bool bold = false) {
+void mv_add_str(WINDOW *w, int y, int x, const char *str, Color color = Color::None, bool bold = false) {
   wmove(w, y, x);
   add_str(w, str, color, bold);
 }
@@ -67,7 +61,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   init_pair(Color::Debug, 8, COLOR_BLACK);
   init_pair(Color::Yellow, COLOR_YELLOW, COLOR_BLACK);
   init_pair(Color::Red, COLOR_RED, COLOR_BLACK);
-  init_pair(Color::bgWhite, COLOR_BLACK, 15);
+  init_pair(Color::bgWhite, COLOR_BLACK, COLOR_WHITE);
   init_pair(Color::BrightWhite, 15, COLOR_BLACK);
   init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
   init_pair(Color::Engaged, 28, 28);
@@ -152,7 +146,7 @@ void ConsoleUI::updateStatus() {
                            bool bold = false, Color color = Color::BrightWhite) {
     auto win = w[Win::CarState];
     mv_add_str(win, y, x, key);
-    add_str(win, value, color, bold);
+    add_str(win, value.c_str(), color, bold);
     add_str(win, unit);
   };
   static const std::pair<const char *, Color> status_text[] = {
@@ -167,7 +161,7 @@ void ConsoleUI::updateStatus() {
     status = (sm.updated("carState") || sm.updated("liveParameters")) ? Status::Playing : Status::Waiting;
   }
   auto [status_str, status_color] = status_text[status];
-  write_item(0, 0, "STATUS:  ", status_str, "      ", false, status_color);
+  write_item(0, 0, "STATUS:  ", status_str, "      ", true, status_color);
   write_item(0, 25, "TIME:  ", format_seconds(replay->currentSeconds()),
              (" / " + format_seconds(replay->totalSeconds())).c_str(), true);
 
@@ -198,8 +192,8 @@ void ConsoleUI::displayHelp() {
   };
 
   auto write_shortcut = [this](std::string key, std::string desc) {
-    add_str(w[Win::Help], ' ' + key + ' ', Color::bgWhite);
-    add_str(w[Win::Help], " " + desc + " ");
+    add_str(w[Win::Help], (' ' + key + ' ').c_str(), Color::bgWhite);
+    add_str(w[Win::Help], (' ' + desc + ' ').c_str());
   };
 
   for (auto [key, desc] : single_line_keys) {
@@ -267,33 +261,30 @@ void ConsoleUI::updateTimeline() {
   werase(win);
 
   std::string fill_str = std::string(width, ' ');
-  mv_add_str(win, 1, 0, fill_str, Color::Disengaged);
-  mv_add_str(win, 2, 0, fill_str, Color::Disengaged);
+  mv_add_str(win, 1, 0, fill_str.c_str(), Color::Disengaged);
+  mv_add_str(win, 2, 0, fill_str.c_str(), Color::Disengaged);
 
   const int total_sec = replay->totalSeconds();
   for (auto [begin, end, type] : replay->getTimeline()) {
     int start_pos = ((double)begin / total_sec) * width;
     int end_pos = ((double)end / total_sec) * width;
-
     if (type == TimelineType::Engaged) {
-      fill_str = std::string(end_pos - start_pos + 1, ' ');
-      mv_add_str(win, 1, start_pos, fill_str, Color::Engaged);
-      mv_add_str(win, 2, start_pos, fill_str, Color::Engaged);
+      mvwchgat(win, 1, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
+      mvwchgat(win, 2, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
     } else {
       auto color_id = Color::Green;
       if (type != TimelineType::AlertInfo) {
         color_id = type == TimelineType::AlertWarning ? Color::Yellow : Color::Red;
       }
-      for (int i = start_pos; i <= end_pos; ++i) {
-        mv_add_str(win, 3, i, ACS_S3, color_id, true);
-      }
+      mvwchgat(win, 3, start_pos, end_pos - start_pos + 1, ACS_S3, color_id, NULL);
     }
   }
 
   int cur_pos = ((double)replay->currentSeconds() / total_sec) * width;
-  mv_add_str(win, 0, cur_pos, ACS_VLINE, Color::BrightWhite);
-  mv_add_str(win, 3, cur_pos, ACS_VLINE, Color::BrightWhite);
-
+  wattron(win, COLOR_PAIR(Color::BrightWhite));
+  mvwaddch(win, 0, cur_pos, ACS_VLINE);
+  mvwaddch(win, 3, cur_pos, ACS_VLINE);
+  wattroff(win, COLOR_PAIR(Color::BrightWhite));
   wrefresh(win);
 }
 
