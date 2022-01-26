@@ -70,7 +70,7 @@ class LatControlINDI(LatControl):
     self.output_steer = 0.
     self.speed = 0.
 
-  def update(self, active, CS, CP, VM, params, last_actuators, curvature, curvature_rate):
+  def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate):
     self.speed = CS.vEgo
     # Update Kalman filter
     y = np.array([[math.radians(CS.steeringAngleDeg)], [math.radians(CS.steeringRateDeg)]])
@@ -81,11 +81,11 @@ class LatControlINDI(LatControl):
     indi_log.steeringRateDeg = math.degrees(self.x[1])
     indi_log.steeringAccelDeg = math.degrees(self.x[2])
 
-    steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo, params.roll)
+    steers_des = VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll)
     steers_des += math.radians(params.angleOffsetDeg)
     indi_log.steeringAngleDesiredDeg = math.degrees(steers_des)
 
-    rate_des = VM.get_steer_from_curvature(-curvature_rate, CS.vEgo, 0)
+    rate_des = VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, 0)
     indi_log.steeringRateDesiredDeg = math.degrees(rate_des)
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
