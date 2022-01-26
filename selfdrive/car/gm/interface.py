@@ -233,15 +233,16 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.36]
 
-    if ret.enableGasInterceptor and candidate == CAR.BOLT_NR:
-      # Assumes the Bolt is using L-Mode for regen braking.
-      ret.longitudinalTuning.kpBP = [0.0, 5.0, 10.0, 20.0, 35.0]
-      ret.longitudinalTuning.kpV = [0.6, 0.95, 1.19, 1.27, 1.18]
-      ret.longitudinalTuning.kiBP = [0., 35.]
-      ret.longitudinalTuning.kiV = [0.31, 0.26]
-      ret.stoppingDecelRate = 0.2
-      ret.stopAccel = 0.
-      ret.stoppingControl = True
+    # TODO: Pedal long needs a tune, but this one will probably cause a crash...
+    # if ret.enableGasInterceptor and candidate == CAR.BOLT_NR:
+    #   # Assumes the Bolt is using L-Mode for regen braking.
+    #   ret.longitudinalTuning.kpBP = [0.0, 5.0, 10.0, 20.0, 35.0]
+    #   ret.longitudinalTuning.kpV = [0.6, 0.95, 1.19, 1.27, 1.18]
+    #   ret.longitudinalTuning.kiBP = [0., 35.]
+    #   ret.longitudinalTuning.kiV = [0.31, 0.26]
+    #   ret.stoppingDecelRate = 0.2
+    #   ret.stopAccel = 0.
+    #   ret.stoppingControl = True
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz

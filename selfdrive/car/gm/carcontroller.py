@@ -112,17 +112,15 @@ class CarController():
         idx = (frame // 4) % 4
 
         at_full_stop = enabled and CS.out.standstill
-        near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
-        # non-ascm cars have brakes on PT bus (if they have them)
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_brake, idx, near_stop, at_full_stop))
-        # TODO: Can we detect that brake controller via fingerprint?
-        # TODO: Check to see if your fingerprint has changed!
+        # near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
+        # VOACC based cars have brakes on PT bus - OP won't be doing VOACC for a while
+        # can_sends.append(gmcan.create_friction_brake_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_brake, idx, near_stop, at_full_stop))
         
         if CS.CP.enableGasInterceptor:
           pedal_gas = clip(actuators.accel, 0., 1.) # TODO: major tuning
           can_sends.append(create_gas_interceptor_command(self.packer_pt, pedal_gas, idx))
         else:
-         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, enabled, at_full_stop))
+          can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, enabled, at_full_stop))
 
               
     # Show green icon when LKA torque is applied, and
