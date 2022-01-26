@@ -48,15 +48,15 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   keypad(stdscr, true);
   nodelay(stdscr, true);  // non-blocking getchar()
 
-  // Initialize all the colors
+  // Initialize all the colors. https://www.ditig.com/256-colors-cheat-sheet
   start_color();
   init_pair(Color::Debug, 246, COLOR_BLACK);  // #949494
-  init_pair(Color::Yellow, COLOR_YELLOW, COLOR_BLACK);
+  init_pair(Color::Yellow, 184, COLOR_BLACK);
   init_pair(Color::Red, COLOR_RED, COLOR_BLACK);
   init_pair(Color::BrightWhite, 15, COLOR_BLACK);
   init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
   init_pair(Color::Engaged, 28, 28);
-  init_pair(Color::Green, 28, COLOR_BLACK);
+  init_pair(Color::Green, 34, COLOR_BLACK);
 
   initWindows();
 
@@ -153,7 +153,7 @@ void ConsoleUI::updateStatus() {
     status = (sm.updated("carState") || sm.updated("liveParameters")) ? Status::Playing : Status::Waiting;
   }
   auto [status_str, status_color] = status_text[status];
-  write_item(0, 0, "STATUS:  ", status_str, "      ", true, status_color);
+  write_item(0, 0, "STATUS:  ", status_str, "      ", false, status_color);
   write_item(0, 25, "TIME:  ", format_seconds(replay->currentSeconds()),
              (" / " + format_seconds(replay->totalSeconds())).c_str(), true);
 
