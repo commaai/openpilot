@@ -10,27 +10,25 @@ namespace {
 const int BORDER_SIZE = 3;
 
 enum Color {
-  None,
-  White,
+  Default,
   Debug,
   Yellow,
   Green,
   Red,
-  bgWhite,
   BrightWhite,
   Engaged,
   Disengaged,
 };
 
-void add_str(WINDOW *w, const char *str, Color color = Color::None, bool bold = false) {
-  if (color != Color::None) wattron(w, COLOR_PAIR(color));
+void add_str(WINDOW *w, const char *str, Color color = Color::Default, bool bold = false) {
+  if (color != Color::Default) wattron(w, COLOR_PAIR(color));
   if (bold) wattron(w, A_BOLD);
   waddstr(w, str);
   if (bold) wattroff(w, A_BOLD);
-  if (color != Color::None) wattroff(w, COLOR_PAIR(color));
+  if (color != Color::Default) wattroff(w, COLOR_PAIR(color));
 }
 
-void mv_add_str(WINDOW *w, int y, int x, const char *str, Color color = Color::None, bool bold = false) {
+void mv_add_str(WINDOW *w, int y, int x, const char *str, Color color = Color::Default, bool bold = false) {
   wmove(w, y, x);
   add_str(w, str, color, bold);
 }
@@ -57,11 +55,9 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
 
   // Initialize all the colors
   start_color();
-  init_pair(Color::White, COLOR_WHITE, COLOR_BLACK);
-  init_pair(Color::Debug, 8, COLOR_BLACK);
+  init_pair(Color::Debug, 246, COLOR_BLACK); // #949494
   init_pair(Color::Yellow, COLOR_YELLOW, COLOR_BLACK);
   init_pair(Color::Red, COLOR_RED, COLOR_BLACK);
-  init_pair(Color::bgWhite, COLOR_BLACK, COLOR_WHITE);
   init_pair(Color::BrightWhite, 15, COLOR_BLACK);
   init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
   init_pair(Color::Engaged, 28, 28);
@@ -111,7 +107,7 @@ void ConsoleUI::initWindows() {
   w[Win::Help] = newwin(5, max_width - (2 * BORDER_SIZE), max_height - 6, BORDER_SIZE);
 
   // set the title bar
-  wbkgd(w[Win::Title], COLOR_PAIR(Color::bgWhite));
+  wbkgd(w[Win::Title], A_REVERSE);
   mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
 
   // show windows on the real screen
@@ -192,8 +188,10 @@ void ConsoleUI::displayHelp() {
   };
 
   auto write_shortcut = [this](std::string key, std::string desc) {
-    add_str(w[Win::Help], (' ' + key + ' ').c_str(), Color::bgWhite);
-    add_str(w[Win::Help], (' ' + desc + ' ').c_str());
+    wattron(w[Win::Help], A_REVERSE);
+    waddstr(w[Win::Help], (' ' + key + ' ').c_str());
+    wattroff(w[Win::Help], A_REVERSE);
+    waddstr(w[Win::Help], (' ' + desc + ' ').c_str());
   };
 
   for (auto [key, desc] : single_line_keys) {
@@ -223,7 +221,7 @@ void ConsoleUI::displayTimelineDesc() {
 
 void ConsoleUI::logMessage(ReplyMsgType type, const QString &msg) {
   if (auto win = w[Win::Log]) {
-    Color color = Color::White;
+    Color color = Color::Default;
     if (type == ReplyMsgType::Debug) {
       color = Color::Debug;
     } else if (type == ReplyMsgType::Warning) {
