@@ -8,10 +8,10 @@ from parameterized import parameterized_class
 
 from cereal import log, car
 from common.params import Params
+from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.honda.values import HONDA_BOSCH, CAR as HONDA
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.test.test_routes import routes, non_tested_cars
 from selfdrive.test.openpilotci import get_url
@@ -174,18 +174,24 @@ class TestCarModel(unittest.TestCase):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
-    checks = defaultdict(lambda: 0)
     CC = car.CarControl.new_message()
+
+    # warm up pass, initial states may be different
+    for can in self.can_msgs[:300]:
+      for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
+        to_send = package_can_msg(msg)
+        self.safety.safety_rx_hook(to_send)
+        self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
+
+    checks = defaultdict(lambda: 0)
     for can in self.can_msgs:
-      for msg in can.can:
-        if msg.src >= 64:
-          continue
-        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
+      for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
+        to_send = package_can_msg(msg)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
-      CS = self.CI.update(CC, (can.as_builder().to_bytes(),))
+        CS = self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
 
-      # TODO: check steering state
+      # TODO: check rest of panda's carstate
       # check that openpilot and panda safety agree on the car's state
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
       checks['brakePressed'] += CS.brakePressed != self.safety.get_brake_pressed_prev()
@@ -196,28 +202,14 @@ class TestCarModel(unittest.TestCase):
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
 
-    # TODO: reduce tolerance to 0
     failed_checks = {k: v for k, v in checks.items() if v > 0}
 
     # TODO: the panda and openpilot interceptor thresholds should match
-    skip_gas_check = self.CP.carName == 'chrysler'
-    if "gasPressed" in failed_checks and (self.CP.enableGasInterceptor or skip_gas_check):
-      if failed_checks['gasPressed'] < 150 or skip_gas_check:
+    if "gasPressed" in failed_checks and self.CP.enableGasInterceptor:
+      if failed_checks['gasPressed'] < 150:
         del failed_checks['gasPressed']
 
-    # TODO: honda nidec: do same checks in carState and panda
-    if "brakePressed" in failed_checks and self.CP.carName == 'honda' and \
-      (self.car_model not in HONDA_BOSCH or self.car_model in [HONDA.CRV_HYBRID, HONDA.HONDA_E]):
-      if failed_checks['brakePressed'] < 150:
-        del failed_checks['brakePressed']
-
-    # TODO: use the same signal in panda and carState
-    # tolerate a small delay between the button press and PCM entering a cruise state
-    if self.car_model == HONDA.ACCORD:
-      if failed_checks['controlsAllowed'] < 500:
-        del failed_checks['controlsAllowed']
-
-    self.assertFalse(len(failed_checks), f"panda safety doesn't agree with CarState: {failed_checks}")
+    self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 if __name__ == "__main__":
   unittest.main()
