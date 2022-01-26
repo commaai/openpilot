@@ -148,13 +148,14 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
 }
 
 void ConsoleUI::updateStatus() {
-  auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit, bool bold = false, Color color = Color::BrightWhite) {
+  auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit,
+                           bool bold = false, Color color = Color::BrightWhite) {
     auto win = w[Win::CarState];
     mv_add_str(win, y, x, key);
     add_str(win, value, color, bold);
     add_str(win, unit);
   };
-  static std::pair<const char *, Color> status_text[] = {
+  static const std::pair<const char *, Color> status_text[] = {
       {"waiting...", Color::Red},
       {"playing", Color::Green},
       {"paused...", Color::Yellow},
@@ -167,7 +168,8 @@ void ConsoleUI::updateStatus() {
   }
   auto [status_str, status_color] = status_text[status];
   write_item(0, 0, "STATUS:  ", status_str, "      ", false, status_color);
-  write_item(0, 25, "TIME:  ", format_seconds(replay->currentSeconds()), (" / " + format_seconds(replay->totalSeconds())).c_str(), true);
+  write_item(0, 25, "TIME:  ", format_seconds(replay->currentSeconds()),
+             (" / " + format_seconds(replay->totalSeconds())).c_str(), true);
 
   auto p = sm["liveParameters"].getLiveParameters();
   write_item(1, 0, "STIFFNESS: ", util::string_format("%.2f", p.getStiffnessFactor() * 100), " deg");
@@ -195,7 +197,7 @@ void ConsoleUI::displayHelp() {
       {"q", "Exit"},
   };
 
-  auto write_shortcut = [=](std::string key, std::string desc) {
+  auto write_shortcut = [this](std::string key, std::string desc) {
     add_str(w[Win::Help], ' ' + key + ' ', Color::bgWhite);
     add_str(w[Win::Help], " " + desc + " ");
   };

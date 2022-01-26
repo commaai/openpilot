@@ -225,7 +225,7 @@ void Replay::queueSegment() {
     auto &[n, seg] = *it;
     if ((seg && !seg->isLoaded()) || !seg) {
       if (!seg) {
-        rInfo("loading segment %d...", n);
+        rDebug("loading segment %d...", n);
         seg = std::make_unique<Segment>(n, route_->at(n), flags_);
         QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
       }
@@ -267,7 +267,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
       s += std::to_string(segments_need_merge[i]);
       if (i != segments_need_merge.size() - 1) s += ", ";
     }
-    rInfo("merge segments %s", s.c_str());
+    rDebug("merge segments %s", s.c_str());
     new_events_->clear();
     new_events_->reserve(new_events_size);
     for (int n : segments_need_merge) {
