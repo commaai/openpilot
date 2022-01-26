@@ -307,7 +307,7 @@ void ConsoleUI::handleKey(char c) {
     // Wait for user input
     rWarning("Waiting for input...");
     int y = getmaxy(stdscr) - 9;
-    move(y, 0);
+    move(y, BORDER_SIZE);
     add_str(stdscr, "Enter seek request: ", Color::BrightWhite, true);
     refresh();
 
