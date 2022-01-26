@@ -225,6 +225,8 @@ selfdrive/common/i2c.h
 
 selfdrive/controls/__init__.py
 selfdrive/controls/controlsd.py
+selfdrive/controls/plannerd.py
+selfdrive/controls/radard.py
 selfdrive/controls/lib/__init__.py
 selfdrive/controls/lib/alertmanager.py
 selfdrive/controls/lib/alerts_offroad.json
@@ -243,8 +245,6 @@ selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/pid.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
-selfdrive/controls/plannerd.py
-selfdrive/controls/radard.py
 
 selfdrive/controls/lib/cluster/*
 
