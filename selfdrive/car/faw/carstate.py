@@ -9,13 +9,16 @@ from selfdrive.car.faw.values import DBC_FILES, CANBUS, NetworkLocation, Transmi
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
+    self.buttonStates = BUTTON_STATES.copy()
+    self.displayMetricUnits=True
 
   def update(self, pt_cp, cam_cp, ext_cp, trans_type):
     ret = car.CarState.new_message()
     ret.wheelSpeeds = self.get_wheel_speeds(0,0,0,0)
 
-    ret.vEgoRaw = pt_cp.vl["NEW_MGS_1"]["Car_Speed"]
+    ret.vEgoRaw = pt_cp.vl["NEW_MSG_1"]["Car_Speed"]*CV.KPH_TO_MS
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    print(ret.vEgo)
 
     return ret
 
@@ -31,7 +34,7 @@ class CarState(CarStateBase):
 
     ]
 
-    return CANParser(DBC_FILES.mqb, signals, checks, CANBUS.pt)
+    return CANParser(DBC_FILES.mqb, signals, checks, CANBUS.pt, False)
 
   @staticmethod
   def get_cam_can_parser(CP):

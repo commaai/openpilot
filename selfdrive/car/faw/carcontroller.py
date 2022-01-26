@@ -6,8 +6,17 @@ from opendbc.can.packer import CANPacker
 
 
 class CarController():
-  def __init__(self, dbc_name, CP, VM):
+  def __init__(self, dbc_name, CP, VM):    
     self.packer_pt = CANPacker(DBC_FILES.mqb)
+
+    self.hcaSameTorqueCount = 0
+    self.hcaEnabledFrameCount = 0
+    self.graButtonStatesToSend = None
+    self.graMsgSentCount = 0
+    self.graMsgStartFramePrev = 0
+    self.graMsgBusCounterPrev = 0
+
+    self.steer_rate_limited = False
 
   def update(self, enabled, CS, frame, ext_bus, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart, right_lane_depart):
     """ Controls thread """
