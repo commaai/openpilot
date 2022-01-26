@@ -38,6 +38,10 @@ def capture_exception(*args, **kwargs) -> None:
     cloudlog.exception("sentry exception")
 
 
+def set_tag(key: str, value: str) -> None:
+  sentry_sdk.set_tag(key, value)
+
+
 def init(project: SentryProject) -> None:
   # forks like to mess with this, so double check
   comma_remote = is_comma_remote() and "commaai" in get_origin(default="")
