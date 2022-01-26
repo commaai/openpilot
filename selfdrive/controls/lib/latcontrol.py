@@ -1,12 +1,17 @@
+from abc import abstractmethod, ABC
 from common.realtime import DT_CTRL
 
 MIN_STEER_SPEED = 0.3
 
 
-class LatControl:
+class LatControl(ABC):
   def __init__(self, CP, CI):
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
+
+  @abstractmethod
+  def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate):
+    pass
 
   def reset(self):
     self.sat_count = 0.
