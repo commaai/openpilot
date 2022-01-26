@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <QBasicTimer>
 #include <QObject>
 #include <QSocketNotifier>
@@ -17,6 +18,7 @@ public:
   ~ConsoleUI();
 
 private:
+  void initWindows();
   void handleKey(char c);
   void displayHelp();
   void displayTimelineDesc();
@@ -25,12 +27,13 @@ private:
   void updateStatus();
 
   enum Win { Title, Stats, Log, LogBorder, DownloadBar, Timeline, TimelineDesc, Help, CarState, Max};
-  WINDOW* w[Win::Max] = {};
+  std::array<WINDOW*, Win::Max> w{};
   SubMaster sm;
   Replay *replay;
   QBasicTimer getch_timer;
   QTimer sm_timer;
   QSocketNotifier notifier{0, QSocketNotifier::Read, this};
+  int max_width, max_height;
 
 signals:
   void updateProgressBarSignal(uint64_t cur, uint64_t total, bool success);

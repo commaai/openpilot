@@ -7,6 +7,8 @@
 
 namespace {
 
+const int BORDER_SIZE = 3;
+
 enum Color {
   None,
   Info,
@@ -25,9 +27,12 @@ void add_str(WINDOW *w, T str, Color color = Color::None, bool bold = false) {
   if (color != Color::None) wattron(w, COLOR_PAIR(color));
   if (bold) wattron(w, A_BOLD);
 
-  if constexpr (std::is_same<T, const char *>::value) waddstr(w, str);
-  else if constexpr (std::is_same<T, std::string>::value) waddstr(w, str.c_str());
-  else waddch(w, str);
+  if constexpr (std::is_same<T, const char *>::value)
+    waddstr(w, str);
+  else if constexpr (std::is_same<T, std::string>::value)
+    waddstr(w, str.c_str());
+  else
+    waddch(w, str);
 
   if (bold) wattroff(w, A_BOLD);
   if (color != Color::None) wattroff(w, COLOR_PAIR(color));
@@ -63,37 +68,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   init_pair(Color::Engaged, 28, 28);
   init_pair(Color::AlertInfo, 28, COLOR_BLACK);
 
-  // Initialize all windows
-  int height, width;
-  getmaxyx(stdscr, height, width);
-
-  w[Win::Title] = newwin(1, width, 0, 0);
-  w[Win::Stats] = newwin(2, width, 2, 3);
-  w[Win::Timeline] = newwin(4, 100, 5, 3);
-  w[Win::TimelineDesc] = newwin(1, 100, 10, 3);
-  w[Win::CarState] = newwin(3, 100, 12, 3);
-  w[Win::DownloadBar] = newwin(1, 100, 16, 3);
-  if (int log_height = height - 27; log_height > 5) {
-    w[Win::LogBorder] = newwin(log_height, 100, 17, 2);
-    box(w[Win::LogBorder], 0, 0);
-    w[Win::Log] = newwin(log_height - 2, 98, 18, 3);
-    scrollok(w[Win::Log], true);
-  }
-  w[Win::Help] = newwin(5, 100, height - 6, 3);
-
-  // set the title bar
-  wbkgd(w[Win::Title], COLOR_PAIR(Color::bgWhite));
-  mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
-
-  // show windows on the real screen
-  refresh();
-  displayTimelineDesc();
-  displayHelp();
-  updateSummary();
-  updateTimeline();
-  for (auto win : w) {
-    if (win) wrefresh(win);
-  }
+  initWindows();
 
   qRegisterMetaType<uint64_t>("uint64_t");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
@@ -118,8 +93,51 @@ ConsoleUI::~ConsoleUI() {
   endwin();
 }
 
+void ConsoleUI::initWindows() {
+  getmaxyx(stdscr, max_height, max_width);
+  w.fill(nullptr);
+  w[Win::Title] = newwin(1, max_width, 0, 0);
+  w[Win::Stats] = newwin(2, max_width - 2 * BORDER_SIZE, 2, BORDER_SIZE);
+  w[Win::Timeline] = newwin(4, max_width - 2 * BORDER_SIZE, 5, BORDER_SIZE);
+  w[Win::TimelineDesc] = newwin(1, 100, 10, BORDER_SIZE);
+  w[Win::CarState] = newwin(3, 100, 12, BORDER_SIZE);
+  w[Win::DownloadBar] = newwin(1, 100, 16, BORDER_SIZE);
+  if (int log_height = max_height - 27; log_height > 4) {
+    w[Win::LogBorder] = newwin(log_height, max_width - 2 * (BORDER_SIZE - 1), 17, BORDER_SIZE - 1);
+    box(w[Win::LogBorder], 0, 0);
+    w[Win::Log] = newwin(log_height - 2, max_width - 2 * BORDER_SIZE, 18, BORDER_SIZE);
+    scrollok(w[Win::Log], true);
+  }
+  w[Win::Help] = newwin(5, max_width - (2 * BORDER_SIZE), max_height - 6, BORDER_SIZE);
+
+  // set the title bar
+  wbkgd(w[Win::Title], COLOR_PAIR(Color::bgWhite));
+  mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
+
+  // show windows on the real screen
+  refresh();
+  displayTimelineDesc();
+  displayHelp();
+  updateSummary();
+  updateTimeline();
+  for (auto win : w) {
+    if (win) wrefresh(win);
+  }
+}
+
 void ConsoleUI::timerEvent(QTimerEvent *ev) {
   if (ev->timerId() != getch_timer.timerId()) return;
+
+  if (is_term_resized(max_height, max_width)) {
+    for (auto win : w) {
+      if (win) delwin(win);
+    }
+    endwin();
+    clear();
+    refresh();
+    initWindows();
+    rWarning("resize term %dx%d", max_height, max_width);
+  }
   updateTimeline();
 }
 
@@ -194,7 +212,7 @@ void ConsoleUI::displayTimelineDesc() {
 
 void ConsoleUI::logMessage(int type, const QString &msg) {
   if (auto win = w[Win::Log]) {
-    add_str(win, qPrintable(msg + "\n"), (Color)type);
+    add_str(win, qPrintable(msg + "\n"), (Color)(type + 1));
     wrefresh(win);
   }
 }
