@@ -11,15 +11,15 @@ const int BORDER_SIZE = 3;
 
 enum Color {
   None,
-  Info,
+  White,
   Debug,
-  Warning,
-  Critical,
+  Yellow,
+  Red,
   bgWhite,
   BrightWhite,
   Engaged,
   Disengaged,
-  AlertInfo,
+  Green,
 };
 
 template <typename T>
@@ -58,15 +58,15 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
 
   // Initialize all the colors
   start_color();
-  init_pair(Color::Info, COLOR_WHITE, COLOR_BLACK);
+  init_pair(Color::White, COLOR_WHITE, COLOR_BLACK);
   init_pair(Color::Debug, 8, COLOR_BLACK);
-  init_pair(Color::Warning, COLOR_YELLOW, COLOR_BLACK);
-  init_pair(Color::Critical, COLOR_RED, COLOR_BLACK);
+  init_pair(Color::Yellow, COLOR_YELLOW, COLOR_BLACK);
+  init_pair(Color::Red, COLOR_RED, COLOR_BLACK);
   init_pair(Color::bgWhite, COLOR_BLACK, 15);
   init_pair(Color::BrightWhite, 15, COLOR_BLACK);
   init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
   init_pair(Color::Engaged, 28, 28);
-  init_pair(Color::AlertInfo, 28, COLOR_BLACK);
+  init_pair(Color::Green, 28, COLOR_BLACK);
 
   initWindows();
 
@@ -84,7 +84,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   QObject::connect(this, &ConsoleUI::logMessageSignal, this, &ConsoleUI::logMessage);
 
   sm_timer.callOnTimeout(this, &ConsoleUI::updateStatus);
-  sm_timer.start(50);
+  sm_timer.start(100);
   getch_timer.start(1000, this);
   readyRead();
 }
@@ -142,25 +142,34 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
 }
 
 void ConsoleUI::updateStatus() {
-  auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit) {
+  auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit, Color color = Color::BrightWhite) {
     auto win = w[Win::CarState];
     mv_add_str(win, y, x, key);
-    add_str(win, value, Color::BrightWhite, true);
+    add_str(win, value, color, true);
     add_str(win, unit);
   };
+  static std::pair<const char *, Color> status_text[] = {
+      {"waiting...", Color::Red},
+      {"playing", Color::Green},
+      {"paused...", Color::Yellow},
+  };
 
-  write_item(0, 0, "SECONDS:   ", std::to_string(replay->currentSeconds()), " s     ");
   sm.update(0);
-  if (sm.updated("carState")) {
-    write_item(0, 25, "SPEED:   ", util::string_format("%.2f", sm["carState"].getCarState().getVEgo()), " m/s");
+
+  if (status != Status::Paused) {
+    status = (sm.updated("carState") || sm.updated("liveParameters")) ? Status::Playing : Status::Waiting;
   }
-  if (sm.updated("liveParameters")) {
-    auto p = sm["liveParameters"].getLiveParameters();
-    write_item(1, 0, "STIFFNESS: ", util::string_format("%.2f", p.getStiffnessFactor() * 100), " deg");
-    write_item(1, 25, "STEER RATIO: ", util::string_format("%.2f", p.getSteerRatio()), "");
-    auto angle_offsets = util::string_format("%.2f|%.2f", p.getAngleOffsetAverageDeg(), p.getAngleOffsetDeg());
-    write_item(2, 0, "ANGLE OFFSET(AVG|INSTANCE): ", angle_offsets, " deg");
-  }
+  auto [status_str, status_color] = status_text[status];
+  write_item(0, 0, "STATUS:  ", status_str, "      ", status_color);
+  write_item(0, 25, "SECONDS:   ", std::to_string(replay->currentSeconds()), " s     ");
+
+  write_item(1, 0, "SPEED:   ", util::string_format("%.2f", sm["carState"].getCarState().getVEgo()), " m/s");
+  auto p = sm["liveParameters"].getLiveParameters();
+  write_item(1, 25, "STIFFNESS: ", util::string_format("%.2f", p.getStiffnessFactor() * 100), " deg");
+  write_item(2, 0, "STEER RATIO: ", util::string_format("%.2f", p.getSteerRatio()), "");
+  auto angle_offsets = util::string_format("%.2f|%.2f", p.getAngleOffsetAverageDeg(), p.getAngleOffsetDeg());
+  write_item(2, 25, "ANGLE OFFSET(AVG|INSTANCE): ", angle_offsets, " deg");
+
   wrefresh(w[Win::CarState]);
 }
 
@@ -200,9 +209,9 @@ void ConsoleUI::displayTimelineDesc() {
   std::tuple<Color, const char *, bool> indicators[]{
       {Color::Engaged, " Engaged ", false},
       {Color::Disengaged, " Disengaged ", false},
-      {Color::AlertInfo, " Info ", true},
-      {Color::Warning, " Warning ", true},
-      {Color::Critical, " Critical ", true},
+      {Color::Green, " Info ", true},
+      {Color::Yellow, " Warning ", true},
+      {Color::Red, " Critical ", true},
   };
   for (auto [color, name, bold] : indicators) {
     add_str(w[Win::TimelineDesc], "__", color, bold);
@@ -257,9 +266,9 @@ void ConsoleUI::updateTimeline() {
         mv_add_str(win, 2, i, ' ', Color::Engaged);
       }
     } else {
-      auto color_id = Color::AlertInfo;
+      auto color_id = Color::Green;
       if (type != TimelineType::AlertInfo) {
-        color_id = type == TimelineType::AlertWarning ? Color::Warning : Color::Critical;
+        color_id = type == TimelineType::AlertWarning ? Color::Yellow : Color::Red;
       }
       for (int i = start_pos; i <= end_pos; ++i) {
         mv_add_str(win, 3, i, ACS_S3, color_id, true);
@@ -285,6 +294,8 @@ void ConsoleUI::handleKey(char c) {
   if (c == '\n') {
     // Pausing replay and blocking getchar()
     replay->pause(true);
+    status = Status::Paused;
+    updateStatus();
     getch_timer.stop();
     curs_set(true);
     nodelay(stdscr, false);
@@ -302,6 +313,7 @@ void ConsoleUI::handleKey(char c) {
     noecho();
     replay->pause(false);
     replay->seekTo(choice, false);
+    status = Status::Waiting;
 
     // Clean up and turn off the blocking mode
     move(y, 0);
@@ -333,6 +345,7 @@ void ConsoleUI::handleKey(char c) {
     replay->seekTo(-10, true);
   } else if (c == ' ') {
     replay->pause(!replay->isPaused());
+    status = replay->isPaused() ? Status::Paused : Status::Playing;
   } else if (c == 'q' || c == 'Q') {
     replay->stop();
     qApp->exit();

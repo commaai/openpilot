@@ -26,6 +26,7 @@ private:
   void updateSummary();
   void updateStatus();
 
+  enum Status { Waiting, Playing, Paused };
   enum Win { Title, Stats, Log, LogBorder, DownloadBar, Timeline, TimelineDesc, Help, CarState, Max};
   std::array<WINDOW*, Win::Max> w{};
   SubMaster sm;
@@ -34,6 +35,7 @@ private:
   QTimer sm_timer;
   QSocketNotifier notifier{0, QSocketNotifier::Read, this};
   int max_width, max_height;
+  Status status = Status::Waiting;
 
 signals:
   void updateProgressBarSignal(uint64_t cur, uint64_t total, bool success);
