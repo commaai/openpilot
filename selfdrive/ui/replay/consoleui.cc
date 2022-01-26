@@ -153,7 +153,7 @@ void ConsoleUI::updateStatus() {
     status = (sm.updated("carState") || sm.updated("liveParameters")) ? Status::Playing : Status::Waiting;
   }
   auto [status_str, status_color] = status_text[status];
-  write_item(0, 0, "STATUS:  ", status_str, "      ", false, status_color);
+  write_item(0, 0, "STATUS:    ", status_str, "      ", false, status_color);
   write_item(0, 25, "TIME:  ", format_seconds(replay->currentSeconds()),
              (" / " + format_seconds(replay->totalSeconds())).c_str(), true);
 
