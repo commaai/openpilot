@@ -3,7 +3,7 @@ from common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, MISSING_MESSAGES, AccState, CanBus, \
+from selfdrive.car.gm.values import DBC, AccState, CanBus, \
                                     CruiseButtons, STEER_THRESHOLD, EV_CAR
 
 
@@ -66,7 +66,7 @@ class CarState(CarStateBase):
     ret.seatbeltUnlatched = pt_cp.vl["BCMDoorBeltStatus"]["LeftSeatBelt"] == 0
     ret.leftBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 1
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
-    if self.car_fingerprint not in MISSING_MESSAGES:
+    if self.CP.hasEPB:
       self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
 
     ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"])
@@ -128,10 +128,8 @@ class CarState(CarStateBase):
       ("EBCMBrakePedalPosition", 100),
     ]
 
-    # Some cars don't have an EPB...
-    # TODO: search for messsage 560 in fingerprint to detect
-    # TODO: Find CAN message for non electronic parking brake status
-    if (CP.carFingerprint not in MISSING_MESSAGES):
+    # TODO: Might be wise to find the non-electronic parking brake signal
+    if CP.hasEPB:
       signals.append(("EPBClosed", "EPBStatus", 0))
       checks.append(("EPBStatus", 20))
     

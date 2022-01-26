@@ -80,6 +80,10 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 1.0
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
+    # Check for Electronic Parking Brake
+    ret.hasEPB = 0x230 in fingerprint[0]
+    
+    
     if ret.enableGasInterceptor:
       ret.openpilotLongitudinalControl = True
 
