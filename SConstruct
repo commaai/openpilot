@@ -52,11 +52,6 @@ AddOption('--no-thneed',
           dest='no_thneed',
           help='avoid using thneed')
 
-AddOption('--coverage',
-          action='store_true',
-          dest='coverage',
-          help='outpute covarge information')
-
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
@@ -172,10 +167,6 @@ elif GetOption('ubsan'):
 else:
   ccflags = []
   ldflags = []
-
-if GetOption('coverage'):
-  ccflags += ["-fprofile-arcs", "-ftest-coverage"]
-  ldflags += ["-fprofile-arcs", "-ftest-coverage"]
 
 # no --as-needed on mac linker
 if arch != "Darwin":
@@ -293,10 +284,6 @@ elif arch == "aarch64":
   envCython["LIBS"] = [os.path.basename(py_include)]
 else:
   envCython["LINKFLAGS"] = ["-pthread", "-shared"]
-
-if GetOption('coverage'):
-  envCython['CCFLAGS'] += ["-fprofile-arcs", "-ftest-coverage"]
-  envCython['LINKFLAGS'] += ["-fprofile-arcs", "-ftest-coverage"]
 
 Export('envCython')
 

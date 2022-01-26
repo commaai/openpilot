@@ -31,9 +31,8 @@ function install_ubuntu_common_requirements() {
     git \
     git-lfs \
     ffmpeg \
-    lcov \
-    libavcodec-dev \
     libavformat-dev \
+    libavcodec-dev \
     libavdevice-dev \
     libavutil-dev \
     libavfilter-dev \
@@ -51,7 +50,6 @@ function install_ubuntu_common_requirements() {
     libusb-1.0-0-dev \
     libzmq3-dev \
     libsystemd-dev \
-    llvm \
     locales \
     opencl-headers \
     ocl-icd-libopencl1 \

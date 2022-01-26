@@ -83,7 +83,3 @@ models/*.thneed
 build/
 
 !**/.gitkeep
-
-*.gcno
-*.gcda
-coverage.info
