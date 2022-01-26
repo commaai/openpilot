@@ -18,25 +18,17 @@ enum Color {
 };
 
 ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"carState", "liveParameters"}), QObject(parent) {
-  qRegisterMetaType<uint64_t>("uint64_t");
-  installMessageHandler([this](ReplyMsgType type, const std::string msg) {
-    emit logMessageSignal((int)type, QString::fromStdString(msg));
-  });
-  installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
-    emit updateProgressBarSignal(cur, total, success);
-  });
-
-  system("clear");
+  // Initialize curses
   initscr();
-  curs_set(0);
-  start_color();
   clear();
-  cbreak();
+  curs_set(false);
+  cbreak(); // Line buffering disabled. pass on everything
   noecho();
   keypad(stdscr, true);
   nodelay(stdscr, true);  // non-blocking getchar()
 
   // Initialize all the colors
+  start_color();
   init_pair(Color::Info, COLOR_WHITE, COLOR_BLACK);
   init_pair(Color::Debug, 8, COLOR_BLACK);
   init_pair(Color::Warning, COLOR_YELLOW, COLOR_BLACK);
@@ -47,6 +39,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   init_pair(Color::Engaged, 28, 28);
   init_pair(Color::AlertInfo, 28, COLOR_BLACK);
 
+  // Initialize all windows
   int height, width;
   getmaxyx(stdscr, height, width);
 
@@ -64,18 +57,27 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   }
   w[Win::Help] = newwin(5, 100, height - 6, 3);
 
+  // set the title bar
   wbkgd(w[Win::Title], COLOR_PAIR(Color::bgWhite));
   mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
 
+  // show windows on the real screen
   refresh();
   displayTimelineDesc();
   displayHelp();
   updateSummary();
   updateTimeline();
-
   for (auto win : w) {
     if (win) wrefresh(win);
   }
+
+  qRegisterMetaType<uint64_t>("uint64_t");
+  installMessageHandler([this](ReplyMsgType type, const std::string msg) {
+    emit logMessageSignal((int)type, QString::fromStdString(msg));
+  });
+  installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
+    emit updateProgressBarSignal(cur, total, success);
+  });
 
   QObject::connect(replay, &Replay::streamStarted, this, &ConsoleUI::updateSummary);
   QObject::connect(&notifier, SIGNAL(activated(int)), SLOT(readyRead()));
@@ -261,9 +263,10 @@ void ConsoleUI::readyRead() {
 
 void ConsoleUI::handleKey(char c) {
   if (c == '\n') {
+    // Pausing replay and blocking getchar()
     replay->pause(true);
     getch_timer.stop();
-    curs_set(1);
+    curs_set(true);
     nodelay(stdscr, false);
 
     rWarning("Waiting for input...");
@@ -274,18 +277,23 @@ void ConsoleUI::handleKey(char c) {
     attroff(A_BOLD);
     attroff(COLOR_PAIR(Color::BrightWhite));
     refresh();
+    
+    // Wait for user input
     echo();
     int choice = 0;
     scanw((char *)"%d", &choice);
     noecho();
+    
+    // Seek to choice
+    replay->pause(false);
+    replay->seekTo(choice, false);
+    
+    // Clean up and turn off the blocking mode
     nodelay(stdscr, true);
-    curs_set(0);
+    curs_set(false);
     move(y, 0);
     clrtoeol();
     refresh();
-
-    replay->pause(false);
-    replay->seekTo(choice, false);
     getch_timer.start(1000, this);
   } else if (c == 'x') {
     if (replay->hasFlag(REPLAY_FLAG_FULL_SPEED)) {
