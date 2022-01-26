@@ -316,14 +316,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     #ET.PERMANENT: ImmediateDisableAlert("openpilot failed to cancel cruise"),
   },
 
-  # Some features or cars are marked as community features. If openpilot
-  # detects the use of a community feature it switches to dashcam mode
-  # until these features are allowed using a toggle in settings.
-  EventName.communityFeatureDisallowed: {
-    ET.PERMANENT: NormalPermanentAlert("openpilot Unavailable",
-                                       "Enable Community Features in Settings"),
-  },
-
   # openpilot doesn't recognize the car. This switches openpilot into a
   # read-only mode. This can be solved by adding your fingerprint.
   # See https://github.com/commaai/openpilot/wiki/Fingerprinting for more information

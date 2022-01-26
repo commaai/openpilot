@@ -161,7 +161,8 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   int safety_param;
 
   auto safety_configs = car_params.getSafetyConfigs();
-  for (uint32_t i=0; i<pandas.size(); i++) {
+  uint16_t unsafe_mode = car_params.getUnsafeMode();
+  for (uint32_t i = 0; i < pandas.size(); i++) {
     auto panda = pandas[i];
 
     if (safety_configs.size() > i) {
@@ -173,9 +174,8 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
       safety_param = 0;
     }
 
-    LOGW("panda %d: setting safety model: %d with param %d", i, (int)safety_model, safety_param);
-
-    panda->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
+    LOGW("panda %d: setting safety model: %d, param: %d, unsafe mode: %d", i, (int)safety_model, safety_param, unsafe_mode);
+    panda->set_unsafe_mode(unsafe_mode);
     panda->set_safety_model(safety_model, safety_param);
   }
 
@@ -315,7 +315,7 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
     pandaStates.push_back(pandaState);
   }
 
-  for (uint32_t i=0; i<pandas.size(); i++) {
+  for (uint32_t i = 0; i < pandas.size(); i++) {
     auto panda = pandas[i];
     const auto &pandaState = pandaStates[i];
 
@@ -356,6 +356,7 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
     ps.setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
     ps.setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
     ps.setHeartbeatLost((bool)(pandaState.heartbeat_lost));
+    ps.setUnsafeMode(pandaState.unsafe_mode);
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(pandaState.car_harness_status));
 
     // Convert faults bitset to capnp list

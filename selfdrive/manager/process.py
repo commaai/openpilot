@@ -34,8 +34,9 @@ def launcher(proc: str, name: str) -> None:
     # create new context since we forked
     messaging.context = messaging.Context()
 
-    # add daemon name to cloudlog ctx
+    # add daemon name tag to logs
     cloudlog.bind(daemon=name)
+    sentry.set_tag("daemon", name)
 
     # exec the process
     getattr(mod, 'main')()
