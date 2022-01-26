@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.gm.values import DBC, AccState, CanBus, \
-                                    CruiseButtons, STEER_THRESHOLD, EV_CAR
+                                    CruiseButtons, STEER_THRESHOLD, EV_CAR, CAR
 
 
 class CarState(CarStateBase):
@@ -66,7 +66,9 @@ class CarState(CarStateBase):
     ret.seatbeltUnlatched = pt_cp.vl["BCMDoorBeltStatus"]["LeftSeatBelt"] == 0
     ret.leftBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 1
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
-    if self.CP.hasEPB:
+    #TODO: JJS: Add hasEPB to cereal and use detection rather than hard coding...
+    #if self.CP.hasEPB:
+    if self.CP.carFingerprint == CAR.SUBURBAN or self.CP.carFingerprint == CAR.TAHOE_NR:
       self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
 
     ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"])
@@ -129,7 +131,7 @@ class CarState(CarStateBase):
     ]
 
     # TODO: Might be wise to find the non-electronic parking brake signal
-    if CP.hasEPB:
+    if CP.carFingerprint == CAR.SUBURBAN or CP.carFingerprint == CAR.TAHOE_NR:
       signals.append(("EPBClosed", "EPBStatus", 0))
       checks.append(("EPBStatus", 20))
     
