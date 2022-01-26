@@ -168,7 +168,7 @@ void ConsoleUI::updateStatus() {
   write_item(1, 25, "STIFFNESS: ", util::string_format("%.2f", p.getStiffnessFactor() * 100), " deg");
   write_item(2, 0, "STEER RATIO: ", util::string_format("%.2f", p.getSteerRatio()), "");
   auto angle_offsets = util::string_format("%.2f|%.2f", p.getAngleOffsetAverageDeg(), p.getAngleOffsetDeg());
-  write_item(2, 25, "ANGLE OFFSET(AVG|INSTANCE): ", angle_offsets, " deg");
+  write_item(2, 25, "ANGLE OFFSET(AVG|INSTANT): ", angle_offsets, " deg");
 
   wrefresh(w[Win::CarState]);
 }
