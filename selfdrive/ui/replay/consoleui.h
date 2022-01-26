@@ -40,11 +40,11 @@ private:
 
 signals:
   void updateProgressBarSignal(uint64_t cur, uint64_t total, bool success);
-  void logMessageSignal(int type, const QString &msg);
+  void logMessageSignal(ReplyMsgType type, const QString &msg);
 
 private slots:
   void readyRead();
   void timerEvent(QTimerEvent *ev);
   void updateProgressBar(uint64_t cur, uint64_t total, bool success);
-  void logMessage(int type, const QString &msg);
+  void logMessage(ReplyMsgType type, const QString &msg);
 };

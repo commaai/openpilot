@@ -14,12 +14,12 @@ enum Color {
   White,
   Debug,
   Yellow,
+  Green,
   Red,
   bgWhite,
   BrightWhite,
   Engaged,
   Disengaged,
-  Green,
 };
 
 template <typename T>
@@ -27,12 +27,9 @@ void add_str(WINDOW *w, T str, Color color = Color::None, bool bold = false) {
   if (color != Color::None) wattron(w, COLOR_PAIR(color));
   if (bold) wattron(w, A_BOLD);
 
-  if constexpr (std::is_same<T, const char *>::value)
-    waddstr(w, str);
-  else if constexpr (std::is_same<T, std::string>::value)
-    waddstr(w, str.c_str());
-  else
-    waddch(w, str);
+  if constexpr (std::is_same<T, const char *>::value) waddstr(w, str);
+  else if constexpr (std::is_same<T, std::string>::value) waddstr(w, str.c_str());
+  else waddch(w, str);
 
   if (bold) wattroff(w, A_BOLD);
   if (color != Color::None) wattroff(w, COLOR_PAIR(color));
@@ -42,6 +39,14 @@ template <typename T>
 void mv_add_str(WINDOW *w, int y, int x, T str, Color color = Color::None, bool bold = false) {
   wmove(w, y, x);
   add_str(w, str, color, bold);
+}
+
+std::string format_seconds(int s) {
+  int total_minutes = s / 60;
+  int seconds = s % 60;
+  int hours = total_minutes / 60;
+  int minutes = total_minutes % 60;
+  return util::string_format("%02d:%02d:%02d", hours, minutes, seconds);
 }
 
 }  // namespace
@@ -71,8 +76,9 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   initWindows();
 
   qRegisterMetaType<uint64_t>("uint64_t");
+  qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
-    emit logMessageSignal((int)type, QString::fromStdString(msg));
+    emit logMessageSignal(type, QString::fromStdString(msg));
   });
   installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
     emit updateProgressBarSignal(cur, total, success);
@@ -142,10 +148,10 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
 }
 
 void ConsoleUI::updateStatus() {
-  auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit, Color color = Color::BrightWhite) {
+  auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit, bool bold = false, Color color = Color::BrightWhite) {
     auto win = w[Win::CarState];
     mv_add_str(win, y, x, key);
-    add_str(win, value, color, true);
+    add_str(win, value, color, bold);
     add_str(win, unit);
   };
   static std::pair<const char *, Color> status_text[] = {
@@ -160,12 +166,12 @@ void ConsoleUI::updateStatus() {
     status = (sm.updated("carState") || sm.updated("liveParameters")) ? Status::Playing : Status::Waiting;
   }
   auto [status_str, status_color] = status_text[status];
-  write_item(0, 0, "STATUS:  ", status_str, "      ", status_color);
-  write_item(0, 25, "SECONDS:   ", std::to_string(replay->currentSeconds()), " s     ");
+  write_item(0, 0, "STATUS:  ", status_str, "      ", false, status_color);
+  write_item(0, 25, "TIME:  ", format_seconds(replay->currentSeconds()), (" / " + format_seconds(replay->totalSeconds())).c_str(), true);
 
-  write_item(1, 0, "SPEED:   ", util::string_format("%.2f", sm["carState"].getCarState().getVEgo()), " m/s");
   auto p = sm["liveParameters"].getLiveParameters();
-  write_item(1, 25, "STIFFNESS: ", util::string_format("%.2f", p.getStiffnessFactor() * 100), " deg");
+  write_item(1, 0, "STIFFNESS: ", util::string_format("%.2f", p.getStiffnessFactor() * 100), " deg");
+  write_item(1, 25, "SPEED: ", util::string_format("%.2f", sm["carState"].getCarState().getVEgo()), " m/s");
   write_item(2, 0, "STEER RATIO: ", util::string_format("%.2f", p.getSteerRatio()), "");
   auto angle_offsets = util::string_format("%.2f|%.2f", p.getAngleOffsetAverageDeg(), p.getAngleOffsetDeg());
   write_item(2, 25, "ANGLE OFFSET(AVG|INSTANT): ", angle_offsets, " deg");
@@ -219,9 +225,17 @@ void ConsoleUI::displayTimelineDesc() {
   }
 }
 
-void ConsoleUI::logMessage(int type, const QString &msg) {
+void ConsoleUI::logMessage(ReplyMsgType type, const QString &msg) {
   if (auto win = w[Win::Log]) {
-    add_str(win, qPrintable(msg + "\n"), (Color)(type + 1));
+    Color color = Color::White;
+    if (type == ReplyMsgType::Debug) {
+      color = Color::Debug;
+    } else if (type == ReplyMsgType::Warning) {
+      color = Color::Yellow;
+    } else if (type == ReplyMsgType::Critical) {
+      color = Color::Red;
+    }
+    add_str(win, qPrintable(msg + "\n"), color);
     wrefresh(win);
   }
 }
@@ -229,7 +243,7 @@ void ConsoleUI::logMessage(int type, const QString &msg) {
 void ConsoleUI::updateProgressBar(uint64_t cur, uint64_t total, bool success) {
   werase(w[Win::DownloadBar]);
   if (success && cur < total) {
-    const int width = 30;
+    const int width = 35;
     const float progress = cur / (double)total;
     const int pos = width * progress;
     wprintw(w[Win::DownloadBar], "Downloading [%s>%s]  %d%% %s", std::string(pos, '=').c_str(),
@@ -250,10 +264,9 @@ void ConsoleUI::updateTimeline() {
   int width = getmaxx(win);
   werase(win);
 
-  for (int i = 0; i < width; ++i) {
-    mv_add_str(win, 1, i, ' ', Color::Disengaged);
-    mv_add_str(win, 2, i, ' ', Color::Disengaged);
-  }
+  std::string fill_str = std::string(width, ' ');
+  mv_add_str(win, 1, 0, fill_str, Color::Disengaged);
+  mv_add_str(win, 2, 0, fill_str, Color::Disengaged);
 
   const int total_sec = replay->totalSeconds();
   for (auto [begin, end, type] : replay->getTimeline()) {
@@ -261,10 +274,9 @@ void ConsoleUI::updateTimeline() {
     int end_pos = ((double)end / total_sec) * width;
 
     if (type == TimelineType::Engaged) {
-      for (int i = start_pos; i <= end_pos; ++i) {
-        mv_add_str(win, 1, i, ' ', Color::Engaged);
-        mv_add_str(win, 2, i, ' ', Color::Engaged);
-      }
+      fill_str = std::string(end_pos - start_pos + 1, ' ');
+      mv_add_str(win, 1, start_pos, fill_str, Color::Engaged);
+      mv_add_str(win, 2, start_pos, fill_str, Color::Engaged);
     } else {
       auto color_id = Color::Green;
       if (type != TimelineType::AlertInfo) {
