@@ -28,11 +28,6 @@ void add_str(WINDOW *w, const char *str, Color color = Color::Default, bool bold
   if (color != Color::Default) wattroff(w, COLOR_PAIR(color));
 }
 
-void mv_add_str(WINDOW *w, int y, int x, const char *str, Color color = Color::Default, bool bold = false) {
-  wmove(w, y, x);
-  add_str(w, str, color, bold);
-}
-
 std::string format_seconds(int s) {
   int total_minutes = s / 60;
   int seconds = s % 60;
@@ -55,7 +50,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
 
   // Initialize all the colors
   start_color();
-  init_pair(Color::Debug, 246, COLOR_BLACK); // #949494
+  init_pair(Color::Debug, 246, COLOR_BLACK);  // #949494
   init_pair(Color::Yellow, COLOR_YELLOW, COLOR_BLACK);
   init_pair(Color::Red, COLOR_RED, COLOR_BLACK);
   init_pair(Color::BrightWhite, 15, COLOR_BLACK);
@@ -141,7 +136,8 @@ void ConsoleUI::updateStatus() {
   auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit,
                            bool bold = false, Color color = Color::BrightWhite) {
     auto win = w[Win::CarState];
-    mv_add_str(win, y, x, key);
+    wmove(win, y, x);
+    add_str(win, key);
     add_str(win, value.c_str(), color, bold);
     add_str(win, unit);
   };
@@ -258,9 +254,10 @@ void ConsoleUI::updateTimeline() {
   int width = getmaxx(win);
   werase(win);
 
-  std::string fill_str = std::string(width, ' ');
-  mv_add_str(win, 1, 0, fill_str.c_str(), Color::Disengaged);
-  mv_add_str(win, 2, 0, fill_str.c_str(), Color::Disengaged);
+  wattron(win, COLOR_PAIR(Color::Disengaged));
+  mvwhline(win, 1, 0, ' ', width);
+  mvwhline(win, 2, 0, ' ', width);
+  wattroff(win, COLOR_PAIR(Color::Disengaged));
 
   const int total_sec = replay->totalSeconds();
   for (auto [begin, end, type] : replay->getTimeline()) {
@@ -310,7 +307,8 @@ void ConsoleUI::handleKey(char c) {
     // Wait for user input
     rWarning("Waiting for input...");
     int y = getmaxy(stdscr) - 9;
-    mv_add_str(stdscr, y, 3, "Enter seek request: ", Color::BrightWhite, true);
+    move(y, 0);
+    add_str(stdscr, "Enter seek request: ", Color::BrightWhite, true);
     refresh();
 
     // Seek to choice
