@@ -41,6 +41,9 @@ const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
 const bool env_send_road = getenv("SEND_ROAD") != NULL;
 const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
 
+// for debugging
+const bool env_only_driver = getenv("ONLY_DRIVER") != NULL;
+
 typedef void (*release_cb)(void *cookie, int buf_idx);
 
 typedef struct CameraInfo {

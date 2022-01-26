@@ -60,7 +60,7 @@ int cam_control(int fd, int op_code, void *handle, int size) {
   struct cam_control camcontrol = {0};
   camcontrol.op_code = op_code;
   camcontrol.handle = (uint64_t)handle;
-  if (size == 0) { 
+  if (size == 0) {
     camcontrol.size = 8;
     camcontrol.handle_type = CAM_HANDLE_MEM_HANDLE;
   } else {
@@ -353,6 +353,9 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(s->multi_cam_state->video0_fd, size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = 0;
+  // YUV has kmd_cmd_buf_offset = 1780
+  // I guess this is the ISP command
+  // YUV also has patch_offset = 0x1030 and num_patches = 10
 
   if (io_mem_handle != 0) {
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*2;
@@ -396,9 +399,9 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   tmp.type_0 |= sizeof(cam_isp_resource_hfr_config) << 8;
   static_assert(sizeof(cam_isp_resource_hfr_config) == 0x20);
   tmp.resource_hfr = {
-    .num_ports = 1,
+    .num_ports = 1,  // 10 for YUV (but I don't think we need them)
     .port_hfr_config[0] = {
-      .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0,
+      .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0, // CAM_ISP_IFE_OUT_RES_FULL for YUV
       .subsample_pattern = 1,
       .subsample_period = 0,
       .framedrop_pattern = 1,
@@ -452,19 +455,20 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
 		 .height = FRAME_HEIGHT,
 		 .plane_stride = FRAME_STRIDE,
 		 .slice_height = FRAME_HEIGHT,
-		 .meta_stride = 0x0,
+		 .meta_stride = 0x0,    // YUV has meta(stride=0x400, size=0x5000)
 		 .meta_size = 0x0,
 		 .meta_offset = 0x0,
-		 .packer_config = 0x0,
-		 .mode_config = 0x0,
+		 .packer_config = 0x0,  // 0xb for YUV
+		 .mode_config = 0x0,    // 0x9ef for YUV
 		 .tile_config = 0x0,
 		 .h_init = 0x0,
 		 .v_init = 0x0,
 		};
-    io_cfg[0].format = CAM_FORMAT_MIPI_RAW_10;
-    io_cfg[0].color_pattern = 0x5;
+    io_cfg[0].format = CAM_FORMAT_MIPI_RAW_10;             // CAM_FORMAT_UBWC_TP10 for YUV
+    io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
+    io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
     io_cfg[0].bpp = 0xa;
-    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;
+    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
     io_cfg[0].subsample_pattern = 0x1;
@@ -590,11 +594,7 @@ int open_v4l_by_name_and_index(const char name[], int index, int flags = O_RDWR 
 static void camera_open(CameraState *s) {
   s->sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", s->camera_num);
   assert(s->sensor_fd >= 0);
-  LOGD("opened sensor");
-
-  s->csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", s->camera_num);
-  assert(s->csiphy_fd >= 0);
-  LOGD("opened csiphy");
+  LOGD("opened sensor for %d", s->camera_num);
 
   // probe the sensor
   LOGD("-- Probing sensor %d", s->camera_num);
@@ -667,6 +667,10 @@ static void camera_open(CameraState *s) {
   s->isp_dev_handle = *isp_dev_handle;
   LOGD("acquire isp dev");
 
+  s->csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", s->camera_num);
+  assert(s->csiphy_fd >= 0);
+  LOGD("opened csiphy for %d", s->camera_num);
+
   struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {.combo_mode = 0};
   auto csiphy_dev_handle = device_acquire(s->csiphy_fd, s->session_handle, &csiphy_acquire_dev_info);
   assert(csiphy_dev_handle);
@@ -681,6 +685,7 @@ static void camera_open(CameraState *s) {
   sensors_i2c(s, init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
   //sensors_i2c(s, start_reg_array, std::size(start_reg_array), CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMON);
   //sensors_i2c(s, stop_reg_array, std::size(stop_reg_array), CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF);
+
 
   // config csiphy
   LOG("-- Config CSI PHY");
@@ -723,8 +728,8 @@ static void camera_open(CameraState *s) {
   req_mgr_link_info.dev_hdls[0] = s->isp_dev_handle;
   req_mgr_link_info.dev_hdls[1] = s->sensor_dev_handle;
   ret = cam_control(s->multi_cam_state->video0_fd, CAM_REQ_MGR_LINK, &req_mgr_link_info, sizeof(req_mgr_link_info));
-  LOGD("link: %d", ret);
   s->link_handle = req_mgr_link_info.link_hdl;
+  LOGD("link: %d hdl: %x", ret, s->link_handle);
 
   struct cam_req_mgr_link_control req_mgr_link_control = {0};
   req_mgr_link_control.ops = CAM_REQ_MGR_LINK_ACTIVATE;
@@ -745,15 +750,17 @@ static void camera_open(CameraState *s) {
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(s, v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_ROAD); // swap left/right
-  printf("road camera initted \n");
-  camera_init(s, v, &s->wide_road_cam, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
-              VISION_STREAM_RGB_WIDE, VISION_STREAM_WIDE_ROAD);
-  printf("wide road camera initted \n");
   camera_init(s, v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_DRIVER);
   printf("driver camera initted \n");
+  if (!env_only_driver) {
+    camera_init(s, v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
+                VISION_STREAM_RGB_BACK, VISION_STREAM_ROAD); // swap left/right
+    printf("road camera initted \n");
+    camera_init(s, v, &s->wide_road_cam, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
+                VISION_STREAM_RGB_WIDE, VISION_STREAM_WIDE_ROAD);
+    printf("wide road camera initted \n");
+  }
 
   s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
@@ -800,12 +807,14 @@ void cameras_open(MultiCameraState *s) {
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
   printf("req mgr subscribe: %d\n", ret);
 
-  camera_open(&s->road_cam);
-  printf("road camera opened \n");
-  camera_open(&s->wide_road_cam);
-  printf("wide road camera opened \n");
   camera_open(&s->driver_cam);
   printf("driver camera opened \n");
+  if (!env_only_driver) {
+    camera_open(&s->road_cam);
+    printf("road camera opened \n");
+    camera_open(&s->wide_road_cam);
+    printf("wide road camera opened \n");
+  }
 }
 
 static void camera_close(CameraState *s) {
@@ -853,9 +862,11 @@ static void camera_close(CameraState *s) {
 }
 
 void cameras_close(MultiCameraState *s) {
-  camera_close(&s->road_cam);
-  camera_close(&s->wide_road_cam);
   camera_close(&s->driver_cam);
+  if (!env_only_driver) {
+    camera_close(&s->road_cam);
+    camera_close(&s->wide_road_cam);
+  }
 
   delete s->sm;
   delete s->pm;
@@ -1047,16 +1058,20 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 void cameras_run(MultiCameraState *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
   threads.push_back(start_process_thread(s, &s->driver_cam, common_process_driver_camera));
-  threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
+  if (!env_only_driver) {
+    threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
+    threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
+  }
 
   // start devices
   LOG("-- Starting devices");
   int start_reg_len = sizeof(start_reg_array) / sizeof(struct i2c_random_wr_payload);
-  sensors_i2c(&s->road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  sensors_i2c(&s->wide_road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
   sensors_i2c(&s->driver_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  if (!env_only_driver) {
+    sensors_i2c(&s->road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+    sensors_i2c(&s->wide_road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  }
 
   // poll events
   LOG("-- Dequeueing Video events");
