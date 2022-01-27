@@ -200,6 +200,8 @@ selfdrive/common/version.h
 
 selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
+selfdrive/common/statlog.h
+selfdrive/common/statlog.cc
 selfdrive/common/util.cc
 selfdrive/common/util.h
 selfdrive/common/queue.h
