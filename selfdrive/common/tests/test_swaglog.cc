@@ -27,8 +27,11 @@ void recv_log(int thread_cnt, int thread_msg_cnt) {
   void *sock = zmq_socket(zctx, ZMQ_PULL);
   zmq_bind(sock, SWAGLOG_ADDR);
   std::vector<int> thread_msgs(thread_cnt);
+  int total_count = 0;
 
-  for (auto start = std::chrono::steady_clock::now(), now = start; now < start + std::chrono::seconds{1}; now = std::chrono::steady_clock::now()) {
+  for (auto start = std::chrono::steady_clock::now(), now = start;
+       now < start + std::chrono::seconds{1} && total_count < (thread_cnt * thread_msg_cnt);
+       now = std::chrono::steady_clock::now()) {
     char buf[4096] = {};
     if (zmq_recv(sock, buf, sizeof(buf), ZMQ_DONTWAIT) <= 0) {
       if (errno == EAGAIN || errno == EINTR || errno == EFSM) continue;
@@ -64,6 +67,7 @@ void recv_log(int thread_cnt, int thread_msg_cnt) {
     int thread_id = atoi(msg["msg"].string_value().c_str());
     REQUIRE((thread_id >= 0 && thread_id < thread_cnt));
     thread_msgs[thread_id]++;
+    total_count++;
   }
   for (int i = 0; i < thread_cnt; ++i) {
     INFO("thread :" << i);
