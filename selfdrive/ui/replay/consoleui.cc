@@ -9,6 +9,23 @@ namespace {
 
 const int BORDER_SIZE = 3;
 
+const std::initializer_list<std::pair<std::string, std::string>> keyboard_shortcuts[] = {
+  {
+    {"s", "+10s"},
+    {"shift+s", "-10s"},
+    {"m", "+60s"},
+    {"shift+m", "-60s"},
+    {"p", "Pause/Resume"},
+    {"e", "Next Engagement"},
+    {"d", "Next Disengagement"},
+  },
+  {
+    {"enter", "Enter seek request"},
+    {"x", "+/-Replay speed"},
+    {"q", "Exit"},
+  },
+};
+
 enum Color {
   Default,
   Debug,
@@ -142,7 +159,7 @@ void ConsoleUI::updateStatus() {
     add_str(win, unit);
   };
   static const std::pair<const char *, Color> status_text[] = {
-      {"waiting...", Color::Red},
+      {"loading...", Color::Red},
       {"playing", Color::Green},
       {"paused...", Color::Yellow},
   };
@@ -154,11 +171,12 @@ void ConsoleUI::updateStatus() {
   }
   auto [status_str, status_color] = status_text[status];
   write_item(0, 0, "STATUS:    ", status_str, "      ", false, status_color);
-  write_item(0, 25, "TIME:  ", format_seconds(replay->currentSeconds()),
-             (" / " + format_seconds(replay->totalSeconds())).c_str(), true);
+  std::string suffix = util::string_format(" / %s [%d/%d]      ", format_seconds(replay->totalSeconds()).c_str(),
+                                           replay->currentSeconds() / 60, replay->route()->segments().size());
+  write_item(0, 25, "TIME:  ", format_seconds(replay->currentSeconds()), suffix.c_str(), true);
 
   auto p = sm["liveParameters"].getLiveParameters();
-  write_item(1, 0, "STIFFNESS: ", util::string_format("%.2f", p.getStiffnessFactor() * 100), " deg");
+  write_item(1, 0, "STIFFNESS: ", util::string_format("%.2f %%", p.getStiffnessFactor() * 100), "  ");
   write_item(1, 25, "SPEED: ", util::string_format("%.2f", sm["carState"].getCarState().getVEgo()), " m/s");
   write_item(2, 0, "STEER RATIO: ", util::string_format("%.2f", p.getSteerRatio()), "");
   auto angle_offsets = util::string_format("%.2f|%.2f", p.getAngleOffsetAverageDeg(), p.getAngleOffsetDeg());
@@ -168,35 +186,14 @@ void ConsoleUI::updateStatus() {
 }
 
 void ConsoleUI::displayHelp() {
-  std::initializer_list<std::pair<const char *, const char *>> single_line_keys{
-      {"s", "+10s"},
-      {"shift+s", "-10s"},
-      {"m", "+60s"},
-      {"shift+m", "+60s"},
-      {"p", "Pause/Resume"},
-      {"e", "Next Engmt"},
-      {"d", "Next DisEngmt"},
-  };
-  std::initializer_list<std::pair<const char *, const char *>> multi_line_keys = {
-      {"enter", "Enter seek request"},
-      {"x", "Replay at full speed"},
-      {"q", "Exit"},
-  };
-
-  auto write_shortcut = [this](std::string key, std::string desc) {
-    wattron(w[Win::Help], A_REVERSE);
-    waddstr(w[Win::Help], (' ' + key + ' ').c_str());
-    wattroff(w[Win::Help], A_REVERSE);
-    waddstr(w[Win::Help], (' ' + desc + ' ').c_str());
-  };
-
-  for (auto [key, desc] : single_line_keys) {
-    write_shortcut(key, desc);
-  }
-  int y = 2;
-  for (auto [key, desc] : multi_line_keys) {
-    wmove(w[Win::Help], y++, 0);
-    write_shortcut(key, desc);
+  for (int i = 0; i < std::size(keyboard_shortcuts); ++i) {
+    wmove(w[Win::Help], i * 2, 0);
+    for (auto &[key, desc] : keyboard_shortcuts[i]) {
+      wattron(w[Win::Help], A_REVERSE);
+      waddstr(w[Win::Help], (' ' + key + ' ').c_str());
+      wattroff(w[Win::Help], A_REVERSE);
+      waddstr(w[Win::Help], (' ' + desc + ' ').c_str());
+    }
   }
   wrefresh(w[Win::Help]);
 }
