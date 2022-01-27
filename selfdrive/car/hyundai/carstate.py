@@ -128,7 +128,7 @@ class CarState(CarStateBase):
 
       ("YAW_RATE", "ESP12"),
 
-      ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
+      ("CF_Gway_DrvSeatBeltInd", "CGW4"),
 
       ("CF_Gway_DrvSeatBeltSw", "CGW1"),
       ("CF_Gway_DrvDrSw", "CGW1"),       # Driver Door
@@ -193,7 +193,7 @@ class CarState(CarStateBase):
         ("VSetDis", "SCC11"),
         ("SCCInfoDisplay", "SCC11"),
         ("ACC_ObjDist", "SCC11"),
-        ("ACCMode", "SCC12", 1),
+        ("ACCMode", "SCC12"),
       ]
 
       checks += [
@@ -273,7 +273,7 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
 
     signals = [
-      # sig_name, sig_address, default
+      # sig_name, sig_address
       ("CF_Lkas_LdwsActivemode", "LKAS11"),
       ("CF_Lkas_LdwsSysState", "LKAS11"),
       ("CF_Lkas_SysWarning", "LKAS11"),
