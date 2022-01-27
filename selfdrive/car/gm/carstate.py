@@ -31,11 +31,11 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.01
 
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]["PRNDL"], None))
-    ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
-    # Brake pedal's potentiometer returns near-zero reading even when pedal is not pressed.
-    # JJS: Bumping to 12 as it seems trucks value floats a bit higher
-    if ret.brake < 12/0xd0:
-      ret.brake = 0.
+    ret.brakePressed = bool(pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"])
+    ret.brake = 0.
+    
+    if ret.brakePressed:
+      ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
 
     if self.CP.enableGasInterceptor:
       ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
@@ -75,7 +75,6 @@ class CarState(CarStateBase):
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
     self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
 
-    ret.brakePressed = ret.brake > 1e-5
     # Regen braking is braking
     if self.car_fingerprint in EV_CAR:
       ret.brakePressed = ret.brakePressed or bool(pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"])
@@ -113,6 +112,7 @@ class CarState(CarStateBase):
       ("LKATorqueDeliveredStatus", "PSCMStatus", 0),
       ("TractionControlOn", "ESPStatus", 0),
       ("CruiseMainOn", "ECMEngineStatus", 0),
+      ("Brake_Pressed", "ECMEngineStatus", 0),
     ]
 
     checks = [
