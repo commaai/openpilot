@@ -142,7 +142,7 @@ class CarState(CarStateBase):
       ]
 
       checks += [
-        ("Dash_State2"),
+        ("Dash_State2", 1),
       ]
 
     if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
