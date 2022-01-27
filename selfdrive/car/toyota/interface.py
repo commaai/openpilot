@@ -20,14 +20,11 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
+    ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate]
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
-
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
-
-    # Most cars use this default safety param
-    ret.safetyConfigs[0].safetyParam = EPS_SCALE.get(candidate, 73)
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
