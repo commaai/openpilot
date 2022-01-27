@@ -30,10 +30,11 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.01
 
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]["PRNDL"], None))
-    ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
-    # Brake pedal's potentiometer returns near-zero reading even when pedal is not pressed.
-    if ret.brake < 10/0xd0:
-      ret.brake = 0.
+    ret.brakePressed = bool(pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"])
+    ret.brake = 0.
+
+    if ret.brakePressed:
+      ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
 
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
@@ -66,7 +67,6 @@ class CarState(CarStateBase):
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
     self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
 
-    ret.brakePressed = ret.brake > 1e-5
     # Regen braking is braking
     if self.car_fingerprint == CAR.VOLT:
       ret.brakePressed = ret.brakePressed or bool(pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"])
@@ -104,6 +104,7 @@ class CarState(CarStateBase):
       ("TractionControlOn", "ESPStatus"),
       ("EPBClosed", "EPBStatus"),
       ("CruiseMainOn", "ECMEngineStatus"),
+      ("Brake_Pressed", "ECMEngineStatus"),
     ]
 
     checks = [
