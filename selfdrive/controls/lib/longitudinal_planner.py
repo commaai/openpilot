@@ -58,7 +58,6 @@ class Planner:
 
   def update(self, sm):
     v_ego = sm['carState'].vEgo
-    a_ego = sm['carState'].aEgo
 
     v_cruise_kph = sm['controlsState'].vCruise
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
@@ -67,14 +66,12 @@ class Planner:
     long_control_state = sm['controlsState'].longControlState
     force_slow_decel = sm['controlsState'].forceDecel
 
-    prev_accel_constraint = True
-    if long_control_state == LongCtrlState.off or sm['carState'].gasPressed:
-      self.v_desired_filter.x = v_ego
-      self.a_desired = a_ego
-      prev_accel_constraint = False
+    active = long_control_state != LongCtrlState.off
+    active = active and not sm['carState'].gasPressed
+    active = active and not sm['carState'].standstill
 
-    if sm['carState'].standstill:
-      prev_accel_constraint = False
+    if not active:
+      self.v_desired_filter.x = v_ego
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
@@ -89,10 +86,10 @@ class Planner:
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
-    self.mpc.set_weights(prev_accel_constraint)
+    self.mpc.set_weights(active)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    self.mpc.update(sm['carState'], sm['radarState'], v_cruise, prev_accel_constraint=prev_accel_constraint)
+    self.mpc.update(sm['carState'], sm['radarState'], v_cruise)
 
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
