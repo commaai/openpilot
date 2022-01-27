@@ -71,7 +71,9 @@ class Planner:
     if long_control_state == LongCtrlState.off or sm['carState'].gasPressed:
       self.v_desired_filter.x = v_ego
       self.a_desired = a_ego
-      # Smoothly changing between accel trajectory is only relevant when OP is driving
+      prev_accel_constraint = False
+
+    if sm['carState'].standstill:
       prev_accel_constraint = False
 
     # Prevent divergence, smooth in current v_ego
@@ -86,9 +88,12 @@ class Planner:
     # clip limits, cannot init MPC outside of bounds
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
+
+    self.mpc.set_weights(prev_accel_constraint)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     self.mpc.update(sm['carState'], sm['radarState'], v_cruise, prev_accel_constraint=prev_accel_constraint)
+
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)

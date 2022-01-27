@@ -219,19 +219,20 @@ class LongitudinalMpc:
     self.x0 = np.zeros(X_DIM)
     self.set_weights()
 
-  def set_weights(self):
+  def set_weights(self, prev_accel_constraint=True):
     if self.e2e:
       self.set_weights_for_xva_policy()
       self.params[:,0] = -10.
       self.params[:,1] = 10.
       self.params[:,2] = 1e5
     else:
-      self.set_weights_for_lead_policy()
+      self.set_weights_for_lead_policy(prev_accel_constraint)
 
-  def set_weights_for_lead_policy(self):
-    W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, A_CHANGE_COST, J_EGO_COST]))
+  def set_weights_for_lead_policy(self, prev_accel_constraint=True):
+    a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
+    W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, a_change_cost, J_EGO_COST]))
     for i in range(N):
-      W[4,4] = A_CHANGE_COST * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
+      W[4,4] = a_change_cost * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
       self.solver.cost_set(i, 'W', W)
     # Setting the slice without the copy make the array not contiguous,
     # causing issues with the C interface.
