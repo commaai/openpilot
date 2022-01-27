@@ -56,7 +56,7 @@ public:
 
     if (Hardware::TICI()) {
       const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
-      const int debayer_local_worksize = 24;
+      const int debayer_local_worksize = 24;  // largest value that fits with amount of private memory
       constexpr int localMemSize = (debayer_local_worksize * 2 + 2) * (debayer_local_worksize * 2 + 2) * 2;
       const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
       CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
@@ -163,23 +163,18 @@ bool CameraBuf::acquire() {
     debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, gain, &event);
   } else {
     assert(rgb_stride == camera_state->ci.frame_stride);
-    // TODO rgb2yuv instead of copy
-    CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0, cur_rgb_buf->len, 0, 0, &event));
+    rgb2yuv->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl);
   }
 
   clWaitForEvents(1, &event);
   CL_CHECK(clReleaseEvent(event));
-
-  // rgb2yuv->queue(q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
   VisionIpcBufExtra extra = {
                         cur_frame_data.frame_id,
                         cur_frame_data.timestamp_sof,
                         cur_frame_data.timestamp_eof,
   };
-  // cur_rgb_buf->set_frame_id(cur_frame_data.frame_id);
   cur_yuv_buf->set_frame_id(cur_frame_data.frame_id);
-  // vipc_server->send(cur_rgb_buf, &extra);
   vipc_server->send(cur_yuv_buf, &extra);
 
   return true;
