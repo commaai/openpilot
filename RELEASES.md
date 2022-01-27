@@ -7,6 +7,7 @@ Version 0.8.13 (2022-XX-XX)
  * Hyundai Santa Fe Plug-in Hybrid 2022 support thanks to sunnyhaibin!
  * Subaru Impreza 2020 support thanks to martinl!
  * Toyota Avalon 2022 support thanks to sshane!
+ * Toyota Prius v 2017 support thanks to CT921!
 
 Version 0.8.12 (2021-12-15)
 ========================
