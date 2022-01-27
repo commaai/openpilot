@@ -43,44 +43,53 @@ extern "C" {
 
 
 
-enum Newton_type_collocation
+// enum Newton_type_collocation
+// {
+//     exact = 0,
+//     simplified_in,
+//     simplified_inis
+// };
+
+
+
+// typedef struct
+// {
+//     enum Newton_type_collocation type;
+//     double *eig;
+//     double *low_tria;
+//     bool single;
+//     bool freeze;
+
+//     double *transf1;
+//     double *transf2;
+
+//     double *transf1_T;
+//     double *transf2_T;
+// } Newton_scheme;
+
+
+typedef enum
 {
-    exact = 0,
-    simplified_in,
-    simplified_inis
-};
-
-
-
-typedef struct
-{
-    enum Newton_type_collocation type;
-    double *eig;
-    double *low_tria;
-    bool single;
-    bool freeze;
-
-    double *transf1;
-    double *transf2;
-
-    double *transf1_T;
-    double *transf2_T;
-} Newton_scheme;
-
+    GAUSS_LEGENDRE,
+    GAUSS_RADAU_IIA,
+} sim_collocation_type;
 
 
 //
-acados_size_t gauss_nodes_work_calculate_size(int ns);
+// acados_size_t gauss_legendre_nodes_work_calculate_size(int ns);
 //
-void gauss_nodes(int ns, double *nodes, void *raw_memory);
+// void gauss_legendre_nodes(int ns, double *nodes, void *raw_memory);
 //
-acados_size_t gauss_simplified_work_calculate_size(int ns);
+// acados_size_t gauss_simplified_work_calculate_size(int ns);
+// //
+// void gauss_simplified(int ns, Newton_scheme *scheme, void *work);
 //
-void gauss_simplified(int ns, Newton_scheme *scheme, void *work);
+acados_size_t butcher_tableau_work_calculate_size(int ns);
 //
-acados_size_t butcher_table_work_calculate_size(int ns);
+// void calculate_butcher_tableau_from_nodes(int ns, double *nodes, double *b, double *A, void *work);
 //
-void butcher_table(int ns, double *nodes, double *b, double *A, void *work);
+void calculate_butcher_tableau(int ns, sim_collocation_type collocation_type, double *c_vec,
+                               double *b_vec, double *A_mat, void *work);
 
 
 

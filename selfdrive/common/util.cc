@@ -20,6 +20,8 @@
 #include <sched.h>
 #endif  // __linux__
 
+namespace util {
+
 void set_thread_name(const char* name) {
 #ifdef __linux__
   // pthread_setname_np is dumb (fails instead of truncates)
@@ -55,8 +57,6 @@ int set_core_affinity(std::vector<int> cores) {
   return -1;
 #endif
 }
-
-namespace util {
 
 std::string read_file(const std::string& fn) {
   std::ifstream f(fn, std::ios::binary | std::ios::in);
@@ -194,28 +194,35 @@ float getenv(const char* key, float default_val) {
   return val ? atof(val) : default_val;
 }
 
-std::string tohex(const uint8_t *buf, size_t buf_size) {
-  std::unique_ptr<char[]> hexbuf(new char[buf_size * 2 + 1]);
-  for (size_t i = 0; i < buf_size; i++) {
-    sprintf(&hexbuf[i * 2], "%02x", buf[i]);
+std::string hexdump(const uint8_t* in, const size_t size) {
+  std::stringstream ss;
+  ss << std::hex << std::setfill('0');
+  for (size_t i = 0; i < size; i++) {
+    ss << std::setw(2) << static_cast<unsigned int>(in[i]);
   }
-  hexbuf[buf_size * 2] = 0;
-  return std::string(hexbuf.get(), hexbuf.get() + buf_size * 2);
-}
-
-std::string hexdump(const std::string& in) {
-    std::stringstream ss;
-    ss << std::hex << std::setfill('0');
-    for (size_t i = 0; i < in.size(); i++) {
-        ss << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(in[i]));
-    }
-    return ss.str();
+  return ss.str();
 }
 
 std::string dir_name(std::string const &path) {
   size_t pos = path.find_last_of("/");
   if (pos == std::string::npos) return "";
   return path.substr(0, pos);
+}
+
+std::string check_output(const std::string& command) {
+  char buffer[128];
+  std::string result;
+  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
+
+  if (!pipe) {
+    return "";
+  }
+
+  while (fgets(buffer, std::size(buffer), pipe.get()) != nullptr) {
+    result += std::string(buffer);
+  }
+
+  return result;
 }
 
 struct tm get_time() {

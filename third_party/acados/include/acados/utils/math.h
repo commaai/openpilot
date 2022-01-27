@@ -40,7 +40,7 @@ extern "C" {
 
 #include "acados/utils/types.h"
 
-#if defined(__DSPACE__)
+#if defined(__MABX2__)
 double fmax(double a, double b);
 #endif
 

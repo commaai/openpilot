@@ -30,18 +30,18 @@ original_segments = [
 ]
 
 segments = [
-  ("HYUNDAI", "fakedata|2021-10-07--15-56-26--0"),
-  ("TOYOTA", "fakedata|2021-10-07--15-57-47--0"),
-  ("TOYOTA2", "fakedata|2021-10-07--15-59-03--0"),
-  ("TOYOTA3", "fakedata|2021-10-07--15-53-21--0"),
-  ("HONDA", "fakedata|2021-10-07--16-00-19--0"),
-  ("HONDA2", "fakedata|2021-10-07--16-01-35--0"),
-  ("CHRYSLER", "fakedata|2021-10-07--16-02-52--0"),
-  ("SUBARU", "fakedata|2021-10-07--16-04-09--0"),
-  ("GM", "fakedata|2021-10-07--16-05-26--0"),
-  ("NISSAN", "fakedata|2021-10-07--16-09-53--0"),
-  ("VOLKSWAGEN", "fakedata|2021-10-07--16-11-11--0"),
-  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--2"),
+  ("HYUNDAI", "fakedata|2022-01-20--17-49-04--0"),
+  ("TOYOTA", "fakedata|2022-01-20--17-50-51--0"),
+  ("TOYOTA2", "fakedata|2022-01-20--17-52-36--0"),
+  ("TOYOTA3", "fakedata|2022-01-20--17-54-50--0"),
+  ("HONDA", "fakedata|2022-01-20--17-56-40--0"),
+  ("HONDA2", "fakedata|2022-01-20--17-58-25--0"),
+  ("CHRYSLER", "fakedata|2022-01-20--18-00-11--0"),
+  ("SUBARU", "fakedata|2022-01-20--18-01-57--0"),
+  ("GM", "fakedata|2022-01-20--18-03-41--0"),
+  ("NISSAN", "fakedata|2022-01-20--18-05-29--0"),
+  ("VOLKSWAGEN", "fakedata|2022-01-20--18-07-15--0"),
+  ("MAZDA", "fakedata|2022-01-20--18-09-32--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -65,16 +65,14 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   log_msgs = replay_process(cfg, lr)
 
   # check to make sure openpilot is engaged in the route
-  # TODO: update routes so enable check can run
-  #       failed enable check: honda bosch, hyundai, chrysler, and subaru
-  if cfg.proc_name == "controlsd" and FULL_TEST and False:
+  if cfg.proc_name == "controlsd":
     for msg in log_msgs:
       if msg.which() == "controlsState":
         if msg.controlsState.active:
           break
     else:
       segment = cmp_log_fn.split("/")[-1].split("_")[0]
-      raise Exception("Route never enabled: %s" % segment)
+      raise Exception(f"Route never enabled: {segment}")
 
   try:
     return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs, cfg.tolerance)
@@ -83,30 +81,30 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
 
 def format_diff(results, ref_commit):
   diff1, diff2 = "", ""
-  diff2 += "***** tested against commit %s *****\n" % ref_commit
+  diff2 += f"***** tested against commit {ref_commit} *****\n"
 
   failed = False
   for segment, result in list(results.items()):
-    diff1 += "***** results for segment %s *****\n" % segment
-    diff2 += "***** differences for segment %s *****\n" % segment
+    diff1 += f"***** results for segment {segment} *****\n"
+    diff2 += f"***** differences for segment {segment} *****\n"
 
     for proc, diff in list(result.items()):
-      diff1 += "\t%s\n" % proc
-      diff2 += "*** process: %s ***\n" % proc
+      diff1 += f"\t{proc}\n"
+      diff2 += f"*** process: {proc} ***\n"
 
       if isinstance(diff, str):
-        diff1 += "\t\t%s\n" % diff
+        diff1 += f"\t\t{diff}\n"
         failed = True
       elif len(diff):
         cnt = {}
         for d in diff:
-          diff2 += "\t%s\n" % str(d)
+          diff2 += f"\t{str(d)}\n"
 
           k = str(d[1])
           cnt[k] = 1 if k not in cnt else cnt[k] + 1
 
         for k, v in sorted(cnt.items()):
-          diff1 += "\t\t%s: %s\n" % (k, v)
+          diff1 += f"\t\t{k}: {v}\n"
         failed = True
   return diff1, diff2, failed
 
@@ -139,13 +137,13 @@ if __name__ == "__main__":
     print("couldn't find reference commit")
     sys.exit(1)
 
-  print("***** testing against commit %s *****" % ref_commit)
+  print(f"***** testing against commit {ref_commit} *****")
 
   # check to make sure all car brands are tested
   if FULL_TEST:
-    tested_cars = set(c.lower() for c, _ in segments)
+    tested_cars = {c.lower() for c, _ in segments}
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
-    assert len(untested) == 0, "Cars missing routes: %s" % (str(untested))
+    assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
   results: Any = {}
   for car_brand, segment in segments:
@@ -153,7 +151,7 @@ if __name__ == "__main__":
        (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
       continue
 
-    print("***** testing route segment %s *****\n" % segment)
+    print(f"***** testing route segment {segment} *****\n")
 
     results[segment] = {}
 
@@ -165,7 +163,7 @@ if __name__ == "__main__":
          (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
         continue
 
-      cmp_log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
+      cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
       results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
 
   diff1, diff2, failed = format_diff(results, ref_commit)

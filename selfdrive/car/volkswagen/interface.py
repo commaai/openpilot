@@ -38,14 +38,14 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.transmissionType = TransmissionType.manual
 
-      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2, 0xFD]):  # Airbag_01, LWI_01, ESP_19, ESP_21
+      if any(msg in fingerprint[1] for msg in (0x40, 0x86, 0xB2, 0xFD)):  # Airbag_01, LWI_01, ESP_19, ESP_21
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
-    # Global tuning defaults, can be overridden per-vehicle
+    # Global lateral tuning defaults, can be overridden per-vehicle
 
-    ret.steerActuatorDelay = 0.05
+    ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.6  # Let the params learner figure this out
@@ -78,6 +78,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1551 + STD_CARGO_KG
       ret.wheelbase = 2.79
 
+    elif candidate == CAR.POLO_MK6:
+      ret.mass = 1230 + STD_CARGO_KG
+      ret.wheelbase = 2.55
+
     elif candidate == CAR.TAOS_MK1:
       ret.mass = 1498 + STD_CARGO_KG
       ret.wheelbase = 2.69
@@ -99,6 +103,10 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.00  # SWB, LWB is 3.40, TBD how to detect difference
       ret.minSteerSpeed = 14.0
 
+    elif candidate == CAR.TROC_MK1:
+      ret.mass = 1413 + STD_CARGO_KG
+      ret.wheelbase = 2.63
+
     elif candidate == CAR.AUDI_A3_MK3:
       ret.mass = 1335 + STD_CARGO_KG
       ret.wheelbase = 2.61
@@ -106,6 +114,10 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.AUDI_Q2_MK1:
       ret.mass = 1205 + STD_CARGO_KG
       ret.wheelbase = 2.61
+
+    elif candidate == CAR.AUDI_Q3_MK2:
+      ret.mass = 1623 + STD_CARGO_KG
+      ret.wheelbase = 2.68
 
     elif candidate == CAR.SEAT_ATECA_MK1:
       ret.mass = 1900 + STD_CARGO_KG
@@ -140,7 +152,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.84
 
     else:
-      raise ValueError("unsupported car %s" % candidate)
+      raise ValueError(f"unsupported car {candidate}")
 
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.45
@@ -182,6 +194,8 @@ class CarInterface(CarInterfaceBase):
     # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:
       events.add(EventName.parkBrake)
+    if self.CS.tsk_status in (6, 7):
+      events.add(EventName.accFaulted)
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
@@ -202,11 +216,12 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
-                   c.hudControl.visualAlert,
-                   c.hudControl.leftLaneVisible,
-                   c.hudControl.rightLaneVisible,
-                   c.hudControl.leftLaneDepart,
-                   c.hudControl.rightLaneDepart)
+    hud_control = c.hudControl
+    ret = self.CC.update(c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
+                         hud_control.visualAlert,
+                         hud_control.leftLaneVisible,
+                         hud_control.rightLaneVisible,
+                         hud_control.leftLaneDepart,
+                         hud_control.rightLaneDepart)
     self.frame += 1
-    return can_sends
+    return ret

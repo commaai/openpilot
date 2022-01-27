@@ -36,9 +36,13 @@ public:
   std::optional<Estimate> predict_and_update_odo_speed(std::vector<Eigen::VectorXd> speed, double t, int kind);
   std::optional<Estimate> predict_and_update_odo_trans(std::vector<Eigen::VectorXd> trans, double t, int kind);
   std::optional<Estimate> predict_and_update_odo_rot(std::vector<Eigen::VectorXd> rot, double t, int kind);
+  void predict(double t);
 
   Eigen::VectorXd get_initial_x();
   MatrixXdr get_initial_P();
+  MatrixXdr get_fake_gps_pos_cov();
+  MatrixXdr get_fake_gps_vel_cov();
+  MatrixXdr get_reset_orientation_P();
 
   MatrixXdr H(Eigen::VectorXd in);
 
@@ -52,6 +56,9 @@ private:
 
   Eigen::VectorXd initial_x;
   MatrixXdr initial_P;
+  MatrixXdr fake_gps_pos_cov;
+  MatrixXdr fake_gps_vel_cov;
+  MatrixXdr reset_orientation_P;
   MatrixXdr Q;  // process noise
   std::unordered_map<int, MatrixXdr> obs_noise;
 };

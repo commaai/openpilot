@@ -4,6 +4,7 @@
 
 #include "selfdrive/ui/replay/framereader.h"
 #include "selfdrive/ui/replay/logreader.h"
+#include "selfdrive/ui/replay/util.h"
 
 struct RouteIdentifier {
   QString dongle_id;
@@ -45,7 +46,7 @@ class Segment : public QObject {
   Q_OBJECT
 
 public:
-  Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool local_cache);
+  Segment(int n, const SegmentFile &files, uint32_t flags);
   ~Segment();
   inline bool isLoaded() const { return !loading_ && !abort_; }
 
@@ -57,9 +58,10 @@ signals:
   void loadFinished(bool success);
 
 protected:
-  void loadFile(int id, const std::string file, bool local_cache);
+  void loadFile(int id, const std::string file);
 
   std::atomic<bool> abort_ = false;
   std::atomic<int> loading_ = 0;
   QFutureSynchronizer<void> synchronizer_;
+  uint32_t flags;
 };

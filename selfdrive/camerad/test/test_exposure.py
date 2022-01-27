@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-
 import time
 import unittest
-import os
 import numpy as np
 
 from selfdrive.test.helpers import with_processes
@@ -12,11 +10,6 @@ from selfdrive.hardware import EON, TICI
 
 TEST_TIME = 45
 REPEAT = 5
-
-os.environ["SEND_ROAD"] = "1"
-os.environ["SEND_DRIVER"] = "1"
-if TICI:
-  os.environ["SEND_WIDE_ROAD"] = "1"
 
 class TestCamerad(unittest.TestCase):
   @classmethod
@@ -38,14 +31,11 @@ class TestCamerad(unittest.TestCase):
     print([i_median, i_mean])
     return med_ex[0] < i_median < med_ex[1] and mean_ex[0] < i_mean < mean_ex[1]
 
-
   @with_processes(['camerad'])
   def test_camera_operation(self):
-    print("checking image outputs")
-
-    start = time.time()
     passed = 0
-    while(time.time() - start < TEST_TIME and passed < REPEAT):
+    start = time.time()
+    while time.time() - start < TEST_TIME and passed < REPEAT:
       rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
 
       res = self._is_exposure_okay(rpic)
@@ -61,8 +51,7 @@ class TestCamerad(unittest.TestCase):
 
       passed += int(res)
       time.sleep(2)
-    print(passed)
-    self.assertTrue(passed >= REPEAT)
+    self.assertGreaterEqual(passed, REPEAT)
 
 if __name__ == "__main__":
   unittest.main()

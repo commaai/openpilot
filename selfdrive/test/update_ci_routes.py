@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import subprocess
-from azure.storage.blob import BlockBlobService
+from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
 
 from selfdrive.test.test_routes import routes as test_car_models_routes
 from selfdrive.test.process_replay.test_processes import original_segments as replay_segments
@@ -25,7 +25,7 @@ def upload_route(path):
     "azcopy",
     "copy",
     f"{path}/*",
-    "https://{}.blob.core.windows.net/{}/{}?{}".format(_DATA_ACCOUNT_CI, "openpilotci", destpath, DEST_KEY),
+    f"https://{_DATA_ACCOUNT_CI}.blob.core.windows.net/openpilotci/{destpath}?{DEST_KEY}",
     "--recursive=false",
     "--overwrite=false",
     "--exclude-pattern=*/dcamera.hevc",
@@ -46,8 +46,8 @@ def sync_to_ci_public(route):
     cmd = [
       "azcopy",
       "copy",
-      "https://{}.blob.core.windows.net/{}/{}?{}".format(source_account, source_bucket, key_prefix, source_key),
-      "https://{}.blob.core.windows.net/{}/{}?{}".format(_DATA_ACCOUNT_CI, "openpilotci", dongle_id, DEST_KEY),
+      f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}?{source_key}",
+      f"https://{_DATA_ACCOUNT_CI}.blob.core.windows.net/openpilotci/{dongle_id}?{DEST_KEY}",
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",

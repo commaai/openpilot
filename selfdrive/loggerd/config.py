@@ -13,6 +13,13 @@ else:
 CAMERA_FPS = 20
 SEGMENT_LENGTH = 60
 
+STATS_DIR_FILE_LIMIT = 10000
+STATS_SOCKET = "ipc:///tmp/stats"
+if PC:
+  STATS_DIR = os.path.join(str(Path.home()), ".comma", "stats")
+else:
+  STATS_DIR = "/data/stats/"
+STATS_FLUSH_TIME_S = 60
 
 def get_available_percent(default=None):
   try:

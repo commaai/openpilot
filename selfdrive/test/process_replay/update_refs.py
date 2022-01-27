@@ -6,7 +6,7 @@ from selfdrive.test.openpilotci import upload_file, get_url
 from selfdrive.test.process_replay.compare_logs import save_log
 from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
 from selfdrive.test.process_replay.test_processes import segments
-from selfdrive.version import get_git_commit
+from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
 if __name__ == "__main__":
@@ -16,7 +16,7 @@ if __name__ == "__main__":
   process_replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(process_replay_dir, "ref_commit")
 
-  ref_commit = get_git_commit()
+  ref_commit = get_commit()
   if ref_commit is None:
     raise Exception("couldn't get ref commit")
   with open(ref_commit_fn, "w") as f:
@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     for cfg in CONFIGS:
       log_msgs = replay_process(cfg, lr)
-      log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
+      log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
       save_log(log_fn, log_msgs)
 
       if not no_upload:

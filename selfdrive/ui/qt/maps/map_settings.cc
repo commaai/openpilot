@@ -127,8 +127,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     {
       QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/locations";
       RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_NavDestinations", 30, true);
-      QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
-      QObject::connect(repeater, &RequestRepeater::failedResponse, this, &MapPanel::failedResponse);
+      QObject::connect(repeater, &RequestRepeater::requestDone, this, &MapPanel::parseResponse);
     }
 
     // Destination set while offline
@@ -137,9 +136,8 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
       RequestRepeater* repeater = new RequestRepeater(this, url, "", 10, true);
       HttpRequest* deleter = new HttpRequest(this);
 
-      QObject::connect(repeater, &RequestRepeater::receivedResponse, [=](QString resp) {
-        auto params = Params();
-        if (resp != "null") {
+      QObject::connect(repeater, &RequestRepeater::requestDone, [=](const QString &resp, bool success) {
+        if (success && resp != "null") {
           if (params.get("NavDestination").empty()) {
             qWarning() << "Setting NavDestination from /next" << resp;
             params.put("NavDestination", resp.toStdString());
@@ -184,7 +182,12 @@ void MapPanel::updateCurrentRoute() {
   current_widget->setVisible(dest.size() && !doc.isNull());
 }
 
-void MapPanel::parseResponse(const QString &response) {
+void MapPanel::parseResponse(const QString &response, bool success) {
+  if (!success) {
+    stack->setCurrentIndex(1);
+    return;
+  }
+
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on navigation locations";
@@ -282,10 +285,6 @@ void MapPanel::parseResponse(const QString &response) {
   recent_layout->addStretch();
   stack->setCurrentIndex(0);
   repaint();
-}
-
-void MapPanel::failedResponse(const QString &response) {
-  stack->setCurrentIndex(1);
 }
 
 void MapPanel::navigateTo(const QJsonObject &place) {

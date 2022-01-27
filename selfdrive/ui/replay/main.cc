@@ -18,9 +18,7 @@ void sigHandler(int s) {
   if (oldt.c_lflag) {
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
   }
-  if (replay) {
-    replay->stop();
-  }
+  replay->stop();
   qApp->quit();
 }
 
@@ -39,7 +37,7 @@ int getch() {
   return ch;
 }
 
-void keyboardThread(Replay *replay) {
+void keyboardThread(Replay *replay_) {
   char c;
   while (true) {
     c = getch();
@@ -51,31 +49,58 @@ void keyboardThread(Replay *replay) {
       try {
         if (r[0] == '#') {
           r.erase(0, 1);
-          replay->seekTo(std::stoi(r) * 60, false);
+          replay_->seekTo(std::stoi(r) * 60, false);
         } else {
-          replay->seekTo(std::stoi(r), false);
+          replay_->seekTo(std::stoi(r), false);
         }
       } catch (std::invalid_argument) {
         qDebug() << "invalid argument";
       }
       getch();  // remove \n from entering seek
+    } else if (c == 'e') {
+      replay_->seekToFlag(FindFlag::nextEngagement);
+    } else if (c == 'd') {
+      replay_->seekToFlag(FindFlag::nextDisEngagement);
     } else if (c == 'm') {
-      replay->seekTo(+60, true);
+      replay_->seekTo(+60, true);
     } else if (c == 'M') {
-      replay->seekTo(-60, true);
+      replay_->seekTo(-60, true);
     } else if (c == 's') {
-      replay->seekTo(+10, true);
+      replay_->seekTo(+10, true);
     } else if (c == 'S') {
-      replay->seekTo(-10, true);
+      replay_->seekTo(-10, true);
     } else if (c == 'G') {
-      replay->seekTo(0, true);
+      replay_->seekTo(0, true);
+    } else if (c == 'x') {
+      if (replay_->hasFlag(REPLAY_FLAG_FULL_SPEED)) {
+        replay_->removeFlag(REPLAY_FLAG_FULL_SPEED);
+        qInfo() << "replay at normal speed";
+      } else {
+        replay_->addFlag(REPLAY_FLAG_FULL_SPEED);
+        qInfo() << "replay at full speed";
+      }
     } else if (c == ' ') {
-      replay->pause(!replay->isPaused());
+      replay_->pause(!replay_->isPaused());
     }
   }
 }
 
+void replayMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+  QByteArray localMsg = msg.toLocal8Bit();
+  if (type == QtDebugMsg) {
+    std::cout << "\033[38;5;248m" << localMsg.constData() << "\033[00m" << std::endl;
+  } else if (type == QtWarningMsg) {
+    std::cout << "\033[38;5;227m" << localMsg.constData() << "\033[00m" << std::endl;
+  } else if (type == QtCriticalMsg) {
+    std::cout << "\033[38;5;196m" << localMsg.constData() << "\033[00m" << std::endl;
+  } else {
+    std::cout << localMsg.constData() << std::endl;
+  }
+}
+
 int main(int argc, char *argv[]) {
+  qInstallMessageHandler(replayMessageOutput);
+
   QApplication app(argc, argv);
   std::signal(SIGINT, sigHandler);
   std::signal(SIGTERM, sigHandler);
@@ -85,6 +110,10 @@ int main(int argc, char *argv[]) {
       {"ecam", REPLAY_FLAG_ECAM, "load wide road camera"},
       {"no-loop", REPLAY_FLAG_NO_LOOP, "stop at the end of the route"},
       {"no-cache", REPLAY_FLAG_NO_FILE_CACHE, "turn off local cache"},
+      {"qcam", REPLAY_FLAG_QCAMERA, "load qcamera"},
+      {"yuv", REPLAY_FLAG_SEND_YUV, "send yuv frame"},
+      {"no-cuda", REPLAY_FLAG_NO_CUDA, "disable CUDA"},
+      {"no-vipc", REPLAY_FLAG_NO_VIPC, "do not output video"},
   };
 
   QCommandLineParser parser;

@@ -39,7 +39,7 @@ def set_realtime_priority(level: int) -> None:
 
 def set_core_affinity(core: int) -> None:
   if not PC:
-    os.sched_setaffinity(0, [core,])
+    os.sched_setaffinity(0, [core,])   # type: ignore[attr-defined]
 
 
 def config_realtime_process(core: int, priority: int) -> None:
@@ -79,7 +79,7 @@ class Ratekeeper:
     remaining = self._next_frame_time - sec_since_boot()
     self._next_frame_time += self._interval
     if self._print_delay_threshold is not None and remaining < -self._print_delay_threshold:
-      print("%s lagging by %.2f ms" % (self._process_name, -remaining * 1000))
+      print(f"{self._process_name} lagging by {-remaining * 1000:.2f} ms")
       lagged = True
     self._frame += 1
     self._remaining = remaining
