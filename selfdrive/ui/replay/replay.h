@@ -28,6 +28,8 @@ enum class FindFlag {
   nextDisEngagement
 };
 
+enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical };
+
 class Replay : public QObject {
   Q_OBJECT
 
@@ -37,23 +39,31 @@ public:
   ~Replay();
   bool load();
   void start(int seconds = 0);
+  void stop();
   void pause(bool pause);
-  bool isPaused() const { return paused_; }
+  void seekToFlag(FindFlag flag);
+  inline bool isPaused() const { return paused_; }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
+  inline const Route* route() const { return route_.get(); }
+  inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
+  inline int toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
+  inline int totalSeconds() const { return segments_.size() * 60; }
+  inline const std::string &carFingerprint() const { return car_fingerprint_; }
+  inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { 
+    std::lock_guard lk(timeline_lock);
+    return timeline; 
+  }
 
 signals:
   void segmentChanged();
   void seekTo(int seconds, bool relative);
-  void seekToFlag(FindFlag flag);
-  void stop();
+  void streamStarted();
 
 protected slots:
   void queueSegment();
-  void doStop();
   void doSeek(int seconds, bool relative);
-  void doSeekToFlag(FindFlag flag);
   void segmentLoadFinished(bool sucess);
 
 protected:
@@ -66,7 +76,7 @@ protected:
   void updateEvents(const std::function<bool()>& lambda);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
-  inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
+  void buildTimeline();
   inline bool isSegmentMerged(int n) {
     return std::find(segments_merged_.begin(), segments_merged_.end(), n) != segments_merged_.end();
   }
@@ -80,7 +90,7 @@ protected:
   std::atomic<int> current_segment_ = 0;
   SegmentMap segments_;
   // the following variables must be protected with stream_lock_
-  bool exit_ = false;
+  std::atomic<bool> exit_ = false;
   bool paused_ = false;
   bool events_updated_ = false;
   uint64_t route_start_ts_ = 0;
@@ -96,4 +106,9 @@ protected:
   std::unique_ptr<Route> route_;
   std::unique_ptr<CameraServer> camera_server_;
   std::atomic<uint32_t> flags_ = REPLAY_FLAG_NONE;
+
+  std::mutex timeline_lock;
+  QFuture<void> timeline_future;
+  std::vector<std::tuple<int, int, TimelineType>> timeline;
+  std::string car_fingerprint_;
 };

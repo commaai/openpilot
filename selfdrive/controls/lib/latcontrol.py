@@ -24,5 +24,5 @@ class LatControl(ABC):
       self.sat_count += self.sat_count_rate
     else:
       self.sat_count -= self.sat_count_rate
-    self.sat_count = clip(self.sat_count, 0.0, 1.0)
-    return self.sat_count > self.sat_limit
+    self.sat_count = clip(self.sat_count, 0.0, self.sat_limit)
+    return self.sat_count > (self.sat_limit - 1e-3)
