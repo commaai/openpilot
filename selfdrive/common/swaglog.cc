@@ -18,7 +18,12 @@
 
 class SwaglogState : public LogState {
  public:
-  SwaglogState() : LogState("ipc:///tmp/logmessage") {
+  SwaglogState() : LogState("ipc:///tmp/logmessage") {}
+
+  bool initialized = false;
+  json11::Json::object ctx_j;
+
+  inline void initialize() {
     ctx_j = json11::Json::object {};
     print_level = CLOUDLOG_WARNING;
     const char* print_lvl = getenv("LOGPRINT");
@@ -52,8 +57,9 @@ class SwaglogState : public LogState {
     } else {
       ctx_j["device"] =  "pc";
     }
-  };
-  json11::Json::object ctx_j;
+
+    initialized = true;
+  }
 };
 
 static SwaglogState s = {};
@@ -77,6 +83,8 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   if (ret <= 0 || !msg_buf) return;
 
   std::lock_guard lk(s.lock);
+
+  if (!s.initialized) s.initialize();
 
   json11::Json log_j = json11::Json::object {
     {"msg", msg_buf},

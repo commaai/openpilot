@@ -47,10 +47,9 @@ void recv_log(int thread_cnt, int thread_msg_cnt) {
 
     auto ctx = msg["ctx"];
 
-    // TODO: this doesn't work anymore because the ctx is constructed at "import time"
-    // REQUIRE(ctx["daemon"].string_value() == daemon_name);
-    // REQUIRE(ctx["dongle_id"].string_value() == dongle_id);
-    // REQUIRE(ctx["dirty"].bool_value() == true);
+    REQUIRE(ctx["daemon"].string_value() == daemon_name);
+    REQUIRE(ctx["dongle_id"].string_value() == dongle_id);
+    REQUIRE(ctx["dirty"].bool_value() == true);
 
     REQUIRE(ctx["version"].string_value() == COMMA_VERSION);
 
