@@ -56,7 +56,7 @@ public:
 
     if (Hardware::TICI()) {
       const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
-      const int debayer_local_worksize = 16;
+      const int debayer_local_worksize = 24;
       constexpr int localMemSize = (debayer_local_worksize * 2 + 2) * (debayer_local_worksize * 2 + 2) * 2;
       const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
       CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
