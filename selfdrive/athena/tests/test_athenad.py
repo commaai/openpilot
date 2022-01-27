@@ -166,6 +166,31 @@ class TestAthenadMethods(unittest.TestCase):
     finally:
       end_event.set()
 
+  @with_http_server
+  @mock.patch('requests.put')
+  def test_upload_handler_retry(self, host, mock_put):
+    for status, retry in ((500, True), (412, False)):
+      mock_put.return_value.status_code = status
+      fn = os.path.join(athenad.ROOT, 'qlog.bz2')
+      Path(fn).touch()
+      item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
+
+      end_event = threading.Event()
+      thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
+      thread.start()
+
+      athenad.upload_queue.put_nowait(item)
+      try:
+        self.wait_for_upload()
+        time.sleep(0.1)
+
+        self.assertEqual(athenad.upload_queue.qsize(), 1 if retry else 0)
+      finally:
+        end_event.set()
+      
+      if retry:
+        self.assertEqual(athenad.upload_queue.get().retry_count, 1)
+
   def test_upload_handler_timeout(self):
     """When an upload times out or fails to connect it should be placed back in the queue"""
     fn = os.path.join(athenad.ROOT, 'qlog.bz2')

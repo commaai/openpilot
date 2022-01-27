@@ -2,7 +2,7 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.tunes import LatTunes, LongTunes, set_long_tune, set_lat_tune
-from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, CarControllerParams
+from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, EPS_SCALE, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -20,17 +20,15 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
+    ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate]
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
-
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
-    # Most cars use this default safety param
-    ret.safetyConfigs[0].safetyParam = 73
+    stop_and_go = False
 
     if candidate == CAR.PRIUS:
-      ret.safetyConfigs[0].safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       stop_and_go = True
       ret.wheelbase = 2.70
       ret.steerRatio = 15.74   # unknown end-to-end spec
@@ -39,6 +37,13 @@ class CarInterface(CarInterfaceBase):
 
       set_lat_tune(ret.lateralTuning, LatTunes.INDI_PRIUS)
       ret.steerActuatorDelay = 0.3
+
+    elif candidate == CAR.PRIUS_V:
+      ret.wheelbase = 2.78
+      ret.steerRatio = 17.8
+      tire_stiffness_factor = 0.5533
+      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
+      set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
 
     elif candidate in (CAR.RAV4, CAR.RAV4H):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
@@ -49,8 +54,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.LQR_RAV4)
 
     elif candidate == CAR.COROLLA:
-      ret.safetyConfigs[0].safetyParam = 88
-      stop_and_go = False
       ret.wheelbase = 2.70
       ret.steerRatio = 18.27
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -99,7 +102,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_G)
 
     elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2):
-      stop_and_go = False
       ret.wheelbase = 2.82
       ret.steerRatio = 14.8  # Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
       tire_stiffness_factor = 0.7983
@@ -154,8 +156,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_J)
 
     elif candidate == CAR.LEXUS_IS:
-      ret.safetyConfigs[0].safetyParam = 77
-      stop_and_go = False
       ret.wheelbase = 2.79908
       ret.steerRatio = 13.3
       tire_stiffness_factor = 0.444
@@ -163,8 +163,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
 
     elif candidate == CAR.LEXUS_RC:
-      ret.safetyConfigs[0].safetyParam = 77
-      stop_and_go = False
       ret.wheelbase = 2.73050
       ret.steerRatio = 13.3
       tire_stiffness_factor = 0.444
@@ -172,7 +170,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
 
     elif candidate == CAR.LEXUS_CTH:
-      ret.safetyConfigs[0].safetyParam = 100
       stop_and_go = True
       ret.wheelbase = 2.60
       ret.steerRatio = 18.6

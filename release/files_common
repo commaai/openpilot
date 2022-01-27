@@ -200,6 +200,8 @@ selfdrive/common/version.h
 
 selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
+selfdrive/common/statlog.h
+selfdrive/common/statlog.cc
 selfdrive/common/util.cc
 selfdrive/common/util.h
 selfdrive/common/queue.h
@@ -238,6 +240,7 @@ selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/latcontrol_indi.py
 selfdrive/controls/lib/latcontrol_lqr.py
 selfdrive/controls/lib/latcontrol_pid.py
+selfdrive/controls/lib/latcontrol.py
 selfdrive/controls/lib/lateral_planner.py
 selfdrive/controls/lib/longcontrol.py
 selfdrive/controls/lib/longitudinal_planner.py
@@ -592,15 +595,10 @@ opendbc/subaru_outback_2015_generated.dbc
 opendbc/subaru_outback_2019_generated.dbc
 opendbc/subaru_forester_2017_generated.dbc
 
-opendbc/toyota_tssp_pt_generated.dbc
-opendbc/toyota_tssp_hybrid_generated.dbc
+opendbc/toyota_tnga_k_pt_generated.dbc
 opendbc/toyota_rav4_2017_pt_generated.dbc
-opendbc/toyota_prius_2017_pt_generated.dbc
-opendbc/toyota_corolla_2017_pt_generated.dbc
 opendbc/toyota_nodsu_pt_generated.dbc
-opendbc/toyota_nodsu_hybrid_pt_generated.dbc
 opendbc/lexus_is_2018_pt_generated.dbc
-opendbc/lexus_ct200h_2018_pt_generated.dbc
 opendbc/toyota_adas.dbc
 opendbc/toyota_tss2_adas.dbc
 
