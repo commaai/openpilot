@@ -68,7 +68,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
     #TODO: JJS: Add hasEPB to cereal and use detection rather than hard coding...
     #if self.CP.hasEPB:
-    if self.CP.carFingerprint == CAR.SUBURBAN or self.CP.carFingerprint == CAR.TAHOE_NR:
+    if self.CP.carFingerprint != CAR.SUBURBAN and self.CP.carFingerprint != CAR.TAHOE_NR:
       self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
 
     ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"])
@@ -131,7 +131,7 @@ class CarState(CarStateBase):
     ]
 
     # TODO: Might be wise to find the non-electronic parking brake signal
-    if CP.carFingerprint == CAR.SUBURBAN or CP.carFingerprint == CAR.TAHOE_NR:
+    if CP.carFingerprint != CAR.SUBURBAN and CP.carFingerprint != CAR.TAHOE_NR:
       signals.append(("EPBClosed", "EPBStatus", 0))
       checks.append(("EPBStatus", 20))
     
