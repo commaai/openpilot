@@ -2,7 +2,7 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.tunes import LatTunes, LongTunes, set_long_tune, set_lat_tune
-from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, CarControllerParams
+from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, EPS_SCALE, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -27,10 +27,9 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
     # Most cars use this default safety param
-    ret.safetyConfigs[0].safetyParam = 73
+    ret.safetyConfigs[0].safetyParam = EPS_SCALE.get(candidate, 73)
 
     if candidate == CAR.PRIUS:
-      ret.safetyConfigs[0].safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       stop_and_go = True
       ret.wheelbase = 2.70
       ret.steerRatio = 15.74   # unknown end-to-end spec
@@ -49,7 +48,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.LQR_RAV4)
 
     elif candidate == CAR.COROLLA:
-      ret.safetyConfigs[0].safetyParam = 88
       stop_and_go = False
       ret.wheelbase = 2.70
       ret.steerRatio = 18.27
@@ -154,7 +152,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_J)
 
     elif candidate == CAR.LEXUS_IS:
-      ret.safetyConfigs[0].safetyParam = 77
       stop_and_go = False
       ret.wheelbase = 2.79908
       ret.steerRatio = 13.3
@@ -163,7 +160,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
 
     elif candidate == CAR.LEXUS_RC:
-      ret.safetyConfigs[0].safetyParam = 77
       stop_and_go = False
       ret.wheelbase = 2.73050
       ret.steerRatio = 13.3
@@ -172,7 +168,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
 
     elif candidate == CAR.LEXUS_CTH:
-      ret.safetyConfigs[0].safetyParam = 100
       stop_and_go = True
       ret.wheelbase = 2.60
       ret.steerRatio = 18.6
