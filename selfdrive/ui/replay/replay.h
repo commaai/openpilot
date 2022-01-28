@@ -58,11 +58,9 @@ public:
   }
 
 signals:
-  void segmentChanged();
   void streamStarted();
 
 protected slots:
-  void queueSegment();
   void segmentLoadFinished(bool sucess);
 
 protected:
@@ -71,6 +69,7 @@ protected:
   void startStream(const Segment *cur_segment);
   void stream();
   void setCurrentSegment(int n);
+  void queueSegment();
   void mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end);
   void updateEvents(const std::function<bool()>& lambda);
   void publishMessage(const Event *e);

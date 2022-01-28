@@ -31,9 +31,6 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   route_ = std::make_unique<Route>(route, data_dir);
   events_ = std::make_unique<std::vector<Event *>>();
   new_events_ = std::make_unique<std::vector<Event *>>();
-
-  qRegisterMetaType<FindFlag>("FindFlag");
-  connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
 
 Replay::~Replay() {
@@ -180,7 +177,7 @@ void Replay::pause(bool pause) {
 
 void Replay::setCurrentSegment(int n) {
   if (current_segment_.exchange(n) != n) {
-    emit segmentChanged();
+    QMetaObject::invokeMethod(this, &Replay::queueSegment, Qt::QueuedConnection);
   }
 }
 
