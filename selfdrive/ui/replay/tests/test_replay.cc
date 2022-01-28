@@ -67,12 +67,7 @@ TEST_CASE("LogReader") {
   }
 }
 
-TEST_CASE("Segment") {
-  auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
-  Route demo_route(DEMO_ROUTE);
-  REQUIRE(demo_route.load());
-  REQUIRE(demo_route.segments().size() == 11);
-
+void test_route(Route &demo_route, uint32_t flags) {
   QEventLoop loop;
   Segment segment(0, demo_route.at(0), flags);
   QObject::connect(&segment, &Segment::loadFinished, [&]() {
@@ -108,6 +103,39 @@ TEST_CASE("Segment") {
     loop.quit();
   });
   loop.exec();
+}
+
+TEST_CASE("Route") {
+  // Create a local route from remote for testing
+  Route remote_route(DEMO_ROUTE);
+  REQUIRE(remote_route.load());
+  char tmp_path[] = "/tmp/root_XXXXXX";
+  const std::string data_dir = mkdtemp(tmp_path);
+  const std::string route_name = DEMO_ROUTE.mid(17).toStdString();
+  for (int i = 0; i < 2; ++i) {
+    std::string log_path = util::string_format("%s/%s--%d/", data_dir.c_str(), route_name.c_str(), i);
+    util::create_directories(log_path, 0755);
+    httpDownload(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2");
+    httpDownload(remote_route.at(i).road_cam.toStdString(), log_path + "fcamera.hevc");
+    httpDownload(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc");
+    httpDownload(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc");
+    httpDownload(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts");
+  }
+
+  SECTION("Local route") {
+    auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
+    Route local_route(DEMO_ROUTE, QString::fromStdString(data_dir));
+    REQUIRE(local_route.load());
+    REQUIRE(local_route.segments().size() == 2);
+    test_route(local_route, flags);
+  };
+  SECTION("Remote route") {
+    auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
+    Route demo_route(DEMO_ROUTE);
+    REQUIRE(demo_route.load());
+    REQUIRE(demo_route.segments().size() == 11);
+    test_route(demo_route, flags);
+  };
 }
 
 // helper class for unit tests
