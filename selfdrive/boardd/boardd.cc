@@ -342,6 +342,7 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
 
     auto ps = pss[i];
     ps.setUptime(pandaState.uptime);
+    ps.setBlockedCnt(pandaState.blocked_msg_cnt);
     ps.setIgnitionLine(pandaState.ignition_line);
     ps.setIgnitionCan(pandaState.ignition_can);
     ps.setControlsAllowed(pandaState.controls_allowed);
