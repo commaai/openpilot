@@ -77,9 +77,9 @@ TEST_CASE("LogReader") {
   }
 }
 
-void test_route(Route &demo_route, uint32_t flags) {
+void read_segment(int n, const SegmentFile &segment_file, uint32_t flags) {
   QEventLoop loop;
-  Segment segment(0, demo_route.at(0), flags);
+  Segment segment(n, segment_file, flags);
   QObject::connect(&segment, &Segment::loadFinished, [&]() {
     REQUIRE(segment.isLoaded() == true);
     REQUIRE(segment.log != nullptr);
@@ -134,17 +134,21 @@ TEST_CASE("Route") {
 
   SECTION("Local route") {
     auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
-    Route local_route(DEMO_ROUTE, QString::fromStdString(data_dir));
-    REQUIRE(local_route.load());
-    REQUIRE(local_route.segments().size() == 2);
-    test_route(local_route, flags);
+    Route route(DEMO_ROUTE, QString::fromStdString(data_dir));
+    REQUIRE(route.load());
+    REQUIRE(route.segments().size() == 2);
+    for (int i = 0; i < route.segments().size(); ++i) {
+      read_segment(i, route.at(i), flags);
+    }
   };
   SECTION("Remote route") {
     auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
-    Route demo_route(DEMO_ROUTE);
-    REQUIRE(demo_route.load());
-    REQUIRE(demo_route.segments().size() == 11);
-    test_route(demo_route, flags);
+    Route route(DEMO_ROUTE);
+    REQUIRE(route.load());
+    REQUIRE(route.segments().size() == 11);
+    for (int i = 0; i < 2; ++i) {
+      read_segment(i, route.at(i), flags);
+    }
   };
 }
 
