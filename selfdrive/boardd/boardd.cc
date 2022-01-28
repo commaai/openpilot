@@ -304,34 +304,34 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
 
   std::vector<health_t> pandaStates;
   for (const auto& panda : pandas){
-    health_t pandaState = panda->get_state();
+    health_t health = panda->get_state();
 
     if (spoofing_started) {
-      pandaState.ignition_line = 1;
+      health.ignition_line_pkt = 1;
     }
 
-    ignition_local |= ((pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
+    ignition_local |= ((health.ignition_line_pkt != 0) || (health.ignition_can_pkt != 0));
 
-    pandaStates.push_back(pandaState);
+    pandaStates.push_back(health);
   }
 
   for (uint32_t i = 0; i < pandas.size(); i++) {
     auto panda = pandas[i];
-    const auto &pandaState = pandaStates[i];
+    const auto &health = pandaStates[i];
 
     // Make sure CAN buses are live: safety_setter_thread does not work if Panda CAN are silent and there is only one other CAN node
-    if (pandaState.safety_model == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
+    if (health.safety_mode_pkt == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
     }
 
   #ifndef __x86_64__
     bool power_save_desired = !ignition_local && !pigeon_active;
-    if (pandaState.power_save_enabled != power_save_desired) {
+    if (health.power_save_enabled_pkt != power_save_desired) {
       panda->set_power_saving(power_save_desired);
     }
 
     // set safety mode to NO_OUTPUT when car is off. ELM327 is an alternative if we want to leverage athenad/connect
-    if (!ignition_local && (pandaState.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
+    if (!ignition_local && (health.safety_mode_pkt != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
     }
   #endif
@@ -341,27 +341,27 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
     }
 
     auto ps = pss[i];
-    ps.setUptime(pandaState.uptime);
-    ps.setBlockedCnt(pandaState.blocked_msg_cnt);
-    ps.setIgnitionLine(pandaState.ignition_line);
-    ps.setIgnitionCan(pandaState.ignition_can);
-    ps.setControlsAllowed(pandaState.controls_allowed);
-    ps.setGasInterceptorDetected(pandaState.gas_interceptor_detected);
-    ps.setCanRxErrs(pandaState.can_rx_errs);
-    ps.setCanSendErrs(pandaState.can_send_errs);
-    ps.setCanFwdErrs(pandaState.can_fwd_errs);
-    ps.setGmlanSendErrs(pandaState.gmlan_send_errs);
+    ps.setUptime(health.uptime_pkt);
+    ps.setBlockedCnt(health.blocked_msg_cnt_pkt);
+    ps.setIgnitionLine(health.ignition_line_pkt);
+    ps.setIgnitionCan(health.ignition_can_pkt);
+    ps.setControlsAllowed(health.controls_allowed_pkt);
+    ps.setGasInterceptorDetected(health.gas_interceptor_detected_pkt);
+    ps.setCanRxErrs(health.can_rx_errs_pkt);
+    ps.setCanSendErrs(health.can_send_errs_pkt);
+    ps.setCanFwdErrs(health.can_fwd_errs_pkt);
+    ps.setGmlanSendErrs(health.gmlan_send_errs_pkt);
     ps.setPandaType(panda->hw_type);
-    ps.setSafetyModel(cereal::CarParams::SafetyModel(pandaState.safety_model));
-    ps.setSafetyParam(pandaState.safety_param);
-    ps.setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
-    ps.setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
-    ps.setHeartbeatLost((bool)(pandaState.heartbeat_lost));
-    ps.setUnsafeMode(pandaState.unsafe_mode);
-    ps.setHarnessStatus(cereal::PandaState::HarnessStatus(pandaState.car_harness_status));
+    ps.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_mode_pkt));
+    ps.setSafetyParam(health.safety_param_pkt);
+    ps.setFaultStatus(cereal::PandaState::FaultStatus(health.fault_status_pkt));
+    ps.setPowerSaveEnabled((bool)(health.power_save_enabled_pkt));
+    ps.setHeartbeatLost((bool)(health.heartbeat_lost_pkt));
+    ps.setUnsafeMode(health.unsafe_mode_pkt);
+    ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
 
     // Convert faults bitset to capnp list
-    std::bitset<sizeof(pandaState.faults) * 8> fault_bits(pandaState.faults);
+    std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt);
     auto faults = ps.initFaults(fault_bits.count());
 
     size_t j = 0;
@@ -398,12 +398,12 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
       LOGW("reading hwmon took %lfms", read_time);
     }
   } else {
-    ps.setVoltage(pandaState.voltage);
-    ps.setCurrent(pandaState.current);
+    ps.setVoltage(pandaState.voltage_pkt);
+    ps.setCurrent(pandaState.current_pkt);
   }
 
   uint16_t fan_speed_rpm = panda->get_fan_speed();
-  ps.setUsbPowerMode(cereal::PeripheralState::UsbPowerMode(pandaState.usb_power_mode));
+  ps.setUsbPowerMode(cereal::PeripheralState::UsbPowerMode(pandaState.usb_power_mode_pkt));
   ps.setFanSpeedRpm(fan_speed_rpm);
 
   pm->send("peripheralState", msg);
