@@ -10,6 +10,14 @@ const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 const std::string TEST_RLOG_CHECKSUM = "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3";
 
+bool donload_to_file(const std::string &url, const std::string &local_file, int chunk_size = 5 * 1024 * 1024, int retries = 3) {
+  bool ret = false;
+  for (int i = 0; i < retries && !ret; ++i) {
+    ret = httpDownload(url, local_file, chunk_size);
+  }
+  return ret;
+}
+
 TEST_CASE("httpMultiPartDownload") {
   char filename[] = "/tmp/XXXXXX";
   close(mkstemp(filename));
@@ -17,11 +25,7 @@ TEST_CASE("httpMultiPartDownload") {
   const size_t chunk_size = 5 * 1024 * 1024;
   std::string content;
   SECTION("download to file") {
-    bool ret = false;
-    for (int i = 0; i < 3 && !ret; ++i) {
-      ret = httpDownload(TEST_RLOG_URL, filename, chunk_size);
-    }
-    REQUIRE(ret);
+    REQUIRE(donload_to_file(TEST_RLOG_URL, filename, chunk_size));
     content = util::read_file(filename);
   }
   SECTION("download to buffer") {
@@ -115,11 +119,11 @@ TEST_CASE("Route") {
   for (int i = 0; i < 2; ++i) {
     std::string log_path = util::string_format("%s/%s--%d/", data_dir.c_str(), route_name.c_str(), i);
     util::create_directories(log_path, 0755);
-    httpDownload(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2");
-    httpDownload(remote_route.at(i).road_cam.toStdString(), log_path + "fcamera.hevc");
-    httpDownload(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc");
-    httpDownload(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc");
-    httpDownload(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts");
+    donload_to_file(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2");
+    donload_to_file(remote_route.at(i).road_cam.toStdString(), log_path + "fcamera.hevc");
+    donload_to_file(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc");
+    donload_to_file(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc");
+    donload_to_file(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts");
   }
 
   SECTION("Local route") {
