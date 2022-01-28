@@ -3,8 +3,7 @@ from common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
-                                    CruiseButtons, STEER_THRESHOLD
+from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, STEER_THRESHOLD
 
 
 class CarState(CarStateBase):
@@ -81,31 +80,31 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     # this function generates lists for signal, messages and initial values
     signals = [
-      # sig_name, sig_address, default
-      ("BrakePedalPosition", "EBCMBrakePedalPosition", 0),
-      ("FrontLeftDoor", "BCMDoorBeltStatus", 0),
-      ("FrontRightDoor", "BCMDoorBeltStatus", 0),
-      ("RearLeftDoor", "BCMDoorBeltStatus", 0),
-      ("RearRightDoor", "BCMDoorBeltStatus", 0),
-      ("LeftSeatBelt", "BCMDoorBeltStatus", 0),
-      ("RightSeatBelt", "BCMDoorBeltStatus", 0),
-      ("TurnSignals", "BCMTurnSignals", 0),
-      ("AcceleratorPedal2", "AcceleratorPedal2", 0),
-      ("CruiseState", "AcceleratorPedal2", 0),
-      ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
-      ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
-      ("SteeringWheelRate", "PSCMSteeringAngle", 0),
-      ("FLWheelSpd", "EBCMWheelSpdFront", 0),
-      ("FRWheelSpd", "EBCMWheelSpdFront", 0),
-      ("RLWheelSpd", "EBCMWheelSpdRear", 0),
-      ("RRWheelSpd", "EBCMWheelSpdRear", 0),
-      ("PRNDL", "ECMPRDNL", 0),
-      ("LKADriverAppldTrq", "PSCMStatus", 0),
-      ("LKATorqueDelivered", "PSCMStatus", 0),
-      ("LKATorqueDeliveredStatus", "PSCMStatus", 0),
-      ("TractionControlOn", "ESPStatus", 0),
-      ("EPBClosed", "EPBStatus", 0),
-      ("CruiseMainOn", "ECMEngineStatus", 0),
+      # sig_name, sig_address
+      ("BrakePedalPosition", "EBCMBrakePedalPosition"),
+      ("FrontLeftDoor", "BCMDoorBeltStatus"),
+      ("FrontRightDoor", "BCMDoorBeltStatus"),
+      ("RearLeftDoor", "BCMDoorBeltStatus"),
+      ("RearRightDoor", "BCMDoorBeltStatus"),
+      ("LeftSeatBelt", "BCMDoorBeltStatus"),
+      ("RightSeatBelt", "BCMDoorBeltStatus"),
+      ("TurnSignals", "BCMTurnSignals"),
+      ("AcceleratorPedal2", "AcceleratorPedal2"),
+      ("CruiseState", "AcceleratorPedal2"),
+      ("ACCButtons", "ASCMSteeringButton"),
+      ("SteeringWheelAngle", "PSCMSteeringAngle"),
+      ("SteeringWheelRate", "PSCMSteeringAngle"),
+      ("FLWheelSpd", "EBCMWheelSpdFront"),
+      ("FRWheelSpd", "EBCMWheelSpdFront"),
+      ("RLWheelSpd", "EBCMWheelSpdRear"),
+      ("RRWheelSpd", "EBCMWheelSpdRear"),
+      ("PRNDL", "ECMPRDNL"),
+      ("LKADriverAppldTrq", "PSCMStatus"),
+      ("LKATorqueDelivered", "PSCMStatus"),
+      ("LKATorqueDeliveredStatus", "PSCMStatus"),
+      ("TractionControlOn", "ESPStatus"),
+      ("EPBClosed", "EPBStatus"),
+      ("CruiseMainOn", "ECMEngineStatus"),
     ]
 
     checks = [
@@ -126,7 +125,7 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint == CAR.VOLT:
       signals += [
-        ("RegenPaddle", "EBCMRegenPaddle", 0),
+        ("RegenPaddle", "EBCMRegenPaddle"),
       ]
       checks += [
         ("EBCMRegenPaddle", 50),
@@ -137,7 +136,7 @@ class CarState(CarStateBase):
   @staticmethod
   def get_loopback_can_parser(CP):
     signals = [
-      ("RollingCounter", "ASCMLKASteeringCmd", 0),
+      ("RollingCounter", "ASCMLKASteeringCmd"),
     ]
 
     checks = [
