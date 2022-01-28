@@ -203,8 +203,8 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
     extract_compressed_image(target_slot_number, partition, cloudlog)
 
   # Write hash after successfull flash
-  with open(path, 'wb+') as out:
-    if not full_check:
+  if not full_check:
+    with open(path, 'wb+') as out:
       out.seek(partition['size'])
       out.write(partition['hash_raw'].lower().encode())
 
