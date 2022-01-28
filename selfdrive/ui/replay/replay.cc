@@ -33,7 +33,6 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   new_events_ = std::make_unique<std::vector<Event *>>();
 
   qRegisterMetaType<FindFlag>("FindFlag");
-  connect(this, &Replay::seekTo, this, &Replay::doSeek);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
 
@@ -94,13 +93,9 @@ void Replay::updateEvents(const std::function<bool()> &lambda) {
   stream_cv_.notify_one();
 }
 
-void Replay::doSeek(int seconds, bool relative) {
-  if (segments_.empty()) return;
-
+void Replay::seekTo(int seconds, bool relative) {
+  seconds = relative ? seconds + currentSeconds() : seconds;
   updateEvents([&]() {
-    if (relative) {
-      seconds += currentSeconds();
-    }
     seconds = std::max(0, seconds);
     int seg = seconds / 60;
     if (segments_.find(seg) == segments_.end()) {
@@ -108,7 +103,7 @@ void Replay::doSeek(int seconds, bool relative) {
       return true;
     }
 
-    rWarning("seeking to %d s, segment %d", seconds, seg);
+    rInfo("seeking to %d s, segment %d", seconds, seg);
     current_segment_ = seg;
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
     return isSegmentMerged(seg);
@@ -117,23 +112,9 @@ void Replay::doSeek(int seconds, bool relative) {
 }
 
 void Replay::seekToFlag(FindFlag flag) {
-  if (flag == FindFlag::nextEngagement) {
-    rWarning("seeking to the next engagement...");
-  } else if (flag == FindFlag::nextDisEngagement) {
-    rWarning("seeking to the disengagement...");
+  if (auto next = find(flag)) {
+    seekTo(*next - 2, false);
   }
-  updateEvents([&]() {
-    if (auto next = find(flag)) {
-      int tm = *next - 2;  // seek to 2 seconds before next
-      cur_mono_time_ = (route_start_ts_ + tm * 1e9);
-      current_segment_ = currentSeconds() / 60;
-    } else {
-      rWarning("seeking failed");
-    }
-    return isSegmentMerged(current_segment_);
-  });
-
-  queueSegment();
 }
 
 void Replay::buildTimeline() {
@@ -419,7 +400,7 @@ void Replay::stream() {
       int last_segment = segments_.rbegin()->first;
       if (current_segment_ >= last_segment && isSegmentMerged(last_segment)) {
         rInfo("reaches the end of route, restart from beginning");
-        emit seekTo(0, false);
+        QMetaObject::invokeMethod(this, std::bind(&Replay::seekTo, this, 0, 0), Qt::QueuedConnection);
       }
     }
   }

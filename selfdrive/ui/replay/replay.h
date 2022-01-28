@@ -42,6 +42,7 @@ public:
   void stop();
   void pause(bool pause);
   void seekToFlag(FindFlag flag);
+  void seekTo(int seconds, bool relative);
   inline bool isPaused() const { return paused_; }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
@@ -58,12 +59,10 @@ public:
 
 signals:
   void segmentChanged();
-  void seekTo(int seconds, bool relative);
   void streamStarted();
 
 protected slots:
   void queueSegment();
-  void doSeek(int seconds, bool relative);
   void segmentLoadFinished(bool sucess);
 
 protected:
