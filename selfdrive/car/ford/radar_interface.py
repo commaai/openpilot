@@ -7,12 +7,12 @@ from selfdrive.car.interfaces import RadarInterfaceBase
 
 RADAR_MSGS = list(range(0x500, 0x540))
 
+
 def _create_radar_can_parser(car_fingerprint):
   msg_n = len(RADAR_MSGS)
   signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
-                     RADAR_MSGS * 3,
-                     [0] * msg_n + [0] * msg_n + [0] * msg_n))
-  checks = list(zip(RADAR_MSGS, [20]*msg_n))
+                     RADAR_MSGS * 3))
+  checks = list(zip(RADAR_MSGS, [20] * msg_n))
 
   return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
 
