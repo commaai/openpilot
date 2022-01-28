@@ -1,3 +1,6 @@
+#include <chrono>
+#include <thread>
+
 #include <QDebug>
 #include <QEventLoop>
 
@@ -11,11 +14,13 @@ const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/ope
 const std::string TEST_RLOG_CHECKSUM = "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3";
 
 bool donload_to_file(const std::string &url, const std::string &local_file, int chunk_size = 5 * 1024 * 1024, int retries = 3) {
-  bool ret = false;
-  for (int i = 0; i < retries && !ret; ++i) {
-    ret = httpDownload(url, local_file, chunk_size);
-  }
-  return ret;
+  do {
+    if (httpDownload(url, local_file, chunk_size)) {
+      return true;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  } while (--retries >= 0);
+  return false;
 }
 
 TEST_CASE("httpMultiPartDownload") {
@@ -31,6 +36,7 @@ TEST_CASE("httpMultiPartDownload") {
   SECTION("download to buffer") {
     for (int i = 0; i < 3 && content.empty(); ++i) {
       content = httpGet(TEST_RLOG_URL, chunk_size);
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
     REQUIRE(!content.empty());
   }
