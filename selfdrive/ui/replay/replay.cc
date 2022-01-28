@@ -397,7 +397,7 @@ void Replay::stream() {
       int last_segment = segments_.rbegin()->first;
       if (current_segment_ >= last_segment && isSegmentMerged(last_segment)) {
         rInfo("reaches the end of route, restart from beginning");
-        QMetaObject::invokeMethod(this, std::bind(&Replay::seekTo, this, 0, 0), Qt::QueuedConnection);
+        QMetaObject::invokeMethod(this, std::bind(&Replay::seekTo, this, 0, false), Qt::QueuedConnection);
       }
     }
   }
