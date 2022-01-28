@@ -84,13 +84,13 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
   if (ret != 0) {
     char err_str[1024] = {0};
     av_strerror(ret, err_str, std::size(err_str));
-    rWarning("Error loading video - %s", err_str);
+    rError("Error loading video - %s", err_str);
     return false;
   }
 
   ret = avformat_find_stream_info(input_ctx, nullptr);
   if (ret < 0) {
-    rWarning("cannot find a video stream in the input file");
+    rError("cannot find a video stream in the input file");
     return false;
   }
 
@@ -195,20 +195,21 @@ bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
 AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
   int ret = avcodec_send_packet(decoder_ctx, pkt);
   if (ret < 0) {
-    rWarning("Error sending a packet for decoding");
+    rError("Error sending a packet for decoding: %d", ret);
     return nullptr;
   }
 
   av_frame_.reset(av_frame_alloc());
   ret = avcodec_receive_frame(decoder_ctx, av_frame_.get());
   if (ret != 0) {
+    rError("avcodec_receive_frame error: %d", ret);
     return nullptr;
   }
 
   if (av_frame_->format == hw_pix_fmt) {
     hw_frame.reset(av_frame_alloc());
     if ((ret = av_hwframe_transfer_data(hw_frame.get(), av_frame_.get(), 0)) < 0) {
-      rWarning("error transferring the data from GPU to CPU");
+      rError("error transferring the data from GPU to CPU");
       return nullptr;
     }
     return hw_frame.get();
