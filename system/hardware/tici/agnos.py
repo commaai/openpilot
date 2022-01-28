@@ -10,6 +10,7 @@ import os
 from typing import Dict, Generator, Union
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
+CASYNC_TMP_DIR = "/data/neoupdate"
 
 
 class StreamingDecompressor:
@@ -74,6 +75,7 @@ def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
     else:
       raise Exception("Unhandled sparse chunk type")
 
+
 # noop wrapper with same API as unsparsify() for non sparse images
 def noop(f: StreamingDecompressor) -> Generator[bytes, None, None]:
   while not f.eof:
@@ -99,8 +101,8 @@ def get_partition_path(target_slot_number: int, partition: dict) -> str:
   return path
 
 
-def verify_partition(target_slot_number: int, partition: Dict[str, Union[str, int]]) -> bool:
-  full_check = partition['full_check']
+def verify_partition(target_slot_number: int, partition: Dict[str, Union[str, int]], force_full_check: bool = False) -> bool:
+  full_check = partition['full_check'] or force_full_check
   path = get_partition_path(target_slot_number, partition)
   if not isinstance(partition['size'], int):
     return False
@@ -135,21 +137,10 @@ def clear_partition_hash(target_slot_number: int, partition: dict) -> None:
     os.sync()
 
 
-def flash_partition(target_slot_number: int, partition: dict, cloudlog):
-  cloudlog.info(f"Downloading and writing {partition['name']}")
-
-  if verify_partition(target_slot_number, partition):
-    cloudlog.info(f"Already flashed {partition['name']}")
-    return
-
+def extract_compressed_image(target_slot_number: int, partition: dict, cloudlog):
+  path = get_partition_path(target_slot_number, partition)
   downloader = StreamingDecompressor(partition['url'])
 
-  # Clear hash before flashing in case we get interrupted
-  full_check = partition['full_check']
-  if not full_check:
-    clear_partition_hash(target_slot_number, partition)
-
-  path = get_partition_path(target_slot_number, partition)
   with open(path, 'wb+') as out:
     # Flash partition
     last_p = 0
@@ -172,9 +163,49 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
     if out.tell() != partition['size']:
       raise Exception("Uncompressed size mismatch")
 
-    # Write hash after successfull flash
     os.sync()
+
+
+def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
+  path = get_partition_path(target_slot_number, partition)
+  seed_path = path[:-1] + ('b' if path[-1] == 'a' else 'a')
+
+  os.makedirs(CASYNC_TMP_DIR, exist_ok=True)
+  new_env = dict(os.environ, TMPDIR=CASYNC_TMP_DIR)
+  cmd = ["casync", "extract", "--verbose", f"--seed={seed_path}", partition['casync'], path]
+  cloudlog.info(f"Starting casync: {cmd}")
+
+  out = subprocess.check_output(cmd, env=new_env)
+  cloudlog.info(out)
+
+  os.sync()
+  if not verify_partition(target_slot_number, partition, force_full_check=True):
+    raise Exception(f"Raw hash mismatch '{partition['hash_raw'].lower()}'")
+
+
+def flash_partition(target_slot_number: int, partition: dict, cloudlog):
+  cloudlog.info(f"Downloading and writing {partition['name']}")
+
+  if verify_partition(target_slot_number, partition):
+    cloudlog.info(f"Already flashed {partition['name']}")
+    return
+
+  # Clear hash before flashing in case we get interrupted
+  full_check = partition['full_check']
+  if not full_check:
+    clear_partition_hash(target_slot_number, partition)
+
+  path = get_partition_path(target_slot_number, partition)
+
+  if 'casync' in partition:
+    extract_casync_image(target_slot_number, partition, cloudlog)
+  else:
+    extract_compressed_image(target_slot_number, partition, cloudlog)
+
+  # Write hash after successfull flash
+  with open(path, 'wb+') as out:
     if not full_check:
+      out.seek(partition['size'])
       out.write(partition['hash_raw'].lower().encode())
 
 
