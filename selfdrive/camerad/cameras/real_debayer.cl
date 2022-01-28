@@ -10,11 +10,6 @@
 #define RGB_TO_V(r, g, b) ((mul24(r, 56) - mul24(g, 47) - mul24(b, 9) + 0x8080) >> 8)
 #define AVERAGE(x, y, z, w) ((convert_ushort(x) + convert_ushort(y) + convert_ushort(z) + convert_ushort(w) + 1) >> 1)
 
-#define CP 0.01h
-#define CPK 0.75h
-#define CPB 0.125h
-#define RK 8.0h  // 9 - 100*CP
-
 const half black_level = 42.0h;
 
 const __constant half3 color_correction[3] = {
@@ -24,17 +19,24 @@ const __constant half3 color_correction[3] = {
   (half3)(-0.25277411, -0.05627105, 1.45875782),
 };
 
+// tone mapping params
+const half cp = 0.01;
+const half cpk = 0.75;
+const half cpb = 0.125;
+const half cpxk = 0.0025;
+const half cpxb = 0.01;
+const half rk = 9 - 100*cp;
 
 inline half3 mf(half3 x) {
-  return x > CP ?
-    (RK * (x-CP) * (1.0h-(CPK*CP+CPB)) * (1.0h+1.0h/(RK*(1.0h-CP))) / (1.0h+RK*(x-CP))) + CPK*CP + CPB :
-    (RK * (x-CP) * (CPK*CP+CPB) * (1.0h+1.0h/(RK*CP)) / (1.0h-RK*(x-CP))) + CPK*CP + CPB;
+  return (x > cp) ?
+    (rk * (x-cp) * (1-(cpk*cp+cpb)) * (1+1/(rk*(1-cp))) / (1+rk*(x-cp))) + cpk*cp + cpb :
+    ((x < cp) ? (rk * (x-cp) * (cpk*cp+cpb) * (1+1/(rk*cp)) / (1-rk*(x-cp))) + cpk*cp + cpb : x);
 }
 
 inline uchar3 color_correct(half3 rgb) {
-  half3 ret = rgb.x * color_correction[0];
-  ret += rgb.y * color_correction[1];
-  ret += rgb.z * color_correction[2];
+  half3 ret = (half)rgb.x * color_correction[0];
+  ret += (half)rgb.y * color_correction[1];
+  ret += (half)rgb.z * color_correction[2];
   ret = mf(ret);
   return convert_uchar3_sat(ret * 255.0h);
 }
