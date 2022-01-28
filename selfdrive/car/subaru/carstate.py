@@ -119,9 +119,7 @@ class CarState(CarStateBase):
         ("L_APPROACHING", "BSD_RCTA"),
         ("R_APPROACHING", "BSD_RCTA"),
       ]
-      checks += [
-        ("BSD_RCTA", 17),
-      ]
+      checks.append(("BSD_RCTA", 17))
 
     if CP.carFingerprint not in PREGLOBAL_CARS:
       signals += [
@@ -137,13 +135,9 @@ class CarState(CarStateBase):
         ("CruiseControl", 20),
       ]
     else:
-      signals += [
-        ("UNITS", "Dash_State2"),
-      ]
+      signals.append(("UNITS", "Dash_State2"))
 
-      checks += [
-        ("Dash_State2", 1),
-      ]
+      checks.append(("Dash_State2", 1))
 
     if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
       checks += [

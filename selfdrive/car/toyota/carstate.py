@@ -201,9 +201,7 @@ class CarState(CarStateBase):
         ("R_ADJACENT", "BSM", 0),
         ("R_APPROACHING", "BSM", 0),
       ]
-      checks += [
-        ("BSM", 1)
-      ]
+      checks.append(("BSM", 1))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
