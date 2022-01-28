@@ -46,6 +46,7 @@ struct __attribute__((packed)) health_t {
   uint8_t power_save_enabled;
   uint8_t heartbeat_lost;
   uint16_t unsafe_mode;
+  uint32_t blocked_msg_cnt;
 };
 
 struct __attribute__((packed)) can_header {
