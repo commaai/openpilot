@@ -212,15 +212,15 @@ class CarState(CarStateBase):
     ]
 
     if CP.transmissionType == TransmissionType.automatic:
-      signals += [("GE_Fahrstufe", "Getriebe_11")]  # Auto trans gear selector position
-      checks += [("Getriebe_11", 20)]  # From J743 Auto transmission control module
+      signals.append(("GE_Fahrstufe", "Getriebe_11"))  # Auto trans gear selector position
+      checks.append(("Getriebe_11", 20))  # From J743 Auto transmission control module
     elif CP.transmissionType == TransmissionType.direct:
-      signals += [("GearPosition", "EV_Gearshift")]  # EV gear selector position
-      checks += [("EV_Gearshift", 10)]  # From J??? unknown EV control module
+      signals.append(("GearPosition", "EV_Gearshift"))  # EV gear selector position
+      checks.append(("EV_Gearshift", 10))  # From J??? unknown EV control module
     elif CP.transmissionType == TransmissionType.manual:
       signals += [("MO_Kuppl_schalter", "Motor_14"),  # Clutch switch
                   ("BCM1_Rueckfahrlicht_Schalter", "Gateway_72")]  # Reverse light from BCM
-      checks += [("Motor_14", 10)]  # From J623 Engine control module
+      checks.append(("Motor_14", 10))  # From J623 Engine control module
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
       # Radars are here on CANBUS.pt

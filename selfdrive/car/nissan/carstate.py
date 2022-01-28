@@ -218,12 +218,8 @@ class CarState(CarStateBase):
       ]
       return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
 
-    signals += [
-      ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"),
-    ]
-    checks += [
-      ("STEER_TORQUE_SENSOR", 100),
-    ]
+    signals.append(("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"))
+    checks.append(("STEER_TORQUE_SENSOR", 100))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
@@ -345,19 +341,11 @@ class CarState(CarStateBase):
     checks = []
 
     if CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL):
-      signals += [
-        ("CRUISE_ON", "PRO_PILOT"),
-      ]
-      checks += [
-        ("PRO_PILOT", 100),
-      ]
+      signals.append(("CRUISE_ON", "PRO_PILOT"))
+      checks.append(("PRO_PILOT", 100))
     elif CP.carFingerprint == CAR.ALTIMA:
-      signals += [
-        ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"),
-      ]
-      checks += [
-        ("STEER_TORQUE_SENSOR", 100),
-      ]
+      signals.append(("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"))
+      checks.append(("STEER_TORQUE_SENSOR", 100))
       return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
