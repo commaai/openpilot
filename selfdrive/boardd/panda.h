@@ -13,6 +13,7 @@
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
+#include "panda/board/health.h"
 
 #define TIMEOUT 0
 #define PANDA_BUS_CNT 4
@@ -23,31 +24,6 @@
 #define CANPACKET_MAX_SIZE  72U
 #define CANPACKET_REJECTED  (0xC0U)
 #define CANPACKET_RETURNED  (0x80U)
-
-// copied from panda/board/main.c
-struct __attribute__((packed)) health_t {
-  uint32_t uptime;
-  uint32_t voltage;
-  uint32_t current;
-  uint32_t can_rx_errs;
-  uint32_t can_send_errs;
-  uint32_t can_fwd_errs;
-  uint32_t gmlan_send_errs;
-  uint32_t faults;
-  uint8_t ignition_line;
-  uint8_t ignition_can;
-  uint8_t controls_allowed;
-  uint8_t gas_interceptor_detected;
-  uint8_t car_harness_status;
-  uint8_t usb_power_mode;
-  uint8_t safety_model;
-  int16_t safety_param;
-  uint8_t fault_status;
-  uint8_t power_save_enabled;
-  uint8_t heartbeat_lost;
-  uint16_t unsafe_mode;
-  uint32_t blocked_msg_cnt;
-};
 
 struct __attribute__((packed)) can_header {
   uint8_t reserved : 1;
