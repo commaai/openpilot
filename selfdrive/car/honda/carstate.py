@@ -163,6 +163,7 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
+    self.brake_error = False
     self.brake_switch_prev = 0
     self.brake_switch_prev_ts = 0
     self.cruise_setting = 0
@@ -203,9 +204,7 @@ class CarState(CarStateBase):
     # LOW_SPEED_LOCKOUT is not worth a warning
     ret.steerWarning = steer_status not in ("NORMAL", "LOW_SPEED_LOCKOUT", "NO_TORQUE_ALERT_2")
 
-    if not self.CP.openpilotLongitudinalControl:
-      self.brake_error = 0
-    else:
+    if self.CP.openpilotLongitudinalControl:
       self.brake_error = cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"]
     ret.espDisabled = cp.vl["VSA_STATUS"]["ESP_DISABLED"] != 0
 
