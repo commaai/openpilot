@@ -181,6 +181,7 @@ class Controls:
     """Compute carEvents from carState"""
 
     self.events.clear()
+    self.events.add_from_msg(CS.events)
     self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
     # Handle startup event
@@ -192,11 +193,10 @@ class Controls:
     if not self.initialized:
       self.events.add(EventName.controlsInitializing)
       return
-    self.events.add_from_msg(CS.events)
 
     # Create events for battery, temperature, disk space, and memory
     if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
-      self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
+       self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
       # at zero percent battery, while discharging, OP should not allowed
       self.events.add(EventName.lowBattery)
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
@@ -233,7 +233,7 @@ class Controls:
     if self.sm['lateralPlan'].laneChangeState == LaneChangeState.preLaneChange:
       direction = self.sm['lateralPlan'].laneChangeDirection
       if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
-        (CS.rightBlindspot and direction == LaneChangeDirection.right):
+         (CS.rightBlindspot and direction == LaneChangeDirection.right):
         self.events.add(EventName.laneChangeBlocked)
       else:
         if direction == LaneChangeDirection.left:
