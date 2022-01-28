@@ -56,7 +56,8 @@ void Replay::stop() {
 
 bool Replay::load() {
   if (!route_->load()) {
-    qCritical() << "failed to load route" << route_->name() << "from server";
+    qCritical() << "failed to load route" << route_->name()
+                << "from" << (route_->dir().isEmpty() ? "server" : route_->dir());
     return false;
   }
 
