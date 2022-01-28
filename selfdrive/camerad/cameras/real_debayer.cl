@@ -206,13 +206,13 @@ __kernel void debayer10(__global const uchar * const in, __global uchar * out, _
 
   // write ys
   uchar2 yy = (uchar2)(
-    RGB_TO_Y(rgb_out[0].s2, rgb_out[0].s1, rgb_out[0].s0),
-    RGB_TO_Y(rgb_out[1].s2, rgb_out[1].s1, rgb_out[1].s0)
+    RGB_TO_Y(rgb_out[0].s0, rgb_out[0].s1, rgb_out[0].s2),
+    RGB_TO_Y(rgb_out[1].s0, rgb_out[1].s1, rgb_out[1].s2)
   );
   vstore2(yy, 0, out + mad24(gid_y * 2, RGB_WIDTH, gid_x * 2));
   yy = (uchar2)(
-    RGB_TO_Y(rgb_out[2].s2, rgb_out[2].s1, rgb_out[2].s0),
-    RGB_TO_Y(rgb_out[3].s2, rgb_out[3].s1, rgb_out[3].s0)
+    RGB_TO_Y(rgb_out[2].s0, rgb_out[2].s1, rgb_out[2].s2),
+    RGB_TO_Y(rgb_out[3].s0, rgb_out[3].s1, rgb_out[3].s2)
   );
   vstore2(yy, 0, out + mad24(gid_y * 2 + 1, RGB_WIDTH, gid_x * 2));
 
