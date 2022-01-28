@@ -126,7 +126,7 @@ class CarState(CarStateBase):
         ("BLIND_SPOT_RIGHT", "BLIND_SPOT_WARNINGS"),
         ("BLIND_SPOT_LEFT", "BLIND_SPOT_WARNINGS"),
       ]
-      checks += [("BLIND_SPOT_WARNINGS", 2)]
+      checks.append(("BLIND_SPOT_WARNINGS", 2))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
