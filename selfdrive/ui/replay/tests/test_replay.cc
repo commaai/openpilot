@@ -125,11 +125,11 @@ TEST_CASE("Route") {
   for (int i = 0; i < 2; ++i) {
     std::string log_path = util::string_format("%s/%s--%d/", data_dir.c_str(), route_name.c_str(), i);
     util::create_directories(log_path, 0755);
-    donload_to_file(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2");
-    donload_to_file(remote_route.at(i).road_cam.toStdString(), log_path + "fcamera.hevc");
-    donload_to_file(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc");
-    donload_to_file(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc");
-    donload_to_file(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts");
+    REQUIRE(donload_to_file(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2"));
+    REQUIRE(donload_to_file(remote_route.at(i).road_cam.toStdString(), log_path + "fcamera.hevc"));
+    REQUIRE(donload_to_file(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc"));
+    REQUIRE(donload_to_file(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc"));
+    REQUIRE(donload_to_file(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts"));
   }
 
   SECTION("Local route") {
