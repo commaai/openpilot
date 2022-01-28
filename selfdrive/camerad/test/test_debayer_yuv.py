@@ -26,12 +26,11 @@ with open('selfdrive/camerad/test/rgb_debayer.cl') as f:
   rgb_debayer_prg = cl.Program(ctx, f.read()).build(options=build_args)
 
 with open('selfdrive/camerad/transforms/rgb_to_yuv.cl') as f:
-  build_args = ' -cl-fast-relaxed-math -cl-denorms-are-zero -DWIDTH={w} -DHEIGHT={h}' + \
+  build_args = f' -cl-fast-relaxed-math -cl-denorms-are-zero -DWIDTH={w} -DHEIGHT={h}' + \
     f' -DUV_WIDTH={w//2} -DUV_HEIGHT={h//2} -DRGB_STRIDE={w*3} -DRGB_SIZE={w*h}'
   rgb_to_yuv_prg = cl.Program(ctx, f.read()).build(options=build_args)
 
 cam_frame = np.random.randint(0, 256, (stride, h), dtype=np.uint8)
-cam_frame = np.ones((h, stride), dtype=np.uint8) * 255  # TODO remove
 
 cam_buff = cam_frame.flatten()
 cam_buff2 = cam_buff.copy()
@@ -55,7 +54,7 @@ rgb_rg = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hos
 cl.enqueue_barrier(q)
 
 ev2 = rgb_to_yuv_prg.rgb_to_yuv(q, (w // 4, h // 4), None, rgb_rg, yuv_old_g, wait_for=[ev1])
-ev3 = real_debayer_prg.debayer10(q, (w // 2, h // 2), (2, 2), cam2_g, yuv_new_g, cl.LocalMemory(2000))
+ev3 = real_debayer_prg.debayer10(q, (w // 2, h // 2), (4, 4), cam2_g, yuv_new_g, cl.LocalMemory(2000))
 
 cl.enqueue_barrier(q)
 
