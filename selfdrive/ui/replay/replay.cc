@@ -110,7 +110,7 @@ void Replay::seekTo(int seconds, bool relative) {
 
 void Replay::seekToFlag(FindFlag flag) {
   if (auto next = find(flag)) {
-    seekTo(*next - 2, false);
+    seekTo(*next - 2, false);  // seek to 2 seconds before next
   }
 }
 
