@@ -4,6 +4,7 @@ import bz2
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
+from typing import Dict, List, Tuple
 
 from cereal.services import service_list
 from tools.lib.logreader import LogReader
@@ -12,7 +13,7 @@ from tools.lib.route import Route
 MIN_SIZE = 0.5  # Percent size of total to show as separate entry
 
 
-def make_pie(msgs, typ):
+def make_pie(msgs: Dict[str, List], typ: str) -> None:
   compressed_length_by_type = {k: len(bz2.compress(b"".join(v))) for k, v in msgs.items()}
 
   total = sum(compressed_length_by_type.values())
@@ -24,7 +25,7 @@ def make_pie(msgs, typ):
     print(f"{name} - {sz / 1024:.2f} kB")
   print()
 
-  sizes_large = [(k, sz) for (k, sz) in sizes if sz >= total * MIN_SIZE / 100]
+  sizes_large: List[Tuple] = [(k, sz) for (k, sz) in sizes if sz >= total * MIN_SIZE / 100]
   sizes_large += [('other', sum(sz for (_, sz) in sizes if sz < total * MIN_SIZE / 100))]
 
   labels, sizes = zip(*sizes_large)
@@ -44,11 +45,11 @@ if __name__ == "__main__":
   rlog = r.log_paths()[args.segment]
   msgs = list(LogReader(rlog))
 
-  msgs_by_type = defaultdict(list)
+  msgs_by_type: Dict[str, List] = defaultdict(list)
   for m in msgs:
     msgs_by_type[m.which()].append(m.as_builder().to_bytes())
 
-  qlog_by_type = defaultdict(list)
+  qlog_by_type: Dict[str, List] = defaultdict(list)
   for name, service in service_list.items():
     if service.decimation is None:
       continue

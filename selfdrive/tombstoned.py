@@ -7,7 +7,8 @@ import signal
 import subprocess
 import time
 import glob
-from typing import NoReturn
+
+from typing import List, NoReturn, Tuple
 
 from common.file_helpers import mkdirs_exists_ok
 from selfdrive.hardware import TICI
@@ -25,12 +26,12 @@ TOMBSTONE_DIR = "/data/tombstones/"
 APPORT_DIR = "/var/crash/"
 
 
-def safe_fn(s):
+def safe_fn(s: str) -> str:
   extra = ['_']
   return "".join(c for c in s if c.isalnum() or c in extra).rstrip()
 
 
-def clear_apport_folder():
+def clear_apport_folder() -> None:
   for f in glob.glob(APPORT_DIR + '*'):
     try:
       os.remove(f)
@@ -38,7 +39,7 @@ def clear_apport_folder():
       pass
 
 
-def get_apport_stacktrace(fn):
+def get_apport_stacktrace(fn: str) -> str:
   try:
     cmd = f'apport-retrace -s <(cat <(echo "Package: openpilot") "{fn}")'
     return subprocess.check_output(cmd, shell=True, encoding='utf8', timeout=30, executable='/bin/bash')  # pylint: disable=unexpected-keyword-arg
@@ -48,7 +49,7 @@ def get_apport_stacktrace(fn):
     return "Timeout getting stacktrace"
 
 
-def get_tombstones():
+def get_tombstones() -> List[Tuple[str, int]]:
   """Returns list of (filename, ctime) for all tombstones in /data/tombstones
   and apport crashlogs in /var/crash"""
   files = []
@@ -65,7 +66,7 @@ def get_tombstones():
   return files
 
 
-def report_tombstone_android(fn):
+def report_tombstone_android(fn: str) -> None:
   f_size = os.path.getsize(fn)
   if f_size > MAX_SIZE:
     cloudlog.error(f"Tombstone {fn} too big, {f_size}. Skipping...")
@@ -106,7 +107,7 @@ def report_tombstone_android(fn):
   shutil.copy(fn, os.path.join(crashlog_dir, new_fn))
 
 
-def report_tombstone_apport(fn):
+def report_tombstone_apport(fn: str) -> None:
   f_size = os.path.getsize(fn)
   if f_size > MAX_SIZE:
     cloudlog.error(f"Tombstone {fn} too big, {f_size}. Skipping...")

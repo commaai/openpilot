@@ -1,3 +1,4 @@
+import capnp
 from enum import IntEnum
 from typing import Dict, Union, Callable, List, Optional
 
@@ -65,7 +66,7 @@ class Events:
   def any(self, event_type: str) -> bool:
     return any(event_type in EVENTS.get(e, {}) for e in self.events)
 
-  def create_alerts(self, event_types: List[str], callback_args=None):
+  def create_alerts(self, event_types: List[str], callback_args: Optional[List]=None) -> List['Alert']:
     if callback_args is None:
       callback_args = []
 
@@ -84,11 +85,11 @@ class Events:
             ret.append(alert)
     return ret
 
-  def add_from_msg(self, events):
+  def add_from_msg(self, events: List[capnp.lib.capnp._DynamicStructBuilder]) -> None:
     for e in events:
       self.events.append(e.name.raw)
 
-  def to_msg(self):
+  def to_msg(self) -> List[capnp.lib.capnp._DynamicStructBuilder]:
     ret = []
     for event_name in self.events:
       event = car.CarEvent.new_message()
