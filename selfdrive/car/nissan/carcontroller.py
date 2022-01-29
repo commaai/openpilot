@@ -18,22 +18,20 @@ class CarController():
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, enabled, CS, frame, actuators, cruise_cancel, hud_alert,
+  def update(self, c, enabled, CS, frame, actuators, cruise_cancel, hud_alert,
              left_line, right_line, left_lane_depart, right_lane_depart):
-    """ Controls thread """
 
-    # Send CAN commands.
     can_sends = []
 
     ### STEER ###
-    acc_active = bool(CS.out.cruiseState.enabled)
+    acc_active = CS.out.cruiseState.enabled
     lkas_hud_msg = CS.lkas_hud_msg
     lkas_hud_info_msg = CS.lkas_hud_info_msg
     apply_angle = actuators.steeringAngleDeg
 
     steer_hud_alert = 1 if hud_alert in (VisualAlert.steerRequired, VisualAlert.ldw) else 0
 
-    if enabled:
+    if c.active:
       # # windup slower
       if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
         angle_rate_lim = interp(CS.out.vEgo, CarControllerParams.ANGLE_DELTA_BP, CarControllerParams.ANGLE_DELTA_V)
