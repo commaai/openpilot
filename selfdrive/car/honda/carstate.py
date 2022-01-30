@@ -269,8 +269,11 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
       ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
     else:
+      # brake switch has shown some single time step noise, so only considered when
+      # switch is on for at least 2 consecutive CAN samples
       # panda safety only checks BRAKE_PRESSED signal
-      ret.brakePressed = cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0
+      ret.brakePressed = bool(cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] or
+                              (self.brake_switch and self.brake_switch_prev and cp.ts["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != self.brake_switch_prev_ts))
 
       self.brake_switch_prev = self.brake_switch
       self.brake_switch_prev_ts = cp.ts["POWERTRAIN_DATA"]["BRAKE_SWITCH"]
