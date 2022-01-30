@@ -17,6 +17,11 @@ from selfdrive.swaglog import cloudlog
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
 
 
+def is_registered_device() -> bool:
+  dongle = Params().get("DongleId", encoding='utf-8')
+  return dongle not in (None, UNREGISTERED_DONGLE_ID)
+
+
 def register(show_spinner=False) -> str:
   params = Params()
   params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
