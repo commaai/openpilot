@@ -9,6 +9,7 @@ from parameterized import parameterized_class
 
 from cereal import log, car
 from common.params import Params
+from common.realtime import DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
@@ -81,9 +82,7 @@ class TestCarModel(unittest.TestCase):
           if msg.carParams.openpilotLongitudinalControl:
             params.put_bool("DisableRadar", True)
 
-      # TODO: min segment length check
-
-      if len(can_msgs):
+      if len(can_msgs) > int(50 / DT_CTRL):
         break
     else:
       raise Exception(f"Route {repr(cls.route)} not found or no CAN msgs found. Is it uploaded?")
