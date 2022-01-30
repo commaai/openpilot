@@ -10,7 +10,7 @@ from common.params import Params
 from common.spinner import Spinner
 from common.basedir import PERSIST
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import HARDWARE
+from selfdrive.hardware import HARDWARE, PC
 from selfdrive.swaglog import cloudlog
 
 
@@ -91,7 +91,7 @@ def register(show_spinner=False) -> str:
 
   if dongle_id:
     params.put("DongleId", dongle_id)
-    set_offroad_alert("Offroad_UnofficialHardware", dongle_id == UNREGISTERED_DONGLE_ID)
+    set_offroad_alert("Offroad_UnofficialHardware", (dongle_id == UNREGISTERED_DONGLE_ID) and not PC)
   return dongle_id
 
 
