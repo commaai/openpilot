@@ -14,6 +14,7 @@ from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
+from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.test.test_routes import routes, non_tested_cars
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
@@ -43,9 +44,6 @@ class TestCarModel(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    #if "TOYOTA SIENNA" not in cls.car_model:
-    #  raise unittest.SkipTest
-
     if cls.car_model not in ROUTES:
       # TODO: get routes for missing cars and remove this
       if cls.car_model in non_tested_cars:
@@ -197,7 +195,15 @@ class TestCarModel(unittest.TestCase):
 
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
-      checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
+      # TODO: make the interceptor thresholds in openpilot and panda match, then remove this exception
+      gas_pressed = CS.gasPressed
+      if self.CP.enableGasInterceptor and gas_pressed and not self.safety.get_gas_pressed_prev():
+        # panda intentionally has a higher threshold
+        if self.CP.carName == "toyota" and 15 < CS.gas < 15*1.5:
+          gas_pressed = False
+        if self.CP.carName == "honda":
+          gas_pressed = False
+      checks['gasPressed'] += gas_pressed != self.safety.get_gas_pressed_prev()
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
@@ -214,13 +220,11 @@ class TestCarModel(unittest.TestCase):
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
 
+    # TODO: configure
+    if self.CP.carFingerprint == TOYOTA.SIENNA and checks['brakePressed'] < 25:
+      checks['brakePressed'] = 0
+
     failed_checks = {k: v for k, v in checks.items() if v > 0}
-
-    # TODO: the panda and openpilot interceptor thresholds should match
-    if "gasPressed" in failed_checks and self.CP.enableGasInterceptor:
-      if failed_checks['gasPressed'] < 150:
-        del failed_checks['gasPressed']
-
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 if __name__ == "__main__":
