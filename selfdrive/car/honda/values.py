@@ -1310,7 +1310,7 @@ FW_VERSIONS = {
       b'78109-TV9-A510\x00\x00',
     ],
   },
-  CAR.HONDA_E:{
+  CAR.HONDA_E: {
     (Ecu.eps, 0x18DA30F1, None):[
       b'39990-TYF-N030\x00\x00'
     ],
@@ -1335,6 +1335,8 @@ FW_VERSIONS = {
     (Ecu.vsa, 0x18DA28F1, None):[
       b'57114-TYF-E030\x00\x00'
     ],
+  },
+  CAR.ODYSSEY_CHN: {
   },
 }
 

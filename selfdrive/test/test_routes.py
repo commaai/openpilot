@@ -2,7 +2,6 @@
 from collections import namedtuple
 
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
-from selfdrive.car.ford.values import CAR as FORD
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
@@ -34,7 +33,7 @@ routes = [
   TestRoute("8190c7275a24557b|2020-01-29--08-33-58", CHRYSLER.PACIFICA_2019_HYBRID),
   TestRoute("3d84727705fecd04|2021-05-25--08-38-56", CHRYSLER.PACIFICA_2020),
 
-  TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
+  #TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
 
   TestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
   TestRoute("aa20e335f61ba898|2019-02-05--16-59-04", GM.BUICK_REGAL),
@@ -197,20 +196,4 @@ routes = [
 
   TestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.AP1_MODELS),
   TestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
-]
-
-forced_dashcam_routes = [
-  # Ford fusion
-  "f1b4c567731f4a1b|2018-04-18--11-29-37",
-  "f1b4c567731f4a1b|2018-04-30--10-15-35",
-  # Mazda CX5
-  "32a319f057902bb3|2020-04-27--15-18-58",
-  # Mazda CX9
-  "10b5a4b380434151|2020-08-26--17-11-45",
-  # Mazda3
-  "74f1038827005090|2020-08-26--20-05-50",
-  # Mazda6
-  "fb53c640f499b73d|2021-06-01--04-17-56",
-  # CX-9 2021
-  "f6d5b1a9d7a1c92e|2021-07-08--06-56-59",
 ]
