@@ -220,7 +220,7 @@ class TestCarModel(unittest.TestCase):
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
 
-    # TODO: configure
+    # TODO: add flag to toyota safety
     if self.CP.carFingerprint == TOYOTA.SIENNA and checks['brakePressed'] < 25:
       checks['brakePressed'] = 0
 
