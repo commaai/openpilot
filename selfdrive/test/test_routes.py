@@ -2,7 +2,6 @@
 from collections import namedtuple
 
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
-from selfdrive.car.ford.values import CAR as FORD
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
@@ -34,7 +33,7 @@ routes = [
   TestRoute("8190c7275a24557b|2020-01-29--08-33-58", CHRYSLER.PACIFICA_2019_HYBRID),
   TestRoute("3d84727705fecd04|2021-05-25--08-38-56", CHRYSLER.PACIFICA_2020),
 
-  TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
+  #TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
 
   TestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
   TestRoute("aa20e335f61ba898|2019-02-05--16-59-04", GM.BUICK_REGAL),
@@ -115,8 +114,6 @@ routes = [
   TestRoute("5f5afb36036506e4|2019-05-14--02-09-54", TOYOTA.COROLLA_TSS2),
   TestRoute("5ceff72287a5c86c|2019-10-19--10-59-02", TOYOTA.COROLLAH_TSS2),
   TestRoute("d2525c22173da58b|2021-04-25--16-47-04", TOYOTA.PRIUS),
-  TestRoute("b0f5a01cf604185c|2017-12-18--20-32-32", TOYOTA.RAV4),
-  TestRoute("b0c9d2329ad1606b|2019-04-02--13-24-43", TOYOTA.RAV4),
   TestRoute("b14c5b4742e6fc85|2020-07-28--19-50-11", TOYOTA.RAV4),
   TestRoute("32a7df20486b0f70|2020-02-06--16-06-50", TOYOTA.RAV4H),
   TestRoute("cdf2f7de565d40ae|2019-04-25--03-53-41", TOYOTA.RAV4_TSS2),
@@ -197,20 +194,4 @@ routes = [
 
   TestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.AP1_MODELS),
   TestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
-]
-
-forced_dashcam_routes = [
-  # Ford fusion
-  "f1b4c567731f4a1b|2018-04-18--11-29-37",
-  "f1b4c567731f4a1b|2018-04-30--10-15-35",
-  # Mazda CX5
-  "32a319f057902bb3|2020-04-27--15-18-58",
-  # Mazda CX9
-  "10b5a4b380434151|2020-08-26--17-11-45",
-  # Mazda3
-  "74f1038827005090|2020-08-26--20-05-50",
-  # Mazda6
-  "fb53c640f499b73d|2021-06-01--04-17-56",
-  # CX-9 2021
-  "f6d5b1a9d7a1c92e|2021-07-08--06-56-59",
 ]

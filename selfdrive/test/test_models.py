@@ -4,10 +4,12 @@ import os
 import importlib
 import unittest
 from collections import defaultdict, Counter
+from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import log, car
 from common.params import Params
+from common.realtime import DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
@@ -27,8 +29,6 @@ PandaType = log.PandaState.PandaType
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 
-ROUTES = {rt.car_fingerprint: rt.route for rt in routes}
-
 # TODO: get updated routes for these cars
 ignore_can_valid = [
   HYUNDAI.SANTA_FE,
@@ -39,25 +39,34 @@ ignore_addr_checks_valid = [
   HYUNDAI.GENESIS_G70_2020,
 ]
 
-@parameterized_class(('car_model'), [(car,) for i, car in enumerate(sorted(all_known_cars())) if i % NUM_JOBS == JOB_ID])
+# build list of test cases
+routes_by_car = defaultdict(set)
+for r in routes:
+  routes_by_car[r.car_fingerprint].add(r.route)
+
+test_cases: List[Tuple[str, Optional[str]]] = []
+for i, c in enumerate(sorted(all_known_cars())):
+  if i % NUM_JOBS == JOB_ID:
+    test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
+
+
+@parameterized_class(('car_model', 'route'), test_cases)
 class TestCarModel(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    if cls.car_model not in ROUTES:
-      # TODO: get routes for missing cars and remove this
+    if cls.route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
         raise unittest.SkipTest
-      else:
-        raise Exception(f"missing test route for car {cls.car_model}")
+      raise Exception(f"missing test route for {cls.car_model}")
 
     params = Params()
     params.clear_all()
 
     for seg in [2, 1, 0]:
       try:
-        lr = LogReader(get_url(ROUTES[cls.car_model], seg))
+        lr = LogReader(get_url(cls.route, seg))
       except Exception:
         continue
 
@@ -73,16 +82,17 @@ class TestCarModel(unittest.TestCase):
           if msg.carParams.openpilotLongitudinalControl:
             params.put_bool("DisableRadar", True)
 
-      if len(can_msgs):
+      if len(can_msgs) > int(50 / DT_CTRL):
         break
     else:
-      raise Exception("Route not found or no CAN msgs found. Is it uploaded?")
+      raise Exception(f"Route {repr(cls.route)} not found or no CAN msgs found. Is it uploaded?")
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [])
     assert cls.CP
+    assert cls.CP.carFingerprint == cls.car_model
 
   def setUp(self):
     self.CI = self.CarInterface(self.CP, self.CarController, self.CarState)
