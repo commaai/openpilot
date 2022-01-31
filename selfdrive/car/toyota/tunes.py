@@ -24,6 +24,7 @@ class LatTunes(Enum):
   PID_L = 13
   PID_M = 14
   PID_N = 15
+  STEER_MODEL = 16
 
 
 ###### LONG ######
@@ -71,6 +72,13 @@ def set_lat_tune(tune, name):
     tune.lqr.k = [-110.73572306, 451.22718255]
     tune.lqr.l = [0.3233671, 0.3185757]
     tune.lqr.dcGain = 0.002237852961363602
+
+  elif name == LatTunes.STEER_MODEL:
+    tune.init('steerModel')
+    tune.steerModel.modelparam = [-1.49630374e-01, -1.36092176e+00, 7.05508965e-01, -2.59304574e+00,
+                                    2.78625170e+00, 2.53506728e+01, -2.00322650e-01, -1.82360024e+00,
+                                    7.23304857e-03, 6.56997797e-02, -2.13578545e-04, -1.93872059e-03,
+                                    5.05738269e-03, 4.60615905e-02]
 
   elif 'PID' in str(name):
     tune.init('pid')
