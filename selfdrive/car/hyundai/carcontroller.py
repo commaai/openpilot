@@ -46,7 +46,7 @@ class CarController():
     self.last_resume_frame = 0
     self.accel = 0
 
-  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, hud_speed,
+  def update(self, c, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, hud_speed,
              left_lane, right_lane, left_lane_depart, right_lane_depart):
     # Steering Torque
     new_steer = int(round(actuators.steer * self.p.STEER_MAX))
@@ -54,7 +54,7 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # disable when temp fault is active, or below LKA minimum speed
-    lkas_active = enabled and not CS.out.steerWarning and CS.out.vEgo >= CS.CP.minSteerSpeed
+    lkas_active = c.active and not CS.out.steerWarning and CS.out.vEgo >= CS.CP.minSteerSpeed
 
     if not lkas_active:
       apply_steer = 0
@@ -89,7 +89,7 @@ class CarController():
 
     if frame % 2 == 0 and CS.CP.openpilotLongitudinalControl:
       lead_visible = False
-      accel = actuators.accel if enabled else 0
+      accel = actuators.accel if c.active else 0
 
       jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
 

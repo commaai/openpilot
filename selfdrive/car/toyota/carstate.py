@@ -6,7 +6,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR
+from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, EPS_SCALE
 
 
 class CarState(CarStateBase):
@@ -14,6 +14,7 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["GEAR_PACKET"]["GEAR"]
+    self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.
 
     # On cars with cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
     # the signal is zeroed to where the steering angle is at start.
@@ -38,7 +39,9 @@ class CarState(CarStateBase):
       ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
       ret.gasPressed = ret.gas > 15
     else:
-      ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL"]
+      # TODO: find a new, common signal
+      msg = "GAS_PEDAL_HYBRID" if (self.CP.flags & ToyotaFlags.HYBRID) else "GAS_PEDAL"
+      ret.gas = cp.vl[msg]["GAS_PEDAL"]
       ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0
 
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -76,7 +79,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 2
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
-    ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_EPS"]
+    ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_EPS"] * self.eps_torque_scale
     # we could use the override bit from dbc, but it's triggered at too high torque values
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     ret.steerWarning = cp.vl["EPS_STATUS"]["LKA_STATE"] not in (1, 5)
@@ -126,33 +129,32 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
 
     signals = [
-      # sig_name, sig_address, default
-      ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
-      ("GEAR", "GEAR_PACKET", 0),
-      ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
-      ("GAS_PEDAL", "GAS_PEDAL", 0),
-      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
-      ("DOOR_OPEN_FL", "BODY_CONTROL_STATE", 1),
-      ("DOOR_OPEN_FR", "BODY_CONTROL_STATE", 1),
-      ("DOOR_OPEN_RL", "BODY_CONTROL_STATE", 1),
-      ("DOOR_OPEN_RR", "BODY_CONTROL_STATE", 1),
-      ("SEATBELT_DRIVER_UNLATCHED", "BODY_CONTROL_STATE", 1),
-      ("TC_DISABLED", "ESP_CONTROL", 1),
-      ("BRAKE_HOLD_ACTIVE", "ESP_CONTROL", 1),
-      ("STEER_FRACTION", "STEER_ANGLE_SENSOR", 0),
-      ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
-      ("CRUISE_ACTIVE", "PCM_CRUISE", 0),
-      ("CRUISE_STATE", "PCM_CRUISE", 0),
-      ("GAS_RELEASED", "PCM_CRUISE", 1),
-      ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
-      ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
-      ("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0),
-      ("TURN_SIGNALS", "BLINKERS_STATE", 3),   # 3 is no blinkers
-      ("LKA_STATE", "EPS_STATUS", 0),
-      ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
+      # sig_name, sig_address
+      ("STEER_ANGLE", "STEER_ANGLE_SENSOR"),
+      ("GEAR", "GEAR_PACKET"),
+      ("BRAKE_PRESSED", "BRAKE_MODULE"),
+      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS"),
+      ("DOOR_OPEN_FL", "BODY_CONTROL_STATE"),
+      ("DOOR_OPEN_FR", "BODY_CONTROL_STATE"),
+      ("DOOR_OPEN_RL", "BODY_CONTROL_STATE"),
+      ("DOOR_OPEN_RR", "BODY_CONTROL_STATE"),
+      ("SEATBELT_DRIVER_UNLATCHED", "BODY_CONTROL_STATE"),
+      ("TC_DISABLED", "ESP_CONTROL"),
+      ("BRAKE_HOLD_ACTIVE", "ESP_CONTROL"),
+      ("STEER_FRACTION", "STEER_ANGLE_SENSOR"),
+      ("STEER_RATE", "STEER_ANGLE_SENSOR"),
+      ("CRUISE_ACTIVE", "PCM_CRUISE"),
+      ("CRUISE_STATE", "PCM_CRUISE"),
+      ("GAS_RELEASED", "PCM_CRUISE"),
+      ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"),
+      ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR"),
+      ("STEER_ANGLE", "STEER_TORQUE_SENSOR"),
+      ("TURN_SIGNALS", "BLINKERS_STATE"),
+      ("LKA_STATE", "EPS_STATUS"),
+      ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
     ]
 
     checks = [
@@ -163,12 +165,18 @@ class CarState(CarStateBase):
       ("ESP_CONTROL", 3),
       ("EPS_STATUS", 25),
       ("BRAKE_MODULE", 40),
-      ("GAS_PEDAL", 33),
       ("WHEEL_SPEEDS", 80),
       ("STEER_ANGLE_SENSOR", 80),
       ("PCM_CRUISE", 33),
       ("STEER_TORQUE_SENSOR", 50),
     ]
+
+    if CP.flags & ToyotaFlags.HYBRID:
+      signals.append(("GAS_PEDAL", "GAS_PEDAL_HYBRID", 0))
+      checks.append(("GAS_PEDAL_HYBRID", 33))
+    else:
+      signals.append(("GAS_PEDAL", "GAS_PEDAL", 0))
+      checks.append(("GAS_PEDAL", 33))
 
     if CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
       signals.append(("MAIN_ON", "DSU_CRUISE", 0))
@@ -193,9 +201,7 @@ class CarState(CarStateBase):
         ("R_ADJACENT", "BSM", 0),
         ("R_APPROACHING", "BSM", 0),
       ]
-      checks += [
-        ("BSM", 1)
-      ]
+      checks.append(("BSM", 1))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 

@@ -16,7 +16,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "nissan"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.nissan)]
 
-    ret.steerLimitAlert = False
+    ret.steerLimitTimer = 1.0
     ret.steerRateCost = 0.5
 
     ret.steerActuatorDelay = 0.1
@@ -79,7 +79,7 @@ class CarInterface(CarInterfaceBase):
 
   def apply(self, c):
     hud_control = c.hudControl
-    ret = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+    ret = self.CC.update(c, c.enabled, self.CS, self.frame, c.actuators,
                          c.cruiseControl.cancel, hud_control.visualAlert,
                          hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                          hud_control.leftLaneDepart, hud_control.rightLaneDepart)

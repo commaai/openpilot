@@ -166,16 +166,22 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (sm.updated("roadCameraState")) {
+  if (!Hardware::TICI() && sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
 
     float max_lines = Hardware::EON() ? 5408 : 1904;
     float max_gain = Hardware::EON() ? 1.0: 10.0;
     float max_ev = max_lines * max_gain;
 
-    if (Hardware::TICI()) {
-      max_ev /= 6;
-    }
+    float ev = camera_state.getGain() * float(camera_state.getIntegLines());
+
+    scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
+  } else if (Hardware::TICI() && sm.updated("wideRoadCameraState")) {
+    auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
+
+    float max_lines = 1904;
+    float max_gain = 10.0;
+    float max_ev = max_lines * max_gain / 6;
 
     float ev = camera_state.getGain() * float(camera_state.getIntegLines());
 
@@ -220,6 +226,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
+    "wideRoadCameraState",
   });
 
   Params params;

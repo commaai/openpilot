@@ -264,9 +264,10 @@ jobs:
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./selfdrive/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
-                        ./selfdrive/camerad/test/ae_gray_test"
-    - name: Upload coverage to Codecov
-      run: bash <(curl -s https://codecov.io/bash) -v -F unit_tests
+                        ./selfdrive/camerad/test/ae_gray_test && \
+                        coverage xml"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
 
   process_replay:
     name: process replay
@@ -299,9 +300,10 @@ jobs:
     - name: Run replay
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
-    - name: Upload coverage to Codecov
-      run: bash <(curl -s https://codecov.io/bash) -v -F process_replay
+                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
+                        coverage xml"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
     - name: Print diff
       if: always()
       run: cat selfdrive/test/process_replay/diff.txt
@@ -354,7 +356,10 @@ jobs:
         ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
                         scons -j$(nproc) && \
                         cd selfdrive/test/longitudinal_maneuvers && \
-                        ./test_longitudinal.py"
+                        coverage run ./test_longitudinal.py && \
+                        coverage xml"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
     - uses: actions/upload-artifact@v2
       if: always()
       continue-on-error: true
@@ -397,13 +402,14 @@ jobs:
     - name: Test car models
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test && \
-                        FILEREADER_CACHE=1 pytest selfdrive/test/test_models.py && \
+                        FILEREADER_CACHE=1 coverage run -m pytest selfdrive/test/test_models.py && \
+                        coverage xml && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
-    - name: Upload coverage to Codecov
-      run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
 
   docs:
     name: build docs
