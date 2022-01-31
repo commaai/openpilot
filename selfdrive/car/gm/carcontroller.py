@@ -18,6 +18,8 @@ class CarController():
     self.apply_brake = 0
 
     self.lka_steering_cmd_counter_last = -1
+    self.jjs_steering_cmd_counter_last = 0
+    self.jjs_steering_cmd_counter_stuck = 0
     self.lka_icon_status_last = (False, False)
     self.steer_rate_limited = False
 
@@ -38,21 +40,32 @@ class CarController():
     # Steering (50Hz)
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
-    #if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
-    #  self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
+    if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
+      self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
     if (frame % P.STEER_STEP) == 0:
-      lkas_enabled = c.active and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED
+      lkas_enabled = c.active and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED \
+        and self.jjs_steering_cmd_counter_stuck <= 3 # If we've been stuck for 3 frames, it's time to reset to 0
       if lkas_enabled:
         new_steer = int(round(actuators.steer * P.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
         self.steer_rate_limited = new_steer != apply_steer
       else:
         apply_steer = 0
+        self.jjs_steering_cmd_counter_stuck = 0 # TODO: cleanup
 
       self.apply_steer_last = apply_steer
       # GM EPS faults on any gap in received message counters. To handle transient OP/Panda safety sync issues at the
       # moment of disengaging, increment the counter based on the last message known to pass Panda safety checks.
       idx = (CS.lka_steering_cmd_counter + 1) % 4
+      
+      # If the calculated rc is the same as the last rc (TODO: confirm logic)
+      # increment stuck counter
+      if idx == self.jjs_steering_cmd_counter_last:
+        self.jjs_steering_cmd_counter_stuck += 1
+      else:
+        self.jjs_steering_cmd_counter_stuck = 0
+
+      self.jjs_steering_cmd_counter_last = idx
 
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 
