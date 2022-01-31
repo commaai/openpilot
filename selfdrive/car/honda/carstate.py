@@ -11,7 +11,6 @@ TransmissionType = car.CarParams.TransmissionType
 
 
 def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
-  # this function generates lists for signals and messages
   signals = [
     ("XMISSION_SPEED", "ENGINE_DATA"),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS"),

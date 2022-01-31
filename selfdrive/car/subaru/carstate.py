@@ -77,7 +77,6 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    # this function generates lists for signal, messages and initial values
     signals = [
       # sig_name, sig_address
       ("Steer_Torque_Sensor", "Steering_Torque"),
