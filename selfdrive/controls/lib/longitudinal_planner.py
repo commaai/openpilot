@@ -72,6 +72,7 @@ class Planner:
 
     if not active:
       self.v_desired_filter.x = v_ego
+      self.a_desired = 0.0
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
