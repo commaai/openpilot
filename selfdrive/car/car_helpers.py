@@ -12,13 +12,12 @@ from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
-from selfdrive.controls.lib.events import Alert
 
 from cereal import car
 EventName = car.CarEvent.EventName
 
 
-def get_startup_event(car_recognized: bool, controller_available: bool, fw_seen: bool) -> Dict[str, Alert]:
+def get_startup_event(car_recognized: bool, controller_available: bool, fw_seen: bool) -> int:
   if is_comma_remote() and is_tested_branch():
     event = EventName.startup
   else:
