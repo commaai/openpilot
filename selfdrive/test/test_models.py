@@ -120,6 +120,8 @@ class TestCarModel(unittest.TestCase):
         self.assertTrue(len(self.CP.lateralTuning.lqr.a))
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
+      elif tuning == 'steerModel':
+        self.assertTrue(len(self.CP.lateralTuning.steerModel.modelparam))
       else:
         raise Exception("unkown tuning")
 

@@ -20,7 +20,6 @@ class LatControlSteerModel(LatControl):
     super().__init__(CP, CI)
 
     self.xcurrent = np.zeros((NX, ))
-    self.torque = 0.0
 
     model_param = np.asarray(list(CP.lateralTuning.steerModel.modelparam))
 
@@ -41,6 +40,8 @@ class LatControlSteerModel(LatControl):
   def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate):
     model_log = log.ControlsState.LateralSteerModelState.new_message()
 
+    steers_max = get_steer_max(CP, CS.vEgo)
+
     angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
@@ -54,27 +55,26 @@ class LatControlSteerModel(LatControl):
       model_log.active = False
       self.reset()
     else:
-      steers_max = get_steer_max(CP, CS.vEgo)
       # self.pid.pos_limit = steers_max
       # self.pid.neg_limit = -steers_max
 
       # torque = argmin norm(xcurrent + DT_CTRL * (A*x + R*live_param + B*u)
       # analytical solution similar to steady state.
       # offset does not contribute to resistive torque
-      output_steer = self.M @ (self.A @ self.xcurrent + self.R @ live_param +
+      torque_np = self.M @ (self.A @ self.xcurrent + self.R @ live_param +
                 (self.xcurrent - np.array([angle_steers_des_no_offset, self.xcurrent[1,]]))/DT_CTRL )
 
       # TODO: needed?
       # steer_feedforward = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
 
       # update state estimate with forward simulation
-      self.xcurrent = self.xcurrent + DT_CTRL * ((self.A @ self.xcurrent) + (self.B * output_steer) + (self.R @ live_param))
-      self.torque = float(output_steer[0])
+      self.xcurrent = self.xcurrent + DT_CTRL * ((self.A @ self.xcurrent) + (self.B * torque_np) + (self.R @ live_param))
+      output_steer = float(torque_np[0])
 
       model_log.active = True
 
     model_log.steeringAngleDeg = float(self.xcurrent[0])
-    model_log.output = self.torque
+    model_log.output = output_steer
     model_log.saturated = self._check_saturation(steers_max - abs(output_steer) < 1e-3, CS)
 
     return output_steer, angle_steers_des, model_log

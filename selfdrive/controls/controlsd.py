@@ -672,6 +672,8 @@ class Controls:
       controlsState.lateralControlState.lqrState = lac_log
     elif lat_tuning == 'indi':
       controlsState.lateralControlState.indiState = lac_log
+    elif lat_tuning == 'steerModel':
+      controlsState.lateralControlState.steerModelState = lac_log
 
     self.pm.send('controlsState', dat)
 
