@@ -206,7 +206,7 @@ class CarState(CarStateBase):
           ("FCA_CmdAct", "FCA11"),
           ("CF_VSM_Warn", "FCA11"),
         ]
-        checks += [("FCA11", 50)]
+        checks.append(("FCA11", 50))
       else:
         signals += [
           ("AEB_CmdAct", "SCC12"),
@@ -218,20 +218,14 @@ class CarState(CarStateBase):
         ("CF_Lca_IndLeft", "LCA11"),
         ("CF_Lca_IndRight", "LCA11"),
       ]
-      checks += [("LCA11", 50)]
+      checks.append(("LCA11", 50))
 
     if CP.carFingerprint in (HYBRID_CAR | EV_CAR):
       if CP.carFingerprint in HYBRID_CAR:
-        signals += [
-          ("CR_Vcu_AccPedDep_Pos", "E_EMS11")
-        ]
+        signals.append(("CR_Vcu_AccPedDep_Pos", "E_EMS11"))
       else:
-        signals += [
-          ("Accel_Pedal_Pos", "E_EMS11")
-        ]
-      checks += [
-        ("E_EMS11", 50),
-      ]
+        signals.append(("Accel_Pedal_Pos", "E_EMS11"))
+      checks.append(("E_EMS11", 50))
     else:
       signals += [
         ("PV_AV_CAN", "EMS12"),
@@ -243,29 +237,17 @@ class CarState(CarStateBase):
       ]
 
     if CP.carFingerprint in FEATURES["use_cluster_gears"]:
-      signals += [
-        ("CF_Clu_Gear", "CLU15"),
-      ]
-      checks += [
-        ("CLU15", 5)
-      ]
+      signals.append(("CF_Clu_Gear", "CLU15"))
+      checks.append(("CLU15", 5))
     elif CP.carFingerprint in FEATURES["use_tcu_gears"]:
-      signals += [
-        ("CUR_GR", "TCU12")
-      ]
-      checks += [
-        ("TCU12", 100)
-      ]
+      signals.append(("CUR_GR", "TCU12"))
+      checks.append(("TCU12", 100))
     elif CP.carFingerprint in FEATURES["use_elect_gears"]:
-      signals += [("Elect_Gear_Shifter", "ELECT_GEAR")]
-      checks += [("ELECT_GEAR", 20)]
+      signals.append(("Elect_Gear_Shifter", "ELECT_GEAR"))
+      checks.append(("ELECT_GEAR", 20))
     else:
-      signals += [
-        ("CF_Lvr_Gear", "LVR12")
-      ]
-      checks += [
-        ("LVR12", 100)
-      ]
+      signals.append(("CF_Lvr_Gear", "LVR12"))
+      checks.append(("LVR12", 100))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 

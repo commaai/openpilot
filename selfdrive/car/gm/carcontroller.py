@@ -27,7 +27,7 @@ class CarController():
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
 
-  def update(self, enabled, CS, frame, actuators,
+  def update(self, c, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
@@ -41,7 +41,7 @@ class CarController():
     #if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
     #  self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
     if (frame % P.STEER_STEP) == 0:
-      lkas_enabled = enabled and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED
+      lkas_enabled = c.active and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED
       if lkas_enabled:
         new_steer = int(round(actuators.steer * P.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
@@ -60,7 +60,7 @@ class CarController():
     if CS.CP.carFingerprint not in NO_ASCM and CS.CP.openpilotLongitudinalControl and not CS.CP.pcmCruise:
       # Gas/regen and brakes - all at 25Hz
       if (frame % 4) == 0:
-        if not enabled:
+        if not c.active:
           # Stock ECU sends max regen when not enabled.
           self.apply_gas = P.MAX_ACC_REGEN
           self.apply_brake = 0
@@ -69,7 +69,7 @@ class CarController():
           self.apply_brake = int(round(interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)))
 
         idx = (frame // 4) % 4
-
+        # TODO: Should all instances of "enabled" be replaced with c.active?
         at_full_stop = enabled and CS.out.standstill
         near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
@@ -101,7 +101,7 @@ class CarController():
     elif CS.CP.openpilotLongitudinalControl:
       # Gas/regen and brakes - all at 25Hz
       if (frame % 4) == 0:
-        if not enabled:
+        if not c.active:
           # Stock ECU sends max regen when not enabled.
           self.apply_gas = P.MAX_ACC_REGEN
           self.apply_brake = 0

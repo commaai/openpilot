@@ -172,7 +172,6 @@ def fingerprint(msgs, fsm, can_sock, fingerprint):
   can_sock.data = []
 
   fsm.update_ready.set()
-  print("finished fingerprinting")
 
 
 def get_car_params(msgs, fsm, can_sock, fingerprint):

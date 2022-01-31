@@ -65,17 +65,13 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ]
 
   if CP.carFingerprint in (CAR.CRV_HYBRID, CAR.CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G, CAR.HONDA_E):
-    checks += [
-      (gearbox_msg, 50),
-    ]
+    checks.append((gearbox_msg, 50))
   else:
-    checks += [
-      (gearbox_msg, 100),
-    ]
+    checks.append((gearbox_msg, 100))
 
   if CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
-    signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
-    checks += [("BRAKE_MODULE", 50)]
+    signals.append(("BRAKE_PRESSED", "BRAKE_MODULE", 0))
+    checks.append(("BRAKE_MODULE", 50))
 
   if CP.carFingerprint in HONDA_BOSCH:
     signals += [
@@ -103,14 +99,14 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS", 0)]
 
     if CP.carFingerprint == CAR.ODYSSEY_CHN:
-      checks += [("CRUISE_PARAMS", 10)]
+      checks.append(("CRUISE_PARAMS", 10))
     else:
-      checks += [("CRUISE_PARAMS", 50)]
+      checks.append(("CRUISE_PARAMS", 50))
 
   if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
-    signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
+    signals.append(("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1))
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
-    signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1)]
+    signals.append(("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1))
   elif CP.carFingerprint in (CAR.FREED, CAR.HRV):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1),
                 ("WHEELS_MOVING", "STANDSTILL", 1)]
@@ -133,8 +129,8 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       ("EPB_STATUS", 50),
     ]
   elif CP.carFingerprint in (CAR.ODYSSEY, CAR.ODYSSEY_CHN):
-    signals += [("EPB_STATE", "EPB_STATUS", 0)]
-    checks += [("EPB_STATUS", 50)]
+    signals.append(("EPB_STATE", "EPB_STATUS", 0))
+    checks.append(("EPB_STATUS", 50))
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
@@ -147,7 +143,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       ("BRAKE_ERROR_1", "STANDSTILL", 1),
       ("BRAKE_ERROR_2", "STANDSTILL", 1)
     ]
-    checks += [("STANDSTILL", 50)]
+    checks.append(("STANDSTILL", 50))
 
   return signals, checks
 
@@ -167,6 +163,7 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
+    self.brake_error = False
     self.brake_switch_prev = 0
     self.brake_switch_prev_ts = 0
     self.cruise_setting = 0
@@ -207,9 +204,7 @@ class CarState(CarStateBase):
     # LOW_SPEED_LOCKOUT is not worth a warning
     ret.steerWarning = steer_status not in ("NORMAL", "LOW_SPEED_LOCKOUT", "NO_TORQUE_ALERT_2")
 
-    if not self.CP.openpilotLongitudinalControl:
-      self.brake_error = 0
-    else:
+    if self.CP.openpilotLongitudinalControl:
       self.brake_error = cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"]
     ret.espDisabled = cp.vl["VSA_STATUS"]["ESP_DISABLED"] != 0
 
@@ -245,15 +240,11 @@ class CarState(CarStateBase):
     gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
 
-    ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
-
-    # this is a hack for the interceptor. This is now only used in the simulation
-    # TODO: Replace tests by toyota so this can go away
     if self.CP.enableGasInterceptor:
-      user_gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
-      ret.gasPressed = user_gas > 1e-5  # this works because interceptor reads < 0 when pedal position is 0. Once calibrated, this will change
+      ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
     else:
-      ret.gasPressed = ret.gas > 1e-5
+      ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
+    ret.gasPressed = ret.gas > 1e-5
 
     ret.steeringTorque = cp.vl["STEER_STATUS"]["STEER_TORQUE_SENSOR"]
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]["MOTOR_TORQUE"]
@@ -289,7 +280,7 @@ class CarState(CarStateBase):
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE):
-      if ret.brake > 0.05:
+      if ret.brake > 0.1:
         ret.brakePressed = True
 
     # TODO: discover the CAN msg that has the imperial unit bit for all other cars
