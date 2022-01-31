@@ -110,7 +110,6 @@ class CarState(CarStateBase):
       ("LKATorqueDelivered", "PSCMStatus"),
       ("LKATorqueDeliveredStatus", "PSCMStatus"),
       ("TractionControlOn", "ESPStatus"),
-      ("EPBClosed", "EPBStatus"),
       ("CruiseMainOn", "ECMEngineStatus"),
       ("Brake_Pressed", "ECMEngineStatus"),
     ]
