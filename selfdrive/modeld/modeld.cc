@@ -80,6 +80,11 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     // Keep receiving frames until we are at least 1 frame ahead of previous extra frame
     do {
       buf_main = vipc_client_main.recv(&meta_main);
+      if (meta_main.frame_id <= meta_extra.frame_id) {
+        LOGE("main camera behind! main: %d (%.5f), extra: %d (%.5f)",
+          meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
+          meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
+      }
     } while (buf_main != nullptr && meta_main.frame_id <= meta_extra.frame_id);
 
     if (buf_main == nullptr) {
@@ -91,6 +96,12 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       // Keep receiving extra frames until frame id matches main camera
       do {
         buf_extra = vipc_client_extra.recv(&meta_extra);
+
+        if (meta_main.frame_id > meta_extra.frame_id) {
+          LOGE("extra camera behind! main: %d (%.5f), extra: %d (%.5f)",
+            meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
+            meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
+        }
       } while (buf_extra != nullptr && meta_main.frame_id > meta_extra.frame_id);
 
       if (buf_extra == nullptr) {
@@ -101,8 +112,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       if (meta_main.frame_id != meta_extra.frame_id || std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
         LOGE("frames out of sync! main: %d (%.5f), extra: %d (%.5f)",
           meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
-          meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9
-        );
+          meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
       }
     } else {
       // Use single camera
