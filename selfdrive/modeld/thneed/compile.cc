@@ -2,6 +2,7 @@
 
 #include "selfdrive/modeld/runners/snpemodel.h"
 #include "selfdrive/modeld/thneed/thneed.h"
+#include "selfdrive/hardware/hw.h"
 
 #define TEMPORAL_SIZE 512
 #define DESIRE_LEN 8
@@ -10,8 +11,10 @@
 // TODO: This should probably use SNPE directly.
 int main(int argc, char* argv[]) {
   #define OUTPUT_SIZE 0x10000
+
+  bool use_extra = !Hardware::EON();
   float *output = (float*)calloc(OUTPUT_SIZE, sizeof(float));
-  SNPEModel mdl(argv[1], output, 0, USE_GPU_RUNTIME, USE_EXTRA);
+  SNPEModel mdl(argv[1], output, 0, USE_GPU_RUNTIME, use_extra);
 
   float state[TEMPORAL_SIZE] = {0};
   float desire[DESIRE_LEN] = {0};
@@ -23,7 +26,7 @@ int main(int argc, char* argv[]) {
   mdl.addDesire(desire, DESIRE_LEN);
   mdl.addTrafficConvention(traffic_convention, TRAFFIC_CONVENTION_LEN);
   mdl.addImage(input, 0);
-  if (USE_EXTRA) {
+  if (use_extra) {
     mdl.addExtra(extra, 0);
   }
 

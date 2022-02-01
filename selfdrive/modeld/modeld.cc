@@ -50,7 +50,7 @@ mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera
   return matmul3(yuv_transform, transform);
 }
 
-void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient &vipc_client_wide, bool wide_camera) {
+void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient &vipc_client_wide, bool wide_camera, bool use_extra) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
   SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration"});
@@ -66,14 +66,20 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
   mat3 model_transform_wide = {};
   bool live_calib_seen = false;
 
+  VisionBuf *buf = nullptr;
+  VisionIpcBufExtra extra = {};
+
+  VisionBuf *buf_wide = nullptr;
+  VisionIpcBufExtra extra_wide = {};
+
   while (!do_exit) {
-    VisionIpcBufExtra extra = {};
-    VisionBuf *buf = vipc_client.recv(&extra);
+    vipc_client.recv(&extra);
     if (buf == nullptr) continue;
 
-    VisionIpcBufExtra extra_wide = {};
-    VisionBuf *buf_wide = vipc_client_wide.recv(&extra_wide);
-    if (buf_wide == nullptr) continue;
+    if (use_extra) {
+      vipc_client_wide.recv(&extra_wide);
+      if (buf_wide == nullptr) continue;
+    }
 
     // TODO: path planner timeout?
     sm.update(0);
@@ -132,6 +138,7 @@ int main(int argc, char **argv) {
   }
 
   bool wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+  bool use_extra = !Hardware::EON();
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -139,28 +146,32 @@ int main(int argc, char **argv) {
 
   // init the models
   ModelState model;
-  model_init(&model, device_id, context);
+  model_init(&model, device_id, context, use_extra);
   LOGW("models loaded, modeld starting");
 
   VisionIpcClient vipc_client = VisionIpcClient("camerad", wide_camera ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD, true, device_id, context);
+  VisionIpcClient vipc_client_wide = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, true, device_id, context);
+
   while (!do_exit && !vipc_client.connect(false)) {
     util::sleep_for(100);
   }
 
-  // TODO: Make this TICI only
-  VisionIpcClient vipc_client_wide = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, true, device_id, context);
-  while (!do_exit && !vipc_client_wide.connect(false)) {
+  while (!do_exit && use_extra && !vipc_client_wide.connect(false)) {
     util::sleep_for(100);
   }
 
   // run the models
   // vipc_client.connected is false only when do_exit is true
-  if (vipc_client.connected) {
+  if (vipc_client.connected && (!use_extra || vipc_client_wide.connected)) {
     const VisionBuf *b = &vipc_client.buffers[0];
-    const VisionBuf *wb = &vipc_client_wide.buffers[0];
     LOGW("connected narrow cam with buffer size: %d (%d x %d)", b->len, b->width, b->height);
-    LOGW("connected wide cam with buffer size: %d (%d x %d)", wb->len, wb->width, wb->height);
-    run_model(model, vipc_client, vipc_client_wide, wide_camera);
+
+    if (use_extra) {
+      const VisionBuf *wb = &vipc_client_wide.buffers[0];
+      LOGW("connected wide cam with buffer size: %d (%d x %d)", wb->len, wb->width, wb->height);
+    }
+
+    run_model(model, vipc_client, vipc_client_wide, wide_camera, use_extra);
   }
 
   model_free(&model);
