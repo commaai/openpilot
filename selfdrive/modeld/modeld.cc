@@ -67,20 +67,31 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
   bool live_calib_seen = false;
 
   VisionBuf *buf = nullptr;
-  VisionIpcBufExtra extra = {};
-
   VisionBuf *buf_wide = nullptr;
-  VisionIpcBufExtra extra_wide = {};
+
+  VisionIpcBufExtra extra = {0};
+  VisionIpcBufExtra extra_wide = {0};
 
   while (!do_exit) {
-    buf = vipc_client.recv(&extra);
+    // TODO: change sync logic to use timestamp start of frame in case camerad skips a frame
+    // log frame id in model packet
+
+    // Keep receiving frames until we are at least 1 frame ahead of previous wide frame
+    do {
+      buf = vipc_client.recv(&extra);
+    } while (buf != nullptr && extra.frame_id <= extra_wide.frame_id);
+
     if (buf == nullptr) {
       LOGE("vipc_client no frame");
       continue;
     };
 
     if (use_extra) {
-      buf_wide = vipc_client_wide.recv(&extra_wide);
+      // Keep receiving wide frames until frame id matches main camera
+      do {
+        buf_wide = vipc_client_wide.recv(&extra_wide);
+      } while (buf_wide != nullptr && extra.frame_id > extra_wide.frame_id);
+
       if (buf_wide == nullptr) {
         LOGE("vipc_client_wide no frame");
         continue;
@@ -162,7 +173,7 @@ int main(int argc, char **argv) {
   LOGW("models loaded, modeld starting");
 
   VisionIpcClient vipc_client = VisionIpcClient("camerad", wide_camera ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD, true, device_id, context);
-  VisionIpcClient vipc_client_wide = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, true, device_id, context);
+  VisionIpcClient vipc_client_wide = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, false, device_id, context);
 
   while (!do_exit && !vipc_client.connect(false)) {
     util::sleep_for(100);
