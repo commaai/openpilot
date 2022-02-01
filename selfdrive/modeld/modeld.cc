@@ -79,6 +79,10 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
     if (use_extra) {
       vipc_client_wide.recv(&extra_wide);
       if (buf_wide == nullptr) continue;
+
+      if (extra.frame_id != extra_wide.frame_id) {
+        LOGE("frames out of sync! narrow: %d, wide: %d", extra.frame_id, extra_wide.frame_id);
+      }
     }
 
     // TODO: path planner timeout?
