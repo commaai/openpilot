@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <mutex>
+#include <cmath>
 
 #include <eigen3/Eigen/Dense>
 
@@ -97,7 +98,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
         continue;
       }
 
-      if (extra.frame_id != extra_wide.frame_id) {
+      if (extra.frame_id != extra_wide.frame_id || std::abs((int64_t)extra.timestamp_sof - (int64_t)extra_wide.timestamp_sof) > 10000000ULL) {
         LOGE("frames out of sync! narrow: %d (%.5f), wide: %d (%.5f)", extra.frame_id, double(extra.timestamp_sof) / 1e9, extra_wide.frame_id, double(extra_wide.timestamp_sof) / 1e9);
       }
     }
