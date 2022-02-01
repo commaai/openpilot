@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
 
   // run the models
   // vipc_client.connected is false only when do_exit is true
-  if (vipc_client_main.connected && (!vipc_client_extra || vipc_client_extra->connected)) {
+  if (!do_exit) {
     const VisionBuf *b = &vipc_client_main.buffers[0];
     LOGW("connected narrow cam with buffer size: %d (%d x %d)", b->len, b->width, b->height);
 
