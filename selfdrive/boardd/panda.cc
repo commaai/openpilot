@@ -311,10 +311,10 @@ void Panda::set_ir_pwr(uint16_t ir_pwr) {
   usb_write(0xb0, ir_pwr, 0);
 }
 
-health_t Panda::get_state() {
+std::optional<health_t> Panda::get_state() {
   health_t health {0};
-  usb_read(0xd2, 0, 0, (unsigned char*)&health, sizeof(health));
-  return health;
+  int err = usb_read(0xd2, 0, 0, (unsigned char*)&health, sizeof(health));
+  return err >= 0 ? std::make_optional(health) : std::nullopt;
 }
 
 void Panda::set_loopback(bool loopback) {
