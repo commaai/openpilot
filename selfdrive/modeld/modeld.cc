@@ -77,7 +77,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, std::option
     // TODO: change sync logic to use timestamp start of frame in case camerad skips a frame
     // log frame id in model packet
 
-    // Keep receiving frames until we are at least 1 frame ahead of previous wide frame
+    // Keep receiving frames until we are at least 1 frame ahead of previous extra frame
     do {
       buf_main = vipc_client_main.recv(&meta_main);
     } while (buf_main != nullptr && meta_main.frame_id <= meta_extra.frame_id);
@@ -88,7 +88,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, std::option
     };
 
     if (vipc_client_extra) {
-      // Keep receiving wide frames until frame id matches main camera
+      // Keep receiving extra frames until frame id matches main camera
       do {
         buf_extra = vipc_client_extra->recv(&meta_extra);
       } while (buf_extra != nullptr && meta_main.frame_id > meta_extra.frame_id);
@@ -99,7 +99,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, std::option
       }
 
       if (meta_main.frame_id != meta_extra.frame_id || std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
-        LOGE("frames out of sync! narrow: %d (%.5f), wide: %d (%.5f)",
+        LOGE("frames out of sync! main: %d (%.5f), extra: %d (%.5f)",
           meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
           meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9
         );
