@@ -238,7 +238,7 @@ def init_overlay() -> None:
 
 def check_for_null_bytes(path: str, context: str) -> None:
   try:
-    null = run(["git", "fetch", "--dry-run"], OVERLAY_MERGED, low_priority=True)
+    null = run(["git", "grep", "--files-with-matches", "-Pa", "'\x00'", "'*.py'"], path)
     cloudlog.event(f"null bytes found in {path} ({context})", files=null, error=True)
   except subprocess.CalledProcessError:
     pass
