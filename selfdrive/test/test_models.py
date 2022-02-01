@@ -220,8 +220,6 @@ class TestCarModel(unittest.TestCase):
       if CS.brakePressed and not self.safety.get_brake_pressed_prev():
         if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
           brake_pressed = False
-        if self.CP.carName == "honda" and self.CI.CS.brake_switch:
-          brake_pressed = False
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
 
       if self.CP.pcmCruise:
