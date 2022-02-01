@@ -163,6 +163,7 @@ class CarState(CarStateBase):
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
     self.brake_error = False
+    self.brake_switch_prev = False
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
 
@@ -261,10 +262,13 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
       ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
     else:
-      # stock cruise disables on brake switch, while brake pressed is late to rise
-      # however, brake switch is always zero when in park
-      ret.brakePressed = cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0 or \
-                         cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0
+      # brake switch has shown some single time step noise, so only considered when
+      # switch is on for at least 2 consecutive CAN samples
+      # brake switch rises earlier than brake pressed but is never 1 when in park
+      brake_switch = cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0
+      ret.brakePressed = (cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0 or
+                          (brake_switch and self.brake_switch_prev and cp.updated["POWERTRAIN_DATA"]))
+      self.brake_switch_prev = brake_switch
 
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
