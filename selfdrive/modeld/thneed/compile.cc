@@ -12,9 +12,8 @@
 int main(int argc, char* argv[]) {
   #define OUTPUT_SIZE 0x10000
 
-  bool use_extra = !Hardware::EON();
   float *output = (float*)calloc(OUTPUT_SIZE, sizeof(float));
-  SNPEModel mdl(argv[1], output, 0, USE_GPU_RUNTIME, use_extra);
+  SNPEModel mdl(argv[1], output, 0, USE_GPU_RUNTIME, USE_EXTRA);
 
   float state[TEMPORAL_SIZE] = {0};
   float desire[DESIRE_LEN] = {0};
