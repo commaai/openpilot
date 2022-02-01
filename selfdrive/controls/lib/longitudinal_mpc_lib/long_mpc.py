@@ -211,6 +211,8 @@ class LongitudinalMpc:
     self.params = np.zeros((N+1, PARAM_DIM))
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(X_DIM))
+    for i in range(N):
+      self.solver.set(i, 'u', self.u_sol[i,:])
     self.last_cloudlog_t = 0
     self.status = False
     self.crash_cnt = 0.0
