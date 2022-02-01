@@ -185,7 +185,7 @@ def upload_handler(end_event: threading.Event) -> None:
           sm.update(0)
           cell = sm['deviceState'].networkType not in [NetworkType.wifi, NetworkType.ethernet]
           if cell and (not cur_upload_items[tid].allow_cellular):
-            raise AbortTransferException("Uploading over cellular not allowed")
+            raise AbortTransferException
 
           cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
@@ -196,8 +196,10 @@ def upload_handler(end_event: threading.Event) -> None:
         UploadQueueCache.cache(upload_queue)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
         cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_items[tid]}")
-
         retry_upload(tid, end_event)
+      except AbortTransferException:
+        cloudlog.warning(f"athena.upload_handler.abort {cur_upload_items[tid]}")
+        retry_upload(tid, end_event, False)
 
     except queue.Empty:
       pass
