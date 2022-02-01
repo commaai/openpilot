@@ -51,7 +51,7 @@ mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera
   return matmul3(yuv_transform, transform);
 }
 
-void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient &vipc_client_wide, bool wide_camera, bool use_extra) {
+void run_model(ModelState &model, VisionIpcClient &vipc_client_main, std::optional<VisionIpcClient> &vipc_client_extra, bool main_wide_camera, bool use_extra) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
   SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration"});
@@ -63,15 +63,15 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
   double last = 0;
   uint32_t run_count = 0;
 
-  mat3 model_transform = {};
-  mat3 model_transform_wide = {};
+  mat3 model_transform_main = {};
+  mat3 model_transform_extra = {};
   bool live_calib_seen = false;
 
-  VisionBuf *buf = nullptr;
-  VisionBuf *buf_wide = nullptr;
+  VisionBuf *buf_main = nullptr;
+  VisionBuf *buf_extra = nullptr;
 
-  VisionIpcBufExtra extra = {0};
-  VisionIpcBufExtra extra_wide = {0};
+  VisionIpcBufExtra meta_main = {0};
+  VisionIpcBufExtra meta_extra = {0};
 
   while (!do_exit) {
     // TODO: change sync logic to use timestamp start of frame in case camerad skips a frame
@@ -79,28 +79,35 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
 
     // Keep receiving frames until we are at least 1 frame ahead of previous wide frame
     do {
-      buf = vipc_client.recv(&extra);
-    } while (buf != nullptr && extra.frame_id <= extra_wide.frame_id);
+      buf_main = vipc_client_main.recv(&meta_main);
+    } while (buf_main != nullptr && meta_main.frame_id <= meta_extra.frame_id);
 
-    if (buf == nullptr) {
-      LOGE("vipc_client no frame");
+    if (buf_main == nullptr) {
+      LOGE("vipc_client_main no frame");
       continue;
     };
 
-    if (use_extra) {
+    if (vipc_client_extra) {
       // Keep receiving wide frames until frame id matches main camera
       do {
-        buf_wide = vipc_client_wide.recv(&extra_wide);
-      } while (buf_wide != nullptr && extra.frame_id > extra_wide.frame_id);
+        buf_extra = vipc_client_extra->recv(&meta_extra);
+      } while (buf_extra != nullptr && meta_main.frame_id > meta_extra.frame_id);
 
-      if (buf_wide == nullptr) {
-        LOGE("vipc_client_wide no frame");
+      if (buf_extra == nullptr) {
+        LOGE("vipc_client_extra no frame");
         continue;
       }
 
-      if (extra.frame_id != extra_wide.frame_id || std::abs((int64_t)extra.timestamp_sof - (int64_t)extra_wide.timestamp_sof) > 10000000ULL) {
-        LOGE("frames out of sync! narrow: %d (%.5f), wide: %d (%.5f)", extra.frame_id, double(extra.timestamp_sof) / 1e9, extra_wide.frame_id, double(extra_wide.timestamp_sof) / 1e9);
+      if (meta_main.frame_id != meta_extra.frame_id || std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
+        LOGE("frames out of sync! narrow: %d (%.5f), wide: %d (%.5f)",
+          meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
+          meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9
+        );
       }
+    } else {
+      // Use single camera
+      buf_extra = buf_main;
+      meta_extra = meta_main;
     }
 
     // TODO: path planner timeout?
@@ -114,9 +121,9 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
         extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
       }
 
-      model_transform = update_calibration(extrinsic_matrix_eigen, wide_camera, false);
+      model_transform_main = update_calibration(extrinsic_matrix_eigen, main_wide_camera, false);
       if (use_extra) {
-        model_transform_wide = update_calibration(extrinsic_matrix_eigen, true, true);
+        model_transform_extra = update_calibration(extrinsic_matrix_eigen, Hardware::TICI(), true);
       }
       live_calib_seen = true;
     }
@@ -127,12 +134,12 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
     }
 
     double mt1 = millis_since_boot();
-    ModelOutput *model_output = model_eval_frame(&model, buf, buf_wide, model_transform, model_transform_wide, vec_desire);
+    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire);
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 
     // tracked dropped frames
-    uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
+    uint32_t vipc_dropped_frames = meta_main.frame_id - last_vipc_frame_id - 1;
     float frames_dropped = frame_dropped_filter.update((float)std::min(vipc_dropped_frames, 10U));
     if (run_count < 10) { // let frame drops warm up
       frame_dropped_filter.reset(0);
@@ -142,13 +149,13 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
 
     float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-    model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, *model_output, extra.timestamp_eof, model_execution_time,
+    model_publish(pm, meta_main.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
                   kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
-    posenet_publish(pm, extra.frame_id, vipc_dropped_frames, *model_output, extra.timestamp_eof, live_calib_seen);
+    posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
 
     //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
     last = mt1;
-    last_vipc_frame_id = extra.frame_id;
+    last_vipc_frame_id = meta_main.frame_id;
   }
 }
 
@@ -161,8 +168,8 @@ int main(int argc, char **argv) {
     assert(ret == 0);
   }
 
-  bool wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
-  bool use_extra = !Hardware::EON();
+  bool main_wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+  bool use_extra = USE_EXTRA;
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -173,29 +180,33 @@ int main(int argc, char **argv) {
   model_init(&model, device_id, context, use_extra);
   LOGW("models loaded, modeld starting");
 
-  VisionIpcClient vipc_client = VisionIpcClient("camerad", wide_camera ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD, true, device_id, context);
-  VisionIpcClient vipc_client_wide = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, false, device_id, context);
+  VisionIpcClient vipc_client_main = VisionIpcClient("camerad", main_wide_camera ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD, true, device_id, context);
 
-  while (!do_exit && !vipc_client.connect(false)) {
+  std::optional<VisionIpcClient> vipc_client_extra;
+  if (Hardware::TICI() && use_extra) {
+   vipc_client_extra = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, false, device_id, context);
+  }
+
+  while (!do_exit && !vipc_client_main.connect(false)) {
     util::sleep_for(100);
   }
 
-  while (!do_exit && use_extra && !vipc_client_wide.connect(false)) {
+  while (!do_exit && vipc_client_extra && !vipc_client_extra->connect(false)) {
     util::sleep_for(100);
   }
 
   // run the models
   // vipc_client.connected is false only when do_exit is true
-  if (vipc_client.connected && (!use_extra || vipc_client_wide.connected)) {
-    const VisionBuf *b = &vipc_client.buffers[0];
+  if (vipc_client_main.connected && (!vipc_client_extra || vipc_client_extra->connected)) {
+    const VisionBuf *b = &vipc_client_main.buffers[0];
     LOGW("connected narrow cam with buffer size: %d (%d x %d)", b->len, b->width, b->height);
 
-    if (use_extra) {
-      const VisionBuf *wb = &vipc_client_wide.buffers[0];
+    if (vipc_client_extra) {
+      const VisionBuf *wb = &vipc_client_extra->buffers[0];
       LOGW("connected wide cam with buffer size: %d (%d x %d)", wb->len, wb->width, wb->height);
     }
 
-    run_model(model, vipc_client, vipc_client_wide, wide_camera, use_extra);
+    run_model(model, vipc_client_main, vipc_client_extra, main_wide_camera, use_extra);
   }
 
   model_free(&model);
