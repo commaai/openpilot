@@ -28,6 +28,10 @@ thneed_src = [
 
 use_thneed = not GetOption('no_thneed')
 
+use_extra = True  # arch == "larch64"
+if use_extra:
+  lenv['CXXFLAGS'].append('-DUSE_EXTRA=true')
+
 if arch == "aarch64" or arch == "larch64":
   libs += ['gsl', 'CB']
   libs += ['gnustl_shared'] if arch == "aarch64" else ['pthread', 'dl']
@@ -61,11 +65,6 @@ else:
 common_model = lenv.Object(common_src)
 
 # build thneed model
-use_extra = True  # arch == "larch64"
-
-if use_extra:
-  lenv['CXXFLAGS'].append('-DUSE_EXTRA=true')
-
 if use_thneed and arch in ("aarch64", "larch64"):
   fn = "../../models/big_supercombo" if use_extra else "../../models/supercombo"
   compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
