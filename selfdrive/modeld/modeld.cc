@@ -87,7 +87,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
       }
 
       if (extra.frame_id != extra_wide.frame_id) {
-        LOGE("frames out of sync! narrow: %d, wide: %d", extra.frame_id, extra_wide.frame_id);
+        LOGE("frames out of sync! narrow: %d (%.5f), wide: %d (%.5f)", extra.frame_id, double(extra.timestamp_sof) / 1e9, extra_wide.frame_id, double(extra_wide.timestamp_sof) / 1e9);
       }
     }
 
