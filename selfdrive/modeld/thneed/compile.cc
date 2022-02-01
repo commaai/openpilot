@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
   mdl.addDesire(desire, DESIRE_LEN);
   mdl.addTrafficConvention(traffic_convention, TRAFFIC_CONVENTION_LEN);
   mdl.addImage(input, 0);
-  if (use_extra) {
+  if (USE_EXTRA) {
     mdl.addExtra(extra, 0);
   }
 
