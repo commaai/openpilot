@@ -74,11 +74,17 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
 
   while (!do_exit) {
     vipc_client.recv(&extra);
-    if (buf == nullptr) continue;
+    if (buf == nullptr) {
+      LOGE("vipc_client no frame");
+      continue;
+    };
 
     if (use_extra) {
       vipc_client_wide.recv(&extra_wide);
-      if (buf_wide == nullptr) continue;
+      if (buf_wide == nullptr) {
+        LOGE("vipc_client_wide no frame");
+        continue;
+      }
 
       if (extra.frame_id != extra_wide.frame_id) {
         LOGE("frames out of sync! narrow: %d, wide: %d", extra.frame_id, extra_wide.frame_id);
