@@ -1,3 +1,6 @@
+#include <chrono>
+#include <thread>
+
 #include <QDebug>
 #include <QEventLoop>
 
@@ -10,6 +13,16 @@ const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 const std::string TEST_RLOG_CHECKSUM = "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3";
 
+bool donload_to_file(const std::string &url, const std::string &local_file, int chunk_size = 5 * 1024 * 1024, int retries = 3) {
+  do {
+    if (httpDownload(url, local_file, chunk_size)) {
+      return true;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  } while (--retries >= 0);
+  return false;
+}
+
 TEST_CASE("httpMultiPartDownload") {
   char filename[] = "/tmp/XXXXXX";
   close(mkstemp(filename));
@@ -17,16 +30,13 @@ TEST_CASE("httpMultiPartDownload") {
   const size_t chunk_size = 5 * 1024 * 1024;
   std::string content;
   SECTION("download to file") {
-    bool ret = false;
-    for (int i = 0; i < 3 && !ret; ++i) {
-      ret = httpDownload(TEST_RLOG_URL, filename, chunk_size);
-    }
-    REQUIRE(ret);
+    REQUIRE(donload_to_file(TEST_RLOG_URL, filename, chunk_size));
     content = util::read_file(filename);
   }
   SECTION("download to buffer") {
     for (int i = 0; i < 3 && content.empty(); ++i) {
       content = httpGet(TEST_RLOG_URL, chunk_size);
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
     REQUIRE(!content.empty());
   }
@@ -67,14 +77,9 @@ TEST_CASE("LogReader") {
   }
 }
 
-TEST_CASE("Segment") {
-  auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
-  Route demo_route(DEMO_ROUTE);
-  REQUIRE(demo_route.load());
-  REQUIRE(demo_route.segments().size() == 11);
-
+void read_segment(int n, const SegmentFile &segment_file, uint32_t flags) {
   QEventLoop loop;
-  Segment segment(0, demo_route.at(0), flags);
+  Segment segment(n, segment_file, flags);
   QObject::connect(&segment, &Segment::loadFinished, [&]() {
     REQUIRE(segment.isLoaded() == true);
     REQUIRE(segment.log != nullptr);
@@ -99,8 +104,8 @@ TEST_CASE("Segment") {
       }
       std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(fr->getRGBSize());
       std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(fr->getYUVSize());
-      // sequence get 50 frames
-      for (int i = 0; i < 50; ++i) {
+      // sequence get 100 frames
+      for (int i = 0; i < 100; ++i) {
         REQUIRE(fr->get(i, rgb_buf.get(), yuv_buf.get()));
       }
     }
@@ -108,6 +113,43 @@ TEST_CASE("Segment") {
     loop.quit();
   });
   loop.exec();
+}
+
+TEST_CASE("Route") {
+  // Create a local route from remote for testing
+  Route remote_route(DEMO_ROUTE);
+  REQUIRE(remote_route.load());
+  char tmp_path[] = "/tmp/root_XXXXXX";
+  const std::string data_dir = mkdtemp(tmp_path);
+  const std::string route_name = DEMO_ROUTE.mid(17).toStdString();
+  for (int i = 0; i < 2; ++i) {
+    std::string log_path = util::string_format("%s/%s--%d/", data_dir.c_str(), route_name.c_str(), i);
+    util::create_directories(log_path, 0755);
+    REQUIRE(donload_to_file(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2"));
+    REQUIRE(donload_to_file(remote_route.at(i).road_cam.toStdString(), log_path + "fcamera.hevc"));
+    REQUIRE(donload_to_file(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc"));
+    REQUIRE(donload_to_file(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc"));
+    REQUIRE(donload_to_file(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts"));
+  }
+
+  SECTION("Local route") {
+    auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
+    Route route(DEMO_ROUTE, QString::fromStdString(data_dir));
+    REQUIRE(route.load());
+    REQUIRE(route.segments().size() == 2);
+    for (int i = 0; i < route.segments().size(); ++i) {
+      read_segment(i, route.at(i), flags);
+    }
+  };
+  SECTION("Remote route") {
+    auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
+    Route route(DEMO_ROUTE);
+    REQUIRE(route.load());
+    REQUIRE(route.segments().size() == 11);
+    for (int i = 0; i < 2; ++i) {
+      read_segment(i, route.at(i), flags);
+    }
+  };
 }
 
 // helper class for unit tests

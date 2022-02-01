@@ -98,6 +98,7 @@ class CarInterfaceBase(ABC):
     ret.longitudinalTuning.kiV = [1.]
     ret.longitudinalActuatorDelayLowerBound = 0.15
     ret.longitudinalActuatorDelayUpperBound = 0.15
+    ret.steerLimitTimer = 1.0
     return ret
 
   @abstractmethod

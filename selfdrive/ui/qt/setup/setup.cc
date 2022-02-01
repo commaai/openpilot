@@ -10,13 +10,14 @@
 
 #include <curl/curl.h>
 
+#include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
-const char* USER_AGENT = "AGNOSSetup-0.1";
+const std::string USER_AGENT = "AGNOSSetup-";
 const QString DASHCAM_URL = "https://dashcam.comma.ai";
 
 void Setup::download(QString url) {
@@ -26,6 +27,8 @@ void Setup::download(QString url) {
     return;
   }
 
+  auto version = util::read_file("/VERSION");
+
   char tmpfile[] = "/tmp/installer_XXXXXX";
   FILE *fp = fdopen(mkstemp(tmpfile), "w");
 
@@ -34,7 +37,7 @@ void Setup::download(QString url) {
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
+  curl_easy_setopt(curl, CURLOPT_USERAGENT, (USER_AGENT + version).c_str());
 
   int ret = curl_easy_perform(curl);
 
