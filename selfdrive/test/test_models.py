@@ -14,7 +14,6 @@ from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.test.test_routes import routes, non_tested_cars
@@ -215,12 +214,7 @@ class TestCarModel(unittest.TestCase):
           gas_pressed = False
       checks['gasPressed'] += gas_pressed != self.safety.get_gas_pressed_prev()
 
-      # TODO: remove this exception once this mismatch is resolved
-      brake_pressed = CS.brakePressed
-      if CS.brakePressed and not self.safety.get_brake_pressed_prev():
-        if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
-          brake_pressed = False
-      checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
+      checks['brakePressed'] += CS.brakePressed != self.safety.get_brake_pressed_prev()
 
       if self.CP.pcmCruise:
         checks['controlsAllowed'] += not CS.cruiseState.enabled and self.safety.get_controls_allowed()
