@@ -73,14 +73,14 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
   VisionIpcBufExtra extra_wide = {};
 
   while (!do_exit) {
-    vipc_client.recv(&extra);
+    buf = vipc_client.recv(&extra);
     if (buf == nullptr) {
       LOGE("vipc_client no frame");
       continue;
     };
 
     if (use_extra) {
-      vipc_client_wide.recv(&extra_wide);
+      buf_wide = vipc_client_wide.recv(&extra_wide);
       if (buf_wide == nullptr) {
         LOGE("vipc_client_wide no frame");
         continue;
