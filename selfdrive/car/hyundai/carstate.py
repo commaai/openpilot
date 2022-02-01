@@ -253,7 +253,6 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-
     signals = [
       # sig_name, sig_address
       ("CF_Lkas_LdwsActivemode", "LKAS11"),

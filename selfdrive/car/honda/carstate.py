@@ -11,34 +11,33 @@ TransmissionType = car.CarParams.TransmissionType
 
 
 def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
-  # this function generates lists for signal, messages and initial values
   signals = [
-    ("XMISSION_SPEED", "ENGINE_DATA", 0),
-    ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
-    ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
-    ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
-    ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
-    ("STEER_ANGLE", "STEERING_SENSORS", 0),
-    ("STEER_ANGLE_RATE", "STEERING_SENSORS", 0),
-    ("MOTOR_TORQUE", "STEER_MOTOR_TORQUE", 0),
-    ("STEER_TORQUE_SENSOR", "STEER_STATUS", 0),
-    ("LEFT_BLINKER", "SCM_FEEDBACK", 0),
-    ("RIGHT_BLINKER", "SCM_FEEDBACK", 0),
-    ("GEAR", gearbox_msg, 0),
-    ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS", 1),
-    ("SEATBELT_DRIVER_LATCHED", "SEATBELT_STATUS", 0),
-    ("BRAKE_PRESSED", "POWERTRAIN_DATA", 0),
-    ("BRAKE_SWITCH", "POWERTRAIN_DATA", 0),
-    ("CRUISE_BUTTONS", "SCM_BUTTONS", 0),
-    ("ESP_DISABLED", "VSA_STATUS", 1),
-    ("USER_BRAKE", "VSA_STATUS", 0),
-    ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
-    ("STEER_STATUS", "STEER_STATUS", 5),
-    ("GEAR_SHIFTER", gearbox_msg, 0),
-    ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
-    ("CRUISE_SETTING", "SCM_BUTTONS", 0),
-    ("ACC_STATUS", "POWERTRAIN_DATA", 0),
-    ("MAIN_ON", main_on_sig_msg, 0),
+    ("XMISSION_SPEED", "ENGINE_DATA"),
+    ("WHEEL_SPEED_FL", "WHEEL_SPEEDS"),
+    ("WHEEL_SPEED_FR", "WHEEL_SPEEDS"),
+    ("WHEEL_SPEED_RL", "WHEEL_SPEEDS"),
+    ("WHEEL_SPEED_RR", "WHEEL_SPEEDS"),
+    ("STEER_ANGLE", "STEERING_SENSORS"),
+    ("STEER_ANGLE_RATE", "STEERING_SENSORS"),
+    ("MOTOR_TORQUE", "STEER_MOTOR_TORQUE"),
+    ("STEER_TORQUE_SENSOR", "STEER_STATUS"),
+    ("LEFT_BLINKER", "SCM_FEEDBACK"),
+    ("RIGHT_BLINKER", "SCM_FEEDBACK"),
+    ("GEAR", gearbox_msg),
+    ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS"),
+    ("SEATBELT_DRIVER_LATCHED", "SEATBELT_STATUS"),
+    ("BRAKE_PRESSED", "POWERTRAIN_DATA"),
+    ("BRAKE_SWITCH", "POWERTRAIN_DATA"),
+    ("CRUISE_BUTTONS", "SCM_BUTTONS"),
+    ("ESP_DISABLED", "VSA_STATUS"),
+    ("USER_BRAKE", "VSA_STATUS"),
+    ("BRAKE_HOLD_ACTIVE", "VSA_STATUS"),
+    ("STEER_STATUS", "STEER_STATUS"),
+    ("GEAR_SHIFTER", gearbox_msg),
+    ("PEDAL_GAS", "POWERTRAIN_DATA"),
+    ("CRUISE_SETTING", "SCM_BUTTONS"),
+    ("ACC_STATUS", "POWERTRAIN_DATA"),
+    ("MAIN_ON", main_on_sig_msg),
   ]
 
   checks = [
@@ -70,13 +69,13 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     checks.append((gearbox_msg, 100))
 
   if CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
-    signals.append(("BRAKE_PRESSED", "BRAKE_MODULE", 0))
+    signals.append(("BRAKE_PRESSED", "BRAKE_MODULE"))
     checks.append(("BRAKE_MODULE", 50))
 
   if CP.carFingerprint in HONDA_BOSCH:
     signals += [
-      ("EPB_STATE", "EPB_STATUS", 0),
-      ("IMPERIAL_UNIT", "CAR_SPEED", 1),
+      ("EPB_STATE", "EPB_STATUS"),
+      ("IMPERIAL_UNIT", "CAR_SPEED"),
     ]
     checks += [
       ("EPB_STATUS", 50),
@@ -85,18 +84,18 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
 
     if not CP.openpilotLongitudinalControl:
       signals += [
-        ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
-        ("CRUISE_SPEED", "ACC_HUD", 0),
-        ("ACCEL_COMMAND", "ACC_CONTROL", 0),
-        ("AEB_STATUS", "ACC_CONTROL", 0),
+        ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
+        ("CRUISE_SPEED", "ACC_HUD"),
+        ("ACCEL_COMMAND", "ACC_CONTROL"),
+        ("AEB_STATUS", "ACC_CONTROL"),
       ]
       checks += [
         ("ACC_HUD", 10),
         ("ACC_CONTROL", 50),
       ]
   else:  # Nidec signals
-    signals += [("CRUISE_SPEED_PCM", "CRUISE", 0),
-                ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS", 0)]
+    signals += [("CRUISE_SPEED_PCM", "CRUISE"),
+                ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS")]
 
     if CP.carFingerprint == CAR.ODYSSEY_CHN:
       checks.append(("CRUISE_PARAMS", 10))
@@ -104,44 +103,44 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       checks.append(("CRUISE_PARAMS", 50))
 
   if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
-    signals.append(("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1))
+    signals.append(("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK"))
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
-    signals.append(("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1))
+    signals.append(("DRIVERS_DOOR_OPEN", "SCM_BUTTONS"))
   elif CP.carFingerprint in (CAR.FREED, CAR.HRV):
-    signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1),
-                ("WHEELS_MOVING", "STANDSTILL", 1)]
+    signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS"),
+                ("WHEELS_MOVING", "STANDSTILL")]
   else:
-    signals += [("DOOR_OPEN_FL", "DOORS_STATUS", 1),
-                ("DOOR_OPEN_FR", "DOORS_STATUS", 1),
-                ("DOOR_OPEN_RL", "DOORS_STATUS", 1),
-                ("DOOR_OPEN_RR", "DOORS_STATUS", 1),
-                ("WHEELS_MOVING", "STANDSTILL", 1)]
+    signals += [("DOOR_OPEN_FL", "DOORS_STATUS"),
+                ("DOOR_OPEN_FR", "DOORS_STATUS"),
+                ("DOOR_OPEN_RL", "DOORS_STATUS"),
+                ("DOOR_OPEN_RR", "DOORS_STATUS"),
+                ("WHEELS_MOVING", "STANDSTILL")]
     checks += [
       ("DOORS_STATUS", 3),
       ("STANDSTILL", 50),
     ]
 
   if CP.carFingerprint == CAR.CIVIC:
-    signals += [("IMPERIAL_UNIT", "HUD_SETTING", 0),
-                ("EPB_STATE", "EPB_STATUS", 0)]
+    signals += [("IMPERIAL_UNIT", "HUD_SETTING"),
+                ("EPB_STATE", "EPB_STATUS")]
     checks += [
       ("HUD_SETTING", 50),
       ("EPB_STATUS", 50),
     ]
   elif CP.carFingerprint in (CAR.ODYSSEY, CAR.ODYSSEY_CHN):
-    signals.append(("EPB_STATE", "EPB_STATUS", 0))
+    signals.append(("EPB_STATE", "EPB_STATUS"))
     checks.append(("EPB_STATUS", 50))
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
-    signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
-    signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
+    signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR"))
+    signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR"))
     checks.append(("GAS_SENSOR", 50))
 
   if CP.openpilotLongitudinalControl:
     signals += [
-      ("BRAKE_ERROR_1", "STANDSTILL", 1),
-      ("BRAKE_ERROR_2", "STANDSTILL", 1)
+      ("BRAKE_ERROR_1", "STANDSTILL"),
+      ("BRAKE_ERROR_2", "STANDSTILL")
     ]
     checks.append(("STANDSTILL", 50))
 
@@ -325,14 +324,14 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint not in HONDA_BOSCH:
-      signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),
-                  ("AEB_REQ_1", "BRAKE_COMMAND", 0),
-                  ("FCW", "BRAKE_COMMAND", 0),
-                  ("CHIME", "BRAKE_COMMAND", 0),
-                  ("FCM_OFF", "ACC_HUD", 0),
-                  ("FCM_OFF_2", "ACC_HUD", 0),
-                  ("FCM_PROBLEM", "ACC_HUD", 0),
-                  ("ICONS", "ACC_HUD", 0)]
+      signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND"),
+                  ("AEB_REQ_1", "BRAKE_COMMAND"),
+                  ("FCW", "BRAKE_COMMAND"),
+                  ("CHIME", "BRAKE_COMMAND"),
+                  ("FCM_OFF", "ACC_HUD"),
+                  ("FCM_OFF_2", "ACC_HUD"),
+                  ("FCM_PROBLEM", "ACC_HUD"),
+                  ("ICONS", "ACC_HUD")]
       checks += [
         ("ACC_HUD", 10),
         ("BRAKE_COMMAND", 50),
@@ -343,8 +342,8 @@ class CarState(CarStateBase):
   @staticmethod
   def get_body_can_parser(CP):
     if CP.enableBsm and CP.carFingerprint == CAR.CRV_5G:
-      signals = [("BSM_ALERT", "BSM_STATUS_RIGHT", 0),
-                 ("BSM_ALERT", "BSM_STATUS_LEFT", 0)]
+      signals = [("BSM_ALERT", "BSM_STATUS_RIGHT"),
+                 ("BSM_ALERT", "BSM_STATUS_LEFT")]
 
       checks = [
         ("BSM_STATUS_LEFT", 3),

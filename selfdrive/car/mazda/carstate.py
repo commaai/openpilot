@@ -104,7 +104,6 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    # this function generates lists for signal, messages and initial values
     signals = [
       # sig_name, sig_address
       ("LEFT_BLINK", "BLINK_INFO"),

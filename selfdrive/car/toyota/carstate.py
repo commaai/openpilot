@@ -127,7 +127,6 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-
     signals = [
       # sig_name, sig_address
       ("STEER_ANGLE", "STEER_ANGLE_SENSOR"),
@@ -172,34 +171,34 @@ class CarState(CarStateBase):
     ]
 
     if CP.flags & ToyotaFlags.HYBRID:
-      signals.append(("GAS_PEDAL", "GAS_PEDAL_HYBRID", 0))
+      signals.append(("GAS_PEDAL", "GAS_PEDAL_HYBRID"))
       checks.append(("GAS_PEDAL_HYBRID", 33))
     else:
-      signals.append(("GAS_PEDAL", "GAS_PEDAL", 0))
+      signals.append(("GAS_PEDAL", "GAS_PEDAL"))
       checks.append(("GAS_PEDAL", 33))
 
     if CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
-      signals.append(("MAIN_ON", "DSU_CRUISE", 0))
-      signals.append(("SET_SPEED", "DSU_CRUISE", 0))
+      signals.append(("MAIN_ON", "DSU_CRUISE"))
+      signals.append(("SET_SPEED", "DSU_CRUISE"))
       checks.append(("DSU_CRUISE", 5))
     else:
-      signals.append(("MAIN_ON", "PCM_CRUISE_2", 0))
-      signals.append(("SET_SPEED", "PCM_CRUISE_2", 0))
-      signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0))
+      signals.append(("MAIN_ON", "PCM_CRUISE_2"))
+      signals.append(("SET_SPEED", "PCM_CRUISE_2"))
+      signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2"))
       checks.append(("PCM_CRUISE_2", 33))
 
     # add gas interceptor reading if we are using it
     if CP.enableGasInterceptor:
-      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
-      signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
+      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR"))
+      signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR"))
       checks.append(("GAS_SENSOR", 50))
 
     if CP.enableBsm:
       signals += [
-        ("L_ADJACENT", "BSM", 0),
-        ("L_APPROACHING", "BSM", 0),
-        ("R_ADJACENT", "BSM", 0),
-        ("R_APPROACHING", "BSM", 0),
+        ("L_ADJACENT", "BSM"),
+        ("L_APPROACHING", "BSM"),
+        ("R_ADJACENT", "BSM"),
+        ("R_APPROACHING", "BSM"),
       ]
       checks.append(("BSM", 1))
 
@@ -207,10 +206,9 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-
     signals = [
-      ("FORCE", "PRE_COLLISION", 0),
-      ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0),
+      ("FORCE", "PRE_COLLISION"),
+      ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
     ]
 
     # use steering message to check if panda is connected to frc
@@ -220,7 +218,7 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint in TSS2_CAR:
-      signals.append(("ACC_TYPE", "ACC_CONTROL", 0))
+      signals.append(("ACC_TYPE", "ACC_CONTROL"))
       checks.append(("ACC_CONTROL", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
