@@ -65,7 +65,7 @@ common_model = lenv.Object(common_src)
 
 # build thneed model
 if use_thneed and arch in ("aarch64", "larch64"):
-  fn = "../../models/supercombo"
+  fn = "../../models/big_supercombo" if (arch == "larch64") else "../../models/supercombo"
   compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
   cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} {fn}.dlc {fn}.thneed --binary"
 
