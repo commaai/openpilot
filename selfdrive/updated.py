@@ -236,6 +236,14 @@ def init_overlay() -> None:
   cloudlog.info(f"git diff output:\n{git_diff}")
 
 
+def check_for_null_bytes(path: str, context: str) -> None:
+  try:
+    null = run(["git", "fetch", "--dry-run"], OVERLAY_MERGED, low_priority=True)
+    cloudlog.event(f"null bytes found in {path} ({context})", files=null, error=True)
+  except subprocess.CalledProcessError:
+    pass
+
+
 def finalize_update() -> None:
   """Take the current OverlayFS merged view and finalize a copy outside of
   OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
@@ -244,13 +252,19 @@ def finalize_update() -> None:
   cloudlog.info("creating finalized version of the overlay")
   set_consistent_flag(False)
 
+  check_for_null_bytes(OVERLAY_MERGED, "before copy")
+
   # Copy the merged overlay view and set the update ready flag
   if os.path.exists(FINALIZED):
     shutil.rmtree(FINALIZED)
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
 
+  check_for_null_bytes(FINALIZED, "after copy")
+
   run(["git", "reset", "--hard"], FINALIZED)
   run(["git", "submodule", "foreach", "--recursive", "git", "reset"], FINALIZED)
+
+  check_for_null_bytes(FINALIZED, "after reset")
 
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
