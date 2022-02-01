@@ -26,16 +26,16 @@ constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> 
   return kj::ArrayPtr(arr.data(), arr.size());
 }
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
+void model_init(ModelState* s, cl_device_id device_id, cl_context context, bool use_extra) {
   s->frame = new ModelFrame(device_id, context);
   s->wide_frame = new ModelFrame(device_id, context);
 
 #ifdef USE_THNEED
-  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, USE_EXTRA);
+  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
 #elif USE_ONNX_MODEL
-  s->m = std::make_unique<ONNXModel>("../../models/supercombo.onnx", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, USE_EXTRA);
+  s->m = std::make_unique<ONNXModel>("../../models/supercombo.onnx", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
 #else
-  s->m = std::make_unique<SNPEModel>("../../models/supercombo.dlc", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, USE_EXTRA);
+  s->m = std::make_unique<SNPEModel>("../../models/supercombo.dlc", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
 #endif
 
 #ifdef TEMPORAL
