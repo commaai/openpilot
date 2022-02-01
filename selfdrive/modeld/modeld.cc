@@ -93,7 +93,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient 
       }
 
       model_transform = update_calibration(extrinsic_matrix_eigen, wide_camera, false);
-      model_transform_wide = update_calibration(extrinsic_matrix_eigen, Hardware::TICI(), true);
+      model_transform_wide = update_calibration(extrinsic_matrix_eigen, true, true);
       live_calib_seen = true;
     }
 
