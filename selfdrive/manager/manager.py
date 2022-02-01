@@ -216,6 +216,11 @@ if __name__ == "__main__":
     add_file_handler(cloudlog)
     cloudlog.exception("Manager failed to start")
 
+    try:
+      managed_processes['ui'].stop()
+    except Exception:
+      pass
+
     # Show last 3 lines of traceback
     error = traceback.format_exc(-3)
     error = "Manager failed to start\n\n" + error
