@@ -170,6 +170,8 @@ def upload_handler(end_event: threading.Event) -> None:
         cancelled_uploads.remove(cur_upload_items[tid].id)
         continue
 
+      # TODO: remove item if too old
+
       # Check if uploading over cell is allowed
       sm.update(0)
       cell = sm['deviceState'].networkType not in [NetworkType.wifi, NetworkType.ethernet]
