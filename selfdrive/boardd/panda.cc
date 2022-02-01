@@ -50,7 +50,10 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
 
       unsigned char desc_serial[26] = { 0 };
       ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
-      if (ret < 0) { goto fail; }
+      if (ret < 0) { 
+        libusb_close(dev_handle);
+        goto fail; 
+      }
 
       usb_serial = std::string((char *)desc_serial, ret).c_str();
       if (serial.empty() || serial == usb_serial) {
