@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
   VisionIpcClient vipc_client_main = VisionIpcClient("camerad", main_wide_camera ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD, true, device_id, context);
 
   std::optional<VisionIpcClient> vipc_client_extra;
-  if (Hardware::TICI() && use_extra) {
+  if (Hardware::TICI() && use_extra && !main_wide_camera) {
    vipc_client_extra = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, false, device_id, context);
   }
 
@@ -199,11 +199,11 @@ int main(int argc, char **argv) {
   // vipc_client.connected is false only when do_exit is true
   if (!do_exit) {
     const VisionBuf *b = &vipc_client_main.buffers[0];
-    LOGW("connected narrow cam with buffer size: %d (%d x %d)", b->len, b->width, b->height);
+    LOGW("connected main cam with buffer size: %d (%d x %d)", b->len, b->width, b->height);
 
     if (vipc_client_extra) {
       const VisionBuf *wb = &vipc_client_extra->buffers[0];
-      LOGW("connected wide cam with buffer size: %d (%d x %d)", wb->len, wb->width, wb->height);
+      LOGW("connected extra cam with buffer size: %d (%d x %d)", wb->len, wb->width, wb->height);
     }
 
     run_model(model, vipc_client_main, vipc_client_extra, main_wide_camera, use_extra);
