@@ -31,11 +31,14 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, bool 
   s->wide_frame = new ModelFrame(device_id, context);
 
 #ifdef USE_THNEED
-  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
+  s->m = std::make_unique<ThneedModel>(use_extra ? "../../models/big_supercombo.thneed" : "../../models/supercombo.thneed",
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
 #elif USE_ONNX_MODEL
-  s->m = std::make_unique<ONNXModel>("../../models/supercombo.onnx", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
+  s->m = std::make_unique<ONNXModel>(use_extra ? "../../models/big_supercombo.onnx" : "../../models/supercombo.onnx",
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
 #else
-  s->m = std::make_unique<SNPEModel>("../../models/supercombo.dlc", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
+  s->m = std::make_unique<SNPEModel>(use_extra ? "../../models/big_supercombo.dlc" : "../../models/supercombo.dlc",
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
 #endif
 
 #ifdef TEMPORAL
