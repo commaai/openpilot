@@ -338,11 +338,22 @@ def setUploadLimit(speed_kbps):
 
   # check, cmd
   commands = [
+    # Clean up old rules
     (False, sudo + ["tc", "qdisc", "del", "dev", adapter, "root"]),
+
+    # Create root Hierarchy Token Bucket that sends all trafic to 1:20
     (True, sudo + ["tc", "qdisc", "add", "dev", adapter, "root", "handle", "1:", "htb", "default", "20"]),
+
+    # Create class 1:20 with specified rate limit
     (True, sudo + ["tc", "class", "add", "dev", adapter, "parent", "1:", "classid", "1:20", "htb", "rate", f"{speed_kbps}kbit"]),
-    (True, sudo + ["tc", "filter", "add", "dev", adapter, "parent", "1:", "protocol", "ip", "prio", "18", "u32", "match", "ip", "dst", "0.0.0.0/0", "flowid", "1:20"]),
+
+    # Create universal 32 bit filter on adapter that sends all outbound ip traffic through the class
+    (True, sudo + ["tc", "filter", "add", "dev", adapter, "parent", "1:", "protocol", "ip", "prio", "10", "u32", "match", "ip", "dst", "0.0.0.0/0", "flowid", "1:20"]),
   ]
+
+  # Disable limits
+  if speed_kbps == -1:
+    commands = commands[:1]
 
   try:
     for check, cmd in commands:
