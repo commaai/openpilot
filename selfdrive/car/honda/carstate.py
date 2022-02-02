@@ -163,11 +163,11 @@ class CarState(CarStateBase):
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
     self.brake_error = False
-    self.brake_switch_on = 0
+    self.brake_switch_on = 0  # frames brake switch has been on
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
 
-  def update(self, cp, cp_cam, cp_body, to_print):
+  def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
     # car params
@@ -265,22 +265,11 @@ class CarState(CarStateBase):
       # brake switch has shown some single time step noise, so only considered when
       # switch is on for at least 2 consecutive CAN samples
       # brake switch rises earlier than brake pressed but is never 1 when in park
-      brake_switch = cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0
-      # print('CS:" 'brake_switch)
-      if cp.updated["POWERTRAIN_DATA"] and brake_switch:
-        self.brake_switch_on += 1
-      elif cp.updated["POWERTRAIN_DATA"]:
-        self.brake_switch_on = 0
-      ret.brakePressed = (cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0 or
-                          (self.brake_switch_on > 1))
-      # if to_print:
-      #   print('BRAKE_PRESSED: {}, brake_switch: {}, brake_switch_prev: {}, updated: {}'.format(cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"],
-      #                                                                                          brake_switch, self.brake_switch_prev,
-      #                                                                                          cp.updated["POWERTRAIN_DATA"]))
-      #   # print('cp updated: {}, brakePressed: {}'.format(cp.updated['POWERTRAIN_DATA'], ret.brakePressed))
-      #   print(ret.brakePressed)
-      # if cp.updated["POWERTRAIN_DATA"]:
-      #   self.brake_switch_prev = brake_switch
+      if cp.updated["POWERTRAIN_DATA"]:
+        brake_switch = cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0
+        self.brake_switch_on = self.brake_switch_on + 1 if brake_switch else 0
+
+      ret.brakePressed = cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0 or self.brake_switch_on > 1
 
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
