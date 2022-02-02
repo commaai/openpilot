@@ -74,9 +74,9 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
 
   if CP.carFingerprint in HONDA_RADARLESS:
     signals += [
-      ("EPB_STATE", "EPB_STATUS", 0),
-      ("IMPERIAL_UNIT", "CAR_SPEED", 1),
-      ("AEB_STATUS", "ACC_CONTROL", 0),
+      ("EPB_STATE", "EPB_STATUS"),
+      ("IMPERIAL_UNIT", "CAR_SPEED"),
+      ("AEB_STATUS", "ACC_CONTROL"),
     ]
     checks += [
       ("EPB_STATUS", 50),
