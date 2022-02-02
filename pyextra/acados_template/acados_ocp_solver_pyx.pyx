@@ -417,8 +417,9 @@ cdef class AcadosOcpSolverFast:
             string_value = value_.encode('utf-8')
             acados_solver_common.ocp_nlp_solver_opts_set(self.nlp_config, self.nlp_opts, field, <void *> &string_value[0])
 
-        raise Exception('AcadosOcpSolver.options_set() does not support field {}.'\
-            '\n Possible values are {}.'.format(field_, ', '.join(int_fields + double_fields + string_fields)))
+        else:
+            raise Exception('AcadosOcpSolver.options_set() does not support field {}.'\
+                '\n Possible values are {}.'.format(field_, ', '.join(int_fields + double_fields + string_fields)))
 
 
     def __del__(self):

@@ -117,7 +117,7 @@ class CarController():
 
     P = self.params
 
-    if enabled:
+    if active:
       accel = actuators.accel
       gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, CS.CP.carFingerprint)
     else:
@@ -152,7 +152,7 @@ class CarController():
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_steer = int(interp(-actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
 
-    lkas_active = enabled and not CS.steer_not_allowed
+    lkas_active = active and not CS.steer_not_allowed
 
     # Send CAN commands.
     can_sends = []
