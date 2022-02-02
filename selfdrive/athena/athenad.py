@@ -12,6 +12,7 @@ import socket
 import threading
 import time
 import tempfile
+import subprocess
 from collections import namedtuple
 from functools import partial
 from typing import Any, Dict
@@ -27,7 +28,7 @@ from common.file_helpers import CallbackReader
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE, PC
+from selfdrive.hardware import HARDWARE, PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
@@ -327,6 +328,28 @@ def cancelUpload(upload_id):
 @dispatcher.add_method
 def primeActivated(activated):
   return {"success": 1}
+
+
+@dispatcher.add_method
+def setUploadLimit(speed_kbps):
+  speed_kbps = int(speed_kbps)
+  adapter = "wwan0" if TICI else "rmnet_data0"
+  sudo = ["sudo"] if TICI else []
+
+  # check, cmd
+  commands = [
+    (False, sudo + ["tc", "qdisc", "del", "dev", adapter, "root"]),
+    (True, sudo + ["tc", "qdisc", "add", "dev", adapter, "root", "handle", "1:", "htb", "default", "20"]),
+    (True, sudo + ["tc", "class", "add", "dev", adapter, "parent", "1:", "classid", "1:20", "htb", "rate", f"{speed_kbps}kbit"]),
+    (True, sudo + ["tc", "filter", "add", "dev", adapter, "parent", "1:", "protocol", "ip", "prio", "18", "u32", "match", "ip", "dst", "0.0.0.0/0", "flowid", "1:20"]),
+  ]
+
+  try:
+    for check, cmd in commands:
+      subprocess.run(cmd, check=check)
+    return {"success": 1}
+  except subprocess.CalledProcessError as e:
+    return {"success": 0, "stdout": e.stdout, "stderr": e.stderr}
 
 
 def startLocalProxy(global_end_event, remote_ws_uri, local_port):
