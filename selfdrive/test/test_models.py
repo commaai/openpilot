@@ -201,7 +201,7 @@ class TestCarModel(unittest.TestCase):
         to_send = package_can_msg(msg)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
-        CS = self.CI.update(CC, (can_list_to_can_capnp([msg, ]),))
+        CS = self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
 
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
