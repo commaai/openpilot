@@ -265,10 +265,13 @@ class CarState(CarStateBase):
       # brake switch has shown some single time step noise, so only considered when
       # switch is on for at least 2 consecutive CAN samples
       # brake switch rises earlier than brake pressed but is never 1 when in park
-      if cp.updated["POWERTRAIN_DATA"]:
-        brake_switch = cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0
-        self.brake_switch_on = self.brake_switch_on + 1 if brake_switch else 0
-
+      brake_switch_vals = cp.updated["POWERTRAIN_DATA"]["BRAKE_SWITCH"]
+      if len(brake_switch_vals):
+        if brake_switch_vals[-1] != 0:
+          # use all updated values this cycle, sometimes we receive two messages at once
+          self.brake_switch_on += sum(brake_switch_vals)
+        else:
+          self.brake_switch_on = 0
       ret.brakePressed = cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0 or self.brake_switch_on > 1
 
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
