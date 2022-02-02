@@ -174,8 +174,6 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   params.clear_all()
   params.put_bool("Passive", False)
   params.put_bool("OpenpilotEnabledToggle", True)
-  params.put_bool("CommunityFeaturesToggle", True)
-  params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ["LOG_ROOT"] = outdir
   os.environ["REPLAY"] = "1"
