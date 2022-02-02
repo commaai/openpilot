@@ -60,12 +60,15 @@ class TestCarModel(unittest.TestCase):
         print(f"Skipping tests for {cls.car_model}: missing route")
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
+    if cls.car_model != HONDA.ACCORDH:
+      raise unittest.SkipTest
 
     params = Params()
     params.clear_all()
 
-    for seg in [2, 1, 0]:
+    for seg in [0]:
       try:
+        print(cls.route)
         lr = LogReader(get_url(cls.route, seg))
       except Exception:
         continue
@@ -91,6 +94,7 @@ class TestCarModel(unittest.TestCase):
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [])
+    print('done init')
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
@@ -103,81 +107,82 @@ class TestCarModel(unittest.TestCase):
     set_status = self.safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyConfigs[0].safetyModel}")
     self.safety.init_tests()
+    print('done setup')
 
-  def test_car_params(self):
-    if self.CP.dashcamOnly:
-      self.skipTest("no need to check carParams for dashcamOnly")
-
-    # make sure car params are within a valid range
-    self.assertGreater(self.CP.mass, 1)
-    self.assertGreater(self.CP.steerRateCost, 1e-3)
-
-    if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
-      tuning = self.CP.lateralTuning.which()
-      if tuning == 'pid':
-        self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
-      elif tuning == 'lqr':
-        self.assertTrue(len(self.CP.lateralTuning.lqr.a))
-      elif tuning == 'indi':
-        self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
-      else:
-        raise Exception("unkown tuning")
-
-  def test_car_interface(self):
-    # TODO: also check for checkusm and counter violations from can parser
-    can_invalid_cnt = 0
-    CC = car.CarControl.new_message()
-    for i, msg in enumerate(self.can_msgs):
-      CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
-      self.CI.apply(CC)
-
-      # wait 2s for low frequency msgs to be seen
-      if i > 200:
-        can_invalid_cnt += not CS.canValid
-
-    if self.car_model not in ignore_can_valid:
-      self.assertLess(can_invalid_cnt, 50)
-
-  def test_radar_interface(self):
-    os.environ['NO_RADAR_SLEEP'] = "1"
-    RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
-    RI = RadarInterface(self.CP)
-    assert RI
-
-    error_cnt = 0
-    for msg in self.can_msgs:
-      radar_data = RI.update((msg.as_builder().to_bytes(),))
-      if radar_data is not None:
-        error_cnt += car.RadarData.Error.canError in radar_data.errors
-    self.assertLess(error_cnt, 20)
-
-  def test_panda_safety_rx_valid(self):
-    if self.CP.dashcamOnly:
-      self.skipTest("no need to check panda safety for dashcamOnly")
-
-    start_ts = self.can_msgs[0].logMonoTime
-
-    failed_addrs = Counter()
-    for can in self.can_msgs:
-      # update panda timer
-      t = (can.logMonoTime - start_ts) / 1e3
-      self.safety.set_timer(int(t))
-
-      # run all msgs through the safety RX hook
-      for msg in can.can:
-        if msg.src >= 64:
-          continue
-
-        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
-        if self.safety.safety_rx_hook(to_send) != 1:
-          failed_addrs[hex(msg.address)] += 1
-
-      # ensure all msgs defined in the addr checks are valid
-      if self.car_model not in ignore_addr_checks_valid:
-        self.safety.safety_tick_current_rx_checks()
-        if t > 1e6:
-          self.assertTrue(self.safety.addr_checks_valid())
-    self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
+  # def test_car_params(self):
+  #   if self.CP.dashcamOnly:
+  #     self.skipTest("no need to check carParams for dashcamOnly")
+  #
+  #   # make sure car params are within a valid range
+  #   self.assertGreater(self.CP.mass, 1)
+  #   self.assertGreater(self.CP.steerRateCost, 1e-3)
+  #
+  #   if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
+  #     tuning = self.CP.lateralTuning.which()
+  #     if tuning == 'pid':
+  #       self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
+  #     elif tuning == 'lqr':
+  #       self.assertTrue(len(self.CP.lateralTuning.lqr.a))
+  #     elif tuning == 'indi':
+  #       self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
+  #     else:
+  #       raise Exception("unkown tuning")
+  #
+  # def test_car_interface(self):
+  #   # TODO: also check for checkusm and counter violations from can parser
+  #   can_invalid_cnt = 0
+  #   CC = car.CarControl.new_message()
+  #   for i, msg in enumerate(self.can_msgs):
+  #     CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
+  #     self.CI.apply(CC)
+  #
+  #     # wait 2s for low frequency msgs to be seen
+  #     if i > 200:
+  #       can_invalid_cnt += not CS.canValid
+  #
+  #   if self.car_model not in ignore_can_valid:
+  #     self.assertLess(can_invalid_cnt, 50)
+  #
+  # def test_radar_interface(self):
+  #   os.environ['NO_RADAR_SLEEP'] = "1"
+  #   RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
+  #   RI = RadarInterface(self.CP)
+  #   assert RI
+  #
+  #   error_cnt = 0
+  #   for msg in self.can_msgs:
+  #     radar_data = RI.update((msg.as_builder().to_bytes(),))
+  #     if radar_data is not None:
+  #       error_cnt += car.RadarData.Error.canError in radar_data.errors
+  #   self.assertLess(error_cnt, 20)
+  #
+  # def test_panda_safety_rx_valid(self):
+  #   if self.CP.dashcamOnly:
+  #     self.skipTest("no need to check panda safety for dashcamOnly")
+  #
+  #   start_ts = self.can_msgs[0].logMonoTime
+  #
+  #   failed_addrs = Counter()
+  #   for can in self.can_msgs:
+  #     # update panda timer
+  #     t = (can.logMonoTime - start_ts) / 1e3
+  #     self.safety.set_timer(int(t))
+  #
+  #     # run all msgs through the safety RX hook
+  #     for msg in can.can:
+  #       if msg.src >= 64:
+  #         continue
+  #
+  #       to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
+  #       if self.safety.safety_rx_hook(to_send) != 1:
+  #         failed_addrs[hex(msg.address)] += 1
+  #
+  #     # ensure all msgs defined in the addr checks are valid
+  #     if self.car_model not in ignore_addr_checks_valid:
+  #       self.safety.safety_tick_current_rx_checks()
+  #       if t > 1e6:
+  #         self.assertTrue(self.safety.addr_checks_valid())
+  #   self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_carstate(self):
     """
@@ -188,39 +193,52 @@ class TestCarModel(unittest.TestCase):
 
     CC = car.CarControl.new_message()
 
+    print('in panda safety carstate')
+
     # warm up pass, as initial states may be different
     for can in self.can_msgs[:300]:
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
         to_send = package_can_msg(msg)
         self.safety.safety_rx_hook(to_send)
-        self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
+        self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ), False)
 
     checks = defaultdict(lambda: 0)
     for can in self.can_msgs:
-      for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
+      # CS = self.CI.update(CC, (can_list_to_can_capnp(can_capnp_to_can_list(can.can, src_filter=range(64))),), True)
+      test = can_capnp_to_can_list(can.can, src_filter=range(64))
+      powertrain_msgs = []
+      for idx, msg in enumerate(test):
+        if msg[0] == 380:
+          powertrain_msgs.append(msg)
         to_send = package_can_msg(msg)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
-        CS = self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
+        CS = self.CI.update(CC, (can_list_to_can_capnp([msg, ]),), idx + 1 == len(test))
 
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
-      # TODO: make the interceptor thresholds in openpilot and panda match, then remove this exception
-      gas_pressed = CS.gasPressed
-      if self.CP.enableGasInterceptor and gas_pressed and not self.safety.get_gas_pressed_prev():
-        # panda intentionally has a higher threshold
-        if self.CP.carName == "toyota" and 15 < CS.gas < 15*1.5:
-          gas_pressed = False
-        if self.CP.carName == "honda":
-          gas_pressed = False
-      checks['gasPressed'] += gas_pressed != self.safety.get_gas_pressed_prev()
+      # # TODO: make the interceptor thresholds in openpilot and panda match, then remove this exception
+      # gas_pressed = CS.gasPressed
+      # if self.CP.enableGasInterceptor and gas_pressed and not self.safety.get_gas_pressed_prev():
+      #   # panda intentionally has a higher threshold
+      #   if self.CP.carName == "toyota" and 15 < CS.gas < 15*1.5:
+      #     gas_pressed = False
+      #   if self.CP.carName == "honda":
+      #     gas_pressed = False
+      # checks['gasPressed'] += gas_pressed != self.safety.get_gas_pressed_prev()
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
       if CS.brakePressed and not self.safety.get_brake_pressed_prev():
         if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
           brake_pressed = False
+      print('CS: {}, panda: {}'.format(brake_pressed, self.safety.get_brake_pressed_prev()))
+      print('powertrain updated: {}, {}'.format(len(powertrain_msgs), set(powertrain_msgs)))
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
+      print(checks['brakePressed'])
+      print()
+      # if brake_pressed != self.safety.get_brake_pressed_prev():
+      #   raise Exception
 
       if self.CP.pcmCruise:
         checks['controlsAllowed'] += not CS.cruiseState.enabled and self.safety.get_controls_allowed()
