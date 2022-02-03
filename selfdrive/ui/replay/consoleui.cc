@@ -15,7 +15,7 @@ const std::initializer_list<std::pair<std::string, std::string>> keyboard_shortc
     {"shift+s", "-10s"},
     {"m", "+60s"},
     {"shift+m", "-60s"},
-    {"p", "Pause/Resume"},
+    {"space", "Pause/Resume"},
     {"e", "Next Engagement"},
     {"d", "Next Disengagement"},
   },
