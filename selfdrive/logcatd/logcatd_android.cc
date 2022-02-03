@@ -14,10 +14,8 @@ int main() {
   ExitHandler do_exit;
   PubMaster pm({"androidLog"});
 
-  struct timespec cur_time;
-  clock_gettime(CLOCK_REALTIME, &cur_time);
-  log_time last_log_time(cur_time);
-  logger_list *logger_list = nullptr;
+  log_time last_log_time = {};
+  logger_list *logger_list = android_logger_list_alloc(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, 0, 0);
 
   while (!do_exit) {
     // setup android logging
