@@ -1,5 +1,6 @@
-Version 0.8.13-GM.5 (2022-01-31)
+Version 0.8.13-GM6 (2022-02-02)
 ========================
+ * 
  * Chevy Bolt EV Support (And several others)
  * Non-ASCM (aka non-radar) GM support
  * GM longitudinal support using Pedal Interceptor (no braking on non-EV)
