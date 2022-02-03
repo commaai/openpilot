@@ -6,11 +6,14 @@ import sysconfig
 import platform
 import numpy as np
 
+from selfdrive.hardware import PC
+
 TICI = os.path.isfile('/TICI')
 Decider('MD5-timestamp')
 
 AddOption('--test',
           action='store_true',
+          default=PC,
           help='build test files')
 
 AddOption('--extras',
