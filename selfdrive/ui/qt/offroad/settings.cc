@@ -159,7 +159,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   QObject::connect(poweroff_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
 
   if (Hardware::TICI()) {
-    connect(uiState(), &UIState::offroadTransition, poweroff_btn, &QPushButton::setEnabled);
+    connect(uiState(), &UIState::offroadTransition, poweroff_btn, &QPushButton::setVisible);
   }
 
   setStyleSheet(R"(
@@ -167,7 +167,6 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     #reboot_btn:pressed { background-color: #4a4a4a; }
     #poweroff_btn { height: 120px; border-radius: 15px; background-color: #E22C2C; }
     #poweroff_btn:pressed { background-color: #FF2424; }
-    #poweroff_btn:disabled { background-color: #390B0B; color: #3F3F3F; }
   )");
   addItem(power_layout);
 }
