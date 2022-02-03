@@ -1,6 +1,16 @@
-Version 0.8.13-GM6 (2022-02-02)
+Version 0.8.13-GM7 (2022-02-02)
 ========================
- * 
+ * ALPHA: Pedal Interceptor adjusted basesd on L-mode status for EVs!
+ * CarState.gearShifter now more detailed, includes L mode!
+   Supports following GearShifter enum vals from cereal
+    park @1
+    drive @2
+    neutral @3 (NEW)
+    reverse @4
+    low @6 (NEW)
+    manumatic @9 (NEW)
+ * Added all gears that should be considered "drive" to
+   extra_gears
  * Chevy Bolt EV Support (And several others)
  * Non-ASCM (aka non-radar) GM support
  * GM longitudinal support using Pedal Interceptor (no braking on non-EV)
