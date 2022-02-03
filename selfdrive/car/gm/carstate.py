@@ -10,7 +10,7 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
+    self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.lka_steering_cmd_counter = 0
     self.park_brake = 0
 
@@ -28,8 +28,20 @@ class CarState(CarStateBase):
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
-
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]["PRNDL"], None))
+    gmGear = self.shifter_values.get(pt_cp.vl["ECMPRDNL2"]["PRNDL2"], None)
+    manualMode = bool(pt_cp.vl["ECMPRDNL2"]["ManualMode"])
+    
+    # In manumatic, the value of PRNDL2 represents the max gear
+    # parse_gear_shifter expects "T" for manumatic
+    # TODO: JJS Add manumatic max gear to cereal and parse (validate value in Acadia)
+    if manualMode:
+      gmGear = "T"
+    
+    # TODO: JJS: Should We just have 0 map to P in the dbc?
+    if gmGear == "Shifting":
+      gmGear = "P"
+    
+    ret.gearShifter = self.parse_gear_shifter(gmGear)
     ret.brakePressed = bool(pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"])
     ret.brake = 0.
     
@@ -104,7 +116,8 @@ class CarState(CarStateBase):
       ("FRWheelSpd", "EBCMWheelSpdFront"),
       ("RLWheelSpd", "EBCMWheelSpdRear"),
       ("RRWheelSpd", "EBCMWheelSpdRear"),
-      ("PRNDL", "ECMPRDNL"),
+      ("PRNDL2", "ECMPRDNL2"),
+      ("ManualMode", "ECMPRDNL2"),
       ("LKADriverAppldTrq", "PSCMStatus"),
       ("LKATorqueDelivered", "PSCMStatus"),
       ("LKATorqueDeliveredStatus", "PSCMStatus"),
@@ -115,7 +128,7 @@ class CarState(CarStateBase):
 
     checks = [
       ("BCMTurnSignals", 1),
-      ("ECMPRDNL", 10),
+      ("ECMPRDNL2", 10),
       ("PSCMStatus", 10),
       ("ESPStatus", 10),
       ("BCMDoorBeltStatus", 10),
@@ -129,6 +142,7 @@ class CarState(CarStateBase):
     ]
 
     # TODO: Might be wise to find the non-electronic parking brake signal
+    # TODO: JJS Add hasEPB to cereal
     if CP.carFingerprint != CAR.SUBURBAN and CP.carFingerprint != CAR.TAHOE_NR:
       signals.append(("EPBClosed", "EPBStatus", 0))
       checks.append(("EPBStatus", 20))
