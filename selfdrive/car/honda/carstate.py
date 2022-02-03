@@ -267,7 +267,7 @@ class CarState(CarStateBase):
       # brake switch rises earlier than brake pressed but is never 1 when in park
       brake_switch_vals = cp.updated["POWERTRAIN_DATA"]["BRAKE_SWITCH"]
       if len(brake_switch_vals):
-        if brake_switch_vals[-1] != 0:
+        if cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0:
           # use all updated values this cycle, sometimes we receive two messages at once
           self.brake_switch_on += sum(brake_switch_vals)
         else:
