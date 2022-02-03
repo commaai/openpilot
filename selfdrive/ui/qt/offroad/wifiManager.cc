@@ -226,7 +226,9 @@ uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
 }
 
 void WifiManager::requestScan() {
-  asyncCall(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
+  if (!adapter.isEmpty()) {
+    asyncCall(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
+  }
 }
 
 QByteArray WifiManager::get_property(const QString &network_path , const QString &property) {
