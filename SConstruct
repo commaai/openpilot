@@ -6,9 +6,9 @@ import sysconfig
 import platform
 import numpy as np
 
-from selfdrive.hardware import PC
-
+EON = os.path.isfile('/EON')
 TICI = os.path.isfile('/TICI')
+PC = not (EON or TICI)
 Decider('MD5-timestamp')
 
 AddOption('--test',
