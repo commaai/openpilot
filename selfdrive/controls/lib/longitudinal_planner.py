@@ -66,11 +66,14 @@ class Planner:
     long_control_state = sm['controlsState'].longControlState
     force_slow_decel = sm['controlsState'].forceDecel
 
-    active = long_control_state != LongCtrlState.off
-    active = active and not sm['carState'].gasPressed
-    active = active and not sm['carState'].standstill
+    # Reset current state when not engaged, or user is controlling the speed
+    reset_state = long_control_state == LongCtrlState.off
+    reset_state = reset_state or sm['carState'].gasPressed
 
-    if not active:
+    # No change cost when user is controlling the speed, or when standstill
+    prev_accel_constraint = not (reset_state or sm['carState'].standstill)
+
+    if reset_state:
       self.v_desired_filter.x = v_ego
       self.a_desired = 0.0
 
@@ -87,7 +90,7 @@ class Planner:
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
-    self.mpc.set_weights(active)
+    self.mpc.set_weights(prev_accel_constraint)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     self.mpc.update(sm['carState'], sm['radarState'], v_cruise)
