@@ -342,7 +342,8 @@ def thermald_thread(end_event, hw_queue):
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not onroad_conditions["device_temp_good"]))
 
     if TICI:
-      set_offroad_alert_if_changed("Offroad_StorageMissing", (not Path("/data/media").is_mount()))
+      missing = (not Path("/data/media").is_mount()) and (not os.path.isfile("/persist/comma/living-in-the-moment"))
+      set_offroad_alert_if_changed("Offroad_StorageMissing", missing)
 
     # Handle offroad/onroad transition
     should_start = all(onroad_conditions.values())
