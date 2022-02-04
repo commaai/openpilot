@@ -198,7 +198,7 @@ class TestCarModel(unittest.TestCase):
     checks = defaultdict(lambda: 0)
     for can in self.can_msgs:
       msgs = can_capnp_to_can_list(can.can, src_filter=range(64))
-      CS = self.CI.update(CC, (can_list_to_can_capnp(msgs),))
+      CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       for msg in msgs:
         to_send = package_can_msg(msg)
         ret = self.safety.safety_rx_hook(to_send)
