@@ -268,9 +268,3 @@ DBC = {
 
 # Gen 1 hardware: same CAN messages and same camera
 GEN1 = {CAR.CX5, CAR.CX9, CAR.CX9_2021, CAR.MAZDA3, CAR.MAZDA6, CAR.CX5_2022}
-
-# Cars with a steering lockout
-STEER_LOCKOUT_CAR = {CAR.CX5, CAR.CX9, CAR.MAZDA3, CAR.MAZDA6}
-
-# Cars that don't steer below 28mph
-STEER_LIMIT_CAR = {CAR.CX5, CAR.CX9, CAR.MAZDA3, CAR.MAZDA6, CAR.CX9_2021}
