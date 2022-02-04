@@ -223,7 +223,7 @@ void WifiItem::update(const Network &n, const QMap<QString, QPixmap> &pixmaps, b
   network = n;
   ssidLabel->setText(n.ssid);
   ssidLabel->setEnabled(n.security_type != SecurityType::UNSUPPORTED);
-  ssidLabel->setStyleSheet(n.connected == ConnectedType::DISCONNECTED ? "font-weight:500" : "font-weight:300");
+  ssidLabel->setStyleSheet(n.connected == ConnectedType::DISCONNECTED ? "font-weight:300" : "font-weight:500");
 
   connecting->setVisible(n.connected == ConnectedType::CONNECTING);
   forgetBtn->setVisible(has_forgot_btn);
@@ -233,7 +233,7 @@ void WifiItem::update(const Network &n, const QMap<QString, QPixmap> &pixmaps, b
   } else if (n.security_type == SecurityType::UNSUPPORTED) {
     iconLabel->setPixmap(pixmaps["circled_slash"]);
   } else if (n.security_type == SecurityType::WPA) {
-    iconLabel->setPixmap(pixmaps["lock_icon"]);
+    iconLabel->setPixmap(pixmaps["lock"]);
   } else {
     iconLabel->setPixmap(QPixmap());
   }
