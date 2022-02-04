@@ -12,7 +12,7 @@ class WifiItem : public QWidget {
   Q_OBJECT
 public:
   explicit WifiItem(QWidget* parent = nullptr);
-  void update(const Network& n, const QMap<QString, QPixmap> &pixmaps, bool has_forgot_btn);
+  void update(const Network& n, const QMap<QString, QPixmap> &pixmaps, bool show_forget_btn);
 
 signals:
   void connectToNetwork(const Network &n);

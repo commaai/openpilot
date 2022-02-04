@@ -219,14 +219,14 @@ WifiItem::WifiItem(QWidget *parent) : QWidget(parent) {
   setVisible(false);
 }
 
-void WifiItem::update(const Network &n, const QMap<QString, QPixmap> &pixmaps, bool has_forgot_btn) {
+void WifiItem::update(const Network &n, const QMap<QString, QPixmap> &pixmaps, bool show_forget_btn) {
   network = n;
   ssidLabel->setText(n.ssid);
   ssidLabel->setEnabled(n.security_type != SecurityType::UNSUPPORTED);
   ssidLabel->setStyleSheet(n.connected == ConnectedType::DISCONNECTED ? "font-weight:300" : "font-weight:500");
 
   connecting->setVisible(n.connected == ConnectedType::CONNECTING);
-  forgetBtn->setVisible(has_forgot_btn);
+  forgetBtn->setVisible(show_forget_btn);
 
   if (n.connected == ConnectedType::CONNECTED) {
     iconLabel->setPixmap(pixmaps["checkmark"]);
@@ -334,8 +334,8 @@ void WifiUI::refresh() {
       wifi_list_widget->addItem(item);
     }
 
-    bool has_forgot_btn = wifi->isKnownConnection(network.ssid) && !is_tethering_enabled;
-    item->update(network, pixmaps, has_forgot_btn);
+    bool show_forget_btn = wifi->isKnownConnection(network.ssid) && !is_tethering_enabled;
+    item->update(network, pixmaps, show_forget_btn);
     item->setVisible(true);
 
     ++cnt;
