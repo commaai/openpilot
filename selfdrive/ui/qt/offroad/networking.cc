@@ -335,7 +335,7 @@ void WifiUI::refresh() {
       wifi_list_widget->addItem(item);
     }
 
-    bool has_forgot_btn = wifi->isKnownConnection(network.ssid) && is_tethering_enabled;
+    bool has_forgot_btn = wifi->isKnownConnection(network.ssid) && !is_tethering_enabled;
     item->update(network, pixmaps, has_forgot_btn);
     item->setVisible(true);
 
