@@ -201,7 +201,7 @@ WifiItem::WifiItem(QWidget *parent) : QWidget(parent) {
 
   connecting = new QPushButton("CONNECTING...");
   connecting->setObjectName("connecting");
-  hlayout->addWidget(connecting, 2, Qt::AlignLeft);
+  hlayout->addWidget(connecting, 0, Qt::AlignRight);
 
   forgetBtn = new QPushButton("FORGET");
   forgetBtn->setObjectName("forgetBtn");
