@@ -249,13 +249,12 @@ WifiUI::WifiUI(QWidget *parent, WifiManager *wifi) : QWidget(parent), wifi(wifi)
 
   scanning_label = new QLabel("Scanning for networks...");
   scanning_label->setStyleSheet("font-size: 65px;");
-  main_layout->addWidget(scanning_label, 0, Qt::AlignCenter);
+  main_layout->addWidget(scanning_label, 1, Qt::AlignCenter);
 
   list_container = new QWidget(this);
   QVBoxLayout *list_layout = new QVBoxLayout(list_container);
   wifi_list_widget = new ListWidget(list_container);
   list_layout->addWidget(wifi_list_widget);
-  list_layout->addStretch(1);
   main_layout->addWidget(list_container);
 
   // load imgs
