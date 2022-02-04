@@ -30,7 +30,7 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.01
 
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]["PRNDL"], None))
-    ret.brakePressed = bool(pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"])
+    ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0
     ret.brake = 0.
 
     if ret.brakePressed:
@@ -63,13 +63,13 @@ class CarState(CarStateBase):
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
 
     self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
-    ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"])
+    ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
     self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
 
     # Regen braking is braking
     if self.car_fingerprint == CAR.VOLT:
-      ret.brakePressed = ret.brakePressed or bool(pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"])
+      ret.brakePressed = ret.brakePressed or pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
 
     ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
     ret.cruiseState.standstill = self.pcm_acc_status == AccState.STANDSTILL
