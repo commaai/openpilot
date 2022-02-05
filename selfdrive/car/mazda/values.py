@@ -19,7 +19,8 @@ class CAR:
   CX9 = "MAZDA CX-9"
   MAZDA3 = "MAZDA 3"
   MAZDA6 = "MAZDA 6"
-  CX9_2021 = "MAZDA CX-9 2021"   # No Steer Lockout
+  CX9_2021 = "MAZDA CX-9 2021"
+  CX5_2022 = "MAZDA CX-5 2022"
 
 class LKAS_LIMITS:
   STEER_THRESHOLD = 15
@@ -35,6 +36,26 @@ class Buttons:
 
 
 FW_VERSIONS = {
+  CAR.CX5_2022 : {
+    (Ecu.eps, 0x730, None): [
+      b'KSD5-3210X-C-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'PX2G-188K2-H\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'K131-67XK2-F\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.esp, 0x760, None): [
+      b'KSD5-437K2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'GSH7-67XK2-S\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'PYB2-21PS1-H\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
   CAR.CX5: {
     (Ecu.eps, 0x730, None): [
       b'KJ01-3210X-G-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -242,10 +263,8 @@ DBC = {
   CAR.MAZDA3: dbc_dict('mazda_2017', None),
   CAR.MAZDA6: dbc_dict('mazda_2017', None),
   CAR.CX9_2021: dbc_dict('mazda_2017', None),
+  CAR.CX5_2022: dbc_dict('mazda_2017', None),
 }
 
 # Gen 1 hardware: same CAN messages and same camera
-GEN1 = {CAR.CX5, CAR.CX9, CAR.CX9_2021, CAR.MAZDA3, CAR.MAZDA6}
-
-# Cars with a steering lockout
-STEER_LOCKOUT_CAR = {CAR.CX5, CAR.CX9, CAR.MAZDA3, CAR.MAZDA6}
+GEN1 = {CAR.CX5, CAR.CX9, CAR.CX9_2021, CAR.MAZDA3, CAR.MAZDA6, CAR.CX5_2022}

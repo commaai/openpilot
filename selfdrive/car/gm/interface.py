@@ -51,7 +51,7 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/test/test_routes, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU}
+    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL}
 
     # TODO: safety param should be a bitmask so we can pass info about ACC type?
     
@@ -132,6 +132,8 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
+      ret.steerMaxBP = [10., 25.]
+      ret.steerMaxV = [1., 1.05]
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -190,12 +192,14 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
 
     elif candidate == CAR.TAHOE_NR:
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.minEnableSpeed = -1. # engage speed is decided by pcmFalse
+      ret.minSteerSpeed = -1 * CV.MPH_TO_MS
       ret.mass = 5602. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
       ret.wheelbase = 2.95 #116 inches in meters
-      ret.steerRatio = 17.3 # guess for tourx
+      ret.steerRatio = 16.3 # guess for tourx
       ret.steerRatioRear = 0. # unknown online
       ret.centerToFront = 2.59  # ret.wheelbase * 0.4 # wild guess
+      ret.steerActuatorDelay = 0.075
       ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
       ret.openpilotLongitudinalControl = False # ASCM vehicles use OP for long
       ret.radarOffCan = True # ASCM vehicles (typically) have radar
