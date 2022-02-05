@@ -4,6 +4,7 @@ import time
 import psutil
 from typing import Optional
 
+import cereal.messaging as messaging
 from common.realtime import set_core_affinity, set_realtime_priority
 from selfdrive.swaglog import cloudlog
 
@@ -37,6 +38,8 @@ def main():
   crash_count = 0
   modem_killed = False
   modem_state = "ONLINE"
+  androidLog = messaging.sub_sock('androidLog')
+
   while True:
     # check critical android services
     if any(p is None or not p.is_running() for p in procs.values()) or not len(procs):
@@ -51,6 +54,16 @@ def main():
           if cur[p] != procs[p]:
             cloudlog.event("android service pid changed", proc=p, cur=cur[p], prev=procs[p], error=True)
       procs.update(cur)
+
+    # log caught NetworkPolicy exceptions
+    msgs = messaging.drain_sock(androidLog)
+    for m in msgs:
+      try:
+        if m.androidLog.tag == "NetworkPolicy" and m.androidLog.message.startswith("problem with advise persist threshold"):
+          print(m)
+          cloudlog.event("network policy exception caught", androidLog=m.androidLog, error=True)
+      except UnicodeDecodeError:
+        pass
 
     if os.path.exists(MODEM_PATH):
       # check modem state
