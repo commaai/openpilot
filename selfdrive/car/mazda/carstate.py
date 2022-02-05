@@ -3,7 +3,7 @@ from selfdrive.config import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, GEN1, CAR
+from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, GEN1
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -65,9 +65,7 @@ class CarState(CarStateBase):
     # Either due to low speed or hands off
     lkas_blocked = cp.vl["STEER_RATE"]["LKAS_BLOCK"] == 1
 
-    carFP = self.CP.carFingerprint
-
-    if carFP not in (CAR.CX5_2022):
+    if self.CP.minSteerSpeed > 0:
       # LKAS is enabled at 52kph going up and disabled at 45kph going down
       # wait for LKAS_BLOCK signal to clear when going up since it lags behind the speed sometimes
       if speed_kph > LKAS_LIMITS.ENABLE_SPEED and not lkas_blocked:
