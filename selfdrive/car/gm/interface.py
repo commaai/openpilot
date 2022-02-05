@@ -191,12 +191,14 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
 
     elif candidate == CAR.TAHOE_NR:
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.minEnableSpeed = -1. # engage speed is decided by pcmFalse
+      ret.minSteerSpeed = -1 * CV.MPH_TO_MS
       ret.mass = 5602. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
       ret.wheelbase = 2.95 #116 inches in meters
       ret.steerRatio = 17.3 # guess for tourx
       ret.steerRatioRear = 0. # unknown online
       ret.centerToFront = 2.59  # ret.wheelbase * 0.4 # wild guess
+      ret.steerActuatorDelay = 0.075
       ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
       ret.openpilotLongitudinalControl = False # ASCM vehicles use OP for long
       ret.radarOffCan = True # ASCM vehicles (typically) have radar
