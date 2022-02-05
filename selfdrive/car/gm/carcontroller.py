@@ -132,7 +132,7 @@ class CarController():
         
         if CS.CP.enableGasInterceptor:
           # TODO: JJS Unsure if low is single pedal mode in any non-electric cars
-          singlePedalMode = GearShifter.low and CS.CP.carFingerprint in EV_CAR
+          singlePedalMode = gearShifter == GearShifter.low and CS.CP.carFingerprint in EV_CAR
           # TODO: JJS Detect saturated battery and fallback to D mode (until regen is available
           if singlePedalMode:
             # In L Mode, Pedal applies regen at a fixed coast-point (TODO: max regen in L mode may be different per car)

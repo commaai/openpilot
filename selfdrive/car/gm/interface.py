@@ -294,7 +294,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.buttonEvents = buttonEvents
     # TODO: JJS Move this to appropriate place (check other brands)
-    EXTRA_GEARS = {GearShifter.sport, GearShifter.low, GearShifter.eco, GearShifter.manumatic}
+    EXTRA_GEARS = [GearShifter.sport, GearShifter.low, GearShifter.eco, GearShifter.manumatic]
     events = self.create_common_events(ret, extra_gears = EXTRA_GEARS, pcm_enable=self.CS.CP.pcmCruise)
 
     if ret.vEgo < self.CP.minEnableSpeed:
