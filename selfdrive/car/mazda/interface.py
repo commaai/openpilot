@@ -36,6 +36,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
+      if candidate == CAR.CX5:
+        ret.minSteerSpeed = 28 * CV.MPH_TO_MS
     elif candidate in (CAR.CX9, CAR.CX9_2021):
       ret.mass = 4217 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 3.1
@@ -43,6 +45,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
+      ret.minSteerSpeed = 28 * CV.MPH_TO_MS
     elif candidate == CAR.MAZDA3:
       ret.mass = 2875 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.7
@@ -50,6 +53,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
+      ret.minSteerSpeed = 28 * CV.MPH_TO_MS
     elif candidate == CAR.MAZDA6:
       ret.mass = 3443 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
@@ -57,9 +61,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
-
-    # No steer below disable speed
-    ret.minSteerSpeed = LKAS_LIMITS.DISABLE_SPEED * CV.KPH_TO_MS
+      ret.minSteerSpeed = 28 * CV.MPH_TO_MS
 
     ret.centerToFront = ret.wheelbase * 0.41
 
