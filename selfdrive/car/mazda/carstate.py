@@ -65,12 +65,13 @@ class CarState(CarStateBase):
     # Either due to low speed or hands off
     lkas_blocked = cp.vl["STEER_RATE"]["LKAS_BLOCK"] == 1
 
-    # LKAS is enabled at 52kph going up and disabled at 45kph going down
-    # wait for LKAS_BLOCK signal to clear when going up since it lags behind the speed sometimes
-    if speed_kph > LKAS_LIMITS.ENABLE_SPEED and not lkas_blocked:
-      self.lkas_allowed_speed = True
-    elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
-      self.lkas_allowed_speed = False
+    if self.CP.minSteerSpeed > 0:
+      # LKAS is enabled at 52kph going up and disabled at 45kph going down
+      # wait for LKAS_BLOCK signal to clear when going up since it lags behind the speed sometimes
+      if speed_kph > LKAS_LIMITS.ENABLE_SPEED and not lkas_blocked:
+        self.lkas_allowed_speed = True
+      elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
+        self.lkas_allowed_speed = False
 
     # TODO: the signal used for available seems to be the adaptive cruise signal, instead of the main on
     #       it should be used for carState.cruiseState.nonAdaptive instead
@@ -87,7 +88,6 @@ class CarState(CarStateBase):
     # Check if LKAS is disabled due to lack of driver torque when all other states indicate
     # it should be enabled (steer lockout). Don't warn until we actually get lkas active
     # and lose it again, i.e, after initial lkas activation
-
     ret.steerWarning = self.lkas_allowed_speed and lkas_blocked
 
     self.acc_active_last = ret.cruiseState.enabled
