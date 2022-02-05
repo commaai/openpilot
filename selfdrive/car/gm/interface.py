@@ -195,7 +195,7 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = -1 * CV.MPH_TO_MS
       ret.mass = 5602. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
       ret.wheelbase = 2.95 #116 inches in meters
-      ret.steerRatio = 17.3 # guess for tourx
+      ret.steerRatio = 16.3 # guess for tourx
       ret.steerRatioRear = 0. # unknown online
       ret.centerToFront = 2.59  # ret.wheelbase * 0.4 # wild guess
       ret.steerActuatorDelay = 0.075
