@@ -50,7 +50,7 @@ def create_mqb_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
 
 def create_mqb_acc_02_control(packer, bus, acc_status, set_speed, speed_visible, lead_visible, idx):
   values = {
-    "ACC_Status_Anzeige": acc_status,
+    "ACC_Status_Anzeige": 3 if acc_status == 5 else acc_status,
     "ACC_Wunschgeschw": 327.36 if not speed_visible else set_speed,
     "ACC_Gesetzte_Zeitluecke": 3,
     "ACC_Display_Prio": 3,
