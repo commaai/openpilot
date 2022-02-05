@@ -34,16 +34,12 @@ int main() {
     while (!do_exit) {
       log_msg log_msg;
       int err = android_logger_list_read(logger_list, &log_msg);
-      if (err <= 0) {
-        break;
-      }
+      if (err <= 0) break;
 
       AndroidLogEntry entry;
-      bool seen = log_msg.entry.sec == last_log_time.tv_sec && log_msg.entry.nsec == last_log_time.tv_nsec;
-      if (seen || android_log_processLogBuffer(&log_msg.entry_v1, &entry) < 0) {
+      if (log_msg.nsec() <= last_log_time.nsec() || android_log_processLogBuffer(&log_msg.entry_v1, &entry) < 0) {
         continue;
       }
-
       last_log_time.tv_sec = entry.tv_sec;
       last_log_time.tv_nsec = entry.tv_nsec;
 
@@ -56,7 +52,6 @@ int main() {
       androidEntry.setTid(entry.tid);
       androidEntry.setTag(entry.tag);
       androidEntry.setMessage(entry.message);
-
       pm.send("androidLog", msg);
     }
 
