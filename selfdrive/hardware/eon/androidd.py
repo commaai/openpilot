@@ -60,7 +60,6 @@ def main():
     for m in msgs:
       try:
         if m.androidLog.tag == "NetworkPolicy" and m.androidLog.message.startswith("problem with advise persist threshold"):
-          print(m)
           cloudlog.event("network policy exception caught", androidLog=m.androidLog, error=True)
       except UnicodeDecodeError:
         pass
