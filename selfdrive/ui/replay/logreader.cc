@@ -1,7 +1,6 @@
 #include "selfdrive/ui/replay/logreader.h"
 
 #include <algorithm>
-#include <iostream>
 #include "selfdrive/ui/replay/util.h"
 
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
@@ -59,7 +58,7 @@ bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abor
   raw_ = decompressBZ2(data, size, abort);
   if (raw_.empty()) {
     if (!(abort && *abort)) {
-      std::cout << "failed to decompress log" << std::endl;
+      rWarning("failed to decompress log");
     }
     return false;
   }
@@ -92,9 +91,9 @@ bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abor
       events.push_back(evt);
     }
   } catch (const kj::Exception &e) {
-    std::cout << "failed to parse log : " << e.getDescription().cStr() << std::endl;
+    rWarning("failed to parse log : %s", e.getDescription().cStr());
     if (!events.empty()) {
-      std::cout << "read " << events.size() << " events from corrupt log" << std::endl;
+      rWarning("read %zu events from corrupt log", events.size());
     }
   }
 

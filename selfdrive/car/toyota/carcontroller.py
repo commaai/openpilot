@@ -26,7 +26,7 @@ class CarController():
              left_line, right_line, lead, left_lane_depart, right_lane_depart):
 
     # gas and brake
-    if CS.CP.enableGasInterceptor and enabled:
+    if CS.CP.enableGasInterceptor and active:
       MAX_INTERCEPTOR_GAS = 0.5
       # RAV4 has very sensitive gas pedal
       if CS.CP.carFingerprint in (CAR.RAV4, CAR.RAV4H, CAR.HIGHLANDER, CAR.HIGHLANDERH):
@@ -49,7 +49,7 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # Cut steering while we're in a known fault state (2s)
-    if not enabled or CS.steer_state in (9, 25):
+    if not active or CS.steer_state in (9, 25):
       apply_steer = 0
       apply_steer_req = 0
     else:
@@ -106,7 +106,7 @@ class CarController():
       can_sends.append(create_gas_interceptor_command(self.packer, interceptor_gas_cmd, frame // 2))
       self.gas = interceptor_gas_cmd
 
-    # ui mesg is at 100Hz but we send asap if:
+    # ui mesg is at 1Hz but we send asap if:
     # - there is something to display
     # - there is something to stop displaying
     fcw_alert = hud_alert == VisualAlert.fcw

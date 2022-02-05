@@ -120,57 +120,57 @@ class CarState(CarStateBase):
   @staticmethod
   def get_can_parser(CP):
     signals = [
-      # sig_name, sig_address, default
-      ("WHL_SPD_FL", "WHL_SPD11", 0),
-      ("WHL_SPD_FR", "WHL_SPD11", 0),
-      ("WHL_SPD_RL", "WHL_SPD11", 0),
-      ("WHL_SPD_RR", "WHL_SPD11", 0),
+      # sig_name, sig_address
+      ("WHL_SPD_FL", "WHL_SPD11"),
+      ("WHL_SPD_FR", "WHL_SPD11"),
+      ("WHL_SPD_RL", "WHL_SPD11"),
+      ("WHL_SPD_RR", "WHL_SPD11"),
 
-      ("YAW_RATE", "ESP12", 0),
+      ("YAW_RATE", "ESP12"),
 
-      ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
+      ("CF_Gway_DrvSeatBeltInd", "CGW4"),
 
-      ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
-      ("CF_Gway_DrvDrSw", "CGW1", 0),       # Driver Door
-      ("CF_Gway_AstDrSw", "CGW1", 0),       # Passenger door
-      ("CF_Gway_RLDrSw", "CGW2", 0),        # Rear reft door
-      ("CF_Gway_RRDrSw", "CGW2", 0),        # Rear right door
-      ("CF_Gway_TurnSigLh", "CGW1", 0),
-      ("CF_Gway_TurnSigRh", "CGW1", 0),
-      ("CF_Gway_ParkBrakeSw", "CGW1", 0),
+      ("CF_Gway_DrvSeatBeltSw", "CGW1"),
+      ("CF_Gway_DrvDrSw", "CGW1"),       # Driver Door
+      ("CF_Gway_AstDrSw", "CGW1"),       # Passenger door
+      ("CF_Gway_RLDrSw", "CGW2"),        # Rear reft door
+      ("CF_Gway_RRDrSw", "CGW2"),        # Rear right door
+      ("CF_Gway_TurnSigLh", "CGW1"),
+      ("CF_Gway_TurnSigRh", "CGW1"),
+      ("CF_Gway_ParkBrakeSw", "CGW1"),
 
-      ("CYL_PRES", "ESP12", 0),
+      ("CYL_PRES", "ESP12"),
 
-      ("CF_Clu_CruiseSwState", "CLU11", 0),
-      ("CF_Clu_CruiseSwMain", "CLU11", 0),
-      ("CF_Clu_SldMainSW", "CLU11", 0),
-      ("CF_Clu_ParityBit1", "CLU11", 0),
-      ("CF_Clu_VanzDecimal" , "CLU11", 0),
-      ("CF_Clu_Vanz", "CLU11", 0),
-      ("CF_Clu_SPEED_UNIT", "CLU11", 0),
-      ("CF_Clu_DetentOut", "CLU11", 0),
-      ("CF_Clu_RheostatLevel", "CLU11", 0),
-      ("CF_Clu_CluInfo", "CLU11", 0),
-      ("CF_Clu_AmpInfo", "CLU11", 0),
-      ("CF_Clu_AliveCnt1", "CLU11", 0),
+      ("CF_Clu_CruiseSwState", "CLU11"),
+      ("CF_Clu_CruiseSwMain", "CLU11"),
+      ("CF_Clu_SldMainSW", "CLU11"),
+      ("CF_Clu_ParityBit1", "CLU11"),
+      ("CF_Clu_VanzDecimal" , "CLU11"),
+      ("CF_Clu_Vanz", "CLU11"),
+      ("CF_Clu_SPEED_UNIT", "CLU11"),
+      ("CF_Clu_DetentOut", "CLU11"),
+      ("CF_Clu_RheostatLevel", "CLU11"),
+      ("CF_Clu_CluInfo", "CLU11"),
+      ("CF_Clu_AmpInfo", "CLU11"),
+      ("CF_Clu_AliveCnt1", "CLU11"),
 
-      ("ACCEnable", "TCS13", 0),
-      ("ACC_REQ", "TCS13", 0),
-      ("DriverBraking", "TCS13", 0),
-      ("StandStill", "TCS13", 0),
-      ("PBRAKE_ACT", "TCS13", 0),
+      ("ACCEnable", "TCS13"),
+      ("ACC_REQ", "TCS13"),
+      ("DriverBraking", "TCS13"),
+      ("StandStill", "TCS13"),
+      ("PBRAKE_ACT", "TCS13"),
 
-      ("ESC_Off_Step", "TCS15", 0),
-      ("AVH_LAMP", "TCS15", 0),
+      ("ESC_Off_Step", "TCS15"),
+      ("AVH_LAMP", "TCS15"),
 
-      ("CR_Mdps_StrColTq", "MDPS12", 0),
-      ("CF_Mdps_ToiActive", "MDPS12", 0),
-      ("CF_Mdps_ToiUnavail", "MDPS12", 0),
-      ("CF_Mdps_ToiFlt", "MDPS12", 0),
-      ("CR_Mdps_OutTq", "MDPS12", 0),
+      ("CR_Mdps_StrColTq", "MDPS12"),
+      ("CF_Mdps_ToiActive", "MDPS12"),
+      ("CF_Mdps_ToiUnavail", "MDPS12"),
+      ("CF_Mdps_ToiFlt", "MDPS12"),
+      ("CR_Mdps_OutTq", "MDPS12"),
 
-      ("SAS_Angle", "SAS11", 0),
-      ("SAS_Speed", "SAS11", 0),
+      ("SAS_Angle", "SAS11"),
+      ("SAS_Speed", "SAS11"),
     ]
 
     checks = [
@@ -189,11 +189,11 @@ class CarState(CarStateBase):
 
     if not CP.openpilotLongitudinalControl:
       signals += [
-        ("MainMode_ACC", "SCC11", 0),
-        ("VSetDis", "SCC11", 0),
-        ("SCCInfoDisplay", "SCC11", 0),
-        ("ACC_ObjDist", "SCC11", 0),
-        ("ACCMode", "SCC12", 1),
+        ("MainMode_ACC", "SCC11"),
+        ("VSetDis", "SCC11"),
+        ("SCCInfoDisplay", "SCC11"),
+        ("ACC_ObjDist", "SCC11"),
+        ("ACCMode", "SCC12"),
       ]
 
       checks += [
@@ -203,39 +203,33 @@ class CarState(CarStateBase):
 
       if CP.carFingerprint in FEATURES["use_fca"]:
         signals += [
-          ("FCA_CmdAct", "FCA11", 0),
-          ("CF_VSM_Warn", "FCA11", 0),
+          ("FCA_CmdAct", "FCA11"),
+          ("CF_VSM_Warn", "FCA11"),
         ]
-        checks += [("FCA11", 50)]
+        checks.append(("FCA11", 50))
       else:
         signals += [
-          ("AEB_CmdAct", "SCC12", 0),
-          ("CF_VSM_Warn", "SCC12", 0),
+          ("AEB_CmdAct", "SCC12"),
+          ("CF_VSM_Warn", "SCC12"),
         ]
 
     if CP.enableBsm:
       signals += [
-        ("CF_Lca_IndLeft", "LCA11", 0),
-        ("CF_Lca_IndRight", "LCA11", 0),
+        ("CF_Lca_IndLeft", "LCA11"),
+        ("CF_Lca_IndRight", "LCA11"),
       ]
-      checks += [("LCA11", 50)]
+      checks.append(("LCA11", 50))
 
     if CP.carFingerprint in (HYBRID_CAR | EV_CAR):
       if CP.carFingerprint in HYBRID_CAR:
-        signals += [
-          ("CR_Vcu_AccPedDep_Pos", "E_EMS11", 0)
-        ]
+        signals.append(("CR_Vcu_AccPedDep_Pos", "E_EMS11"))
       else:
-        signals += [
-          ("Accel_Pedal_Pos", "E_EMS11", 0)
-        ]
-      checks += [
-        ("E_EMS11", 50),
-      ]
+        signals.append(("Accel_Pedal_Pos", "E_EMS11"))
+      checks.append(("E_EMS11", 50))
     else:
       signals += [
-        ("PV_AV_CAN", "EMS12", 0),
-        ("CF_Ems_AclAct", "EMS16", 0),
+        ("PV_AV_CAN", "EMS12"),
+        ("CF_Ems_AclAct", "EMS16"),
       ]
       checks += [
         ("EMS12", 100),
@@ -243,52 +237,39 @@ class CarState(CarStateBase):
       ]
 
     if CP.carFingerprint in FEATURES["use_cluster_gears"]:
-      signals += [
-        ("CF_Clu_Gear", "CLU15", 0),
-      ]
-      checks += [
-        ("CLU15", 5)
-      ]
+      signals.append(("CF_Clu_Gear", "CLU15"))
+      checks.append(("CLU15", 5))
     elif CP.carFingerprint in FEATURES["use_tcu_gears"]:
-      signals += [
-        ("CUR_GR", "TCU12", 0)
-      ]
-      checks += [
-        ("TCU12", 100)
-      ]
+      signals.append(("CUR_GR", "TCU12"))
+      checks.append(("TCU12", 100))
     elif CP.carFingerprint in FEATURES["use_elect_gears"]:
-      signals += [("Elect_Gear_Shifter", "ELECT_GEAR", 0)]
-      checks += [("ELECT_GEAR", 20)]
+      signals.append(("Elect_Gear_Shifter", "ELECT_GEAR"))
+      checks.append(("ELECT_GEAR", 20))
     else:
-      signals += [
-        ("CF_Lvr_Gear", "LVR12", 0)
-      ]
-      checks += [
-        ("LVR12", 100)
-      ]
+      signals.append(("CF_Lvr_Gear", "LVR12"))
+      checks.append(("LVR12", 100))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
-
     signals = [
-      # sig_name, sig_address, default
-      ("CF_Lkas_LdwsActivemode", "LKAS11", 0),
-      ("CF_Lkas_LdwsSysState", "LKAS11", 0),
-      ("CF_Lkas_SysWarning", "LKAS11", 0),
-      ("CF_Lkas_LdwsLHWarning", "LKAS11", 0),
-      ("CF_Lkas_LdwsRHWarning", "LKAS11", 0),
-      ("CF_Lkas_HbaLamp", "LKAS11", 0),
-      ("CF_Lkas_FcwBasReq", "LKAS11", 0),
-      ("CF_Lkas_HbaSysState", "LKAS11", 0),
-      ("CF_Lkas_FcwOpt", "LKAS11", 0),
-      ("CF_Lkas_HbaOpt", "LKAS11", 0),
-      ("CF_Lkas_FcwSysState", "LKAS11", 0),
-      ("CF_Lkas_FcwCollisionWarning", "LKAS11", 0),
-      ("CF_Lkas_FusionState", "LKAS11", 0),
-      ("CF_Lkas_FcwOpt_USM", "LKAS11", 0),
-      ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0),
+      # sig_name, sig_address
+      ("CF_Lkas_LdwsActivemode", "LKAS11"),
+      ("CF_Lkas_LdwsSysState", "LKAS11"),
+      ("CF_Lkas_SysWarning", "LKAS11"),
+      ("CF_Lkas_LdwsLHWarning", "LKAS11"),
+      ("CF_Lkas_LdwsRHWarning", "LKAS11"),
+      ("CF_Lkas_HbaLamp", "LKAS11"),
+      ("CF_Lkas_FcwBasReq", "LKAS11"),
+      ("CF_Lkas_HbaSysState", "LKAS11"),
+      ("CF_Lkas_FcwOpt", "LKAS11"),
+      ("CF_Lkas_HbaOpt", "LKAS11"),
+      ("CF_Lkas_FcwSysState", "LKAS11"),
+      ("CF_Lkas_FcwCollisionWarning", "LKAS11"),
+      ("CF_Lkas_FusionState", "LKAS11"),
+      ("CF_Lkas_FcwOpt_USM", "LKAS11"),
+      ("CF_Lkas_LdwsOpt_USM", "LKAS11"),
     ]
 
     checks = [
