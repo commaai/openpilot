@@ -18,7 +18,7 @@ public:
 protected:
   struct Camera {
     CameraType type;
-    VisionStreamType rgb_type; 
+    VisionStreamType rgb_type;
     VisionStreamType yuv_type;
     int width;
     int height;
