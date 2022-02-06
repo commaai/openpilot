@@ -50,7 +50,7 @@ class CarState(CarStateBase):
     cruise_state = self.can_define.dv["DI_state"]["DI_cruiseState"].get(int(cp.vl["DI_state"]["DI_cruiseState"]), None)
     speed_units = self.can_define.dv["DI_state"]["DI_speedUnits"].get(int(cp.vl["DI_state"]["DI_speedUnits"]), None)
 
-    acc_enabled = (cruise_state in ["ENABLED", "STANDSTILL", "OVERRIDE", "PRE_FAULT", "PRE_CANCEL"])
+    acc_enabled = (cruise_state in ("ENABLED", "STANDSTILL", "OVERRIDE", "PRE_FAULT", "PRE_CANCEL"))
 
     ret.cruiseState.enabled = acc_enabled
     if speed_units == "KPH":
@@ -96,64 +96,64 @@ class CarState(CarStateBase):
   @staticmethod
   def get_can_parser(CP):
     signals = [
-      # sig_name, sig_address, default
-      ("ESP_vehicleSpeed", "ESP_B", 0),
-      ("DI_pedalPos", "DI_torque1", 0),
-      ("DI_brakePedal", "DI_torque2", 0),
-      ("StW_AnglHP", "STW_ANGLHP_STAT", 0),
-      ("StW_AnglHP_Spd", "STW_ANGLHP_STAT", 0),
-      ("EPAS_handsOnLevel", "EPAS_sysStatus", 0),
-      ("EPAS_torsionBarTorque", "EPAS_sysStatus", 0),
-      ("EPAS_internalSAS", "EPAS_sysStatus", 0),
-      ("EPAS_eacStatus", "EPAS_sysStatus", 1),
-      ("EPAS_eacErrorCode", "EPAS_sysStatus", 0),
-      ("DI_cruiseState", "DI_state", 0),
-      ("DI_digitalSpeed", "DI_state", 0),
-      ("DI_speedUnits", "DI_state", 0),
-      ("DI_gear", "DI_torque2", 0),
-      ("DOOR_STATE_FL", "GTW_carState", 1),
-      ("DOOR_STATE_FR", "GTW_carState", 1),
-      ("DOOR_STATE_RL", "GTW_carState", 1),
-      ("DOOR_STATE_RR", "GTW_carState", 1),
-      ("DOOR_STATE_FrontTrunk", "GTW_carState", 1),
-      ("BOOT_STATE", "GTW_carState", 1),
-      ("BC_indicatorLStatus", "GTW_carState", 1),
-      ("BC_indicatorRStatus", "GTW_carState", 1),
-      ("SDM_bcklDrivStatus", "SDM1", 0),
-      ("driverBrakeStatus", "BrakeMessage", 0),
+      # sig_name, sig_address
+      ("ESP_vehicleSpeed", "ESP_B"),
+      ("DI_pedalPos", "DI_torque1"),
+      ("DI_brakePedal", "DI_torque2"),
+      ("StW_AnglHP", "STW_ANGLHP_STAT"),
+      ("StW_AnglHP_Spd", "STW_ANGLHP_STAT"),
+      ("EPAS_handsOnLevel", "EPAS_sysStatus"),
+      ("EPAS_torsionBarTorque", "EPAS_sysStatus"),
+      ("EPAS_internalSAS", "EPAS_sysStatus"),
+      ("EPAS_eacStatus", "EPAS_sysStatus"),
+      ("EPAS_eacErrorCode", "EPAS_sysStatus"),
+      ("DI_cruiseState", "DI_state"),
+      ("DI_digitalSpeed", "DI_state"),
+      ("DI_speedUnits", "DI_state"),
+      ("DI_gear", "DI_torque2"),
+      ("DOOR_STATE_FL", "GTW_carState"),
+      ("DOOR_STATE_FR", "GTW_carState"),
+      ("DOOR_STATE_RL", "GTW_carState"),
+      ("DOOR_STATE_RR", "GTW_carState"),
+      ("DOOR_STATE_FrontTrunk", "GTW_carState"),
+      ("BOOT_STATE", "GTW_carState"),
+      ("BC_indicatorLStatus", "GTW_carState"),
+      ("BC_indicatorRStatus", "GTW_carState"),
+      ("SDM_bcklDrivStatus", "SDM1"),
+      ("driverBrakeStatus", "BrakeMessage"),
 
       # We copy this whole message when spamming cancel
-      ("SpdCtrlLvr_Stat", "STW_ACTN_RQ", 0),
-      ("VSL_Enbl_Rq", "STW_ACTN_RQ", 0),
-      ("SpdCtrlLvrStat_Inv", "STW_ACTN_RQ", 0),
-      ("DTR_Dist_Rq", "STW_ACTN_RQ", 0),
-      ("TurnIndLvr_Stat", "STW_ACTN_RQ", 0),
-      ("HiBmLvr_Stat", "STW_ACTN_RQ", 0),
-      ("WprWashSw_Psd", "STW_ACTN_RQ", 0),
-      ("WprWash_R_Sw_Posn_V2", "STW_ACTN_RQ", 0),
-      ("StW_Lvr_Stat", "STW_ACTN_RQ", 0),
-      ("StW_Cond_Flt", "STW_ACTN_RQ", 0),
-      ("StW_Cond_Psd", "STW_ACTN_RQ", 0),
-      ("HrnSw_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw00_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw01_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw02_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw03_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw04_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw05_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw06_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw07_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw08_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw09_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw10_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw11_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw12_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw13_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw14_Psd", "STW_ACTN_RQ", 0),
-      ("StW_Sw15_Psd", "STW_ACTN_RQ", 0),
-      ("WprSw6Posn", "STW_ACTN_RQ", 0),
-      ("MC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
-      ("CRC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
+      ("SpdCtrlLvr_Stat", "STW_ACTN_RQ"),
+      ("VSL_Enbl_Rq", "STW_ACTN_RQ"),
+      ("SpdCtrlLvrStat_Inv", "STW_ACTN_RQ"),
+      ("DTR_Dist_Rq", "STW_ACTN_RQ"),
+      ("TurnIndLvr_Stat", "STW_ACTN_RQ"),
+      ("HiBmLvr_Stat", "STW_ACTN_RQ"),
+      ("WprWashSw_Psd", "STW_ACTN_RQ"),
+      ("WprWash_R_Sw_Posn_V2", "STW_ACTN_RQ"),
+      ("StW_Lvr_Stat", "STW_ACTN_RQ"),
+      ("StW_Cond_Flt", "STW_ACTN_RQ"),
+      ("StW_Cond_Psd", "STW_ACTN_RQ"),
+      ("HrnSw_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw00_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw01_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw02_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw03_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw04_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw05_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw06_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw07_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw08_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw09_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw10_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw11_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw12_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw13_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw14_Psd", "STW_ACTN_RQ"),
+      ("StW_Sw15_Psd", "STW_ACTN_RQ"),
+      ("WprSw6Posn", "STW_ACTN_RQ"),
+      ("MC_STW_ACTN_RQ", "STW_ACTN_RQ"),
+      ("CRC_STW_ACTN_RQ", "STW_ACTN_RQ"),
     ]
 
     checks = [
@@ -175,8 +175,8 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
     signals = [
-      # sig_name, sig_address, default
-      ("DAS_accState", "DAS_control", 0),
+      # sig_name, sig_address
+      ("DAS_accState", "DAS_control"),
     ]
     checks = [
       # sig_address, frequency

@@ -83,7 +83,7 @@ def process_hud_alert(hud_alert):
   # priority is: FCW, steer required, all others
   if hud_alert == VisualAlert.fcw:
     fcw_display = VISUAL_HUD[hud_alert.raw]
-  elif hud_alert in [VisualAlert.steerRequired, VisualAlert.ldw]:
+  elif hud_alert in (VisualAlert.steerRequired, VisualAlert.ldw):
     steer_required = VISUAL_HUD[hud_alert.raw]
   else:
     acc_alert = VISUAL_HUD[hud_alert.raw]
@@ -117,7 +117,7 @@ class CarController():
 
     P = self.params
 
-    if enabled:
+    if active:
       accel = actuators.accel
       gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, CS.CP.carFingerprint)
     else:
@@ -152,7 +152,7 @@ class CarController():
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_steer = int(interp(-actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
 
-    lkas_active = enabled and not CS.steer_not_allowed
+    lkas_active = active and not CS.steer_not_allowed
 
     # Send CAN commands.
     can_sends = []
@@ -168,7 +168,6 @@ class CarController():
       lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
 
     stopping = actuators.longControlState == LongCtrlState.stopping
-    starting = actuators.longControlState == LongCtrlState.starting
 
     # wind brake from air resistance decel at high speed
     wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
@@ -218,7 +217,7 @@ class CarController():
         if CS.CP.carFingerprint in HONDA_BOSCH:
           self.accel = clip(accel, P.BOSCH_ACCEL_MIN, P.BOSCH_ACCEL_MAX)
           self.gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
-          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, active, accel, self.gas, idx, stopping, starting, CS.CP.carFingerprint))
+          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, active, accel, self.gas, idx, stopping, CS.CP.carFingerprint))
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * P.NIDEC_BRAKE_MAX, 0, P.NIDEC_BRAKE_MAX - 1))

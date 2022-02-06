@@ -1,5 +1,3 @@
-# flake8: noqa
-
 from collections import defaultdict
 from typing import Dict
 
@@ -124,6 +122,7 @@ FW_VERSIONS = {
   CAR.ATLAS_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8703H906026AA\xf1\x899970',
+      b'\xf1\x8703H906026AT\xf1\x891922',
       b'\xf1\x8703H906026F \xf1\x896696',
       b'\xf1\x8703H906026F \xf1\x899970',
       b'\xf1\x8703H906026J \xf1\x896026',
@@ -134,17 +133,21 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158A \xf1\x893387',
       b'\xf1\x8709G927158DR\xf1\x893536',
+      b'\xf1\x8709G927158FT\xf1\x893835',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655BC\xf1\x890503\xf1\x82\0161914151912001103111122031200',
       b'\xf1\x873Q0959655BN\xf1\x890713\xf1\x82\0162214152212001105141122052900',
       b'\xf1\x873Q0959655DB\xf1\x890720\xf1\x82\0162214152212001105141122052900',
+      b'\xf1\x873Q0959655DM\xf1\x890732\xf1\x82\x0e1114151112001105161122052J00',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x873QF909144B \xf1\x891582\xf1\x82\00571B60924A1',
+      b'\xf1\x873QF909144B \xf1\x891582\xf1\x82\x0571B6G920A1',
       b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820528B6090105',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572T \xf1\x890383',
       b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572J \xf1\x890654',
       b'\xf1\x875Q0907572P \xf1\x890682',
@@ -162,6 +165,7 @@ FW_VERSIONS = {
       b'\xf1\x8704E906027HD\xf1\x893742',
       b'\xf1\x8704E906027MA\xf1\x894958',
       b'\xf1\x8704L906021DT\xf1\x895520',
+      b'\xf1\x8704L906021DT\xf1\x898127',
       b'\xf1\x8704L906021N \xf1\x895518',
       b'\xf1\x8704L906026BP\xf1\x897608',
       b'\xf1\x8704L906026NF\xf1\x899528',
@@ -208,6 +212,7 @@ FW_VERSIONS = {
       b'\xf1\x870D9300040A \xf1\x893613',
       b'\xf1\x870D9300040S \xf1\x894311',
       b'\xf1\x870D9300041H \xf1\x895220',
+      b'\xf1\x870D9300041P \xf1\x894507',
       b'\xf1\x870DD300045K \xf1\x891120',
       b'\xf1\x870DD300046F \xf1\x891601',
       b'\xf1\x870GC300012A \xf1\x891403',

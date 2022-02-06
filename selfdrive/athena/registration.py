@@ -1,4 +1,4 @@
-#/!/usr/bin/env python3
+#!/usr/bin/env python3
 import time
 import json
 import jwt
@@ -10,11 +10,16 @@ from common.params import Params
 from common.spinner import Spinner
 from common.basedir import PERSIST
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import HARDWARE
+from selfdrive.hardware import HARDWARE, PC
 from selfdrive.swaglog import cloudlog
 
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
+
+
+def is_registered_device() -> bool:
+  dongle = Params().get("DongleId", encoding='utf-8')
+  return dongle not in (None, UNREGISTERED_DONGLE_ID)
 
 
 def register(show_spinner=False) -> str:
@@ -86,7 +91,7 @@ def register(show_spinner=False) -> str:
 
   if dongle_id:
     params.put("DongleId", dongle_id)
-    set_offroad_alert("Offroad_UnofficialHardware", dongle_id == UNREGISTERED_DONGLE_ID)
+    set_offroad_alert("Offroad_UnofficialHardware", (dongle_id == UNREGISTERED_DONGLE_ID) and not PC)
   return dongle_id
 
 

@@ -7,6 +7,7 @@ else:
 
 common_libs = [
   'params.cc',
+  'statlog.cc',
   'swaglog.cc',
   'util.cc',
   'gpio.cc',
@@ -33,3 +34,4 @@ Export('_common', '_gpucommon', '_gpu_libs')
 
 if GetOption('test'):
   env.Program('tests/test_util', ['tests/test_util.cc'], LIBS=[_common])
+  env.Program('tests/test_swaglog', ['tests/test_swaglog.cc'], LIBS=[_common, 'json11', 'zmq', 'pthread'])

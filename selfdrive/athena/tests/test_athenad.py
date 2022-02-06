@@ -134,15 +134,16 @@ class TestAthenadMethods(unittest.TestCase):
   @with_http_server
   def test_uploadFileToUrl(self, host):
     not_exists_resp = dispatcher["uploadFileToUrl"]("does_not_exist.bz2", "http://localhost:1238", {})
-    self.assertEqual(not_exists_resp, 404)
+    self.assertEqual(not_exists_resp, {'enqueued': 0, 'items': [], 'failed': ['does_not_exist.bz2']})
 
     fn = os.path.join(athenad.ROOT, 'qlog.bz2')
     Path(fn).touch()
 
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", f"{host}/qlog.bz2", {})
     self.assertEqual(resp['enqueued'], 1)
-    self.assertDictContainsSubset({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}, resp['item'])
-    self.assertIsNotNone(resp['item'].get('id'))
+    self.assertNotIn('failed', resp)
+    self.assertDictContainsSubset({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}, resp['items'][0])
+    self.assertIsNotNone(resp['items'][0].get('id'))
     self.assertEqual(athenad.upload_queue.qsize(), 1)
 
   @with_http_server
@@ -164,6 +165,31 @@ class TestAthenadMethods(unittest.TestCase):
       self.assertEqual(athenad.upload_queue.qsize(), 0)
     finally:
       end_event.set()
+
+  @with_http_server
+  @mock.patch('requests.put')
+  def test_upload_handler_retry(self, host, mock_put):
+    for status, retry in ((500, True), (412, False)):
+      mock_put.return_value.status_code = status
+      fn = os.path.join(athenad.ROOT, 'qlog.bz2')
+      Path(fn).touch()
+      item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
+
+      end_event = threading.Event()
+      thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
+      thread.start()
+
+      athenad.upload_queue.put_nowait(item)
+      try:
+        self.wait_for_upload()
+        time.sleep(0.1)
+
+        self.assertEqual(athenad.upload_queue.qsize(), 1 if retry else 0)
+      finally:
+        end_event.set()
+      
+      if retry:
+        self.assertEqual(athenad.upload_queue.get().retry_count, 1)
 
   def test_upload_handler_timeout(self):
     """When an upload times out or fails to connect it should be placed back in the queue"""

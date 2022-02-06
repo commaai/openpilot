@@ -205,8 +205,8 @@ class DriverStatus():
                                             self.settings._POSE_YAW_THRESHOLD_STRICT]) / self.settings._POSE_YAW_THRESHOLD
 
   def get_pose(self, driver_state, cal_rpy, car_speed, op_engaged):
-    if not all(len(x) > 0 for x in [driver_state.faceOrientation, driver_state.facePosition,
-                                    driver_state.faceOrientationStd, driver_state.facePositionStd]):
+    if not all(len(x) > 0 for x in (driver_state.faceOrientation, driver_state.facePosition,
+                                    driver_state.faceOrientationStd, driver_state.facePositionStd)):
       return
 
     self.face_partial = driver_state.partialFace > self.settings._PARTIAL_FACE_THRESHOLD

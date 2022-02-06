@@ -125,13 +125,13 @@ def fingerprint(logcan, sendcan):
       # The fingerprint dict is generated for all buses, this way the car interface
       # can use it to detect a (valid) multipanda setup and initialize accordingly
       if can.src < 128:
-        if can.src not in finger.keys():
+        if can.src not in finger:
           finger[can.src] = {}
         finger[can.src][can.address] = len(can.dat)
 
       for b in candidate_cars:
         # Ignore extended messages and VIN query response.
-        if can.src == b and can.address < 0x800 and can.address not in [0x7df, 0x7e0, 0x7e8]:
+        if can.src == b and can.address < 0x800 and can.address not in (0x7df, 0x7e0, 0x7e8):
           candidate_cars[b] = eliminate_incompatible_cars(can, candidate_cars[b])
 
     # if we only have one car choice and the time since we got our first

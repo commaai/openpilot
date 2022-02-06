@@ -320,6 +320,9 @@ class Tici(HardwareBase):
   def initialize_hardware(self):
     self.amplifier.initialize_configuration()
 
+    # Allow thermald to write engagement status to kmsg
+    os.system("sudo chmod a+w /dev/kmsg")
+
   def get_networks(self):
     r = {}
 

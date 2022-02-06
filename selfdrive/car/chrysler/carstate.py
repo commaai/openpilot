@@ -52,7 +52,7 @@ class CarState(CarStateBase):
     ret.cruiseState.available = ret.cruiseState.enabled  # FIXME: for now same as enabled
     ret.cruiseState.speed = cp.vl["DASHBOARD"]["ACC_SPEED_CONFIG_KPH"] * CV.KPH_TO_MS
     # CRUISE_STATE is a three bit msg, 0 is off, 1 and 2 are Non-ACC mode, 3 and 4 are ACC mode, find if there are other states too
-    ret.cruiseState.nonAdaptive = cp.vl["DASHBOARD"]["CRUISE_STATE"] in [1, 2]
+    ret.cruiseState.nonAdaptive = cp.vl["DASHBOARD"]["CRUISE_STATE"] in (1, 2)
 
     ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
@@ -75,33 +75,33 @@ class CarState(CarStateBase):
   @staticmethod
   def get_can_parser(CP):
     signals = [
-      # sig_name, sig_address, default
-      ("PRNDL", "GEAR", 0),
-      ("DOOR_OPEN_FL", "DOORS", 0),
-      ("DOOR_OPEN_FR", "DOORS", 0),
-      ("DOOR_OPEN_RL", "DOORS", 0),
-      ("DOOR_OPEN_RR", "DOORS", 0),
-      ("BRAKE_PRESSED_2", "BRAKE_2", 0),
-      ("ACCEL_134", "ACCEL_GAS_134", 0),
-      ("SPEED_LEFT", "SPEED_1", 0),
-      ("SPEED_RIGHT", "SPEED_1", 0),
-      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
-      ("STEER_ANGLE", "STEERING", 0),
-      ("STEERING_RATE", "STEERING", 0),
-      ("TURN_SIGNALS", "STEERING_LEVERS", 0),
-      ("ACC_STATUS_2", "ACC_2", 0),
-      ("HIGH_BEAM_FLASH", "STEERING_LEVERS", 0),
-      ("ACC_SPEED_CONFIG_KPH", "DASHBOARD", 0),
-      ("CRUISE_STATE", "DASHBOARD", 0),
-      ("TORQUE_DRIVER", "EPS_STATUS", 0),
-      ("TORQUE_MOTOR", "EPS_STATUS", 0),
-      ("LKAS_STATE", "EPS_STATUS", 1),
-      ("COUNTER", "EPS_STATUS", -1),
-      ("TRACTION_OFF", "TRACTION_BUTTON", 0),
-      ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS", 0),
+      # sig_name, sig_address
+      ("PRNDL", "GEAR"),
+      ("DOOR_OPEN_FL", "DOORS"),
+      ("DOOR_OPEN_FR", "DOORS"),
+      ("DOOR_OPEN_RL", "DOORS"),
+      ("DOOR_OPEN_RR", "DOORS"),
+      ("BRAKE_PRESSED_2", "BRAKE_2"),
+      ("ACCEL_134", "ACCEL_GAS_134"),
+      ("SPEED_LEFT", "SPEED_1"),
+      ("SPEED_RIGHT", "SPEED_1"),
+      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS"),
+      ("STEER_ANGLE", "STEERING"),
+      ("STEERING_RATE", "STEERING"),
+      ("TURN_SIGNALS", "STEERING_LEVERS"),
+      ("ACC_STATUS_2", "ACC_2"),
+      ("HIGH_BEAM_FLASH", "STEERING_LEVERS"),
+      ("ACC_SPEED_CONFIG_KPH", "DASHBOARD"),
+      ("CRUISE_STATE", "DASHBOARD"),
+      ("TORQUE_DRIVER", "EPS_STATUS"),
+      ("TORQUE_MOTOR", "EPS_STATUS"),
+      ("LKAS_STATE", "EPS_STATUS"),
+      ("COUNTER", "EPS_STATUS",),
+      ("TRACTION_OFF", "TRACTION_BUTTON"),
+      ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS"),
     ]
 
     checks = [
@@ -123,20 +123,20 @@ class CarState(CarStateBase):
 
     if CP.enableBsm:
       signals += [
-        ("BLIND_SPOT_RIGHT", "BLIND_SPOT_WARNINGS", 0),
-        ("BLIND_SPOT_LEFT", "BLIND_SPOT_WARNINGS", 0),
+        ("BLIND_SPOT_RIGHT", "BLIND_SPOT_WARNINGS"),
+        ("BLIND_SPOT_LEFT", "BLIND_SPOT_WARNINGS"),
       ]
-      checks += [("BLIND_SPOT_WARNINGS", 2)]
+      checks.append(("BLIND_SPOT_WARNINGS", 2))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
     signals = [
-      # sig_name, sig_address, default
-      ("COUNTER", "LKAS_COMMAND", -1),
-      ("CAR_MODEL", "LKAS_HUD", -1),
-      ("LKAS_STATUS_OK", "LKAS_HEARTBIT", -1)
+      # sig_name, sig_address
+      ("COUNTER", "LKAS_COMMAND"),
+      ("CAR_MODEL", "LKAS_HUD"),
+      ("LKAS_STATUS_OK", "LKAS_HEARTBIT")
     ]
     checks = [
       ("LKAS_COMMAND", 100),

@@ -47,7 +47,6 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = True
 
       ret.pcmCruise = not ret.enableGasInterceptor
-      ret.communityFeature = ret.enableGasInterceptor
 
     if candidate == CAR.CRV_5G:
       ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
@@ -227,7 +226,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 11.95  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.06]]
       tire_stiffness_factor = 0.677
 
     elif candidate == CAR.ODYSSEY:
@@ -250,17 +249,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.28], [0.08]]
 
-    elif candidate in (CAR.PILOT, CAR.PILOT_2019):
-      stop_and_go = False
-      ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG  # average weight
-      ret.wheelbase = 2.82
-      ret.centerToFront = ret.wheelbase * 0.428
-      ret.steerRatio = 17.25  # as spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
-      tire_stiffness_factor = 0.444
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
-
-    elif candidate == CAR.PASSPORT:
+    elif candidate in (CAR.PILOT, CAR.PASSPORT):
       stop_and_go = False
       ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG  # average weight
       ret.wheelbase = 2.82
@@ -416,7 +405,7 @@ class CarInterface(CarInterfaceBase):
     for b in ret.buttonEvents:
 
       # do enable on both accel and decel buttons
-      if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
+      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
         if not self.CP.pcmCruise:
           events.add(EventName.buttonEnable)
 
@@ -432,8 +421,9 @@ class CarInterface(CarInterfaceBase):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-    if c.hudControl.speedVisible:
-      hud_v_cruise = c.hudControl.setSpeed * CV.MS_TO_KPH
+    hud_control = c.hudControl
+    if hud_control.speedVisible:
+      hud_v_cruise = hud_control.setSpeed * CV.MS_TO_KPH
     else:
       hud_v_cruise = 255
 
@@ -441,9 +431,9 @@ class CarInterface(CarInterfaceBase):
                          c.actuators,
                          c.cruiseControl.cancel,
                          hud_v_cruise,
-                         c.hudControl.lanesVisible,
-                         hud_show_car=c.hudControl.leadVisible,
-                         hud_alert=c.hudControl.visualAlert)
+                         hud_control.lanesVisible,
+                         hud_show_car=hud_control.leadVisible,
+                         hud_alert=hud_control.visualAlert)
 
     self.frame += 1
     return ret
