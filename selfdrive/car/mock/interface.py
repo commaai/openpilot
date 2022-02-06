@@ -20,7 +20,6 @@ class CarInterface(CarInterfaceBase):
 
     cloudlog.debug("Using Mock Car Interface")
 
-    # TODO: subscribe to phone sensor
     self.sensor = messaging.sub_sock('sensorEvents')
     self.gps = messaging.sub_sock('gpsLocationExternal')
 
