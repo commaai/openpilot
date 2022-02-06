@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cmath>
 
+#include <QtConcurrent>
+
 #include "common/transformations/orientation.hpp"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
@@ -36,17 +38,17 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
 static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
   int max_idx = 0;
-  for (int i = 0; i < TRAJECTORY_SIZE && line_x[i] < path_height; ++i) {
+  for (int i = 1; i < TRAJECTORY_SIZE && line_x[i] <= path_height; ++i) {
     max_idx = i;
   }
   return max_idx;
 }
 
-static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, std::optional<cereal::ModelDataV2::XYZTData::Reader> line) {
+static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
   for (int i = 0; i < 2; ++i) {
     auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
     if (lead_data.getStatus()) {
-      float z = line ? (*line).getZ()[get_path_length_idx(*line, lead_data.getDRel())] : 0.0;
+      float z = line.getZ()[get_path_length_idx(line, lead_data.getDRel())];
       calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
     }
   }
@@ -107,18 +109,7 @@ static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
 
-  if (sm.updated("modelV2")) {
-    update_model(s, sm["modelV2"].getModelV2());
-  }
-  if (sm.updated("radarState")) {
-    std::optional<cereal::ModelDataV2::XYZTData::Reader> line;
-    if (sm.rcv_frame("modelV2") > 0) {
-      line = sm["modelV2"].getModelV2().getPosition();
-    }
-    update_leads(s, sm["radarState"].getRadarState(), line);
-  }
   if (sm.updated("liveCalibration")) {
-    scene.world_objects_visible = true;
     auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
     Eigen::Vector3d rpy;
     rpy << rpy_list[0], rpy_list[1], rpy_list[2];
@@ -132,6 +123,14 @@ static void update_state(UIState *s) {
       for (int j = 0; j < 3; j++) {
         scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);
       }
+    }
+  }
+  if (s->worldObjectsVisible()) {
+    if (sm.updated("modelV2")) {
+      update_model(s, sm["modelV2"].getModelV2());
+    }
+    if (sm.updated("radarState") && sm.rcv_frame("modelV2") >= s->scene.started_frame) {
+      update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
     }
   }
   if (sm.updated("pandaStates")) {
@@ -167,16 +166,22 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (sm.updated("roadCameraState")) {
+  if (!Hardware::TICI() && sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
 
     float max_lines = Hardware::EON() ? 5408 : 1904;
     float max_gain = Hardware::EON() ? 1.0: 10.0;
     float max_ev = max_lines * max_gain;
 
-    if (Hardware::TICI()) {
-      max_ev /= 6;
-    }
+    float ev = camera_state.getGain() * float(camera_state.getIntegLines());
+
+    scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
+  } else if (Hardware::TICI() && sm.updated("wideRoadCameraState")) {
+    auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
+
+    float max_lines = 1904;
+    float max_gain = 10.0;
+    float max_ev = max_lines * max_gain / 6;
 
     float ev = camera_state.getGain() * float(camera_state.getIntegLines());
 
@@ -189,68 +194,67 @@ void ui_update_params(UIState *s) {
   s->scene.is_metric = Params().getBool("IsMetric");
 }
 
-static void update_status(UIState *s) {
-  if (s->scene.started && s->sm->updated("controlsState")) {
-    auto controls_state = (*s->sm)["controlsState"].getControlsState();
+void UIState::updateStatus() {
+  if (scene.started && sm->updated("controlsState")) {
+    auto controls_state = (*sm)["controlsState"].getControlsState();
     auto alert_status = controls_state.getAlertStatus();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
-      s->status = STATUS_WARNING;
+      status = STATUS_WARNING;
     } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
-      s->status = STATUS_ALERT;
+      status = STATUS_ALERT;
     } else {
-      s->status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+      status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
   }
 
   // Handle onroad/offroad transition
-  static bool started_prev = false;
-  if (s->scene.started != started_prev) {
-    if (s->scene.started) {
-      s->status = STATUS_DISENGAGED;
-      s->scene.started_frame = s->sm->frame;
-      s->scene.end_to_end = Params().getBool("EndToEndToggle");
-      s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+  if (scene.started != started_prev) {
+    if (scene.started) {
+      status = STATUS_DISENGAGED;
+      scene.started_frame = sm->frame;
+      scene.end_to_end = Params().getBool("EndToEndToggle");
+      wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
     }
-    // Invisible until we receive a calibration message.
-    s->scene.world_objects_visible = false;
+    started_prev = scene.started;
+    emit offroadTransition(!scene.started);
+  } else if (sm->frame == 1) {
+    emit offroadTransition(!scene.started);
   }
-  started_prev = s->scene.started;
 }
 
-
-QUIState::QUIState(QObject *parent) : QObject(parent) {
-  ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
+UIState::UIState(QObject *parent) : QObject(parent) {
+  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
+    "wideRoadCameraState",
   });
 
   Params params;
-  ui_state.wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
-  ui_state.has_prime = params.getBool("HasPrime");
+  wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
+  has_prime = params.getBool("HasPrime");
 
   // update timer
   timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &QUIState::update);
+  QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
   timer->start(1000 / UI_FREQ);
 }
 
-void QUIState::update() {
-  update_sockets(&ui_state);
-  update_state(&ui_state);
-  update_status(&ui_state);
+void UIState::update() {
+  update_sockets(this);
+  update_state(this);
+  updateStatus();
 
-  if (ui_state.scene.started != started_prev || ui_state.sm->frame == 1) {
-    started_prev = ui_state.scene.started;
-    emit offroadTransition(!ui_state.scene.started);
-  }
-
-  if (ui_state.sm->frame % UI_FREQ == 0) {
+  if (sm->frame % UI_FREQ == 0) {
     watchdog_kick();
   }
-  emit uiUpdate(ui_state);
+  emit uiUpdate(*this);
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
+  setAwake(true);
+  resetInteractiveTimout();
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
 }
 
 void Device::update(const UIState &s) {
@@ -258,20 +262,20 @@ void Device::update(const UIState &s) {
   updateWakefulness(s);
 
   // TODO: remove from UIState and use signals
-  QUIState::ui_state.awake = awake;
+  uiState()->awake = awake;
 }
 
-void Device::setAwake(bool on, bool reset) {
+void Device::setAwake(bool on) {
   if (on != awake) {
     awake = on;
     Hardware::set_display_power(awake);
     LOGD("setting display power %d", awake);
     emit displayPowerChanged(awake);
   }
+}
 
-  if (reset) {
-    awake_timeout = 30 * UI_FREQ;
-  }
+void Device::resetInteractiveTimout() {
+  interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
 }
 
 void Device::updateBrightness(const UIState &s) {
@@ -297,23 +301,40 @@ void Device::updateBrightness(const UIState &s) {
   }
 
   if (brightness != last_brightness) {
-    std::thread{Hardware::set_brightness, brightness}.detach();
+    if (!brightness_future.isRunning()) {
+      brightness_future = QtConcurrent::run(Hardware::set_brightness, brightness);
+      last_brightness = brightness;
+    }
   }
-  last_brightness = brightness;
+}
+
+bool Device::motionTriggered(const UIState &s) {
+  static float accel_prev = 0;
+  static float gyro_prev = 0;
+
+  bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
+  bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
+
+  gyro_prev = s.scene.gyro_sensor;
+  accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
+
+  return (!awake && accel_trigger && gyro_trigger);
 }
 
 void Device::updateWakefulness(const UIState &s) {
-  awake_timeout = std::max(awake_timeout - 1, 0);
+  bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
+  ignition_on = s.scene.ignition;
 
-  bool should_wake = s.scene.started || s.scene.ignition;
-  if (!should_wake) {
-    // tap detection while display is off
-    bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
-    bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
-    should_wake = accel_trigger && gyro_trigger;
-    gyro_prev = s.scene.gyro_sensor;
-    accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
+  if (ignition_just_turned_off || motionTriggered(s)) {
+    resetInteractiveTimout();
+  } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
+    emit interactiveTimout();
   }
 
-  setAwake(awake_timeout, should_wake);
+  setAwake(s.scene.ignition || interactive_timeout > 0);
+}
+
+UIState *uiState() {
+  static UIState ui_state;
+  return &ui_state;
 }

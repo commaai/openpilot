@@ -1,99 +1,13 @@
-#include <termios.h>
-
 #include <QApplication>
 #include <QCommandLineParser>
-#include <QDebug>
-#include <QThread>
-#include <csignal>
-#include <iostream>
 
+#include "selfdrive/ui/replay/consoleui.h"
 #include "selfdrive/ui/replay/replay.h"
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
-struct termios oldt = {};
-Replay *replay = nullptr;
-
-void sigHandler(int s) {
-  std::signal(s, SIG_DFL);
-  if (oldt.c_lflag) {
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-  }
-  if (replay) {
-    replay->stop();
-  }
-  qApp->quit();
-}
-
-int getch() {
-  int ch;
-  struct termios newt;
-
-  tcgetattr(STDIN_FILENO, &oldt);
-  newt = oldt;
-  newt.c_lflag &= ~(ICANON | ECHO);
-
-  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  ch = getchar();
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-
-  return ch;
-}
-
-void keyboardThread(Replay *replay_) {
-  char c;
-  while (true) {
-    c = getch();
-    if (c == '\n') {
-      printf("Enter seek request: ");
-      std::string r;
-      std::cin >> r;
-
-      try {
-        if (r[0] == '#') {
-          r.erase(0, 1);
-          replay_->seekTo(std::stoi(r) * 60, false);
-        } else {
-          replay_->seekTo(std::stoi(r), false);
-        }
-      } catch (std::invalid_argument) {
-        qDebug() << "invalid argument";
-      }
-      getch();  // remove \n from entering seek
-    } else if (c == 'm') {
-      replay_->seekTo(+60, true);
-    } else if (c == 'M') {
-      replay_->seekTo(-60, true);
-    } else if (c == 's') {
-      replay_->seekTo(+10, true);
-    } else if (c == 'S') {
-      replay_->seekTo(-10, true);
-    } else if (c == 'G') {
-      replay_->seekTo(0, true);
-    } else if (c == ' ') {
-      replay_->pause(!replay_->isPaused());
-    }
-  }
-}
-
-void replayMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-  QByteArray localMsg = msg.toLocal8Bit();
-  if (type == QtDebugMsg) {
-    std::cout << "\033[38;5;248m" << localMsg.constData() << "\033[00m" << std::endl;
-  } else if (type == QtWarningMsg) {
-    std::cout << "\033[38;5;227m" << localMsg.constData() << "\033[00m" << std::endl;
-  } else if (type == QtCriticalMsg) {
-    std::cout << "\033[38;5;196m" << localMsg.constData() << "\033[00m" << std::endl;
-  } else {
-    std::cout << localMsg.constData() << std::endl;
-  }
-}
 
 int main(int argc, char *argv[]) {
-  qInstallMessageHandler(replayMessageOutput);
-
   QApplication app(argc, argv);
-  std::signal(SIGINT, sigHandler);
-  std::signal(SIGTERM, sigHandler);
 
   const std::tuple<QString, REPLAY_FLAGS, QString> flags[] = {
       {"dcam", REPLAY_FLAG_DCAM, "load driver camera"},
@@ -103,6 +17,7 @@ int main(int argc, char *argv[]) {
       {"qcam", REPLAY_FLAG_QCAMERA, "load qcamera"},
       {"yuv", REPLAY_FLAG_SEND_YUV, "send yuv frame"},
       {"no-cuda", REPLAY_FLAG_NO_CUDA, "disable CUDA"},
+      {"no-vipc", REPLAY_FLAG_NO_VIPC, "do not output video"},
   };
 
   QCommandLineParser parser;
@@ -134,16 +49,12 @@ int main(int argc, char *argv[]) {
       replay_flags |= flag;
     }
   }
-  replay = new Replay(route, allow, block, nullptr, replay_flags, parser.value("data_dir"), &app);
+  Replay *replay = new Replay(route, allow, block, nullptr, replay_flags, parser.value("data_dir"), &app);
   if (!replay->load()) {
     return 0;
   }
-  replay->start(parser.value("start").toInt());
-  // start keyboard control thread
-  QThread *t = new QThread();
-  QObject::connect(t, &QThread::started, [=]() { keyboardThread(replay); });
-  QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
-  t->start();
 
+  ConsoleUI console_ui(replay);
+  replay->start(parser.value("start").toInt());
   return app.exec();
 }

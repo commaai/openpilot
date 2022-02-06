@@ -1,3 +1,15 @@
+Version 0.8.13 (2022-XX-XX)
+========================
+ * Improved driver monitoring
+ * Roll compensation
+ * Improved camera focus on the comma two
+ * Subaru ECU firmware fingerprinting thanks to martinl!
+ * Hyundai Santa Fe Plug-in Hybrid 2022 support thanks to sunnyhaibin!
+ * Mazda CX-5 2022 support thanks to Jafaral!
+ * Subaru Impreza 2020 support thanks to martinl!
+ * Toyota Avalon 2022 support thanks to sshane!
+ * Toyota Prius v 2017 support thanks to CT921!
+
 Version 0.8.12 (2021-12-15)
 ========================
  * New driving model

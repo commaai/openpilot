@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget name="Main Window" parent="main_window">
+  <Tab containers="1" tab_name="tab1">
+   <Container>
+    <DockSplitter sizes="0.332965;0.334071;0.332965" orientation="-" count="3">
+     <DockArea name="...">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="0.000000" top="1.025000" bottom="-0.025000" right="59.900659"/>
+       <limitY/>
+       <curve name="/controlsState/enabled" color="#1f77b4"/>
+       <curve name="/pandaStates/0/controlsAllowed" color="#d62728"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="0.000000" top="-10.627637" bottom="-15.150799" right="59.900659"/>
+       <limitY/>
+       <curve name="/controlsState/cumLagMs" color="#9467bd"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="0.000447" top="1.025000" bottom="-0.025000" right="59.900939"/>
+       <limitY/>
+       <curve name="/carState/gasPressed" color="#1ac938"/>
+       <curve name="/carState/brakePressed" color="#ff7f0e"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="Cereal Subscriber"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

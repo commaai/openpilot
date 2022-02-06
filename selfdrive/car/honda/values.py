@@ -82,7 +82,6 @@ class CAR:
   ACURA_RDX = "ACURA RDX 2018"
   ACURA_RDX_3G = "ACURA RDX 2020"
   PILOT = "HONDA PILOT 2017"
-  PILOT_2019 = "HONDA PILOT 2019"
   PASSPORT = "HONDA PASSPORT 2021"
   RIDGELINE = "HONDA RIDGELINE 2017"
   INSIGHT = "HONDA INSIGHT 2019"
@@ -990,23 +989,44 @@ FW_VERSIONS = {
       b'37805-RLV-C530\x00\x00',
       b'37805-RLV-C910\x00\x00',
     ],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-TG7-A030\x00\x00',
+      b'38897-TG7-A040\x00\x00',
+      b'38897-TG7-A110\x00\x00',
+      b'38897-TG7-A210\x00\x00',
+    ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TG7-A030\x00\x00',
       b'39990-TG7-A040\x00\x00',
       b'39990-TG7-A060\x00\x00',
+      b'39990-TG7-A070\x00\x00',
+      b'39990-TGS-A230\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab0f1, None): [
+      b'36161-TG7-A310\x00\x00',
       b'36161-TG7-A520\x00\x00',
+      b'36161-TG7-A630\x00\x00',
       b'36161-TG7-A720\x00\x00',
       b'36161-TG7-A820\x00\x00',
+      b'36161-TG7-A930\x00\x00',
       b'36161-TG7-C520\x00\x00',
       b'36161-TG7-D520\x00\x00',
+      b'36161-TG7-D630\x00\x00',
+      b'36161-TG7-Y630\x00\x00',
       b'36161-TG8-A520\x00\x00',
+      b'36161-TG8-A630\x00\x00',
       b'36161-TG8-A720\x00\x00',
+      b'36161-TG8-A830\x00\x00',
+      b'36161-TGS-A130\x00\x00',
+      b'36161-TGT-A030\x00\x00',
+      b'36161-TGT-A130\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
-      b'77959-TG7-A110\x00\x00',
       b'77959-TG7-A020\x00\x00',
+      b'77959-TG7-A110\x00\x00',
+      b'77959-TG7-A210\x00\x00',
+      b'77959-TG7-Y210\x00\x00',
+      b'77959-TGS-A010\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TG7-A040\x00\x00',
@@ -1014,50 +1034,6 @@ FW_VERSIONS = {
       b'78109-TG7-A420\x00\x00',
       b'78109-TG7-A520\x00\x00',
       b'78109-TG7-A720\x00\x00',
-      b'78109-TG7-D020\x00\x00',
-      b'78109-TG8-A420\x00\x00',
-      b'78109-TG8-A520\x00\x00',
-    ],
-    (Ecu.vsa, 0x18da28f1, None): [
-      b'57114-TG7-A130\x00\x00',
-      b'57114-TG7-A140\x00\x00',
-      b'57114-TG7-A230\x00\x00',
-      b'57114-TG7-A240\x00\x00',
-      b'57114-TG8-A140\x00\x00',
-      b'57114-TG8-A240\x00\x00',
-    ],
-
-  },
-  CAR.PILOT_2019: {
-    (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TG7-A060\x00\x00',
-      b'39990-TG7-A070\x00\x00',
-      b'39990-TGS-A230\x00\x00',
-    ],
-    (Ecu.gateway, 0x18daeff1, None): [
-      b'38897-TG7-A030\x00\x00',
-      b'38897-TG7-A040\x00\x00',
-      b'38897-TG7-A110\x00\x00',
-      b'38897-TG7-A210\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
-      b'36161-TG7-A310\x00\x00',
-      b'36161-TG7-A630\x00\x00',
-      b'36161-TG7-A930\x00\x00',
-      b'36161-TG7-D630\x00\x00',
-      b'36161-TG7-Y630\x00\x00',
-      b'36161-TG8-A630\x00\x00',
-      b'36161-TG8-A830\x00\x00',
-      b'36161-TGS-A130\x00\x00',
-      b'36161-TGT-A030\x00\x00',
-      b'36161-TGT-A130\x00\x00',
-    ],
-    (Ecu.srs, 0x18da53f1, None): [
-      b'77959-TG7-A210\x00\x00',
-      b'77959-TG7-Y210\x00\x00',
-      b'77959-TGS-A010\x00\x00',
-    ],
-    (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TG7-AJ10\x00\x00',
       b'78109-TG7-AJ20\x00\x00',
       b'78109-TG7-AK10\x00\x00',
@@ -1069,8 +1045,11 @@ FW_VERSIONS = {
       b'78109-TG7-AT20\x00\x00',
       b'78109-TG7-AU20\x00\x00',
       b'78109-TG7-AX20\x00\x00',
+      b'78109-TG7-D020\x00\x00',
       b'78109-TG7-DJ10\x00\x00',
       b'78109-TG7-YK20\x00\x00',
+      b'78109-TG8-A420\x00\x00',
+      b'78109-TG8-A520\x00\x00',
       b'78109-TG8-AJ10\x00\x00',
       b'78109-TG8-AJ20\x00\x00',
       b'78109-TG8-AK20\x00\x00',
@@ -1080,8 +1059,14 @@ FW_VERSIONS = {
       b'78109-TGT-AK30\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TG7-A130\x00\x00',
+      b'57114-TG7-A140\x00\x00',
+      b'57114-TG7-A230\x00\x00',
+      b'57114-TG7-A240\x00\x00',
       b'57114-TG7-A630\x00\x00',
       b'57114-TG7-A730\x00\x00',
+      b'57114-TG8-A140\x00\x00',
+      b'57114-TG8-A240\x00\x00',
       b'57114-TG8-A630\x00\x00',
       b'57114-TG8-A730\x00\x00',
       b'57114-TGS-A530\x00\x00',
@@ -1371,10 +1356,9 @@ DBC = {
   CAR.HRV: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY: dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.PILOT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.PILOT_2019: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.PASSPORT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
+  CAR.PILOT: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
+  CAR.PASSPORT: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
+  CAR.RIDGELINE: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
   CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
 }
@@ -1385,9 +1369,9 @@ STEER_THRESHOLD = {
   CAR.CRV_EU: 400,
 }
 
-HONDA_NIDEC_ALT_PCM_ACCEL = set([CAR.ODYSSEY])
-HONDA_NIDEC_ALT_SCM_MESSAGES = set([CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.FREED, CAR.HRV, CAR.ODYSSEY_CHN,
-                                    CAR.PILOT, CAR.PILOT_2019, CAR.PASSPORT, CAR.RIDGELINE])
-HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
-                   CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E])
-HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G])
+HONDA_NIDEC_ALT_PCM_ACCEL = {CAR.ODYSSEY}
+HONDA_NIDEC_ALT_SCM_MESSAGES = {CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.FREED, CAR.HRV, CAR.ODYSSEY_CHN,
+                                CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE}
+HONDA_BOSCH = {CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
+               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E}
+HONDA_BOSCH_ALT_BRAKE_SIGNAL = {CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G}

@@ -1,10 +1,10 @@
+#include "selfdrive/camerad/cameras/camera_common.h"
+
 #include <cassert>
 
-#include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
-
-ExitHandler do_exit;
+#include "selfdrive/hardware/hw.h"
 
 int main(int argc, char *argv[]) {
   if (!Hardware::PC()) {
@@ -15,5 +15,6 @@ int main(int argc, char *argv[]) {
     assert(ret == 0 || Params().getBool("IsOffroad"));  // failure ok while offroad due to offlining cores
   }
 
-  start_camera_server();
+  camerad_thread();
+  return 0;
 }

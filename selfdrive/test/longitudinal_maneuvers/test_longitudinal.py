@@ -120,7 +120,6 @@ class LongitudinalControl(unittest.TestCase):
     params.clear_all()
     params.put_bool("Passive", bool(os.getenv("PASSIVE")))
     params.put_bool("OpenpilotEnabledToggle", True)
-    params.put_bool("CommunityFeaturesToggle", True)
 
   # hack
   def test_longitudinal_setup(self):

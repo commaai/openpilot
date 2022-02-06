@@ -5,6 +5,8 @@
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/util.h"
 
+extern ExitHandler do_exit;
+
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
 namespace {

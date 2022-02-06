@@ -308,10 +308,10 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
                    const ModelOutput &net_outputs, uint64_t timestamp_eof,
-                   float model_execution_time, kj::ArrayPtr<const float> raw_pred) {
+                   float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
-  auto framed = msg.initEvent().initModelV2();
+  auto framed = msg.initEvent(valid).initModelV2();
   framed.setFrameId(vipc_frame_id);
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
@@ -325,14 +325,14 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
 }
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
-                     const ModelOutput &net_outputs, uint64_t timestamp_eof) {
+                     const ModelOutput &net_outputs, uint64_t timestamp_eof, const bool valid) {
   MessageBuilder msg;
-  auto v_mean = net_outputs.pose.velocity_mean;
-  auto r_mean = net_outputs.pose.rotation_mean;
-  auto v_std = net_outputs.pose.velocity_std;
-  auto r_std = net_outputs.pose.rotation_std;
+  const auto &v_mean = net_outputs.pose.velocity_mean;
+  const auto &r_mean = net_outputs.pose.rotation_mean;
+  const auto &v_std = net_outputs.pose.velocity_std;
+  const auto &r_std = net_outputs.pose.rotation_std;
 
-  auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
+  auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
   posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
   posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});

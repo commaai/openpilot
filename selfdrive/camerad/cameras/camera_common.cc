@@ -22,6 +22,8 @@
 #include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
 
+ExitHandler do_exit;
+
 class Debayer {
 public:
   Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s) {
@@ -202,7 +204,6 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setMeasuredGreyFraction(frame_data.measured_grey_fraction);
   framed.setTargetGreyFraction(frame_data.target_grey_fraction);
   framed.setLensPos(frame_data.lens_pos);
-  framed.setLensSag(frame_data.lens_sag);
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
 }
@@ -447,7 +448,7 @@ CameraServerBase::~CameraServerBase() {
   delete pm;
 }
 
-void start_camera_server() {
+void camerad_thread() {
   MultiCameraState cameras{};
   cameras_init(&cameras);
   cameras_open(&cameras);

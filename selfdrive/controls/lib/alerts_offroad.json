@@ -38,7 +38,7 @@
     "severity": 1
   },
   "Offroad_StorageMissing": {
-    "text": "Storage drive not mounted.",
+    "text": "NVMe drive not mounted.",
     "severity": 1
   },
   "Offroad_CarUnrecognized": {

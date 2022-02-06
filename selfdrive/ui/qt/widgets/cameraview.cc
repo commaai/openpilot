@@ -31,8 +31,8 @@ const char frame_fragment_shader[] =
   "#version 150 core\n"
 #else
   "#version 300 es\n"
-#endif
   "precision mediump float;\n"
+#endif
   "uniform sampler2D uTexture;\n"
   "in vec4 vTexCoord;\n"
   "out vec4 colorOut;\n"
@@ -199,13 +199,18 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
 }
 
 void CameraViewWidget::paintGL() {
-  if (latest_texture_id == -1) {
-    glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
-    glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    return;
-  }
+  glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
+  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+  std::lock_guard lk(lock);
+
+  if (latest_texture_id == -1) return;
 
   glViewport(0, 0, width(), height());
+  // sync with the PBO
+  if (wait_fence) {
+    wait_fence->wait();
+  }
 
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
@@ -290,20 +295,33 @@ void CameraViewWidget::vipcThread() {
     }
 
     if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
-      if (!Hardware::EON()) {
-        void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
-        memcpy(texture_buffer, buf->addr, buf->len);
-        gl_buffer->unmap();
+      {
+        std::lock_guard lk(lock);
+        if (!Hardware::EON()) {
+          void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
+          
+          if (texture_buffer == nullptr) {
+            LOGE("gl_buffer->map returned nullptr");
+            continue;
+          }
+          
+          memcpy(texture_buffer, buf->addr, buf->len);
+          gl_buffer->unmap();
 
-        // copy pixels from PBO to texture object
-        glBindTexture(GL_TEXTURE_2D, texture[buf->idx]->frame_tex);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        assert(glGetError() == GL_NO_ERROR);
-        // use glFinish to ensure that the texture has been uploaded.
-        glFinish();
+          // copy pixels from PBO to texture object
+          glBindTexture(GL_TEXTURE_2D, texture[buf->idx]->frame_tex);
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+          glBindTexture(GL_TEXTURE_2D, 0);
+          assert(glGetError() == GL_NO_ERROR);
+
+          wait_fence.reset(new WaitFence());
+
+          // Ensure the fence is in the GPU command queue, or waiting on it might block
+          // https://www.khronos.org/opengl/wiki/Sync_Object#Flushing_and_contexts
+          glFlush();
+        }
+        latest_texture_id = buf->idx;
       }
-      latest_texture_id = buf->idx;
       // Schedule update. update() will be invoked on the gui thread.
       QMetaObject::invokeMethod(this, "update");
 

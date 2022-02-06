@@ -11,8 +11,6 @@
 #include "selfdrive/camerad/cameras/camera_common.h"
 
 // needed by camera_common.cc
-ExitHandler do_exit;
-
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 void cameras_init(MultiCameraState *s) {};
 void cameras_open(MultiCameraState *s) {};

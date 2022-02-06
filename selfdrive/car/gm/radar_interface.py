@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import print_function
 import math
 from cereal import car
 from opendbc.can.parser import CANParser
@@ -15,6 +14,7 @@ NUM_SLOTS = 20
 # messages that are present in DBC
 LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 
+
 def create_radar_can_parser(car_fingerprint):
   if car_fingerprint not in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS, CAR.ESCALADE_ESV):
     return None
@@ -22,17 +22,13 @@ def create_radar_can_parser(car_fingerprint):
   # C1A-ARS3-A by Continental
   radar_targets = list(range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS))
   signals = list(zip(['FLRRNumValidTargets',
-                 'FLRRSnsrBlckd', 'FLRRYawRtPlsblityFlt',
-                 'FLRRHWFltPrsntInt', 'FLRRAntTngFltPrsnt',
-                 'FLRRAlgnFltPrsnt', 'FLRRSnstvFltPrsntInt'] +
-                ['TrkRange'] * NUM_SLOTS + ['TrkRangeRate'] * NUM_SLOTS +
-                ['TrkRangeAccel'] * NUM_SLOTS + ['TrkAzimuth'] * NUM_SLOTS +
-                ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
-                [RADAR_HEADER_MSG] * 7 + radar_targets * 6,
-                [0] * 7 +
-                [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
-                [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
-                [0.0] * NUM_SLOTS + [0] * NUM_SLOTS))
+                      'FLRRSnsrBlckd', 'FLRRYawRtPlsblityFlt',
+                      'FLRRHWFltPrsntInt', 'FLRRAntTngFltPrsnt',
+                      'FLRRAlgnFltPrsnt', 'FLRRSnstvFltPrsntInt'] +
+                     ['TrkRange'] * NUM_SLOTS + ['TrkRangeRate'] * NUM_SLOTS +
+                     ['TrkRangeAccel'] * NUM_SLOTS + ['TrkAzimuth'] * NUM_SLOTS +
+                     ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
+                     [RADAR_HEADER_MSG] * 7 + radar_targets * 6))
 
   checks = list({(s[1], 14) for s in signals})
 

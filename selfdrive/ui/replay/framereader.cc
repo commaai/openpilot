@@ -1,7 +1,10 @@
 #include "selfdrive/ui/replay/framereader.h"
+#include "selfdrive/ui/replay/util.h"
 
 #include <cassert>
 #include "libyuv.h"
+
+#include "cereal/visionipc/visionbuf.h"
 
 namespace {
 
@@ -13,7 +16,8 @@ struct buffer_data {
 
 int readPacket(void *opaque, uint8_t *buf, int buf_size) {
   struct buffer_data *bd = (struct buffer_data *)opaque;
-  buf_size = std::min((size_t)buf_size, bd->size - bd->offset);
+  assert(bd->offset <= bd->size);
+  buf_size = std::min((size_t)buf_size, (size_t)(bd->size - bd->offset));
   if (!buf_size) return AVERROR_EOF;
 
   memcpy(buf, bd->data + bd->offset, buf_size);
@@ -26,7 +30,7 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
   for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
     if (*p == *hw_pix_fmt) return *p;
   }
-  printf("Please run replay with the --no-cuda flag!\n");
+  rWarning("Please run replay with the --no-cuda flag!");
   // fallback to YUV420p
   *hw_pix_fmt = AV_PIX_FMT_NONE;
   return AV_PIX_FMT_YUV420P;
@@ -34,7 +38,9 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
 
 }  // namespace
 
-FrameReader::FrameReader() {}
+FrameReader::FrameReader() {
+  av_log_set_level(AV_LOG_QUIET);
+}
 
 FrameReader::~FrameReader() {
   for (AVPacket *pkt : packets) {
@@ -78,13 +84,13 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
   if (ret != 0) {
     char err_str[1024] = {0};
     av_strerror(ret, err_str, std::size(err_str));
-    printf("Error loading video - %s\n", err_str);
+    rError("Error loading video - %s", err_str);
     return false;
   }
 
   ret = avformat_find_stream_info(input_ctx, nullptr);
   if (ret < 0) {
-    printf("cannot find a video stream in the input file\n");
+    rError("cannot find a video stream in the input file");
     return false;
   }
 
@@ -98,10 +104,11 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
 
   width = (decoder_ctx->width + 3) & ~3;
   height = decoder_ctx->height;
+  visionbuf_compute_aligned_width_and_height(width, height, &aligned_width, &aligned_height);
 
   if (has_cuda_device && !no_cuda) {
     if (!initHardwareDecoder(AV_HWDEVICE_TYPE_CUDA)) {
-      printf("No CUDA capable device was found. fallback to CPU decoding.\n");
+      rWarning("No CUDA capable device was found. fallback to CPU decoding.");
     } else {
       nv12toyuv_buffer.resize(getYUVSize());
     }
@@ -131,8 +138,8 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   for (int i = 0;; i++) {
     const AVCodecHWConfig *config = avcodec_get_hw_config(decoder_ctx->codec, i);
     if (!config) {
-      printf("decoder %s does not support hw device type %s.\n",
-             decoder_ctx->codec->name, av_hwdevice_get_type_name(hw_device_type));
+      rWarning("decoder %s does not support hw device type %s.", decoder_ctx->codec->name,
+               av_hwdevice_get_type_name(hw_device_type));
       return false;
     }
     if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hw_device_type) {
@@ -145,7 +152,7 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   if (ret < 0) {
     hw_pix_fmt = AV_PIX_FMT_NONE;
     has_cuda_device = false;
-    printf("Failed to create specified HW device %d.\n", ret);
+    rWarning("Failed to create specified HW device %d.", ret);
     return false;
   }
 
@@ -188,20 +195,21 @@ bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
 AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
   int ret = avcodec_send_packet(decoder_ctx, pkt);
   if (ret < 0) {
-    printf("Error sending a packet for decoding\n");
+    rError("Error sending a packet for decoding: %d", ret);
     return nullptr;
   }
 
   av_frame_.reset(av_frame_alloc());
   ret = avcodec_receive_frame(decoder_ctx, av_frame_.get());
   if (ret != 0) {
+    rError("avcodec_receive_frame error: %d", ret);
     return nullptr;
   }
 
   if (av_frame_->format == hw_pix_fmt) {
     hw_frame.reset(av_frame_alloc());
     if ((ret = av_hwframe_transfer_data(hw_frame.get(), av_frame_.get(), 0)) < 0) {
-      printf("error transferring the data from GPU to CPU\n");
+      rError("error transferring the data from GPU to CPU");
       return nullptr;
     }
     return hw_frame.get();
@@ -218,19 +226,21 @@ bool FrameReader::copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
     libyuv::NV12ToI420(f->data[0], f->linesize[0], f->data[1], f->linesize[1],
                        y, width, u, width / 2, v, width / 2, width, height);
     libyuv::I420ToRGB24(y, width, u, width / 2, v, width / 2,
-                        rgb, width * 3, width, height);
+                        rgb, aligned_width * 3, width, height);
   } else {
     if (yuv) {
       uint8_t *u = yuv + width * height;
       uint8_t *v = u + (width / 2) * (height / 2);
-      memcpy(yuv, f->data[0], width * height);
-      memcpy(u, f->data[1], width / 2 * height / 2);
-      memcpy(v, f->data[2], width / 2 * height / 2);
+      libyuv::I420Copy(f->data[0], f->linesize[0],
+                       f->data[1], f->linesize[1],
+                       f->data[2], f->linesize[2],
+                       yuv, width, u, width / 2, v, width / 2,
+                       width, height);
     }
     libyuv::I420ToRGB24(f->data[0], f->linesize[0],
                         f->data[1], f->linesize[1],
                         f->data[2], f->linesize[2],
-                        rgb, width * 3, width, height);
+                        rgb, aligned_width * 3, width, height);
   }
   return true;
 }

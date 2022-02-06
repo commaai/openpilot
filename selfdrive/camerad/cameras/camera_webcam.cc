@@ -24,6 +24,8 @@ const int DRIVER_CAMERA_ID = util::getenv("DRIVERCAM_ID", 2);
 #define FRAME_WIDTH_FRONT  1152
 #define FRAME_HEIGHT_FRONT 864
 
+extern ExitHandler do_exit;
+
 namespace {
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
