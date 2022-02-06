@@ -98,7 +98,6 @@ class CarState(CarStateBase):
 
     # Update ACC radar status.
     self.acc_04_stock_values = ext_cp.vl["ACC_04"]
-    self.acc_13_stock_values = ext_cp.vl["ACC_13"]
     self.acc_type = ext_cp.vl["ACC_06"]["ACC_Typ"]
     self.tsk_status = pt_cp.vl["TSK_06"]["TSK_Status"]
     if self.tsk_status == 2:
@@ -274,15 +273,12 @@ class MqbExtraSignals:
     ("AWV2_Freigabe", "ACC_10"),                 # FCW brake jerk release
     ("ANB_Teilbremsung_Freigabe", "ACC_10"),     # AEB partial braking release
     ("ANB_Zielbremsung_Freigabe", "ACC_10"),     # AEB target braking release
-    ("Unknown_Osc_1", "ACC_13"),                 # Unknown oscillating value (checksum/xor?)
-    ("Unknown_Osc_2", "ACC_13"),                 # Unknown oscillating value (checksum/xor?)
   ]
   fwd_radar_checks = [
     ("ACC_06", 50),                                 # From J428 ACC radar control module
     ("ACC_10", 50),                                 # From J428 ACC radar control module
     ("ACC_02", 17),                                 # From J428 ACC radar control module
     ("ACC_04", 17),                                 # From J428 ACC radar control module
-    ("ACC_13", 17),                                 # From J428 ACC radar control module
   ]
   bsm_radar_signals = [
     ("SWA_Infostufe_SWA_li", "SWA_01"),          # Blind spot object info, left

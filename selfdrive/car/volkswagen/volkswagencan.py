@@ -98,13 +98,3 @@ def create_mqb_acc_07_control(packer, bus, enabled, accel, acc_hold_request, acc
   }
 
   return packer.make_can_msg("ACC_07", bus, values, idx)
-
-def create_mqb_acc_13_control(packer, bus, enabled, acc_13_stock_values):
-  values = acc_13_stock_values.copy()
-
-  values.update({
-    "Unknown_Status": 15,
-    "ACC_Engaged": enabled,
-  })
-
-  return packer.make_can_msg("ACC_13", bus, values)
