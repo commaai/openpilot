@@ -12,9 +12,9 @@
 
 // needed by camera_common.cc
 void camera_autoexposure(CameraState *s, float grey_frac) {}
-void cameras_init(MultiCameraState *s) {};
-void cameras_open(MultiCameraState *s) {};
-void cameras_run(MultiCameraState *s) {};
+void cameras_init(MultiCameraState *s) {}
+void cameras_open(MultiCameraState *s) {}
+void cameras_run(MultiCameraState *s) {}
 
 int main() {
   // set up fake camerabuf
