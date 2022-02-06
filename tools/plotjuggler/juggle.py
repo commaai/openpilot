@@ -93,7 +93,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
     r = Route(route_or_segment_name.route_name.canonical_name)
     logs = r.qlog_paths() if qlog else r.log_paths()
 
-  segment_end = segment_start + segment_count if segment_count else -1
+  segment_end = segment_start + segment_count if segment_count else None
   logs = logs[segment_start:segment_end]
 
   if None in logs:
