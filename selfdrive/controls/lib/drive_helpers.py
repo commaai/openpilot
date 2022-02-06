@@ -93,7 +93,7 @@ def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
     if b.type == car.CarState.ButtonEvent.Type.accelCruise and v_cruise_last < 250:
       return v_cruise_last
 
-  return int(round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
+  return round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX))
 
 
 def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):

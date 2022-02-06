@@ -49,7 +49,7 @@ class CarController():
   def update(self, c, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, hud_speed,
              left_lane, right_lane, left_lane_depart, right_lane_depart):
     # Steering Torque
-    new_steer = int(round(actuators.steer * self.p.STEER_MAX))
+    new_steer = round(actuators.steer * self.p.STEER_MAX)
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
     self.steer_rate_limited = new_steer != apply_steer
 

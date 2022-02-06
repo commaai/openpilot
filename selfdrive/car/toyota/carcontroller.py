@@ -44,7 +44,7 @@ class CarController():
     pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
-    new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
+    new_steer = round(actuators.steer * CarControllerParams.STEER_MAX)
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, CarControllerParams)
     self.steer_rate_limited = new_steer != apply_steer
 

@@ -21,7 +21,7 @@ class CarController():
 
     if c.active:
       # calculate steer and also set limits due to driver torque
-      new_steer = int(round(c.actuators.steer * CarControllerParams.STEER_MAX))
+      new_steer = round(c.actuators.steer * CarControllerParams.STEER_MAX)
       apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last,
                                                   CS.out.steeringTorque, CarControllerParams)
       self.steer_rate_limited = new_steer != apply_steer
