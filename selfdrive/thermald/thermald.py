@@ -253,10 +253,7 @@ def thermald_thread(end_event, hw_queue):
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
 
       # Set ignition based on any panda connected
-      onroad_conditions["ignition"] = False
-      for pandaState in pandaStates:
-        if pandaState.pandaType != log.PandaState.PandaType.unknown:
-          onroad_conditions["ignition"] |= pandaState.ignitionLine or pandaState.ignitionCan
+      onroad_conditions["ignition"] = any(ps.ignitionLine or ps.ignitionCan for ps in pandaStates if ps != pandaType != log.PandaState.PandaType.unknown)
 
       pandaState = pandaStates[0]
 
