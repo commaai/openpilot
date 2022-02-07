@@ -1,5 +1,8 @@
 #include "selfdrive/ui/qt/offroad/wifiManager.h"
 
+#include "selfdrive/ui/qt/widgets/prime.h"
+#include "selfdrive/ui/ui.h"
+
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
@@ -397,8 +400,13 @@ void WifiManager::addTetheringConnection() {
   address["prefix"] = 24u;
   connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
   connection["ipv4"]["gateway"] = "192.168.43.1";
-  connection["ipv4"]["route-metric"] = 1100;
   connection["ipv6"]["method"] = "ignore";
+
+  // Allow internet forwarding when no prime, or bring your own SIM
+  int prime_type = uiState()->prime_type;
+  if (prime_type == PrimeType::NONE || prime_type == PrimeType::BYOS) {
+    connection["ipv4"]["route-metric"] = 1100;
+  }
 
   call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
