@@ -333,13 +333,13 @@ def primeActivated(activated):
 @dispatcher.add_method
 def setUploadLimit(speed_kbps):
   if not TICI:
-    return {"success": 0}
+    return {"success": 0, "error": "only supported on comma three"}
 
   try:
     HARDWARE.set_upload_limit(speed_kbps)
     return {"success": 1}
   except subprocess.CalledProcessError as e:
-    return {"success": 0, "stdout": e.stdout, "stderr": e.stderr}
+    return {"success": 0, "error": "failed to set limit", "stdout": e.stdout, "stderr": e.stderr}
 
 
 def startLocalProxy(global_end_event, remote_ws_uri, local_port):
