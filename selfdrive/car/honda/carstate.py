@@ -163,7 +163,7 @@ class CarState(CarStateBase):
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
     self.brake_error = False
-    self.brake_switch_on = 0  # frames brake switch has been on
+    self.brake_switch_prev = False
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
 
