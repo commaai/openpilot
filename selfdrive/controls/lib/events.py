@@ -189,7 +189,7 @@ class StartupAlert(Alert):
 
 # ********** helper functions **********
 def get_display_speed(speed_ms: float, metric: bool) -> str:
-  speed = round(speed_ms * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
+  speed = int(round(speed_ms * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)))
   unit = 'km/h' if metric else 'mph'
   return f"{speed} {unit}"
 

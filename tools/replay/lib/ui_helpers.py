@@ -195,7 +195,7 @@ def plot_model(m, img, calibration, top_down):
 
     _, py_top = to_topdown_pt(x + x_std, y)
     px, py_bottom = to_topdown_pt(x - x_std, y)
-    top_down[1][round(px - 4):round(px + 4), py_top:py_bottom] = find_color(top_down[0], YELLOW)
+    top_down[1][int(round(px - 4)):int(round(px + 4)), py_top:py_bottom] = find_color(top_down[0], YELLOW)
 
   for path, prob, _ in zip(m.laneLines, m.laneLineProbs, m.laneLineStds):
     color = (0, int(255 * prob), 0)
@@ -245,16 +245,16 @@ def maybe_update_radar_points(lt, lid_overlay):
 def get_blank_lid_overlay(UP):
   lid_overlay = np.zeros((UP.lidar_x, UP.lidar_y), 'uint8')
   # Draw the car.
-  lid_overlay[round(UP.lidar_car_x - UP.car_hwidth):
-    round(UP.lidar_car_x + UP.car_hwidth), round(UP.lidar_car_y -
-                                                      UP.car_front)] = UP.car_color
-  lid_overlay[round(UP.lidar_car_x - UP.car_hwidth):
-    round(UP.lidar_car_x + UP.car_hwidth), round(UP.lidar_car_y +
-                                                      UP.car_back)] = UP.car_color
-  lid_overlay[round(UP.lidar_car_x - UP.car_hwidth),
-    round(UP.lidar_car_y - UP.car_front):round(
-      UP.lidar_car_y + UP.car_back)] = UP.car_color
-  lid_overlay[round(UP.lidar_car_x + UP.car_hwidth),
-    round(UP.lidar_car_y - UP.car_front):round(
-      UP.lidar_car_y + UP.car_back)] = UP.car_color
+  lid_overlay[int(round(UP.lidar_car_x - UP.car_hwidth)):int(
+    round(UP.lidar_car_x + UP.car_hwidth)), int(round(UP.lidar_car_y -
+                                                      UP.car_front))] = UP.car_color
+  lid_overlay[int(round(UP.lidar_car_x - UP.car_hwidth)):int(
+    round(UP.lidar_car_x + UP.car_hwidth)), int(round(UP.lidar_car_y +
+                                                      UP.car_back))] = UP.car_color
+  lid_overlay[int(round(UP.lidar_car_x - UP.car_hwidth)), int(
+    round(UP.lidar_car_y - UP.car_front)):int(round(
+      UP.lidar_car_y + UP.car_back))] = UP.car_color
+  lid_overlay[int(round(UP.lidar_car_x + UP.car_hwidth)), int(
+    round(UP.lidar_car_y - UP.car_front)):int(round(
+      UP.lidar_car_y + UP.car_back))] = UP.car_color
   return lid_overlay
