@@ -220,6 +220,8 @@ class Tici(HardwareBase):
 
   @staticmethod
   def set_upload_limit(speed_kbps: int) -> None:
+    speed_kbps = int(speed_kbps)  # Ensure integer value
+
     adapter = "wwan0"
     tc = ["sudo", "tc"]
 

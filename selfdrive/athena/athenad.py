@@ -335,8 +335,6 @@ def setUploadLimit(speed_kbps):
   if not TICI:
     return {"success": 0}
 
-  speed_kbps = int(speed_kbps)
-
   try:
     HARDWARE.set_upload_limit(speed_kbps)
     return {"success": 1}
