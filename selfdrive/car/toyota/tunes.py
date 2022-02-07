@@ -72,6 +72,17 @@ def set_lat_tune(tune, name):
     tune.lqr.l = [0.3233671, 0.3185757]
     tune.lqr.dcGain = 0.002237852961363602
 
+  elif name == LatTunes.LQR_PV:
+    tune.init('lqr')
+    tune.lqr.scale = 1650.0
+    tune.lqr.ki = 0.028
+    tune.lqr.a = [0., 1., -0.22619643, 1.21822268]
+    tune.lqr.b = [-1.92006585e-04, 3.95603032e-05]
+    tune.lqr.c = [1., 0.]
+    tune.lqr.k = [-110.73572306, 451.22718255]
+    tune.lqr.l = [0.3233671, 0.3185757]
+    tune.lqr.dcGain = 0.0028
+	
   elif 'PID' in str(name):
     tune.init('pid')
     tune.pid.kiBP = [0.0]
