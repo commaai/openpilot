@@ -300,15 +300,20 @@ def reboot():
 
 @dispatcher.add_method
 def uploadFileToUrl(fn, url, headers):
-  return uploadFilesToUrls([[fn, url, headers, False]])
+  return uploadFilesToUrls([{
+    "fn": fn,
+    "url": url,
+    "headers": headers,
+  }])
 
 
 @dispatcher.add_method
 def uploadFilesToUrls(files_data):
   items = []
   failed = []
-  for fn, url, headers, allow_cellular in files_data:
-    if len(fn) == 0 or fn[0] == '/' or '..' in fn:
+  for file in files_data:
+    fn = file.get('fn', '')
+    if len(fn) == 0 or fn[0] == '/' or '..' in fn or 'url' not in file:
       failed.append(fn)
       continue
     path = os.path.join(ROOT, fn)
@@ -316,7 +321,14 @@ def uploadFilesToUrls(files_data):
       failed.append(fn)
       continue
 
-    item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None, allow_cellular=allow_cellular)
+    item = UploadItem(
+      path=path,
+      url=file['url'],
+      headers=file.get('headers', {}),
+      created_at=int(time.time() * 1000),
+      id=None,
+      allow_cellular=file.get('allow_cellular', False),
+    )
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
     item = item._replace(id=upload_id)
     upload_queue.put_nowait(item)
