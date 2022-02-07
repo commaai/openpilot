@@ -5,10 +5,11 @@ from selfdrive.controls.lib.drive_helpers import get_steer_max
 from cereal import log
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from common.realtime import DT_CTRL
+from common.numpy_fast import clip
 
 NX = 2
 NU = 1
-N_live_param = 4
+N_live_param = 1
 
 # TODO:
 # - update model structure?
@@ -30,6 +31,7 @@ class LatControlSteerModel(LatControl):
     self.B = self.B.reshape((NX,))
     # CP.lateralTuning.steerModel.?
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
+    self.torque = 0.0
 
 
   def reset(self):
@@ -46,7 +48,8 @@ class LatControlSteerModel(LatControl):
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
     # live_param_list = ['roll', 'speeds', 'speed_squared', 'speed_times_roll']
-    live_param = np.array([params.roll, CS.vEgo, CS.vEgo ** 2, CS.vEgo * params.roll])
+    # live_param = np.array([params.roll, CS.vEgo, CS.vEgo ** 2, CS.vEgo * params.roll])
+    live_param = np.array([params.roll])
 
     model_log.steeringAngleDesiredDeg = angle_steers_des
 
@@ -63,14 +66,25 @@ class LatControlSteerModel(LatControl):
       # offset does not contribute to resistive torque
       torque_np = self.M @ (self.A @ self.xcurrent + self.R @ live_param +
                 (self.xcurrent - np.array([angle_steers_des_no_offset, self.xcurrent[1,]]))/DT_CTRL )
+      # torque_np = self.M @ (self.A @ np.array([angle_steers_des_no_offset, 0.0]) + self.R @ live_param)
 
       # TODO: needed?
       # steer_feedforward = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
 
-      # update state estimate with forward simulation
-      self.xcurrent = self.xcurrent + DT_CTRL * ((self.A @ self.xcurrent) + (self.B * torque_np) + (self.R @ live_param))
-      output_steer = float(torque_np[0])
+      STEER_DELTA_UP = 10/1500       # 1.5s time to peak torque
+      STEER_DELTA_DOWN = 25/1500
+      if self.torque > 0:
+          torque_np = clip(torque_np, max(self.torque - STEER_DELTA_DOWN, -STEER_DELTA_UP),
+                          self.torque + STEER_DELTA_UP)
+      else:
+          torque_np = clip(torque_np, self.torque - STEER_DELTA_UP,
+                  min(self.torque + STEER_DELTA_DOWN, STEER_DELTA_UP))
 
+      output_steer = float(clip(torque_np, -1.0, 1.0))
+      # update state estimate with forward simulation
+      self.xcurrent = self.xcurrent + DT_CTRL * ((self.A @ self.xcurrent) + (self.B * output_steer) + (self.R @ live_param))
+
+      self.torque = output_steer
       model_log.active = True
 
     model_log.steeringAngleDeg = float(self.xcurrent[0])
