@@ -251,10 +251,14 @@ def thermald_thread(end_event, hw_queue):
     msg = read_thermal(thermal_config)
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
-      pandaState = pandaStates[0]
 
-      if pandaState.pandaType != log.PandaState.PandaType.unknown:
-        onroad_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
+      # Set ignition based on any panda connected
+      onroad_conditions["ignition"] = False
+      for pandaState in pandaStates:
+        if pandaState.pandaType != log.PandaState.PandaType.unknown:
+          onroad_conditions["ignition"] |= pandaState.ignitionLine or pandaState.ignitionCan
+
+      pandaState = pandaStates[0]
 
       in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
       usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
