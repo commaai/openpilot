@@ -218,6 +218,35 @@ class Tici(HardwareBase):
 
     return network_strength
 
+  @staticmethod
+  def set_upload_limit(speed_kbps: int) -> None:
+    speed_kbps = int(speed_kbps)  # Ensure integer value
+
+    adapter = "wwan0"
+    tc = ["sudo", "tc"]
+
+    # check, cmd
+    commands = [
+      # Clean up old rules
+      (False, tc + ["qdisc", "del", "dev", adapter, "root"]),
+
+      # Create root Hierarchy Token Bucket that sends all trafic to 1:20
+      (True, tc + ["qdisc", "add", "dev", adapter, "root", "handle", "1:", "htb", "default", "20"]),
+
+      # Create class 1:20 with specified rate limit
+      (True, tc + ["class", "add", "dev", adapter, "parent", "1:", "classid", "1:20", "htb", "rate", f"{speed_kbps}kbit"]),
+
+      # Create universal 32 bit filter on adapter that sends all outbound ip traffic through the class
+      (True, tc + ["filter", "add", "dev", adapter, "parent", "1:", "protocol", "ip", "prio", "10", "u32", "match", "ip", "dst", "0.0.0.0/0", "flowid", "1:20"]),
+    ]
+
+    # Disable limits
+    if speed_kbps == -1:
+      commands = commands[:1]
+
+    for check, cmd in commands:
+      subprocess.run(cmd, check=check)
+
   def get_modem_version(self):
     try:
       modem = self.get_modem()
