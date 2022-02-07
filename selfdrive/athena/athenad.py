@@ -12,6 +12,7 @@ import socket
 import threading
 import time
 import tempfile
+import subprocess
 from collections import namedtuple
 from functools import partial
 from typing import Any, Dict
@@ -27,7 +28,7 @@ from common.file_helpers import CallbackReader
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE, PC
+from selfdrive.hardware import HARDWARE, PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
@@ -327,6 +328,18 @@ def cancelUpload(upload_id):
 @dispatcher.add_method
 def primeActivated(activated):
   return {"success": 1}
+
+
+@dispatcher.add_method
+def setUploadLimit(speed_kbps):
+  if not TICI:
+    return {"success": 0, "error": "only supported on comma three"}
+
+  try:
+    HARDWARE.set_upload_limit(speed_kbps)
+    return {"success": 1}
+  except subprocess.CalledProcessError as e:
+    return {"success": 0, "error": "failed to set limit", "stdout": e.stdout, "stderr": e.stderr}
 
 
 def startLocalProxy(global_end_event, remote_ws_uri, local_port):
