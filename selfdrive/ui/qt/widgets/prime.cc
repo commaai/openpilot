@@ -312,14 +312,14 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
   } else {
     popup->reject();
 
-    bool prime = json["prime"].toBool();
+    int prime_type = json["prime"].toInt();
 
-    if (uiState()->has_prime != prime) {
-      uiState()->has_prime = prime;
-      Params().putBool("HasPrime", prime);
+    if (uiState()->prime_type != prime_type) {
+      uiState()->prime_type = prime_type;
+      Params().put("PrimeType", std::to_string(prime_type));
     }
 
-    if (prime) {
+    if (prime_type) {
       mainLayout->setCurrentWidget(primeUser);
     } else {
       mainLayout->setCurrentWidget(primeAd);

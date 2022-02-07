@@ -127,7 +127,7 @@ public:
   UIScene scene = {};
 
   bool awake;
-  bool has_prime = false;
+  int prime_type = 0;
 
   QTransform car_space_transform;
   bool wide_camera;
