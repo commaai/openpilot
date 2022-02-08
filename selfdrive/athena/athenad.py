@@ -331,12 +331,12 @@ def primeActivated(activated):
 
 
 @dispatcher.add_method
-def setUploadLimit(speed_kbps):
+def setBandwithLimit(upload_speed_kbps, download_speed_kbps):
   if not TICI:
     return {"success": 0, "error": "only supported on comma three"}
 
   try:
-    HARDWARE.set_upload_limit(speed_kbps)
+    HARDWARE.set_bandwidth_limit(upload_speed_kbps, download_speed_kbps)
     return {"success": 1}
   except subprocess.CalledProcessError as e:
     return {"success": 0, "error": "failed to set limit", "stdout": e.stdout, "stderr": e.stderr}
