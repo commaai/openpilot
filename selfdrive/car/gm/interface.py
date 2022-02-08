@@ -175,12 +175,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.26], [0.01, 0.021]]
-      #ret.lateralTuning.pid.kdBP = [0.] removed from cereal
-      #ret.lateralTuning.pid.kdV = [0.316]  # very sensitive to changes greater than 0.001
-      ret.lateralTuning.pid.kf = 0.0001
-      #steering parameters from Geniuth
+      ret.lateralTuning.pid.kf = 0.0002
       ret.steerMaxBP = [10., 25.]
-      ret.steerMaxV = [1., 1.2]
+      ret.steerMaxV = [1., 1.15]
       
     elif candidate == CAR.EQUINOX_NR:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -242,16 +239,23 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.36]
 
-    # TODO: Pedal long needs a tune, but this one will probably cause a crash...
-    # if ret.enableGasInterceptor and candidate == CAR.BOLT_NR:
-    #   # Assumes the Bolt is using L-Mode for regen braking.
-    #   ret.longitudinalTuning.kpBP = [0.0, 5.0, 10.0, 20.0, 35.0]
-    #   ret.longitudinalTuning.kpV = [0.6, 0.95, 1.19, 1.27, 1.18]
-    #   ret.longitudinalTuning.kiBP = [0., 35.]
-    #   ret.longitudinalTuning.kiV = [0.31, 0.26]
-    #   ret.stoppingDecelRate = 0.2
-    #   ret.stopAccel = 0.
-    #   ret.stoppingControl = True
+
+    # TODO: Needs refinement for stop and go 
+    if ret.enableGasInterceptor and candidate == CAR.BOLT_NR:
+    # Assumes the Bolt is using L-Mode for regen braking.
+      ret.longitudinalTuning.kpBP = [0., 35]
+      ret.longitudinalTuning.kpV = [0.25, 0.49] 
+      ret.longitudinalTuning.kiBP = [0., 35.] 
+      ret.longitudinalTuning.kiV = [0.22, 0.34]
+      ret.stoppingDecelRate = 0.2  # reach stopping target smoothly, brake_travel/s while trying to stop
+      ret.stopAccel = 0. # Required acceleraton to keep vehicle stationary
+      ret.vEgoStopping = 0.5  # Speed at which the car goes into stopping state, when car starts requesting stopping accel
+      ret.vEgoStarting = 0.5  # Speed at which the car goes into starting state, when car starts requesting starting accel,
+      # vEgoStarting needs to be > or == vEgoStopping to avoid state transition oscillation
+      ret.stoppingControl = True
+      ret.longitudinalTuning.deadzoneBP = [0.]
+      ret.longitudinalTuning.deadzoneV = [0.]
+
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
