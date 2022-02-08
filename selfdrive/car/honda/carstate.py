@@ -270,7 +270,8 @@ class CarState(CarStateBase):
       if len(brake_switch_vals) > 1:
         self.brake_switch_prev = brake_switch_vals[-2] != 0
       ret.brakePressed = (cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0) or (brake_switch and self.brake_switch_prev)
-      self.brake_switch_prev = brake_switch
+      if len(brake_switch_vals):
+        self.brake_switch_prev = brake_switch
 
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
