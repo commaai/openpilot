@@ -115,7 +115,6 @@ def main(sm=None, pm=None):
   cloudlog.info("paramsd got CarParams")
 
   min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
-  start_min_sr, start_max_sr = 0.7 * CP.steerRatio, 1.3 * CP.steerRatio
 
   params = params_reader.get("LiveParameters")
 
@@ -152,11 +151,6 @@ def main(sm=None, pm=None):
   # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
   # Without a way to detect this we have to reset the stiffness every drive
   params['stiffnessFactor'] = 1.0
-  # When the steer ratio is outside the allowed start bounds (stricter than operational bounds)
-  # reset it to default platform values. This may be due to the unbounded variance of stiffness when then
-  # gets persisted across routes
-  if params['steerRatio'] < start_min_sr or params['steerRatio'] > start_max_sr:
-    params['steerRatio'] = CP.steerRatio
   learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']))
   angle_offset_average = params['angleOffsetAverageDeg']
   angle_offset = angle_offset_average
