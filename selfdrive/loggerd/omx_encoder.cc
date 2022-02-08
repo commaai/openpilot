@@ -268,7 +268,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
 
     vp_type.eProfile = OMX_VIDEO_VP8ProfileMain;
     vp_type.bErrorResilientMode = OMX_FALSE;
-    vp_type.nDCTPartitions = 8;
+    vp_type.nDCTPartitions = 0;
 
     OMX_CHECK(OMX_SetParameter(this->handle, index_type, &vp_type));
   }
