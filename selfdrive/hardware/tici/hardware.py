@@ -234,6 +234,8 @@ class Tici(HardwareBase):
       # Clean up old rules
       (False, tc + ["qdisc", "del", "dev", adapter, "root"]),
       (False, tc + ["qdisc", "del", "dev", ifb, "root"]),
+      (False, tc + ["qdisc", "del", "dev", adapter, "ingress"]),
+      (False, tc + ["qdisc", "del", "dev", ifb, "ingress"]),
 
       # Bring ifb0 down
       (False, sudo + ["ip", "link", "set", "dev", ifb, "down"]),
