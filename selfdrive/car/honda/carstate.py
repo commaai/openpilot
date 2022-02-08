@@ -164,6 +164,7 @@ class CarState(CarStateBase):
 
     self.brake_error = False
     self.brake_switch_prev = False
+    self.brake_switch_active = False
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
 
@@ -265,13 +266,14 @@ class CarState(CarStateBase):
       # brake switch has shown some single time step noise, so only considered when
       # switch is on for at least 2 consecutive CAN samples
       # brake switch rises earlier than brake pressed but is never 1 when in park
-      brake_switch = cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0
       brake_switch_vals = cp.updated["POWERTRAIN_DATA"]["BRAKE_SWITCH"]
-      if len(brake_switch_vals) > 1:
-        self.brake_switch_prev = brake_switch_vals[-2] != 0
-      ret.brakePressed = (cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0) or (brake_switch and self.brake_switch_prev)
+      brake_switch = cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0
       if len(brake_switch_vals):
+        if len(brake_switch_vals) > 1:
+          self.brake_switch_prev = brake_switch_vals[-2] != 0
+        self.brake_switch_active = brake_switch and self.brake_switch_prev
         self.brake_switch_prev = brake_switch
+      ret.brakePressed = (cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0) or self.brake_switch_active
 
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
