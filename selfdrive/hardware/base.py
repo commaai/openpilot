@@ -68,7 +68,7 @@ class HardwareBase(ABC):
     pass
 
   @staticmethod
-  def set_upload_limit(speed_kbps: int) -> None:
+  def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
     pass
 
   @abstractmethod
