@@ -49,6 +49,7 @@ PROCS = {
 if EON:
   PROCS.update({
     "selfdrive.hardware.eon.androidd": 0.4,
+    "selfdrive.hardware.eon.shutdownd": 0.4,
   })
 
 if TICI:
