@@ -22,6 +22,7 @@ def main():
       if prop is not None and len(prop) > 0:
         os.system("pkill -9 loggerd")
         params.put("LastSystemShutdown", f"'{prop}' {datetime.datetime.now()}")
+        os.sync()
 
         time.sleep(120)
         cloudlog.error('shutdown false positive')
