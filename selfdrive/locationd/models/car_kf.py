@@ -75,7 +75,7 @@ class CarKalman(KalmanFilter):
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(10.0)**2),
     ObservationKind.ROAD_ROLL: np.atleast_2d(math.radians(1.0)**2),
     ObservationKind.STEER_RATIO: np.atleast_2d(5**2),
-    ObservationKind.STIFFNESS: np.atleast_2d(1**2),
+    ObservationKind.STIFFNESS: np.atleast_2d(0.5**2),
     ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.1**2),
   }
 
