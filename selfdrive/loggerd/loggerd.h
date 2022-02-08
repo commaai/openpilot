@@ -98,9 +98,9 @@ const LogCameraInfo cameras_logged[] = {
   },
 };
 const LogCameraInfo qcam_info = {
-  .filename = "qcamera.ts",
+  .filename = "qcamera.webm",
   .fps = MAIN_FPS,
-  .bitrate = 256000,
+  .bitrate = 128000,
   .is_h265 = false,
   .downscale = true,
   .frame_width = Hardware::TICI() ? 526 : 480,

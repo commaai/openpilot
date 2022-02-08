@@ -163,6 +163,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   this->height = height;
   this->fps = fps;
   this->remuxing = !h265;
+  this->bitrate = bitrate;
 
   this->downscale = downscale;
   if (this->downscale) {
@@ -171,7 +172,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
     this->v_ptr2 = (uint8_t *)malloc(this->width*this->height/4);
   }
 
-  auto component = (OMX_STRING)(h265 ? "OMX.qcom.video.encoder.hevc" : "OMX.qcom.video.encoder.avc");
+  auto component = (OMX_STRING)(h265 ? "OMX.qcom.video.encoder.hevc" : "OMX.qcom.video.encoder.vp8");
   int err = OMX_GetHandle(&this->handle, component, this, &omx_callbacks);
   if (err != OMX_ErrorNone) {
     LOGE("error getting codec: %x", err);
@@ -214,7 +215,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   if (h265) {
     out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingHEVC;
   } else {
-    out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
+    out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingVP8;
   }
   out_port.format.video.eColorFormat = OMX_COLOR_FormatUnused;
 
@@ -250,28 +251,18 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
 
     OMX_CHECK(OMX_SetParameter(this->handle, index_type, (OMX_PTR) &hevc_type));
   } else {
-    // setup h264
-    OMX_VIDEO_PARAM_AVCTYPE avc = { 0 };
-    avc.nSize = sizeof(avc);
-    avc.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
-    OMX_CHECK(OMX_GetParameter(this->handle, OMX_IndexParamVideoAvc, &avc));
+    // setup vp8
+    OMX_VIDEO_PARAM_VP8TYPE vp_type = { 0 };
+    OMX_INDEXTYPE index_type = (OMX_INDEXTYPE) OMX_IndexParamVideoVp8;
 
-    avc.nBFrames = 0;
-    avc.nPFrames = 15;
+    vp_type.nSize = sizeof(vp_type);
+    vp_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
+    OMX_CHECK(OMX_GetParameter(this->handle, index_type, &vp_type));
 
-    avc.eProfile = OMX_VIDEO_AVCProfileHigh;
-    avc.eLevel = OMX_VIDEO_AVCLevel31;
+    vp_type.eLevel = OMX_VIDEO_VP8Level_Version3; // What about 0, 1, 2?
+    vp_type.eProfile = OMX_VIDEO_VP8ProfileMain;
 
-    avc.nAllowedPictureTypes |= OMX_VIDEO_PictureTypeB;
-    avc.eLoopFilterMode = OMX_VIDEO_AVCLoopFilterEnable;
-
-    avc.nRefFrames = 1;
-    avc.bUseHadamard = OMX_TRUE;
-    avc.bEntropyCodingCABAC = OMX_TRUE;
-    avc.bWeightedPPrediction = OMX_TRUE;
-    avc.bconstIpred = OMX_TRUE;
-
-    OMX_CHECK(OMX_SetParameter(this->handle, OMX_IndexParamVideoAvc, &avc));
+    OMX_CHECK(OMX_SetParameter(this->handle, index_type, &vp_type));
   }
 
 
@@ -351,14 +342,16 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
   }
 
   if (e->remuxing) {
-    if (!e->wrote_codec_config && e->codec_config_len > 0) {
+    if (!e->wrote_codec_config) {
+      // This causes av_write_frame to segfault
       // extradata will be freed by av_free() in avcodec_free_context()
-      e->codec_ctx->extradata = (uint8_t*)av_mallocz(e->codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
-      e->codec_ctx->extradata_size = e->codec_config_len;
-      memcpy(e->codec_ctx->extradata, e->codec_config, e->codec_config_len);
+      // e->codec_ctx->extradata = (uint8_t*)av_mallocz(e->codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
+      // e->codec_ctx->extradata_size = e->codec_config_len;
+      // memcpy(e->codec_ctx->extradata, e->codec_config, e->codec_config_len);
 
       err = avcodec_parameters_from_context(e->out_stream->codecpar, e->codec_ctx);
       assert(err >= 0);
+
       err = avformat_write_header(e->ofmt_ctx, NULL);
       assert(err >= 0);
 
@@ -369,7 +362,7 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
       // input timestamps are in microseconds
       AVRational in_timebase = {1, 1000000};
 
-      AVPacket pkt;
+      AVPacket pkt = {0};
       av_init_packet(&pkt);
       pkt.data = buf_data;
       pkt.size = out_buf->nFilledLen;
@@ -384,8 +377,6 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
 
       err = av_write_frame(e->ofmt_ctx, &pkt);
       if (err < 0) { LOGW("ts encoder write issue"); }
-
-      av_free_packet(&pkt);
     }
   }
 
@@ -485,15 +476,15 @@ void OmxEncoder::encoder_open(const char* path) {
     avformat_alloc_output_context2(&this->ofmt_ctx, NULL, NULL, this->vid_path);
     assert(this->ofmt_ctx);
 
-    this->out_stream = avformat_new_stream(this->ofmt_ctx, NULL);
-    assert(this->out_stream);
-
     // set codec correctly
     av_register_all();
 
     AVCodec *codec = NULL;
-    codec = avcodec_find_encoder(AV_CODEC_ID_H264);
+    codec = avcodec_find_encoder(AV_CODEC_ID_VP8);
     assert(codec);
+
+    this->out_stream = avformat_new_stream(this->ofmt_ctx, codec);
+    assert(this->out_stream);
 
     this->codec_ctx = avcodec_alloc_context3(codec);
     assert(this->codec_ctx);
@@ -501,6 +492,10 @@ void OmxEncoder::encoder_open(const char* path) {
     this->codec_ctx->height = this->height;
     this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
     this->codec_ctx->time_base = (AVRational){ 1, this->fps };
+
+    // This seems optional
+    this->codec_ctx->codec_id = AV_CODEC_ID_VP8;
+    this->codec_ctx->bit_rate = this->bitrate;
 
     err = avio_open(&this->ofmt_ctx->pb, this->vid_path, AVIO_FLAG_WRITE);
     assert(err >= 0);
