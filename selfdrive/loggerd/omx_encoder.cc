@@ -259,8 +259,16 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
     vp_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
     OMX_CHECK(OMX_GetParameter(this->handle, index_type, &vp_type));
 
-    vp_type.eLevel = OMX_VIDEO_VP8Level_Version3; // What about 0, 1, 2?
+    // Level  Reconstruction Tiler  Loop Filter
+    // 0      Bicubic               Normal
+    // 1      Bilinear              Simple
+    // 2      Bilinear              None
+    // 2      None                  None
+    vp_type.eLevel = OMX_VIDEO_VP8Level_Version0;
+
     vp_type.eProfile = OMX_VIDEO_VP8ProfileMain;
+    vp_type.bErrorResilientMode = OMX_FALSE;
+    vp_type.nDCTPartitions = 8;
 
     OMX_CHECK(OMX_SetParameter(this->handle, index_type, &vp_type));
   }
