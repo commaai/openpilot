@@ -56,7 +56,7 @@ public:
   void setTetheringEnabled(bool enabled);
   bool isTetheringEnabled();
   void changeTetheringPassword(const QString &newPassword);
-  void updateTetheringRouteMetric();
+  void updateTetheringGateway();
   QString getTetheringPassword();
 
 private:

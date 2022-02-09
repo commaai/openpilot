@@ -400,12 +400,13 @@ void WifiManager::addTetheringConnection() {
   address["prefix"] = 24u;
   connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
   connection["ipv4"]["gateway"] = "192.168.43.1";
+  connection["ipv4"]["route-metric"] = "1100";
   connection["ipv6"]["method"] = "ignore";
 
   call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
 
-void WifiManager::updateTetheringRouteMetric() {
+void WifiManager::updateTetheringGateway() {
   const QDBusObjectPath &path = getConnectionPath(tethering_ssid);
   if (!path.path().isEmpty()) {
     Connection settings = getConnectionSettings(path);
@@ -413,7 +414,11 @@ void WifiManager::updateTetheringRouteMetric() {
     int prime_type = uiState()->prime_type;
 
     // Allow internet forwarding from cellular when no prime, or bring your own SIM
-    settings["ipv4"]["route-metric"] = (prime_type == PrimeType::NONE || prime_type == PrimeType::BYOS) ? 1100 : 900;
+    if (prime_type == PrimeType::NONE || prime_type == PrimeType::BYOS) {
+      settings["ipv4"]["gateway"] = "192.168.43.1";
+    } else {
+      settings["ipv4"]["gateway"] = "127.0.0.1";
+    }
     call(path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
   }
 }
@@ -424,7 +429,7 @@ void WifiManager::setTetheringEnabled(bool enabled) {
       addTetheringConnection();
     }
 
-    updateTetheringRouteMetric();
+    updateTetheringGateway();
     activateWifiConnection(tethering_ssid);
   } else {
     deactivateConnectionBySsid(tethering_ssid);
