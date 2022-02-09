@@ -307,13 +307,7 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
   }
 
   QJsonObject json = doc.object();
-
-  bool has_prime = json["prime"].toBool();
-  int prime_type = has_prime ? PrimeType::MAGENTA : PrimeType::NONE;
-
-  if (has_prime && json.contains("primeType")) {
-    prime_type = json["primeType"].toInt();
-  }
+  int prime_type = json["primeType"].toInt();
 
   if (uiState()->prime_type != prime_type) {
     uiState()->prime_type = prime_type;
