@@ -10,9 +10,7 @@
 enum PrimeType {
   NONE = 0,
   MAGENTA,
-  BYOS,
-  BLUE,
-  NEW_MAGENTA,
+  LITE,
 };
 
 // pairing QR code

@@ -409,7 +409,7 @@ void WifiManager::addTetheringConnection() {
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
     int prime_type = uiState()->prime_type;
-    int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::BYOS);
+    int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
 
     if (!ipv4_forward) {
       qWarning() << "net.ipv4.ip_forward = 0";
