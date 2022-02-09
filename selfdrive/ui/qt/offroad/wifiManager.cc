@@ -412,8 +412,10 @@ void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
     int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
 
     if (!ipv4_forward) {
-      qWarning() << "net.ipv4.ip_forward = 0";
-      std::system("sudo sysctl net.ipv4.ip_forward=0");
+      QTimer::singleShot(5000, this, [=] {
+        qWarning() << "net.ipv4.ip_forward = 0";
+        std::system("sudo sysctl net.ipv4.ip_forward=0");
+      });
     }
     call->deleteLater();
 }
