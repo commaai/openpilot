@@ -152,6 +152,7 @@
 | Škoda     | Superb 2015-18                  | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Arteon 2018, 2021<sup>4</sup>   | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Atlas 2018-19, 2022<sup>4</sup> | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Caravelle 2020<sup>4</sup>      | Driver Assistance | Stock            | 0mph               | 32mph        |
 | Volkswagen| California 2021<sup>4</sup>     | Driver Assistance | Stock            | 0mph               | 32mph        |
 | Volkswagen| e-Golf 2014, 2019-20            | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2015-20                    | Driver Assistance | Stock            | 0mph               | 0mph         |
