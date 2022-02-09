@@ -36,6 +36,7 @@ protected:
   const QMap<cereal::DeviceState::NetworkType, QString> network_type = {
     {cereal::DeviceState::NetworkType::NONE, "--"},
     {cereal::DeviceState::NetworkType::WIFI, "Wi-Fi"},
+    {cereal::DeviceState::NetworkType::WIFI_METERED, "Hotspot"},
     {cereal::DeviceState::NetworkType::ETHERNET, "ETH"},
     {cereal::DeviceState::NetworkType::CELL2_G, "2G"},
     {cereal::DeviceState::NetworkType::CELL3_G, "3G"},
