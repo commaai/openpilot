@@ -13,6 +13,7 @@ from selfdrive.hardware.tici.amplifier import Amplifier
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
+NM_DEV = NM + '.Device'
 NM_DEV_WL = NM + '.Device.Wireless'
 NM_AP = NM + '.AccessPoint'
 DBUS_PROPS = 'org.freedesktop.DBus.Properties'
@@ -36,6 +37,13 @@ class MM_MODEM_STATE(IntEnum):
        DISCONNECTING = 9
        CONNECTING    = 10
        CONNECTED     = 11
+
+class NMMetered(IntEnum):
+  NM_METERED_UNKNOWN = 0
+  NM_METERED_YES = 1
+  NM_METERED_NO = 2
+  NM_METERED_GUESS_YES = 3
+  NM_METERED_GUESS_NO = 4
 
 TIMEOUT = 0.1
 
@@ -96,6 +104,15 @@ class Tici(HardwareBase):
       if primary_type == '802-3-ethernet':
         return NetworkType.ethernet
       elif primary_type == '802-11-wireless' and primary_id != 'Hotspot':
+        primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+        for dev in primary_devices:
+          dev_obj = self.bus.get_object(NM, str(dev))
+          metered = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+          if metered in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
+            return NetworkType.wifiMetered
+
         return NetworkType.wifi
       else:
         active_connections = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -202,7 +219,7 @@ class Tici(HardwareBase):
     try:
       if network_type == NetworkType.none:
         pass
-      elif network_type == NetworkType.wifi:
+      elif network_type in [NetworkType.wifi, NetworkType.wifiMetered]:
         wlan = self.get_wlan()
         active_ap_path = wlan.Get(NM_DEV_WL, 'ActiveAccessPoint', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
         if active_ap_path != "/":
