@@ -8,17 +8,25 @@ from selfdrive.hardware.eon.hardware import getprop
 from selfdrive.swaglog import cloudlog
 
 def main():
+  prev = b""
   params = Params()
   while True:
-    # 0 for shutdown, 1 for reboot
-    prop = getprop("sys.shutdown.requested")
-    if prop is not None and len(prop) > 0:
-      os.system("pkill -9 loggerd")
-      params.put("LastSystemShutdown", f"'{prop}' {datetime.datetime.now()}")
+    with open("/dev/__properties__", 'rb') as f:
+      cur = f.read()
 
-      time.sleep(120)
-      cloudlog.error('shutdown false positive')
-      break
+    if cur != prev:
+      prev = cur
+
+      # 0 for shutdown, 1 for reboot
+      prop = getprop("sys.shutdown.requested")
+      if prop is not None and len(prop) > 0:
+        os.system("pkill -9 loggerd")
+        params.put("LastSystemShutdown", f"'{prop}' {datetime.datetime.now()}")
+        os.sync()
+
+        time.sleep(120)
+        cloudlog.error('shutdown false positive')
+        break
 
     time.sleep(0.1)
 

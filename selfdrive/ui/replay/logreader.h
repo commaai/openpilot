@@ -34,7 +34,7 @@ public:
     return mbr->allocate(size);
   }
   void operator delete(void *ptr) {
-    // No-op. memory used by EventMemoryPool increases monotonically until the logReader is destroyed. 
+    // No-op. memory used by EventMemoryPool increases monotonically until the logReader is destroyed.
   }
 #endif
 
