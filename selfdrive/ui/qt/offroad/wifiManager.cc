@@ -409,9 +409,12 @@ void WifiManager::addTetheringConnection() {
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
     int prime_type = uiState()->prime_type;
-    int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::BYOS) ? 1 : 0;
-    qWarning() << "setting net.ipv4.ip_forward=" << ipv4_forward;
-    // TODO: actually set forwarding
+    int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::BYOS);
+
+    if (!ipv4_forward) {
+      qWarning() << "net.ipv4.ip_forward = 0";
+      std::system("sudo sysctl net.ipv4.ip_forward=0");
+    }
     call->deleteLater();
 }
 
