@@ -1,7 +1,7 @@
 #include "selfdrive/ui/qt/offroad/wifiManager.h"
 
-#include "selfdrive/ui/qt/widgets/prime.h"
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
@@ -309,12 +309,13 @@ void WifiManager::initConnections() {
   }
 }
 
-void WifiManager::activateWifiConnection(const QString &ssid) {
+std::optional<QDBusPendingCall> WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
     connecting_to_network = ssid;
-    asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
+    return asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
+  return std::nullopt;
 }
 
 void WifiManager::activateModemConnection(const QDBusObjectPath &path) {
@@ -400,22 +401,18 @@ void WifiManager::addTetheringConnection() {
   address["prefix"] = 24u;
   connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
   connection["ipv4"]["gateway"] = "192.168.43.1";
+  connection["ipv4"]["route-metric"] = 1100;
   connection["ipv6"]["method"] = "ignore";
 
   call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
 
-void WifiManager::updateTetheringRouteMetric() {
-  const QDBusObjectPath &path = getConnectionPath(tethering_ssid);
-  if (!path.path().isEmpty()) {
-    Connection settings = getConnectionSettings(path);
-
+void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
     int prime_type = uiState()->prime_type;
-
-    // Allow internet forwarding from cellular when no prime, or bring your own SIM
-    settings["ipv4"]["route-metric"] = (prime_type == PrimeType::NONE || prime_type == PrimeType::BYOS) ? 1100 : 900;
-    call(path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
-  }
+    int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::BYOS) ? 1 : 0;
+    qWarning() << "setting net.ipv4.ip_forward=" << ipv4_forward;
+    // TODO: actually set forwarding
+    call->deleteLater();
 }
 
 void WifiManager::setTetheringEnabled(bool enabled) {
@@ -424,8 +421,13 @@ void WifiManager::setTetheringEnabled(bool enabled) {
       addTetheringConnection();
     }
 
-    updateTetheringRouteMetric();
-    activateWifiConnection(tethering_ssid);
+    auto pending_call = activateWifiConnection(tethering_ssid);
+
+    if (pending_call) {
+      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
+      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, &WifiManager::tetheringActivated);
+    }
+
   } else {
     deactivateConnectionBySsid(tethering_ssid);
   }
