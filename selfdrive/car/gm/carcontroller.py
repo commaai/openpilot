@@ -4,10 +4,11 @@ from common.numpy_fast import interp, clip
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits, create_gas_interceptor_command
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import DBC, NO_ASCM, CanBus, CarControllerParams
+from selfdrive.car.gm.values import DBC, EV_CAR, NO_ASCM, CanBus, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+GearShifter = car.CarState.GearShifter
 
 
 class CarController():
@@ -130,7 +131,37 @@ class CarController():
         # can_sends.append(gmcan.create_friction_brake_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_brake, idx, near_stop, at_full_stop))
         
         if CS.CP.enableGasInterceptor:
-          pedal_gas = clip(actuators.accel, 0., 1.) # TODO: major tuning
+          # TODO: JJS Unsure if low is single pedal mode in any non-electric cars
+          singlePedalMode = CS.out.gearShifter == GearShifter.low and CS.CP.carFingerprint in EV_CAR
+          # TODO: JJS Detect saturated battery and fallback to D mode (until regen is available
+          if singlePedalMode:
+            # In L Mode, Pedal applies regen at a fixed coast-point (TODO: max regen in L mode may be different per car)
+            # This will apply to EVs in L mode.
+            # accel values below zero down to a cutoff point 
+            #  that approximates the percentage of braking regen can handle should be scaled between 0 and the coast-point
+            # accell values below this point will need to be add-on future hijacked AEB
+            # TODO: Determine (or guess) at regen precentage
+
+            # From Felger's Bolt Bort
+            #It seems in L mode, accel / decel point is around 1/5
+            #-1-------AEB------0----regen---0.15-------accel----------+1
+            # Shrink gas request to 0.85, have it start at 0.2
+            # Shrink brake request to 0.85, first 0.15 gives regen, rest gives AEB
+            
+            zero = 40/256
+            
+            if (actuators.accel > 0.):
+              pedal_gas = clip(((1-zero) * actuators.accel + zero), 0., 1.)
+            else:
+              pedal_gas = clip(actuators.accel, 0., zero) # Make brake the same size as gas, but clip to regen
+              # aeb = actuators.brake*(1-zero)-regen # For use later, braking more than regen
+          else:
+            # In D Mode, Pedal is close to coast at 0, 100% at 1.
+            # This will apply to non-EVs and EVs in D mode.
+            # accel values below zero will need to be handled by future hijacked AEB
+            # TODO: Determine if this clipping is correct
+            pedal_gas = clip(actuators.accel, 0., 1.) 
+            
           can_sends.append(create_gas_interceptor_command(self.packer_pt, pedal_gas, idx))
         else:
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, enabled, at_full_stop))
