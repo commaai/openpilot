@@ -307,7 +307,7 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
   }
 
   QJsonObject json = doc.object();
-  int prime_type = json["primeType"].toInt();
+  int prime_type = json["prime_type"].toInt();
 
   if (uiState()->prime_type != prime_type) {
     uiState()->prime_type = prime_type;
