@@ -45,7 +45,7 @@ class CarInterface(CarInterfaceBase):
 
     # Global lateral tuning defaults, can be overridden per-vehicle
 
-    ret.steerActuatorDelay = 0.05
+    ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.6  # Let the params learner figure this out
@@ -174,12 +174,6 @@ class CarInterface(CarInterfaceBase):
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
-    # TODO: add a field for this to carState, car interface code shouldn't write params
-    # Update the device metric configuration to match the car at first startup,
-    # or if there's been a change.
-    #if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
-    #  put_nonblocking("IsMetric", "1" if self.CS.displayMetricUnits else "0")
-
     # Check for and process state-change events (button press or release) from
     # the turn stalk switch or ACC steering wheel/control stalk buttons.
     for button in self.CS.buttonStates:
@@ -217,7 +211,7 @@ class CarInterface(CarInterfaceBase):
 
   def apply(self, c):
     hud_control = c.hudControl
-    ret = self.CC.update(c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
+    ret = self.CC.update(c, c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
                          hud_control.visualAlert,
                          hud_control.leftLaneVisible,
                          hud_control.rightLaneVisible,

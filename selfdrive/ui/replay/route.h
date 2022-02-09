@@ -27,6 +27,7 @@ public:
   Route(const QString &route, const QString &data_dir = {});
   bool load();
   inline const QString &name() const { return route_.str; }
+  inline const QString &dir() const { return data_dir_; }
   inline const RouteIdentifier &identifier() const { return route_; }
   inline const std::map<int, SegmentFile> &segments() const { return segments_; }
   inline const SegmentFile &at(int n) { return segments_.at(n); }

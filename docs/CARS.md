@@ -43,7 +43,7 @@
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RX Hybrid 2020-21             | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | UX Hybrid 2019-21             | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Alphard 2020                  | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Alphard 2019-20               | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon 2016-21                | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Avalon 2022                   | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon Hybrid 2019-21         | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
@@ -64,6 +64,7 @@
 | Toyota    | Mirai 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Prius 2016-20                 | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Prius 2021-22                 | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Prius v 2017                  | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Prius Prime 2017-20           | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Prius Prime 2021-22           | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Rav4 2016-18                  | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
@@ -86,10 +87,7 @@
 | Audi      | Q2 2018                         | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
 | Audi      | Q3 2020-21                      | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
 | Audi      | S3 2015                         | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
-| Buick     | Regal 2018<sup>1</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Cadillac  | ATS 2018<sup>1</sup>            | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Cadillac  | Escalade ESV 2016<sup>1</sup>   | ACC + LKAS        | openpilot        | 0mph               | 7mph         |
-| Chevrolet | Malibu 2017<sup>1</sup>         | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Chevrolet | Volt 2017-18<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Chrysler  | Pacifica 2017-18                | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica 2020                   | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
@@ -100,7 +98,6 @@
 | Genesis   | G80 2018                        | All               | Stock            | 0mph               | 0mph         |
 | Genesis   | G90 2018                        | All               | Stock            | 0mph               | 0mph         |
 | GMC       | Acadia 2018<sup>1</sup>         | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Holden    | Astra 2017<sup>1</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Hyundai   | Elantra 2017-19                 | SCC + LKAS        | Stock            | 19mph              | 34mph        |
 | Hyundai   | Elantra 2021                    | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Elantra Hybrid 2021             | SCC + LKAS        | Stock            | 0mph               | 0mph         |
@@ -134,6 +131,7 @@
 | Kia       | Sorento 2018-19                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018                    | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Telluride 2020                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Mazda     | CX-5 2022                       | All               | Stock            | 0mph               | 0mph         |
 | Mazda     | CX-9 2021                       | All               | Stock            | 0mph               | 28mph        |
 | Nissan    | Altima 2019-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Leaf 2018-22                    | ProPILOT          | Stock            | 0mph               | 0mph         |
@@ -141,6 +139,10 @@
 | Nissan    | X-Trail 2017                    | ProPILOT          | Stock            | 0mph               | 0mph         |
 | SEAT      | Ateca 2018                      | Driver Assistance | Stock            | 0mph               | 0mph         |
 | SEAT      | Leon 2014-2020                  | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Subaru    | Ascent 2019                     | EyeSight          | Stock            | 0mph               | 0mph         |
+| Subaru    | Crosstrek 2018-20               | EyeSight          | Stock            | 0mph               | 0mph         |
+| Subaru    | Forester 2019-21                | EyeSight          | Stock            | 0mph               | 0mph         |
+| Subaru    | Impreza 2017-19                 | EyeSight          | Stock            | 0mph               | 0mph         |
 | Škoda     | Kamiq 2021<sup>2</sup>          | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Karoq 2019                      | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Kodiaq 2018-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
@@ -148,10 +150,6 @@
 | Škoda     | Octavia RS 2016                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Scala 2020                      | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Superb 2015-18                  | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Subaru    | Ascent 2019                     | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Crosstrek 2018-20               | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Forester 2019-21                | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Impreza 2017-19                 | EyeSight          | Stock            | 0mph               | 0mph         |
 | Volkswagen| Arteon 2018, 2021<sup>4</sup>   | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Atlas 2018-19, 2022<sup>4</sup> | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| California 2021<sup>4</sup>     | Driver Assistance | Stock            | 0mph               | 32mph        |

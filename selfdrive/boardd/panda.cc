@@ -45,11 +45,11 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
     libusb_device_descriptor desc;
     libusb_get_device_descriptor(dev_list[i], &desc);
     if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
-      libusb_open(dev_list[i], &dev_handle);
-      if (dev_handle == NULL) { goto fail; }
+      int ret = libusb_open(dev_list[i], &dev_handle);
+      if (dev_handle == NULL || ret < 0) { goto fail; }
 
       unsigned char desc_serial[26] = { 0 };
-      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
+      ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
       if (ret < 0) { goto fail; }
 
       usb_serial = std::string((char *)desc_serial, ret).c_str();
@@ -130,12 +130,14 @@ std::vector<std::string> Panda::list() {
     libusb_get_device_descriptor(device, &desc);
     if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
       libusb_device_handle *handle = NULL;
-      libusb_open(device, &handle);
-      unsigned char desc_serial[26] = { 0 };
-      int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
-      libusb_close(handle);
-
+      int ret = libusb_open(device, &handle);
       if (ret < 0) { goto finish; }
+
+      unsigned char desc_serial[26] = { 0 };
+      ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
+      libusb_close(handle);
+      if (ret < 0) { goto finish; }
+
       serials.push_back(std::string((char *)desc_serial, ret).c_str());
     }
   }

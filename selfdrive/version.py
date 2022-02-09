@@ -111,10 +111,6 @@ def is_dirty() -> bool:
         pass
 
       dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
-
-    dirty = dirty or (not is_comma_remote())
-    dirty = dirty or ('master' in branch)
-
   except subprocess.CalledProcessError:
     cloudlog.exception("git subprocess failed while checking dirty")
     dirty = True

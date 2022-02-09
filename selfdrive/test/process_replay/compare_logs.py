@@ -85,11 +85,14 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       # Dictdiffer only supports relative tolerance, we also want to check for absolute
       # TODO: add this to dictdiffer
       def outside_tolerance(diff):
-        if diff[0] == "change":
-          a, b = diff[2]
-          finite = math.isfinite(a) and math.isfinite(b)
-          if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
-            return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
+        try:
+          if diff[0] == "change":
+            a, b = diff[2]
+            finite = math.isfinite(a) and math.isfinite(b)
+            if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
+              return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
+        except TypeError:
+          pass
         return True
 
       dd = list(filter(outside_tolerance, dd))
