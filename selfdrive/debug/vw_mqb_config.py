@@ -10,7 +10,6 @@ from panda.python.uds import UdsClient, MessageTimeoutError, NegativeResponseErr
 # TODO: extend UDS library to allow custom/vendor-defined data identifiers without ignoring type checks
 class VOLKSWAGEN_DATA_IDENTIFIER_TYPE(IntEnum):
   CODING = 0x0600
-  ODX_FILE_VERSION = 0xF182
 
 # TODO: extend UDS library security_access() to take an access level offset per ISO 14229-1:2020 10.4 and remove this
 class ACCESS_TYPE_LEVEL_1(IntEnum):
@@ -51,7 +50,6 @@ if __name__ == "__main__":
     sw_ver = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_VERSION_NUMBER).decode("utf-8")
     component = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.SYSTEM_NAME_OR_ENGINE_TYPE).decode("utf-8")
     odx_file = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.ODX_FILE).decode("utf-8")
-    odx_ver = uds_client.read_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.ODX_FILE_VERSION).decode("utf-8")  # type: ignore
     current_coding = uds_client.read_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.CODING)  # type: ignore
     coding_text = current_coding.hex()
 
@@ -61,7 +59,7 @@ if __name__ == "__main__":
     print(f"   SW Version:   {sw_ver}")
     print(f"   Component:    {component}")
     print(f"   Coding:       {coding_text}")
-    print(f"   ASAM Dataset: {odx_file} version {odx_ver}")
+    print(f"   ASAM Dataset: {odx_file}")
   except NegativeResponseError:
     print("Error fetching data from EPS")
     quit()
