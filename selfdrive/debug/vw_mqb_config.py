@@ -54,12 +54,6 @@ if __name__ == "__main__":
     odx_ver = uds_client.read_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.ODX_FILE_VERSION).decode("utf-8")  # type: ignore
     current_coding = uds_client.read_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.CODING)  # type: ignore
     coding_text = current_coding.hex()
-    params = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION).decode("utf-8")
-    param_version_system_params = params[0:2]
-    param_vehicle_type = params[2:4]
-    param_index_char_curve = params[4:6]
-    param_version_char_values = params[6:8]
-    param_version_memory_map = params[8:10]
 
     print("\nDiagnostic data from EPS controller\n")
     print(f"   Part No HW:   {hw_pn}")
@@ -68,12 +62,6 @@ if __name__ == "__main__":
     print(f"   Component:    {component}")
     print(f"   Coding:       {coding_text}")
     print(f"   ASAM Dataset: {odx_file} version {odx_ver}")
-    print("\nEPS parameterization data\n")
-    print(f"   Version of system parameters:     {param_version_system_params}")
-    print(f"   Vehicle type:                     {param_vehicle_type}")
-    print(f"   Index of characteristic curve:    {param_index_char_curve}")
-    print(f"   Version of characteristic values: {param_version_char_values}")
-    print(f"   Version of memory map:            {param_version_memory_map}")
   except NegativeResponseError:
     print("Error fetching data from EPS")
     quit()
@@ -93,6 +81,23 @@ if __name__ == "__main__":
     print(f"   Lane Assist:  {hca_text}")
   else:
     print("Configuration changes not yet supported on this EPS!")
+    quit()
+
+  try:
+    params = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION).decode("utf-8")
+    param_version_system_params = params[1:3]
+    param_vehicle_type = params[3:5]
+    param_index_char_curve = params[5:7]
+    param_version_char_values = params[7:9]
+    param_version_memory_map = params[9:11]
+    print("\nEPS parameterization data\n")
+    print(f"   Version of system parameters:     {param_version_system_params}")
+    print(f"   Vehicle type:                     {param_vehicle_type}")
+    print(f"   Index of characteristic curve:    {param_index_char_curve}")
+    print(f"   Version of characteristic values: {param_version_char_values}")
+    print(f"   Version of memory map:            {param_version_memory_map}")
+  except (NegativeResponseError, MessageTimeoutError):
+    print("Error fetching parameterization data from EPS!")
     quit()
 
   if args.action in ["enable", "disable"]:
