@@ -197,11 +197,11 @@ class TestCarModel(unittest.TestCase):
 
     checks = defaultdict(lambda: 0)
     for can in self.can_msgs:
+      CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
         to_send = package_can_msg(msg)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
-        CS = self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
 
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
@@ -219,8 +219,6 @@ class TestCarModel(unittest.TestCase):
       brake_pressed = CS.brakePressed
       if CS.brakePressed and not self.safety.get_brake_pressed_prev():
         if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
-          brake_pressed = False
-        if self.CP.carName == "honda" and self.CI.CS.brake_switch:
           brake_pressed = False
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
 

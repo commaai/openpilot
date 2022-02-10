@@ -131,6 +131,7 @@
 | Kia       | Sorento 2018-19                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018                    | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Telluride 2020                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Mazda     | CX-5 2022                       | All               | Stock            | 0mph               | 0mph         |
 | Mazda     | CX-9 2021                       | All               | Stock            | 0mph               | 28mph        |
 | Nissan    | Altima 2019-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Leaf 2018-22                    | ProPILOT          | Stock            | 0mph               | 0mph         |
@@ -151,6 +152,7 @@
 | Škoda     | Superb 2015-18                  | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Arteon 2018, 2021<sup>4</sup>   | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Atlas 2018-19, 2022<sup>4</sup> | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Caravelle 2020<sup>4</sup>      | Driver Assistance | Stock            | 0mph               | 32mph        |
 | Volkswagen| California 2021<sup>4</sup>     | Driver Assistance | Stock            | 0mph               | 32mph        |
 | Volkswagen| e-Golf 2014, 2019-20            | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2015-20                    | Driver Assistance | Stock            | 0mph               | 0mph         |
