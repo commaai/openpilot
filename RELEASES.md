@@ -1,6 +1,9 @@
 Version 0.8.13 (2022-XX-XX)
 ========================
  * Improved driver monitoring
+   * Retuned driver pose learner for relaxed driving positions
+   * Added reliance on driving model to be more scene adaptive
+   * Matched strictness between comma two and comma three
  * Roll compensation
  * Improved camera focus on the comma two
  * Subaru ECU firmware fingerprinting thanks to martinl!
