@@ -14,25 +14,6 @@ def apply_deadzone(error, deadzone):
 
 class PIController():
   def __init__(self, k_p, k_i, k_f=0., pos_limit=None, neg_limit=None, rate=100):
-    self.sanitize_gains(k_p, k_i, k_f)
-
-    self.pos_limit = pos_limit
-    self.neg_limit = neg_limit
-
-    self.i_unwind_rate = 0.3 / rate
-    self.i_rate = 1.0 / rate
-
-    self.reset()
-
-  @property
-  def k_p(self):
-    return interp(self.speed, self._k_p[0], self._k_p[1])
-
-  @property
-  def k_i(self):
-    return interp(self.speed, self._k_i[0], self._k_i[1])
-
-  def sanitize_gains(self, k_p, k_i, k_f):
     if isinstance(k_p, Number):
       k_p = [[0], [k_p]]
     if not k_p[0]:
@@ -55,6 +36,22 @@ class PIController():
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
     self.k_f = k_f   # feedforward gain
+
+    self.pos_limit = pos_limit
+    self.neg_limit = neg_limit
+
+    self.i_unwind_rate = 0.3 / rate
+    self.i_rate = 1.0 / rate
+
+    self.reset()
+
+  @property
+  def k_p(self):
+    return interp(self.speed, self._k_p[0], self._k_p[1])
+
+  @property
+  def k_i(self):
+    return interp(self.speed, self._k_i[0], self._k_i[1])
 
   def reset(self):
     self.p = 0.0
