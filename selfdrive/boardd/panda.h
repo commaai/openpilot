@@ -80,7 +80,7 @@ class Panda {
   void set_fan_speed(uint16_t fan_speed);
   uint16_t get_fan_speed();
   void set_ir_pwr(uint16_t ir_pwr);
-  health_t get_state();
+  std::optional<health_t> get_state();
   void set_loopback(bool loopback);
   std::optional<std::vector<uint8_t>> get_firmware_version();
   std::optional<std::string> get_serial();
