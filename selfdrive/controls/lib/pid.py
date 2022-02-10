@@ -33,27 +33,28 @@ class PIController():
     return interp(self.speed, self._k_i[0], self._k_i[1])
 
   def sanitize_gains(self, k_p, k_i, k_f):
+    if isinstance(k_p, Number):
+      k_p = [[0], [k_p]]
+    if not k_p[0]:
+      k_p[0] = [0.0]
+    if not k_p[1]:
+      k_p = [[0], [0]]
+
+    if isinstance(k_i, Number):
+      k_i = [[0], [k_i]]
+    if not k_i[0]:
+      k_i[0] = [0.0]
+    if not k_i[1]:
+      k_i = [[0], [0]]
+    
+    if not isinstance(k_f, Number):
+      k_f = 0
+    if not k_i[0]:
+      k_f = 0
+
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
     self.k_f = k_f   # feedforward gain
-    if isinstance(self._k_p, Number):
-      self._k_p = [[0], [self._k_p]]
-    if not self._k_p[0]:
-      self._k_p[0] = [0.0]
-    if not self._k_p[1]:
-      self._k_p = [[0], [0]]
-
-    if isinstance(self._k_i, Number):
-      self._k_i = [[0], [self._k_i]]
-    if not self._k_i[0]:
-      self._k_i[0] = [0.0]
-    if not self._k_i[1]:
-      self._k_i = [[0], [0]]
-    
-    if not isinstance(self.k_f, Number):
-      self.k_f = 0
-    if not self._k_i[0]:
-      self.k_f = 0
 
   def reset(self):
     self.p = 0.0
