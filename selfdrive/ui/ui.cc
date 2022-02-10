@@ -129,7 +129,7 @@ static void update_state(UIState *s) {
     if (sm.updated("modelV2")) {
       update_model(s, sm["modelV2"].getModelV2());
     }
-    if (sm.updated("radarState") && sm.rcv_frame("modelV2") >= s->scene.started_frame) {
+    if (sm.updated("radarState") && sm.rcv_frame("modelV2") > s->scene.started_frame) {
       update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
     }
   }
