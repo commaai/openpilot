@@ -17,6 +17,9 @@ class ACCESS_TYPE_LEVEL_1(IntEnum):
   REQUEST_SEED = ACCESS_TYPE.REQUEST_SEED + 2
   SEND_KEY = ACCESS_TYPE.SEND_KEY + 2
 
+MQB_EPS_CAN_ADDR = 0x712
+RX_OFFSET = 0x6a
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("--debug", action="store_true", help="enable ISO-TP/UDS stack debugging output")
@@ -26,7 +29,7 @@ if __name__ == "__main__":
   panda = Panda()
   panda.set_safety_mode(Panda.SAFETY_ELM327)
   bus = 1 if panda.has_obd() else 0
-  uds_client = UdsClient(panda, 0x712, 0x77c, bus, timeout=0.2, debug=args.debug)
+  uds_client = UdsClient(panda, MQB_EPS_CAN_ADDR, MQB_EPS_CAN_ADDR + RX_OFFSET, bus, timeout=0.2, debug=args.debug)
 
   try:
     uds_client.diagnostic_session_control(SESSION_TYPE.EXTENDED_DIAGNOSTIC)
