@@ -14,13 +14,7 @@ def apply_deadzone(error, deadzone):
 
 class PIController():
   def __init__(self, k_p, k_i, k_f=1., pos_limit=None, neg_limit=None, rate=100):
-    self._k_p = k_p  # proportional gain
-    self._k_i = k_i  # integral gain
-    self.k_f = k_f   # feedforward gain
-    if isinstance(self._k_p, Number):
-      self._k_p = [[0], [self._k_p]]
-    if isinstance(self._k_i, Number):
-      self._k_i = [[0], [self._k_i]]
+    self.sanitize_gains(k_p, k_i, k_f)
 
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
@@ -37,6 +31,24 @@ class PIController():
   @property
   def k_i(self):
     return interp(self.speed, self._k_i[0], self._k_i[1])
+
+  def sanitize_gains(self, k_p, k_i, k_f):
+    self._k_p = k_p  # proportional gain
+    self._k_i = k_i  # integral gain
+    self.k_f = k_f   # feedforward gain
+    if isinstance(self._k_p, Number):
+      self._k_p = [[0], [self._k_p]]
+    if not self._k_p[0]:
+      self._k_p[0] = [0.0]
+    if not self._k_p[1]:
+      self._k_p = [[0], [0]]
+
+    if isinstance(self._k_i, Number):
+      self._k_i = [[0], [self._k_i]]
+    if not self._k_i[0]:
+      self._k_i[0] = [0.0]
+    if not self._k_i[1]:
+      self._k_i = [[0], [0]]
 
   def reset(self):
     self.p = 0.0
