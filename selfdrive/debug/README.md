@@ -37,24 +37,23 @@ optional arguments:
 
 ## [vw_mqb_config.py](vw_mqb_config.py)
 
-Shows Volkswagen EPS software and coding info, and enables or disables Heading
-Control Assist (Lane Assist). Useful for enabling HCA on cars without factory
-Lane Assist that want to use openpilot integrated at the CAN gateway (J533).
-
-This script is meant to run directly on a vehicle-installed comma two or comma
-three, with the openpilot/tmux processes stopped. It should also work on a
-separate PC with a USB-attached comma panda. Vehicle ignition must be on,
-recommend engine not be running. Must turn ignition off and on again for any
-changes to take effect.
-
 ```
-usage: vw_mqb_config.py [-h] [--debug] {disable,show,enable}
+usage: vw_mqb_config.py [-h] [--debug] {enable,show,disable}
+
+Shows Volkswagen EPS software and coding info, and enables or disables Heading Control
+Assist (Lane Assist). Useful for enabling HCA on cars without factory Lane Assist that want
+to use openpilot integrated at the CAN gateway (J533).
 
 positional arguments:
-  {disable,show,enable}
+  {enable,show,disable}
                         show or modify current EPS HCA config
 
 optional arguments:
   -h, --help            show this help message and exit
   --debug               enable ISO-TP/UDS stack debugging output
-  ```
+
+This tool is meant to run directly on a vehicle-installed comma two or comma three, with
+the openpilot/tmux processes stopped. It should also work on a separate PC with a USB-
+attached comma panda. Vehicle ignition must be on. Recommend engine not be running when
+making changes. Must turn ignition off and on again for any changes to take effect.
+```

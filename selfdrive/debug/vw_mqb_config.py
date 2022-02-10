@@ -21,7 +21,14 @@ MQB_EPS_CAN_ADDR = 0x712
 RX_OFFSET = 0x6a
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
+  desc_text =   "Shows Volkswagen EPS software and coding info, and enables or disables Heading Control Assist " + \
+                "(Lane Assist). Useful for enabling HCA on cars without factory Lane Assist that want to use " + \
+                "openpilot integrated at the CAN gateway (J533)."
+  epilog_text = "This tool is meant to run directly on a vehicle-installed comma two or comma three, with the " + \
+                "openpilot/tmux processes stopped. It should also work on a separate PC with a USB-attached comma " + \
+                "panda. Vehicle ignition must be on. Recommend engine not be running when making changes. Must " + \
+                "turn ignition off and on again for any changes to take effect."
+  parser = argparse.ArgumentParser(description=desc_text, epilog=epilog_text)
   parser.add_argument("--debug", action="store_true", help="enable ISO-TP/UDS stack debugging output")
   parser.add_argument("action", choices={"show", "enable", "disable"}, help="show or modify current EPS HCA config")
   args = parser.parse_args()
