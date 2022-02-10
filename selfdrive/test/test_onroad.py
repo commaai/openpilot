@@ -22,7 +22,7 @@ from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 50.0,
+  "selfdrive.controls.controlsd": 55.0,
   "./loggerd": 45.0,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 22.6,
@@ -30,7 +30,7 @@ PROCS = {
   "selfdrive.locationd.paramsd": 9.1,
   "./camerad": 7.07,
   "./_sensord": 6.17,
-  "selfdrive.controls.radard": 5.67,
+  "selfdrive.controls.radard": 7.0,
   "./_modeld": 4.48,
   "./boardd": 3.63,
   "./_dmonitoringmodeld": 2.67,
@@ -55,13 +55,13 @@ if EON:
 if TICI:
   PROCS.update({
     "./loggerd": 70.0,
-    "selfdrive.controls.controlsd": 28.0,
+    "selfdrive.controls.controlsd": 31.0,
     "./camerad": 31.0,
     "./_ui": 33.0,
     "selfdrive.controls.plannerd": 11.7,
     "./_dmonitoringmodeld": 10.0,
     "selfdrive.locationd.paramsd": 5.0,
-    "selfdrive.controls.radard": 3.6,
+    "selfdrive.controls.radard": 4.5,
     "selfdrive.thermald.thermald": 3.87,
   })
 
