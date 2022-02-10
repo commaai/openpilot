@@ -12,6 +12,7 @@ import socket
 import threading
 import time
 import tempfile
+import subprocess
 from collections import namedtuple
 from functools import partial
 from typing import Any, Dict
@@ -21,13 +22,14 @@ from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import ABNF, WebSocketTimeoutException, WebSocketException, create_connection
 
 import cereal.messaging as messaging
+from cereal import log
 from cereal.services import service_list
 from common.api import Api
 from common.file_helpers import CallbackReader
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE, PC
+from selfdrive.hardware import HARDWARE, PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
@@ -46,6 +48,8 @@ RETRY_DELAY = 10  # seconds
 MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
 WS_FRAME_SIZE = 4096
 
+NetworkType = log.DeviceState.NetworkType
+
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
 send_queue: Any = queue.Queue()
@@ -53,9 +57,12 @@ upload_queue: Any = queue.Queue()
 low_priority_send_queue: Any = queue.Queue()
 log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
-UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress'], defaults=(0, False, 0))
+UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress', 'allow_cellular'], defaults=(0, False, 0, False))
 
 cur_upload_items: Dict[int, Any] = {}
+
+class AbortTransferException(Exception):
+  pass
 
 
 class UploadQueueCache():
@@ -128,11 +135,13 @@ def jsonrpc_handler(end_event):
       send_queue.put_nowait(json.dumps({"error": str(e)}))
 
 
-def retry_upload(tid: int, end_event: threading.Event) -> None:
+def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = True) -> None:
   if cur_upload_items[tid].retry_count < MAX_RETRY_COUNT:
     item = cur_upload_items[tid]
+    new_retry_count = item.retry_count + 1 if increase_count else item.retry_count
+
     item = item._replace(
-      retry_count=item.retry_count + 1,
+      retry_count=new_retry_count,
       progress=0,
       current=False
     )
@@ -148,6 +157,7 @@ def retry_upload(tid: int, end_event: threading.Event) -> None:
 
 
 def upload_handler(end_event: threading.Event) -> None:
+  sm = messaging.SubMaster(['deviceState'])
   tid = threading.get_ident()
 
   while not end_event.is_set():
@@ -160,8 +170,23 @@ def upload_handler(end_event: threading.Event) -> None:
         cancelled_uploads.remove(cur_upload_items[tid].id)
         continue
 
+      # TODO: remove item if too old
+
+      # Check if uploading over cell is allowed
+      sm.update(0)
+      cell = sm['deviceState'].networkType not in [NetworkType.wifi, NetworkType.ethernet]
+      if cell and (not cur_upload_items[tid].allow_cellular):
+        retry_upload(tid, end_event, False)
+        continue
+
       try:
         def cb(sz, cur):
+          # Abort transfer if connection changed to cell after starting upload
+          sm.update(0)
+          cell = sm['deviceState'].networkType not in [NetworkType.wifi, NetworkType.ethernet]
+          if cell and (not cur_upload_items[tid].allow_cellular):
+            raise AbortTransferException
+
           cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
         response = _do_upload(cur_upload_items[tid], cb)
@@ -171,8 +196,10 @@ def upload_handler(end_event: threading.Event) -> None:
         UploadQueueCache.cache(upload_queue)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
         cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_items[tid]}")
-
         retry_upload(tid, end_event)
+      except AbortTransferException:
+        cloudlog.warning(f"athena.upload_handler.abort {cur_upload_items[tid]}")
+        retry_upload(tid, end_event, False)
 
     except queue.Empty:
       pass
@@ -273,15 +300,20 @@ def reboot():
 
 @dispatcher.add_method
 def uploadFileToUrl(fn, url, headers):
-  return uploadFilesToUrls([[fn, url, headers]])
+  return uploadFilesToUrls([{
+    "fn": fn,
+    "url": url,
+    "headers": headers,
+  }])
 
 
 @dispatcher.add_method
 def uploadFilesToUrls(files_data):
   items = []
   failed = []
-  for fn, url, headers in files_data:
-    if len(fn) == 0 or fn[0] == '/' or '..' in fn:
+  for file in files_data:
+    fn = file.get('fn', '')
+    if len(fn) == 0 or fn[0] == '/' or '..' in fn or 'url' not in file:
       failed.append(fn)
       continue
     path = os.path.join(ROOT, fn)
@@ -289,7 +321,14 @@ def uploadFilesToUrls(files_data):
       failed.append(fn)
       continue
 
-    item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None)
+    item = UploadItem(
+      path=path,
+      url=file['url'],
+      headers=file.get('headers', {}),
+      created_at=int(time.time() * 1000),
+      id=None,
+      allow_cellular=file.get('allow_cellular', False),
+    )
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
     item = item._replace(id=upload_id)
     upload_queue.put_nowait(item)
@@ -327,6 +366,18 @@ def cancelUpload(upload_id):
 @dispatcher.add_method
 def primeActivated(activated):
   return {"success": 1}
+
+
+@dispatcher.add_method
+def setBandwithLimit(upload_speed_kbps, download_speed_kbps):
+  if not TICI:
+    return {"success": 0, "error": "only supported on comma three"}
+
+  try:
+    HARDWARE.set_bandwidth_limit(upload_speed_kbps, download_speed_kbps)
+    return {"success": 1}
+  except subprocess.CalledProcessError as e:
+    return {"success": 0, "error": "failed to set limit", "stdout": e.stdout, "stderr": e.stderr}
 
 
 def startLocalProxy(global_end_event, remote_ws_uri, local_port):
