@@ -68,7 +68,7 @@ if __name__ == "__main__":
     # ZF EPS config coding length can be anywhere from 1 to 4 bytes, but the
     # bit we care about is always in the same place in the first byte
     if args.action == "enable":
-      new_byte_0 = current_coding_array[0] | 1 << 4
+      new_byte_0 = current_coding_array[0] | (1 << 4)
     else:
       new_byte_0 = current_coding_array[0] & ~(1 << 4)
     new_coding = new_byte_0.to_bytes(1, "little") + current_coding[1:]
