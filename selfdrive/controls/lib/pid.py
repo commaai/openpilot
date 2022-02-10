@@ -41,7 +41,10 @@ class PIController():
       self._k_i = [[0.], self._k_i[1]]
     if not self._k_i[1]:
       self._k_i = [[0], [0]]
-
+      
+    if not isinstance(self.k_f, Number):
+      self.k_f = 0
+      
   @property
   def k_p(self):
     return interp(self.speed, self._k_p[0], self._k_p[1])
