@@ -55,7 +55,7 @@ if __name__ == "__main__":
     current_coding = uds_client.read_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.CODING)  # type: ignore
     coding_text = current_coding.hex()
 
-    print("\nDiagnostic data from EPS controller\n")
+    print("\nEPS diagnostic data\n")
     print(f"   Part No HW:   {hw_pn}")
     print(f"   Part No SW:   {sw_pn}")
     print(f"   SW Version:   {sw_ver}")
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     param_index_char_curve = params[5:7]
     param_version_char_values = params[7:9]
     param_version_memory_map = params[9:11]
-    print("\nEPS parameterization data\n")
+    print("\nEPS parameterization (per-vehicle calibration) data\n")
     print(f"   Version of system parameters:     {param_version_system_params}")
     print(f"   Vehicle type:                     {param_vehicle_type}")
     print(f"   Index of characteristic curve:    {param_index_char_curve}")
