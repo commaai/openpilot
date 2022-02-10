@@ -19,8 +19,12 @@ class PIController():
     self.k_f = k_f   # feedforward gain
     if isinstance(self._k_p, Number):
       self._k_p = [[0], [self._k_p]]
+    if not self._k_p[1]:
+      self._k_p = [[0], [0]]
     if isinstance(self._k_i, Number):
       self._k_i = [[0], [self._k_i]]
+    if not self._k_i[1]:
+      self._k_i = [[0], [0]]
 
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
