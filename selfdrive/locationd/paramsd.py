@@ -45,7 +45,7 @@ class ParamsLearner:
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
 
       localizer_roll = msg.orientationNED.value[0]
-      localizer_roll_std = msg.orientationNED.std[0]
+      localizer_roll_std = np.radians(1) if np.isnan(msg.orientationNED.std[0]) else msg.orientationNED.std[0]
       roll_valid = msg.orientationNED.valid and ROLL_MIN < localizer_roll < ROLL_MAX
       if roll_valid:
         roll = localizer_roll
@@ -75,6 +75,14 @@ class ParamsLearner:
                                       np.array([[self.roll]]),
                                       np.array([np.atleast_2d(roll_std**2)]))
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
+
+        # We observe the current stiffness and steer ratio (with a high observation noise) to bound
+        # the respective estimate STD. Otherwise the STDs keep increasing, causing rapid changes in the
+        # states in longer routes (especially straight stretches).
+        stiffness = float(self.kf.x[States.STIFFNESS])
+        steer_ratio = float(self.kf.x[States.STEER_RATIO])
+        self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, np.array([[stiffness]]))
+        self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, np.array([[steer_ratio]]))
 
     elif which == 'carState':
       self.steering_angle = msg.steeringAngleDeg
