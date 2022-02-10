@@ -54,7 +54,7 @@ if __name__ == "__main__":
   if odx_file == "EV_SteerAssisMQB\x00":
     coding_variant = "ZF"
     current_coding_array = struct.unpack("!4B", current_coding)
-    hca_enabled = (current_coding_array[0] & 1 << 4 != 0)
+    hca_enabled = (current_coding_array[0] & (1 << 4) != 0)
     hca_text = ("DISABLED", "ENABLED")[hca_enabled]
     print(f"   Lane Assist:  {hca_text}")
   else:
