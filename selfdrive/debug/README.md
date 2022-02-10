@@ -41,7 +41,7 @@ Shows Volkswagen EPS software and coding info, and enables or disables Heading
 Control Assist (Lane Assist). Useful for enabling HCA on cars without factory
 Lane Assist that want to use openpilot integrated at the CAN gateway (J533).
 
-This script is mean to run directly on a vehicle-installed comma two or comma
+This script is meant to run directly on a vehicle-installed comma two or comma
 three, with the openpilot/tmux processes stopped. It should also work on a
 separate PC with a USB-attached comma panda. Vehicle ignition must be on,
 recommend engine not be running. Must turn ignition off and on again for any
