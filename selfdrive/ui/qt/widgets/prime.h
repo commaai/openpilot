@@ -7,6 +7,12 @@
 
 #include "selfdrive/ui/qt/widgets/input.h"
 
+enum PrimeType {
+  NONE = 0,
+  MAGENTA,
+  LITE,
+};
+
 // pairing QR code
 class PairingQRWidget : public QWidget {
   Q_OBJECT
