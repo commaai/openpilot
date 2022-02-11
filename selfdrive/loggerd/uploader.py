@@ -166,7 +166,6 @@ class Uploader():
     return self.last_resp
 
   def upload(self, key, fn, network_type):
-    network_type = int(network_type)
     try:
       sz = os.path.getsize(fn)
     except OSError:
@@ -246,7 +245,7 @@ def uploader_fn(exit_event):
 
     key, fn = d
 
-    success = uploader.upload(key, fn, network_type)
+    success = uploader.upload(key, fn, sm['deviceState'].networkType.raw)
     if success:
       backoff = 0.1
     elif allow_sleep:

@@ -190,7 +190,7 @@ def upload_handler(end_event: threading.Event) -> None:
           cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
 
-        network_type = int(sm['deviceState'].networkType)
+        network_type = sm['deviceState'].networkType.raw
         fn = cur_upload_items[tid].path
         try:
           sz = os.path.getsize(fn)
