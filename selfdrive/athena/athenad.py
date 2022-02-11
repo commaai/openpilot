@@ -189,16 +189,29 @@ def upload_handler(end_event: threading.Event) -> None:
 
           cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
+
+        network_type = sm['deviceState'].networkType.raw
+        fn = cur_upload_items[tid].path
+        try:
+          sz = os.path.getsize(fn)
+        except OSError:
+          sz = -1
+
+        cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type)
         response = _do_upload(cur_upload_items[tid], cb)
+
         if response.status_code not in (200, 201, 403, 412):
-          cloudlog.warning(f"athena.upload_handler.retry {response.status_code} {cur_upload_items[tid]}")
+          cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type)
           retry_upload(tid, end_event)
+        else:
+          cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type)
+
         UploadQueueCache.cache(upload_queue)
-      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
-        cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_items[tid]}")
+      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError):
+        cloudlog.event("athena.upload_handler.timeout", fn=fn, sz=sz, network_type=network_type)
         retry_upload(tid, end_event)
       except AbortTransferException:
-        cloudlog.warning(f"athena.upload_handler.abort {cur_upload_items[tid]}")
+        cloudlog.event("athena.upload_handler.abort", fn=fn, sz=sz, network_type=network_type)
         retry_upload(tid, end_event, False)
 
     except queue.Empty:
