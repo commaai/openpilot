@@ -129,7 +129,7 @@ static void update_state(UIState *s) {
     if (sm.updated("modelV2")) {
       update_model(s, sm["modelV2"].getModelV2());
     }
-    if (sm.updated("radarState") && sm.rcv_frame("modelV2") >= s->scene.started_frame) {
+    if (sm.updated("radarState") && sm.rcv_frame("modelV2") > s->scene.started_frame) {
       update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
     }
   }
@@ -231,7 +231,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
 
   Params params;
   wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
-  has_prime = params.getBool("HasPrime");
+  prime_type = std::atoi(params.get("PrimeType").c_str());
 
   // update timer
   timer = new QTimer(this);
