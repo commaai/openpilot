@@ -64,7 +64,7 @@ class CarState(CarStateBase):
 
     if self.accurate_steer_angle_seen:
       # Offset seems to be invalid for large steering angles
-      if abs(ret.steeringAngleDeg) < 90:
+      if abs(ret.steeringAngleDeg) < 90 and cp.can_valid:
         self.angle_offset.update(torque_sensor_angle_deg - ret.steeringAngleDeg)
 
       if self.angle_offset.initialized:
