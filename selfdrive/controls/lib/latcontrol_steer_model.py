@@ -25,14 +25,16 @@ class LatControlSteerModel(LatControl):
     model_param = np.asarray(list(CP.lateralTuning.steerModel.modelparam))
 
     self.A = model_param[0:NX*NX].reshape((NX, NX), order='F')
-    self.B = model_param[NX*NX:NX*(NX+NU)].reshape((NX, NU), order='F')
+    B = model_param[NX*NX:NX*(NX+NU)].reshape((NX, NU), order='F')
     self.R = model_param[NX*(NX+NU):].reshape((NX, N_live_param), order='F')
-    self.M = - np.linalg.solve(self.B.T @ self.B, self.B.T)
-    self.B = self.B.reshape((NX,))
-    # CP.lateralTuning.steerModel.?
+    self.M = - np.linalg.solve(B.T @ B, B.T)
+    self.B = B.reshape((NX,))
+
+    self.W = np.diag([1e0, 1e-1])
+    self.PHI = (DT_CTRL * self.B).reshape((2,1))
+    self.M_tilde = - 1/(self.PHI.T @ self.W @ self.PHI) * (self.PHI.T@self.W)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
     self.torque = 0.0
-
 
   def reset(self):
     # when is this called? only in if below?
@@ -44,6 +46,7 @@ class LatControlSteerModel(LatControl):
 
     steers_max = get_steer_max(CP, CS.vEgo)
 
+    # offset does not contribute to resistive torque
     angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
@@ -58,19 +61,27 @@ class LatControlSteerModel(LatControl):
       model_log.active = False
       self.reset()
     else:
-      # self.pid.pos_limit = steers_max
-      # self.pid.neg_limit = -steers_max
 
-      # torque = argmin norm(xcurrent + DT_CTRL * (A*x + R*live_param + B*u)
       # analytical solution similar to steady state.
-      # offset does not contribute to resistive torque
-      torque_np = self.M @ (self.A @ self.xcurrent + self.R @ live_param +
-                (self.xcurrent - np.array([angle_steers_des_no_offset, self.xcurrent[1,]]))/DT_CTRL )
-      # torque_np = self.M @ (self.A @ np.array([angle_steers_des_no_offset, 0.0]) + self.R @ live_param)
+      # steady_state_torque = self.M * (self.A @ self.xcurrent + self.R @ live_param) # solve for xdot = 0
 
-      # TODO: needed?
-      # steer_feedforward = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
+      # torque = argmin norm([desired_angle, xcurrent_1] + DT_CTRL * (A*xcurrent + R*live_param + B*u))
+      # torque_np = self.M @ (self.A @ self.xcurrent + self.R @ live_param +
+                # (self.xcurrent - np.array([angle_steers_des_no_offset, self.xcurrent[1,]]))/DT_CTRL )
+      # hacky but works well..
+      # torque_np = self.M @ (self.A @ self.xcurrent + self.R @ live_param +
+      #           (self.xcurrent - np.array([angle_steers_des_no_offset, .95*self.xcurrent[1,]]))/DT_CTRL )
 
+      #
+      AxplusRp = (self.A @ self.xcurrent + self.R @ live_param)
+      desired_angle_rate = math.degrees(VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, params.roll))
+
+      # torque = argmin norm(xcurrent + DT_CTRL * (A*xcurrent + R*live_param + B*u) - [desired_angle, desired_angle_rate])_W
+      y = (self.xcurrent - np.array([angle_steers_des_no_offset, desired_angle_rate]) + DT_CTRL * AxplusRp).reshape((2,1))
+      torque_np = self.M_tilde @ y
+
+      # TODO: remove clipping later, good for prototype testing!
+      # When removing, use last_actuators instead of self.torque to update xcurrent
       STEER_DELTA_UP = 10/1500       # 1.5s time to peak torque
       STEER_DELTA_DOWN = 25/1500
       if self.torque > 0:
@@ -79,10 +90,10 @@ class LatControlSteerModel(LatControl):
       else:
           torque_np = clip(torque_np, self.torque - STEER_DELTA_UP,
                   min(self.torque + STEER_DELTA_DOWN, STEER_DELTA_UP))
-
       output_steer = float(clip(torque_np, -1.0, 1.0))
+
       # update state estimate with forward simulation
-      self.xcurrent = self.xcurrent + DT_CTRL * ((self.A @ self.xcurrent) + (self.B * output_steer) + (self.R @ live_param))
+      self.xcurrent = self.xcurrent + DT_CTRL * (AxplusRp + (self.B * output_steer))
 
       self.torque = output_steer
       model_log.active = True
