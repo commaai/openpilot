@@ -254,7 +254,6 @@ def uploader_fn(exit_event):
       backoff = min(backoff*2, 120)
 
     pm.send("uploaderState", uploader.get_msg())
-    cloudlog.info("upload done, success=%r", success)
 
 def main():
   uploader_fn(threading.Event())
