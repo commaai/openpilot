@@ -6,12 +6,12 @@ Version 0.8.13 (2022-02-16)
    * Matched strictness between comma two and comma three
  * Improved performance in turns by compensating for the road bank angle
  * Improved camera focus on the comma two
- * AGNOS 4 for comma three
-  * ADB support
-  * improved cell auto configuration
- * NEOS 19 for comma two
-  * package updates
-  * stability improvements
+ * AGNOS 4
+   * ADB support
+   * improved cell auto configuration
+ * NEOS 19
+   * package updates
+   * stability improvements
  * Subaru ECU firmware fingerprinting thanks to martinl!
  * Hyundai Santa Fe Plug-in Hybrid 2022 support thanks to sunnyhaibin!
  * Mazda CX-5 2022 support thanks to Jafaral!
