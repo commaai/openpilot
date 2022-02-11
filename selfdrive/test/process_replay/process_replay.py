@@ -346,8 +346,6 @@ def setup_env():
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
   params.put_bool("Passive", False)
-  params.put_bool("CommunityFeaturesToggle", True)
-  params.put_bool("DisengageOnGas", True)
 
   os.environ['NO_RADAR_SLEEP'] = "1"
   os.environ["SIMULATION"] = "1"
