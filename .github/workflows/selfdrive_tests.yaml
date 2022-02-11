@@ -69,62 +69,62 @@ jobs:
                           rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
 
-  build_mac:
-    name: build macos
-    runs-on: macos-latest
-    timeout-minutes: 60
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Determine pre-existing Homebrew packages
-      if: steps.dependency-cache.outputs.cache-hit != 'true'
-      run: |
-        echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
-        ls -1 /usr/local/Cellar >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
-    - name: Cache dependencies
-      id: dependency-cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.pyenv
-          ~/.local/share/virtualenvs/
-          /usr/local/Cellar
-          ~/github_brew_cache_entries.txt
-          /tmp/scons_cache
-        key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'Pipfile*') }}
-        restore-keys: macos-
-    - name: Brew link restored dependencies
-      run: |
-        if [ -f ~/github_brew_cache_entries.txt ]; then
-          while read pkg; do
-            brew link --force "$pkg" # `--force` for keg-only packages
-          done < ~/github_brew_cache_entries.txt
-        else
-          echo "Cache entries not found"
-        fi
-    - name: Install dependencies
-      run: ./tools/mac_setup.sh
-    - name: Build openpilot
-      run: |
-        source tools/openpilot_env.sh
-        pipenv run selfdrive/manager/build.py
-
-        # cleanup scons cache
-        rm -rf /tmp/scons_cache/
-        pipenv run scons -j$(nproc) --cache-populate
-    - name: Remove pre-existing Homebrew packages for caching
-      if: steps.dependency-cache.outputs.cache-hit != 'true'
-      run: |
-        cd /usr/local/Cellar
-        new_cellar=$(ls -1)
-        comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
-          if [[ $pkg != "zstd" ]]; then # caching step needs zstd
-            rm -rf "$pkg"
-          fi
-        done
-        comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
+  #build_mac:
+  #  name: build macos
+  #  runs-on: macos-latest
+  #  timeout-minutes: 60
+  #  steps:
+  #  - uses: actions/checkout@v2
+  #    with:
+  #      submodules: true
+  #  - name: Determine pre-existing Homebrew packages
+  #    if: steps.dependency-cache.outputs.cache-hit != 'true'
+  #    run: |
+  #      echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
+  #      ls -1 /usr/local/Cellar >> $GITHUB_ENV
+  #      echo 'EOF' >> $GITHUB_ENV
+  #  - name: Cache dependencies
+  #    id: dependency-cache
+  #    uses: actions/cache@v2
+  #    with:
+  #      path: |
+  #        ~/.pyenv
+  #        ~/.local/share/virtualenvs/
+  #        /usr/local/Cellar
+  #        ~/github_brew_cache_entries.txt
+  #        /tmp/scons_cache
+  #      key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'Pipfile*') }}
+  #      restore-keys: macos-
+  #  - name: Brew link restored dependencies
+  #    run: |
+  #      if [ -f ~/github_brew_cache_entries.txt ]; then
+  #        while read pkg; do
+  #          brew link --force "$pkg" # `--force` for keg-only packages
+  #        done < ~/github_brew_cache_entries.txt
+  #      else
+  #        echo "Cache entries not found"
+  #      fi
+  #  - name: Install dependencies
+  #    run: ./tools/mac_setup.sh
+  #  - name: Build openpilot
+  #    run: |
+  #      source tools/openpilot_env.sh
+  #      pipenv run selfdrive/manager/build.py
+  #
+  #      # cleanup scons cache
+  #      rm -rf /tmp/scons_cache/
+  #      pipenv run scons -j$(nproc) --cache-populate
+  #  - name: Remove pre-existing Homebrew packages for caching
+  #    if: steps.dependency-cache.outputs.cache-hit != 'true'
+  #    run: |
+  #      cd /usr/local/Cellar
+  #      new_cellar=$(ls -1)
+  #      comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
+  #        if [[ $pkg != "zstd" ]]; then # caching step needs zstd
+  #          rm -rf "$pkg"
+  #        fi
+  #      done
+  #      comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
 
   build_webcam:
     name: build webcam
@@ -264,9 +264,10 @@ jobs:
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./selfdrive/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
-                        ./selfdrive/camerad/test/ae_gray_test"
-    - name: Upload coverage to Codecov
-      run: bash <(curl -s https://codecov.io/bash) -v -F unit_tests
+                        ./selfdrive/camerad/test/ae_gray_test && \
+                        coverage xml"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
 
   process_replay:
     name: process replay
@@ -299,9 +300,10 @@ jobs:
     - name: Run replay
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
-    - name: Upload coverage to Codecov
-      run: bash <(curl -s https://codecov.io/bash) -v -F process_replay
+                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
+                        coverage xml"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
     - name: Print diff
       if: always()
       run: cat selfdrive/test/process_replay/diff.txt
@@ -354,7 +356,10 @@ jobs:
         ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
                         scons -j$(nproc) && \
                         cd selfdrive/test/longitudinal_maneuvers && \
-                        ./test_longitudinal.py"
+                        coverage run ./test_longitudinal.py && \
+                        coverage xml"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
     - uses: actions/upload-artifact@v2
       if: always()
       continue-on-error: true
@@ -397,13 +402,14 @@ jobs:
     - name: Test car models
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test && \
-                        FILEREADER_CACHE=1 pytest selfdrive/test/test_models.py && \
+                        FILEREADER_CACHE=1 coverage run -m pytest selfdrive/test/test_models.py && \
+                        coverage xml && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
-    - name: Upload coverage to Codecov
-      run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
 
   docs:
     name: build docs

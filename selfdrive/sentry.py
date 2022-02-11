@@ -4,7 +4,8 @@ from enum import Enum
 from sentry_sdk.integrations.threading import ThreadingIntegration
 
 from common.params import Params
-from selfdrive.hardware import HARDWARE
+from selfdrive.athena.registration import is_registered_device
+from selfdrive.hardware import HARDWARE, PC
 from selfdrive.swaglog import cloudlog
 from selfdrive.version import get_branch, get_commit, get_origin, get_version, \
                               is_comma_remote, is_dirty, is_tested_branch
@@ -12,9 +13,9 @@ from selfdrive.version import get_branch, get_commit, get_origin, get_version, \
 
 class SentryProject(Enum):
   # python project
-  SELFDRIVE = "https://a8dc76b5bfb34908a601d67e2aa8bcf9@o33823.ingest.sentry.io/77924"
+  SELFDRIVE = "https://6f3c7076c1e14b2aa10f5dde6dda0cc4@o33823.ingest.sentry.io/77924"
   # native project
-  SELFDRIVE_NATIVE = "https://a40f22e13cbc4261873333c125fc9d38@o33823.ingest.sentry.io/157615"
+  SELFDRIVE_NATIVE = "https://3e4b586ed21a4479ad5d85083b639bc6@o33823.ingest.sentry.io/157615"
 
 
 def report_tombstone(fn: str, message: str, contents: str) -> None:
@@ -37,12 +38,17 @@ def capture_exception(*args, **kwargs) -> None:
     cloudlog.exception("sentry exception")
 
 
+def set_tag(key: str, value: str) -> None:
+  sentry_sdk.set_tag(key, value)
+
+
 def init(project: SentryProject) -> None:
   # forks like to mess with this, so double check
-  if not (is_comma_remote() and "commaai" in get_origin(default="")):
+  comma_remote = is_comma_remote() and "commaai" in get_origin(default="")
+  if not comma_remote or not is_registered_device() or PC:
     return
 
-  env = "production" if is_tested_branch() else "master"
+  env = "release" if is_tested_branch() else "master"
   dongle_id = Params().get("DongleId", encoding='utf-8')
 
   integrations = []

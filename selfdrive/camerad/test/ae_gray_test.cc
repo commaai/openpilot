@@ -11,9 +11,10 @@
 #include "selfdrive/camerad/cameras/camera_common.h"
 
 // needed by camera_common.cc
-ExitHandler do_exit;
-
 void camera_autoexposure(CameraState *s, float grey_frac) {}
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {}
+void cameras_open(MultiCameraState *s) {}
+void cameras_run(MultiCameraState *s) {}
 
 int main() {
   // set up fake camerabuf

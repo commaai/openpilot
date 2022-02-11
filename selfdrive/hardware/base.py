@@ -67,6 +67,10 @@ class HardwareBase(ABC):
   def get_network_strength(self, network_type):
     pass
 
+  @staticmethod
+  def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
+    pass
+
   @abstractmethod
   def get_battery_capacity(self):
     pass

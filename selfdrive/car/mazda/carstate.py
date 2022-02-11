@@ -16,6 +16,7 @@ class CarState(CarStateBase):
     self.acc_active_last = False
     self.low_speed_alert = False
     self.lkas_allowed_speed = False
+    self.lkas_disabled = False
 
   def update(self, cp, cp_cam):
 
@@ -64,12 +65,13 @@ class CarState(CarStateBase):
     # Either due to low speed or hands off
     lkas_blocked = cp.vl["STEER_RATE"]["LKAS_BLOCK"] == 1
 
-    # LKAS is enabled at 52kph going up and disabled at 45kph going down
-    # wait for LKAS_BLOCK signal to clear when going up since it lags behind the speed sometimes
-    if speed_kph > LKAS_LIMITS.ENABLE_SPEED and not lkas_blocked:
-      self.lkas_allowed_speed = True
-    elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
-      self.lkas_allowed_speed = False
+    if self.CP.minSteerSpeed > 0:
+      # LKAS is enabled at 52kph going up and disabled at 45kph going down
+      # wait for LKAS_BLOCK signal to clear when going up since it lags behind the speed sometimes
+      if speed_kph > LKAS_LIMITS.ENABLE_SPEED and not lkas_blocked:
+        self.lkas_allowed_speed = True
+      elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
+        self.lkas_allowed_speed = False
 
     # TODO: the signal used for available seems to be the adaptive cruise signal, instead of the main on
     #       it should be used for carState.cruiseState.nonAdaptive instead
@@ -86,34 +88,35 @@ class CarState(CarStateBase):
     # Check if LKAS is disabled due to lack of driver torque when all other states indicate
     # it should be enabled (steer lockout). Don't warn until we actually get lkas active
     # and lose it again, i.e, after initial lkas activation
-
     ret.steerWarning = self.lkas_allowed_speed and lkas_blocked
 
     self.acc_active_last = ret.cruiseState.enabled
 
+    self.crz_btns_counter = cp.vl["CRZ_BTNS"]["CTR"]
+
+    # camera signals
+    self.lkas_disabled = cp_cam.vl["CAM_LANEINFO"]["LANE_LINES"] == 0
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
     self.cam_laneinfo = cp_cam.vl["CAM_LANEINFO"]
-    self.crz_btns_counter = cp.vl["CRZ_BTNS"]["CTR"]
     ret.steerError = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
 
     return ret
 
   @staticmethod
   def get_can_parser(CP):
-    # this function generates lists for signal, messages and initial values
     signals = [
-      # sig_name, sig_address, default
-      ("LEFT_BLINK", "BLINK_INFO", 0),
-      ("RIGHT_BLINK", "BLINK_INFO", 0),
-      ("HIGH_BEAMS", "BLINK_INFO", 0),
-      ("STEER_ANGLE", "STEER", 0),
-      ("STEER_ANGLE_RATE", "STEER_RATE", 0),
-      ("STEER_TORQUE_SENSOR", "STEER_TORQUE", 0),
-      ("STEER_TORQUE_MOTOR", "STEER_TORQUE", 0),
-      ("FL", "WHEEL_SPEEDS", 0),
-      ("FR", "WHEEL_SPEEDS", 0),
-      ("RL", "WHEEL_SPEEDS", 0),
-      ("RR", "WHEEL_SPEEDS", 0),
+      # sig_name, sig_address
+      ("LEFT_BLINK", "BLINK_INFO"),
+      ("RIGHT_BLINK", "BLINK_INFO"),
+      ("HIGH_BEAMS", "BLINK_INFO"),
+      ("STEER_ANGLE", "STEER"),
+      ("STEER_ANGLE_RATE", "STEER_RATE"),
+      ("STEER_TORQUE_SENSOR", "STEER_TORQUE"),
+      ("STEER_TORQUE_MOTOR", "STEER_TORQUE"),
+      ("FL", "WHEEL_SPEEDS"),
+      ("FR", "WHEEL_SPEEDS"),
+      ("RL", "WHEEL_SPEEDS"),
+      ("RR", "WHEEL_SPEEDS"),
     ]
 
     checks = [
@@ -127,26 +130,26 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in GEN1:
       signals += [
-        ("LKAS_BLOCK", "STEER_RATE", 0),
-        ("LKAS_TRACK_STATE", "STEER_RATE", 0),
-        ("HANDS_OFF_5_SECONDS", "STEER_RATE", 0),
-        ("CRZ_ACTIVE", "CRZ_CTRL", 0),
-        ("CRZ_AVAILABLE", "CRZ_CTRL", 0),
-        ("CRZ_SPEED", "CRZ_EVENTS", 0),
-        ("STANDSTILL", "PEDALS", 0),
-        ("BRAKE_ON", "PEDALS", 0),
-        ("BRAKE_PRESSURE", "BRAKE", 0),
-        ("GEAR", "GEAR", 0),
-        ("DRIVER_SEATBELT", "SEATBELT", 0),
-        ("FL", "DOORS", 0),
-        ("FR", "DOORS", 0),
-        ("BL", "DOORS", 0),
-        ("BR", "DOORS", 0),
-        ("PEDAL_GAS", "ENGINE_DATA", 0),
-        ("SPEED", "ENGINE_DATA", 0),
-        ("CTR", "CRZ_BTNS", 0),
-        ("LEFT_BS1", "BSM", 0),
-        ("RIGHT_BS1", "BSM", 0),
+        ("LKAS_BLOCK", "STEER_RATE"),
+        ("LKAS_TRACK_STATE", "STEER_RATE"),
+        ("HANDS_OFF_5_SECONDS", "STEER_RATE"),
+        ("CRZ_ACTIVE", "CRZ_CTRL"),
+        ("CRZ_AVAILABLE", "CRZ_CTRL"),
+        ("CRZ_SPEED", "CRZ_EVENTS"),
+        ("STANDSTILL", "PEDALS"),
+        ("BRAKE_ON", "PEDALS"),
+        ("BRAKE_PRESSURE", "BRAKE"),
+        ("GEAR", "GEAR"),
+        ("DRIVER_SEATBELT", "SEATBELT"),
+        ("FL", "DOORS"),
+        ("FR", "DOORS"),
+        ("BL", "DOORS"),
+        ("BR", "DOORS"),
+        ("PEDAL_GAS", "ENGINE_DATA"),
+        ("SPEED", "ENGINE_DATA"),
+        ("CTR", "CRZ_BTNS"),
+        ("LEFT_BS1", "BSM"),
+        ("RIGHT_BS1", "BSM"),
       ]
 
       checks += [
@@ -171,26 +174,26 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in GEN1:
       signals += [
-        # sig_name, sig_address, default
-        ("LKAS_REQUEST", "CAM_LKAS", 0),
-        ("CTR", "CAM_LKAS", 0),
-        ("ERR_BIT_1", "CAM_LKAS", 0),
-        ("LINE_NOT_VISIBLE", "CAM_LKAS", 0),
-        ("BIT_1", "CAM_LKAS", 1),
-        ("ERR_BIT_2", "CAM_LKAS", 0),
-        ("STEERING_ANGLE", "CAM_LKAS", 0),
-        ("ANGLE_ENABLED", "CAM_LKAS", 0),
-        ("CHKSUM", "CAM_LKAS", 0),
+        # sig_name, sig_address
+        ("LKAS_REQUEST", "CAM_LKAS"),
+        ("CTR", "CAM_LKAS"),
+        ("ERR_BIT_1", "CAM_LKAS"),
+        ("LINE_NOT_VISIBLE", "CAM_LKAS"),
+        ("BIT_1", "CAM_LKAS"),
+        ("ERR_BIT_2", "CAM_LKAS"),
+        ("STEERING_ANGLE", "CAM_LKAS"),
+        ("ANGLE_ENABLED", "CAM_LKAS"),
+        ("CHKSUM", "CAM_LKAS"),
 
-        ("LINE_VISIBLE", "CAM_LANEINFO", 0),
-        ("LINE_NOT_VISIBLE", "CAM_LANEINFO", 1),
-        ("LANE_LINES", "CAM_LANEINFO", 0),
-        ("BIT1", "CAM_LANEINFO", 0),
-        ("BIT2", "CAM_LANEINFO", 0),
-        ("BIT3", "CAM_LANEINFO", 0),
-        ("NO_ERR_BIT", "CAM_LANEINFO", 1),
-        ("S1", "CAM_LANEINFO", 0),
-        ("S1_HBEAM", "CAM_LANEINFO", 0),
+        ("LINE_VISIBLE", "CAM_LANEINFO"),
+        ("LINE_NOT_VISIBLE", "CAM_LANEINFO"),
+        ("LANE_LINES", "CAM_LANEINFO"),
+        ("BIT1", "CAM_LANEINFO"),
+        ("BIT2", "CAM_LANEINFO"),
+        ("BIT3", "CAM_LANEINFO"),
+        ("NO_ERR_BIT", "CAM_LANEINFO"),
+        ("S1", "CAM_LANEINFO"),
+        ("S1_HBEAM", "CAM_LANEINFO"),
       ]
 
       checks += [

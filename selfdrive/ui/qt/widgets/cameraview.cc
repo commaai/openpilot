@@ -299,12 +299,12 @@ void CameraViewWidget::vipcThread() {
         std::lock_guard lk(lock);
         if (!Hardware::EON()) {
           void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
-          
+
           if (texture_buffer == nullptr) {
             LOGE("gl_buffer->map returned nullptr");
             continue;
           }
-          
+
           memcpy(texture_buffer, buf->addr, buf->len);
           gl_buffer->unmap();
 

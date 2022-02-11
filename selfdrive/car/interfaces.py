@@ -74,8 +74,7 @@ class CarInterfaceBase(ABC):
   def get_std_params(candidate, fingerprint):
     ret = car.CarParams.new_message()
     ret.carFingerprint = candidate
-    ret.unsafeMode = 0  # see safety_declarations.h for allowed values
-    ret.unsafeMode = 1 if Params().get_bool("DisengageOnGas") else 0 # sets unsafeMode to 1 if DisengageOnGas is True
+    ret.unsafeMode = 1 if Params().get_bool("DisengageOnGas") else 0  # see safety_declarations.h for allowed values
 
     # standard ALC params
     ret.steerControlType = car.CarParams.SteerControlType.torque
@@ -101,6 +100,7 @@ class CarInterfaceBase(ABC):
     ret.longitudinalTuning.kiV = [1.]
     ret.longitudinalActuatorDelayLowerBound = 0.15
     ret.longitudinalActuatorDelayUpperBound = 0.15
+    ret.steerLimitTimer = 1.0
     return ret
 
   @abstractmethod

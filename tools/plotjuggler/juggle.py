@@ -23,6 +23,7 @@ juggle_dir = os.path.dirname(os.path.realpath(__file__))
 DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
 RELEASES_URL="https://github.com/commaai/PlotJuggler/releases/download/latest"
 INSTALL_DIR = os.path.join(juggle_dir, "bin")
+PLOTJUGGLER_BIN = os.path.join(juggle_dir, "bin/plotjuggler")
 
 
 def install():
@@ -70,7 +71,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
   if layout is not None:
     extra_args += f" -l {layout}"
 
-  cmd = f'plotjuggler --plugin_folders {INSTALL_DIR}{extra_args}'
+  cmd = f'{PLOTJUGGLER_BIN} --plugin_folders {INSTALL_DIR}{extra_args}'
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
 
@@ -92,7 +93,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
     r = Route(route_or_segment_name.route_name.canonical_name)
     logs = r.qlog_paths() if qlog else r.log_paths()
 
-  segment_end = segment_start + segment_count if segment_count else -1
+  segment_end = segment_start + segment_count if segment_count else None
   logs = logs[segment_start:segment_end]
 
   if None in logs:
@@ -148,6 +149,10 @@ if __name__ == "__main__":
   if args.install:
     install()
     sys.exit()
+
+  if not os.path.exists(PLOTJUGGLER_BIN):
+    print("PlotJuggler is missing. Downloading...")
+    install()
 
   if args.stream:
     start_juggler(layout=args.layout)

@@ -165,6 +165,7 @@ FW_VERSIONS = {
       b'\xf1\x8704E906027HD\xf1\x893742',
       b'\xf1\x8704E906027MA\xf1\x894958',
       b'\xf1\x8704L906021DT\xf1\x895520',
+      b'\xf1\x8704L906021DT\xf1\x898127',
       b'\xf1\x8704L906021N \xf1\x895518',
       b'\xf1\x8704L906026BP\xf1\x897608',
       b'\xf1\x8704L906026NF\xf1\x899528',
@@ -211,6 +212,7 @@ FW_VERSIONS = {
       b'\xf1\x870D9300040A \xf1\x893613',
       b'\xf1\x870D9300040S \xf1\x894311',
       b'\xf1\x870D9300041H \xf1\x895220',
+      b'\xf1\x870D9300041P \xf1\x894507',
       b'\xf1\x870DD300045K \xf1\x891120',
       b'\xf1\x870DD300046F \xf1\x891601',
       b'\xf1\x870GC300012A \xf1\x891403',
@@ -469,13 +471,16 @@ FW_VERSIONS = {
   },
   CAR.TRANSPORTER_T61: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906057AP\xf1\x891186',
       b'\xf1\x8704L906057N \xf1\x890413',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870BT300012G \xf1\x893102',
+      b'\xf1\x870BT300012E \xf1\x893105',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x872Q0959655AE\xf1\x890506\xf1\x82\02316170411110411--04041704161611152S1411',
+      b'\xf1\x872Q0959655AF\xf1\x890506\xf1\x82\x1316171111110411--04041711121211152S1413',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x877LA909144F \xf1\x897150\xf1\x82\005323A5519A2',
