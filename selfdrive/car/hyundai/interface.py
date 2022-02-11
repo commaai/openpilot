@@ -46,7 +46,7 @@ class CarInterface(CarInterfaceBase):
 
     if candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1806. + STD_CARGO_KG
       ret.wheelbase = 2.766
       # Values from optimizer
       ret.steerRatio = 16.55  # 13.8 is spec end-to-end
@@ -63,7 +63,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.SONATA_LF:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 4497. * CV.LB_TO_KG
+      ret.mass = 2040. + STD_CARGO_KG
       ret.wheelbase = 2.804
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -87,7 +87,7 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.ELANTRA_2021:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = (2800. * CV.LB_TO_KG) + STD_CARGO_KG
+      ret.mass = 1270. + STD_CARGO_KG
       ret.wheelbase = 2.72
       ret.steerRatio = 12.9
       tire_stiffness_factor = 0.65
@@ -95,7 +95,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.ELANTRA_HEV_2021:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = (3017. * CV.LB_TO_KG) + STD_CARGO_KG
+      ret.mass = 1368. + STD_CARGO_KG
       ret.wheelbase = 2.72
       ret.steerRatio = 12.9
       tire_stiffness_factor = 0.65
@@ -136,7 +136,7 @@ class CarInterface(CarInterfaceBase):
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.VELOSTER:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3558. * CV.LB_TO_KG
+      ret.mass = 1523. + STD_CARGO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75 * 1.15
       tire_stiffness_factor = 0.5
@@ -177,7 +177,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.actuatorEffectivenessV = [1.8]
     elif candidate in (CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H):
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3558. * CV.LB_TO_KG
+      ret.mass = 1523. + STD_CARGO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
@@ -192,7 +192,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_FORTE:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3558. * CV.LB_TO_KG
+      ret.mass = 1614. + STD_CARGO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
@@ -209,7 +209,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_K5_2021:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3228. * CV.LB_TO_KG
+      ret.mass = 1464. + STD_CARGO_KG
       ret.wheelbase = 2.85
       ret.steerRatio = 13.27  # 2021 Kia K5 Steering Ratio (all trims)
       tire_stiffness_factor = 0.5
@@ -228,14 +228,14 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
       ret.lateralTuning.indi.actuatorEffectivenessV = [1.8]
       ret.steerActuatorDelay = 0.1
-      ret.mass = 1640.0 + STD_CARGO_KG
+      ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.84
       ret.steerRatio = 13.56
     elif candidate == CAR.GENESIS_G70_2020:
       ret.lateralTuning.pid.kf = 0.
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.112], [0.004]]
-      ret.mass = 3673.0 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1666. + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.steerRatio = 12.9
     elif candidate == CAR.GENESIS_G80:
@@ -246,7 +246,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
     elif candidate == CAR.GENESIS_G90:
-      ret.mass = 2200
+      ret.mass = 2200. + STD_CARGO_KG
       ret.wheelbase = 3.15
       ret.steerRatio = 12.069
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]

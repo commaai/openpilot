@@ -16,7 +16,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.wheelbase = 2.85
     ret.steerRatio = 14.8
-    ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
+    ret.mass = 1381. + STD_CARGO_KG
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]     # TODO: tune this
     ret.lateralTuning.pid.kf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF

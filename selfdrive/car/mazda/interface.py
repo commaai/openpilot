@@ -30,28 +30,28 @@ class CarInterface(CarInterfaceBase):
     tire_stiffness_factor = 0.70   # not optimized yet
 
     if candidate in (CAR.CX5, CAR.CX5_2022):
-      ret.mass = 3655 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1662. + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 15.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
     elif candidate in (CAR.CX9, CAR.CX9_2021):
-      ret.mass = 4217 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1913. + STD_CARGO_KG
       ret.wheelbase = 3.1
       ret.steerRatio = 17.6
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
     elif candidate == CAR.MAZDA3:
-      ret.mass = 2875 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1304. + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 14.0
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
     elif candidate == CAR.MAZDA6:
-      ret.mass = 3443 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1562. + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.steerRatio = 15.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]

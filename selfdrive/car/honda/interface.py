@@ -115,7 +115,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.ACCORD, CAR.ACCORDH):
       stop_and_go = True
-      ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1487. + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 16.33  # 11.82 is spec end-to-end
@@ -129,7 +129,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
-      ret.mass = 3095. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1404. + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.37
       ret.steerRatio = 18.61  # 15.3 is spec end-to-end
@@ -139,7 +139,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.CRV, CAR.CRV_EU):
       stop_and_go = False
-      ret.mass = 3572. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1620. + STD_CARGO_KG
       ret.wheelbase = 2.62
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.89  # as spec
@@ -150,7 +150,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
-      ret.mass = 3410. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1547. + STD_CARGO_KG
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0  # 12.3 is spec end-to-end
@@ -179,7 +179,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.FIT:
       stop_and_go = False
-      ret.mass = 2644. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1199. + STD_CARGO_KG
       ret.wheelbase = 2.53
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.06
@@ -189,7 +189,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.FREED:
       stop_and_go = False
-      ret.mass = 3086. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1400. + STD_CARGO_KG
       ret.wheelbase = 2.74
       # the remaining parameters were copied from FIT
       ret.centerToFront = ret.wheelbase * 0.39
@@ -200,7 +200,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.HRV:
       stop_and_go = False
-      ret.mass = 3125 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1417. + STD_CARGO_KG
       ret.wheelbase = 2.61
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.2
@@ -211,7 +211,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ACURA_RDX:
       stop_and_go = False
-      ret.mass = 3935. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1785. + STD_CARGO_KG
       ret.wheelbase = 2.68
       ret.centerToFront = ret.wheelbase * 0.38
       ret.steerRatio = 15.0  # as spec
@@ -221,7 +221,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ACURA_RDX_3G:
       stop_and_go = True
-      ret.mass = 4068. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1845. + STD_CARGO_KG
       ret.wheelbase = 2.75
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 11.95  # as spec
@@ -231,7 +231,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ODYSSEY:
       stop_and_go = False
-      ret.mass = 4471. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 2028. + STD_CARGO_KG
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 14.35  # as spec
@@ -251,7 +251,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.PILOT, CAR.PASSPORT):
       stop_and_go = False
-      ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG  # average weight
+      ret.mass = 1907. + STD_CARGO_KG  # average weight
       ret.wheelbase = 2.82
       ret.centerToFront = ret.wheelbase * 0.428
       ret.steerRatio = 17.25  # as spec
@@ -261,7 +261,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.RIDGELINE:
       stop_and_go = False
-      ret.mass = 4515. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 2048. + STD_CARGO_KG
       ret.wheelbase = 3.18
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.59  # as spec
@@ -271,7 +271,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.INSIGHT:
       stop_and_go = True
-      ret.mass = 2987. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1355. + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 15.0  # 12.58 is spec end-to-end
@@ -281,7 +281,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.HONDA_E:
       stop_and_go = True
-      ret.mass = 3338.8 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 1514. + STD_CARGO_KG
       ret.wheelbase = 2.5
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 16.71
