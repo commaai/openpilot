@@ -1,4 +1,4 @@
-Version 0.8.13-GM7 (2022-02-09)
+Version 0.8.13-GM7 (2022-02-11)
 ========================
  * WARNING: Forced update on opendbc may require reinstall
  * ^^^^^^
@@ -29,15 +29,20 @@ Version 0.8.13-GM7 (2022-02-09)
  * TODO: Pedal low-speed tuning
  * TODO: Auto-detection of B-mode
  * TODO: Auto-detection of B-mode zero-point
-
-Version 0.8.13 (2022-XX-XX)
+Version 0.8.13 (2022-02-16)
 ========================
  * Improved driver monitoring
    * Retuned driver pose learner for relaxed driving positions
    * Added reliance on driving model to be more scene adaptive
    * Matched strictness between comma two and comma three
- * Roll compensation
+ * Improved performance in turns by compensating for the road bank angle
  * Improved camera focus on the comma two
+ * AGNOS 4
+   * ADB support
+   * improved cell auto configuration
+ * NEOS 19
+   * package updates
+   * stability improvements
  * Subaru ECU firmware fingerprinting thanks to martinl!
  * Hyundai Santa Fe Plug-in Hybrid 2022 support thanks to sunnyhaibin!
  * Mazda CX-5 2022 support thanks to Jafaral!
