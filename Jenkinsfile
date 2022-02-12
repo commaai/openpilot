@@ -157,7 +157,6 @@ pipeline {
                 }
                 */
 
-                /*
                 stage('C3: build') {
                   environment {
                     R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
@@ -172,7 +171,6 @@ pipeline {
                     ])
                   }
                 }
-                */
 
                 stage('C3: HW + Unit Tests') {
                   steps {
