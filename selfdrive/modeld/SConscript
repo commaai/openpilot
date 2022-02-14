@@ -23,6 +23,7 @@ common_src = [
 thneed_src = [
   "thneed/thneed.cc",
   "thneed/serialize.cc",
+  "thneed/optimizer.cc",
   "runners/thneedmodel.cc",
 ]
 

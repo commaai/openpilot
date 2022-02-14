@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include "selfdrive/common/util.h"
+#include "selfdrive/common/timing.h"
 
 void PrintErrorStringAndExit() {
   std::cerr << zdl::DlSystem::getLastErrorString() << std::endl;
@@ -193,13 +194,19 @@ void SNPEModel::execute() {
       float *outputs_golden = (float *)malloc(output_size*sizeof(float));
       memcpy(outputs_golden, output, output_size*sizeof(float));
       memset(output, 0, output_size*sizeof(float));
-      memset(recurrent, 0, recurrent_size*sizeof(float));
-      if (extra != NULL) {
-        float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
-        thneed->execute(inputs, output);
-      } else {
-        float *inputs[4] = {recurrent, trafficConvention, desire, input};
-        thneed->execute(inputs, output);
+
+      for (int i = 0; i < 5; i++) {
+        memset(recurrent, 0, recurrent_size*sizeof(float));
+        uint64_t start_time = nanos_since_boot();
+        if (extra != NULL) {
+          float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
+          thneed->execute(inputs, output);
+        } else {
+          float *inputs[4] = {recurrent, trafficConvention, desire, input};
+          thneed->execute(inputs, output);
+        }
+        uint64_t elapsed_time = nanos_since_boot() - start_time;
+        printf("ran model in %.2f ms\n", float(elapsed_time)/1e6);
       }
 
       if (memcmp(output, outputs_golden, output_size*sizeof(float)) == 0) {
