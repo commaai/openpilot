@@ -1,13 +1,17 @@
 from collections import namedtuple
+from enum import Enum
+
 from selfdrive.car import dbc_dict
 from cereal import car
 
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
 
-class CAR:
+
+class CAR(Enum):
   AP1_MODELS = 'TESLA AP1 MODEL S'
   AP2_MODELS = 'TESLA AP2 MODEL S'
+
 
 FINGERPRINTS = {
   CAR.AP2_MODELS: [
@@ -27,6 +31,7 @@ DBC = {
   CAR.AP1_MODELS: dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
 }
 
+
 class CANBUS:
   # Lateral harness
   chassis = 0
@@ -37,6 +42,7 @@ class CANBUS:
   powertrain = 4
   private = 5
   autopilot_powertrain = 6
+
 
 GEAR_MAP = {
   "DI_GEAR_INVALID": car.CarState.GearShifter.unknown,
@@ -58,6 +64,7 @@ BUTTONS = [
   Button(car.CarState.ButtonEvent.Type.cancel, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [2]),
   Button(car.CarState.ButtonEvent.Type.resumeCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [1]),
 ]
+
 
 class CarControllerParams:
   RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
