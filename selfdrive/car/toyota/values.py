@@ -26,8 +26,8 @@ class ToyotaFlags(IntFlag):
 
 class CAR(Enum):
   # Toyota
-  ALPHARD_TSS2 = 0
-  AVALON = 1
+  ALPHARD_TSS2 = "Toyota Alphard 2020"
+  AVALON = "Toyota Avalon 2016"
   AVALON_2019 = "Toyota Avalon 2019"
   AVALONH_2019 = "Toyota Avalon Hybrid 2019"
   AVALON_TSS2 = "Toyota Avalon 2022"
@@ -35,15 +35,15 @@ class CAR(Enum):
   CAMRYH = "Toyota Camry Hybrid 2018"
   CAMRY_TSS2 = "Toyota Camry 2021"  # TSS 2.5
   CAMRYH_TSS2 = "Toyota Camry Hybrid 2021"
-  CHR = "Toyota C-HR 2018"
-  CHRH = "Toyota C-HR Hybrid 2018"
+  CHR = "Toyota C-HR 2017"
+  CHRH = "Toyota C-HR Hybrid 2017"
   COROLLA = "Toyota Corolla 2017"
   COROLLA_TSS2 = "Toyota Corolla TSS2 2019"
   # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
   COROLLAH_TSS2 = "Toyota Corolla Hybrid TSS2 2019"
-  HIGHLANDER = "Toyota Highlander 2017"
+  HIGHLANDER = "Toyota Highlander 2017"  # TODO: don't change fingerprint
   HIGHLANDER_TSS2 = "Toyota Highlander 2020"
-  HIGHLANDERH = "Toyota Highlander Hybrid 2018"
+  HIGHLANDERH = "Toyota Highlander Hybrid 2017"
   HIGHLANDERH_TSS2 = "Toyota Highlander Hybrid 2020"
   PRIUS = "Toyota Prius 2017"
   PRIUS_V = "Toyota Prius v 2017"
@@ -72,40 +72,33 @@ class CAR(Enum):
 
 
 CAR_INFO = {
-  CAR.ALPHARD_TSS2: CarInfo("Toyota Alphard 2020", {2019, 2020}),
-  CAR.AVALON: CarInfo("Toyota Avalon 2016", {2016, 2017, 2018, 2019, 2020, 2021}, 'TSS-P'),
-  CAR.AVALON_2019: CarInfo("Toyota Avalon 2019", {2022}),
-  CAR.AVALONH_2019: CarInfo("Toyota Avalon Hybrid 2019", {2019, 2020, 2021}, 'TSS-P'),
-  CAR.AVALON_TSS2: "Toyota Avalon 2022",
-  CAR.CAMRY: "Toyota Camry 2018",
-  CAR.CAMRYH: "Toyota Camry Hybrid 2018",
-  CAR.CAMRY_TSS2: "Toyota Camry 2021"  # TSS 2.5
-  CAR.CAMRYH_TSS2: "Toyota Camry Hybrid 2021",
-  CAR.CHR: "Toyota C-HR 2018",
-  CAR.CHRH: "Toyota C-HR Hybrid 2018",
-  CAR.COROLLA: "Toyota Corolla 2017",
-  CAR.COROLLA_TSS2: "Toyota Corolla TSS2 2019",
-  CAR.COROLLAH_TSS2: "Toyota Corolla Hybrid TSS2 2019",
-  CAR.HIGHLANDER: "Toyota Highlander 2017",
-  CAR.HIGHLANDER_TSS2: "Toyota Highlander 2020",
-  CAR.HIGHLANDERH: "Toyota Highlander Hybrid 2018",
-  CAR.HIGHLANDERH_TSS2: "Toyota Highlander Hybrid 2020",
-  CAR.PRIUS: "Toyota Prius 2017",
-  CAR.PRIUS_V: "Toyota Prius v 2017",
-  CAR.PRIUS_TSS2: "Toyota Prius TSS2 2021",
-  CAR.RAV4: "Toyota RAV4 2017",
-  CAR.RAV4H: "Toyota RAV4 Hybrid 2017",
-  CAR.RAV4_TSS2: "Toyota RAV4 2019",
-  CAR.RAV4H_TSS2: "Toyota RAV4 Hybrid 2019",
-  CAR.MIRAI: "Toyota Mirai 2021"  # TSS 2.5
-  CAR.SIENNA: "Toyota Sienna 2018",
-}
-
-CAR_INFO = {
-  CAR.ALPHARD_TSS2: CarInfo("Toyota Alphard 2020", {2019, 2020}),
-  CAR.CAMRY_TSS2: CarInfo("Toyota Camry 2021", {2021, 2022}),  # TSS 2.5
-  CAR.CAMRYH: CarInfo("Toyota Camry Hybrid 2018", {2018, 2019, 2020}),
-  CAR.CAMRYH_TSS2: CarInfo("Toyota Camry Hybrid 2021", {2021, 2022}),
+  CAR.ALPHARD_TSS2: CarInfo({2019, 2020}),
+  CAR.AVALON: CarInfo({2016, 2017, 2018, 2019, 2020, 2021}, 'TSS-P'),
+  CAR.AVALON_2019: CarInfo({2022}, 'TSS-P'),
+  CAR.AVALONH_2019: CarInfo({2019, 2020, 2021}, 'TSS-P'),
+  CAR.AVALON_TSS2: CarInfo({2022}),
+  CAR.CAMRY: CarInfo({2018, 2019, 2020}),
+  CAR.CAMRYH: CarInfo({2018, 2019, 2020}),
+  CAR.CAMRY_TSS2: CarInfo({2021, 2022}),
+  CAR.CAMRYH_TSS2: CarInfo({2021, 2022}),
+  CAR.CHR: CarInfo({2017, 2018, 2019, 2020, 2021}),
+  CAR.CHRH: CarInfo({2017, 2018, 2019}),
+  CAR.COROLLA: CarInfo({2017, 2018, 2019}),
+  CAR.COROLLA_TSS2: CarInfo({2020, 2021, 2022}),
+  CAR.COROLLAH_TSS2: CarInfo({2020, 2021, 2022}),
+  CAR.HIGHLANDER: CarInfo({2017, 2018, 2019}),
+  CAR.HIGHLANDER_TSS2: CarInfo({2020, 2021, 2022}),
+  CAR.HIGHLANDERH: CarInfo({2017, 2018, 2019}),
+  CAR.HIGHLANDERH_TSS2: CarInfo({2020, 2021, 2022}),
+  CAR.PRIUS: CarInfo({2016, 2017, 2018, 2019, 2020}, 'TSS-P'),  # TODO: Prius Prime is lost here (supports All packages)
+  CAR.PRIUS_V: CarInfo({2017}, 'TSS-P'),
+  CAR.PRIUS_TSS2: CarInfo({2021, 2022}),
+  CAR.RAV4: CarInfo({2016, 2017, 2018}, 'TSS-P'),
+  CAR.RAV4H: CarInfo({2016, 2017, 2018}, 'TSS-P'),
+  CAR.RAV4_TSS2: CarInfo({2019, 2020, 2021}),
+  CAR.RAV4H_TSS2: CarInfo({2019, 2020, 2021}),
+  CAR.MIRAI: CarInfo({2021}),
+  CAR.SIENNA: CarInfo({2018, 2019, 2020}),
 }
 
 # (addr, cars, bus, 1/freq*100, vl)
