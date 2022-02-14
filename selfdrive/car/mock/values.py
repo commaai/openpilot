@@ -1,5 +1,2 @@
-from enum import Enum
-
-
-class CAR(Enum):
+class CAR:
   MOCK = 'mock'

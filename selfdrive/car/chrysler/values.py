@@ -1,9 +1,6 @@
-from enum import Enum
-
 from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
-
 
 class CarControllerParams:
   STEER_MAX = 261         # 262 faults
@@ -12,7 +9,7 @@ class CarControllerParams:
   STEER_ERROR_MAX = 80
 
 
-class CAR(Enum):
+class CAR:
   PACIFICA_2017_HYBRID = "CHRYSLER PACIFICA HYBRID 2017"
   PACIFICA_2018_HYBRID = "CHRYSLER PACIFICA HYBRID 2018"
   PACIFICA_2019_HYBRID = "CHRYSLER PACIFICA HYBRID 2019"
@@ -20,7 +17,6 @@ class CAR(Enum):
   PACIFICA_2020 = "CHRYSLER PACIFICA 2020"
   JEEP_CHEROKEE = "JEEP GRAND CHEROKEE V6 2018"  # includes 2017 Trailhawk
   JEEP_CHEROKEE_2019 = "JEEP GRAND CHEROKEE 2019" # includes 2020 Trailhawk
-
 
 # Unique CAN messages:
 # Only the hybrids have 270: 8

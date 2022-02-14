@@ -1,5 +1,3 @@
-from enum import Enum
-
 from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -12,8 +10,7 @@ class CarControllerParams:
   LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
   STEER_THRESHOLD = 1.0
 
-
-class CAR(Enum):
+class CAR:
   XTRAIL = "NISSAN X-TRAIL 2017"
   LEAF = "NISSAN LEAF 2018"
   # Leaf with ADAS ECU found behind instrument cluster instead of glovebox
