@@ -1,8 +1,8 @@
 from collections import defaultdict
-from enum import IntFlag
+from enum import Enum, IntFlag
 
 from cereal import car
-from selfdrive.car import dbc_dict
+from selfdrive.car import dbc_dict, CarInfo
 from selfdrive.config import Conversions as CV
 
 Ecu = car.CarParams.Ecu
@@ -24,51 +24,89 @@ class ToyotaFlags(IntFlag):
   HYBRID = 1
 
 
-class CAR:
+class CAR(Enum):
   # Toyota
-  ALPHARD_TSS2 = "TOYOTA ALPHARD 2020"
-  AVALON = "TOYOTA AVALON 2016"
-  AVALON_2019 = "TOYOTA AVALON 2019"
-  AVALONH_2019 = "TOYOTA AVALON HYBRID 2019"
-  AVALON_TSS2 = "TOYOTA AVALON 2022"
-  CAMRY = "TOYOTA CAMRY 2018"
-  CAMRYH = "TOYOTA CAMRY HYBRID 2018"
-  CAMRY_TSS2 = "TOYOTA CAMRY 2021"  # TSS 2.5
-  CAMRYH_TSS2 = "TOYOTA CAMRY HYBRID 2021"
-  CHR = "TOYOTA C-HR 2018"
-  CHRH = "TOYOTA C-HR HYBRID 2018"
-  COROLLA = "TOYOTA COROLLA 2017"
-  COROLLA_TSS2 = "TOYOTA COROLLA TSS2 2019"
+  ALPHARD_TSS2 = 0
+  AVALON = 1
+  AVALON_2019 = "Toyota Avalon 2019"
+  AVALONH_2019 = "Toyota Avalon Hybrid 2019"
+  AVALON_TSS2 = "Toyota Avalon 2022"
+  CAMRY = "Toyota Camry 2018"
+  CAMRYH = "Toyota Camry Hybrid 2018"
+  CAMRY_TSS2 = "Toyota Camry 2021"  # TSS 2.5
+  CAMRYH_TSS2 = "Toyota Camry Hybrid 2021"
+  CHR = "Toyota C-HR 2018"
+  CHRH = "Toyota C-HR Hybrid 2018"
+  COROLLA = "Toyota Corolla 2017"
+  COROLLA_TSS2 = "Toyota Corolla TSS2 2019"
   # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
-  COROLLAH_TSS2 = "TOYOTA COROLLA HYBRID TSS2 2019"
-  HIGHLANDER = "TOYOTA HIGHLANDER 2017"
-  HIGHLANDER_TSS2 = "TOYOTA HIGHLANDER 2020"
-  HIGHLANDERH = "TOYOTA HIGHLANDER HYBRID 2018"
-  HIGHLANDERH_TSS2 = "TOYOTA HIGHLANDER HYBRID 2020"
-  PRIUS = "TOYOTA PRIUS 2017"
-  PRIUS_V = "TOYOTA PRIUS v 2017"
-  PRIUS_TSS2 = "TOYOTA PRIUS TSS2 2021"
-  RAV4 = "TOYOTA RAV4 2017"
-  RAV4H = "TOYOTA RAV4 HYBRID 2017"
-  RAV4_TSS2 = "TOYOTA RAV4 2019"
-  RAV4H_TSS2 = "TOYOTA RAV4 HYBRID 2019"
-  MIRAI = "TOYOTA MIRAI 2021" # TSS 2.5
-  SIENNA = "TOYOTA SIENNA 2018"
+  COROLLAH_TSS2 = "Toyota Corolla Hybrid TSS2 2019"
+  HIGHLANDER = "Toyota Highlander 2017"
+  HIGHLANDER_TSS2 = "Toyota Highlander 2020"
+  HIGHLANDERH = "Toyota Highlander Hybrid 2018"
+  HIGHLANDERH_TSS2 = "Toyota Highlander Hybrid 2020"
+  PRIUS = "Toyota Prius 2017"
+  PRIUS_V = "Toyota Prius v 2017"
+  PRIUS_TSS2 = "Toyota Prius TSS2 2021"
+  RAV4 = "Toyota RAV4 2017"
+  RAV4H = "Toyota RAV4 Hybrid 2017"
+  RAV4_TSS2 = "Toyota RAV4 2019"
+  RAV4H_TSS2 = "Toyota RAV4 Hybrid 2019"
+  MIRAI = "Toyota Mirai 2021"  # TSS 2.5
+  SIENNA = "Toyota Sienna 2018"
 
   # Lexus
-  LEXUS_CTH = "LEXUS CT HYBRID 2018"
-  LEXUS_ESH = "LEXUS ES HYBRID 2018"
-  LEXUS_ES_TSS2 = "LEXUS ES 2019"
-  LEXUS_ESH_TSS2 = "LEXUS ES HYBRID 2019"
-  LEXUS_IS = "LEXUS IS 2018"
-  LEXUS_NX = "LEXUS NX 2018"
-  LEXUS_NXH = "LEXUS NX HYBRID 2018"
-  LEXUS_NX_TSS2 = "LEXUS NX 2020"
-  LEXUS_RC = "LEXUS RC 2020"
-  LEXUS_RX = "LEXUS RX 2016"
-  LEXUS_RXH = "LEXUS RX HYBRID 2017"
-  LEXUS_RX_TSS2 = "LEXUS RX 2020"
-  LEXUS_RXH_TSS2 = "LEXUS RX HYBRID 2020"
+  LEXUS_CTH = "Lexus CT Hybrid 2018"
+  LEXUS_ESH = "Lexus ES Hybrid 2018"
+  LEXUS_ES_TSS2 = "Lexus ES 2019"
+  LEXUS_ESH_TSS2 = "Lexus ES Hybrid 2019"
+  LEXUS_IS = "Lexus IS 2018"
+  LEXUS_NX = "Lexus NX 2018"
+  LEXUS_NXH = "Lexus NX Hybrid 2018"
+  LEXUS_NX_TSS2 = "Lexus NX 2020"
+  LEXUS_RC = "Lexus RC 2020"
+  LEXUS_RX = "Lexus RX 2016"
+  LEXUS_RXH = "Lexus RX Hybrid 2017"
+  LEXUS_RX_TSS2 = "Lexus RX 2020"
+  LEXUS_RXH_TSS2 = "Lexus RX Hybrid 2020"
+
+
+CAR_INFO = {
+  CAR.ALPHARD_TSS2: CarInfo("Toyota Alphard 2020", {2019, 2020}),
+  CAR.AVALON: CarInfo("Toyota Avalon 2016", {2016, 2017, 2018, 2019, 2020, 2021}, 'TSS-P'),
+  CAR.AVALON_2019: CarInfo("Toyota Avalon 2019", {2022}),
+  CAR.AVALONH_2019: CarInfo("Toyota Avalon Hybrid 2019", {2019, 2020, 2021}, 'TSS-P'),
+  CAR.AVALON_TSS2: "Toyota Avalon 2022",
+  CAR.CAMRY: "Toyota Camry 2018",
+  CAR.CAMRYH: "Toyota Camry Hybrid 2018",
+  CAR.CAMRY_TSS2: "Toyota Camry 2021"  # TSS 2.5
+  CAR.CAMRYH_TSS2: "Toyota Camry Hybrid 2021",
+  CAR.CHR: "Toyota C-HR 2018",
+  CAR.CHRH: "Toyota C-HR Hybrid 2018",
+  CAR.COROLLA: "Toyota Corolla 2017",
+  CAR.COROLLA_TSS2: "Toyota Corolla TSS2 2019",
+  CAR.COROLLAH_TSS2: "Toyota Corolla Hybrid TSS2 2019",
+  CAR.HIGHLANDER: "Toyota Highlander 2017",
+  CAR.HIGHLANDER_TSS2: "Toyota Highlander 2020",
+  CAR.HIGHLANDERH: "Toyota Highlander Hybrid 2018",
+  CAR.HIGHLANDERH_TSS2: "Toyota Highlander Hybrid 2020",
+  CAR.PRIUS: "Toyota Prius 2017",
+  CAR.PRIUS_V: "Toyota Prius v 2017",
+  CAR.PRIUS_TSS2: "Toyota Prius TSS2 2021",
+  CAR.RAV4: "Toyota RAV4 2017",
+  CAR.RAV4H: "Toyota RAV4 Hybrid 2017",
+  CAR.RAV4_TSS2: "Toyota RAV4 2019",
+  CAR.RAV4H_TSS2: "Toyota RAV4 Hybrid 2019",
+  CAR.MIRAI: "Toyota Mirai 2021"  # TSS 2.5
+  CAR.SIENNA: "Toyota Sienna 2018",
+}
+
+CAR_INFO = {
+  CAR.ALPHARD_TSS2: CarInfo("Toyota Alphard 2020", {2019, 2020}),
+  CAR.CAMRY_TSS2: CarInfo("Toyota Camry 2021", {2021, 2022}),  # TSS 2.5
+  CAR.CAMRYH: CarInfo("Toyota Camry Hybrid 2018", {2018, 2019, 2020}),
+  CAR.CAMRYH_TSS2: CarInfo("Toyota Camry Hybrid 2021", {2021, 2022}),
+}
 
 # (addr, cars, bus, 1/freq*100, vl)
 STATIC_DSU_MSGS = [
