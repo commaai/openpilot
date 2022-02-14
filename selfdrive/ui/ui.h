@@ -141,7 +141,7 @@ private slots:
 
 private:
   QTimer *timer;
-  bool started_prev = true;
+  bool started_prev = false;
 };
 
 UIState *uiState();
