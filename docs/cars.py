@@ -4,7 +4,8 @@ from enum import Enum
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.config import Conversions as CV
-
+import locale
+locale.setlocale(locale.LC_ALL, '')
 
 class Tier(Enum):
   GOLD = "Gold"
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     print(f"## {t.value} Cars")
     print("| Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below      |")
     print("| ----------| ------------------------------| ------------------| -----------------| -------------------| ------------------|")
-    for c in sorted(all_known_cars()):
+    for c in sorted(all_known_cars(), key=locale.strxfrm):
       CI, _, _ = interfaces[c]
       CP = CI.get_params(c, {0: [], 1: [], 2: []}, [])
       car = Car(CP)

@@ -129,12 +129,12 @@ Cars are sorted into three tiers:
 | Nissan | X-Trail 2017 | None | Stock | 0mph | 0mph |
 | Seat | Ateca 1St Gen | None | Stock | 0mph | 0mph |
 | Seat | Leon 3Rd Gen | None | Stock | 0mph | 0mph |
-| Skoda | Kamiq 1St Gen | None | Stock | 0mph | 0mph |
-| Skoda | Karoq 1St Gen | None | Stock | 0mph | 0mph |
-| Skoda | Kodiaq 1St Gen | None | Stock | 0mph | 0mph |
-| Skoda | Octavia 3Rd Gen | None | Stock | 0mph | 0mph |
-| Skoda | Scala 1St Gen | None | Stock | 0mph | 0mph |
-| Skoda | Superb 3Rd Gen | None | Stock | 0mph | 0mph |
+| Škoda | Kamiq 1St Gen | None | Stock | 0mph | 0mph |
+| Škoda | Karoq 1St Gen | None | Stock | 0mph | 0mph |
+| Škoda | Kodiaq 1St Gen | None | Stock | 0mph | 0mph |
+| Škoda | Octavia 3Rd Gen | None | Stock | 0mph | 0mph |
+| Škoda | Scala 1St Gen | None | Stock | 0mph | 0mph |
+| Škoda | Superb 3Rd Gen | None | Stock | 0mph | 0mph |
 | Subaru | Ascent Limited 2019 | None | Stock | 0mph | 0mph |
 | Subaru | Forester 2017 - 2018 | None | Stock | 0mph | 0mph |
 | Subaru | Forester 2019 | None | Stock | 0mph | 0mph |
@@ -148,10 +148,10 @@ Cars are sorted into three tiers:
 | Toyota | Avalon 2016 | None | Stock | 19mph | 0mph |
 | Toyota | Avalon 2019 | None | Stock | 19mph | 0mph |
 | Toyota | Avalon Hybrid 2019 | None | Stock | 19mph | 0mph |
-| Toyota | C-Hr 2018 | None | Stock | 0mph | 0mph |
-| Toyota | C-Hr Hybrid 2018 | None | Stock | 0mph | 0mph |
 | Toyota | Camry 2018 | None | Stock | 0mph | 0mph |
 | Toyota | Camry Hybrid 2018 | None | Stock | 0mph | 0mph |
+| Toyota | C-Hr 2018 | None | Stock | 0mph | 0mph |
+| Toyota | C-Hr Hybrid 2018 | None | Stock | 0mph | 0mph |
 | Toyota | Corolla 2017 | None | Stock | 19mph | 0mph |
 | Toyota | Highlander 2017 | None | Stock | 0mph | 0mph |
 | Toyota | Highlander Hybrid 2018 | None | Stock | 0mph | 0mph |
@@ -166,9 +166,9 @@ Cars are sorted into three tiers:
 | Volkswagen | Jetta 7Th Gen | None | Stock | 0mph | 0mph |
 | Volkswagen | Passat 8Th Gen | None | Stock | 0mph | 0mph |
 | Volkswagen | Polo 6Th Gen | None | Stock | 0mph | 0mph |
-| Volkswagen | T-Cross 1St Gen | None | Stock | 0mph | 0mph |
-| Volkswagen | T-Roc 1St Gen | None | Stock | 0mph | 0mph |
 | Volkswagen | Taos 1St Gen | None | Stock | 0mph | 0mph |
+| Volkswagen | T-Cross 1St Gen | None | Stock | 0mph | 0mph |
 | Volkswagen | Tiguan 2Nd Gen | None | Stock | 0mph | 0mph |
 | Volkswagen | Touran 2Nd Gen | None | Stock | 0mph | 0mph |
 | Volkswagen | Transporter T6.1 | None | Stock | 0mph | 31mph |
+| Volkswagen | T-Roc 1St Gen | None | Stock | 0mph | 0mph |
