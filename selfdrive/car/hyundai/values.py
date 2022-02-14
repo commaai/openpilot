@@ -651,6 +651,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\x01TJS-JNU06F200H0A',
       b'\x01TJS-JDK06F200H0A',
+      b'391282BJF5 ',
     ],
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00JSL MDPS C 1.00 1.03 56340-J3000 8308', ],
     (Ecu.fwdCamera, 0x7c4, None): [
