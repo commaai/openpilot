@@ -1,4 +1,4 @@
-from enum import IntFlag
+from enum import Enum, IntFlag
 
 from cereal import car
 from selfdrive.car import dbc_dict
@@ -51,6 +51,7 @@ class CruiseButtons:
   CANCEL = 2
   MAIN = 1
 
+
 # See dbc files for info on values
 VISUAL_HUD = {
   VisualAlert.none: 0,
@@ -63,7 +64,8 @@ VISUAL_HUD = {
   VisualAlert.speedTooHigh: 8
 }
 
-class CAR:
+
+class CAR(Enum):
   ACCORD = "HONDA ACCORD 2018"
   ACCORDH = "HONDA ACCORD HYBRID 2018"
   CIVIC = "HONDA CIVIC 2016"
@@ -86,6 +88,7 @@ class CAR:
   RIDGELINE = "HONDA RIDGELINE 2017"
   INSIGHT = "HONDA INSIGHT 2019"
   HONDA_E = "HONDA E 2020"
+
 
 FW_VERSIONS = {
   CAR.ACCORD: {

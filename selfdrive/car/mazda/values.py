@@ -1,3 +1,5 @@
+from enum import Enum
+
 from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -14,7 +16,8 @@ class CarControllerParams:
   STEER_DRIVER_FACTOR = 1         # from dbc
   STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
 
-class CAR:
+
+class CAR(Enum):
   CX5 = "MAZDA CX-5"
   CX9 = "MAZDA CX-9"
   MAZDA3 = "MAZDA 3"
@@ -22,10 +25,12 @@ class CAR:
   CX9_2021 = "MAZDA CX-9 2021"
   CX5_2022 = "MAZDA CX-5 2022"
 
+
 class LKAS_LIMITS:
   STEER_THRESHOLD = 15
   DISABLE_SPEED = 45    # kph
   ENABLE_SPEED = 52     # kph
+
 
 class Buttons:
   NONE = 0
@@ -36,7 +41,7 @@ class Buttons:
 
 
 FW_VERSIONS = {
-  CAR.CX5_2022 : {
+  CAR.CX5_2022: {
     (Ecu.eps, 0x730, None): [
       b'KSD5-3210X-C-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -122,7 +127,7 @@ FW_VERSIONS = {
     ],
   },
 
-  CAR.CX9 : {
+  CAR.CX9: {
     (Ecu.eps, 0x730, None): [
       b'K070-3210X-C-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'KJ01-3210X-G-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -234,7 +239,7 @@ FW_VERSIONS = {
     ],
   },
 
-  CAR.CX9_2021 : {
+  CAR.CX9_2021: {
     (Ecu.eps, 0x730, None): [
       b'TC3M-3210X-A-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
