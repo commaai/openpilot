@@ -35,15 +35,15 @@ class CAR(Enum):
   CAMRYH = "Toyota Camry Hybrid 2018"
   CAMRY_TSS2 = "Toyota Camry 2021"  # TSS 2.5
   CAMRYH_TSS2 = "Toyota Camry Hybrid 2021"
-  CHR = "Toyota C-HR 2017"
-  CHRH = "Toyota C-HR Hybrid 2017"
+  CHR = "Toyota C-HR 2018"
+  CHRH = "Toyota C-HR Hybrid 2018"
   COROLLA = "Toyota Corolla 2017"
   COROLLA_TSS2 = "Toyota Corolla TSS2 2019"
   # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
   COROLLAH_TSS2 = "Toyota Corolla Hybrid TSS2 2019"
   HIGHLANDER = "Toyota Highlander 2017"  # TODO: don't change fingerprint
   HIGHLANDER_TSS2 = "Toyota Highlander 2020"
-  HIGHLANDERH = "Toyota Highlander Hybrid 2017"
+  HIGHLANDERH = "Toyota Highlander Hybrid 2018"
   HIGHLANDERH_TSS2 = "Toyota Highlander Hybrid 2020"
   PRIUS = "Toyota Prius 2017"
   PRIUS_V = "Toyota Prius v 2017"
