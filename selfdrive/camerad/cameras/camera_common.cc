@@ -19,6 +19,7 @@
 #include "selfdrive/hardware/hw.h"
 
 #ifdef QCOM
+#include "CL/cl_ext_qcom.h"
 #include "selfdrive/camerad/cameras/camera_qcom.h"
 #elif QCOM2
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
@@ -27,6 +28,8 @@
 #else
 #include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
+
+ExitHandler do_exit;
 
 class Debayer {
 public:
@@ -200,7 +203,6 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setMeasuredGreyFraction(frame_data.measured_grey_fraction);
   framed.setTargetGreyFraction(frame_data.target_grey_fraction);
   framed.setLensPos(frame_data.lens_pos);
-  framed.setLensSag(frame_data.lens_sag);
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
 }
@@ -340,8 +342,6 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
   return lum_med / 256.0;
 }
 
-extern ExitHandler do_exit;
-
 void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
   const char *thread_name = nullptr;
   if (cs == &cameras->road_cam) {
@@ -422,4 +422,28 @@ void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
     framed.setImage(get_frame_image(&c->buf));
   }
   s->pm->send("driverCameraState", msg);
+}
+
+
+void camerad_thread() {
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+   // TODO: do this for QCOM2 too
+#if defined(QCOM)
+  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
+  cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
+#else
+  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+#endif
+
+  MultiCameraState cameras = {};
+  VisionIpcServer vipc_server("camerad", device_id, context);
+
+  cameras_init(&vipc_server, &cameras, device_id, context);
+  cameras_open(&cameras);
+
+  vipc_server.start_listener();
+
+  cameras_run(&cameras);
+
+  CL_CHECK(clReleaseContext(context));
 }

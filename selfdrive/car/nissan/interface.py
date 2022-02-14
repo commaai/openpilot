@@ -16,17 +16,17 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "nissan"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.nissan)]
 
-    ret.steerLimitAlert = False
+    ret.steerLimitTimer = 1.0
     ret.steerRateCost = 0.5
 
     ret.steerActuatorDelay = 0.1
 
-    if candidate in [CAR.ROGUE, CAR.XTRAIL]:
+    if candidate in (CAR.ROGUE, CAR.XTRAIL):
       ret.mass = 1610 + STD_CARGO_KG
       ret.wheelbase = 2.705
       ret.centerToFront = ret.wheelbase * 0.44
       ret.steerRatio = 17
-    elif candidate in [CAR.LEAF, CAR.LEAF_IC]:
+    elif candidate in (CAR.LEAF, CAR.LEAF_IC):
       ret.mass = 1610 + STD_CARGO_KG
       ret.wheelbase = 2.705
       ret.centerToFront = ret.wheelbase * 0.44
@@ -78,9 +78,10 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                               c.cruiseControl.cancel, c.hudControl.visualAlert,
-                               c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible,
-                               c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
+    hud_control = c.hudControl
+    ret = self.CC.update(c, c.enabled, self.CS, self.frame, c.actuators,
+                         c.cruiseControl.cancel, hud_control.visualAlert,
+                         hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                         hud_control.leftLaneDepart, hud_control.rightLaneDepart)
     self.frame += 1
-    return can_sends
+    return ret

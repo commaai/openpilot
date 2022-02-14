@@ -1,6 +1,6 @@
 # flake8: noqa
 # pylint: skip-file
-from .python import Panda, PandaWifiStreaming, PandaDFU, flash_release, \
+from .python import Panda, PandaDFU, flash_release, \
                     BASEDIR, ensure_st_up_to_date, PandaSerial, pack_can_buffer, unpack_can_buffer, \
                     DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, MCU_TYPE_F4, DLC_TO_LEN, LEN_TO_DLC
 

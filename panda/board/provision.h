@@ -1,9 +1,5 @@
 #define PROVISION_CHUNK_LEN 0x20
 
-// WiFi SSID     = 0x0  - 0x10
-// WiFi password = 0x10 - 0x1C
-// SHA1 checksum = 0x1C - 0x20
-
 void get_provision_chunk(uint8_t *resp) {
   (void)memcpy(resp, (uint8_t *)PROVISION_CHUNK_ADDRESS, PROVISION_CHUNK_LEN);
   if (memcmp(resp, "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff", 0x20) == 0) {

@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]     # TODO: tune this
     ret.lateralTuning.pid.kf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
-    ret.steerLimitTimer = 0.8
+    ret.steerLimitTimer = 1.0
     ret.steerRateCost = 1.0
     ret.centerToFront = ret.wheelbase * 0.44
     tire_stiffness_factor = 0.5328
@@ -51,7 +51,7 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret)
 
-    if self.CS.lkas_state not in [2, 3] and ret.vEgo > 13. * CV.MPH_TO_MS and ret.cruiseState.enabled:
+    if self.CS.lkas_state not in (2, 3) and ret.vEgo > 13. * CV.MPH_TO_MS and ret.cruiseState.enabled:
       events.add(car.CarEvent.EventName.steerTempUnavailable)
 
     ret.events = events.to_msg()
@@ -63,8 +63,8 @@ class CarInterface(CarInterfaceBase):
   # to be called @ 100hz
   def apply(self, c):
 
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+    ret = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
                                c.hudControl.visualAlert, c.cruiseControl.cancel)
 
     self.frame += 1
-    return can_sends
+    return ret

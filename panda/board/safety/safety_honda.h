@@ -56,6 +56,7 @@ const uint16_t HONDA_PARAM_BOSCH_LONG = 2;
 const uint16_t HONDA_PARAM_NIDEC_ALT = 4;
 
 int honda_brake = 0;
+bool honda_brake_switch_prev = false;
 bool honda_alt_brake_msg = false;
 bool honda_fwd_brake = false;
 bool honda_bosch_long = false;
@@ -95,6 +96,8 @@ static int honda_rx_hook(CANPacket_t *to_push) {
   bool valid = addr_safety_check(to_push, &honda_rx_checks,
                                  honda_get_checksum, honda_compute_checksum, honda_get_counter);
 
+  const bool pcm_cruise = ((honda_hw == HONDA_BOSCH) && !honda_bosch_long) || ((honda_hw == HONDA_NIDEC) && !gas_interceptor_detected);
+
   if (valid) {
     int addr = GET_ADDR(to_push);
     int len = GET_LEN(to_push);
@@ -115,9 +118,21 @@ static int honda_rx_hook(CANPacket_t *to_push) {
       }
     }
 
-    // state machine to enter and exit controls
+    // enter controls when PCM enters cruise state
+    if (pcm_cruise && (addr == 0x17C)) {
+      const bool cruise_engaged = GET_BIT(to_push, 38U) != 0U;
+      if (!cruise_engaged) {
+        controls_allowed = 0;
+      }
+      if (cruise_engaged && !cruise_engaged_prev) {
+        controls_allowed = 1;
+      }
+      cruise_engaged_prev = cruise_engaged;
+    }
+
+    // state machine to enter and exit controls for button enabling
     // 0x1A6 for the ILX, 0x296 for the Civic Touring
-    if ((addr == 0x1A6) || (addr == 0x296)) {
+    if (!pcm_cruise && ((addr == 0x1A6) || (addr == 0x296))) {
       // check for button presses
       int button = (GET_BYTE(to_push, 0) & 0xE0U) >> 5;
       switch (button) {
@@ -140,11 +155,19 @@ static int honda_rx_hook(CANPacket_t *to_push) {
     // and crv, which prevents the usual brake safety from working correctly. these
     // cars have a signal on 0x1BE which only detects user's brake being applied so
     // in these cases, this is used instead.
-    // most hondas: 0x17C bit 53
-    // accord, crv: 0x1BE bit 4
-    bool is_user_brake_msg = honda_alt_brake_msg ? ((addr) == 0x1BE) : ((addr) == 0x17C);
-    if (is_user_brake_msg) {
-      brake_pressed = honda_alt_brake_msg ? (GET_BYTE((to_push), 0) & 0x10U) : (GET_BYTE((to_push), 6) & 0x20U);
+    // most hondas: 0x17C
+    // accord, crv: 0x1BE
+    if (honda_alt_brake_msg) {
+      if (addr == 0x1BE) {
+        brake_pressed = GET_BIT(to_push, 4U) != 0U;
+      }
+    } else {
+      if (addr == 0x17C) {
+        // also if brake switch is 1 for two CAN frames, as brake pressed is delayed
+        const bool brake_switch = GET_BIT(to_push, 32U) != 0U;
+        brake_pressed = (GET_BIT(to_push, 53U) != 0U) || (brake_switch && honda_brake_switch_prev);
+        honda_brake_switch_prev = brake_switch;
+      }
     }
 
     // length check because bosch hardware also uses this id (0x201 w/ len = 8)
@@ -162,7 +185,7 @@ static int honda_rx_hook(CANPacket_t *to_push) {
     }
 
     // disable stock Honda AEB in unsafe mode
-    if ( !(unsafe_mode & UNSAFE_DISABLE_STOCK_AEB) ) {
+    if (!(unsafe_mode & UNSAFE_DISABLE_STOCK_AEB)) {
       if ((bus == 2) && (addr == 0x1FA)) {
         bool honda_stock_aeb = GET_BYTE(to_push, 3) & 0x20U;
         int honda_stock_brake = (GET_BYTE(to_push, 0) << 2) + ((GET_BYTE(to_push, 1) >> 6) & 0x3U);
@@ -228,7 +251,7 @@ static int honda_tx_hook(CANPacket_t *to_send) {
   int pedal_pressed = brake_pressed_prev && vehicle_moving;
   bool unsafe_allow_gas = unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS;
   if (!unsafe_allow_gas) {
-    pedal_pressed = pedal_pressed || gas_pressed_prev || (gas_interceptor_prev > HONDA_GAS_INTERCEPTOR_THRESHOLD);
+    pedal_pressed = pedal_pressed || gas_pressed_prev;
   }
   bool current_controls_allowed = controls_allowed && !(pedal_pressed);
   int bus_pt = (honda_hw == HONDA_BOSCH) ? 1 : 0;

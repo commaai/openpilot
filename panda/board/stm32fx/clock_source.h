@@ -1,22 +1,11 @@
 
 #define CLOCK_SOURCE_MODE_DISABLED       0U
 #define CLOCK_SOURCE_MODE_FREE_RUNNING   1U
-#define CLOCK_SOURCE_MODE_EXTERNAL_SYNC  2U
 
 #define CLOCK_SOURCE_PERIOD_MS           50U
 #define CLOCK_SOURCE_PULSE_LEN_MS        2U
 
 uint8_t clock_source_mode = CLOCK_SOURCE_MODE_DISABLED;
-
-void EXTI0_IRQ_Handler(void) {
-  volatile unsigned int pr = EXTI->PR & (1U << 0);
-  if (pr != 0U) {
-    if(clock_source_mode == CLOCK_SOURCE_MODE_EXTERNAL_SYNC){
-      // TODO: Implement!
-    }
-  }
-  EXTI->PR = (1U << 0);
-}
 
 void TIM1_UP_TIM10_IRQ_Handler(void) {
   if((TIM1->SR & TIM_SR_UIF) != 0) {
@@ -47,13 +36,6 @@ void TIM1_CC_IRQ_Handler(void) {
 }
 
 void clock_source_init(uint8_t mode){
-  // Setup external clock signal interrupt
-  REGISTER_INTERRUPT(EXTI0_IRQn, EXTI0_IRQ_Handler, 110U, FAULT_INTERRUPT_RATE_CLOCK_SOURCE)
-  register_set(&(SYSCFG->EXTICR[0]), SYSCFG_EXTICR1_EXTI0_PB, 0xFU);
-  register_set_bits(&(EXTI->IMR), (1U << 0));
-  register_set_bits(&(EXTI->RTSR), (1U << 0));
-  register_clear_bits(&(EXTI->FTSR), (1U << 0));
-
   // Setup timer
   REGISTER_INTERRUPT(TIM1_UP_TIM10_IRQn, TIM1_UP_TIM10_IRQ_Handler, (1200U / CLOCK_SOURCE_PERIOD_MS) , FAULT_INTERRUPT_RATE_TIM1)
   REGISTER_INTERRUPT(TIM1_CC_IRQn, TIM1_CC_IRQ_Handler, (1200U / CLOCK_SOURCE_PERIOD_MS) , FAULT_INTERRUPT_RATE_TIM1)
@@ -69,7 +51,6 @@ void clock_source_init(uint8_t mode){
   switch(mode) {
     case CLOCK_SOURCE_MODE_DISABLED:
       // No clock signal
-      NVIC_DisableIRQ(EXTI0_IRQn);
       NVIC_DisableIRQ(TIM1_UP_TIM10_IRQn);
       NVIC_DisableIRQ(TIM1_CC_IRQn);
 
@@ -81,19 +62,10 @@ void clock_source_init(uint8_t mode){
       break;
     case CLOCK_SOURCE_MODE_FREE_RUNNING:
       // Clock signal is based on internal timer
-      NVIC_DisableIRQ(EXTI0_IRQn);
       NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
       NVIC_EnableIRQ(TIM1_CC_IRQn);
 
       clock_source_mode = CLOCK_SOURCE_MODE_FREE_RUNNING;
-      break;
-    case CLOCK_SOURCE_MODE_EXTERNAL_SYNC:
-      // Clock signal is based on external timer
-      NVIC_EnableIRQ(EXTI0_IRQn);
-      NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
-      NVIC_EnableIRQ(TIM1_CC_IRQn);
-
-      clock_source_mode = CLOCK_SOURCE_MODE_EXTERNAL_SYNC;
       break;
     default:
       puts("Unknown clock source mode: "); puth(mode); puts("\n");

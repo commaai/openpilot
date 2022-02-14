@@ -22,7 +22,7 @@ from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 50.0,
+  "selfdrive.controls.controlsd": 55.0,
   "./loggerd": 45.0,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 22.6,
@@ -30,11 +30,11 @@ PROCS = {
   "selfdrive.locationd.paramsd": 9.1,
   "./camerad": 7.07,
   "./_sensord": 6.17,
-  "selfdrive.controls.radard": 5.67,
+  "selfdrive.controls.radard": 7.0,
   "./_modeld": 4.48,
   "./boardd": 3.63,
   "./_dmonitoringmodeld": 2.67,
-  "selfdrive.thermald.thermald": 2.41,
+  "selfdrive.thermald.thermald": 5.36,
   "selfdrive.locationd.calibrationd": 2.0,
   "./_soundd": 1.0,
   "selfdrive.monitoring.dmonitoringd": 1.90,
@@ -49,19 +49,20 @@ PROCS = {
 if EON:
   PROCS.update({
     "selfdrive.hardware.eon.androidd": 0.4,
+    "selfdrive.hardware.eon.shutdownd": 0.4,
   })
 
 if TICI:
   PROCS.update({
     "./loggerd": 70.0,
-    "selfdrive.controls.controlsd": 28.0,
+    "selfdrive.controls.controlsd": 31.0,
     "./camerad": 31.0,
-    "./_ui": 30.2,
+    "./_ui": 33.0,
     "selfdrive.controls.plannerd": 11.7,
     "./_dmonitoringmodeld": 10.0,
     "selfdrive.locationd.paramsd": 5.0,
-    "selfdrive.controls.radard": 3.6,
-    "selfdrive.thermald.thermald": 1.5,
+    "selfdrive.controls.radard": 4.5,
+    "selfdrive.thermald.thermald": 3.87,
   })
 
 
@@ -203,6 +204,22 @@ class TestOnroad(unittest.TestCase):
     self.assertGreater(len(proclogs), service_list['procLog'].frequency * 45, "insufficient samples")
     cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
+
+  def test_mpc_execution_timings(self):
+    result = "\n"
+    result += "------------------------------------------------\n"
+    result += "-----------------  MPC Timing ------------------\n"
+    result += "------------------------------------------------\n"
+
+    cfgs = [("lateralPlan", 0.05, 0.05), ("longitudinalPlan", 0.05, 0.05)]
+    for (s, instant_max, avg_max) in cfgs:
+      ts = [getattr(getattr(m, s), "solverExecutionTime") for m in self.lr if m.which() == s]
+      self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
+      self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
+      result += f"'{s}' execution time: {min(ts)}\n"
+      result += f"'{s}' avg execution time: {np.mean(ts)}\n"
+    result += "------------------------------------------------\n"
+    print(result)
 
   def test_model_execution_timings(self):
     result = "\n"

@@ -140,7 +140,7 @@ class Uploader():
       cloudlog.debug("upload_url v1.4 %s %s", url, str(headers))
 
       if fake_upload:
-        cloudlog.debug("*** WARNING, THIS IS A FAKE UPLOAD TO %s ***" % url)
+        cloudlog.debug(f"*** WARNING, THIS IS A FAKE UPLOAD TO {url} ***")
 
         class FakeResponse():
           def __init__(self):
@@ -165,16 +165,14 @@ class Uploader():
 
     return self.last_resp
 
-  def upload(self, key, fn):
+  def upload(self, key, fn, network_type):
     try:
       sz = os.path.getsize(fn)
     except OSError:
       cloudlog.exception("upload: getsize failed")
       return False
 
-    cloudlog.event("upload", key=key, fn=fn, sz=sz)
-
-    cloudlog.debug("checking %r with size %r", key, sz)
+    cloudlog.event("upload_start", key=key, fn=fn, sz=sz, network_type=network_type)
 
     if sz == 0:
       try:
@@ -185,10 +183,8 @@ class Uploader():
       success = True
     else:
       start_time = time.monotonic()
-      cloudlog.debug("uploading %r", fn)
       stat = self.normal_upload(key, fn)
       if stat is not None and stat.status_code in (200, 201, 403, 412):
-        cloudlog.event("upload_success" if stat.status_code != 412 else "upload_ignored", key=key, fn=fn, sz=sz, debug=True)
         try:
           # tag file as uploaded
           setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
@@ -199,9 +195,10 @@ class Uploader():
         self.last_time = time.monotonic() - start_time
         self.last_speed = (sz / 1e6) / self.last_time
         success = True
+        cloudlog.event("upload_success" if stat.status_code != 412 else "upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type)
       else:
-        cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz, debug=True)
         success = False
+        cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz, network_type=network_type)
 
     return success
 
@@ -248,8 +245,7 @@ def uploader_fn(exit_event):
 
     key, fn = d
 
-    cloudlog.debug("upload %r over %s", d, network_type)
-    success = uploader.upload(key, fn)
+    success = uploader.upload(key, fn, sm['deviceState'].networkType.raw)
     if success:
       backoff = 0.1
     elif allow_sleep:
@@ -258,7 +254,6 @@ def uploader_fn(exit_event):
       backoff = min(backoff*2, 120)
 
     pm.send("uploaderState", uploader.get_msg())
-    cloudlog.info("upload done, success=%r", success)
 
 def main():
   uploader_fn(threading.Event())

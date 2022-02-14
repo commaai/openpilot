@@ -5,7 +5,7 @@ RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, con
   timer = new QTimer(this);
   timer->setTimerType(Qt::VeryCoarseTimer);
   QObject::connect(timer, &QTimer::timeout, [=]() {
-    if ((!QUIState::ui_state.scene.started || while_onroad) && QUIState::ui_state.awake && !active()) {
+    if ((!uiState()->scene.started || while_onroad) && uiState()->awake && !active()) {
       sendRequest(requestURL);
     }
   });

@@ -41,11 +41,10 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
     ret.stopAccel = 0.0
-    ret.startAccel = 0.0
 
     ret.longitudinalActuatorDelayUpperBound = 1.0 # s
 
-    if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022]:
+    if candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.766
@@ -54,7 +53,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[9., 22.], [9., 22.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.35], [0.05, 0.09]]
-    elif candidate in [CAR.SONATA, CAR.SONATA_HYBRID]:
+    elif candidate in (CAR.SONATA, CAR.SONATA_HYBRID):
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1513. + STD_CARGO_KG
       ret.wheelbase = 2.84
@@ -77,7 +76,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.63
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
-    elif candidate in [CAR.ELANTRA, CAR.ELANTRA_GT_I30]:
+    elif candidate in (CAR.ELANTRA, CAR.ELANTRA_GT_I30):
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1275. + STD_CARGO_KG
       ret.wheelbase = 2.7
@@ -117,7 +116,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
       ret.lateralTuning.indi.actuatorEffectivenessV = [2.3]
       ret.minSteerSpeed = 60 * CV.KPH_TO_MS
-    elif candidate in [CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV]:
+    elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV):
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425.}.get(candidate, 1275.) + STD_CARGO_KG
       ret.wheelbase = 2.7
@@ -125,7 +124,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate in [CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.IONIQ_HEV_2022]:
+    elif candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.IONIQ_HEV_2022):
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1490. + STD_CARGO_KG  # weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
       ret.wheelbase = 2.7
@@ -133,7 +132,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      if candidate not in [CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.IONIQ_HEV_2022]:
+      if candidate not in (CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.IONIQ_HEV_2022):
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.VELOSTER:
       ret.lateralTuning.pid.kf = 0.00005
@@ -152,7 +151,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate in [CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021]:
+    elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021):
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1737. + STD_CARGO_KG
       ret.wheelbase = 2.7
@@ -176,7 +175,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.timeConstantV = [1.4]
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
       ret.lateralTuning.indi.actuatorEffectivenessV = [1.8]
-    elif candidate in [CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H]:
+    elif candidate in (CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H):
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3558. * CV.LB_TO_KG
       ret.wheelbase = 2.80
@@ -327,7 +326,7 @@ class CarInterface(CarInterfaceBase):
 
         for b in ret.buttonEvents:
           # do enable on both accel and decel buttons
-          if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
+          if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
             events.add(EventName.buttonEnable)
           # do disable on button down
           if b.type == ButtonType.cancel and b.pressed:
@@ -347,8 +346,9 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                               c.cruiseControl.cancel, c.hudControl.visualAlert, c.hudControl.setSpeed, c.hudControl.leftLaneVisible,
-                               c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
+    hud_control = c.hudControl
+    ret = self.CC.update(c, c.enabled, self.CS, self.frame, c.actuators,
+                         c.cruiseControl.cancel, hud_control.visualAlert, hud_control.setSpeed, hud_control.leftLaneVisible,
+                         hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart)
     self.frame += 1
-    return can_sends
+    return ret

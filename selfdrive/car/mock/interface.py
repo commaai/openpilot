@@ -20,7 +20,6 @@ class CarInterface(CarInterfaceBase):
 
     cloudlog.debug("Using Mock Car Interface")
 
-    # TODO: subscribe to phone sensor
     self.sensor = messaging.sub_sock('sensorEvents')
     self.gps = messaging.sub_sock('gpsLocationExternal')
 
@@ -88,4 +87,5 @@ class CarInterface(CarInterfaceBase):
 
   def apply(self, c):
     # in mock no carcontrols
-    return []
+    actuators = car.CarControl.Actuators.new_message()
+    return actuators, []

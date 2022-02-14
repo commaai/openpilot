@@ -129,6 +129,9 @@ def objcopy(source, target, env, for_signature):
 with open("obj/gitversion.h", "w") as f:
   f.write(f'const uint8_t gitversion[] = "{get_version(BUILDER, BUILD_TYPE)}";\n')
 
+with open("obj/version", "w") as f:
+  f.write(f'{get_version(BUILDER, BUILD_TYPE)}')
+
 certs = [get_key_header(n) for n in ["debug", "release"]]
 with open("obj/cert.h", "w") as f:
   for cert in certs:

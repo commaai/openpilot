@@ -45,6 +45,16 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.3], [0.02, 0.03]]
 
+    if candidate == CAR.IMPREZA_2020:
+      ret.mass = 1480. + STD_CARGO_KG
+      ret.wheelbase = 2.67
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.steerRatio = 17           # learned, 14 stock
+      ret.steerActuatorDelay = 0.1
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.045, 0.042, 0.20], [0.04, 0.035, 0.045]]
+
     if candidate == CAR.FORESTER:
       ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67
@@ -55,7 +65,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.065, 0.2], [0.001, 0.015, 0.025]]
 
-    if candidate in [CAR.FORESTER_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018]:
+    if candidate in (CAR.FORESTER_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
       ret.safetyConfigs[0].safetyParam = 1  # Outback 2018-2019 and Forester have reversed driver torque signal
       ret.mass = 1568 + STD_CARGO_KG
       ret.wheelbase = 2.67
@@ -112,8 +122,9 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                               c.cruiseControl.cancel, c.hudControl.visualAlert,
-                               c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
+    hud_control = c.hudControl
+    ret = self.CC.update(c, c.enabled, self.CS, self.frame, c.actuators,
+                         c.cruiseControl.cancel, hud_control.visualAlert,
+                         hud_control.leftLaneVisible, hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart)
     self.frame += 1
-    return can_sends
+    return ret

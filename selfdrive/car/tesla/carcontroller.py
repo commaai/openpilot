@@ -12,12 +12,12 @@ class CarController():
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
 
-  def update(self, enabled, CS, frame, actuators, cruise_cancel):
+  def update(self, c, enabled, CS, frame, actuators, cruise_cancel):
     can_sends = []
 
     # Temp disable steering on a hands_on_fault, and allow for user override
     hands_on_fault = (CS.steer_warning == "EAC_ERROR_HANDS_ON" and CS.hands_on_level >= 3)
-    lkas_enabled = enabled and (not hands_on_fault)
+    lkas_enabled = c.active and (not hands_on_fault)
 
     if lkas_enabled:
       apply_angle = actuators.steeringAngleDeg
@@ -37,7 +37,7 @@ class CarController():
     can_sends.append(self.tesla_can.create_steering_control(apply_angle, lkas_enabled, frame))
 
     # Longitudinal control (40Hz)
-    if self.CP.openpilotLongitudinalControl and ((frame % 5) in [0, 2]):
+    if self.CP.openpilotLongitudinalControl and ((frame % 5) in (0, 2)):
       target_accel = actuators.accel
       target_speed = max(CS.out.vEgo + (target_accel * CarControllerParams.ACCEL_TO_SPEED_MULTIPLIER), 0)
       max_accel = 0 if target_accel < 0 else target_accel
@@ -62,4 +62,7 @@ class CarController():
 
     # TODO: HUD control
 
-    return can_sends
+    new_actuators = actuators.copy()
+    new_actuators.steeringAngleDeg = apply_angle
+
+    return new_actuators, can_sends

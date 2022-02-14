@@ -119,6 +119,11 @@ BO_ 313 Brake_Pedal: 8 XXX
  SG_ Brake_Pedal : 36|12@1+ (1,0) [0|4095] "" XXX
  SG_ Signal4 : 48|16@1+ (1,0) [0|65535] "" XXX
 
+BO_ 372 Engine_Stop_Start: 8 XXX
+  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
+  SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+  SG_ STOP_START_STATE : 39|2@0+ (1,0) [0|3] "" XXX
+
 BO_ 290 ES_LKAS: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
@@ -161,6 +166,7 @@ BO_ 912 Dashlights: 8 XXX
  SG_ SEATBELT_FL : 48|1@1+ (1,0) [0|1] "" XXX
  SG_ LEFT_BLINKER : 50|1@1+ (1,0) [0|1] "" XXX
  SG_ RIGHT_BLINKER : 51|1@1+ (1,0) [0|1] "" XXX
+ SG_ STOP_START : 54|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 940 BodyInfo: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
@@ -256,7 +262,6 @@ CM_ SG_ 912 UNITS "0 = Metric, 1 = Imperial";
 CM_ SG_ 912 ICY_ROAD "1 = DASHLIGHT ON, 2 = WARNING, 3 = OFF";
 
 CM_ "subaru_global_2017.dbc starts here";
-
 
 BO_ 72 Transmission: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX

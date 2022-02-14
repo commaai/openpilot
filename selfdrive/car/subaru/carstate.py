@@ -65,41 +65,39 @@ class CarState(CarStateBase):
     ret.steerError = cp.vl["Steering_Torque"]["Steer_Error_1"] == 1
 
     if self.car_fingerprint in PREGLOBAL_CARS:
-      self.cruise_button = cp_cam.vl["ES_CruiseThrottle"]["Cruise_Button"]
+      self.cruise_button = cp_cam.vl["ES_Distance"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
-      self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
     else:
       ret.steerWarning = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
-      self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
+    self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
 
     return ret
 
   @staticmethod
   def get_can_parser(CP):
-    # this function generates lists for signal, messages and initial values
     signals = [
-      # sig_name, sig_address, default
-      ("Steer_Torque_Sensor", "Steering_Torque", 0),
-      ("Steering_Angle", "Steering_Torque", 0),
-      ("Steer_Error_1", "Steering_Torque", 0),
-      ("Cruise_On", "CruiseControl", 0),
-      ("Cruise_Activated", "CruiseControl", 0),
-      ("Brake_Pedal", "Brake_Pedal", 0),
-      ("Throttle_Pedal", "Throttle", 0),
-      ("LEFT_BLINKER", "Dashlights", 0),
-      ("RIGHT_BLINKER", "Dashlights", 0),
-      ("SEATBELT_FL", "Dashlights", 0),
-      ("FL", "Wheel_Speeds", 0),
-      ("FR", "Wheel_Speeds", 0),
-      ("RL", "Wheel_Speeds", 0),
-      ("RR", "Wheel_Speeds", 0),
-      ("DOOR_OPEN_FR", "BodyInfo", 1),
-      ("DOOR_OPEN_FL", "BodyInfo", 1),
-      ("DOOR_OPEN_RR", "BodyInfo", 1),
-      ("DOOR_OPEN_RL", "BodyInfo", 1),
-      ("Gear", "Transmission", 0),
+      # sig_name, sig_address
+      ("Steer_Torque_Sensor", "Steering_Torque"),
+      ("Steering_Angle", "Steering_Torque"),
+      ("Steer_Error_1", "Steering_Torque"),
+      ("Cruise_On", "CruiseControl"),
+      ("Cruise_Activated", "CruiseControl"),
+      ("Brake_Pedal", "Brake_Pedal"),
+      ("Throttle_Pedal", "Throttle"),
+      ("LEFT_BLINKER", "Dashlights"),
+      ("RIGHT_BLINKER", "Dashlights"),
+      ("SEATBELT_FL", "Dashlights"),
+      ("FL", "Wheel_Speeds"),
+      ("FR", "Wheel_Speeds"),
+      ("RL", "Wheel_Speeds"),
+      ("RR", "Wheel_Speeds"),
+      ("DOOR_OPEN_FR", "BodyInfo"),
+      ("DOOR_OPEN_FL", "BodyInfo"),
+      ("DOOR_OPEN_RR", "BodyInfo"),
+      ("DOOR_OPEN_RL", "BodyInfo"),
+      ("Gear", "Transmission"),
     ]
 
     checks = [
@@ -115,20 +113,18 @@ class CarState(CarStateBase):
 
     if CP.enableBsm:
       signals += [
-        ("L_ADJACENT", "BSD_RCTA", 0),
-        ("R_ADJACENT", "BSD_RCTA", 0),
-        ("L_APPROACHING", "BSD_RCTA", 0),
-        ("R_APPROACHING", "BSD_RCTA", 0),
+        ("L_ADJACENT", "BSD_RCTA"),
+        ("R_ADJACENT", "BSD_RCTA"),
+        ("L_APPROACHING", "BSD_RCTA"),
+        ("R_APPROACHING", "BSD_RCTA"),
       ]
-      checks += [
-        ("BSD_RCTA", 17),
-      ]
+      checks.append(("BSD_RCTA", 17))
 
     if CP.carFingerprint not in PREGLOBAL_CARS:
       signals += [
-        ("Steer_Warning", "Steering_Torque", 0),
-        ("Brake", "Brake_Status", 0),
-        ("UNITS", "Dashlights", 0),
+        ("Steer_Warning", "Steering_Torque"),
+        ("Brake", "Brake_Status"),
+        ("UNITS", "Dashlights"),
       ]
 
       checks += [
@@ -138,13 +134,9 @@ class CarState(CarStateBase):
         ("CruiseControl", 20),
       ]
     else:
-      signals += [
-        ("UNITS", "Dash_State2", 0),
-      ]
+      signals.append(("UNITS", "Dash_State2"))
 
-      checks += [
-        ("Dash_State2", 1),
-      ]
+      checks.append(("Dash_State2", 1))
 
     if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
       checks += [
@@ -153,7 +145,7 @@ class CarState(CarStateBase):
         ("CruiseControl", 50),
       ]
 
-    if CP.carFingerprint in [CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018]:
+    if CP.carFingerprint in (CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
       checks += [
         ("Dashlights", 10),
         ("CruiseControl", 50),
@@ -165,70 +157,70 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     if CP.carFingerprint in PREGLOBAL_CARS:
       signals = [
-        ("Cruise_Set_Speed", "ES_DashStatus", 0),
-        ("Not_Ready_Startup", "ES_DashStatus", 0),
+        ("Cruise_Set_Speed", "ES_DashStatus"),
+        ("Not_Ready_Startup", "ES_DashStatus"),
 
-        ("Throttle_Cruise", "ES_CruiseThrottle", 0),
-        ("Signal1", "ES_CruiseThrottle", 0),
-        ("Cruise_Activated", "ES_CruiseThrottle", 0),
-        ("Signal2", "ES_CruiseThrottle", 0),
-        ("Brake_On", "ES_CruiseThrottle", 0),
-        ("Distance_Swap", "ES_CruiseThrottle", 0),
-        ("Standstill", "ES_CruiseThrottle", 0),
-        ("Signal3", "ES_CruiseThrottle", 0),
-        ("Close_Distance", "ES_CruiseThrottle", 0),
-        ("Signal4", "ES_CruiseThrottle", 0),
-        ("Standstill_2", "ES_CruiseThrottle", 0),
-        ("Cruise_Fault", "ES_CruiseThrottle", 0),
-        ("Signal5", "ES_CruiseThrottle", 0),
-        ("Counter", "ES_CruiseThrottle", 0),
-        ("Signal6", "ES_CruiseThrottle", 0),
-        ("Cruise_Button", "ES_CruiseThrottle", 0),
-        ("Signal7", "ES_CruiseThrottle", 0),
+        ("Cruise_Throttle", "ES_Distance"),
+        ("Signal1", "ES_Distance"),
+        ("Car_Follow", "ES_Distance"),
+        ("Signal2", "ES_Distance"),
+        ("Brake_On", "ES_Distance"),
+        ("Distance_Swap", "ES_Distance"),
+        ("Standstill", "ES_Distance"),
+        ("Signal3", "ES_Distance"),
+        ("Close_Distance", "ES_Distance"),
+        ("Signal4", "ES_Distance"),
+        ("Standstill_2", "ES_Distance"),
+        ("Cruise_Fault", "ES_Distance"),
+        ("Signal5", "ES_Distance"),
+        ("Counter", "ES_Distance"),
+        ("Signal6", "ES_Distance"),
+        ("Cruise_Button", "ES_Distance"),
+        ("Signal7", "ES_Distance"),
       ]
 
       checks = [
         ("ES_DashStatus", 20),
-        ("ES_CruiseThrottle", 20),
+        ("ES_Distance", 20),
       ]
     else:
       signals = [
-        ("Cruise_Set_Speed", "ES_DashStatus", 0),
-        ("Conventional_Cruise", "ES_DashStatus", 0),
+        ("Cruise_Set_Speed", "ES_DashStatus"),
+        ("Conventional_Cruise", "ES_DashStatus"),
 
-        ("Counter", "ES_Distance", 0),
-        ("Signal1", "ES_Distance", 0),
-        ("Cruise_Fault", "ES_Distance", 0),
-        ("Cruise_Throttle", "ES_Distance", 0),
-        ("Signal2", "ES_Distance", 0),
-        ("Car_Follow", "ES_Distance", 0),
-        ("Signal3", "ES_Distance", 0),
-        ("Cruise_Brake_Active", "ES_Distance", 0),
-        ("Distance_Swap", "ES_Distance", 0),
-        ("Cruise_EPB", "ES_Distance", 0),
-        ("Signal4", "ES_Distance", 0),
-        ("Close_Distance", "ES_Distance", 0),
-        ("Signal5", "ES_Distance", 0),
-        ("Cruise_Cancel", "ES_Distance", 0),
-        ("Cruise_Set", "ES_Distance", 0),
-        ("Cruise_Resume", "ES_Distance", 0),
-        ("Signal6", "ES_Distance", 0),
+        ("Counter", "ES_Distance"),
+        ("Signal1", "ES_Distance"),
+        ("Cruise_Fault", "ES_Distance"),
+        ("Cruise_Throttle", "ES_Distance"),
+        ("Signal2", "ES_Distance"),
+        ("Car_Follow", "ES_Distance"),
+        ("Signal3", "ES_Distance"),
+        ("Cruise_Brake_Active", "ES_Distance"),
+        ("Distance_Swap", "ES_Distance"),
+        ("Cruise_EPB", "ES_Distance"),
+        ("Signal4", "ES_Distance"),
+        ("Close_Distance", "ES_Distance"),
+        ("Signal5", "ES_Distance"),
+        ("Cruise_Cancel", "ES_Distance"),
+        ("Cruise_Set", "ES_Distance"),
+        ("Cruise_Resume", "ES_Distance"),
+        ("Signal6", "ES_Distance"),
 
-        ("Counter", "ES_LKAS_State", 0),
-        ("LKAS_Alert_Msg", "ES_LKAS_State", 0),
-        ("Signal1", "ES_LKAS_State", 0),
-        ("LKAS_ACTIVE", "ES_LKAS_State", 0),
-        ("LKAS_Dash_State", "ES_LKAS_State", 0),
-        ("Signal2", "ES_LKAS_State", 0),
-        ("Backward_Speed_Limit_Menu", "ES_LKAS_State", 0),
-        ("LKAS_Left_Line_Enable", "ES_LKAS_State", 0),
-        ("LKAS_Left_Line_Light_Blink", "ES_LKAS_State", 0),
-        ("LKAS_Right_Line_Enable", "ES_LKAS_State", 0),
-        ("LKAS_Right_Line_Light_Blink", "ES_LKAS_State", 0),
-        ("LKAS_Left_Line_Visible", "ES_LKAS_State", 0),
-        ("LKAS_Right_Line_Visible", "ES_LKAS_State", 0),
-        ("LKAS_Alert", "ES_LKAS_State", 0),
-        ("Signal3", "ES_LKAS_State", 0),
+        ("Counter", "ES_LKAS_State"),
+        ("LKAS_Alert_Msg", "ES_LKAS_State"),
+        ("Signal1", "ES_LKAS_State"),
+        ("LKAS_ACTIVE", "ES_LKAS_State"),
+        ("LKAS_Dash_State", "ES_LKAS_State"),
+        ("Signal2", "ES_LKAS_State"),
+        ("Backward_Speed_Limit_Menu", "ES_LKAS_State"),
+        ("LKAS_Left_Line_Enable", "ES_LKAS_State"),
+        ("LKAS_Left_Line_Light_Blink", "ES_LKAS_State"),
+        ("LKAS_Right_Line_Enable", "ES_LKAS_State"),
+        ("LKAS_Right_Line_Light_Blink", "ES_LKAS_State"),
+        ("LKAS_Left_Line_Visible", "ES_LKAS_State"),
+        ("LKAS_Right_Line_Visible", "ES_LKAS_State"),
+        ("LKAS_Alert", "ES_LKAS_State"),
+        ("Signal3", "ES_LKAS_State"),
       ]
 
       checks = [

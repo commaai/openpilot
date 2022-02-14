@@ -134,10 +134,10 @@ BO_ 352 ES_Brake: 8 XXX
  SG_ Counter : 48|3@1+ (1,0) [0|7] "" XXX
  SG_ Checksum : 56|8@1+ (1,0) [0|255] "" XXX
 
-BO_ 353 ES_CruiseThrottle: 8 XXX
- SG_ Throttle_Cruise : 0|12@1+ (1,0) [0|4095] "" XXX
+BO_ 353 ES_Distance: 8 XXX
+ SG_ Cruise_Throttle : 0|12@1+ (1,0) [0|4095] "" XXX
  SG_ Signal1 : 12|4@1+ (1,0) [0|15] "" XXX
- SG_ Cruise_Activated : 16|1@1+ (1,0) [0|1] "" XXX
+ SG_ Car_Follow : 16|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal2 : 17|3@1+ (1,0) [0|7] "" XXX
  SG_ Brake_On : 20|1@1+ (1,0) [0|1] "" XXX
  SG_ Distance_Swap : 21|1@1+ (1,0) [0|1] "" XXX
@@ -249,13 +249,15 @@ VAL_ 328 Gear 0 "N" 1 "D" 2 "D" 3 "D" 4 "D" 5 "D" 6 "D" 14 "R" 15 "P";
 
 CM_ "subaru_forester_2017.dbc starts here";
 
-
 BO_ 355 ES_DashStatus: 8 XXX
  SG_ Not_Ready_Startup : 4|2@1+ (1,0) [0|3] "" XXX
  SG_ Cruise_On : 16|1@1+ (1,0) [0|1] "" XXX
+ SG_ Cruise_Activated : 17|1@0+ (1,0) [0|1] "" XXX
  SG_ Cruise_Set_Speed : 24|8@1+ (1,0) [0|255] "" XXX
  SG_ Counter : 40|3@1+ (1,0) [0|7] "" XXX
- SG_ Cruise_Activated : 54|1@1+ (1,0) [0|1] "" XXX
+ SG_ Brake : 43|1@1+ (1,0) [0|1] "" XXX
+ SG_ Car_Follow : 54|1@1+ (1,0) [0|1] "" XXX
+ SG_ Far_Distance : 56|4@1+ (1,0) [0|1] "" XXX
 
 BO_ 881 Steering_Torque: 8 XXX
  SG_ Steering_Motor_Flat : 0|10@1+ (32,0) [0|1000] "" XXX

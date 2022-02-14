@@ -11,6 +11,13 @@ Most open source development activity is coordinated through our [GitHub Discuss
  * Make sure you have a [GitHub account](https://github.com/signup/free)
  * Fork [our repositories](https://github.com/commaai) on GitHub
 
+### First contribution
+Try out some of these first pull requests ideas to dive into the codebase:
+
+* Increase our [mypy](http://mypy-lang.org/) coverage
+* Write some documentation
+* Tackle an open [good first issue](https://github.com/commaai/openpilot/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+
 ## Pull Requests
 
 Pull requests should be against the master branch. Welcomed contributions include bug reports, car ports, and any [open issue](https://github.com/commaai/openpilot/issues). If you're unsure about a contribution, feel free to open a discussion, issue, or draft PR to discuss the problem you're trying to solve.

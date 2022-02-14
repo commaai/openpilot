@@ -17,10 +17,7 @@ from tools.lib.cache import cache_path_for_file_path
 from tools.lib.exceptions import DataUnreadableError
 from common.file_helpers import atomic_write_in_dir
 
-try:
-  from xx.chffr.lib.filereader import FileReader
-except ImportError:
-  from tools.lib.filereader import FileReader
+from tools.lib.filereader import FileReader
 
 HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
@@ -50,7 +47,7 @@ def fingerprint_video(fn):
   with FileReader(fn) as f:
     header = f.read(4)
   if len(header) == 0:
-    raise DataUnreadableError("%s is empty" % fn)
+    raise DataUnreadableError(f"{fn} is empty")
   elif header == b"\x00\xc0\x12\x00":
     return FrameType.raw
   elif header == b"\x00\x00\x00\x01":
@@ -90,7 +87,7 @@ def vidindex(fn, typ):
     try:
       subprocess.check_call([vidindex, typ, fn, prefix_f.name, index_f.name])
     except subprocess.CalledProcessError:
-      raise DataUnreadableError("vidindex failed on file %s" % fn)
+      raise DataUnreadableError(f"vidindex failed on file {fn}")
     with open(index_f.name, "rb") as f:
       index = f.read()
     with open(prefix_f.name, "rb") as f:
@@ -308,7 +305,7 @@ class RawFrameReader(BaseFrameReader):
     assert num+count <= self.frame_count
 
     if pix_fmt not in ("yuv420p", "rgb24"):
-      raise ValueError("Unsupported pixel format %r" % pix_fmt)
+      raise ValueError(f"Unsupported pixel format {pix_fmt!r}")
 
     app = []
     for i in range(num, num+count):
@@ -548,10 +545,10 @@ class GOPFrameReader(BaseFrameReader):
     assert self.frame_count is not None
 
     if num + count > self.frame_count:
-      raise ValueError("{} > {}".format(num + count, self.frame_count))
+      raise ValueError(f"{num + count} > {self.frame_count}")
 
     if pix_fmt not in ("yuv420p", "rgb24", "yuv444p"):
-      raise ValueError("Unsupported pixel format %r" % pix_fmt)
+      raise ValueError(f"Unsupported pixel format {pix_fmt!r}")
 
     ret = [self._get_one(num + i, pix_fmt) for i in range(count)]
 
@@ -572,15 +569,13 @@ class StreamFrameReader(StreamGOPReader, GOPFrameReader):
 
 def GOPFrameIterator(gop_reader, pix_fmt):
   dec = VideoStreamDecompressor(gop_reader.fn, gop_reader.vid_fmt, gop_reader.w, gop_reader.h, pix_fmt)
-  for frame in dec.read():
-    yield frame
+  yield from dec.read()
 
 
 def FrameIterator(fn, pix_fmt, **kwargs):
   fr = FrameReader(fn, **kwargs)
   if isinstance(fr, GOPReader):
-    for v in GOPFrameIterator(fr, pix_fmt):
-      yield v
+    yield from GOPFrameIterator(fr, pix_fmt)
   else:
     for i in range(fr.frame_count):
       yield fr.get(i, pix_fmt=pix_fmt)[0]

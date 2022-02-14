@@ -24,6 +24,10 @@ int main(int argc, char *argv[]) {
   err = sd_journal_seek_tail(journal);
   assert(err >= 0);
 
+  // workaround for bug https://github.com/systemd/systemd/issues/9934
+  // call sd_journal_previous_skip after sd_journal_seek_tail (like journalctl -f does) to makes things work.
+  sd_journal_previous_skip(journal, 1);
+
   while (!do_exit) {
     err = sd_journal_next(journal);
     assert(err >= 0);

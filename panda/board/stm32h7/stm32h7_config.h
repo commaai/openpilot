@@ -34,8 +34,6 @@
 #define PROVISION_CHUNK_ADDRESS 0x080FFFE0U
 #define DEVICE_SERIAL_NUMBER_ADDRESS 0x080FFFC0U
 
-#define CANPACKET_DATA_SIZE_MAX 64U
-
 #include "can_definitions.h"
 
 #ifndef BOOTSTUB
@@ -58,7 +56,7 @@
 #include "stm32h7/board.h"
 #include "stm32h7/clock.h"
 
-#if !defined (BOOTSTUB) && defined(PANDA)
+#if !defined(BOOTSTUB) && defined(PANDA)
   #include "drivers/uart.h"
   #include "stm32h7/lluart.h"
 #endif

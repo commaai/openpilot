@@ -11,14 +11,14 @@ bool sync_encoders(LoggerdState *s, CameraType cam_type, uint32_t frame_id) {
     update_max_atomic(s->start_frame_id, frame_id + 2);
     if (std::exchange(s->camera_ready[cam_type], true) == false) {
       ++s->encoders_ready;
-      LOGE("camera %d encoder ready", cam_type);
+      LOGD("camera %d encoder ready", cam_type);
     }
     return false;
   } else {
     if (s->max_waiting == 1) update_max_atomic(s->start_frame_id, frame_id);
     bool synced = frame_id >= s->start_frame_id;
     s->camera_synced[cam_type] = synced;
-    if (!synced) LOGE("camera %d waiting for frame %d, cur %d", cam_type, (int)s->start_frame_id, frame_id);
+    if (!synced) LOGD("camera %d waiting for frame %d, cur %d", cam_type, (int)s->start_frame_id, frame_id);
     return synced;
   }
 }
@@ -244,7 +244,7 @@ void loggerd_thread() {
 
         count++;
         if (count >= 200) {
-          LOGE("large volume of '%s' messages", qs.name.c_str());
+          LOGD("large volume of '%s' messages", qs.name.c_str());
           break;
         }
       }

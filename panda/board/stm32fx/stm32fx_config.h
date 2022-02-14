@@ -38,8 +38,6 @@
 #define PROVISION_CHUNK_ADDRESS 0x1FFF79E0U
 #define DEVICE_SERIAL_NUMBER_ADDRESS 0x1FFF79C0U
 
-#define CANPACKET_DATA_SIZE_MAX 8U
-
 #include "can_definitions.h"
 
 #ifndef BOOTSTUB
@@ -66,7 +64,7 @@
 #include "stm32fx/board.h"
 #include "stm32fx/clock.h"
 
-#if !defined (BOOTSTUB) && (defined(PANDA) || defined(PEDAL_USB))
+#if !defined(BOOTSTUB) && (defined(PANDA) || defined(PEDAL_USB))
   #include "drivers/uart.h"
   #include "stm32fx/lluart.h"
 #endif

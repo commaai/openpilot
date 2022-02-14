@@ -36,11 +36,20 @@ protected:
   virtual void updateFrameMat(int w, int h);
   void vipcThread();
 
+  struct WaitFence {
+    WaitFence() { sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0); }
+    ~WaitFence() { glDeleteSync(sync); }
+    void wait() { glWaitSync(sync, 0, GL_TIMEOUT_IGNORED); }
+    GLsync sync = 0;
+  };
+
   bool zoomed_view;
-  std::atomic<int> latest_texture_id = -1;
+  std::mutex lock;
+  int latest_texture_id = -1;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
+  std::unique_ptr<WaitFence> wait_fence;
   std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
 
@@ -49,7 +58,6 @@ protected:
   int stream_height = 0;
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
-
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);

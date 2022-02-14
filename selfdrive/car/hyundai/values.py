@@ -1,5 +1,3 @@
-# flake8: noqa
-
 from cereal import car
 from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
@@ -10,13 +8,14 @@ class CarControllerParams:
   ACCEL_MAX = 2.0 # m/s
 
   def __init__(self, CP):
-    if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SANTA_FE, CAR.VELOSTER, CAR.GENESIS_G70, CAR.GENESIS_G70_2020,
-                             CAR.IONIQ_EV_2020, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.ELANTRA_2021,
-                             CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.SANTA_FE_2022,
-                             CAR.KIA_K5_2021, CAR.KONA_EV, CAR.KONA, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022]:
-      self.STEER_MAX = 384
-    else:
+    # To determine the limit for your car, find the maximum value that the stock LKAS will request.
+    # If the max stock LKAS request is <384, add your car to this list.
+    if CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.ELANTRA_GT_I30, CAR.IONIQ,
+                             CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_HEV,
+                             CAR.KIA_NIRO_HEV_2021, CAR.KIA_OPTIMA_H, CAR.KIA_OPTIMA, CAR.KIA_SORENTO, CAR.KIA_STINGER):
       self.STEER_MAX = 255
+    else:
+      self.STEER_MAX = 384
     self.STEER_DELTA_UP = 3
     self.STEER_DELTA_DOWN = 7
     self.STEER_DRIVER_ALLOWANCE = 50
@@ -41,6 +40,7 @@ class CAR:
   SANTA_FE = "HYUNDAI SANTA FE 2019"
   SANTA_FE_2022 = "HYUNDAI SANTA FE 2022"
   SANTA_FE_HEV_2022 = "HYUNDAI SANTA FE HYBRID 2022"
+  SANTA_FE_PHEV_2022 = "HYUNDAI SANTA FE PlUG-IN HYBRID 2022"
   SONATA = "HYUNDAI SONATA 2020"
   SONATA_LF = "HYUNDAI SONATA 2019"
   PALISADE = "HYUNDAI PALISADE 2020"
@@ -463,22 +463,27 @@ FW_VERSIONS = {
       b'\xf1\x00TM ESC \x03 101 \x08\x02 58910-S2DA0',
       b'\xf1\x8758910-S2DA0\xf1\x00TM ESC \x03 101 \x08\x02 58910-S2DA0',
       b'\xf1\x8758910-S2GA0\xf1\x00TM ESC \x02 101 \x08\x04 58910-S2GA0',
+      b'\xf1\x8758910-S1DA0\xf1\x00TM ESC \x1e 102 \x08\x08 58910-S1DA0',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x82TMBZN5TMD3XXXG2E',
       b'\xf1\x82TACVN5GSI3XXXH0A',
+      b'\xf1\x82TMCFD5MMCXXXXG0A',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.02 56370-S2AA0 0B19',
+      b'\xf1\x00TM  MDPS C 1.00 1.01 56310-S1AB0 4TSDC101',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TMA MFC  AT MEX LHD 1.00 1.01 99211-S2500 210205',
       b'\xf1\x00TMA MFC  AT USA LHD 1.00 1.00 99211-S2500 200720',
+      b'\xf1\x00TM  MFC  AT EUR LHD 1.00 1.03 99211-S1500 210224',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00T02601BL  T02730A1  VTMPT25XXX730NS2\xa6\x06\x88\xf7',
       b'\xf1\x87SDMXCA8653204GN1EVugEUuWwwwwww\x87wwwwwv/\xfb\xff\xa8\x88\x9f\xff\xa5\x9c\xf1\x89HT6WAD00A1\xf1\x82STM4G25NH1\x00\x00\x00\x00\x00\x00',
       b'\xf1\x87954A02N250\x00\x00\x00\x00\x00\xf1\x81T02730A1  \xf1\x00T02601BL  T02730A1  VTMPT25XXX730NS2\xa6\x06\x88\xf7',
+      b'\xf1\x87KMMYBU034207SB72x\x89\x88\x98h\x88\x98\x89\x87fhvvfWf33_\xff\x87\xff\x8f\xfa\x81\xe5\xf1\x89HT6TAF00A1\xf1\x82STM0M25GS1\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.SANTA_FE_HEV_2022: {
@@ -496,6 +501,23 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x87391312MTC1',
+    ],
+  },
+  CAR.SANTA_FE_PHEV_2022: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x8799110CL500\xf1\x00TMhe SCC FHCUP      1.00 1.00 99110-CL500         ',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00TM  MDPS C 1.00 1.02 56310-CLAC0 4TSHC102',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00TMP MFC  AT USA LHD 1.00 1.03 99211-S1500 210224',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x8795441-3D121\x00\xf1\x81E16\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2333  E16\x00\x00\x00\x00\x00\x00\x00TTM2P16SA0o\x88^\xbe',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x87391312MTF0',
     ],
   },
   CAR.KIA_STINGER: {
@@ -653,7 +675,7 @@ FW_VERSIONS = {
       b'\xf1\x00IK  MDPS R 1.00 1.07 57700-G9220 4I2VL107',
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x87VCJLP18407832DN3\x88vXfvUVT\x97eFU\x87d7v\x88eVeveFU\x89\x98\x7f\xff\xb2\xb0\xf1\x81E25\x00\x00\x00'
+      b'\xf1\x87VCJLP18407832DN3\x88vXfvUVT\x97eFU\x87d7v\x88eVeveFU\x89\x98\x7f\xff\xb2\xb0\xf1\x81E25\x00\x00\x00',
       b'\x00\x00\x00\x00\xf1\x00bcsh8p54  E25\x00\x00\x00\x00\x00\x00\x00SIK0T33NB4\xecE\xefL',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
@@ -777,25 +799,22 @@ FW_VERSIONS = {
       b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4000         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4100         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.03 96400-Q4100         ',
-      b'\xf1\x00OSev SCC F-CUP      1.00 1.01 99110-K4000         ',
       b'\xf1\x8799110Q4000\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4000         ',
       b'\xf1\x8799110Q4100\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4100         ',
-      b'\xf1\x8799110Q4500\xf1\000DEev SCC F-CUP      1.00 1.00 99110-Q4500         ',
-    ],
-    (Ecu.esp, 0x7D1, None): [
-      b'\xf1\x00OS IEB \r 212 \x11\x13 58520-K4000',
+      b'\xf1\x8799110Q4500\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4500         ',
+      b'\xf1\x8799110Q4600\xf1\x00DEev SCC FNCUP      1.00 1.00 99110-Q4600         ',
+      b'\xf1\x8799110Q4600\xf1\x00DEev SCC FHCUP      1.00 1.00 99110-Q4600         ',
     ],
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4000\x00 4DEEC105',
       b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4100\x00 4DEEC105',
-      b'\xf1\x00OS  MDPS C 1.00 1.04 56310K4050\x00 4OEDC104',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
-      b'\xf1\000DEE MFC  AT EUR LHD 1.00 1.00 99211-Q4100 200706',
+      b'\xf1\x00DEE MFC  AT EUR LHD 1.00 1.00 99211-Q4100 200706',
       b'\xf1\x00DEE MFC  AT EUR LHD 1.00 1.00 99211-Q4000 191211',
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.00 99211-Q4000 191211',
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.03 95740-Q4000 180821',
-      b'\xf1\x00OSE LKAS AT EUR LHD 1.00 1.00 95740-K4100 W40',
+      b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.01 99211-Q4500 210428',
     ],
   },
   CAR.KIA_NIRO_HEV: {
@@ -981,25 +1000,25 @@ FW_VERSIONS = {
 }
 
 CHECKSUM = {
-  "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.SANTA_FE_HEV_2022],
+  "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022],
   "6B": [CAR.KIA_SORENTO, CAR.HYUNDAI_GENESIS],
 }
 
 FEATURES = {
   # which message has the gear
-  "use_cluster_gears": set([CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KONA]),
-  "use_tcu_gears": set([CAR.KIA_OPTIMA, CAR.SONATA_LF, CAR.VELOSTER]),
-  "use_elect_gears": set([CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021,CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022]),
+  "use_cluster_gears": {CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KONA},
+  "use_tcu_gears": {CAR.KIA_OPTIMA, CAR.SONATA_LF, CAR.VELOSTER},
+  "use_elect_gears": {CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021,CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022},
 
   # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
-  "use_fca": set([CAR.SONATA, CAR.SONATA_HYBRID, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.GENESIS_G70_2020, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS, CAR.KONA_HEV, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022]),
+  "use_fca": {CAR.SONATA, CAR.SONATA_HYBRID, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.GENESIS_G70_2020, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS, CAR.KONA_HEV, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022},
 }
 
-HYBRID_CAR = set([CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022])  # these cars use a different gas signal
-EV_CAR = set([CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV])
+HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022}  # these cars use a different gas signal
+EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV}
 
 # these cars require a special panda safety mode due to missing counters and checksums in the messages
-LEGACY_SAFETY_MODE_CAR = set([CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_SORENTO, CAR.SONATA_LF, CAR.KIA_NIRO_EV, CAR.KIA_OPTIMA, CAR.VELOSTER, CAR.KIA_STINGER, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA, CAR.IONIQ_HEV_2022])
+LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_SORENTO, CAR.SONATA_LF, CAR.KIA_OPTIMA, CAR.VELOSTER, CAR.KIA_STINGER, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA, CAR.IONIQ_HEV_2022}
 
 # If 0x500 is present on bus 1 it probably has a Mando radar outputting radar points.
 # If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py
@@ -1020,7 +1039,7 @@ DBC = {
   CAR.IONIQ_HEV_2022: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_FORTE: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_K5_2021: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_NIRO_EV: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_NIRO_EV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.KIA_NIRO_HEV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.KIA_NIRO_HEV_2021: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA: dbc_dict('hyundai_kia_generic', None),
@@ -1034,6 +1053,7 @@ DBC = {
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.SANTA_FE_2022: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE_HEV_2022: dbc_dict('hyundai_kia_generic', None),
+  CAR.SANTA_FE_PHEV_2022: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.SONATA_LF: dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
   CAR.PALISADE: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),

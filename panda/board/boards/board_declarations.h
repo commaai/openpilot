@@ -22,7 +22,7 @@ struct board {
   const bool has_hw_gmlan;
   const bool has_obd;
   const bool has_lin;
-  const bool has_rtc;
+  const bool has_rtc_battery;
   board_init init;
   board_enable_can_transceiver enable_can_transceiver;
   board_enable_can_transceivers enable_can_transceivers;

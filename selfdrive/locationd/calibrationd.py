@@ -6,17 +6,20 @@ While the roll calibration is a real value that can be estimated, here we assume
 and the image input into the neural network is not corrected for roll.
 '''
 
+import gc
 import os
-import copy
 import numpy as np
-import cereal.messaging as messaging
+from typing import NoReturn
+
 from cereal import log
-from selfdrive.hardware import TICI
+import cereal.messaging as messaging
 from common.params import Params, put_nonblocking
+from common.realtime import set_realtime_priority
 from common.transformations.model import model_height
 from common.transformations.camera import get_view_frame_from_road_frame
 from common.transformations.orientation import rot_from_euler, euler_from_rot
 from selfdrive.config import Conversions as CV
+from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
 
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
@@ -69,7 +72,7 @@ class Calibrator():
     if param_put and calibration_params:
       try:
         msg = log.Event.from_bytes(calibration_params)
-        rpy_init = list(msg.liveCalibration.rpyCalib)
+        rpy_init = np.array(msg.liveCalibration.rpyCalib)
         valid_blocks = msg.liveCalibration.validBlocks
       except Exception:
         cloudlog.exception("Error reading cached CalibrationParams")
@@ -79,13 +82,15 @@ class Calibrator():
 
   def reset(self, rpy_init=RPY_INIT, valid_blocks=0, smooth_from=None):
     if not np.isfinite(rpy_init).all():
-        self.rpy = copy.copy(RPY_INIT)
+      self.rpy = RPY_INIT.copy()
     else:
-      self.rpy = rpy_init
+      self.rpy = rpy_init.copy()
+
     if not np.isfinite(valid_blocks) or valid_blocks < 0:
-        self.valid_blocks = 0
+      self.valid_blocks = 0
     else:
       self.valid_blocks = valid_blocks
+
     self.rpys = np.tile(self.rpy, (INPUTS_WANTED, 1))
 
     self.idx = 0
@@ -99,10 +104,19 @@ class Calibrator():
       self.old_rpy = smooth_from
       self.old_rpy_weight = 1.0
 
+  def get_valid_idxs(self):
+    # exclude current block_idx from validity window
+    before_current = list(range(self.block_idx))
+    after_current = list(range(min(self.valid_blocks, self.block_idx + 1), self.valid_blocks))
+    return before_current + after_current
+
   def update_status(self):
-    if self.valid_blocks > 0:
-      max_rpy_calib = np.array(np.max(self.rpys[:self.valid_blocks], axis=0))
-      min_rpy_calib = np.array(np.min(self.rpys[:self.valid_blocks], axis=0))
+    valid_idxs = self.get_valid_idxs()
+    if valid_idxs:
+      rpys = self.rpys[valid_idxs]
+      self.rpy = np.mean(rpys, axis=0)
+      max_rpy_calib = np.array(np.max(rpys, axis=0))
+      min_rpy_calib = np.array(np.min(rpys, axis=0))
       self.calib_spread = np.abs(max_rpy_calib - min_rpy_calib)
     else:
       self.calib_spread = np.zeros(3)
@@ -157,8 +171,6 @@ class Calibrator():
       self.block_idx += 1
       self.valid_blocks = max(self.block_idx, self.valid_blocks)
       self.block_idx = self.block_idx % INPUTS_WANTED
-    if self.valid_blocks > 0:
-      self.rpy = np.mean(self.rpys[:self.valid_blocks], axis=0)
 
     self.update_status()
 
@@ -172,16 +184,19 @@ class Calibrator():
     msg.liveCalibration.validBlocks = self.valid_blocks
     msg.liveCalibration.calStatus = self.cal_status
     msg.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
-    msg.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
-    msg.liveCalibration.rpyCalib = [float(x) for x in smooth_rpy]
-    msg.liveCalibration.rpyCalibSpread = [float(x) for x in self.calib_spread]
+    msg.liveCalibration.extrinsicMatrix = extrinsic_matrix.flatten().tolist()
+    msg.liveCalibration.rpyCalib = smooth_rpy.tolist()
+    msg.liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
     return msg
 
-  def send_data(self, pm):
+  def send_data(self, pm) -> None:
     pm.send('liveCalibration', self.get_msg())
 
 
-def calibrationd_thread(sm=None, pm=None):
+def calibrationd_thread(sm=None, pm=None) -> NoReturn:
+  gc.disable()
+  set_realtime_priority(1)
+
   if sm is None:
     sm = messaging.SubMaster(['cameraOdometry', 'carState'], poll=['cameraOdometry'])
 
@@ -209,7 +224,7 @@ def calibrationd_thread(sm=None, pm=None):
       calibrator.send_data(pm)
 
 
-def main(sm=None, pm=None):
+def main(sm=None, pm=None) -> NoReturn:
   calibrationd_thread(sm, pm)
 
 

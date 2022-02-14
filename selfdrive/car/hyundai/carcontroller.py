@@ -13,7 +13,7 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
                       right_lane, left_lane_depart, right_lane_depart):
-  sys_warning = (visual_alert in [VisualAlert.steerRequired, VisualAlert.ldw])
+  sys_warning = (visual_alert in (VisualAlert.steerRequired, VisualAlert.ldw))
 
   # initialize to no line visible
   sys_state = 1
@@ -28,9 +28,9 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
   left_lane_warning = 0
   right_lane_warning = 0
   if left_lane_depart:
-    left_lane_warning = 1 if fingerprint in [CAR.GENESIS_G90, CAR.GENESIS_G80] else 2
+    left_lane_warning = 1 if fingerprint in (CAR.GENESIS_G90, CAR.GENESIS_G80) else 2
   if right_lane_depart:
-    right_lane_warning = 1 if fingerprint in [CAR.GENESIS_G90, CAR.GENESIS_G80] else 2
+    right_lane_warning = 1 if fingerprint in (CAR.GENESIS_G90, CAR.GENESIS_G80) else 2
 
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
@@ -44,8 +44,9 @@ class CarController():
     self.car_fingerprint = CP.carFingerprint
     self.steer_rate_limited = False
     self.last_resume_frame = 0
+    self.accel = 0
 
-  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, hud_speed,
+  def update(self, c, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, hud_speed,
              left_lane, right_lane, left_lane_depart, right_lane_depart):
     # Steering Torque
     new_steer = int(round(actuators.steer * self.p.STEER_MAX))
@@ -53,7 +54,7 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # disable when temp fault is active, or below LKA minimum speed
-    lkas_active = enabled and not CS.out.steerWarning and CS.out.vEgo >= CS.CP.minSteerSpeed
+    lkas_active = c.active and not CS.out.steerWarning and CS.out.vEgo >= CS.CP.minSteerSpeed
 
     if not lkas_active:
       apply_steer = 0
@@ -88,7 +89,7 @@ class CarController():
 
     if frame % 2 == 0 and CS.CP.openpilotLongitudinalControl:
       lead_visible = False
-      accel = actuators.accel if enabled else 0
+      accel = actuators.accel if c.active else 0
 
       jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
 
@@ -100,12 +101,13 @@ class CarController():
       stopping = (actuators.longControlState == LongCtrlState.stopping)
       set_speed_in_units = hud_speed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
       can_sends.extend(create_acc_commands(self.packer, enabled, accel, jerk, int(frame / 2), lead_visible, set_speed_in_units, stopping))
+      self.accel = accel
 
     # 20 Hz LFA MFA message
-    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.IONIQ, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021,
+    if frame % 5 == 0 and self.car_fingerprint in (CAR.SONATA, CAR.PALISADE, CAR.IONIQ, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021,
                                                    CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.KONA_EV,
                                                    CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.SANTA_FE_2022,
-                                                   CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.GENESIS_G70_2020]:
+                                                   CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.GENESIS_G70_2020, CAR.SANTA_FE_PHEV_2022):
       can_sends.append(create_lfahda_mfc(self.packer, enabled))
 
     # 5 Hz ACC options
@@ -116,4 +118,8 @@ class CarController():
     if frame % 50 == 0 and CS.CP.openpilotLongitudinalControl:
       can_sends.append(create_frt_radar_opt(self.packer))
 
-    return can_sends
+    new_actuators = actuators.copy()
+    new_actuators.steer = apply_steer / self.p.STEER_MAX
+    new_actuators.accel = self.accel
+
+    return new_actuators, can_sends

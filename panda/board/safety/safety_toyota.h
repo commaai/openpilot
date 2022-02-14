@@ -172,6 +172,15 @@ static int toyota_tx_hook(CANPacket_t *to_send) {
       }
     }
 
+    // AEB: block all actuation. only used when DSU is unplugged
+    if (addr == 0x283) {
+      // only allow the checksum, which is the last byte
+      bool block = (GET_BYTES_04(to_send) != 0U) || (GET_BYTE(to_send, 4) != 0U) || (GET_BYTE(to_send, 5) != 0U);
+      if (block) {
+        tx = 0;
+      }
+    }
+
     // LTA steering check
     // only sent to prevent dash errors, no actuation is accepted
     if (addr == 0x191) {

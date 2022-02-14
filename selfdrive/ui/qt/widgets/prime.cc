@@ -307,19 +307,19 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
   }
 
   QJsonObject json = doc.object();
+  int prime_type = json["prime_type"].toInt();
+
+  if (uiState()->prime_type != prime_type) {
+    uiState()->prime_type = prime_type;
+    Params().put("PrimeType", std::to_string(prime_type));
+  }
+
   if (!json["is_paired"].toBool()) {
     mainLayout->setCurrentIndex(0);
   } else {
     popup->reject();
 
-    bool prime = json["prime"].toBool();
-
-    if (QUIState::ui_state.has_prime != prime) {
-      QUIState::ui_state.has_prime = prime;
-      Params().putBool("HasPrime", prime);
-    }
-
-    if (prime) {
+    if (prime_type) {
       mainLayout->setCurrentWidget(primeUser);
     } else {
       mainLayout->setCurrentWidget(primeAd);

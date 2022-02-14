@@ -8,8 +8,7 @@ typedef struct {
 usb_asm_buffer ep1_buffer = {.ptr = 0, .tail_size = 0, .counter = 0};
 int total_rx_size = 0;
 
-int usb_cb_ep1_in(void *usbdata, int len, bool hardwired) {
-  UNUSED(hardwired);
+int usb_cb_ep1_in(void *usbdata, int len) {
   int pos = 1;
   uint8_t *usbdata8 = (uint8_t *)usbdata;
   usbdata8[0] = ep1_buffer.counter;
@@ -60,8 +59,7 @@ int usb_cb_ep1_in(void *usbdata, int len, bool hardwired) {
 usb_asm_buffer ep3_buffer = {.ptr = 0, .tail_size = 0, .counter = 0};
 
 // send on CAN
-void usb_cb_ep3_out(void *usbdata, int len, bool hardwired) {
-  UNUSED(hardwired);
+void usb_cb_ep3_out(void *usbdata, int len) {
   uint8_t *usbdata8 = (uint8_t *)usbdata;
   // Got first packet from a stream, resetting buffer and counter
   if (usbdata8[0] == 0U) {

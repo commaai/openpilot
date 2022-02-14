@@ -13,7 +13,7 @@
 // #define DEBUG printf
 #define INFO printf
 
-bool MessageState::parse(uint64_t sec, uint16_t ts_, uint8_t * dat) {
+bool MessageState::parse(uint64_t sec, uint8_t * dat) {
   uint64_t dat_le = read_u64_le(dat);
   uint64_t dat_be = read_u64_be(dat);
 
@@ -83,8 +83,8 @@ bool MessageState::parse(uint64_t sec, uint16_t ts_, uint8_t * dat) {
     }
 
     vals[i] = tmp * sig.factor + sig.offset;
+    all_vals[i].push_back(vals[i]);
   }
-  ts = ts_;
   seen = sec;
 
   return true;
@@ -148,6 +148,7 @@ CANParser::CANParser(int abus, const std::string& dbc_name,
       if (sig->type != SignalType::DEFAULT) {
         state.parse_sigs.push_back(*sig);
         state.vals.push_back(0);
+        state.all_vals.push_back({});
       }
     }
 
@@ -160,7 +161,8 @@ CANParser::CANParser(int abus, const std::string& dbc_name,
         if (strcmp(sig->name, sigop.name) == 0
             && sig->type == SignalType::DEFAULT) {
           state.parse_sigs.push_back(*sig);
-          state.vals.push_back(sigop.default_value);
+          state.vals.push_back(0);
+          state.all_vals.push_back({});
           break;
         }
       }
@@ -189,6 +191,7 @@ CANParser::CANParser(int abus, const std::string& dbc_name, bool ignore_checksum
       const Signal *sig = &msg->sigs[j];
       state.parse_sigs.push_back(*sig);
       state.vals.push_back(0);
+      state.all_vals.push_back({});
     }
 
     message_states[state.address] = state;
@@ -210,7 +213,7 @@ void CANParser::update_string(const std::string &data, bool sendcan) {
 
   last_sec = event.getLogMonoTime();
 
-  auto cans = sendcan? event.getSendcan() : event.getCan();
+  auto cans = sendcan ? event.getSendcan() : event.getCan();
   UpdateCans(last_sec, cans);
 
   UpdateValid(last_sec);
@@ -238,7 +241,7 @@ void CANParser::UpdateCans(uint64_t sec, const capnp::List<cereal::CanData>::Rea
     uint8_t dat[8] = {0};
     memcpy(dat, cmsg.getDat().begin(), cmsg.getDat().size());
 
-    state_it->second.parse(sec, cmsg.getBusTime(), dat);
+    state_it->second.parse(sec, dat);
   }
 }
 #endif
@@ -262,7 +265,7 @@ void CANParser::UpdateCans(uint64_t sec, const capnp::DynamicStruct::Reader& cms
   if (dat.size() > 8) return; //shouldn't ever happen
   uint8_t data[8] = {0};
   memcpy(data, dat.begin(), dat.size());
-  state_it->second.parse(sec, cmsg.get("busTime").as<uint16_t>(), data);
+  state_it->second.parse(sec, data);
 }
 
 void CANParser::UpdateValid(uint64_t sec) {
@@ -283,18 +286,19 @@ void CANParser::UpdateValid(uint64_t sec) {
 std::vector<SignalValue> CANParser::query_latest() {
   std::vector<SignalValue> ret;
 
-  for (const auto& kv : message_states) {
-    const auto& state = kv.second;
+  for (auto& kv : message_states) {
+    auto& state = kv.second;
     if (last_sec != 0 && state.seen != last_sec) continue;
 
-    for (int i=0; i<state.parse_sigs.size(); i++) {
+    for (int i = 0; i < state.parse_sigs.size(); i++) {
       const Signal &sig = state.parse_sigs[i];
       ret.push_back((SignalValue){
         .address = state.address,
-        .ts = state.ts,
         .name = sig.name,
         .value = state.vals[i],
+        .all_values = state.all_vals[i],
       });
+      state.all_vals[i].clear();
     }
   }
 

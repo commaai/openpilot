@@ -1,7 +1,6 @@
 #include "selfdrive/ui/replay/logreader.h"
 
 #include <algorithm>
-#include <iostream>
 #include "selfdrive/ui/replay/util.h"
 
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
@@ -56,15 +55,17 @@ bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool loca
 }
 
 bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abort) {
-  raw_ = decompressBZ2(data, size);
+  raw_ = decompressBZ2(data, size, abort);
   if (raw_.empty()) {
-    std::cout << "failed to decompress log" << std::endl;
+    if (!(abort && *abort)) {
+      rWarning("failed to decompress log");
+    }
     return false;
   }
 
   try {
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
-    while (words.size() > 0) {
+    while (words.size() > 0 && !(abort && *abort)) {
 
 #ifdef HAS_MEMORY_RESOURCE
       Event *evt = new (mbr_) Event(words);
@@ -90,12 +91,15 @@ bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abor
       events.push_back(evt);
     }
   } catch (const kj::Exception &e) {
-    std::cout << "failed to parse log : " << e.getDescription().cStr() << std::endl;
-    if (events.empty()) return false;
-
-    std::cout << "read " << events.size() << " events from corrupt log" << std::endl;
+    rWarning("failed to parse log : %s", e.getDescription().cStr());
+    if (!events.empty()) {
+      rWarning("read %zu events from corrupt log", events.size());
+    }
   }
 
-  std::sort(events.begin(), events.end(), Event::lessThan());
-  return true;
+  if (!events.empty() && !(abort && *abort)) {
+    std::sort(events.begin(), events.end(), Event::lessThan());
+    return true;
+  }
+  return false;
 }

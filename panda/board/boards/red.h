@@ -145,6 +145,9 @@ void red_init(void) {
   // Initialize harness
   harness_init();
 
+  // Initialize RTC
+  rtc_init();
+
   // Enable CAN transceivers
   red_enable_can_transceivers(true);
 
@@ -183,7 +186,7 @@ const board board_red = {
   .has_hw_gmlan = false,
   .has_obd = true,
   .has_lin = false,
-  .has_rtc = false,
+  .has_rtc_battery = false,
   .init = red_init,
   .enable_can_transceiver = red_enable_can_transceiver,
   .enable_can_transceivers = red_enable_can_transceivers,

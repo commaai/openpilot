@@ -81,16 +81,16 @@ void black_set_gps_mode(uint8_t mode) {
   switch (mode) {
     case GPS_DISABLED:
       // GPS OFF
-      set_gpio_output(GPIOC, 14, 0);
+      set_gpio_output(GPIOC, 12, 0);
       set_gpio_output(GPIOC, 5, 0);
       break;
     case GPS_ENABLED:
       // GPS ON
-      set_gpio_output(GPIOC, 14, 1);
+      set_gpio_output(GPIOC, 12, 1);
       set_gpio_output(GPIOC, 5, 1);
       break;
     case GPS_BOOTMODE:
-      set_gpio_output(GPIOC, 14, 1);
+      set_gpio_output(GPIOC, 12, 1);
       set_gpio_output(GPIOC, 5, 0);
       break;
     default:
@@ -168,6 +168,9 @@ void black_init(void) {
   // Initialize harness
   harness_init();
 
+  // Initialize RTC
+  rtc_init();
+
   // Enable CAN transceivers
   black_enable_can_transceivers(true);
 
@@ -206,7 +209,7 @@ const board board_black = {
   .has_hw_gmlan = false,
   .has_obd = true,
   .has_lin = false,
-  .has_rtc = false,
+  .has_rtc_battery = false,
   .init = black_init,
   .enable_can_transceiver = black_enable_can_transceiver,
   .enable_can_transceivers = black_enable_can_transceivers,

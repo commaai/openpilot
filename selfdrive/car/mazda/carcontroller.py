@@ -19,7 +19,7 @@ class CarController():
     apply_steer = 0
     self.steer_rate_limited = False
 
-    if c.enabled:
+    if c.active:
       # calculate steer and also set limits due to driver torque
       new_steer = int(round(c.actuators.steer * CarControllerParams.STEER_MAX))
       apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last,
@@ -58,4 +58,8 @@ class CarController():
     # send steering command
     can_sends.append(mazdacan.create_steering_control(self.packer, CS.CP.carFingerprint,
                                                       frame, apply_steer, CS.cam_lkas))
-    return can_sends
+
+    new_actuators = c.actuators.copy()
+    new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
+
+    return new_actuators, can_sends

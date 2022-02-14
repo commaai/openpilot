@@ -7,14 +7,6 @@
 //#define DEBUG_SPI
 //#define DEBUG_FAULTS
 
-#define USB_VID 0xbbaaU
-
-#ifdef BOOTSTUB
-  #define USB_PID 0xddeeU
-#else
-  #define USB_PID 0xddccU
-#endif
-
 #define NULL ((void*)0)
 #define COMPILE_TIME_ASSERT(pred) ((void)sizeof(char[1 - (2 * ((int)(!(pred))))]))
 
@@ -32,9 +24,8 @@
  ({ __typeof__ (a) _a = (a); \
    (_a > 0) ? _a : (-_a); })
 
-#define MAX_RESP_LEN 0x40U
-
 #include <stdbool.h>
+#include "panda.h"
 #ifdef STM32H7
   #include "stm32h7/stm32h7_config.h"
 #else

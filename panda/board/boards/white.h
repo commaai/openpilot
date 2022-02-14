@@ -205,6 +205,9 @@ void white_grey_common_init(void) {
   set_gpio_alternate(GPIOC, 11, GPIO_AF7_USART3);
   set_gpio_pullup(GPIOC, 11, PULL_UP);
 
+  // Initialize RTC
+  rtc_init();
+
   // Enable CAN transceivers
   white_enable_can_transceivers(true);
 
@@ -245,7 +248,7 @@ const board board_white = {
   .has_hw_gmlan = true,
   .has_obd = false,
   .has_lin = true,
-  .has_rtc = false,
+  .has_rtc_battery = false,
   .init = white_init,
   .enable_can_transceiver = white_enable_can_transceiver,
   .enable_can_transceivers = white_enable_can_transceivers,

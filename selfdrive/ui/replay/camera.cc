@@ -1,9 +1,7 @@
 #include "selfdrive/ui/replay/camera.h"
+#include "selfdrive/ui/replay/util.h"
 
 #include <cassert>
-#include <iostream>
-
-const int YUV_BUF_COUNT = 50;
 
 CameraServer::CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS], bool send_yuv) : send_yuv(send_yuv) {
   for (int i = 0; i < MAX_CAMERAS; ++i) {
@@ -26,10 +24,10 @@ void CameraServer::startVipcServer() {
   vipc_server_.reset(new VisionIpcServer("camerad"));
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
-      std::cout << "camera[" << cam.type << "] frame size " << cam.width << "x" << cam.height << std::endl;
+      rInfo("camera[%d] frame size %dx%d", cam.type, cam.width, cam.height);
       vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
       if (send_yuv) {
-        vipc_server_->create_buffers(cam.yuv_type, YUV_BUF_COUNT, false, cam.width, cam.height);
+        vipc_server_->create_buffers(cam.yuv_type, YUV_BUFFER_COUNT, false, cam.width, cam.height);
       }
       if (!cam.thread.joinable()) {
         cam.thread = std::thread(&CameraServer::cameraThread, this, std::ref(cam));
@@ -63,7 +61,7 @@ void CameraServer::cameraThread(Camera &cam) {
       if (rgb) vipc_server_->send(rgb, &extra, false);
       if (yuv) vipc_server_->send(yuv, &extra, false);
     } else {
-      std::cout << "camera[" << cam.type << "] failed to get frame:" << eidx.getSegmentId() << std::endl;
+      rError("camera[%d] failed to get frame:", cam.type, eidx.getSegmentId());
     }
 
     cam.cached_id = id + 1;

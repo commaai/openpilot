@@ -32,8 +32,8 @@ public:
 
   std::vector<Signal> parse_sigs;
   std::vector<double> vals;
+  std::vector<std::vector<double>> all_vals;
 
-  uint16_t ts;
   uint64_t seen;
   uint64_t check_threshold;
 
@@ -43,7 +43,7 @@ public:
   bool ignore_checksum = false;
   bool ignore_counter = false;
 
-  bool parse(uint64_t sec, uint16_t ts_, uint8_t * dat);
+  bool parse(uint64_t sec, uint8_t * dat);
   bool update_counter_generic(int64_t v, int cnt_size);
 };
 

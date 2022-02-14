@@ -134,10 +134,10 @@ BO_ 352 ES_Brake: 8 XXX
  SG_ Counter : 48|3@1+ (1,0) [0|7] "" XXX
  SG_ Checksum : 56|8@1+ (1,0) [0|255] "" XXX
 
-BO_ 353 ES_CruiseThrottle: 8 XXX
- SG_ Throttle_Cruise : 0|12@1+ (1,0) [0|4095] "" XXX
+BO_ 353 ES_Distance: 8 XXX
+ SG_ Cruise_Throttle : 0|12@1+ (1,0) [0|4095] "" XXX
  SG_ Signal1 : 12|4@1+ (1,0) [0|15] "" XXX
- SG_ Cruise_Activated : 16|1@1+ (1,0) [0|1] "" XXX
+ SG_ Car_Follow : 16|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal2 : 17|3@1+ (1,0) [0|7] "" XXX
  SG_ Brake_On : 20|1@1+ (1,0) [0|1] "" XXX
  SG_ Distance_Swap : 21|1@1+ (1,0) [0|1] "" XXX
@@ -248,7 +248,6 @@ CM_ SG_ 977 UNITS "0 = Metric, 1 = Imperial";
 VAL_ 328 Gear 0 "N" 1 "D" 2 "D" 3 "D" 4 "D" 5 "D" 6 "D" 14 "R" 15 "P";
 
 CM_ "subaru_outback_2019.dbc starts here";
-
 
 BO_ 358 ES_DashStatus: 8 XXX
  SG_ Not_Ready_Startup : 0|3@1+ (1,0) [0|7] "" XXX

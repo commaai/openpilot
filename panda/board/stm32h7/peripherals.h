@@ -112,6 +112,8 @@ void peripherals_init(void) {
   RCC->APB1HENR |= RCC_APB1HENR_FDCANEN; // FDCAN core enable
   RCC->AHB1ENR |= RCC_AHB1ENR_ADC12EN; // Enable ADC clocks
 
+  RCC->APB4ENR |= RCC_APB4ENR_SYSCFGEN;
+
   // HS USB enable, also LP is needed for CSleep state(__WFI())
   RCC->AHB1ENR |= RCC_AHB1ENR_USB1OTGHSEN;
   RCC->AHB1LPENR |= RCC_AHB1LPENR_USB1OTGHSLPEN;

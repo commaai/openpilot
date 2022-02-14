@@ -23,16 +23,16 @@ class CarState(CarStateBase):
   def update(self, cp, cp_adas, cp_cam):
     ret = car.CarState.new_message()
 
-    if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA]:
+    if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
       ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL"]
-    elif self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
+    elif self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
       ret.gas = cp.vl["CRUISE_THROTTLE"]["GAS_PEDAL"]
 
     ret.gasPressed = bool(ret.gas > 3)
 
-    if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA]:
+    if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
       ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
-    elif self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
+    elif self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
       ret.brakePressed = bool(cp.vl["CRUISE_THROTTLE"]["USER_BRAKE_PRESSED"])
 
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -51,10 +51,10 @@ class CarState(CarStateBase):
     else:
       ret.cruiseState.enabled = bool(cp_adas.vl["CRUISE_STATE"]["CRUISE_ENABLED"])
 
-    if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
+    if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL):
       ret.seatbeltUnlatched = cp.vl["HUD"]["SEATBELT_DRIVER_LATCHED"] == 0
       ret.cruiseState.available = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ON"])
-    elif self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
+    elif self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
       if self.CP.carFingerprint == CAR.LEAF:
         ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEATBELT_DRIVER_LATCHED"] == 0
       elif self.CP.carFingerprint == CAR.LEAF_IC:
@@ -70,7 +70,7 @@ class CarState(CarStateBase):
       speed = cp_adas.vl["PROPILOT_HUD"]["SET_SPEED"]
 
     if speed != 255:
-      if self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
+      if self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
         conversion = CV.MPH_TO_MS if cp.vl["HUD_SETTINGS"]["SPEED_MPH"] else CV.KPH_TO_MS
       else:
         conversion = CV.MPH_TO_MS if cp.vl["HUD"]["SPEED_MPH"] else CV.KPH_TO_MS
@@ -108,7 +108,7 @@ class CarState(CarStateBase):
 
     self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
 
-    if self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
+    if self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
       self.cancel_msg = copy.copy(cp.vl["CANCEL_MSG"])
 
     if self.CP.carFingerprint != CAR.ALTIMA:
@@ -119,27 +119,26 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    # this function generates lists for signal, messages and initial values
     signals = [
-      # sig_name, sig_address, default
-      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS_FRONT", 0),
-      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS_FRONT", 0),
-      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS_REAR", 0),
-      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS_REAR", 0),
+      # sig_name, sig_address
+      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS_FRONT"),
+      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS_FRONT"),
+      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS_REAR"),
+      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS_REAR"),
 
-      ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
+      ("STEER_ANGLE", "STEER_ANGLE_SENSOR"),
 
-      ("DOOR_OPEN_FR", "DOORS_LIGHTS", 1),
-      ("DOOR_OPEN_FL", "DOORS_LIGHTS", 1),
-      ("DOOR_OPEN_RR", "DOORS_LIGHTS", 1),
-      ("DOOR_OPEN_RL", "DOORS_LIGHTS", 1),
+      ("DOOR_OPEN_FR", "DOORS_LIGHTS"),
+      ("DOOR_OPEN_FL", "DOORS_LIGHTS"),
+      ("DOOR_OPEN_RR", "DOORS_LIGHTS"),
+      ("DOOR_OPEN_RL", "DOORS_LIGHTS"),
 
-      ("RIGHT_BLINKER", "LIGHTS", 0),
-      ("LEFT_BLINKER", "LIGHTS", 0),
+      ("RIGHT_BLINKER", "LIGHTS"),
+      ("LEFT_BLINKER", "LIGHTS"),
 
-      ("ESP_DISABLED", "ESP", 0),
+      ("ESP_DISABLED", "ESP"),
 
-      ("GEAR_SHIFTER", "GEARBOX", 0),
+      ("GEAR_SHIFTER", "GEARBOX"),
     ]
 
     checks = [
@@ -153,28 +152,28 @@ class CarState(CarStateBase):
       ("LIGHTS", 10),
     ]
 
-    if CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA]:
+    if CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
       signals += [
-        ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 1),
+        ("USER_BRAKE_PRESSED", "DOORS_LIGHTS"),
 
-        ("GAS_PEDAL", "GAS_PEDAL", 0),
-        ("SEATBELT_DRIVER_LATCHED", "HUD", 0),
-        ("SPEED_MPH", "HUD", 0),
+        ("GAS_PEDAL", "GAS_PEDAL"),
+        ("SEATBELT_DRIVER_LATCHED", "HUD"),
+        ("SPEED_MPH", "HUD"),
 
-        ("PROPILOT_BUTTON", "CRUISE_THROTTLE", 0),
-        ("CANCEL_BUTTON", "CRUISE_THROTTLE", 0),
-        ("GAS_PEDAL_INVERTED", "CRUISE_THROTTLE", 0),
-        ("SET_BUTTON", "CRUISE_THROTTLE", 0),
-        ("RES_BUTTON", "CRUISE_THROTTLE", 0),
-        ("FOLLOW_DISTANCE_BUTTON", "CRUISE_THROTTLE", 0),
-        ("NO_BUTTON_PRESSED", "CRUISE_THROTTLE", 0),
-        ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
-        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE", 0),
-        ("NEW_SIGNAL_2", "CRUISE_THROTTLE", 0),
-        ("GAS_PRESSED_INVERTED", "CRUISE_THROTTLE", 0),
-        ("unsure1", "CRUISE_THROTTLE", 0),
-        ("unsure2", "CRUISE_THROTTLE", 0),
-        ("unsure3", "CRUISE_THROTTLE", 0),
+        ("PROPILOT_BUTTON", "CRUISE_THROTTLE"),
+        ("CANCEL_BUTTON", "CRUISE_THROTTLE"),
+        ("GAS_PEDAL_INVERTED", "CRUISE_THROTTLE"),
+        ("SET_BUTTON", "CRUISE_THROTTLE"),
+        ("RES_BUTTON", "CRUISE_THROTTLE"),
+        ("FOLLOW_DISTANCE_BUTTON", "CRUISE_THROTTLE"),
+        ("NO_BUTTON_PRESSED", "CRUISE_THROTTLE"),
+        ("GAS_PEDAL", "CRUISE_THROTTLE"),
+        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE"),
+        ("NEW_SIGNAL_2", "CRUISE_THROTTLE"),
+        ("GAS_PRESSED_INVERTED", "CRUISE_THROTTLE"),
+        ("unsure1", "CRUISE_THROTTLE"),
+        ("unsure2", "CRUISE_THROTTLE"),
+        ("unsure3", "CRUISE_THROTTLE"),
       ]
 
       checks += [
@@ -183,19 +182,19 @@ class CarState(CarStateBase):
         ("HUD", 25),
       ]
 
-    elif CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
+    elif CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
       signals += [
-        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE", 1),
-        ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
-        ("CRUISE_AVAILABLE", "CRUISE_THROTTLE", 0),
-        ("SPEED_MPH", "HUD_SETTINGS", 0),
-        ("SEATBELT_DRIVER_LATCHED", "SEATBELT", 0),
+        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE"),
+        ("GAS_PEDAL", "CRUISE_THROTTLE"),
+        ("CRUISE_AVAILABLE", "CRUISE_THROTTLE"),
+        ("SPEED_MPH", "HUD_SETTINGS"),
+        ("SEATBELT_DRIVER_LATCHED", "SEATBELT"),
 
         # Copy other values, we use this to cancel
-        ("CANCEL_SEATBELT", "CANCEL_MSG", 0),
-        ("NEW_SIGNAL_1", "CANCEL_MSG", 0),
-        ("NEW_SIGNAL_2", "CANCEL_MSG", 0),
-        ("NEW_SIGNAL_3", "CANCEL_MSG", 0),
+        ("CANCEL_SEATBELT", "CANCEL_MSG"),
+        ("NEW_SIGNAL_1", "CANCEL_MSG"),
+        ("NEW_SIGNAL_2", "CANCEL_MSG"),
+        ("NEW_SIGNAL_3", "CANCEL_MSG"),
       ]
       checks += [
         ("BRAKE_PEDAL", 100),
@@ -207,9 +206,9 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint == CAR.ALTIMA:
       signals += [
-        ("LKAS_ENABLED", "LKAS_SETTINGS", 0),
-        ("CRUISE_ENABLED", "CRUISE_STATE", 0),
-        ("SET_SPEED", "PROPILOT_HUD", 0),
+        ("LKAS_ENABLED", "LKAS_SETTINGS"),
+        ("CRUISE_ENABLED", "CRUISE_STATE"),
+        ("SET_SPEED", "PROPILOT_HUD"),
       ]
       checks += [
         ("CRUISE_STATE", 10),
@@ -218,12 +217,8 @@ class CarState(CarStateBase):
       ]
       return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
 
-    signals += [
-      ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
-    ]
-    checks += [
-      ("STEER_TORQUE_SENSOR", 100),
-    ]
+    signals.append(("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"))
+    checks.append(("STEER_TORQUE_SENSOR", 100))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
@@ -233,14 +228,14 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint == CAR.ALTIMA:
       signals = [
-        ("DESIRED_ANGLE", "LKAS", 0),
-        ("SET_0x80_2", "LKAS", 0),
-        ("MAX_TORQUE", "LKAS", 0),
-        ("SET_0x80", "LKAS", 0),
-        ("COUNTER", "LKAS", 0),
-        ("LKA_ACTIVE", "LKAS", 0),
+        ("DESIRED_ANGLE", "LKAS"),
+        ("SET_0x80_2", "LKAS"),
+        ("MAX_TORQUE", "LKAS"),
+        ("SET_0x80", "LKAS"),
+        ("COUNTER", "LKAS"),
+        ("LKA_ACTIVE", "LKAS"),
 
-        ("CRUISE_ON", "PRO_PILOT", 0),
+        ("CRUISE_ON", "PRO_PILOT"),
       ]
       checks = [
         ("LKAS", 100),
@@ -248,85 +243,85 @@ class CarState(CarStateBase):
       ]
     else:
       signals = [
-        # sig_name, sig_address, default
-        ("LKAS_ENABLED", "LKAS_SETTINGS", 0),
+        # sig_name, sig_address
+        ("LKAS_ENABLED", "LKAS_SETTINGS"),
 
-        ("CRUISE_ENABLED", "CRUISE_STATE", 0),
+        ("CRUISE_ENABLED", "CRUISE_STATE"),
 
-        ("DESIRED_ANGLE", "LKAS", 0),
-        ("SET_0x80_2", "LKAS", 0),
-        ("MAX_TORQUE", "LKAS", 0),
-        ("SET_0x80", "LKAS", 0),
-        ("COUNTER", "LKAS", 0),
-        ("LKA_ACTIVE", "LKAS", 0),
+        ("DESIRED_ANGLE", "LKAS"),
+        ("SET_0x80_2", "LKAS"),
+        ("MAX_TORQUE", "LKAS"),
+        ("SET_0x80", "LKAS"),
+        ("COUNTER", "LKAS"),
+        ("LKA_ACTIVE", "LKAS"),
 
         # Below are the HUD messages. We copy the stock message and modify
-        ("LARGE_WARNING_FLASHING", "PROPILOT_HUD", 0),
-        ("SIDE_RADAR_ERROR_FLASHING1", "PROPILOT_HUD", 0),
-        ("SIDE_RADAR_ERROR_FLASHING2", "PROPILOT_HUD", 0),
-        ("LEAD_CAR", "PROPILOT_HUD", 0),
-        ("LEAD_CAR_ERROR", "PROPILOT_HUD", 0),
-        ("FRONT_RADAR_ERROR", "PROPILOT_HUD", 0),
-        ("FRONT_RADAR_ERROR_FLASHING", "PROPILOT_HUD", 0),
-        ("SIDE_RADAR_ERROR_FLASHING3", "PROPILOT_HUD", 0),
-        ("LKAS_ERROR_FLASHING", "PROPILOT_HUD", 0),
-        ("SAFETY_SHIELD_ACTIVE", "PROPILOT_HUD", 0),
-        ("RIGHT_LANE_GREEN_FLASH", "PROPILOT_HUD", 0),
-        ("LEFT_LANE_GREEN_FLASH", "PROPILOT_HUD", 0),
-        ("FOLLOW_DISTANCE", "PROPILOT_HUD", 0),
-        ("AUDIBLE_TONE", "PROPILOT_HUD", 0),
-        ("SPEED_SET_ICON", "PROPILOT_HUD", 0),
-        ("SMALL_STEERING_WHEEL_ICON", "PROPILOT_HUD", 0),
-        ("unknown59", "PROPILOT_HUD", 0),
-        ("unknown55", "PROPILOT_HUD", 0),
-        ("unknown26", "PROPILOT_HUD", 0),
-        ("unknown28", "PROPILOT_HUD", 0),
-        ("unknown31", "PROPILOT_HUD", 0),
-        ("SET_SPEED", "PROPILOT_HUD", 0),
-        ("unknown43", "PROPILOT_HUD", 0),
-        ("unknown08", "PROPILOT_HUD", 0),
-        ("unknown05", "PROPILOT_HUD", 0),
-        ("unknown02", "PROPILOT_HUD", 0),
+        ("LARGE_WARNING_FLASHING", "PROPILOT_HUD"),
+        ("SIDE_RADAR_ERROR_FLASHING1", "PROPILOT_HUD"),
+        ("SIDE_RADAR_ERROR_FLASHING2", "PROPILOT_HUD"),
+        ("LEAD_CAR", "PROPILOT_HUD"),
+        ("LEAD_CAR_ERROR", "PROPILOT_HUD"),
+        ("FRONT_RADAR_ERROR", "PROPILOT_HUD"),
+        ("FRONT_RADAR_ERROR_FLASHING", "PROPILOT_HUD"),
+        ("SIDE_RADAR_ERROR_FLASHING3", "PROPILOT_HUD"),
+        ("LKAS_ERROR_FLASHING", "PROPILOT_HUD"),
+        ("SAFETY_SHIELD_ACTIVE", "PROPILOT_HUD"),
+        ("RIGHT_LANE_GREEN_FLASH", "PROPILOT_HUD"),
+        ("LEFT_LANE_GREEN_FLASH", "PROPILOT_HUD"),
+        ("FOLLOW_DISTANCE", "PROPILOT_HUD"),
+        ("AUDIBLE_TONE", "PROPILOT_HUD"),
+        ("SPEED_SET_ICON", "PROPILOT_HUD"),
+        ("SMALL_STEERING_WHEEL_ICON", "PROPILOT_HUD"),
+        ("unknown59", "PROPILOT_HUD"),
+        ("unknown55", "PROPILOT_HUD"),
+        ("unknown26", "PROPILOT_HUD"),
+        ("unknown28", "PROPILOT_HUD"),
+        ("unknown31", "PROPILOT_HUD"),
+        ("SET_SPEED", "PROPILOT_HUD"),
+        ("unknown43", "PROPILOT_HUD"),
+        ("unknown08", "PROPILOT_HUD"),
+        ("unknown05", "PROPILOT_HUD"),
+        ("unknown02", "PROPILOT_HUD"),
 
-        ("NA_HIGH_ACCEL_TEMP", "PROPILOT_HUD_INFO_MSG", 0),
-        ("SIDE_RADAR_NA_HIGH_CABIN_TEMP", "PROPILOT_HUD_INFO_MSG", 0),
-        ("SIDE_RADAR_MALFUNCTION", "PROPILOT_HUD_INFO_MSG", 0),
-        ("LKAS_MALFUNCTION", "PROPILOT_HUD_INFO_MSG", 0),
-        ("FRONT_RADAR_MALFUNCTION", "PROPILOT_HUD_INFO_MSG", 0),
-        ("SIDE_RADAR_NA_CLEAN_REAR_CAMERA", "PROPILOT_HUD_INFO_MSG", 0),
-        ("NA_POOR_ROAD_CONDITIONS", "PROPILOT_HUD_INFO_MSG", 0),
-        ("CURRENTLY_UNAVAILABLE", "PROPILOT_HUD_INFO_MSG", 0),
-        ("SAFETY_SHIELD_OFF", "PROPILOT_HUD_INFO_MSG", 0),
-        ("FRONT_COLLISION_NA_FRONT_RADAR_OBSTRUCTION", "PROPILOT_HUD_INFO_MSG", 0),
-        ("PEDAL_MISSAPPLICATION_SYSTEM_ACTIVATED", "PROPILOT_HUD_INFO_MSG", 0),
-        ("SIDE_IMPACT_NA_RADAR_OBSTRUCTION", "PROPILOT_HUD_INFO_MSG", 0),
-        ("WARNING_DO_NOT_ENTER", "PROPILOT_HUD_INFO_MSG", 0),
-        ("SIDE_IMPACT_SYSTEM_OFF", "PROPILOT_HUD_INFO_MSG", 0),
-        ("SIDE_IMPACT_MALFUNCTION", "PROPILOT_HUD_INFO_MSG", 0),
-        ("FRONT_COLLISION_MALFUNCTION", "PROPILOT_HUD_INFO_MSG", 0),
-        ("SIDE_RADAR_MALFUNCTION2", "PROPILOT_HUD_INFO_MSG", 0),
-        ("LKAS_MALFUNCTION2", "PROPILOT_HUD_INFO_MSG", 0),
-        ("FRONT_RADAR_MALFUNCTION2", "PROPILOT_HUD_INFO_MSG", 0),
-        ("PROPILOT_NA_MSGS", "PROPILOT_HUD_INFO_MSG", 0),
-        ("BOTTOM_MSG", "PROPILOT_HUD_INFO_MSG", 0),
-        ("HANDS_ON_WHEEL_WARNING", "PROPILOT_HUD_INFO_MSG", 0),
-        ("WARNING_STEP_ON_BRAKE_NOW", "PROPILOT_HUD_INFO_MSG", 0),
-        ("PROPILOT_NA_FRONT_CAMERA_OBSTRUCTED", "PROPILOT_HUD_INFO_MSG", 0),
-        ("PROPILOT_NA_HIGH_CABIN_TEMP", "PROPILOT_HUD_INFO_MSG", 0),
-        ("WARNING_PROPILOT_MALFUNCTION", "PROPILOT_HUD_INFO_MSG", 0),
-        ("ACC_UNAVAILABLE_HIGH_CABIN_TEMP", "PROPILOT_HUD_INFO_MSG", 0),
-        ("ACC_NA_FRONT_CAMERA_IMPARED", "PROPILOT_HUD_INFO_MSG", 0),
-        ("unknown07", "PROPILOT_HUD_INFO_MSG", 0),
-        ("unknown10", "PROPILOT_HUD_INFO_MSG", 0),
-        ("unknown15", "PROPILOT_HUD_INFO_MSG", 0),
-        ("unknown23", "PROPILOT_HUD_INFO_MSG", 0),
-        ("unknown19", "PROPILOT_HUD_INFO_MSG", 0),
-        ("unknown31", "PROPILOT_HUD_INFO_MSG", 0),
-        ("unknown32", "PROPILOT_HUD_INFO_MSG", 0),
-        ("unknown46", "PROPILOT_HUD_INFO_MSG", 0),
-        ("unknown61", "PROPILOT_HUD_INFO_MSG", 0),
-        ("unknown55", "PROPILOT_HUD_INFO_MSG", 0),
-        ("unknown50", "PROPILOT_HUD_INFO_MSG", 0),
+        ("NA_HIGH_ACCEL_TEMP", "PROPILOT_HUD_INFO_MSG"),
+        ("SIDE_RADAR_NA_HIGH_CABIN_TEMP", "PROPILOT_HUD_INFO_MSG"),
+        ("SIDE_RADAR_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
+        ("LKAS_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
+        ("FRONT_RADAR_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
+        ("SIDE_RADAR_NA_CLEAN_REAR_CAMERA", "PROPILOT_HUD_INFO_MSG"),
+        ("NA_POOR_ROAD_CONDITIONS", "PROPILOT_HUD_INFO_MSG"),
+        ("CURRENTLY_UNAVAILABLE", "PROPILOT_HUD_INFO_MSG"),
+        ("SAFETY_SHIELD_OFF", "PROPILOT_HUD_INFO_MSG"),
+        ("FRONT_COLLISION_NA_FRONT_RADAR_OBSTRUCTION", "PROPILOT_HUD_INFO_MSG"),
+        ("PEDAL_MISSAPPLICATION_SYSTEM_ACTIVATED", "PROPILOT_HUD_INFO_MSG"),
+        ("SIDE_IMPACT_NA_RADAR_OBSTRUCTION", "PROPILOT_HUD_INFO_MSG"),
+        ("WARNING_DO_NOT_ENTER", "PROPILOT_HUD_INFO_MSG"),
+        ("SIDE_IMPACT_SYSTEM_OFF", "PROPILOT_HUD_INFO_MSG"),
+        ("SIDE_IMPACT_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
+        ("FRONT_COLLISION_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
+        ("SIDE_RADAR_MALFUNCTION2", "PROPILOT_HUD_INFO_MSG"),
+        ("LKAS_MALFUNCTION2", "PROPILOT_HUD_INFO_MSG"),
+        ("FRONT_RADAR_MALFUNCTION2", "PROPILOT_HUD_INFO_MSG"),
+        ("PROPILOT_NA_MSGS", "PROPILOT_HUD_INFO_MSG"),
+        ("BOTTOM_MSG", "PROPILOT_HUD_INFO_MSG"),
+        ("HANDS_ON_WHEEL_WARNING", "PROPILOT_HUD_INFO_MSG"),
+        ("WARNING_STEP_ON_BRAKE_NOW", "PROPILOT_HUD_INFO_MSG"),
+        ("PROPILOT_NA_FRONT_CAMERA_OBSTRUCTED", "PROPILOT_HUD_INFO_MSG"),
+        ("PROPILOT_NA_HIGH_CABIN_TEMP", "PROPILOT_HUD_INFO_MSG"),
+        ("WARNING_PROPILOT_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
+        ("ACC_UNAVAILABLE_HIGH_CABIN_TEMP", "PROPILOT_HUD_INFO_MSG"),
+        ("ACC_NA_FRONT_CAMERA_IMPARED", "PROPILOT_HUD_INFO_MSG"),
+        ("unknown07", "PROPILOT_HUD_INFO_MSG"),
+        ("unknown10", "PROPILOT_HUD_INFO_MSG"),
+        ("unknown15", "PROPILOT_HUD_INFO_MSG"),
+        ("unknown23", "PROPILOT_HUD_INFO_MSG"),
+        ("unknown19", "PROPILOT_HUD_INFO_MSG"),
+        ("unknown31", "PROPILOT_HUD_INFO_MSG"),
+        ("unknown32", "PROPILOT_HUD_INFO_MSG"),
+        ("unknown46", "PROPILOT_HUD_INFO_MSG"),
+        ("unknown61", "PROPILOT_HUD_INFO_MSG"),
+        ("unknown55", "PROPILOT_HUD_INFO_MSG"),
+        ("unknown50", "PROPILOT_HUD_INFO_MSG"),
       ]
 
       checks = [
@@ -344,21 +339,12 @@ class CarState(CarStateBase):
     signals = []
     checks = []
 
-    if CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
-      signals += [
-        ("CRUISE_ON", "PRO_PILOT", 0),
-      ]
-      checks += [
-        ("PRO_PILOT", 100),
-      ]
+    if CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL):
+      signals.append(("CRUISE_ON", "PRO_PILOT"))
+      checks.append(("PRO_PILOT", 100))
     elif CP.carFingerprint == CAR.ALTIMA:
-      signals += [
-        ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
-      ]
-      checks += [
-        ("STEER_TORQUE_SENSOR", 100),
-      ]
+      signals.append(("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"))
+      checks.append(("STEER_TORQUE_SENSOR", 100))
       return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
-
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
