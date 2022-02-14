@@ -1,9 +1,6 @@
-from enum import Enum
-
 from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
-
 
 class CarControllerParams:
   def __init__(self, CP):
@@ -18,8 +15,7 @@ class CarControllerParams:
     self.STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1       # from dbc
 
-
-class CAR(Enum):
+class CAR:
   ASCENT = "SUBARU ASCENT LIMITED 2019"
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
   IMPREZA_2020 = "SUBARU IMPREZA SPORT 2020"
@@ -28,7 +24,6 @@ class CAR(Enum):
   LEGACY_PREGLOBAL = "SUBARU LEGACY 2015 - 2018"
   OUTBACK_PREGLOBAL = "SUBARU OUTBACK 2015 - 2017"
   OUTBACK_PREGLOBAL_2018 = "SUBARU OUTBACK 2018 - 2019"
-
 
 FINGERPRINTS = {
   CAR.IMPREZA: [{

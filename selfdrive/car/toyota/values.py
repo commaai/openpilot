@@ -1,5 +1,5 @@
 from collections import defaultdict
-from enum import Enum, IntFlag
+from enum import IntFlag
 
 from cereal import car
 from selfdrive.car import dbc_dict
@@ -24,7 +24,7 @@ class ToyotaFlags(IntFlag):
   HYBRID = 1
 
 
-class CAR(Enum):
+class CAR:
   # Toyota
   ALPHARD_TSS2 = "TOYOTA ALPHARD 2020"
   AVALON = "TOYOTA AVALON 2016"

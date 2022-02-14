@@ -1,5 +1,4 @@
 from collections import defaultdict
-from enum import Enum
 from typing import Dict
 
 from cereal import car
@@ -9,7 +8,6 @@ Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
-
 
 class CarControllerParams:
   HCA_STEP = 2                   # HCA_01 message frequency 50Hz
@@ -29,15 +27,12 @@ class CarControllerParams:
   STEER_DRIVER_MULTIPLIER = 3    # weight driver torque heavily
   STEER_DRIVER_FACTOR = 1        # from dbc
 
-
 class CANBUS:
   pt = 0
   cam = 2
 
-
 class DBC_FILES:
   mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
-
 
 DBC = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))  # type: Dict[str, Dict[str, str]]
 
@@ -62,13 +57,12 @@ MQB_LDW_MESSAGES = {
   "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
 }
 
-
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
 # chassis code is already listed below, don't add a new CAR, just add to the
 # FW_VERSIONS for that existing CAR.
 # Exception: SEAT Leon and SEAT Ateca share a chassis code
 
-class CAR(Enum):
+class CAR:
   ARTEON_MK1 = "VOLKSWAGEN ARTEON 1ST GEN"          # Chassis AN, Mk1 VW Arteon and variants
   ATLAS_MK1 = "VOLKSWAGEN ATLAS 1ST GEN"            # Chassis CA, Mk1 VW Atlas and Atlas Cross Sport
   GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"              # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
@@ -92,7 +86,6 @@ class CAR(Enum):
   SKODA_SCALA_MK1 = "SKODA SCALA 1ST GEN"           # Chassis NW, Mk1 Skoda Scala and Skoda Kamiq
   SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"         # Chassis 3V/NP, Mk3 Skoda Superb and variants
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
-
 
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.

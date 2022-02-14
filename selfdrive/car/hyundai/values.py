@@ -1,14 +1,11 @@
-from enum import Enum
-
 from cereal import car
 from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 
-
 # Steer torque limits
 class CarControllerParams:
-  ACCEL_MIN = -3.5  # m/s
-  ACCEL_MAX = 2.0  # m/s
+  ACCEL_MIN = -3.5 # m/s
+  ACCEL_MAX = 2.0 # m/s
 
   def __init__(self, CP):
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
@@ -25,8 +22,7 @@ class CarControllerParams:
     self.STEER_DRIVER_MULTIPLIER = 2
     self.STEER_DRIVER_FACTOR = 1
 
-
-class CAR(Enum):
+class CAR:
   # Hyundai
   ELANTRA = "HYUNDAI ELANTRA 2017"
   ELANTRA_2021 = "HYUNDAI ELANTRA 2021"
@@ -77,7 +73,6 @@ class Buttons:
   SET_DECEL = 2
   GAP_DIST = 3
   CANCEL = 4
-
 
 FINGERPRINTS = {
   CAR.ELANTRA: [{
@@ -932,23 +927,23 @@ FW_VERSIONS = {
     ],
   },
   CAR.ELANTRA_HEV_2021: {
-    (Ecu.fwdCamera, 0x7c4, None): [
+    (Ecu.fwdCamera, 0x7c4, None) : [
       b'\xf1\000CN7HMFC  AT USA LHD 1.00 1.03 99210-AA000 200819',
     ],
-    (Ecu.fwdRadar, 0x7d0, None): [
+    (Ecu.fwdRadar, 0x7d0, None) : [
       b'\xf1\000CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
       b'\xf1\x8799110BY000\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
     ],
-    (Ecu.eps, 0x7d4, None): [
+    (Ecu.eps, 0x7d4, None) :[
       b'\xf1\x8756310/BY050\xf1\000CN7 MDPS C 1.00 1.02 56310/BY050 4CNHC102',
     ],
-    (Ecu.transmission, 0x7e1, None): [
+    (Ecu.transmission, 0x7e1, None) :[
       b'\xf1\0006U3L0_C2\000\0006U3K3051\000\000HCN0G16NS0\xb9?A\xaa',
       b'\xf1\0006U3L0_C2\000\0006U3K3051\000\000HCN0G16NS0\000\000\000\000',
       b'\xf1\x816U3K3051\000\000\xf1\0006U3L0_C2\000\0006U3K3051\000\000HCN0G16NS0\xb9?A\xaa',
       b'\xf1\x816U3K3051\x00\x00\xf1\x006U3L0_C2\x00\x006U3K3051\x00\x00HCN0G16NS0\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7e0, None): [
+    (Ecu.engine, 0x7e0, None) : [
       b'\xf1\x816H6G5051\x00\x00\x00\x00\x00\x00\x00\x00',
     ]
   },
