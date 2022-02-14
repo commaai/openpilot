@@ -1,4 +1,4 @@
-Version 0.8.13 (2022-02-16)
+Version 0.8.13 (2022-02-18)
 ========================
  * Improved driver monitoring
    * Retuned driver pose learner for relaxed driving positions
