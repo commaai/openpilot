@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 from enum import Enum
+import locale
+locale.setlocale(locale.LC_ALL, '')
 
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.config import Conversions as CV
-import locale
-locale.setlocale(locale.LC_ALL, '')
 
 class Tier(Enum):
   GOLD = "Gold"
