@@ -61,14 +61,14 @@ static cl_mem make_image_like(cl_context context, cl_mem val) {
 
 // this cuts ~2 ms off the model runtime right now
 int Thneed::optimize() {
+  const char *kernel_path = getenv("KERNEL_PATH");
+  if (!kernel_path) { kernel_path = "/data/openpilot/selfdrive/modeld/thneed/kernels"; printf("no KERNEL_PATH set, defaulting to %s\n", kernel_path); }
   // load custom kernels
   map<string, cl_program> g_programs;
   for (auto &k : kq) {
     // replace program?
     if (g_programs.find(k->name) == g_programs.end()) {
       char fn[0x100];
-      const char *kernel_path = getenv("KERNEL_PATH");
-      if (!kernel_path) { kernel_path = "/data/openpilot/selfdrive/modeld/thneed/kernels"; printf("no KERNEL_PATH set, defaulting to %s\n", kernel_path); }
       snprintf(fn, sizeof(fn), "%s/%s.cl", kernel_path, k->name.c_str());
       FILE *g = fopen(fn, "rb");
       if (g != NULL) {
