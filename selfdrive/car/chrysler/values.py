@@ -1,4 +1,6 @@
-from selfdrive.car import dbc_dict
+from enum import Enum
+
+from selfdrive.car import CarInfo, dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -9,14 +11,25 @@ class CarControllerParams:
   STEER_ERROR_MAX = 80
 
 
-class CAR:
-  PACIFICA_2017_HYBRID = "CHRYSLER PACIFICA HYBRID 2017"
-  PACIFICA_2018_HYBRID = "CHRYSLER PACIFICA HYBRID 2018"
-  PACIFICA_2019_HYBRID = "CHRYSLER PACIFICA HYBRID 2019"
-  PACIFICA_2018 = "CHRYSLER PACIFICA 2018"  # includes 2017 Pacifica
-  PACIFICA_2020 = "CHRYSLER PACIFICA 2020"
-  JEEP_CHEROKEE = "JEEP GRAND CHEROKEE V6 2018"  # includes 2017 Trailhawk
-  JEEP_CHEROKEE_2019 = "JEEP GRAND CHEROKEE 2019" # includes 2020 Trailhawk
+class CAR(Enum):
+  PACIFICA_2017_HYBRID = 0
+  PACIFICA_2018_HYBRID = 1
+  PACIFICA_2019_HYBRID = 2
+  PACIFICA_2018 = 3
+  PACIFICA_2020 = 4
+  JEEP_CHEROKEE = 5
+  JEEP_CHEROKEE_2019 = 6
+
+
+CAR_INFO = {
+  CAR.PACIFICA_2017_HYBRID: CarInfo("Chrysler Pacifica Hybrid", {2017}, "Adaptive Cruise"),
+  CAR.PACIFICA_2018_HYBRID: CarInfo("Chrysler Pacifica Hybrid", {2018}, "Adaptive Cruise"),
+  CAR.PACIFICA_2019_HYBRID: CarInfo("Chrysler Pacifica Hybrid", {2019}, "Adaptive Cruise"),
+  CAR.PACIFICA_2018: CarInfo("Chrysler Pacifica", {2017, 2018}, "Adaptive Cruise"),
+  CAR.PACIFICA_2020: CarInfo("Chrysler Pacifica", {2020}, "Adaptive Cruise"),
+  CAR.JEEP_CHEROKEE: CarInfo("Jeep Grand Cherokee V6", {2016, 2017, 2018}, "Adaptive Cruise"),
+  CAR.JEEP_CHEROKEE_2019: CarInfo("Jeep Grand Cherokee", {2019, 2020}, "Adaptive Cruise"),
+}
 
 # Unique CAN messages:
 # Only the hybrids have 270: 8
