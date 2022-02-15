@@ -1,8 +1,11 @@
+from enum import Enum
+
 from cereal import car
-from selfdrive.car import dbc_dict
+from selfdrive.car import CarInfo, dbc_dict
 Ecu = car.CarParams.Ecu
 
-class CarControllerParams():
+
+class CarControllerParams:
   STEER_MAX = 300  # Safety limit, not LKA max. Trucks use 600.
   STEER_STEP = 2  # control frames per command
   STEER_DELTA_UP = 7
@@ -38,14 +41,27 @@ class CarControllerParams():
 
 STEER_THRESHOLD = 1.0
 
-class CAR:
-  HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
-  VOLT = "CHEVROLET VOLT PREMIER 2017"
-  CADILLAC_ATS = "CADILLAC ATS Premium Performance 2018"
-  MALIBU = "CHEVROLET MALIBU PREMIER 2017"
-  ACADIA = "GMC ACADIA DENALI 2018"
-  BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
-  ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
+
+class CAR(Enum):
+  HOLDEN_ASTRA = 0
+  VOLT = 1
+  CADILLAC_ATS = 2
+  MALIBU = 3
+  ACADIA = 4
+  BUICK_REGAL = 5
+  ESCALADE_ESV = 6
+
+
+CAR_INFO = {
+  CAR.HOLDEN_ASTRA: CarInfo("Holden Astra RS-V BK", {2017}, "Adaptive Cruise"),
+  CAR.VOLT: CarInfo("Chevrolet Volt Premier", {2017, 2018}, "Adaptive Cruise"),
+  CAR.CADILLAC_ATS: CarInfo("CADILLAC ATS Premium Performance", {2018}, "Adaptive Cruise"),
+  CAR.MALIBU: CarInfo("Chevrolet Malibu Premier", {2017}, "Adaptive Cruise"),
+  CAR.ACADIA: CarInfo("GMC Acadia Denali", {2018}, "Adaptive Cruise"),
+  CAR.BUICK_REGAL: CarInfo("Buick Regal Essence", {2018}, "Adaptive Cruise"),
+  CAR.ESCALADE_ESV: CarInfo("Cadillac Escalade ESV", {2016}, "ACC + LKAS"),
+}
+
 
 class CruiseButtons:
   INIT = 0
