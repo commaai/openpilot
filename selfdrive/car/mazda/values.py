@@ -1,4 +1,6 @@
-from selfdrive.car import dbc_dict
+from enum import Enum
+
+from selfdrive.car import CarInfo, dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -14,13 +16,25 @@ class CarControllerParams:
   STEER_DRIVER_FACTOR = 1         # from dbc
   STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
 
-class CAR:
-  CX5 = "MAZDA CX-5"
-  CX9 = "MAZDA CX-9"
-  MAZDA3 = "MAZDA 3"
-  MAZDA6 = "MAZDA 6"
-  CX9_2021 = "MAZDA CX-9 2021"
-  CX5_2022 = "MAZDA CX-5 2022"
+
+class CAR(Enum):
+  CX5 = 0
+  CX9 = 1
+  MAZDA3 = 2
+  MAZDA6 = 3
+  CX9_2021 = 4
+  CX5_2022 = 5
+
+
+CAR_INFO = {
+  CAR.CX5: CarInfo("Mazda CX-5", {2017, 2019}),  # TODO: verify years for first 4
+  CAR.CX9: CarInfo("Mazda CX-9", {2016, 2017}),
+  CAR.MAZDA3: CarInfo("Mazda 3", {2017}),
+  CAR.MAZDA6: CarInfo("Mazda 6", {2017}),
+  CAR.CX9_2021: CarInfo("Mazda CX-9", {2021}),
+  CAR.CX5_2022: CarInfo("Mazda CX-5", {2022}),
+}
+
 
 class LKAS_LIMITS:
   STEER_THRESHOLD = 15
@@ -206,7 +220,6 @@ FW_VERSIONS = {
       b'PYKE-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-
   CAR.MAZDA6: {
     (Ecu.eps, 0x730, None): [
       b'GBEF-3210X-B-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
