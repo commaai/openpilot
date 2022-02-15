@@ -1,4 +1,6 @@
-from selfdrive.car import dbc_dict
+from enum import Enum
+
+from selfdrive.car import CarInfo, dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -15,15 +17,29 @@ class CarControllerParams:
     self.STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1       # from dbc
 
-class CAR:
-  ASCENT = "SUBARU ASCENT LIMITED 2019"
-  IMPREZA = "SUBARU IMPREZA LIMITED 2019"
-  IMPREZA_2020 = "SUBARU IMPREZA SPORT 2020"
-  FORESTER = "SUBARU FORESTER 2019"
-  FORESTER_PREGLOBAL = "SUBARU FORESTER 2017 - 2018"
-  LEGACY_PREGLOBAL = "SUBARU LEGACY 2015 - 2018"
-  OUTBACK_PREGLOBAL = "SUBARU OUTBACK 2015 - 2017"
-  OUTBACK_PREGLOBAL_2018 = "SUBARU OUTBACK 2018 - 2019"
+
+class CAR(Enum):
+  ASCENT = 0
+  IMPREZA = 1
+  IMPREZA_2020 = 2
+  FORESTER = 3
+  FORESTER_PREGLOBAL = 4
+  LEGACY_PREGLOBAL = 5
+  OUTBACK_PREGLOBAL = 6
+  OUTBACK_PREGLOBAL_2018 = 7
+
+
+CAR_INFO = {
+  CAR.ASCENT: CarInfo("Subaru Ascent Limited", {2019}, "EyeSight"),
+  CAR.IMPREZA: CarInfo("Subaru Impreza Limited", {2017, 2018, 2019}, "EyeSight"),
+  CAR.IMPREZA_2020: CarInfo("Subaru Impreza Sport", {2020, 2021}, "EyeSight"),
+  CAR.FORESTER: CarInfo("Subaru Forester", {2019, 2020, 2021}, "EyeSight"),
+  CAR.FORESTER_PREGLOBAL: CarInfo("Subaru Forester", {2017, 2018}, "EyeSight"),
+  CAR.LEGACY_PREGLOBAL: CarInfo("Subaru Legacy", {2015, 2016, 2017, 2018}, "EyeSight"),
+  CAR.OUTBACK_PREGLOBAL: CarInfo("Subaru Outback", {2015, 2016, 2017}, "EyeSight"),
+  CAR.OUTBACK_PREGLOBAL_2018: CarInfo("Subaru Outback", {2018, 2019}, "EyeSight"),
+}
+
 
 FINGERPRINTS = {
   CAR.IMPREZA: [{
