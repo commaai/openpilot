@@ -67,7 +67,9 @@ int Thneed::optimize() {
     // replace program?
     if (g_programs.find(k->name) == g_programs.end()) {
       char fn[0x100];
-      snprintf(fn, sizeof(fn), "/data/openpilot/selfdrive/modeld/thneed/kernels/%s.cl", k->name.c_str());
+      const char *kernel_path = getenv("KERNEL_PATH");
+      if (!kernel_path) { kernel_path = "/data/openpilot/selfdrive/modeld/thneed/kernels"; printf("no KERNEL_PATH set, defaulting to %s\n", kernel_path); }
+      snprintf(fn, sizeof(fn), "%s/%s.cl", kernel_path, k->name.c_str());
       FILE *g = fopen(fn, "rb");
       if (g != NULL) {
         char *src[0x10000];

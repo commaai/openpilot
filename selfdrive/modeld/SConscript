@@ -1,3 +1,5 @@
+import os
+
 Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
 lenv = env.Clone()
 
@@ -71,9 +73,11 @@ if use_thneed and arch in ("aarch64", "larch64"):
   cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} {fn}.dlc {fn}.thneed --binary"
 
   lib_paths = ':'.join(Dir(p).abspath for p in lenv["LIBPATH"])
-  cenv = Environment(ENV={'LD_LIBRARY_PATH': f"{lib_paths}:{lenv['ENV']['LD_LIBRARY_PATH']}"})
+  kernel_path = os.path.join(Dir('.').abspath, "thneed", "kernels")
+  cenv = Environment(ENV={'LD_LIBRARY_PATH': f"{lib_paths}:{lenv['ENV']['LD_LIBRARY_PATH']}", 'KERNEL_PATH': kernel_path})
 
-  cenv.Command(fn + ".thneed", [fn + ".dlc", compiler], cmd)
+  kernels = [os.path.join(kernel_path, x) for x in os.listdir(kernel_path) if x.endswith(".cl")]
+  cenv.Command(fn + ".thneed", [fn + ".dlc", kernels, compiler], cmd)
 
 lenv.Program('_dmonitoringmodeld', [
     "dmonitoringmodeld.cc",
