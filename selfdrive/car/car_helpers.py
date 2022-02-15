@@ -1,5 +1,5 @@
-import os
 from enum import Enum
+import os
 
 from common.params import Params
 from common.basedir import BASEDIR
@@ -55,7 +55,6 @@ def load_interfaces(brand_names):
       CarController = None
 
     for model_name in brand_names[brand_name]:
-      # print(model_name)
       ret[model_name] = (CarInterface, CarController, CarState)
   return ret
 
