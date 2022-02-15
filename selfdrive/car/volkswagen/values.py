@@ -1,8 +1,9 @@
 from collections import defaultdict
+from enum import Enum
 from typing import Dict
 
 from cereal import car
-from selfdrive.car import dbc_dict
+from selfdrive.car import CarInfo, dbc_dict
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -62,30 +63,80 @@ MQB_LDW_MESSAGES = {
 # FW_VERSIONS for that existing CAR.
 # Exception: SEAT Leon and SEAT Ateca share a chassis code
 
-class CAR:
-  ARTEON_MK1 = "VOLKSWAGEN ARTEON 1ST GEN"          # Chassis AN, Mk1 VW Arteon and variants
-  ATLAS_MK1 = "VOLKSWAGEN ATLAS 1ST GEN"            # Chassis CA, Mk1 VW Atlas and Atlas Cross Sport
-  GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"              # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
-  JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"            # Chassis BU, Mk7 VW Jetta
-  PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"          # Chassis 3G, Mk8 VW Passat and variants
-  POLO_MK6 = "VOLKSWAGEN POLO 6TH GEN"              # Chassis AW, Mk6 VW Polo
-  TAOS_MK1 = "VOLKSWAGEN TAOS 1ST GEN"              # Chassis B2, Mk1 VW Taos and Tharu
-  TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"         # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
-  TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"          # Chassis AD/BW, Mk2 VW Tiguan and variants
-  TOURAN_MK2 = "VOLKSWAGEN TOURAN 2ND GEN"          # Chassis 1T, Mk2 VW Touran and variants
-  TRANSPORTER_T61 = "VOLKSWAGEN TRANSPORTER T6.1"   # Chassis 7H/7L, T6-facelift Transporter/Multivan/Caravelle/California
-  TROC_MK1 = "VOLKSWAGEN T-ROC 1ST GEN"             # Chassis A1, Mk1 VW VW T-Roc and variants
-  AUDI_A3_MK3 = "AUDI A3 3RD GEN"                   # Chassis 8V/FF, Mk3 Audi A3 and variants
-  AUDI_Q2_MK1 = "AUDI Q2 1ST GEN"                   # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
-  AUDI_Q3_MK2 = "AUDI Q3 2ND GEN"                   # Chassis 8U/F3/FS, Mk2 Audi Q3 and variants
-  SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"             # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
-  SEAT_LEON_MK3 = "SEAT LEON 3RD GEN"               # Chassis 5F, Mk3 SEAT Leon and variants
-  SKODA_KAMIQ_MK1 = "SKODA KAMIQ 1ST GEN"           # Chassis NW, Mk1 Skoda Kamiq
-  SKODA_KAROQ_MK1 = "SKODA KAROQ 1ST GEN"           # Chassis NU, Mk1 Skoda Karoq
-  SKODA_KODIAQ_MK1 = "SKODA KODIAQ 1ST GEN"         # Chassis NS, Mk1 Skoda Kodiaq
-  SKODA_SCALA_MK1 = "SKODA SCALA 1ST GEN"           # Chassis NW, Mk1 Skoda Scala and Skoda Kamiq
-  SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"         # Chassis 3V/NP, Mk3 Skoda Superb and variants
-  SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
+Enum("Animal", ["_1", "_2"], )
+
+class CAR(Enum):
+  ARTEON_MK1 = 0          # Chassis AN, Mk1 VW Arteon and variants
+  ATLAS_MK1 = 1           # Chassis CA, Mk1 VW Atlas and Atlas Cross Sport
+  GOLF_MK7 = 2            # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
+  JETTA_MK7 = 3           # Chassis BU, Mk7 VW Jetta
+  PASSAT_MK8 = 4          # Chassis 3G, Mk8 VW Passat and variants
+  POLO_MK6 = 5            # Chassis AW, Mk6 VW Polo
+  TAOS_MK1 = 6            # Chassis B2, Mk1 VW Taos and Tharu
+  TCROSS_MK1 = 7          # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
+  TIGUAN_MK2 = 8          # Chassis AD/BW, Mk2 VW Tiguan and variants
+  TOURAN_MK2 = 9          # Chassis 1T, Mk2 VW Touran and variants
+  TRANSPORTER_T61 = 10    # Chassis 7H/7L, T6-facelift Transporter/Multivan/Caravelle/California
+  TROC_MK1 = 11           # Chassis A1, Mk1 VW VW T-Roc and variants
+  AUDI_A3_MK3 = 12        # Chassis 8V/FF, Mk3 Audi A3 and variants
+  AUDI_Q2_MK1 = 13        # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
+  AUDI_Q3_MK2 = 14        # Chassis 8U/F3/FS, Mk2 Audi Q3 and variants
+  SEAT_ATECA_MK1 = 15     # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
+  SEAT_LEON_MK3 = 16      # Chassis 5F, Mk3 SEAT Leon and variants
+  SKODA_KAMIQ_MK1 = 17    # Chassis NW, Mk1 Skoda Kamiq
+  SKODA_KAROQ_MK1 = 18    # Chassis NU, Mk1 Skoda Karoq
+  SKODA_KODIAQ_MK1 = 19   # Chassis NS, Mk1 Skoda Kodiaq
+  SKODA_SCALA_MK1 = 20    # Chassis NW, Mk1 Skoda Scala and Skoda Kamiq
+  SKODA_SUPERB_MK3 = 21   # Chassis 3V/NP, Mk3 Skoda Superb and variants
+  SKODA_OCTAVIA_MK3 = 22  # Chassis NE, Mk3 Skoda Octavia and variants
+
+
+CAR_INFO = {
+  CAR.ARTEON_MK1: CarInfo("Volkswagen Arteon", {2018, 2021}, "Driver Assistance"),
+  CAR.ATLAS_MK1: CarInfo("Volkswagen Atlas", {2018, 2019, 2022}, "Driver Assistance"),
+  CAR.GOLF_MK7: {
+    CarInfo("Volkswagen e-Golf", {2014, 2019, 2020}, "Driver Assistance"),
+    CarInfo("Volkswagen Golf", {2015, 2016, 2017, 2018, 2019, 2020}, "Driver Assistance"),
+    CarInfo("Volkswagen Golf Alltrack", {2017, 2018}, "Driver Assistance"),
+    CarInfo("Volkswagen Golf GTE", {2016}, "Driver Assistance"),
+    CarInfo("Volkswagen Golf GTI", {2018, 2019, 2020}, "Driver Assistance"),
+    CarInfo("Volkswagen Golf R", {2016, 2017, 2018, 2019}, "Driver Assistance"),
+    CarInfo("Volkswagen Golf SportsVan", {2016}, "Driver Assistance"),
+    CarInfo("Volkswagen Golf SportWagen", {2016}, "Driver Assistance"),
+  },
+  CAR.JETTA_MK7: {
+    CarInfo("Volkswagen Jetta", {2018, 2019, 2020}, "Driver Assistance"),
+    CarInfo("Volkswagen Jetta GLI", {2021}, "Driver Assistance"),
+  },
+  CAR.PASSAT_MK8: CarInfo("Volkswagen PASSAT", {2016, 2017, 2018}, "Driver Assistance"),
+  CAR.POLO_MK6: CarInfo("Volkswagen Polo", {2020}, "Driver Assistance"),
+  CAR.TAOS_MK1: CarInfo("Volkswagen Taos", {2022}, "Driver Assistance"),
+  CAR.TCROSS_MK1: CarInfo("Volkswagen T-Cross", {2021}, "Driver Assistance"),
+  CAR.TIGUAN_MK2: CarInfo("Volkswagen Tiguan", {2020}, "Driver Assistance"),
+  CAR.TOURAN_MK2: CarInfo("Volkswagen Touran", {2017}, "Driver Assistance"),
+  CAR.TRANSPORTER_T61: {
+    CarInfo("Volkswagen Caravelle", {2020}, "Driver Assistance"),
+    CarInfo("Volkswagen California", {2021}, "Driver Assistance"),
+  },
+  CAR.TROC_MK1: CarInfo("Volkswagen T-Roc", {2021}, "Driver Assistance"),
+  CAR.AUDI_A3_MK3: {
+    CarInfo("Audi A3", {2014, 2015, 2016, 2017, 2018, 2019}, "ACC + Lane Assist"),
+    CarInfo("Audi A3 Sportback e-tron", {2017, 2018}, "ACC + Lane Assist"),
+  },
+  CAR.AUDI_Q2_MK1: CarInfo("Audi Q2", {2018}, "ACC + Lane Assist"),
+  CAR.AUDI_Q3_MK2: CarInfo("Audi Q3", {2020, 2021}, "ACC + Lane Assist"),
+  CAR.SEAT_ATECA_MK1: CarInfo("SEAT Ateca", {2018}, "Driver Assistance"),
+  CAR.SEAT_LEON_MK3: CarInfo("SEAT Leon", {2014, 2015, 2016, 2017, 2018, 2019, 2020}, "Driver Assistance"),
+  CAR.SKODA_KAMIQ_MK1: CarInfo("Škoda Kamiq", {2021}, "Driver Assistance"),
+  CAR.SKODA_KAROQ_MK1: CarInfo("Škoda Karoq", {2019}, "Driver Assistance"),
+  CAR.SKODA_KODIAQ_MK1: CarInfo("Škoda Kodiaq", {2018, 2019}, "Driver Assistance"),
+  CAR.SKODA_SCALA_MK1: CarInfo("Škoda Scala", {2020}, "Driver Assistance"),
+  CAR.SKODA_SUPERB_MK3: CarInfo("Škoda Superb", {2015, 2017, 2018}, "Driver Assistance"),
+  CAR.SKODA_OCTAVIA_MK3: {
+    CarInfo("Škoda Octavia", {2015, 2018, 2019}, "Driver Assistance"),
+    CarInfo("Škoda Octavia RS", {2016}, "Driver Assistance"),
+  }
+}
 
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.
