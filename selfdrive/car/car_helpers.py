@@ -1,4 +1,6 @@
 import os
+from enum import Enum
+
 from common.params import Params
 from common.basedir import BASEDIR
 from selfdrive.version import is_comma_remote, is_tested_branch
@@ -67,9 +69,7 @@ def _get_interface_names():
     try:
       brand_name = car_folder.split('/')[-1]
       model_names = __import__(f'selfdrive.car.{brand_name}.values', fromlist=['CAR']).CAR
-      if brand_name == 'toyota':  # TODO: remove exception
-        model_names = [c.name for c in model_names]
-      else:
+      if not issubclass(model_names, Enum):  # TODO: remove exception
         model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
       brand_names[brand_name] = model_names
     except (ImportError, OSError):
