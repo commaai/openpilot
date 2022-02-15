@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <vector>
-#include <atomic>
+#include <thread>
 
 #include <OMX_Component.h>
 extern "C" {

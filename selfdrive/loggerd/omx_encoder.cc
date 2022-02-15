@@ -534,7 +534,6 @@ void OmxEncoder::encoder_open(const char* path) {
   // start writer thread
   write_handler_thread = std::thread(OmxEncoder::write_handler, this);
 
-
   this->is_open = true;
   this->counter = 0;
 }
