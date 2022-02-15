@@ -63,8 +63,6 @@ MQB_LDW_MESSAGES = {
 # FW_VERSIONS for that existing CAR.
 # Exception: SEAT Leon and SEAT Ateca share a chassis code
 
-Enum("Animal", ["_1", "_2"], )
-
 class CAR(Enum):
   ARTEON_MK1 = 0          # Chassis AN, Mk1 VW Arteon and variants
   ATLAS_MK1 = 1           # Chassis CA, Mk1 VW Atlas and Atlas Cross Sport
