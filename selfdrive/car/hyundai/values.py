@@ -1,7 +1,7 @@
 from enum import Enum
 
 from cereal import car
-from selfdrive.car import CarInfo, dbc_dict
+from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 
 # Steer torque limits
@@ -68,51 +68,6 @@ class CAR(Enum):
   GENESIS_G70_2020 = 34
   GENESIS_G80 = 35
   GENESIS_G90 = 36
-
-
-CAR_INFO = {
-  CAR.ELANTRA: CarInfo("Hyundai Elantra", {2017, 2018, 2019}, "SCC + LKAS"),
-  CAR.ELANTRA_2021: CarInfo("Hyundai Elantra", {2021}, "SCC + LKAS"),
-  CAR.ELANTRA_HEV_2021: CarInfo("Hyundai Elantra Hybrid", {2021}, "SCC + LKAS"),
-  CAR.ELANTRA_GT_I30: CarInfo("Hyundai i30 N Line 2019 & GT 2018 DCT", {2018, 2019}, "SCC + LKAS"),
-  CAR.HYUNDAI_GENESIS: CarInfo("Hyundai Genesis", {2015, 2016}, "SCC + LKAS"),
-  CAR.IONIQ: CarInfo("Hyundai Ioniq Hybrid", {2017, 2018, 2019}, "SCC + LKAS"),
-  CAR.IONIQ_HEV_2022: CarInfo("Hyundai Ioniq Hybrid", {2020, 2021, 2022}, "SCC + LFA"),
-  CAR.IONIQ_EV_LTD: CarInfo("Hyundai Ioniq Electric Limited", {2019}, "SCC + LKAS"),
-  CAR.IONIQ_EV_2020: CarInfo("Hyundai Ioniq Electric", {2020}, "SCC + LKAS"),
-  CAR.IONIQ_PHEV: CarInfo("Hyundai Ioniq Plug-In Hybrid", {2020, 2021}, "SCC + LKAS"),
-  CAR.KONA: CarInfo("Hyundai Kona", {2020}, "SCC + LKAS"),
-  CAR.KONA_EV: CarInfo("Hyundai Kona Electric", {2018, 2019}, "SCC + LKAS"),
-  CAR.KONA_HEV: CarInfo("Hyundai Kona Hybrid", {2020}, "SCC + LKAS"),
-  CAR.SANTA_FE: CarInfo("Hyundai Santa Fe", {2019, 2020}),
-  CAR.SANTA_FE_2022: CarInfo("Hyundai Santa Fe", {2021, 2022}),
-  CAR.SANTA_FE_HEV_2022: CarInfo("Hyundai Santa Fe Hybrid", {2022}),
-  CAR.SANTA_FE_PHEV_2022: CarInfo("Hyundai Santa Fe Plug-In Hybrid", {2022}),
-  CAR.SONATA: CarInfo("Hyundai Sonata", {2020, 2021, 2022}),
-  CAR.SONATA_LF: CarInfo("Hyundai Sonata", {2018, 2019}, "SCC + LKAS"),
-  CAR.PALISADE: CarInfo("Hyundai Palisade", {2020, 2021}),
-  CAR.VELOSTER: CarInfo("Hyundai Veloster", {2019, 2020}, "SCC + LKAS"),
-  CAR.SONATA_HYBRID: CarInfo("Hyundai Sonata Hybrid", {2021, 2022}),
-
-  # Kia
-  CAR.KIA_FORTE: CarInfo("Kia Forte E 2018 & GT 2021", {2018, 2019, 2020, 2021}, "SCC + LKAS"),  # TODO: figure out which cars this exactly supports
-  CAR.KIA_K5_2021: CarInfo("Kia K5", {2021, 2022}, "SCC + LFA"),
-  CAR.KIA_NIRO_EV: CarInfo("Kia Niro EV", {2019, 2020, 2021, 2022}),
-  CAR.KIA_NIRO_HEV: CarInfo("Kia Niro Plug-In Hybrid", {2019}, "SCC + LKAS"),
-  CAR.KIA_NIRO_HEV_2021: CarInfo("Kia Niro Hybrid", {2021}, "SCC + LKAS"),
-  CAR.KIA_OPTIMA: CarInfo("Kia Optima SX 2019 & 2016", {2017, 2019}, "SCC + LKAS"),
-  CAR.KIA_OPTIMA_H: CarInfo("Kia Optima Hybrid 2017 & Sports 2019", {2017, 2019}, "SCC + LKAS"),
-  CAR.KIA_SELTOS: CarInfo("Kia Seltos", {2021}, "SCC + LKAS"),
-  CAR.KIA_SORENTO: CarInfo("Kia Sorento GT-Line", {2018, 2019}, "SCC + LKAS"),
-  CAR.KIA_STINGER: CarInfo("Kia Stinger GT2", {2018}, "SCC + LKAS"),
-  CAR.KIA_CEED: CarInfo("Kia Ceed Intro Edition", {2019}, "SCC + LKAS"),
-
-  # Genesis
-  CAR.GENESIS_G70: CarInfo("Genesis G70", {2018}),
-  CAR.GENESIS_G70_2020: CarInfo("Genesis G70", {2020}),
-  CAR.GENESIS_G80: CarInfo("Genesis G80", {2018}),
-  CAR.GENESIS_G90: CarInfo("Genesis G90", {2018}),
-}
 
 
 class Buttons:

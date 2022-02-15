@@ -1,6 +1,6 @@
 from enum import Enum
 
-from selfdrive.car import CarInfo, dbc_dict
+from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -24,16 +24,6 @@ class CAR(Enum):
   MAZDA6 = 3
   CX9_2021 = 4
   CX5_2022 = 5
-
-
-CAR_INFO = {
-  CAR.CX5: CarInfo("Mazda CX-5", {2017, 2019}),  # TODO: verify years for first 4
-  CAR.CX9: CarInfo("Mazda CX-9", {2016, 2017}),
-  CAR.MAZDA3: CarInfo("Mazda 3", {2017}),
-  CAR.MAZDA6: CarInfo("Mazda 6", {2017}),
-  CAR.CX9_2021: CarInfo("Mazda CX-9", {2021}),
-  CAR.CX5_2022: CarInfo("Mazda CX-5", {2022}),
-}
 
 
 class LKAS_LIMITS:

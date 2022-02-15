@@ -1,13 +1,9 @@
 # functions common among cars
-from collections import namedtuple
-
 from cereal import car
 from common.numpy_fast import clip
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
-
-CarInfo = namedtuple('CarInfo', ['name', 'years', 'supported_package'], defaults=('All',))
 
 
 def gen_empty_fingerprint():

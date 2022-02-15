@@ -1,7 +1,7 @@
 from enum import Enum, IntFlag
 
 from cereal import car
-from selfdrive.car import CarInfo, dbc_dict
+from selfdrive.car import dbc_dict
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -86,33 +86,6 @@ class CAR(Enum):
   RIDGELINE = 19
   INSIGHT = 20
   HONDA_E = 21
-
-
-CAR_INFO = {
-  CAR.ACCORD: CarInfo("Honda Accord", {2018, 2019, 2020, 2021}),
-  CAR.ACCORDH: CarInfo("Honda Accord Hybrid", {2018, 2019, 2020, 2021}),
-  CAR.CIVIC: CarInfo("Honda Civic", {2016, 2017, 2018}, "Honda Sensing"),  # TODO: there's also the identical coupe
-  CAR.CIVIC_BOSCH: CarInfo("Honda Civic (Bosch)", {2019, 2020}),
-  CAR.CIVIC_BOSCH_DIESEL: CarInfo("Honda Civic Sedan 1.6 DIESEL", {2019, 2020}),  # TODO: same as civic bosch but has no alc under 12 mph exception
-  CAR.ACURA_ILX: CarInfo("Acura ILX", {2016, 2017, 2018, 2019}, "AcuraWatch Plus"),
-  CAR.CRV: CarInfo("Honda CR-V", {2015, 2016}, "Touring"),
-  CAR.CRV_5G: CarInfo("Honda CR-V", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
-  CAR.CRV_EU: CarInfo("Honda CR-V EU", {2015, 2016}, "Touring"),  # Euro version of CRV Touring
-  CAR.CRV_HYBRID: CarInfo("Honda CR-V Hybrid", {2017, 2018, 2019}, "Honda Sensing"),
-  CAR.FIT: CarInfo("Honda Fit", {2018, 2019}, "Honda Sensing"),
-  CAR.FREED: CarInfo("Honda Freed", {2020}, "Honda Sensing"),
-  CAR.HRV: CarInfo("Honda HR-V", {2019, 2020}, "Honda Sensing"),
-  CAR.ODYSSEY: CarInfo("Honda Odyssey", {2018, 2019, 2020}, "Honda Sensing"),
-  # TODO: Duplicate of above
-  CAR.ODYSSEY_CHN: CarInfo("Honda Odyssey CHN", {2018, 2019, 2020}, "Honda Sensing"),
-  CAR.ACURA_RDX: CarInfo("Acura RDX", {2016, 2017, 2018}, "AcuraWatch Plus"),
-  CAR.ACURA_RDX_3G: CarInfo("Acura RDX", {2019, 2020, 2021}),
-  CAR.PILOT: CarInfo("Honda Pilot", {2016, 2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
-  CAR.PASSPORT: CarInfo("Honda Passport", {2019, 2020, 2021}),
-  CAR.RIDGELINE: CarInfo("Honda Ridgeline", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
-  CAR.INSIGHT: CarInfo("Honda Insight", {2019, 2020, 2021}),
-  CAR.HONDA_E: CarInfo("Honda E", {2020}),
-}
 
 
 FW_VERSIONS = {

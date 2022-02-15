@@ -1,6 +1,6 @@
 from enum import Enum
 
-from selfdrive.car import CarInfo, dbc_dict
+from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -20,16 +20,6 @@ class CAR(Enum):
   JEEP_CHEROKEE = 5
   JEEP_CHEROKEE_2019 = 6
 
-
-CAR_INFO = {
-  CAR.PACIFICA_2017_HYBRID: CarInfo("Chrysler Pacifica Hybrid", {2017}, "Adaptive Cruise"),
-  CAR.PACIFICA_2018_HYBRID: CarInfo("Chrysler Pacifica Hybrid", {2018}, "Adaptive Cruise"),
-  CAR.PACIFICA_2019_HYBRID: CarInfo("Chrysler Pacifica Hybrid", {2019}, "Adaptive Cruise"),
-  CAR.PACIFICA_2018: CarInfo("Chrysler Pacifica", {2017, 2018}, "Adaptive Cruise"),
-  CAR.PACIFICA_2020: CarInfo("Chrysler Pacifica", {2020}, "Adaptive Cruise"),
-  CAR.JEEP_CHEROKEE: CarInfo("Jeep Grand Cherokee V6", {2016, 2017, 2018}, "Adaptive Cruise"),
-  CAR.JEEP_CHEROKEE_2019: CarInfo("Jeep Grand Cherokee", {2019, 2020}, "Adaptive Cruise"),
-}
 
 # Unique CAN messages:
 # Only the hybrids have 270: 8

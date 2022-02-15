@@ -1,7 +1,7 @@
 from enum import Enum
 
 from cereal import car
-from selfdrive.car import CarInfo, dbc_dict
+from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 
 
@@ -50,17 +50,6 @@ class CAR(Enum):
   ACADIA = 4
   BUICK_REGAL = 5
   ESCALADE_ESV = 6
-
-
-CAR_INFO = {
-  CAR.HOLDEN_ASTRA: CarInfo("Holden Astra RS-V BK", {2017}, "Adaptive Cruise"),
-  CAR.VOLT: CarInfo("Chevrolet Volt Premier", {2017, 2018}, "Adaptive Cruise"),
-  CAR.CADILLAC_ATS: CarInfo("CADILLAC ATS Premium Performance", {2018}, "Adaptive Cruise"),
-  CAR.MALIBU: CarInfo("Chevrolet Malibu Premier", {2017}, "Adaptive Cruise"),
-  CAR.ACADIA: CarInfo("GMC Acadia Denali", {2018}, "Adaptive Cruise"),
-  CAR.BUICK_REGAL: CarInfo("Buick Regal Essence", {2018}, "Adaptive Cruise"),
-  CAR.ESCALADE_ESV: CarInfo("Cadillac Escalade ESV", {2016}, "ACC + LKAS"),
-}
 
 
 class CruiseButtons:
