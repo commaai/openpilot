@@ -7,22 +7,7 @@ from common.numpy_fast import clip
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
 
-CarInfo = namedtuple('CarInfo', ['years', 'supported_package'], defaults=('All',))
-
-
-# class CarInfo:
-#   def __init__(self, fingerprint, years, package=None):
-#     self.fingerprint = fingerprint
-#     self.years = years
-#     if package is None:
-#       package = 'All'
-#     self.package = package
-#
-#   def __eq__(self, other):
-#     return self.fingerprint == other
-#
-#   def __hash__(self):
-#     return hash(self.fingerprint)
+CarInfo = namedtuple('CarInfo', ['name', 'years', 'supported_package'], defaults=('All',))
 
 
 def gen_empty_fingerprint():

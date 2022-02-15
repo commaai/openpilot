@@ -26,79 +26,95 @@ class ToyotaFlags(IntFlag):
 
 class CAR(Enum):
   # Toyota
-  ALPHARD_TSS2 = "Toyota Alphard 2020"
-  AVALON = "Toyota Avalon 2016"
-  AVALON_2019 = "Toyota Avalon 2019"
-  AVALONH_2019 = "Toyota Avalon Hybrid 2019"
-  AVALON_TSS2 = "Toyota Avalon 2022"
-  CAMRY = "Toyota Camry 2018"
-  CAMRYH = "Toyota Camry Hybrid 2018"
-  CAMRY_TSS2 = "Toyota Camry 2021"  # TSS 2.5
-  CAMRYH_TSS2 = "Toyota Camry Hybrid 2021"
-  CHR = "Toyota C-HR 2018"
-  CHRH = "Toyota C-HR Hybrid 2018"
-  COROLLA = "Toyota Corolla 2017"
-  COROLLA_TSS2 = "Toyota Corolla TSS2 2019"
-  # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
-  COROLLAH_TSS2 = "Toyota Corolla Hybrid TSS2 2019"
-  HIGHLANDER = "Toyota Highlander 2017"  # TODO: don't change fingerprint
-  HIGHLANDER_TSS2 = "Toyota Highlander 2020"
-  HIGHLANDERH = "Toyota Highlander Hybrid 2018"
-  HIGHLANDERH_TSS2 = "Toyota Highlander Hybrid 2020"
-  PRIUS = "Toyota Prius 2017"
-  PRIUS_V = "Toyota Prius v 2017"
-  PRIUS_TSS2 = "Toyota Prius TSS2 2021"
-  RAV4 = "Toyota RAV4 2017"
-  RAV4H = "Toyota RAV4 Hybrid 2017"
-  RAV4_TSS2 = "Toyota RAV4 2019"
-  RAV4H_TSS2 = "Toyota RAV4 Hybrid 2019"
-  MIRAI = "Toyota Mirai 2021"  # TSS 2.5
-  SIENNA = "Toyota Sienna 2018"
+  ALPHARD_TSS2 = 0
+  AVALON = 1
+  AVALON_2019 = 2
+  AVALONH_2019 = 3
+  AVALON_TSS2 = 4
+  CAMRY = 5
+  CAMRYH = 6
+  CAMRY_TSS2 = 7
+  CAMRYH_TSS2 = 8
+  CHR = 9
+  CHRH = 10
+  COROLLA = 11
+  COROLLA_TSS2 = 12
+  COROLLAH_TSS2 = 13
+  HIGHLANDER = 14
+  HIGHLANDER_TSS2 = 15
+  HIGHLANDERH = 16
+  HIGHLANDERH_TSS2 = 17
+  PRIUS = 18
+  PRIUS_V = 19
+  PRIUS_TSS2 = 20
+  RAV4 = 21
+  RAV4H = 22
+  RAV4_TSS2 = 23
+  RAV4H_TSS2 = 24
+  MIRAI = 25
+  SIENNA = 26
 
   # Lexus
-  LEXUS_CTH = "Lexus CT Hybrid 2018"
-  LEXUS_ESH = "Lexus ES Hybrid 2018"
-  LEXUS_ES_TSS2 = "Lexus ES 2019"
-  LEXUS_ESH_TSS2 = "Lexus ES Hybrid 2019"
-  LEXUS_IS = "Lexus IS 2018"
-  LEXUS_NX = "Lexus NX 2018"
-  LEXUS_NXH = "Lexus NX Hybrid 2018"
-  LEXUS_NX_TSS2 = "Lexus NX 2020"
-  LEXUS_RC = "Lexus RC 2020"
-  LEXUS_RX = "Lexus RX 2016"
-  LEXUS_RXH = "Lexus RX Hybrid 2017"
-  LEXUS_RX_TSS2 = "Lexus RX 2020"
-  LEXUS_RXH_TSS2 = "Lexus RX Hybrid 2020"
+  LEXUS_CTH = 27
+  LEXUS_ESH = 28
+  LEXUS_ES_TSS2 = 29
+  LEXUS_ESH_TSS2 = 30
+  LEXUS_IS = 31
+  LEXUS_NX = 32
+  LEXUS_NXH = 33
+  LEXUS_NX_TSS2 = 33
+  LEXUS_RC = 34
+  LEXUS_RX = 35
+  LEXUS_RXH = 36
+  LEXUS_RX_TSS2 = 37
+  LEXUS_RXH_TSS2 = 38
 
 
 CAR_INFO = {
-  CAR.ALPHARD_TSS2: CarInfo({2019, 2020}),
-  CAR.AVALON: CarInfo({2016, 2017, 2018, 2019, 2020, 2021}, 'TSS-P'),
-  CAR.AVALON_2019: CarInfo({2022}, 'TSS-P'),
-  CAR.AVALONH_2019: CarInfo({2019, 2020, 2021}, 'TSS-P'),
-  CAR.AVALON_TSS2: CarInfo({2022}),
-  CAR.CAMRY: CarInfo({2018, 2019, 2020}),
-  CAR.CAMRYH: CarInfo({2018, 2019, 2020}),
-  CAR.CAMRY_TSS2: CarInfo({2021, 2022}),
-  CAR.CAMRYH_TSS2: CarInfo({2021, 2022}),
-  CAR.CHR: CarInfo({2017, 2018, 2019, 2020, 2021}),
-  CAR.CHRH: CarInfo({2017, 2018, 2019}),
-  CAR.COROLLA: CarInfo({2017, 2018, 2019}),
-  CAR.COROLLA_TSS2: CarInfo({2020, 2021, 2022}),
-  CAR.COROLLAH_TSS2: CarInfo({2020, 2021, 2022}),
-  CAR.HIGHLANDER: CarInfo({2017, 2018, 2019}),
-  CAR.HIGHLANDER_TSS2: CarInfo({2020, 2021, 2022}),
-  CAR.HIGHLANDERH: CarInfo({2017, 2018, 2019}),
-  CAR.HIGHLANDERH_TSS2: CarInfo({2020, 2021, 2022}),
-  CAR.PRIUS: CarInfo({2016, 2017, 2018, 2019, 2020}, 'TSS-P'),  # TODO: Prius Prime is lost here (supports All packages)
-  CAR.PRIUS_V: CarInfo({2017}, 'TSS-P'),
-  CAR.PRIUS_TSS2: CarInfo({2021, 2022}),
-  CAR.RAV4: CarInfo({2016, 2017, 2018}, 'TSS-P'),
-  CAR.RAV4H: CarInfo({2016, 2017, 2018}, 'TSS-P'),
-  CAR.RAV4_TSS2: CarInfo({2019, 2020, 2021}),
-  CAR.RAV4H_TSS2: CarInfo({2019, 2020, 2021}),
-  CAR.MIRAI: CarInfo({2021}),
-  CAR.SIENNA: CarInfo({2018, 2019, 2020}),
+  # Toyota
+  CAR.ALPHARD_TSS2: CarInfo("Toyota Alphard 2020", {2019, 2020}),
+  CAR.AVALON: CarInfo("Toyota Avalon 2016", {2016, 2017, 2018, 2019, 2020, 2021}, 'TSS-P'),
+  CAR.AVALON_2019: CarInfo("Toyota Avalon 2019", {2022}, 'TSS-P'),
+  CAR.AVALONH_2019: CarInfo("Toyota Avalon Hybrid 2019", {2019, 2020, 2021}, 'TSS-P'),
+  CAR.AVALON_TSS2: CarInfo("Toyota Avalon 2022", {2022}),
+  CAR.CAMRY: CarInfo("Toyota Camry 2018", {2018, 2019, 2020}),
+  CAR.CAMRYH: CarInfo("Toyota Camry Hybrid 2018", {2018, 2019, 2020}),
+  CAR.CAMRY_TSS2: CarInfo("Toyota Camry 2021", {2021, 2022}),  # TSS 2.5
+  CAR.CAMRYH_TSS2: CarInfo("Toyota Camry Hybrid 2021", {2021, 2022}),
+  CAR.CHR: CarInfo("Toyota C-HR 2018", {2017, 2018, 2019, 2020, 2021}),
+  CAR.CHRH: CarInfo("Toyota C-HR Hybrid 2018", {2017, 2018, 2019}),
+  CAR.COROLLA: CarInfo("Toyota Corolla 2017", {2017, 2018, 2019}),
+  CAR.COROLLA_TSS2: CarInfo("Toyota Corolla TSS2 2019", {2020, 2021, 2022}),
+  # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
+  CAR.COROLLAH_TSS2: CarInfo("Toyota Corolla Hybrid TSS2 2019", {2020, 2021, 2022}),
+  CAR.HIGHLANDER: CarInfo("Toyota Highlander 2017", {2017, 2018, 2019}),
+  CAR.HIGHLANDER_TSS2: CarInfo("Toyota Highlander 2020", {2020, 2021, 2022}),
+  CAR.HIGHLANDERH: CarInfo("Toyota Highlander Hybrid 2018", {2017, 2018, 2019}),
+  CAR.HIGHLANDERH_TSS2: CarInfo("Toyota Highlander Hybrid 2020", {2020, 2021, 2022}),
+  CAR.PRIUS: CarInfo("Toyota Prius 2017", {2016, 2017, 2018, 2019, 2020}, 'TSS-P'),  # TODO: Prius Prime is lost here (supports All packages)
+  CAR.PRIUS_V: CarInfo("Toyota Prius v 2017", {2017}, 'TSS-P'),
+  CAR.PRIUS_TSS2: CarInfo("Toyota Prius Prime TSS2 2021", {2021, 2022}),
+  CAR.RAV4: CarInfo("Toyota RAV4 2017", {2016, 2017, 2018}, 'TSS-P'),
+  CAR.RAV4H: CarInfo("Toyota RAV4 Hybrid 2017", {2016, 2017, 2018}, 'TSS-P'),
+  CAR.RAV4_TSS2: CarInfo("Toyota RAV4 2019", {2019, 2020, 2021}),
+  CAR.RAV4H_TSS2: CarInfo("Toyota RAV4 Hybrid 2019", {2019, 2020, 2021}),
+  CAR.MIRAI: CarInfo("Toyota Mirai 2021", {2021}),  # TSS 2.5
+  CAR.SIENNA: CarInfo("Toyota Sienna 2018", {2018, 2019, 2020}),
+
+  # Lexus
+  CAR.LEXUS_CTH: CarInfo("Lexus CT Hybrid 2018", {2017, 2018}, 'LSS'),
+  CAR.LEXUS_ESH: CarInfo("Lexus ES Hybrid 2018", {2017, 2018}, 'LSS'),
+  CAR.LEXUS_ES_TSS2: CarInfo("Lexus ES 2019", {2019, 2020, 2021}),
+  CAR.LEXUS_ESH_TSS2: CarInfo("Lexus ES Hybrid 2019", {2019, 2020, 2021}),
+  CAR.LEXUS_IS: CarInfo("Lexus IS 2018", {2017, 2018, 2019}),
+  CAR.LEXUS_NX: CarInfo("Lexus NX 2018", {2018, 2019}),
+  CAR.LEXUS_NXH: CarInfo("Lexus NX Hybrid 2018", {2018, 2019}),
+  CAR.LEXUS_NX_TSS2: CarInfo("Lexus NX 2020", {2020}),
+  CAR.LEXUS_RC: CarInfo("Lexus RC 2020", {2020}),
+  CAR.LEXUS_RX: CarInfo("Lexus RX 2016", {2016, 2017, 2018}),
+  CAR.LEXUS_RXH: CarInfo("Lexus RX Hybrid 2017", {2016, 2017, 2018, 2019}),
+  CAR.LEXUS_RX_TSS2: CarInfo("Lexus RX 2020", {2020, 2021}),
+  CAR.LEXUS_RXH_TSS2: CarInfo("Lexus RX Hybrid 2020", {2020, 2021}),
 }
 
 # (addr, cars, bus, 1/freq*100, vl)
