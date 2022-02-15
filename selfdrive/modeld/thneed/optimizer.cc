@@ -67,7 +67,7 @@ int Thneed::optimize() {
     // replace program?
     if (g_programs.find(k->name) == g_programs.end()) {
       char fn[0x100];
-      snprintf(fn, sizeof(fn), "/data/openpilot/hyperthneed/replace/%s.cl", k->name.c_str());
+      snprintf(fn, sizeof(fn), "/data/openpilot/selfdrive/modeld/thneed/kernels/%s.cl", k->name.c_str());
       FILE *g = fopen(fn, "rb");
       if (g != NULL) {
         char *src[0x10000];
@@ -103,7 +103,7 @@ int Thneed::optimize() {
       }
     }
 
-    // hack in more arguments
+    // hack in accumulator to convolution_horizontal_reduced_reads_1x1
     if (k->name == "convolution_horizontal_reduced_reads_1x1") {
       k->arg_names.push_back("doAccumulate");
       short doAccumulate = 0;
@@ -113,6 +113,17 @@ int Thneed::optimize() {
       k->args.push_back(k->args[k->get_arg_num("output")]);
       k->args_size.push_back(8);
       k->num_args += 2;
+    }
+
+    // assert that parameters + batchNormBiases are not used
+    // since they aren't supported in custom replacement kernels
+    if (k->name == "convolution_horizontal_reduced_reads_1x1" ||
+        k->name == "convolution_horizontal_reduced_reads" ||
+        k->name == "convolution_horizontal_reduced_reads_5_outputs") {
+      string p1 = k->args[k->get_arg_num("parameters")];
+      string p2 = k->args[k->get_arg_num("batchNormBiases")];
+      assert(p1.length() == 8 && *((uint64_t*)p1.data()) == 0);
+      assert(p2.length() == 8 && *((uint64_t*)p2.data()) == 0);
     }
   }
 

@@ -533,6 +533,7 @@ uint64_t CLQueuedKernel::benchmark() {
   int old_record = thneed->record;
   thneed->record = 0;
   clFinish(thneed->command_queue);
+  // TODO: benchmarking at a lower level will make this more accurate
   for (int i = 0; i < 10; i++) {
     uint64_t sb = nanos_since_boot();
     exec();
