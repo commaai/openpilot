@@ -647,7 +647,10 @@ FW_VERSIONS = {
       b'\xf1\x00JS__ SCC H-CUP      1.00 1.02 95650-J3200         ',
       b'\xf1\x00JS__ SCC HNCUP      1.00 1.02 95650-J3100         ',
     ],
-    (Ecu.esp, 0x7d1, None): [b'\xf1\x00\x00\x00\x00\x00\x00\x00', ],
+    (Ecu.esp, 0x7d1, None): [
+      b'\xf1\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x816V8RAC00121.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
+    ],
     (Ecu.engine, 0x7e0, None): [
       b'\x01TJS-JNU06F200H0A',
       b'\x01TJS-JDK06F200H0A',
