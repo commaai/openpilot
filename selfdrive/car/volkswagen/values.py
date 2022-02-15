@@ -105,7 +105,7 @@ CAR_INFO = {
     CarInfo("Volkswagen Jetta", {2018, 2019, 2020}, "Driver Assistance"),
     CarInfo("Volkswagen Jetta GLI", {2021}, "Driver Assistance"),
   },
-  CAR.PASSAT_MK8: CarInfo("Volkswagen PASSAT", {2016, 2017, 2018}, "Driver Assistance"),
+  CAR.PASSAT_MK8: CarInfo("Volkswagen Passat", {2016, 2017, 2018}, "Driver Assistance"),
   CAR.POLO_MK6: CarInfo("Volkswagen Polo", {2020}, "Driver Assistance"),
   CAR.TAOS_MK1: CarInfo("Volkswagen Taos", {2022}, "Driver Assistance"),
   CAR.TCROSS_MK1: CarInfo("Volkswagen T-Cross", {2021}, "Driver Assistance"),
