@@ -184,7 +184,7 @@ void MapPanel::updateCurrentRoute() {
 }
 
 void MapPanel::parseResponse(const QString &response, bool success) {
-  stack->setCurrentIndex(uiState()->prime_type ? 0 : 1);
+  stack->setCurrentIndex((uiState()->prime_type || success) ? 0 : 1);
 
   if (!success) {
     return;
