@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <vector>
+#include <atomic>
 
 #include <OMX_Component.h>
 extern "C" {
@@ -32,6 +33,7 @@ public:
 
 private:
   void wait_for_state(OMX_STATETYPE state);
+  static void write_handler(OmxEncoder *e);
   static void handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf);
 
   int width, height, fps;
@@ -41,6 +43,7 @@ private:
   bool dirty = false;
   bool write = false;
   int counter = 0;
+  std::thread write_handler_thread;
 
   const char* filename;
   FILE *of = nullptr;

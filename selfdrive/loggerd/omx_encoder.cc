@@ -155,7 +155,6 @@ static const char* omx_color_fomat_name(uint32_t format) {
 
 
 // ***** encoder functions *****
-
 OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write) {
   this->filename = filename;
   this->write = write;
@@ -327,6 +326,23 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   }
 }
 
+void OmxEncoder::write_handler(OmxEncoder *e){
+  while (true) {
+    OMX_BUFFERHEADERTYPE *out_buf;
+
+    if (!e->done_out.try_pop(out_buf, 1)) {
+      continue;
+    }
+
+    OmxEncoder::handle_out_buf(e, out_buf);
+
+    if (out_buf->nFlags & OMX_BUFFERFLAG_EOS) {
+      break;
+    }
+  }
+}
+
+
 void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
   int err;
   uint8_t *buf_data = out_buf->pBuffer + out_buf->nOffset;
@@ -459,15 +475,6 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 
   OMX_CHECK(OMX_EmptyThisBuffer(this->handle, in_buf));
 
-  // pump output
-  while (true) {
-    OMX_BUFFERHEADERTYPE *out_buf;
-    if (!this->done_out.try_pop(out_buf)) {
-      break;
-    }
-    handle_out_buf(this, out_buf);
-  }
-
   this->dirty = true;
 
   this->counter++;
@@ -524,6 +531,10 @@ void OmxEncoder::encoder_open(const char* path) {
   assert(lock_fd >= 0);
   close(lock_fd);
 
+  // start writer thread
+  write_handler_thread = std::thread(OmxEncoder::write_handler, this);
+
+
   this->is_open = true;
   this->counter = 0;
 }
@@ -541,17 +552,10 @@ void OmxEncoder::encoder_close() {
 
       OMX_CHECK(OMX_EmptyThisBuffer(this->handle, in_buf));
 
-      while (true) {
-        OMX_BUFFERHEADERTYPE *out_buf = this->done_out.pop();
-
-        handle_out_buf(this, out_buf);
-
-        if (out_buf->nFlags & OMX_BUFFERFLAG_EOS) {
-          break;
-        }
-      }
       this->dirty = false;
     }
+
+    write_handler_thread.join();
 
     if (this->remuxing) {
       av_write_trailer(this->ofmt_ctx);
