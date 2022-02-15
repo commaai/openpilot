@@ -528,6 +528,22 @@ cl_int CLQueuedKernel::exec() {
     kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);
 }
 
+uint64_t CLQueuedKernel::benchmark() {
+  uint64_t ret = 0;
+  int old_record = thneed->record;
+  thneed->record = 0;
+  clFinish(thneed->command_queue);
+  for (int i = 0; i < 10; i++) {
+    uint64_t sb = nanos_since_boot();
+    exec();
+    clFinish(thneed->command_queue);
+    uint64_t et = nanos_since_boot() - sb;
+    if (ret == 0 || et < ret) ret = et;
+  }
+  thneed->record = old_record;
+  return ret;
+}
+
 void CLQueuedKernel::debug_print(bool verbose) {
   printf("%p %56s -- ", kernel, name.c_str());
   for (int i = 0; i < work_dim; i++) {

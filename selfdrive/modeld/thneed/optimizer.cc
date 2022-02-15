@@ -210,6 +210,37 @@ int Thneed::optimize() {
 
     printf("optimize %lu -> %lu\n", start_size, kq.size());
   } while (kq.size() != start_size);
+
+  size_t work_group_size = 0;
+  clGetDeviceInfo(device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(work_group_size), &work_group_size, NULL);
+  printf("max work group size %lu\n", work_group_size);
+
+  // local work group optimizer
+  for (auto &k : kq) {
+    // only do it for convs, since others might share memory
+    if (k->name.rfind("convolution_", 0) == 0) {
+      int best = -1;
+      if (k->local_work_size[0] * k->local_work_size[1] * k->local_work_size[2] < work_group_size/2) {
+        uint64_t base_time = k->benchmark();
+        uint64_t best_time = base_time;
+        for (int i = 0; i < 3; i++) {
+          k->local_work_size[i] *= 2;
+          uint64_t this_time = k->benchmark();
+          if (this_time < best_time) {
+            best = i;
+            best_time = this_time;
+          }
+          k->local_work_size[i] /= 2;
+        }
+        if (best != -1) {
+          k->local_work_size[best] *= 2;
+          //printf("%s %.2f ms doubled %d to %.2f ms\n", k->name.c_str(), base_time/1e6, best, best_time/1e6);
+        }
+      }
+
+    }
+  }
+
   return 0;
 }
 
