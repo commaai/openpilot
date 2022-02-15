@@ -90,29 +90,29 @@ class CAR(Enum):
 
 
 CAR_INFO = {
-  CAR.ACCORD: CarInfo("HONDA ACCORD 2018", {2018, 2019, 2020, 2021}),
-  CAR.ACCORDH: CarInfo("HONDA ACCORD HYBRID 2018", {2018, 2019, 2020, 2021}),
-  CAR.CIVIC: CarInfo("HONDA CIVIC 2016", {2016, 2017, 2018}, "Honda Sensing"),  # TODO: there's also the identical coupe
-  CAR.CIVIC_BOSCH: CarInfo("HONDA CIVIC (BOSCH) 2019", {2019, 2020}),
-  CAR.CIVIC_BOSCH_DIESEL: CarInfo("HONDA CIVIC SEDAN 1.6 DIESEL 2019", {2019, 2020}),  # TODO: same as civic bosch but has no alc under 12 mph exception
-  CAR.ACURA_ILX: CarInfo("ACURA ILX 2016", {2016, 2017, 2018, 2019}, "AcuraWatch Plus"),
-  CAR.CRV: CarInfo("HONDA CR-V 2016", {2015, 2016}, "Touring"),
-  CAR.CRV_5G: CarInfo("HONDA CR-V 2017", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
-  CAR.CRV_EU: CarInfo("HONDA CR-V EU 2016", {2015, 2016}, "Touring"),  # Euro version of CRV Touring
-  CAR.CRV_HYBRID: CarInfo("HONDA CR-V HYBRID 2019", {2017, 2018, 2019}, "Honda Sensing"),
-  CAR.FIT: CarInfo("HONDA FIT 2018", {2018, 2019}, "Honda Sensing"),
-  CAR.FREED: CarInfo("HONDA FREED 2020", {2020}, "Honda Sensing"),
-  CAR.HRV: CarInfo("HONDA HRV 2019", {2019, 2020}, "Honda Sensing"),
-  CAR.ODYSSEY: CarInfo("HONDA ODYSSEY 2018", {2018, 2019, 2020}, "Honda Sensing"),
+  CAR.ACCORD: CarInfo("Honda Accord", {2018, 2019, 2020, 2021}),
+  CAR.ACCORDH: CarInfo("Honda Accord Hybrid", {2018, 2019, 2020, 2021}),
+  CAR.CIVIC: CarInfo("Honda Civic", {2016, 2017, 2018}, "Honda Sensing"),  # TODO: there's also the identical coupe
+  CAR.CIVIC_BOSCH: CarInfo("Honda Civic (Bosch)", {2019, 2020}),
+  CAR.CIVIC_BOSCH_DIESEL: CarInfo("Honda Civic Sedan 1.6 DIESEL", {2019, 2020}),  # TODO: same as civic bosch but has no alc under 12 mph exception
+  CAR.ACURA_ILX: CarInfo("Acura ILX", {2016, 2017, 2018, 2019}, "AcuraWatch Plus"),
+  CAR.CRV: CarInfo("Honda CR-V", {2015, 2016}, "Touring"),
+  CAR.CRV_5G: CarInfo("Honda CR-V", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
+  CAR.CRV_EU: CarInfo("Honda CR-V EU", {2015, 2016}, "Touring"),  # Euro version of CRV Touring
+  CAR.CRV_HYBRID: CarInfo("Honda CR-V Hybrid", {2017, 2018, 2019}, "Honda Sensing"),
+  CAR.FIT: CarInfo("Honda Fit", {2018, 2019}, "Honda Sensing"),
+  CAR.FREED: CarInfo("Honda Freed", {2020}, "Honda Sensing"),
+  CAR.HRV: CarInfo("Honda HR-V", {2019, 2020}, "Honda Sensing"),
+  CAR.ODYSSEY: CarInfo("Honda Odyssey", {2018, 2019, 2020}, "Honda Sensing"),
   # TODO: Duplicate of above
-  CAR.ODYSSEY_CHN: CarInfo("HONDA ODYSSEY CHN 2019", {2018, 2019, 2020}, "Honda Sensing"),
-  CAR.ACURA_RDX: CarInfo("ACURA RDX 2018", {2016, 2017, 2018}, "AcuraWatch Plus"),
-  CAR.ACURA_RDX_3G: CarInfo("ACURA RDX 2020", {2019, 2020, 2021}),
-  CAR.PILOT: CarInfo("HONDA PILOT 2017", {2016, 2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
-  CAR.PASSPORT: CarInfo("HONDA PASSPORT 2021", {2019, 2020, 2021}),
-  CAR.RIDGELINE: CarInfo("HONDA RIDGELINE 2017", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
-  CAR.INSIGHT: CarInfo("HONDA INSIGHT 2019", {2019, 2020, 2021}),
-  CAR.HONDA_E: CarInfo("HONDA E 2020", {2020}),
+  CAR.ODYSSEY_CHN: CarInfo("Honda Odyssey CHN", {2018, 2019, 2020}, "Honda Sensing"),
+  CAR.ACURA_RDX: CarInfo("Acura RDX", {2016, 2017, 2018}, "AcuraWatch Plus"),
+  CAR.ACURA_RDX_3G: CarInfo("Acura RDX", {2019, 2020, 2021}),
+  CAR.PILOT: CarInfo("Honda Pilot", {2016, 2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
+  CAR.PASSPORT: CarInfo("Honda Passport", {2019, 2020, 2021}),
+  CAR.RIDGELINE: CarInfo("Honda Ridgeline", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
+  CAR.INSIGHT: CarInfo("Honda Insight", {2019, 2020, 2021}),
+  CAR.HONDA_E: CarInfo("Honda E", {2020}),
 }
 
 
