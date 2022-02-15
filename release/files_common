@@ -426,7 +426,9 @@ selfdrive/modeld/transforms/transform.cl
 selfdrive/modeld/thneed/thneed.*
 selfdrive/modeld/thneed/serialize.cc
 selfdrive/modeld/thneed/compile.cc
+selfdrive/modeld/thneed/optimizer.cc
 selfdrive/modeld/thneed/include/*
+selfdrive/modeld/thneed/kernels/*.cl
 
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
