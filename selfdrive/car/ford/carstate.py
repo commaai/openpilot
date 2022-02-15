@@ -1,11 +1,12 @@
 from cereal import car
-from opendbc.can.parser import CANParser
 from common.numpy_fast import mean
-from selfdrive.config import Conversions as CV
-from selfdrive.car.interfaces import CarStateBase
+from opendbc.can.parser import CANParser
 from selfdrive.car.ford.values import DBC
+from selfdrive.car.interfaces import CarStateBase
+from selfdrive.config import Conversions as CV
 
 WHEEL_RADIUS = 0.33
+
 
 class CarState(CarStateBase):
   def update(self, cp):
@@ -18,14 +19,15 @@ class CarState(CarStateBase):
       cp.vl["WheelSpeed_CG1"]["WhlRr_W_Meas"],
       unit=WHEEL_RADIUS,
     )
+
     ret.vEgoRaw = mean([ret.wheelSpeeds.rr, ret.wheelSpeeds.rl, ret.wheelSpeeds.fr, ret.wheelSpeeds.fl])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = not ret.vEgoRaw > 0.001
+    ret.standstill = ret.vEgoRaw < 0.001
     ret.steeringAngleDeg = cp.vl["Steering_Wheel_Data_CG1"]["SteWhlRelInit_An_Sns"]
-    ret.steeringPressed = not cp.vl["Lane_Keep_Assist_Status"]["LaHandsOff_B_Actl"]
-    ret.steerError = cp.vl["Lane_Keep_Assist_Status"]["LaActDeny_B_Actl"] == 1
+    ret.steeringPressed = not bool(cp.vl["Lane_Keep_Assist_Status"]["LaHandsOff_B_Actl"])
+    ret.steerError = bool(cp.vl["Lane_Keep_Assist_Status"]["LaActDeny_B_Actl"])
     ret.cruiseState.speed = cp.vl["Cruise_Status"]["Set_Speed"] * CV.MPH_TO_MS
-    ret.cruiseState.enabled = not (cp.vl["Cruise_Status"]["Cruise_State"] in (0, 3))
+    ret.cruiseState.enabled = cp.vl["Cruise_Status"]["Cruise_State"] not in (0, 3)
     ret.cruiseState.available = cp.vl["Cruise_Status"]["Cruise_State"] != 0
     ret.gas = cp.vl["EngineData_14"]["ApedPosScal_Pc_Actl"] / 100.
     ret.gasPressed = ret.gas > 1e-6
