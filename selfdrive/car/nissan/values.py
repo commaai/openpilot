@@ -1,4 +1,6 @@
-from selfdrive.car import dbc_dict
+from enum import Enum
+
+from selfdrive.car import CarInfo, dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -10,15 +12,25 @@ class CarControllerParams:
   LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
   STEER_THRESHOLD = 1.0
 
-class CAR:
-  XTRAIL = "NISSAN X-TRAIL 2017"
-  LEAF = "NISSAN LEAF 2018"
+
+class CAR(Enum):
+  XTRAIL = 0
+  LEAF = 1
   # Leaf with ADAS ECU found behind instrument cluster instead of glovebox
   # Currently the only known difference between them is the inverted seatbelt signal.
-  LEAF_IC = "NISSAN LEAF 2018 Instrument Cluster"
-  ROGUE = "NISSAN ROGUE 2019"
-  ALTIMA = "NISSAN ALTIMA 2020"
+  LEAF_IC = 2
+  ROGUE = 3
+  ALTIMA = 4
 
+
+CAR_INFO = {
+  CAR.XTRAIL: CarInfo("Nissan X-Trail", {2017}, "ProPILOT"),
+  CAR.LEAF: CarInfo("Nissan Leaf", {2018, 2019, 2020, 2021, 2022}, "ProPILOT"),
+  # TODO: ensure we can leave out cars when generating docs
+  # CAR.LEAF_IC: CarInfo("Nissan Leaf Instrument Cluster", {2018, 2019, 2020, 2021, 2022}, "ProPILOT"),
+  CAR.ROGUE: CarInfo("Nissan Rogue", {2018, 2019, 2020}),
+  CAR.ALTIMA: CarInfo("Nissan Altima", {2019, 2020}, "ProPILOT"),
+}
 
 FINGERPRINTS = {
   CAR.XTRAIL: [
