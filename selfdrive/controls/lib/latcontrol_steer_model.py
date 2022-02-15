@@ -11,10 +11,6 @@ NX = 2
 NU = 1
 N_live_param = 1
 
-# TODO:
-# - update model structure?
-# - get angle measurements sometimes?
-
 
 class LatControlSteerModel(LatControl):
   def __init__(self, CP, CI):
@@ -27,13 +23,12 @@ class LatControlSteerModel(LatControl):
     self.A = model_param[0:NX*NX].reshape((NX, NX), order='F')
     B = model_param[NX*NX:NX*(NX+NU)].reshape((NX, NU), order='F')
     self.R = model_param[NX*(NX+NU):].reshape((NX, N_live_param), order='F')
-    self.M = - np.linalg.solve(B.T @ B, B.T)
+    # self.M = - np.linalg.solve(B.T @ B, B.T)
     self.B = B.reshape((NX,))
 
     self.W = np.diag([1e0, 1e-1])
-    self.PHI = (DT_CTRL * self.B).reshape((2,1))
-    self.M_tilde = - 1/(self.PHI.T @ self.W @ self.PHI) * (self.PHI.T@self.W)
-    self.get_steer_feedforward = CI.get_steer_feedforward_function()
+    Phi = (DT_CTRL * self.B).reshape((2,1))
+    self.M_tilde = - 1/(Phi.T @ self.W @ Phi) * (Phi.T@self.W)
     self.torque = 0.0
 
   def reset(self):
@@ -73,12 +68,12 @@ class LatControlSteerModel(LatControl):
       #           (self.xcurrent - np.array([angle_steers_des_no_offset, .95*self.xcurrent[1,]]))/DT_CTRL )
 
       #
-      AxplusRp = (self.A @ self.xcurrent + self.R @ live_param)
       desired_angle_rate = math.degrees(VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, params.roll))
 
       # torque = argmin norm(xcurrent + DT_CTRL * (A*xcurrent + R*live_param + B*u) - [desired_angle, desired_angle_rate])_W
-      y = (self.xcurrent - np.array([angle_steers_des_no_offset, desired_angle_rate]) + DT_CTRL * AxplusRp).reshape((2,1))
-      torque_np = self.M_tilde @ y
+      AxplusRp = (self.A @ self.xcurrent + self.R @ live_param)
+      torque_np = self.M_tilde @ (self.xcurrent -
+                      np.array([angle_steers_des_no_offset, desired_angle_rate]) + DT_CTRL * AxplusRp).reshape((2,1))
 
       # TODO: remove clipping later, good for prototype testing!
       # When removing, use last_actuators instead of self.torque to update xcurrent
