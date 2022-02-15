@@ -220,6 +220,7 @@ FW_VERSIONS = {
       b'PYKE-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
+
   CAR.MAZDA6: {
     (Ecu.eps, 0x730, None): [
       b'GBEF-3210X-B-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
