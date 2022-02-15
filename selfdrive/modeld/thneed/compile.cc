@@ -18,13 +18,6 @@ int main(int argc, char* argv[]) {
   float traffic_convention[TRAFFIC_CONVENTION_LEN] = {0};
   float *input = (float*)calloc(0x1000000, sizeof(float));
 
-  // don't just input 0s
-  srand(0);
-  for (int i = 0; i < 0x1000000; i++) {
-    input[i] = rand();
-    extra[i] = rand();
-  }
-
   mdl.addRecurrent(state, TEMPORAL_SIZE);
   mdl.addDesire(desire, DESIRE_LEN);
   mdl.addTrafficConvention(traffic_convention, TRAFFIC_CONVENTION_LEN);
