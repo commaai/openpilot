@@ -328,12 +328,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
 
 void OmxEncoder::write_handler(OmxEncoder *e){
   while (true) {
-    OMX_BUFFERHEADERTYPE *out_buf;
-
-    if (!e->done_out.try_pop(out_buf, 1)) {
-      continue;
-    }
-
+    OMX_BUFFERHEADERTYPE *out_buf = e->done_out.pop();
     OmxEncoder::handle_out_buf(e, out_buf);
 
     if (out_buf->nFlags & OMX_BUFFERFLAG_EOS) {
