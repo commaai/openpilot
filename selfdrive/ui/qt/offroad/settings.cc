@@ -199,7 +199,7 @@ void DevicePanel::reboot() {
   if (!uiState()->engaged()) {
     if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
       // Check engaged again in case it changed while the dialog was open
-      if (uiState()->status == UIStatus::STATUS_DISENGAGED) {
+      if (!uiState()->engaged()) {
         Params().putBool("DoReboot", true);
       }
     }
@@ -212,7 +212,7 @@ void DevicePanel::poweroff() {
   if (!uiState()->engaged()) {
     if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
       // Check engaged again in case it changed while the dialog was open
-      if (uiState()->status == UIStatus::STATUS_DISENGAGED) {
+      if (!uiState()->engaged()) {
         Params().putBool("DoShutdown", true);
       }
     }
