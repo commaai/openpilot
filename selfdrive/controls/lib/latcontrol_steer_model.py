@@ -8,7 +8,7 @@ from common.realtime import DT_CTRL
 from common.numpy_fast import clip
 
 NX = 2
-NU = 1
+NU = 2
 N_live_param = 1
 
 
@@ -21,14 +21,13 @@ class LatControlSteerModel(LatControl):
     model_param = np.asarray(list(CP.lateralTuning.steerModel.modelparam))
 
     self.A = model_param[0:NX*NX].reshape((NX, NX), order='F')
-    B = model_param[NX*NX:NX*(NX+NU)].reshape((NX, NU), order='F')
+    self.B = model_param[NX*NX:NX*(NX+NU)].reshape((NX, NU), order='F')
     self.R = model_param[NX*(NX+NU):].reshape((NX, N_live_param), order='F')
     # self.M = - np.linalg.solve(B.T @ B, B.T)
-    self.B = B.reshape((NX,))
 
     self.W = np.diag([1e0, 1e-1])
-    Phi = (DT_CTRL * self.B).reshape((2,1))
-    self.M_tilde = - 1/(Phi.T @ self.W @ Phi) * (Phi.T@self.W)
+    # self.PHI = (DT_CTRL * self.B).reshape((2,1))
+    # self.M_tilde = - 1/(self.PHI.T @ self.W @ self.PHI) * (self.PHI.T@self.W)
     self.torque = 0.0
 
   def reset(self):
@@ -71,8 +70,12 @@ class LatControlSteerModel(LatControl):
       desired_angle_rate = math.degrees(VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, params.roll))
 
       # torque = argmin norm(xcurrent + DT_CTRL * (A*xcurrent + R*live_param + B*u) - [desired_angle, desired_angle_rate])_W
+      B_tilde = self.B @ np.array([1, 2*np.abs(self.torque)])
+      Phi = (DT_CTRL * B_tilde).reshape((2,1))
+      M_tilde = - 1/(Phi.T @ self.W @ Phi) * (Phi.T@self.W)
+
       AxplusRp = (self.A @ self.xcurrent + self.R @ live_param)
-      torque_np = self.M_tilde @ (self.xcurrent -
+      torque_np = M_tilde @ (self.xcurrent -
                       np.array([angle_steers_des_no_offset, desired_angle_rate]) + DT_CTRL * AxplusRp).reshape((2,1))
 
       # TODO: remove clipping later, good for prototype testing!
@@ -88,7 +91,8 @@ class LatControlSteerModel(LatControl):
       output_steer = float(clip(torque_np, -1.0, 1.0))
 
       # update state estimate with forward simulation
-      self.xcurrent = self.xcurrent + DT_CTRL * (AxplusRp + (self.B * output_steer))
+      self.xcurrent = self.xcurrent + DT_CTRL * (AxplusRp + (self.B @ np.array([output_steer, output_steer *abs(output_steer)])))
+      # self.xcurrent = self.xcurrent + DT_CTRL * (AxplusRp + (self.B * output_steer))
 
       self.torque = output_steer
       model_log.active = True
