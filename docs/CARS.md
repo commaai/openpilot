@@ -1,7 +1,8 @@
 # Supported Cars
+
 Cars are organized into three tiers:
 
-- ⭐ Gold - a high-quality openpilot experience
+- 🥇 Gold - a high-quality openpilot experience
 - 🥈 Silver - a pretty good, albeit limited experience
 - 🥉 Bronze - a significantly limited experience
 
@@ -12,24 +13,10 @@ Description of terms:
 - Lateral to 0mph - openpilot can control the steering wheel down to 0 mph
 - Good lateral torque - car has enough steering torque for comfortable highway driving
 
-
 ## Gold Cars
 
 | Make    | Model (US Market Reference) | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Lateral to 0mph | Good lateral torque |
 |---------|-----------------------------|-------------------|:----------------------:|:--------------------:|:---------------:|:-------------------:|
-| Toyota  | Corolla 2020-22             | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Corolla Hybrid 2020-22      | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Corolla Hatchback 2019-22   | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Camry Hybrid 2021-22        | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Highlander 2020-22          | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Highlander Hybrid 2020-22   | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Mirai 2021                  | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Prius 2021-22               | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Prius Prime 2021-22         | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Rav4 2019-21                | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Rav4 Hybrid 2019-21         | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Alphard 2019-20             | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
-| Toyota  | Avalon 2022                 | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
 | Hyundai | Sonata 2020-22              | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
 | Hyundai | Palisade 2020-21            | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
 | Lexus   | ES 2019-21                  | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
@@ -38,6 +25,19 @@ Description of terms:
 | Lexus   | RX 2020-21                  | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
 | Lexus   | RX Hybrid 2020-21           | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
 | Lexus   | UX Hybrid 2019-21           | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | Alphard 2019-20             | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | Avalon 2022                 | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | Camry Hybrid 2021-22        | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | Corolla 2020-22             | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | Corolla Hybrid 2020-22      | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | Corolla Hatchback 2019-22   | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | Highlander 2020-22          | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | Highlander Hybrid 2020-22   | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | Mirai 2021                  | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | Prius 2021-22               | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | Prius Prime 2021-22         | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | RAV4 2019-21                | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
+| Toyota  | RAV4 Hybrid 2019-21         | All               |           ⭐            |          ⭐           |        ⭐        |          ⭐          |
 
 ## Silver Cars
 
