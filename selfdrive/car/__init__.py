@@ -1,9 +1,21 @@
 # functions common among cars
+from enum import Enum
+
 from cereal import car
 from common.numpy_fast import clip
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
+
+
+class CarEnum(Enum):
+  def __eq__(self, other):
+    if isinstance(other, int):
+      return self._value_ == other
+    return self is other
+
+  def __hash__(self):
+    return hash(self._name_)
 
 
 def gen_empty_fingerprint():

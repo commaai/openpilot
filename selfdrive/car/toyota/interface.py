@@ -18,7 +18,6 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
-    ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
     ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate]
 

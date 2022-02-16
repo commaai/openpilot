@@ -12,9 +12,9 @@ from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    can_define = CANDefine(DBC[CP.carModel]["pt"])
     self.shifter_values = can_define.dv["GEAR_PACKET"]["GEAR"]
-    self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.
+    self.eps_torque_scale = EPS_SCALE[CP.carModel] / 100.
 
     # On cars with cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
     # the signal is zeroed to where the steering angle is at start.
@@ -84,26 +84,26 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     ret.steerWarning = cp.vl["EPS_STATUS"]["LKA_STATE"] not in (1, 5)
 
-    if self.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
+    if self.CP.carModel in (CAR.LEXUS_IS, CAR.LEXUS_RC):
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["DSU_CRUISE"]["SET_SPEED"] * CV.KPH_TO_MS
     else:
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    if self.CP.carFingerprint in TSS2_CAR:
+    if self.CP.carModel in TSS2_CAR:
       self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
     # TODO: it is possible to avoid the lockout and gain stop and go if you
     # send your own ACC_CONTROL msg on startup with ACC_TYPE set to 1
-    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint not in (CAR.LEXUS_IS, CAR.LEXUS_RC)) or \
-       (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
+    if (self.CP.carModel not in TSS2_CAR and self.CP.carModel not in (CAR.LEXUS_IS, CAR.LEXUS_RC)) or \
+       (self.CP.carModel in TSS2_CAR and self.acc_type == 1):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
-    if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
+    if self.CP.carModel in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
       # receiving any special command. Also if interceptor is detected
       ret.cruiseState.standstill = False
@@ -177,7 +177,7 @@ class CarState(CarStateBase):
       signals.append(("GAS_PEDAL", "GAS_PEDAL"))
       checks.append(("GAS_PEDAL", 33))
 
-    if CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
+    if CP.carModel in (CAR.LEXUS_IS, CAR.LEXUS_RC):
       signals.append(("MAIN_ON", "DSU_CRUISE"))
       signals.append(("SET_SPEED", "DSU_CRUISE"))
       checks.append(("DSU_CRUISE", 5))
@@ -202,7 +202,7 @@ class CarState(CarStateBase):
       ]
       checks.append(("BSM", 1))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -217,8 +217,8 @@ class CarState(CarStateBase):
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
     ]
 
-    if CP.carFingerprint in TSS2_CAR:
+    if CP.carModel in TSS2_CAR:
       signals.append(("ACC_TYPE", "ACC_CONTROL"))
       checks.append(("ACC_CONTROL", 33))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 2)

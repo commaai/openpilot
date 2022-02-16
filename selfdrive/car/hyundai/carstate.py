@@ -10,11 +10,11 @@ from selfdrive.config import Conversions as CV
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    can_define = CANDefine(DBC[CP.carModel]["pt"])
 
-    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
+    if self.CP.carModel in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
-    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
+    elif self.CP.carModel in FEATURES["use_tcu_gears"]:
       self.shifter_values = can_define.dv["TCU12"]["CUR_GR"]
     else:  # preferred and elect gear methods use same definition
       self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
@@ -71,8 +71,8 @@ class CarState(CarStateBase):
     ret.brakePressed = cp.vl["TCS13"]["DriverBraking"] != 0
     ret.brakeHoldActive = cp.vl["TCS15"]["AVH_LAMP"] == 2 # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
 
-    if self.CP.carFingerprint in (HYBRID_CAR | EV_CAR):
-      if self.CP.carFingerprint in HYBRID_CAR:
+    if self.CP.carModel in (HYBRID_CAR | EV_CAR):
+      if self.CP.carModel in HYBRID_CAR:
         ret.gas = cp.vl["E_EMS11"]["CR_Vcu_AccPedDep_Pos"] / 254.
       else:
         ret.gas = cp.vl["E_EMS11"]["Accel_Pedal_Pos"] / 254.
@@ -83,11 +83,11 @@ class CarState(CarStateBase):
 
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection,
     # as this seems to be standard over all cars, but is not the preferred method.
-    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
+    if self.CP.carModel in FEATURES["use_cluster_gears"]:
       gear = cp.vl["CLU15"]["CF_Clu_Gear"]
-    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
+    elif self.CP.carModel in FEATURES["use_tcu_gears"]:
       gear = cp.vl["TCU12"]["CUR_GR"]
-    elif self.CP.carFingerprint in FEATURES["use_elect_gears"]:
+    elif self.CP.carModel in FEATURES["use_elect_gears"]:
       gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
     else:
       gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
@@ -95,7 +95,7 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     if not self.CP.openpilotLongitudinalControl:
-      if self.CP.carFingerprint in FEATURES["use_fca"]:
+      if self.CP.carModel in FEATURES["use_fca"]:
         ret.stockAeb = cp.vl["FCA11"]["FCA_CmdAct"] != 0
         ret.stockFcw = cp.vl["FCA11"]["CF_VSM_Warn"] == 2
       else:
@@ -201,7 +201,7 @@ class CarState(CarStateBase):
         ("SCC12", 50),
       ]
 
-      if CP.carFingerprint in FEATURES["use_fca"]:
+      if CP.carModel in FEATURES["use_fca"]:
         signals += [
           ("FCA_CmdAct", "FCA11"),
           ("CF_VSM_Warn", "FCA11"),
@@ -220,8 +220,8 @@ class CarState(CarStateBase):
       ]
       checks.append(("LCA11", 50))
 
-    if CP.carFingerprint in (HYBRID_CAR | EV_CAR):
-      if CP.carFingerprint in HYBRID_CAR:
+    if CP.carModel in (HYBRID_CAR | EV_CAR):
+      if CP.carModel in HYBRID_CAR:
         signals.append(("CR_Vcu_AccPedDep_Pos", "E_EMS11"))
       else:
         signals.append(("Accel_Pedal_Pos", "E_EMS11"))
@@ -236,20 +236,20 @@ class CarState(CarStateBase):
         ("EMS16", 100),
       ]
 
-    if CP.carFingerprint in FEATURES["use_cluster_gears"]:
+    if CP.carModel in FEATURES["use_cluster_gears"]:
       signals.append(("CF_Clu_Gear", "CLU15"))
       checks.append(("CLU15", 5))
-    elif CP.carFingerprint in FEATURES["use_tcu_gears"]:
+    elif CP.carModel in FEATURES["use_tcu_gears"]:
       signals.append(("CUR_GR", "TCU12"))
       checks.append(("TCU12", 100))
-    elif CP.carFingerprint in FEATURES["use_elect_gears"]:
+    elif CP.carModel in FEATURES["use_elect_gears"]:
       signals.append(("Elect_Gear_Shifter", "ELECT_GEAR"))
       checks.append(("ELECT_GEAR", 20))
     else:
       signals.append(("CF_Lvr_Gear", "LVR12"))
       checks.append(("LVR12", 100))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -276,4 +276,4 @@ class CarState(CarStateBase):
       ("LKAS11", 100)
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 2)

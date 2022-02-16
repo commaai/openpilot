@@ -66,9 +66,11 @@ def _get_interface_names():
   for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
     try:
       brand_name = car_folder.split('/')[-1]
-      model_names = __import__(f'selfdrive.car.{brand_name}.values', fromlist=['CAR']).CAR
+      models = __import__(f'selfdrive.car.{brand_name}.values', fromlist=['CAR']).CAR
+      for model in models:
+        model.make = brand_name.lower()
       # brand = getattr(car.CarParams.CarMake, brand_name)
-      brand_names[brand_name] = list(model_names)
+      brand_names[brand_name] = list(models)
     except (ImportError, OSError):
       pass
 
@@ -93,7 +95,7 @@ def fingerprint(logcan, sendcan):
     cached_params = Params().get("CarParamsCache")
     if cached_params is not None:
       cached_params = car.CarParams.from_bytes(cached_params)
-      if cached_params.carMake == car.CarParams.CarMake.mock:
+      if cached_params.carMake == "mock":
         cached_params = None
 
     if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:

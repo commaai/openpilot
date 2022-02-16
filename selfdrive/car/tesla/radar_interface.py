@@ -46,7 +46,7 @@ def get_radar_can_parser(CP):
       (msg_id_b, 8),
     ])
 
-  return CANParser(DBC[CP.carFingerprint]['radar'], signals, checks, CANBUS.radar)
+  return CANParser(DBC[CP.carModel]['radar'], signals, checks, CANBUS.radar)
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):

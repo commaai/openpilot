@@ -21,7 +21,6 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
-    ret.carName = "hyundai"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1]
 

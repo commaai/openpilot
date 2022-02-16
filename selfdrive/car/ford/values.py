@@ -1,13 +1,11 @@
-from enum import Enum
-
-from selfdrive.car import dbc_dict
+from selfdrive.car import CarEnum, dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
 MAX_ANGLE = 87.  # make sure we never command the extremes (0xfff) which cause latching fault
 
 
-class CAR(Enum):
+class CAR(CarEnum):
   FUSION = 0
 
 

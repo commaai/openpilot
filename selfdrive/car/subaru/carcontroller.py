@@ -13,7 +13,7 @@ class CarController():
     self.steer_rate_limited = False
 
     self.p = CarControllerParams(CP)
-    self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
+    self.packer = CANPacker(DBC[CP.carModel]['pt'])
 
   def update(self, c, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart):
 
@@ -33,7 +33,7 @@ class CarController():
       if not c.active:
         apply_steer = 0
 
-      if CS.CP.carFingerprint in PREGLOBAL_CARS:
+      if CS.CP.carModel in PREGLOBAL_CARS:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, frame, self.p.STEER_STEP))
       else:
         can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, frame, self.p.STEER_STEP))
@@ -43,7 +43,7 @@ class CarController():
 
     # *** alerts and pcm cancel ***
 
-    if CS.CP.carFingerprint in PREGLOBAL_CARS:
+    if CS.CP.carModel in PREGLOBAL_CARS:
       if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged

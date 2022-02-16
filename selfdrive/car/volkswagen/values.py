@@ -1,9 +1,8 @@
 from collections import defaultdict
-from enum import Enum
 from typing import Dict
 
 from cereal import car
-from selfdrive.car import dbc_dict
+from selfdrive.car import CarEnum, dbc_dict
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -63,7 +62,7 @@ MQB_LDW_MESSAGES = {
 # FW_VERSIONS for that existing CAR.
 # Exception: SEAT Leon and SEAT Ateca share a chassis code
 
-class CAR(Enum):
+class CAR(CarEnum):
   ARTEON_MK1 = 0          # Chassis AN, Mk1 VW Arteon and variants
   ATLAS_MK1 = 1           # Chassis CA, Mk1 VW Atlas and Atlas Cross Sport
   GOLF_MK7 = 2            # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants

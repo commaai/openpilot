@@ -1,5 +1,5 @@
-from enum import Enum
+from selfdrive.car import CarEnum
 
 
-class CAR(Enum):
+class CAR(CarEnum):
   MOCK = 0

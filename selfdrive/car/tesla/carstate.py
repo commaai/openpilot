@@ -10,7 +10,7 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     self.button_states = {button.event_type: False for button in BUTTONS}
-    self.can_define = CANDefine(DBC[CP.carFingerprint]['chassis'])
+    self.can_define = CANDefine(DBC[CP.carModel]['chassis'])
 
     # Needed by carcontroller
     self.msg_stw_actn_req = None
@@ -170,7 +170,7 @@ class CarState(CarStateBase):
       ("BrakeMessage", 50),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]['chassis'], signals, checks, CANBUS.chassis)
+    return CANParser(DBC[CP.carModel]['chassis'], signals, checks, CANBUS.chassis)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -182,4 +182,4 @@ class CarState(CarStateBase):
       # sig_address, frequency
       ("DAS_control", 40),
     ]
-    return CANParser(DBC[CP.carFingerprint]['chassis'], signals, checks, CANBUS.autopilot_chassis)
+    return CANParser(DBC[CP.carModel]['chassis'], signals, checks, CANBUS.autopilot_chassis)

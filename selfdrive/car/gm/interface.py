@@ -30,9 +30,9 @@ class CarInterface(CarInterfaceBase):
     return 0.04689655 * sigmoid * (v_ego + 10.028217)
 
   def get_steer_feedforward_function(self):
-    if self.CP.carFingerprint == CAR.VOLT:
+    if self.CP.carModel == CAR.VOLT:
       return self.get_steer_feedforward_volt
-    elif self.CP.carFingerprint == CAR.ACADIA:
+    elif self.CP.carModel == CAR.ACADIA:
       return self.get_steer_feedforward_acadia
     else:
       return CarInterfaceBase.get_steer_feedforward_default
@@ -40,7 +40,6 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-    ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.pcmCruise = False  # stock cruise control is kept off
 

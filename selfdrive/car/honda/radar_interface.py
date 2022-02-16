@@ -30,7 +30,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.radar_off_can:
       self.rcp = None
     else:
-      self.rcp = _create_nidec_can_parser(CP.carFingerprint)
+      self.rcp = _create_nidec_can_parser(CP.carModel)
     self.trigger_msg = 0x445
     self.updated_messages = set()
 

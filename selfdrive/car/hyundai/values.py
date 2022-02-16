@@ -1,7 +1,5 @@
-from enum import Enum
-
 from cereal import car
-from selfdrive.car import dbc_dict
+from selfdrive.car import CarEnum, dbc_dict
 Ecu = car.CarParams.Ecu
 
 # Steer torque limits
@@ -25,7 +23,7 @@ class CarControllerParams:
     self.STEER_DRIVER_FACTOR = 1
 
 
-class CAR(Enum):
+class CAR(CarEnum):
   # Hyundai
   ELANTRA = 0
   ELANTRA_2021 = 1

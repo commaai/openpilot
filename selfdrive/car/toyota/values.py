@@ -1,8 +1,8 @@
 from collections import defaultdict
-from enum import Enum, IntFlag
+from enum import IntFlag
 
 from cereal import car
-from selfdrive.car import dbc_dict
+from selfdrive.car import CarEnum, dbc_dict
 from selfdrive.config import Conversions as CV
 
 Ecu = car.CarParams.Ecu
@@ -24,7 +24,7 @@ class ToyotaFlags(IntFlag):
   HYBRID = 1
 
 
-class CAR(Enum):
+class CAR(CarEnum):
   # Toyota
   ALPHARD_TSS2 = 0
   AVALON = 1

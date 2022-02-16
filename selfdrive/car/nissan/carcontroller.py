@@ -11,7 +11,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
-    self.car_fingerprint = CP.carFingerprint
+    self.car_fingerprint = CP.carModel
 
     self.lkas_max_torque = 0
     self.last_angle = 0
@@ -62,14 +62,14 @@ class CarController():
       # send acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       cruise_cancel = 1
 
-    if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA) and cruise_cancel:
+    if self.CP.carModel in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA) and cruise_cancel:
         can_sends.append(nissancan.create_acc_cancel_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, frame))
 
     # TODO: Find better way to cancel!
     # For some reason spamming the cancel button is unreliable on the Leaf
     # We now cancel by making propilot think the seatbelt is unlatched,
     # this generates a beep and a warning message every time you disengage
-    if self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC) and frame % 2 == 0:
+    if self.CP.carModel in (CAR.LEAF, CAR.LEAF_IC) and frame % 2 == 0:
         can_sends.append(nissancan.create_cancel_msg(self.packer, CS.cancel_msg, cruise_cancel))
 
     can_sends.append(nissancan.create_steering_control(

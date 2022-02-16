@@ -9,7 +9,7 @@ class CarController():
     self.last_angle = 0
     self.long_control_counter = 0
     self.packer = CANPacker(dbc_name)
-    self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
+    self.pt_packer = CANPacker(DBC[CP.carModel]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
 
   def update(self, c, enabled, CS, frame, actuators, cruise_cancel):

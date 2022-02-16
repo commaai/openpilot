@@ -1,7 +1,5 @@
-from enum import Enum
-
 from cereal import car
-from selfdrive.car import dbc_dict
+from selfdrive.car import CarEnum, dbc_dict
 Ecu = car.CarParams.Ecu
 
 
@@ -42,7 +40,7 @@ class CarControllerParams:
 STEER_THRESHOLD = 1.0
 
 
-class CAR(Enum):
+class CAR(CarEnum):
   HOLDEN_ASTRA = 0
   VOLT = 1
   CADILLAC_ATS = 2

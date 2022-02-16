@@ -1,6 +1,4 @@
-from enum import Enum
-
-from selfdrive.car import dbc_dict
+from selfdrive.car import CarEnum, dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -18,7 +16,7 @@ class CarControllerParams:
     self.STEER_DRIVER_FACTOR = 1       # from dbc
 
 
-class CAR(Enum):
+class CAR(CarEnum):
   ASCENT = 0
   IMPREZA = 1
   IMPREZA_2020 = 2

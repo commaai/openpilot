@@ -9,7 +9,7 @@ from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    can_define = CANDefine(DBC[CP.carModel]["pt"])
     self.shifter_values = can_define.dv["GEAR"]["PRNDL"]
 
   def update(self, cp, cp_cam):
@@ -128,7 +128,7 @@ class CarState(CarStateBase):
       ]
       checks.append(("BLIND_SPOT_WARNINGS", 2))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -144,4 +144,4 @@ class CarState(CarStateBase):
       ("LKAS_HUD", 4),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 2)

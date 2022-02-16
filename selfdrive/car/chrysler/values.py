@@ -1,6 +1,4 @@
-from enum import Enum
-
-from selfdrive.car import dbc_dict
+from selfdrive.car import CarEnum, dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -11,7 +9,7 @@ class CarControllerParams:
   STEER_ERROR_MAX = 80
 
 
-class CAR(Enum):
+class CAR(CarEnum):
   PACIFICA_2017_HYBRID = 0
   PACIFICA_2018_HYBRID = 1
   PACIFICA_2019_HYBRID = 2

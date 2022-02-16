@@ -12,7 +12,7 @@ TORQUE_SAMPLES = 12
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    can_define = CANDefine(DBC[CP.carModel]["pt"])
 
     self.lkas_hud_msg = None
     self.lkas_hud_info_msg = None
@@ -23,16 +23,16 @@ class CarState(CarStateBase):
   def update(self, cp, cp_adas, cp_cam):
     ret = car.CarState.new_message()
 
-    if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
+    if self.CP.carModel in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
       ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL"]
-    elif self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
+    elif self.CP.carModel in (CAR.LEAF, CAR.LEAF_IC):
       ret.gas = cp.vl["CRUISE_THROTTLE"]["GAS_PEDAL"]
 
     ret.gasPressed = bool(ret.gas > 3)
 
-    if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
+    if self.CP.carModel in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
       ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
-    elif self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
+    elif self.CP.carModel in (CAR.LEAF, CAR.LEAF_IC):
       ret.brakePressed = bool(cp.vl["CRUISE_THROTTLE"]["USER_BRAKE_PRESSED"])
 
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -46,38 +46,38 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
 
-    if self.CP.carFingerprint == CAR.ALTIMA:
+    if self.CP.carModel == CAR.ALTIMA:
       ret.cruiseState.enabled = bool(cp.vl["CRUISE_STATE"]["CRUISE_ENABLED"])
     else:
       ret.cruiseState.enabled = bool(cp_adas.vl["CRUISE_STATE"]["CRUISE_ENABLED"])
 
-    if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL):
+    if self.CP.carModel in (CAR.ROGUE, CAR.XTRAIL):
       ret.seatbeltUnlatched = cp.vl["HUD"]["SEATBELT_DRIVER_LATCHED"] == 0
       ret.cruiseState.available = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ON"])
-    elif self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
-      if self.CP.carFingerprint == CAR.LEAF:
+    elif self.CP.carModel in (CAR.LEAF, CAR.LEAF_IC):
+      if self.CP.carModel == CAR.LEAF:
         ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEATBELT_DRIVER_LATCHED"] == 0
-      elif self.CP.carFingerprint == CAR.LEAF_IC:
+      elif self.CP.carModel == CAR.LEAF_IC:
         ret.seatbeltUnlatched = cp.vl["CANCEL_MSG"]["CANCEL_SEATBELT"] == 1
       ret.cruiseState.available = bool(cp.vl["CRUISE_THROTTLE"]["CRUISE_AVAILABLE"])
-    elif self.CP.carFingerprint == CAR.ALTIMA:
+    elif self.CP.carModel == CAR.ALTIMA:
       ret.seatbeltUnlatched = cp.vl["HUD"]["SEATBELT_DRIVER_LATCHED"] == 0
       ret.cruiseState.available = bool(cp_adas.vl["PRO_PILOT"]["CRUISE_ON"])
 
-    if self.CP.carFingerprint == CAR.ALTIMA:
+    if self.CP.carModel == CAR.ALTIMA:
       speed = cp.vl["PROPILOT_HUD"]["SET_SPEED"]
     else:
       speed = cp_adas.vl["PROPILOT_HUD"]["SET_SPEED"]
 
     if speed != 255:
-      if self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
+      if self.CP.carModel in (CAR.LEAF, CAR.LEAF_IC):
         conversion = CV.MPH_TO_MS if cp.vl["HUD_SETTINGS"]["SPEED_MPH"] else CV.KPH_TO_MS
       else:
         conversion = CV.MPH_TO_MS if cp.vl["HUD"]["SPEED_MPH"] else CV.KPH_TO_MS
       speed -= 1  # Speed on HUD is always 1 lower than actually sent on can bus
       ret.cruiseState.speed = speed * conversion
 
-    if self.CP.carFingerprint == CAR.ALTIMA:
+    if self.CP.carModel == CAR.ALTIMA:
       ret.steeringTorque = cp_cam.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
     else:
       ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
@@ -101,17 +101,17 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    if self.CP.carFingerprint == CAR.ALTIMA:
+    if self.CP.carModel == CAR.ALTIMA:
       self.lkas_enabled = bool(cp.vl["LKAS_SETTINGS"]["LKAS_ENABLED"])
     else:
       self.lkas_enabled = bool(cp_adas.vl["LKAS_SETTINGS"]["LKAS_ENABLED"])
 
     self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
 
-    if self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
+    if self.CP.carModel in (CAR.LEAF, CAR.LEAF_IC):
       self.cancel_msg = copy.copy(cp.vl["CANCEL_MSG"])
 
-    if self.CP.carFingerprint != CAR.ALTIMA:
+    if self.CP.carModel != CAR.ALTIMA:
       self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
       self.lkas_hud_info_msg = copy.copy(cp_adas.vl["PROPILOT_HUD_INFO_MSG"])
 
@@ -152,7 +152,7 @@ class CarState(CarStateBase):
       ("LIGHTS", 10),
     ]
 
-    if CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
+    if CP.carModel in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
       signals += [
         ("USER_BRAKE_PRESSED", "DOORS_LIGHTS"),
 
@@ -182,7 +182,7 @@ class CarState(CarStateBase):
         ("HUD", 25),
       ]
 
-    elif CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
+    elif CP.carModel in (CAR.LEAF, CAR.LEAF_IC):
       signals += [
         ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE"),
         ("GAS_PEDAL", "CRUISE_THROTTLE"),
@@ -204,7 +204,7 @@ class CarState(CarStateBase):
         ("SEATBELT", 10),
       ]
 
-    if CP.carFingerprint == CAR.ALTIMA:
+    if CP.carModel == CAR.ALTIMA:
       signals += [
         ("LKAS_ENABLED", "LKAS_SETTINGS"),
         ("CRUISE_ENABLED", "CRUISE_STATE"),
@@ -215,18 +215,18 @@ class CarState(CarStateBase):
         ("LKAS_SETTINGS", 10),
         ("PROPILOT_HUD", 50),
       ]
-      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
+      return CANParser(DBC[CP.carModel]["pt"], signals, checks, 1)
 
     signals.append(("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"))
     checks.append(("STEER_TORQUE_SENSOR", 100))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_adas_can_parser(CP):
     # this function generates lists for signal, messages and initial values
 
-    if CP.carFingerprint == CAR.ALTIMA:
+    if CP.carModel == CAR.ALTIMA:
       signals = [
         ("DESIRED_ANGLE", "LKAS"),
         ("SET_0x80_2", "LKAS"),
@@ -332,19 +332,19 @@ class CarState(CarStateBase):
         ("LKAS", 100),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 2)
 
   @staticmethod
   def get_cam_can_parser(CP):
     signals = []
     checks = []
 
-    if CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL):
+    if CP.carModel in (CAR.ROGUE, CAR.XTRAIL):
       signals.append(("CRUISE_ON", "PRO_PILOT"))
       checks.append(("PRO_PILOT", 100))
-    elif CP.carFingerprint == CAR.ALTIMA:
+    elif CP.carModel == CAR.ALTIMA:
       signals.append(("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"))
       checks.append(("STEER_TORQUE_SENSOR", 100))
-      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+      return CANParser(DBC[CP.carModel]["pt"], signals, checks, 0)
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 1)

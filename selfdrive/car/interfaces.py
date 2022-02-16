@@ -71,6 +71,7 @@ class CarInterfaceBase(ABC):
   @staticmethod
   def get_std_params(candidate, fingerprint):
     ret = car.CarParams.new_message()
+    ret.carMake = candidate.make
     ret.carModel = candidate.value
     ret.unsafeMode = 0  # see panda/board/safety_declarations.h for allowed values
 
@@ -185,7 +186,7 @@ class RadarInterfaceBase(ABC):
 class CarStateBase(ABC):
   def __init__(self, CP):
     self.CP = CP
-    self.car_fingerprint = CP.carFingerprint
+    self.car_fingerprint = CP.carModel
     self.out = car.CarState.new_message()
 
     self.cruise_buttons = 0

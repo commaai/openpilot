@@ -100,12 +100,12 @@ def create_bosch_supplemental_1(packer, car_fingerprint, idx):
 
 def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
   commands = []
-  bus_pt = get_pt_bus(CP.carFingerprint)
-  radar_disabled = CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl
-  bus_lkas = get_lkas_cmd_bus(CP.carFingerprint, radar_disabled)
+  bus_pt = get_pt_bus(CP.carModel)
+  radar_disabled = CP.carModel in HONDA_BOSCH and CP.openpilotLongitudinalControl
+  bus_lkas = get_lkas_cmd_bus(CP.carModel, radar_disabled)
 
   if CP.openpilotLongitudinalControl:
-    if CP.carFingerprint in HONDA_BOSCH:
+    if CP.carModel in HONDA_BOSCH:
       acc_hud_values = {
         'CRUISE_SPEED': hud.v_cruise,
         'ENABLE_MINI_CAR': 1,
@@ -152,14 +152,14 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
   else:
     commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values, idx))
 
-  if radar_disabled and CP.carFingerprint in HONDA_BOSCH:
+  if radar_disabled and CP.carModel in HONDA_BOSCH:
     radar_hud_values = {
       'CMBS_OFF': 0x01,
       'SET_TO_1': 0x01,
     }
     commands.append(packer.make_can_msg('RADAR_HUD', bus_pt, radar_hud_values, idx))
 
-    if CP.carFingerprint == CAR.CIVIC_BOSCH:
+    if CP.carModel == CAR.CIVIC_BOSCH:
       commands.append(packer.make_can_msg("LEGACY_BRAKE_COMMAND", bus_pt, {}, idx))
 
   return commands

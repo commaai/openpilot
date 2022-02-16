@@ -93,7 +93,7 @@ class TestCarModel(unittest.TestCase):
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [])
     assert cls.CP
-    assert cls.CP.carMake == cls.car_make
+    assert cls.CP.carMake == cls.car_model.make
     assert cls.CP.carModel == cls.car_model
 
   def setUp(self):
@@ -220,7 +220,7 @@ class TestCarModel(unittest.TestCase):
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
       if CS.brakePressed and not self.safety.get_brake_pressed_prev():
-        if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
+        if self.CP.carModel in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
           brake_pressed = False
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
 
@@ -231,7 +231,7 @@ class TestCarModel(unittest.TestCase):
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
 
     # TODO: add flag to toyota safety
-    if self.CP.carFingerprint == TOYOTA.SIENNA and checks['brakePressed'] < 25:
+    if self.CP.carModel == TOYOTA.SIENNA and checks['brakePressed'] < 25:
       checks['brakePressed'] = 0
 
     failed_checks = {k: v for k, v in checks.items() if v > 0}

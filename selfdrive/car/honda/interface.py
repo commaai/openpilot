@@ -18,7 +18,7 @@ TransmissionType = car.CarParams.TransmissionType
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    if CP.carFingerprint in HONDA_BOSCH:
+    if CP.carModel in HONDA_BOSCH:
       return CarControllerParams.BOSCH_ACCEL_MIN, CarControllerParams.BOSCH_ACCEL_MAX
     else:
       # NIDECs don't allow acceleration near cruise_speed,
@@ -30,7 +30,6 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-    ret.carName = "honda"
 
     if candidate in HONDA_BOSCH:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
@@ -325,7 +324,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def init(CP, logcan, sendcan):
-    if CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl:
+    if CP.carModel in HONDA_BOSCH and CP.openpilotLongitudinalControl:
       disable_ecu(logcan, sendcan, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')
 
   # returns a car.CarState

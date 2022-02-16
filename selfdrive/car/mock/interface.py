@@ -35,7 +35,6 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-    ret.carName = "mock"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput)]
     ret.mass = 1700.
     ret.rotationalInertia = 2500.

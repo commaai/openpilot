@@ -1,7 +1,7 @@
-from enum import Enum, IntFlag
+from enum import IntFlag
 
 from cereal import car
-from selfdrive.car import dbc_dict
+from selfdrive.car import CarEnum, dbc_dict
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -63,7 +63,7 @@ VISUAL_HUD = {
 }
 
 
-class CAR(Enum):
+class CAR(CarEnum):
   ACCORD = 0
   ACCORDH = 1
   CIVIC = 2

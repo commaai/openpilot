@@ -10,7 +10,6 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-    ret.carName = "tesla"
 
     # There is no safe way to do steer blending with user torque,
     # so the steering behaves like autopilot. This is not

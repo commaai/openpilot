@@ -10,7 +10,7 @@ from selfdrive.car.subaru.values import DBC, STEER_THRESHOLD, CAR, PREGLOBAL_CAR
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    can_define = CANDefine(DBC[CP.carModel]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
 
   def update(self, cp, cp_cam):
@@ -120,7 +120,7 @@ class CarState(CarStateBase):
       ]
       checks.append(("BSD_RCTA", 17))
 
-    if CP.carFingerprint not in PREGLOBAL_CARS:
+    if CP.carModel not in PREGLOBAL_CARS:
       signals += [
         ("Steer_Warning", "Steering_Torque"),
         ("Brake", "Brake_Status"),
@@ -138,24 +138,24 @@ class CarState(CarStateBase):
 
       checks.append(("Dash_State2", 1))
 
-    if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
+    if CP.carModel == CAR.FORESTER_PREGLOBAL:
       checks += [
         ("Dashlights", 20),
         ("BodyInfo", 1),
         ("CruiseControl", 50),
       ]
 
-    if CP.carFingerprint in (CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
+    if CP.carModel in (CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
       checks += [
         ("Dashlights", 10),
         ("CruiseControl", 50),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
-    if CP.carFingerprint in PREGLOBAL_CARS:
+    if CP.carModel in PREGLOBAL_CARS:
       signals = [
         ("Cruise_Set_Speed", "ES_DashStatus"),
         ("Not_Ready_Startup", "ES_DashStatus"),
@@ -229,4 +229,4 @@ class CarState(CarStateBase):
         ("ES_LKAS_State", 10),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 2)

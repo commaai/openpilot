@@ -9,7 +9,7 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
 
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    can_define = CANDefine(DBC[CP.carModel]["pt"])
     self.shifter_values = can_define.dv["GEAR"]["GEAR"]
 
     self.crz_btns_counter = 0
@@ -128,7 +128,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS", 100),
     ]
 
-    if CP.carFingerprint in GEN1:
+    if CP.carModel in GEN1:
       signals += [
         ("LKAS_BLOCK", "STEER_RATE"),
         ("LKAS_TRACK_STATE", "STEER_RATE"),
@@ -165,14 +165,14 @@ class CarState(CarStateBase):
         ("BSM", 10),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
     signals = []
     checks = []
 
-    if CP.carFingerprint in GEN1:
+    if CP.carModel in GEN1:
       signals += [
         # sig_name, sig_address
         ("LKAS_REQUEST", "CAM_LKAS"),
@@ -202,4 +202,4 @@ class CarState(CarStateBase):
         ("CAM_LKAS", 16),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    return CANParser(DBC[CP.carModel]["pt"], signals, checks, 2)
