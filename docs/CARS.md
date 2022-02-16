@@ -3,7 +3,7 @@ Cars are organized into three tiers:
 
 - ⭐ Gold - a high-quality openpilot experience
 - 🥈 Silver - a pretty good, albeit limited experience
-- 🥉 Bronze - significantly limited
+- 🥉 Bronze - a significantly limited experience
 
 Description of terms:
 
