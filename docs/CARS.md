@@ -1,9 +1,5 @@
 # Supported Cars
-Cars are organized into three tiers:
-
-- ⭐ Gold - a full openpilot experience
-- 🥈 Silver - a pretty good, albeit limited experience
-- 🥉 Bronze - significantly limited
+Supported cars are organized into three tiers based on their overall experience.
 
 Description of terms:
 
@@ -13,7 +9,7 @@ Description of terms:
 - Good lateral torque - car has enough steering torque for comfortable highway driving
 
 
-## Gold Cars
+## ⭐ Gold Cars - a full openpilot experience
 
 | Make    | Model (US Market Reference) | Supported Package | openpilot Longitudinal | Longitudinal to 0 mph | Lateral to 0 mph | Good lateral torque |
 |---------|-----------------------------|-------------------|------------------------|-----------------------|------------------|---------------------|
@@ -40,7 +36,7 @@ Description of terms:
 | Lexus   | UX Hybrid 2019-21           | All               | ⭐                      | ⭐                     | ⭐                | ⭐                   |
 
 
-## Silver Cars
+## 🥈 Silver Cars - a pretty good, albeit limited experience
 
 | Make    | Model (US Market Reference) | Supported Package | openpilot Longitudinal | Longitudinal to 0 mph | Lateral to 0 mph | Good lateral torque |
 |---------|-----------------------------|-------------------|------------------------|-----------------------|------------------|---------------------|
@@ -72,7 +68,7 @@ Description of terms:
 | Toyota  | Camry Hybrid 2018-20        | All               |                        | ⭐<sup>4</sup>         | ⭐                | ⭐                   |
 | Toyota  | Prius v 2017                | TSS-P             |                        |                       | ⭐                |                     |
 
-## Bronze Cars
+## 🥉 Bronze Cars - significantly limited
 
 | Make    | Model (US Market Reference) | Supported Package | openpilot Longitudinal | Longitudinal to 0 mph | Lateral to 0 mph | Good lateral torque |
 |---------|-----------------------------|-------------------|------------------------|-----------------------|------------------|---------------------|
