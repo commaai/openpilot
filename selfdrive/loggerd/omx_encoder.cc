@@ -324,6 +324,8 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   for (auto &buf : this->in_buf_headers) {
     this->free_in.push(buf);
   }
+
+  LOGE("omx initialized - in: %d - out %d", this->in_buf_headers.size(), this->out_buf_headers.size());
 }
 
 void OmxEncoder::write_handler(OmxEncoder *e){
