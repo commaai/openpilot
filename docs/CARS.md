@@ -1,77 +1,79 @@
 # Supported Cars
 
+All cars start with 5 stars
+
 ## comma.ai supported cars
 
-| Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below      |
-| ----------| ------------------------------| ------------------| -----------------| -------------------| ------------------|
-| Acura     | ILX 2016-19                   | AcuraWatch Plus   | openpilot        | 25mph<sup>1</sup>  | 25mph             |
-| Acura     | RDX 2016-18                   | AcuraWatch Plus   | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Acura     | RDX 2019-21                   | All               | Stock            | 0mph               | 3mph              |
-| Honda     | Accord 2018-21                | All               | Stock            | 0mph               | 3mph              |
-| Honda     | Accord Hybrid 2018-21         | All               | Stock            | 0mph               | 3mph              |
-| Honda     | Civic Hatchback 2017-21       | Honda Sensing     | Stock            | 0mph               | 12mph             |
-| Honda     | Civic Coupe 2016-18           | Honda Sensing     | openpilot        | 0mph               | 12mph             |
-| Honda     | Civic Coupe 2019-20           | All               | Stock            | 0mph               | 2mph<sup>2</sup>  |
-| Honda     | Civic Sedan 2016-18           | Honda Sensing     | openpilot        | 0mph               | 12mph             |
-| Honda     | Civic Sedan 2019-20           | All               | Stock            | 0mph               | 2mph<sup>2</sup>  |
-| Honda     | CR-V 2015-16                  | Touring           | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Honda     | CR-V 2017-21                  | Honda Sensing     | Stock            | 0mph               | 12mph             |
-| Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph             |
-| Honda     | e 2020                        | All               | Stock            | 0mph               | 3mph              |
-| Honda     | Fit 2018-19                   | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Honda     | Freed 2020                    | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Honda     | HR-V 2019-20                  | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Honda     | Insight 2019-21               | All               | Stock            | 0mph               | 3mph              |
-| Honda     | Inspire 2018                  | All               | Stock            | 0mph               | 3mph              |
-| Honda     | Odyssey 2018-20               | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 0mph              |
-| Honda     | Passport 2019-21              | All               | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Honda     | Pilot 2016-21                 | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Honda     | Ridgeline 2017-21             | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Hyundai   | Palisade 2020-21              | All               | Stock            | 0mph               | 0mph              |
-| Hyundai   | Sonata 2020-22                | All               | Stock            | 0mph               | 0mph              |
-| Lexus     | CT Hybrid 2017-18             | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Lexus     | ES 2019-21                    | All               | openpilot        | 0mph               | 0mph              |
-| Lexus     | ES Hybrid 2017-18             | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Lexus     | ES Hybrid 2019-21             | All               | openpilot        | 0mph               | 0mph              |
-| Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph              |
-| Lexus     | NX 2018-2019                  | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Lexus     | NX 2020                       | All               | openpilot        | 0mph               | 0mph              |
-| Lexus     | NX Hybrid 2018-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Lexus     | RC 2020                       | All               | Stock            | 22mph              | 0mph              |
-| Lexus     | RX 2016-18                    | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Lexus     | RX 2020-21                    | All               | openpilot        | 0mph               | 0mph              |
-| Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Lexus     | RX Hybrid 2020-21             | All               | openpilot        | 0mph               | 0mph              |
-| Lexus     | UX Hybrid 2019-21             | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Alphard 2019-20               | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Avalon 2016-21                | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
-| Toyota    | Avalon 2022                   | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Avalon Hybrid 2019-21         | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
-| Toyota    | Camry 2018-20                 | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
-| Toyota    | Camry 2021-22                 | All               | openpilot        | 0mph<sup>4</sup>   | 0mph              |
-| Toyota    | Camry Hybrid 2018-20          | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
-| Toyota    | Camry Hybrid 2021-22          | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | C-HR 2017-21                  | All               | Stock            | 0mph               | 0mph              |
-| Toyota    | C-HR Hybrid 2017-19           | All               | Stock            | 0mph               | 0mph              |
-| Toyota    | Corolla 2017-19               | All               | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
-| Toyota    | Corolla 2020-22               | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Corolla Hatchback 2019-22     | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Corolla Hybrid 2020-22        | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Highlander 2017-19            | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Toyota    | Highlander 2020-22            | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Highlander Hybrid 2017-19     | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Toyota    | Highlander Hybrid 2020-22     | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Mirai 2021                    | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Prius 2016-20                 | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Toyota    | Prius 2021-22                 | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Prius v 2017                  | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
-| Toyota    | Prius Prime 2017-20           | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Toyota    | Prius Prime 2021-22           | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Rav4 2016-18                  | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
-| Toyota    | Rav4 2019-21                  | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Rav4 Hybrid 2016-18           | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Toyota    | Rav4 Hybrid 2019-21           | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Sienna 2018-20                | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
+| Make      | Model (US Market Reference)   | Supported Package | longitudinal (2 stars) | lateral (2 stars) |
+| ----------| ------------------------------| ------------------|------------------------| -------------------|
+| Acura     | ILX 2016-19                   | AcuraWatch Plus   | ⭐                  |              |
+| Acura     | RDX 2016-18                   | AcuraWatch Plus   | ⭐              | ⭐             |
+| Acura     | RDX 2019-21                   | All               |                   | ⭐              |
+| Honda     | Accord 2018-21                | All               |                   | ⭐              |
+| Honda     | Accord Hybrid 2018-21         | All               |                   | ⭐              |
+| Honda     | Civic Hatchback 2017-21       | Honda Sensing     |                   | ⭐             |
+| Honda     | Civic Coupe 2016-18           | Honda Sensing     | ⭐⭐              | ⭐             |
+| Honda     | Civic Coupe 2019-20           | All               |                   | ⭐  |
+| Honda     | Civic Sedan 2016-18           | Honda Sensing     | ⭐⭐              | ⭐             |
+| Honda     | Civic Sedan 2019-20           | All               |                   | ⭐  |
+| Honda     | CR-V 2015-16                  | Touring           | ⭐              | ⭐             |
+| Honda     | CR-V 2017-21                  | Honda Sensing     |                   | ⭐             |
+| Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     |                   | ⭐             |
+| Honda     | e 2020                        | All               |                   | ⭐              |
+| Honda     | Fit 2018-19                   | Honda Sensing     | ⭐              | ⭐             |
+| Honda     | Freed 2020                    | Honda Sensing     | ⭐              | ⭐             |
+| Honda     | HR-V 2019-20                  | Honda Sensing     | ⭐              | ⭐             |
+| Honda     | Insight 2019-21               | All               |                   | ⭐              |
+| Honda     | Inspire 2018                  | All               |                   | ⭐              |
+| Honda     | Odyssey 2018-20               | Honda Sensing     | ⭐              | ⭐⭐                |
+| Honda     | Passport 2019-21              | All               | ⭐              | ⭐             |
+| Honda     | Pilot 2016-21                 | Honda Sensing     | ⭐              | ⭐             |
+| Honda     | Ridgeline 2017-21             | Honda Sensing     | ⭐              | ⭐             |
+| Hyundai   | Palisade 2020-21              | All               | ⭐                  | ⭐⭐                |
+| Hyundai   | Sonata 2020-22                | All               | ⭐                  | ⭐⭐                |
+| Lexus     | CT Hybrid 2017-18             | LSS               | ⭐      | ⭐⭐                |
+| Lexus     | ES 2019-21                    | All               | ⭐⭐              | ⭐⭐                |
+| Lexus     | ES Hybrid 2017-18             | LSS               | ⭐      | ⭐⭐                |
+| Lexus     | ES Hybrid 2019-21             | All               | ⭐⭐              | ⭐⭐                |
+| Lexus     | IS 2017-2019                  | All               |                   | ⭐⭐                |
+| Lexus     | NX 2018-2019                  | All               | ⭐      | ⭐⭐                |
+| Lexus     | NX 2020                       | All               | ⭐⭐              | ⭐⭐                |
+| Lexus     | NX Hybrid 2018-19             | All               | ⭐      | ⭐⭐                |
+| Lexus     | RC 2020                       | All               |                   | ⭐⭐                |
+| Lexus     | RX 2016-18                    | All               | ⭐      | ⭐⭐                |
+| Lexus     | RX 2020-21                    | All               | ⭐⭐              | ⭐⭐                |
+| Lexus     | RX Hybrid 2016-19             | All               | ⭐      | ⭐⭐                |
+| Lexus     | RX Hybrid 2020-21             | All               | ⭐⭐              | ⭐⭐                |
+| Lexus     | UX Hybrid 2019-21             | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Alphard 2019-20               | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Avalon 2016-21                | TSS-P             | ⭐      | ⭐⭐                |
+| Toyota    | Avalon 2022                   | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Avalon Hybrid 2019-21         | TSS-P             | ⭐      | ⭐⭐                |
+| Toyota    | Camry 2018-20                 | All               |                   | ⭐⭐                |
+| Toyota    | Camry 2021-22                 | All               | ⭐              | ⭐⭐                |
+| Toyota    | Camry Hybrid 2018-20          | All               |                   | ⭐⭐                |
+| Toyota    | Camry Hybrid 2021-22          | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | C-HR 2017-21                  | All               |                   | ⭐⭐                |
+| Toyota    | C-HR Hybrid 2017-19           | All               |                   | ⭐⭐                |
+| Toyota    | Corolla 2017-19               | All               | ⭐      | ⭐⭐                |
+| Toyota    | Corolla 2020-22               | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Corolla Hatchback 2019-22     | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Corolla Hybrid 2020-22        | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Highlander 2017-19            | All               | ⭐      | ⭐⭐                |
+| Toyota    | Highlander 2020-22            | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Highlander Hybrid 2017-19     | All               | ⭐      | ⭐⭐                |
+| Toyota    | Highlander Hybrid 2020-22     | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Mirai 2021                    | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Prius 2016-20                 | TSS-P             | ⭐      | ⭐⭐                |
+| Toyota    | Prius 2021-22                 | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Prius v 2017                  | TSS-P             | ⭐      | ⭐⭐                |
+| Toyota    | Prius Prime 2017-20           | All               | ⭐      | ⭐⭐                |
+| Toyota    | Prius Prime 2021-22           | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Rav4 2016-18                  | TSS-P             | ⭐      | ⭐⭐                |
+| Toyota    | Rav4 2019-21                  | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Rav4 Hybrid 2016-18           | TSS-P             | ⭐      | ⭐⭐                |
+| Toyota    | Rav4 Hybrid 2019-21           | All               | ⭐⭐              | ⭐⭐                |
+| Toyota    | Sienna 2018-20                | All               | ⭐      | ⭐⭐                |
 
 <sup>1</sup>[Comma Pedal](https://github.com/commaai/openpilot/wiki/comma-pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. ***NOTE: The Comma Pedal is not officially supported by [comma](https://comma.ai).*** <br />
 <sup>2</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
