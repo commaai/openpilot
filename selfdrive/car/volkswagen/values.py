@@ -91,7 +91,7 @@ class CAR:
 CAR_INFO = {
   CAR.ARTEON_MK1: CarInfo("Volkswagen Arteon", {2018, 2021}, "Driver Assistance"),
   CAR.ATLAS_MK1: CarInfo("Volkswagen Atlas", {2018, 2019, 2022}, "Driver Assistance"),
-  CAR.GOLF_MK7: {
+  CAR.GOLF_MK7: (
     CarInfo("Volkswagen e-Golf", {2014, 2019, 2020}, "Driver Assistance"),
     CarInfo("Volkswagen Golf", {2015, 2016, 2017, 2018, 2019, 2020}, "Driver Assistance"),
     CarInfo("Volkswagen Golf Alltrack", {2017, 2018}, "Driver Assistance"),
@@ -100,26 +100,26 @@ CAR_INFO = {
     CarInfo("Volkswagen Golf R", {2016, 2017, 2018, 2019}, "Driver Assistance"),
     CarInfo("Volkswagen Golf SportsVan", {2016}, "Driver Assistance"),
     CarInfo("Volkswagen Golf SportWagen", {2016}, "Driver Assistance"),
-  },
-  CAR.JETTA_MK7: {
+  ),
+  CAR.JETTA_MK7: (
     CarInfo("Volkswagen Jetta", {2018, 2019, 2020}, "Driver Assistance"),
     CarInfo("Volkswagen Jetta GLI", {2021}, "Driver Assistance"),
-  },
+  ),
   CAR.PASSAT_MK8: CarInfo("Volkswagen Passat", {2016, 2017, 2018}, "Driver Assistance"),
   CAR.POLO_MK6: CarInfo("Volkswagen Polo", {2020}, "Driver Assistance"),
   CAR.TAOS_MK1: CarInfo("Volkswagen Taos", {2022}, "Driver Assistance"),
   CAR.TCROSS_MK1: CarInfo("Volkswagen T-Cross", {2021}, "Driver Assistance"),
   CAR.TIGUAN_MK2: CarInfo("Volkswagen Tiguan", {2020}, "Driver Assistance"),
   CAR.TOURAN_MK2: CarInfo("Volkswagen Touran", {2017}, "Driver Assistance"),
-  CAR.TRANSPORTER_T61: {
+  CAR.TRANSPORTER_T61: (
     CarInfo("Volkswagen Caravelle", {2020}, "Driver Assistance"),
     CarInfo("Volkswagen California", {2021}, "Driver Assistance"),
-  },
+  ),
   CAR.TROC_MK1: CarInfo("Volkswagen T-Roc", {2021}, "Driver Assistance"),
-  CAR.AUDI_A3_MK3: {
+  CAR.AUDI_A3_MK3: (
     CarInfo("Audi A3", {2014, 2015, 2016, 2017, 2018, 2019}, "ACC + Lane Assist"),
     CarInfo("Audi A3 Sportback e-tron", {2017, 2018}, "ACC + Lane Assist"),
-  },
+  ),
   CAR.AUDI_Q2_MK1: CarInfo("Audi Q2", {2018}, "ACC + Lane Assist"),
   CAR.AUDI_Q3_MK2: CarInfo("Audi Q3", {2020, 2021}, "ACC + Lane Assist"),
   CAR.SEAT_ATECA_MK1: CarInfo("SEAT Ateca", {2018}, "Driver Assistance"),
@@ -129,10 +129,10 @@ CAR_INFO = {
   CAR.SKODA_KODIAQ_MK1: CarInfo("Škoda Kodiaq", {2018, 2019}, "Driver Assistance"),
   CAR.SKODA_SCALA_MK1: CarInfo("Škoda Scala", {2020}, "Driver Assistance"),
   CAR.SKODA_SUPERB_MK3: CarInfo("Škoda Superb", {2015, 2017, 2018}, "Driver Assistance"),
-  CAR.SKODA_OCTAVIA_MK3: {
+  CAR.SKODA_OCTAVIA_MK3: (
     CarInfo("Škoda Octavia", {2015, 2018, 2019}, "Driver Assistance"),
     CarInfo("Škoda Octavia RS", {2016}, "Driver Assistance"),
-  }
+  ),
 }
 
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars

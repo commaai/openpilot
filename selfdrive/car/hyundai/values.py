@@ -82,20 +82,20 @@ CAR_INFO = {
   CAR.KONA: CarInfo("Hyundai Kona", {2020}, "SCC + LKAS"),
   CAR.KONA_EV: CarInfo("Hyundai Kona Electric", {2018, 2019}, "SCC + LKAS"),
   CAR.KONA_HEV: CarInfo("Hyundai Kona Hybrid", {2020}, "SCC + LKAS"),
-  CAR.SANTA_FE: CarInfo("Hyundai Santa Fe", {2019, 2020}),
-  CAR.SANTA_FE_2022: CarInfo("Hyundai Santa Fe", {2021, 2022}),
-  CAR.SANTA_FE_HEV_2022: CarInfo("Hyundai Santa Fe Hybrid", {2022}),
-  CAR.SANTA_FE_PHEV_2022: CarInfo("Hyundai Santa Fe Plug-In Hybrid", {2022}),
-  CAR.SONATA: CarInfo("Hyundai Sonata", {2020, 2021, 2022}),
+  CAR.SANTA_FE: CarInfo("Hyundai Santa Fe", {2019, 2020}, "All"),
+  CAR.SANTA_FE_2022: CarInfo("Hyundai Santa Fe", {2021, 2022}, "All"),
+  CAR.SANTA_FE_HEV_2022: CarInfo("Hyundai Santa Fe Hybrid", {2022}, "All"),
+  CAR.SANTA_FE_PHEV_2022: CarInfo("Hyundai Santa Fe Plug-In Hybrid", {2022}, "All"),
+  CAR.SONATA: CarInfo("Hyundai Sonata", {2020, 2021, 2022}, "All"),
   CAR.SONATA_LF: CarInfo("Hyundai Sonata", {2018, 2019}, "SCC + LKAS"),
-  CAR.PALISADE: CarInfo("Hyundai Palisade", {2020, 2021}),
+  CAR.PALISADE: CarInfo("Hyundai Palisade", {2020, 2021}, "All"),
   CAR.VELOSTER: CarInfo("Hyundai Veloster", {2019, 2020}, "SCC + LKAS"),
-  CAR.SONATA_HYBRID: CarInfo("Hyundai Sonata Hybrid", {2021, 2022}),
+  CAR.SONATA_HYBRID: CarInfo("Hyundai Sonata Hybrid", {2021, 2022}, "All"),
 
   # Kia
   CAR.KIA_FORTE: CarInfo("Kia Forte E 2018 & GT 2021", {2018, 2019, 2020, 2021}, "SCC + LKAS"),  # TODO: figure out which cars this exactly supports
   CAR.KIA_K5_2021: CarInfo("Kia K5", {2021, 2022}, "SCC + LFA"),
-  CAR.KIA_NIRO_EV: CarInfo("Kia Niro EV", {2019, 2020, 2021, 2022}),
+  CAR.KIA_NIRO_EV: CarInfo("Kia Niro EV", {2019, 2020, 2021, 2022}, "All"),
   CAR.KIA_NIRO_HEV: CarInfo("Kia Niro Plug-In Hybrid", {2019}, "SCC + LKAS"),
   CAR.KIA_NIRO_HEV_2021: CarInfo("Kia Niro Hybrid", {2021}, "SCC + LKAS"),
   CAR.KIA_OPTIMA: CarInfo("Kia Optima SX 2019 & 2016", {2017, 2019}, "SCC + LKAS"),
@@ -106,10 +106,10 @@ CAR_INFO = {
   CAR.KIA_CEED: CarInfo("Kia Ceed Intro Edition", {2019}, "SCC + LKAS"),
 
   # Genesis
-  CAR.GENESIS_G70: CarInfo("Genesis G70", {2018}),
-  CAR.GENESIS_G70_2020: CarInfo("Genesis G70", {2020}),
-  CAR.GENESIS_G80: CarInfo("Genesis G80", {2018}),
-  CAR.GENESIS_G90: CarInfo("Genesis G90", {2018}),
+  CAR.GENESIS_G70: CarInfo("Genesis G70", {2018}, "All"),
+  CAR.GENESIS_G70_2020: CarInfo("Genesis G70", {2020}, "All"),
+  CAR.GENESIS_G80: CarInfo("Genesis G80", {2018}, "All"),
+  CAR.GENESIS_G90: CarInfo("Genesis G90", {2018}, "All"),
 }
 
 

@@ -26,7 +26,7 @@ CAR_INFO = {
   CAR.LEAF: CarInfo("Nissan Leaf", {2018, 2019, 2020, 2021, 2022}, "ProPILOT"),
   # TODO: ensure we can leave out cars when generating docs
   # CAR.LEAF_IC: CarInfo("Nissan Leaf Instrument Cluster", {2018, 2019, 2020, 2021, 2022}, "ProPILOT"),
-  CAR.ROGUE: CarInfo("Nissan Rogue", {2018, 2019, 2020}),
+  CAR.ROGUE: CarInfo("Nissan Rogue", {2018, 2019, 2020}, "All"),
   CAR.ALTIMA: CarInfo("Nissan Altima", {2019, 2020}, "ProPILOT"),
 }
 

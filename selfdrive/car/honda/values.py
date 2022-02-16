@@ -89,11 +89,11 @@ class CAR:
 
 
 CAR_INFO = {
-  CAR.ACCORD: CarInfo("Honda Accord", {2018, 2019, 2020, 2021}),
-  CAR.ACCORDH: CarInfo("Honda Accord Hybrid", {2018, 2019, 2020, 2021}),
+  CAR.ACCORD: CarInfo("Honda Accord", {2018, 2019, 2020, 2021}, "All"),
+  CAR.ACCORDH: CarInfo("Honda Accord Hybrid", {2018, 2019, 2020, 2021}, "All"),
   CAR.CIVIC: CarInfo("Honda Civic", {2016, 2017, 2018}, "Honda Sensing"),  # TODO: there's also the identical coupe
-  CAR.CIVIC_BOSCH: CarInfo("Honda Civic (Bosch)", {2019, 2020}),
-  CAR.CIVIC_BOSCH_DIESEL: CarInfo("Honda Civic Sedan 1.6 DIESEL", {2019, 2020}),  # TODO: same as civic bosch but has no alc under 12 mph exception
+  CAR.CIVIC_BOSCH: CarInfo("Honda Civic (Bosch)", {2019, 2020}, "All"),
+  CAR.CIVIC_BOSCH_DIESEL: CarInfo("Honda Civic Sedan 1.6 DIESEL", {2019, 2020}, "All"),  # TODO: same as civic bosch but has no alc under 12 mph exception
   CAR.ACURA_ILX: CarInfo("Acura ILX", {2016, 2017, 2018, 2019}, "AcuraWatch Plus"),
   CAR.CRV: CarInfo("Honda CR-V", {2015, 2016}, "Touring"),
   CAR.CRV_5G: CarInfo("Honda CR-V", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
@@ -106,12 +106,12 @@ CAR_INFO = {
   # TODO: Duplicate of above
   CAR.ODYSSEY_CHN: CarInfo("Honda Odyssey CHN", {2018, 2019, 2020}, "Honda Sensing"),
   CAR.ACURA_RDX: CarInfo("Acura RDX", {2016, 2017, 2018}, "AcuraWatch Plus"),
-  CAR.ACURA_RDX_3G: CarInfo("Acura RDX", {2019, 2020, 2021}),
+  CAR.ACURA_RDX_3G: CarInfo("Acura RDX", {2019, 2020, 2021}, "All"),
   CAR.PILOT: CarInfo("Honda Pilot", {2016, 2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
-  CAR.PASSPORT: CarInfo("Honda Passport", {2019, 2020, 2021}),
+  CAR.PASSPORT: CarInfo("Honda Passport", {2019, 2020, 2021}, "All"),
   CAR.RIDGELINE: CarInfo("Honda Ridgeline", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
-  CAR.INSIGHT: CarInfo("Honda Insight", {2019, 2020, 2021}),
-  CAR.HONDA_E: CarInfo("Honda E", {2020}),
+  CAR.INSIGHT: CarInfo("Honda Insight", {2019, 2020, 2021}, "All"),
+  CAR.HONDA_E: CarInfo("Honda E", {2020}, "All"),
 }
 
 

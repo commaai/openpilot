@@ -12,8 +12,8 @@ class CAR:
 
 
 CAR_INFO = {
-  CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", {}),
-  CAR.AP2_MODELS: CarInfo("TESLA AP2 MODEL S", {}),
+  CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", {}, "All"),
+  CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", {}, "All"),
 }
 
 FINGERPRINTS = {

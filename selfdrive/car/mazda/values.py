@@ -25,12 +25,12 @@ class CAR:
 
 
 CAR_INFO = {
-  CAR.CX5: CarInfo("Mazda CX-5", {2017, 2019}),  # TODO: verify years for first 4
-  CAR.CX9: CarInfo("Mazda CX-9", {2016, 2017}),
-  CAR.MAZDA3: CarInfo("Mazda 3", {2017}),
-  CAR.MAZDA6: CarInfo("Mazda 6", {2017}),
-  CAR.CX9_2021: CarInfo("Mazda CX-9", {2021}),
-  CAR.CX5_2022: CarInfo("Mazda CX-5", {2022}),
+  CAR.CX5: CarInfo("Mazda CX-5", {2017, 2019}, "All"),  # TODO: verify years for first 4
+  CAR.CX9: CarInfo("Mazda CX-9", {2016, 2017}, "All"),
+  CAR.MAZDA3: CarInfo("Mazda 3", {2017}, "All"),
+  CAR.MAZDA6: CarInfo("Mazda 6", {2017}, "All"),
+  CAR.CX9_2021: CarInfo("Mazda CX-9", {2021}, "All"),
+  CAR.CX5_2022: CarInfo("Mazda CX-5", {2022}, "All"),
 }
 
 
