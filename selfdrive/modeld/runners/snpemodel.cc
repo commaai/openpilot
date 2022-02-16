@@ -160,7 +160,10 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
       memcpy(outputs_golden, output, output_size*sizeof(float));
       memset(output, 0, output_size*sizeof(float));
       memset(recurrent, 0, recurrent_size*sizeof(float));
+      uint64_t start_time = nanos_since_boot();
       thneed->execute(inputs, output);
+      uint64_t elapsed_time = nanos_since_boot() - start_time;
+      printf("ran model in %.2f ms\n", float(elapsed_time)/1e6);
 
       if (memcmp(output, outputs_golden, output_size*sizeof(float)) == 0) {
         printf("thneed selftest passed\n");
