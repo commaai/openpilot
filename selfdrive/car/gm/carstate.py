@@ -9,7 +9,7 @@ from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, STEER_THRESHOLD
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    can_define = CANDefine(DBC[CAR(CP.carFingerprint)]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
     self.lka_steering_cmd_counter = 0
 
@@ -120,11 +120,11 @@ class CarState(CarStateBase):
       ("EBCMBrakePedalPosition", 100),
     ]
 
-    if CP.carFingerprint == CAR.VOLT:
+    if CAR(CP.carFingerprint) == CAR.VOLT:
       signals.append(("RegenPaddle", "EBCMRegenPaddle"))
       checks.append(("EBCMRegenPaddle", 50))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.POWERTRAIN)
+    return CANParser(DBC[CAR(CP.carFingerprint)]["pt"], signals, checks, CanBus.POWERTRAIN)
 
   @staticmethod
   def get_loopback_can_parser(CP):
@@ -136,4 +136,4 @@ class CarState(CarStateBase):
       ("ASCMLKASteeringCmd", 50),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK)
+    return CANParser(DBC[CAR(CP.carFingerprint)]["pt"], signals, checks, CanBus.LOOPBACK)

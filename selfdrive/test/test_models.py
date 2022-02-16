@@ -45,7 +45,8 @@ for r in routes:
   routes_by_car[r.car_fingerprint].add(r.route)
 
 test_cases: List[Tuple[str, Optional[str]]] = []
-for i, c in enumerate(sorted(all_known_cars())):
+# TODO: this sorts by model names now, not make and model
+for i, c in enumerate(sorted(all_known_cars(), key=lambda x: x.name)):
   if i % NUM_JOBS == JOB_ID:
     test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
 
@@ -92,7 +93,8 @@ class TestCarModel(unittest.TestCase):
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [])
     assert cls.CP
-    assert cls.CP.carFingerprint == cls.car_model
+    assert cls.CP.carMake == cls.car_make
+    assert cls.CP.carModel == cls.car_model
 
   def setUp(self):
     self.CI = self.CarInterface(self.CP, self.CarController, self.CarState)

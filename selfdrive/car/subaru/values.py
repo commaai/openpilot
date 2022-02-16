@@ -6,7 +6,7 @@ Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
   def __init__(self, CP):
-    if CP.carFingerprint == CAR.IMPREZA_2020:
+    if CAR(CP.carModel) == CAR.IMPREZA_2020:
       self.STEER_MAX = 1439
     else:
       self.STEER_MAX = 2047

@@ -1,4 +1,3 @@
-from enum import Enum
 import os
 
 from common.params import Params
@@ -61,16 +60,15 @@ def load_interfaces(brand_names):
 
 def _get_interface_names():
   # read all the folders in selfdrive/car and return a dict where:
-  # - keys are all the car names that which we have an interface for
-  # - values are lists of spefic car models for a given car
+  # - keys are all the car enums that which we have an interface for
+  # - values are lists of specific car models for a given car
   brand_names = {}
   for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
     try:
       brand_name = car_folder.split('/')[-1]
       model_names = __import__(f'selfdrive.car.{brand_name}.values', fromlist=['CAR']).CAR
-      if not issubclass(model_names, Enum):  # TODO: remove exception
-        model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
-      brand_names[brand_name] = model_names
+      # brand = getattr(car.CarParams.CarMake, brand_name)
+      brand_names[brand_name] = list(model_names)
     except (ImportError, OSError):
       pass
 
@@ -79,6 +77,7 @@ def _get_interface_names():
 
 # imports from directory selfdrive/car/<name>/
 interface_names = _get_interface_names()
+print(interface_names)
 interfaces = load_interfaces(interface_names)
 
 
@@ -94,7 +93,7 @@ def fingerprint(logcan, sendcan):
     cached_params = Params().get("CarParamsCache")
     if cached_params is not None:
       cached_params = car.CarParams.from_bytes(cached_params)
-      if cached_params.carName == "mock":
+      if cached_params.carMake == car.CarParams.CarMake.mock:
         cached_params = None
 
     if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
@@ -174,7 +173,7 @@ def get_car(logcan, sendcan):
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
-    candidate = "mock"
+    candidate = car.CarParams.CarMake.mock
 
   CarInterface, CarController, CarState = interfaces[candidate]
   car_params = CarInterface.get_params(candidate, fingerprints, car_fw)
