@@ -1,7 +1,7 @@
 # Supported Cars
 Cars are organized into three tiers:
 
-- ⭐ Gold - a full openpilot experience
+- ⭐ Gold - a high-quality openpilot experience
 - 🥈 Silver - a pretty good, albeit limited experience
 - 🥉 Bronze - significantly limited
 
