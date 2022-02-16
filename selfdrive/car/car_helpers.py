@@ -1,5 +1,4 @@
 import os
-from enum import Enum
 
 from common.params import Params
 from common.basedir import BASEDIR
@@ -55,7 +54,6 @@ def load_interfaces(brand_names):
       CarController = None
 
     for model_name in brand_names[brand_name]:
-      # print(model_name)
       ret[model_name] = (CarInterface, CarController, CarState)
   return ret
 
@@ -69,8 +67,7 @@ def _get_interface_names():
     try:
       brand_name = car_folder.split('/')[-1]
       model_names = __import__(f'selfdrive.car.{brand_name}.values', fromlist=['CAR']).CAR
-      if not issubclass(model_names, Enum):  # TODO: remove exception
-        model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
+      model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
       brand_names[brand_name] = model_names
     except (ImportError, OSError):
       pass

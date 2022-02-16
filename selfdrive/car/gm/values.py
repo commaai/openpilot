@@ -1,5 +1,3 @@
-from enum import Enum
-
 from cereal import car
 from selfdrive.car import CarInfo, dbc_dict
 Ecu = car.CarParams.Ecu
@@ -42,14 +40,14 @@ class CarControllerParams:
 STEER_THRESHOLD = 1.0
 
 
-class CAR(Enum):
-  HOLDEN_ASTRA = 0
-  VOLT = 1
-  CADILLAC_ATS = 2
-  MALIBU = 3
-  ACADIA = 4
-  BUICK_REGAL = 5
-  ESCALADE_ESV = 6
+class CAR:
+  HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
+  VOLT = "CHEVROLET VOLT PREMIER 2017"
+  CADILLAC_ATS = "CADILLAC ATS Premium Performance 2018"
+  MALIBU = "CHEVROLET MALIBU PREMIER 2017"
+  ACADIA = "GMC ACADIA DENALI 2018"
+  BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
+  ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
 
 
 CAR_INFO = {

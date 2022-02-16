@@ -1,5 +1,3 @@
-from enum import Enum
-
 from collections import namedtuple
 from selfdrive.car import CarInfo, dbc_dict
 from cereal import car
@@ -8,9 +6,9 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
 
 
-class CAR(Enum):
-  AP1_MODELS = 0
-  AP2_MODELS = 1
+class CAR:
+  AP1_MODELS = 'TESLA AP1 MODEL S'
+  AP2_MODELS = 'TESLA AP2 MODEL S'
 
 
 CAR_INFO = {

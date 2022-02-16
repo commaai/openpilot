@@ -1,5 +1,3 @@
-from enum import Enum
-
 from selfdrive.car import CarInfo, dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -13,14 +11,14 @@ class CarControllerParams:
   STEER_THRESHOLD = 1.0
 
 
-class CAR(Enum):
-  XTRAIL = 0
-  LEAF = 1
+class CAR:
+  XTRAIL = "NISSAN X-TRAIL 2017"
+  LEAF = "NISSAN LEAF 2018"
   # Leaf with ADAS ECU found behind instrument cluster instead of glovebox
   # Currently the only known difference between them is the inverted seatbelt signal.
-  LEAF_IC = 2
-  ROGUE = 3
-  ALTIMA = 4
+  LEAF_IC = "NISSAN LEAF 2018 Instrument Cluster"
+  ROGUE = "NISSAN ROGUE 2019"
+  ALTIMA = "NISSAN ALTIMA 2020"
 
 
 CAR_INFO = {

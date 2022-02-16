@@ -1,5 +1,3 @@
-from enum import Enum
-
 from selfdrive.car import CarInfo, dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -17,13 +15,13 @@ class CarControllerParams:
   STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
 
 
-class CAR(Enum):
-  CX5 = 0
-  CX9 = 1
-  MAZDA3 = 2
-  MAZDA6 = 3
-  CX9_2021 = 4
-  CX5_2022 = 5
+class CAR:
+  CX5 = "MAZDA CX-5"
+  CX9 = "MAZDA CX-9"
+  MAZDA3 = "MAZDA 3"
+  MAZDA6 = "MAZDA 6"
+  CX9_2021 = "MAZDA CX-9 2021"
+  CX5_2022 = "MAZDA CX-5 2022"
 
 
 CAR_INFO = {
