@@ -48,6 +48,8 @@ def model_replay(lr, frs):
   vipc_server = VisionIpcServer("camerad")
   vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, *(tici_f_frame_size if TICI else eon_f_frame_size))
   vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, *(tici_d_frame_size if TICI else eon_d_frame_size))
+  if TICI:
+    vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *(tici_f_frame_size if TICI else eon_f_frame_size))
   vipc_server.start_listener()
 
   sm = messaging.SubMaster(['modelV2', 'driverState'])
