@@ -196,7 +196,6 @@ void SNPEModel::execute() {
       memset(output, 0, output_size*sizeof(float));
       memset(recurrent, 0, recurrent_size*sizeof(float));
       uint64_t start_time = nanos_since_boot();
-      thneed->execute(inputs, output);
       if (extra != NULL) {
         float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
         thneed->execute(inputs, output);
