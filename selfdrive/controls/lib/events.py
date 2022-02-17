@@ -15,7 +15,6 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 EventName = car.CarEvent.EventName
 
-REPLAY = "REPLAY" in os.environ
 
 # Alert priorities
 class Priority(IntEnum):
@@ -218,8 +217,9 @@ def user_soft_disable_alert(alert_text_2: str) -> AlertCallbackType:
 
 def startup_master_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   branch = get_short_branch("")
-  if REPLAY:
+  if "REPLAY" in os.environ:
     branch = "replay"
+
   return StartupAlert("WARNING: This branch is not tested", branch, alert_status=AlertStatus.userPrompt)
 
 def below_engage_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
