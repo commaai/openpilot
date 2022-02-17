@@ -262,7 +262,6 @@ void Localizer::input_fake_gps_observations(double current_time) {
 
 void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log) {
   // ignore the message if the fix is invalid
-
   bool gps_invalid_flag = (log.getFlags() % 2 == 0);
   bool gps_unreasonable = (Vector2d(log.getAccuracy(), log.getVerticalAccuracy()).norm() >= SANE_GPS_UNCERTAINTY);
   bool gps_accuracy_insane = ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0));
@@ -500,7 +499,7 @@ int Localizer::locationd_thread() {
   while (!do_exit) {
     sm.update();
     for (const char* service : service_list) {
-      if (sm.updated(service) && sm.valid(service)) {
+      if (sm.updated(service) && sm.valid(service) && sm.allAliveAndValid()){
         const cereal::Event::Reader log = sm[service];
         this->handle_msg(log);
       }
