@@ -103,97 +103,97 @@ Description of terms:
 
 ## Community Maintained Cars and Features
 
-| Make      | Model (US Market Reference)     | Supported Package | ACC              | No ACC accel below | No ALC below |
-| ----------| --------------------------------| ------------------| -----------------| -------------------| -------------|
-| Audi      | A3 2014-19                      | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
-| Audi      | A3 Sportback e-tron 2017-18     | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
-| Audi      | Q2 2018                         | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
-| Audi      | Q3 2020-21                      | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
-| Audi      | S3 2015                         | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
-| Cadillac  | Escalade ESV 2016<sup>1</sup>   | ACC + LKAS        | openpilot        | 0mph               | 7mph         |
-| Chevrolet | Volt 2017-18<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Chrysler  | Pacifica 2017-18                | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Chrysler  | Pacifica 2020                   | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Chrysler  | Pacifica Hybrid 2017-18         | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Chrysler  | Pacifica Hybrid 2019-21         | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Genesis   | G70 2018                        | All               | Stock            | 0mph               | 0mph         |
-| Genesis   | G70 2020                        | All               | Stock            | 0mph               | 0mph         |
-| Genesis   | G80 2018                        | All               | Stock            | 0mph               | 0mph         |
-| Genesis   | G90 2018                        | All               | Stock            | 0mph               | 0mph         |
-| GMC       | Acadia 2018<sup>1</sup>         | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Hyundai   | Elantra 2017-19                 | SCC + LKAS        | Stock            | 19mph              | 34mph        |
-| Hyundai   | Elantra 2021                    | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Elantra Hybrid 2021             | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Genesis 2015-16                 | SCC + LKAS        | Stock            | 19mph              | 37mph        |
-| Hyundai   | Ioniq Electric 2019             | SCC + LKAS        | Stock            | 0mph               | 32mph        |
-| Hyundai   | Ioniq Electric 2020             | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Ioniq Hybrid 2017-19            | SCC + LKAS        | Stock            | 0mph               | 32mph        |
-| Hyundai   | Ioniq Hybrid 2020-22            | SCC + LFA         | Stock            | 0mph               | 0mph         |
-| Hyundai   | Ioniq PHEV 2020-21              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Kona 2020                       | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Kona EV 2018-19                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Kona Hybrid 2020                | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Santa Fe 2019-20                | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Santa Fe 2021-22                | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Santa Fe Hybrid 2022            | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Santa Fe Plug-in Hybrid 2022    | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Sonata 2018-2019                | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Sonata Hybrid 2021-22           | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Veloster 2019-20                | SCC + LKAS        | Stock            | 5mph               | 0mph         |
-| Jeep      | Grand Cherokee 2016-18          | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Jeep      | Grand Cherokee 2019-20          | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Kia       | Ceed 2019                       | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Forte 2018-21                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | K5 2021-22                      | SCC + LFA         | Stock            | 0mph               | 0mph         |
-| Kia       | Niro EV 2019-22                 | All               | Stock            | 0mph               | 0mph         |
-| Kia       | Niro Hybrid 2021                | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Niro PHEV 2019                  | SCC + LKAS        | Stock            | 10mph              | 32mph        |
-| Kia       | Optima 2017                     | SCC + LKAS        | Stock            | 0mph               | 32mph        |
-| Kia       | Optima 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Seltos 2021                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Sorento 2018-19                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Stinger 2018                    | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Telluride 2020                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Mazda     | CX-5 2022                       | All               | Stock            | 0mph               | 0mph         |
-| Mazda     | CX-9 2021                       | All               | Stock            | 0mph               | 28mph        |
-| Nissan    | Altima 2019-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
-| Nissan    | Leaf 2018-22                    | ProPILOT          | Stock            | 0mph               | 0mph         |
-| Nissan    | Rogue 2018-20                   | ProPILOT          | Stock            | 0mph               | 0mph         |
-| Nissan    | X-Trail 2017                    | ProPILOT          | Stock            | 0mph               | 0mph         |
-| SEAT      | Ateca 2018                      | Driver Assistance | Stock            | 0mph               | 0mph         |
-| SEAT      | Leon 2014-2020                  | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Subaru    | Ascent 2019                     | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Crosstrek 2018-20               | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Forester 2019-21                | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Impreza 2017-19                 | EyeSight          | Stock            | 0mph               | 0mph         |
-| Škoda     | Kamiq 2021<sup>2</sup>          | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Škoda     | Karoq 2019                      | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Škoda     | Kodiaq 2018-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Škoda     | Octavia 2015, 2018-19           | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Škoda     | Octavia RS 2016                 | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Škoda     | Scala 2020                      | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Škoda     | Superb 2015-18                  | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Arteon 2018, 2021<sup>4</sup>   | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Atlas 2018-19, 2022<sup>4</sup> | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Caravelle 2020<sup>4</sup>      | Driver Assistance | Stock            | 0mph               | 32mph        |
-| Volkswagen| California 2021<sup>4</sup>     | Driver Assistance | Stock            | 0mph               | 32mph        |
-| Volkswagen| e-Golf 2014, 2019-20            | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf 2015-20                    | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf Alltrack 2017-18           | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf GTE 2016                   | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf GTI 2018-20                | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf R 2016-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf SportsVan 2016             | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf SportWagen 2015            | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Jetta 2018-20                   | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Jetta GLI 2021                  | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Passat 2016-18<sup>3</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Polo 2020                       | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| T-Cross 2021<sup>4</sup>        | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| T-Roc 2021<sup>4</sup>          | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Taos 2022<sup>4</sup>           | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Tiguan 2020                     | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Touran 2017                     | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Make       | Model (US Market Reference)     | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Lateral to 0mph | Well Supported |
+|------------|---------------------------------|:-----------------:|:----------------------:|:--------------------:|:---------------:|:--------------:|
+| Audi       | A3 2014-19                      | ACC + Lane Assist |                        |          ⭐           |        ⭐        |                |
+| Audi       | A3 Sportback e-tron 2017-18     | ACC + Lane Assist |                        |          ⭐           |        ⭐        |                |
+| Audi       | Q2 2018                         | ACC + Lane Assist |                        |          ⭐           |        ⭐        |                |
+| Audi       | Q3 2020-21                      | ACC + Lane Assist |                        |          ⭐           |        ⭐        |                |
+| Audi       | S3 2015                         | ACC + Lane Assist |                        |          ⭐           |        ⭐        |                |
+| Cadillac   | Escalade ESV 2016<sup>1</sup>   |    ACC + LKAS     |           ⭐            |          ⭐           |                 |                |
+| Chevrolet  | Volt 2017-18<sup>1</sup>        |  Adaptive Cruise  |           ⭐            |          ⭐           |                 |                |
+| Chrysler   | Pacifica 2017-18                |  Adaptive Cruise  |                        |          ⭐           |                 |                |
+| Chrysler   | Pacifica 2020                   |  Adaptive Cruise  |                        |          ⭐           |                 |                |
+| Chrysler   | Pacifica Hybrid 2017-18         |  Adaptive Cruise  |                        |          ⭐           |                 |                |
+| Chrysler   | Pacifica Hybrid 2019-21         |  Adaptive Cruise  |                        |          ⭐           |                 |                |
+| Genesis    | G70 2018                        |        All        |                        |          ⭐           |        ⭐        |                |
+| Genesis    | G70 2020                        |        All        |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Genesis    | G80 2018                        |        All        |                        |          ⭐           |        ⭐        |                |
+| Genesis    | G90 2018                        |        All        |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| GMC        | Acadia 2018<sup>1</sup>         |  Adaptive Cruise  |           ⭐            |          ⭐           |                 |                |
+| Hyundai    | Elantra 2017-19                 |    SCC + LKAS     |                        |                      |                 |                |
+| Hyundai    | Elantra 2021                    |    SCC + LKAS     |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Hyundai    | Elantra Hybrid 2021             |    SCC + LKAS     |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Hyundai    | Genesis 2015-16                 |    SCC + LKAS     |                        |                      |                 |                |
+| Hyundai    | Ioniq Electric 2019             |    SCC + LKAS     |                        |          ⭐           |                 |                |
+| Hyundai    | Ioniq Electric 2020             |    SCC + LKAS     |                        |          ⭐           |        ⭐        |                |
+| Hyundai    | Ioniq Hybrid 2017-19            |    SCC + LKAS     |                        |          ⭐           |                 |                |
+| Hyundai    | Ioniq Hybrid 2020-22            |     SCC + LFA     |                        |          ⭐           |        ⭐        |                |
+| Hyundai    | Ioniq PHEV 2020-21              |    SCC + LKAS     |                        |          ⭐           |        ⭐        |                |
+| Hyundai    | Kona 2020                       |    SCC + LKAS     |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Hyundai    | Kona EV 2018-19                 |    SCC + LKAS     |                        |          ⭐           |        ⭐        |                |
+| Hyundai    | Kona Hybrid 2020                |    SCC + LKAS     |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Hyundai    | Santa Fe 2019-20                |        All        |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Hyundai    | Santa Fe 2021-22                |        All        |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Hyundai    | Santa Fe Hybrid 2022            |        All        |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Hyundai    | Santa Fe Plug-in Hybrid 2022    |        All        |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Hyundai    | Sonata 2018-2019                |    SCC + LKAS     |                        |          ⭐           |        ⭐        |                |
+| Hyundai    | Sonata Hybrid 2021-22           |        All        |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Hyundai    | Veloster 2019-20                |    SCC + LKAS     |                        |                      |        ⭐        |                |
+| Jeep       | Grand Cherokee 2016-18          |  Adaptive Cruise  |                        |          ⭐           |                 |                |
+| Jeep       | Grand Cherokee 2019-20          |  Adaptive Cruise  |                        |          ⭐           |                 |                |
+| Kia        | Ceed 2019                       |    SCC + LKAS     |                        |          ⭐           |        ⭐        |                |
+| Kia        | Forte 2018-21                   |    SCC + LKAS     |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Kia        | K5 2021-22                      |     SCC + LFA     |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Kia        | Niro EV 2019-22                 |        All        |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Kia        | Niro Hybrid 2021                |    SCC + LKAS     |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Kia        | Niro PHEV 2019                  |    SCC + LKAS     |     🌗<sup>5</sup>     |                      |                 |                |
+| Kia        | Optima 2017                     |    SCC + LKAS     |                        |          ⭐           |                 |                |
+| Kia        | Optima 2019                     |    SCC + LKAS     |                        |          ⭐           |        ⭐        |                |
+| Kia        | Seltos 2021                     |    SCC + LKAS     |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Kia        | Sorento 2018-19                 |    SCC + LKAS     |                        |          ⭐           |        ⭐        |                |
+| Kia        | Stinger 2018                    |    SCC + LKAS     |                        |          ⭐           |        ⭐        |                |
+| Kia        | Telluride 2020                  |    SCC + LKAS     |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |                |
+| Mazda      | CX-5 2022                       |        All        |                        |          ⭐           |        ⭐        |                |
+| Mazda      | CX-9 2021                       |        All        |                        |          ⭐           |                 |                |
+| Nissan     | Altima 2019-20                  |     ProPILOT      |                        |          ⭐           |        ⭐        |                |
+| Nissan     | Leaf 2018-22                    |     ProPILOT      |                        |          ⭐           |        ⭐        |                |
+| Nissan     | Rogue 2018-20                   |     ProPILOT      |                        |          ⭐           |        ⭐        |                |
+| Nissan     | X-Trail 2017                    |     ProPILOT      |                        |          ⭐           |        ⭐        |                |
+| SEAT       | Ateca 2018                      | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| SEAT       | Leon 2014-2020                  | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Subaru     | Ascent 2019                     |     EyeSight      |                        |          ⭐           |        ⭐        |                |
+| Subaru     | Crosstrek 2018-20               |     EyeSight      |                        |          ⭐           |        ⭐        |                |
+| Subaru     | Forester 2019-21                |     EyeSight      |                        |          ⭐           |        ⭐        |                |
+| Subaru     | Impreza 2017-19                 |     EyeSight      |                        |          ⭐           |        ⭐        |                |
+| Škoda      | Kamiq 2021<sup>2</sup>          | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Škoda      | Karoq 2019                      | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Škoda      | Kodiaq 2018-19                  | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Škoda      | Octavia 2015, 2018-19           | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Škoda      | Octavia RS 2016                 | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Škoda      | Scala 2020                      | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Škoda      | Superb 2015-18                  | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Arteon 2018, 2021<sup>4</sup>   | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Atlas 2018-19, 2022<sup>4</sup> | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Caravelle 2020<sup>4</sup>      | Driver Assistance |                        |          ⭐           |                 |                |
+| Volkswagen | California 2021<sup>4</sup>     | Driver Assistance |                        |          ⭐           |                 |                |
+| Volkswagen | e-Golf 2014, 2019-20            | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Golf 2015-20                    | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Golf Alltrack 2017-18           | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Golf GTE 2016                   | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Golf GTI 2018-20                | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Golf R 2016-19                  | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Golf SportsVan 2016             | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Golf SportWagen 2015            | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Jetta 2018-20                   | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Jetta GLI 2021                  | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Passat 2016-18<sup>3</sup>      | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Polo 2020                       | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | T-Cross 2021<sup>4</sup>        | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | T-Roc 2021<sup>4</sup>          | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Taos 2022<sup>4</sup>           | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Tiguan 2020                     | Driver Assistance |                        |          ⭐           |        ⭐        |                |
+| Volkswagen | Touran 2017                     | Driver Assistance |                        |          ⭐           |        ⭐        |                |
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
 <sup>2</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
