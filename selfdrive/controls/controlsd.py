@@ -492,7 +492,8 @@ class Controls:
     if not self.joystick_mode:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
-      actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits)
+      long_rcv_frames = self.sm.frame - self.sm.rcv_frame['longitudinalPlan']
+      actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, long_rcv_frames)
 
       # Steering PID loop and lateral MPC
       lat_active = self.active and not CS.steerWarning and not CS.steerError and CS.vEgo > self.CP.minSteerSpeed
