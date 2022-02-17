@@ -53,7 +53,10 @@ def model_replay(lr, frs):
   vipc_server.start_listener()
 
   sm = messaging.SubMaster(['modelV2', 'driverState'])
-  pm = messaging.PubMaster(['roadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
+  if TICI:
+    pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
+  else:
+    pm = messaging.PubMaster(['roadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
 
   try:
     managed_processes['modeld'].start()
