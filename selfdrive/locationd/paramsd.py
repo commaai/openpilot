@@ -198,6 +198,8 @@ def main(sm=None, pm=None):
       liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET])
       liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
 
+      msg.valid = liveParameters.valid and sm.all_alive_and_valid()
+
       if sm.frame % 1200 == 0:  # once a minute
         params = {
           'carFingerprint': CP.carFingerprint,

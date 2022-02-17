@@ -461,6 +461,7 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
 {
   cereal::Event::Builder evt = msg_builder.initEvent();
   evt.setLogMonoTime(logMonoTime);
+  evt.setValid(inputsOK);
   cereal::LiveLocationKalman::Builder liveLoc = evt.initLiveLocationKalman();
   this->build_live_location(liveLoc);
   liveLoc.setInputsOK(inputsOK);
