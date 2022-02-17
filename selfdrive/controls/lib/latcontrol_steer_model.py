@@ -8,8 +8,12 @@ from common.realtime import DT_CTRL
 from common.numpy_fast import clip
 
 NX = 2
-NU = 2
-N_live_param = 1
+
+controls_list = ['can_cmds', 'can_cmds_squared', 'cmds_by_vsquared']
+NU = len(controls_list)
+
+live_param_list = ['roll', 'speed_times_roll', 'roll_squared', 'roll_by_speed']
+N_live_param = len(live_param_list)
 
 
 class LatControlSteerModel(LatControl):
@@ -44,9 +48,9 @@ class LatControlSteerModel(LatControl):
     angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
-    # live_param_list = ['roll', 'speeds', 'speed_squared', 'speed_times_roll']
-    # live_param = np.array([params.roll, CS.vEgo, CS.vEgo ** 2, CS.vEgo * params.roll])
-    live_param = np.array([params.roll])
+    # TODO
+    # live_param_list = ['roll', 'speed_times_roll', 'roll_squared', 'roll_by_speed'] #, 'speed_times_angle']
+    live_param = np.array([params.roll, CS.vEgo * params.roll, params.roll * abs(params.roll), params.roll / CS.vEgo])
 
     model_log.steeringAngleDesiredDeg = angle_steers_des
 
@@ -70,7 +74,9 @@ class LatControlSteerModel(LatControl):
       desired_angle_rate = math.degrees(VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, params.roll))
 
       # torque = argmin norm(xcurrent + DT_CTRL * (A*xcurrent + R*live_param + B*u) - [desired_angle, desired_angle_rate])_W
-      B_tilde = self.B @ np.array([1, 2*np.abs(self.torque)])
+      # TODO!
+      du_dtorque = np.array([1, 2*np.abs(self.torque), 1/(CS.vEgo**2)])
+      B_tilde = self.B @ du_dtorque
       Phi = (DT_CTRL * B_tilde).reshape((2,1))
       M_tilde = - 1/(Phi.T @ self.W @ Phi) * (Phi.T@self.W)
 
@@ -78,7 +84,7 @@ class LatControlSteerModel(LatControl):
       torque_np = M_tilde @ (self.xcurrent -
                       np.array([angle_steers_des_no_offset, desired_angle_rate]) + DT_CTRL * AxplusRp).reshape((2,1))
 
-      # TODO: remove clipping later, good for prototype testing!
+      # Note: meybe remove clipping later, good for prototype testing!
       # When removing, use last_actuators instead of self.torque to update xcurrent
       STEER_DELTA_UP = 10/1500       # 1.5s time to peak torque
       STEER_DELTA_DOWN = 25/1500
@@ -91,7 +97,9 @@ class LatControlSteerModel(LatControl):
       output_steer = float(clip(torque_np, -1.0, 1.0))
 
       # update state estimate with forward simulation
-      self.xcurrent = self.xcurrent + DT_CTRL * (AxplusRp + (self.B @ np.array([output_steer, output_steer *abs(output_steer)])))
+      # TODO
+      u = np.array([output_steer, output_steer*abs(output_steer), output_steer/(CS.vEgo**2)])
+      self.xcurrent = self.xcurrent + DT_CTRL * (AxplusRp + (self.B @ u))
       # self.xcurrent = self.xcurrent + DT_CTRL * (AxplusRp + (self.B * output_steer))
 
       self.torque = output_steer
