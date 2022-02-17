@@ -44,30 +44,30 @@ Description of terms:
 | Honda  | Civic Coupe 2016-18         |   Honda Sensing   |           ⭐            |          ⭐           |                 |                      |       ⭐        |
 | Honda  | Civic Sedan 2016-18         |   Honda Sensing   |           ⭐            |          ⭐           |                 |                      |       ⭐        |
 | Honda  | Odyssey 2018-20             |   Honda Sensing   |           ⭐            |                      |        ⭐        |                      |       ⭐        |
-| Lexus  | CT Hybrid 2017-18           |        LSS        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | ES Hybrid 2017-18           |        LSS        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Lexus  | CT Hybrid 2017-18           |        LSS        |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Lexus  | ES Hybrid 2017-18           |        LSS        |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Lexus  | IS 2017-2019                |        All        |                        |                      |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | NX 2018-2019                |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | NX Hybrid 2018-19           |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Lexus  | NX 2018-2019                |        All        |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Lexus  | NX Hybrid 2018-19           |        All        |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Lexus  | RC 2020                     |        All        |                        |                      |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | RX 2016-18                  |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | RX Hybrid 2016-19           |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Avalon 2016-21              |       TSS-P       |                        |                      |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Avalon Hybrid 2019-21       |       TSS-P       |                        |                      |        ⭐        |          ⭐           |       ⭐        |
+| Lexus  | RX 2016-18                  |        All        |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Lexus  | RX Hybrid 2016-19           |        All        |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota | Avalon 2016-21              |       TSS-P       |     🌗<sup>3</sup>     |                      |        ⭐        |          ⭐           |       ⭐        |
+| Toyota | Avalon Hybrid 2019-21       |       TSS-P       |     🌗<sup>3</sup>     |                      |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | C-HR 2017-21                |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | C-HR Hybrid 2017-19         |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | Camry 2018-20               |        All        |                        |    ⭐<sup>4</sup>     |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | Camry 2021-22               |        All        |           ⭐            |    ⭐<sup>4</sup>     |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | Camry Hybrid 2018-20        |        All        |                        |    ⭐<sup>4</sup>     |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Corolla 2017-19             |        All        |                        |                      |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Highlander 2017-19          |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Highlander Hybrid 2017-19   |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Prius 2016-20               |       TSS-P       |                        |          ⭐           |        ⭐        |                      |       ⭐        |
-| Toyota | Prius Prime 2017-20         |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Prius v 2017                |       TSS-P       |                        |                      |        ⭐        |                      |       ⭐        |
-| Toyota | RAV4 2016-18                |       TSS-P       |                        |                      |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | RAV4 Hybrid 2016-18         |       TSS-P       |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Sienna 2018-20              |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota | Corolla 2017-19             |        All        |     🌗<sup>3</sup>     |                      |        ⭐        |          ⭐           |       ⭐        |
+| Toyota | Highlander 2017-19          |        All        |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota | Highlander Hybrid 2017-19   |        All        |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota | Prius 2016-20               |       TSS-P       |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |                      |       ⭐        |
+| Toyota | Prius Prime 2017-20         |        All        |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota | Prius v 2017                |       TSS-P       |     🌗<sup>3</sup>     |                      |        ⭐        |                      |       ⭐        |
+| Toyota | RAV4 2016-18                |       TSS-P       |     🌗<sup>3</sup>     |                      |        ⭐        |          ⭐           |       ⭐        |
+| Toyota | RAV4 Hybrid 2016-18         |       TSS-P       |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota | Sienna 2018-20              |        All        |     🌗<sup>3</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 
 ## Bronze Cars
 
@@ -96,7 +96,7 @@ Description of terms:
 
 
 <sup>1</sup>[Comma Pedal](https://github.com/commaai/openpilot/wiki/comma-pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. ***NOTE: The Comma Pedal is not officially supported by [comma](https://comma.ai).*** <br />
-[//]: # (<sup>2</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />)
+<sup>2</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph.
 <sup>3</sup>When disconnecting the Driver Support Unit (DSU), openpilot ACC will replace stock ACC. ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
 <sup>4</sup>28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>5</sup>When disabling the radar, openpilot ACC will replace stock ACC. ***NOTE: disabling the radar disables Automatic Emergency Braking (AEB).*** <br />
