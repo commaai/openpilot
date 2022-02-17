@@ -15,8 +15,8 @@ Description of terms:
 
 | Make    | Model (US Market Reference) | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Lateral to 0mph | Good steering torque | Well Supported |
 |---------|-----------------------------|:-----------------:|:----------------------:|:--------------------:|:---------------:|:--------------------:|:--------------:|
-| Hyundai | Palisade 2020-21            |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Hyundai | Sonata 2020-22              |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Hyundai | Palisade 2020-21            |        All        |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Hyundai | Sonata 2020-22              |        All        |     🌗<sup>5</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Lexus   | ES 2019-21                  |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Lexus   | ES Hybrid 2019-21           |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Lexus   | NX 2020                     |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
@@ -96,9 +96,10 @@ Description of terms:
 
 
 <sup>1</sup>[Comma Pedal](https://github.com/commaai/openpilot/wiki/comma-pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. ***NOTE: The Comma Pedal is not officially supported by [comma](https://comma.ai).*** <br />
-<sup>2</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
+[//]: # (<sup>2</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />)
 <sup>3</sup>When disconnecting the Driver Support Unit (DSU), openpilot ACC will replace stock ACC. ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
 <sup>4</sup>28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
+<sup>5</sup>When disabling the radar, openpilot ACC will replace stock ACC. ***NOTE: disabling the radar disables Automatic Emergency Braking (AEB).*** <br />
 
 ## Community Maintained Cars and Features
 
