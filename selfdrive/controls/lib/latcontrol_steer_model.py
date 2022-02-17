@@ -48,7 +48,7 @@ class LatControlSteerModel(LatControl):
     angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
-    # TODO
+    # NOTE: live_param_list dependent.
     # live_param_list = ['roll', 'speed_times_roll', 'roll_squared', 'roll_by_speed'] #, 'speed_times_angle']
     live_param = np.array([params.roll, CS.vEgo * params.roll, params.roll * abs(params.roll), params.roll / CS.vEgo])
 
@@ -66,15 +66,11 @@ class LatControlSteerModel(LatControl):
       # torque = argmin norm([desired_angle, xcurrent_1] + DT_CTRL * (A*xcurrent + R*live_param + B*u))
       # torque_np = self.M @ (self.A @ self.xcurrent + self.R @ live_param +
                 # (self.xcurrent - np.array([angle_steers_des_no_offset, self.xcurrent[1,]]))/DT_CTRL )
-      # hacky but works well..
-      # torque_np = self.M @ (self.A @ self.xcurrent + self.R @ live_param +
-      #           (self.xcurrent - np.array([angle_steers_des_no_offset, .95*self.xcurrent[1,]]))/DT_CTRL )
-
       #
       desired_angle_rate = math.degrees(VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, params.roll))
 
       # torque = argmin norm(xcurrent + DT_CTRL * (A*xcurrent + R*live_param + B*u) - [desired_angle, desired_angle_rate])_W
-      # TODO!
+      # NOTE: controls_list dependent.
       du_dtorque = np.array([1, 2*np.abs(self.torque), 1/(CS.vEgo**2)])
       B_tilde = self.B @ du_dtorque
       Phi = (DT_CTRL * B_tilde).reshape((2,1))
@@ -84,8 +80,13 @@ class LatControlSteerModel(LatControl):
       torque_np = M_tilde @ (self.xcurrent -
                       np.array([angle_steers_des_no_offset, desired_angle_rate]) + DT_CTRL * AxplusRp).reshape((2,1))
 
-      # Note: meybe remove clipping later, good for prototype testing!
-      # When removing, use last_actuators instead of self.torque to update xcurrent
+      # hacky but works well..
+      # B_tilde = B_tilde.reshape((2,1))
+      # M = - np.linalg.solve(B_tilde.T @ B_tilde, B_tilde.T)
+      # torque_np = M @ (self.A @ self.xcurrent + self.R @ live_param +
+      #           (self.xcurrent - np.array([angle_steers_des_no_offset, .95*self.xcurrent[1,]]))/DT_CTRL )
+
+      # NOTE: clipping Toyota dependent here.
       STEER_DELTA_UP = 10/1500       # 1.5s time to peak torque
       STEER_DELTA_DOWN = 25/1500
       if self.torque > 0:
@@ -97,7 +98,7 @@ class LatControlSteerModel(LatControl):
       output_steer = float(clip(torque_np, -1.0, 1.0))
 
       # update state estimate with forward simulation
-      # TODO
+      # NOTE: controls_list dependent.
       u = np.array([output_steer, output_steer*abs(output_steer), output_steer/(CS.vEgo**2)])
       self.xcurrent = self.xcurrent + DT_CTRL * (AxplusRp + (self.B @ u))
       # self.xcurrent = self.xcurrent + DT_CTRL * (AxplusRp + (self.B * output_steer))
