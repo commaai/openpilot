@@ -66,7 +66,6 @@ OMX_ERRORTYPE OmxEncoder::event_handler(OMX_HANDLETYPE component, OMX_PTR app_da
 
 OMX_ERRORTYPE OmxEncoder::empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                                    OMX_BUFFERHEADERTYPE *buffer) {
-  // printf("empty_buffer_done\n");
   OmxEncoder *e = (OmxEncoder*)app_data;
   e->free_in.push(buffer);
   return OMX_ErrorNone;
@@ -74,7 +73,6 @@ OMX_ERRORTYPE OmxEncoder::empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR ap
 
 OMX_ERRORTYPE OmxEncoder::fill_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                                   OMX_BUFFERHEADERTYPE *buffer) {
-  // printf("fill_buffer_done\n");
   OmxEncoder *e = (OmxEncoder*)app_data;
   e->done_out.push(buffer);
   return OMX_ErrorNone;
@@ -328,37 +326,78 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   LOGE("omx initialized - in: %d - out %d", this->in_buf_headers.size(), this->out_buf_headers.size());
 }
 
-void OmxEncoder::write_handler(OmxEncoder *e){
-  while (true) {
-    OMX_BUFFERHEADERTYPE *out_buf = e->done_out.pop();
-    OmxEncoder::handle_out_buf(e, out_buf);
+void OmxEncoder::callback_handler(OmxEncoder *e) {
+  // OMX documentation specifies to not empty the buffer from the callback function
+  // so we use this intermediate handler to copy the buffer for further writing
+  // and give it back to OMX. We could also send the data over msgq from here.
+  bool exit = false;
 
-    if (out_buf->nFlags & OMX_BUFFERFLAG_EOS) {
-      break;
+  while (!exit) {
+    OMX_BUFFERHEADERTYPE *buffer = e->done_out.pop();
+    OmxBuffer *new_buffer = (OmxBuffer*)malloc(sizeof(OmxBuffer) + buffer->nFilledLen);
+    assert(new_buffer);
+
+    new_buffer->header = *buffer;
+    memcpy(new_buffer->data, buffer->pBuffer + buffer->nOffset, buffer->nFilledLen);
+
+    e->to_write.push(new_buffer);
+
+#ifdef QCOM2
+    if (buffer->nFlags & OMX_BUFFERFLAG_CODECCONFIG) {
+      buffer->nTimeStamp = 0;
     }
+
+    if (buffer->nFlags & OMX_BUFFERFLAG_EOS) {
+      buffer->nTimeStamp = 0;
+    }
+#endif
+
+    if (buffer->nFlags & OMX_BUFFERFLAG_EOS) {
+      exit = true;
+    }
+
+    // give omx back the buffer
+    // TOOD: fails when shutting down
+    OMX_CHECK(OMX_FillThisBuffer(e->handle, buffer));
   }
 }
 
 
-void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
-  int err;
-  uint8_t *buf_data = out_buf->pBuffer + out_buf->nOffset;
+void OmxEncoder::write_handler(OmxEncoder *e){
+  bool exit = false;
+  while (!exit) {
+    OmxBuffer *out_buf = e->to_write.pop();
+    OmxEncoder::handle_out_buf(e, out_buf);
 
-  if (out_buf->nFlags & OMX_BUFFERFLAG_CODECCONFIG) {
-    if (e->codec_config_len < out_buf->nFilledLen) {
-      e->codec_config = (uint8_t *)realloc(e->codec_config, out_buf->nFilledLen);
+    if (out_buf->header.nFlags & OMX_BUFFERFLAG_EOS) {
+      exit = true;
     }
-    e->codec_config_len = out_buf->nFilledLen;
-    memcpy(e->codec_config, buf_data, out_buf->nFilledLen);
+
+    free(out_buf);
+  }
+}
+
+
+void OmxEncoder::handle_out_buf(OmxEncoder *e, OmxBuffer *out_buf) {
+  int err;
+
+  if (out_buf->header.nFlags & OMX_BUFFERFLAG_CODECCONFIG) {
+    if (e->codec_config_len < out_buf->header.nFilledLen) {
+      e->codec_config = (uint8_t *)realloc(e->codec_config, out_buf->header.nFilledLen);
+    }
+    e->codec_config_len = out_buf->header.nFilledLen;
+    memcpy(e->codec_config, out_buf->data, out_buf->header.nFilledLen);
+
+    // TODO: is still needed?
 #ifdef QCOM2
-    out_buf->nTimeStamp = 0;
+    out_buf->header.nTimeStamp = 0;
 #endif
   }
 
   if (e->of) {
     //printf("write %d flags 0x%x\n", out_buf->nFilledLen, out_buf->nFlags);
-    size_t written = util::safe_fwrite(buf_data, 1, out_buf->nFilledLen, e->of);
-    if (written != out_buf->nFilledLen) {
+    size_t written = util::safe_fwrite(out_buf->data, 1, out_buf->header.nFilledLen, e->of);
+    if (written != out_buf->header.nFilledLen) {
       LOGE("failed to write file.errno=%d", errno);
     }
   }
@@ -378,20 +417,20 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
       e->wrote_codec_config = true;
     }
 
-    if (out_buf->nTimeStamp > 0) {
+    if (out_buf->header.nTimeStamp > 0) {
       // input timestamps are in microseconds
       AVRational in_timebase = {1, 1000000};
 
       AVPacket pkt;
       av_init_packet(&pkt);
-      pkt.data = buf_data;
-      pkt.size = out_buf->nFilledLen;
+      pkt.data = out_buf->data;
+      pkt.size = out_buf->header.nFilledLen;
 
       enum AVRounding rnd = static_cast<enum AVRounding>(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
-      pkt.pts = pkt.dts = av_rescale_q_rnd(out_buf->nTimeStamp, in_timebase, e->ofmt_ctx->streams[0]->time_base, rnd);
+      pkt.pts = pkt.dts = av_rescale_q_rnd(out_buf->header.nTimeStamp, in_timebase, e->ofmt_ctx->streams[0]->time_base, rnd);
       pkt.duration = av_rescale_q(50*1000, in_timebase, e->ofmt_ctx->streams[0]->time_base);
 
-      if (out_buf->nFlags & OMX_BUFFERFLAG_SYNCFRAME) {
+      if (out_buf->header.nFlags & OMX_BUFFERFLAG_SYNCFRAME) {
         pkt.flags |= AV_PKT_FLAG_KEY;
       }
 
@@ -401,14 +440,6 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
       av_free_packet(&pkt);
     }
   }
-
-  // give omx back the buffer
-#ifdef QCOM2
-  if (out_buf->nFlags & OMX_BUFFERFLAG_EOS) {
-    out_buf->nTimeStamp = 0;
-  }
-#endif
-  OMX_CHECK(OMX_FillThisBuffer(e->handle, out_buf));
 }
 
 int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
@@ -528,7 +559,8 @@ void OmxEncoder::encoder_open(const char* path) {
   assert(lock_fd >= 0);
   close(lock_fd);
 
-  // start writer thread
+  // start writer threads
+  callback_handler_thread = std::thread(OmxEncoder::callback_handler, this);
   write_handler_thread = std::thread(OmxEncoder::write_handler, this);
 
   this->is_open = true;
@@ -551,6 +583,7 @@ void OmxEncoder::encoder_close() {
       this->dirty = false;
     }
 
+    callback_handler_thread.join();
     write_handler_thread.join();
 
     if (this->remuxing) {
@@ -591,9 +624,14 @@ OmxEncoder::~OmxEncoder() {
 
   OMX_CHECK(OMX_FreeHandle(this->handle));
 
-  OMX_BUFFERHEADERTYPE *out_buf;
-  while (this->free_in.try_pop(out_buf));
-  while (this->done_out.try_pop(out_buf));
+  OMX_BUFFERHEADERTYPE *buf;
+  while (this->free_in.try_pop(buf));
+  while (this->done_out.try_pop(buf));
+
+  OmxBuffer *write_buf;
+  while (this->to_write.try_pop(write_buf)) {
+    free(write_buf);
+  };
 
   if (this->codec_config) {
     free(this->codec_config);

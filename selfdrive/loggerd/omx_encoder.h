@@ -13,6 +13,12 @@ extern "C" {
 #include "selfdrive/common/queue.h"
 #include "selfdrive/loggerd/encoder.h"
 
+struct OmxBuffer {
+  OMX_BUFFERHEADERTYPE header;
+  OMX_U8 data[];
+};
+
+
 // OmxEncoder, lossey codec using hardware hevc
 class OmxEncoder : public VideoEncoder {
 public:
@@ -33,8 +39,9 @@ public:
 
 private:
   void wait_for_state(OMX_STATETYPE state);
+  static void callback_handler(OmxEncoder *e);
   static void write_handler(OmxEncoder *e);
-  static void handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf);
+  static void handle_out_buf(OmxEncoder *e, OmxBuffer *out_buf);
 
   int width, height, fps;
   char vid_path[1024];
@@ -43,6 +50,7 @@ private:
   bool dirty = false;
   bool write = false;
   int counter = 0;
+  std::thread callback_handler_thread;
   std::thread write_handler_thread;
 
   const char* filename;
@@ -65,6 +73,7 @@ private:
 
   SafeQueue<OMX_BUFFERHEADERTYPE *> free_in;
   SafeQueue<OMX_BUFFERHEADERTYPE *> done_out;
+  SafeQueue<OmxBuffer *> to_write;
 
   AVFormatContext *ofmt_ctx;
   AVCodecContext *codec_ctx;
