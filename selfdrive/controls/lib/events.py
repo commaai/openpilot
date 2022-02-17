@@ -1,3 +1,4 @@
+import os
 from enum import IntEnum
 from typing import Dict, Union, Callable, List, Optional
 
@@ -14,6 +15,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 EventName = car.CarEvent.EventName
 
+REPLAY = "REPLAY" in os.environ
 
 # Alert priorities
 class Priority(IntEnum):
@@ -215,7 +217,10 @@ def user_soft_disable_alert(alert_text_2: str) -> AlertCallbackType:
   return func
 
 def startup_master_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  return StartupAlert("WARNING: This branch is not tested", get_short_branch(""), alert_status=AlertStatus.userPrompt)
+  branch = get_short_branch("")
+  if REPLAY:
+    branch = "replay"
+  return StartupAlert("WARNING: This branch is not tested", branch, alert_status=AlertStatus.userPrompt)
 
 def below_engage_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   return NoEntryAlert(f"Speed Below {get_display_speed(CP.minEnableSpeed, metric)}")
