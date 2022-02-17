@@ -17,57 +17,51 @@ Description of terms:
 |---------|-----------------------------|:-----------------:|:----------------------:|:--------------------:|:---------------:|:--------------------:|:--------------:|
 | Hyundai | Palisade 2020-21            |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Hyundai | Sonata 2020-22              |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Lexus   | CT Hybrid 2017-18           |        LSS        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Lexus   | ES 2019-21                  |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Lexus   | ES Hybrid 2017-18           |        LSS        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Lexus   | ES Hybrid 2019-21           |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Lexus   | NX 2018-2019                |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Lexus   | NX 2020                     |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Lexus   | NX Hybrid 2018-19           |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Lexus   | RX 2016-18                  |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Lexus   | RX 2020-21                  |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Lexus   | RX Hybrid 2016-19           |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Lexus   | RX Hybrid 2020-21           |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Lexus   | UX Hybrid 2019-21           |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | Alphard 2019-20             |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | Avalon 2022                 |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota  | Camry 2021-22               |        All        |           ⭐            |    ⭐<sup>3</sup>     |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | Camry Hybrid 2021-22        |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | Corolla 2020-22             |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | Corolla Hatchback 2019-22   |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | Corolla Hybrid 2020-22      |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota  | Highlander 2017-19          |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | Highlander 2020-22          |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota  | Highlander Hybrid 2017-19   |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | Highlander Hybrid 2020-22   |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | Mirai 2021                  |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | Prius 2021-22               |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota  | Prius Prime 2017-20         |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | Prius Prime 2021-22         |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | RAV4 2019-21                |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota  | RAV4 Hybrid 2016-18         |       TSS-P       |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota  | RAV4 Hybrid 2019-21         |        All        |           ⭐            |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
+| Toyota  | Sienna 2018-20              |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 
 ## Silver Cars
 
 | Make   | Model (US Market Reference) | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Lateral to 0mph | Good steering torque | Well Supported |
 |--------|-----------------------------|:-----------------:|:----------------------:|:--------------------:|:---------------:|:--------------------:|:--------------:|
-| Honda  | Civic Coupe 2016-18         |   Honda Sensing   |           ⭐            |          ⭐           |                 |                      |       ⭐        |
-| Honda  | Civic Sedan 2016-18         |   Honda Sensing   |           ⭐            |          ⭐           |                 |                      |       ⭐        |
-| Honda  | Odyssey 2018-20             |   Honda Sensing   |           ⭐            |                      |        ⭐        |                      |       ⭐        |
-| Lexus  | CT Hybrid 2017-18           |        LSS        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | ES Hybrid 2017-18           |        LSS        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | IS 2017-2019                |        All        |                        |                      |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | NX 2018-2019                |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | NX Hybrid 2018-19           |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | RC 2020                     |        All        |                        |                      |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | RX 2016-18                  |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Lexus  | RX Hybrid 2016-19           |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | Avalon 2016-21              |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | Avalon Hybrid 2019-21       |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | C-HR 2017-21                |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | C-HR Hybrid 2017-19         |        All        |                        |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | Camry 2018-20               |        All        |                        |    ⭐<sup>3</sup>     |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Camry 2021-22               |        All        |           ⭐            |    ⭐<sup>3</sup>     |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | Camry Hybrid 2018-20        |        All        |                        |    ⭐<sup>3</sup>     |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | Corolla 2017-19             |        All        |     🌗<sup>2</sup>     |                      |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Highlander 2017-19          |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Highlander Hybrid 2017-19   |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 | Toyota | Prius 2016-20               |       TSS-P       |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |                      |       ⭐        |
-| Toyota | Prius Prime 2017-20         |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Prius v 2017                |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐        |                      |       ⭐        |
 | Toyota | RAV4 2016-18                |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | RAV4 Hybrid 2016-18         |       TSS-P       |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
-| Toyota | Sienna 2018-20              |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐        |          ⭐           |       ⭐        |
 
 ## Bronze Cars
 
@@ -97,14 +91,17 @@ Description of terms:
 | Honda      | CR-V 2015-16                    |      Touring      |           ⭐            |                      |                 |                      |       ⭐        |
 | Honda      | CR-V 2017-21                    |   Honda Sensing   |                        |          ⭐           |                 |                      |       ⭐        |
 | Honda      | CR-V Hybrid 2017-2019           |   Honda Sensing   |                        |          ⭐           |                 |                      |       ⭐        |
+| Honda      | Civic Coupe 2016-18             |   Honda Sensing   |           ⭐            |          ⭐           |                 |                      |       ⭐        |
 | Honda      | Civic Coupe 2019-20             |        All        |                        |          ⭐           |                 |                      |       ⭐        |
 | Honda      | Civic Hatchback 2017-21         |   Honda Sensing   |                        |          ⭐           |                 |                      |       ⭐        |
+| Honda      | Civic Sedan 2016-18             |   Honda Sensing   |           ⭐            |          ⭐           |                 |                      |       ⭐        |
 | Honda      | Civic Sedan 2019-20             |        All        |                        |          ⭐           |                 |                      |       ⭐        |
 | Honda      | Fit 2018-19                     |   Honda Sensing   |           ⭐            |                      |                 |                      |       ⭐        |
 | Honda      | Freed 2020                      |   Honda Sensing   |           ⭐            |                      |                 |                      |       ⭐        |
 | Honda      | HR-V 2019-20                    |   Honda Sensing   |           ⭐            |                      |                 |                      |       ⭐        |
 | Honda      | Insight 2019-21                 |        All        |                        |          ⭐           |                 |                      |       ⭐        |
 | Honda      | Inspire 2018                    |        All        |                        |          ⭐           |                 |                      |       ⭐        |
+| Honda      | Odyssey 2018-20                 |   Honda Sensing   |           ⭐            |                      |        ⭐        |                      |       ⭐        |
 | Honda      | Passport 2019-21                |        All        |           ⭐            |                      |                 |                      |       ⭐        |
 | Honda      | Pilot 2016-21                   |   Honda Sensing   |           ⭐            |                      |                 |                      |       ⭐        |
 | Honda      | Ridgeline 2017-21               |   Honda Sensing   |           ⭐            |                      |                 |                      |       ⭐        |
@@ -142,6 +139,8 @@ Description of terms:
 | Kia        | Sorento 2018-19                 |    SCC + LKAS     |                        |          ⭐           |        ⭐        |                      |                |
 | Kia        | Stinger 2018                    |    SCC + LKAS     |                        |          ⭐           |        ⭐        |                      |                |
 | Kia        | Telluride 2020                  |    SCC + LKAS     |     🌗<sup>4</sup>     |          ⭐           |        ⭐        |                      |                |
+| Lexus      | IS 2017-2019                    |        All        |                        |                      |        ⭐        |          ⭐           |       ⭐        |
+| Lexus      | RC 2020                         |        All        |                        |                      |        ⭐        |          ⭐           |       ⭐        |
 | Mazda      | CX-5 2022                       |        All        |                        |          ⭐           |        ⭐        |                      |                |
 | Mazda      | CX-9 2021                       |        All        |                        |          ⭐           |                 |                      |                |
 | Nissan     | Altima 2019-20                  |     ProPILOT      |                        |          ⭐           |        ⭐        |                      |                |
@@ -154,6 +153,7 @@ Description of terms:
 | Subaru     | Crosstrek 2018-20               |     EyeSight      |                        |          ⭐           |        ⭐        |                      |                |
 | Subaru     | Forester 2019-21                |     EyeSight      |                        |          ⭐           |        ⭐        |                      |                |
 | Subaru     | Impreza 2017-19                 |     EyeSight      |                        |          ⭐           |        ⭐        |                      |                |
+| Toyota     | Prius v 2017                    |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐        |                      |       ⭐        |
 | Volkswagen | Arteon 2018, 2021<sup>8</sup>   | Driver Assistance |                        |          ⭐           |        ⭐        |                      |                |
 | Volkswagen | Atlas 2018-19, 2022<sup>8</sup> | Driver Assistance |                        |          ⭐           |        ⭐        |                      |                |
 | Volkswagen | California 2021<sup>8</sup>     | Driver Assistance |                        |          ⭐           |                 |                      |                |
