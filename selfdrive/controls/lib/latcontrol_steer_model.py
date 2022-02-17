@@ -27,7 +27,8 @@ class LatControlSteerModel(LatControl):
     self.A = model_param[0:NX*NX].reshape((NX, NX), order='F')
     self.B = model_param[NX*NX:NX*(NX+NU)].reshape((NX, NU), order='F')
     self.R = model_param[NX*(NX+NU):].reshape((NX, N_live_param), order='F')
-    # self.M = - np.linalg.solve(B.T @ B, B.T)
+
+    # print(f"LatControlSteerModel: \nA {self.A}\nB {self.B}\nR {self.R}\n")
 
     self.W = np.diag([1e0, 1e-1])
     # self.PHI = (DT_CTRL * self.B).reshape((2,1))
@@ -48,9 +49,6 @@ class LatControlSteerModel(LatControl):
     angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
-    # NOTE: live_param_list dependent.
-    # live_param_list = ['roll', 'speed_times_roll', 'roll_squared', 'roll_by_speed'] #, 'speed_times_angle']
-    live_param = np.array([params.roll, CS.vEgo * params.roll, params.roll * abs(params.roll), params.roll / CS.vEgo])
 
     model_log.steeringAngleDesiredDeg = angle_steers_des
 
@@ -59,6 +57,10 @@ class LatControlSteerModel(LatControl):
       model_log.active = False
       self.reset()
     else:
+      # NOTE: live_param_list dependent.
+      # live_param_list = ['roll', 'speed_times_roll', 'roll_squared', 'roll_by_speed'] #, 'speed_times_angle']
+      roll_deg = np.degrees(params.roll)
+      live_param = np.array([roll_deg, CS.vEgo * roll_deg, roll_deg * abs(roll_deg), roll_deg / CS.vEgo])
 
       # analytical solution similar to steady state.
       # steady_state_torque = self.M * (self.A @ self.xcurrent + self.R @ live_param) # solve for xdot = 0
