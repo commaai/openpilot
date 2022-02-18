@@ -51,29 +51,62 @@ Description of terms:
 
 ## Silver Cars
 
-| Make    | Model (US Market Reference) | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good steering torque | Well Supported |
-|---------|-----------------------------|:-----------------:|:----------------------:|:--------------------:|:----------------:|:--------------------:|:--------------:|
-| Genesis | G70 2020                    |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Hyundai | Elantra 2021                |    SCC + LKAS     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Hyundai | Elantra Hybrid 2021         |    SCC + LKAS     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Hyundai | Kona 2020                   |    SCC + LKAS     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Hyundai | Kona Hybrid 2020            |    SCC + LKAS     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Hyundai | Santa Fe 2019-20            |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Hyundai | Santa Fe 2021-22            |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Hyundai | Santa Fe Hybrid 2022        |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Hyundai | Sonata Hybrid 2021-22       |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Kia     | K5 2021-22                  |     SCC + LFA     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Kia     | Niro EV 2019-22             |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Kia     | Seltos 2021                 |    SCC + LKAS     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
-| Toyota  | Avalon 2016-21              |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Avalon Hybrid 2019-21       |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | C-HR 2017-21                |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | C-HR Hybrid 2017-19         |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Camry 2018-20               |        All        |                        |    ⭐<sup>3</sup>     |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Camry Hybrid 2018-20        |        All        |                        |    ⭐<sup>3</sup>     |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Corolla 2017-19             |        All        |     🌗<sup>2</sup>     |                      |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Prius 2016-20               |       TSS-P       |     🌗<sup>2</sup>     |          ⭐           |        ⭐         |                      |       ⭐        |
-| Toyota  | RAV4 2016-18                |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐         |          ⭐           |       ⭐        |
+| Make       | Model (US Market Reference)     | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good steering torque | Well Supported |
+|------------|---------------------------------|:-----------------:|:----------------------:|:--------------------:|:----------------:|:--------------------:|:--------------:|
+| Audi       | A3 2014-19                      | ACC + Lane Assist |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Audi       | A3 Sportback e-tron 2017-18     | ACC + Lane Assist |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Audi       | Q2 2018                         | ACC + Lane Assist |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Audi       | Q3 2020-21                      | ACC + Lane Assist |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Audi       | S3 2015                         | ACC + Lane Assist |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Genesis    | G70 2020                        |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| Hyundai    | Elantra 2021                    |    SCC + LKAS     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| Hyundai    | Elantra Hybrid 2021             |    SCC + LKAS     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| Hyundai    | Kona 2020                       |    SCC + LKAS     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| Hyundai    | Kona Hybrid 2020                |    SCC + LKAS     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| Hyundai    | Santa Fe 2019-20                |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| Hyundai    | Santa Fe 2021-22                |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| Hyundai    | Santa Fe Hybrid 2022            |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| Hyundai    | Sonata Hybrid 2021-22           |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| Kia        | K5 2021-22                      |     SCC + LFA     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| Kia        | Niro EV 2019-22                 |        All        |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| Kia        | Seltos 2021                     |    SCC + LKAS     |     🌗<sup>4</sup>     |          ⭐           |        ⭐         |          ⭐           |                |
+| SEAT       | Ateca 2018                      | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| SEAT       | Leon 2014-2020                  | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota     | Avalon 2016-21                  |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐         |          ⭐           |       ⭐        |
+| Toyota     | Avalon Hybrid 2019-21           |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐         |          ⭐           |       ⭐        |
+| Toyota     | C-HR 2017-21                    |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota     | C-HR Hybrid 2017-19             |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota     | Camry 2018-20                   |        All        |                        |    ⭐<sup>3</sup>     |        ⭐         |          ⭐           |       ⭐        |
+| Toyota     | Camry Hybrid 2018-20            |        All        |                        |    ⭐<sup>3</sup>     |        ⭐         |          ⭐           |       ⭐        |
+| Toyota     | Corolla 2017-19                 |        All        |     🌗<sup>2</sup>     |                      |        ⭐         |          ⭐           |       ⭐        |
+| Toyota     | Prius 2016-20                   |       TSS-P       |     🌗<sup>2</sup>     |          ⭐           |        ⭐         |                      |       ⭐        |
+| Toyota     | RAV4 2016-18                    |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Arteon 2018, 2021<sup>8</sup>   | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Atlas 2018-19, 2022<sup>8</sup> | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Golf 2015-20                    | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Golf Alltrack 2017-18           | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Golf GTE 2016                   | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Golf GTI 2018-20                | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Golf R 2016-19                  | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Golf SportWagen 2015            | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Golf SportsVan 2016             | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Jetta 2018-20                   | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Jetta GLI 2021                  | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Passat 2016-18<sup>7</sup>      | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Polo 2020                       | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | T-Cross 2021<sup>8</sup>        | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | T-Roc 2021<sup>8</sup>          | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Taos 2022<sup>8</sup>           | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Tiguan 2020                     | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | Touran 2017                     | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Volkswagen | e-Golf 2014, 2019-20            | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Škoda      | Kamiq 2021<sup>6</sup>          | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Škoda      | Karoq 2019                      | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Škoda      | Kodiaq 2018-19                  | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Škoda      | Octavia 2015, 2018-19           | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Škoda      | Octavia RS 2016                 | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Škoda      | Scala 2020                      | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Škoda      | Superb 2015-18                  | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 
 ## Bronze Cars
 
@@ -82,11 +115,6 @@ Description of terms:
 | Acura      | ILX 2016-19                     |  AcuraWatch Plus  |           ⭐            |                      |                  |                      |       ⭐        |
 | Acura      | RDX 2016-18                     |  AcuraWatch Plus  |           ⭐            |                      |                  |                      |       ⭐        |
 | Acura      | RDX 2019-21                     |        All        |                        |          ⭐           |                  |                      |       ⭐        |
-| Audi       | A3 2014-19                      | ACC + Lane Assist |                        |          ⭐           |        ⭐         |                      |                |
-| Audi       | A3 Sportback e-tron 2017-18     | ACC + Lane Assist |                        |          ⭐           |        ⭐         |                      |                |
-| Audi       | Q2 2018                         | ACC + Lane Assist |                        |          ⭐           |        ⭐         |                      |                |
-| Audi       | Q3 2020-21                      | ACC + Lane Assist |                        |          ⭐           |        ⭐         |                      |                |
-| Audi       | S3 2015                         | ACC + Lane Assist |                        |          ⭐           |        ⭐         |                      |                |
 | Cadillac   | Escalade ESV 2016<sup>5</sup>   |    ACC + LKAS     |           ⭐            |          ⭐           |                  |                      |                |
 | Chevrolet  | Volt 2017-18<sup>5</sup>        |  Adaptive Cruise  |           ⭐            |          ⭐           |                  |                      |                |
 | Chrysler   | Pacifica 2017-18                |  Adaptive Cruise  |                        |          ⭐           |                  |                      |                |
@@ -147,41 +175,14 @@ Description of terms:
 | Nissan     | Leaf 2018-22                    |     ProPILOT      |                        |          ⭐           |        ⭐         |                      |                |
 | Nissan     | Rogue 2018-20                   |     ProPILOT      |                        |          ⭐           |        ⭐         |                      |                |
 | Nissan     | X-Trail 2017                    |     ProPILOT      |                        |          ⭐           |        ⭐         |                      |                |
-| SEAT       | Ateca 2018                      | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| SEAT       | Leon 2014-2020                  | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
 | Subaru     | Ascent 2019                     |     EyeSight      |                        |          ⭐           |        ⭐         |                      |                |
 | Subaru     | Crosstrek 2018-20               |     EyeSight      |                        |          ⭐           |        ⭐         |                      |                |
 | Subaru     | Forester 2019-21                |     EyeSight      |                        |          ⭐           |        ⭐         |                      |                |
 | Subaru     | Impreza 2017-19                 |     EyeSight      |                        |          ⭐           |        ⭐         |                      |                |
 | Toyota     | Prius v 2017                    |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐         |                      |       ⭐        |
-| Volkswagen | Arteon 2018, 2021<sup>8</sup>   | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Atlas 2018-19, 2022<sup>8</sup> | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | California 2021<sup>8</sup>     | Driver Assistance |                        |          ⭐           |                  |                      |                |
-| Volkswagen | Caravelle 2020<sup>8</sup>      | Driver Assistance |                        |          ⭐           |                  |                      |                |
-| Volkswagen | Golf 2015-20                    | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Golf Alltrack 2017-18           | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Golf GTE 2016                   | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Golf GTI 2018-20                | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Golf R 2016-19                  | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Golf SportWagen 2015            | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Golf SportsVan 2016             | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Jetta 2018-20                   | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Jetta GLI 2021                  | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Passat 2016-18<sup>7</sup>      | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Polo 2020                       | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | T-Cross 2021<sup>8</sup>        | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | T-Roc 2021<sup>8</sup>          | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Taos 2022<sup>8</sup>           | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Tiguan 2020                     | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | Touran 2017                     | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Volkswagen | e-Golf 2014, 2019-20            | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Škoda      | Kamiq 2021<sup>6</sup>          | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Škoda      | Karoq 2019                      | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Škoda      | Kodiaq 2018-19                  | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Škoda      | Octavia 2015, 2018-19           | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Škoda      | Octavia RS 2016                 | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Škoda      | Scala 2020                      | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
-| Škoda      | Superb 2015-18                  | Driver Assistance |                        |          ⭐           |        ⭐         |                      |                |
+| Volkswagen | California 2021<sup>8</sup>     | Driver Assistance |                        |          ⭐           |                  |          ⭐           |       ⭐        |
+| Volkswagen | Caravelle 2020<sup>8</sup>      | Driver Assistance |                        |          ⭐           |                  |          ⭐           |       ⭐        |
+
 
 
 # TODO: add pedal back
