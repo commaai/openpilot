@@ -41,6 +41,7 @@ Description of terms:
 | Toyota  | Highlander Hybrid 2017-19   |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Toyota  | Highlander Hybrid 2020-22   |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Toyota  | Mirai 2021                  |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Prius 2016-20               |       TSS-P       |     🌗<sup>2</sup>     |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Toyota  | Prius 2021-22               |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Toyota  | Prius Prime 2017-20         |        All        |     🌗<sup>2</sup>     |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Toyota  | Prius Prime 2021-22         |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
@@ -79,7 +80,6 @@ Description of terms:
 | Toyota     | Camry 2018-20                   |        All        |                        |    ⭐<sup>3</sup>     |        ⭐         |          ⭐           |       ⭐        |
 | Toyota     | Camry Hybrid 2018-20            |        All        |                        |    ⭐<sup>3</sup>     |        ⭐         |          ⭐           |       ⭐        |
 | Toyota     | Corolla 2017-19                 |        All        |     🌗<sup>2</sup>     |                      |        ⭐         |          ⭐           |       ⭐        |
-| Toyota     | Prius 2016-20                   |       TSS-P       |     🌗<sup>2</sup>     |          ⭐           |        ⭐         |                      |       ⭐        |
 | Toyota     | RAV4 2016-18                    |       TSS-P       |     🌗<sup>2</sup>     |                      |        ⭐         |          ⭐           |       ⭐        |
 | Volkswagen | Arteon 2018, 2021<sup>8</sup>   | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Volkswagen | Atlas 2018-19, 2022<sup>8</sup> | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
