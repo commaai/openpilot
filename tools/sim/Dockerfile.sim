@@ -61,5 +61,7 @@ COPY ./panda $HOME/openpilot/panda
 COPY ./selfdrive $HOME/openpilot/selfdrive
 COPY ./tools $HOME/openpilot/tools
 
+RUN sed -i 's/\/tmp\/tools\/openpilot_env\.sh/\/openpilot\/tools\/openpilot_env\.sh/g' ~/.bashrc
+
 WORKDIR $HOME/openpilot
 RUN scons -j$(nproc)
