@@ -73,23 +73,28 @@ class LatControlSteerModel(LatControl):
       # torque_np = self.M @ (self.A @ self.xcurrent + self.R @ live_param +
                 # (self.xcurrent - np.array([angle_steers_des_no_offset, self.xcurrent[1,]]))/DT_CTRL )
       #
-      desired_angle_rate = math.degrees(VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, 0.0))
 
       # torque = argmin norm(xcurrent + DT_CTRL * (A*xcurrent + R*live_param + B*u) - [desired_angle, desired_angle_rate])_W
       # NOTE: controls_list dependent.
       du_dtorque = np.array([1, 2*abs(self.torque), 1/(CS.vEgo**2)])
       B_tilde = self.B @ du_dtorque
-      Phi = (DT_CTRL * B_tilde).reshape((2,1))
-      M_tilde = - 1/(Phi.T @ self.W @ Phi) * (Phi.T@self.W)
+      # desired_angle_rate = math.degrees(VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, 0.0))
+      # Phi = (DT_CTRL * B_tilde).reshape((2,1))
+      # M_tilde = - 1/(Phi.T @ self.W @ Phi) * (Phi.T@self.W)
 
-      torque_np = M_tilde @ (self.xcurrent + DT_CTRL * (self.A @ self.xcurrent + Rp) -
-                      np.array([angle_steers_des_no_offset, desired_angle_rate])).reshape((2,1))
+      # torque_np = M_tilde @ (self.xcurrent + DT_CTRL * (self.A @ self.xcurrent + Rp) -
+      #                 np.array([angle_steers_des_no_offset, desired_angle_rate])).reshape((2,1))
 
       # hacky but works well..
-      # B_tilde = B_tilde.reshape((2,1))
+      B_tilde = B_tilde.reshape((2,1))
+      M = - np.linalg.solve(B_tilde.T @ B_tilde, B_tilde.T)
+      torque_np = M @ (self.A @ self.xcurrent + self.R @ live_param +
+                (self.xcurrent - np.array([angle_steers_des_no_offset, .95*self.xcurrent[1,]]))/DT_CTRL )
+
+      # steady state torque: for x = [angle_steers_des_no_offset, desired_angle_rate]
       # M = - np.linalg.solve(B_tilde.T @ B_tilde, B_tilde.T)
-      # torque_np = M @ (self.A @ self.xcurrent + self.R @ live_param +
-      #           (self.xcurrent - np.array([angle_steers_des_no_offset, .95*self.xcurrent[1,]]))/DT_CTRL )
+      # torque_np = M @ (self.A @ np.array([angle_steers_des_no_offset, self.xcurrent[1]] ) + Rp)
+
       output_steer = float(torque_np)
       self.torque = output_steer
       model_log.active = True
@@ -98,4 +103,5 @@ class LatControlSteerModel(LatControl):
     model_log.output = output_steer
     model_log.saturated = self._check_saturation(steers_max - abs(output_steer) < 1e-3, CS)
 
+    # print(f"LatControlSteerModel: x {self.xcurrent}")
     return output_steer, angle_steers_des, model_log
