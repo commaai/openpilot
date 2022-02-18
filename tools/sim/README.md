@@ -3,6 +3,11 @@ openpilot in simulator
 
 openpilot implements a [bridge](bridge.py) that allows it to run in the [CARLA simulator](https://carla.org/). 
 
+## Build Docker Image Locally
+```
+./build_container.sh
+```
+
 ## System Requirements
 
 openpilot doesn't have any extreme hardware requirements, however CARLA requires an NVIDIA graphics card and is very resource-intensive and may not run smoothly on your system. For this case, we have a low quality mode you can activate by running:
