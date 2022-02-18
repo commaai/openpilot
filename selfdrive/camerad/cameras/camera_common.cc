@@ -67,9 +67,10 @@ public:
     } else {
       if (hdr_) {
         // HDR requires a 1-D kernel due to the DPCM compression
+        const size_t debayer_local_worksize = 128;
         const size_t debayer_work_size = height;  // doesn't divide evenly, is this okay?
         CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
-        CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, NULL, 0, 0, debayer_event));
+        CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, &debayer_local_worksize, 0, 0, debayer_event));
       } else {
         const int debayer_local_worksize = 32;
         assert(rgb_width_ % 2 == 0);
