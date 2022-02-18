@@ -53,23 +53,23 @@ class LongControl():
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, CS, CP, long_plan, accel_limits, rcv_frames):
+  def update(self, active, CS, CP, long_plan, accel_limits, iter_since_plan):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
     if len(speeds) == CONTROL_N:
-      actuator_delay_lower = CP.longitudinalActuatorDelayLowerBound + (rcv_frames * DT_CTRL)
-      actuator_delay_upper = CP.longitudinalActuatorDelayUpperBound + (rcv_frames * DT_CTRL)
+      interp_t = iter_since_plan * DT_CTRL
+      v_target = interp(interp_t, T_IDXS[:CONTROL_N], speeds)
+      a_target = interp(interp_t, T_IDXS[:CONTROL_N], long_plan.accels)
 
-      v_target_lower = interp(actuator_delay_lower, T_IDXS[:CONTROL_N], speeds)
-      a_target_lower = 2 * (v_target_lower - speeds[0]) / actuator_delay_lower - long_plan.accels[0]
+      v_target_lower = interp(CP.longitudinalActuatorDelayLowerBound + interp_t, T_IDXS[:CONTROL_N], speeds)
+      a_target_lower = 2 * (v_target_lower - v_target) / CP.longitudinalActuatorDelayLowerBound - a_target
 
-      v_target_upper = interp(actuator_delay_upper, T_IDXS[:CONTROL_N], speeds)
-      a_target_upper = 2 * (v_target_upper - speeds[0]) / actuator_delay_upper - long_plan.accels[0]
+      v_target_upper = interp(CP.longitudinalActuatorDelayUpperBound + interp_t, T_IDXS[:CONTROL_N], speeds)
+      a_target_upper = 2 * (v_target_upper - v_target) / CP.longitudinalActuatorDelayUpperBound - a_target
       a_target = min(a_target_lower, a_target_upper)
 
-      v_target = interp(rcv_frames * DT_CTRL, T_IDXS[:CONTROL_N], speeds)
-      v_target_future = speeds[-1]
+      self.v_target_future = speeds[-1]
     else:
       v_target = 0.0
       v_target_future = 0.0
