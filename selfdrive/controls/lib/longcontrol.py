@@ -68,7 +68,7 @@ class LongControl():
       a_target_upper = 2 * (v_target_upper - v_target) / CP.longitudinalActuatorDelayUpperBound - a_target
       a_target = min(a_target_lower, a_target_upper)
 
-      self.v_target_future = speeds[-1]
+      v_target_future = speeds[-1]
     else:
       v_target = 0.0
       v_target_future = 0.0
