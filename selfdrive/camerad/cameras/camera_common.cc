@@ -38,7 +38,6 @@ public:
     char args[4096];
     const CameraInfo *ci = &s->ci;
     hdr_ = ci->hdr;
-    rgb_width_ = b->rgb_width;
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
@@ -73,8 +72,8 @@ public:
         CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, &debayer_local_worksize, 0, 0, debayer_event));
       } else {
         const int debayer_local_worksize = 32;
-        assert(rgb_width_ % 2 == 0);
-        const size_t globalWorkSize[] = {size_t(height), size_t(rgb_width_ / 2)};
+        assert(width % 2 == 0);
+        const size_t globalWorkSize[] = {size_t(height), size_t(width / 2)};
         const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
         CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
         CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
@@ -88,7 +87,6 @@ public:
 
 private:
   cl_kernel krnl_;
-  int rgb_width_;
   bool hdr_;
 };
 
