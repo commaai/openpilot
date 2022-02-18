@@ -90,16 +90,16 @@ def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
 
 
 def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates, t_since_plan):
-  if len(psis) != CONTROL_N:
-    psis = [0.0 for _ in range(CONTROL_N)]
-    curvatures = [0.0 for _ in range(CONTROL_N)]
-    curvature_rates = [0.0 for _ in range(CONTROL_N)]
-
   # TODO this needs more thought, use .2s extra for now to estimate other delays
   delay = CP.steerActuatorDelay + .2
-  current_curvature = interp(t_since_plan, T_IDXS[:CONTROL_N], curvatures)
-  psi = interp(delay + t_since_plan, T_IDXS[:CONTROL_N], psis)
-  desired_curvature_rate = interp(t_since_plan, T_IDXS[:CONTROL_N], curvature_rates)
+  if len(psis) == CONTROL_N:
+    psi = interp(delay + t_since_plan, T_IDXS[:CONTROL_N], psis)
+    current_curvature = interp(t_since_plan, T_IDXS[:CONTROL_N], curvatures)
+    desired_curvature_rate = interp(t_since_plan, T_IDXS[:CONTROL_N], curvature_rates)
+  else:
+    psi = 0.0
+    current_curvature = 0.0
+    desired_curvature_rate = 0.0
 
   # MPC can plan to turn the wheel and turn back before t_delay. This means
   # in high delay cases some corrections never even get commanded. So just use
