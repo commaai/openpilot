@@ -73,7 +73,7 @@ public:
       } else {
         const int debayer_local_worksize = 32;
         assert(rgb_width_ % 2 == 0);
-        const size_t globalWorkSize[] = {height, rgb_width_ / 2};
+        const size_t globalWorkSize[] = {size_t(height), size_t(rgb_width_ / 2)};
         const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
         CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
         CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
