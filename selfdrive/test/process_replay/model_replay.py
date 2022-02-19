@@ -116,7 +116,7 @@ def model_replay(lr, frs):
             recv = "driverState"
 
           # wait for a response
-          with Timeout(seconds=15, f"timed out waiting for {recv}"):
+          with Timeout(15, f"timed out waiting for {recv}"):
             if recv:
               recv_cnt[recv] += 1
               log_msgs.append(messaging.recv_one(sm.sock[recv]))
