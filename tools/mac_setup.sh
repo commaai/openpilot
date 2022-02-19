@@ -46,13 +46,13 @@ elif [[ $SHELL == "/bin/bash" ]]; then
   RC_FILE="$HOME/.bash_profile"
 fi
 
-export LDFLAGS="$LDFLAGS -L/usr/local/opt/zlib/lib"
-export LDFLAGS="$LDFLAGS -L/usr/local/opt/bzip2/lib"
-export LDFLAGS="$LDFLAGS -L/usr/local/opt/openssl@1.1/lib"
-export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/zlib/include"
-export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/bzip2/include"
-export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/openssl@1.1/include"
-export PATH="$PATH:/usr/local/opt/openssl@1.1/bin"
+export LDFLAGS="$LDFLAGS -L/opt/homebrew/opt/zlib/lib"
+export LDFLAGS="$LDFLAGS -L/opt/homebrew/opt/bzip2/lib"
+export LDFLAGS="$LDFLAGS -L/opt/homebrew/opt/openssl@1.1/lib"
+export CPPFLAGS="$CPPFLAGS -I/opt/homebrew/opt/zlib/include"
+export CPPFLAGS="$CPPFLAGS -I/opt/homebrew/opt/bzip2/include"
+export CPPFLAGS="$CPPFLAGS -I/opt/homebrew/opt/openssl@1.1/include"
+export PATH="$PATH:/opt/homebrew/opt/openssl@1.1/bin"
 export PATH="$PATH:/usr/local/bin"
 
 # openpilot environment
@@ -63,6 +63,7 @@ if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
 fi
 
 # install python dependencies
+export PYCURL_SSL_LIBRARY=openssl
 $ROOT/update_requirements.sh
 eval "$(pyenv init --path)"
 echo "[ ] installed python dependencies t=$SECONDS"
