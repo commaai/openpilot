@@ -15,20 +15,19 @@ def create_steer_command(packer, steer, steer_req, raw_cnt):
 def create_lta_steer_command(packer, apply_steer, steer_angle, driver_torque, steer_req, raw_cnt):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
-  # PERCENTAGE is correlated with driver torque
   percentage = interp(abs(driver_torque), [30, 100], [100, 0])
   apply_steer = interp(percentage, [0, 100], [steer_angle, apply_steer])
   values = {
-    "COUNTER": raw_cnt + 128,
+    "COUNTER": raw_cnt,  # 0 to 62
     "SETME_X1": 1,
-    "SETME_X3": 3,
-    "PERCENTAGE": percentage,
-    "SETME_X64": 0x64,
+    "SETME_X3": 1,  # usually 1, but sometimes 3 (??)
+    "PERCENTAGE": percentage,  # correlated with driver torque
+    "SETME_X64": 0x64,  # ramps to 0 smoothly then back on falling edge of STEER_REQUEST if BIT isn't 1
     "ANGLE": apply_steer * 1.5,  # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
-    "STEER_ANGLE_CMD": apply_steer,
-    "STEER_REQUEST": steer_req,
-    "STEER_REQUEST_2": steer_req,
-    "BIT": 0,
+    "STEER_ANGLE_CMD": apply_steer,  # seems to just be desired angle cmd
+    "STEER_REQUEST": steer_req,  # stock system turns off steering after ~20 frames of override, else torque winds up
+    "STEER_REQUEST_2": steer_req,  # duplicate
+    "BIT": 0,  # 1 when STEER_REQUEST changes state (usually)
   }
   return packer.make_can_msg("STEERING_LTA", 0, values)
 
