@@ -12,18 +12,20 @@ def create_steer_command(packer, steer, steer_req, raw_cnt):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_lta_steer_command(packer, steer, driver_torque, steer_req, raw_cnt):
+def create_lta_steer_command(packer, apply_steer, steer_angle, driver_torque, steer_req, raw_cnt):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
-  percentage = interp(abs(driver_torque), [40, 100], [100, 0])
+  # PERCENTAGE is correlated with driver torque
+  percentage = interp(abs(driver_torque), [30, 100], [100, 0])
+  apply_steer = interp(percentage, [0, 100], [steer_angle, apply_steer])
   values = {
     "COUNTER": raw_cnt + 128,
     "SETME_X1": 1,
     "SETME_X3": 3,
     "PERCENTAGE": percentage,
     "SETME_X64": 0x64,
-    "ANGLE": steer,  # Rate limit? Lower values seeem to work better, but needs more testing
-    "STEER_ANGLE_CMD": steer,
+    "ANGLE": apply_steer * 1.5,  # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
+    "STEER_ANGLE_CMD": apply_steer,
     "STEER_REQUEST": steer_req,
     "STEER_REQUEST_2": steer_req,
     "BIT": 0,
