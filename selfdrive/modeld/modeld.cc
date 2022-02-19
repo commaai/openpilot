@@ -78,19 +78,21 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     // log frame id in model packet
 
     // Keep receiving frames until we are at least 1 frame ahead of previous extra frame
-    do {
+    while (meta_main.frame_id <= meta_extra.frame_id) {
       buf_main = vipc_client_main.recv(&meta_main);
       if (meta_main.frame_id <= meta_extra.frame_id) {
         LOGE("main camera behind! main: %d (%.5f), extra: %d (%.5f)",
           meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
           meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
       }
-    } while (buf_main != nullptr && meta_main.frame_id <= meta_extra.frame_id);
+
+      if (buf_main == nullptr)  break;
+    }
 
     if (buf_main == nullptr) {
       LOGE("vipc_client_main no frame");
       continue;
-    };
+    }
 
     if (use_extra_client) {
       // Keep receiving extra frames until frame id matches main camera
