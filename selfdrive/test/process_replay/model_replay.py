@@ -79,7 +79,7 @@ def model_replay(lr, frs):
 
     for cam_msgs in zip_longest(msgs['roadCameraState'], msgs['wideRoadCameraState'], msgs['driverCameraState']):
       # need a pair of road/wide msgs
-      if None in (cam_msgs[0], cam_msgs[1]):
+      if TICI and None in (cam_msgs[0], cam_msgs[1]):
         break
 
       for msg in cam_msgs:
