@@ -29,6 +29,8 @@ SEGMENT = 0
 
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
+VIPC_STREAM = {"roadCameraState": VisionStreamType.VISION_STREAM_ROAD, "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,
+               "wideRoadCameraState": VisionStreamType.VISION_STREAM_WIDE_ROAD}
 
 def get_log_fn(ref_commit):
   return f"{TEST_ROUTE}_{'model_tici' if TICI else 'model'}_{ref_commit}.bz2"
@@ -48,15 +50,11 @@ def model_replay(lr, frs):
   vipc_server = VisionIpcServer("camerad")
   vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, *(tici_f_frame_size if TICI else eon_f_frame_size))
   vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, *(tici_d_frame_size if TICI else eon_d_frame_size))
-  if TICI:
-    vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *(tici_f_frame_size))
+  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *(tici_f_frame_size))
   vipc_server.start_listener()
 
   sm = messaging.SubMaster(['modelV2', 'driverState'])
-  if TICI:
-    pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
-  else:
-    pm = messaging.PubMaster(['roadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
+  pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
 
   try:
     managed_processes['modeld'].start()
@@ -85,9 +83,9 @@ def model_replay(lr, frs):
           dat.lateralPlan.desire = last_desire
           pm.send('lateralPlan', dat)
 
-      if msg.which() in ["roadCameraState", "driverCameraState"]:
+      if msg.which() in VIPC_STREAM:
         camera_state = getattr(msg, msg.which())
-        stream = VisionStreamType.VISION_STREAM_ROAD if msg.which() == "roadCameraState" else VisionStreamType.VISION_STREAM_DRIVER
+        stream = VIPC_STREAM[msg.which()]
         img = frs[msg.which()].get(frame_idxs[msg.which()], pix_fmt="yuv420p")[0]
 
         # send camera state and frame
@@ -97,8 +95,14 @@ def model_replay(lr, frs):
 
         # wait for a response
         with Timeout(seconds=15):
-          packet_from_camera = {"roadCameraState": "modelV2", "driverCameraState": "driverState"}
-          log_msgs.append(messaging.recv_one(sm.sock[packet_from_camera[msg.which()]]))
+          recv = None
+          if msg.which() in ('roadCameraState', 'wideRoadCameraState') and frs['roadCameraState'].frame_count == frs['wideRoadCameraState']:
+            recv = "modelV2"
+          elif msg.which() == 'driverCameraState':
+            recv = "driverState"
+
+          if recv:
+            log_msgs.append(messaging.recv_one(sm.sock[recv]))
 
         frame_idxs[msg.which()] += 1
         if frame_idxs[msg.which()] >= frs[msg.which()].frame_count:
@@ -128,6 +132,8 @@ if __name__ == "__main__":
     'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="fcamera")),
     'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="dcamera")),
   }
+  if TICI:
+    frs['wideRoadCameraState'] = FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="ecamera"))
 
   # run replay
   log_msgs = model_replay(lr, frs)
