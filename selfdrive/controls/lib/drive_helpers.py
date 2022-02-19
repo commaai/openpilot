@@ -94,6 +94,7 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates, t_s
   delay = CP.steerActuatorDelay + .2
   if len(psis) == CONTROL_N:
     psi = interp(delay + t_since_plan, T_IDXS[:CONTROL_N], psis)
+    psi -= interp(t_since_plan, T_IDXS[:CONTROL_N], psis)
     current_curvature = interp(t_since_plan, T_IDXS[:CONTROL_N], curvatures)
     desired_curvature_rate = interp(t_since_plan, T_IDXS[:CONTROL_N], curvature_rates)
   else:
