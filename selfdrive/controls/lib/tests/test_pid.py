@@ -24,7 +24,7 @@ override = 5 # seconds
 overshoot_allowance_percent = 1
 overshoot_allowance = overshoot_allowance_percent / 100
 
-noise_intensity = 5 # noise = rand() * (noise_intensity * rate_limit) / kp
+noise_intensity = 10 # noise = rand() * noise_intensity
 
 # NOTE 1.0 is perfect FF, FF does not impact stability
 
@@ -33,7 +33,7 @@ def ratelimit(new, last):
 
 class TestPID(unittest.TestCase):
   def test_error_noise(self):
-    self.assertFalse(noise_intensity < 1, msg="Noise not disastrous enough")
+    self.assertFalse(noise_intensity < 5, msg="Noise not disastrous enough")
     for i in range(0, 2*num_divs + 1):
       for j in range (0, 2*num_divs + 1):
 
@@ -52,7 +52,7 @@ class TestPID(unittest.TestCase):
         pid_c_control = 0
         pid_r_control = 0
         last_pid_r_control = 0
-        for t in range(0, int(noise_intensity*sec*rate)):
+        for t in range(0, int(4*sec*rate)):
           target = 0
           if (t > start_offset*rate):
             target = step_size * limit
@@ -60,7 +60,7 @@ class TestPID(unittest.TestCase):
           # threshold base on time and error_intensity. multiply runtime by intensity or divide error by intensity
           noise = 0
           if target != 0:
-            noise = noise_intensity * (rate_limit / kp) * ((random.randint(0, 200*gain_range) - 100*gain_range) / (100*gain_range))
+            noise = noise_intensity * ((random.randint(0, 2000) - 1000) / (1000*limit))
 
           pid_n_control = ratelimit(pid_n.update(target+noise, output_n.x, last_output=pid_n_control, feedforward=target), pid_n_control)
           pid_c_control = ratelimit(pid_c.update(target, output_c.x, last_output=pid_c_control, feedforward=target), pid_c_control)
@@ -78,7 +78,7 @@ class TestPID(unittest.TestCase):
 
         # assert that moving average of SS error is falling to zero
         # threshold base on time and error_intensity. multiply runtime by intensity or divide error by intensity
-        self.assertFalse(abs(ss_error) > limit / rate, msg=f"Possible SS_error: {ss_error} detected in controller due to noise")
+        self.assertFalse(abs(ss_error) > 0.1 * noise_intensity * limit / rate, msg=f"Possible SS_error: {ss_error} detected in controller due to noise")
   
   def test_override(self):
     for i in range(0, 2*num_divs + 1):
