@@ -3,8 +3,8 @@ import os
 import sys
 import time
 from collections import defaultdict
-from tqdm import tqdm
 from typing import Any
+from itertools import zip_longest
 
 import cereal.messaging as messaging
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
@@ -64,6 +64,7 @@ def model_replay(lr, frs):
 
     log_msgs = []
     last_desire = None
+    recv_cnt = defaultdict(lambda: 0)
     frame_idxs = defaultdict(lambda: 0)
 
     # init modeld with valid calibration
@@ -72,44 +73,58 @@ def model_replay(lr, frs):
       pm.send(cal_msgs[0].which(), cal_msgs[0].as_builder())
       time.sleep(0.1)
 
-    for msg in tqdm(lr):
-      if SEND_EXTRA_INPUTS:
-        if msg.which() == "liveCalibration":
-          last_calib = list(msg.liveCalibration.rpyCalib)
-          pm.send(msg.which(), replace_calib(msg, last_calib))
-        elif msg.which() == "lateralPlan":
-          last_desire = msg.lateralPlan.desire
-          dat = messaging.new_message('lateralPlan')
-          dat.lateralPlan.desire = last_desire
-          pm.send('lateralPlan', dat)
+    msgs = defaultdict(list)
+    for msg in lr:
+      msgs[msg.which()].append(msg)
 
-      if msg.which() in VIPC_STREAM:
-        camera_state = getattr(msg, msg.which())
-        stream = VIPC_STREAM[msg.which()]
-        img = frs[msg.which()].get(frame_idxs[msg.which()], pix_fmt="yuv420p")[0]
+    for cam_msgs in zip_longest(msgs['roadCameraState'], msgs['wideRoadCameraState'], msgs['driverCameraState']):
+      # need a pair of road/wide msgs
+      if None in (cam_msgs[0], cam_msgs[1]):
+        break
 
-        # send camera state and frame
-        pm.send(msg.which(), msg.as_builder())
-        vipc_server.send(stream, img.flatten().tobytes(), camera_state.frameId,
-                         camera_state.timestampSof, camera_state.timestampEof)
+      for msg in cam_msgs:
+        if msg is None:
+          continue
 
-        # wait for a response
-        with Timeout(seconds=15):
-          recv = None
-          if msg.which() in ('roadCameraState', 'wideRoadCameraState') and frs['roadCameraState'].frame_count == frs['wideRoadCameraState']:
-            recv = "modelV2"
-          elif msg.which() == 'driverCameraState':
-            recv = "driverState"
+        if SEND_EXTRA_INPUTS:
+          if msg.which() == "liveCalibration":
+            last_calib = list(msg.liveCalibration.rpyCalib)
+            pm.send(msg.which(), replace_calib(msg, last_calib))
+          elif msg.which() == "lateralPlan":
+            last_desire = msg.lateralPlan.desire
+            dat = messaging.new_message('lateralPlan')
+            dat.lateralPlan.desire = last_desire
+            pm.send('lateralPlan', dat)
 
-          if recv:
-            log_msgs.append(messaging.recv_one(sm.sock[recv]))
+        if msg.which() in VIPC_STREAM:
+          camera_state = getattr(msg, msg.which())
+          stream = VIPC_STREAM[msg.which()]
+          img = frs[msg.which()].get(frame_idxs[msg.which()], pix_fmt="yuv420p")[0]
 
-        frame_idxs[msg.which()] += 1
-        if frame_idxs[msg.which()] >= frs[msg.which()].frame_count:
-          break
+          # send camera state and frame
+          pm.send(msg.which(), msg.as_builder())
+          vipc_server.send(stream, img.flatten().tobytes(), camera_state.frameId,
+                           camera_state.timestampSof, camera_state.timestampEof)
 
-        spinner.update("replaying models:  road %d/%d,  driver %d/%d" % (frame_idxs['roadCameraState'],
-                       frs['roadCameraState'].frame_count, frame_idxs['driverCameraState'], frs['driverCameraState'].frame_count))
+          # wait for a response
+          with Timeout(seconds=15):
+            recv = None
+            if msg.which() in ('roadCameraState', 'wideRoadCameraState'):
+              if not TICI or min(frame_idxs['roadCameraState'], frame_idxs['wideRoadCameraState']) > recv_cnt['modelV2']:
+                recv = "modelV2"
+            elif msg.which() == 'driverCameraState':
+              recv = "driverState"
+
+            if recv:
+              recv_cnt[recv] += 1
+              log_msgs.append(messaging.recv_one(sm.sock[recv]))
+
+          frame_idxs[msg.which()] += 1
+          spinner.update("replaying models:  road %d/%d,  driver %d/%d" % (frame_idxs['roadCameraState'],
+                         frs['roadCameraState'].frame_count, frame_idxs['driverCameraState'], frs['driverCameraState'].frame_count))
+
+      if any(frame_idxs[c] >= frs[c].frame_count for c in frame_idxs.keys()):
+        break
 
   finally:
     spinner.close()
@@ -144,25 +159,28 @@ if __name__ == "__main__":
     with open(ref_commit_fn) as f:
       ref_commit = f.read().strip()
     log_fn = get_log_fn(ref_commit)
-    cmp_log = LogReader(BASE_URL + log_fn)
+    try:
+      cmp_log = LogReader(BASE_URL + log_fn)
 
-    ignore = [
-      'logMonoTime',
-      'modelV2.frameDropPerc',
-      'modelV2.modelExecutionTime',
-      'driverState.modelExecutionTime',
-      'driverState.dspExecutionTime'
-    ]
-    tolerance = None if not PC else 1e-3
-    results: Any = {TEST_ROUTE: {}}
-    results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
-    diff1, diff2, failed = format_diff(results, ref_commit)
+      ignore = [
+        'logMonoTime',
+        'modelV2.frameDropPerc',
+        'modelV2.modelExecutionTime',
+        'driverState.modelExecutionTime',
+        'driverState.dspExecutionTime'
+      ]
+      tolerance = None if not PC else 1e-3
+      results: Any = {TEST_ROUTE: {}}
+      results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
+      diff1, diff2, failed = format_diff(results, ref_commit)
 
-    print(diff2)
-    print('-------------\n'*5)
-    print(diff1)
-    with open("model_diff.txt", "w") as f:
-      f.write(diff2)
+      print(diff2)
+      print('-------------\n'*5)
+      print(diff1)
+      with open("model_diff.txt", "w") as f:
+        f.write(diff2)
+    except Exception:
+      failed = True
 
   # upload new refs
   if update or failed:
