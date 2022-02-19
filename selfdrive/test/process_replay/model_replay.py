@@ -59,7 +59,7 @@ def model_replay(lr, frs):
   try:
     managed_processes['modeld'].start()
     managed_processes['dmonitoringmodeld'].start()
-    time.sleep(2)
+    time.sleep(5)
     sm.update(1000)
 
     log_msgs = []
@@ -97,29 +97,30 @@ def model_replay(lr, frs):
             pm.send('lateralPlan', dat)
 
         if msg.which() in VIPC_STREAM:
+          msg = msg.as_builder()
           camera_state = getattr(msg, msg.which())
-          stream = VIPC_STREAM[msg.which()]
           img = frs[msg.which()].get(frame_idxs[msg.which()], pix_fmt="yuv420p")[0]
+          frame_idxs[msg.which()] += 1
 
           # send camera state and frame
-          pm.send(msg.which(), msg.as_builder())
-          vipc_server.send(stream, img.flatten().tobytes(), camera_state.frameId,
+          camera_state.frameId = frame_idxs[msg.which()]
+          pm.send(msg.which(), msg)
+          vipc_server.send(VIPC_STREAM[msg.which()], img.flatten().tobytes(), camera_state.frameId,
                            camera_state.timestampSof, camera_state.timestampEof)
 
-          # wait for a response
-          with Timeout(seconds=15):
-            recv = None
-            if msg.which() in ('roadCameraState', 'wideRoadCameraState'):
-              if not TICI or min(frame_idxs['roadCameraState'], frame_idxs['wideRoadCameraState']) > recv_cnt['modelV2']:
-                recv = "modelV2"
-            elif msg.which() == 'driverCameraState':
-              recv = "driverState"
+          recv = None
+          if msg.which() in ('roadCameraState', 'wideRoadCameraState'):
+            if not TICI or min(frame_idxs['roadCameraState'], frame_idxs['wideRoadCameraState']) > recv_cnt['modelV2']:
+              recv = "modelV2"
+          elif msg.which() == 'driverCameraState':
+            recv = "driverState"
 
+          # wait for a response
+          with Timeout(seconds=15, f"timed out waiting for {recv}"):
             if recv:
               recv_cnt[recv] += 1
               log_msgs.append(messaging.recv_one(sm.sock[recv]))
 
-          frame_idxs[msg.which()] += 1
           spinner.update("replaying models:  road %d/%d,  driver %d/%d" % (frame_idxs['roadCameraState'],
                          frs['roadCameraState'].frame_count, frame_idxs['driverCameraState'], frs['driverCameraState'].frame_count))
 
