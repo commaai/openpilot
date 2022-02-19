@@ -37,6 +37,7 @@ public:
   Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s) {
     char args[4096];
     const CameraInfo *ci = &s->ci;
+    hdr_ = ci->hdr;
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
@@ -63,9 +64,20 @@ public:
       CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
       CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
     } else {
-      const size_t debayer_work_size = height;  // doesn't divide evenly, is this okay?
-      CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
-      CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, NULL, 0, 0, debayer_event));
+      if (hdr_) {
+        // HDR requires a 1-D kernel due to the DPCM compression
+        const size_t debayer_local_worksize = 128;
+        const size_t debayer_work_size = height;  // doesn't divide evenly, is this okay?
+        CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
+        CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, &debayer_local_worksize, 0, 0, debayer_event));
+      } else {
+        const int debayer_local_worksize = 32;
+        assert(width % 2 == 0);
+        const size_t globalWorkSize[] = {size_t(height), size_t(width / 2)};
+        const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
+        CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
+        CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
+      }
     }
   }
 
@@ -75,6 +87,7 @@ public:
 
 private:
   cl_kernel krnl_;
+  bool hdr_;
 };
 
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_rgb_type, VisionStreamType init_yuv_type, release_cb init_release_callback) {
