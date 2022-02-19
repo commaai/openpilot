@@ -179,7 +179,8 @@ if __name__ == "__main__":
       print(diff1)
       with open("model_diff.txt", "w") as f:
         f.write(diff2)
-    except Exception:
+    except Exception as e:
+      print(str(e))
       failed = True
 
   # upload new refs
