@@ -32,7 +32,7 @@
   // init
   const sampler_t smp = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
   short packedOutputChannel = get_global_id(0);
-  short startOutputColumn = mul24((short)get_global_id(1), 4);
+  short startOutputColumn = mul24((short)get_global_id(1), NUM_OUTPUTS);
   short outputRow = get_global_id(2);
 
 #ifdef DEPTHWISE
