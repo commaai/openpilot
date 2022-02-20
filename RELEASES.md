@@ -1,4 +1,4 @@
-Version 0.8.13-GM7 (2022-02-20)
+Version 0.8.14-GM8 (2022-02-20)
 ========================
  * CarState.gearShifter now more detailed, includes L mode!
    Supports following GearShifter enum vals from cereal
@@ -26,7 +26,12 @@ Version 0.8.13-GM7 (2022-02-20)
  * TODO: Pedal low-speed tuning
  * TODO: Auto-detection of B-mode
  * TODO: Auto-detection of B-mode zero-point
-Version 0.8.13 (2022-02-16)
+
+Version 0.8.14 (2022-0X-XX)
+========================
+ * bigmodel!
+
+Version 0.8.13 (2022-02-18)
 ========================
  * Improved driver monitoring
    * Retuned driver pose learner for relaxed driving positions

@@ -58,6 +58,7 @@ common/transformations/transformations.pyx
 common/api/__init__.py
 
 models/supercombo.dlc
+models/big_supercombo.dlc
 models/dmonitoring_model_q.dlc
 
 release/*
@@ -426,7 +427,9 @@ selfdrive/modeld/transforms/transform.cl
 selfdrive/modeld/thneed/thneed.*
 selfdrive/modeld/thneed/serialize.cc
 selfdrive/modeld/thneed/compile.cc
+selfdrive/modeld/thneed/optimizer.cc
 selfdrive/modeld/thneed/include/*
+selfdrive/modeld/thneed/kernels/*.cl
 
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
