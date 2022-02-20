@@ -26,15 +26,19 @@ constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> 
   return kj::ArrayPtr(arr.data(), arr.size());
 }
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
+void model_init(ModelState* s, cl_device_id device_id, cl_context context, bool use_extra) {
   s->frame = new ModelFrame(device_id, context);
+  s->wide_frame = new ModelFrame(device_id, context);
 
 #ifdef USE_THNEED
-  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME);
+  s->m = std::make_unique<ThneedModel>(use_extra ? "../../models/big_supercombo.thneed" : "../../models/supercombo.thneed",
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
 #elif USE_ONNX_MODEL
-  s->m = std::make_unique<ONNXModel>("../../models/supercombo.onnx", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME);
+  s->m = std::make_unique<ONNXModel>(use_extra ? "../../models/big_supercombo.onnx" : "../../models/supercombo.onnx",
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
 #else
-  s->m = std::make_unique<SNPEModel>("../../models/supercombo.dlc", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME);
+  s->m = std::make_unique<SNPEModel>(use_extra ? "../../models/big_supercombo.dlc" : "../../models/supercombo.dlc",
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
 #endif
 
 #ifdef TEMPORAL
@@ -52,8 +56,8 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #endif
 }
 
-ModelOutput* model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
-                           const mat3 &transform, float *desire_in) {
+ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
+                              const mat3 &transform, const mat3 &transform_wide, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
     for (int i = 1; i < DESIRE_LEN; i++) {
@@ -70,8 +74,14 @@ ModelOutput* model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 #endif
 
   // if getInputBuf is not NULL, net_input_buf will be
-  auto net_input_buf = s->frame->prepare(yuv_cl, width, height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
-  s->m->execute(net_input_buf, s->frame->buf_size);
+  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
+  s->m->addImage(net_input_buf, s->frame->buf_size);
+
+  if (wbuf != nullptr) {
+    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, transform_wide, static_cast<cl_mem*>(s->m->getExtraBuf()));
+    s->m->addExtra(net_extra_buf, s->wide_frame->buf_size);
+  }
+  s->m->execute();
 
   return (ModelOutput*)&s->output;
 }
