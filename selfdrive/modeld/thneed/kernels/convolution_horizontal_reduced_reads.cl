@@ -1,5 +1,4 @@
-#define NAME horizontal_reduced_reads
 #define SUPPORT_DILATION
-#define NUM_OUTPUTS 4
 
+__kernel void convolution_horizontal_reduced_reads(
 #include "convolution_.cl"

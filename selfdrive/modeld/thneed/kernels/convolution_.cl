@@ -1,8 +1,8 @@
-__kernel void convolution_##NAME(
     read_only image2d_t input,
 #ifndef DEPTHWISE
     short startPackedInputChannel,
     short numPackedInputChannelsForGroup, short totalNumPackedInputChannels,
+    // typo required for API compatibility
     short packedOuputChannelOffset, short totalNumPackedOutputChannels,
 #else
     short totalNumPackedChannels,
@@ -15,12 +15,19 @@ __kernel void convolution_##NAME(
     short dilationX, short dilationY,
 #endif
     short neuron, float a, float b, float min_clamp, float max_clamp,
+#ifndef DEPTHWISE
+    // note: these are not supported
     __constant float *parameters, __constant float *batchNormBiases,
+#endif
     short numOutputColumns
 #ifdef SUPPORT_ACCUMULATION
     , short doAccumulate, read_only image2d_t accumulator
 #endif
     ) {
+
+#ifndef NUM_OUTPUTS
+  #define NUM_OUTPUTS 4
+#endif
 
   // init
   const sampler_t smp = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
@@ -52,6 +59,7 @@ __kernel void convolution_##NAME(
 #ifdef DEPTHWISE
 
 #ifdef SUPPORT_DILATION
+
   // depthwise convolution
   for (short rfRow = 0; rfRow < filterSizeY; ++rfRow) {
     for (short rfColumn = 0; rfColumn < filterSizeX; ++rfColumn) {
@@ -68,10 +76,12 @@ __kernel void convolution_##NAME(
       outputValues[1] += inputValues[1] * weightValues;
       outputValues[2] += inputValues[2] * weightValues;
       outputValues[3] += inputValues[3] * weightValues;
-    u}
+    }
     inputLocation.y += dilationY;
   }
+
 #else
+
   // depthwise unstrided convolution
   for (short rfRow = 0; rfRow < filterSizeY; ++rfRow) {
     float4 inputValues[4];
@@ -95,27 +105,64 @@ __kernel void convolution_##NAME(
     }
     ++inputLocation.y;
   }
+
 #endif
 
+#elif defined(ONLY_1X1_CONV)
+
+  // 1x1 convolution
+  short endPackedInputChannel = startPackedInputChannel + numPackedInputChannelsForGroup;
+  for (short packedInputChannel = startPackedInputChannel; packedInputChannel < endPackedInputChannel; ++packedInputChannel) {
+    float4 weightValues[4];
+    for (short outChIdx = 0; outChIdx < 4; ++outChIdx) {
+      weightValues[outChIdx] = read_imagef(weights, smp, weightLocation);
+      ++weightLocation.x;
+    }
+
+    inputLocation.x = startX + packedInputChannel;
+    float4 inputValues[NUM_OUTPUTS];
+    for (short i = 0; i < NUM_OUTPUTS; ++i) {
+      inputValues[i] = read_imagef(input, smp, inputLocation);
+      inputLocation.x += strideWithChannels;
+    }
+
+    for (short i = 0; i < NUM_OUTPUTS; ++i) {
+      float4 curOutputValues = outputValues[i];
+      curOutputValues.x += inputValues[i].x * weightValues[0].x;
+      curOutputValues.x += inputValues[i].y * weightValues[0].y;
+      curOutputValues.x += inputValues[i].z * weightValues[0].z;
+      curOutputValues.x += inputValues[i].w * weightValues[0].w;
+      curOutputValues.y += inputValues[i].x * weightValues[1].x;
+      curOutputValues.y += inputValues[i].y * weightValues[1].y;
+      curOutputValues.y += inputValues[i].z * weightValues[1].z;
+      curOutputValues.y += inputValues[i].w * weightValues[1].w;
+      curOutputValues.z += inputValues[i].x * weightValues[2].x;
+      curOutputValues.z += inputValues[i].y * weightValues[2].y;
+      curOutputValues.z += inputValues[i].z * weightValues[2].z;
+      curOutputValues.z += inputValues[i].w * weightValues[2].w;
+      curOutputValues.w += inputValues[i].x * weightValues[3].x;
+      curOutputValues.w += inputValues[i].y * weightValues[3].y;
+      curOutputValues.w += inputValues[i].z * weightValues[3].z;
+      curOutputValues.w += inputValues[i].w * weightValues[3].w;
+      outputValues[i] = curOutputValues;
+    }
+  }
+  packedOutputChannel += packedOuputChannelOffset;
+
 #else
+
   // normal convolution
-#ifdef ONLY_1X1_CONV
-  {
-#else
   for (short rfRow = 0; rfRow < filterSizeY; ++rfRow) {
-#endif
     for (short packedInputChannel = 0; packedInputChannel < numPackedInputChannelsForGroup; ++packedInputChannel) {
       short startXForChannel = startX + packedInputChannel;
-#ifdef ONLY_1X1_CONV
-      {
-#else
       for (short rfColumn = 0; rfColumn < filterSizeX; ++rfColumn) {
-#endif
+
         float4 weightValues[4];
         for (short outChIdx = 0; outChIdx < 4; ++outChIdx) {
           weightValues[outChIdx] = read_imagef(weights, smp, weightLocation);
           ++weightLocation.x;
         }
+
 #ifdef SUPPORT_DILATION
         short dilatedStepX = mul24(totalNumPackedInputChannels, dilationX);
         inputLocation.x = mad24(rfColumn, dilatedStepX, startXForChannel);
