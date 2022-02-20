@@ -80,7 +80,9 @@ int Thneed::optimize() {
 
         printf("building kernel %s\n", k->name.c_str());
         k->program = clCreateProgramWithSource(context, 1, srcs, &length, NULL);
-        int err = clBuildProgram(k->program, 1, &device_id, "", NULL, NULL);
+        char options[0x100];
+        snprintf(options, sizeof(options)-1, "-I %s", kernel_path);
+        int err = clBuildProgram(k->program, 1, &device_id, options, NULL, NULL);
 
         if (err != 0) {
           printf("got err %d\n", err);
