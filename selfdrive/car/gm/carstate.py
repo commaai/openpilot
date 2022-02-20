@@ -83,6 +83,8 @@ class CarState(CarStateBase):
       self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
 
     ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
+    if self.CP.enableGasInterceptor: # Flip CC main logic when pedal is being used for long
+      ret.cruiseState.available = (not ret.cruiseState.available)
 
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
     self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
