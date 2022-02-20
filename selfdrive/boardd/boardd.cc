@@ -610,11 +610,11 @@ void pigeon_thread(Panda *panda) {
 }
 
 void boardd_main_thread(std::vector<std::string> serials) {
-  if (serials.size() == 0) serials.push_back("");
-
   PubMaster pm({"pandaStates", "peripheralState"});
   LOGW("attempting to connect");
 
+  if (serials.size() == 0) serials = Panda::list();
+  
   // connect to all provided serials
   std::vector<Panda *> pandas;
   for (int i = 0; i < serials.size() && !do_exit; /**/) {
