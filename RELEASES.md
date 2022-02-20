@@ -1,8 +1,5 @@
-Version 0.8.13-GM7 (2022-02-11)
+Version 0.8.13-GM7 (2022-02-20)
 ========================
- * WARNING: Forced update on opendbc may require reinstall
- * ^^^^^^
- * ALPHA: Pedal Interceptor adjusted basesd on L-mode status for EVs!
  * CarState.gearShifter now more detailed, includes L mode!
    Supports following GearShifter enum vals from cereal
     park @1
