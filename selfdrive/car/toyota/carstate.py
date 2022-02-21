@@ -16,9 +16,9 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["GEAR_PACKET"]["GEAR"]
     self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.
 
-    # On cars with cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
-    # the signal is zeroed to where the steering angle is at start.
-    # Need to apply an offset as soon as the steering angle measurements are both received
+    # On most cars with cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
+    # the signal is zeroed to where the steering angle starts.
+    # However, on some cars this signal is absolute and requires no offset
     self.accurate_steer_angle_seen = False
     self.prev_accurate_steer_angle = 0.0
     self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
@@ -58,7 +58,7 @@ class CarState(CarStateBase):
     ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
     torque_sensor_angle_deg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
 
-    # Some newer models have a more accurate angle measurement in the TORQUE_SENSOR message. Use when updated
+    # Wait until an update has been seen to avoid learning an incorrect offset
     if abs(torque_sensor_angle_deg - self.prev_accurate_steer_angle) > 1e-3:
       self.accurate_steer_angle_seen = True
     self.prev_accurate_steer_angle = torque_sensor_angle_deg
