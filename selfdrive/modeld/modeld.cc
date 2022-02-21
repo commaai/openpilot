@@ -33,7 +33,7 @@ mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera
     -2.19780220e-03,  4.11497335e-19,  5.62637363e-01,
     -5.46146580e-20,  1.80147721e-03, -2.73464241e-01).finished();
 
-  static const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
+  const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
   static const mat3 yuv_transform = get_model_yuv_transform();
 
   auto ground_from_model_frame = bigmodel_frame ? ground_from_sbigmodel_frame : ground_from_medmodel_frame;
