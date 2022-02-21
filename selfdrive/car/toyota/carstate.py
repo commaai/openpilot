@@ -58,7 +58,7 @@ class CarState(CarStateBase):
     torque_sensor_angle_deg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
 
     # Wait until an update has been seen to avoid learning an incorrect offset
-    if not cp.vl["STEER_TORQUE_SENSOR"]["INITIALIZING"]:
+    if not bool(cp.vl["STEER_TORQUE_SENSOR"]["INITIALIZING"]):
       self.accurate_steer_angle_seen = True
 
     if self.accurate_steer_angle_seen:
