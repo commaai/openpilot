@@ -185,12 +185,12 @@ def plot_model(m, img, calibration, top_down):
   if calibration is None or top_down is None:
     return
 
-  for lead in m.leads:
+  for lead in m.leadsV3:
     if lead.prob < 0.5:
       continue
 
-    x, y, _, _ = lead.xyva
-    x_std, _, _, _ = lead.xyvaStd
+    x, y = lead.x[0], lead.y[0]
+    x_std = lead.xStd[0]
     x -= RADAR_TO_CAMERA
 
     _, py_top = to_topdown_pt(x + x_std, y)
