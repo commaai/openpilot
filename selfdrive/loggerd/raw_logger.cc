@@ -110,9 +110,6 @@ void RawLogger::encoder_close() {
   int err = av_write_trailer(format_ctx);
   assert(err == 0);
 
-  // TODO: how to close with new api?
-  // avcodec_close(stream->codec);
-
   err = avio_closep(&format_ctx->pb);
   assert(err == 0);
 
