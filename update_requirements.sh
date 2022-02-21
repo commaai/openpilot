@@ -8,7 +8,7 @@ cd $DIR
 if ! command -v "pyenv" > /dev/null 2>&1; then
   echo "pyenv install ..."
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-  export PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH`
+  export PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 fi
 
 export MAKEFLAGS="-j$(nproc)"
