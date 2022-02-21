@@ -182,7 +182,7 @@ def upload_handler(end_event: threading.Event) -> None:
       # Check if uploading over cell is allowed
       sm.update(0)
       cell = sm['deviceState'].networkType not in [NetworkType.wifi, NetworkType.ethernet]
-      if cell and (not cur_upload_items[tid].allow_cellular):
+      if cell and (not cur_upload_items[tid].allow_cellular) and not Params().get_bool("CellularUnmetered"):
         retry_upload(tid, end_event, False)
         continue
 
