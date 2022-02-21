@@ -154,14 +154,20 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
 
   int err = avcodec_send_frame(codec_ctx, frame);
   if (ret < 0) {
-    LOGE("encoding error\n");
+    LOGE("avcode_send_frame error %d", err);
     ret = -1;
   }
 
   while (ret >= 0){
     err = avcodec_receive_packet(codec_ctx, &pkt);
-    if (err < 0) {
-      LOGE("encoding error\n");
+    if (err == AVERROR_EOF) {
+      break;
+    } else if (err == AVERROR(EAGAIN)) {
+      // Encoder might need a few frames on startup to get started. Keep going
+      ret = 0;
+      break;
+    } else if (err < 0) {
+      LOGE("avcodec_receive_packet error %d", err);
       ret = -1;
       break;
     }
@@ -171,7 +177,7 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
 
     err = av_interleaved_write_frame(format_ctx, &pkt);
     if (err < 0) {
-      LOGE("encoder writer error\n");
+      LOGE("av_interleaved_write_frame %d", err);
       ret = -1;
     } else {
       counter++;
