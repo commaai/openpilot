@@ -83,7 +83,7 @@ if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
   echo "Added openpilot_env to RC file: $RC_FILE"
 fi
 
-# install python & dependencies
+# install python dependencies
 $ROOT/update_requirements.sh
 eval "$(pyenv init --path)"
 echo "[ ] installed python dependencies t=$SECONDS"
