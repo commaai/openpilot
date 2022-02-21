@@ -28,7 +28,6 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
 
   // TODO: respect write arg
 
-  //av_register_all();
   codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
   // codec = avcodec_find_encoder(AV_CODEC_ID_FFV1);
   assert(codec);
