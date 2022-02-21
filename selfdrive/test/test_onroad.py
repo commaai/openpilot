@@ -28,7 +28,7 @@ PROCS = {
   "selfdrive.controls.plannerd": 22.6,
   "./_ui": 20.0,
   "selfdrive.locationd.paramsd": 14.0,
-  "./camerad": 7.07,
+  "./camerad": 9.16,
   "./_sensord": 6.17,
   "selfdrive.controls.radard": 7.0,
   "./_modeld": 4.48,
@@ -56,7 +56,7 @@ if TICI:
   PROCS.update({
     "./loggerd": 70.0,
     "selfdrive.controls.controlsd": 31.0,
-    "./camerad": 31.0,
+    "./camerad": 36.8,
     "./_ui": 33.0,
     "selfdrive.controls.plannerd": 11.7,
     "./_dmonitoringmodeld": 10.0,
