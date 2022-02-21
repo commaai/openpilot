@@ -194,7 +194,73 @@ cdef class AcadosOcpSolverFast:
 
             :param field: string in ['statistics', 'time_tot', 'time_lin', 'time_sim', 'time_sim_ad', 'time_sim_la', 'time_qp', 'time_qp_solver_call', 'time_reg', 'sqp_iter']
         """
-        raise NotImplementedError()
+        fields = ['time_tot',  # total cpu time previous call
+                  'time_lin',  # cpu time for linearization
+                  'time_sim',  # cpu time for integrator
+                  'time_sim_ad',  # cpu time for integrator contribution of external function calls
+                  'time_sim_la',  # cpu time for integrator contribution of linear algebra
+                  'time_qp',   # cpu time qp solution
+                  'time_qp_solver_call',  # cpu time inside qp solver (without converting the QP)
+                  'time_qp_xcond',
+                  'time_glob',  # cpu time globalization
+                  'time_reg',  # cpu time regularization
+                  'sqp_iter',  # number of SQP iterations
+                  'qp_iter',  # vector of QP iterations for last SQP call
+                  'statistics',  # table with info about last iteration
+                  'stat_m',
+                  'stat_n',]
+
+        field = field_
+        field = field.encode('utf-8')
+
+        if (field_ not in fields):
+            raise Exception('AcadosOcpSolver.get_stats(): {} is not a valid argument.\
+                    \n Possible values are {}. Exiting.'.format(fields, fields))
+
+        if field_ in ['sqp_iter', 'stat_m', 'stat_n']:
+            return self.__get_stat_int(field)
+
+        elif field_.startswith('time'):
+            return self.__get_stat_double(field)
+
+        elif field_ == 'statistics':
+            # TODO: segfaults. why? dynamics_get works..
+            # print(f"acados get_stats(): calling getter with field {field}")
+            NotImplementedError("TODO!")
+            sqp_iter = self.get_stats("sqp_iter")
+            stat_m = self.get_stats("stat_m")
+            stat_n = self.get_stats("stat_n")
+            min_size = min([stat_m, sqp_iter+1])
+            return self.__get_stat_matrix(field, stat_n, min_size)
+
+        elif field_ == 'qp_iter':
+            NotImplementedError("TODO!")
+            # full_stats = self.get_stats('statistics')
+            # if self.acados_ocp.solver_options.nlp_solver_type == 'SQP':
+            #     out = full_stats[6, :]
+            # elif self.acados_ocp.solver_options.nlp_solver_type == 'SQP_RTI':
+            #     out = full_stats[2, :]
+        else:
+            NotImplementedError("TODO!")
+
+    def __get_stat_int(self, field):
+        # cdef cnp.ndarray[cnp.int_t, ndim=1] out = np.ascontiguousarray(np.zeros((1,)), dtype=np.int64)
+        # acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> out.data)
+        cdef int out
+        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> &out)
+        return out
+
+    def __get_stat_double(self, field):
+        cdef cnp.ndarray[cnp.float64_t, ndim=1] out = np.zeros((1,))
+        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> out.data)
+        return out
+
+    def __get_stat_matrix(self, field, n, m):
+        print(f"get_stat_matrix: n, m {n, m}")
+        out_mat = np.zeros((m, n), order='F', dtype=np.float64)
+        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> out_mat.data)
+        return out_mat
+
 
 
     def get_cost(self):
