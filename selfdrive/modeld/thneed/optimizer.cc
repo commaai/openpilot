@@ -173,6 +173,11 @@ int Thneed::optimize() {
 
           if (lastout == in) {
             short neuron = *(int*)kq[i]->args[kq[i]->get_arg_num("neuron")].data();
+            assert(neuron <= 5);
+
+            // ELU isn't supported in fc_Wtx
+            assert(!(kq[i-1]->name == "fc_Wtx" && neuron == 5));
+
             kq[i-1]->args[kq[i-1]->get_arg_num("neuron")] = string((char *)&neuron, sizeof(neuron));
 
             cl_mem tmp = make_image_like(context, *(cl_mem *)lastout.data());
