@@ -1,5 +1,7 @@
 Version 0.8.14-GM8 (2022-02-20)
 ========================
+ * Further improved Bolt Tunining thanks to Darknight11
+ * Reversed CC main logic with Pedal
  * CarState.gearShifter now more detailed, includes L mode!
    Supports following GearShifter enum vals from cereal
     park @1
