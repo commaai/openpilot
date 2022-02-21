@@ -20,7 +20,6 @@ class CarState(CarStateBase):
     # the signal is zeroed to where the steering angle starts.
     # However, on some cars this signal is absolute and requires no offset
     self.accurate_steer_angle_seen = False
-    self.prev_accurate_steer_angle = 0.0
     self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
 
     self.low_speed_lockout = False
@@ -59,9 +58,8 @@ class CarState(CarStateBase):
     torque_sensor_angle_deg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
 
     # Wait until an update has been seen to avoid learning an incorrect offset
-    if abs(torque_sensor_angle_deg - self.prev_accurate_steer_angle) > 1e-3:
+    if not cp.vl["STEER_TORQUE_SENSOR"]["INITIALIZING"]:
       self.accurate_steer_angle_seen = True
-    self.prev_accurate_steer_angle = torque_sensor_angle_deg
 
     if self.accurate_steer_angle_seen:
       # Offset seems to be invalid for large steering angles
@@ -152,6 +150,7 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"),
       ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR"),
       ("STEER_ANGLE", "STEER_TORQUE_SENSOR"),
+      ("INITIALIZING", "STEER_TORQUE_SENSOR"),
       ("TURN_SIGNALS", "BLINKERS_STATE"),
       ("LKA_STATE", "EPS_STATUS"),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
