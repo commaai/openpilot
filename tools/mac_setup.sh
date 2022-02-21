@@ -4,12 +4,28 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
+ARCH=$(uname -m)
+
+if [[ $SHELL == "/bin/zsh" ]]; then
+  RC_FILE="$HOME/.zshrc"
+elif [[ $SHELL == "/bin/bash" ]]; then
+  RC_FILE="$HOME/.bashrc"
+fi
 
 # Install brew if required
 if [[ $(command -v brew) == "" ]]; then
   echo "-- Installing Hombrew"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
   echo "[ ] installed brew t=$SECONDS"
+
+  # make brew available now
+  if [[ $ARCH == "x86_64" ]]; then
+      echo 'eval "$(/usr/local/homebrew/bin/brew shellenv)"' >> $RC_FILE
+      eval "$(/usr/local/homebrew/bin/brew shellenv)"
+  else
+      echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $RC_FILE
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+  fi
 fi
 
 # TODO: remove protobuf,protobuf-c,swig when casadi can be pip installed
@@ -41,12 +57,6 @@ cask "gcc-arm-embedded"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"
-
-if [[ $SHELL == "/bin/zsh" ]]; then
-  RC_FILE="$HOME/.zshrc"
-elif [[ $SHELL == "/bin/bash" ]]; then
-  RC_FILE="$HOME/.bash_profile"
-fi
 
 BREW_PREFIX=$(brew --prefix)
 
