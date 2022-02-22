@@ -59,6 +59,8 @@ class CarState(CarStateBase):
     ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
     self.torque_sensor_angle_deg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
 
+    self.steering_lta = cp.vl["STEERING_LTA"]
+
     # Some newer models have a more accurate angle measurement in the TORQUE_SENSOR message. Use if non-zero
     if abs(self.torque_sensor_angle_deg) > 1e-3:
       self.accurate_steer_angle_seen = True
@@ -209,12 +211,16 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = [
       ("FORCE", "PRE_COLLISION"),
+      ("SETME_X1", "STEERING_LTA"),
+      ("SETME_X3", "STEERING_LTA"),
+      ("SETME_X64", "STEERING_LTA"),
       ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
     ]
 
     # use steering message to check if panda is connected to frc
     checks = [
       ("STEERING_LKA", 42),
+      ("STEERING_LTA", 0),
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
     ]
 
