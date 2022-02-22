@@ -141,7 +141,6 @@ def model_replay(lr, frs):
 if __name__ == "__main__":
 
   update = "--update" in sys.argv
-  update = True
   replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
