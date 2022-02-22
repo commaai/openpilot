@@ -35,7 +35,7 @@ VIPC_STREAM = {"roadCameraState": VisionStreamType.VISION_STREAM_ROAD, "driverCa
                "wideRoadCameraState": VisionStreamType.VISION_STREAM_WIDE_ROAD}
 
 def get_log_fn(ref_commit, TEST_ROUTE, tici=True):
-  return f"{TEST_ROUTE}_{'model_tici' if TICI else 'model'}_{ref_commit}.bz2"
+  return f"{TEST_ROUTE}_{'model_tici' if tici else 'model'}_{ref_commit}.bz2"
 
 
 def replace_calib(msg, calib):
