@@ -5,6 +5,7 @@ import os
 import lzma
 import functools
 import requests
+import io
 from Crypto.Hash import SHA512
 
 
@@ -20,40 +21,46 @@ CA_TABLE_MIN_LEN = CA_TABLE_HEADER_LEN + CA_TABLE_ENTRY_LEN
 
 
 def parse_caibx(caibx_path):
-  with open(caibx_path, 'rb') as caibx:
-    caibx.seek(0, os.SEEK_END)
-    caibx_len = caibx.tell()
-    caibx.seek(0, os.SEEK_SET)
+  if os.path.isfile(caibx_path):
+    caibx = open(caibx_path, 'rb')
+  else:
+    resp = requests.get(caibx_path)
+    resp.raise_for_status()
+    caibx = io.BytesIO(resp.content)
 
-    # Parse header
-    length, magic, flags, min_size, _, max_size = struct.unpack("<QQQQQQ", caibx.read(CA_HEADER_LEN))
-    assert flags == flags
-    assert length == CA_HEADER_LEN
-    assert magic == CA_FORMAT_INDEX
+  caibx.seek(0, os.SEEK_END)
+  caibx_len = caibx.tell()
+  caibx.seek(0, os.SEEK_SET)
 
-    # Parse table header
-    length, magic = struct.unpack("<QQ", caibx.read(CA_TABLE_HEADER_LEN))
-    assert magic == CA_FORMAT_TABLE
+  # Parse header
+  length, magic, flags, min_size, _, max_size = struct.unpack("<QQQQQQ", caibx.read(CA_HEADER_LEN))
+  assert flags == flags
+  assert length == CA_HEADER_LEN
+  assert magic == CA_FORMAT_INDEX
 
-    # Parse chunks
-    num_chunks = (caibx_len - CA_HEADER_LEN - CA_TABLE_MIN_LEN) // CA_TABLE_ENTRY_LEN
-    chunks = {}
+  # Parse table header
+  length, magic = struct.unpack("<QQ", caibx.read(CA_TABLE_HEADER_LEN))
+  assert magic == CA_FORMAT_TABLE
 
-    offset = 0
-    for i in range(num_chunks):
-      new_offset = struct.unpack("<Q", caibx.read(8))[0]
+  # Parse chunks
+  num_chunks = (caibx_len - CA_HEADER_LEN - CA_TABLE_MIN_LEN) // CA_TABLE_ENTRY_LEN
+  chunks = {}
 
-      sha = caibx.read(32)
-      length = new_offset - offset
+  offset = 0
+  for i in range(num_chunks):
+    new_offset = struct.unpack("<Q", caibx.read(8))[0]
 
-      assert length <= max_size
+    sha = caibx.read(32)
+    length = new_offset - offset
 
-      # Last chunk can be smaller
-      if i < num_chunks - 1:
-        assert length >= min_size
+    assert length <= max_size
 
-      chunks[sha] = (offset, length)
-      offset = new_offset
+    # Last chunk can be smaller
+    if i < num_chunks - 1:
+      assert length >= min_size
+
+    chunks[sha] = (offset, length)
+    offset = new_offset
 
   return chunks
 
@@ -111,8 +118,8 @@ def extract_simple(caibx_path, out_path, store_path):
   target = parse_caibx(caibx_path)
   sources = [
     # (functools.partial(read_chunk_local_store, store_path=store_path), target),
-    # (functools.partial(read_chunk_remote_store, store_path=store_path), target),
-    (functools.partial(read_chunk_local_file, f=open(store_path, 'rb')), target),
+    (functools.partial(read_chunk_remote_store, store_path=store_path), target),
+    # (functools.partial(read_chunk_local_file, f=open(store_path, 'rb')), target),
   ]
 
   extract(target, sources, out_path)
