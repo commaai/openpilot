@@ -197,7 +197,7 @@ class LongitudinalMpc:
     self.source = SOURCES[2]
 
   def reset(self):
-    self.solver = AcadosOcpSolverFast('long', N, EXPORT_DIR)
+    self.solver = AcadosOcpSolverFast('long', N)
     self.v_solution = np.zeros(N+1)
     self.a_solution = np.zeros(N+1)
     self.prev_a = np.array(self.a_solution)

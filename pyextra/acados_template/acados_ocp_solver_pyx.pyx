@@ -51,9 +51,8 @@ cdef class AcadosOcpSolverFast:
     """
     Class to interact with the acados ocp solver C object.
 
-        :param acados_ocp: type AcadosOcp - description of the OCP for acados
-        :param json_file: name for the json file used to render the templated code - default: acados_ocp_nlp.json
-        :param simulink_opts: Options to configure Simulink S-function blocks, mainly to activate possible Inputs and Outputs
+        :param model_name:
+        :param N:
     """
 
     cdef acados_solver.nlp_solver_capsule *capsule
@@ -68,7 +67,7 @@ cdef class AcadosOcpSolverFast:
     cdef int N
     cdef bint solver_created
 
-    def __cinit__(self, str model_name, int N, str code_export_dir):
+    def __cinit__(self, str model_name, int N):
         self.model_name = model_name
         self.N = N
 
