@@ -34,8 +34,8 @@ SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 VIPC_STREAM = {"roadCameraState": VisionStreamType.VISION_STREAM_ROAD, "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,
                "wideRoadCameraState": VisionStreamType.VISION_STREAM_WIDE_ROAD}
 
-def get_log_fn(ref_commit, TEST_ROUTE, tici=True):
-  return f"{TEST_ROUTE}_{'model_tici' if tici else 'model'}_{ref_commit}.bz2"
+def get_log_fn(ref_commit, test_route, tici=True):
+  return f"{test_route}_{'model_tici' if tici else 'model'}_{ref_commit}.bz2"
 
 
 def replace_calib(msg, calib):
