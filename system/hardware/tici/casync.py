@@ -37,14 +37,17 @@ def parse_caibx(caibx_path):
     chunks = {}
 
     offset = 0
-    for _ in range(num_chunks):
+    for i in range(num_chunks):
       new_offset = struct.unpack("<Q", caibx.read(8))[0]
 
       sha = caibx.read(32)
       length = new_offset - offset
 
-      assert(length >= min_size)
-      assert(length <= max_size)
+      assert length <= max_size
+
+      # Last chunk can be smaller
+      if i != num_chunks - 1:
+        assert length >= min_size
 
       chunks[sha] = (offset, length)
       offset = new_offset
@@ -84,7 +87,7 @@ def extract(target, sources, out_path):
         raise RuntimeError("Desired chunk not found")
 
 
-def extract_simple(caibx_path, out_path, store_path='default.castr'):
+def extract_simple(caibx_path, out_path, store_path):
   # (callback, chunks)
   sources = [
     (functools.partial(read_chunk_local_store, store_path=store_path), parse_caibx(caibx_path)),
@@ -95,5 +98,6 @@ def extract_simple(caibx_path, out_path, store_path='default.castr'):
 if __name__ == "__main__":
   caibx = sys.argv[1]
   out = sys.argv[2]
+  store = sys.argv[3]
 
-  extract_simple(caibx, out)
+  extract_simple(caibx, out, store)
