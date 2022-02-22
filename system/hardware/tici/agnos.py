@@ -180,7 +180,16 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
     sources += [('local', functools.partial(casync.read_chunk_local_file, f=open(seed_path, 'rb')), casync.parse_caibx(partition['casync_seed_caibx']))]
   sources += [('remote', functools.partial(casync.read_chunk_remote_store, store_path=partition['casync_store']), target)]
 
-  stats = casync.extract(target, sources, path)
+  last_p = 0
+
+  def progress(cur):
+    nonlocal last_p
+    p = int(cur / partition['size'] * 100)
+    if p != last_p:
+      last_p = p
+      print(f"Installing {partition['name']}: {p}", flush=True)
+
+  stats = casync.extract(target, sources, path, progress)
   casync.print_stats(stats)
 
   cloudlog.event('casync done', stats=stats, error=True)

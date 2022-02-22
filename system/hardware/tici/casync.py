@@ -89,8 +89,9 @@ def read_chunk_remote_store(sha, chunk, store_path):
   return decompressor.decompress(resp.content)
 
 
-def extract(target, sources, out_path):
+def extract(target, sources, out_path, progress=None):
   stats = defaultdict(int)
+
   with open(out_path, 'wb') as out:
     for sha, (offset, length) in target.items():
 
@@ -113,6 +114,9 @@ def extract(target, sources, out_path):
 
           stats[name] += length
 
+          if progress is not None:
+            progress(sum(stats.values()))
+
           break
       else:
         raise RuntimeError("Desired chunk not found in provided stores")
@@ -132,8 +136,8 @@ def extract_simple(caibx_path, out_path, store_path):
   target = parse_caibx(caibx_path)
   sources = [
     # (store_path, functools.partial(read_chunk_local_store, store_path=store_path), target),
-    (store_path, functools.partial(read_chunk_remote_store, store_path=store_path), target),
-    # (store_path, functools.partial(read_chunk_local_file, f=open(store_path, 'rb')), target),
+    # (store_path, functools.partial(read_chunk_remote_store, store_path=store_path), target),
+    (store_path, functools.partial(read_chunk_local_file, f=open(store_path, 'rb')), target),
   ]
 
   return extract(target, sources, out_path)
@@ -144,4 +148,5 @@ if __name__ == "__main__":
   out = sys.argv[2]
   store = sys.argv[3]
 
-  print_stats(extract_simple(caibx, out, store))
+  stats = extract_simple(caibx, out, store)
+  print_stats(stats)
