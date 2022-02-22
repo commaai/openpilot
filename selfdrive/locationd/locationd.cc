@@ -464,7 +464,6 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
   evt.setValid(inputsOK);
   cereal::LiveLocationKalman::Builder liveLoc = evt.initLiveLocationKalman();
   this->build_live_location(liveLoc);
-  liveLoc.setInputsOK(inputsOK);
   liveLoc.setSensorsOK(sensorsOK);
   liveLoc.setGpsOK(gpsOK);
   return msg_builder.toBytes();
@@ -499,12 +498,15 @@ int Localizer::locationd_thread() {
 
   while (!do_exit) {
     sm.update();
-    for (const char* service : service_list) {
-      if (sm.updated(service) && sm.valid(service) && sm.allAliveAndValid()){
-        const cereal::Event::Reader log = sm[service];
-        this->handle_msg(log);
+    if (sm.allAliveAndValid()){
+      for (const char* service : service_list) {
+        if (sm.updated(service)){
+          const cereal::Event::Reader log = sm[service];
+          this->handle_msg(log);
+        }
       }
     }
+    
 
     if (sm.updated("cameraOdometry")) {
       uint64_t logMonoTime = sm["cameraOdometry"].getLogMonoTime();

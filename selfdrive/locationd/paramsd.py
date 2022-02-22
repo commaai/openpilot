@@ -160,10 +160,11 @@ def main(sm=None, pm=None):
 
   while True:
     sm.update()
-    for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
-      if sm.updated[which] and sm.all_alive_and_valid():
-        t = sm.logMonoTime[which] * 1e-9
-        learner.handle_log(t, which, sm[which])
+    if sm.all_alive_and_valid():
+      for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
+        if sm.updated[which]:
+          t = sm.logMonoTime[which] * 1e-9
+          learner.handle_log(t, which, sm[which])
 
     if sm.updated['liveLocationKalman']:
       x = learner.kf.x
