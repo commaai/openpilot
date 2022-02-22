@@ -44,8 +44,10 @@
     "url": "https://commadist.azureedge.net/agnosupdate/system-11fdbc9e8a9cd27f98346d7e1039bc5b3032d0e892ff95fa1258673ff1809bca.img.xz",
     "hash": "45b4719a9e580617cf840036b24fb0dcd32491edd9654d8d74c28d91ff362d36",
     "hash_raw": "11fdbc9e8a9cd27f98346d7e1039bc5b3032d0e892ff95fa1258673ff1809bca",
+    "casync_caibx": "http://192.168.200.51:8000/system-9b0b534ed0c35c25850dbb73d3f052611f2e2c9db32410edc25d75fbcfc6c15e.img.raw.caibx",
+    "casync_store": "http://192.168.200.51:8000/default.castr",
+    "casync_seed_caibx": "http://192.168.200.51:8000/system-9b0b534ed0c35c25850dbb73d3f052611f2e2c9db32410edc25d75fbcfc6c15e.img.raw.caibx",
     "size": 10737418240,
-    "sparse": true,
     "full_check": false,
     "has_ab": true
   }

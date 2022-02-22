@@ -8,6 +8,9 @@ import subprocess
 import time
 import os
 from typing import Dict, Generator, Union
+import functools
+
+from selfdrive.hardware.tici.casync import extract, parse_caibx, read_chunk_remote_store, read_chunk_local_file
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 CASYNC_TMP_DIR = "/data/neoupdate"
@@ -170,13 +173,17 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
   path = get_partition_path(target_slot_number, partition)
   seed_path = path[:-1] + ('b' if path[-1] == 'a' else 'a')
 
-  os.makedirs(CASYNC_TMP_DIR, exist_ok=True)
-  new_env = dict(os.environ, TMPDIR=CASYNC_TMP_DIR)
-  cmd = ["casync", "extract", "--verbose", f"--seed={seed_path}", partition['casync'], path]
-  cloudlog.info(f"Starting casync: {cmd}")
+  target = parse_caibx(partition['casync_caibx'])
+  sources = []
 
-  out = subprocess.check_output(cmd, env=new_env)
-  cloudlog.info(out)
+  if 'casync_seed_caibx' in partition:
+    sources += [('local', functools.partial(read_chunk_local_file, f=open(seed_path, 'rb')), parse_caibx(partition['casync_seed_caibx']))]
+  sources += [('remote', functools.partial(read_chunk_remote_store, store_path=partition['casync_store']), target)]
+
+  stats = extract(target, sources, path)
+  print(stats)
+
+  cloudlog.event('casync done', stats=stats, error=True)
 
   os.sync()
   if not verify_partition(target_slot_number, partition, force_full_check=True):
@@ -197,7 +204,7 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
 
   path = get_partition_path(target_slot_number, partition)
 
-  if 'casync' in partition:
+  if 'casync_caibx' in partition:
     extract_casync_image(target_slot_number, partition, cloudlog)
   else:
     extract_compressed_image(target_slot_number, partition, cloudlog)
