@@ -192,7 +192,7 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
   stats = casync.extract(target, sources, path, progress)
   casync.print_stats(stats)
 
-  cloudlog.event('casync done', stats=stats, error=True)
+  cloudlog.error(f'casync done {stats}')
 
   os.sync()
   if not verify_partition(target_slot_number, partition, force_full_check=True):
