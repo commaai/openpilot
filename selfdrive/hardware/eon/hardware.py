@@ -5,7 +5,7 @@ import re
 import serial
 import struct
 import subprocess
-from typing import List, Union
+from typing import List, Union, cast
 
 from cereal import log
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
@@ -33,7 +33,7 @@ def service_call(call: List[str]) -> Union[bytes, None]:
 
 def parse_service_call_unpack(r, fmt) -> Union[bytes, None]:
   try:
-    return struct.unpack(fmt, r)[0]
+    return cast(bytes, struct.unpack(fmt, r)[0])
   except Exception:
     return None
 

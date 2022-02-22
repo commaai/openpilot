@@ -1,6 +1,6 @@
 import capnp
 from enum import IntEnum
-from typing import Dict, Union, Callable, List, Optional
+from typing import Dict, Union, Callable, List, Optional, cast
 
 from cereal import log, car
 import cereal.messaging as messaging
@@ -133,7 +133,7 @@ class Alert:
     return f"{self.alert_text_1}/{self.alert_text_2} {self.priority} {self.visual_alert} {self.audible_alert}"
 
   def __gt__(self, alert2) -> bool:
-    return self.priority > alert2.priority
+    return cast(bool, self.priority > alert2.priority)
 
 
 class NoEntryAlert(Alert):

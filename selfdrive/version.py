@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from typing import List, Optional
+from typing import List, Optional, cast
 from functools import lru_cache
 
 from common.basedir import BASEDIR
@@ -55,7 +55,10 @@ def get_origin(default: Optional[str] = None) -> Optional[str]:
 
 @cache
 def get_normalized_origin(default: Optional[str] = None) -> Optional[str]:
-  return get_origin()\
+  origin: Optional[str] = get_origin()
+  if origin is None:
+    return None
+  return origin\
           .replace("git@", "", 1)\
           .replace(".git", "", 1)\
           .replace("https://", "", 1)\
@@ -70,7 +73,7 @@ def get_version() -> str:
 
 @cache
 def get_short_version() -> str:
-  return get_version().split('-')[0]
+  return cast(str, get_version().split('-')[0])
 
 @cache
 def is_prebuilt() -> bool:
@@ -81,7 +84,7 @@ def is_prebuilt() -> bool:
 def is_comma_remote() -> bool:
   # note to fork maintainers, this is used for release metrics. please do not
   # touch this to get rid of the orange startup alert. there's better ways to do that
-  origin = get_origin()
+  origin: Optional[str] = get_origin()
   if origin is None:
     return False
 

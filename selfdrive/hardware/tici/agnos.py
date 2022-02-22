@@ -7,7 +7,7 @@ import struct
 import subprocess
 import time
 import os
-from typing import Generator
+from typing import Generator, cast
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 
@@ -115,10 +115,10 @@ def verify_partition(target_slot_number: int, partition: dict) -> bool:
         raw_hash.update(out.read(n))
         pos += n
 
-      return raw_hash.hexdigest().lower() == partition['hash_raw'].lower()
+      return cast(bool, raw_hash.hexdigest().lower() == partition['hash_raw'].lower())
     else:
       out.seek(partition_size)
-      return out.read(64) == partition['hash_raw'].lower().encode()
+      return cast(bool, out.read(64) == partition['hash_raw'].lower().encode())
 
 
 def clear_partition_hash(target_slot_number: int, partition: dict) -> None:

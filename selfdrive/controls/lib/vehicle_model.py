@@ -12,7 +12,7 @@ x_dot = A*x + B*u
 
 A depends on longitudinal speed, u [m/s], and vehicle parameters CP
 """
-from typing import Tuple
+from typing import Tuple, cast
 
 import numpy as np
 from numpy.linalg import solve
@@ -89,7 +89,7 @@ class VehicleModel:
       Curvature factor [1/m]
     """
     sf = calc_slip_factor(self)
-    return (1. - self.chi) / (1. - sf * u**2) / self.l
+    return cast(float, (1. - self.chi) / (1. - sf * u**2) / self.l)
 
   def get_steer_from_curvature(self, curv: float, u: float, roll: float) -> float:
     """Calculates the required steering wheel angle for a given curvature
@@ -120,7 +120,7 @@ class VehicleModel:
     if abs(sf) < 1e-6:
       return 0
     else:
-      return (ACCELERATION_DUE_TO_GRAVITY * roll) / ((1 / sf) - u**2)
+      return cast(float, (ACCELERATION_DUE_TO_GRAVITY * roll) / ((1 / sf) - u**2))
 
   def get_steer_from_yaw_rate(self, yaw_rate: float, u: float, roll: float) -> float:
     """Calculates the required steering wheel angle for a given yaw_rate
@@ -166,7 +166,7 @@ def kin_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
   K = np.zeros((2, 1))
   K[0, 0] = VM.aR / VM.sR / VM.l * u
   K[1, 0] = 1. / VM.sR / VM.l * u
-  return K * sa
+  return cast(np.ndarray, K * sa)
 
 
 def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, np.ndarray]:
@@ -221,7 +221,7 @@ def dyn_ss_sol(sa: float, u: float, roll: float, VM: VehicleModel) -> np.ndarray
   """
   A, B = create_dyn_state_matrices(u, VM)
   inp = np.array([[sa], [roll]])
-  return -solve(A, B) @ inp
+  return cast(np.ndarray, -solve(A, B) @ inp)
 
 
 def calc_slip_factor(VM):

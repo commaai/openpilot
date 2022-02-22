@@ -4,7 +4,7 @@ import os
 import importlib
 import unittest
 from collections import defaultdict, Counter
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import log, car
@@ -40,7 +40,7 @@ ignore_addr_checks_valid = [
 ]
 
 # build list of test cases
-routes_by_car = defaultdict(set)
+routes_by_car: Dict = defaultdict(set)
 for r in routes:
   routes_by_car[r.car_fingerprint].add(r.route)
 
