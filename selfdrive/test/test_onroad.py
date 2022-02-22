@@ -235,7 +235,7 @@ class TestOnroad(unittest.TestCase):
 
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
-      self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
+      self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: {min(ts)}\n"
       result += f"'{s}' avg execution time: {np.mean(ts)}\n"
