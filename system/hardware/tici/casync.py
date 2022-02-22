@@ -9,6 +9,7 @@ from Crypto.Hash import SHA512
 CA_FORMAT_INDEX = 0x96824d9c7b129ff9
 CA_FORMAT_TABLE = 0xe75b9e112f17417d
 CA_FORMAT_TABLE_TAIL_MARKER = 0xe75b9e112f17417
+FLAGS = 0xb000000000000000
 
 CA_HEADER_LEN = 48
 CA_TABLE_HEADER_LEN = 16
@@ -24,7 +25,7 @@ def parse_caibx(caibx_path):
 
     # Parse header
     length, magic, flags, min_size, _, max_size = struct.unpack("<QQQQQQ", caibx.read(CA_HEADER_LEN))
-    assert flags
+    assert flags == flags
     assert length == CA_HEADER_LEN
     assert magic == CA_FORMAT_INDEX
 
@@ -89,10 +90,12 @@ def extract(target, sources, out_path):
 
 def extract_simple(caibx_path, out_path, store_path):
   # (callback, chunks)
+  target = parse_caibx(caibx_path)
   sources = [
-    (functools.partial(read_chunk_local_store, store_path=store_path), parse_caibx(caibx_path)),
+    (functools.partial(read_chunk_local_store, store_path=store_path), target),
   ]
-  extract(parse_caibx(caibx_path), sources, out_path)
+
+  extract(target, sources, out_path)
 
 
 if __name__ == "__main__":
