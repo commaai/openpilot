@@ -12,7 +12,7 @@
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/timing.h"
 //#define RUN_DISASSEMBLER
-//#define RUN_OPTIMIZER
+#define RUN_OPTIMIZER
 
 Thneed *g_thneed = NULL;
 int g_fd = -1;
@@ -526,6 +526,23 @@ cl_int CLQueuedKernel::exec() {
 
   return clEnqueueNDRangeKernel(thneed->command_queue,
     kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);
+}
+
+uint64_t CLQueuedKernel::benchmark() {
+  uint64_t ret = 0;
+  int old_record = thneed->record;
+  thneed->record = 0;
+  clFinish(thneed->command_queue);
+  // TODO: benchmarking at a lower level will make this more accurate
+  for (int i = 0; i < 10; i++) {
+    uint64_t sb = nanos_since_boot();
+    exec();
+    clFinish(thneed->command_queue);
+    uint64_t et = nanos_since_boot() - sb;
+    if (ret == 0 || et < ret) ret = et;
+  }
+  thneed->record = old_record;
+  return ret;
 }
 
 void CLQueuedKernel::debug_print(bool verbose) {

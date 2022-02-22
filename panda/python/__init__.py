@@ -163,9 +163,9 @@ class Panda(object):
   HEALTH_PACKET_VERSION = 3
   HEALTH_STRUCT = struct.Struct("<IIIIIIIIBBBBBBBHBBBHI")
 
-  F2_DEVICES = [HW_TYPE_PEDAL]
-  F4_DEVICES = [HW_TYPE_WHITE_PANDA, HW_TYPE_GREY_PANDA, HW_TYPE_BLACK_PANDA, HW_TYPE_UNO, HW_TYPE_DOS]
-  H7_DEVICES = [HW_TYPE_RED_PANDA]
+  F2_DEVICES = (HW_TYPE_PEDAL, )
+  F4_DEVICES = (HW_TYPE_WHITE_PANDA, HW_TYPE_GREY_PANDA, HW_TYPE_BLACK_PANDA, HW_TYPE_UNO, HW_TYPE_DOS)
+  H7_DEVICES = (HW_TYPE_RED_PANDA, )
 
   CLOCK_SOURCE_MODE_DISABLED = 0
   CLOCK_SOURCE_MODE_FREE_RUNNING = 1
@@ -448,7 +448,7 @@ class Panda(object):
     return (self.is_uno() or self.is_dos() or self.is_black() or self.is_red())
 
   def has_canfd(self):
-    return self._mcu_type in Panda.H7_DEVICES
+    return self.get_type() in Panda.H7_DEVICES
 
   def is_internal(self):
     return self.get_type() in [Panda.HW_TYPE_UNO, Panda.HW_TYPE_DOS]
@@ -480,8 +480,8 @@ class Panda(object):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xda, int(bootmode), 0, b'')
     time.sleep(0.2)
 
-  def set_safety_mode(self, mode=SAFETY_SILENT, disable_checks=True):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xdc, mode, 0, b'')
+  def set_safety_mode(self, mode=SAFETY_SILENT, param=0, disable_checks=True):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xdc, mode, param, b'')
     if disable_checks:
       self.set_heartbeat_disabled()
       self.set_power_save(0)
@@ -511,7 +511,7 @@ class Panda(object):
   def set_can_data_speed_kbps(self, bus, speed):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf9, bus, int(speed * 10), b'')
 
-    # CAN FD and BRS status
+  # CAN FD and BRS status
   def get_canfd_status(self, bus):
     dat = self._handle.controlRead(Panda.REQUEST_IN, 0xfa, bus, 0, 2)
     if dat:

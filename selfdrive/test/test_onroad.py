@@ -27,8 +27,8 @@ PROCS = {
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 22.6,
   "./_ui": 20.0,
-  "selfdrive.locationd.paramsd": 9.1,
-  "./camerad": 7.07,
+  "selfdrive.locationd.paramsd": 14.0,
+  "./camerad": 9.16,
   "./_sensord": 6.17,
   "selfdrive.controls.radard": 7.0,
   "./_modeld": 4.48,
@@ -56,7 +56,7 @@ if TICI:
   PROCS.update({
     "./loggerd": 70.0,
     "selfdrive.controls.controlsd": 31.0,
-    "./camerad": 31.0,
+    "./camerad": 36.8,
     "./_ui": 33.0,
     "selfdrive.controls.plannerd": 11.7,
     "./_dmonitoringmodeld": 10.0,
@@ -227,7 +227,12 @@ class TestOnroad(unittest.TestCase):
     result += "----------------- Model Timing -----------------\n"
     result += "------------------------------------------------\n"
     # TODO: this went up when plannerd cpu usage increased, why?
-    cfgs = [("modelV2", 0.038, 0.036), ("driverState", 0.028, 0.026)]
+    cfgs = [("driverState", 0.028, 0.026)]
+    if EON:
+      cfgs += [("modelV2", 0.045, 0.04)]
+    else:
+      cfgs += [("modelV2", 0.038, 0.036), ("driverState", 0.028, 0.026)]
+
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
       self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
