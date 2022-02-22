@@ -193,7 +193,7 @@ def upload_handler(end_event: threading.Event) -> None:
           # Abort transfer if connection changed to cell after starting upload
           sm.update(0)
           cell = sm['deviceState'].networkType not in [NetworkType.wifi, NetworkType.ethernet]
-          if cell and (not cur_upload_items[tid].allow_cellular):
+          if cell and (not cur_upload_items[tid].allow_cellular) and (not cellular_unmetered):
             raise AbortTransferException
 
           cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
