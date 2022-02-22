@@ -169,7 +169,7 @@ cdef class AcadosOcpSolverFast:
             - qp_res_ineq: residual wrt inequality constraints (constraints)  of the last QP solution
             - qp_res_comp: residual wrt complementarity conditions of the last QP solution
         """
-        raise NotImplementedError()
+        acados_solver.acados_print_stats(self.capsule)
 
 
     def store_iterate(self, filename='', overwrite=False):
