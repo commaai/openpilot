@@ -21,19 +21,21 @@ from selfdrive.version import get_commit
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
-if TICI:
-  TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
-else:
-  TEST_ROUTE = "303055c0002aefd1|2021-11-22--18-36-32"
+TICI_TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
+EON_TEST_ROUTE = "303055c0002aefd1|2021-11-22--18-36-32"
 SEGMENT = 0
+if TICI:
+  TEST_ROUTE = TICI_TEST_ROUTE
+else:
+  TEST_ROUTE = EON_TEST_ROUTE
 
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
 VIPC_STREAM = {"roadCameraState": VisionStreamType.VISION_STREAM_ROAD, "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,
                "wideRoadCameraState": VisionStreamType.VISION_STREAM_WIDE_ROAD}
 
-def get_log_fn(ref_commit):
-  return f"{TEST_ROUTE}_{'model_tici' if TICI else 'model'}_{ref_commit}.bz2"
+def get_log_fn(ref_commit, test_route, tici=True):
+  return f"{test_route}_{'model_tici' if tici else 'model'}_{ref_commit}.bz2"
 
 
 def replace_calib(msg, calib):
@@ -159,7 +161,7 @@ if __name__ == "__main__":
   if not update:
     with open(ref_commit_fn) as f:
       ref_commit = f.read().strip()
-    log_fn = get_log_fn(ref_commit)
+    log_fn = get_log_fn(ref_commit, TEST_ROUTE, tici=TICI)
     try:
       cmp_log = LogReader(BASE_URL + log_fn)
 
@@ -191,7 +193,7 @@ if __name__ == "__main__":
     print("Uploading new refs")
 
     new_commit = get_commit()
-    log_fn = get_log_fn(new_commit)
+    log_fn = get_log_fn(new_commit, TEST_ROUTE, tici=TICI)
     save_log(log_fn, log_msgs)
     try:
       upload_file(log_fn, os.path.basename(log_fn))

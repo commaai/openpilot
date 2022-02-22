@@ -40,9 +40,10 @@ const mat3 fcam_intrinsic_matrix =
                               0.0, 2648.0, 1208.0 / 2,
                               0.0, 0.0, 1.0}};
 
-// without unwarp, focal length is for center portion only
-const mat3 ecam_intrinsic_matrix = (mat3){{620.0, 0.0, 1928.0 / 2,
-                                           0.0, 620.0, 1208.0 / 2,
+// tici ecam focal probably wrong? magnification is not consistent across frame
+// Need to retrain model before this can be changed
+const mat3 ecam_intrinsic_matrix = (mat3){{567.0, 0.0, 1928.0 / 2,
+                                           0.0, 567.0, 1208.0 / 2,
                                            0.0, 0.0, 1.0}};
 
 static inline mat3 get_model_yuv_transform(bool bayer = true) {
