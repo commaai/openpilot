@@ -47,7 +47,7 @@ def parse_caibx(caibx_path):
       assert length <= max_size
 
       # Last chunk can be smaller
-      if i != num_chunks - 1:
+      if i < num_chunks - 1:
         assert length >= min_size
 
       chunks[sha] = (offset, length)
