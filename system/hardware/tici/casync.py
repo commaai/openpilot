@@ -4,7 +4,9 @@ import struct
 import os
 import lzma
 import functools
+import requests
 from Crypto.Hash import SHA512
+
 
 CA_FORMAT_INDEX = 0x96824d9c7b129ff9
 CA_FORMAT_TABLE = 0xe75b9e112f17417d
@@ -56,10 +58,26 @@ def parse_caibx(caibx_path):
   return chunks
 
 
-def read_chunk_local_store(sha, store_path):
+def read_chunk_local_store(sha, chunk, store_path):
   sha_hex = sha.hex()
   path = os.path.join(store_path, sha_hex[:4], sha_hex + ".cacnk")
   return lzma.open(path).read()
+
+
+def read_chunk_local_file(sha, chunk, f):
+  f.seek(chunk[0])
+  return f.read(chunk[1])
+
+
+def read_chunk_remote_store(sha, chunk, store_path):
+  sha_hex = sha.hex()
+  url = os.path.join(store_path, sha_hex[:4], sha_hex + ".cacnk")
+
+  resp = requests.get(url)
+  resp.raise_for_status()
+
+  decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
+  return decompressor.decompress(resp.content)
 
 
 def extract(target, sources, out_path):
@@ -69,7 +87,7 @@ def extract(target, sources, out_path):
       # Find source for desired chunk
       for callback, store_chunks in sources:
         if sha in store_chunks:
-          bts = callback(sha)
+          bts = callback(sha, store_chunks[sha])
 
           # Check length
           if len(bts) != length:
@@ -85,14 +103,16 @@ def extract(target, sources, out_path):
 
           break
       else:
-        raise RuntimeError("Desired chunk not found")
+        raise RuntimeError("Desired chunk not found in provided stores")
 
 
 def extract_simple(caibx_path, out_path, store_path):
   # (callback, chunks)
   target = parse_caibx(caibx_path)
   sources = [
-    (functools.partial(read_chunk_local_store, store_path=store_path), target),
+    # (functools.partial(read_chunk_local_store, store_path=store_path), target),
+    # (functools.partial(read_chunk_remote_store, store_path=store_path), target),
+    (functools.partial(read_chunk_local_file, f=open(store_path, 'rb')), target),
   ]
 
   extract(target, sources, out_path)
