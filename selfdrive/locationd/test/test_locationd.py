@@ -9,7 +9,7 @@ import capnp
 
 from cereal import log
 import cereal.messaging as messaging
-from cereal.services import service_list 
+from cereal.services import service_list
 from common.params import Params
 
 from selfdrive.manager.process_config import managed_processes
@@ -163,11 +163,12 @@ class TestLocationdProc(unittest.TestCase):
     self.alt = 5 + (random.random() * 10.0)
     self.fake_duration = 90  # secs
     # get fake messages at the correct frequency, listed in services.py
-    fake_msgs = [
-      self.get_fake_msg(name, int((i + j / service_list[name].frequency) * 1e9)) for i in range(self.fake_duration)
-      for name in self.LLD_MSGS
-      for j in range(int(service_list[name].frequency))
-    ]
+    fake_msgs = []
+    for sec in range(self.fake_duration):
+      for name in self.LLD_MSGS:
+        for j in range(int(service_list[name].frequency)):
+          fake_msgs.append(self.get_fake_msg(name, int((sec + j / service_list[name].frequency) * 1e9)))
+
     for fake_msg in sorted(fake_msgs, key=lambda x: x.logMonoTime):
       self.send_msg(fake_msg)
     time.sleep(1)  # wait for async params write
