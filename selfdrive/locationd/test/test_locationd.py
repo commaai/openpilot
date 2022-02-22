@@ -4,8 +4,8 @@ import json
 import random
 import unittest
 import time
-from cffi import FFI
 import capnp
+from cffi import FFI
 
 from cereal import log
 import cereal.messaging as messaging
