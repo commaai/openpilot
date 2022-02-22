@@ -9,7 +9,7 @@ import capnp
 
 from cereal import log
 import cereal.messaging as messaging
-from cereal.services import services
+from cereal.services import service_list 
 from common.params import Params
 
 from selfdrive.manager.process_config import managed_processes
@@ -156,7 +156,7 @@ class TestLocationdProc(unittest.TestCase):
 
   def test_params_gps(self):
     # first reset params
-    Params().put('LastGPSPosition', json.dumps({"latitude": 0.0, "longitude": 0.0, "altitude": 0.0}))
+    Params().delete('LastGPSPosition')
 
     self.lat = 30 + (random.random() * 10.0)
     self.lon = -70 + (random.random() * 10.0)
@@ -164,9 +164,9 @@ class TestLocationdProc(unittest.TestCase):
     self.fake_duration = 90  # secs
     # get fake messages at the correct frequency, listed in services.py
     fake_msgs = [
-      self.get_fake_msg(name, int((i + j / services[name][1]) * 1e9)) for i in range(self.fake_duration)
+      self.get_fake_msg(name, int((i + j / service_list[name].frequency) * 1e9)) for i in range(self.fake_duration)
       for name in self.LLD_MSGS
-      for j in range(int(services[name][1]))
+      for j in range(int(service_list[name].frequency))
     ]
     for fake_msg in sorted(fake_msgs, key=lambda x: x.logMonoTime):
       self.send_msg(fake_msg)

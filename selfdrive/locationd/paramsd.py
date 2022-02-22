@@ -62,7 +62,7 @@ class ParamsLearner:
       yaw_rate_valid = yaw_rate_valid and abs(yaw_rate) < 1  # rad/s
 
       if self.active:
-        if msg.inputsOK and msg.posenetOK:
+        if msg.posenetOK:
 
           if yaw_rate_valid:
             self.kf.predict_and_observe(t,
