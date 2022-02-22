@@ -44,6 +44,8 @@ cimport acados_solver
 cimport numpy as cnp
 
 import os
+import json
+from datetime import datetime
 import numpy as np
 
 
@@ -177,7 +179,33 @@ cdef class AcadosOcpSolverFast:
             :param filename: if not set, use model_name + timestamp + '.json'
             :param overwrite: if false and filename exists add timestamp to filename
         """
-        raise NotImplementedError()
+        if filename == '':
+            filename += self.model_name + '_' + 'iterate' + '.json'
+
+        if not overwrite:
+            # append timestamp
+            if os.path.isfile(filename):
+                filename = filename[:-5]
+                filename += datetime.utcnow().strftime('%Y-%m-%d-%H:%M:%S.%f') + '.json'
+
+        # get iterate:
+        solution = dict()
+
+        for i in range(self.N+1):
+            solution['x_'+str(i)] = self.get(i,'x')
+            solution['u_'+str(i)] = self.get(i,'u')
+            solution['z_'+str(i)] = self.get(i,'z')
+            solution['lam_'+str(i)] = self.get(i,'lam')
+            solution['t_'+str(i)] = self.get(i, 't')
+            solution['sl_'+str(i)] = self.get(i, 'sl')
+            solution['su_'+str(i)] = self.get(i, 'su')
+        for i in range(self.N):
+            solution['pi_'+str(i)] = self.get(i,'pi')
+
+        # save
+        with open(filename, 'w') as f:
+            json.dump(solution, f, default=lambda x: x.tolist(), indent=4, sort_keys=True)
+        print("stored current iterate in ", os.path.join(os.getcwd(), filename))
 
 
     def load_iterate(self, filename):
