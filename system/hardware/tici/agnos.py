@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
+import functools
+import hashlib
 import json
 import lzma
-import hashlib
-import requests
+import os
 import struct
 import subprocess
 import time
-import os
 from typing import Dict, Generator, Union
-import functools
+import requests
 
-from selfdrive.hardware.tici.casync import extract, parse_caibx, read_chunk_remote_store, read_chunk_local_file
+import selfdrive.hardware.tici.casync as casync
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 CASYNC_TMP_DIR = "/data/neoupdate"
@@ -173,15 +173,15 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
   path = get_partition_path(target_slot_number, partition)
   seed_path = path[:-1] + ('b' if path[-1] == 'a' else 'a')
 
-  target = parse_caibx(partition['casync_caibx'])
+  target = casync.parse_caibx(partition['casync_caibx'])
   sources = []
 
   if 'casync_seed_caibx' in partition:
-    sources += [('local', functools.partial(read_chunk_local_file, f=open(seed_path, 'rb')), parse_caibx(partition['casync_seed_caibx']))]
-  sources += [('remote', functools.partial(read_chunk_remote_store, store_path=partition['casync_store']), target)]
+    sources += [('local', functools.partial(casync.read_chunk_local_file, f=open(seed_path, 'rb')), casync.parse_caibx(partition['casync_seed_caibx']))]
+  sources += [('remote', functools.partial(casync.read_chunk_remote_store, store_path=partition['casync_store']), target)]
 
-  stats = extract(target, sources, path)
-  print(stats)
+  stats = casync.extract(target, sources, path)
+  casync.print_stats(stats)
 
   cloudlog.event('casync done', stats=stats, error=True)
 
@@ -266,8 +266,8 @@ def verify_agnos_update(manifest_path: str, target_slot_number: int) -> bool:
 
 
 if __name__ == "__main__":
-  import logging
   import argparse
+  import logging
 
   parser = argparse.ArgumentParser(description="Flash and verify AGNOS update",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
