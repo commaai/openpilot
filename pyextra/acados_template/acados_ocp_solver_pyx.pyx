@@ -224,14 +224,11 @@ cdef class AcadosOcpSolverFast:
             return self.__get_stat_double(field)
 
         elif field_ == 'statistics':
-            # TODO: segfaults. why? dynamics_get works..
-            # print(f"acados get_stats(): calling getter with field {field}")
-            NotImplementedError("TODO!")
             sqp_iter = self.get_stats("sqp_iter")
             stat_m = self.get_stats("stat_m")
             stat_n = self.get_stats("stat_n")
             min_size = min([stat_m, sqp_iter+1])
-            return self.__get_stat_matrix(field, stat_n, min_size)
+            return self.__get_stat_matrix(field, stat_n+1, min_size)
 
         elif field_ == 'qp_iter':
             NotImplementedError("TODO! Cython not aware if SQP or SQP_RTI")
@@ -245,8 +242,6 @@ cdef class AcadosOcpSolverFast:
 
 
     def __get_stat_int(self, field):
-        # cdef cnp.ndarray[cnp.int_t, ndim=1] out = np.ascontiguousarray(np.zeros((1,)), dtype=np.int64)
-        # acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> out.data)
         cdef int out
         acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> &out)
         return out
@@ -257,11 +252,9 @@ cdef class AcadosOcpSolverFast:
         return out
 
     def __get_stat_matrix(self, field, n, m):
-        print(f"get_stat_matrix: n, m {n, m}")
-        out_mat = np.zeros((m, n), order='F', dtype=np.float64)
+        cdef cnp.ndarray[cnp.float64_t, ndim=2] out_mat = np.ascontiguousarray(np.zeros((n, m)), dtype=np.float64)
         acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> out_mat.data)
         return out_mat
-
 
 
     def get_cost(self):
