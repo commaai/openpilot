@@ -135,6 +135,7 @@ FW_VERSIONS = {
       b'\xe4\xf5\002\000\000',
       b'\xe3\xd0\x081\x00',
       b'\xe3\xf5\x06\x00\x00',
+      b'\xf1\x00\xa4\x10@',
     ],
   },
   CAR.IMPREZA_2020: {
