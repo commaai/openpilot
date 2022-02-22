@@ -6,6 +6,8 @@ import lzma
 import functools
 import requests
 import io
+from collections import defaultdict
+
 from Crypto.Hash import SHA512
 
 
@@ -88,11 +90,12 @@ def read_chunk_remote_store(sha, chunk, store_path):
 
 
 def extract(target, sources, out_path):
+  stats = defaultdict(int)
   with open(out_path, 'wb') as out:
     for sha, (offset, length) in target.items():
 
       # Find source for desired chunk
-      for callback, store_chunks in sources:
+      for name, callback, store_chunks in sources:
         if sha in store_chunks:
           bts = callback(sha, store_chunks[sha])
 
@@ -108,21 +111,32 @@ def extract(target, sources, out_path):
           out.seek(offset)
           out.write(bts)
 
+          stats[name] += length
+
           break
       else:
         raise RuntimeError("Desired chunk not found in provided stores")
 
+  return stats
+
+
+def print_stats(stats):
+  total_bytes = sum(stats.values())
+  print(f"Total size: {total_bytes / 1024 / 1024:.2f} MB")
+  for name, total in stats.items():
+    print(f"  {name}: {total / 1024 / 1024:.2f} MB ({total / total_bytes * 100:.1f}%)")
+
 
 def extract_simple(caibx_path, out_path, store_path):
-  # (callback, chunks)
+  # (name, callback, chunks)
   target = parse_caibx(caibx_path)
   sources = [
-    # (functools.partial(read_chunk_local_store, store_path=store_path), target),
-    (functools.partial(read_chunk_remote_store, store_path=store_path), target),
-    # (functools.partial(read_chunk_local_file, f=open(store_path, 'rb')), target),
+    # (store_path, functools.partial(read_chunk_local_store, store_path=store_path), target),
+    (store_path, functools.partial(read_chunk_remote_store, store_path=store_path), target),
+    # (store_path, functools.partial(read_chunk_local_file, f=open(store_path, 'rb')), target),
   ]
 
-  extract(target, sources, out_path)
+  return extract(target, sources, out_path)
 
 
 if __name__ == "__main__":
@@ -130,4 +144,4 @@ if __name__ == "__main__":
   out = sys.argv[2]
   store = sys.argv[3]
 
-  extract_simple(caibx, out, store)
+  print_stats(extract_simple(caibx, out, store))
