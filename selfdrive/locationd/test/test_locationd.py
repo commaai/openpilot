@@ -5,6 +5,7 @@ import random
 import unittest
 import time
 from cffi import FFI
+import capnp
 
 from cereal import log
 import cereal.messaging as messaging
@@ -131,8 +132,12 @@ class TestLocationdProc(unittest.TestCase):
     time.sleep(0.0001)
 
   def get_fake_msg(self, name, t):
-    if name == "gpsLocationExternal":
+    try:
       msg = messaging.new_message(name)
+    except capnp.lib.capnp.KjException:
+      msg = messaging.new_message(name, 0)
+
+    if name == "gpsLocationExternal":
       msg.gpsLocationExternal.flags = 1
       msg.gpsLocationExternal.verticalAccuracy = 1.0
       msg.gpsLocationExternal.speedAccuracy = 1.0
@@ -142,15 +147,10 @@ class TestLocationdProc(unittest.TestCase):
       msg.gpsLocationExternal.longitude = self.lon
       msg.gpsLocationExternal.altitude = self.alt
     elif name == 'cameraOdometry':
-      msg = messaging.new_message(name)
       msg.cameraOdometry.rot = [0.0, 0.0, 0.0]
       msg.cameraOdometry.rotStd = [0.0, 0.0, 0.0]
       msg.cameraOdometry.trans = [0.0, 0.0, 0.0]
       msg.cameraOdometry.transStd = [0.0, 0.0, 0.0]
-    elif name == 'sensorEvents':
-      msg = messaging.new_message(name, 0)
-    elif name in ['carState', 'liveCalibration']:
-      msg = messaging.new_message(name)
     msg.logMonoTime = t
     return msg
 
