@@ -14,7 +14,8 @@ def create_random_file(file_path, size_mb, lock=False):
       pass
 
     lock_path = file_path + ".lock"
-    os.close(os.open(lock_path, os.O_CREAT | os.O_EXCL))
+    if lock:
+      os.close(os.open(lock_path, os.O_CREAT | os.O_EXCL))
 
     chunks = 128
     chunk_bytes = int(size_mb * 1024 * 1024 / chunks)
@@ -23,9 +24,6 @@ def create_random_file(file_path, size_mb, lock=False):
     with open(file_path, 'wb') as f:
       for _ in range(chunks):
         f.write(data)
-
-    if not lock:
-        os.remove(lock_path)
 
 class MockResponse():
   def __init__(self, text, status_code):
