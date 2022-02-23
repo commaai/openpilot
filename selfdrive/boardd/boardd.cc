@@ -613,8 +613,17 @@ void boardd_main_thread(std::vector<std::string> serials) {
   PubMaster pm({"pandaStates", "peripheralState"});
   LOGW("attempting to connect");
 
-  if (serials.size() == 0) serials = Panda::list();
-  
+  if (serials.size() == 0) {
+    // connect to all
+    serials = Panda::list();
+
+    // exit if no pandas are connected
+    if (serials.size() == 0) {
+      LOGW("no pandas found, exiting");
+      return;
+    }
+  }
+
   // connect to all provided serials
   std::vector<Panda *> pandas;
   for (int i = 0; i < serials.size() && !do_exit; /**/) {
