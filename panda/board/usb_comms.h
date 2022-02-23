@@ -440,10 +440,10 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
     // **** 0xde: set CAN FD data bitrate
     case 0xf9:
       if (setup->b.wValue.w < CAN_CNT) {
-        // TODO: add sanity check, ideally check if value is correct(from array of correct values)
+        // TODO: add sanity check, ideally check if value is correct (from array of correct values)
         bus_config[setup->b.wValue.w].can_data_speed = setup->b.wIndex.w;
-        bus_config[setup->b.wValue.w].canfd_enabled = (setup->b.wIndex.w >= bus_config[setup->b.wValue.w].can_speed) ? true : false;
-        bus_config[setup->b.wValue.w].brs_enabled = (setup->b.wIndex.w > bus_config[setup->b.wValue.w].can_speed) ? true : false;
+        bus_config[setup->b.wValue.w].canfd_enabled = (setup->b.wIndex.w >= bus_config[setup->b.wValue.w].can_speed);
+        bus_config[setup->b.wValue.w].brs_enabled = (setup->b.wIndex.w > bus_config[setup->b.wValue.w].can_speed);
         bool ret = can_init(CAN_NUM_FROM_BUS_NUM(setup->b.wValue.w));
         UNUSED(ret);
       }

@@ -578,19 +578,6 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
-int open_v4l_by_name_and_index(const char name[], int index, int flags = O_RDWR | O_NONBLOCK) {
-  for (int v4l_index = 0; /**/; ++v4l_index) {
-    std::string v4l_name = util::read_file(util::string_format("/sys/class/video4linux/v4l-subdev%d/name", v4l_index));
-    if (v4l_name.empty()) return -1;
-    if (v4l_name.find(name) == 0) {
-      if (index == 0) {
-        return open(util::string_format("/dev/v4l-subdev%d", v4l_index).c_str(), flags);
-      }
-      index--;
-    }
-  }
-}
-
 static void camera_open(CameraState *s) {
   s->sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", s->camera_num);
   assert(s->sensor_fd >= 0);

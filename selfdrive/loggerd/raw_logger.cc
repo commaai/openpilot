@@ -28,7 +28,6 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
 
   // TODO: respect write arg
 
-  av_register_all();
   codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
   // codec = avcodec_find_encoder(AV_CODEC_ID_FFV1);
   assert(codec);
@@ -111,8 +110,6 @@ void RawLogger::encoder_close() {
   int err = av_write_trailer(format_ctx);
   assert(err == 0);
 
-  avcodec_close(stream->codec);
-
   err = avio_closep(&format_ctx->pb);
   assert(err == 0);
 
@@ -155,18 +152,32 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
 
   int ret = counter;
 
-  int got_output = 0;
-  int err = avcodec_encode_video2(codec_ctx, &pkt, frame, &got_output);
-  if (err) {
-    LOGE("encoding error\n");
+  int err = avcodec_send_frame(codec_ctx, frame);
+  if (ret < 0) {
+    LOGE("avcode_send_frame error %d", err);
     ret = -1;
-  } else if (got_output) {
+  }
+
+  while (ret >= 0){
+    err = avcodec_receive_packet(codec_ctx, &pkt);
+    if (err == AVERROR_EOF) {
+      break;
+    } else if (err == AVERROR(EAGAIN)) {
+      // Encoder might need a few frames on startup to get started. Keep going
+      ret = 0;
+      break;
+    } else if (err < 0) {
+      LOGE("avcodec_receive_packet error %d", err);
+      ret = -1;
+      break;
+    }
+
     av_packet_rescale_ts(&pkt, codec_ctx->time_base, stream->time_base);
     pkt.stream_index = 0;
 
     err = av_interleaved_write_frame(format_ctx, &pkt);
     if (err < 0) {
-      LOGE("encoder writer error\n");
+      LOGE("av_interleaved_write_frame %d", err);
       ret = -1;
     } else {
       counter++;

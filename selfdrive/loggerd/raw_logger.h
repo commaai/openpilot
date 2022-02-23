@@ -32,7 +32,7 @@ private:
 
   std::string vid_path, lock_path;
 
-  AVCodec *codec = NULL;
+  const AVCodec *codec = NULL;
   AVCodecContext *codec_ctx = NULL;
 
   AVStream *stream = NULL;
