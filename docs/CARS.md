@@ -72,13 +72,13 @@ Description of terms:
 | Audi       | S3 2015                         | ACC + Lane Assist |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Genesis    | G70 2018                        |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Genesis    | G70 2020                        |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |                |
-| Genesis    | G90 2018                        |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |                      |       ⭐        |
+| Genesis    | G90 2018                        |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai    | Ioniq Electric 2020             |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai    | Kona EV 2018-19                 |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Hyundai    | Santa Fe Plug-in Hybrid 2022    |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |                      |       ⭐        |
+| Hyundai    | Santa Fe Plug-in Hybrid 2022    |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Kia        | Ceed 2019                       |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Kia        | Forte 2018-21                   |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |                      |       ⭐        |
-| Kia        | Niro Hybrid 2021                |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |                      |       ⭐        |
+| Kia        | Forte 2018-21                   |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia        | Niro Hybrid 2021                |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | SEAT       | Ateca 2018                      | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | SEAT       | Leon 2014-2020                  | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Toyota     | Avalon 2016-21                  |       TSS-P       |     ⭐<sup>1</sup>      |                      |        ⭐         |          ⭐           |       ⭐        |
@@ -130,7 +130,7 @@ Description of terms:
 | Chrysler   | Pacifica Hybrid 2017-18       |  Adaptive Cruise  |                        |          ⭐           |                  |                      |                |
 | Chrysler   | Pacifica Hybrid 2019-21       |  Adaptive Cruise  |                        |          ⭐           |                  |                      |                |
 | GMC        | Acadia 2018<sup>4</sup>       |  Adaptive Cruise  |           ⭐            |          ⭐           |                  |                      |                |
-| Genesis    | G80 2018                      |        All        |                        |          ⭐           |        ⭐         |                      |       ⭐        |
+| Genesis    | G80 2018                      |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Honda      | Accord 2018-21                |        All        |                        |          ⭐           |                  |                      |       ⭐        |
 | Honda      | Accord Hybrid 2018-21         |        All        |                        |          ⭐           |                  |                      |       ⭐        |
 | Honda      | CR-V 2015-16                  |      Touring      |           ⭐            |                      |                  |                      |       ⭐        |
@@ -151,22 +151,22 @@ Description of terms:
 | Honda      | Pilot 2016-21                 |   Honda Sensing   |           ⭐            |                      |                  |                      |       ⭐        |
 | Honda      | Ridgeline 2017-21             |   Honda Sensing   |           ⭐            |                      |                  |                      |       ⭐        |
 | Honda      | e 2020                        |        All        |                        |          ⭐           |                  |                      |       ⭐        |
-| Hyundai    | Elantra 2017-19               |    SCC + LKAS     |                        |                      |                  |                      |                |
-| Hyundai    | Genesis 2015-16               |    SCC + LKAS     |                        |                      |                  |                      |       ⭐        |
-| Hyundai    | Ioniq Electric 2019           |    SCC + LKAS     |                        |          ⭐           |                  |                      |       ⭐        |
-| Hyundai    | Ioniq Hybrid 2017-19          |    SCC + LKAS     |                        |          ⭐           |                  |                      |                |
+| Hyundai    | Elantra 2017-19               |    SCC + LKAS     |                        |                      |                  |          ⭐           |                |
+| Hyundai    | Genesis 2015-16               |    SCC + LKAS     |                        |                      |                  |          ⭐           |       ⭐        |
+| Hyundai    | Ioniq Electric 2019           |    SCC + LKAS     |                        |          ⭐           |                  |          ⭐           |       ⭐        |
+| Hyundai    | Ioniq Hybrid 2017-19          |    SCC + LKAS     |                        |          ⭐           |                  |          ⭐           |                |
 | Hyundai    | Ioniq Hybrid 2020-22          |     SCC + LFA     |                        |          ⭐           |        ⭐         |          ⭐           |                |
-| Hyundai    | Ioniq PHEV 2020-21            |    SCC + LKAS     |                        |          ⭐           |        ⭐         |                      |                |
-| Hyundai    | Sonata 2018-2019              |    SCC + LKAS     |                        |          ⭐           |        ⭐         |                      |       ⭐        |
+| Hyundai    | Ioniq PHEV 2020-21            |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |                |
+| Hyundai    | Sonata 2018-2019              |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai    | Veloster 2019-20              |    SCC + LKAS     |                        |                      |        ⭐         |          ⭐           |       ⭐        |
 | Jeep       | Grand Cherokee 2016-18        |  Adaptive Cruise  |                        |          ⭐           |                  |                      |                |
 | Jeep       | Grand Cherokee 2019-20        |  Adaptive Cruise  |                        |          ⭐           |                  |                      |                |
-| Kia        | Niro PHEV 2019                |    SCC + LKAS     |     ⭐<sup>3</sup>      |                      |                  |                      |       ⭐        |
-| Kia        | Optima 2017                   |    SCC + LKAS     |                        |          ⭐           |                  |                      |       ⭐        |
-| Kia        | Optima 2019                   |    SCC + LKAS     |                        |          ⭐           |        ⭐         |                      |       ⭐        |
-| Kia        | Sorento 2018-19               |    SCC + LKAS     |                        |          ⭐           |        ⭐         |                      |                |
-| Kia        | Stinger 2018                  |    SCC + LKAS     |                        |          ⭐           |        ⭐         |                      |       ⭐        |
-| Kia        | Telluride 2020                |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |                      |                |
+| Kia        | Niro PHEV 2019                |    SCC + LKAS     |     ⭐<sup>3</sup>      |                      |                  |          ⭐           |       ⭐        |
+| Kia        | Optima 2017                   |    SCC + LKAS     |                        |          ⭐           |                  |          ⭐           |       ⭐        |
+| Kia        | Optima 2019                   |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia        | Sorento 2018-19               |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |                |
+| Kia        | Stinger 2018                  |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia        | Telluride 2020                |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |                |
 | Lexus      | IS 2017-2019                  |        All        |                        |                      |        ⭐         |          ⭐           |       ⭐        |
 | Lexus      | RC 2020                       |        All        |                        |                      |        ⭐         |          ⭐           |       ⭐        |
 | Mazda      | CX-5 2022                     |        All        |                        |          ⭐           |        ⭐         |                      |                |
