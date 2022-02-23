@@ -34,7 +34,7 @@ X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 5.0
-A_CHANGE_COST = .5
+A_CHANGE_COST = 200.
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
@@ -136,7 +136,7 @@ def gen_long_mpc_solver():
            x_ego,
            v_ego,
            a_ego,
-           20*(a_ego - prev_a),
+           a_ego - prev_a,
            j_ego]
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
