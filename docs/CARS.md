@@ -32,6 +32,7 @@ Description of terms:
 | Kia     | Niro EV 2019-22              |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Kia     | Niro Hybrid 2021             |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Kia     | Seltos 2021                  |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia     | Telluride 2020               |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Lexus   | CT Hybrid 2017-18            |        LSS        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Lexus   | ES 2019-21                   |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Lexus   | ES Hybrid 2017-18            |        LSS        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
@@ -78,12 +79,12 @@ Description of terms:
 | Genesis    | G70 2020                        |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |                |
 | Genesis    | G80 2018                        |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai    | Ioniq Electric 2020             |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai    | Ioniq PHEV 2020-21              |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai    | Kona EV 2018-19                 |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai    | Sonata 2018-2019                |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Kia        | Ceed 2019                       |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Kia        | Optima 2019                     |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Kia        | Stinger 2018                    |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Kia        | Telluride 2020                  |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |                |
 | SEAT       | Ateca 2018                      | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | SEAT       | Leon 2014-2020                  | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Toyota     | Avalon 2016-21                  |       TSS-P       |     ⭐<sup>1</sup>      |                      |        ⭐         |          ⭐           |       ⭐        |
@@ -160,7 +161,6 @@ Description of terms:
 | Hyundai    | Ioniq Electric 2019           |    SCC + LKAS     |                        |          ⭐           |                  |          ⭐           |       ⭐        |
 | Hyundai    | Ioniq Hybrid 2017-19          |    SCC + LKAS     |                        |          ⭐           |                  |          ⭐           |                |
 | Hyundai    | Ioniq Hybrid 2020-22          |     SCC + LFA     |                        |          ⭐           |        ⭐         |          ⭐           |                |
-| Hyundai    | Ioniq PHEV 2020-21            |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |                |
 | Hyundai    | Veloster 2019-20              |    SCC + LKAS     |                        |                      |        ⭐         |          ⭐           |       ⭐        |
 | Jeep       | Grand Cherokee 2016-18        |  Adaptive Cruise  |                        |          ⭐           |                  |                      |                |
 | Jeep       | Grand Cherokee 2019-20        |  Adaptive Cruise  |                        |          ⭐           |                  |                      |                |
