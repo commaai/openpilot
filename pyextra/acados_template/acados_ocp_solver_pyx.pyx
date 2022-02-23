@@ -358,12 +358,11 @@ cdef class AcadosOcpSolverFast:
 
         field = field_.encode('utf-8')
 
-        cdef double[::1] value
+        cdef cnp.ndarray[cnp.float64_t, ndim=1] value = np.ascontiguousarray(value_, dtype=np.float64)
 
         # treat parameters separately
         if field_ == 'p':
-            value = np.ascontiguousarray(value_, dtype=np.double)
-            assert acados_solver.acados_update_params(self.capsule, stage, <double *> &value[0], value.shape[0]) == 0
+            assert acados_solver.acados_update_params(self.capsule, stage, <double *> value.data, value.shape[0]) == 0
         else:
             if field_ not in constraints_fields + cost_fields + out_fields:
                 raise Exception("AcadosOcpSolver.set(): {} is not a valid argument.\
@@ -378,16 +377,15 @@ cdef class AcadosOcpSolverFast:
                 msg += 'with dimension {} (you have {})'.format(dims, value_.shape[0])
                 raise Exception(msg)
 
-            value = np.ascontiguousarray(value_, dtype=np.double)
             if field_ in constraints_fields:
                 acados_solver_common.ocp_nlp_constraints_model_set(self.nlp_config,
-                    self.nlp_dims, self.nlp_in, stage, field, <void *> &value[0])
+                    self.nlp_dims, self.nlp_in, stage, field, <void *> value.data)
             elif field_ in cost_fields:
                 acados_solver_common.ocp_nlp_cost_model_set(self.nlp_config,
-                    self.nlp_dims, self.nlp_in, stage, field, <void *> &value[0])
+                    self.nlp_dims, self.nlp_in, stage, field, <void *> value.data)
             elif field_ in out_fields:
                 acados_solver_common.ocp_nlp_out_set(self.nlp_config,
-                    self.nlp_dims, self.nlp_out, stage, field, <void *> &value[0])
+                    self.nlp_dims, self.nlp_out, stage, field, <void *> value.data)
 
 
     def cost_set(self, int stage, str field_, value_):
