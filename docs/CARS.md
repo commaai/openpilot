@@ -15,7 +15,7 @@ Description of terms:
 
 | Make    | Model (US Market Reference) | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good steering torque | Well Supported |
 |---------|-----------------------------|:-----------------:|:----------------------:|:--------------------:|:----------------:|:--------------------:|:--------------:|
-| Hyundai | Elantra 2021                |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Elantra 2021-22             |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai | Elantra Hybrid 2021         |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai | Kona 2020                   |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai | Kona Hybrid 2020            |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |

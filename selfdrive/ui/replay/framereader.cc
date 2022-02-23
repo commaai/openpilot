@@ -95,7 +95,7 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
   }
 
   AVStream *video = input_ctx->streams[0];
-  AVCodec *decoder = avcodec_find_decoder(video->codec->codec_id);
+  const AVCodec *decoder = avcodec_find_decoder(video->codecpar->codec_id);
   if (!decoder) return false;
 
   decoder_ctx = avcodec_alloc_context3(decoder);

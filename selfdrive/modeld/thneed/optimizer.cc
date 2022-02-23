@@ -80,7 +80,9 @@ int Thneed::optimize() {
 
         printf("building kernel %s\n", k->name.c_str());
         k->program = clCreateProgramWithSource(context, 1, srcs, &length, NULL);
-        int err = clBuildProgram(k->program, 1, &device_id, "", NULL, NULL);
+        char options[0x100];
+        snprintf(options, sizeof(options)-1, "-I %s", kernel_path);
+        int err = clBuildProgram(k->program, 1, &device_id, options, NULL, NULL);
 
         if (err != 0) {
           printf("got err %d\n", err);
@@ -171,6 +173,11 @@ int Thneed::optimize() {
 
           if (lastout == in) {
             short neuron = *(int*)kq[i]->args[kq[i]->get_arg_num("neuron")].data();
+            assert(neuron <= 5);
+
+            // ELU isn't supported in fc_Wtx
+            assert(!(kq[i-1]->name == "fc_Wtx" && neuron == 5));
+
             kq[i-1]->args[kq[i-1]->get_arg_num("neuron")] = string((char *)&neuron, sizeof(neuron));
 
             cl_mem tmp = make_image_like(context, *(cl_mem *)lastout.data());
