@@ -6,13 +6,15 @@ Cars are organized into three tiers:
 - 🥈 Silver - a pretty good, albeit limited experience
 - 🥉 Bronze - a significantly limited experience
 
-Description of terms:
+Tier Criteria:
 
-- openpilot Longitudinal - openpilot is able to control gas and brakes. If no star is present, the car is limited to the stock system controlling gas and brakes
+- openpilot Longitudinal - openpilot is able to control gas and brakes. If no star is present, the car is limited to the stock system
 - Longitudinal to 0mph - openpilot can brake and accelerate down to 0 mph
 - Steering to 0mph - openpilot can actuate the steering wheel down to 0 mph
 - Well Supported - mainline software support, hardness hardware sold by comma.ai
 - Good Steering Torque - car has enough steering torque for comfortable highway driving
+
+**All supported cars can move between the tiers as features change.**
 
 ## Gold Cars
 
