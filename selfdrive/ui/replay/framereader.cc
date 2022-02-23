@@ -152,7 +152,6 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
     }
     if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hw_device_type) {
       hw_pix_fmt = config->pix_fmt;
-      assert(hw_pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX);
       break;
     }
   }
