@@ -19,8 +19,8 @@ class FrameReader {
 public:
   FrameReader();
   ~FrameReader();
-  bool load(const std::string &url, bool no_cuda = false, std::atomic<bool> *abort = nullptr, bool local_cache = false, int chunk_size = -1, int retries = 0);
-  bool load(const std::byte *data, size_t size, bool no_cuda = false, std::atomic<bool> *abort = nullptr);
+  bool load(const std::string &url, bool no_hw_decoder = false, std::atomic<bool> *abort = nullptr, bool local_cache = false, int chunk_size = -1, int retries = 0);
+  bool load(const std::byte *data, size_t size, bool no_hw_decoder = false, std::atomic<bool> *abort = nullptr);
   bool get(int idx, uint8_t *rgb, uint8_t *yuv);
   int getRGBSize() const { return aligned_width * aligned_height * 3; }
   int getYUVSize() const { return width * height * 3 / 2; }
@@ -48,5 +48,5 @@ private:
   AVBufferRef *hw_device_ctx = nullptr;
   std::vector<uint8_t> nv12toyuv_buffer;
   int prev_idx = -1;
-  inline static std::atomic<bool> has_cuda_device = true;
+  inline static std::atomic<bool> has_hw_decoder = true;
 };
