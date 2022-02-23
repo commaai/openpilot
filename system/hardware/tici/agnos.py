@@ -174,11 +174,10 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
   seed_path = path[:-1] + ('b' if path[-1] == 'a' else 'a')
 
   target = casync.parse_caibx(partition['casync_caibx'])
-  sources = []
-
+  sources = [('target', functools.partial(casync.read_chunk_local_file, f=open(path, 'rb')), casync.build_chunk_dict(target))]
   if 'casync_seed_caibx' in partition:
-    sources += [('local', functools.partial(casync.read_chunk_local_file, f=open(seed_path, 'rb')), casync.parse_caibx(partition['casync_seed_caibx']))]
-  sources += [('remote', functools.partial(casync.read_chunk_remote_store, store_path=partition['casync_store']), target)]
+    sources += [('seed', functools.partial(casync.read_chunk_local_file, f=open(seed_path, 'rb')), casync.build_chunk_dict(casync.parse_caibx(partition['casync_seed_caibx'])))]
+  sources += [('remote', functools.partial(casync.read_chunk_remote_store, store_path=partition['casync_store']), casync.build_chunk_dict(target))]
 
   last_p = 0
 

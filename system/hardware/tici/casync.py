@@ -46,7 +46,7 @@ def parse_caibx(caibx_path):
 
   # Parse chunks
   num_chunks = (caibx_len - CA_HEADER_LEN - CA_TABLE_MIN_LEN) // CA_TABLE_ENTRY_LEN
-  chunks = {}
+  chunks = []
 
   offset = 0
   for i in range(num_chunks):
@@ -61,10 +61,14 @@ def parse_caibx(caibx_path):
     if i < num_chunks - 1:
       assert length >= min_size
 
-    chunks[sha] = (offset, length)
+    chunks.append((sha, offset, length))
     offset = new_offset
 
   return chunks
+
+
+def build_chunk_dict(chunks):
+  return {sha: (offset, length) for sha, offset, length in chunks}
 
 
 def read_chunk_local_store(sha, chunk, store_path):
@@ -93,7 +97,7 @@ def extract(target, sources, out_path, progress=None):
   stats = defaultdict(int)
 
   with open(out_path, 'wb') as out:
-    for sha, (offset, length) in target.items():
+    for sha, offset, length in target:
 
       # Find source for desired chunk
       for name, callback, store_chunks in sources:
@@ -135,9 +139,9 @@ def extract_simple(caibx_path, out_path, store_path):
   # (name, callback, chunks)
   target = parse_caibx(caibx_path)
   sources = [
-    # (store_path, functools.partial(read_chunk_local_store, store_path=store_path), target),
-    # (store_path, functools.partial(read_chunk_remote_store, store_path=store_path), target),
-    (store_path, functools.partial(read_chunk_local_file, f=open(store_path, 'rb')), target),
+    # (store_path, functools.partial(read_chunk_local_store, store_path=store_path), build_chunk_dict(target)),
+    # (store_path, functools.partial(read_chunk_remote_store, store_path=store_path), build_chunk_dict(target)),
+    (store_path, functools.partial(read_chunk_local_file, f=open(store_path, 'rb')), build_chunk_dict(target)),
   ]
 
   return extract(target, sources, out_path)
