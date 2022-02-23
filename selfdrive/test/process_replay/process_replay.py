@@ -388,7 +388,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
     for msg in lr:
       if msg.which() == 'carParams':
         car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-        if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
+        if msg.carParams.fingerprintSource == "fw" and (car_fingerprint in FW_VERSIONS):
           Params().put("CarParamsCache", msg.carParams.as_builder().to_bytes())
         else:
           os.environ['SKIP_FW_QUERY'] = "1"
