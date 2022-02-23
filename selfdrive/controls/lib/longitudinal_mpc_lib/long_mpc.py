@@ -27,7 +27,7 @@ U_DIM = 1
 PARAM_DIM = 4
 COST_E_DIM = 5
 COST_DIM = COST_E_DIM + 1
-CONSTR_DIM = 4
+CONSTR_DIM = 5
 
 X_EGO_OBSTACLE_COST = 3.
 X_EGO_COST = 0.
@@ -147,7 +147,8 @@ def gen_long_mpc_solver():
   constraints = vertcat(v_ego,
                         (a_ego - a_min),
                         (a_max - a_ego),
-                        ((x_obstacle - x_ego) - (3/4) * (desired_dist_comfort)) / (v_ego + 10.))
+                        ((x_obstacle - x_ego) - (3/4) * (desired_dist_comfort)) / (v_ego + 10.),
+                        a_ego)
   ocp.model.con_h_expr = constraints
   ocp.model.con_h_expr_e = vertcat(np.zeros(CONSTR_DIM))
 
@@ -155,16 +156,23 @@ def gen_long_mpc_solver():
   ocp.constraints.x0 = x0
   ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0])
 
-  # We put all constraint cost weights to 0 and only set them at runtime
+  # We initialize all L2 slack penalties initialized with 0 and only set them at runtime
   cost_weights = np.zeros(CONSTR_DIM)
-  ocp.cost.zl = cost_weights
   ocp.cost.Zl = cost_weights
   ocp.cost.Zu = cost_weights
-  ocp.cost.zu = cost_weights
 
   ocp.constraints.lh = np.zeros(CONSTR_DIM)
   ocp.constraints.lh_e = np.zeros(CONSTR_DIM)
-  ocp.constraints.uh = 1e4*np.ones(CONSTR_DIM)
+
+  # L1 penalty on positive a_ego to avoid creeping, all other L1 penalties are 0
+  ocp.cost.zl = cost_weights
+  uh = 1e4*np.ones(CONSTR_DIM)
+  uh[-1] = 0.0
+  zu = np.zeros(CONSTR_DIM)
+  zu[-1] = 1e-0
+  ocp.cost.zu = zu
+
+  ocp.constraints.uh = uh
   ocp.constraints.uh_e = 1e4*np.ones(CONSTR_DIM)
   ocp.constraints.idxsh = np.arange(CONSTR_DIM)
 
@@ -247,7 +255,7 @@ class LongitudinalMpc:
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
     # Set L2 slack cost on lower bound constraints
-    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST])
+    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST, 0.0])
     for i in range(N):
       self.solver.cost_set(i, 'Zl', Zl)
 
@@ -260,7 +268,7 @@ class LongitudinalMpc:
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
     # Set L2 slack cost on lower bound constraints
-    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0])
+    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0, 0.0])
     for i in range(N):
       self.solver.cost_set(i, 'Zl', Zl)
 
