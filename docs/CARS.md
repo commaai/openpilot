@@ -15,7 +15,6 @@ Description of terms:
 
 | Make    | Model (US Market Reference)  | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good steering torque | Well Supported |
 |---------|------------------------------|:-----------------:|:----------------------:|:--------------------:|:----------------:|:--------------------:|:--------------:|
-| Genesis | G90 2018                     |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai | Elantra 2021-22              |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai | Elantra Hybrid 2021          |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai | Kona 2020                    |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
@@ -78,6 +77,7 @@ Description of terms:
 | Genesis    | G70 2018                        |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Genesis    | G70 2020                        |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |                |
 | Genesis    | G80 2018                        |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Genesis    | G90 2018                        |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |  <sup>8</sup>  |
 | Hyundai    | Ioniq Electric 2020             |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai    | Ioniq PHEV 2020-21              |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai    | Kona EV 2018-19                 |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
@@ -184,7 +184,6 @@ Description of terms:
 | Volkswagen | Caravelle 2020<sup>7</sup>    | Driver Assistance |                        |          ⭐           |                  |          ⭐           |       ⭐        |
 
 
-
 <sup>1</sup>When disconnecting the Driver Support Unit (DSU), openpilot ACC will replace stock ACC. ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
 <sup>2</sup>28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>3</sup>When disabling the radar, openpilot ACC will replace stock ACC. ***NOTE: disabling the radar disables Automatic Emergency Braking (AEB).*** <br />
@@ -194,6 +193,7 @@ Description of terms:
 <sup>7</sup>Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma store. Before ordering,
 remove the Lane Assist camera cover and check to see if the connector is black (older design) or light brown (newer design). For the newer design,
 in the interim, choose "VW J533 Development" from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.<br />
+<sup>8</sup>These cars are supported but haven't been tested in the last year. Get them supported by [adding a test route here](https://github.com/commaai/openpilot/blob/master/selfdrive/test/test_routes.py). <br />
 Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them.
 
 ## Community Maintained Cars
