@@ -23,6 +23,8 @@ CA_TABLE_MIN_LEN = CA_TABLE_HEADER_LEN + CA_TABLE_ENTRY_LEN
 
 
 def parse_caibx(caibx_path):
+  """Parses the chunks from a caibx file. Can handle both local and remote files.
+  Returns a list of chunks with hash, offset and length"""
   if os.path.isfile(caibx_path):
     caibx = open(caibx_path, 'rb')
   else:
@@ -68,21 +70,18 @@ def parse_caibx(caibx_path):
 
 
 def build_chunk_dict(chunks):
+  """Turn a list of chunks into a dict for faster lookups based on hash"""
   return {sha: (offset, length) for sha, offset, length in chunks}
 
 
-def read_chunk_local_store(sha, chunk, store_path):
-  sha_hex = sha.hex()
-  path = os.path.join(store_path, sha_hex[:4], sha_hex + ".cacnk")
-  return lzma.open(path).read()
-
-
 def read_chunk_local_file(sha, chunk, f):
+  """Read a chunk from an open file"""
   f.seek(chunk[0])
   return f.read(chunk[1])
 
 
 def read_chunk_remote_store(sha, chunk, store_path):
+  """Read an lzma compressed chunk from a remote store"""
   sha_hex = sha.hex()
   url = os.path.join(store_path, sha_hex[:4], sha_hex + ".cacnk")
 
@@ -139,7 +138,6 @@ def extract_simple(caibx_path, out_path, store_path):
   # (name, callback, chunks)
   target = parse_caibx(caibx_path)
   sources = [
-    # (store_path, functools.partial(read_chunk_local_store, store_path=store_path), build_chunk_dict(target)),
     # (store_path, functools.partial(read_chunk_remote_store, store_path=store_path), build_chunk_dict(target)),
     (store_path, functools.partial(read_chunk_local_file, f=open(store_path, 'rb')), build_chunk_dict(target)),
   ]

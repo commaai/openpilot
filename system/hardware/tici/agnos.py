@@ -174,9 +174,18 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
   seed_path = path[:-1] + ('b' if path[-1] == 'a' else 'a')
 
   target = casync.parse_caibx(partition['casync_caibx'])
-  sources = [('target', functools.partial(casync.read_chunk_local_file, f=open(path, 'rb')), casync.build_chunk_dict(target))]
+
+  sources = []
+
+  # First source is the current partition. Index file for current version is provided in the manifest
+  # TODO: build url based on agnos version or parition hash instead?
   if 'casync_seed_caibx' in partition:
     sources += [('seed', functools.partial(casync.read_chunk_local_file, f=open(seed_path, 'rb')), casync.build_chunk_dict(casync.parse_caibx(partition['casync_seed_caibx'])))]
+
+  # Second source is the target partition, this allows for resuming
+  sources += [('target', functools.partial(casync.read_chunk_local_file, f=open(path, 'rb')), casync.build_chunk_dict(target))]
+
+  # Finally we add the remote source to download any missing chunks
   sources += [('remote', functools.partial(casync.read_chunk_remote_store, store_path=partition['casync_store']), casync.build_chunk_dict(target))]
 
   last_p = 0
