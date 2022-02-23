@@ -6,7 +6,6 @@ import tempfile
 import threading
 import urllib.parse
 import pycurl
-import certifi
 from hashlib import sha256
 from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
@@ -41,9 +40,6 @@ class URLFile:
       self._curl = self._tlocal.curl
     except AttributeError:
       self._curl = self._tlocal.curl = pycurl.Curl()
-
-    self._curl.setopt(pycurl.CAINFO, certifi.where())
-
     mkdirs_exists_ok(CACHE_DIR)
 
   def __enter__(self):

@@ -44,7 +44,6 @@ brew "libarchive"
 brew "libusb"
 brew "libtool"
 brew "llvm"
-brew "curl"
 brew "openssl"
 brew "pyenv"
 brew "qt@5"
@@ -67,14 +66,8 @@ export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/bzip2/include"
 
 # pycurl curl/openssl backend dependencies
 export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/openssl@3/lib"
-export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/curl/lib"
 export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/openssl@3/include"
-export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/curl/include"
-export PATH="${BREW_PREFIX}/opt/openssl@3/bin:$PATH"
-export PATH="${BREW_PREFIX}/opt/curl/bin:$PATH"
-
-# newer (brew-installed) curl doesn't use LibreSSL backend
-export CURL_SSL_BACKEND=secure-transport
+export PYCURL_SSL_LIBRARY=openssl
 
 # openpilot environment
 if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
