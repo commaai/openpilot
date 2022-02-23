@@ -6,6 +6,14 @@
 
 #include "cereal/visionipc/visionbuf.h"
 
+#ifdef __APPLE__
+#define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_VIDEOTOOLBOX
+#define HW_PIX_FMT AV_PIX_FMT_VIDEOTOOLBOX
+#else
+#define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_CUDA
+#define HW_PIX_FMT AV_PIX_FMT_CUDA
+#endif
+
 namespace {
 
 struct buffer_data {
@@ -107,7 +115,7 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
   visionbuf_compute_aligned_width_and_height(width, height, &aligned_width, &aligned_height);
 
   if (has_cuda_device && !no_cuda) {
-    if (!initHardwareDecoder(AV_HWDEVICE_TYPE_CUDA)) {
+    if (!initHardwareDecoder(HW_DEVICE_TYPE)) {
       rWarning("No CUDA capable device was found. fallback to CPU decoding.");
     } else {
       nv12toyuv_buffer.resize(getYUVSize());
@@ -144,6 +152,7 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
     }
     if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hw_device_type) {
       hw_pix_fmt = config->pix_fmt;
+      assert(hw_pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX);
       break;
     }
   }
@@ -219,7 +228,7 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
 }
 
 bool FrameReader::copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
-  if (hw_pix_fmt == AV_PIX_FMT_CUDA) {
+  if (hw_pix_fmt == HW_PIX_FMT) {
     uint8_t *y = yuv ? yuv : nv12toyuv_buffer.data();
     uint8_t *u = y + width * height;
     uint8_t *v = u + (width / 2) * (height / 2);
