@@ -119,27 +119,26 @@ else:
   cxxflags = []
   cpppath = []
 
+  # MacOS
   if arch == "Darwin":
+    brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
     yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
       f"#third_party/libyuv/{yuv_dir}/lib",
-      "/usr/local/lib",
-      "/opt/homebrew/lib",
-      "/usr/local/Homebrew/Library",
-      "/usr/local/opt/openssl/lib",
-      "/opt/homebrew/opt/openssl/lib",
-      "/usr/local/Cellar",
+      f"{brew_prefix}/lib",
+      f"{brew_prefix}/Library",
+      f"{brew_prefix}/opt/openssl/lib",
+      f"{brew_prefix}/Cellar",
       f"#third_party/acados/{arch}/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
-      "/opt/homebrew/include",
-      "/usr/local/include",
-      "/usr/local/opt/openssl/include",
-      "/opt/homebrew/opt/openssl/include"
+      f"{brew_prefix}/include",
+      f"{brew_prefix}/opt/openssl/include",
     ]
+  # Linux 86_64
   else:
     libpath = [
       "#third_party/acados/x86_64/lib",
