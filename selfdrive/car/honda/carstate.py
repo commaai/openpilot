@@ -241,7 +241,7 @@ class CarState(CarStateBase):
 
     if self.CP.enableGasInterceptor:
       ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
-      ret.gasPressed = ret.gas > 3.
+      ret.gasPressed = ret.gas > 15
     else:
       ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
       ret.gasPressed = ret.gas > 1e-5
