@@ -8,12 +8,15 @@ Cars are organized into three tiers:
 
 Description of terms:
 
-- openpilot Longitudinal - openpilot is able to control gas and brakes
-- Good steering torque - car has enough steering torque for comfortable highway driving
+- openpilot Longitudinal - openpilot is able to control gas and brakes. If no star is present, the car is limited to the stock system controlling gas and brakes
+- Longitudinal to 0mph - openpilot can brake and accelerate down to 0 mph
+- Steering to 0mph - openpilot can actuate the steering wheel down to 0 mph
+- Well Supported - mainline software support, hardness hardware sold by comma.ai
+- Good Steering Torque - car has enough steering torque for comfortable highway driving
 
 ## Gold Cars
 
-| Make    | Model (US Market Reference)  | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good steering torque | Well Supported |
+| Make    | Model (US Market Reference)  | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good Steering Torque | Well Supported |
 |---------|------------------------------|:-----------------:|:----------------------:|:--------------------:|:----------------:|:--------------------:|:--------------:|
 | Hyundai | Elantra 2021-22              |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai | Elantra Hybrid 2021          |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
@@ -67,7 +70,7 @@ Description of terms:
 
 ## Silver Cars
 
-| Make       | Model (US Market Reference)     | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good steering torque | Well Supported |
+| Make       | Model (US Market Reference)     | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good Steering Torque | Well Supported |
 |------------|---------------------------------|:-----------------:|:----------------------:|:--------------------:|:----------------:|:--------------------:|:--------------:|
 | Audi       | A3 2014-19                      | ACC + Lane Assist |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Audi       | A3 Sportback e-tron 2017-18     | ACC + Lane Assist |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
@@ -124,7 +127,7 @@ Description of terms:
 
 ## Bronze Cars
 
-| Make       | Model (US Market Reference)   | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good steering torque | Well Supported |
+| Make       | Model (US Market Reference)   | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good Steering Torque | Well Supported |
 |------------|-------------------------------|:-----------------:|:----------------------:|:--------------------:|:----------------:|:--------------------:|:--------------:|
 | Acura      | ILX 2016-19                   |  AcuraWatch Plus  |           ⭐            |                      |                  |                      |       ⭐        |
 | Acura      | RDX 2016-18                   |  AcuraWatch Plus  |           ⭐            |                      |                  |                      |       ⭐        |
