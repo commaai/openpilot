@@ -13,53 +13,57 @@ Description of terms:
 
 ## Gold Cars
 
-| Make    | Model (US Market Reference) | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good steering torque | Well Supported |
-|---------|-----------------------------|:-----------------:|:----------------------:|:--------------------:|:----------------:|:--------------------:|:--------------:|
-| Hyundai | Elantra 2021-22             |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Hyundai | Elantra Hybrid 2021         |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Hyundai | Kona 2020                   |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Hyundai | Kona Hybrid 2020            |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Hyundai | Palisade 2020-21            |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Hyundai | Santa Fe 2019-20            |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Hyundai | Santa Fe 2021-22            |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Hyundai | Santa Fe Hybrid 2022        |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Hyundai | Sonata 2020-22              |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Hyundai | Sonata Hybrid 2021-22       |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Kia     | K5 2021-22                  |     SCC + LFA     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Kia     | Niro EV 2019-22             |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Kia     | Seltos 2021                 |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | CT Hybrid 2017-18           |        LSS        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | ES 2019-21                  |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | ES Hybrid 2017-18           |        LSS        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | ES Hybrid 2019-21           |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | NX 2018-2019                |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | NX 2020                     |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | NX Hybrid 2018-19           |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | RX 2016-18                  |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | RX 2020-21                  |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | RX Hybrid 2016-19           |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | RX Hybrid 2020-21           |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Lexus   | UX Hybrid 2019-21           |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Alphard 2019-20             |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Avalon 2022                 |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Camry 2021-22               |        All        |           ⭐            |    ⭐<sup>2</sup>     |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Camry Hybrid 2021-22        |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Corolla 2020-22             |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Corolla Hatchback 2019-22   |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Corolla Hybrid 2020-22      |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Highlander 2017-19          |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Highlander 2020-22          |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Highlander Hybrid 2017-19   |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Highlander Hybrid 2020-22   |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Mirai 2021                  |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Prius 2016-20               |       TSS-P       |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Prius 2021-22               |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Prius Prime 2017-20         |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Prius Prime 2021-22         |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | RAV4 2019-21                |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | RAV4 Hybrid 2016-18         |       TSS-P       |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | RAV4 Hybrid 2019-21         |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Toyota  | Sienna 2018-20              |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Make    | Model (US Market Reference)  | Supported Package | openpilot Longitudinal | Longitudinal to 0mph | Steering to 0mph | Good steering torque | Well Supported |
+|---------|------------------------------|:-----------------:|:----------------------:|:--------------------:|:----------------:|:--------------------:|:--------------:|
+| Genesis | G90 2018                     |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Elantra 2021-22              |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Elantra Hybrid 2021          |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Kona 2020                    |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Kona Hybrid 2020             |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Palisade 2020-21             |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Santa Fe 2019-20             |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Santa Fe 2021-22             |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Santa Fe Hybrid 2022         |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Santa Fe Plug-in Hybrid 2022 |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Sonata 2020-22               |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai | Sonata Hybrid 2021-22        |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia     | Forte 2018-21                |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia     | K5 2021-22                   |     SCC + LFA     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia     | Niro EV 2019-22              |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia     | Niro Hybrid 2021             |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia     | Seltos 2021                  |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | CT Hybrid 2017-18            |        LSS        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | ES 2019-21                   |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | ES Hybrid 2017-18            |        LSS        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | ES Hybrid 2019-21            |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | NX 2018-2019                 |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | NX 2020                      |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | NX Hybrid 2018-19            |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | RX 2016-18                   |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | RX 2020-21                   |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | RX Hybrid 2016-19            |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | RX Hybrid 2020-21            |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Lexus   | UX Hybrid 2019-21            |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Alphard 2019-20              |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Avalon 2022                  |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Camry 2021-22                |        All        |           ⭐            |    ⭐<sup>2</sup>     |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Camry Hybrid 2021-22         |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Corolla 2020-22              |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Corolla Hatchback 2019-22    |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Corolla Hybrid 2020-22       |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Highlander 2017-19           |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Highlander 2020-22           |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Highlander Hybrid 2017-19    |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Highlander Hybrid 2020-22    |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Mirai 2021                   |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Prius 2016-20                |       TSS-P       |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Prius 2021-22                |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Prius Prime 2017-20          |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Prius Prime 2021-22          |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | RAV4 2019-21                 |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | RAV4 Hybrid 2016-18          |       TSS-P       |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | RAV4 Hybrid 2019-21          |        All        |           ⭐            |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Toyota  | Sienna 2018-20               |        All        |     ⭐<sup>1</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 
 ## Silver Cars
 
@@ -72,13 +76,14 @@ Description of terms:
 | Audi       | S3 2015                         | ACC + Lane Assist |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Genesis    | G70 2018                        |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Genesis    | G70 2020                        |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |                |
-| Genesis    | G90 2018                        |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Genesis    | G80 2018                        |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai    | Ioniq Electric 2020             |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai    | Kona EV 2018-19                 |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Hyundai    | Santa Fe Plug-in Hybrid 2022    |        All        |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Hyundai    | Sonata 2018-2019                |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Kia        | Ceed 2019                       |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Kia        | Forte 2018-21                   |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Kia        | Niro Hybrid 2021                |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia        | Optima 2019                     |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia        | Stinger 2018                    |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
+| Kia        | Telluride 2020                  |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |                |
 | SEAT       | Ateca 2018                      | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | SEAT       | Leon 2014-2020                  | Driver Assistance |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Toyota     | Avalon 2016-21                  |       TSS-P       |     ⭐<sup>1</sup>      |                      |        ⭐         |          ⭐           |       ⭐        |
@@ -130,7 +135,6 @@ Description of terms:
 | Chrysler   | Pacifica Hybrid 2017-18       |  Adaptive Cruise  |                        |          ⭐           |                  |                      |                |
 | Chrysler   | Pacifica Hybrid 2019-21       |  Adaptive Cruise  |                        |          ⭐           |                  |                      |                |
 | GMC        | Acadia 2018<sup>4</sup>       |  Adaptive Cruise  |           ⭐            |          ⭐           |                  |                      |                |
-| Genesis    | G80 2018                      |        All        |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Honda      | Accord 2018-21                |        All        |                        |          ⭐           |                  |                      |       ⭐        |
 | Honda      | Accord Hybrid 2018-21         |        All        |                        |          ⭐           |                  |                      |       ⭐        |
 | Honda      | CR-V 2015-16                  |      Touring      |           ⭐            |                      |                  |                      |       ⭐        |
@@ -157,16 +161,12 @@ Description of terms:
 | Hyundai    | Ioniq Hybrid 2017-19          |    SCC + LKAS     |                        |          ⭐           |                  |          ⭐           |                |
 | Hyundai    | Ioniq Hybrid 2020-22          |     SCC + LFA     |                        |          ⭐           |        ⭐         |          ⭐           |                |
 | Hyundai    | Ioniq PHEV 2020-21            |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |                |
-| Hyundai    | Sonata 2018-2019              |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Hyundai    | Veloster 2019-20              |    SCC + LKAS     |                        |                      |        ⭐         |          ⭐           |       ⭐        |
 | Jeep       | Grand Cherokee 2016-18        |  Adaptive Cruise  |                        |          ⭐           |                  |                      |                |
 | Jeep       | Grand Cherokee 2019-20        |  Adaptive Cruise  |                        |          ⭐           |                  |                      |                |
 | Kia        | Niro PHEV 2019                |    SCC + LKAS     |     ⭐<sup>3</sup>      |                      |                  |          ⭐           |       ⭐        |
 | Kia        | Optima 2017                   |    SCC + LKAS     |                        |          ⭐           |                  |          ⭐           |       ⭐        |
-| Kia        | Optima 2019                   |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
 | Kia        | Sorento 2018-19               |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |                |
-| Kia        | Stinger 2018                  |    SCC + LKAS     |                        |          ⭐           |        ⭐         |          ⭐           |       ⭐        |
-| Kia        | Telluride 2020                |    SCC + LKAS     |     ⭐<sup>3</sup>      |          ⭐           |        ⭐         |          ⭐           |                |
 | Lexus      | IS 2017-2019                  |        All        |                        |                      |        ⭐         |          ⭐           |       ⭐        |
 | Lexus      | RC 2020                       |        All        |                        |                      |        ⭐         |          ⭐           |       ⭐        |
 | Mazda      | CX-5 2022                     |        All        |                        |          ⭐           |        ⭐         |                      |                |
