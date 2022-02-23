@@ -48,13 +48,6 @@ class CarController():
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, CarControllerParams)
     self.steer_rate_limited = new_steer != apply_steer
 
-    # Cut steering while we're in a known fault state (2s)
-    if not active or CS.steer_state in (9, 25):
-      apply_steer = 0
-      apply_steer_req = 0
-    else:
-      apply_steer_req = 1
-
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
     if not enabled and CS.pcm_acc_status:
@@ -72,20 +65,29 @@ class CarController():
 
     can_sends = []
 
-    #*** control msgs ***
-    #print("steer {0} {1} {2} {3}".format(apply_steer, min_lim, max_lim, CS.steer_torque_motor)
-
-    # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
-    # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
-    # on consecutive messages
-    can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
-    if frame % 2 == 0 and CS.CP.carFingerprint in TSS2_CAR:
-      can_sends.append(create_lta_steer_command(self.packer, 0, 0, frame // 2))
-
-    # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
-    # if frame % 2 == 0:
-    #   can_sends.append(create_steer_command(self.packer, 0, 0, frame // 2))
-    #   can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg, apply_steer_req, frame // 2))
+    if CS.CP.steerControlType == car.CarParams.SteerControlType.angle:
+      can_sends.append(create_steer_command(self.packer, 0, 0, frame))
+      # On TSS2 cars, the LTA and STEER_TORQUE_SENSOR messages use relative steering angle signals that start
+      # at 0 degrees, so we need to offset the commanded angle as well.
+      # Also need to pulse steer_req to prevent 5 second steering lockout in some cases
+      steer_req = active and (frame % 100 != 0)
+      percentage = interp(abs(CS.out.steeringTorque), [50, 100], [100, 0])
+      commanded_angle = interp(percentage, [-10, 100], [CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg, 
+                    actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg])
+      can_sends.append(create_lta_steer_command(self.packer, commanded_angle, steer_req, frame))
+    else:
+      # Cut steering while we're in a known fault state (2s)
+      if not active or CS.steer_state in (9, 25):
+        apply_steer = 0
+        apply_steer_req = 0
+      else:
+        apply_steer_req = 1
+      # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
+      # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
+      # on consecutive messages
+      can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
+      if frame % 2 == 0 and CS.CP.carFingerprint in TSS2_CAR:
+        can_sends.append(create_lta_steer_command(self.packer, 0, 0, frame // 2))
 
     # we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
