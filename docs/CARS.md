@@ -11,8 +11,8 @@ Tier Criteria:
 - openpilot Longitudinal - openpilot is able to control gas and brakes. If no star is present, the car is limited to the stock system
 - Longitudinal to 0mph - openpilot can brake and accelerate down to 0 mph
 - Steering to 0mph - openpilot can actuate the steering wheel down to 0 mph
-- Well Supported - mainline software support, hardness hardware sold by comma.ai
 - Good Steering Torque - car has enough steering torque for comfortable highway driving
+- Well Supported - mainline software support, hardness hardware sold by comma.ai
 
 **All supported cars can move between the tiers as features change.**
 
