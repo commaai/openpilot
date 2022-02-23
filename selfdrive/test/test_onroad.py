@@ -214,7 +214,7 @@ class TestOnroad(unittest.TestCase):
     cfgs = [("lateralPlan", 0.05, 0.05), ("longitudinalPlan", 0.05, 0.05)]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "solverExecutionTime") for m in self.lr if m.which() == s]
-      self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
+      self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: {min(ts)}\n"
       result += f"'{s}' avg execution time: {np.mean(ts)}\n"
@@ -231,7 +231,7 @@ class TestOnroad(unittest.TestCase):
     if EON:
       cfgs += [("modelV2", 0.045, 0.04)]
     else:
-      cfgs += [("modelV2", 0.038, 0.036), ("driverState", 0.028, 0.026)]
+      cfgs += [("modelV2", 0.038, 0.036)]
 
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
