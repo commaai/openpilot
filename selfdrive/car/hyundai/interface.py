@@ -137,7 +137,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      if candidate not in (CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.IONIQ_HEV_2022):
+      if candidate not in (CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.IONIQ_HEV_2022, CAR.IONIQ_PHEV_2022):
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.VELOSTER:
       ret.lateralTuning.pid.kf = 0.00005
