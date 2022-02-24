@@ -112,6 +112,7 @@ class Controls:
       safety_config = car.CarParams.SafetyConfig.new_message()
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
+    self.CP.unsafeMode = 0  # see panda/board/safety_declarations.h for allowed values
 
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
@@ -194,6 +195,10 @@ class Controls:
 
     self.events.add_from_msg(CS.events)
     self.events.add_from_msg(self.sm['driverMonitoringState'].events)
+
+    # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
+    if CS.gasPressed or (CS.brakePressed and not CS.standstill):
+      self.events.add(EventName.pedalPressed)
 
     # Create events for battery, temperature, disk space, and memory
     if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
