@@ -198,7 +198,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0., 35.] 
       ret.longitudinalTuning.kiV = [0.22, 0.33]
       ret.stoppingDecelRate = 0.17  # reach stopping target smoothly, brake_travel/s while trying to stop
-      ret.stopAccel = -3.0 # Required acceleraton to keep vehicle stationary
+      ret.stopAccel = 0. # Required acceleraton to keep vehicle stationary
       ret.vEgoStopping = 0.6  # Speed at which the car goes into stopping state, when car starts requesting stopping accel
       ret.vEgoStarting = 0.6  # Speed at which the car goes into starting state, when car starts requesting starting accel,
       # vEgoStarting needs to be > or == vEgoStopping to avoid state transition oscillation
