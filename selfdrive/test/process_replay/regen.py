@@ -259,8 +259,8 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
   rpath = regen_segment(lr, {'roadCameraState': fr})
 
   lr = LogReader(os.path.join(rpath, 'rlog.bz2'))
-  controls_state_active = [m.controlsState.active for m in lr if m.which() == 'controlsState']
-  assert any(controls_state_active), "Segment did not engage"
+  controls_state_enabled = [m.controlsState.enabled for m in lr if m.which() == 'controlsState']
+  assert any(controls_state_enabled), "Segment did not engage"
 
   relr = os.path.relpath(rpath)
 

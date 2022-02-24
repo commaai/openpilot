@@ -137,7 +137,6 @@ class Controls:
     self.initialized = False
     self.state = State.disabled
     self.enabled = False
-    self.active = False
     self.can_rcv_error = False
     self.soft_disable_timer = 0
     self.v_cruise_kph = 255
@@ -458,12 +457,9 @@ class Controls:
           self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
 
     # Check if actuators are enabled
-    self.active = self.state in (State.preEnabled, State.enabled, State.softDisabling)
-    if self.active:
+    self.enabled = self.state in (State.preEnabled, State.enabled, State.softDisabling)
+    if self.enabled:
       self.current_alert_types.append(ET.WARNING)
-
-    # Check if openpilot is engaged
-    self.enabled = self.active or self.state == State.preEnabled
 
   def state_control(self, CS):
     """Given the state, this function returns an actuators packet"""
@@ -485,7 +481,7 @@ class Controls:
 
     # State specific actions
 
-    if not self.active:
+    if not self.enabled:
       self.LaC.reset()
       self.LoC.reset(v_pid=CS.vEgo)
 
@@ -493,10 +489,10 @@ class Controls:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
-      actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
+      actuators.accel = self.LoC.update(self.enabled, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
 
       # Steering PID loop and lateral MPC
-      lat_active = self.active and not CS.steerWarning and not CS.steerError and CS.vEgo > self.CP.minSteerSpeed
+      lat_active = self.enabled and not CS.steerWarning and not CS.steerError and CS.vEgo > self.CP.minSteerSpeed
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
@@ -505,7 +501,7 @@ class Controls:
                                                                              desired_curvature, desired_curvature_rate)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
-      if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
+      if self.sm.rcv_frame['testJoystick'] > 0 and self.enabled:
         actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
 
         steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
@@ -556,7 +552,6 @@ class Controls:
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
-    CC.active = self.active
     CC.actuators = actuators
 
     orientation_value = self.sm['liveLocationKalman'].orientationNED.value
@@ -579,7 +574,7 @@ class Controls:
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
-                    and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
+                    and not self.enabled and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
     model_v2 = self.sm['modelV2']
     desire_prediction = model_v2.meta.desirePrediction
@@ -643,7 +638,6 @@ class Controls:
     controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     controlsState.lateralPlanMonoTime = self.sm.logMonoTime['lateralPlan']
     controlsState.enabled = self.enabled
-    controlsState.active = self.active
     controlsState.curvature = curvature
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)

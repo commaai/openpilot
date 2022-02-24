@@ -68,7 +68,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   if cfg.proc_name == "controlsd":
     for msg in log_msgs:
       if msg.which() == "controlsState":
-        if msg.controlsState.active:
+        if msg.controlsState.enabled:
           break
     else:
       segment = cmp_log_fn.split("/")[-1].split("_")[0]

@@ -31,8 +31,8 @@ class CarController():
 
     steer_hud_alert = 1 if hud_alert in (VisualAlert.steerRequired, VisualAlert.ldw) else 0
 
-    if c.active:
-      # # windup slower
+    if c.enabled:
+      # windup slower
       if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
         angle_rate_lim = interp(CS.out.vEgo, CarControllerParams.ANGLE_DELTA_BP, CarControllerParams.ANGLE_DELTA_V)
       else:
