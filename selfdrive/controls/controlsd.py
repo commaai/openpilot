@@ -193,12 +193,12 @@ class Controls:
       self.events.add(EventName.controlsInitializing)
       return
 
+    # Disable on rising edge of gas or brake. Also disable on brake when speed > 0
+    if (CS.gasPressed and self.active) or (CS.brakePressed and not CS.standstill):
+      self.events.add(EventName.pedalPressed)
+
     self.events.add_from_msg(CS.events)
     self.events.add_from_msg(self.sm['driverMonitoringState'].events)
-
-    # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
-    if CS.gasPressed or (CS.brakePressed and not CS.standstill):
-      self.events.add(EventName.pedalPressed)
 
     # Create events for battery, temperature, disk space, and memory
     if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
