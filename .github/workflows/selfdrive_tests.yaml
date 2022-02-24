@@ -277,6 +277,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
+        lfs: true
     - name: Cache dependencies
       id: dependency-cache
       uses: actions/cache@v2
