@@ -458,7 +458,7 @@ class Controls:
           self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
 
     # Check if actuators are enabled
-    self.active = self.state == State.enabled or self.state == State.softDisabling
+    self.active = self.state in (State.preEnabled, State.enabled, State.softDisabling)
     if self.active:
       self.current_alert_types.append(ET.WARNING)
 
