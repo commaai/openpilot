@@ -1,6 +1,7 @@
 Version 0.8.14 (2022-0X-XX)
 ========================
  * bigmodel!
+ * Hyundai Ioniq Plug-in Hybrid 2022 support thanks to sunnyhaibin!
 
 Version 0.8.13 (2022-02-18)
 ========================
