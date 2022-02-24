@@ -94,6 +94,7 @@ class Controls:
     get_one_can(self.can_sock)
 
     self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
+    self.CP.unsafeMode = 0  # see panda/board/safety_declarations.h for allowed values
 
     # read params
     self.is_metric = params.get_bool("IsMetric")
@@ -112,7 +113,6 @@ class Controls:
       safety_config = car.CarParams.SafetyConfig.new_message()
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
-    self.CP.unsafeMode = 0  # see panda/board/safety_declarations.h for allowed values
 
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
