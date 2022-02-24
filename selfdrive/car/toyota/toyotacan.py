@@ -17,7 +17,6 @@ def create_lta_steer_command(packer, apply_steer, steer_angle, driver_torque, st
 
   percentage = interp(abs(driver_torque), [50, 100], [100, 0])
   apply_steer = interp(percentage, [-10, 100], [steer_angle, apply_steer])
-  steer_req = steer_req == 1 and (raw_cnt % 100 != 0)
   values = {
     "COUNTER": raw_cnt,  # 0 to 62
     "SETME_X1": 1,
