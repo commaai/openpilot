@@ -53,6 +53,7 @@ FW_VERSIONS = {
       b'\x00\x00d\xb9\x1f@ \x10',
       b'\000\000e~\037@ \'',
       b'\x00\x00e@\x1f@ $',
+      b'\x00\x00d\xb9\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xbb,\xa0t\a',
@@ -65,6 +66,7 @@ FW_VERSIONS = {
       b'\x00\xfe\xf7\x00\x00',
       b'\001\xfe\xf9\000\000',
       b'\x01\xfe\xf7\x00\x00',
+      b'\xf1\x00\xa4\x10@',
     ],
   },
   CAR.IMPREZA: {
