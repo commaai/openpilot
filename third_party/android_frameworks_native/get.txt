@@ -1,0 +1,3 @@
+git clone https://github.com/CyanogenMod/android_frameworks_native.git && cd android_frameworks_native
+git reset --hard b22bca465e55618a949d9cbdea665a1a3a831241
+cp -r include ~/one/third_party/android_frameworks_native/

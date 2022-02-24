@@ -1,0 +1,52 @@
+[
+  {
+    "name": "boot",
+    "url": "https://commadist.azureedge.net/agnosupdate/boot-0a86272196cb54607f8ba082f412fed4607baaf6ce3eb8dc8e950b4a1d763954.img.xz",
+    "hash": "0a86272196cb54607f8ba082f412fed4607baaf6ce3eb8dc8e950b4a1d763954",
+    "hash_raw": "0a86272196cb54607f8ba082f412fed4607baaf6ce3eb8dc8e950b4a1d763954",
+    "size": 14776320,
+    "sparse": false,
+    "full_check": true,
+    "has_ab": true
+  },
+  {
+    "name": "abl",
+    "url": "https://commadist.azureedge.net/agnosupdate/abl-ab4068f005ed9cb7fbca55c6d658880df1abfb1a4e6afb64f3fc5e64dac6fc82.img.xz",
+    "hash": "ab4068f005ed9cb7fbca55c6d658880df1abfb1a4e6afb64f3fc5e64dac6fc82",
+    "hash_raw": "ab4068f005ed9cb7fbca55c6d658880df1abfb1a4e6afb64f3fc5e64dac6fc82",
+    "size": 274432,
+    "sparse": false,
+    "full_check": true,
+    "has_ab": true
+  },
+  {
+    "name": "xbl",
+    "url": "https://commadist.azureedge.net/agnosupdate/xbl-2b1b67aa918cd127f2b0b4ed0a372f3a93676cf9d270bd3e56329516efdc5a35.img.xz",
+    "hash": "2b1b67aa918cd127f2b0b4ed0a372f3a93676cf9d270bd3e56329516efdc5a35",
+    "hash_raw": "2b1b67aa918cd127f2b0b4ed0a372f3a93676cf9d270bd3e56329516efdc5a35",
+    "size": 3670016,
+    "sparse": false,
+    "full_check": true,
+    "has_ab": true
+  },
+  {
+    "name": "xbl_config",
+    "url": "https://commadist.azureedge.net/agnosupdate/xbl_config-3aa926394b4cec464300bfc0e7ab77d50889b38041138c60cd84c397930b38ad.img.xz",
+    "hash": "3aa926394b4cec464300bfc0e7ab77d50889b38041138c60cd84c397930b38ad",
+    "hash_raw": "3aa926394b4cec464300bfc0e7ab77d50889b38041138c60cd84c397930b38ad",
+    "size": 364544,
+    "sparse": false,
+    "full_check": true,
+    "has_ab": true
+  },
+  {
+    "name": "system",
+    "url": "https://commadist.azureedge.net/agnosupdate/system-9b0b534ed0c35c25850dbb73d3f052611f2e2c9db32410edc25d75fbcfc6c15e.img.xz",
+    "hash": "b1f622f00037bbdb28c0a6016c0e42fa7f87e99591ff2417c757a67ff559b526",
+    "hash_raw": "9b0b534ed0c35c25850dbb73d3f052611f2e2c9db32410edc25d75fbcfc6c15e",
+    "size": 10737418240,
+    "sparse": true,
+    "full_check": false,
+    "has_ab": true
+  }
+]

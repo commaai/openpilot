@@ -1,0 +1,33 @@
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc', 'gpucommon')
+
+
+libs = [common, cereal, messaging, visionipc,
+        'zmq', 'capnp', 'kj', 'z',
+        'avformat', 'avcodec', 'swscale', 'avutil',
+        'yuv', 'bz2', 'OpenCL']
+
+src = ['logger.cc', 'loggerd.cc']
+if arch in ["aarch64", "larch64"]:
+  src += ['omx_encoder.cc']
+  libs += ['OmxCore', 'gsl', 'CB'] + gpucommon
+  if arch == "aarch64":
+    libs += ['OmxVenc', 'cutils']
+  else:
+    libs += ['pthread']
+else:
+  src += ['raw_logger.cc']
+  libs += ['pthread']
+
+if arch == "Darwin":
+  # fix OpenCL
+  del libs[libs.index('OpenCL')]
+  env['FRAMEWORKS'] = ['OpenCL']
+
+logger_lib = env.Library('logger', src)
+libs.insert(0, logger_lib)
+
+env.Program('loggerd', ['main.cc'], LIBS=libs)
+env.Program('bootlog.cc', LIBS=libs)
+
+if GetOption('test'):
+  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_loggerd.cc', 'tests/test_logger.cc', env.Object('logger_util', '#/selfdrive/ui/replay/util.cc')], LIBS=libs + ['curl', 'crypto'])
