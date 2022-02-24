@@ -29,7 +29,7 @@ class LatControlSteerModel(LatControl):
 
     # print(f"LatControlSteerModel: \nA {self.A}\nB {self.B}\nR {self.R}\n")
 
-    self.W = np.diag([1e0, 1e-1])
+    self.W = np.diag([1e0, 0.05, 0.2])
     # self.PHI = (DT_CTRL * self.B).reshape((2,1))
     # self.M_tilde = - 1/(self.PHI.T @ self.W @ self.PHI) * (self.PHI.T@self.W)
     self.torque = 0.0
@@ -78,18 +78,26 @@ class LatControlSteerModel(LatControl):
       # NOTE: controls_list dependent.
       du_dtorque = np.array([1, 2*abs(self.torque), 1/(CS.vEgo**2)])
       B_tilde = self.B @ du_dtorque
-      # desired_angle_rate = math.degrees(VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, 0.0))
-      # Phi = (DT_CTRL * B_tilde).reshape((2,1))
+      desired_angle_rate = math.degrees(VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, 0.0))
+      Phi = (DT_CTRL * B_tilde).reshape((2,1))
       # M_tilde = - 1/(Phi.T @ self.W @ Phi) * (Phi.T@self.W)
+      Phi_tilde = np.zeros((3,1))
+      Phi_tilde[:2] = Phi
+      Phi_tilde[-1] = 1.0
+      M_tilde = - 1/(Phi_tilde.T @ self.W @ Phi_tilde) * (Phi_tilde.T@self.W)
+      y = (self.xcurrent + DT_CTRL * (self.A @ self.xcurrent + Rp) -
+                      np.array([angle_steers_des_no_offset, desired_angle_rate])).reshape((2,1))
+      y_tilde = np.zeros((3,1))
+      y_tilde[:2] = y
+      y_tilde[-1] = 0.0
 
-      # torque_np = M_tilde @ (self.xcurrent + DT_CTRL * (self.A @ self.xcurrent + Rp) -
-      #                 np.array([angle_steers_des_no_offset, desired_angle_rate])).reshape((2,1))
+      torque_np = M_tilde @ y_tilde
 
       # hacky but works well..
-      B_tilde = B_tilde.reshape((2,1))
-      M = - np.linalg.solve(B_tilde.T @ B_tilde, B_tilde.T)
-      torque_np = M @ (self.A @ self.xcurrent + self.R @ live_param +
-                (self.xcurrent - np.array([angle_steers_des_no_offset, .95*self.xcurrent[1,]]))/DT_CTRL )
+      # B_tilde = B_tilde.reshape((2,1))
+      # M = - np.linalg.solve(B_tilde.T @ B_tilde, B_tilde.T)
+      # torque_np = M @ (self.A @ self.xcurrent + self.R @ live_param +
+      #           (self.xcurrent - np.array([angle_steers_des_no_offset, .95*self.xcurrent[1,]]))/DT_CTRL )
 
       # steady state torque: for x = [angle_steers_des_no_offset, desired_angle_rate]
       # M = - np.linalg.solve(B_tilde.T @ B_tilde, B_tilde.T)
