@@ -141,8 +141,6 @@ class Controls:
     self.initialized = False
     self.state = State.disabled
     self.enabled = False
-    self.lat_active = False
-    self.long_active = False
     self.can_rcv_error = False
     self.soft_disable_timer = 0
     self.v_cruise_kph = 255
@@ -464,12 +462,7 @@ class Controls:
 
     # Check if openpilot is engaged
     self.enabled = self.state in (State.preEnabled, State.enabled, State.softDisabling)
-
-    # Check if actuators are enabled
-    self.lat_active = self.enabled and (not CS.gasPressed or not self.disengage_on_gas)
-    self.long_active = self.enabled and not CS.gasPressed
-
-    if self.enabled and self.lat_active:
+    if self.enabled:
       self.current_alert_types.append(ET.WARNING)
 
   def state_control(self, CS):
@@ -485,6 +478,9 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
 
     actuators = car.CarControl.Actuators.new_message()
+    # Check if actuators are enabled
+    actuators.latActive = self.enabled and (not CS.gasPressed or not self.disengage_on_gas)
+    actuators.longActive = self.enabled and not CS.gasPressed
     actuators.longControlState = self.LoC.long_control_state
 
     if CS.leftBlinker or CS.rightBlinker:
@@ -492,19 +488,19 @@ class Controls:
 
     # State specific actions
 
-    if not self.lat_active:
+    if not actuators.lat_active:
       self.LaC.reset()
-    if not self.long_active:
+    if not actuators.long_active:
       self.LoC.reset(v_pid=CS.vEgo)
 
     if not self.joystick_mode:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
-      actuators.accel = self.LoC.update(self.long_active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
+      actuators.accel = self.LoC.update(actuators.long_active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
 
       # Steering PID loop and lateral MPC
-      lat_active = self.lat_active and not CS.steerWarning and not CS.steerError and CS.vEgo > self.CP.minSteerSpeed
+      lat_active = actuators.lat_active and not CS.steerWarning and not CS.steerError and CS.vEgo > self.CP.minSteerSpeed
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
@@ -513,7 +509,7 @@ class Controls:
                                                                              desired_curvature, desired_curvature_rate)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
-      if self.sm.rcv_frame['testJoystick'] > 0 and self.lat_active:
+      if self.sm.rcv_frame['testJoystick'] > 0 and actuators.lat_active:
         actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
 
         steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
@@ -564,8 +560,6 @@ class Controls:
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
-    CC.latActive = self.lat_active
-    CC.longActive = self.long_active
     CC.actuators = actuators
 
     orientation_value = self.sm['liveLocationKalman'].orientationNED.value
@@ -588,7 +582,7 @@ class Controls:
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
-                    and not self.lat_active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
+                    and not actuators.lat_active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
     model_v2 = self.sm['modelV2']
     desire_prediction = model_v2.meta.desirePrediction
@@ -652,8 +646,6 @@ class Controls:
     controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     controlsState.lateralPlanMonoTime = self.sm.logMonoTime['lateralPlan']
     controlsState.enabled = self.enabled
-    controlsState.latActive = self.lat_active
-    controlsState.longActive = self.long_active
     controlsState.curvature = curvature
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)
