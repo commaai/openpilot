@@ -488,19 +488,19 @@ class Controls:
 
     # State specific actions
 
-    if not actuators.lat_active:
+    if not actuators.latActive:
       self.LaC.reset()
-    if not actuators.long_active:
+    if not actuators.longActive:
       self.LoC.reset(v_pid=CS.vEgo)
 
     if not self.joystick_mode:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
-      actuators.accel = self.LoC.update(actuators.long_active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
+      actuators.accel = self.LoC.update(actuators.longActive, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
 
       # Steering PID loop and lateral MPC
-      lat_active = actuators.lat_active and not CS.steerWarning and not CS.steerError and CS.vEgo > self.CP.minSteerSpeed
+      lat_active = actuators.latActive and not CS.steerWarning and not CS.steerError and CS.vEgo > self.CP.minSteerSpeed
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
@@ -509,7 +509,7 @@ class Controls:
                                                                              desired_curvature, desired_curvature_rate)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
-      if self.sm.rcv_frame['testJoystick'] > 0 and actuators.lat_active:
+      if self.sm.rcv_frame['testJoystick'] > 0 and actuators.latActive:
         actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
 
         steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
@@ -582,7 +582,7 @@ class Controls:
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
-                    and not actuators.lat_active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
+                    and not actuators.latActive and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
     model_v2 = self.sm['modelV2']
     desire_prediction = model_v2.meta.desirePrediction

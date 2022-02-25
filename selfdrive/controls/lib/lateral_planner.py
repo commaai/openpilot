@@ -49,7 +49,7 @@ class LateralPlanner:
 
     # Lane change logic
     lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
-    self.DH.update(sm['carState'], sm['controlsState'].active, lane_change_prob)
+    self.DH.update(sm['carState'], sm['carControl'].actuators.latActive, lane_change_prob)
 
     # Turn off lanes during lane change
     if self.DH.desire == log.LateralPlan.Desire.laneChangeRight or self.DH.desire == log.LateralPlan.Desire.laneChangeLeft:
@@ -100,7 +100,7 @@ class LateralPlanner:
   def publish(self, sm, pm):
     plan_solution_valid = self.solution_invalid_cnt < 2
     plan_send = messaging.new_message('lateralPlan')
-    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'modelV2'])
+    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'carControl', 'modelV2'])
 
     lateralPlan = plan_send.lateralPlan
     lateralPlan.laneWidth = float(self.LP.lane_width)
