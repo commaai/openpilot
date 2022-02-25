@@ -67,9 +67,9 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     },
     {
       "DisengageOnGas",
-      "Disengage openpilot On Gas Press",
-      "Disengage openpilot on gas pedal press.",
-      "../assets/offroad/icon_speed_limit.png",
+      "Disengage On Accelerator Pedal",
+      "openpilot will disengage when accelerator pedal is pressed.",
+      "../assets/offroad/icon_disengage_on_accelerator.svg",
     },
 #ifdef ENABLE_MAPS
     {
