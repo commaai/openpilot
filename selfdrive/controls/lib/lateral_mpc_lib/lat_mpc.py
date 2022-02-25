@@ -117,7 +117,7 @@ def gen_lat_mpc_solver():
 
 class LateralMpc():
   def __init__(self, x0=np.zeros(X_DIM)):
-    self.solver = AcadosOcpSolverFast('lat', N, EXPORT_DIR)
+    self.solver = AcadosOcpSolverFast('lat', N)
     self.reset(x0)
 
   def reset(self, x0=np.zeros(X_DIM)):
