@@ -133,15 +133,27 @@ class TestUploader(UploaderTestCase):
     self.assertTrue(log_handler.upload_order == exp_order, "Files uploaded in wrong order")
 
   def test_no_upload_with_lock_file(self):
+    self.start_thread()
+
+    time.sleep(0.25)
     f_paths = self.gen_files(lock=True, boot=False)
 
-    self.start_thread()
     # allow enough time that files should have been uploaded if they would be uploaded
     time.sleep(5)
     self.join_thread()
 
     for f_path in f_paths:
       self.assertFalse(getxattr(f_path, uploader.UPLOAD_ATTR_NAME), "File upload when locked")
+
+
+  def test_clear_locks_on_startup(self):
+    f_paths = self.gen_files(lock=True, boot=False)
+    self.start_thread()
+    time.sleep(1)
+    self.join_thread()
+
+    for f_path in f_paths:
+      self.assertFalse(os.path.isfile(f_path + ".lock"), "File lock not cleared on startup")
 
 
 if __name__ == "__main__":

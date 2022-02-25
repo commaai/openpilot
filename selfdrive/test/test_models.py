@@ -14,7 +14,7 @@ from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.test.test_routes import routes, non_tested_cars
@@ -231,6 +231,10 @@ class TestCarModel(unittest.TestCase):
     # TODO: add flag to toyota safety
     if self.CP.carFingerprint == TOYOTA.SIENNA and checks['brakePressed'] < 25:
       checks['brakePressed'] = 0
+
+    # Honda Nidec uses button enable in panda, but pcm enable in openpilot
+    if self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH and checks['controlsAllowed'] < 25:
+      checks['controlsAllowed'] = 0
 
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")

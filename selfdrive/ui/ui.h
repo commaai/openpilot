@@ -118,6 +118,9 @@ public:
   inline bool worldObjectsVisible() const {
     return sm->rcv_frame("liveCalibration") > scene.started_frame;
   };
+  inline bool engaged() const {
+    return scene.started && (*sm)["controlsState"].getControlsState().getEnabled();
+  };
 
   int fb_w = 0, fb_h = 0;
 
@@ -141,7 +144,7 @@ private slots:
 
 private:
   QTimer *timer;
-  bool started_prev = true;
+  bool started_prev = false;
 };
 
 UIState *uiState();
