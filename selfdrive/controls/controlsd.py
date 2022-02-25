@@ -95,10 +95,6 @@ class Controls:
 
     self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
 
-    self.disengage_on_gas = True
-    # see panda/board/safety_declarations.h for allowed values
-    self.CP.unsafeMode = 0 if self.disengage_on_gas else 1
-
     # read params
     self.is_metric = params.get_bool("IsMetric")
     self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
@@ -479,7 +475,7 @@ class Controls:
 
     actuators = car.CarControl.Actuators.new_message()
     # Check if actuators are enabled
-    actuators.latActive = self.enabled and (not CS.gasPressed or not self.disengage_on_gas)
+    actuators.latActive = self.enabled and not CS.gasPressed
     actuators.longActive = self.enabled and not CS.gasPressed
     actuators.longControlState = self.LoC.long_control_state
 
