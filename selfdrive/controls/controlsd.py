@@ -134,6 +134,9 @@ class Controls:
     elif self.CP.lateralTuning.which() == 'lqr':
       self.LaC = LatControlLQR(self.CP, self.CI)
 
+   
+    self.steer, self.steeringAngleDeg, self.saturated = 0, 0, 0
+
     self.initialized = False
     self.state = State.disabled
     self.enabled = False
@@ -489,6 +492,7 @@ class Controls:
     if not self.active:
       self.LaC.reset()
       self.LoC.reset(v_pid=CS.vEgo)
+      self.steer, self.steeringAngleDeg, self.saturated = 0, 0, 0
 
     if not self.joystick_mode:
       # accel PID loop
@@ -502,8 +506,14 @@ class Controls:
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
                                                                              lat_plan.curvatureRates)
-      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(lat_active, CS, self.CP, self.VM, params, self.last_actuators,
-                                                                             desired_curvature, desired_curvature_rate)
+      if self.CI.get_frame() % self.CI.get_steer_step() == 0:
+        self.steer, self.steeringAngleDeg, lac_log = self.LaC.update(lat_active, CS, self.CP, self.VM, params, self.last_actuators,
+                                                                               desired_curvature, desired_curvature_rate)
+      else:
+        lac_log = None
+      actuators.steer, actuators.steeringAngleDeg = self.steer, self.steeringAngleDeg
+
+
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
@@ -518,8 +528,11 @@ class Controls:
         lac_log.output = steer
         lac_log.saturated = abs(steer) >= 0.9
 
+
+    if lac_log is not None:
+      self.saturated = lac_log.saturated
     # Send a "steering required alert" if saturation count has reached the limit
-    if lac_log.active and lac_log.saturated and not CS.steeringPressed:
+    if self.saturated and not CS.steeringPressed:
       dpath_points = lat_plan.dPathPoints
       if len(dpath_points):
         # Check if we deviated from the path
@@ -659,17 +672,18 @@ class Controls:
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.can_rcv_error_counter
 
-    lat_tuning = self.CP.lateralTuning.which()
-    if self.joystick_mode:
-      controlsState.lateralControlState.debugState = lac_log
-    elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-      controlsState.lateralControlState.angleState = lac_log
-    elif lat_tuning == 'pid':
-      controlsState.lateralControlState.pidState = lac_log
-    elif lat_tuning == 'lqr':
-      controlsState.lateralControlState.lqrState = lac_log
-    elif lat_tuning == 'indi':
-      controlsState.lateralControlState.indiState = lac_log
+    if lac_log is not None:
+        lat_tuning = self.CP.lateralTuning.which()
+        if self.joystick_mode:
+          controlsState.lateralControlState.debugState = lac_log
+        elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+          controlsState.lateralControlState.angleState = lac_log
+        elif lat_tuning == 'pid':
+          controlsState.lateralControlState.pidState = lac_log
+        elif lat_tuning == 'lqr':
+          controlsState.lateralControlState.lqrState = lac_log
+        elif lat_tuning == 'indi':
+          controlsState.lateralControlState.indiState = lac_log
 
     self.pm.send('controlsState', dat)
 

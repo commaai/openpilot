@@ -106,6 +106,9 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
+  def get_steer_step(self):
+    return self.CC.get_steer_step()
+
   # returns a car.CarState
   def update(self, c, can_strings):
     self.cp.update_strings(can_strings)
