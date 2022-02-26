@@ -68,7 +68,7 @@ void Sidebar::updateState(const UIState &s) {
   if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
     tempStatus = {"TEMP\nGOOD", good_color};
   } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
-    tempStatus = {"TEMP\nOK", warning_color};
+    tempStatus = {"TEMP\nWARNING", warning_color};
   }
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
 
