@@ -134,17 +134,11 @@ last_ignition = False
 def handle_fan_tici(controller, max_cpu_temp, fan_speed, ignition):
   global last_ignition
 
-  controller.neg_limit = -(80 if ignition else 30)
-  controller.pos_limit = -(30 if ignition else 0)
-
   if ignition != last_ignition:
     controller.reset()
 
-  fan_pwr_out = -int(controller.update(
-                     setpoint=75,
-                     measurement=max_cpu_temp,
-                     feedforward=interp(max_cpu_temp, [60.0, 100.0], [0, -80])
-                  ))
+  fan_pwr_out = int(controller.update(75, max_cpu_temp))
+  fan_pwr_out = max(fan_pwr_out, 30) if ignition else min(fan_pwr_out, 30)
 
   last_ignition = ignition
   return fan_pwr_out
@@ -240,7 +234,7 @@ def thermald_thread(end_event, hw_queue):
   thermal_config = HARDWARE.get_thermal_config()
 
   # TODO: use PI controller for UNO
-  controller = PIController(k_p=0, k_i=2e-3, k_f=1, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
+  controller = PIController(k_p=2, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
 
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
