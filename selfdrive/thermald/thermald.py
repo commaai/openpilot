@@ -138,7 +138,7 @@ def handle_fan_tici(controller, max_cpu_temp, fan_speed, ignition):
     controller.reset()
 
   fan_pwr_out = int(controller.update(75, max_cpu_temp))
-  fan_pwr_out = max(fan_pwr_out, 30) if ignition else min(fan_pwr_out, 30)
+  fan_pwr_out = min(fan_pwr_out + 30, 80) if ignition else min(fan_pwr_out, 30)
 
   last_ignition = ignition
   return fan_pwr_out
