@@ -857,6 +857,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00DEH MFC  AT USA LHD 1.00 1.07 99211-G5000 201221',
+      b'\xf1\x00DEH MFC  AT USA LHD 1.00 1.00 99211-G5500 210428',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DEhe SCC FHCUP      1.00 1.00 99110-G5600         ',
