@@ -266,7 +266,7 @@ struct ModelState {
 #endif
 };
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context, bool use_extra);
+void model_init(ModelState* s, cl_device_id device_id, cl_context context);
 ModelOutput *model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* buf_wide,
                               const mat3 &transform, const mat3 &transform_wide, float *desire_in);
 void model_free(ModelState* s);
