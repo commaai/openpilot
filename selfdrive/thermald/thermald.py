@@ -169,7 +169,7 @@ def hw_state_thread(end_event, hw_queue):
       try:
         network_type = HARDWARE.get_network_type()
         modem_temps = HARDWARE.get_modem_temperatures()
-        if len(modem_temps == 0) and prev_hw_state is not None:
+        if len(modem_temps) == 0 and prev_hw_state is not None:
           modem_temps = prev_hw_state.modem_temps
 
         hw_state = HardwareState(
