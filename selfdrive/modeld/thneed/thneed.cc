@@ -223,6 +223,12 @@ Thneed::Thneed(bool do_clinit) {
   record = THNEED_RECORD;
   timestamp = -1;
   g_thneed = this;
+  char *thneed_debug_env = getenv("THNEED_DEBUG");
+  if (thneed_debug_env != NULL) {
+    int thneed_debug_level = atoi(thneed_debug_env);
+    record |= (thneed_debug_level >= 1) ? THNEED_DEBUG : 0;
+    record |= (thneed_debug_level >= 2) ? THNEED_VERBOSE_DEBUG : 0;
+  }
 }
 
 void Thneed::stop() {
