@@ -22,11 +22,11 @@ class CarController():
     self.gas = 0
     self.accel = 0
 
-  def update(self, enabled, active, CS, frame, actuators, pcm_cancel_cmd, hud_alert,
+  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, hud_alert,
              left_line, right_line, lead, left_lane_depart, right_lane_depart):
 
     # gas and brake
-    if CS.CP.enableGasInterceptor and active:
+    if CS.CP.enableGasInterceptor and actuators.longActive:
       MAX_INTERCEPTOR_GAS = 0.5
       # RAV4 has very sensitive gas pedal
       if CS.CP.carFingerprint in (CAR.RAV4, CAR.RAV4H, CAR.HIGHLANDER, CAR.HIGHLANDERH):
@@ -49,7 +49,7 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # Cut steering while we're in a known fault state (2s)
-    if not active or CS.steer_state in (9, 25):
+    if not actuators.latActive or CS.steer_state in (9, 25):
       apply_steer = 0
       apply_steer_req = 0
     else:
