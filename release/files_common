@@ -58,7 +58,6 @@ common/transformations/transformations.pyx
 common/api/__init__.py
 
 models/supercombo.dlc
-models/big_supercombo.dlc
 models/dmonitoring_model_q.dlc
 
 release/*
