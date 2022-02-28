@@ -75,8 +75,7 @@ def set_lat_tune(tune, name):
 
   elif name == LatTunes.STEER_MODEL:
     tune.init('steerModel')
-    tune.steerModel.modelparam = [-4.31675765e+00, 1.84600886e+01, 1.13741407e+02, 6.64955530e+02, 1.18758903e+03, -5.26240219e+00, 6.43072642e-02, -1.00595898e-01, 3.55391699e+00, -2.11952439e+02]
-
+    tune.steerModel.modelparam = [ 1.71925238e+01, 1.41763391e+03, 9.77812550e+02, 1.88123015e-01, -9.82756467e-02, -1.26513806e+00, -1.68255566e+02]
   elif 'PID' in str(name):
     tune.init('pid')
     tune.pid.kiBP = [0.0]

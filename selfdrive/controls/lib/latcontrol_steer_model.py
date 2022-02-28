@@ -6,8 +6,7 @@ from cereal import log
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 
 
-controls_list = ['can_cmds', 'can_cmds_squared', 'cmds_by_speed',
-                 'cmds_by_vsquared', 'cmds_squared_by_vsquared', 'cmds_squared_by_v']
+controls_list = ['can_cmds_squared', 'cmds_by_vsquared', 'cmds_squared_by_vsquared']
 NU = len(controls_list)
 
 live_param_list = ['roll', 'roll_squared', 'roll_by_speed', 'roll_by_vsquared']
@@ -47,9 +46,8 @@ class LatControlSteerModel(LatControl):
       Rp = self.R @ live_param
 
       # NOTE: controls_list dependent.
-      # controls_list = ['can_cmds', 'can_cmds_squared', 'cmds_by_speed',
-                #  'cmds_by_vsquared', 'cmds_squared_by_vsquared', 'cmds_squared_by_v']
-      du_dtorque = np.array([1, 2*abs(torque_prev), 1/CS.vEgo, 1/(CS.vEgo**2), 2*abs(torque_prev)/(CS.vEgo**2), 2*abs(torque_prev)/(CS.vEgo) ])
+      # controls_list = ['can_cmds_squared', 'cmds_by_vsquared', 'cmds_squared_by_vsquared']
+      du_dtorque = np.array([2*abs(torque_prev), 1/(CS.vEgo**2), 2*abs(torque_prev)/(CS.vEgo**2) ])
       B_tilde = self.B @ du_dtorque
       output_steer = float( (1/B_tilde) * (angle_steers_des_no_offset - Rp) )
 
