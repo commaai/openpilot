@@ -1,4 +1,5 @@
 from cereal import car
+from common.realtime import DT_CTRL
 from common.numpy_fast import clip, interp
 from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
@@ -17,6 +18,10 @@ class CarController():
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_limited = False
+    self.permit_braking = True
+    self.last_gas_press_frame = 0
+    self.last_standstill_frame = 0
+    self.last_zero_speed_frame = 0
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -91,11 +96,28 @@ class CarController():
     if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
       lead = lead or CS.out.vEgo < 12.    # at low speed we always assume the lead is present so ACC can be engaged
 
+      # record accelerator depression frame
+      if CS.out.gasPressed:
+        self.last_gas_press_frame = frame
+      # record standstill exit frame
+      if CS.pcm_acc_status == 7:
+        self.last_standstill_frame = frame
+      # record last frame when vego is 0
+      if CS.out.vEgo == 0:
+        self.last_zero_speed_frame = frame
+      # handle permit braking
+      if (CS.out.gasPressed or 1. / DT_CTRL > (frame - self.last_gas_press_frame)) \
+         or ((actuators.accel > - 1.95) and (2. / DT_CTRL > (frame - self.last_standstill_frame))) \
+         or ((actuators.accel > - 1.95) and (2. / DT_CTRL > (frame - self.last_zero_speed_frame))):
+        self.permit_braking = False
+      else:
+        self.permit_braking = True
+
       # Lexus IS uses a different cancellation message
       if pcm_cancel_cmd and CS.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
         can_sends.append(create_acc_cancel_command(self.packer))
       elif CS.CP.openpilotLongitudinalControl:
-        can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type, CS.out.gasPressed))
+        can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type, self.permit_braking))
         self.accel = pcm_accel_cmd
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type, 1))
