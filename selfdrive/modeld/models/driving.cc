@@ -37,7 +37,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #else
   s->m = std::make_unique<SNPEModel>("../../models/supercombo.dlc",
 #endif
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME);
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, true);
 
 #ifdef TEMPORAL
   s->m->addRecurrent(&s->output[OUTPUT_SIZE], TEMPORAL_SIZE);
