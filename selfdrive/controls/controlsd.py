@@ -137,6 +137,7 @@ class Controls:
     self.initialized = False
     self.state = State.disabled
     self.enabled = False
+    self.active = False
     self.can_rcv_error = False
     self.soft_disable_timer = 0
     self.v_cruise_kph = 255
@@ -456,10 +457,13 @@ class Controls:
           self.current_alert_types.append(ET.ENABLE)
           self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
 
-    # Check if openpilot is engaged
-    self.enabled = self.state in (State.preEnabled, State.enabled, State.softDisabling)
-    if self.enabled:
+    # Check if actuators are enabled
+    self.active = self.state in (State.enabled, State.softDisabling)
+    if self.active:
       self.current_alert_types.append(ET.WARNING)
+
+    # Check if openpilot is engaged
+    self.enabled = self.active or self.state == State.preEnabled
 
   def state_control(self, CS):
     """Given the state, this function returns an actuators packet"""
@@ -642,7 +646,7 @@ class Controls:
     controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     controlsState.lateralPlanMonoTime = self.sm.logMonoTime['lateralPlan']
     controlsState.enabled = self.enabled
-    controlsState.active = actuators.latActive and actuators.longActive
+    controlsState.active = self.active
     controlsState.curvature = curvature
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)
