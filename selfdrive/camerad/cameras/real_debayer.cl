@@ -33,7 +33,7 @@ half3 color_correct(half3 rgb) {
   ret.x = mf(ret.x, cpx);
   ret.y = mf(ret.y, cpx);
   ret.z = mf(ret.z, cpx);
-  ret = clamp(0.0h, 255.0h, ret*255.0h);
+  ret = clamp(0.0h, 1.0h, ret);
   return ret;
 }
 
@@ -43,11 +43,38 @@ inline half val_from_10(const uchar * source, int gx, int gy, half black_level) 
   int offset = gx % 2;
   uint major = (uint)source[start + offset] << 4;
   uint minor = (source[start + 2] >> (4 * offset)) & 0xf;
-  half pv = (half)((major + minor)/4);
+  uint combined = major + minor;
+
+  // decompress - Legacy kneepoints
+  uint decompressed;
+  if (combined > 3040) {
+    decompressed = (combined - 3040) * 1024 + 65536;
+  } else if (combined > 2048) {
+    decompressed = (combined - 2048) * 64 + 2048;
+  } else {
+    decompressed = combined;
+  }
 
   // normalize
-  pv = max(0.0h, pv - black_level);
-  pv /= (1024.0f - black_level);
+  float pv = max(0.0f, decompressed - (float)black_level) / (1048575.0f - (float)black_level);
+  // float pv = max(0.0f, decompressed  / 1048575.0f);
+
+  // // TODO: get from histogram
+  float lower = 0.0;
+  // float upper = 0.00390625f; // T1
+  // float upper = 0.00390625f * 16;  // T1 + T2
+  float upper = 1.0; // T1 + T2 + T3 - 0.00390625f * 16 * 16
+
+  // // Scale
+  pv = (pv - lower) / (upper - lower);
+
+  // Test to see if it's clipping
+  // if (pv > upper) {
+  //   pv = 0;
+  // } else {
+  //   pv = (pv - lower) / (upper - lower);
+  // }
+  pv = clamp(0.0f, 1.0f, pv);
 
   // correct vignetting
   if (CAM_NUM == 1) { // fcamera
@@ -67,7 +94,7 @@ inline half val_from_10(const uchar * source, int gx, int gy, half black_level) 
     pv = s * pv;
   }
 
-  pv = clamp(0.0h, 1.0h, pv);
+  pv = clamp(0.0f, 1.0f, pv);
   return pv;
 }
 
@@ -199,6 +226,8 @@ __kernel void debayer10(const __global uchar * in,
 
   rgb = clamp(0.0h, 1.0h, rgb);
   rgb = color_correct(rgb);
+  // rgb = srgb_gamma(rgb);
+  rgb = clamp(0.0h, 255.0h, rgb * 255.0h);
 
   out[out_idx + 0] = (uchar)(rgb.z);
   out[out_idx + 1] = (uchar)(rgb.y);

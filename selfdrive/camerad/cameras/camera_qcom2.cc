@@ -954,6 +954,7 @@ void CameraState::handle_camera_event(void *evdat) {
 }
 
 void CameraState::set_camera_exposure(float grey_frac) {
+  /*
   const float dt = 0.05;
 
   const float ts_grey = 10.0;
@@ -1067,6 +1068,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   }
+  */
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
