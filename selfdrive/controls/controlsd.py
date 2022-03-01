@@ -518,14 +518,13 @@ class Controls:
         lac_log.saturated = abs(steer) >= 0.9
 
     # Send a "steering required alert" if saturation count has reached the limit
-    if (lac_log.saturated and not CS.steeringPressed) or \
-       (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
-
-      if len(lat_plan.dPathPoints):
+    if lac_log.active and lac_log.saturated and not CS.steeringPressed:
+      dpath_points = lat_plan.dPathPoints
+      if len(dpath_points):
         # Check if we deviated from the path
         # TODO use desired vs actual curvature
-        left_deviation = actuators.steer > 0 and lat_plan.dPathPoints[0] < -0.20
-        right_deviation = actuators.steer < 0 and lat_plan.dPathPoints[0] > 0.20
+        left_deviation = actuators.steer > 0 and dpath_points[0] < -0.20
+        right_deviation = actuators.steer < 0 and dpath_points[0] > 0.20
 
         if left_deviation or right_deviation:
           self.events.add(EventName.steerSaturated)
