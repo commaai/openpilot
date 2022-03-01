@@ -100,9 +100,9 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
     ans = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (Y/n) ")
     if ans.lower().strip() == 'n':
       print("Please try a different route or segment")
+      return
     else:
       logs = r.qlog_paths()[segment_start:segment_end]
-      return
 
   all_data = []
   with multiprocessing.Pool(24) as pool:
