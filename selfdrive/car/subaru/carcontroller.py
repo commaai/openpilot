@@ -30,7 +30,7 @@ class CarController():
       apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
       self.steer_rate_limited = new_steer != apply_steer
 
-      if not c.latActive:
+      if not actuators.latActive:
         apply_steer = 0
 
       if CS.CP.carFingerprint in PREGLOBAL_CARS:

@@ -17,7 +17,7 @@ class CarController():
 
     # Temp disable steering on a hands_on_fault, and allow for user override
     hands_on_fault = (CS.steer_warning == "EAC_ERROR_HANDS_ON" and CS.hands_on_level >= 3)
-    lkas_enabled = c.latActive and (not hands_on_fault)
+    lkas_enabled = actuators.latActive and (not hands_on_fault)
 
     if lkas_enabled:
       apply_angle = actuators.steeringAngleDeg
