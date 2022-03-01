@@ -7,7 +7,7 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/runners/run.h"
 
-#define OUTPUT_SIZE 39
+#define OUTPUT_SIZE 45
 
 typedef struct DMonitoringResult {
   float face_orientation[3];
@@ -25,6 +25,8 @@ typedef struct DMonitoringResult {
   float distracted_pose;
   float distracted_eyes;
   float occluded_prob;
+  float ready_prob[4];
+  float not_ready_prob[2];
   float dsp_execution_time;
 } DMonitoringResult;
 

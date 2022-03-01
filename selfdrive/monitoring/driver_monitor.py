@@ -33,6 +33,11 @@ class DRIVER_MONITOR_SETTINGS():
     self._BLINK_THRESHOLD_SLACK = 0.9 if TICI else 0.77
     self._BLINK_THRESHOLD_STRICT = self._BLINK_THRESHOLD
 
+    self._EE_THRESH11 = 0.75 if TICI else 0.4
+    self._EE_THRESH12 = 3.25 if TICI else 2.45
+    self._EE_THRESH21 = 0.01
+    self._EE_THRESH22 = 0.35
+
     self._POSE_PITCH_THRESHOLD = 0.3237
     self._POSE_PITCH_THRESHOLD_SLACK = 0.3657
     self._POSE_PITCH_THRESHOLD_STRICT = self._POSE_PITCH_THRESHOLD
@@ -46,7 +51,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._YAW_MAX_OFFSET = 0.289
     self._YAW_MIN_OFFSET = -0.0246
 
-    self._POSESTD_THRESHOLD = 0.38 if TICI else 0.3
+    self._POSESTD_THRESHOLD = 0.46 if TICI else 0.35
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
@@ -67,8 +72,9 @@ H, W, FULL_W = 320, 160, 426
 
 class DistractedType:
   NOT_DISTRACTED = 0
-  BAD_POSE = 1
-  BAD_BLINK = 2
+  DISTRACTED_POSE = 1
+  DISTRACTED_BLINK = 2
+  DISTRACTED_E2E = 3
 
 def face_orientation_from_net(angles_desc, pos_desc, rpy_calib, is_rhd):
   # the output of these angles are in device frame
@@ -118,6 +124,13 @@ class DriverStatus():
     self.pose = DriverPose(self.settings._POSE_OFFSET_MAX_COUNT)
     self.pose_calibrated = False
     self.blink = DriverBlink()
+    self.eev1 = 0.
+    self.eev2 = 1.
+    self.ee1_offseter = RunningStatFilter(max_trackable=self.settings._POSE_OFFSET_MAX_COUNT)
+    self.ee2_offseter = RunningStatFilter(max_trackable=self.settings._POSE_OFFSET_MAX_COUNT)
+    self.ee1_calibrated = False
+    self.ee2_calibrated = False
+
     self.awareness = 1.
     self.awareness_active = 1.
     self.awareness_passive = 1.
@@ -166,26 +179,38 @@ class DriverStatus():
       self.step_change = self.settings._DT_DMON / self.settings._AWARENESS_TIME
       self.active_monitoring_mode = False
 
-  def _is_driver_distracted(self, pose, blink):
-    if not self.pose_calibrated:
-      pitch_error = pose.pitch - self.settings._PITCH_NATURAL_OFFSET
-      yaw_error = pose.yaw - self.settings._YAW_NATURAL_OFFSET
-    else:
-      pitch_error = pose.pitch - min(max(self.pose.pitch_offseter.filtered_stat.mean(),
-                                                       self.settings._PITCH_MIN_OFFSET), self.settings._PITCH_MAX_OFFSET)
-      yaw_error = pose.yaw - min(max(self.pose.yaw_offseter.filtered_stat.mean(),
-                                                    self.settings._YAW_MIN_OFFSET), self.settings._YAW_MAX_OFFSET)
+  def _is_driver_distracted(self):
+    distracted_types = []
 
+    if not self.pose_calibrated:
+      pitch_error = self.pose.pitch - self.settings._PITCH_NATURAL_OFFSET
+      yaw_error = self.pose.yaw - self.settings._YAW_NATURAL_OFFSET
+    else:
+      pitch_error = self.pose.pitch - min(max(self.pose.pitch_offseter.filtered_stat.mean(),
+                                                       self.settings._PITCH_MIN_OFFSET), self.settings._PITCH_MAX_OFFSET)
+      yaw_error = self.pose.yaw - min(max(self.pose.yaw_offseter.filtered_stat.mean(),
+                                                    self.settings._YAW_MIN_OFFSET), self.settings._YAW_MAX_OFFSET)
     pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
     yaw_error = abs(yaw_error)
+    if pitch_error > self.settings._POSE_PITCH_THRESHOLD*self.pose.cfactor_pitch or \
+       yaw_error > self.settings._POSE_YAW_THRESHOLD*self.pose.cfactor_yaw:
+      distracted_types.append(DistractedType.DISTRACTED_POSE)
 
-    if pitch_error > self.settings._POSE_PITCH_THRESHOLD*pose.cfactor_pitch or \
-       yaw_error > self.settings._POSE_YAW_THRESHOLD*pose.cfactor_yaw:
-      return DistractedType.BAD_POSE
-    elif (blink.left_blink + blink.right_blink)*0.5 > self.settings._BLINK_THRESHOLD*blink.cfactor:
-      return DistractedType.BAD_BLINK
+    if (self.blink.left_blink + self.blink.right_blink)*0.5 > self.settings._BLINK_THRESHOLD*self.blink.cfactor:
+      distracted_types.append(DistractedType.DISTRACTED_BLINK)
+
+    if self.ee1_calibrated:
+      ee1_dist = self.eev1 > self.ee1_offseter.filtered_stat.M * self.settings._EE_THRESH12
     else:
-      return DistractedType.NOT_DISTRACTED
+      ee1_dist = self.eev1 > self.settings._EE_THRESH11
+    if self.ee2_calibrated:
+      ee2_dist = self.eev2 < self.ee2_offseter.filtered_stat.M * self.settings._EE_THRESH22
+    else:
+      ee2_dist = self.eev2 < self.settings._EE_THRESH21
+    if ee1_dist or ee2_dist:
+      distracted_types.append(DistractedType.DISTRACTED_E2E)
+
+    return distracted_types
 
   def set_policy(self, model_data, car_speed):
     ep = min(model_data.meta.engagedProb, 0.8) / 0.8 # engaged prob
@@ -219,9 +244,13 @@ class DriverStatus():
     self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD and not self.face_partial
     self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
     self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.eev1 = driver_state.notReadyProb[1]
+    self.eev2 = driver_state.readyProb[0]
 
-    self.driver_distracted = self._is_driver_distracted(self.pose, self.blink) > 0 and \
-                                   driver_state.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
+    distracted_types = self._is_driver_distracted()
+    self.driver_distracted = (DistractedType.DISTRACTED_POSE in distracted_types or 
+                                            DistractedType.DISTRACTED_BLINK in distracted_types) and \
+                                          driver_state.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
@@ -229,9 +258,13 @@ class DriverStatus():
     if self.face_detected and car_speed > self.settings._POSE_CALIB_MIN_SPEED and self.pose.low_std and (not op_engaged or not self.driver_distracted):
       self.pose.pitch_offseter.push_and_update(self.pose.pitch)
       self.pose.yaw_offseter.push_and_update(self.pose.yaw)
+      self.ee1_offseter.push_and_update(self.eev1)
+      self.ee2_offseter.push_and_update(self.eev2)
 
     self.pose_calibrated = self.pose.pitch_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT and \
                                        self.pose.yaw_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
+    self.ee1_calibrated = self.ee1_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
+    self.ee2_calibrated = self.ee2_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
 
     self.is_model_uncertain = self.hi_stds > self.settings._HI_STD_FALLBACK_TIME
     self._set_timers(self.face_detected and not self.is_model_uncertain)
