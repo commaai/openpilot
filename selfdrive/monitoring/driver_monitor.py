@@ -74,7 +74,7 @@ class DistractedType:
   NOT_DISTRACTED = 0
   DISTRACTED_POSE = 1
   DISTRACTED_BLINK = 2
-  DISTRACTED_E2E = 3
+  DISTRACTED_E2E = 4
 
 def face_orientation_from_net(angles_desc, pos_desc, rpy_calib, is_rhd):
   # the output of these angles are in device frame
@@ -134,6 +134,7 @@ class DriverStatus():
     self.awareness = 1.
     self.awareness_active = 1.
     self.awareness_passive = 1.
+    self.distracted_types = []
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
     self.face_detected = False
@@ -247,9 +248,9 @@ class DriverStatus():
     self.eev1 = driver_state.notReadyProb[1]
     self.eev2 = driver_state.readyProb[0]
 
-    distracted_types = self._is_driver_distracted()
-    self.driver_distracted = (DistractedType.DISTRACTED_POSE in distracted_types or 
-                                            DistractedType.DISTRACTED_BLINK in distracted_types) and \
+    self.distracted_types = self._is_driver_distracted()
+    self.driver_distracted = (DistractedType.DISTRACTED_POSE in self.distracted_types or
+                                            DistractedType.DISTRACTED_BLINK in self.distracted_types) and \
                                           driver_state.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
