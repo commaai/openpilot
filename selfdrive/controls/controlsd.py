@@ -478,7 +478,7 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
 
     actuators = car.CarControl.Actuators.new_message()
-    # Check if actuators are enabled
+    # Check which actuators are enabled
     actuators.latActive = self.enabled and not CS.gasPressed
     actuators.longActive = self.enabled and not CS.gasPressed
     actuators.longControlState = self.LoC.long_control_state
