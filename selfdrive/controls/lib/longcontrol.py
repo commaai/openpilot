@@ -83,9 +83,9 @@ class LongControl():
 
     # Update state machine
     output_accel = self.last_output_accel
-    self.long_control_state, long_control_state_trans(CP, active, self.long_control_state, CS.vEgo,
-                                                      v_target, v_target_future, CS.brakePressed,
-                                                      CS.cruiseState.standstill)
+    self.long_control_state = long_control_state_trans(CP, active, self.long_control_state, CS.vEgo,
+                                                       v_target, v_target_future, CS.brakePressed,
+                                                       CS.cruiseState.standstill)
 
     if self.long_control_state == LongCtrlState.off or CS.gasPressed:
       self.reset(CS.vEgo)
