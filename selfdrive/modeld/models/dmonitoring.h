@@ -8,6 +8,7 @@
 #include "selfdrive/modeld/runners/run.h"
 
 #define OUTPUT_SIZE 45
+#define REG_SCALE 0.25f
 
 typedef struct DMonitoringResult {
   float face_orientation[3];
