@@ -15,7 +15,7 @@ def load_onnx_weights(fn):
 
   onnx_layers = []
   for node in graph.node:
-    #print(node.name)
+    #print(node.name, node.op_type, node.input, node.output)
     vals = []
     for inp in node.input:
       if inp in init:
@@ -48,12 +48,10 @@ def weights_fixup():
   assert len(thneed_layers) == len(onnx_layers)
 
   # fix up weights
-
   for tl, ol in zip(thneed_layers, onnx_layers):
     print(tl[0], ol[0])
     assert len(tl[1]) == len(ol[1])
     for o, onnx_weight in zip(tl[1], ol[1]):
-      # TODO: is the bias correct?
       if o['arg_type'] == "image2d_t":
         obuf = bufs[o['buffer_id']]
         saved_weights = np.frombuffer(obuf['data'], dtype=np.float16).reshape(o['height'], o['row_pitch']//2)
@@ -78,9 +76,16 @@ def weights_fixup():
         fixed_err = np.mean((new_weights.astype(np.float16).astype(np.float32) - new_weights)**2)
 
         assert (err/fixed_err) >= 1
-        print(o['size'], onnx_weight.shape, o['row_pitch'], o['width'], o['height'], "err %.2fx better" % (err/fixed_err))
+        print("   ", o['size'], onnx_weight.shape, o['row_pitch'], o['width'], o['height'], "err %.2fx better" % (err/fixed_err))
 
         obuf['data'] = new_weights.astype(np.float16).tobytes()
+
+      elif o['arg_type'] == "float*":
+        # unconverted floats are correct
+        new_weights = np.zeros(o['size']//4, dtype=np.float32)
+        new_weights[:onnx_weight.shape[0]] = onnx_weight
+        assert new_weights.tobytes() == o['data']
+        print("   ", o['size'], onnx_weight.shape)
 
   save_thneed(jdat, os.path.join(BASEDIR, "models/supercombo_fixed.thneed"))
 
