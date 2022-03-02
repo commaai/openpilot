@@ -76,6 +76,10 @@ if use_thneed and arch in ("aarch64", "larch64"):
   kernels = [os.path.join(kernel_path, x) for x in os.listdir(kernel_path) if x.endswith(".cl")]
   cenv.Command(fn + ".thneed", [fn + ".dlc", kernels, compiler], cmd)
 
+  from selfdrive.modeld.thneed.weights_fixup import weights_fixup
+  weights_fixup()
+  os.rename(fn + "_fixed.thneed", fn + ".thneed")
+
 lenv.Program('_dmonitoringmodeld', [
     "dmonitoringmodeld.cc",
     "models/dmonitoring.cc",

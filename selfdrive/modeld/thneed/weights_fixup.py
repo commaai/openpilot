@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-import os, struct, json
+import os
 from common.basedir import BASEDIR
 import numpy as np
 
-# load onnx weights
-def get_onnx_weights():
-  import onnx
-  from onnx import helper, numpy_helper
+from selfdrive.modeld.thneed.lib import load_thneed, save_thneed
 
-  model = onnx.load(os.path.join(BASEDIR, "models/supercombo.onnx"))
+def load_onnx_weights(fn):
+  import onnx
+  from onnx import numpy_helper
+
+  model = onnx.load(fn)
   graph = model.graph
   init = {x.name:x for x in graph.initializer}
 
@@ -23,79 +24,67 @@ def get_onnx_weights():
       onnx_layers.append((node.name, vals))
   return onnx_layers
 
-onnx_layers = get_onnx_weights()
+def weights_fixup():
+  onnx_layers = load_onnx_weights(os.path.join(BASEDIR, "models/supercombo.onnx"))
+  jdat = load_thneed(os.path.join(BASEDIR, "models/supercombo.thneed"))
 
-# load thneed file
+  bufs = {}
+  for o in jdat['objects']:
+    bufs[o['id']] = o
 
-with open(os.path.join(BASEDIR, "models/supercombo.thneed"), "rb") as f:
-  json_len = struct.unpack("I", f.read(4))[0]
-  jdat = json.loads(f.read(json_len).decode('latin_1'))
-  weights = f.read()
+  thneed_layers = []
+  for k in jdat['kernels']:
+    #print(k['name'])
+    vals = []
+    for a in k['args']:
+      if a in bufs:
+        o = bufs[a]
+        if o['needs_load'] or ('buffer_id' in o and bufs[o['buffer_id']]['needs_load']):
+          #print("  ", o['arg_type'])
+          vals.append(o)
+    if len(vals) > 0:
+      thneed_layers.append((k['name'], vals))
 
-ptr = 0
-bufs = {}
-for o in jdat['objects']:
-  if o['needs_load']:
-    nptr = ptr + o['size']
-    o['data'] = weights[ptr:nptr]
-    ptr = nptr
-  bufs[o['id']] = o
+  assert len(thneed_layers) == len(onnx_layers)
 
-thneed_layers = []
-for k in jdat['kernels']:
-  #print(k['name'])
-  vals = []
-  for a in k['args']:
-    if a in bufs:
-      o = bufs[a]
-      if o['needs_load'] or ('buffer_id' in o and bufs[o['buffer_id']]['needs_load']):
-        #print("  ", o['arg_type'])
-        vals.append(o)
-  if len(vals) > 0:
-    thneed_layers.append((k['name'], vals))
+  # fix up weights
 
-assert len(thneed_layers) == len(onnx_layers)
-
-# fix up weights
-
-for tl, ol in zip(thneed_layers, onnx_layers):
-  print(tl[0], ol[0])
-  assert len(tl[1]) == len(ol[1])
-  for o, onnx_weight in zip(tl[1], ol[1]):
-    if o['arg_type'] == "image2d_t":
-      obuf = bufs[o['buffer_id']]
-      saved_weights = np.frombuffer(obuf['data'], dtype=np.float16).reshape(o['height'], o['row_pitch']//2)
-
-      # convolution
-      if tl[0] in ["convolution_horizontal_reduced_reads", "convolution_horizontal_reduced_reads_1x1"]:
-        oc,ic,ch,cw = onnx_weight.shape
-        weights = np.transpose(onnx_weight.reshape(oc//4,4,ic//4,4,ch,cw), (0,4,2,5,1,3)).reshape(o['height'], o['width']*4)
+  for tl, ol in zip(thneed_layers, onnx_layers):
+    print(tl[0], ol[0])
+    assert len(tl[1]) == len(ol[1])
+    for o, onnx_weight in zip(tl[1], ol[1]):
+      # TODO: is the bias correct?
+      if o['arg_type'] == "image2d_t":
+        obuf = bufs[o['buffer_id']]
+        saved_weights = np.frombuffer(obuf['data'], dtype=np.float16).reshape(o['height'], o['row_pitch']//2)
         new_weights = np.zeros((o['height'], o['row_pitch']//2), dtype=np.float32)
-        new_weights[:, :o['width']*4] = weights
+
+        if len(onnx_weight.shape) == 4:
+          # convolution
+          oc,ic,ch,cw = onnx_weight.shape
+
+          if 'depthwise' in tl[0]:
+            assert ic == 1
+            weights = np.transpose(onnx_weight.reshape(oc//4,4,ch,cw), (0,2,3,1)).reshape(o['height'], o['width']*4)
+          else:
+            weights = np.transpose(onnx_weight.reshape(oc//4,4,ic//4,4,ch,cw), (0,4,2,5,1,3)).reshape(o['height'], o['width']*4)
+        else:
+          # fc_Wtx
+          weights = onnx_weight
+
+        new_weights[:, :weights.shape[1]] = weights
 
         err = np.mean((saved_weights.astype(np.float32) - new_weights)**2)
         fixed_err = np.mean((new_weights.astype(np.float16).astype(np.float32) - new_weights)**2)
 
-        print(o['size'], onnx_weight.shape, o['row_pitch'], o['width'], o['height'], "err %.2f x better" % (err/fixed_err))
+        assert (err/fixed_err) >= 1
+        print(o['size'], onnx_weight.shape, o['row_pitch'], o['width'], o['height'], "err %.2fx better" % (err/fixed_err))
 
         obuf['data'] = new_weights.astype(np.float16).tobytes()
 
-# save thneed file
+  save_thneed(jdat, os.path.join(BASEDIR, "models/supercombo_fixed.thneed"))
 
-new_weights = []
-for o in jdat['objects']:
-  if 'data' in o:
-    new_weights.append(o['data'])
-    del o['data']
-new_weights = b''.join(new_weights)
-
-with open(os.path.join(BASEDIR, "models/supercombo_fixed.thneed"), "wb") as f:
-  j = json.dumps(jdat, ensure_ascii=False).encode('latin_1')
-  f.write(struct.pack("I", len(j)))
-  f.write(j)
-  f.write(new_weights)
-
-exit(0)
-
+if __name__ == "__main__":
+  weights_fixup()
 
 
