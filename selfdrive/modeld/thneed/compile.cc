@@ -35,6 +35,14 @@ int main(int argc, char* argv[]) {
   // save model
   bool save_binaries = (argc > 3) && (strcmp(argv[3], "--binary") == 0);
   mdl.thneed->save(argv[2], save_binaries);
+
+  // test model
+  auto thneed = new Thneed(true);
+  thneed->record &= ~THNEED_RECORD;
+  thneed->load(argv[2]);
+  thneed->clexec();
+  thneed->find_inputs_outputs();
+
   return 0;
 }
 
