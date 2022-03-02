@@ -4,6 +4,9 @@
 #include <assert.h>
 #include "thneed.h"
 
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/clutil.h"
+
 extern map<cl_program, string> g_program_source;
 
 static int is_same_size_image(cl_mem a, cl_mem b) {
@@ -63,6 +66,14 @@ static cl_mem make_image_like(cl_context context, cl_mem val) {
 int Thneed::optimize() {
   const char *kernel_path = getenv("KERNEL_PATH");
   if (!kernel_path) { kernel_path = "/data/openpilot/selfdrive/modeld/thneed/kernels"; printf("no KERNEL_PATH set, defaulting to %s\n", kernel_path); }
+
+  string convolution_;
+  {
+    char fn[0x100];
+    snprintf(fn, sizeof(fn), "%s/%s.cl", kernel_path, "convolution_");
+    convolution_ = util::read_file(fn);
+  }
+
   // load custom kernels
   map<string, cl_program> g_programs;
   for (auto &k : kq) {
@@ -70,33 +81,17 @@ int Thneed::optimize() {
     if (g_programs.find(k->name) == g_programs.end()) {
       char fn[0x100];
       snprintf(fn, sizeof(fn), "%s/%s.cl", kernel_path, k->name.c_str());
-      FILE *g = fopen(fn, "rb");
-      if (g != NULL) {
-        char *src[0x10000];
-        const char *srcs[1]; srcs[0] = (const char *)src;
-        memset(src, 0, sizeof(src));
-        size_t length = fread(src, 1, sizeof(src), g);
-        fclose(g);
-
-        printf("building kernel %s\n", k->name.c_str());
-        k->program = clCreateProgramWithSource(context, 1, srcs, &length, NULL);
-        char options[0x100];
-        snprintf(options, sizeof(options)-1, "-I %s", kernel_path);
-        int err = clBuildProgram(k->program, 1, &device_id, options, NULL, NULL);
-
-        if (err != 0) {
-          printf("got err %d\n", err);
-          size_t err_length;
-          char buffer[2048];
-          clGetProgramBuildInfo(k->program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &err_length);
-          buffer[err_length] = '\0';
-          printf("%s\n", buffer);
+      if (util::file_exists(fn)) {
+        string kernel_src = util::read_file(fn);
+        if (k->name.rfind("convolution_", 0) == 0) {
+          kernel_src += convolution_;
         }
-        assert(err == 0);
+        printf("building kernel %s with len %lu\n", k->name.c_str(), kernel_src.length());
+        k->program = cl_program_from_source(context, device_id, kernel_src);
 
         // save in cache
         g_programs[k->name] = k->program;
-        g_program_source[k->program] = string((char *)src, length);
+        g_program_source[k->program] = kernel_src;
       } else {
         g_programs[k->name] = NULL;
       }
