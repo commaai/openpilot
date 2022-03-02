@@ -180,7 +180,7 @@ class DriverStatus():
       self.step_change = self.settings._DT_DMON / self.settings._AWARENESS_TIME
       self.active_monitoring_mode = False
 
-  def _is_driver_distracted(self):
+  def _get_distracted_types(self):
     distracted_types = []
 
     if not self.pose_calibrated:
@@ -230,7 +230,7 @@ class DriverStatus():
                                            [self.settings._POSE_YAW_THRESHOLD_SLACK,
                                             self.settings._POSE_YAW_THRESHOLD_STRICT]) / self.settings._POSE_YAW_THRESHOLD
 
-  def get_pose(self, driver_state, cal_rpy, car_speed, op_engaged):
+  def update_states(self, driver_state, cal_rpy, car_speed, op_engaged):
     if not all(len(x) > 0 for x in (driver_state.faceOrientation, driver_state.facePosition,
                                     driver_state.faceOrientationStd, driver_state.facePositionStd)):
       return
@@ -248,7 +248,7 @@ class DriverStatus():
     self.eev1 = driver_state.notReadyProb[1]
     self.eev2 = driver_state.readyProb[0]
 
-    self.distracted_types = self._is_driver_distracted()
+    self.distracted_types = self._get_distracted_types()
     self.driver_distracted = (DistractedType.DISTRACTED_POSE in self.distracted_types or
                                             DistractedType.DISTRACTED_BLINK in self.distracted_types) and \
                                           driver_state.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
@@ -274,7 +274,7 @@ class DriverStatus():
     elif self.face_detected and self.pose.low_std:
       self.hi_stds = 0
 
-  def update(self, events, driver_engaged, ctrl_active, standstill):
+  def update_events(self, events, driver_engaged, ctrl_active, standstill):
     if (driver_engaged and self.awareness > 0) or not ctrl_active:
       # reset only when on disengagement if red reached
       self.awareness = 1.
