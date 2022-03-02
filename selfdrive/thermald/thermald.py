@@ -82,19 +82,23 @@ def hw_state_thread(end_event, hw_queue):
   """Handles non critical hardware state, and sends over queue"""
   count = 0
   registered_count = 0
+  prev_hw_state = None
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
       try:
         network_type = HARDWARE.get_network_type()
+        modem_temps = HARDWARE.get_modem_temperatures()
+        if len(modem_temps) == 0 and prev_hw_state is not None:
+          modem_temps = prev_hw_state.modem_temps
 
         hw_state = HardwareState(
           network_type=network_type,
           network_strength=HARDWARE.get_network_strength(network_type),
           network_info=HARDWARE.get_network_info(),
           nvme_temps=HARDWARE.get_nvme_temperatures(),
-          modem_temps=HARDWARE.get_modem_temperatures(),
+          modem_temps=modem_temps,
         )
 
         try:
@@ -112,8 +116,9 @@ def hw_state_thread(end_event, hw_queue):
           os.system("nmcli conn up lte")
           registered_count = 0
 
+        prev_hw_state = hw_state
       except Exception:
-        cloudlog.exception("Error getting network status")
+        cloudlog.exception("Error getting hardware state")
 
     count += 1
     time.sleep(DT_TRML)
