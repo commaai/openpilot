@@ -67,7 +67,7 @@ common_model = lenv.Object(common_src)
 if use_thneed and arch in ("aarch64", "larch64"):
   fn = File("#models/supercombo").abspath
   compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
-  cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} {fn}.dlc {fn}.thneed --binary"
+  cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} {fn}.dlc {fn}_badweights.thneed --binary"
 
   lib_paths = ':'.join(Dir(p).abspath for p in lenv["LIBPATH"])
   kernel_path = os.path.join(Dir('.').abspath, "thneed", "kernels")
@@ -77,8 +77,12 @@ if use_thneed and arch in ("aarch64", "larch64"):
   cenv.Command(fn + "_badweights.thneed", [fn + ".dlc", kernels, compiler], cmd)
 
   from selfdrive.modeld.thneed.weights_fixup import weights_fixup
-  env = Environment(BUILDERS = {'WeightFixup' : Builder(action = weights_fixup)})
-  env.WeightFixup(target=fn + ".thneed", source=[fn+".dlc", fn+"_badweights.thneed"])
+  def weights_fixup_action(target, source, env):
+    print(target[0].abspath, source[0].abspath, source[1].abspath)
+    weights_fixup(target[0].abspath, source[0].abspath, source[1].abspath)
+
+  env = Environment(BUILDERS = {'WeightFixup' : Builder(action = weights_fixup_action)})
+  env.WeightFixup(target=fn + ".thneed", source=[fn+"_badweights.thneed", fn+".dlc"])
 
 
 lenv.Program('_dmonitoringmodeld', [

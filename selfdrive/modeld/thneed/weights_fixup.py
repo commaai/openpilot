@@ -37,7 +37,7 @@ def load_dlc_weights(fn):
     return ret
   ranges = []
   cnt = r4()
-  for i in range(cnt):
+  for _ in range(cnt):
     o = r4() + ptr
     # the header is 0xC
     plen, is_4, is_2 = struct.unpack("III", dlc_params[o:o+0xC])
@@ -68,10 +68,10 @@ def load_onnx_weights(fn):
   return onnx_layers
 """
 
-def weights_fixup(target, source, env):
+def weights_fixup(target, source_thneed, dlc):
   #onnx_layers = load_onnx_weights(os.path.join(BASEDIR, "models/supercombo.onnx"))
-  onnx_layers = load_dlc_weights(source[0])
-  jdat = load_thneed(source[1])
+  onnx_layers = load_dlc_weights(dlc)
+  jdat = load_thneed(source_thneed)
 
   bufs = {}
   for o in jdat['objects']:
@@ -136,6 +136,7 @@ def weights_fixup(target, source, env):
 
 if __name__ == "__main__":
   weights_fixup(os.path.join(BASEDIR, "models/supercombo_fixed.thneed"),
-               [os.path.join(BASEDIR, "models/supercombo.dlc"), os.path.join(BASEDIR, "models/supercombo.thneed")])
+                os.path.join(BASEDIR, "models/supercombo.thneed"),
+                os.path.join(BASEDIR, "models/supercombo.dlc"))
 
 
