@@ -57,7 +57,6 @@ def weights_fixup():
       if o['arg_type'] == "image2d_t":
         obuf = bufs[o['buffer_id']]
         saved_weights = np.frombuffer(obuf['data'], dtype=np.float16).reshape(o['height'], o['row_pitch']//2)
-        new_weights = np.zeros((o['height'], o['row_pitch']//2), dtype=np.float32)
 
         if len(onnx_weight.shape) == 4:
           # convolution
@@ -72,6 +71,7 @@ def weights_fixup():
           # fc_Wtx
           weights = onnx_weight
 
+        new_weights = np.zeros((o['height'], o['row_pitch']//2), dtype=np.float32)
         new_weights[:, :weights.shape[1]] = weights
 
         err = np.mean((saved_weights.astype(np.float32) - new_weights)**2)
