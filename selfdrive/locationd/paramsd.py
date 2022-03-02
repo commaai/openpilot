@@ -62,7 +62,7 @@ class ParamsLearner:
       yaw_rate_valid = yaw_rate_valid and abs(yaw_rate) < 1  # rad/s
 
       if self.active:
-        if msg.inputsOK and msg.posenetOK:
+        if msg.posenetOK:
 
           if yaw_rate_valid:
             self.kf.predict_and_observe(t,
@@ -160,10 +160,11 @@ def main(sm=None, pm=None):
 
   while True:
     sm.update()
-    for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
-      if sm.updated[which]:
-        t = sm.logMonoTime[which] * 1e-9
-        learner.handle_log(t, which, sm[which])
+    if sm.all_alive_and_valid():
+      for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
+        if sm.updated[which]:
+          t = sm.logMonoTime[which] * 1e-9
+          learner.handle_log(t, which, sm[which])
 
     if sm.updated['liveLocationKalman']:
       x = learner.kf.x
@@ -197,6 +198,8 @@ def main(sm=None, pm=None):
       liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS])
       liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET])
       liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
+
+      msg.valid = sm.all_alive_and_valid()
 
       if sm.frame % 1200 == 0:  # once a minute
         params = {
