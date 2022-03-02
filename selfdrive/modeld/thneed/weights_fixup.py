@@ -53,7 +53,7 @@ def load_onnx_weights(fn):
   from onnx import numpy_helper
 
   model = onnx.load(fn)
-  graph = model.graph
+  graph = model.graph  # pylint: disable=maybe-no-member
   init = {x.name:x for x in graph.initializer}
 
   onnx_layers = []
