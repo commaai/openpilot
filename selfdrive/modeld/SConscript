@@ -78,7 +78,6 @@ if use_thneed and arch in ("aarch64", "larch64"):
 
   from selfdrive.modeld.thneed.weights_fixup import weights_fixup
   def weights_fixup_action(target, source, env):
-    print(target[0].abspath, source[0].abspath, source[1].abspath)
     weights_fixup(target[0].abspath, source[0].abspath, source[1].abspath)
 
   env = Environment(BUILDERS = {'WeightFixup' : Builder(action = weights_fixup_action)})

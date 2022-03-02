@@ -47,7 +47,7 @@ def load_dlc_weights(fn):
 
   return [parse(dlc_params[s:e]) for s,e in ranges]
 
-"""
+# this won't run on device without onnx
 def load_onnx_weights(fn):
   import onnx
   from onnx import numpy_helper
@@ -66,7 +66,6 @@ def load_onnx_weights(fn):
     if len(vals) > 0:
       onnx_layers.append((node.name, vals))
   return onnx_layers
-"""
 
 def weights_fixup(target, source_thneed, dlc):
   #onnx_layers = load_onnx_weights(os.path.join(BASEDIR, "models/supercombo.onnx"))
@@ -138,5 +137,3 @@ if __name__ == "__main__":
   weights_fixup(os.path.join(BASEDIR, "models/supercombo_fixed.thneed"),
                 os.path.join(BASEDIR, "models/supercombo.thneed"),
                 os.path.join(BASEDIR, "models/supercombo.dlc"))
-
-
