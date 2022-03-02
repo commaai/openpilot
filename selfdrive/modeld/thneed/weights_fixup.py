@@ -3,6 +3,7 @@ import os
 import struct
 import zipfile
 import numpy as np
+from tqdm import tqdm
 
 from common.basedir import BASEDIR
 from selfdrive.modeld.thneed.lib import load_thneed, save_thneed
@@ -67,10 +68,10 @@ def load_onnx_weights(fn):
   return onnx_layers
 """
 
-def weights_fixup():
+def weights_fixup(target, source, env):
   #onnx_layers = load_onnx_weights(os.path.join(BASEDIR, "models/supercombo.onnx"))
-  onnx_layers = load_dlc_weights(os.path.join(BASEDIR, "models/supercombo.dlc"))
-  jdat = load_thneed(os.path.join(BASEDIR, "models/supercombo.thneed"))
+  onnx_layers = load_dlc_weights(source[0])
+  jdat = load_thneed(source[1])
 
   bufs = {}
   for o in jdat['objects']:
@@ -92,8 +93,8 @@ def weights_fixup():
   assert len(thneed_layers) == len(onnx_layers)
 
   # fix up weights
-  for tl, ol in zip(thneed_layers, onnx_layers):
-    print(tl[0], ol[0])
+  for tl, ol in tqdm(zip(thneed_layers, onnx_layers), total=len(thneed_layers)):
+    #print(tl[0], ol[0])
     assert len(tl[1]) == len(ol[1])
     for o, onnx_weight in zip(tl[1], ol[1]):
       if o['arg_type'] == "image2d_t":
@@ -120,7 +121,7 @@ def weights_fixup():
         fixed_err = np.mean((new_weights.astype(np.float16).astype(np.float32) - new_weights)**2)
 
         assert (err/fixed_err) >= 1
-        print("   ", o['size'], onnx_weight.shape, o['row_pitch'], o['width'], o['height'], "err %.2fx better" % (err/fixed_err))
+        #print("   ", o['size'], onnx_weight.shape, o['row_pitch'], o['width'], o['height'], "err %.2fx better" % (err/fixed_err))
 
         obuf['data'] = new_weights.astype(np.float16).tobytes()
 
@@ -129,11 +130,12 @@ def weights_fixup():
         new_weights = np.zeros(o['size']//4, dtype=np.float32)
         new_weights[:onnx_weight.shape[0]] = onnx_weight
         assert new_weights.tobytes() == o['data']
-        print("   ", o['size'], onnx_weight.shape)
+        #print("   ", o['size'], onnx_weight.shape)
 
-  save_thneed(jdat, os.path.join(BASEDIR, "models/supercombo_fixed.thneed"))
+  save_thneed(jdat, target)
 
 if __name__ == "__main__":
-  weights_fixup()
+  weights_fixup(os.path.join(BASEDIR, "models/supercombo_fixed.thneed"),
+               [os.path.join(BASEDIR, "models/supercombo.dlc"), os.path.join(BASEDIR, "models/supercombo.thneed")])
 
 

@@ -74,11 +74,12 @@ if use_thneed and arch in ("aarch64", "larch64"):
   cenv = Environment(ENV={'LD_LIBRARY_PATH': f"{lib_paths}:{lenv['ENV']['LD_LIBRARY_PATH']}", 'KERNEL_PATH': kernel_path})
 
   kernels = [os.path.join(kernel_path, x) for x in os.listdir(kernel_path) if x.endswith(".cl")]
-  cenv.Command(fn + ".thneed", [fn + ".dlc", kernels, compiler], cmd)
+  cenv.Command(fn + "_badweights.thneed", [fn + ".dlc", kernels, compiler], cmd)
 
   from selfdrive.modeld.thneed.weights_fixup import weights_fixup
-  weights_fixup()
-  os.rename(fn + "_fixed.thneed", fn + ".thneed")
+  env = Environment(BUILDERS = {'WeightFixup' : Builder(action = weights_fixup)})
+  env.WeightFixup(target=fn + ".thneed", source=[fn+".dlc", fn+"_badweights.thneed"])
+
 
 lenv.Program('_dmonitoringmodeld', [
     "dmonitoringmodeld.cc",
