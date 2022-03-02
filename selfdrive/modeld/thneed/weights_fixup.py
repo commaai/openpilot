@@ -1,10 +1,52 @@
 #!/usr/bin/env python3
 import os
-from common.basedir import BASEDIR
+import struct
+import zipfile
 import numpy as np
 
+from common.basedir import BASEDIR
 from selfdrive.modeld.thneed.lib import load_thneed, save_thneed
 
+# this is junk code, but it doesn't have deps
+def load_dlc_weights(fn):
+  archive = zipfile.ZipFile(fn, 'r')
+  dlc_params = archive.read("model.params")
+
+  def extract(rdat):
+    idx = rdat.find(b"\x00\x00\x00\x09\x04\x00\x00\x00")
+    rdat = rdat[idx+8:]
+    ll = struct.unpack("I", rdat[0:4])[0]
+    buf = np.frombuffer(rdat[4:4+ll*4], dtype=np.float32)
+    rdat = rdat[4+ll*4:]
+    dims = struct.unpack("I", rdat[0:4])[0]
+    buf = buf.reshape(struct.unpack("I"*dims, rdat[4:4+dims*4]))
+    if len(buf.shape) == 4:
+      buf = np.transpose(buf, (3,2,0,1))
+    return buf
+
+  def parse(tdat):
+    ll = struct.unpack("I", tdat[0:4])[0] + 4
+    return (None, [extract(tdat[0:]), extract(tdat[ll:])])
+
+  ptr = 0x20
+  def r4():
+    nonlocal ptr
+    ret = struct.unpack("I", dlc_params[ptr:ptr+4])[0]
+    ptr += 4
+    return ret
+  ranges = []
+  cnt = r4()
+  for i in range(cnt):
+    o = r4() + ptr
+    # the header is 0xC
+    plen, is_4, is_2 = struct.unpack("III", dlc_params[o:o+0xC])
+    assert is_4 == 4 and is_2 == 2
+    ranges.append((o+0xC, o+plen+0xC))
+  ranges = sorted(ranges, reverse=True)
+
+  return [parse(dlc_params[s:e]) for s,e in ranges]
+
+"""
 def load_onnx_weights(fn):
   import onnx
   from onnx import numpy_helper
@@ -23,9 +65,11 @@ def load_onnx_weights(fn):
     if len(vals) > 0:
       onnx_layers.append((node.name, vals))
   return onnx_layers
+"""
 
 def weights_fixup():
-  onnx_layers = load_onnx_weights(os.path.join(BASEDIR, "models/supercombo.onnx"))
+  #onnx_layers = load_onnx_weights(os.path.join(BASEDIR, "models/supercombo.onnx"))
+  onnx_layers = load_dlc_weights(os.path.join(BASEDIR, "models/supercombo.dlc"))
   jdat = load_thneed(os.path.join(BASEDIR, "models/supercombo.thneed"))
 
   bufs = {}
