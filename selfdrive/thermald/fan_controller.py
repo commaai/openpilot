@@ -2,13 +2,13 @@
 
 import os
 from smbus2 import SMBus
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from common.realtime import DT_TRML
 from common.numpy_fast import interp
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.pid import PIController
 
-class BaseFanController:
+class BaseFanController(ABC):
   @abstractmethod
   def update(self, max_cpu_temp: float, ignition: bool) -> int:
     pass
