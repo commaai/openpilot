@@ -108,7 +108,7 @@ class CarController():
       # handle permit braking
       if (CS.out.gasPressed or 1. / DT_CTRL > (frame - self.last_gas_press_frame)) \
          or ((actuators.accel > - 1.95) and (2. / DT_CTRL > (frame - self.last_standstill_frame))) \
-         or ((actuators.accel > - 1.95) and (2. / DT_CTRL > (frame - self.last_zero_speed_frame))):
+         or (2. / DT_CTRL > (frame - self.last_zero_speed_frame)):
         self.permit_braking = False
       else:
         self.permit_braking = True
