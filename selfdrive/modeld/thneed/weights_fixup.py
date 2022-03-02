@@ -116,10 +116,16 @@ def weights_fixup(target, source_thneed, dlc):
         new_weights = np.zeros((o['height'], o['row_pitch']//2), dtype=np.float32)
         new_weights[:, :weights.shape[1]] = weights
 
+        # weights shouldn't be too far off
         err = np.mean((saved_weights.astype(np.float32) - new_weights)**2)
-        fixed_err = np.mean((new_weights.astype(np.float16).astype(np.float32) - new_weights)**2)
+        assert err < 1e-3
+        rerr = np.mean(np.abs((saved_weights.astype(np.float32) - new_weights)/(new_weights+1e-12)))
+        assert rerr < 0.5
 
+        # fix should improve things
+        fixed_err = np.mean((new_weights.astype(np.float16).astype(np.float32) - new_weights)**2)
         assert (err/fixed_err) >= 1
+
         #print("   ", o['size'], onnx_weight.shape, o['row_pitch'], o['width'], o['height'], "err %.2fx better" % (err/fixed_err))
 
         obuf['data'] = new_weights.astype(np.float16).tobytes()
