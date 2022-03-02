@@ -496,6 +496,8 @@ int Localizer::locationd_thread() {
   PubMaster pm({ "liveLocationKalman" });
   SubMaster sm(service_list, nullptr, { "gpsLocationExternal" });
 
+  uint64_t cnt = 0;
+
   while (!do_exit) {
     sm.update();
     if (sm.allAliveAndValid()){
@@ -518,7 +520,7 @@ int Localizer::locationd_thread() {
       kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK);
       pm.send("liveLocationKalman", bytes.begin(), bytes.size());
 
-      if (sm.frame % 1200 == 0 && gpsOK) {  // once a minute
+      if (cnt % 1200 == 0 && gpsOK) {  // once a minute
         VectorXd posGeo = this->get_position_geodetic();
         std::string lastGPSPosJSON = util::string_format(
           "{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}", posGeo(0), posGeo(1), posGeo(2));
@@ -527,6 +529,7 @@ int Localizer::locationd_thread() {
           Params().put("LastGPSPosition", gpsjson);
         }, lastGPSPosJSON).detach();
       }
+      cnt++;
     }
   }
   return 0;
