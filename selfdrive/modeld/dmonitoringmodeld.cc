@@ -20,8 +20,10 @@ void run_model(DMonitoringModelState &model, VisionIpcClient &vipc_client) {
     VisionBuf *buf = vipc_client.recv(&extra);
     if (buf == nullptr) continue;
 
+    // float some_calib = get_calib();
+    float some_calib[CALIB_LEN] = {0};
     double t1 = millis_since_boot();
-    DMonitoringResult res = dmonitoring_eval_frame(&model, buf->addr, buf->width, buf->height);
+    DMonitoringResult res = dmonitoring_eval_frame(&model, buf->addr, buf->width, buf->height, some_calib);
     double t2 = millis_since_boot();
 
     // send dm packet

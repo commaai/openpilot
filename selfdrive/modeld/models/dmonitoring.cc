@@ -43,6 +43,8 @@ void dmonitoring_init(DMonitoringModelState* s) {
 #else
   s->m = new SNPEModel("../../models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
 #endif
+
+  s->m->addCalib(s->calib, CALIB_LEN);
 }
 
 static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int height) {
@@ -65,7 +67,7 @@ void crop_yuv(uint8_t *raw, int width, int height, uint8_t *y, uint8_t *u, uint8
   }
 }
 
-DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
+DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, float *calib) {
   Rect crop_rect;
   if (width == TICI_CAM_WIDTH) {
     const int cropped_height = tici_dm_crop::width / 1.33;
@@ -167,6 +169,9 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
 
   double t1 = millis_since_boot();
   s->m->addImage(net_input_buf, yuv_buf_len);
+  for (int i = 0; i < CALIB_LEN; i++) {
+    s->calib[i] = calib[i];
+  }
   s->m->execute();
   double t2 = millis_since_boot();
 

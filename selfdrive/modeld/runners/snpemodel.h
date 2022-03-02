@@ -71,4 +71,6 @@ private:
   std::unique_ptr<zdl::DlSystem::IUserBuffer> trafficConventionBuffer;
   float *desire;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> desireBuffer;
+  float *calib;
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> calibBuffer;
 };
