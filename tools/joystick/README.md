@@ -22,6 +22,8 @@ The available buttons and axes will print showing their key mappings. In general
 ### Joystick on your comma three
 
 Plug the joystick into your comma three aux USB-C port. Then, SSH into the device and start `joystickd.py`.
+to swap axes run with --swap_axes
+to control angle run with --angle_mode
 
 ### Joystick on your laptop
 
@@ -32,6 +34,8 @@ In order to use a joystick over the network, we need to run joystickd locally fr
    ```shell
    # on your comma device
    echo -n "1" > /data/params/d/JoystickDebugMode
+   #for controlling angle instead of torque
+   echo -n "1" > /data/params/d/JoystickAngleMode
    ```
 3. Run bridge with your laptop's IP address. This republishes the `testJoystick` packets sent from your laptop so that openpilot can receive them:
    ```shell
@@ -43,6 +47,8 @@ In order to use a joystick over the network, we need to run joystickd locally fr
    # on your laptop
    export ZMQ=1
    tools/joystick/joystickd.py
+   # to swap axes:
+   tools/joystick/joystickd.py --swap_axes
    ```
 
 ---

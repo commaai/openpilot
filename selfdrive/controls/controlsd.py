@@ -71,6 +71,7 @@ class Controls:
 
     params = Params()
     self.joystick_mode = params.get_bool("JoystickDebugMode")
+    self.joystick_angle_mode = params.get_bool("JoystickAngleMode")
     joystick_packet = ['testJoystick'] if self.joystick_mode else []
 
     self.sm = sm
@@ -490,28 +491,32 @@ class Controls:
       self.LaC.reset()
       self.LoC.reset(v_pid=CS.vEgo)
 
-    if not self.joystick_mode:
-      # accel PID loop
-      pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
-      t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
-      actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
+    # accel PID loop
+    pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
+    t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
+    actuators.accel = self.LoC.update(self.active, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
 
-      # Steering PID loop and lateral MPC
-      lat_active = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and CS.vEgo > self.CP.minSteerSpeed
+    # Steering PID loop and lateral MPC
+    lat_active = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and CS.vEgo > self.CP.minSteerSpeed
+    if self.joystick_angle_mode:
+        desired_curvature = -self.VM.calc_curvature(clip(self.sm['testJoystick'].axes[1], -1, 1)*45, CS.vEgo, params.roll)
+        desired_curvature_rate = 0
+    else:
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
                                                                              lat_plan.curvatureRates)
-      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(lat_active, CS, self.CP, self.VM, params, self.last_actuators,
+    actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(lat_active, CS, self.CP, self.VM, params, self.last_actuators,
                                                                              desired_curvature, desired_curvature_rate)
-    else:
+    if self.joystick_mode and not self.joystick_angle_mode:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
-        actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
-
-        steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
-        # max angle is 45 for angle-based cars
-        actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
+        if self.sm['testJoystick'].axes[0] != 0:
+          actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
+        if self.sm['testJoystick'].axes[1] != 0:
+          steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
+          # max angle is 45 for angle-based cars
+          actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
 
         lac_log.active = True
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
@@ -660,7 +665,7 @@ class Controls:
     controlsState.canErrorCounter = self.can_rcv_error_counter
 
     lat_tuning = self.CP.lateralTuning.which()
-    if self.joystick_mode:
+    if self.joystick_mode and not self.joystick_angle_mode:
       controlsState.lateralControlState.debugState = lac_log
     elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       controlsState.lateralControlState.angleState = lac_log

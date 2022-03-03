@@ -57,7 +57,7 @@ class Joystick:
     return True
 
 
-def joystick_thread(use_keyboard):
+def joystick_thread(use_keyboard, swap):
   Params().put_bool('JoystickDebugMode', True)
   joystick_sock = messaging.pub_sock('testJoystick')
   joystick = Keyboard() if use_keyboard else Joystick()
@@ -67,6 +67,10 @@ def joystick_thread(use_keyboard):
     if ret:
       dat = messaging.new_message('testJoystick')
       dat.testJoystick.axes = [joystick.axes_values[a] for a in joystick.axes_values]
+      if swap:
+        swap_val = dat.testJoystick.axes[0]
+        dat.testJoystick.axes[0] = dat.testJoystick.axes[1]
+        dat.testJoystick.axes[1] = swap_val
       dat.testJoystick.buttons = [joystick.cancel]
       joystick_sock.send(dat.to_bytes())
       print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
@@ -77,11 +81,16 @@ if __name__ == '__main__':
                                                'openpilot must be offroad before starting joysticked.',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument('--keyboard', action='store_true', help='Use your keyboard instead of a joystick')
+  parser.add_argument('--swap_axes', action='store_true', help='switch gas/steer')
+  parser.add_argument('--angle_mode', action='store_true', help='controls set desired angle')
   args = parser.parse_args()
 
   if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ:
     print("The car must be off before running joystickd.")
     exit()
+
+  if args.angle_mode:
+    Params().put_bool('JoystickAngleMode', True)
 
   print()
   if args.keyboard:
@@ -93,4 +102,4 @@ if __name__ == '__main__':
   else:
     print('Using joystick, make sure to run cereal/messaging/bridge on your device if running over the network!')
 
-  joystick_thread(args.keyboard)
+  joystick_thread(args.keyboard, args.swap_axes)
