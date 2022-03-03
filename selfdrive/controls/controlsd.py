@@ -498,7 +498,7 @@ class Controls:
 
     # Steering PID loop and lateral MPC
     lat_active = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and CS.vEgo > self.CP.minSteerSpeed
-    if self.joystick_angle_mode:
+    if self.joystick_angle_mode and not self.CP.lateralTuning.which() == 'indi':
         desired_curvature = -self.VM.calc_curvature(clip(self.sm['testJoystick'].axes[1], -1, 1)*45, CS.vEgo, params.roll)
         desired_curvature_rate = 0
     else:

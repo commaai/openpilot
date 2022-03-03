@@ -91,6 +91,7 @@ if __name__ == '__main__':
 
   if args.angle_mode:
     Params().put_bool('JoystickAngleMode', True)
+    print('INDI control requires a desired angle and angle rate. Angle Mode will not be used on INDI')
 
   print()
   if args.keyboard:
