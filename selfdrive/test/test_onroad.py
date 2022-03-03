@@ -216,8 +216,9 @@ class TestOnroad(unittest.TestCase):
       ts = [getattr(getattr(m, s), "solverExecutionTime") for m in self.lr if m.which() == s]
       self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
-      result += f"'{s}' execution time: {min(ts)}\n"
-      result += f"'{s}' avg execution time: {np.mean(ts)}\n"
+      result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
+      result += f"'{s}' execution time: max  {max(ts):.5f}s\n"
+      result += f"'{s}' execution time: mean {np.mean(ts):.5f}s\n"
     result += "------------------------------------------------\n"
     print(result)
 
@@ -237,8 +238,8 @@ class TestOnroad(unittest.TestCase):
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
       self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
-      result += f"'{s}' execution time: {min(ts)}\n"
-      result += f"'{s}' avg execution time: {np.mean(ts)}\n"
+      result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
+      result += f"'{s}' execution time: mean {np.mean(ts):.5f}s\n"
     result += "------------------------------------------------\n"
     print(result)
 
