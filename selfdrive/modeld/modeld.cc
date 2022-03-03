@@ -53,8 +53,7 @@ mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera
 
 uint64_t frame_id_from_ts(const VisionIpcBufExtra &extra) {
   uint64_t frame_ts = Hardware::TICI() ? extra.timestamp_sof : extra.timestamp_eof;
-  uint64_t frame_ts_ms = frame_ts / 1000000ULL;
-  return std::round((double)frame_ts_ms / 50.0);
+  return (frame_ts + 25000000) / 50000000;
 }
 
 
