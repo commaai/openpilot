@@ -51,6 +51,13 @@ mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera
   return matmul3(yuv_transform, transform);
 }
 
+uint64_t frame_id_from_ts(const VisionIpcBufExtra &extra) {
+  uint64_t frame_ts = Hardware::TICI() ? extra.timestamp_sof : extra.timestamp_eof;
+  uint64_t frame_ts_ms = frame_ts / 1000000ULL;
+  return std::round((double)frame_ts_ms / 50.0);
+}
+
+
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
@@ -78,14 +85,8 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     // log frame id in model packet
 
     // Keep receiving frames until we are at least 1 frame ahead of previous extra frame
-    while (meta_main.frame_id <= meta_extra.frame_id) {
+    while (frame_id_from_ts(meta_main) <= frame_id_from_ts(meta_extra)) {
       buf_main = vipc_client_main.recv(&meta_main);
-      if (meta_main.frame_id <= meta_extra.frame_id) {
-        LOGE("main camera behind! main: %d (%.5f), extra: %d (%.5f)",
-          meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
-          meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
-      }
-
       if (buf_main == nullptr)  break;
     }
 
@@ -98,20 +99,14 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       // Keep receiving extra frames until frame id matches main camera
       do {
         buf_extra = vipc_client_extra.recv(&meta_extra);
-
-        if (meta_main.frame_id > meta_extra.frame_id) {
-          LOGE("extra camera behind! main: %d (%.5f), extra: %d (%.5f)",
-            meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
-            meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
-        }
-      } while (buf_extra != nullptr && meta_main.frame_id > meta_extra.frame_id);
+      } while (buf_extra != nullptr && frame_id_from_ts(meta_main) > frame_id_from_ts(meta_extra));
 
       if (buf_extra == nullptr) {
         LOGE("vipc_client_extra no frame");
         continue;
       }
 
-      if (meta_main.frame_id != meta_extra.frame_id || std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
+      if (std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
         LOGE("frames out of sync! main: %d (%.5f), extra: %d (%.5f)",
           meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
           meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
