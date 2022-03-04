@@ -336,6 +336,7 @@ selfdrive/sensord/sensord
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
+selfdrive/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
 selfdrive/test/helpers.py
@@ -423,6 +424,7 @@ selfdrive/modeld/transforms/transform.cc
 selfdrive/modeld/transforms/transform.h
 selfdrive/modeld/transforms/transform.cl
 
+selfdrive/modeld/thneed/*.py
 selfdrive/modeld/thneed/thneed.*
 selfdrive/modeld/thneed/serialize.cc
 selfdrive/modeld/thneed/compile.cc

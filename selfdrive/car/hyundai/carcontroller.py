@@ -55,7 +55,7 @@ class CarController():
 
     # disable when temp fault is active, or below LKA minimum speed
     # TODO: do these checks in controlsd
-    lkas_active = actuators.latActive and not CS.out.steerWarning and CS.out.vEgo >= CS.CP.minSteerSpeed
+    lkas_active = actuators.latActive and not CS.out.steerFaultTemporary and CS.out.vEgo >= CS.CP.minSteerSpeed
 
     if not lkas_active:
       apply_steer = 0
