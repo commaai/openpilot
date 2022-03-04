@@ -51,9 +51,8 @@ mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera
   return matmul3(yuv_transform, transform);
 }
 
-uint64_t frame_id_from_ts(const VisionIpcBufExtra &extra) {
-  uint64_t frame_ts = Hardware::TICI() ? extra.timestamp_sof : extra.timestamp_eof;
-  return (frame_ts + 25000000) / 50000000;
+static uint64_t get_ts(const VisionIpcBufExtra &extra) {
+  return Hardware::TICI() ? extra.timestamp_sof : extra.timestamp_eof;
 }
 
 
@@ -80,11 +79,8 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
   VisionIpcBufExtra meta_extra = {0};
 
   while (!do_exit) {
-    // TODO: change sync logic to use timestamp start of frame in case camerad skips a frame
-    // log frame id in model packet
-
     // Keep receiving frames until we are at least 1 frame ahead of previous extra frame
-    while (frame_id_from_ts(meta_main) <= frame_id_from_ts(meta_extra)) {
+    while (get_ts(meta_main) < get_ts(meta_extra) + 25000000ULL) {
       buf_main = vipc_client_main.recv(&meta_main);
       if (buf_main == nullptr)  break;
     }
@@ -98,7 +94,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       // Keep receiving extra frames until frame id matches main camera
       do {
         buf_extra = vipc_client_extra.recv(&meta_extra);
-      } while (buf_extra != nullptr && frame_id_from_ts(meta_main) > frame_id_from_ts(meta_extra));
+      } while (buf_extra != nullptr && get_ts(meta_main) > get_ts(meta_extra) + 25000000ULL);
 
       if (buf_extra == nullptr) {
         LOGE("vipc_client_extra no frame");
