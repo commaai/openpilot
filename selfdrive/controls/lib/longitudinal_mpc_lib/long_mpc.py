@@ -27,7 +27,10 @@ U_DIM = 1
 PARAM_DIM = 2
 COST_E_DIM = 5
 COST_DIM = COST_E_DIM + 1
-CONSTR_DIM = 3
+
+XBOUND_DIM = 2
+HCONSTR_DIM = 1
+CONSTR_DIM = XBOUND_DIM + HCONSTR_DIM
 
 X_EGO_OBSTACLE_COST = 3.
 X_EGO_COST = 0.
@@ -141,9 +144,7 @@ def gen_long_mpc_solver():
   # Constraints on speed, acceleration and desired distance to
   # the obstacle, which is treated as a slack constraint so it
   # behaves like an asymmetrical cost.
-  constraints = vertcat(v_ego,
-                        a_ego,
-                        ((x_obstacle - x_ego) - (3/4) * (desired_dist_comfort)) / (v_ego + 10.))
+  constraints = vertcat(((x_obstacle - x_ego) - (3/4) * (desired_dist_comfort)) / (v_ego + 10.))
   ocp.model.con_h_expr = constraints
 
   x0 = np.zeros(X_DIM)
@@ -157,9 +158,16 @@ def gen_long_mpc_solver():
   ocp.cost.Zu = cost_weights
   ocp.cost.zu = cost_weights
 
-  ocp.constraints.lh = np.array([0.0, -1.2, 0.0])
-  ocp.constraints.uh = np.array([1e4, 1.2, 1e4])
-  ocp.constraints.idxsh = np.arange(CONSTR_DIM)
+  # constraint: bound on v and a
+  ocp.constraints.idxbx = np.array([1, 2])
+  ocp.constraints.lbx = np.array([0.0, -1.2])
+  ocp.constraints.ubx = np.array([1e4, 1.2])
+  ocp.constraints.idxsbx = np.arange(XBOUND_DIM)
+
+  # obstacle constraint
+  ocp.constraints.lh = np.array([0.0])
+  ocp.constraints.uh = np.array([1e4])
+  ocp.constraints.idxsh = np.arange(HCONSTR_DIM)
 
   # The HPIPM solver can give decent solutions even when it is stopped early
   # Which is critical for our purpose where compute time is strictly bounded
@@ -240,7 +248,8 @@ class LongitudinalMpc:
     # Set L2 slack cost on lower bound constraints
     Zl = np.array([LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST])
     Zu = np.array([0.0, LIMIT_COST, 0.0])
-    for i in range(N):
+    self.solver.cost_set(0, 'Zl', np.array([DANGER_ZONE_COST]))
+    for i in range(1, N):
       self.solver.cost_set(i, 'Zl', Zl)
       self.solver.cost_set(i, 'Zu', Zu)
 
@@ -255,7 +264,8 @@ class LongitudinalMpc:
     # Set L2 slack cost on lower bound constraints
     Zl = np.array([LIMIT_COST, LIMIT_COST, 0.0])
     Zu = np.array([0.0, LIMIT_COST, 0.0])
-    for i in range(N):
+    self.solver.cost_set(0, 'Zl', np.array([DANGER_ZONE_COST]))
+    for i in range(1, N):
       self.solver.cost_set(i, 'Zl', Zl)
       self.solver.cost_set(i, 'Zu', Zu)
 
@@ -355,13 +365,11 @@ class LongitudinalMpc:
       self.solver.set(i, 'p', self.params[i])
 
     # set bounds (only accel limits change)
-    uh = 1e4*np.ones(CONSTR_DIM)
-    lh = np.zeros(CONSTR_DIM)
-    lh[1] = self.a_min
-    uh[1] = self.a_max
-    for i in range(N):
-      self.solver.constraints_set(i, 'lh', lh)
-      self.solver.constraints_set(i, 'uh', uh)
+    lbx = np.array([0.0, self.a_min])
+    ubx = np.array([1e4, self.a_max])
+    for i in range(1, N):
+      self.solver.constraints_set(i, 'lbx', lbx)
+      self.solver.constraints_set(i, 'ubx', ubx)
 
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
