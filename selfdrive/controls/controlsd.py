@@ -498,7 +498,7 @@ class Controls:
 
     # Steering PID loop and lateral MPC
     lat_active = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and CS.vEgo > self.CP.minSteerSpeed
-    if self.joystick_angle_mode and not self.CP.lateralTuning.which() == 'indi':
+    if self.joystick_angle_mode and self.sm.rcv_frame['testJoystick'] > 0 and not self.CP.lateralTuning.which() == 'indi':
         desired_curvature = -self.VM.calc_curvature(clip(self.sm['testJoystick'].axes[1], -1, 1)*45, CS.vEgo, params.roll)
         desired_curvature_rate = 0
     else:
@@ -510,6 +510,7 @@ class Controls:
                                                                              desired_curvature, desired_curvature_rate)
     if self.joystick_mode and not self.joystick_angle_mode:
       lac_log = log.ControlsState.LateralDebugState.new_message()
+      lac_log.saturated = False
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
         if self.sm['testJoystick'].axes[0] != 0:
           actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
@@ -517,6 +518,7 @@ class Controls:
           steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
           # max angle is 45 for angle-based cars
           actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
+          lac_log.saturated = abs(steer) >= 0.9
 
         lac_log.active = True
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
