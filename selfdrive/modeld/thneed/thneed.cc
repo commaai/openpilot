@@ -70,7 +70,7 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       struct kgsl_gpuobj_sync *cmd = (struct kgsl_gpuobj_sync *)argp;
       struct kgsl_gpuobj_sync_obj *objs = (struct kgsl_gpuobj_sync_obj *)(cmd->objs);
 
-      if (thneed->record & THNEED_DEBUG) {
+      if (thneed->record & THNEED_VERBOSE_DEBUG) {
         printf("IOCTL_KGSL_GPUOBJ_SYNC count:%d ", cmd->count);
         for (int i = 0; i < cmd->count; i++) {
           printf(" -- offset:0x%lx len:0x%lx id:%d op:%d  ", objs[i].offset, objs[i].length, objs[i].id, objs[i].op);
