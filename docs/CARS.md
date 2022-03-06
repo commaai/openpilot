@@ -169,7 +169,7 @@
 | Volkswagen| T-Cross 2021<sup>4</sup>        | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| T-Roc 2021<sup>4</sup>          | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Taos 2022<sup>4</sup>           | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Tiguan 2020                     | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Tiguan 2020-22<sup>4</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Touran 2017                     | Driver Assistance | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
