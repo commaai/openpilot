@@ -71,7 +71,8 @@ if use_thneed and arch in ("aarch64", "larch64"):
 
   lib_paths = ':'.join(Dir(p).abspath for p in lenv["LIBPATH"])
   kernel_path = os.path.join(Dir('.').abspath, "thneed", "kernels")
-  cenv = Environment(ENV={'LD_LIBRARY_PATH': f"{lib_paths}:{lenv['ENV']['LD_LIBRARY_PATH']}", 'KERNEL_PATH': kernel_path})
+  env_lib_paths = ':'.join(lenv['ENV']['LD_LIBRARY_PATH'])
+  cenv = Environment(ENV={'LD_LIBRARY_PATH': f"{lib_paths}:{env_lib_paths}", 'KERNEL_PATH': kernel_path})
 
   kernels = [os.path.join(kernel_path, x) for x in os.listdir(kernel_path) if x.endswith(".cl")]
   cenv.Command(fn + "_badweights.thneed", [fn + ".dlc", kernels, compiler], cmd)
