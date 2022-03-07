@@ -480,8 +480,8 @@ class Controls:
 
     actuators = car.CarControl.Actuators.new_message()
     # Check which actuators are enabled
-    actuators.latActive = self.enabled and not CS.gasPressed
-    actuators.longActive = self.enabled and not CS.gasPressed
+    actuators.latActive = self.active
+    actuators.longActive = self.active
     actuators.longControlState = self.LoC.long_control_state
 
     if CS.leftBlinker or CS.rightBlinker:
