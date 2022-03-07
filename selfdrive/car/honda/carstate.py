@@ -198,9 +198,8 @@ class CarState(CarStateBase):
 
     steer_status = self.steer_status_values[cp.vl["STEER_STATUS"]["STEER_STATUS"]]
     ret.steerFaultPermanent = steer_status not in ("NORMAL", "NO_TORQUE_ALERT_1", "NO_TORQUE_ALERT_2", "LOW_SPEED_LOCKOUT", "TMP_FAULT")
-    # NO_TORQUE_ALERT_2 can be caused by bump OR steering nudge from driver
-    self.steer_not_allowed = steer_status not in ("NORMAL", "NO_TORQUE_ALERT_2")
     # LOW_SPEED_LOCKOUT is not worth a warning
+    # NO_TORQUE_ALERT_2 can be caused by bump or steering nudge from driver
     ret.steerFaultTemporary = steer_status not in ("NORMAL", "LOW_SPEED_LOCKOUT", "NO_TORQUE_ALERT_2")
 
     if self.CP.openpilotLongitudinalControl:
