@@ -20,12 +20,6 @@ fi
 umount /data/safe_staging/merged/ || true
 sudo umount /data/safe_staging/merged/ || true
 
-if [ -f "/EON" ]; then
-  rm -rf /data/core
-  rm -rf /data/neoupdate
-  rm -rf /data/safe_staging
-fi
-
 export KEYS_PARAM_PATH="/data/params/d/GithubSshKeys"
 if [ -f "/EON" ]; then
   export KEYS_PATH="/data/data/com.termux/files/home/setup_keys"
@@ -34,9 +28,14 @@ if [ -f "/EON" ]; then
   if ! grep -F "$KEYS_PATH" /usr/etc/ssh/sshd_config; then
     echo "setting up keys"
     mount -o rw,remount /system
-    sed -i 's,$KEYS_PARAM_PATH,$KEYS_PATH,' /usr/etc/ssh/sshd_config
+    sed -i "s,$KEYS_PARAM_PATH,$KEYS_PATH," /usr/etc/ssh/sshd_config
     mount -o ro,remount /system
   fi
+
+  # these can get pretty big
+  rm -rf /data/core
+  rm -rf /data/neoupdate
+  rm -rf /data/safe_staging
 else
   export KEYS_PATH="/usr/comma/setup_keys"
   export CONTINUE_PATH="/data/continue.sh"
@@ -45,7 +44,7 @@ else
     echo "setting up keys"
     sudo mount -o rw,remount /
     sudo systemctl enable ssh
-    sudo sed -i 's,$KEYS_PARAM_PATH,$KEYS_PATH,' /etc/ssh/sshd_config
+    sudo sed -i "s,$KEYS_PARAM_PATH,$KEYS_PATH," /etc/ssh/sshd_config
     sudo mount -o ro,remount /
   fi
 fi
