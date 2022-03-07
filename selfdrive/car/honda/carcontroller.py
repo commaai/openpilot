@@ -152,8 +152,6 @@ class CarController():
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_steer = int(interp(-actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
 
-    lkas_active = c.latActive
-
     # Send CAN commands.
     can_sends = []
 
@@ -165,7 +163,7 @@ class CarController():
     # Send steering command.
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
-      lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
+      c.latActive, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
 
     stopping = actuators.longControlState == LongCtrlState.stopping
 

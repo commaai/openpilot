@@ -482,8 +482,8 @@ class Controls:
     actuators.longControlState = self.LoC.long_control_state
 
     CC = car.CarControl.new_message()
-    # Check which actuators can be enabled
     CC.enabled = self.enabled
+    # Check which actuators are enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and CS.vEgo > self.CP.minSteerSpeed
     CC.longActive = self.active
 
