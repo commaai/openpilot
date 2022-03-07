@@ -314,13 +314,14 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   }
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                    const ModelOutput &net_outputs, uint64_t timestamp_eof,
                    float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
   auto framed = msg.initEvent(valid).initModelV2();
   framed.setFrameId(vipc_frame_id);
+  framed.setFrameIdExtra(vipc_frame_id_extra);
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
