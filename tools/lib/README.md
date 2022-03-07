@@ -28,46 +28,24 @@ lr = LogReader(r.log_paths()[1])
 
 # print all the steering angles values from the log
 for msg in lr:
-  try:
-    typ = msg.which()
-  except:
-    continue
-  if typ == "carState":
+  if msg.which() == "carState":
     print(msg.carState.steeringAngleDeg)
 ```
 
-Alternatively, use `MultiLogIterator` to read the entire route, get timestamps:
+### MultiLogIterator
+
+`MultiLogIterator` is similar to `LogReader`, but reads multiple logs. 
 
 ```python
 from tools.lib.route import Route
 from tools.lib.logreader import MultiLogIterator
 
+# setup a MultiLogIterator to read all the logs in the route
 r = Route("4cf7a6ad03080c90|2021-09-29--13-46-36")
+lr = MultiLogIterator(r.log_paths())
 
-# setup a MultiLogIterator to read the route
-lr = MultiLogIterator(r.log_paths(), wraparound=False)
-
-# print out all the messages in the route
-import codecs
-codecs.register_error("strict", codecs.backslashreplace_errors)
-while True:
-  msg = next(lr)
-  print(msg)
-
-# print all CAN messages with timestamp
-while True:
-  route_time = lr.tell()
-  try:
-    msg = next(lr)
-  except StopIteration:
-    break
-  except:
-    raise
-  try:
-    typ = msg.which()
-  except:
-    continue
-  if typ == "can":
-    for CAN_msg in msg.can:
-      print(f'{route_time},{CAN_msg.address},{CAN_msg.src},{CAN_msg.dat.hex()}')
+# print all the steering angles values from all the logs in the route
+for msg in lr:
+  if msg.which() == "carState":
+    print(msg.carState.steeringAngleDeg)
 ```
