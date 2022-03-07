@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
   #define OUTPUT_SIZE 0x10000
 
   float *output = (float*)calloc(OUTPUT_SIZE, sizeof(float));
-  SNPEModel mdl(argv[1], output, 0, USE_GPU_RUNTIME, USE_EXTRA);
+  SNPEModel mdl(argv[1], output, 0, USE_GPU_RUNTIME, true);
 
   float state[TEMPORAL_SIZE] = {0};
   float desire[DESIRE_LEN] = {0};
@@ -25,9 +25,7 @@ int main(int argc, char* argv[]) {
   mdl.addDesire(desire, DESIRE_LEN);
   mdl.addTrafficConvention(traffic_convention, TRAFFIC_CONVENTION_LEN);
   mdl.addImage(input, 0);
-  if (USE_EXTRA) {
-    mdl.addExtra(extra, 0);
-  }
+  mdl.addExtra(extra, 0);
 
   // first run
   printf("************** execute 1 **************\n");
@@ -37,6 +35,14 @@ int main(int argc, char* argv[]) {
   // save model
   bool save_binaries = (argc > 3) && (strcmp(argv[3], "--binary") == 0);
   mdl.thneed->save(argv[2], save_binaries);
+
+  // test model
+  auto thneed = new Thneed(true);
+  thneed->record &= ~THNEED_RECORD;
+  thneed->load(argv[2]);
+  thneed->clexec();
+  thneed->find_inputs_outputs();
+
   return 0;
 }
 

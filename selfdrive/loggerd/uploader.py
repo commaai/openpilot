@@ -213,6 +213,8 @@ class Uploader():
     return msg
 
 def uploader_fn(exit_event):
+  clear_locks(ROOT)
+
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf8')
 

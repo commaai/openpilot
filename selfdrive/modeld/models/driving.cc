@@ -26,20 +26,18 @@ constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> 
   return kj::ArrayPtr(arr.data(), arr.size());
 }
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context, bool use_extra) {
+void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->frame = new ModelFrame(device_id, context);
   s->wide_frame = new ModelFrame(device_id, context);
 
 #ifdef USE_THNEED
-  s->m = std::make_unique<ThneedModel>(use_extra ? "../../models/big_supercombo.thneed" : "../../models/supercombo.thneed",
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
+  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed",
 #elif USE_ONNX_MODEL
-  s->m = std::make_unique<ONNXModel>(use_extra ? "../../models/big_supercombo.onnx" : "../../models/supercombo.onnx",
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
+  s->m = std::make_unique<ONNXModel>("../../models/supercombo.onnx",
 #else
-  s->m = std::make_unique<SNPEModel>(use_extra ? "../../models/big_supercombo.dlc" : "../../models/supercombo.dlc",
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
+  s->m = std::make_unique<SNPEModel>("../../models/supercombo.dlc",
 #endif
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, true);
 
 #ifdef TEMPORAL
   s->m->addRecurrent(&s->output[OUTPUT_SIZE], TEMPORAL_SIZE);
@@ -316,13 +314,14 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   }
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                    const ModelOutput &net_outputs, uint64_t timestamp_eof,
                    float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
   auto framed = msg.initEvent(valid).initModelV2();
   framed.setFrameId(vipc_frame_id);
+  framed.setFrameIdExtra(vipc_frame_id_extra);
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
