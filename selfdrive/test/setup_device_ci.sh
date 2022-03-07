@@ -26,12 +26,29 @@ if [ -f "/EON" ]; then
   rm -rf /data/safe_staging
 fi
 
-export KEYS_PATH="/usr/comma/setup_keys"
-export CONTINUE_PATH="/data/continue.sh"
+export KEYS_PARAM_PATH="/usr/comma/setup_keys"
 if [ -f "/EON" ]; then
   export KEYS_PATH="/data/data/com.termux/files/home/setup_keys"
   export CONTINUE_PATH="/data/data/com.termux/files/continue.sh"
+
+  if ! grep -F "$KEYS_PATH" /usr/etc/ssh/sshd_config; then
+    echo "setting up keys"
+    mount -o rw,remount /system
+    sed -i 's,$KEYS_PARAM_PATH,$KEYS_PATH,' /usr/etc/ssh/sshd_config
+    mount -o ro,remount /system
+  fi
+else
+  export KEYS_PATH="/usr/comma/setup_keys"
+  export CONTINUE_PATH="/data/continue.sh"
+
+  if ! grep -F "$KEYS_PATH" /etc/ssh/sshd_config; then
+    echo "setting up keys"
+    mount -o rw,remount /
+    sed -i 's,$KEYS_PARAM_PATH,$KEYS_PATH,' /etc/ssh/sshd_config
+    mount -o ro,remount /
+  fi
 fi
+
 tee $CONTINUE_PATH << EOF
 #!/usr/bin/bash
 
@@ -39,7 +56,6 @@ PARAMS_ROOT="/data/params/d"
 
 while true; do
   mkdir -p \$PARAMS_ROOT
-  cp $KEYS_PATH \$PARAMS_ROOT/GithubSshKeys
   echo -n 1 > \$PARAMS_ROOT/SshEnabled
   sleep 1m
 done
