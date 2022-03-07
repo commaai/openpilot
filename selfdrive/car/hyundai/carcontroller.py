@@ -54,9 +54,9 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # disable when temp fault is active, or below LKA minimum speed
-    lkas_active = actuators.latActive and not CS.out.steerFaultTemporary and CS.out.vEgo >= CS.CP.minSteerSpeed
+    lkas_active = c.latActive
 
-    if not lkas_active:
+    if not c.latActive:
       apply_steer = 0
 
     self.apply_steer_last = apply_steer
@@ -89,7 +89,7 @@ class CarController():
 
     if frame % 2 == 0 and CS.CP.openpilotLongitudinalControl:
       lead_visible = False
-      accel = actuators.accel if actuators.longActive else 0
+      accel = actuators.accel if c.longActive else 0
 
       jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
 

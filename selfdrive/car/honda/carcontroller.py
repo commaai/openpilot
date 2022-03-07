@@ -112,12 +112,12 @@ class CarController():
 
     self.params = CarControllerParams(CP)
 
-  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd,
+  def update(self, c, enabled, CS, frame, actuators, pcm_cancel_cmd,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
 
-    if actuators.longActive:
+    if c.longActive:
       accel = actuators.accel
       gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, CS.CP.carFingerprint)
     else:
@@ -152,7 +152,7 @@ class CarController():
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_steer = int(interp(-actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
 
-    lkas_active = actuators.latActive
+    lkas_active = c.latActive
 
     # Send CAN commands.
     can_sends = []
@@ -217,7 +217,7 @@ class CarController():
         if CS.CP.carFingerprint in HONDA_BOSCH:
           self.accel = clip(accel, P.BOSCH_ACCEL_MIN, P.BOSCH_ACCEL_MAX)
           self.gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
-          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, actuators.longActive, accel, self.gas, idx, stopping, CS.CP.carFingerprint))
+          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, c.longActive, accel, self.gas, idx, stopping, CS.CP.carFingerprint))
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * P.NIDEC_BRAKE_MAX, 0, P.NIDEC_BRAKE_MAX - 1))
@@ -236,7 +236,7 @@ class CarController():
             # This prevents unexpected pedal range rescaling
             # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected
             # when you do enable.
-            if actuators.longActive:
+            if c.longActive:
               self.gas = clip(gas_mult * (gas - brake + wind_brake*3/4), 0., 1.)
             else:
               self.gas = 0.0
