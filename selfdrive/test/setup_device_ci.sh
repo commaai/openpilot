@@ -26,7 +26,7 @@ if [ -f "/EON" ]; then
   rm -rf /data/safe_staging
 fi
 
-export KEYS_PARAM_PATH="/usr/comma/setup_keys"
+export KEYS_PARAM_PATH="/data/params/d/GithubSshKeys"
 if [ -f "/EON" ]; then
   export KEYS_PATH="/data/data/com.termux/files/home/setup_keys"
   export CONTINUE_PATH="/data/data/com.termux/files/continue.sh"
