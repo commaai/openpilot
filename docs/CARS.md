@@ -12,7 +12,7 @@ Tier Criteria:
 - Longitudinal to 0mph - openpilot can brake and accelerate down to 0 mph
 - Steering to 0mph - openpilot can actuate the steering wheel down to 0 mph
 - Good Steering Torque - car has enough steering torque for comfortable highway driving
-- Well Supported - mainline software support, hardness hardware sold by comma.ai
+- Well Supported - mainline software support, harness hardware sold by comma.ai
 
 **All supported cars can move between the tiers as features change.**
 
@@ -82,7 +82,7 @@ Tier Criteria:
 | Genesis    | G70 2018                        |        All        |                                                           |       <img src="assets/icon-star.png" width="18" />       | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> |
 | Genesis    | G70 2020                        |        All        | <img src="assets/icon-star.png" width="18" /><sup>3</sup> |       <img src="assets/icon-star.png" width="18" />       | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> |                                               |
 | Genesis    | G80 2018                        |        All        |                                                           |       <img src="assets/icon-star.png" width="18" />       | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> |
-| Genesis    | G90 2018                        |        All        | <img src="assets/icon-star.png" width="18" /><sup>3</sup> |       <img src="assets/icon-star.png" width="18" />       | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> |                 <sup>8</sup>                  |
+| Genesis    | G90 2018                        |        All        | <img src="assets/icon-star.png" width="18" /><sup>3</sup> |       <img src="assets/icon-star.png" width="18" />       | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> |                                               |
 | Hyundai    | Ioniq Electric 2020             |    SCC + LKAS     |                                                           |       <img src="assets/icon-star.png" width="18" />       | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> |
 | Hyundai    | Ioniq PHEV 2020-21              |    SCC + LKAS     |                                                           |       <img src="assets/icon-star.png" width="18" />       | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> |
 | Hyundai    | Kona EV 2018-19                 |    SCC + LKAS     |                                                           |       <img src="assets/icon-star.png" width="18" />       | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> | <img src="assets/icon-star.png" width="18" /> |
@@ -198,7 +198,6 @@ Tier Criteria:
 <sup>7</sup>Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma store. Before ordering,
 remove the Lane Assist camera cover and check to see if the connector is black (older design) or light brown (newer design). For the newer design,
 in the interim, choose "VW J533 Development" from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.<br />
-<sup>8</sup>These cars are supported but haven't been tested in the last year. Get them supported by [adding a test route here](https://github.com/commaai/openpilot/blob/master/selfdrive/test/test_routes.py). <br />
 Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them.
 
 ## Community Maintained Cars
