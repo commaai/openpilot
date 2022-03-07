@@ -483,7 +483,7 @@ class Controls:
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
-    # Check which actuators are enabled
+    # Check which actuators can be enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and CS.vEgo > self.CP.minSteerSpeed
     CC.longActive = self.active
 
@@ -513,17 +513,19 @@ class Controls:
                                                                              desired_curvature_rate)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
-      if self.sm.rcv_frame['testJoystick'] > 0 and CC.latActive:
-        actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
+      if self.sm.rcv_frame['testJoystick'] > 0:
+        if CC.longActive:
+          actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
 
-        steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
-        # max angle is 45 for angle-based cars
-        actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
+        if CC.latActive:
+          steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
+          # max angle is 45 for angle-based cars
+          actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
 
-        lac_log.active = True
+        lac_log.active = self.active
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
-        lac_log.output = steer
-        lac_log.saturated = abs(steer) >= 0.9
+        lac_log.output = actuators.steer
+        lac_log.saturated = abs(actuators.steer) >= 0.9
 
     # Send a "steering required alert" if saturation count has reached the limit
     if lac_log.active and lac_log.saturated and not CS.steeringPressed:
