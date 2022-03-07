@@ -222,7 +222,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   configFont(p, "Open Sans", 48, "Regular");
   drawText(p, rc.center().x(), 118, "MAX", is_cruise_set ? 200 : 100);
   if (is_cruise_set) {
-    configFont(p, "Open Sans", 88, is_cruise_set ? "Bold" : "SemiBold");
+    configFont(p, "Open Sans", 88, "Bold");
     drawText(p, rc.center().x(), 212, maxSpeed, 255);
   } else {
     configFont(p, "Open Sans", 80, "SemiBold");
