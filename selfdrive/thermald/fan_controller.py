@@ -87,6 +87,8 @@ class TiciFanController(BaseFanController):
     self.target = 75
 
   def update(self, max_cpu_temp: float, ignition: bool) -> int:
+    self.controller.neg_limit = -(80 if ignition else 30)
+    self.controller.pos_limit = -(30 if ignition else 0)
 
     if ignition != self.last_ignition:
       self.controller.reset()
@@ -96,7 +98,6 @@ class TiciFanController(BaseFanController):
                                         measurement=max_cpu_temp,
                                         feedforward=interp(self.target, [60, 100], [-80, 0])
                                         ))
-    fan_pwr_out = max(fan_pwr_out, 30) if ignition else min(fan_pwr_out, 30)
 
     self.last_ignition = ignition
     return fan_pwr_out
