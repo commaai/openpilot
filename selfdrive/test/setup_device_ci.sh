@@ -43,21 +43,25 @@ else
 
   if ! grep -F "$KEYS_PATH" /etc/ssh/sshd_config; then
     echo "setting up keys"
-    mount -o rw,remount /
-    sed -i 's,$KEYS_PARAM_PATH,$KEYS_PATH,' /etc/ssh/sshd_config
-    mount -o ro,remount /
+    sudo mount -o rw,remount /
+    sudo systemctl enable ssh
+    sudo sed -i 's,$KEYS_PARAM_PATH,$KEYS_PATH,' /etc/ssh/sshd_config
+    sudo mount -o ro,remount /
   fi
 fi
 
 tee $CONTINUE_PATH << EOF
 #!/usr/bin/bash
 
-PARAMS_ROOT="/data/params/d"
-
 while true; do
-  mkdir -p \$PARAMS_ROOT
-  echo -n 1 > \$PARAMS_ROOT/SshEnabled
-  sleep 1m
+  if [ -f /EON ]; then
+    setprop persist.neos.ssh 1
+  else
+    if ! sudo systemctl is-active -q ssh; then
+      sudo systemctl start ssh
+    fi
+  fi
+  sleep 10s
 done
 
 sleep infinity
