@@ -320,8 +320,13 @@ class Controls:
     if not SIMULATION:
       if not NOSENSOR:
         if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000):
-          # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
-          self.events.add(EventName.noGps)
+        # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
+        # TODO JJS: Evaluate actual impact of not having GPS
+        # TODO JJS : onStar module has "high precision" GPS with roof mount - could this be used instead of Panda?
+        # TODO JJS: Can OP fallback to the cell phone's AGPS?
+        # Dirty hack workaround disable noGps event
+        #   self.events.add(EventName.noGps)
+          pass
       if not self.sm.all_alive(self.camera_packets):
         self.events.add(EventName.cameraMalfunction)
       if self.sm['modelV2'].frameDropPerc > 20:
