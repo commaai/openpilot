@@ -51,6 +51,11 @@ mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera
   return matmul3(yuv_transform, transform);
 }
 
+static uint64_t get_ts(const VisionIpcBufExtra &extra) {
+  return Hardware::TICI() ? extra.timestamp_sof : extra.timestamp_eof;
+}
+
+
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
@@ -74,18 +79,9 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
   VisionIpcBufExtra meta_extra = {0};
 
   while (!do_exit) {
-    // TODO: change sync logic to use timestamp start of frame in case camerad skips a frame
-    // log frame id in model packet
-
     // Keep receiving frames until we are at least 1 frame ahead of previous extra frame
-    while (meta_main.frame_id <= meta_extra.frame_id) {
+    while (get_ts(meta_main) < get_ts(meta_extra) + 25000000ULL) {
       buf_main = vipc_client_main.recv(&meta_main);
-      if (meta_main.frame_id <= meta_extra.frame_id) {
-        LOGE("main camera behind! main: %d (%.5f), extra: %d (%.5f)",
-          meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
-          meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
-      }
-
       if (buf_main == nullptr)  break;
     }
 
@@ -98,20 +94,14 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       // Keep receiving extra frames until frame id matches main camera
       do {
         buf_extra = vipc_client_extra.recv(&meta_extra);
-
-        if (meta_main.frame_id > meta_extra.frame_id) {
-          LOGE("extra camera behind! main: %d (%.5f), extra: %d (%.5f)",
-            meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
-            meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
-        }
-      } while (buf_extra != nullptr && meta_main.frame_id > meta_extra.frame_id);
+      } while (buf_extra != nullptr && get_ts(meta_main) > get_ts(meta_extra) + 25000000ULL);
 
       if (buf_extra == nullptr) {
         LOGE("vipc_client_extra no frame");
         continue;
       }
 
-      if (meta_main.frame_id != meta_extra.frame_id || std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
+      if (std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
         LOGE("frames out of sync! main: %d (%.5f), extra: %d (%.5f)",
           meta_main.frame_id, double(meta_main.timestamp_sof) / 1e9,
           meta_extra.frame_id, double(meta_extra.timestamp_sof) / 1e9);
@@ -159,7 +149,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
     float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-    model_publish(pm, meta_main.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
+    model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
                   kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
     posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
 
