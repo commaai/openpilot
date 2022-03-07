@@ -69,5 +69,5 @@ while True:
     continue
   if typ == "can":
     for CAN_msg in msg.can:
-      print(f'{route_time},{CAN_msg.address},{CAN_msg.src},{CAN_msg.dat.hex()}'.format())
+      print(f'{route_time},{CAN_msg.address},{CAN_msg.src},{CAN_msg.dat.hex()}')
 ```
