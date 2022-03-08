@@ -34,7 +34,7 @@ DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect 
 PANDA_STATES_TIMEOUT = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
-HardwareState = namedtuple("HardwareState", ['network_type', 'network_strength', 'network_info', 'nvme_temps', 'modem_temps'])
+HardwareState = namedtuple("HardwareState", ['network_type', 'network_metered', 'network_strength', 'network_info', 'nvme_temps', 'modem_temps'])
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
@@ -95,6 +95,7 @@ def hw_state_thread(end_event, hw_queue):
 
         hw_state = HardwareState(
           network_type=network_type,
+          network_metered=HARDWARE.get_network_metered(network_type),
           network_strength=HARDWARE.get_network_strength(network_type),
           network_info=HARDWARE.get_network_info(),
           nvme_temps=HARDWARE.get_nvme_temperatures(),
@@ -144,6 +145,7 @@ def thermald_thread(end_event, hw_queue):
 
   last_hw_state = HardwareState(
     network_type=NetworkType.none,
+    network_metered=False,
     network_strength=NetworkStrength.unknown,
     network_info=None,
     nvme_temps=[],
@@ -205,6 +207,7 @@ def thermald_thread(end_event, hw_queue):
     msg.deviceState.gpuUsagePercent = int(round(HARDWARE.get_gpu_usage_percent()))
 
     msg.deviceState.networkType = last_hw_state.network_type
+    msg.deviceState.networkMetered = last_hw_state.network_metered
     msg.deviceState.networkStrength = last_hw_state.network_strength
     if last_hw_state.network_info is not None:
       msg.deviceState.networkInfo = last_hw_state.network_info

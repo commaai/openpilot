@@ -104,15 +104,6 @@ class Tici(HardwareBase):
       if primary_type == '802-3-ethernet':
         return NetworkType.ethernet
       elif primary_type == '802-11-wireless' and primary_id != 'Hotspot':
-        primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
-        for dev in primary_devices:
-          dev_obj = self.bus.get_object(NM, str(dev))
-          metered = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
-          if metered in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
-            return NetworkType.wifiMetered
-
         return NetworkType.wifi
       else:
         active_connections = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -219,7 +210,7 @@ class Tici(HardwareBase):
     try:
       if network_type == NetworkType.none:
         pass
-      elif network_type in [NetworkType.wifi, NetworkType.wifiMetered]:
+      elif network_type == NetworkType.wifi:
         wlan = self.get_wlan()
         active_ap_path = wlan.Get(NM_DEV_WL, 'ActiveAccessPoint', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
         if active_ap_path != "/":
@@ -234,6 +225,27 @@ class Tici(HardwareBase):
       pass
 
     return network_strength
+
+  def get_network_metered(self, network_type) -> bool:
+    metered = False
+
+    try:
+      if network_type == NetworkType.wifi:
+          primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+          primary_connection = self.bus.get_object(NM, primary_connection)
+          primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+          for dev in primary_devices:
+            dev_obj = self.bus.get_object(NM, str(dev))
+            metered_prop = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+            if metered_prop in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
+              metered = True
+      else:
+        metered = super().get_network_metered(network_type)
+    except Exception:
+      pass
+    return metered
 
   @staticmethod
   def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
