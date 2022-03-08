@@ -46,7 +46,7 @@ class CarController():
     self.last_resume_frame = 0
     self.accel = 0
 
-  def update(self, c, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, hud_speed,
+  def update(self, c, CS, frame, actuators, pcm_cancel_cmd, visual_alert, hud_speed,
              left_lane, right_lane, left_lane_depart, right_lane_depart):
     # Steering Torque
     new_steer = int(round(actuators.steer * self.p.STEER_MAX))
@@ -59,7 +59,7 @@ class CarController():
     self.apply_steer_last = apply_steer
 
     sys_warning, sys_state, left_lane_warning, right_lane_warning = \
-      process_hud_alert(enabled, self.car_fingerprint, visual_alert,
+      process_hud_alert(c.enabled, self.car_fingerprint, visual_alert,
                         left_lane, right_lane, left_lane_depart, right_lane_depart)
 
     can_sends = []
@@ -70,7 +70,7 @@ class CarController():
         can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
     can_sends.append(create_lkas11(self.packer, frame, self.car_fingerprint, apply_steer, c.latActive,
-                                   CS.lkas11, sys_warning, sys_state, enabled,
+                                   CS.lkas11, sys_warning, sys_state, c.enabled,
                                    left_lane, right_lane,
                                    left_lane_warning, right_lane_warning))
 
@@ -97,7 +97,7 @@ class CarController():
 
       stopping = (actuators.longControlState == LongCtrlState.stopping)
       set_speed_in_units = hud_speed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
-      can_sends.extend(create_acc_commands(self.packer, enabled, accel, jerk, int(frame / 2), lead_visible, set_speed_in_units, stopping))
+      can_sends.extend(create_acc_commands(self.packer, c.enabled, accel, jerk, int(frame / 2), lead_visible, set_speed_in_units, stopping))
       self.accel = accel
 
     # 20 Hz LFA MFA message
@@ -105,7 +105,7 @@ class CarController():
                                                    CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.KONA_EV,
                                                    CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.SANTA_FE_2022,
                                                    CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.GENESIS_G70_2020, CAR.SANTA_FE_PHEV_2022):
-      can_sends.append(create_lfahda_mfc(self.packer, enabled))
+      can_sends.append(create_lfahda_mfc(self.packer, c.enabled))
 
     # 5 Hz ACC options
     if frame % 20 == 0 and CS.CP.openpilotLongitudinalControl:

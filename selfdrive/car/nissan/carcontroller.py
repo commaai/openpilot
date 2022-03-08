@@ -18,7 +18,7 @@ class CarController():
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, c, enabled, CS, frame, actuators, cruise_cancel, hud_alert,
+  def update(self, c, CS, frame, actuators, cruise_cancel, hud_alert,
              left_line, right_line, left_lane_depart, right_lane_depart):
 
     can_sends = []
@@ -58,7 +58,7 @@ class CarController():
 
     self.last_angle = apply_angle
 
-    if not enabled and acc_active:
+    if not c.enabled and acc_active:
       # send acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       cruise_cancel = 1
 
@@ -73,12 +73,12 @@ class CarController():
         can_sends.append(nissancan.create_cancel_msg(self.packer, CS.cancel_msg, cruise_cancel))
 
     can_sends.append(nissancan.create_steering_control(
-        self.packer, apply_angle, frame, enabled, self.lkas_max_torque))
+        self.packer, apply_angle, frame, c.enabled, self.lkas_max_torque))
 
     if lkas_hud_msg and lkas_hud_info_msg:
       if frame % 2 == 0:
         can_sends.append(nissancan.create_lkas_hud_msg(
-          self.packer, lkas_hud_msg, enabled, left_line, right_line, left_lane_depart, right_lane_depart))
+          self.packer, lkas_hud_msg, c.enabled, left_line, right_line, left_lane_depart, right_lane_depart))
 
       if frame % 50 == 0:
         can_sends.append(nissancan.create_lkas_hud_info_msg(

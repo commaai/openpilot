@@ -12,7 +12,7 @@ class CarController():
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
 
-  def update(self, c, enabled, CS, frame, actuators, cruise_cancel):
+  def update(self, c, CS, frame, actuators, cruise_cancel):
     can_sends = []
 
     # Temp disable steering on a hands_on_fault, and allow for user override
@@ -51,7 +51,7 @@ class CarController():
       cruise_cancel = True
 
     # Cancel when openpilot is not enabled anymore
-    if not enabled and bool(CS.out.cruiseState.enabled):
+    if not c.enabled and bool(CS.out.cruiseState.enabled):
       cruise_cancel = True
 
     if ((frame % 10) == 0 and cruise_cancel):
