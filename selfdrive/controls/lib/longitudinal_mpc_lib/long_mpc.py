@@ -11,14 +11,13 @@ from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 if __name__ == '__main__':  # generating code
   from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 else:
-  # from pyextra.acados_template import AcadosOcpSolver as AcadosOcpSolverFast
-  from selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverFast  # pylint: disable=no-name-in-module, import-error
+  from selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython  # pylint: disable=no-name-in-module, import-error
 
 from casadi import SX, vertcat
 
 LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LONG_MPC_DIR, "c_generated_code")
-JSON_FILE = "acados_ocp_long.json"
+JSON_FILE = os.path.join(LONG_MPC_DIR, "acados_ocp_long.json")
 
 SOURCES = ['lead0', 'lead1', 'cruise']
 
@@ -97,7 +96,7 @@ def gen_long_model():
   return model
 
 
-def gen_long_mpc_solver():
+def gen_long_ocp():
   ocp = AcadosOcp()
   ocp.model = gen_long_model()
 
@@ -195,7 +194,7 @@ class LongitudinalMpc:
     self.source = SOURCES[2]
 
   def reset(self):
-    self.solver = AcadosOcpSolverFast('long', N)
+    self.solver = AcadosOcpSolverCython(JSON_FILE)
     self.v_solution = np.zeros(N+1)
     self.a_solution = np.zeros(N+1)
     self.prev_a = np.array(self.a_solution)
@@ -388,5 +387,6 @@ class LongitudinalMpc:
 
 
 if __name__ == "__main__":
-  ocp = gen_long_mpc_solver()
-  AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=False)
+  ocp = gen_long_ocp()
+  AcadosOcpSolver.generate(ocp, json_file=JSON_FILE)
+  AcadosOcpSolver.build(ocp.code_export_directory, with_cython=True)

@@ -11,12 +11,11 @@ from selfdrive.modeld.constants import T_IDXS
 if __name__ == '__main__':  # generating code
   from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 else:
-  # from pyextra.acados_template import AcadosOcpSolverFast
-  from selfdrive.controls.lib.lateral_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverFast  # pylint: disable=no-name-in-module, import-error
+  from selfdrive.controls.lib.lateral_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython  # pylint: disable=no-name-in-module, import-error
 
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
-JSON_FILE = "acados_ocp_lat.json"
+JSON_FILE = os.path.join(LAT_MPC_DIR, "acados_ocp_lat.json")
 X_DIM = 4
 P_DIM = 2
 
@@ -58,7 +57,7 @@ def gen_lat_model():
   return model
 
 
-def gen_lat_mpc_solver():
+def gen_lat_ocp():
   ocp = AcadosOcp()
   ocp.model = gen_lat_model()
 
@@ -117,7 +116,7 @@ def gen_lat_mpc_solver():
 
 class LateralMpc():
   def __init__(self, x0=np.zeros(X_DIM)):
-    self.solver = AcadosOcpSolverFast('lat', N)
+    self.solver = AcadosOcpSolverCython(JSON_FILE)
     self.reset(x0)
 
   def reset(self, x0=np.zeros(X_DIM)):
@@ -173,5 +172,6 @@ class LateralMpc():
 
 
 if __name__ == "__main__":
-  ocp = gen_lat_mpc_solver()
-  AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=False)
+  ocp = gen_lat_ocp()
+  AcadosOcpSolver.generate(ocp, json_file=JSON_FILE)
+  AcadosOcpSolver.build(ocp.code_export_directory, with_cython=True)
