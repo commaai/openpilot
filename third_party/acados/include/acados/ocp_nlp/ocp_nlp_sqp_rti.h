@@ -64,7 +64,6 @@ typedef struct
     int qp_warm_start;        // NOTE: this is not actually setting the warm_start! Just for compatibility with sqp.
     bool warm_start_first_qp; // to set qp_warm_start in first iteration
     int rti_phase;            // phase of RTI. Possible values 1 (preparation), 2 (feedback) 0 (both)
-    int print_level;     // verbosity
 
 } ocp_nlp_sqp_rti_opts;
 

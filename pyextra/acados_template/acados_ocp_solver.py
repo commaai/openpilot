@@ -435,14 +435,13 @@ def make_ocp_dims_consistent(acados_ocp):
             raise Exception('inconsistent dimension N, regarding shooting_nodes.')
 
         time_steps = opts.shooting_nodes[1:] - opts.shooting_nodes[0:-1]
-        # identify constant time-steps: due to numerical reasons the content of time_steps might vary a bit
-        delta_time_steps = time_steps[1:] - time_steps[0:-1]
+        # identify constant time_steps: due to numerical reasons the content of time_steps might vary a bit
         avg_time_steps = np.average(time_steps)
-        # criterion for constant time-step detection: the min/max difference in values normalized by the average
-        check_const_time_step = np.max(delta_time_steps)-np.min(delta_time_steps) / avg_time_steps
-        # if the criterion is small, we have a constant time-step
+        # criterion for constant time step detection: the min/max difference in values normalized by the average
+        check_const_time_step = (np.max(time_steps)-np.min(time_steps)) / avg_time_steps
+        # if the criterion is small, we have a constant time_step
         if check_const_time_step < 1e-9:
-            time_steps[:] = avg_time_steps  # if we have a constant time-step: apply the average time-step
+            time_steps[:] = avg_time_steps  # if we have a constant time_step: apply the average time_step
 
         opts.time_steps = time_steps
 
@@ -965,7 +964,7 @@ class AcadosOcpSolver:
 
             :param new_time_steps: 1 dimensional np array of new time steps for the solver
 
-            .. note:: This allows for different use-cases: either set a new size of time-steps or a new distribution of
+            .. note:: This allows for different use-cases: either set a new size of time_steps or a new distribution of
                       the shooting nodes without changing the number, e.g., to reach a different final time. Both cases
                       do not require a new code export and compilation.
         """
