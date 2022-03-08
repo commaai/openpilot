@@ -100,6 +100,7 @@ typedef struct
     double time_reg;
     double time_tot;
     double time_glob;
+    double time_solution_sensitivities;
 
     // statistics
     double *stat;

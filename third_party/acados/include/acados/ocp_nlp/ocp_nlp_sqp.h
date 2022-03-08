@@ -107,6 +107,7 @@ typedef struct
     double time_sim;
     double time_sim_la;
     double time_sim_ad;
+    double time_solution_sensitivities;
 
     // statistics
     double *stat;
