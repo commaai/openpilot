@@ -460,6 +460,12 @@ def getNetworkType():
 
 
 @dispatcher.add_method
+def getNetworkMetered():
+  network_type = HARDWARE.get_network_type()
+  return HARDWARE.get_network_metered(network_type)
+
+
+@dispatcher.add_method
 def getNetworks():
   return HARDWARE.get_networks()
 
