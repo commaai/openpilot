@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+from collections import defaultdict, namedtuple
 from enum import Enum
 import os
 
 from common.basedir import BASEDIR
+from common.params import Params
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.test.test_routes import non_tested_cars
-from collections import defaultdict, namedtuple
 
 
 class Tier(Enum):
@@ -50,9 +51,9 @@ def make_row(columns):
 # TODO: unify with column names below?
 Stars = namedtuple("Stars", ["op_long", "fsr_long", "fsr_lat", "steering_torque", "well_supported"])
 
-STAR_ICON_FULL = '<img src="assets/icon-star-full.png" width="18" />'
-STAR_ICON_HALF = '<img src="assets/icon-star-half.png" width="18" />'
-STAR_ICON_EMPTY = '<img src="assets/icon-star-empty.png" width="18" />'
+STAR_ICON_FULL = '<img src="assets/icon-star-full.png" width="22" />'
+STAR_ICON_HALF = '<img src="assets/icon-star-half.png" width="22" />'
+STAR_ICON_EMPTY = '<img src="assets/icon-star-empty.png" width="22" />'
 
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS_generated.md")
 CAR_TABLE_COLUMNS = make_row(['Make', 'Model (US Market Reference)', 'Supported Package', 'openpilot Longitudinal',
@@ -104,6 +105,7 @@ def generate_cars_md():
 
 if __name__ == "__main__":
   # TODO: add argparse for generating json or html (undecided)
+  Params().put_bool("DisableRadar", True)
 
   with open(CARS_MD_OUT, 'w') as f:
     f.write(generate_cars_md())
