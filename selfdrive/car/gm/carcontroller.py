@@ -67,15 +67,19 @@ class CarController():
 
       idx = (frame // 4) % 4
 
-      at_full_stop = c.enabled and CS.out.standstill
-      near_stop = c.enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
+      # For Openpilot, "enabled" includes pre-enable.
+      # In GM, PCM faults out if ACC command overlaps user gas.
+      acc_enabled = c.enabled and not CS.out.gasPressed
+
+      at_full_stop = acc_enabled and CS.out.standstill
+      near_stop = acc_enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
       can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
-      can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, c.enabled, at_full_stop))
+      can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, acc_enabled, at_full_stop))
 
     # Send dashboard UI commands (ACC status), 25hz
     if (frame % 4) == 0:
       send_fcw = hud_alert == VisualAlert.fcw
-      can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, c.enabled, hud_v_cruise * CV.MS_TO_KPH, hud_show_car, send_fcw))
+      can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, acc_enabled, hud_v_cruise * CV.MS_TO_KPH, hud_show_car, send_fcw))
 
     # Radar needs to know current speed and yaw rate (50hz),
     # and that ADAS is alive (10hz)
