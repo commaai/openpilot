@@ -35,5 +35,6 @@ if __name__ == "__main__":
       rows.append(r)
 
     df = pd.DataFrame(data=rows)
+    df.columns = [str(n) for n in range(7, -1, -1)] + [' ']
     table = df.to_markdown(tablefmt='grid')
     print(f"\n\n{hex(addr)} ({addr}) on bus {args.bus}\n{table}")
