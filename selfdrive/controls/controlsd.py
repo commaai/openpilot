@@ -478,15 +478,13 @@ class Controls:
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
 
-    actuators = car.CarControl.Actuators.new_message()
-    actuators.longControlState = self.LoC.long_control_state
-
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
     # Check which actuators can be enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
-                     CS.vEgo > self.CP.minSteerSpeed and not CS.out.standstill
+                   CS.vEgo > self.CP.minSteerSpeed and not CS.out.standstill
     CC.longActive = self.active
+    CC.actuators.longControlState = self.LoC.long_control_state
 
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = self.sm.frame
@@ -502,31 +500,31 @@ class Controls:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
-      actuators.accel = self.LoC.update(CC.longActive, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
+      CC.actuators.accel = self.LoC.update(CC.longActive, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
 
       # Steering PID loop and lateral MPC
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
                                                                              lat_plan.curvatureRates)
-      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.CP, self.VM,
+      CC.actuators.steer, CC.actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.CP, self.VM,
                                                                              params, self.last_actuators, desired_curvature,
                                                                              desired_curvature_rate)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
         if CC.longActive:
-          actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
+          CC.actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
 
         if CC.latActive:
           steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
           # max angle is 45 for angle-based cars
-          actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
+          CC.actuators.steer, CC.actuators.steeringAngleDeg = steer, steer * 45.
 
         lac_log.active = self.active
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
-        lac_log.output = actuators.steer
-        lac_log.saturated = abs(actuators.steer) >= 0.9
+        lac_log.output = CC.actuators.steer
+        lac_log.saturated = abs(CC.actuators.steer) >= 0.9
 
     # Send a "steering required alert" if saturation count has reached the limit
     if lac_log.active and lac_log.saturated and not CS.steeringPressed:
@@ -534,23 +532,21 @@ class Controls:
       if len(dpath_points):
         # Check if we deviated from the path
         # TODO use desired vs actual curvature
-        left_deviation = actuators.steer > 0 and dpath_points[0] < -0.20
-        right_deviation = actuators.steer < 0 and dpath_points[0] > 0.20
+        left_deviation = CC.actuators.steer > 0 and dpath_points[0] < -0.20
+        right_deviation = CC.actuators.steer < 0 and dpath_points[0] > 0.20
 
         if left_deviation or right_deviation:
           self.events.add(EventName.steerSaturated)
 
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
-      attr = getattr(actuators, p)
+      attr = getattr(CC.actuators, p)
       if not isinstance(attr, Number):
         continue
 
       if not math.isfinite(attr):
-        cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
-        setattr(actuators, p, 0.0)
-
-    CC.actuators = actuators
+        cloudlog.error(f"actuators.{p} not finite {CC.actuators.to_dict()}")
+        setattr(CC.actuators, p, 0.0)
 
     return CC, lac_log
 
