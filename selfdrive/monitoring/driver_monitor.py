@@ -26,11 +26,11 @@ class DRIVER_MONITOR_SETTINGS():
     self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
     self._FACE_THRESHOLD = 0.5
-    self._PARTIAL_FACE_THRESHOLD = 0.765 if TICI else 0.43
+    self._PARTIAL_FACE_THRESHOLD = 0.8 if TICI else 0.45
     self._EYE_THRESHOLD = 0.61 if TICI else 0.55
     self._SG_THRESHOLD = 0.89 if TICI else 0.86
-    self._BLINK_THRESHOLD = 0.82 if TICI else 0.588
-    self._BLINK_THRESHOLD_SLACK = 0.9 if TICI else 0.77
+    self._BLINK_THRESHOLD = 0.8085 if TICI else 0.66
+    self._BLINK_THRESHOLD_SLACK = 0.9 if TICI else 0.8
     self._BLINK_THRESHOLD_STRICT = self._BLINK_THRESHOLD
 
     self._EE_THRESH11 = 0.75 if TICI else 0.4
@@ -51,7 +51,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._YAW_MAX_OFFSET = 0.289
     self._YAW_MIN_OFFSET = -0.0246
 
-    self._POSESTD_THRESHOLD = 0.46 if TICI else 0.35
+    self._POSESTD_THRESHOLD = 0.48 if TICI else 0.37
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
