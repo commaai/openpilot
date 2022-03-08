@@ -2,7 +2,9 @@
 
 #include <cassert>
 
-#ifdef QCOM
+// TODO: fix this on pixel3
+#if 0
+//#ifdef QCOM
 #include <gralloc_priv.h>
 #include <system/graphics.h>
 #include <ui/GraphicBuffer.h>
