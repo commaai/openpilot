@@ -227,25 +227,25 @@ class Tici(HardwareBase):
     return network_strength
 
   def get_network_metered(self, network_type) -> bool:
-    metered = False
-
     try:
+      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      primary_connection = self.bus.get_object(NM, primary_connection)
+      primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+      for dev in primary_devices:
+        dev_obj = self.bus.get_object(NM, str(dev))
+        metered_prop = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
       if network_type == NetworkType.wifi:
-          primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-          primary_connection = self.bus.get_object(NM, primary_connection)
-          primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
-          for dev in primary_devices:
-            dev_obj = self.bus.get_object(NM, str(dev))
-            metered_prop = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-
-            if metered_prop in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
-              metered = True
-      else:
-        metered = super().get_network_metered(network_type)
+        if metered_prop in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
+          return True
+      elif network_type in [NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G]:
+        if metered_prop == NMMetered.NM_METERED_NO:
+          return False
     except Exception:
       pass
-    return metered
+
+    return super().get_network_metered(network_type)
 
   @staticmethod
   def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
