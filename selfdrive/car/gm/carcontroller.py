@@ -67,7 +67,7 @@ class CarController():
 
       idx = (frame // 4) % 4
 
-      # For Openpilot, "enabled" includes pre-enable.
+      # For openpilot, "enabled" includes pre-enable.
       # In GM, PCM faults out if ACC command overlaps user gas.
       acc_enabled = c.enabled and not CS.out.gasPressed
 
