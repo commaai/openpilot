@@ -18,14 +18,14 @@ if [ ! -d acados_repo/ ]; then
 fi
 cd acados_repo
 git fetch
-git checkout 92b85c61f7358a1b08b7cd30aeb9d32ad15942e8
+git checkout 6456bb5f74a9023adef58480aab716e304c72733
 git submodule update --recursive --init
 
 # build
 mkdir -p build
 cd build
 cmake -DACADOS_WITH_QPOASES=ON -UBLASFEO_TARGET -DBLASFEO_TARGET=$BLAS_TARGET ..
-make -j4 install
+make -j20 install
 
 INSTALL_DIR="$DIR/$ARCHNAME"
 rm -rf $INSTALL_DIR
