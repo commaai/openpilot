@@ -107,3 +107,5 @@ if __name__ == "__main__":
 
   with open(CARS_MD_OUT, 'w') as f:
     f.write(generate_cars_md())
+
+  print('Generated and written to {}'.format(CARS_MD_OUT))
