@@ -7,11 +7,6 @@ from cereal import log
 ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient', 'pmic'])
 NetworkType = log.DeviceState.NetworkType
 
-try:
-  from common.params import Params
-except Exception:
-  # openpilot is not built yet
-  Params = None
 
 class HardwareBase(ABC):
   @staticmethod
@@ -79,8 +74,6 @@ class HardwareBase(ABC):
   def get_network_metered(self, network_type) -> bool:
     if network_type in [NetworkType.none, NetworkType.wifi, NetworkType.ethernet]:
       return False
-    elif Params is not None:
-      return not Params().get_bool("CellularUnmetered")
     else:
       return True
 
