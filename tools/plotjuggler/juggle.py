@@ -75,7 +75,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
 
-def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
+def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=None):
   segment_start = 0
   if 'cabana' in route_or_segment_name:
     query = parse_qs(urlparse(route_or_segment_name).query)
@@ -113,14 +113,14 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout):
     all_data = [d for d in all_data if d.which() not in ['can', 'sendcan']]
 
   # Infer DBC name from logs
-  dbc = None
-  for cp in [m for m in all_data if m.which() == 'carParams']:
-    try:
-      DBC = __import__(f"selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
-      dbc = DBC[cp.carParams.carFingerprint]['pt']
-    except Exception:
-      pass
-    break
+  if dbc is None:
+    for cp in [m for m in all_data if m.which() == 'carParams']:
+      try:
+        DBC = __import__(f"selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
+        dbc = DBC[cp.carParams.carFingerprint]['pt']
+      except Exception:
+        pass
+      break
 
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
@@ -138,6 +138,7 @@ if __name__ == "__main__":
   parser.add_argument("--stream", action="store_true", help="Start PlotJuggler in streaming mode")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("--install", action="store_true", help="Install or update PlotJuggler + plugins")
+  parser.add_argument("--dbc", help="Set the DBC name to load for parsing CAN data. If not set, the DBC will be automatically inferred from the logs.")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot (cabana share URL accepted)")
   parser.add_argument("segment_count", type=int, nargs='?', help="The number of segments to plot")
 
@@ -158,4 +159,4 @@ if __name__ == "__main__":
     start_juggler(layout=args.layout)
   else:
     route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-    juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.can, args.layout)
+    juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.can, args.layout, args.dbc)
