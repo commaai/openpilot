@@ -238,14 +238,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     l_ptr[0] = (long long) acados_ocp_capsule->impl_dae_hess;
 {%- endif %}
 {% elif solver_options.integrator_type == "GNSF" %}
+    {% if model.gnsf.purely_linear != 1 %}
     l_ptr = mxGetData(gnsf_phi_fun_mat);
     l_ptr[0] = (long long) acados_ocp_capsule->gnsf_phi_fun;
     l_ptr = mxGetData(gnsf_phi_fun_jac_y_mat);
     l_ptr[0] = (long long) acados_ocp_capsule->gnsf_phi_fun_jac_y;
     l_ptr = mxGetData(gnsf_phi_jac_y_uhat_mat);
     l_ptr[0] = (long long) acados_ocp_capsule->gnsf_phi_jac_y_uhat;
+    {% if model.gnsf.nontrivial_f_LO == 1 %}
     l_ptr = mxGetData(gnsf_f_lo_jac_x1_x1dot_u_z_mat);
     l_ptr[0] = (long long) acados_ocp_capsule->gnsf_f_lo_jac_x1_x1dot_u_z;
+    {%- endif %}
+    {%- endif %}
     l_ptr = mxGetData(gnsf_get_matrices_fun_mat);
     l_ptr[0] = (long long) acados_ocp_capsule->gnsf_get_matrices_fun;
 {% elif solver_options.integrator_type == "DISCRETE" %}
