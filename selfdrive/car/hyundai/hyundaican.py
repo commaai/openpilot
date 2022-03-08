@@ -62,6 +62,11 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   return packer.make_can_msg("LKAS11", 0, values)
 
 
+def create_cancel_command(packer, cgw1_values):
+  cgw1_values["CF_Gway_DrvDrSw"] = 1
+  return packer.make_can_msg("CGW1", 0, cgw1_values)
+
+
 def create_clu11(packer, frame, clu11, button):
   values = clu11
   values["CF_Clu_CruiseSwState"] = button
