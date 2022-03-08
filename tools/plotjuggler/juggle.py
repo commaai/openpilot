@@ -138,7 +138,7 @@ if __name__ == "__main__":
   parser.add_argument("--stream", action="store_true", help="Start PlotJuggler in streaming mode")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("--install", action="store_true", help="Install or update PlotJuggler + plugins")
-  parser.add_argument("--dbc", help="Set the DBC name to load for parsing CAN data")
+  parser.add_argument("--dbc", help="Set the DBC name to load for parsing CAN data. If not set, the DBC will be automatically inferred from the logs.")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot (cabana share URL accepted)")
   parser.add_argument("segment_count", type=int, nargs='?', help="The number of segments to plot")
 
