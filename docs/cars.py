@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 from enum import Enum
+import os
 
-from selfdrive.car import CarInfo
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import get_attr_from_cars, all_known_cars
-from selfdrive.config import Conversions as CV
+from common.basedir import BASEDIR
+from selfdrive.car.car_helpers import interfaces, get_interface_attr
+from selfdrive.test.test_routes import non_tested_cars
+from collections import defaultdict, namedtuple
 
 
 class Tier(Enum):
@@ -14,56 +15,95 @@ class Tier(Enum):
 
 
 class Car:
-  def __init__(self, CP, car_info):
-    self.CP = CP
-    self.info = car_info
-    self.make, self.model = self.info.name.split(' ', 1)
+  def __init__(self, car_info, CP):
+    self.make, self.model = car_info.name.split(' ', 1)
+
+    assert len(car_info.years), 'Model {} has no years listed'.format(CP.carFingerprint)
+
+    # TODO: properly format model years
+    years = ' ' + str(max(car_info.years))
+    self.model_string = "{}{}".format(self.model, years)
+    self.package = car_info.package
+
+    self.stars = Stars(
+      CP.openpilotLongitudinalControl,
+      CP.minEnableSpeed <= 1e-3,  # TODO: 0 is probably okay
+      CP.minSteerSpeed <= 1e-3,
+      CP.carName in MAKES_GOOD_STEERING_TORQUE,
+      # TODO: make sure this check is complete
+      CP.carFingerprint not in non_tested_cars,
+    )
+
+  def format_stars(self):
+    # TODO: exceptions and half stars
+    return [STAR_ICON_FULL if cat else STAR_ICON_EMPTY for cat in self.stars]
 
   @property
   def tier(self):
-    if self.CP.openpilotLongitudinalControl:
-      return Tier.GOLD
-    return Tier.BRONZE
-
-  @property
-  def years(self):
-    years =
-    for year in self.info.years:
+    return {5: Tier.GOLD, 4: Tier.SILVER}.get(sum(self.stars), Tier.BRONZE)
 
 
-  def __str__(self):
-    min_alc = int(max(0, self.CP.minSteerSpeed) * CV.MS_TO_MPH)
-    min_acc = int(max(0, self.CP.minEnableSpeed) * CV.MS_TO_MPH)
-    acc = "openpilot" if self.CP.openpilotLongitudinalControl else "Stock"
-    years = {}
-    return f"| {self.make} | {self.model} | {self.info.package} | {acc} | {min_acc}mph | {min_alc}mph |"
+def make_row(columns):
+  return "|{}|".format("|".join(columns))
 
 
-if __name__ == "__main__":
-  print("# Supported Cars")
+# TODO: unify with column names below?
+Stars = namedtuple("Stars", ["op_long", "fsr_long", "fsr_lat", "steering_torque", "well_supported"])
 
-  print("Cars are sorted into three tiers:\n")
-  print("  Gold - a full openpilot experience\n")
-  print("  Silver - a pretty good, albeit limited experience\n")
-  print("  Bronze - significantly limited\n")
+STAR_ICON_FULL = '<img src="assets/icon-star-full.png" width="18" />'
+STAR_ICON_HALF = '<img src="assets/icon-star-half.png" width="18" />'
+STAR_ICON_EMPTY = '<img src="assets/icon-star-empty.png" width="18" />'
 
-  for t in Tier:
-    print(f"## {t.value} Cars")
-    print("| Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below      |")
-    print("| ----------| ------------------------------| ------------------| -----------------| -------------------| ------------------|")
-    for fingerprint, car_info in sorted(get_attr_from_cars('CAR_INFO').items(), key=lambda x: x[0]):
-      # print(car_info)
-      CI, _, _ = interfaces[fingerprint]
-      CP = CI.get_params(fingerprint)
+CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS_generated.md")
+CAR_TABLE_COLUMNS = make_row(['Make', 'Model (US Market Reference)', 'Supported Package', 'openpilot Longitudinal',
+                              'FSR Longitudinal', 'FSR Steering', 'Steering Torque', 'Actively Maintained'])
+CAR_TABLE_HEADER = make_row(["---"] * 3 + [":---:"] * 5)  # first three aren't centered
+CAR_ROW_TEMPLATE = make_row(["{}"] * 8)
 
+# TODO: which other makes?
+MAKES_GOOD_STEERING_TORQUE = ["toyota", "hyundai", "volkswagen"]
+
+
+def generate_cars_md():
+  tiered_cars = defaultdict(list)
+
+  for _, models in get_interface_attr("CAR_INFO").items():
+    for model, car_info in models.items():
+      CP = interfaces[model][0].get_params(model)
       # Skip community supported
       if CP.dashcamOnly:
         continue
 
-      if isinstance(car_info, CarInfo):
-        car_info = (car_info,)
+      # Some candidates have multiple variants
+      if not isinstance(car_info, list):
+        car_info = [car_info]
 
-      for info in car_info:
-        car = Car(CP, info)
-        if car.tier == t:
-          print(car)
+      for _car_info in car_info:
+        car = Car(_car_info, CP)
+        tiered_cars[car.tier].append(car)
+
+  # Build CARS.md
+  cars_md_doc = []
+  for tier in Tier:
+    # Sort by make, model name, and year
+    cars = sorted(tiered_cars[tier], key=lambda car: car.make + car.model_string)
+
+    cars_md_doc.append("## {} Cars\n".format(tier.name.title()))
+    cars_md_doc.append(CAR_TABLE_COLUMNS)
+    cars_md_doc.append(CAR_TABLE_HEADER)
+    for car in cars:
+      line = CAR_ROW_TEMPLATE.format(car.make,
+                                     car.model_string,
+                                     car.package,
+                                     *car.format_stars())
+      cars_md_doc.append(line)
+    cars_md_doc.append("")  # newline
+
+  return '\n'.join(cars_md_doc)
+
+
+if __name__ == "__main__":
+  # TODO: add argparse for generating json or html (undecided)
+
+  with open(CARS_MD_OUT, 'w') as f:
+    f.write(generate_cars_md())
