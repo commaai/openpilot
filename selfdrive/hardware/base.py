@@ -7,6 +7,12 @@ from cereal import log
 ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient', 'pmic'])
 NetworkType = log.DeviceState.NetworkType
 
+try:
+  from common.params import Params
+except Exception:
+  # openpilot is not built yet
+  Params = None
+
 class HardwareBase(ABC):
   @staticmethod
   def get_cmdline() -> Dict[str, str]:
@@ -71,7 +77,12 @@ class HardwareBase(ABC):
     pass
 
   def get_network_metered(self, network_type) -> bool:
-    return network_type not in [NetworkType.none, NetworkType.wifi, NetworkType.ethernet]
+    if network_type in [NetworkType.none, NetworkType.wifi, NetworkType.ethernet]:
+      return False
+    elif Params is not None:
+      return not Params().get_bool("CellularUnmetered")
+    else:
+      return True
 
   @staticmethod
   def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
