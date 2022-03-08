@@ -339,7 +339,7 @@ void Panda::set_power_saving(bool power_saving) {
 }
 
 void Panda::enable_deepsleep(void) {
-  usb_write(0xe7, 0, 0);
+  usb_write(0xfb, 0, 0);
 }
 
 void Panda::set_usb_power_mode(cereal::PeripheralState::UsbPowerMode power_mode) {
