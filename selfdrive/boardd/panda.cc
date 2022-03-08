@@ -338,7 +338,7 @@ void Panda::set_power_saving(bool power_saving) {
   usb_write(0xe7, power_saving, 0);
 }
 
-void Panda::enable_deepsleep(void) {
+void Panda::enable_deepsleep() {
   usb_write(0xfb, 0, 0);
 }
 
