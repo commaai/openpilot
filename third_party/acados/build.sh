@@ -33,8 +33,10 @@ mkdir -p $INSTALL_DIR
 
 rm $DIR/acados_repo/lib/*.json
 
+rm -rf $DIR/include
 cp -r $DIR/acados_repo/include $DIR
 cp -r $DIR/acados_repo/lib $INSTALL_DIR
+rm -rf $DIR/../../pyextra/acados_template
 cp -r $DIR/acados_repo/interfaces/acados_template/acados_template $DIR/../../pyextra
 #pip3 install -e $DIR/acados/interfaces/acados_template
 
