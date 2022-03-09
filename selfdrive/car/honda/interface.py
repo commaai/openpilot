@@ -172,6 +172,11 @@ class CarInterface(CarInterfaceBase):
       ret.wheelSpeedFactor = 1.025
       ret.minSteerSpeed = 12. * CV.MPH_TO_MS
 
+      # 2020+ models have a lower minimum steering speed
+      for fw in car_fw:
+        if fw.ecu == "eps" and fw.fwVersion in [b'39990-TLA-A220\x00\x00']:
+          ret.minSteerSpeed = 3. * CV.MPH_TO_MS
+
     elif candidate == CAR.CRV_HYBRID:
       stop_and_go = True
       ret.mass = 1667. + STD_CARGO_KG  # mean of 4 models in kg
