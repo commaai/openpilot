@@ -67,7 +67,6 @@ def read_tz(x):
   if isinstance(x, str):
     if tz_by_type is None:
       populate_tz_by_type()
-    print(x, tz_by_type[x])
     x = tz_by_type[x]
 
   try:
