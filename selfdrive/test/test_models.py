@@ -24,6 +24,7 @@ from tools.lib.logreader import LogReader
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
 
+ButtonType = car.CarState.ButtonEvent.Type
 PandaType = log.PandaState.PandaType
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
@@ -55,7 +56,10 @@ class TestCarModel(unittest.TestCase):
         print(f"Skipping tests for {cls.car_model}: missing route")
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
-
+    # if 'HYUNDAI' not in cls.car_model:
+    #   raise unittest.SkipTest
+    # if cls.car_model != HYUNDAI.ELANTRA_2021:
+    #   raise unittest.SkipTest
     params = Params()
     params.clear_all()
 
@@ -66,6 +70,7 @@ class TestCarModel(unittest.TestCase):
         continue
 
       can_msgs = []
+      log_msgs = []
       fingerprint = {i: dict() for i in range(3)}
       for msg in lr:
         if msg.which() == "can":
@@ -73,9 +78,11 @@ class TestCarModel(unittest.TestCase):
             if m.src < 64:
               fingerprint[m.src][m.address] = len(m.dat)
           can_msgs.append(msg)
-        elif msg.which() == "carParams":
-          if msg.carParams.openpilotLongitudinalControl:
-            params.put_bool("DisableRadar", True)
+        else:
+          log_msgs.append(msg)
+          if msg.which() == "carParams":
+            if msg.carParams.openpilotLongitudinalControl:
+              params.put_bool("DisableRadar", True)
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break
@@ -83,6 +90,7 @@ class TestCarModel(unittest.TestCase):
       raise Exception(f"Route {repr(cls.route)} not found or no CAN msgs found. Is it uploaded?")
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
+    cls.log_msgs = sorted(log_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [])
@@ -172,6 +180,44 @@ class TestCarModel(unittest.TestCase):
         if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
+
+  def test_openpilot_cancel(self):
+    if self.CP.dashcamOnly:
+      print('Skipping dashcam only test route')
+      self.skipTest("no need to check gas cancellation for dashcamOnly")
+
+    # Checks how long it takes to disengage after gas press or other cancellation reason
+    # TODO: also check we don't re-engage without user intention
+
+    cancel_times = []
+    cancel_start_time = 0
+    cancel = False
+    prev_cancel = None
+    for idx, msg in enumerate(self.log_msgs):
+      if msg.which() == "carControl":
+        cancel = msg.carControl.cruiseControl.cancel
+      elif msg.which() == 'carState':
+        CS = msg.carState
+        if prev_cancel is not None:
+          # TODO: make sure this check is reliable
+          car_caused_cancel = CS.brakePressed or ButtonType.cancel in [be.type for be in CS.buttonEvents]
+          if cancel and not prev_cancel and not car_caused_cancel:
+            cancel_start_time = msg.logMonoTime
+
+          # add if on falling edge or last log item and there's a pending cancel
+          if (not cancel and prev_cancel) or (idx + 1 == len(self.log_msgs)):
+            if cancel_start_time != 0:
+              cancel_times.append((msg.logMonoTime - cancel_start_time) / 1e6)
+          if not cancel:
+            cancel_start_time = 0
+
+        prev_cancel = cancel
+
+    if not len(cancel_times):
+      print('Warning: car {}, route {} has no openpilot cancellation events!'.format(self.car_model, self.route))
+      return
+    print(cancel_times)
+    self.assertTrue(max(cancel_times) < 200, "openpilot cancellation took too long to cancel: {} frames".format(max(cancel_times)))
 
   def test_panda_safety_carstate(self):
     """
