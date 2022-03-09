@@ -171,8 +171,8 @@ if arch != "Darwin":
   ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
 # Enable swaglog include in submodules
-cflags += ["-DSWAGLOG"]
-cxxflags += ["-DSWAGLOG"]
+cflags += ['-DSWAGLOG="\\"selfdrive/common/swaglog.h\\""']
+cxxflags += ['-DSWAGLOG="\\"selfdrive/common/swaglog.h\\""']
 
 env = Environment(
   ENV=lenv,
