@@ -23,7 +23,9 @@ MODEM_PATH = "/dev/smd11"
 
 def service_call(call: List[str]) -> Union[bytes, None]:
   try:
-    ret = subprocess.check_output(["service", "call", *call], encoding='utf8').strip()
+    env = os.environ.copy()
+    env["LD_LIBRARY_PATH"] = "/system/lib64:"+os.environ["LD_LIBRARY_PATH"]
+    ret = subprocess.check_output(["service", "call", *call], encoding='utf8', env=env).strip()
     if 'Parcel' not in ret:
       return None
     return parse_service_call_bytes(ret)
@@ -113,8 +115,8 @@ class Android(HardwareBase):
     else:
       reason_args = ["s16", reason]
 
-    subprocess.check_output([
-      "service", "call", "power", "16",  # IPowerManager.reboot
+    service_call([
+      "power", "16",  # IPowerManager.reboot
       "i32", "0",  # no confirmation,
       *reason_args,
       "i32", "1"  # wait
