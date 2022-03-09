@@ -189,9 +189,9 @@ selfdrive/car/tesla/carstate.py
 selfdrive/car/tesla/interface.py
 selfdrive/car/mock/*.py
 
-selfdrive/clocksd/.gitignore
-selfdrive/clocksd/SConscript
-selfdrive/clocksd/clocksd.cc
+system/clocksd/.gitignore
+system/clocksd/SConscript
+system/clocksd/clocksd.cc
 
 selfdrive/debug/*.py
 
@@ -297,42 +297,42 @@ selfdrive/locationd/models/live_kf.cc
 
 selfdrive/locationd/calibrationd.py
 
-selfdrive/logcatd/SConscript
-selfdrive/logcatd/logcatd_android.cc
-selfdrive/logcatd/logcatd_systemd.cc
+system/logcatd/SConscript
+system/logcatd/logcatd_android.cc
+system/logcatd/logcatd_systemd.cc
 
-selfdrive/proclogd/SConscript
-selfdrive/proclogd/main.cc
-selfdrive/proclogd/proclog.cc
-selfdrive/proclogd/proclog.h
+system/proclogd/SConscript
+system/proclogd/main.cc
+system/proclogd/proclog.cc
+system/proclogd/proclog.h
 
-selfdrive/loggerd/SConscript
-selfdrive/loggerd/encoder.h
-selfdrive/loggerd/omx_encoder.cc
-selfdrive/loggerd/omx_encoder.h
-selfdrive/loggerd/logger.cc
-selfdrive/loggerd/logger.h
-selfdrive/loggerd/loggerd.cc
-selfdrive/loggerd/loggerd.h
-selfdrive/loggerd/main.cc
-selfdrive/loggerd/bootlog.cc
-selfdrive/loggerd/raw_logger.cc
-selfdrive/loggerd/raw_logger.h
-selfdrive/loggerd/include/msm_media_info.h
+system/loggerd/SConscript
+system/loggerd/encoder.h
+system/loggerd/omx_encoder.cc
+system/loggerd/omx_encoder.h
+system/loggerd/logger.cc
+system/loggerd/logger.h
+system/loggerd/loggerd.cc
+system/loggerd/loggerd.h
+system/loggerd/main.cc
+system/loggerd/bootlog.cc
+system/loggerd/raw_logger.cc
+system/loggerd/raw_logger.h
+system/loggerd/include/msm_media_info.h
 
-selfdrive/loggerd/__init__.py
-selfdrive/loggerd/config.py
-selfdrive/loggerd/uploader.py
-selfdrive/loggerd/deleter.py
-selfdrive/loggerd/xattr_cache.py
+system/loggerd/__init__.py
+system/loggerd/config.py
+system/loggerd/uploader.py
+system/loggerd/deleter.py
+system/loggerd/xattr_cache.py
 
-selfdrive/sensord/SConscript
-selfdrive/sensord/libdiag.h
-selfdrive/sensord/sensors_qcom.cc
-selfdrive/sensord/sensors_qcom2.cc
-selfdrive/sensord/sensors/*.cc
-selfdrive/sensord/sensors/*.h
-selfdrive/sensord/sensord
+system/sensord/SConscript
+system/sensord/libdiag.h
+system/sensord/sensors_qcom.cc
+system/sensord/sensors_qcom2.cc
+system/sensord/sensors/*.cc
+system/sensord/sensors/*.h
+system/sensord/sensord
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
@@ -369,30 +369,30 @@ selfdrive/ui/qt/text_aarch64
 selfdrive/ui/replay/*.cc
 selfdrive/ui/replay/*.h
 
-selfdrive/camerad/SConscript
-selfdrive/camerad/main.cc
+system/camerad/SConscript
+system/camerad/main.cc
 
-selfdrive/camerad/snapshot/*
-selfdrive/camerad/include/*
-selfdrive/camerad/cameras/camera_common.h
-selfdrive/camerad/cameras/camera_common.cc
-selfdrive/camerad/cameras/camera_qcom.cc
-selfdrive/camerad/cameras/camera_qcom.h
-selfdrive/camerad/cameras/camera_replay.cc
-selfdrive/camerad/cameras/camera_replay.h
-selfdrive/camerad/cameras/debayer.cl
-selfdrive/camerad/cameras/sensor_i2c.h
-selfdrive/camerad/cameras/sensor2_i2c.h
+system/camerad/snapshot/*
+system/camerad/include/*
+system/camerad/cameras/camera_common.h
+system/camerad/cameras/camera_common.cc
+system/camerad/cameras/camera_qcom.cc
+system/camerad/cameras/camera_qcom.h
+system/camerad/cameras/camera_replay.cc
+system/camerad/cameras/camera_replay.h
+system/camerad/cameras/debayer.cl
+system/camerad/cameras/sensor_i2c.h
+system/camerad/cameras/sensor2_i2c.h
 
-selfdrive/camerad/transforms/rgb_to_yuv.cc
-selfdrive/camerad/transforms/rgb_to_yuv.h
-selfdrive/camerad/transforms/rgb_to_yuv.cl
-selfdrive/camerad/transforms/rgb_to_yuv_test.cc
+system/camerad/transforms/rgb_to_yuv.cc
+system/camerad/transforms/rgb_to_yuv.h
+system/camerad/transforms/rgb_to_yuv.cl
+system/camerad/transforms/rgb_to_yuv_test.cc
 
-selfdrive/camerad/imgproc/conv.cl
-selfdrive/camerad/imgproc/pool.cl
-selfdrive/camerad/imgproc/utils.cc
-selfdrive/camerad/imgproc/utils.h
+system/camerad/imgproc/conv.cl
+system/camerad/imgproc/pool.cl
+system/camerad/imgproc/utils.cc
+system/camerad/imgproc/utils.h
 
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py

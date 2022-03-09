@@ -128,9 +128,9 @@ pipeline {
                       ["build", "cd selfdrive/manager && ./build.py"],
                       ["test sounds", "python selfdrive/ui/tests/test_soundd.py"],
                       ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
-                      ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
-                      ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
-                      ["test logcatd", "python selfdrive/logcatd/tests/test_logcatd_android.py"],
+                      ["test loggerd", "python system/loggerd/tests/test_loggerd.py"],
+                      ["test encoder", "python system/loggerd/tests/test_encoder.py"],
+                      ["test logcatd", "python system/logcatd/tests/test_logcatd_android.py"],
                       ["test updater", "python selfdrive/hardware/eon/test_neos_updater.py"],
                     ])
                   }
@@ -177,8 +177,8 @@ pipeline {
                     phone_steps("tici2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
                       ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
-                      ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
-                      ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
+                      ["test loggerd", "python system/loggerd/tests/test_loggerd.py"],
+                      ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python system/loggerd/tests/test_encoder.py"],
                     ])
                   }
                 }
@@ -187,8 +187,8 @@ pipeline {
                   steps {
                     phone_steps("eon-party", [
                       ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
-                      ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+                      ["test camerad", "python system/camerad/test/test_camerad.py"],
+                      ["test exposure", "python system/camerad/test/test_exposure.py"],
                     ])
                   }
                 }
@@ -197,8 +197,8 @@ pipeline {
                   steps {
                     phone_steps("tici-party", [
                       ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
-                      ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+                      ["test camerad", "python system/camerad/test/test_camerad.py"],
+                      ["test exposure", "python system/camerad/test/test_exposure.py"],
                     ])
                   }
                 }

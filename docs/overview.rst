@@ -5,7 +5,7 @@ openpilot
    :maxdepth: 4
 
    Debugging <selfdrive/debug/README.md>
-   selfdrive/loggerd/README.md
+   system/loggerd/README.md
    Driver Monitoring <selfdrive/monitoring/README.md>
    Process Replay <selfdrive/test/process_replay/README.md>
 
