@@ -13,6 +13,7 @@ from selfdrive.hardware.tici.amplifier import Amplifier
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
+NM_DEV = NM + '.Device'
 NM_DEV_WL = NM + '.Device.Wireless'
 NM_AP = NM + '.AccessPoint'
 DBUS_PROPS = 'org.freedesktop.DBus.Properties'
@@ -36,6 +37,13 @@ class MM_MODEM_STATE(IntEnum):
        DISCONNECTING = 9
        CONNECTING    = 10
        CONNECTED     = 11
+
+class NMMetered(IntEnum):
+  NM_METERED_UNKNOWN = 0
+  NM_METERED_YES = 1
+  NM_METERED_NO = 2
+  NM_METERED_GUESS_YES = 3
+  NM_METERED_GUESS_NO = 4
 
 TIMEOUT = 0.1
 
@@ -91,11 +99,10 @@ class Tici(HardwareBase):
       primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       primary_connection = self.bus.get_object(NM, primary_connection)
       primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      primary_id = primary_connection.Get(NM_CON_ACT, 'Id', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
       if primary_type == '802-3-ethernet':
         return NetworkType.ethernet
-      elif primary_type == '802-11-wireless' and primary_id != 'Hotspot':
+      elif primary_type == '802-11-wireless':
         return NetworkType.wifi
       else:
         active_connections = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -217,6 +224,27 @@ class Tici(HardwareBase):
       pass
 
     return network_strength
+
+  def get_network_metered(self, network_type) -> bool:
+    try:
+      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      primary_connection = self.bus.get_object(NM, primary_connection)
+      primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+      for dev in primary_devices:
+        dev_obj = self.bus.get_object(NM, str(dev))
+        metered_prop = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+        if network_type == NetworkType.wifi:
+          if metered_prop in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
+            return True
+        elif network_type in [NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G]:
+          if metered_prop == NMMetered.NM_METERED_NO:
+            return False
+    except Exception:
+      pass
+
+    return super().get_network_metered(network_type)
 
   @staticmethod
   def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
