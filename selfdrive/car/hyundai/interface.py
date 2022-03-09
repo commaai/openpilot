@@ -89,8 +89,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.385    # stiffnessFactor settled on 1.0081302973865127
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      ret.minSteerSpeed = 32 * CV.MPH_TO_MS  # TODO: CARS.md lists 34 mph for these cars
-      ret.minEnableSpeed = 19 * CV.MPH_TO_MS
     elif candidate == CAR.ELANTRA_2021:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = (2800. * CV.LB_TO_KG) + STD_CARGO_KG
@@ -122,7 +120,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
       ret.lateralTuning.indi.actuatorEffectivenessV = [2.3]
       ret.minSteerSpeed = 60 * CV.KPH_TO_MS
-      ret.minEnableSpeed = 19 * CV.MPH_TO_MS
     elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV):
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425.}.get(candidate, 1275.) + STD_CARGO_KG
@@ -149,7 +146,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      ret.minEnableSpeed = 5 * CV.MPH_TO_MS
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
@@ -169,7 +165,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       if candidate == CAR.KIA_NIRO_HEV:
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
-        ret.minEnableSpeed = 10 * CV.MPH_TO_MS
     elif candidate == CAR.KIA_SELTOS:
       ret.mass = 1337. + STD_CARGO_KG
       ret.wheelbase = 2.63
@@ -192,7 +187,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      # TODO: this car has two variants (2017 and 2019) with two different minEnableSpeeds
     elif candidate == CAR.KIA_STINGER:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1825. + STD_CARGO_KG
