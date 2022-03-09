@@ -50,11 +50,14 @@ generated_files = [
   f'{gen}/long_cost/long_cost_y_0_fun.h',
 ] + build_files
 
+
+source_list = ['long_mpc.py', '#third_party/acados/build.sh']
+
 lenv = env.Clone()
 lenv.Clean(generated_files, Dir(gen))
 
 lenv.Command(generated_files,
-             ["long_mpc.py"],
+             source_list,
              f"cd {Dir('.').abspath} && python3 long_mpc.py")
 
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
