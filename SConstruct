@@ -89,7 +89,6 @@ if arch == "aarch64" or arch == "larch64":
     "/usr/local/lib",
     "/usr/lib",
     "/system/vendor/lib64",
-    "/system/comma/usr/lib",
     f"#third_party/acados/{arch}/lib",
   ]
 
@@ -306,11 +305,11 @@ if arch == "Darwin":
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
   qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
 elif arch == "aarch64":
-  qt_env['QTDIR'] = "/system/comma/usr"
+  qt_env['QTDIR'] = "/usr"
   qt_dirs = [
-    f"/system/comma/usr/include/qt",
+    f"/usr/include/qt",
   ]
-  qt_dirs += [f"/system/comma/usr/include/qt/Qt{m}" for m in qt_modules]
+  qt_dirs += [f"/usr/include/qt/Qt{m}" for m in qt_modules]
 
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   qt_libs += ['EGL', 'GLESv3', 'c++_shared']
