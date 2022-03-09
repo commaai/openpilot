@@ -186,35 +186,34 @@ class TestCarModel(unittest.TestCase):
     # Checks how long it takes to disengage after gas press or other cancellation reason
     # TODO: also check we don't re-engage without user intention
 
-    cancel_times = []
-    cancel_start_time = 0
+    cancel_frames = []
+    cancel_start_frame = 0
     cancel = False
-    prev_cancel = None
+    prev_cancel = False
     for idx, msg in enumerate(self.log_msgs):
       if msg.which() == "carControl":
         cancel = msg.carControl.cruiseControl.cancel
       elif msg.which() == 'carState':
         CS = msg.carState
-        if prev_cancel is not None:
-          # TODO: make sure this check is reliable
-          car_caused_cancel = CS.brakePressed or ButtonType.cancel in [be.type for be in CS.buttonEvents]
-          if cancel and not prev_cancel and not car_caused_cancel:
-            cancel_start_time = msg.logMonoTime
+        # TODO: make sure this check is reliable
+        car_caused_cancel = CS.brakePressed or ButtonType.cancel in [be.type for be in CS.buttonEvents]
+        if cancel and not prev_cancel and not car_caused_cancel:
+          cancel_start_frame = msg.logMonoTime
 
-          # add if on falling edge or last log item and there's a pending cancel
-          if (not cancel and prev_cancel) or (idx + 1 == len(self.log_msgs)):
-            if cancel_start_time != 0:
-              cancel_times.append((msg.logMonoTime - cancel_start_time) / 1e7)
-          if not cancel:
-            cancel_start_time = 0
+        # add if on falling edge or last log item and there's a pending cancel
+        if (not cancel and prev_cancel) or (idx + 1 == len(self.log_msgs)):
+          if cancel_start_frame != 0:
+            cancel_frames.append((msg.logMonoTime - cancel_start_frame) / 1e7)
+        if not cancel:
+          cancel_start_frame = 0
 
         prev_cancel = cancel
 
-    if not len(cancel_times):
+    if not len(cancel_frames):
       print('Warning: car {}, route {} has no openpilot cancellation events!'.format(self.car_model, self.route))
       return
-    print('Cancellation times:', cancel_times)
-    self.assertTrue(max(cancel_times) < 50, "car took too long to cancel: {} frames".format(max(cancel_times)))
+    print('Cancellation times:', cancel_frames)
+    self.assertTrue(max(cancel_frames) < 50, "car took too long to cancel: {} frames".format(max(cancel_frames)))
 
   def test_panda_safety_carstate(self):
     """
