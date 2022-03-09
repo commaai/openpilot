@@ -46,8 +46,6 @@ class CarController():
     self.steer_rate_limited = False
     self.last_resume_frame = 0
     self.accel = 0
-    self.cancel_frames = 0
-    self.prev_pcm_cancel = False
 
   def update(self, c, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, hud_speed,
              left_lane, right_lane, left_lane_depart, right_lane_depart):
@@ -81,23 +79,14 @@ class CarController():
                                    left_lane_warning, right_lane_warning))
 
     if not CS.CP.openpilotLongitudinalControl:
-      if pcm_cancel_cmd and not self.prev_pcm_cancel:
-        self.cancel_frames = 0
-      if pcm_cancel_cmd:
-        self.cancel_frames += 1
-        if frame % 10 == 0:
-          print('Sending cancel')
-          can_sends.extend([create_cancel_command(self.packer, CS.cgw1)] * 1)
+      if frame % 4 == 0:
+        can_sends.extend([create_cancel_command(self.packer, CS.cgw1)] * 10)
       elif CS.out.cruiseState.standstill:
         # send resume at a max freq of 10Hz
         if (frame - self.last_resume_frame) * DT_CTRL > 0.1:
           # send 25 messages at a time to increases the likelihood of resume being accepted
           can_sends.extend([create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL)] * 25)
           self.last_resume_frame = frame
-
-      if not pcm_cancel_cmd and self.prev_pcm_cancel:
-        print('Took {} send frames to cancel'.format(self.cancel_frames))
-      self.prev_pcm_cancel = pcm_cancel_cmd
 
     if frame % 2 == 0 and CS.CP.openpilotLongitudinalControl:
       lead_visible = False
