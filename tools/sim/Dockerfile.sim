@@ -58,6 +58,7 @@ COPY ./models $HOME/openpilot/models
 COPY ./opendbc $HOME/openpilot/opendbc
 COPY ./cereal $HOME/openpilot/cereal
 COPY ./panda $HOME/openpilot/panda
+COPY ./system ${HOME}/openpilot/system
 COPY ./selfdrive $HOME/openpilot/selfdrive
 COPY ./tools $HOME/openpilot/tools
 

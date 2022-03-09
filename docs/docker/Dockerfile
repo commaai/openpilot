@@ -29,6 +29,7 @@ COPY ./common ${OPENPILOT_PATH}/common
 COPY ./opendbc ${OPENPILOT_PATH}/opendbc
 COPY ./cereal ${OPENPILOT_PATH}/cereal
 COPY ./panda ${OPENPILOT_PATH}/panda
+COPY ./system ${OPENPILOT_PATH}/system
 COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
 COPY ./*.md ${OPENPILOT_PATH}/
 
