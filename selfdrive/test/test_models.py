@@ -56,10 +56,7 @@ class TestCarModel(unittest.TestCase):
         print(f"Skipping tests for {cls.car_model}: missing route")
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
-    # if 'HYUNDAI' not in cls.car_model:
-    #   raise unittest.SkipTest
-    # if cls.car_model != HYUNDAI.ELANTRA_2021:
-    #   raise unittest.SkipTest
+
     params = Params()
     params.clear_all()
 
@@ -207,7 +204,7 @@ class TestCarModel(unittest.TestCase):
           # add if on falling edge or last log item and there's a pending cancel
           if (not cancel and prev_cancel) or (idx + 1 == len(self.log_msgs)):
             if cancel_start_time != 0:
-              cancel_times.append((msg.logMonoTime - cancel_start_time) / 1e6)
+              cancel_times.append((msg.logMonoTime - cancel_start_time) / 1e7)
           if not cancel:
             cancel_start_time = 0
 
@@ -216,8 +213,8 @@ class TestCarModel(unittest.TestCase):
     if not len(cancel_times):
       print('Warning: car {}, route {} has no openpilot cancellation events!'.format(self.car_model, self.route))
       return
-    print(cancel_times)
-    self.assertTrue(max(cancel_times) < 200, "openpilot cancellation took too long to cancel: {} frames".format(max(cancel_times)))
+    print('Cancellation times:', cancel_times)
+    self.assertTrue(max(cancel_times) < 50, "car took too long to cancel: {} frames".format(max(cancel_times)))
 
   def test_panda_safety_carstate(self):
     """
