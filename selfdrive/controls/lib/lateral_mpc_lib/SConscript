@@ -43,7 +43,13 @@ generated_files = [
   f'{gen}/lat_cost/lat_cost_y_0_fun.h',
 ] + build_files
 
-source_list = ['lat_mpc.py', '#third_party/acados/build.sh']
+acados_dir = '#third_party/acados'
+source_list = ['lat_mpc.py',
+  f'{acados_dir}/include/acados_c/ocp_nlp_interface.h',
+  f'{acados_dir}/aarch64/lib/libacados.so',
+  f'{acados_dir}/x86_64/lib/libacados.so',
+  f'{acados_dir}/larch64/lib/libacados.so',
+]
 
 lenv = env.Clone()
 lenv.Clean(generated_files, Dir(gen))
