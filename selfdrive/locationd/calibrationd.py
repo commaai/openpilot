@@ -19,8 +19,8 @@ from common.transformations.model import model_height
 from common.transformations.camera import get_view_frame_from_road_frame
 from common.transformations.orientation import rot_from_euler, euler_from_rot
 from selfdrive.config import Conversions as CV
-from selfdrive.hardware import TICI
-from selfdrive.swaglog import cloudlog
+from system.hardware import TICI
+from system.swaglog import cloudlog
 
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)

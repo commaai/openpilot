@@ -18,8 +18,8 @@
 #include <QMap>
 #include <QPixmap>
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/util.h"
+#include "system/common/params.h"
+#include "system/common/util.h"
 #include "cereal/messaging/messaging.h"
 
 class MapInstructions : public QWidget {

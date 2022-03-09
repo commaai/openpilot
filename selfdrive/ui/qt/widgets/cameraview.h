@@ -8,7 +8,7 @@
 #include <QThread>
 #include "cereal/visionipc/visionipc_client.h"
 #include "system/camerad/cameras/camera_common.h"
-#include "selfdrive/common/visionimg.h"
+#include "system/common/visionimg.h"
 #include "selfdrive/ui/ui.h"
 
 class CameraViewWidget : public QOpenGLWidget, protected QOpenGLFunctions {

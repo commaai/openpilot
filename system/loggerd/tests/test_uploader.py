@@ -6,7 +6,7 @@ import unittest
 import logging
 import json
 
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 import system.loggerd.uploader as uploader
 
 from common.xattr import getxattr

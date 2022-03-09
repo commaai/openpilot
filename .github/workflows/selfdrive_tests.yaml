@@ -256,11 +256,11 @@ jobs:
                         $UNIT_TEST selfdrive/locationd && \
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
-                        $UNIT_TEST selfdrive/hardware/tici && \
+                        $UNIT_TEST system/hardware/tici && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
-                        ./selfdrive/common/tests/test_util && \
-                        ./selfdrive/common/tests/test_swaglog && \
+                        ./system/common/tests/test_util && \
+                        ./system/common/tests/test_swaglog && \
                         ./system/loggerd/tests/test_logger &&\
                         ./system/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \

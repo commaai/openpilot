@@ -51,7 +51,7 @@ libvisiontest_inputs := visiontest.c \
                         transforms/transform.cc \
                         transforms/loadyuv.cc \
                         ../common/clutil.cc \
-                        $(BASEDIR)/selfdrive/common/util.c \
+                        $(BASEDIR)/system/common/util.c \
                         $(CEREAL_OBJS)
 
 visiontest: libvisiontest.so
@@ -62,7 +62,7 @@ all-tests := $(addsuffix .test, $(basename $(wildcard test_*)))
 	$(CXX) $(CXXFLAGS) -MMD \
 		-I. -I.. -I../.. \
 		-Wall \
-		-I$(BASEDIR)/ -I$(BASEDIR)/selfdrive -I$(BASEDIR)/selfdrive/common \
+		-I$(BASEDIR)/ -I$(BASEDIR)/selfdrive -I$(BASEDIR)/system/common \
 		$(EIGEN_FLAGS) \
     $(OPENCV_FLAGS) \
     $(CEREAL_CXXFLAGS) \
@@ -73,7 +73,7 @@ all-tests := $(addsuffix .test, $(basename $(wildcard test_*)))
 	$(CC) $(CFLAGS) -MMD \
 		-I. -I.. -I../.. \
 		-Wall \
-		-I$(BASEDIR)/ -I$(BASEDIR)/selfdrive -I$(BASEDIR)/selfdrive/common \
+		-I$(BASEDIR)/ -I$(BASEDIR)/selfdrive -I$(BASEDIR)/system/common \
     $(CEREAL_CFLAGS) \
 		-c -o '$@' '$<'
 
@@ -85,7 +85,7 @@ libvisiontest.so: $(libvisiontest_inputs)
 		-I. \
 		$^ -o $($@_TMP) \
 		-I$(PHONELIBS)/opencl/include \
-		-I$(BASEDIR)/selfdrive/common \
+		-I$(BASEDIR)/system/common \
 		$(CEREAL_CXXFLAGS) \
 		$(CEREAL_CFLAGS) \
 		-I$(BASEDIR)/external/zmq/include \

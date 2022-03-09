@@ -4,7 +4,7 @@
 
 #include <QDebug>
 
-#include "selfdrive/common/timing.h"
+#include "system/common/timing.h"
 #include "selfdrive/ui/qt/util.h"
 #ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/maps/map.h"

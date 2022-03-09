@@ -2,7 +2,7 @@
 
 #include <QFontDatabase>
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);

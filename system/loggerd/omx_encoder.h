@@ -10,7 +10,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-#include "selfdrive/common/queue.h"
+#include "system/common/queue.h"
 #include "system/loggerd/encoder.h"
 
 struct OmxBuffer {

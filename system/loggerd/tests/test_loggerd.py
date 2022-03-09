@@ -15,10 +15,10 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.hardware import TICI
+from system.hardware import TICI
 from system.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.version import get_version
+from system.version import get_version
 from tools.lib.logreader import LogReader
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.transformations.camera import eon_f_frame_size, tici_f_frame_size, \

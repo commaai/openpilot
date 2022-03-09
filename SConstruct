@@ -145,7 +145,7 @@ else:
       "#third_party/libyuv/x64/lib",
       "#third_party/mapbox-gl-native-qt/x86_64",
       "#cereal",
-      "#selfdrive/common",
+      "#system/common",
       "/usr/lib",
       "/usr/local/lib",
     ]
@@ -153,7 +153,7 @@ else:
   rpath += [
     Dir("#third_party/snpe/x86_64-linux-clang").abspath,
     Dir("#cereal").abspath,
-    Dir("#selfdrive/common").abspath
+    Dir("#system/common").abspath
   ]
 
 if GetOption('asan'):
@@ -229,7 +229,7 @@ env = Environment(
     "#third_party",
     "#opendbc/can",
     "#selfdrive/boardd",
-    "#selfdrive/common",
+    "#system/common",
   ],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
@@ -357,7 +357,7 @@ if GetOption("clazy"):
 
 Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
 
-SConscript(['selfdrive/common/SConscript'])
+SConscript(['system/common/SConscript'])
 Import('_common', '_gpucommon', '_gpu_libs')
 
 if SHARED:

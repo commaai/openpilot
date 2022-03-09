@@ -19,11 +19,11 @@
 #include "system/camerad/include/msmb_camera.h"
 #include "system/camerad/include/msmb_isp.h"
 #include "system/camerad/include/msmb_ispif.h"
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
+#include "system/common/clutil.h"
+#include "system/common/params.h"
+#include "system/common/swaglog.h"
+#include "system/common/timing.h"
+#include "system/common/util.h"
 
 // leeco actuator (DW9800W H-Bridge Driver IC)
 // from sniff

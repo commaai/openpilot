@@ -2,9 +2,9 @@
 
 #include <cassert>
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/common/params.h"
+#include "system/common/util.h"
+#include "system/hardware/hw.h"
 
 int main(int argc, char *argv[]) {
   if (!Hardware::PC()) {

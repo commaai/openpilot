@@ -6,7 +6,7 @@ import multiprocessing
 from typing import Optional
 
 from common.clock import sec_since_boot  # pylint: disable=no-name-in-module, import-error
-from selfdrive.hardware import PC, TICI
+from system.hardware import PC, TICI
 
 
 # time step for each process

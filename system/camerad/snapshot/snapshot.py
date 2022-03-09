@@ -10,7 +10,7 @@ import cereal.messaging as messaging
 from cereal.visionipc.visionipc_pyx import VisionIpcClient, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.params import Params
 from common.realtime import DT_MDL
-from selfdrive.hardware import TICI, PC
+from system.hardware import TICI, PC
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.manager.process_config import managed_processes
 

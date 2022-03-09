@@ -11,8 +11,8 @@ from common.realtime import Ratekeeper, Priority, config_realtime_process
 from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
 from selfdrive.controls.lib.radar_helpers import Cluster, Track
-from selfdrive.swaglog import cloudlog
-from selfdrive.hardware import TICI
+from system.swaglog import cloudlog
+from system.hardware import TICI
 
 
 class KalmanParams():

@@ -16,8 +16,8 @@
 #include <chrono>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
+#include "system/common/timing.h"
+#include "system/common/util.h"
 
 ExitHandler do_exit;
 

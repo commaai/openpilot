@@ -16,8 +16,8 @@
 #include <OMX_VideoExt.h>
 #include "libyuv.h"
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "system/common/swaglog.h"
+#include "system/common/util.h"
 #include "system/loggerd/include/msm_media_info.h"
 
 // Check the OMX error code and assert if an error occurred.

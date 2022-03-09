@@ -4,7 +4,7 @@ import traceback
 import cereal.messaging as messaging
 from panda.python.uds import FUNCTIONAL_ADDRS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 VIN_REQUEST = b'\x09\x02'
 VIN_RESPONSE = b'\x49\x02\x01'

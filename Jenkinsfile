@@ -131,7 +131,7 @@ pipeline {
                       ["test loggerd", "python system/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python system/loggerd/tests/test_encoder.py"],
                       ["test logcatd", "python system/logcatd/tests/test_logcatd_android.py"],
-                      ["test updater", "python selfdrive/hardware/eon/test_neos_updater.py"],
+                      ["test updater", "python system/hardware/eon/test_neos_updater.py"],
                     ])
                   }
                 }

@@ -6,8 +6,8 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/timing.h"
+#include "system/common/util.h"
+#include "system/common/timing.h"
 
 void PrintErrorStringAndExit() {
   std::cerr << zdl::DlSystem::getLastErrorString() << std::endl;

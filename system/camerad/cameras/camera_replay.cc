@@ -3,8 +3,8 @@
 #include <cassert>
 #include <thread>
 
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/util.h"
+#include "system/common/clutil.h"
+#include "system/common/util.h"
 
 extern ExitHandler do_exit;
 

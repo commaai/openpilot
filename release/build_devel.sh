@@ -49,8 +49,8 @@ fi
 # append source commit hash and build date to version
 GIT_HASH=$(git --git-dir=$SOURCE_DIR/.git rev-parse --short HEAD)
 DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
-VERSION=$(cat selfdrive/common/version.h | awk -F\" '{print $2}')
-echo "#define COMMA_VERSION \"$VERSION-$GIT_HASH-$DATETIME\"" > selfdrive/common/version.h
+VERSION=$(cat system/common/version.h | awk -F\" '{print $2}')
+echo "#define COMMA_VERSION \"$VERSION-$GIT_HASH-$DATETIME\"" > system/common/version.h
 
 # in the directory
 cd $TARGET_DIR

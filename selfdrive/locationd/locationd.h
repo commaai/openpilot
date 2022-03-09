@@ -8,10 +8,10 @@
 #include "cereal/messaging/messaging.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
+#include "system/common/params.h"
+#include "system/common/swaglog.h"
+#include "system/common/timing.h"
+#include "system/common/util.h"
 
 #include "system/sensord/sensors/constants.h"
 #define VISION_DECIMATION 2

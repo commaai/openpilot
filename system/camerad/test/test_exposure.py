@@ -6,7 +6,7 @@ import numpy as np
 from selfdrive.test.helpers import with_processes
 from system.camerad.snapshot.snapshot import get_snapshots
 
-from selfdrive.hardware import EON, TICI
+from system.hardware import EON, TICI
 
 TEST_TIME = 45
 REPEAT = 5

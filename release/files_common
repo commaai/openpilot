@@ -66,17 +66,17 @@ tools/lib/*
 
 installer/updater/updater
 
-selfdrive/version.py
+system/version.py
 
 selfdrive/__init__.py
 selfdrive/config.py
-selfdrive/sentry.py
-selfdrive/swaglog.py
-selfdrive/logmessaged.py
-selfdrive/tombstoned.py
+system/sentry.py
+system/swaglog.py
+system/logmessaged.py
+system/tombstoned.py
 selfdrive/pandad.py
 selfdrive/updated.py
-selfdrive/rtshield.py
+system/rtshield.py
 selfdrive/statsd.py
 
 selfdrive/athena/__init__.py
@@ -195,34 +195,34 @@ system/clocksd/clocksd.cc
 
 selfdrive/debug/*.py
 
-selfdrive/common/SConscript
-selfdrive/common/version.h
+system/common/SConscript
+system/common/version.h
 
-selfdrive/common/swaglog.h
-selfdrive/common/swaglog.cc
-selfdrive/common/statlog.h
-selfdrive/common/statlog.cc
-selfdrive/common/util.cc
-selfdrive/common/util.h
-selfdrive/common/queue.h
-selfdrive/common/clutil.cc
-selfdrive/common/clutil.h
-selfdrive/common/params.h
-selfdrive/common/params.cc
-selfdrive/common/watchdog.cc
-selfdrive/common/watchdog.h
+system/common/swaglog.h
+system/common/swaglog.cc
+system/common/statlog.h
+system/common/statlog.cc
+system/common/util.cc
+system/common/util.h
+system/common/queue.h
+system/common/clutil.cc
+system/common/clutil.h
+system/common/params.h
+system/common/params.cc
+system/common/watchdog.cc
+system/common/watchdog.h
 
-selfdrive/common/modeldata.h
-selfdrive/common/mat.h
-selfdrive/common/timing.h
+system/common/modeldata.h
+system/common/mat.h
+system/common/timing.h
 
-selfdrive/common/visionimg.cc
-selfdrive/common/visionimg.h
+system/common/visionimg.cc
+system/common/visionimg.h
 
-selfdrive/common/gpio.cc
-selfdrive/common/gpio.h
-selfdrive/common/i2c.cc
-selfdrive/common/i2c.h
+system/common/gpio.cc
+system/common/gpio.h
+system/common/i2c.cc
+system/common/i2c.h
 
 
 selfdrive/controls/__init__.py
@@ -255,24 +255,24 @@ selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
 selfdrive/controls/lib/lateral_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
-selfdrive/hardware/__init__.py
-selfdrive/hardware/base.h
-selfdrive/hardware/base.py
-selfdrive/hardware/hw.h
-selfdrive/hardware/eon/__init__.py
-selfdrive/hardware/eon/androidd.py
-selfdrive/hardware/eon/shutdownd.py
-selfdrive/hardware/eon/hardware.h
-selfdrive/hardware/eon/hardware.py
-selfdrive/hardware/eon/neos.py
-selfdrive/hardware/eon/neos.json
-selfdrive/hardware/eon/updater
-selfdrive/hardware/tici/__init__.py
-selfdrive/hardware/tici/hardware.py
-selfdrive/hardware/tici/amplifier.py
-selfdrive/hardware/tici/iwlist.py
-selfdrive/hardware/pc/__init__.py
-selfdrive/hardware/pc/hardware.py
+system/hardware/__init__.py
+system/hardware/base.h
+system/hardware/base.py
+system/hardware/hw.h
+system/hardware/eon/__init__.py
+system/hardware/eon/androidd.py
+system/hardware/eon/shutdownd.py
+system/hardware/eon/hardware.h
+system/hardware/eon/hardware.py
+system/hardware/eon/neos.py
+system/hardware/eon/neos.json
+system/hardware/eon/updater
+system/hardware/tici/__init__.py
+system/hardware/tici/hardware.py
+system/hardware/tici/amplifier.py
+system/hardware/tici/iwlist.py
+system/hardware/pc/__init__.py
+system/hardware/pc/hardware.py
 
 selfdrive/locationd/__init__.py
 selfdrive/locationd/.gitignore

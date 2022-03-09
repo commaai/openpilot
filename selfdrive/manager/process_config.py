@@ -1,6 +1,6 @@
 import os
 
-from selfdrive.hardware import EON, TICI, PC
+from system.hardware import EON, TICI, PC
 from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
@@ -26,22 +26,22 @@ procs = [
   PythonProcess("controlsd", "selfdrive.controls.controlsd"),
   PythonProcess("deleter", "system.loggerd.deleter", persistent=True),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enabled=(not PC or WEBCAM), driverview=True),
-  PythonProcess("logmessaged", "selfdrive.logmessaged", persistent=True),
+  PythonProcess("logmessaged", "system.logmessaged", persistent=True),
   PythonProcess("pandad", "selfdrive.pandad", persistent=True),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd"),
   PythonProcess("plannerd", "selfdrive.controls.plannerd"),
   PythonProcess("radard", "selfdrive.controls.radard"),
   PythonProcess("thermald", "selfdrive.thermald.thermald", persistent=True),
-  PythonProcess("timezoned", "selfdrive.timezoned", enabled=TICI, persistent=True),
-  PythonProcess("tombstoned", "selfdrive.tombstoned", enabled=not PC, persistent=True),
+  PythonProcess("timezoned", "system.timezoned", enabled=TICI, persistent=True),
+  PythonProcess("tombstoned", "system.tombstoned", enabled=not PC, persistent=True),
   PythonProcess("updated", "selfdrive.updated", enabled=not PC, persistent=True),
   PythonProcess("uploader", "system.loggerd.uploader", persistent=True),
   PythonProcess("statsd", "selfdrive.statsd", persistent=True),
 
   # EON only
-  PythonProcess("rtshield", "selfdrive.rtshield", enabled=EON),
-  PythonProcess("shutdownd", "selfdrive.hardware.eon.shutdownd", enabled=EON),
-  PythonProcess("androidd", "selfdrive.hardware.eon.androidd", enabled=EON, persistent=True),
+  PythonProcess("rtshield", "system.rtshield", enabled=EON),
+  PythonProcess("shutdownd", "system.hardware.eon.shutdownd", enabled=EON),
+  PythonProcess("androidd", "system.hardware.eon.androidd", enabled=EON, persistent=True),
 ]
 
 managed_processes = {p.name: p for p in procs}

@@ -1,6 +1,6 @@
 third_party/mapbox-gl-native-qt/include/*
 
-selfdrive/timezoned.py
+system/timezoned.py
 
 selfdrive/assets/navigation/*
 selfdrive/assets/training_wide/*
@@ -9,14 +9,14 @@ system/camerad/cameras/camera_qcom2.cc
 system/camerad/cameras/camera_qcom2.h
 system/camerad/cameras/real_debayer.cl
 
-selfdrive/hardware/tici/__init__.py
-selfdrive/hardware/tici/hardware.h
-selfdrive/hardware/tici/hardware.py
-selfdrive/hardware/tici/pins.py
-selfdrive/hardware/tici/agnos.py
-selfdrive/hardware/tici/agnos.json
-selfdrive/hardware/tici/amplifier.py
-selfdrive/hardware/tici/updater
+system/hardware/tici/__init__.py
+system/hardware/tici/hardware.h
+system/hardware/tici/hardware.py
+system/hardware/tici/pins.py
+system/hardware/tici/agnos.py
+system/hardware/tici/agnos.json
+system/hardware/tici/amplifier.py
+system/hardware/tici/updater
 
 selfdrive/ui/qt/spinner_larch64
 selfdrive/ui/qt/text_larch64

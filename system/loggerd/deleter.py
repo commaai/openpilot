@@ -2,7 +2,7 @@
 import os
 import shutil
 import threading
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 from system.loggerd.config import ROOT, get_available_bytes, get_available_percent
 from system.loggerd.uploader import listdir_by_creation
 

@@ -7,7 +7,7 @@
 #include <cmath>
 #include <cstring>
 
-#include "selfdrive/common/util.h"
+#include "system/common/util.h"
 #include "system/camerad/cameras/camera_common.h"
 
 // needed by camera_common.cc

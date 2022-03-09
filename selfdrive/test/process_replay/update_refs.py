@@ -6,7 +6,7 @@ from selfdrive.test.openpilotci import upload_file, get_url
 from selfdrive.test.process_replay.compare_logs import save_log
 from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
 from selfdrive.test.process_replay.test_processes import segments
-from selfdrive.version import get_commit
+from system.version import get_commit
 from tools.lib.logreader import LogReader
 
 if __name__ == "__main__":

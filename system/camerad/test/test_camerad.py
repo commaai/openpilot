@@ -7,7 +7,7 @@ import cereal.messaging as messaging
 from selfdrive.test.helpers import with_processes
 
 # only tests for EON and TICI
-from selfdrive.hardware import EON, TICI
+from system.hardware import EON, TICI
 
 TEST_TIMESPAN = 30 # random.randint(60, 180) # seconds
 SKIP_FRAME_TOLERANCE = 0

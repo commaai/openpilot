@@ -8,9 +8,9 @@
 #include <cerrno>
 #include <optional>
 
-#include "selfdrive/common/gpio.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "system/common/gpio.h"
+#include "system/common/swaglog.h"
+#include "system/common/util.h"
 #include "selfdrive/locationd/ublox_msg.h"
 
 // Termios on macos doesn't define all baud rate constants

@@ -5,7 +5,7 @@
 #include <media/cam_req_mgr.h>
 
 #include "system/camerad/cameras/camera_common.h"
-#include "selfdrive/common/util.h"
+#include "system/common/util.h"
 
 #define FRAME_BUF_COUNT 4
 

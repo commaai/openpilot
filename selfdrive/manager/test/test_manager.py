@@ -5,7 +5,7 @@ import time
 import unittest
 
 import selfdrive.manager.manager as manager
-from selfdrive.hardware import EON, TICI, HARDWARE
+from system.hardware import EON, TICI, HARDWARE
 from selfdrive.manager.process import DaemonProcess
 from selfdrive.manager.process_config import managed_processes
 

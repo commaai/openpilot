@@ -3,7 +3,7 @@ from math import atan2
 from cereal import car
 from common.numpy_fast import interp
 from common.realtime import DT_DMON
-from selfdrive.hardware import TICI
+from system.hardware import TICI
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
 

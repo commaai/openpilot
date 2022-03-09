@@ -13,10 +13,10 @@
 #include <opencv2/videoio.hpp>
 #pragma clang diagnostic pop
 
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
+#include "system/common/clutil.h"
+#include "system/common/swaglog.h"
+#include "system/common/timing.h"
+#include "system/common/util.h"
 
 // id of the video capturing device
 const int ROAD_CAMERA_ID = util::getenv("ROADCAM_ID", 1);

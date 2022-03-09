@@ -5,9 +5,9 @@
 
 #include <capnp/dynamic.h>
 #include "cereal/services.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/common/params.h"
+#include "system/common/timing.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/replay/util.h"
 
 Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, uint32_t flags, QString data_dir, QObject *parent)

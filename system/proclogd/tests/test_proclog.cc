@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
-#include "selfdrive/common/util.h"
+#include "system/common/util.h"
 #include "system/proclogd/proclog.h"
 
 const std::string allowed_states = "RSDTZtWXxKWPI";

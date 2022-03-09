@@ -8,9 +8,9 @@
 
 #include <eigen3/Eigen/Dense>
 
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
+#include "system/common/clutil.h"
+#include "system/common/params.h"
+#include "system/common/timing.h"
 
 constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
 constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;

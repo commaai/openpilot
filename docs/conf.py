@@ -16,7 +16,7 @@
 import os
 from os.path import exists
 import sys
-from selfdrive.version import get_version
+from system.version import get_version
 from common.basedir import BASEDIR
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))

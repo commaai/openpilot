@@ -12,9 +12,9 @@
 #include <kj/array.h>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/common/util.h"
+#include "system/common/swaglog.h"
+#include "system/hardware/hw.h"
 
 const std::string LOG_ROOT = Path::log_root();
 

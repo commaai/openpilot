@@ -2,7 +2,7 @@
 #include <string>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/swaglog.h"
+#include "system/common/swaglog.h"
 #include "system/loggerd/logger.h"
 
 

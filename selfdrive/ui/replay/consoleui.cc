@@ -3,7 +3,7 @@
 #include <QApplication>
 #include <initializer_list>
 
-#include "selfdrive/common/version.h"
+#include "system/common/version.h"
 
 namespace {
 

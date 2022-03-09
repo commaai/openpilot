@@ -3,7 +3,7 @@
 #include <QFrame>
 #include <QMap>
 
-#include "selfdrive/common/params.h"
+#include "system/common/params.h"
 #include "selfdrive/ui/ui.h"
 
 typedef QPair<QString, QColor> ItemStatus;

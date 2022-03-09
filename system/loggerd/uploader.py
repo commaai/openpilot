@@ -12,10 +12,10 @@ from cereal import log
 import cereal.messaging as messaging
 from common.api import Api
 from common.params import Params
-from selfdrive.hardware import TICI
+from system.hardware import TICI
 from system.loggerd.xattr_cache import getxattr, setxattr
 from system.loggerd.config import ROOT
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'

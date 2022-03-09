@@ -2,8 +2,8 @@
 #include <set>
 
 #include "json11.hpp"
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/clutil.h"
+#include "system/common/util.h"
+#include "system/common/clutil.h"
 #include "selfdrive/modeld/thneed/thneed.h"
 using namespace json11;
 

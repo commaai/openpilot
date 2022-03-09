@@ -6,8 +6,8 @@
 #include <QQuickWidget>
 #include <QVBoxLayout>
 
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/params.h"
+#include "system/common/util.h"
+#include "system/common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 

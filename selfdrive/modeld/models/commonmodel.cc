@@ -5,9 +5,9 @@
 #include <cmath>
 #include <cstring>
 
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/mat.h"
-#include "selfdrive/common/timing.h"
+#include "system/common/clutil.h"
+#include "system/common/mat.h"
+#include "system/common/timing.h"
 
 ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
   input_frames = std::make_unique<float[]>(buf_size);

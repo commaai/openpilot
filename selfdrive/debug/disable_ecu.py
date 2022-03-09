@@ -3,7 +3,7 @@ import traceback
 
 import cereal.messaging as messaging
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 EXT_DIAG_REQUEST = b'\x10\x03'
 EXT_DIAG_RESPONSE = b'\x50\x03'

@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "selfdrive/common/timing.h"
+#include "system/common/timing.h"
 #include "system/sensord/sensors/constants.h"
 
 void LightSensor::get_event(cereal::SensorEventData::Builder &event) {

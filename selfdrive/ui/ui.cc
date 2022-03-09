@@ -6,11 +6,11 @@
 #include <QtConcurrent>
 
 #include "common/transformations/orientation.hpp"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/watchdog.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/common/params.h"
+#include "system/common/swaglog.h"
+#include "system/common/util.h"
+#include "system/common/watchdog.h"
+#include "system/hardware/hw.h"
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
