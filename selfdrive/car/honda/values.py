@@ -66,9 +66,9 @@ VISUAL_HUD = {
 class CAR:
   ACCORD = "HONDA ACCORD 2018"
   ACCORDH = "HONDA ACCORD HYBRID 2018"
-  CIVIC = "HONDA CIVIC 2016"
-  CIVIC_BOSCH = "HONDA CIVIC (BOSCH) 2019"
-  CIVIC_BOSCH_DIESEL = "HONDA CIVIC SEDAN 1.6 DIESEL 2019"
+  CIVIC = "HONDA CIVIC 2016"  # Sedan/Coupe 2016-18
+  CIVIC_BOSCH = "HONDA CIVIC (BOSCH) 2019"  # Bosch Sedan/Coupe 2019-2020
+  CIVIC_BOSCH_DIESEL = "HONDA CIVIC SEDAN 1.6 DIESEL 2019"  #
   ACURA_ILX = "ACURA ILX 2016"
   CRV = "HONDA CR-V 2016"
   CRV_5G = "HONDA CR-V 2017"
@@ -91,8 +91,8 @@ class CAR:
 CAR_INFO = {
   CAR.ACCORD: CarInfo("Honda Accord", {2018, 2019, 2020, 2021}, "All"),
   CAR.ACCORDH: CarInfo("Honda Accord Hybrid", {2018, 2019, 2020, 2021}, "All"),
-  CAR.CIVIC: CarInfo("Honda Civic", {2016, 2017, 2018}, "Honda Sensing"),  # TODO: there's also the identical coupe
-  CAR.CIVIC_BOSCH: CarInfo("Honda Civic (Bosch)", {2019, 2020}, "All"),
+  CAR.CIVIC: CarInfo("Honda Civic Sedan/Coupe", {2016, 2017, 2018}, "Honda Sensing"),  # Nidec
+  CAR.CIVIC_BOSCH: CarInfo("Honda Civic Sedan/Coupe", {2019, 2020}, "All"),
   CAR.CIVIC_BOSCH_DIESEL: CarInfo("Honda Civic Sedan 1.6 DIESEL", {2019, 2020}, "All"),  # TODO: same as civic bosch but has no alc under 12 mph exception
   CAR.ACURA_ILX: CarInfo("Acura ILX", {2016, 2017, 2018, 2019}, "AcuraWatch Plus"),
   CAR.CRV: CarInfo("Honda CR-V", {2015, 2016}, "Touring"),
