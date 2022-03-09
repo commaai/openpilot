@@ -63,7 +63,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     mexPrintf("{{ model.name }}_acados_create() -> success!\n");
 
     // get pointers to nlp solver related objects
-    ocp_nlp_plan *nlp_plan = {{ model.name }}_acados_get_nlp_plan(acados_ocp_capsule);
+    ocp_nlp_plan_t *nlp_plan = {{ model.name }}_acados_get_nlp_plan(acados_ocp_capsule);
     ocp_nlp_config *nlp_config = {{ model.name }}_acados_get_nlp_config(acados_ocp_capsule);
     ocp_nlp_dims *nlp_dims = {{ model.name }}_acados_get_nlp_dims(acados_ocp_capsule);
     ocp_nlp_in *nlp_in = {{ model.name }}_acados_get_nlp_in(acados_ocp_capsule);

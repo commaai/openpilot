@@ -220,7 +220,7 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     {% endif %}
 
     // sim plan & config
-    sim_solver_plan plan;
+    sim_solver_plan_t plan;
     plan.sim_solver = {{ solver_options.integrator_type }};
 
     // create correct config based on plan

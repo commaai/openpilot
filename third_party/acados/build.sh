@@ -13,12 +13,12 @@ elif [ -f /EON ]; then
 fi
 
 if [ ! -d acados_repo/ ]; then
-  #git clone https://github.com/acados/acados.git $DIR/acados
-  git clone https://github.com/commaai/acados.git $DIR/acados_repo
+  git clone https://github.com/acados/acados.git $DIR/acados_repo
+  # git clone https://github.com/commaai/acados.git $DIR/acados_repo
 fi
 cd acados_repo
 git fetch
-git checkout 474fb1fb227a4abbb6ce04f64c7d8952bf9a6396
+git checkout 6c7ffa23105d6b86a5ae2e3af7d7670698ac434d # acados/master March 9, 2022
 git submodule update --recursive --init
 
 # build

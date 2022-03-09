@@ -81,7 +81,7 @@ typedef struct {{ model.name }}_solver_capsule
     ocp_nlp_out *sens_out;
     ocp_nlp_solver *nlp_solver;
     void *nlp_opts;
-    ocp_nlp_plan *nlp_solver_plan;
+    ocp_nlp_plan_t *nlp_solver_plan;
     ocp_nlp_config *nlp_config;
     ocp_nlp_dims *nlp_dims;
 
@@ -203,7 +203,7 @@ ocp_nlp_solver *{{ model.name }}_acados_get_nlp_solver({{ model.name }}_solver_c
 ocp_nlp_config *{{ model.name }}_acados_get_nlp_config({{ model.name }}_solver_capsule * capsule);
 void *{{ model.name }}_acados_get_nlp_opts({{ model.name }}_solver_capsule * capsule);
 ocp_nlp_dims *{{ model.name }}_acados_get_nlp_dims({{ model.name }}_solver_capsule * capsule);
-ocp_nlp_plan *{{ model.name }}_acados_get_nlp_plan({{ model.name }}_solver_capsule * capsule);
+ocp_nlp_plan_t *{{ model.name }}_acados_get_nlp_plan({{ model.name }}_solver_capsule * capsule);
 
 #ifdef __cplusplus
 } /* extern "C" */

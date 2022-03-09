@@ -156,7 +156,7 @@ int {{ model.name }}_acados_update_time_steps({{ model.name }}_solver_capsule* c
 /**
  * Internal function for {{ model.name }}_acados_create: step 1
  */
-void {{ model.name }}_acados_create_1_set_plan(ocp_nlp_plan* nlp_solver_plan, const int N)
+void {{ model.name }}_acados_create_1_set_plan(ocp_nlp_plan_t* nlp_solver_plan, const int N)
 {
     assert(N == nlp_solver_plan->N);
 
@@ -226,7 +226,7 @@ void {{ model.name }}_acados_create_1_set_plan(ocp_nlp_plan* nlp_solver_plan, co
  */
 ocp_nlp_dims* {{ model.name }}_acados_create_2_create_and_set_dimensions({{ model.name }}_solver_capsule* capsule)
 {
-    ocp_nlp_plan* nlp_solver_plan = capsule->nlp_solver_plan;
+    ocp_nlp_plan_t* nlp_solver_plan = capsule->nlp_solver_plan;
     const int N = nlp_solver_plan->N;
     ocp_nlp_config* nlp_config = capsule->nlp_config;
 
@@ -2383,7 +2383,7 @@ ocp_nlp_solver *{{ model.name }}_acados_get_nlp_solver({{ model.name }}_solver_c
 ocp_nlp_config *{{ model.name }}_acados_get_nlp_config({{ model.name }}_solver_capsule* capsule) { return capsule->nlp_config; }
 void *{{ model.name }}_acados_get_nlp_opts({{ model.name }}_solver_capsule* capsule) { return capsule->nlp_opts; }
 ocp_nlp_dims *{{ model.name }}_acados_get_nlp_dims({{ model.name }}_solver_capsule* capsule) { return capsule->nlp_dims; }
-ocp_nlp_plan *{{ model.name }}_acados_get_nlp_plan({{ model.name }}_solver_capsule* capsule) { return capsule->nlp_solver_plan; }
+ocp_nlp_plan_t *{{ model.name }}_acados_get_nlp_plan({{ model.name }}_solver_capsule* capsule) { return capsule->nlp_solver_plan; }
 
 
 void {{ model.name }}_acados_print_stats({{ model.name }}_solver_capsule* capsule)
