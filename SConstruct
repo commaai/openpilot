@@ -106,11 +106,11 @@ if arch == "aarch64" or arch == "larch64":
     rpath += ["/usr/local/lib"]
   else:
     rpath = []
-    libpath += [
+    libpath = [
       "#third_party/snpe/aarch64",
       "#third_party/libyuv/lib",
       "/system/vendor/lib64"
-    ]
+    ] + libpath
     cflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
 else:
