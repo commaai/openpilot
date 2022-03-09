@@ -72,10 +72,7 @@ class HardwareBase(ABC):
     pass
 
   def get_network_metered(self, network_type) -> bool:
-    if network_type in [NetworkType.none, NetworkType.wifi, NetworkType.ethernet]:
-      return False
-    else:
-      return True
+    return network_type not in (NetworkType.none, NetworkType.wifi, NetworkType.ethernet)
 
   @staticmethod
   def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
