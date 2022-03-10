@@ -1,9 +1,9 @@
 from cereal import car
-from common.numpy_fast import mean
 from opendbc.can.parser import CANParser
-from selfdrive.car.ford.values import DBC
-from selfdrive.car.interfaces import CarStateBase
+from common.numpy_fast import mean
 from selfdrive.config import Conversions as CV
+from selfdrive.car.interfaces import CarStateBase
+from selfdrive.car.ford.values import DBC
 
 WHEEL_RADIUS = 0.33
 
