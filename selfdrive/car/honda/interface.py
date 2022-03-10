@@ -113,7 +113,12 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 1.
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
-      ret.minSteerSpeed = 12. * CV.MPH_TO_MS  # TODO do these cars have the same minSteerSpeed?
+      ret.minSteerSpeed = 2. * CV.MPH_TO_MS
+
+      # Diesel and hatchback have a higher minimum steering speed
+      # TODO: also add fw exception for Civic Hatchback 2017-21
+      if candidate == CAR.CIVIC_BOSCH_DIESEL:
+        ret.minSteerSpeed = 12. * CV.MPH_TO_MS
 
     elif candidate in (CAR.ACCORD, CAR.ACCORDH):
       stop_and_go = True
