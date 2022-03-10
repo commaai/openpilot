@@ -25,6 +25,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 1.0
     ret.centerToFront = ret.wheelbase * 0.44
     tire_stiffness_factor = 0.5328
+    # TODO: add minSteerSpeed
+    ret.minEnableSpeed = 12. * CV.MPH_TO_MS
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
