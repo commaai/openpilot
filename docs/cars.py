@@ -2,10 +2,14 @@
 from collections import defaultdict, namedtuple
 from enum import Enum
 import os
+from typing import Dict
 
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
+from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
+from selfdrive.car.gm.values import CAR as GM
 from selfdrive.test.test_routes import non_tested_cars
 
 
@@ -15,10 +19,79 @@ class Tier(Enum):
   BRONZE = "Bronze"
 
 
+class Column(Enum):
+  MAKE = "Make"
+  MODEL = "Model"
+  PACKAGE = "Supported Package"
+  LONGITUDINAL = "openpilot Longitudinal"
+  FSR_LONGITUDINAL = "FSR Longitudinal"
+  FSR_STEERING = "FSR Steering"
+  STEERING_TORQUE = "Steering Torque"
+  SUPPORTED = "Actively Maintained"
+
+
+StarColumns = list(Column)[3:]
+CarException = namedtuple("CarException", ["cars", "text", "column", "star"], defaults=[None])
+
+
+def make_row(columns):
+  return "|{}|".format("|".join(columns))
+
+
+def get_star_icon(variant):
+  return '<img src="assets/icon-star-{}.png" width="22" />'.format(variant)
+
+
+def get_exceptions(CP) -> Dict[Column, CarException]:
+  exceptions = {}
+  for car_exception in CAR_EXCEPTIONS:
+    if CP.carFingerprint in car_exception.cars:
+      exceptions[car_exception.column] = car_exception
+  return exceptions
+
+
+CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS_generated.md")
+CAR_TABLE_HEADER = make_row(["---"] * 3 + [":---:"] * 5)  # first three aren't centered
+
+# TODO: which other makes?
+MAKES_GOOD_STEERING_TORQUE = ["toyota", "hyundai", "volkswagen"]
+CAR_EXCEPTIONS = [
+  CarException([TOYOTA.LEXUS_CTH, TOYOTA.LEXUS_ESH, TOYOTA.LEXUS_NX, TOYOTA.LEXUS_NXH, TOYOTA.LEXUS_RX,
+                TOYOTA.LEXUS_RXH, TOYOTA.AVALON, TOYOTA.AVALONH_2019, TOYOTA.COROLLA, TOYOTA.HIGHLANDER,
+                TOYOTA.HIGHLANDERH, TOYOTA.PRIUS, TOYOTA.PRIUS_V, TOYOTA.RAV4, TOYOTA.RAV4H, TOYOTA.SIENNA],
+               "When disconnecting the Driver Support Unit (DSU), openpilot Adaptive Cruise Control (ACC) will replace "
+               "stock Adaptive Cruise Control (ACC). NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).",
+               Column.LONGITUDINAL, star="half"),
+  CarException([TOYOTA.CAMRY, TOYOTA.CAMRY_TSS2, TOYOTA.CAMRYH],
+               "28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
+               Column.FSR_LONGITUDINAL),
+  CarException([GM.ESCALADE_ESV, GM.VOLT, GM.ACADIA],
+               "Requires an [OBD-II](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness]"
+               "(https://github.com/commaai/openpilot/wiki/GM#hardware). NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).",
+               Column.MODEL),
+  CarException([VOLKSWAGEN.SKODA_KAMIQ_MK1],
+               "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
+               Column.MODEL),
+  CarException([VOLKSWAGEN.PASSAT_MK8],
+               "Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform.",
+               Column.MODEL),
+  CarException([VOLKSWAGEN.ARTEON_MK1, VOLKSWAGEN.ATLAS_MK1, VOLKSWAGEN.TRANSPORTER_T61, VOLKSWAGEN.TCROSS_MK1,
+                VOLKSWAGEN.TROC_MK1, VOLKSWAGEN.TAOS_MK1, VOLKSWAGEN.TIGUAN_MK2],
+               'Model-years 2021 and beyond may have a new camera harness design, which isn\'t yet available from the comma '
+               'store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black '
+               '(older design) or light brown (newer design). For the newer design, in the interim, choose "VW J533 Development" '
+               'from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.',
+               Column.MODEL),
+  CarException([TOYOTA.PRIUS, TOYOTA.PRIUS_V],
+               "An inaccurate steering wheel angle sensor makes precise control difficult.",
+               Column.STEERING_TORQUE, star="half"),
+]
+
+
 class Car:
   def __init__(self, car_info, CP):
     self.make, self.model = car_info.name.split(' ', 1)
-
+    self.car_fingerprint = CP.carFingerprint
     assert len(car_info.years), 'Model {} has no years listed'.format(CP.carFingerprint)
 
     # TODO: properly format model years
@@ -26,43 +99,47 @@ class Car:
     self.model_string = "{}{}".format(self.model, years)
     self.package = car_info.package
 
-    self.stars = Stars(
-      CP.openpilotLongitudinalControl,
-      CP.minEnableSpeed <= 1e-3,  # TODO: 0 is probably okay
-      CP.minSteerSpeed <= 1e-3,
-      CP.carName in MAKES_GOOD_STEERING_TORQUE,
-      # TODO: make sure this check is complete
-      CP.carFingerprint not in non_tested_cars,
-    )
+    self.exceptions = get_exceptions(CP)
+    self.stars = self._calculate_stars(CP, car_info)
 
-  def format_stars(self):
-    # TODO: exceptions and half stars
-    return [STAR_ICON_FULL if cat else STAR_ICON_EMPTY for cat in self.stars]
+  @property
+  def row(self):
+    # TODO: add YouTube videos
+    row = [self.make, self.model_string, self.package, *map(get_star_icon, self.stars)]
+
+    # Check for car exceptions
+    for row_idx, column in enumerate(Column):
+      exception = self.exceptions.get(column, None)
+      if exception is not None:
+        superscript_number = CAR_EXCEPTIONS.index(exception) + 1
+        row[row_idx] += "<sup>{}</sup>".format(superscript_number)
+
+    return make_row(row)
 
   @property
   def tier(self):
-    return {5: Tier.GOLD, 4: Tier.SILVER}.get(sum(self.stars), Tier.BRONZE)
+    return {5: Tier.GOLD, 4: Tier.SILVER}.get(self.stars.count("full"), Tier.BRONZE)
 
+  def _calculate_stars(self, CP, car_info):
+    # Some minimum steering speeds are not yet in CarParams
+    min_steer_speed = CP.minSteerSpeed
+    if car_info.min_steer_speed is not None:
+      min_steer_speed = car_info.min_steer_speed
+      assert CP.minSteerSpeed == 0, "Minimum steer speed set in both CarInfo and CarParams for {}".format(
+        CP.carFingerprint)
 
-def make_row(columns):
-  return "|{}|".format("|".join(columns))
+    # TODO: make sure well supported check is complete
+    stars = [CP.openpilotLongitudinalControl, CP.minEnableSpeed <= 1e-3, min_steer_speed <= 1e-3,
+             CP.carName in MAKES_GOOD_STEERING_TORQUE, CP.carFingerprint not in non_tested_cars]
 
-
-# TODO: unify with column names below?
-Stars = namedtuple("Stars", ["op_long", "fsr_long", "fsr_lat", "steering_torque", "well_supported"])
-
-STAR_ICON_FULL = '<img src="assets/icon-star-full.png" width="22" />'
-STAR_ICON_HALF = '<img src="assets/icon-star-half.png" width="22" />'
-STAR_ICON_EMPTY = '<img src="assets/icon-star-empty.png" width="22" />'
-
-CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS_generated.md")
-CAR_TABLE_COLUMNS = make_row(['Make', 'Model (US Market Reference)', 'Supported Package', 'openpilot Longitudinal',
-                              'FSR Longitudinal', 'FSR Steering', 'Steering Torque', 'Actively Maintained'])
-CAR_TABLE_HEADER = make_row(["---"] * 3 + [":---:"] * 5)  # first three aren't centered
-CAR_ROW_TEMPLATE = make_row(["{}"] * 8)
-
-# TODO: which other makes?
-MAKES_GOOD_STEERING_TORQUE = ["toyota", "hyundai", "volkswagen"]
+    # Check for star demotions from exceptions
+    for idx, (star, column) in enumerate(zip(stars, StarColumns)):
+      star = "full" if star else "empty"
+      exception = self.exceptions.get(column, None)
+      if exception is not None and exception.star is not None:
+        star = exception.star.lower()
+      stars[idx] = star
+    return stars
 
 
 def generate_cars_md():
@@ -90,14 +167,10 @@ def generate_cars_md():
     cars = sorted(tiered_cars[tier], key=lambda car: car.make + car.model_string)
 
     cars_md_doc.append("## {} Cars\n".format(tier.name.title()))
-    cars_md_doc.append(CAR_TABLE_COLUMNS)
+
+    cars_md_doc.append(make_row([column.value for column in Column]))
     cars_md_doc.append(CAR_TABLE_HEADER)
-    for car in cars:
-      line = CAR_ROW_TEMPLATE.format(car.make,
-                                     car.model_string,
-                                     car.package,
-                                     *car.format_stars())
-      cars_md_doc.append(line)
+    cars_md_doc.extend(map(lambda car: car.row, cars))
     cars_md_doc.append("")  # newline
 
   return '\n'.join(cars_md_doc)
