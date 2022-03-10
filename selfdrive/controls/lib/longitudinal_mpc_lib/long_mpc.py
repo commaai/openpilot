@@ -15,6 +15,7 @@ else:
 
 from casadi import SX, vertcat
 
+MODEL_NAME = 'long'
 LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LONG_MPC_DIR, "c_generated_code")
 JSON_FILE = os.path.join(LONG_MPC_DIR, "acados_ocp_long.json")
@@ -37,6 +38,7 @@ A_CHANGE_COST = 200.
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
+ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
 
 # Fewer timestamps don't hurt performance and lead to
@@ -64,7 +66,7 @@ def desired_follow_distance(v_ego, v_lead):
 
 def gen_long_model():
   model = AcadosModel()
-  model.name = 'long'
+  model.name = MODEL_NAME
 
   # set up states & controls
   x_ego = SX.sym('x_ego')
@@ -171,7 +173,7 @@ def gen_long_ocp():
   ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
-  ocp.solver_options.nlp_solver_type = 'SQP_RTI'
+  ocp.solver_options.nlp_solver_type = ACADOS_SOLVER_TYPE
   ocp.solver_options.qp_solver_cond_N = 1
 
   # More iterations take too much time and less lead to inaccurate convergence in
@@ -194,7 +196,7 @@ class LongitudinalMpc:
     self.source = SOURCES[2]
 
   def reset(self):
-    self.solver = AcadosOcpSolverCython(JSON_FILE)
+    self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.v_solution = np.zeros(N+1)
     self.a_solution = np.zeros(N+1)
     self.prev_a = np.array(self.a_solution)

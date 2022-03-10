@@ -18,10 +18,12 @@ EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
 JSON_FILE = os.path.join(LAT_MPC_DIR, "acados_ocp_lat.json")
 X_DIM = 4
 P_DIM = 2
+MODEL_NAME = 'lat'
+ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
 def gen_lat_model():
   model = AcadosModel()
-  model.name = 'lat'
+  model.name = MODEL_NAME
 
   # set up states & controls
   x_ego = SX.sym('x_ego')
@@ -102,7 +104,7 @@ def gen_lat_ocp():
   ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
-  ocp.solver_options.nlp_solver_type = 'SQP_RTI'
+  ocp.solver_options.nlp_solver_type = ACADOS_SOLVER_TYPE
   ocp.solver_options.qp_solver_iter_max = 1
   ocp.solver_options.qp_solver_cond_N = 1
 
@@ -116,7 +118,7 @@ def gen_lat_ocp():
 
 class LateralMpc():
   def __init__(self, x0=np.zeros(X_DIM)):
-    self.solver = AcadosOcpSolverCython(JSON_FILE)
+    self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset(x0)
 
   def reset(self, x0=np.zeros(X_DIM)):
