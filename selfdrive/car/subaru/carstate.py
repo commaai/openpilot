@@ -21,7 +21,7 @@ class CarState(CarStateBase):
     if self.car_fingerprint in PREGLOBAL_CARS:
       ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 2
     else:
-      ret.brakePressed = cp.vl["Brake_Status"]["Brake"] == 1
+      ret.brakePressed = bool(cp.vl["Brake_Status"]["Brake"])
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       cp.vl["Wheel_Speeds"]["FL"],
@@ -39,8 +39,8 @@ class CarState(CarStateBase):
       50, cp.vl["Dashlights"]["LEFT_BLINKER"], cp.vl["Dashlights"]["RIGHT_BLINKER"])
 
     if self.CP.enableBsm:
-      ret.leftBlindspot = (cp.vl["BSD_RCTA"]["L_ADJACENT"] == 1) or (cp.vl["BSD_RCTA"]["L_APPROACHING"] == 1)
-      ret.rightBlindspot = (cp.vl["BSD_RCTA"]["R_ADJACENT"] == 1) or (cp.vl["BSD_RCTA"]["R_APPROACHING"] == 1)
+      ret.leftBlindspot = any([cp.vl["BSD_RCTA"]["L_ADJACENT"], cp.vl["BSD_RCTA"]["L_APPROACHING"]])
+      ret.rightBlindspot = any([cp.vl["BSD_RCTA"]["R_ADJACENT"], cp.vl["BSD_RCTA"]["R_APPROACHING"]])
 
     can_gear = int(cp.vl["Transmission"]["Gear"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
@@ -49,27 +49,27 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD[self.car_fingerprint]
 
-    ret.cruiseState.enabled = cp.vl["CruiseControl"]["Cruise_Activated"] != 0
-    ret.cruiseState.available = cp.vl["CruiseControl"]["Cruise_On"] != 0
+    ret.cruiseState.enabled = bool(cp.vl["CruiseControl"]["Cruise_Activated"])
+    ret.cruiseState.available = bool(cp.vl["CruiseControl"]["Cruise_On"])
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
-    if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
-       (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
+    if (self.car_fingerprint in PREGLOBAL_CARS and bool(cp.vl["Dash_State2"]["UNITS"])) or \
+       (self.car_fingerprint not in PREGLOBAL_CARS and bool(cp.vl["Dashlights"]["UNITS"])):
       ret.cruiseState.speed *= CV.MPH_TO_KPH
 
-    ret.seatbeltUnlatched = cp.vl["Dashlights"]["SEATBELT_FL"] == 1
+    ret.seatbeltUnlatched = bool(cp.vl["Dashlights"]["SEATBELT_FL"])
     ret.doorOpen = any([cp.vl["BodyInfo"]["DOOR_OPEN_RR"],
                         cp.vl["BodyInfo"]["DOOR_OPEN_RL"],
                         cp.vl["BodyInfo"]["DOOR_OPEN_FR"],
                         cp.vl["BodyInfo"]["DOOR_OPEN_FL"]])
-    ret.steerFaultPermanent = cp.vl["Steering_Torque"]["Steer_Error_1"] == 1
+    ret.steerFaultPermanent = bool(cp.vl["Steering_Torque"]["Steer_Error_1"])
 
     if self.car_fingerprint in PREGLOBAL_CARS:
       self.cruise_button = cp_cam.vl["ES_Distance"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
     else:
-      ret.steerFaultTemporary = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
-      ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
+      ret.steerFaultTemporary = bool(cp.vl["Steering_Torque"]["Steer_Warning"])
+      ret.cruiseState.nonAdaptive = bool(cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"])
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
     self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
 
