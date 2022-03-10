@@ -17,9 +17,9 @@ from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
 from system import swaglog
-from selfdrive.athena import athenad
-from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
+from system.athena import athenad
+from system.athena.athenad import MAX_RETRY_COUNT, dispatcher
+from system.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
 from cereal import messaging
 
 
@@ -321,7 +321,7 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertEqual(athenad.upload_queue.qsize(), 1)
     self.assertDictEqual(athenad.upload_queue.queue[-1]._asdict(), item1._asdict())
 
-  @mock.patch('selfdrive.athena.athenad.create_connection')
+  @mock.patch('system.athena.athenad.create_connection')
   def test_startLocalProxy(self, mock_create_connection):
     end_event = threading.Event()
 

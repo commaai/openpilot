@@ -254,7 +254,7 @@ jobs:
                         $UNIT_TEST system/loggerd && \
                         $UNIT_TEST selfdrive/car && \
                         $UNIT_TEST selfdrive/locationd && \
-                        $UNIT_TEST selfdrive/athena && \
+                        $UNIT_TEST system/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST system/hardware/tici && \
                         $UNIT_TEST tools/lib/tests && \

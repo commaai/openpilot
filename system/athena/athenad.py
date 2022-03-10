@@ -34,7 +34,7 @@ from common.realtime import sec_since_boot
 from system.hardware import HARDWARE, PC, TICI
 from system.loggerd.config import ROOT
 from system.loggerd.xattr_cache import getxattr, setxattr
-from selfdrive.statsd import STATS_DIR
+from system.statsd import STATS_DIR
 from system.swaglog import SWAGLOG_DIR, cloudlog
 from system.version import get_commit, get_origin, get_short_branch, get_version
 

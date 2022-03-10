@@ -6,7 +6,7 @@ from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProces
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 procs = [
-  DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
+  DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
   # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
   NativeProcess("camerad", "system/camerad", ["./camerad"], unkillable=True, driverview=True),
   NativeProcess("clocksd", "system/clocksd", ["./clocksd"]),
@@ -36,7 +36,7 @@ procs = [
   PythonProcess("tombstoned", "system.tombstoned", enabled=not PC, persistent=True),
   PythonProcess("updated", "selfdrive.updated", enabled=not PC, persistent=True),
   PythonProcess("uploader", "system.loggerd.uploader", persistent=True),
-  PythonProcess("statsd", "selfdrive.statsd", persistent=True),
+  PythonProcess("statsd", "system.statsd", persistent=True),
 
   # EON only
   PythonProcess("rtshield", "system.rtshield", enabled=EON),

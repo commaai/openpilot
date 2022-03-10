@@ -19,7 +19,7 @@ from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.hardware import EON, HARDWARE, PC, TICI
 from system.loggerd.config import get_available_percent
-from selfdrive.statsd import statlog
+from system.statsd import statlog
 from system.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.thermald.fan_controller import EonFanController, UnoFanController, TiciFanController
