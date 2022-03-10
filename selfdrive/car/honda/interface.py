@@ -116,7 +116,7 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = 2. * CV.MPH_TO_MS
 
       # Diesel and hatchback have a higher minimum steering speed
-      # TODO: also add fw exception for Civic Hatchback 2017-21
+      # TODO: add fw exception for Civic Hatchback 2017-21
       if candidate == CAR.CIVIC_BOSCH_DIESEL:
         ret.minSteerSpeed = 12. * CV.MPH_TO_MS
 
