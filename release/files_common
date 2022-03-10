@@ -75,7 +75,7 @@ system/swaglog.py
 system/logmessaged.py
 system/tombstoned.py
 selfdrive/pandad.py
-selfdrive/updated.py
+system/updated.py
 system/rtshield.py
 system/statsd.py
 

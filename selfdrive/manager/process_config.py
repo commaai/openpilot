@@ -34,7 +34,7 @@ procs = [
   PythonProcess("thermald", "selfdrive.thermald.thermald", persistent=True),
   PythonProcess("timezoned", "system.timezoned", enabled=TICI, persistent=True),
   PythonProcess("tombstoned", "system.tombstoned", enabled=not PC, persistent=True),
-  PythonProcess("updated", "selfdrive.updated", enabled=not PC, persistent=True),
+  PythonProcess("updated", "system.updated", enabled=not PC, persistent=True),
   PythonProcess("uploader", "system.loggerd.uploader", persistent=True),
   PythonProcess("statsd", "system.statsd", persistent=True),
 
