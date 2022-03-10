@@ -181,7 +181,7 @@ void OnroadHud::updateState(const UIState &s) {
   const auto cs = sm["controlsState"].getControlsState();
 
   float maxspeed = cs.getVCruise();
-  bool cruise_set = maxspeed > 0 && (int)maxspeed != SET_SPEED_NA && sm["controlsState"].getCarState().getCruiseState().getAvailable();
+  bool cruise_set = maxspeed > 0 && (int)maxspeed != SET_SPEED_NA && sm["carState"].getCarState().getCruiseState().getAvailable();
   if (cruise_set && !s.scene.is_metric) {
     maxspeed *= KM_TO_MILE;
   }
