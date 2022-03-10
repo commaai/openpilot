@@ -38,10 +38,10 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
     ret.genericToggle = bool(cp.vl["BLINK_INFO"]["HIGH_BEAMS"])
-    ret.leftBlindspot = cp.vl["BSM"]["LEFT_BS1"] == 1
-    ret.rightBlindspot = cp.vl["BSM"]["RIGHT_BS1"] == 1
-    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(40, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
-                                                                      cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1)
+    ret.leftBlindspot = bool(cp.vl["BSM"]["LEFT_BS1"])
+    ret.rightBlindspot = bool(cp.vl["BSM"]["RIGHT_BS1"])
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(40, bool(cp.vl["BLINK_INFO"]["LEFT_BLINK"]),
+                                                                      bool(cp.vl["BLINK_INFO"]["RIGHT_BLINK"]))
 
     ret.steeringAngleDeg = cp.vl["STEER"]["STEER_ANGLE"]
     ret.steeringTorque = cp.vl["STEER_TORQUE"]["STEER_TORQUE_SENSOR"]
@@ -51,10 +51,10 @@ class CarState(CarStateBase):
     ret.steeringRateDeg = cp.vl["STEER_RATE"]["STEER_ANGLE_RATE"]
 
     # TODO: this should be from 0 - 1.
-    ret.brakePressed = cp.vl["PEDALS"]["BRAKE_ON"] == 1
+    ret.brakePressed = bool(cp.vl["PEDALS"]["BRAKE_ON"])
     ret.brake = cp.vl["BRAKE"]["BRAKE_PRESSURE"]
 
-    ret.seatbeltUnlatched = cp.vl["SEATBELT"]["DRIVER_SEATBELT"] == 0
+    ret.seatbeltUnlatched = not bool(cp.vl["SEATBELT"]["DRIVER_SEATBELT"])
     ret.doorOpen = any([cp.vl["DOORS"]["FL"], cp.vl["DOORS"]["FR"],
                         cp.vl["DOORS"]["BL"], cp.vl["DOORS"]["BR"]])
 
@@ -63,7 +63,7 @@ class CarState(CarStateBase):
     ret.gasPressed = ret.gas > 0
 
     # Either due to low speed or hands off
-    lkas_blocked = cp.vl["STEER_RATE"]["LKAS_BLOCK"] == 1
+    lkas_blocked = bool(cp.vl["STEER_RATE"]["LKAS_BLOCK"])
 
     if self.CP.minSteerSpeed > 0:
       # LKAS is enabled at 52kph going up and disabled at 45kph going down
@@ -75,8 +75,8 @@ class CarState(CarStateBase):
 
     # TODO: the signal used for available seems to be the adaptive cruise signal, instead of the main on
     #       it should be used for carState.cruiseState.nonAdaptive instead
-    ret.cruiseState.available = cp.vl["CRZ_CTRL"]["CRZ_AVAILABLE"] == 1
-    ret.cruiseState.enabled = cp.vl["CRZ_CTRL"]["CRZ_ACTIVE"] == 1
+    ret.cruiseState.available = bool(cp.vl["CRZ_CTRL"]["CRZ_AVAILABLE"])
+    ret.cruiseState.enabled = bool(cp.vl["CRZ_CTRL"]["CRZ_ACTIVE"])
     ret.cruiseState.speed = cp.vl["CRZ_EVENTS"]["CRZ_SPEED"] * CV.KPH_TO_MS
 
     if ret.cruiseState.enabled:
@@ -98,7 +98,7 @@ class CarState(CarStateBase):
     self.lkas_disabled = cp_cam.vl["CAM_LANEINFO"]["LANE_LINES"] == 0
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
     self.cam_laneinfo = cp_cam.vl["CAM_LANEINFO"]
-    ret.steerFaultPermanent = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
+    ret.steerFaultPermanent = bool(cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"])
 
     return ret
 
