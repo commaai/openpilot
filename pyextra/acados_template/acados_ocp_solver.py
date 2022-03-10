@@ -851,7 +851,9 @@ class AcadosOcpSolver:
         acados_ocp_solver_pyx = importlib.import_module(f'{rel_code_export_directory}.acados_ocp_solver_pyx')
 
         AcadosOcpSolverCython = getattr(acados_ocp_solver_pyx, 'AcadosOcpSolverCython')
-        return AcadosOcpSolverCython(json_file)
+        return AcadosOcpSolverCython(acados_ocp_json['model']['name'],
+                    acados_ocp_json['solver_options']['nlp_solver_type'],
+                    acados_ocp_json['dims']['N'])
 
 
     def __init__(self, acados_ocp, json_file='acados_ocp_nlp.json', simulink_opts=None, build=True, generate=True):

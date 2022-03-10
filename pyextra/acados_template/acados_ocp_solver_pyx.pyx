@@ -45,7 +45,6 @@ cimport acados_solver
 cimport numpy as cnp
 
 import os
-import json
 from datetime import datetime
 import numpy as np
 
@@ -64,22 +63,21 @@ cdef class AcadosOcpSolverCython:
     cdef acados_solver_common.ocp_nlp_in *nlp_in
     cdef acados_solver_common.ocp_nlp_solver *nlp_solver
 
-    cdef str model_name
-    cdef int N
     cdef int status
     cdef bint solver_created
-    cdef dict solver_options
 
-    def __cinit__(self, json_file):
+    cdef str model_name
+    cdef int N
+
+    cdef str nlp_solver_type
+
+    def __cinit__(self, model_name, nlp_solver_type, N):
 
         self.solver_created = False
 
-        # load json, store options in object
-        with open(json_file, 'r') as f:
-            acados_ocp_json = json.load(f)
-        self.N = acados_ocp_json['dims']['N']
-        self.model_name = acados_ocp_json['model']['name']
-        self.solver_options = acados_ocp_json['solver_options']
+        self.N = N
+        self.model_name = model_name
+        self.nlp_solver_type = nlp_solver_type
 
         # create capsule
         self.capsule = acados_solver.acados_create_capsule()
@@ -126,39 +124,43 @@ cdef class AcadosOcpSolverCython:
                       do not require a new code export and compilation.
         """
 
-        # unlikely but still possible
-        if not self.solver_created:
-            raise Exception('Solver was not yet created!')
+        raise NotImplementedError("AcadosOcpSolverCython: does not support set_new_time_steps() since it is only a prototyping feature")
+        # # unlikely but still possible
+        # if not self.solver_created:
+        #     raise Exception('Solver was not yet created!')
 
-        # check if time steps really changed in value
-        if np.array_equal(self.solver_options['time_steps'], new_time_steps):
-            return
+        # ## check if time steps really changed in value
+        # # get time steps
+        # cdef cnp.ndarray[cnp.float64_t, ndim=1] old_time_steps = np.ascontiguousarray(np.zeros((self.N,)), dtype=np.float64)
+        # assert acados_solver.acados_get_time_steps(self.capsule, self.N, <double *> old_time_steps.data)
 
-        N = new_time_steps.size
-        cdef cnp.ndarray[cnp.float64_t, ndim=1] value = np.ascontiguousarray(new_time_steps, dtype=np.float64)
+        # if np.array_equal(old_time_steps, new_time_steps):
+        #     return
 
-        # check if recreation of acados is necessary (no need to recreate acados if sizes are identical)
-        if len(self.solver_options['time_steps']) == N:
-            assert acados_solver.acados_update_time_steps(self.capsule, N, <double *> value.data) == 0
+        # N = new_time_steps.size
+        # cdef cnp.ndarray[cnp.float64_t, ndim=1] value = np.ascontiguousarray(new_time_steps, dtype=np.float64)
 
-        else:  # recreate the solver with the new time steps
-            self.solver_created = False
+        # # check if recreation of acados is necessary (no need to recreate acados if sizes are identical)
+        # if len(old_time_steps) == N:
+        #     assert acados_solver.acados_update_time_steps(self.capsule, N, <double *> value.data) == 0
 
-            # delete old memory (analog to __del__)
-            acados_solver.acados_free(self.capsule)
+        # else:  # recreate the solver with the new time steps
+        #     self.solver_created = False
 
-            # create solver with new time steps
-            assert acados_solver.acados_create_with_discretization(self.capsule, N, <double *> value.data) == 0
+        #     # delete old memory (analog to __del__)
+        #     acados_solver.acados_free(self.capsule)
 
-            self.solver_created = True
+        #     # create solver with new time steps
+        #     assert acados_solver.acados_create_with_discretization(self.capsule, N, <double *> value.data) == 0
 
-            # get pointers solver
-            self.__get_pointers_solver()
+        #     self.solver_created = True
 
-        # store time_steps, N
-        self.solver_options['time_steps'] = new_time_steps
-        self.N = N
-        self.solver_options['Tsim'] = self.solver_options['time_steps'][0]
+        #     # get pointers solver
+        #     self.__get_pointers_solver()
+
+        # # store time_steps, N
+        # self.time_steps = new_time_steps
+        # self.N = N
 
 
     def update_qp_solver_cond_N(self, qp_solver_cond_N: int):
@@ -174,23 +176,25 @@ cdef class AcadosOcpSolverCython:
                       necessary to change `qp_solver_cond_N` as well (using this function), i.e., typically
                       `qp_solver_cond_N < N`.
         """
-        # unlikely but still possible
-        if not self.solver_created:
-            raise Exception('Solver was not yet created!')
-        if self.N < qp_solver_cond_N:
-            raise Exception('Setting qp_solver_cond_N to be larger than N does not work!')
-        if self.solver_options['qp_solver_cond_N'] != qp_solver_cond_N:
-            self.solver_created = False
+        raise NotImplementedError("AcadosOcpSolverCython: does not support update_qp_solver_cond_N() since it is only a prototyping feature")
 
-            # recreate the solver
-            acados_solver.acados_update_qp_solver_cond_N(self.capsule, qp_solver_cond_N)
+        # # unlikely but still possible
+        # if not self.solver_created:
+        #     raise Exception('Solver was not yet created!')
+        # if self.N < qp_solver_cond_N:
+        #     raise Exception('Setting qp_solver_cond_N to be larger than N does not work!')
+        # if self.qp_solver_cond_N != qp_solver_cond_N:
+        #     self.solver_created = False
 
-            # store the new value
-            self.solver_options['qp_solver_cond_N'] = qp_solver_cond_N
-            self.solver_created = True
+        #     # recreate the solver
+        #     acados_solver.acados_update_qp_solver_cond_N(self.capsule, qp_solver_cond_N)
 
-            # get pointers solver
-            self.__get_pointers_solver()
+        #     # store the new value
+        #     self.qp_solver_cond_N = qp_solver_cond_N
+        #     self.solver_created = True
+
+        #     # get pointers solver
+        #     self.__get_pointers_solver()
 
 
     def eval_param_sens(self, index, stage=0, field="ex"):
@@ -286,6 +290,7 @@ cdef class AcadosOcpSolverCython:
             :param filename: if not set, use model_name + timestamp + '.json'
             :param overwrite: if false and filename exists add timestamp to filename
         """
+        import json
         if filename == '':
             filename += self.model_name + '_' + 'iterate' + '.json'
 
@@ -319,6 +324,7 @@ cdef class AcadosOcpSolverCython:
         """
         Loads the iterate stored in json file with filename into the ocp solver.
         """
+        import json
         if not os.path.isfile(filename):
             raise Exception('load_iterate: failed, file does not exist: ' + os.path.join(os.getcwd(), filename))
 
@@ -393,16 +399,16 @@ cdef class AcadosOcpSolverCython:
 
         elif field_ == 'qp_iter':
             full_stats = self.get_stats('statistics')
-            if self.solver_options['nlp_solver_type'] == 'SQP':
+            if self.nlp_solver_type == 'SQP':
                 return full_stats[6, :]
-            elif self.solver_options['nlp_solver_type'] == 'SQP_RTI':
+            elif self.nlp_solver_type == 'SQP_RTI':
                 return full_stats[2, :]
 
         elif field_ == 'alpha':
             full_stats = self.get_stats('statistics')
-            if self.solver_options['nlp_solver_type'] == 'SQP':
+            if self.nlp_solver_type == 'SQP':
                 return full_stats[7, :]
-            else: # self.solver_options['nlp_solver_type'] == 'SQP_RTI':
+            else: # self.nlp_solver_type == 'SQP_RTI':
                 raise Exception("alpha values are not available for SQP_RTI")
 
         elif field_ == 'residuals':
@@ -449,7 +455,7 @@ cdef class AcadosOcpSolverCython:
         Returns an array of the form [res_stat, res_eq, res_ineq, res_comp].
         """
         # compute residuals if RTI
-        if self.solver_options['nlp_solver_type'] == 'SQP_RTI':
+        if self.nlp_solver_type == 'SQP_RTI':
             acados_solver_common.ocp_nlp_eval_residuals(self.nlp_solver, self.nlp_in, self.nlp_out)
 
         # create output array
@@ -652,7 +658,7 @@ cdef class AcadosOcpSolverCython:
                 if value_ < 0 or value_ > 2:
                     raise Exception('AcadosOcpSolverCython.solve(): argument \'rti_phase\' can '
                         'take only values 0, 1, 2 for SQP-RTI-type solvers')
-                if self.solver_options['nlp_solver_type'] != 'SQP_RTI' and value_ > 0:
+                if self.nlp_solver_type != 'SQP_RTI' and value_ > 0:
                     raise Exception('AcadosOcpSolverCython.solve(): argument \'rti_phase\' can '
                         'take only value 0 for SQP-type solvers')
 

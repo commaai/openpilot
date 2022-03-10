@@ -18,7 +18,7 @@ if [ ! -d acados_repo/ ]; then
 fi
 cd acados_repo
 git fetch
-git checkout 6c7ffa23105d6b86a5ae2e3af7d7670698ac434d # acados/master March 9, 2022
+git checkout 4767922c478c1be7937f46211e465d795f23c8e0
 git submodule update --recursive --init
 
 # build
