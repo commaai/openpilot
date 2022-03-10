@@ -61,8 +61,8 @@ if __name__ == "__main__":
 
   parser.add_argument("--bus", type=int, help="CAN bus to print out", default=0)
 
-  parser.add_argument("--init", type=str, help="Route or segment to initialize with")
-  parser.add_argument("--comp", type=str, help="Route or segment to compare against init")
+  parser.add_argument("init", type=str, help="Route or segment to initialize with")
+  parser.add_argument("comp", type=str, help="Route or segment to compare against init")
 
   args = parser.parse_args()
 
