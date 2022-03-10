@@ -90,6 +90,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = CivicParams.CENTER_TO_FRONT
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
       ret.minSteerSpeed = 12. * CV.MPH_TO_MS
+
       if eps_modified:
         # stock request input values:     0x0000, 0x00DE, 0x014D, 0x01EF, 0x0290, 0x0377, 0x0454, 0x0610, 0x06EE
         # stock request output values:    0x0000, 0x0917, 0x0DC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x1680, 0x1680
@@ -164,6 +165,15 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0  # 12.3 is spec end-to-end
+      tire_stiffness_factor = 0.677
+      ret.wheelSpeedFactor = 1.025
+      ret.minSteerSpeed = 12. * CV.MPH_TO_MS
+
+      # 2020+ models have a lower minimum steering speed
+      for fw in car_fw:
+        if fw.ecu == "eps" and fw.fwVersion in [b'39990-TLA-A220\x00\x00']:
+          ret.minSteerSpeed = 3. * CV.MPH_TO_MS
+
       if eps_modified:
         # stock request input values:     0x0000, 0x00DB, 0x01BB, 0x0296, 0x0377, 0x0454, 0x0532, 0x0610, 0x067F
         # stock request output values:    0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x129A, 0x134D, 0x1400
@@ -173,14 +183,6 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.64], [0.192]]
-      tire_stiffness_factor = 0.677
-      ret.wheelSpeedFactor = 1.025
-      ret.minSteerSpeed = 12. * CV.MPH_TO_MS
-
-      # 2020+ models have a lower minimum steering speed
-      for fw in car_fw:
-        if fw.ecu == "eps" and fw.fwVersion in [b'39990-TLA-A220\x00\x00']:
-          ret.minSteerSpeed = 3. * CV.MPH_TO_MS
 
     elif candidate == CAR.CRV_HYBRID:
       stop_and_go = True
