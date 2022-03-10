@@ -22,6 +22,7 @@
 #include "CL/cl_ext_qcom.h"
 #include "selfdrive/camerad/cameras/camera_qcom.h"
 #elif QCOM2
+#include "CL/cl_ext_qcom.h"
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
 #elif WEBCAM
 #include "selfdrive/camerad/cameras/camera_webcam.h"
@@ -36,6 +37,7 @@ public:
   Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s) {
     char args[4096];
     const CameraInfo *ci = &s->ci;
+    hdr_ = ci->hdr;
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
@@ -62,9 +64,20 @@ public:
       CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
       CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
     } else {
-      const size_t debayer_work_size = height;  // doesn't divide evenly, is this okay?
-      CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
-      CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, NULL, 0, 0, debayer_event));
+      if (hdr_) {
+        // HDR requires a 1-D kernel due to the DPCM compression
+        const size_t debayer_local_worksize = 128;
+        const size_t debayer_work_size = height;  // doesn't divide evenly, is this okay?
+        CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
+        CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, &debayer_local_worksize, 0, 0, debayer_event));
+      } else {
+        const int debayer_local_worksize = 32;
+        assert(width % 2 == 0);
+        const size_t globalWorkSize[] = {size_t(height), size_t(width / 2)};
+        const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
+        CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
+        CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
+      }
     }
   }
 
@@ -74,6 +87,7 @@ public:
 
 private:
   cl_kernel krnl_;
+  bool hdr_;
 };
 
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_rgb_type, VisionStreamType init_yuv_type, release_cb init_release_callback) {
@@ -147,6 +161,8 @@ bool CameraBuf::acquire() {
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
 
+  float start_time = millis_since_boot();
+
   if (debayer) {
     float gain = 0.0;
 
@@ -166,6 +182,8 @@ bool CameraBuf::acquire() {
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   rgb2yuv->queue(q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
+
+  cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
   VisionIpcBufExtra extra = {
                         cur_frame_data.frame_id,
@@ -205,6 +223,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensPos(frame_data.lens_pos);
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
+  framed.setProcessingTime(frame_data.processing_time);
 }
 
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
@@ -427,8 +446,7 @@ void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
 
 void camerad_thread() {
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-   // TODO: do this for QCOM2 too
-#if defined(QCOM)
+#if defined(QCOM) || defined(QCOM2)
   const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
   cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
 #else
@@ -446,4 +464,17 @@ void camerad_thread() {
   cameras_run(&cameras);
 
   CL_CHECK(clReleaseContext(context));
+}
+
+int open_v4l_by_name_and_index(const char name[], int index, int flags) {
+  for (int v4l_index = 0; /**/; ++v4l_index) {
+    std::string v4l_name = util::read_file(util::string_format("/sys/class/video4linux/v4l-subdev%d/name", v4l_index));
+    if (v4l_name.empty()) return -1;
+    if (v4l_name.find(name) == 0) {
+      if (index == 0) {
+        return HANDLE_EINTR(open(util::string_format("/dev/v4l-subdev%d", v4l_index).c_str(), flags));
+      }
+      index--;
+    }
+  }
 }

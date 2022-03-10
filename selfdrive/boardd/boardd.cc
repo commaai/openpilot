@@ -371,7 +371,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
 
     size_t j = 0;
     for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
-        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_TICK); f++) {
+        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_EXTI); f++) {
       if (fault_bits.test(f)) {
         faults.set(j, cereal::PandaState::FaultType(f));
         j++;
@@ -610,10 +610,19 @@ void pigeon_thread(Panda *panda) {
 }
 
 void boardd_main_thread(std::vector<std::string> serials) {
-  if (serials.size() == 0) serials.push_back("");
-
   PubMaster pm({"pandaStates", "peripheralState"});
   LOGW("attempting to connect");
+
+  if (serials.size() == 0) {
+    // connect to all
+    serials = Panda::list();
+
+    // exit if no pandas are connected
+    if (serials.size() == 0) {
+      LOGW("no pandas found, exiting");
+      return;
+    }
+  }
 
   // connect to all provided serials
   std::vector<Panda *> pandas;

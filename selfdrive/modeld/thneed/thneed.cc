@@ -12,7 +12,7 @@
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/timing.h"
 //#define RUN_DISASSEMBLER
-//#define RUN_OPTIMIZER
+#define RUN_OPTIMIZER
 
 Thneed *g_thneed = NULL;
 int g_fd = -1;
@@ -70,7 +70,7 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       struct kgsl_gpuobj_sync *cmd = (struct kgsl_gpuobj_sync *)argp;
       struct kgsl_gpuobj_sync_obj *objs = (struct kgsl_gpuobj_sync_obj *)(cmd->objs);
 
-      if (thneed->record & THNEED_DEBUG) {
+      if (thneed->record & THNEED_VERBOSE_DEBUG) {
         printf("IOCTL_KGSL_GPUOBJ_SYNC count:%d ", cmd->count);
         for (int i = 0; i < cmd->count; i++) {
           printf(" -- offset:0x%lx len:0x%lx id:%d op:%d  ", objs[i].offset, objs[i].length, objs[i].id, objs[i].op);
@@ -223,6 +223,12 @@ Thneed::Thneed(bool do_clinit) {
   record = THNEED_RECORD;
   timestamp = -1;
   g_thneed = this;
+  char *thneed_debug_env = getenv("THNEED_DEBUG");
+  if (thneed_debug_env != NULL) {
+    int thneed_debug_level = atoi(thneed_debug_env);
+    record |= (thneed_debug_level >= 1) ? THNEED_DEBUG : 0;
+    record |= (thneed_debug_level >= 2) ? THNEED_VERBOSE_DEBUG : 0;
+  }
 }
 
 void Thneed::stop() {
@@ -526,6 +532,23 @@ cl_int CLQueuedKernel::exec() {
 
   return clEnqueueNDRangeKernel(thneed->command_queue,
     kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);
+}
+
+uint64_t CLQueuedKernel::benchmark() {
+  uint64_t ret = 0;
+  int old_record = thneed->record;
+  thneed->record = 0;
+  clFinish(thneed->command_queue);
+  // TODO: benchmarking at a lower level will make this more accurate
+  for (int i = 0; i < 10; i++) {
+    uint64_t sb = nanos_since_boot();
+    exec();
+    clFinish(thneed->command_queue);
+    uint64_t et = nanos_since_boot() - sb;
+    if (ret == 0 || et < ret) ret = et;
+  }
+  thneed->record = old_record;
+  return ret;
 }
 
 void CLQueuedKernel::debug_print(bool verbose) {

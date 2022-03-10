@@ -44,6 +44,7 @@ class CLQueuedKernel {
                    const size_t *_global_work_size,
                    const size_t *_local_work_size);
     cl_int exec();
+    uint64_t benchmark();
     void debug_print(bool verbose);
     int get_arg_num(const char *search_arg_name);
     cl_program program;

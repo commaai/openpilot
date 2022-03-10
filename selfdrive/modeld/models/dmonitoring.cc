@@ -166,7 +166,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   //fclose(dump_yuv_file2);
 
   double t1 = millis_since_boot();
-  s->m->execute(net_input_buf, yuv_buf_len);
+  s->m->addImage(net_input_buf, yuv_buf_len);
+  s->m->execute();
   double t2 = millis_since_boot();
 
   DMonitoringResult ret = {0};

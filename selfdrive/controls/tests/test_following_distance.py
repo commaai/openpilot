@@ -21,7 +21,7 @@ def run_following_distance_simulation(v_lead, t_end=100.0):
 
 
 class TestFollowingDistance(unittest.TestCase):
-  def test_following_distanc(self):
+  def test_following_distance(self):
     for speed in np.arange(0, 40, 5):
       print(f'Testing {speed} m/s')
       v_lead = float(speed)

@@ -25,7 +25,7 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.001
     ret.steeringAngleDeg = cp.vl["Steering_Wheel_Data_CG1"]["SteWhlRelInit_An_Sns"]
     ret.steeringPressed = not bool(cp.vl["Lane_Keep_Assist_Status"]["LaHandsOff_B_Actl"])
-    ret.steerError = bool(cp.vl["Lane_Keep_Assist_Status"]["LaActDeny_B_Actl"])
+    ret.steerFaultPermanent = bool(cp.vl["Lane_Keep_Assist_Status"]["LaActDeny_B_Actl"])
     ret.cruiseState.speed = cp.vl["Cruise_Status"]["Set_Speed"] * CV.MPH_TO_MS
     ret.cruiseState.enabled = cp.vl["Cruise_Status"]["Cruise_State"] not in (0, 3)
     ret.cruiseState.available = cp.vl["Cruise_Status"]["Cruise_State"] != 0

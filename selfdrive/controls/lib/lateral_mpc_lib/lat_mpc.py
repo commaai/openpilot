@@ -6,7 +6,7 @@ from casadi import SX, vertcat, sin, cos
 
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.drive_helpers import LAT_MPC_N as N
-from selfdrive.controls.lib.drive_helpers import T_IDXS
+from selfdrive.modeld.constants import T_IDXS
 
 if __name__ == '__main__':  # generating code
   from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -117,7 +117,7 @@ def gen_lat_mpc_solver():
 
 class LateralMpc():
   def __init__(self, x0=np.zeros(X_DIM)):
-    self.solver = AcadosOcpSolverFast('lat', N, EXPORT_DIR)
+    self.solver = AcadosOcpSolverFast('lat', N)
     self.reset(x0)
 
   def reset(self, x0=np.zeros(X_DIM)):

@@ -43,8 +43,8 @@ class CarState(CarStateBase):
     ret.steeringRateDeg = -cp.vl["STW_ANGLHP_STAT"]["StW_AnglHP_Spd"] # This is from a different angle sensor, and at different rate
     ret.steeringTorque = -cp.vl["EPAS_sysStatus"]["EPAS_torsionBarTorque"]
     ret.steeringPressed = (self.hands_on_level > 0)
-    ret.steerError = steer_status == "EAC_FAULT"
-    ret.steerWarning = self.steer_warning != "EAC_ERROR_IDLE"
+    ret.steerFaultPermanent = steer_status == "EAC_FAULT"
+    ret.steerFaultTemporary = self.steer_warning != "EAC_ERROR_IDLE"
 
     # Cruise state
     cruise_state = self.can_define.dv["DI_state"]["DI_cruiseState"].get(int(cp.vl["DI_state"]["DI_cruiseState"]), None)

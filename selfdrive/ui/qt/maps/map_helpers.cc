@@ -160,6 +160,11 @@ static float dot(QGeoCoordinate v, QGeoCoordinate w) {
 }
 
 float minimum_distance(QGeoCoordinate a, QGeoCoordinate b, QGeoCoordinate p) {
+  // If a and b are the same coordinate the computation below doesn't work
+  if (a.distanceTo(b) < 0.01) {
+    return a.distanceTo(p);
+  }
+
   const QGeoCoordinate ap = sub(p, a);
   const QGeoCoordinate ab = sub(b, a);
   const float t = std::clamp(dot(ap, ab) / dot(ab, ab), 0.0f, 1.0f);

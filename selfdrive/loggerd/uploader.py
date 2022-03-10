@@ -165,14 +165,14 @@ class Uploader():
 
     return self.last_resp
 
-  def upload(self, key, fn, network_type):
+  def upload(self, key, fn, network_type, metered):
     try:
       sz = os.path.getsize(fn)
     except OSError:
       cloudlog.exception("upload: getsize failed")
       return False
 
-    cloudlog.event("upload_start", key=key, fn=fn, sz=sz, network_type=network_type)
+    cloudlog.event("upload_start", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
 
     if sz == 0:
       try:
@@ -195,10 +195,10 @@ class Uploader():
         self.last_time = time.monotonic() - start_time
         self.last_speed = (sz / 1e6) / self.last_time
         success = True
-        cloudlog.event("upload_success" if stat.status_code != 412 else "upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type)
+        cloudlog.event("upload_success" if stat.status_code != 412 else "upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
       else:
         success = False
-        cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz, network_type=network_type)
+        cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
 
     return success
 
@@ -213,6 +213,8 @@ class Uploader():
     return msg
 
 def uploader_fn(exit_event):
+  clear_locks(ROOT)
+
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf8')
 
@@ -245,7 +247,7 @@ def uploader_fn(exit_event):
 
     key, fn = d
 
-    success = uploader.upload(key, fn, sm['deviceState'].networkType.raw)
+    success = uploader.upload(key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
     if success:
       backoff = 0.1
     elif allow_sleep:
@@ -254,6 +256,7 @@ def uploader_fn(exit_event):
       backoff = min(backoff*2, 120)
 
     pm.send("uploaderState", uploader.get_msg())
+
 
 def main():
   uploader_fn(threading.Event())

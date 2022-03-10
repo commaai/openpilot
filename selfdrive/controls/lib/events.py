@@ -1,3 +1,4 @@
+import os
 from enum import IntEnum
 from typing import Dict, Union, Callable, List, Optional
 
@@ -6,6 +7,7 @@ import cereal.messaging as messaging
 from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
 from selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
+from selfdrive.version import get_short_branch
 
 AlertSize = log.ControlsState.AlertSize
 AlertStatus = log.ControlsState.AlertStatus
@@ -206,7 +208,6 @@ def soft_disable_alert(alert_text_2: str) -> AlertCallbackType:
     return SoftDisableAlert(alert_text_2)
   return func
 
-
 def user_soft_disable_alert(alert_text_2: str) -> AlertCallbackType:
   def func(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
     if soft_disable_time < int(0.5 / DT_CTRL):
@@ -214,6 +215,12 @@ def user_soft_disable_alert(alert_text_2: str) -> AlertCallbackType:
     return UserSoftDisableAlert(alert_text_2)
   return func
 
+def startup_master_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  branch = get_short_branch("")
+  if "REPLAY" in os.environ:
+    branch = "replay"
+
+  return StartupAlert("WARNING: This branch is not tested", branch, alert_status=AlertStatus.userPrompt)
 
 def below_engage_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   return NoEntryAlert(f"Speed Below {get_display_speed(CP.minEnableSpeed, metric)}")
@@ -280,8 +287,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.startupMaster: {
-    ET.PERMANENT: StartupAlert("WARNING: This branch is not tested",
-                               alert_status=AlertStatus.userPrompt),
+    ET.PERMANENT: startup_master_alert,
   },
 
   # Car is recognized, but marked as dashcam only

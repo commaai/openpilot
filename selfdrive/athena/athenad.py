@@ -179,46 +179,45 @@ def upload_handler(end_event: threading.Event) -> None:
         cloudlog.event("athena.upload_handler.expired", item=cur_upload_items[tid], error=True)
         continue
 
-      # Check if uploading over cell is allowed
+      # Check if uploading over metered connection is allowed
       sm.update(0)
-      cell = sm['deviceState'].networkType not in [NetworkType.wifi, NetworkType.ethernet]
-      if cell and (not cur_upload_items[tid].allow_cellular):
+      metered = sm['deviceState'].networkMetered
+      network_type = sm['deviceState'].networkType.raw
+      if metered and (not cur_upload_items[tid].allow_cellular):
         retry_upload(tid, end_event, False)
         continue
 
       try:
         def cb(sz, cur):
-          # Abort transfer if connection changed to cell after starting upload
+          # Abort transfer if connection changed to metered after starting upload
           sm.update(0)
-          cell = sm['deviceState'].networkType not in [NetworkType.wifi, NetworkType.ethernet]
-          if cell and (not cur_upload_items[tid].allow_cellular):
+          metered = sm['deviceState'].networkMetered
+          if metered and (not cur_upload_items[tid].allow_cellular):
             raise AbortTransferException
 
           cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
-
-        network_type = sm['deviceState'].networkType.raw
         fn = cur_upload_items[tid].path
         try:
           sz = os.path.getsize(fn)
         except OSError:
           sz = -1
 
-        cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type)
+        cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered)
         response = _do_upload(cur_upload_items[tid], cb)
 
         if response.status_code not in (200, 201, 403, 412):
-          cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type)
+          cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
           retry_upload(tid, end_event)
         else:
-          cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type)
+          cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type, metered=metered)
 
         UploadQueueCache.cache(upload_queue)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError):
-        cloudlog.event("athena.upload_handler.timeout", fn=fn, sz=sz, network_type=network_type)
+        cloudlog.event("athena.upload_handler.timeout", fn=fn, sz=sz, network_type=network_type, metered=metered)
         retry_upload(tid, end_event)
       except AbortTransferException:
-        cloudlog.event("athena.upload_handler.abort", fn=fn, sz=sz, network_type=network_type)
+        cloudlog.event("athena.upload_handler.abort", fn=fn, sz=sz, network_type=network_type, metered=metered)
         retry_upload(tid, end_event, False)
 
     except queue.Empty:
@@ -455,6 +454,12 @@ def getSimInfo():
 @dispatcher.add_method
 def getNetworkType():
   return HARDWARE.get_network_type()
+
+
+@dispatcher.add_method
+def getNetworkMetered():
+  network_type = HARDWARE.get_network_type()
+  return HARDWARE.get_network_metered(network_type)
 
 
 @dispatcher.add_method
