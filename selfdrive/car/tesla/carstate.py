@@ -32,7 +32,7 @@ class CarState(CarStateBase):
 
     # Brake pedal
     ret.brake = 0
-    ret.brakePressed = bool(cp.vl["BrakeMessage"]["driverBrakeStatus"] != 1)
+    ret.brakePressed = cp.vl["BrakeMessage"]["driverBrakeStatus"] != 1
 
     # Steering wheel
     self.hands_on_level = cp.vl["EPAS_sysStatus"]["EPAS_handsOnLevel"]
