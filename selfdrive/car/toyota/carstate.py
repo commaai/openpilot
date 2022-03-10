@@ -30,10 +30,10 @@ class CarState(CarStateBase):
 
     ret.doorOpen = any([cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FR"],
                         cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RR"]])
-    ret.seatbeltUnlatched = cp.vl["BODY_CONTROL_STATE"]["SEATBELT_DRIVER_UNLATCHED"] != 0
+    ret.seatbeltUnlatched = bool(cp.vl["BODY_CONTROL_STATE"]["SEATBELT_DRIVER_UNLATCHED"])
 
-    ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
-    ret.brakeHoldActive = cp.vl["ESP_CONTROL"]["BRAKE_HOLD_ACTIVE"] == 1
+    ret.brakePressed = bool(cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"])
+    ret.brakeHoldActive = bool(cp.vl["ESP_CONTROL"]["BRAKE_HOLD_ACTIVE"])
     if self.CP.enableGasInterceptor:
       ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
       ret.gasPressed = ret.gas > 15
@@ -41,7 +41,7 @@ class CarState(CarStateBase):
       # TODO: find a new, common signal
       msg = "GAS_PEDAL_HYBRID" if (self.CP.flags & ToyotaFlags.HYBRID) else "GAS_PEDAL"
       ret.gas = cp.vl[msg]["GAS_PEDAL"]
-      ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0
+      ret.gasPressed = not bool(cp.vl["PCM_CRUISE"]["GAS_RELEASED"])
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
@@ -114,13 +114,13 @@ class CarState(CarStateBase):
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
     ret.stockAeb = bool(cp_cam.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cam.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
 
-    ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
+    ret.espDisabled = bool(cp.vl["ESP_CONTROL"]["TC_DISABLED"])
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["EPS_STATUS"]["LKA_STATE"]
 
     if self.CP.enableBsm:
-      ret.leftBlindspot = (cp.vl["BSM"]["L_ADJACENT"] == 1) or (cp.vl["BSM"]["L_APPROACHING"] == 1)
-      ret.rightBlindspot = (cp.vl["BSM"]["R_ADJACENT"] == 1) or (cp.vl["BSM"]["R_APPROACHING"] == 1)
+      ret.leftBlindspot = any([cp.vl["BSM"]["L_ADJACENT"], cp.vl["BSM"]["L_APPROACHING"]])
+      ret.rightBlindspot = any([cp.vl["BSM"]["R_ADJACENT"], cp.vl["BSM"]["R_APPROACHING"]])
 
     return ret
 
