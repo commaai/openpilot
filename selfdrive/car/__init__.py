@@ -7,7 +7,7 @@ from common.numpy_fast import clip
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
 
-CarInfo = namedtuple('CarInfo', ['name', 'years', 'package', 'min_steer_speed'], defaults=[-1])
+CarInfo = namedtuple('CarInfo', ['name', 'years', 'package', 'min_steer_speed'], defaults=[0])
 
 
 def gen_empty_fingerprint():

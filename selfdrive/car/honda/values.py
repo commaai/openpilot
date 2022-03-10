@@ -90,33 +90,31 @@ class CAR:
 
 
 CAR_INFO = {
-  CAR.ACCORD: CarInfo("Honda Accord", {2018, 2019, 2020, 2021}, "All"),
-  CAR.ACCORDH: CarInfo("Honda Accord Hybrid", {2018, 2019, 2020, 2021}, "All"),
-  CAR.CIVIC: CarInfo("Honda Civic Sedan/Coupe", {2016, 2017, 2018}, "Honda Sensing"),  # Nidec
+  CAR.ACCORD: CarInfo("Honda Accord", {2018, 2019, 2020, 2021}, "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.ACCORDH: CarInfo("Honda Accord Hybrid", {2018, 2019, 2020, 2021}, "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.CIVIC: CarInfo("Honda Civic Sedan/Coupe", {2016, 2017, 2018}, "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),  # Nidec
   CAR.CIVIC_BOSCH: [
-    CarInfo("Honda Civic Sedan/Coupe", {2019, 2020}, "All"),  # 12 mph ALC
-    CarInfo("Honda Civic Hatchback", {2017, 2018, 2019, 2020, 2021}, "All", min_steer_speed=12. * CV.MPH_TO_MS),  # TODO: we can't easily use fw as they were batch added. move exception to cars.py?
+    CarInfo("Honda Civic Sedan/Coupe", {2019, 2020}, "All", min_steer_speed=2. * CV.MPH_TO_MS),
+    CarInfo("Honda Civic Hatchback", {2017, 2018, 2019, 2020, 2021}, "All", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
   # TODO: same as sedan/coupe, but no ALC under 12. make sure diesel exception is in readme
   # CAR.CIVIC_BOSCH_DIESEL: CarInfo("Honda Civic Sedan 1.6 DIESEL", {2019, 2020}, "All"),
-  CAR.ACURA_ILX: CarInfo("Acura ILX", {2016, 2017, 2018, 2019}, "AcuraWatch Plus"),
-  CAR.CRV: CarInfo("Honda CR-V", {2015, 2016}, "Touring"),
-  CAR.CRV_5G: CarInfo("Honda CR-V", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
-  CAR.CRV_EU: CarInfo("Honda CR-V EU", {2015, 2016}, "Touring"),  # Euro version of CRV Touring
-  CAR.CRV_HYBRID: CarInfo("Honda CR-V Hybrid", {2017, 2018, 2019}, "Honda Sensing"),
-  CAR.FIT: CarInfo("Honda Fit", {2018, 2019}, "Honda Sensing"),
-  CAR.FREED: CarInfo("Honda Freed", {2020}, "Honda Sensing"),
-  CAR.HRV: CarInfo("Honda HR-V", {2019, 2020}, "Honda Sensing"),
+  CAR.ACURA_ILX: CarInfo("Acura ILX", {2016, 2017, 2018, 2019}, "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),
+  CAR.CRV: CarInfo("Honda CR-V", {2015, 2016}, "Touring", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.CRV_5G: CarInfo("Honda CR-V", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
+  # CAR.CRV_EU: CarInfo("Honda CR-V EU", {2015, 2016}, "Touring"),  # Euro version of CRV Touring
+  CAR.CRV_HYBRID: CarInfo("Honda CR-V Hybrid", {2017, 2018, 2019}, "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.FIT: CarInfo("Honda Fit", {2018, 2019}, "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.FREED: CarInfo("Honda Freed", {2020}, "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.HRV: CarInfo("Honda HR-V", {2019, 2020}, "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.ODYSSEY: CarInfo("Honda Odyssey", {2018, 2019, 2020}, "Honda Sensing"),
-  # TODO: Duplicate of above. remove
-  CAR.ODYSSEY_CHN: CarInfo("Honda Odyssey CHN", {2018, 2019, 2020}, "Honda Sensing"),
-  CAR.ACURA_RDX: CarInfo("Acura RDX", {2016, 2017, 2018}, "AcuraWatch Plus"),
-  CAR.ACURA_RDX_3G: CarInfo("Acura RDX", {2019, 2020, 2021}, "All"),
-  CAR.PILOT: CarInfo("Honda Pilot", {2016, 2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
-  CAR.PASSPORT: CarInfo("Honda Passport", {2019, 2020, 2021}, "All"),
-  CAR.RIDGELINE: CarInfo("Honda Ridgeline", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing"),
-  CAR.INSIGHT: CarInfo("Honda Insight", {2019, 2020, 2021}, "All"),
-  CAR.HONDA_E: CarInfo("Honda E", {2020}, "All"),
+  CAR.ACURA_RDX: CarInfo("Acura RDX", {2016, 2017, 2018}, "AcuraWatch Plus", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.ACURA_RDX_3G: CarInfo("Acura RDX", {2019, 2020, 2021}, "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.PILOT: CarInfo("Honda Pilot", {2016, 2017, 2018, 2019, 2020, 2021}, "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.PASSPORT: CarInfo("Honda Passport", {2019, 2020, 2021}, "All", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.RIDGELINE: CarInfo("Honda Ridgeline", {2017, 2018, 2019, 2020, 2021}, "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.INSIGHT: CarInfo("Honda Insight", {2019, 2020, 2021}, "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.HONDA_E: CarInfo("Honda E", {2020}, "All", min_steer_speed=3. * CV.MPH_TO_MS),
 }
 
 
