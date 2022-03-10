@@ -22,17 +22,36 @@ visionipc
    :project: cereal_visionipc
 
 
-selfdrive
+system
 ---------
 
 camerad
 ^^^^^^^
 .. autodoxygenindex::
-   :project: selfdrive_camerad_cameras
+   :project: system_camerad_cameras
 .. autodoxygenindex::
-   :project: selfdrive_camerad_transforms
+   :project: system_camerad_transforms
 .. autodoxygenindex::
-   :project: selfdrive_camerad_imgproc
+   :project: system_camerad_imgproc
+
+proclogd
+^^^^^^^^
+.. autodoxygenindex::
+   :project: system_proclogd
+ 
+common
+^^^^^^
+.. autodoxygenindex::
+   :project: system_common
+
+sensorsd
+^^^^^^^^
+.. autodoxygenindex::
+   :project: system_sensord_sensors
+
+
+selfdrive
+---------
 
 locationd
 ^^^^^^^^^
@@ -67,11 +86,6 @@ qt
 .. autodoxygenindex::
    :project: selfdrive_ui_qt_maps
 
-proclogd
-^^^^^^^^
-.. autodoxygenindex::
-   :project: selfdrive_proclogd
-
 modeld
 ^^^^^^
 .. autodoxygenindex::
@@ -82,16 +96,6 @@ modeld
    :project: selfdrive_modeld_thneed
 .. autodoxygenindex::
    :project: selfdrive_modeld_runners
-
-common
-^^^^^^
-.. autodoxygenindex::
-   :project: selfdrive_common
-
-sensorsd
-^^^^^^^^
-.. autodoxygenindex::
-   :project: selfdrive_sensord_sensors
 
 boardd
 ^^^^^^
