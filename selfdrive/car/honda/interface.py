@@ -320,6 +320,10 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unsupported car {candidate}")
 
+    # eps modded cars have no minimum steering speed
+    if eps_modified:
+      ret.minSteerSpeed = 0. * CV.MPH_TO_MS
+
     # These cars use alternate user brake msg (0x1BE)
     if candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
