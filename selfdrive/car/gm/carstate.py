@@ -30,7 +30,7 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.01
 
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]["PRNDL"], None))
-    ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0
+    ret.brakePressed = bool(pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"])
     ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
 
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
@@ -49,19 +49,17 @@ class CarState(CarStateBase):
     ret.steerFaultPermanent = self.lkas_status == 3
 
     # 1 - open, 0 - closed
-    ret.doorOpen = (pt_cp.vl["BCMDoorBeltStatus"]["FrontLeftDoor"] == 1 or
-                    pt_cp.vl["BCMDoorBeltStatus"]["FrontRightDoor"] == 1 or
-                    pt_cp.vl["BCMDoorBeltStatus"]["RearLeftDoor"] == 1 or
-                    pt_cp.vl["BCMDoorBeltStatus"]["RearRightDoor"] == 1)
+    ret.doorOpen = any([pt_cp.vl["BCMDoorBeltStatus"]["FrontLeftDoor"], pt_cp.vl["BCMDoorBeltStatus"]["FrontRightDoor"],
+                        pt_cp.vl["BCMDoorBeltStatus"]["RearLeftDoor"], pt_cp.vl["BCMDoorBeltStatus"]["RearRightDoor"]])
 
     # 1 - latched
-    ret.seatbeltUnlatched = pt_cp.vl["BCMDoorBeltStatus"]["LeftSeatBelt"] == 0
+    ret.seatbeltUnlatched = not bool(pt_cp.vl["BCMDoorBeltStatus"]["LeftSeatBelt"])
     ret.leftBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 1
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
 
     self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
-    ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
-    ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
+    ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"])
+    ret.espDisabled = not bool(pt_cp.vl["ESPStatus"]["TractionControlOn"])
     self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
 
     # Regen braking is braking
