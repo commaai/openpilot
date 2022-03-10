@@ -204,7 +204,7 @@ class CarState(CarStateBase):
 
     if self.CP.openpilotLongitudinalControl:
       self.brake_error = cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"]
-    ret.espDisabled = cp.vl["VSA_STATUS"]["ESP_DISABLED"] != 0
+    ret.espDisabled = bool(cp.vl["VSA_STATUS"]["ESP_DISABLED"])
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
@@ -227,7 +227,7 @@ class CarState(CarStateBase):
 
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(
       250, cp.vl["SCM_FEEDBACK"]["LEFT_BLINKER"], cp.vl["SCM_FEEDBACK"]["RIGHT_BLINKER"])
-    ret.brakeHoldActive = cp.vl["VSA_STATUS"]["BRAKE_HOLD_ACTIVE"] == 1
+    ret.brakeHoldActive = bool(cp.vl["VSA_STATUS"]["BRAKE_HOLD_ACTIVE"])
 
     if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH,
                                   CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
@@ -250,7 +250,7 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       if not self.CP.openpilotLongitudinalControl:
-        ret.cruiseState.nonAdaptive = cp.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"] != 0
+        ret.cruiseState.nonAdaptive = bool(cp.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"])
         ret.cruiseState.standstill = cp.vl["ACC_HUD"]["CRUISE_SPEED"] == 252.
 
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
@@ -260,22 +260,22 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * CV.KPH_TO_MS
 
     if self.CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
-      ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
+      ret.brakePressed = bool(cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"])
     else:
       # brake switch has shown some single time step noise, so only considered when
       # switch is on for at least 2 consecutive CAN samples
       # brake switch rises earlier than brake pressed but is never 1 when in park
       brake_switch_vals = cp.vl_all["POWERTRAIN_DATA"]["BRAKE_SWITCH"]
       if len(brake_switch_vals):
-        brake_switch = cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0
+        brake_switch = bool(cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"])
         if len(brake_switch_vals) > 1:
-          self.brake_switch_prev = brake_switch_vals[-2] != 0
+          self.brake_switch_prev = bool(brake_switch_vals[-2])
         self.brake_switch_active = brake_switch and self.brake_switch_prev
         self.brake_switch_prev = brake_switch
-      ret.brakePressed = (cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0) or self.brake_switch_active
+      ret.brakePressed = bool(cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"]) or self.brake_switch_active
 
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
-    ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
+    ret.cruiseState.enabled = bool(cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"])
     ret.cruiseState.available = bool(cp.vl[self.main_on_sig_msg]["MAIN_ON"])
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
@@ -307,8 +307,8 @@ class CarState(CarStateBase):
     if self.CP.enableBsm and self.CP.carFingerprint in (CAR.CRV_5G, ):
       # BSM messages are on B-CAN, requires a panda forwarding B-CAN messages to CAN 0
       # more info here: https://github.com/commaai/openpilot/pull/1867
-      ret.leftBlindspot = cp_body.vl["BSM_STATUS_LEFT"]["BSM_ALERT"] == 1
-      ret.rightBlindspot = cp_body.vl["BSM_STATUS_RIGHT"]["BSM_ALERT"] == 1
+      ret.leftBlindspot = bool(cp_body.vl["BSM_STATUS_LEFT"]["BSM_ALERT"])
+      ret.rightBlindspot = bool(cp_body.vl["BSM_STATUS_RIGHT"]["BSM_ALERT"])
 
     return ret
 
