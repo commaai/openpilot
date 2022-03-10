@@ -22,14 +22,14 @@ class CarState(CarStateBase):
                         cp.vl["DOORS"]["DOOR_OPEN_FR"],
                         cp.vl["DOORS"]["DOOR_OPEN_RL"],
                         cp.vl["DOORS"]["DOOR_OPEN_RR"]])
-    ret.seatbeltUnlatched = cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_UNLATCHED"] == 1
+    ret.seatbeltUnlatched = bool(cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_UNLATCHED"])
 
     ret.brakePressed = cp.vl["BRAKE_2"]["BRAKE_PRESSED_2"] == 5  # human-only
     ret.brake = 0
     ret.gas = cp.vl["ACCEL_GAS_134"]["ACCEL_134"]
     ret.gasPressed = ret.gas > 1e-5
 
-    ret.espDisabled = (cp.vl["TRACTION_BUTTON"]["TRACTION_OFF"] == 1)
+    ret.espDisabled = bool(cp.vl["TRACTION_BUTTON"]["TRACTION_OFF"])
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
@@ -63,8 +63,8 @@ class CarState(CarStateBase):
     ret.genericToggle = bool(cp.vl["STEERING_LEVERS"]["HIGH_BEAM_FLASH"])
 
     if self.CP.enableBsm:
-      ret.leftBlindspot = cp.vl["BLIND_SPOT_WARNINGS"]["BLIND_SPOT_LEFT"] == 1
-      ret.rightBlindspot = cp.vl["BLIND_SPOT_WARNINGS"]["BLIND_SPOT_RIGHT"] == 1
+      ret.leftBlindspot = bool(cp.vl["BLIND_SPOT_WARNINGS"]["BLIND_SPOT_LEFT"])
+      ret.rightBlindspot = bool(cp.vl["BLIND_SPOT_WARNINGS"]["BLIND_SPOT_RIGHT"])
 
     self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]["COUNTER"]
     self.lkas_car_model = cp_cam.vl["LKAS_HUD"]["CAR_MODEL"]
