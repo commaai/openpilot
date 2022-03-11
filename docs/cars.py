@@ -138,9 +138,8 @@ class Car:
     return stars
 
 
-def generate_cars_md():
+def get_tiered_cars():
   tiered_cars = defaultdict(list)
-
   for _, models in get_interface_attr("CAR_INFO").items():
     for model, car_info in models.items():
       CP = interfaces[model][0].get_params(model)
@@ -156,7 +155,10 @@ def generate_cars_md():
         car = Car(_car_info, CP)
         tiered_cars[car.tier].append(car)
 
-  # Build CARS.md
+  return tiered_cars
+
+
+def generate_cars_md(tiered_cars):
   cars_md_doc = []
   for tier in Tier:
     # Sort by make, model name, and year
@@ -174,9 +176,11 @@ def generate_cars_md():
 
 if __name__ == "__main__":
   # TODO: add argparse for generating json or html (undecided)
+  # Cars that can disable radar have openpilot longitudinal
   Params().put_bool("DisableRadar", True)
 
+  tiered_cars = get_tiered_cars()
   with open(CARS_MD_OUT, 'w') as f:
-    f.write(generate_cars_md())
+    f.write(generate_cars_md(tiered_cars))
 
   print('Generated and written to {}'.format(CARS_MD_OUT))
