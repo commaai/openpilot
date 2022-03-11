@@ -59,6 +59,10 @@ if platform.system() == "Darwin":
 if arch == "aarch64" and TICI:
   arch = "larch64"
 
+
+if arch == "aarch64":
+  android_version = subprocess.check_output(["getprop", "ro.build.version.release"], encoding='utf8').rstrip()
+
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 lenv = {
@@ -174,6 +178,33 @@ if arch != "Darwin":
 cflags += ["-DSWAGLOG"]
 cxxflags += ["-DSWAGLOG"]
 
+android_header_paths = [
+  "#third_party/android_frameworks_native/include",
+  "#third_party/android_system_core/include",
+  "#third_party/android_hardware_libhardware/include",
+]
+if arch == "aarch64" and android_version == "9":
+  cflags += ["-DANDROID_9"]
+  cxxflags += ["-DANDROID_9"]
+  android_header_paths = [
+    "#third_party/android_system_core_9/libsystem/include",
+    "#third_party/android_system_core_9/libutils/include",
+    "#third_party/android_system_core_9/liblog/include",
+    "#third_party/android_system_core_9/libcutils/include",
+    "#third_party/android_system_core_9/base/include",
+    "#third_party/android_hardware_libhardware_9/include",
+    "#third_party/android_hardware_hidl_9/base/include",
+    "#third_party/android_hardware_hidl_9/transport/token/1.0/utils/include",
+    "#third_party/android_hardware_hidl_9/output",
+    "#third_party/android_frameworks_native_9/include",
+    "#third_party/android_frameworks_native_9/libs/math/include",
+    "#third_party/android_frameworks_native_9/libs/nativebase/include",
+    "#third_party/android_frameworks_native_9/libs/nativewindow/include",
+    "#third_party/android_frameworks_native_9/libs/binder/include",
+    "#third_party/android_frameworks_native_9/libs/ui/include",
+    "#third_party/android_frameworks_native_9/libs/gui/include",
+  ]
+
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
@@ -204,9 +235,7 @@ env = Environment(
     "#third_party/json11",
     "#third_party/curl/include",
     "#third_party/libgralloc/include",
-    "#third_party/android_frameworks_native/include",
-    "#third_party/android_hardware_libhardware/include",
-    "#third_party/android_system_core/include",
+    *android_header_paths,
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party/mapbox-gl-native-qt/include",

@@ -1,0 +1,24 @@
+# Do not change this file except to add new interfaces. Changing
+# pre-existing interfaces will fail VTS and break framework-only OTAs
+
+# HALs released in Android O
+
+fc6cbbc8a22edabd4b58f8949e591359d3138d16a82506052e25ac43e1dbda68 android.hidl.allocator@1.0::IAllocator
+bddab6184d7a346da6a07dc0828cf19a696f4caa3611c51f2e14565a14b40fd9 android.hidl.base@1.0::IBase
+500ec34f1b0826a93c4abe45b23c4d85565d8041acaf3cf9fb23c09702967567 android.hidl.base@1.0::types
+4d046a598e85f1c2d383c3a9096c3c0578e97458072ee7e67f704e99d5fb0d3f android.hidl.manager@1.0::IServiceManager
+50552b700ef67c7ed8c8d776d323f8c629a9b43b965e10a916a66f3c946c50fb android.hidl.manager@1.0::IServiceNotification
+2b885b5dec97391c82f35e64180686dc4c8f78b2b0a01732f8536385654f27c8 android.hidl.memory@1.0::IMapper
+4632246017013e75536fa6ee47db286b24a323fb92c37c6b14bb0ab796b7a16b android.hidl.memory@1.0::IMemory
+7c9fe352af04af659bd51ab6f5495115575bc063ddf684fc6d0dec1f4a4b4b7c android.hidl.token@1.0::ITokenManager
+
+# HALs released in Android O-MR1
+
+0b94dc876f749ed24a98f61c41d46ad75a27511163f1968a084213a33c684ef6 android.hidl.manager@1.1::IServiceManager
+
+# HALs released in Android P
+445da29052612c57db3a8504f6395814277dc3826ee0f166cc732031b35af496 android.hidl.memory.block@1.0::types
+2e19301ceb87fb0696cd8268fab9c41f95d23c7392d35bc575daaa6eb32807eb android.hidl.memory.token@1.0::IMemoryToken
+
+# ABI preserving changes to HALs during Android Q
+fcde1d0788066a62d5766f4dc19d4c1ec76967d5ddb636f59ccc66603460bcf8 android.hidl.manager@1.0::IServiceNotification
