@@ -102,9 +102,8 @@ int device_control(int fd, int op_code, int session_handle, int dev_handle) {
   return do_cam_control(fd, op_code, &cmd, sizeof(cmd));
 }
 
-void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8,
-                             int flags = CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
-                             int mmu_hdl = 0, int mmu_hdl2 = 0) {
+void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8, int flags = CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+                      int mmu_hdl = 0, int mmu_hdl2 = 0) {
   struct cam_mem_mgr_alloc_cmd mem_mgr_alloc_cmd = {0};
   mem_mgr_alloc_cmd.len = len;
   mem_mgr_alloc_cmd.align = align;
@@ -1019,10 +1018,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
   sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
               CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 }
-
-
-// ******************* just a helper *******************
-
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
   s->set_camera_exposure(grey_frac);
