@@ -7,7 +7,7 @@ if arch == "aarch64":
   cameras = ['cameras/camera_qcom.cc']
 elif arch == "larch64":
   libs += ['atomic']
-  cameras = ['cameras/camera_qcom2.cc']
+  cameras = ['cameras/camera_qcom2.cc', 'cameras/camera_qcom2_camerastate.cc']
 else:
   env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
   if USE_WEBCAM:
