@@ -98,7 +98,7 @@ CAR_INFO = {
   CAR.CIVIC: CarInfo("Honda Civic Sedan/Coupe 2016-18", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.CIVIC_BOSCH: [
     CarInfo("Honda Civic Sedan/Coupe 2019-20", "All", min_steer_speed=2. * CV.MPH_TO_MS),
-    CarInfo("Honda Civic Hatchback 2017-21", "All", min_steer_speed=12. * CV.MPH_TO_MS),
+    CarInfo("Honda Civic Hatchback 2017-21", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
   # TODO: same as sedan/coupe, but no ALC under 12. make sure diesel exception is in readme
   # CAR.CIVIC_BOSCH_DIESEL: CarInfo("Honda Civic Sedan 1.6 DIESEL", "All"),

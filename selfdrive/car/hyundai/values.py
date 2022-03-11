@@ -90,7 +90,7 @@ CAR_INFO = {
   CAR.SONATA_LF: CarInfo("Hyundai Sonata 2018-19", "SCC + LKAS"),
   CAR.PALISADE: [
     CarInfo("Hyundai Palisade 2020-21", "All"),
-    CarInfo("Kia Telluride 2020", "All"),
+    CarInfo("Kia Telluride 2020", "SCC + LKAS"),
   ],
   CAR.VELOSTER: CarInfo("Hyundai Veloster 2019-20", "SCC + LKAS"),
   CAR.SONATA_HYBRID: CarInfo("Hyundai Sonata Hybrid 2021-22", "All"),
