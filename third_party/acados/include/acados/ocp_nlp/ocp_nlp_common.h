@@ -234,11 +234,7 @@ typedef struct ocp_nlp_out
 
     // NOTE: the inequalities are internally organized in the following order:
     // [ lbu lbx lg lh lphi ubu ubx ug uh uphi; lsbu lsbx lsg lsh lsphi usbu usbx usg ush usphi]
-
-    int sqp_iter;
-    int qp_iter;
     double inf_norm_res;
-    double total_time;
 
     void *raw_memory; // Pointer to allocated memory, to be used for freeing
 
@@ -274,11 +270,16 @@ typedef struct ocp_nlp_opts
     double levenberg_marquardt;  // LM factor to be added to the hessian before regularization
     int reuse_workspace;
     int num_threads;
+    int print_level;
 
     // TODO: move to separate struct?
     ocp_nlp_globalization_t globalization;
+    int full_step_dual;
+    int line_search_use_sufficient_descent;
+    int globalization_use_SOC;
     double alpha_min;
     double alpha_reduction;
+    double eps_sufficient_descent;
 } ocp_nlp_opts;
 
 //
@@ -316,6 +317,8 @@ typedef struct ocp_nlp_res
 acados_size_t ocp_nlp_res_calculate_size(ocp_nlp_dims *dims);
 //
 ocp_nlp_res *ocp_nlp_res_assign(ocp_nlp_dims *dims, void *raw_memory);
+//
+void ocp_nlp_res_get_inf_norm(ocp_nlp_res *res, double *out);
 
 /************************************************
  * memory
@@ -351,7 +354,7 @@ typedef struct ocp_nlp_memory
     bool *set_sim_guess; // indicate if there is new explicitly provided guess for integration variables
     struct blasfeo_dvec *sim_guess;
 
-	int *sqp_iter; // pointer to iteration number
+    int *sqp_iter; // pointer to iteration number
 
 } ocp_nlp_memory;
 
@@ -375,8 +378,12 @@ typedef struct ocp_nlp_workspace
     void **cost;         // cost_workspace
     void **constraints;  // constraints_workspace
 
-	ocp_nlp_out *tmp_nlp_out;
-	ocp_nlp_out *weight_merit_fun;
+    // for globalization: -> move to module?!
+    ocp_nlp_out *tmp_nlp_out;
+    ocp_nlp_out *weight_merit_fun;
+    struct blasfeo_dvec tmp_nxu;
+    struct blasfeo_dvec tmp_ni;
+    struct blasfeo_dvec dxnext_dy;
 
 } ocp_nlp_workspace;
 
@@ -392,6 +399,8 @@ ocp_nlp_workspace *ocp_nlp_workspace_assign(ocp_nlp_config *config, ocp_nlp_dims
  * function
  ************************************************/
 
+void ocp_nlp_alias_memory_to_submodules(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,
+            ocp_nlp_out *out, ocp_nlp_opts *opts, ocp_nlp_memory *mem, ocp_nlp_workspace *work);
 //
 void ocp_nlp_initialize_qp(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,
             ocp_nlp_out *out, ocp_nlp_opts *opts, ocp_nlp_memory *mem, ocp_nlp_workspace *work);
@@ -409,7 +418,8 @@ void ocp_nlp_update_variables_sqp(ocp_nlp_config *config, ocp_nlp_dims *dims, oc
            ocp_nlp_out *out, ocp_nlp_opts *opts, ocp_nlp_memory *mem, ocp_nlp_workspace *work, double alpha);
 //
 double ocp_nlp_line_search(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,
-            ocp_nlp_out *out, ocp_nlp_opts *opts, ocp_nlp_memory *mem, ocp_nlp_workspace *work);
+            ocp_nlp_out *out, ocp_nlp_opts *opts, ocp_nlp_memory *mem, ocp_nlp_workspace *work,
+            int check_early_termination);
 //
 double ocp_nlp_evaluate_merit_fun(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,
           ocp_nlp_out *out, ocp_nlp_opts *opts, ocp_nlp_memory *mem, ocp_nlp_workspace *work);
