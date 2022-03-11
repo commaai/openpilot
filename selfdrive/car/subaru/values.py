@@ -29,7 +29,10 @@ class CAR:
 
 CAR_INFO = {
   CAR.ASCENT: CarInfo("Subaru Ascent 2019", "EyeSight"),
-  CAR.IMPREZA: CarInfo("Subaru Impreza 2017-19", "EyeSight"),
+  CAR.IMPREZA: [
+    CarInfo("Subaru Impreza 2017-19", "EyeSight"),
+    CarInfo("Subaru Crosstrek 2018-20", "EyeSight"),
+  ],
   CAR.FORESTER: CarInfo("Subaru Forester 2019-21", "EyeSight"),
   CAR.FORESTER_PREGLOBAL: CarInfo("Subaru Forester 2017-18", "EyeSight"),
   CAR.LEGACY_PREGLOBAL: CarInfo("Subaru Legacy 2015-18", "EyeSight"),

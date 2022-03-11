@@ -90,7 +90,10 @@ class CAR:
 
 
 CAR_INFO = {
-  CAR.ACCORD: CarInfo("Honda Accord 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.ACCORD: [
+    CarInfo("Honda Accord 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+    CarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  ],
   CAR.ACCORDH: CarInfo("Honda Accord Hybrid 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   CAR.CIVIC: CarInfo("Honda Civic Sedan/Coupe 2016-18", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.CIVIC_BOSCH: [
@@ -114,7 +117,7 @@ CAR_INFO = {
   CAR.PASSPORT: CarInfo("Honda Passport 2019-21", "All", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.RIDGELINE: CarInfo("Honda Ridgeline 2017-21", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.INSIGHT: CarInfo("Honda Insight 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS),
-  CAR.HONDA_E: CarInfo("Honda E 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.HONDA_E: CarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS),
 }
 
 

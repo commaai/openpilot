@@ -85,7 +85,10 @@ CAR_INFO = {
   CAR.CHR: CarInfo("Toyota C-HR 2017-21", "All"),
   CAR.CHRH: CarInfo("Toyota C-HR Hybrid 2017-19", "All"),
   CAR.COROLLA: CarInfo("Toyota Corolla 2017-19", "All"),
-  CAR.COROLLA_TSS2: CarInfo("Toyota Corolla 2020-22", "All"),
+  CAR.COROLLA_TSS2: [
+    CarInfo("Toyota Corolla 2020-22", "All"),
+    CarInfo("Toyota Corolla Hatchback 2019-22", "All"),
+  ],
   CAR.COROLLAH_TSS2: [
     CarInfo("Toyota Corolla Hybrid 2020-22", "All"),
     CarInfo("Lexus UX Hybrid 2019-21", "All"),
@@ -99,7 +102,10 @@ CAR_INFO = {
     CarInfo("Toyota Prius Prime 2017-20", 'All'),
   ],
   CAR.PRIUS_V: CarInfo("Toyota Prius v 2017", 'TSS-P', min_enable_speed=MIN_ACC_SPEED),
-  CAR.PRIUS_TSS2: CarInfo("Toyota Prius Prime 2021-22", "All"),
+  CAR.PRIUS_TSS2: [
+    CarInfo("Toyota Prius 2021-22", "All"),
+    CarInfo("Toyota Prius Prime 2021-22", "All"),
+  ],
   CAR.RAV4: CarInfo("Toyota RAV4 2016-18", 'TSS-P'),
   CAR.RAV4H: CarInfo("Toyota RAV4 Hybrid 2016-18", 'TSS-P'),
   CAR.RAV4_TSS2: CarInfo("Toyota RAV4 2019-21", "All"),

@@ -109,7 +109,7 @@ CAR_INFO = {
   CAR.POLO_MK6: CarInfo("Volkswagen Polo 2020", "Driver Assistance"),
   CAR.TAOS_MK1: CarInfo("Volkswagen Taos 2022", "Driver Assistance"),
   CAR.TCROSS_MK1: CarInfo("Volkswagen T-Cross 2021", "Driver Assistance"),
-  CAR.TIGUAN_MK2: CarInfo("Volkswagen Tiguan 2020", "Driver Assistance"),
+  CAR.TIGUAN_MK2: CarInfo("Volkswagen Tiguan 2020-22", "Driver Assistance"),
   CAR.TOURAN_MK2: CarInfo("Volkswagen Touran 2017", "Driver Assistance"),
   CAR.TRANSPORTER_T61: [
     CarInfo("Volkswagen Caravelle 2020", "Driver Assistance"),
@@ -124,7 +124,7 @@ CAR_INFO = {
   CAR.AUDI_Q2_MK1: CarInfo("Audi Q2 2018", "ACC + Lane Assist"),
   CAR.AUDI_Q3_MK2: CarInfo("Audi Q3 2020-21", "ACC + Lane Assist"),
   CAR.SEAT_ATECA_MK1: CarInfo("SEAT Ateca 2018", "Driver Assistance"),
-  CAR.SEAT_LEON_MK3: CarInfo("SEAT Leon 2014-2020", "Driver Assistance"),
+  CAR.SEAT_LEON_MK3: CarInfo("SEAT Leon 2014-20", "Driver Assistance"),
   CAR.SKODA_KAMIQ_MK1: CarInfo("Škoda Kamiq 2021", "Driver Assistance"),
   CAR.SKODA_KAROQ_MK1: CarInfo("Škoda Karoq 2019", "Driver Assistance"),
   CAR.SKODA_KODIAQ_MK1: CarInfo("Škoda Kodiaq 2018-19", "Driver Assistance"),

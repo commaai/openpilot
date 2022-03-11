@@ -76,7 +76,7 @@ CAR_INFO = {
   CAR.HYUNDAI_GENESIS: CarInfo("Hyundai Genesis 2015-16", "SCC + LKAS"),
   CAR.IONIQ: CarInfo("Hyundai Ioniq Hybrid 2017-19", "SCC + LKAS"),
   CAR.IONIQ_HEV_2022: CarInfo("Hyundai Ioniq Hybrid 2020-22", "SCC + LFA"),
-  CAR.IONIQ_EV_LTD: CarInfo("Hyundai Ioniq Electric Limited 2019", "SCC + LKAS"),
+  CAR.IONIQ_EV_LTD: CarInfo("Hyundai Ioniq Electric 2019", "SCC + LKAS"),
   CAR.IONIQ_EV_2020: CarInfo("Hyundai Ioniq Electric 2020", "SCC + LKAS"),
   CAR.IONIQ_PHEV: CarInfo("Hyundai Ioniq Plug-In Hybrid 2020-21", "SCC + LKAS"),
   CAR.KONA: CarInfo("Hyundai Kona 2020", "SCC + LKAS"),
@@ -98,9 +98,9 @@ CAR_INFO = {
   # Kia
   CAR.KIA_FORTE: CarInfo("Kia Forte 2018-21", "SCC + LKAS"),
   CAR.KIA_K5_2021: CarInfo("Kia K5 2021-22", "SCC + LFA"),
-  CAR.KIA_NIRO_EV: CarInfo("Kia Niro EV 2019-22", "All"),
+  CAR.KIA_NIRO_EV: CarInfo("Kia Niro Electric 2019-22", "All"),
   CAR.KIA_NIRO_HEV: CarInfo("Kia Niro Plug-In Hybrid 2019", "SCC + LKAS"),
-  CAR.KIA_NIRO_HEV_2021: CarInfo("Kia Niro Hybrid 2021", "SCC + LKAS"),
+  CAR.KIA_NIRO_HEV_2021: CarInfo("Kia Niro Hybrid 2021-22", "SCC + LKAS"),
   CAR.KIA_OPTIMA: [
     CarInfo("Kia Optima 2017", "SCC + LKAS", min_steer_speed=32. * CV.MPH_TO_MS),
     CarInfo("Kia Optima 2019", "SCC + LKAS"),

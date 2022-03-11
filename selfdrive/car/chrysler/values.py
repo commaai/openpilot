@@ -24,8 +24,8 @@ CAR_INFO = {
   CAR.PACIFICA_2019_HYBRID: CarInfo("Chrysler Pacifica Hybrid 2019-21", "Adaptive Cruise"),
   CAR.PACIFICA_2018: CarInfo("Chrysler Pacifica 2017-18", "Adaptive Cruise"),
   CAR.PACIFICA_2020: CarInfo("Chrysler Pacifica 2020", "Adaptive Cruise"),
-  CAR.JEEP_CHEROKEE: CarInfo("Grand Cherokee 2016-18", "Adaptive Cruise"),
-  CAR.JEEP_CHEROKEE_2019: CarInfo("Grand Cherokee 2019-20", "Adaptive Cruise"),
+  CAR.JEEP_CHEROKEE: CarInfo("Jeep Grand Cherokee 2016-18", "Adaptive Cruise"),
+  CAR.JEEP_CHEROKEE_2019: CarInfo("Jeep Grand Cherokee 2019-20", "Adaptive Cruise"),
 }
 
 # Unique CAN messages:
