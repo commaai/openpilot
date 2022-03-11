@@ -88,12 +88,15 @@ CAR_INFO = {
   CAR.SANTA_FE_PHEV_2022: CarInfo("Hyundai Santa Fe Plug-In Hybrid", {2022}, "All"),
   CAR.SONATA: CarInfo("Hyundai Sonata", {2020, 2021, 2022}, "All"),
   CAR.SONATA_LF: CarInfo("Hyundai Sonata", {2018, 2019}, "SCC + LKAS"),
-  CAR.PALISADE: CarInfo("Hyundai Palisade", {2020, 2021}, "All"),
+  CAR.PALISADE: [
+    CarInfo("Hyundai Palisade", {2020, 2021}, "All"),
+    CarInfo("Kia Telluride", {2020}, "All"),
+  ],
   CAR.VELOSTER: CarInfo("Hyundai Veloster", {2019, 2020}, "SCC + LKAS"),
   CAR.SONATA_HYBRID: CarInfo("Hyundai Sonata Hybrid", {2021, 2022}, "All"),
 
   # Kia
-  CAR.KIA_FORTE: CarInfo("Kia Forte E 2018 & GT 2021", {2018, 2019, 2020, 2021}, "SCC + LKAS"),  # TODO: figure out which cars this exactly supports
+  CAR.KIA_FORTE: CarInfo("Kia Forte", {2018, 2019, 2020, 2021}, "SCC + LKAS"),
   CAR.KIA_K5_2021: CarInfo("Kia K5", {2021, 2022}, "SCC + LFA"),
   CAR.KIA_NIRO_EV: CarInfo("Kia Niro EV", {2019, 2020, 2021, 2022}, "All"),
   CAR.KIA_NIRO_HEV: CarInfo("Kia Niro Plug-In Hybrid", {2019}, "SCC + LKAS"),
@@ -111,7 +114,6 @@ CAR_INFO = {
   CAR.GENESIS_G80: CarInfo("Genesis G80", {2018}, "All"),
   CAR.GENESIS_G90: CarInfo("Genesis G90", {2018}, "All"),
 }
-
 
 class Buttons:
   NONE = 0
