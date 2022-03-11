@@ -20,7 +20,6 @@
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 #include "selfdrive/common/swaglog.h"
-
 #include "selfdrive/camerad/cameras/sensor2_i2c.h"
 
 extern ExitHandler do_exit;
@@ -746,6 +745,20 @@ void CameraState::camera_open() {
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }
 
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+  s->driver_cam.camera_init(s, v, CAMERA_ID_AR0231, 2, 20, device_id, ctx, VISION_STREAM_RGB_FRONT, VISION_STREAM_DRIVER);
+  printf("driver camera initted \n");
+  if (!env_only_driver) {
+    s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_RGB_BACK, VISION_STREAM_ROAD); // swap left/right
+    printf("road camera initted \n");
+    s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_RGB_WIDE, VISION_STREAM_WIDE_ROAD);
+    printf("wide road camera initted \n");
+  }
+
+  s->sm = new SubMaster({"driverState"});
+  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
+}
+
 void cameras_open(MultiCameraState *s) {
   int ret;
 
@@ -1008,20 +1021,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
               CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 }
 
-
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(s, v, CAMERA_ID_AR0231, 2, 20, device_id, ctx, VISION_STREAM_RGB_FRONT, VISION_STREAM_DRIVER);
-  printf("driver camera initted \n");
-  if (!env_only_driver) {
-    s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_RGB_BACK, VISION_STREAM_ROAD); // swap left/right
-    printf("road camera initted \n");
-    s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_RGB_WIDE, VISION_STREAM_WIDE_ROAD);
-    printf("wide road camera initted \n");
-  }
-
-  s->sm = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
-}
 
 // ******************* just a helper *******************
 
