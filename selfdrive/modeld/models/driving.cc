@@ -56,7 +56,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 }
 
 ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
-                              const mat3 &transform, const mat3 &transform_wide, float *desire_in) {
+                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool prepare_only) {
 #ifdef DESIRE
   if (desire_in != NULL) {
     for (int i = 1; i < DESIRE_LEN; i++) {
@@ -74,6 +74,11 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
 
   // if getInputBuf is not NULL, net_input_buf will be
   auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
+
+  if (prepare_only) {
+    return nullptr;
+  }
+
   s->m->addImage(net_input_buf, s->frame->buf_size);
   LOGT("Image added");
 
