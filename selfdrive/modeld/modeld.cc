@@ -141,6 +141,10 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
     bool prepare_only = vipc_dropped_frames > 0;
 
+    if (prepare_only) {
+      LOGE("skipping model eval. Dropped %d frames", vipc_dropped_frames);
+    }
+
     double mt1 = millis_since_boot();
     ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, prepare_only);
     double mt2 = millis_since_boot();
