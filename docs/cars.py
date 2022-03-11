@@ -125,11 +125,14 @@ class Car:
     min_steer_speed = CP.minSteerSpeed
     if car_info.min_steer_speed is not None:
       min_steer_speed = car_info.min_steer_speed
-      assert CP.minSteerSpeed == 0, "Minimum steer speed set in both CarInfo and CarParams for {}".format(
-        CP.carFingerprint)
+      assert CP.minSteerSpeed == 0, "Minimum steer speed set in both CarInfo and CarParams for {}".format(CP.carFingerprint)
+
+    min_enable_speed = CP.minEnableSpeed
+    if car_info.min_enable_speed is not None:
+      min_enable_speed = car_info.min_enable_speed
 
     # TODO: make sure well supported check is complete
-    stars = [CP.openpilotLongitudinalControl, CP.minEnableSpeed <= 1e-3, min_steer_speed <= 1e-3,
+    stars = [CP.openpilotLongitudinalControl, min_enable_speed <= 1e-3, min_steer_speed <= 1e-3,
              CP.carName in MAKES_GOOD_STEERING_TORQUE, CP.carFingerprint not in non_tested_cars]
 
     # Check for star demotions from exceptions

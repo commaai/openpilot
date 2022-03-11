@@ -93,7 +93,7 @@ CAR_INFO = {
   CAR.HIGHLANDERH: CarInfo("Toyota Highlander Hybrid", {2017, 2018, 2019}, "All"),
   CAR.HIGHLANDERH_TSS2: CarInfo("Toyota Highlander Hybrid", {2020, 2021, 2022}, "All"),
   CAR.PRIUS: CarInfo("Toyota Prius", {2016, 2017, 2018, 2019, 2020}, 'TSS-P'),  # TODO: Prius Prime is lost here (supports All packages)
-  CAR.PRIUS_V: CarInfo("Toyota Prius v", {2017}, 'TSS-P'),
+  CAR.PRIUS_V: CarInfo("Toyota Prius v", {2017}, 'TSS-P', min_enable_speed=MIN_ACC_SPEED),
   CAR.PRIUS_TSS2: CarInfo("Toyota Prius Prime TSS2", {2021, 2022}, "All"),
   CAR.RAV4: CarInfo("Toyota RAV4", {2016, 2017, 2018}, 'TSS-P'),
   CAR.RAV4H: CarInfo("Toyota RAV4 Hybrid", {2016, 2017, 2018}, 'TSS-P'),
