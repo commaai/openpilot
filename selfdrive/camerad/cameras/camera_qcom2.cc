@@ -1,24 +1,10 @@
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
 
-#include <fcntl.h>
-#include <poll.h>
 #include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <unistd.h>
-
-#include <atomic>
+#include <poll.h>
 #include <cassert>
-#include <cerrno>
-#include <cmath>
-#include <cstdio>
-#include <cstring>
 
-#include "media/cam_defs.h"
 #include "media/cam_isp.h"
-#include "media/cam_isp_ife.h"
-#include "media/cam_sensor.h"
-#include "media/cam_sensor_cmn_header.h"
-#include "media/cam_sync.h"
 #include "selfdrive/common/swaglog.h"
 
 extern ExitHandler do_exit;
@@ -54,7 +40,7 @@ void cameras_open(MultiCameraState *s) {
   LOGD("opened video1");
 
   // looks like there's only one of these
-  s->isp_fd = HANDLE_EINTR(open("/dev/v4l-subdev1", O_RDWR | O_NONBLOCK));
+  s->isp_fd = open_v4l_by_name_and_index("cam-isp");
   assert(s->isp_fd >= 0);
   LOGD("opened isp");
 
@@ -139,10 +125,10 @@ void cameras_run(MultiCameraState *s) {
 
   // start devices
   LOG("-- Starting devices");
-  s->driver_cam.start();
+  s->driver_cam.sensors_start();
   if (!env_only_driver) {
-    s->road_cam.start();
-    s->wide_road_cam.start();
+    s->road_cam.sensors_start();
+    s->wide_road_cam.sensors_start();
   }
 
   // poll events

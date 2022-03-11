@@ -75,7 +75,7 @@ int do_cam_control(int fd, int op_code, void *handle, int size) {
   return ret;
 }
 
-std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data) {
+static std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data) {
   struct cam_acquire_dev_cmd cmd = {
       .session_handle = session_handle,
       .handle_type = CAM_HANDLE_USER_POINTER,
@@ -86,7 +86,7 @@ std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data
   return err == 0 ? std::make_optional(cmd.dev_handle) : std::nullopt;
 };
 
-int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle) {
+static int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle) {
   struct cam_config_dev_cmd cmd = {
       .session_handle = session_handle,
       .dev_handle = dev_handle,
@@ -95,14 +95,15 @@ int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t p
   return do_cam_control(fd, CAM_CONFIG_DEV, &cmd, sizeof(cmd));
 }
 
-int device_control(int fd, int op_code, int session_handle, int dev_handle) {
+static int device_control(int fd, int op_code, int session_handle, int dev_handle) {
   // start stop and release are all the same
   struct cam_start_stop_dev_cmd cmd { .session_handle = session_handle, .dev_handle = dev_handle };
   return do_cam_control(fd, op_code, &cmd, sizeof(cmd));
 }
 
-void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8, int flags = CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
-                      int mmu_hdl = 0, int mmu_hdl2 = 0) {
+static void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8,
+                             int flags = CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+                             int mmu_hdl = 0, int mmu_hdl2 = 0) {
   struct cam_mem_mgr_alloc_cmd mem_mgr_alloc_cmd = {0};
   mem_mgr_alloc_cmd.len = len;
   mem_mgr_alloc_cmd.align = align;
@@ -131,7 +132,7 @@ void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8, i
   return ptr;
 }
 
-void release(int video0_fd, uint32_t handle) {
+static void release(int video0_fd, uint32_t handle) {
   int ret;
   struct cam_mem_mgr_release_cmd mem_mgr_release_cmd = {0};
   mem_mgr_release_cmd.buf_handle = handle;
@@ -140,13 +141,13 @@ void release(int video0_fd, uint32_t handle) {
   assert(ret == 0);
 }
 
-void release_fd(int video0_fd, uint32_t handle) {
+static void release_fd(int video0_fd, uint32_t handle) {
   // handle to fd
   close(handle>>16);
   release(video0_fd, handle);
 }
 
-void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
+static void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
   req_mgr_flush_request.session_hdl = session_hdl;
   req_mgr_flush_request.link_hdl = link_hdl;
@@ -392,7 +393,7 @@ void CameraState::sensors_poke(int request_id) {
   release_fd(multi_cam_state->video0_fd, cam_packet_handle);
 }
 
-void CameraState::start() {
+void CameraState::sensors_start() {
   int start_reg_len = sizeof(start_reg_array) / sizeof(struct i2c_random_wr_payload);
   sensors_i2c(start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 }

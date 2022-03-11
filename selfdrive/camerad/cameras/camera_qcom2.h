@@ -35,14 +35,15 @@ public:
   int camera_num;
 
   void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
-  void enqueue_buffer(int i, bool dp);
-  void sensors_poke(int request_id);
-  void start();
-  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code);
-  void sensors_init();
   void enqueue_req_multi(int start, int n, bool dp);
+  void enqueue_buffer(int i, bool dp);
   void handle_camera_event(void *evdat);
   void set_camera_exposure(float grey_frac);
+
+  void sensors_start();
+  void sensors_poke(int request_id);
+  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code);
+  void sensors_init();
 
   void camera_open();
   void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type);
