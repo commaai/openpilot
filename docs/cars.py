@@ -91,21 +91,14 @@ CAR_EXCEPTIONS = [
 class Car:
   def __init__(self, car_info, CP):
     self.make, self.model = car_info.name.split(' ', 1)
-    self.car_fingerprint = CP.carFingerprint
-    assert len(car_info.years), 'Model {} has no years listed'.format(CP.carFingerprint)
-
-    # TODO: properly format model years
-    years = ' ' + str(max(car_info.years))
-    self.model_string = "{}{}".format(self.model, years)
     self.package = car_info.package
-
     self.exceptions = get_exceptions(CP)
     self.stars = self._calculate_stars(CP, car_info)
 
   @property
   def row(self):
     # TODO: add YouTube videos
-    row = [self.make, self.model_string, self.package, *map(get_star_icon, self.stars)]
+    row = [self.make, self.model, self.package, *map(get_star_icon, self.stars)]
 
     # Check for car exceptions
     for row_idx, column in enumerate(Column):
@@ -167,7 +160,7 @@ def generate_cars_md():
   cars_md_doc = []
   for tier in Tier:
     # Sort by make, model name, and year
-    cars = sorted(tiered_cars[tier], key=lambda car: car.make + car.model_string)
+    cars = sorted(tiered_cars[tier], key=lambda car: car.make + car.model)
 
     cars_md_doc.append("## {} Cars\n".format(tier.name.title()))
 
