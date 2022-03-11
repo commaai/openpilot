@@ -24,7 +24,7 @@ class TestLocationdLib(unittest.TestCase):
   def setUp(self):
     header = '''typedef ...* Localizer_t;
 Localizer_t localizer_init();
-void localizer_get_message_bytes(Localizer_t localizer, uint64_t logMonoTime, bool inputsOK, bool msgValid, bool sensorsOK, bool gpsOK, char *buff, size_t buff_size);
+void localizer_get_message_bytes(Localizer_t localizer, uint64_t logMonoTime, bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid, char *buff, size_t buff_size);
 void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t size);'''
 
     self.ffi = FFI()
