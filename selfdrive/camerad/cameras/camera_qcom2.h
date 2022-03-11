@@ -9,8 +9,6 @@
 
 #define FRAME_BUF_COUNT 4
 
-int do_cam_control(int fd, int op_code, void *handle, int size);
-
 class CameraState {
 public:
   MultiCameraState *multi_cam_state;

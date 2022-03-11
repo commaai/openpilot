@@ -76,7 +76,7 @@ int do_cam_control(int fd, int op_code, void *handle, int size) {
   return ret;
 }
 
-static std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data) {
+std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data) {
   struct cam_acquire_dev_cmd cmd = {
       .session_handle = session_handle,
       .handle_type = CAM_HANDLE_USER_POINTER,
@@ -87,7 +87,7 @@ static std::optional<int32_t> device_acquire(int fd, int32_t session_handle, voi
   return err == 0 ? std::make_optional(cmd.dev_handle) : std::nullopt;
 };
 
-static int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle) {
+int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle) {
   struct cam_config_dev_cmd cmd = {
       .session_handle = session_handle,
       .dev_handle = dev_handle,
@@ -96,13 +96,13 @@ static int device_config(int fd, int32_t session_handle, int32_t dev_handle, uin
   return do_cam_control(fd, CAM_CONFIG_DEV, &cmd, sizeof(cmd));
 }
 
-static int device_control(int fd, int op_code, int session_handle, int dev_handle) {
+int device_control(int fd, int op_code, int session_handle, int dev_handle) {
   // start stop and release are all the same
   struct cam_start_stop_dev_cmd cmd { .session_handle = session_handle, .dev_handle = dev_handle };
   return do_cam_control(fd, op_code, &cmd, sizeof(cmd));
 }
 
-static void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8,
+void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8,
                              int flags = CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                              int mmu_hdl = 0, int mmu_hdl2 = 0) {
   struct cam_mem_mgr_alloc_cmd mem_mgr_alloc_cmd = {0};
@@ -133,7 +133,7 @@ static void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align
   return ptr;
 }
 
-static void release(int video0_fd, uint32_t handle) {
+void release(int video0_fd, uint32_t handle) {
   int ret;
   struct cam_mem_mgr_release_cmd mem_mgr_release_cmd = {0};
   mem_mgr_release_cmd.buf_handle = handle;
@@ -142,13 +142,13 @@ static void release(int video0_fd, uint32_t handle) {
   assert(ret == 0);
 }
 
-static void release_fd(int video0_fd, uint32_t handle) {
+void release_fd(int video0_fd, uint32_t handle) {
   // handle to fd
   close(handle>>16);
   release(video0_fd, handle);
 }
 
-static void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
+void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
   req_mgr_flush_request.session_hdl = session_hdl;
   req_mgr_flush_request.link_hdl = link_hdl;
@@ -157,7 +157,6 @@ static void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
   ret = do_cam_control(fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
   // LOGD("flushed all req: %d", ret);
 }
-
 
 // ************** high level camera helpers ****************
 
