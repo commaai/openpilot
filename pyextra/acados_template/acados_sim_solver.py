@@ -215,6 +215,24 @@ class AcadosSimSolver:
         model_name = self.sim_struct.model.name
         self.model_name = model_name
 
+        # Load acados library to avoid unloading the library.
+        # This is necessary if acados was compiled with OpenMP, since the OpenMP threads can't be destroyed.
+        # Unloading a library which uses OpenMP results in a segfault (on any platform?).
+        # see [https://stackoverflow.com/questions/34439956/vc-crash-when-freeing-a-dll-built-with-openmp]
+        # or [https://python.hotexamples.com/examples/_ctypes/-/dlclose/python-dlclose-function-examples.html]
+        libacados_name = 'libacados.so'
+        libacados_filepath = os.path.join(acados_sim.acados_lib_path, libacados_name)
+        self.__acados_lib = CDLL(libacados_filepath)
+        # find out if acados was compiled with OpenMP
+        try:
+            self.__acados_lib_uses_omp = getattr(self.__acados_lib, 'omp_get_thread_num') is not None
+        except AttributeError as e:
+            self.__acados_lib_uses_omp = False
+        if self.__acados_lib_uses_omp:
+            print('acados was compiled with OpenMP.')
+        else:
+            print('acados was compiled without OpenMP.')
+
         # Ctypes
         shared_lib = f'{code_export_dir}/libacados_sim_solver_{model_name}.so'
         self.shared_lib = CDLL(shared_lib)
