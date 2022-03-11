@@ -22,12 +22,10 @@ class CAR:
 
 
 CAR_INFO = {
-  CAR.XTRAIL: CarInfo("Nissan X-Trail", {2017}, "ProPILOT"),
-  CAR.LEAF: CarInfo("Nissan Leaf", {2018, 2019, 2020, 2021, 2022}, "ProPILOT"),
-  # TODO: ensure we can leave out cars when generating docs
-  # CAR.LEAF_IC: CarInfo("Nissan Leaf Instrument Cluster", {2018, 2019, 2020, 2021, 2022}, "ProPILOT"),
-  CAR.ROGUE: CarInfo("Nissan Rogue", {2018, 2019, 2020}, "All"),
-  CAR.ALTIMA: CarInfo("Nissan Altima", {2019, 2020}, "ProPILOT"),
+  CAR.XTRAIL: CarInfo("Nissan X-Trail 2017", "ProPILOT"),
+  CAR.LEAF: CarInfo("Nissan Leaf 2018-22", "ProPILOT"),
+  CAR.ROGUE: CarInfo("Nissan Rogue 2018-20", "ProPILOT"),
+  CAR.ALTIMA: CarInfo("Nissan Altima 2019-20", "ProPILOT"),
 }
 
 FINGERPRINTS = {

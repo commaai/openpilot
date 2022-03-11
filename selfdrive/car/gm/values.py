@@ -51,13 +51,13 @@ class CAR:
 
 
 CAR_INFO = {
-  CAR.HOLDEN_ASTRA: CarInfo("Holden Astra RS-V BK", {2017}, "Adaptive Cruise"),
-  CAR.VOLT: CarInfo("Chevrolet Volt Premier", {2017, 2018}, "Adaptive Cruise"),
-  CAR.CADILLAC_ATS: CarInfo("CADILLAC ATS Premium Performance", {2018}, "Adaptive Cruise"),
-  CAR.MALIBU: CarInfo("Chevrolet Malibu Premier", {2017}, "Adaptive Cruise"),
-  CAR.ACADIA: CarInfo("GMC Acadia Denali", {2018}, "Adaptive Cruise"),
-  CAR.BUICK_REGAL: CarInfo("Buick Regal Essence", {2018}, "Adaptive Cruise"),
-  CAR.ESCALADE_ESV: CarInfo("Cadillac Escalade ESV", {2016}, "ACC + LKAS"),
+  CAR.HOLDEN_ASTRA: CarInfo("Holden Astra 2017", "Adaptive Cruise"),
+  CAR.VOLT: CarInfo("Chevrolet Volt 2017-18", "Adaptive Cruise"),
+  CAR.CADILLAC_ATS: CarInfo("Cadillac ATS Premium Performance 2018", "Adaptive Cruise"),
+  CAR.MALIBU: CarInfo("Chevrolet Malibu Premier 2017", "Adaptive Cruise"),
+  CAR.ACADIA: CarInfo("GMC Acadia 2018", "Adaptive Cruise"),
+  CAR.BUICK_REGAL: CarInfo("Buick Regal Essence 2018", "Adaptive Cruise"),
+  CAR.ESCALADE_ESV: CarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS"),
 }
 
 

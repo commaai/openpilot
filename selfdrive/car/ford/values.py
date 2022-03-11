@@ -10,7 +10,7 @@ class CAR:
 
 
 CAR_INFO = {
-  CAR.FUSION: CarInfo("Ford Fusion", {2018}, "All")
+  CAR.FUSION: CarInfo("Ford Fusion 2018", "All")
 }
 
 DBC = {
