@@ -1,5 +1,6 @@
 from cereal import car
 from selfdrive.car import CarInfo, dbc_dict
+from selfdrive.config import Conversions as CV
 Ecu = car.CarParams.Ecu
 
 # Steer torque limits
@@ -70,9 +71,8 @@ class CAR:
 
 CAR_INFO = {
   CAR.ELANTRA: CarInfo("Hyundai Elantra 2017-19", "SCC + LKAS"),
-  CAR.ELANTRA_2021: CarInfo("Hyundai Elantra 2021", "SCC + LKAS"),
+  CAR.ELANTRA_2021: CarInfo("Hyundai Elantra 2021-22", "SCC + LKAS"),
   CAR.ELANTRA_HEV_2021: CarInfo("Hyundai Elantra Hybrid 2021", "SCC + LKAS"),
-  CAR.ELANTRA_GT_I30: CarInfo("Hyundai i30 N Line 2019 & GT 2018 DCT", "SCC + LKAS"),
   CAR.HYUNDAI_GENESIS: CarInfo("Hyundai Genesis 2015-16", "SCC + LKAS"),
   CAR.IONIQ: CarInfo("Hyundai Ioniq Hybrid 2017-19", "SCC + LKAS"),
   CAR.IONIQ_HEV_2022: CarInfo("Hyundai Ioniq Hybrid 2020-22", "SCC + LFA"),
@@ -101,12 +101,14 @@ CAR_INFO = {
   CAR.KIA_NIRO_EV: CarInfo("Kia Niro EV 2019-22", "All"),
   CAR.KIA_NIRO_HEV: CarInfo("Kia Niro Plug-In Hybrid 2019", "SCC + LKAS"),
   CAR.KIA_NIRO_HEV_2021: CarInfo("Kia Niro Hybrid 2021", "SCC + LKAS"),
-  CAR.KIA_OPTIMA: CarInfo("Kia Optima SX 2019 & 2016", "SCC + LKAS"),  # TODO
-  CAR.KIA_OPTIMA_H: CarInfo("Kia Optima Hybrid 2017 & Sports 2019", "SCC + LKAS"),  # TODO
+  CAR.KIA_OPTIMA: [
+    CarInfo("Kia Optima 2017", "SCC + LKAS", min_steer_speed=32. * CV.MPH_TO_MS),
+    CarInfo("Kia Optima 2019", "SCC + LKAS"),
+  ],
   CAR.KIA_SELTOS: CarInfo("Kia Seltos 2021", "SCC + LKAS"),
-  CAR.KIA_SORENTO: CarInfo("Kia Sorento GT-Line 2018-19", "SCC + LKAS"),
-  CAR.KIA_STINGER: CarInfo("Kia Stinger GT2 2018", "SCC + LKAS"),
-  CAR.KIA_CEED: CarInfo("Kia Ceed Intro Edition 2019", "SCC + LKAS"),
+  CAR.KIA_SORENTO: CarInfo("Kia Sorento 2018-19", "SCC + LKAS"),
+  CAR.KIA_STINGER: CarInfo("Kia Stinger 2018", "SCC + LKAS"),
+  CAR.KIA_CEED: CarInfo("Kia Ceed 2019", "SCC + LKAS"),
 
   # Genesis
   CAR.GENESIS_G70: CarInfo("Genesis G70 2018", "All"),
