@@ -75,10 +75,6 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
   // if getInputBuf is not NULL, net_input_buf will be
   auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
 
-  if (prepare_only) {
-    return nullptr;
-  }
-
   s->m->addImage(net_input_buf, s->frame->buf_size);
   LOGT("Image added");
 
@@ -87,6 +83,11 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
     s->m->addExtra(net_extra_buf, s->wide_frame->buf_size);
     LOGT("Extra image added");
   }
+
+  if (prepare_only) {
+    return nullptr;
+  }
+
   s->m->execute();
   LOGT("Execution finished");
 
