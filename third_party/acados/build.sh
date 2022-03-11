@@ -13,19 +13,19 @@ elif [ -f /EON ]; then
 fi
 
 if [ ! -d acados_repo/ ]; then
-  #git clone https://github.com/acados/acados.git $DIR/acados
-  git clone https://github.com/commaai/acados.git $DIR/acados_repo
+  git clone https://github.com/acados/acados.git $DIR/acados_repo
+  # git clone https://github.com/commaai/acados.git $DIR/acados_repo
 fi
 cd acados_repo
 git fetch
-git checkout 92b85c61f7358a1b08b7cd30aeb9d32ad15942e8
+git checkout 105e06df87f06ea02df4af825867c946b31defdd
 git submodule update --recursive --init
 
 # build
 mkdir -p build
 cd build
 cmake -DACADOS_WITH_QPOASES=ON -UBLASFEO_TARGET -DBLASFEO_TARGET=$BLAS_TARGET ..
-make -j4 install
+make -j20 install
 
 INSTALL_DIR="$DIR/$ARCHNAME"
 rm -rf $INSTALL_DIR
@@ -33,8 +33,10 @@ mkdir -p $INSTALL_DIR
 
 rm $DIR/acados_repo/lib/*.json
 
+rm -rf $DIR/include
 cp -r $DIR/acados_repo/include $DIR
 cp -r $DIR/acados_repo/lib $INSTALL_DIR
+rm -rf $DIR/../../pyextra/acados_template
 cp -r $DIR/acados_repo/interfaces/acados_template/acados_template $DIR/../../pyextra
 #pip3 install -e $DIR/acados/interfaces/acados_template
 
