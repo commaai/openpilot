@@ -119,6 +119,7 @@ CAR_INFO = {
   CAR.AUDI_A3_MK3: [
     CarInfo("Audi A3 2014-19", "ACC + Lane Assist"),
     CarInfo("Audi A3 Sportback e-tron 2017-18", "ACC + Lane Assist"),
+    CarInfo("Audi S3 2015-17", "ACC + Lane Assist"),
   ],
   CAR.AUDI_Q2_MK1: CarInfo("Audi Q2 2018", "ACC + Lane Assist"),
   CAR.AUDI_Q3_MK2: CarInfo("Audi Q3 2020-21", "ACC + Lane Assist"),
