@@ -8,20 +8,26 @@ struct i2c_random_wr_payload init_array_imx390[] = {
   {0x200C, 0xe4}, {0x200D, 0x0c},  // MODE_HMAX
   //{0x201c, 0x01}, {0x201D, 0x13},
 
+  //{0x201c, 0xf1}, {0x201D, 0x12},
+
   // crop 
   {0x3410, 0x88}, {0x3411, 0x7},     // CROP_H_SIZE
   {0x3418, 0xb8}, {0x3419, 0x4},     // CROP_V_SIZE
   {0x0078, 1}, {0x03c0, 1},
 
   // external trigger (off)
+  // while images still come in, they are blank with this
   {0x3650, 0},  // CU_MODE
 
   // exposure
   {0x000c, 0x7f}, {0x000d, 0x02},
   {0x0010, 0x7f}, {0x0011, 0x02},
 
+  // WUXGA mode
+  // not in datasheet, from https://github.com/bogsen/STLinux-Kernel/blob/master/drivers/media/platform/tegra/imx185.c
+
+
   // analog gain
-  //{0x0018, 0x64}, {0x0019, 0x00},
   //{0x001a, 0x0c}, {0x001b, 0x00},
 
   // disable a bunch of errors causing blanking
