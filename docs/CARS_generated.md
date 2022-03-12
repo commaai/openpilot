@@ -14,7 +14,7 @@ How We Rate The Cars
     <th>Full-Speed Range (FSR) Longitudinal</th>
   </tr>
     <td valign="top"><img style="float: left;" src="assets/icon-star-full.png" width="22" /> - openpilot is able to control gas and brakes<br/><img style="float: left;" src="assets/icon-star-half.png" width="22" /> - openpilot is able to control the gas and brakes with some restrictions<br/><img style="float: left;" src="assets/icon-star-empty.png" width="22" /> - The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system</td>
-    <td valign="top"><img style="float: left;" src="assets/icon-star-full.png" width="22" /> - Adaptive Cruise Control (ACC) operates down to 0 mph <br/> <img style="float: left;" src="assets/icon-star-empty.png" width="22" /> - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.</td>
+    <td valign="top"><img style="float: left;" src="assets/icon-star-full.png" width="22" /> - Adaptive Cruise Control (ACC) operates down to 0 mph<br/><img style="float: left;" src="assets/icon-star-empty.png" width="22" /> - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.</td>
   </tr>
 </table>
 
@@ -24,7 +24,7 @@ How We Rate The Cars
     <th>Steering Torque</th>
   </tr>
     <td valign="top"><img style="float: left;" src="assets/icon-star-full.png" width="22" /> - openpilot can control the steering wheel down to 0 mph<br/><img style="float: left;" src="assets/icon-star-empty.png" width="22" /> - No steering control below certain speeds</td>
-    <td valign="top"><img style="float: left;" src="assets/icon-star-full.png" width="22" /> - Car has enough steering torque for comfortable highway driving<br/> <img style="float: left;" src="assets/icon-star-empty.png" width="22" /> - Limited ability to make turns</td>
+    <td valign="top"><img style="float: left;" src="assets/icon-star-full.png" width="22" /> - Car has enough steering torque for comfortable highway driving<br/><img style="float: left;" src="assets/icon-star-empty.png" width="22" /> - Limited ability to make turns</td>
   </tr>
 </table>
 
