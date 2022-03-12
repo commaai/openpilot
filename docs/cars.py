@@ -12,6 +12,8 @@ from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 from selfdrive.test.test_routes import non_tested_cars
 
@@ -84,6 +86,29 @@ CAR_EXCEPTIONS = [
                "An inaccurate steering wheel angle sensor makes precise control difficult.",
                Column.STEERING_TORQUE, star="half"),
 ]
+
+CAR_VIDEOS = {
+  HYUNDAI.ELANTRA_2021: "https://youtu.be/_EdYQtV52-c",
+  HYUNDAI.ELANTRA_HEV_2021: "https://youtu.be/_EdYQtV52-c",
+  HYUNDAI.KONA_HEV: "https://youtu.be/_EdYQtV52-c",
+  HYUNDAI.PALISADE: "https://youtu.be/TAnDqjF4fDY?t=456",
+  HYUNDAI.SONATA: "https://www.youtube.com/watch?v=ix63r9kE3Fw",
+  HYUNDAI.KIA_NIRO_EV: "https://www.youtube.com/watch?v=lT7zcG6ZpGo",
+  TOYOTA.COROLLA_TSS2: "https://www.youtube.com/watch?v=_66pXk0CBYA",
+  TOYOTA.PRIUS_TSS2: "https://www.youtube.com/watch?v=J58TvCpUd4U",
+  HYUNDAI.KIA_STINGER: "https://www.youtube.com/watch?v=MJ94qoofYw0",
+  TOYOTA.CAMRY: "https://www.youtube.com/watch?v=fkcjviZY9CM",
+  TOYOTA.CAMRYH: "https://www.youtube.com/watch?v=Q2DYY0AWKgk",
+  TOYOTA.SIENNA: "https://www.youtube.com/watch?v=q1UPOo4Sh68",
+  TOYOTA.HIGHLANDER: "https://www.youtube.com/watch?v=0wS0wXSLzoo",
+  TOYOTA.PRIUS: "https://www.youtube.com/watch?v=8zopPJI8XQ0",
+  TOYOTA.RAV4_TSS2: "https://www.youtube.com/watch?v=wJxjDd42gGA",
+  HONDA.ACCORD: "https://www.youtube.com/watch?v=mrUwlj3Mi58",
+  HONDA.CIVIC_BOSCH: "https://www.youtube.com/watch?v=4Iz1Mz5LGF8",
+  CHRYSLER.JEEP_CHEROKEE: "https://www.youtube.com/watch?v=eLR9o2JkuRk",
+  CHRYSLER.JEEP_CHEROKEE_2019: "https://www.youtube.com/watch?v=jBe4lWnRSu4",
+  HYUNDAI.KIA_SORENTO: "https://www.youtube.com/watch?v=Fkh3s6WHJz8",
+}
 
 
 class Car:
