@@ -52,7 +52,7 @@ class CAR:
 
 CAR_INFO = {
   CAR.HOLDEN_ASTRA: CarInfo("Holden Astra 2017", "Adaptive Cruise"),
-  CAR.VOLT: CarInfo("Chevrolet Volt 2017-18", "Adaptive Cruise"),
+  CAR.VOLT: CarInfo("Chevrolet Volt 2017-18", "Adaptive Cruise", min_enable_speed=0),
   CAR.CADILLAC_ATS: CarInfo("Cadillac ATS Premium Performance 2018", "Adaptive Cruise"),
   CAR.MALIBU: CarInfo("Chevrolet Malibu Premier 2017", "Adaptive Cruise"),
   CAR.ACADIA: CarInfo("GMC Acadia 2018", "Adaptive Cruise"),
