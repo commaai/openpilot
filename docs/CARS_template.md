@@ -2,9 +2,9 @@
 
 Cars are organized into three tiers:
 
-- 🥇 Gold - a high-quality openpilot experience
-- 🥈 Silver - a pretty good, albeit limited experience
-- 🥉 Bronze - a significantly limited experience
+- 🥇 Gold - The best openpilot experience. Great highway driving with continual updates.
+- 🥈 Silver - A solid highway experience, but is limited by stock longitudinal.
+- 🥉 Bronze - A solid highway experience, but will have limited performance in stop-and-go. May have ACC and ALC speed limitations.
 
 How We Rate The Cars
 ---
