@@ -140,7 +140,6 @@ class Controls:
     self.enabled = False
     self.active = False
     self.can_rcv_error = False
-    self.brake_pressed_prev = False
     self.soft_disable_timer = 0
     self.v_cruise_kph = 255
     self.v_cruise_kph_last = 0
@@ -155,6 +154,7 @@ class Controls:
     self.logged_comm_issue = False
     self.button_timers = {ButtonEvent.Type.decelCruise: 0, ButtonEvent.Type.accelCruise: 0}
     self.last_actuators = car.CarControl.Actuators.new_message()
+    self.CS_prev = car.CarState()
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -195,9 +195,9 @@ class Controls:
       return
 
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0
-    if (CS.gasPressed and self.active) or (CS.brakePressed and (not self.brake_pressed_prev or not CS.standstill)):
+    if (CS.gasPressed and not self.CS_prev.gasPressed) or \
+      (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)):
       self.events.add(EventName.pedalPressed)
-    self.brake_pressed_prev = CS.brakePressed
 
     self.events.add_from_msg(CS.events)
     self.events.add_from_msg(self.sm['driverMonitoringState'].events)
@@ -735,6 +735,7 @@ class Controls:
     self.prof.checkpoint("Sent")
 
     self.update_button_timers(CS.buttonEvents)
+    self.CS_prev = CS.copy()
 
   def controlsd_thread(self):
     while True:
