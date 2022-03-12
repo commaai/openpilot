@@ -3,6 +3,7 @@ from collections import defaultdict, namedtuple
 from enum import Enum
 import os
 from typing import Dict
+import jinja2
 
 from common.basedir import BASEDIR
 from common.params import Params
@@ -35,10 +36,6 @@ StarColumns = list(Column)[3:]
 CarException = namedtuple("CarException", ["cars", "text", "column", "star"], defaults=[None])
 
 
-def make_row(columns):
-  return "|{}|".format("|".join(columns))
-
-
 def get_star_icon(variant):
   return '<img src="assets/icon-star-{}.png" width="22" />'.format(variant)
 
@@ -52,7 +49,6 @@ def get_exceptions(CP) -> Dict[Column, CarException]:
 
 
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS_generated.md")
-CAR_TABLE_HEADER = make_row(["---"] * 3 + [":---:"] * 5)  # first three aren't centered
 
 # TODO: which other makes?
 MAKES_GOOD_STEERING_TORQUE = ["toyota", "hyundai", "volkswagen"]
@@ -108,13 +104,14 @@ class Car:
         superscript_number = CAR_EXCEPTIONS.index(exception) + 1
         row[row_idx] += "<sup>{}</sup>".format(superscript_number)
 
-    return make_row(row)
+    return row
 
   @property
   def tier(self):
     return {5: Tier.GOLD, 4: Tier.SILVER}.get(self.stars.count("full"), Tier.BRONZE)
 
   def _calculate_stars(self, CP, car_info):
+    # TODO: can we incorporate this into row()?
     # Some minimum steering speeds are not yet in CarParams
     min_steer_speed = CP.minSteerSpeed
     if car_info.min_steer_speed is not None:
@@ -159,23 +156,26 @@ def get_tiered_cars():
         car = Car(_car_info, CP)
         tiered_cars[car.tier].append(car)
 
-  return tiered_cars
+  return dict(tiered_cars)
 
 
 def generate_cars_md(tiered_cars):
-  cars_md_doc = []
+  # make global docs directory?
+  template_fn = os.path.join(BASEDIR, "docs", "CARS_template.md")
+  with open(template_fn, "r") as f:
+    template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)  # TODO: remove lstrip_blocks if not needed
+
+  tiers = []
   for tier in Tier:
     # Sort by make, model name, and year
     cars = sorted(tiered_cars[tier], key=lambda car: car.make + car.model)
+    tiers.append([
+      tier.name.title(),
+      [column.value for column in Column],
+      list(map(lambda car: car.row, cars))
+    ])
 
-    cars_md_doc.append("## {} Cars\n".format(tier.name.title()))
-
-    cars_md_doc.append(make_row([column.value for column in Column]))
-    cars_md_doc.append(CAR_TABLE_HEADER)
-    cars_md_doc.extend(map(lambda car: car.row, cars))
-    cars_md_doc.append("")  # newline
-
-  return '\n'.join(cars_md_doc)
+  return template.render(tiers=tiers)
 
 
 if __name__ == "__main__":

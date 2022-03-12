@@ -168,3 +168,4 @@
 |Toyota|RAV4 2016-18|TSS-P|<img src="assets/icon-star-half.png" width="22" /><sup>1</sup>|<img src="assets/icon-star-empty.png" width="22" />|<img src="assets/icon-star-full.png" width="22" />|<img src="assets/icon-star-full.png" width="22" />|<img src="assets/icon-star-full.png" width="22" />|
 |Volkswagen|California 2021<sup>6</sup>|Driver Assistance|<img src="assets/icon-star-empty.png" width="22" />|<img src="assets/icon-star-full.png" width="22" />|<img src="assets/icon-star-empty.png" width="22" />|<img src="assets/icon-star-full.png" width="22" />|<img src="assets/icon-star-full.png" width="22" />|
 |Volkswagen|Caravelle 2020<sup>6</sup>|Driver Assistance|<img src="assets/icon-star-empty.png" width="22" />|<img src="assets/icon-star-full.png" width="22" />|<img src="assets/icon-star-empty.png" width="22" />|<img src="assets/icon-star-full.png" width="22" />|<img src="assets/icon-star-full.png" width="22" />|
+
