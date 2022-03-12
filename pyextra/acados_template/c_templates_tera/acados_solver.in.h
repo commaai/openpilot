@@ -78,9 +78,10 @@ typedef struct {{ model.name }}_solver_capsule
     // acados objects
     ocp_nlp_in *nlp_in;
     ocp_nlp_out *nlp_out;
+    ocp_nlp_out *sens_out;
     ocp_nlp_solver *nlp_solver;
     void *nlp_opts;
-    ocp_nlp_plan *nlp_solver_plan;
+    ocp_nlp_plan_t *nlp_solver_plan;
     ocp_nlp_config *nlp_config;
     ocp_nlp_dims *nlp_dims;
 
@@ -186,6 +187,10 @@ int {{ model.name }}_acados_create_with_discretization({{ model.name }}_solver_c
  * nlp_solver_plan. Returns 0 if no error occurred and a otherwise a value other than 0.
  */
 int {{ model.name }}_acados_update_time_steps({{ model.name }}_solver_capsule * capsule, int N, double* new_time_steps);
+/**
+ * This function is used for updating an already initialized solver with a different number of qp_cond_N.
+ */
+int {{ model.name }}_acados_update_qp_solver_cond_N({{ model.name }}_solver_capsule * capsule, int qp_solver_cond_N);
 int {{ model.name }}_acados_update_params({{ model.name }}_solver_capsule * capsule, int stage, double *value, int np);
 int {{ model.name }}_acados_solve({{ model.name }}_solver_capsule * capsule);
 int {{ model.name }}_acados_free({{ model.name }}_solver_capsule * capsule);
@@ -193,11 +198,12 @@ void {{ model.name }}_acados_print_stats({{ model.name }}_solver_capsule * capsu
 
 ocp_nlp_in *{{ model.name }}_acados_get_nlp_in({{ model.name }}_solver_capsule * capsule);
 ocp_nlp_out *{{ model.name }}_acados_get_nlp_out({{ model.name }}_solver_capsule * capsule);
+ocp_nlp_out *{{ model.name }}_acados_get_sens_out({{ model.name }}_solver_capsule * capsule);
 ocp_nlp_solver *{{ model.name }}_acados_get_nlp_solver({{ model.name }}_solver_capsule * capsule);
 ocp_nlp_config *{{ model.name }}_acados_get_nlp_config({{ model.name }}_solver_capsule * capsule);
 void *{{ model.name }}_acados_get_nlp_opts({{ model.name }}_solver_capsule * capsule);
 ocp_nlp_dims *{{ model.name }}_acados_get_nlp_dims({{ model.name }}_solver_capsule * capsule);
-ocp_nlp_plan *{{ model.name }}_acados_get_nlp_plan({{ model.name }}_solver_capsule * capsule);
+ocp_nlp_plan_t *{{ model.name }}_acados_get_nlp_plan({{ model.name }}_solver_capsule * capsule);
 
 #ifdef __cplusplus
 } /* extern "C" */
