@@ -7,9 +7,10 @@ from typing import Dict
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
+from selfdrive.car.gm.values import CAR as GM
+from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
-from selfdrive.car.gm.values import CAR as GM
 from selfdrive.test.test_routes import non_tested_cars
 
 
@@ -125,7 +126,7 @@ class Car:
       min_enable_speed = car_info.min_enable_speed
 
     # TODO: make sure well supported check is complete
-    stars = [CP.openpilotLongitudinalControl, min_enable_speed <= 1e-3, min_steer_speed <= 1e-3,
+    stars = [CP.openpilotLongitudinalControl and not CP.radarOffCan, min_enable_speed <= 1e-3, min_steer_speed <= 1e-3,
              CP.carName in MAKES_GOOD_STEERING_TORQUE, CP.carFingerprint not in non_tested_cars]
 
     # Check for star demotions from exceptions
@@ -142,7 +143,10 @@ def get_tiered_cars():
   tiered_cars = defaultdict(list)
   for _, models in get_interface_attr("CAR_INFO").items():
     for model, car_info in models.items():
-      CP = interfaces[model][0].get_params(model)
+      # Hyundai exception: all have openpilot longitudinal
+      fingerprint = defaultdict(dict)
+      fingerprint[1] = {HKG_RADAR_START_ADDR: 8}
+      CP = interfaces[model][0].get_params(model, fingerprint=fingerprint)
       # Skip community supported
       if CP.dashcamOnly:
         continue
