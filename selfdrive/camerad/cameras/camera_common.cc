@@ -161,6 +161,8 @@ bool CameraBuf::acquire() {
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
 
+  float start_time = millis_since_boot();
+
   if (debayer) {
     float gain = 0.0;
 
@@ -180,6 +182,8 @@ bool CameraBuf::acquire() {
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   rgb2yuv->queue(q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
+
+  cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
   VisionIpcBufExtra extra = {
                         cur_frame_data.frame_id,
@@ -219,6 +223,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensPos(frame_data.lens_pos);
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
+  framed.setProcessingTime(frame_data.processing_time);
 }
 
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
