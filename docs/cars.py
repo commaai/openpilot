@@ -138,8 +138,9 @@ class Car:
 
 
 def get_tiered_cars():
-  # Keep track of cars sorted by make, model name, and year
+  # Keep track of cars while sorting by make, model name, and year
   tiered_cars = {tier: SortedList(key=lambda car: car.make + car.model) for tier in Tier}
+
   for _, models in get_interface_attr("CAR_INFO").items():
     for model, car_info in models.items():
       # Hyundai exception: all have openpilot longitudinal
@@ -158,7 +159,7 @@ def get_tiered_cars():
         car = Car(_car_info, CP)
         tiered_cars[car.tier].add(car)
 
-  # Return tier name and car rows
+  # Return tier name and car rows for each tier
   for tier, cars in tiered_cars.items():
     yield [tier.name.title(), map(lambda car: car.row, cars)]
 
@@ -168,7 +169,8 @@ def generate_cars_md(tiered_cars):
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)  # TODO: remove lstrip_blocks if not needed
 
-  return template.render(tiers=tiered_cars, columns=[column.value for column in Column])
+  exceptions = [exception.text for exception in CAR_EXCEPTIONS]
+  return template.render(tiers=tiered_cars, columns=[column.value for column in Column], exceptions=exceptions)
 
 
 if __name__ == "__main__":
