@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 from collections import defaultdict, namedtuple
 from enum import Enum
-import os
-from typing import Dict
 import jinja2
+import os
+from sortedcontainers import SortedList
+from typing import Dict
 
 from common.basedir import BASEDIR
 from common.params import Params
@@ -137,7 +138,8 @@ class Car:
 
 
 def get_tiered_cars():
-  tiered_cars = defaultdict(list)
+  # Keep track of cars sorted by make, model name, and year
+  tiered_cars = {tier: SortedList(key=lambda car: car.make + car.model) for tier in Tier}
   for _, models in get_interface_attr("CAR_INFO").items():
     for model, car_info in models.items():
       # Hyundai exception: all have openpilot longitudinal
@@ -154,28 +156,19 @@ def get_tiered_cars():
 
       for _car_info in car_info:
         car = Car(_car_info, CP)
-        tiered_cars[car.tier].append(car)
+        tiered_cars[car.tier].add(car)
 
-  return dict(tiered_cars)
+  # Return tier name and car rows
+  for tier, cars in tiered_cars.items():
+    yield [tier.name.title(), map(lambda car: car.row, cars)]
 
 
 def generate_cars_md(tiered_cars):
-  # make global docs directory?
   template_fn = os.path.join(BASEDIR, "docs", "CARS_template.md")
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)  # TODO: remove lstrip_blocks if not needed
 
-  tiers = []
-  for tier in Tier:
-    # Sort by make, model name, and year
-    cars = sorted(tiered_cars[tier], key=lambda car: car.make + car.model)
-    tiers.append([
-      tier.name.title(),
-      [column.value for column in Column],
-      list(map(lambda car: car.row, cars))
-    ])
-
-  return template.render(tiers=tiers)
+  return template.render(tiers=tiered_cars, columns=[column.value for column in Column])
 
 
 if __name__ == "__main__":
