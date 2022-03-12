@@ -479,12 +479,13 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
 
     CC = car.CarControl.new_message()
-    actuators = CC.actuators
     CC.enabled = self.enabled
     # Check which actuators can be enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                      CS.vEgo > self.CP.minSteerSpeed and not CS.standstill
     CC.longActive = self.active
+
+    actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
 
     if CS.leftBlinker or CS.rightBlinker:
