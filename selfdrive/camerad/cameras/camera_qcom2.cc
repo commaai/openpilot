@@ -22,6 +22,9 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/camerad/cameras/sensor2_i2c.h"
 
+// For debugging:
+// echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
+
 extern ExitHandler do_exit;
 
 const size_t FRAME_WIDTH = 1928;
@@ -199,7 +202,8 @@ void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op
   i2c_random_wr->header.count = len;
   i2c_random_wr->header.op_code = 1;
   i2c_random_wr->header.cmd_type = CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR;
-  i2c_random_wr->header.data_type = CAMERA_SENSOR_I2C_TYPE_WORD;
+  //i2c_random_wr->header.data_type = CAMERA_SENSOR_I2C_TYPE_WORD;
+  i2c_random_wr->header.data_type = CAMERA_SENSOR_I2C_TYPE_BYTE;
   i2c_random_wr->header.addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
   memcpy(i2c_random_wr->random_wr_payload, dat, len*sizeof(struct i2c_random_wr_payload));
 
@@ -249,7 +253,8 @@ void CameraState::sensors_init() {
       break;
     case 2:
       // port 2
-      i2c_info->slave_addr = 0x20;
+      //i2c_info->slave_addr = 0x20;
+      i2c_info->slave_addr = 0x34;
       probe->camera_id = 2;
       break;
   }
@@ -263,8 +268,12 @@ void CameraState::sensors_init() {
   probe->addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
   probe->op_code = 3;   // don't care?
   probe->cmd_type = CAMERA_SENSOR_CMD_TYPE_PROBE;
-  probe->reg_addr = 0x3000; //0x300a; //0x300b;
-  probe->expected_data = 0x354; //0x7750; //0x885a;
+  // ar0231
+  /*probe->reg_addr = 0x3000;
+  probe->expected_data = 0x354;*/
+  // imx390
+  probe->reg_addr = 0x330;
+  probe->expected_data = 0x1538;
   probe->data_mask = 0;
 
   //buf_desc[1].size = buf_desc[1].length = 148;
@@ -293,7 +302,8 @@ void CameraState::sensors_init() {
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
-  power->power_settings[0].config_val_low = 19200000; //Hz
+  //power->power_settings[0].config_val_low = 19200000; //Hz
+  power->power_settings[0].config_val_low = 24000000; //Hz
   power = power_set_wait(power, 10);
 
   // 8,1 is this reset?
@@ -675,7 +685,8 @@ void CameraState::camera_open() {
   config_isp(0, 0, 1, buf0_handle, 0);
 
   LOG("-- Configuring sensor");
-  sensors_i2c(init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  sensors_i2c(init_array_imx390, std::size(init_array_imx390), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  //sensors_i2c(init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
   //sensors_i2c(start_reg_array, std::size(start_reg_array), CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMON);
   //sensors_i2c(stop_reg_array, std::size(stop_reg_array), CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF);
 
