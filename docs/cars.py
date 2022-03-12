@@ -9,12 +9,12 @@ from typing import Dict
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
-from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
-from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
-from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
+from selfdrive.car.gm.values import CAR as GM
+from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
+from selfdrive.car.hyundai.values import CAR as HYUNDAI
+from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 from selfdrive.test.test_routes import non_tested_cars
 
