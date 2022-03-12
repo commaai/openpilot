@@ -16,13 +16,13 @@ Tier Criteria:
 
 **All supported cars can move between the tiers as support changes.**
 
-{% for tier, cars in tiers %}
+{% for tier, car_rows in tiers %}
 ## {{tier}} Cars
 
 |{{columns | join('|')}}|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
-{% for car in cars %}
-|{{car | join('|')}}|
+{% for row in car_rows %}
+|{{row | join('|')}}|
 {% endfor %}
 
 {% endfor %}
