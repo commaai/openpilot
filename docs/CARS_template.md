@@ -6,6 +6,16 @@ Cars are organized into three tiers:
 - 🥈 Silver - a pretty good, albeit limited experience
 - 🥉 Bronze - a significantly limited experience
 
+|                          Star                          | openpilot Longitudinal                                                 | Star                                                            | Full-Speed Range (FSR) Longitudinal                   |
+|:---------------------------------------------------:|------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| <img src="assets/icon-star-full.png" width="22" />  | openpilot is able to control gas and brakes                            | <img src="assets/icon-star-full.png" width="22" /> |  Adaptive Cruise Control (ACC) operates down to 0 mph |
+| <img src="assets/icon-star-half.png" width="22" />  | openpilot is able to control the gas and brakes with some restrictions |<img src="assets/icon-star-half.png" width="22" />
+| <img src="assets/icon-star-empty.png" width="22" /> | The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system |
+
+|                                                                                                                                                                                openpilot Longitudinal                                                                                                                                                                                | Full-Speed Range (FSR) Longitudinal                                                 |
+|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|------------------------------------------------------------------------|
+| <img src="assets/icon-star-full.png" width="22" /> - openpilot is able to control gas and brakes<br/><img src="assets/icon-star-half.png" width="22" /> - openpilot is able to control the gas and brakes with some restrictions<br/><img src="assets/icon-star-empty.png" width="22" /> - The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system |
+
 Tier Criteria:
 
 - openpilot Longitudinal - openpilot is able to control gas and brakes. If no star is present, the car is limited to the stock system
