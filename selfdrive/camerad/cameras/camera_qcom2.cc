@@ -26,7 +26,7 @@ extern ExitHandler do_exit;
 
 const size_t FRAME_WIDTH = 1928;
 const size_t FRAME_HEIGHT = 1208;
-const size_t FRAME_STRIDE = 2416;  // for 10 bit output
+const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
@@ -471,10 +471,10 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
 		 .h_init = 0x0,
 		 .v_init = 0x0,
 		};
-    io_cfg[0].format = CAM_FORMAT_MIPI_RAW_10;             // CAM_FORMAT_UBWC_TP10 for YUV
+    io_cfg[0].format = CAM_FORMAT_MIPI_RAW_12;             // CAM_FORMAT_UBWC_TP10 for YUV
     io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
-    io_cfg[0].bpp = 0xa;
+    io_cfg[0].bpp = 0xc;
     io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
@@ -615,9 +615,8 @@ void CameraState::camera_open() {
       .lane_cfg = 0x3210,
 
       .vc = 0x0,
-      // .dt = 0x2C; //CSI_RAW12
-      .dt = 0x2B,  //CSI_RAW10
-      .format = CAM_FORMAT_MIPI_RAW_10,
+      .dt = 0x2C,  // CSI_RAW12
+      .format = CAM_FORMAT_MIPI_RAW_12,
 
       .test_pattern = 0x2,  // 0x3?
       .usage_type = 0x0,
@@ -643,7 +642,7 @@ void CameraState::camera_open() {
       .num_out_res = 0x1,
       .data[0] = (struct cam_isp_out_port_info){
           .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-          .format = CAM_FORMAT_MIPI_RAW_10,
+          .format = CAM_FORMAT_MIPI_RAW_12,
           .width = FRAME_WIDTH,
           .height = FRAME_HEIGHT,
           .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
