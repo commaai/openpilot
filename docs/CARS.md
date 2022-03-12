@@ -45,7 +45,7 @@
 | Lexus     | UX Hybrid 2019-21             | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Alphard 2019-20               | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon 2016-18                | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
-| Toyota    | Avalon 2018-21                | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
+| Toyota    | Avalon 2019-21                | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Avalon 2022                   | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon Hybrid 2019-21         | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Camry 2018-20                 | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
