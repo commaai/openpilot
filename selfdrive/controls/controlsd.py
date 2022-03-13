@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import copy
 import os
 import math
 from numbers import Number
@@ -735,7 +736,7 @@ class Controls:
     self.prof.checkpoint("Sent")
 
     self.update_button_timers(CS.buttonEvents)
-    self.CS_prev = CS.copy()
+    self.CS_prev = copy.copy(CS)
 
   def controlsd_thread(self):
     while True:
