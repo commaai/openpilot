@@ -13,3 +13,6 @@
 [submodule "rednose_repo"]
 	path = rednose_repo
 	url = ../../commaai/rednose.git
+[submodule "third_party/android_headers_9"]
+	path = third_party/android_headers_9
+	url = ../../martinl/android_headers_9

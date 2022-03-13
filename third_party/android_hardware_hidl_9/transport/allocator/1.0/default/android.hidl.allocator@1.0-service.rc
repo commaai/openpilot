@@ -1,4 +1,0 @@
-service hidl_memory /system/bin/hw/android.hidl.allocator@1.0-service
-    class hal
-    user system
-    group system
