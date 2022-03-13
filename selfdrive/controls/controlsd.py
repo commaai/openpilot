@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import copy
 import os
 import math
 from numbers import Number
@@ -121,6 +120,7 @@ class Controls:
     put_nonblocking("CarParamsCache", cp_bytes)
 
     self.CC = car.CarControl.new_message()
+    self.CS = car.CarState.new_message()
     self.AM = AlertManager()
     self.events = Events()
 
@@ -155,7 +155,6 @@ class Controls:
     self.logged_comm_issue = False
     self.button_timers = {ButtonEvent.Type.decelCruise: 0, ButtonEvent.Type.accelCruise: 0}
     self.last_actuators = car.CarControl.Actuators.new_message()
-    self.CS_prev = car.CarState()
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -196,8 +195,8 @@ class Controls:
       return
 
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0
-    if (CS.gasPressed and not self.CS_prev.gasPressed) or \
-      (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)):
+    if (CS.gasPressed and not self.CS.gasPressed) or \
+      (CS.brakePressed and (not self.CS.brakePressed or not CS.standstill)):
       self.events.add(EventName.pedalPressed)
 
     self.events.add_from_msg(CS.events)
@@ -736,7 +735,7 @@ class Controls:
     self.prof.checkpoint("Sent")
 
     self.update_button_timers(CS.buttonEvents)
-    self.CS_prev = copy.copy(CS)
+    self.CS = CS
 
   def controlsd_thread(self):
     while True:
