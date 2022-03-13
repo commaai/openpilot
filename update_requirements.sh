@@ -47,5 +47,7 @@ pyenv rehash
 echo "pre-commit hooks install..."
 for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
   cd $DIR/$(dirname $f)
-  $RUN pre-commit install
+  if [ -e ".git" ]; then
+    $RUN pre-commit install
+  fi
 done
