@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -45,10 +44,8 @@ echo "pip packages install..."
 pipenv install --dev --deploy --clear
 pyenv rehash
 
-if [ -f "$DIR/.pre-commit-config.yaml" ]; then
-  echo "precommit install ..."
+echo "pre-commit hooks install..."
+for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
+  cd $DIR/$(dirname $f)
   $RUN pre-commit install
-  [ -d "./xx" ] && (cd xx && $RUN pre-commit install)
-  [ -d "./notebooks" ] && (cd notebooks && $RUN pre-commit install)
-  echo "pre-commit hooks installed"
-fi
+done
