@@ -16,6 +16,7 @@ from selfdrive.car.body.values import CAR as COMMA
 
 # TODO: add routes for these cars
 non_tested_cars = [
+  FORD.ESCAPE_MK4,
   FORD.FOCUS_MK4,
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,

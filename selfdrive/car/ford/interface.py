@@ -27,7 +27,13 @@ class CarInterface(CarInterfaceBase):
     # TODO: detect stop-and-go vehicles
     stop_and_go = False
 
-    if candidate == CAR.FOCUS_MK4:
+    if candidate == CAR.ESCAPE_MK4:
+      ret.wheelbase = 2.71
+      ret.steerRatio = 14.3  # Copied from Focus
+      tire_stiffness_factor = 0.5328  # Copied from Focus
+      ret.mass = 1750 + STD_CARGO_KG
+
+    elif candidate == CAR.FOCUS_MK4:
       ret.wheelbase = 2.7
       ret.steerRatio = 14.3
       tire_stiffness_factor = 0.5328
