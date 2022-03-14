@@ -2,7 +2,7 @@
 from cereal import car
 from opendbc.can.parser import CANParser
 from selfdrive.car.ford.values import DBC
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import RadarInterfaceBase
 
 RADAR_MSGS = list(range(0x500, 0x540))

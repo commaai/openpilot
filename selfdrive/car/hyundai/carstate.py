@@ -4,7 +4,7 @@ from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_CAR,
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 
 
 class CarState(CarStateBase):

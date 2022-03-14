@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from math import fabs
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.car.gm.values import CAR, CruiseButtons, \
                                     AccState, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
