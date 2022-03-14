@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 from collections import defaultdict, namedtuple
 from enum import Enum
 import jinja2
@@ -187,11 +188,11 @@ def get_tiered_cars():
 
   # Return tier name and car rows for each tier
   for tier, cars in tiered_cars.items():
-    yield [tier.name.title(), map(lambda car: car.row, cars)]
+    yield [tier.name.title(), list(map(lambda car: car.row, cars))]
 
 
-def generate_cars_md(tiered_cars):
-  template_fn = os.path.join(BASEDIR, "docs", "CARS_template.md")
+def generate_cars_md(tiered_cars, template_fn):
+  # template_fn = os.path.join(BASEDIR, "docs", "CARS_template.md")
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)  # TODO: remove lstrip_blocks if not needed
 
@@ -200,12 +201,26 @@ def generate_cars_md(tiered_cars):
 
 
 if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description='')
+  # parser.add_argument('--template', default=CARS_MD_OUT)
+  parser.add_argument('--template', default=os.path.join(BASEDIR, "docs", "vehicles_template.vue"))
+  args = parser.parse_args()
+
   # TODO: add argparse for generating json or html (undecided)
   # Cars that can disable radar have openpilot longitudinal
   Params().put_bool("DisableRadar", True)
 
-  tiered_cars = get_tiered_cars()
-  with open(CARS_MD_OUT, 'w') as f:
-    f.write(generate_cars_md(tiered_cars))
+  tiered_cars = list(get_tiered_cars())
 
-  print('Generated and written to {}'.format(CARS_MD_OUT))
+  tiered_cars_dict = {'tiers': {}, 'columns': [column.value for column in Column], 'exceptions': [exception.text for exception in CAR_EXCEPTIONS]}
+  for idx, tier in enumerate(Tier):
+    tiered_cars_dict['tiers'][tier.name.title()] = tiered_cars[idx][1]
+  print(tiered_cars_dict)
+
+  with open(os.path.join(BASEDIR, "docs", "vehicles.vue"), 'w') as f:
+    json.dumps()
+
+  # with open(os.path.join(BASEDIR, "docs", "vehicles.vue"), 'w') as f:
+  #   f.write(generate_cars_md(tiered_cars, args.template))
+  #
+  # print('Generated and written to {}'.format(os.path.join(BASEDIR, "docs", "vehicles.vue")))
