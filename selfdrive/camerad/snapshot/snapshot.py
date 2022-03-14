@@ -19,7 +19,7 @@ LM_THRESH = 120  # defined in selfdrive/camerad/imgproc/utils.h
 VISION_STREAMS = {
   "roadCameraState": VisionStreamType.VISION_STREAM_RGB_ROAD,
   "driverCameraState": VisionStreamType.VISION_STREAM_RGB_DRIVER,
-  "wideRoadCameraState": VisionStreamType.VISION_STREAM_RGB_WIDE,
+  "wideRoadCameraState": VisionStreamType.VISION_STREAM_RGB_WIDE_ROAD,
 }
 
 

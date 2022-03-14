@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     QHBoxLayout *hlayout = new QHBoxLayout();
     layout->addLayout(hlayout);
     hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_RGB_DRIVER, false));
-    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_RGB_WIDE, false));
+    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_RGB_WIDE_ROAD, false));
   }
 
   return a.exec();

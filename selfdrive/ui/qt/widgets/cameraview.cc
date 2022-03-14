@@ -174,9 +174,9 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
     if (stream_type == VISION_STREAM_RGB_DRIVER) {
       frame_mat = matmul(device_transform, get_driver_view_transform(w, h, stream_width, stream_height));
     } else {
-      auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+      auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE_ROAD ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
       float zoom = ZOOM / intrinsic_matrix.v[0];
-      if (stream_type == VISION_STREAM_RGB_WIDE) {
+      if (stream_type == VISION_STREAM_RGB_WIDE_ROAD) {
         zoom *= 0.5;
       }
       float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
