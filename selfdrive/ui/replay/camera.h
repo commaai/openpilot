@@ -18,7 +18,7 @@ public:
 protected:
   struct Camera {
     CameraType type;
-    VisionStreamType rgb_type; 
+    VisionStreamType rgb_type;
     VisionStreamType yuv_type;
     int width;
     int height;
@@ -32,8 +32,8 @@ protected:
   void cameraThread(Camera &cam);
 
   Camera cameras_[MAX_CAMERAS] = {
-      {.type = RoadCam, .rgb_type = VISION_STREAM_RGB_BACK, .yuv_type = VISION_STREAM_ROAD},
-      {.type = DriverCam, .rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_DRIVER},
+      {.type = RoadCam, .rgb_type = VISION_STREAM_RGB_ROAD, .yuv_type = VISION_STREAM_ROAD},
+      {.type = DriverCam, .rgb_type = VISION_STREAM_RGB_DRIVER, .yuv_type = VISION_STREAM_DRIVER},
       {.type = WideRoadCam, .rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_WIDE_ROAD},
   };
   std::atomic<int> publishing_ = 0;

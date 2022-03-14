@@ -73,7 +73,7 @@ def replay_cameras(lr, frs):
                                      args=(s, stream, dt, vs, fr, size)))
 
   # hack to make UI work
-  vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
+  vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
   vs.start_listener()
   return p
 

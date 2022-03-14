@@ -67,7 +67,7 @@ class Camerad:
     self.vipc_server = VisionIpcServer("camerad")
 
     # TODO: remove RGB buffers once the last RGB vipc subscriber is removed
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, W, H)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, W, H)
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, W, H)
     self.vipc_server.start_listener()
 
@@ -97,7 +97,7 @@ class Camerad:
     eof = self.frame_id * 0.05
 
     # TODO: remove RGB send once the last RGB vipc subscriber is removed
-    self.vipc_server.send(VisionStreamType.VISION_STREAM_RGB_BACK, img.tobytes(), self.frame_id, eof, eof)
+    self.vipc_server.send(VisionStreamType.VISION_STREAM_RGB_ROAD, img.tobytes(), self.frame_id, eof, eof)
     self.vipc_server.send(VisionStreamType.VISION_STREAM_ROAD, yuv.data.tobytes(), self.frame_id, eof, eof)
 
     dat = messaging.new_message('roadCameraState')
