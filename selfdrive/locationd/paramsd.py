@@ -45,10 +45,12 @@ class ParamsLearner:
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
 
       localizer_roll = msg.orientationNED.value[0]
+      localizer_roll_std = np.radians(1) if np.isnan(msg.orientationNED.std[0]) else msg.orientationNED.std[0]
       roll_valid = msg.orientationNED.valid and ROLL_MIN < localizer_roll < ROLL_MAX
       if roll_valid:
         roll = localizer_roll
-        roll_std = np.radians(1.0)
+        # Experimentally found multiplier of 2 to be best trade-off between stability and accuracy or similar?
+        roll_std = 2 * localizer_roll_std
       else:
         # This is done to bound the road roll estimate when localizer values are invalid
         roll = 0.0
@@ -60,7 +62,7 @@ class ParamsLearner:
       yaw_rate_valid = yaw_rate_valid and abs(yaw_rate) < 1  # rad/s
 
       if self.active:
-        if msg.inputsOK and msg.posenetOK:
+        if msg.posenetOK:
 
           if yaw_rate_valid:
             self.kf.predict_and_observe(t,
@@ -73,6 +75,14 @@ class ParamsLearner:
                                       np.array([[self.roll]]),
                                       np.array([np.atleast_2d(roll_std**2)]))
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
+
+        # We observe the current stiffness and steer ratio (with a high observation noise) to bound
+        # the respective estimate STD. Otherwise the STDs keep increasing, causing rapid changes in the
+        # states in longer routes (especially straight stretches).
+        stiffness = float(self.kf.x[States.STIFFNESS])
+        steer_ratio = float(self.kf.x[States.STEER_RATIO])
+        self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, np.array([[stiffness]]))
+        self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, np.array([[steer_ratio]]))
 
     elif which == 'carState':
       self.steering_angle = msg.steeringAngleDeg
@@ -150,10 +160,11 @@ def main(sm=None, pm=None):
 
   while True:
     sm.update()
-    for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
-      if sm.updated[which]:
-        t = sm.logMonoTime[which] * 1e-9
-        learner.handle_log(t, which, sm[which])
+    if sm.all_alive_and_valid():
+      for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
+        if sm.updated[which]:
+          t = sm.logMonoTime[which] * 1e-9
+          learner.handle_log(t, which, sm[which])
 
     if sm.updated['liveLocationKalman']:
       x = learner.kf.x
@@ -169,30 +180,33 @@ def main(sm=None, pm=None):
       msg = messaging.new_message('liveParameters')
       msg.logMonoTime = sm.logMonoTime['carState']
 
-      msg.liveParameters.posenetValid = True
-      msg.liveParameters.sensorValid = True
-      msg.liveParameters.steerRatio = float(x[States.STEER_RATIO])
-      msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
-      msg.liveParameters.roll = float(x[States.ROAD_ROLL])
-      msg.liveParameters.angleOffsetAverageDeg = angle_offset_average
-      msg.liveParameters.angleOffsetDeg = angle_offset
-      msg.liveParameters.valid = all((
-        abs(msg.liveParameters.angleOffsetAverageDeg) < 10.0,
-        abs(msg.liveParameters.angleOffsetDeg) < 10.0,
-        0.2 <= msg.liveParameters.stiffnessFactor <= 5.0,
-        min_sr <= msg.liveParameters.steerRatio <= max_sr,
+      liveParameters = msg.liveParameters
+      liveParameters.posenetValid = True
+      liveParameters.sensorValid = True
+      liveParameters.steerRatio = float(x[States.STEER_RATIO])
+      liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
+      liveParameters.roll = float(x[States.ROAD_ROLL])
+      liveParameters.angleOffsetAverageDeg = angle_offset_average
+      liveParameters.angleOffsetDeg = angle_offset
+      liveParameters.valid = all((
+        abs(liveParameters.angleOffsetAverageDeg) < 10.0,
+        abs(liveParameters.angleOffsetDeg) < 10.0,
+        0.2 <= liveParameters.stiffnessFactor <= 5.0,
+        min_sr <= liveParameters.steerRatio <= max_sr,
       ))
-      msg.liveParameters.steerRatioStd = float(P[States.STEER_RATIO])
-      msg.liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS])
-      msg.liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET])
-      msg.liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
+      liveParameters.steerRatioStd = float(P[States.STEER_RATIO])
+      liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS])
+      liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET])
+      liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
+
+      msg.valid = sm.all_alive_and_valid()
 
       if sm.frame % 1200 == 0:  # once a minute
         params = {
           'carFingerprint': CP.carFingerprint,
-          'steerRatio': msg.liveParameters.steerRatio,
-          'stiffnessFactor': msg.liveParameters.stiffnessFactor,
-          'angleOffsetAverageDeg': msg.liveParameters.angleOffsetAverageDeg,
+          'steerRatio': liveParameters.steerRatio,
+          'stiffnessFactor': liveParameters.stiffnessFactor,
+          'angleOffsetAverageDeg': liveParameters.angleOffsetAverageDeg,
         }
         put_nonblocking("LiveParameters", json.dumps(params))
 

@@ -80,11 +80,10 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd vel_ecef = predicted_state.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START);
   VectorXd vel_ecef_std = predicted_std.segment<STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START);
   VectorXd fix_pos_geo_vec = this->get_position_geodetic();
-  //fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
   VectorXd orientation_ecef = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ecef_std = predicted_std.segment<STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START);
+  MatrixXdr orientation_ecef_cov = predicted_cov.block<STATE_ECEF_ORIENTATION_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START, STATE_ECEF_ORIENTATION_ERR_START);
   MatrixXdr device_from_ecef = euler2rot(orientation_ecef).transpose();
-  //VectorXd calibrated_orientation_ecef = rot2euler(device_from_ecef);
   VectorXd calibrated_orientation_ecef = rot2euler((this->calib_from_device * device_from_ecef).transpose());
 
   VectorXd acc_calib = this->calib_from_device * predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
@@ -116,11 +115,10 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd vel_calib_std = rotate_cov(this->calib_from_device, vel_device_cov).diagonal().array().sqrt();
 
   VectorXd orientation_ned = ned_euler_from_ecef(fix_ecef_ecef, orientation_ecef);
-  //orientation_ned_std = ned_euler_from_ecef(fix_ecef, orientation_ecef + orientation_ecef_std) - orientation_ned
+  VectorXd orientation_ned_std = rotate_cov(this->converter->ecef2ned_matrix, orientation_ecef_cov).diagonal().array().sqrt();
   VectorXd calibrated_orientation_ned = ned_euler_from_ecef(fix_ecef_ecef, calibrated_orientation_ecef);
   VectorXd nextfix_ecef = fix_ecef + vel_ecef;
   VectorXd ned_vel = this->converter->ecef2ned((ECEF) { .x = nextfix_ecef(0), .y = nextfix_ecef(1), .z = nextfix_ecef(2) }).to_vector() - converter->ecef2ned(fix_ecef_ecef).to_vector();
-  //ned_vel_std = self.converter->ecef2ned(fix_ecef + vel_ecef + vel_ecef_std) - self.converter->ecef2ned(fix_ecef + vel_ecef)
 
   VectorXd accDevice = predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
   VectorXd accDeviceErr = predicted_std.segment<STATE_ACCELERATION_ERR_LEN>(STATE_ACCELERATION_ERR_START);
@@ -130,6 +128,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
 
   Vector3d nans = Vector3d(NAN, NAN, NAN);
 
+  // TODO fill in NED and Calibrated stds
   // write measurements to msg
   init_measurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, this->gps_mode);
   init_measurement(fix.initPositionECEF(), fix_ecef, fix_ecef_std, this->gps_mode);
@@ -139,7 +138,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   init_measurement(fix.initAccelerationDevice(), accDevice, accDeviceErr, true);
   init_measurement(fix.initOrientationECEF(), orientation_ecef, orientation_ecef_std, this->gps_mode);
   init_measurement(fix.initCalibratedOrientationECEF(), calibrated_orientation_ecef, nans, this->calibrated && this->gps_mode);
-  init_measurement(fix.initOrientationNED(), orientation_ned, nans, this->gps_mode);
+  init_measurement(fix.initOrientationNED(), orientation_ned, orientation_ned_std, this->gps_mode);
   init_measurement(fix.initCalibratedOrientationNED(), calibrated_orientation_ned, nans, this->calibrated && this->gps_mode);
   init_measurement(fix.initAngularVelocityDevice(), angVelocityDevice, angVelocityDeviceErr, true);
   init_measurement(fix.initVelocityCalibrated(), vel_calib, vel_calib_std, this->calibrated);
@@ -232,9 +231,10 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
     if (sensor_reading.getSensor() == SENSOR_ACCELEROMETER && sensor_reading.getType() == SENSOR_TYPE_ACCELEROMETER) {
       auto v = sensor_reading.getAcceleration().getV();
 
+      // TODO: reduce false positives and re-enable this check
       // check if device fell, estimate 10 for g
       // 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
-      this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
+      //this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
 
       auto meas = Vector3d(-v[2], -v[1], -v[0]);
       if (meas.norm() < ACCEL_SANITY_CHECK) {
@@ -262,7 +262,6 @@ void Localizer::input_fake_gps_observations(double current_time) {
 
 void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log) {
   // ignore the message if the fix is invalid
-
   bool gps_invalid_flag = (log.getFlags() % 2 == 0);
   bool gps_unreasonable = (Vector2d(log.getAccuracy(), log.getVerticalAccuracy()).norm() >= SANE_GPS_UNCERTAINTY);
   bool gps_accuracy_insane = ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0));
@@ -462,9 +461,9 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
 {
   cereal::Event::Builder evt = msg_builder.initEvent();
   evt.setLogMonoTime(logMonoTime);
+  evt.setValid(inputsOK);
   cereal::LiveLocationKalman::Builder liveLoc = evt.initLiveLocationKalman();
   this->build_live_location(liveLoc);
-  liveLoc.setInputsOK(inputsOK);
   liveLoc.setSensorsOK(sensorsOK);
   liveLoc.setGpsOK(gpsOK);
   return msg_builder.toBytes();
@@ -497,14 +496,19 @@ int Localizer::locationd_thread() {
   PubMaster pm({ "liveLocationKalman" });
   SubMaster sm(service_list, nullptr, { "gpsLocationExternal" });
 
+  uint64_t cnt = 0;
+
   while (!do_exit) {
     sm.update();
-    for (const char* service : service_list) {
-      if (sm.updated(service) && sm.valid(service)) {
-        const cereal::Event::Reader log = sm[service];
-        this->handle_msg(log);
+    if (sm.allAliveAndValid()){
+      for (const char* service : service_list) {
+        if (sm.updated(service)){
+          const cereal::Event::Reader log = sm[service];
+          this->handle_msg(log);
+        }
       }
     }
+    
 
     if (sm.updated("cameraOdometry")) {
       uint64_t logMonoTime = sm["cameraOdometry"].getLogMonoTime();
@@ -516,7 +520,7 @@ int Localizer::locationd_thread() {
       kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK);
       pm.send("liveLocationKalman", bytes.begin(), bytes.size());
 
-      if (sm.frame % 1200 == 0 && gpsOK) {  // once a minute
+      if (cnt % 1200 == 0 && gpsOK) {  // once a minute
         VectorXd posGeo = this->get_position_geodetic();
         std::string lastGPSPosJSON = util::string_format(
           "{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}", posGeo(0), posGeo(1), posGeo(2));
@@ -525,6 +529,7 @@ int Localizer::locationd_thread() {
           Params().put("LastGPSPosition", gpsjson);
         }, lastGPSPosJSON).detach();
       }
+      cnt++;
     }
   }
   return 0;

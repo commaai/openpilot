@@ -12,11 +12,11 @@ rpacker = CANPacker("acura_ilx_2016_nidec")
 def get_car_can_parser():
   dbc_f = 'honda_civic_touring_2016_can_generated'
   signals = [
-    ("STEER_TORQUE", 0xe4, 0),
-    ("STEER_TORQUE_REQUEST", 0xe4, 0),
-    ("COMPUTER_BRAKE", 0x1fa, 0),
-    ("COMPUTER_BRAKE_REQUEST", 0x1fa, 0),
-    ("GAS_COMMAND", 0x200, 0),
+    ("STEER_TORQUE", 0xe4),
+    ("STEER_TORQUE_REQUEST", 0xe4),
+    ("COMPUTER_BRAKE", 0x1fa),
+    ("COMPUTER_BRAKE_REQUEST", 0x1fa),
+    ("GAS_COMMAND", 0x200),
   ]
   checks = [
     (0xe4, 100),

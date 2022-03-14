@@ -11,6 +11,8 @@
 
 #define __STDC_CONSTANT_MACROS
 
+#include "libyuv.h"
+
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -26,7 +28,6 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
 
   // TODO: respect write arg
 
-  av_register_all();
   codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
   // codec = avcodec_find_encoder(AV_CODEC_ID_FFV1);
   assert(codec);
@@ -55,6 +56,10 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
   frame->linesize[0] = width;
   frame->linesize[1] = width/2;
   frame->linesize[2] = width/2;
+
+  if (downscale) {
+    downscale_buf.resize(width * height * 3 / 2);
+  }
 }
 
 RawLogger::~RawLogger() {
@@ -64,7 +69,7 @@ RawLogger::~RawLogger() {
 }
 
 void RawLogger::encoder_open(const char* path) {
-  vid_path = util::string_format("%s/%s.mkv", path, filename);
+  vid_path = util::string_format("%s/%s", path, filename);
 
   // create camera lock file
   lock_path = util::string_format("%s/%s.lock", path, filename);
@@ -76,7 +81,7 @@ void RawLogger::encoder_open(const char* path) {
   close(lock_fd);
 
   format_ctx = NULL;
-  avformat_alloc_output_context2(&format_ctx, NULL, NULL, vid_path.c_str());
+  avformat_alloc_output_context2(&format_ctx, NULL, "matroska", vid_path.c_str());
   assert(format_ctx);
 
   stream = avformat_new_stream(format_ctx, codec);
@@ -105,8 +110,6 @@ void RawLogger::encoder_close() {
   int err = av_write_trailer(format_ctx);
   assert(err == 0);
 
-  avcodec_close(stream->codec);
-
   err = avio_closep(&format_ctx->pb);
   assert(err == 0);
 
@@ -124,25 +127,57 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
   pkt.data = NULL;
   pkt.size = 0;
 
-  frame->data[0] = (uint8_t*)y_ptr;
-  frame->data[1] = (uint8_t*)u_ptr;
-  frame->data[2] = (uint8_t*)v_ptr;
+  if (downscale_buf.size() > 0) {
+    uint8_t *out_y = downscale_buf.data();
+    uint8_t *out_u = out_y + codec_ctx->width * codec_ctx->height;
+    uint8_t *out_v = out_u + (codec_ctx->width / 2) * (codec_ctx->height / 2);
+    libyuv::I420Scale(y_ptr, in_width,
+                      u_ptr, in_width/2,
+                      v_ptr, in_width/2,
+                      in_width, in_height,
+                      out_y, codec_ctx->width,
+                      out_u, codec_ctx->width/2,
+                      out_v, codec_ctx->width/2,
+                      codec_ctx->width, codec_ctx->height,
+                      libyuv::kFilterNone);
+    frame->data[0] = out_y;
+    frame->data[1] = out_u;
+    frame->data[2] = out_v;
+  } else {
+    frame->data[0] = (uint8_t*)y_ptr;
+    frame->data[1] = (uint8_t*)u_ptr;
+    frame->data[2] = (uint8_t*)v_ptr;
+  }
   frame->pts = counter;
 
   int ret = counter;
 
-  int got_output = 0;
-  int err = avcodec_encode_video2(codec_ctx, &pkt, frame, &got_output);
-  if (err) {
-    LOGE("encoding error\n");
+  int err = avcodec_send_frame(codec_ctx, frame);
+  if (ret < 0) {
+    LOGE("avcode_send_frame error %d", err);
     ret = -1;
-  } else if (got_output) {
+  }
+
+  while (ret >= 0){
+    err = avcodec_receive_packet(codec_ctx, &pkt);
+    if (err == AVERROR_EOF) {
+      break;
+    } else if (err == AVERROR(EAGAIN)) {
+      // Encoder might need a few frames on startup to get started. Keep going
+      ret = 0;
+      break;
+    } else if (err < 0) {
+      LOGE("avcodec_receive_packet error %d", err);
+      ret = -1;
+      break;
+    }
+
     av_packet_rescale_ts(&pkt, codec_ctx->time_base, stream->time_base);
     pkt.stream_index = 0;
 
     err = av_interleaved_write_frame(format_ctx, &pkt);
     if (err < 0) {
-      LOGE("encoder writer error\n");
+      LOGE("av_interleaved_write_frame %d", err);
       ret = -1;
     } else {
       counter++;

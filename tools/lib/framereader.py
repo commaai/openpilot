@@ -17,10 +17,7 @@ from tools.lib.cache import cache_path_for_file_path
 from tools.lib.exceptions import DataUnreadableError
 from common.file_helpers import atomic_write_in_dir
 
-try:
-  from xx.chffr.lib.filereader import FileReader
-except ImportError:
-  from tools.lib.filereader import FileReader
+from tools.lib.filereader import FileReader
 
 HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
@@ -572,15 +569,13 @@ class StreamFrameReader(StreamGOPReader, GOPFrameReader):
 
 def GOPFrameIterator(gop_reader, pix_fmt):
   dec = VideoStreamDecompressor(gop_reader.fn, gop_reader.vid_fmt, gop_reader.w, gop_reader.h, pix_fmt)
-  for frame in dec.read():
-    yield frame
+  yield from dec.read()
 
 
 def FrameIterator(fn, pix_fmt, **kwargs):
   fr = FrameReader(fn, **kwargs)
   if isinstance(fr, GOPReader):
-    for v in GOPFrameIterator(fr, pix_fmt):
-      yield v
+    yield from GOPFrameIterator(fr, pix_fmt)
   else:
     for i in range(fr.frame_count):
       yield fr.get(i, pix_fmt=pix_fmt)[0]

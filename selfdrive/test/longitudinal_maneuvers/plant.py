@@ -86,18 +86,17 @@ class Plant():
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
 
-
     control.controlsState.longControlState = LongCtrlState.pid
     control.controlsState.vCruise = float(v_cruise * 3.6)
     car_state.carState.vEgo = float(self.speed)
-
+    car_state.carState.standstill = self.speed < 0.01
 
     # ******** get controlsState messages for plotting ***
     sm = {'radarState': radar.radarState,
           'carState': car_state.carState,
           'controlsState': control.controlsState}
     self.planner.update(sm)
-    self.speed = self.planner.v_desired
+    self.speed = self.planner.v_desired_filter.x
     self.acceleration = self.planner.a_desired
     fcw = self.planner.fcw
     self.distance_lead = self.distance_lead + v_lead * self.ts

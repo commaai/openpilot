@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 import sys
+from typing import Dict, List
+
 from common.basedir import BASEDIR
 
 # messages reserved for CAN based ignition (see can_ignition_hook function in panda/board/drivers/can)
@@ -19,7 +21,7 @@ def _get_fingerprints():
     car_name = car_folder.split('/')[-1]
     try:
       fingerprints[car_name] = __import__(f'selfdrive.car.{car_name}.values', fromlist=['FINGERPRINTS']).FINGERPRINTS
-    except (ImportError, IOError, AttributeError):
+    except (ImportError, OSError, AttributeError):
       pass
 
   return fingerprints
@@ -62,7 +64,7 @@ def check_can_ignition_conflicts(fingerprints, brands):
 if __name__ == "__main__":
   fingerprints = _get_fingerprints()
 
-  fingerprints_flat = []
+  fingerprints_flat: List[Dict] = []
   car_names = []
   brand_names = []
   for brand in fingerprints:

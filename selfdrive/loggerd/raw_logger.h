@@ -32,11 +32,12 @@ private:
 
   std::string vid_path, lock_path;
 
-  AVCodec *codec = NULL;
+  const AVCodec *codec = NULL;
   AVCodecContext *codec_ctx = NULL;
 
   AVStream *stream = NULL;
   AVFormatContext *format_ctx = NULL;
 
   AVFrame *frame = NULL;
+  std::vector<uint8_t> downscale_buf;
 };

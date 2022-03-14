@@ -2,7 +2,7 @@ import math
 from cereal import car
 from common.numpy_fast import clip, interp
 from common.realtime import DT_MDL
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
 
 # WARNING: this value was determined based on the model's training distribution,
@@ -35,13 +35,6 @@ class MPC_COST_LAT:
   PATH = 1.0
   HEADING = 1.0
   STEER_RATE = 1.0
-
-
-class MPC_COST_LONG:
-  TTC = 5.0
-  DISTANCE = 0.1
-  ACCELERATION = 10.0
-  JERK = 20.0
 
 
 def rate_limit(new_value, last_value, dw_step, up_step):
@@ -119,6 +112,6 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
                                           -max_curvature_rate,
                                           max_curvature_rate)
   safe_desired_curvature = clip(desired_curvature,
-                                     current_curvature - max_curvature_rate/DT_MDL,
-                                     current_curvature + max_curvature_rate/DT_MDL)
+                                     current_curvature - max_curvature_rate * DT_MDL,
+                                     current_curvature + max_curvature_rate * DT_MDL)
   return safe_desired_curvature, safe_desired_curvature_rate

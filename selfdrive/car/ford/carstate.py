@@ -1,7 +1,7 @@
 from cereal import car
-from opendbc.can.parser import CANParser
+from common.conversions import Conversions as CV
 from common.numpy_fast import mean
-from selfdrive.config import Conversions as CV
+from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.ford.values import DBC
 
@@ -23,9 +23,9 @@ class CarState(CarStateBase):
     ret.standstill = not ret.vEgoRaw > 0.001
     ret.steeringAngleDeg = cp.vl["Steering_Wheel_Data_CG1"]["SteWhlRelInit_An_Sns"]
     ret.steeringPressed = not cp.vl["Lane_Keep_Assist_Status"]["LaHandsOff_B_Actl"]
-    ret.steerError = cp.vl["Lane_Keep_Assist_Status"]["LaActDeny_B_Actl"] == 1
+    ret.steerFaultPermanent = cp.vl["Lane_Keep_Assist_Status"]["LaActDeny_B_Actl"] == 1
     ret.cruiseState.speed = cp.vl["Cruise_Status"]["Set_Speed"] * CV.MPH_TO_MS
-    ret.cruiseState.enabled = not (cp.vl["Cruise_Status"]["Cruise_State"] in [0, 3])
+    ret.cruiseState.enabled = not (cp.vl["Cruise_Status"]["Cruise_State"] in (0, 3))
     ret.cruiseState.available = cp.vl["Cruise_Status"]["Cruise_State"] != 0
     ret.gas = cp.vl["EngineData_14"]["ApedPosScal_Pc_Actl"] / 100.
     ret.gasPressed = ret.gas > 1e-6
@@ -39,20 +39,20 @@ class CarState(CarStateBase):
   @staticmethod
   def get_can_parser(CP):
     signals = [
-      # sig_name, sig_address, default
-      ("WhlRr_W_Meas", "WheelSpeed_CG1", 0.),
-      ("WhlRl_W_Meas", "WheelSpeed_CG1", 0.),
-      ("WhlFr_W_Meas", "WheelSpeed_CG1", 0.),
-      ("WhlFl_W_Meas", "WheelSpeed_CG1", 0.),
-      ("SteWhlRelInit_An_Sns", "Steering_Wheel_Data_CG1", 0.),
-      ("Cruise_State", "Cruise_Status", 0.),
-      ("Set_Speed", "Cruise_Status", 0.),
-      ("LaActAvail_D_Actl", "Lane_Keep_Assist_Status", 0),
-      ("LaHandsOff_B_Actl", "Lane_Keep_Assist_Status", 0),
-      ("LaActDeny_B_Actl", "Lane_Keep_Assist_Status", 0),
-      ("ApedPosScal_Pc_Actl", "EngineData_14", 0.),
-      ("Dist_Incr", "Steering_Buttons", 0.),
-      ("Brake_Drv_Appl", "Cruise_Status", 0.),
+      # sig_name, sig_address
+      ("WhlRr_W_Meas", "WheelSpeed_CG1"),
+      ("WhlRl_W_Meas", "WheelSpeed_CG1"),
+      ("WhlFr_W_Meas", "WheelSpeed_CG1"),
+      ("WhlFl_W_Meas", "WheelSpeed_CG1"),
+      ("SteWhlRelInit_An_Sns", "Steering_Wheel_Data_CG1"),
+      ("Cruise_State", "Cruise_Status"),
+      ("Set_Speed", "Cruise_Status"),
+      ("LaActAvail_D_Actl", "Lane_Keep_Assist_Status"),
+      ("LaHandsOff_B_Actl", "Lane_Keep_Assist_Status"),
+      ("LaActDeny_B_Actl", "Lane_Keep_Assist_Status"),
+      ("ApedPosScal_Pc_Actl", "EngineData_14"),
+      ("Dist_Incr", "Steering_Buttons"),
+      ("Brake_Drv_Appl", "Cruise_Status"),
     ]
     checks = []
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0, enforce_checks=False)

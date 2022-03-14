@@ -13,10 +13,15 @@ USE AT YOUR OWN RISK! Safety features, like AEB and FCW, might be affected by th
 
 import sys
 import argparse
+from typing import NamedTuple
 from subprocess import check_output, CalledProcessError
 
 from panda.python import Panda
 from panda.python.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
+
+class ConfigValues(NamedTuple):
+  default_config: bytes
+  tracks_enabled: bytes
 
 # If your radar supports changing data identifier 0x0142 as well make a PR to
 # this file to add your firmware version. Make sure to post a drive as proof!
@@ -24,31 +29,29 @@ from panda.python.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
 #       because this script uses a different diagnostic session type
 SUPPORTED_FW_VERSIONS = {
   # 2020 SONATA
-  b"DN8_ SCC FHCUP      1.00 1.00 99110-L0000\x19\x08)\x15T    ": {
-    "default_config": b"\x00\x00\x00\x01\x00\x00",
-    "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
-  },
+  b"DN8_ SCC FHCUP      1.00 1.00 99110-L0000\x19\x08)\x15T    ": ConfigValues(
+    default_config=b"\x00\x00\x00\x01\x00\x00",
+    tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
   # 2021 SONATA HYBRID
-  b"DNhe SCC FHCUP      1.00 1.02 99110-L5000 \x01#\x15#    ": {
-    "default_config": b"\x00\x00\x00\x01\x00\x00",
-    "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
-  },
+  b"DNhe SCC FHCUP      1.00 1.02 99110-L5000 \x01#\x15#    ": ConfigValues(
+    default_config=b"\x00\x00\x00\x01\x00\x00",
+    tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
   # 2020 PALISADE
-  b"LX2_ SCC FHCUP      1.00 1.04 99110-S8100\x19\x05\x02\x16V    ": {
-    "default_config": b"\x00\x00\x00\x01\x00\x00",
-    "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
-  },
+  b"LX2_ SCC FHCUP      1.00 1.04 99110-S8100\x19\x05\x02\x16V    ": ConfigValues(
+    default_config=b"\x00\x00\x00\x01\x00\x00",
+    tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
+  # 2022 PALISADE
+  b"LX2_ SCC FHCUP      1.00 1.00 99110-S8110!\x04\x05\x17\x01    ": ConfigValues(
+    default_config=b"\x00\x00\x00\x01\x00\x00",
+    tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
   # 2020 SANTA FE
-  b"TM__ SCC F-CUP      1.00 1.03 99110-S2000\x19\x050\x13'    ": {
-    "default_config": b"\x00\x00\x00\x01\x00\x00",
-    "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
-  },
-
+  b"TM__ SCC F-CUP      1.00 1.03 99110-S2000\x19\x050\x13'    ": ConfigValues(
+    default_config=b"\x00\x00\x00\x01\x00\x00",
+    tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
   # 2020 GENESIS G70
-  b'IK__ SCC F-CUP      1.00 1.02 96400-G9100\x18\x07\x06\x17\x12    ': {
-    "default config": b"\x00\x00\x00\x01\x00\x00",
-    "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
-  },
+  b'IK__ SCC F-CUP      1.00 1.02 96400-G9100\x18\x07\x06\x17\x12    ': ConfigValues(
+    default_config=b"\x00\x00\x00\x01\x00\x00",
+    tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
 }
 
 if __name__ == "__main__":
@@ -90,13 +93,14 @@ if __name__ == "__main__":
   print("[GET CONFIGURATION]")
   config_data_id : DATA_IDENTIFIER_TYPE = 0x0142 # type: ignore
   current_config = uds_client.read_data_by_identifier(config_data_id)
-  new_config = SUPPORTED_FW_VERSIONS[fw_version]["default_config" if args.default else "tracks_enabled"]
+  config_values = SUPPORTED_FW_VERSIONS[fw_version]
+  new_config = config_values.default_config if args.default else config_values.tracks_enabled
   print(f"current config: 0x{current_config.hex()}")
   if current_config != new_config:
     print("[CHANGE CONFIGURATION]")
     print(f"new config:     0x{new_config.hex()}")
     uds_client.write_data_by_identifier(config_data_id, new_config)
-    if not args.default and current_config != SUPPORTED_FW_VERSIONS[fw_version]["default_config"]:
+    if not args.default and current_config != SUPPORTED_FW_VERSIONS[fw_version].default_config:
       print("\ncurrent config does not match expected default! (aborted)")
       sys.exit(1)
 

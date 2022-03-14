@@ -1,7 +1,6 @@
 #include "selfdrive/ui/replay/filereader.h"
 
 #include <fstream>
-#include <iostream>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/util.h"
@@ -35,12 +34,11 @@ std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) 
 
 std::string FileReader::download(const std::string &url, std::atomic<bool> *abort) {
   for (int i = 0; i <= max_retries_ && !(abort && *abort); ++i) {
+    if (i > 0) rWarning("download failed, retrying %d", i);
+
     std::string result = httpGet(url, chunk_size_, abort);
     if (!result.empty()) {
       return result;
-    }
-    if (i != max_retries_) {
-      std::cout << "download failed, retrying " << i + 1 << std::endl;
     }
   }
   return {};

@@ -8,9 +8,8 @@ from cereal import car
 from common.numpy_fast import interp
 from common.params import Params
 from common.realtime import Ratekeeper, Priority, config_realtime_process
-from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
-from selfdrive.controls.lib.radar_helpers import Cluster, Track
+from selfdrive.controls.lib.radar_helpers import Cluster, Track, RADAR_TO_CAMERA
 from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import TICI
 
@@ -135,7 +134,7 @@ class RadarD():
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
 
     idens = list(sorted(self.tracks.keys()))
-    track_pts = list([self.tracks[iden].get_key_for_cluster() for iden in idens])
+    track_pts = [self.tracks[iden].get_key_for_cluster() for iden in idens]
 
     # If we have multiple points, cluster them
     if len(track_pts) > 1:
@@ -172,9 +171,10 @@ class RadarD():
     radarState.carStateMonoTime = sm.logMonoTime['carState']
 
     if enable_lead:
-      if len(sm['modelV2'].leadsV3) > 1:
-        radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[0], low_speed_override=True)
-        radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[1], low_speed_override=False)
+      leads_v3 = sm['modelV2'].leadsV3
+      if len(leads_v3) > 1:
+        radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, leads_v3[0], low_speed_override=True)
+        radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, leads_v3[1], low_speed_override=False)
     return dat
 
 
