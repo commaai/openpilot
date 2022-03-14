@@ -34,56 +34,47 @@ class Column(Enum):
 
 
 StarColumns = list(Column)[3:]
-CarFootnote = namedtuple("CarFootnote", ["cars", "text", "column", "star"], defaults=[None])
+CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
 
 def get_star_icon(variant):
   return '<img src="assets/icon-star-{}.svg" width="22" />'.format(variant)
 
 
-def get_footnotes(CP) -> Dict[Column, CarFootnote]:
-  footnotes = {}
-  for car_footnote in CAR_FOOTNOTES:
-    if CP.carFingerprint in car_footnote.cars:
-      footnotes[car_footnote.column] = car_footnote
-  return footnotes
+def get_footnote(car_info, column) -> CarFootnote:
+  if car_info.footnotes is None:
+    return None
+
+  for fn in car_info.footnotes:
+    if CAR_FOOTNOTES[fn].column == column:
+      return CAR_FOOTNOTES[fn]
 
 
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS_generated.md")
 
 # TODO: which other makes?
 MAKES_GOOD_STEERING_TORQUE = ["toyota", "hyundai", "volkswagen"]
-CAR_FOOTNOTES = [
-  CarFootnote([TOYOTA.LEXUS_CTH, TOYOTA.LEXUS_ESH, TOYOTA.LEXUS_NX, TOYOTA.LEXUS_NXH, TOYOTA.LEXUS_RX,
-                TOYOTA.LEXUS_RXH, TOYOTA.AVALON, TOYOTA.AVALONH_2019, TOYOTA.COROLLA, TOYOTA.HIGHLANDER,
-                TOYOTA.HIGHLANDERH, TOYOTA.PRIUS, TOYOTA.PRIUS_V, TOYOTA.RAV4, TOYOTA.RAV4H, TOYOTA.SIENNA],
-               "When disconnecting the Driver Support Unit (DSU), openpilot Adaptive Cruise Control (ACC) will replace "
-               "stock Adaptive Cruise Control (ACC). NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).",
-               Column.LONGITUDINAL, star="half"),
-  CarFootnote([TOYOTA.CAMRY, TOYOTA.CAMRY_TSS2, TOYOTA.CAMRYH],
-               "28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
-               Column.FSR_LONGITUDINAL),
-  CarFootnote([GM.ESCALADE_ESV, GM.VOLT, GM.ACADIA],
-               "Requires an [OBD-II](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness]"
-               "(https://github.com/commaai/openpilot/wiki/GM#hardware). NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).",
-               Column.MODEL),
-  CarFootnote([VOLKSWAGEN.SKODA_KAMIQ_MK1],
-               "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
-               Column.MODEL),
-  CarFootnote([VOLKSWAGEN.PASSAT_MK8],
-               "Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform.",
-               Column.MODEL),
-  CarFootnote([VOLKSWAGEN.ARTEON_MK1, VOLKSWAGEN.ATLAS_MK1, VOLKSWAGEN.TRANSPORTER_T61, VOLKSWAGEN.TCROSS_MK1,
-                VOLKSWAGEN.TROC_MK1, VOLKSWAGEN.TAOS_MK1, VOLKSWAGEN.TIGUAN_MK2],
-               'Model-years 2021 and beyond may have a new camera harness design, which isn\'t yet available from the comma '
-               'store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black '
-               '(older design) or light brown (newer design). For the newer design, in the interim, choose "VW J533 Development" '
-               'from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.',
-               Column.MODEL),
-  CarFootnote([TOYOTA.PRIUS, TOYOTA.PRIUS_V],
-               "An inaccurate steering wheel angle sensor makes precise control difficult.",
-               Column.STEERING_TORQUE, star="half"),
-]
+CAR_FOOTNOTES = {
+  1: CarFootnote("When disconnecting the Driver Support Unit (DSU), openpilot Adaptive Cruise Control (ACC) will replace " \
+                 "stock Adaptive Cruise Control (ACC). NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).",
+                 Column.LONGITUDINAL, star="half"),
+  2: CarFootnote("28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
+                 Column.FSR_LONGITUDINAL),
+  3: CarFootnote("Requires an [OBD-II](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness]" \
+                 "(https://github.com/commaai/openpilot/wiki/GM#hardware). NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).",
+                 Column.MODEL),
+  4: CarFootnote("Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
+                 Column.MODEL),
+  5: CarFootnote("Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform.",
+                 Column.MODEL),
+  6: CarFootnote("Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " \
+                 "store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black " \
+                 "(older design) or light brown (newer design). For the newer design, in the interim, choose \"VW J533 Development\" " \
+                 "from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.",
+                 Column.MODEL),
+  7: CarFootnote("An inaccurate steering wheel angle sensor makes precise control difficult.",
+                 Column.STEERING_TORQUE, star="half"),
+}
 
 
 class Car:
@@ -111,9 +102,8 @@ class Car:
 
     # Check for car footnotes and star demotions
     star_count = 0
-    footnotes = get_footnotes(CP)
     for row_idx, column in enumerate(Column):
-      footnote = footnotes.get(column, None)
+      footnote = get_footnote(car_info, column)
       if column in StarColumns:
         # Demote if footnote specifies a star
         if footnote is not None and footnote.star is not None:
@@ -122,7 +112,7 @@ class Car:
         row[row_idx] = get_star_icon(row[row_idx])
 
       if footnote is not None:
-        superscript_number = CAR_FOOTNOTES.index(footnote) + 1
+        superscript_number = list(CAR_FOOTNOTES.values()).index(footnote) + 1
         row[row_idx] += "<sup>{}</sup>".format(superscript_number)
 
     return row, star_count
@@ -160,7 +150,7 @@ def generate_cars_md(tiered_cars):
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)  # TODO: remove lstrip_blocks if not needed
 
-  footnotes = [footnote.text for footnote in CAR_FOOTNOTES]
+  footnotes = [footnote.text for footnote in CAR_FOOTNOTES.values()]
   return template.render(tiers=tiered_cars, columns=[column.value for column in Column], footnotes=footnotes)
 
 
