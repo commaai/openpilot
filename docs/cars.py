@@ -38,7 +38,7 @@ CarFootnote = namedtuple("CarFootnote", ["cars", "text", "column", "star"], defa
 
 
 def get_star_icon(variant):
-  return '<img src="assets/icon-star-{}.png" width="22" />'.format(variant)
+  return '<img src="assets/icon-star-{}.svg" width="22" />'.format(variant)
 
 
 def get_footnotes(CP) -> Dict[Column, CarFootnote]:
