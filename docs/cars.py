@@ -89,30 +89,11 @@ CAR_FOOTNOTES = [
 class Car:
   def __init__(self, car_info, CP):
     self.make, self.model = car_info.name.split(' ', 1)
-    self.package = car_info.package
-    self.footnotes = get_footnotes(CP)
-    self.stars = self._calculate_stars(CP, car_info)
+    self.row, star_count = self.get_row(car_info, CP)
+    self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(star_count, Tier.BRONZE)
 
-  @property
-  def row(self):
+  def get_row(self, car_info, CP):
     # TODO: add YouTube videos
-    row = [self.make, self.model, self.package, *map(get_star_icon, self.stars)]
-
-    # Check for car footnotes
-    for row_idx, column in enumerate(Column):
-      footnote = self.footnotes.get(column, None)
-      if footnote is not None:
-        superscript_number = CAR_FOOTNOTES.index(footnote) + 1
-        row[row_idx] += "<sup>{}</sup>".format(superscript_number)
-
-    return row
-
-  @property
-  def tier(self):
-    return {5: Tier.GOLD, 4: Tier.SILVER}.get(self.stars.count("full"), Tier.BRONZE)
-
-  def _calculate_stars(self, CP, car_info):
-    # TODO: can we incorporate this into row()?
     # Some minimum steering speeds are not yet in CarParams
     min_steer_speed = CP.minSteerSpeed
     if car_info.min_steer_speed is not None:
@@ -126,15 +107,25 @@ class Car:
     # TODO: make sure well supported check is complete
     stars = [CP.openpilotLongitudinalControl and not CP.radarOffCan, min_enable_speed <= 1e-3, min_steer_speed <= 1e-3,
              CP.carName in MAKES_GOOD_STEERING_TORQUE, CP.carFingerprint not in non_tested_cars]
+    row = [self.make, self.model, car_info.package, *map(lambda star: "full" if star else "empty", stars)]
 
-    # Check for star demotions from footnotes
-    for idx, (star, column) in enumerate(zip(stars, StarColumns)):
-      star = "full" if star else "empty"
-      footnote = self.footnotes.get(column, None)
-      if footnote is not None and footnote.star is not None:
-        star = footnote.star.lower()
-      stars[idx] = star
-    return stars
+    # Check for car footnotes and star demotions
+    star_count = 0
+    footnotes = get_footnotes(CP)
+    for row_idx, column in enumerate(Column):
+      footnote = footnotes.get(column, None)
+      if column in StarColumns:
+        # Demote if footnote specifies a star
+        if footnote is not None and footnote.star is not None:
+          row[row_idx] = footnote.star
+        star_count += row[row_idx] == "full"
+        row[row_idx] = get_star_icon(row[row_idx])
+
+      if footnote is not None:
+        superscript_number = CAR_FOOTNOTES.index(footnote) + 1
+        row[row_idx] += "<sup>{}</sup>".format(superscript_number)
+
+    return row, star_count
 
 
 def get_tiered_cars():
