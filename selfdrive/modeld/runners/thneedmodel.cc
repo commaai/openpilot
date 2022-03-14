@@ -47,7 +47,7 @@ void* ThneedModel::getExtraBuf() {
 
 void ThneedModel::execute() {
   if (!recorded) {
-    thneed->record = THNEED_RECORD;
+    thneed->record = true;
     if (use_extra) {
       float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
       thneed->copy_inputs(inputs);

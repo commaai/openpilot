@@ -32,7 +32,7 @@ class CarController():
         # TODO: improve the resume trigger logic by looking at actual radar data
         can_sends.append(mazdacan.create_button_cmd(self.packer, CS.CP.carFingerprint, CS.crz_btns_counter, Buttons.RESUME))
 
-    if c.cruiseControl.cancel or (CS.out.cruiseState.enabled and not c.enabled):
+    if c.cruiseControl.cancel:
       # If brake is pressed, let us wait >70ms before trying to disable crz to avoid
       # a race condition with the stock system, where the second cancel from openpilot
       # will disable the crz 'main on'. crz ctrl msg runs at 50hz. 70ms allows us to
