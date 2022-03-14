@@ -99,7 +99,7 @@ def ui_thread(addr):
 
   draw_plots = init_plots(plot_arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles)
 
-  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_RGB_BACK, True)
+  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_RGB_ROAD, True)
   while 1:
     list(pygame.event.get())
 
