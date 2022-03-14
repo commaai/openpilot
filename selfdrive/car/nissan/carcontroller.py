@@ -24,7 +24,6 @@ class CarController():
     can_sends = []
 
     ### STEER ###
-    acc_active = CS.out.cruiseState.enabled
     lkas_hud_msg = CS.lkas_hud_msg
     lkas_hud_info_msg = CS.lkas_hud_info_msg
     apply_angle = actuators.steeringAngleDeg
@@ -57,10 +56,6 @@ class CarController():
       self.lkas_max_torque = 0
 
     self.last_angle = apply_angle
-
-    if not enabled and acc_active:
-      # send acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
-      cruise_cancel = 1
 
     if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA) and cruise_cancel:
         can_sends.append(nissancan.create_acc_cancel_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, frame))

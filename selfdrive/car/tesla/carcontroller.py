@@ -50,10 +50,6 @@ class CarController():
     if hands_on_fault:
       cruise_cancel = True
 
-    # Cancel when openpilot is not enabled anymore
-    if not enabled and bool(CS.out.cruiseState.enabled):
-      cruise_cancel = True
-
     if ((frame % 10) == 0 and cruise_cancel):
       # Spam every possible counter value, otherwise it might not be accepted
       for counter in range(16):
