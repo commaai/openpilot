@@ -3,7 +3,7 @@ import sys
 import subprocess
 from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
 
-from selfdrive.test.test_routes import routes as test_car_models_routes
+from selfdrive.car.tests.routes import routes as test_car_models_routes
 from selfdrive.test.process_replay.test_processes import original_segments as replay_segments
 from xx.chffr.lib import azureutil  # pylint: disable=import-error
 from xx.chffr.lib.storage import _DATA_ACCOUNT_PRODUCTION, _DATA_ACCOUNT_CI, _DATA_BUCKET_PRODUCTION  # pylint: disable=import-error
