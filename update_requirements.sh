@@ -45,6 +45,7 @@ pipenv install --dev --deploy --clear
 pyenv rehash
 
 echo "pre-commit hooks install..."
+shopt -s nullglob
 for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
   cd $DIR/$(dirname $f)
   if [ -e ".git" ]; then
