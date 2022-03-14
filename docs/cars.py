@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 import jinja2
 import os
 from collections import defaultdict, namedtuple
@@ -10,11 +9,8 @@ from typing import Dict
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
-from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 from selfdrive.test.test_routes import non_tested_cars
@@ -165,11 +161,11 @@ def get_tiered_cars():
 
   # Return tier name and car rows for each tier
   for tier, cars in tiered_cars.items():
-    yield [tier.name.title(), list(map(lambda car: car.row, cars))]
+    yield [tier.name.title(), map(lambda car: car.row, cars)]
 
 
-def generate_cars_md(tiered_cars, template_fn):
-  # template_fn = os.path.join(BASEDIR, "docs", "CARS_template.md")
+def generate_cars_md(tiered_cars):
+  template_fn = os.path.join(BASEDIR, "docs", "CARS_template.md")
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)  # TODO: remove lstrip_blocks if not needed
 
@@ -178,26 +174,12 @@ def generate_cars_md(tiered_cars, template_fn):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description='')
-  # parser.add_argument('--template', default=CARS_MD_OUT)
-  parser.add_argument('--template', default=os.path.join(BASEDIR, "docs", "vehicles_template.vue"))
-  args = parser.parse_args()
-
   # TODO: add argparse for generating json or html (undecided)
   # Cars that can disable radar have openpilot longitudinal
   Params().put_bool("DisableRadar", True)
 
-  tiered_cars = list(get_tiered_cars())
+  tiered_cars = get_tiered_cars()
+  with open(CARS_MD_OUT, 'w') as f:
+    f.write(generate_cars_md(tiered_cars))
 
-  tiered_cars_dict = {'tiers': {}, 'columns': [column.value for column in Column], 'footnotes': [footnote.text for footnote in CAR_FOOTNOTES]}
-  for idx, tier in enumerate(Tier):
-    tiered_cars_dict['tiers'][tier.name.title()] = tiered_cars[idx][1]
-  print(tiered_cars_dict)
-
-  with open(os.path.join(BASEDIR, "docs", "vehicles.vue"), 'w') as f:
-    json.dumps()
-
-  # with open(os.path.join(BASEDIR, "docs", "vehicles.vue"), 'w') as f:
-  #   f.write(generate_cars_md(tiered_cars, args.template))
-  #
-  # print('Generated and written to {}'.format(os.path.join(BASEDIR, "docs", "vehicles.vue")))
+  print('Generated and written to {}'.format(CARS_MD_OUT))
