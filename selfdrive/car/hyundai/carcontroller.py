@@ -37,6 +37,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    self.CP = CP
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
 
@@ -54,7 +55,7 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # disable when temp fault is active, or below LKA minimum speed
-    lkas_active = c.active and not CS.out.steerFaultTemporary and CS.out.vEgo >= CS.CP.minSteerSpeed
+    lkas_active = c.active and not CS.out.steerFaultTemporary and CS.out.vEgo >= self.CP.minSteerSpeed
 
     if not lkas_active:
       apply_steer = 0
@@ -68,7 +69,7 @@ class CarController():
     can_sends = []
 
     # tester present - w/ no response (keeps radar disabled)
-    if CS.CP.openpilotLongitudinalControl:
+    if self.CP.openpilotLongitudinalControl:
       if (frame % 100) == 0:
         can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
@@ -77,7 +78,7 @@ class CarController():
                                    left_lane, right_lane,
                                    left_lane_warning, right_lane_warning))
 
-    if not CS.CP.openpilotLongitudinalControl:
+    if not self.CP.openpilotLongitudinalControl:
       if pcm_cancel_cmd:
         can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL))
       elif CS.out.cruiseState.standstill:
@@ -87,7 +88,7 @@ class CarController():
           can_sends.extend([create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL)] * 25)
           self.last_resume_frame = frame
 
-    if frame % 2 == 0 and CS.CP.openpilotLongitudinalControl:
+    if frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
       lead_visible = False
       accel = actuators.accel if c.active else 0
 
@@ -111,11 +112,11 @@ class CarController():
       can_sends.append(create_lfahda_mfc(self.packer, enabled))
 
     # 5 Hz ACC options
-    if frame % 20 == 0 and CS.CP.openpilotLongitudinalControl:
+    if frame % 20 == 0 and self.CP.openpilotLongitudinalControl:
       can_sends.extend(create_acc_opt(self.packer))
 
     # 2 Hz front radar options
-    if frame % 50 == 0 and CS.CP.openpilotLongitudinalControl:
+    if frame % 50 == 0 and self.CP.openpilotLongitudinalControl:
       can_sends.append(create_frt_radar_opt(self.packer))
 
     new_actuators = actuators.copy()
