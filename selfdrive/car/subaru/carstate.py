@@ -1,7 +1,7 @@
 import copy
 from cereal import car
 from opendbc.can.can_define import CANDefine
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.car.subaru.values import DBC, STEER_THRESHOLD, CAR, PREGLOBAL_CARS

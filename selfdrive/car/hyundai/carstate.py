@@ -1,10 +1,10 @@
 import copy
 from cereal import car
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_CAR, HYBRID_CAR
-from selfdrive.car.interfaces import CarStateBase
+from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.config import Conversions as CV
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_CAR, HYBRID_CAR
+from selfdrive.car.interfaces import CarStateBase
 
 
 class CarState(CarStateBase):

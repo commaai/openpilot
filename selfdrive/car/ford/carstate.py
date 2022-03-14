@@ -1,7 +1,7 @@
 from cereal import car
-from opendbc.can.parser import CANParser
+from common.conversions import Conversions as CV
 from common.numpy_fast import mean
-from selfdrive.config import Conversions as CV
+from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.ford.values import DBC
 
