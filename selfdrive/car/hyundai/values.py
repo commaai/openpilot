@@ -71,8 +71,8 @@ class CAR:
 
 CAR_INFO = {
   CAR.ELANTRA: CarInfo("Hyundai Elantra 2017-19", "SCC + LKAS", min_enable_speed=19 * CV.MPH_TO_MS),
-  CAR.ELANTRA_2021: CarInfo("Hyundai Elantra 2021-22", "SCC + LKAS"),
-  CAR.ELANTRA_HEV_2021: CarInfo("Hyundai Elantra Hybrid 2021", "SCC + LKAS"),
+  CAR.ELANTRA_2021: CarInfo("Hyundai Elantra 2021-22", "SCC + LKAS", "https://youtu.be/_EdYQtV52-c"),
+  CAR.ELANTRA_HEV_2021: CarInfo("Hyundai Elantra Hybrid 2021", "SCC + LKAS", "https://youtu.be/_EdYQtV52-c"),
   CAR.HYUNDAI_GENESIS: CarInfo("Hyundai Genesis 2015-16", "SCC + LKAS", min_enable_speed=19 * CV.MPH_TO_MS),
   CAR.IONIQ: CarInfo("Hyundai Ioniq Hybrid 2017-19", "SCC + LKAS"),
   CAR.IONIQ_HEV_2022: CarInfo("Hyundai Ioniq Hybrid 2020-22", "SCC + LFA"),
@@ -81,15 +81,15 @@ CAR_INFO = {
   CAR.IONIQ_PHEV: CarInfo("Hyundai Ioniq Plug-In Hybrid 2020-21", "SCC + LKAS"),
   CAR.KONA: CarInfo("Hyundai Kona 2020", "SCC + LKAS"),
   CAR.KONA_EV: CarInfo("Hyundai Kona Electric 2018-19", "SCC + LKAS"),
-  CAR.KONA_HEV: CarInfo("Hyundai Kona Hybrid 2020", "SCC + LKAS"),
+  CAR.KONA_HEV: CarInfo("Hyundai Kona Hybrid 2020", "SCC + LKAS", "https://youtu.be/_EdYQtV52-c"),
   CAR.SANTA_FE: CarInfo("Hyundai Santa Fe 2019-20", "All"),
   CAR.SANTA_FE_2022: CarInfo("Hyundai Santa Fe 2021-22", "All"),
   CAR.SANTA_FE_HEV_2022: CarInfo("Hyundai Santa Fe Hybrid 2022", "All"),
   CAR.SANTA_FE_PHEV_2022: CarInfo("Hyundai Santa Fe Plug-In Hybrid 2022", "All"),
-  CAR.SONATA: CarInfo("Hyundai Sonata 2020-22", "All"),
+  CAR.SONATA: CarInfo("Hyundai Sonata 2020-22", "All", "https://www.youtube.com/watch?v=ix63r9kE3Fw"),
   CAR.SONATA_LF: CarInfo("Hyundai Sonata 2018-19", "SCC + LKAS"),
   CAR.PALISADE: [
-    CarInfo("Hyundai Palisade 2020-21", "All"),
+    CarInfo("Hyundai Palisade 2020-21", "All", "https://youtu.be/TAnDqjF4fDY?t=456"),
     CarInfo("Kia Telluride 2020", "SCC + LKAS"),
   ],
   CAR.VELOSTER: CarInfo("Hyundai Veloster 2019-20", "SCC + LKAS", min_enable_speed=5. * CV.MPH_TO_MS),
@@ -98,7 +98,7 @@ CAR_INFO = {
   # Kia
   CAR.KIA_FORTE: CarInfo("Kia Forte 2018-21", "SCC + LKAS"),
   CAR.KIA_K5_2021: CarInfo("Kia K5 2021-22", "SCC + LFA"),
-  CAR.KIA_NIRO_EV: CarInfo("Kia Niro Electric 2019-22", "All"),
+  CAR.KIA_NIRO_EV: CarInfo("Kia Niro Electric 2019-22", "All", "https://www.youtube.com/watch?v=lT7zcG6ZpGo"),
   CAR.KIA_NIRO_HEV: CarInfo("Kia Niro Plug-In Hybrid 2019", "SCC + LKAS", min_enable_speed=10. * CV.MPH_TO_MS),
   CAR.KIA_NIRO_HEV_2021: CarInfo("Kia Niro Hybrid 2021-22", "SCC + LKAS"),
   CAR.KIA_OPTIMA: [
@@ -106,8 +106,8 @@ CAR_INFO = {
     CarInfo("Kia Optima 2019", "SCC + LKAS"),
   ],
   CAR.KIA_SELTOS: CarInfo("Kia Seltos 2021", "SCC + LKAS"),
-  CAR.KIA_SORENTO: CarInfo("Kia Sorento 2018-19", "SCC + LKAS"),
-  CAR.KIA_STINGER: CarInfo("Kia Stinger 2018", "SCC + LKAS"),
+  CAR.KIA_SORENTO: CarInfo("Kia Sorento 2018-19", "SCC + LKAS", "https://www.youtube.com/watch?v=Fkh3s6WHJz8"),
+  CAR.KIA_STINGER: CarInfo("Kia Stinger 2018", "SCC + LKAS", "https://www.youtube.com/watch?v=MJ94qoofYw0"),
   CAR.KIA_CEED: CarInfo("Kia Ceed 2019", "SCC + LKAS"),
 
   # Genesis

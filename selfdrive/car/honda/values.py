@@ -91,13 +91,13 @@ class CAR:
 
 CAR_INFO = {
   CAR.ACCORD: [
-    CarInfo("Honda Accord 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+    CarInfo("Honda Accord 2018-21", "All", "https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
     CarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   ],
   CAR.ACCORDH: CarInfo("Honda Accord Hybrid 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   CAR.CIVIC: CarInfo("Honda Civic Sedan/Coupe 2016-18", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.CIVIC_BOSCH: [
-    CarInfo("Honda Civic Sedan/Coupe 2019-20", "All", min_steer_speed=2. * CV.MPH_TO_MS),
+    CarInfo("Honda Civic Sedan/Coupe 2019-20", "All", "https://www.youtube.com/watch?v=4Iz1Mz5LGF8", min_steer_speed=2. * CV.MPH_TO_MS),
     CarInfo("Honda Civic Hatchback 2017-21", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
   # TODO: same as sedan/coupe, but no ALC under 12. make sure diesel exception is in readme
