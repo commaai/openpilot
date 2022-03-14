@@ -3,7 +3,6 @@ import jinja2
 import os
 from collections import defaultdict
 from sortedcontainers import SortedList
-from typing import Dict
 
 from common.basedir import BASEDIR
 from common.params import Params
