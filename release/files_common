@@ -74,7 +74,6 @@ selfdrive/sentry.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
-selfdrive/pandad.py
 selfdrive/updated.py
 selfdrive/rtshield.py
 selfdrive/statsd.py
@@ -98,6 +97,7 @@ selfdrive/boardd/panda.h
 selfdrive/boardd/pigeon.cc
 selfdrive/boardd/pigeon.h
 selfdrive/boardd/set_time.py
+selfdrive/boardd/pandad.py
 
 selfdrive/car/__init__.py
 selfdrive/car/car_helpers.py
