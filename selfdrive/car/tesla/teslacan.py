@@ -1,6 +1,6 @@
 import copy
 import crcmod
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.car.tesla.values import CANBUS, CarControllerParams
 
 

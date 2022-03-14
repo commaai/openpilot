@@ -17,6 +17,7 @@ site_scons/site_tools/cython.py
 
 common/.gitignore
 common/__init__.py
+common/conversions.py
 common/gpio.py
 common/realtime.py
 common/clock.pyx
@@ -69,7 +70,6 @@ installer/updater/updater
 selfdrive/version.py
 
 selfdrive/__init__.py
-selfdrive/config.py
 selfdrive/sentry.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py

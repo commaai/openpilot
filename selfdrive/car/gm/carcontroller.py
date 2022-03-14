@@ -1,11 +1,11 @@
 from cereal import car
+from common.conversions import Conversions as CV
 from common.realtime import DT_CTRL
 from common.numpy_fast import interp
-from selfdrive.config import Conversions as CV
+from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams
-from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
