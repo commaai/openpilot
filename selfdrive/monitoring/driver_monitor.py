@@ -233,7 +233,8 @@ class DriverStatus():
 
   def update_states(self, driver_state, cal_rpy, car_speed, op_engaged):
     if not all(len(x) > 0 for x in (driver_state.faceOrientation, driver_state.facePosition,
-                                    driver_state.faceOrientationStd, driver_state.facePositionStd)):
+                                    driver_state.faceOrientationStd, driver_state.facePositionStd,
+                                    driver_state.readyProb, driver_state.notReadyProb)):
       return
 
     self.face_partial = driver_state.partialFace > self.settings._PARTIAL_FACE_THRESHOLD
