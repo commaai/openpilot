@@ -50,11 +50,19 @@ generated_files = [
   f'{gen}/long_cost/long_cost_y_0_fun.h',
 ] + build_files
 
+acados_dir = '#third_party/acados'
+source_list = ['long_mpc.py',
+  f'{acados_dir}/include/acados_c/ocp_nlp_interface.h',
+  f'{acados_dir}/aarch64/lib/libacados.so',
+  f'{acados_dir}/x86_64/lib/libacados.so',
+  f'{acados_dir}/larch64/lib/libacados.so',
+]
+
 lenv = env.Clone()
 lenv.Clean(generated_files, Dir(gen))
 
 lenv.Command(generated_files,
-             ["long_mpc.py"],
+             source_list,
              f"cd {Dir('.').abspath} && python3 long_mpc.py")
 
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")

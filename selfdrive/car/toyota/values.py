@@ -2,8 +2,8 @@ from collections import defaultdict
 from enum import IntFlag
 
 from cereal import car
+from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.config import Conversions as CV
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -30,7 +30,7 @@ class CAR:
   AVALON = "TOYOTA AVALON 2016"
   AVALON_2019 = "TOYOTA AVALON 2019"
   AVALONH_2019 = "TOYOTA AVALON HYBRID 2019"
-  AVALON_TSS2 = "TOYOTA AVALON 2022"
+  AVALON_TSS2 = "TOYOTA AVALON 2022"  # TSS 2.5
   CAMRY = "TOYOTA CAMRY 2018"
   CAMRYH = "TOYOTA CAMRY HYBRID 2018"
   CAMRY_TSS2 = "TOYOTA CAMRY 2021"  # TSS 2.5

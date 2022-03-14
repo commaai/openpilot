@@ -44,9 +44,10 @@
 | Lexus     | RX Hybrid 2020-21             | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | UX Hybrid 2019-21             | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Alphard 2019-20               | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Avalon 2016-21                | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
+| Toyota    | Avalon 2016-18                | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
+| Toyota    | Avalon 2019-21                | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Avalon 2022                   | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Avalon Hybrid 2019-21         | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
+| Toyota    | Avalon Hybrid 2019-21         | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Camry 2018-20                 | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry 2021-22                 | All               | openpilot        | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry Hybrid 2018-20          | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
@@ -169,7 +170,7 @@
 | Volkswagen| T-Cross 2021<sup>4</sup>        | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| T-Roc 2021<sup>4</sup>          | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Taos 2022<sup>4</sup>           | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Tiguan 2020                     | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Tiguan 2020-22<sup>4</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Touran 2017                     | Driver Assistance | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
