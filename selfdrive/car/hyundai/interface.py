@@ -352,8 +352,8 @@ class CarInterface(CarInterfaceBase):
 
   def apply(self, c):
     hud_control = c.hudControl
-    ret = self.CC.update(c, c.enabled, self.CS, self.frame, c.actuators,
-                         c.cruiseControl.cancel, hud_control.visualAlert, hud_control.setSpeed, hud_control.leftLaneVisible,
-                         hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart)
+    ret = self.CC.update(c, self.CS, self.frame, c.actuators, c.cruiseControl.cancel, hud_control.visualAlert,
+                         hud_control.setSpeed, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                         hud_control.leftLaneDepart, hud_control.rightLaneDepart)
     self.frame += 1
     return ret
