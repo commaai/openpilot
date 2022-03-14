@@ -9,10 +9,7 @@ from common.params import Params
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.test.test_routes import non_tested_cars
-from selfdrive.car.docs import Tier, Column, StarColumns, MAKES_GOOD_STEERING_TORQUE, Footnote, get_footnote, get_star_icon
-
-
-CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS_generated.md")
+from selfdrive.car.docs import Tier, Column, StarColumns, Footnote, MAKES_GOOD_STEERING_TORQUE, get_footnote, get_star_icon
 
 
 class Car:
@@ -33,7 +30,6 @@ class Car:
     if car_info.min_enable_speed is not None:
       min_enable_speed = car_info.min_enable_speed
 
-    # TODO: make sure well supported check is complete
     stars = [CP.openpilotLongitudinalControl and not CP.radarOffCan, min_enable_speed <= 1e-3, min_steer_speed <= 1e-3,
              CP.carName in MAKES_GOOD_STEERING_TORQUE, CP.carFingerprint not in non_tested_cars]
     row = [self.make, self.model, car_info.package, *map(lambda star: "full" if star else "empty", stars)]
@@ -93,12 +89,13 @@ def generate_cars_md(tiered_cars):
 
 
 if __name__ == "__main__":
-  # TODO: add argparse for generating json or html (undecided)
+  # Auto generates supported cars documentation
   # Cars that can disable radar have openpilot longitudinal
   Params().put_bool("DisableRadar", True)
-
   tiered_cars = get_tiered_cars()
-  with open(CARS_MD_OUT, 'w') as f:
+
+  cars_md_fn = os.path.join(BASEDIR, "docs", "CARS.md")
+  with open(cars_md_fn, 'w') as f:
     f.write(generate_cars_md(tiered_cars))
 
-  print('Generated and written to {}'.format(CARS_MD_OUT))
+  print('Generated and written to {}'.format(cars_md_fn))
