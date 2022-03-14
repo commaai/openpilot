@@ -66,7 +66,7 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
 
     ret = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                               c.hudControl.visualAlert, c.cruiseControl.cancel)
+                         c.hudControl.visualAlert, c.cruiseControl.cancel)
 
     self.frame += 1
     return ret

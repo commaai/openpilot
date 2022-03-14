@@ -71,6 +71,6 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    ret = self.CC.update(c, c.enabled, self.CS, self.frame, c.actuators, c.cruiseControl.cancel)
+    ret = self.CC.update(c, self.CS, self.frame, c.actuators, c.cruiseControl.cancel)
     self.frame += 1
     return ret

@@ -18,7 +18,7 @@ class CarController():
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, c, enabled, CS, frame, actuators, cruise_cancel, hud_alert,
+  def update(self, c, CS, frame, actuators, cruise_cancel, hud_alert,
              left_line, right_line, left_lane_depart, right_lane_depart):
 
     can_sends = []
@@ -30,7 +30,7 @@ class CarController():
 
     steer_hud_alert = 1 if hud_alert in (VisualAlert.steerRequired, VisualAlert.ldw) else 0
 
-    if c.active:
+    if c.latActive:
       # # windup slower
       if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
         angle_rate_lim = interp(CS.out.vEgo, CarControllerParams.ANGLE_DELTA_BP, CarControllerParams.ANGLE_DELTA_V)
@@ -68,12 +68,12 @@ class CarController():
         can_sends.append(nissancan.create_cancel_msg(self.packer, CS.cancel_msg, cruise_cancel))
 
     can_sends.append(nissancan.create_steering_control(
-        self.packer, apply_angle, frame, enabled, self.lkas_max_torque))
+        self.packer, apply_angle, frame, c.enabled, self.lkas_max_torque))
 
     if lkas_hud_msg and lkas_hud_info_msg:
       if frame % 2 == 0:
         can_sends.append(nissancan.create_lkas_hud_msg(
-          self.packer, lkas_hud_msg, enabled, left_line, right_line, left_lane_depart, right_lane_depart))
+          self.packer, lkas_hud_msg, c.enabled, left_line, right_line, left_lane_depart, right_lane_depart))
 
       if frame % 50 == 0:
         can_sends.append(nissancan.create_lkas_hud_info_msg(
