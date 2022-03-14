@@ -1,5 +1,9 @@
 #include <android/log.h>
+#ifndef ANDROID_9
 #include <log/logger.h>
+#else
+#include <log/log.h>
+#endif
 #include <log/logprint.h>
 #include <sys/resource.h>
 

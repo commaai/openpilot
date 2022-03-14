@@ -25,9 +25,15 @@ EGLImageTexture::EGLImageTexture(const VisionBuf *buf) {
                              buf->stride/bpp, buf->len/buf->stride,
                              buf->width, buf->height);
 
-  // GraphicBuffer is ref counted by EGLClientBuffer(ANativeWindowBuffer), no need and not possible to release.	
+  // GraphicBuffer is ref counted by EGLClientBuffer(ANativeWindowBuffer), no need and not possible to release.
+#ifndef ANDROID_9
   GraphicBuffer* gb = new GraphicBuffer(buf->width, buf->height, (PixelFormat)format,
                                         GraphicBuffer::USAGE_HW_TEXTURE, buf->stride/bpp, (private_handle_t*)private_handle, false);
+#else
+  GraphicBuffer* gb = new GraphicBuffer((private_handle_t*)private_handle, GraphicBuffer::WRAP_HANDLE, buf->width, buf->height, (PixelFormat)format,
+                                        1, (uint64_t)GraphicBuffer::USAGE_HW_TEXTURE, buf->stride/bpp);
+#endif
+
 
   EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   assert(display != EGL_NO_DISPLAY);

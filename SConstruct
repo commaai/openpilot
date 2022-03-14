@@ -59,6 +59,10 @@ if platform.system() == "Darwin":
 if arch == "aarch64" and TICI:
   arch = "larch64"
 
+
+if arch == "aarch64":
+  android_version = subprocess.check_output(["getprop", "ro.build.version.release"], encoding='utf8').rstrip()
+
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 lenv = {
@@ -174,6 +178,33 @@ if arch != "Darwin":
 cflags += ['-DSWAGLOG="\\"selfdrive/common/swaglog.h\\""']
 cxxflags += ['-DSWAGLOG="\\"selfdrive/common/swaglog.h\\""']
 
+android_header_paths = [
+  "#third_party/android_frameworks_native/include",
+  "#third_party/android_system_core/include",
+  "#third_party/android_hardware_libhardware/include",
+]
+if arch == "aarch64" and android_version == "9":
+  cflags += ["-DANDROID_9"]
+  cxxflags += ["-DANDROID_9"]
+  android_header_paths = [
+    "#third_party/android_headers_9/android_system_core/libsystem/include",
+    "#third_party/android_headers_9/android_system_core/libutils/include",
+    "#third_party/android_headers_9/android_system_core/liblog/include",
+    "#third_party/android_headers_9/android_system_core/libcutils/include",
+    "#third_party/android_headers_9/android_system_core/base/include",
+    "#third_party/android_headers_9/android_hardware_libhardware/include",
+    "#third_party/android_headers_9/android_hardware_hidl/base/include",
+    "#third_party/android_headers_9/android_hardware_hidl/transport/token/1.0/utils/include",
+    "#third_party/android_headers_9/android_hardware_hidl/output",
+    "#third_party/android_headers_9/android_frameworks_native/include",
+    "#third_party/android_headers_9/android_frameworks_native/libs/math/include",
+    "#third_party/android_headers_9/android_frameworks_native/libs/nativebase/include",
+    "#third_party/android_headers_9/android_frameworks_native/libs/nativewindow/include",
+    "#third_party/android_headers_9/android_frameworks_native/libs/binder/include",
+    "#third_party/android_headers_9/android_frameworks_native/libs/ui/include",
+    "#third_party/android_headers_9/android_frameworks_native/libs/gui/include",
+  ]
+
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
@@ -204,9 +235,7 @@ env = Environment(
     "#third_party/json11",
     "#third_party/curl/include",
     "#third_party/libgralloc/include",
-    "#third_party/android_frameworks_native/include",
-    "#third_party/android_hardware_libhardware/include",
-    "#third_party/android_system_core/include",
+    *android_header_paths,
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party/mapbox-gl-native-qt/include",
