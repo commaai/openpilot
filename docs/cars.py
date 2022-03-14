@@ -38,53 +38,53 @@ class Column(Enum):
 
 
 StarColumns = list(Column)[3:]
-CarException = namedtuple("CarException", ["cars", "text", "column", "star"], defaults=[None])
+CarFootnote = namedtuple("CarFootnote", ["cars", "text", "column", "star"], defaults=[None])
 
 
 def get_star_icon(variant):
   return '<img src="assets/icon-star-{}.png" width="22" />'.format(variant)
 
 
-def get_exceptions(CP) -> Dict[Column, CarException]:
-  exceptions = {}
-  for car_exception in CAR_EXCEPTIONS:
-    if CP.carFingerprint in car_exception.cars:
-      exceptions[car_exception.column] = car_exception
-  return exceptions
+def get_footnotes(CP) -> Dict[Column, CarFootnote]:
+  footnotes = {}
+  for car_footnote in CAR_FOOTNOTES:
+    if CP.carFingerprint in car_footnote.cars:
+      footnotes[car_footnote.column] = car_footnote
+  return footnotes
 
 
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS_generated.md")
 
 # TODO: which other makes?
 MAKES_GOOD_STEERING_TORQUE = ["toyota", "hyundai", "volkswagen"]
-CAR_EXCEPTIONS = [
-  CarException([TOYOTA.LEXUS_CTH, TOYOTA.LEXUS_ESH, TOYOTA.LEXUS_NX, TOYOTA.LEXUS_NXH, TOYOTA.LEXUS_RX,
+CAR_FOOTNOTES = [
+  CarFootnote([TOYOTA.LEXUS_CTH, TOYOTA.LEXUS_ESH, TOYOTA.LEXUS_NX, TOYOTA.LEXUS_NXH, TOYOTA.LEXUS_RX,
                 TOYOTA.LEXUS_RXH, TOYOTA.AVALON, TOYOTA.AVALONH_2019, TOYOTA.COROLLA, TOYOTA.HIGHLANDER,
                 TOYOTA.HIGHLANDERH, TOYOTA.PRIUS, TOYOTA.PRIUS_V, TOYOTA.RAV4, TOYOTA.RAV4H, TOYOTA.SIENNA],
                "When disconnecting the Driver Support Unit (DSU), openpilot Adaptive Cruise Control (ACC) will replace "
                "stock Adaptive Cruise Control (ACC). NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).",
                Column.LONGITUDINAL, star="half"),
-  CarException([TOYOTA.CAMRY, TOYOTA.CAMRY_TSS2, TOYOTA.CAMRYH],
+  CarFootnote([TOYOTA.CAMRY, TOYOTA.CAMRY_TSS2, TOYOTA.CAMRYH],
                "28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
                Column.FSR_LONGITUDINAL),
-  CarException([GM.ESCALADE_ESV, GM.VOLT, GM.ACADIA],
+  CarFootnote([GM.ESCALADE_ESV, GM.VOLT, GM.ACADIA],
                "Requires an [OBD-II](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness]"
                "(https://github.com/commaai/openpilot/wiki/GM#hardware). NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).",
                Column.MODEL),
-  CarException([VOLKSWAGEN.SKODA_KAMIQ_MK1],
+  CarFootnote([VOLKSWAGEN.SKODA_KAMIQ_MK1],
                "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
                Column.MODEL),
-  CarException([VOLKSWAGEN.PASSAT_MK8],
+  CarFootnote([VOLKSWAGEN.PASSAT_MK8],
                "Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform.",
                Column.MODEL),
-  CarException([VOLKSWAGEN.ARTEON_MK1, VOLKSWAGEN.ATLAS_MK1, VOLKSWAGEN.TRANSPORTER_T61, VOLKSWAGEN.TCROSS_MK1,
+  CarFootnote([VOLKSWAGEN.ARTEON_MK1, VOLKSWAGEN.ATLAS_MK1, VOLKSWAGEN.TRANSPORTER_T61, VOLKSWAGEN.TCROSS_MK1,
                 VOLKSWAGEN.TROC_MK1, VOLKSWAGEN.TAOS_MK1, VOLKSWAGEN.TIGUAN_MK2],
                'Model-years 2021 and beyond may have a new camera harness design, which isn\'t yet available from the comma '
                'store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black '
                '(older design) or light brown (newer design). For the newer design, in the interim, choose "VW J533 Development" '
                'from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.',
                Column.MODEL),
-  CarException([TOYOTA.PRIUS, TOYOTA.PRIUS_V],
+  CarFootnote([TOYOTA.PRIUS, TOYOTA.PRIUS_V],
                "An inaccurate steering wheel angle sensor makes precise control difficult.",
                Column.STEERING_TORQUE, star="half"),
 ]
@@ -94,7 +94,7 @@ class Car:
   def __init__(self, car_info, CP):
     self.make, self.model = car_info.name.split(' ', 1)
     self.package = car_info.package
-    self.exceptions = get_exceptions(CP)
+    self.footnotes = get_footnotes(CP)
     self.stars = self._calculate_stars(CP, car_info)
 
   @property
@@ -102,11 +102,11 @@ class Car:
     # TODO: add YouTube videos
     row = [self.make, self.model, self.package, *map(get_star_icon, self.stars)]
 
-    # Check for car exceptions
+    # Check for car footnotes
     for row_idx, column in enumerate(Column):
-      exception = self.exceptions.get(column, None)
-      if exception is not None:
-        superscript_number = CAR_EXCEPTIONS.index(exception) + 1
+      footnote = self.footnotes.get(column, None)
+      if footnote is not None:
+        superscript_number = CAR_FOOTNOTES.index(footnote) + 1
         row[row_idx] += "<sup>{}</sup>".format(superscript_number)
 
     return row
@@ -131,12 +131,12 @@ class Car:
     stars = [CP.openpilotLongitudinalControl and not CP.radarOffCan, min_enable_speed <= 1e-3, min_steer_speed <= 1e-3,
              CP.carName in MAKES_GOOD_STEERING_TORQUE, CP.carFingerprint not in non_tested_cars]
 
-    # Check for star demotions from exceptions
+    # Check for star demotions from footnotes
     for idx, (star, column) in enumerate(zip(stars, StarColumns)):
       star = "full" if star else "empty"
-      exception = self.exceptions.get(column, None)
-      if exception is not None and exception.star is not None:
-        star = exception.star.lower()
+      footnote = self.footnotes.get(column, None)
+      if footnote is not None and footnote.star is not None:
+        star = footnote.star.lower()
       stars[idx] = star
     return stars
 
@@ -173,8 +173,8 @@ def generate_cars_md(tiered_cars, template_fn):
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)  # TODO: remove lstrip_blocks if not needed
 
-  exceptions = [exception.text for exception in CAR_EXCEPTIONS]
-  return template.render(tiers=tiered_cars, columns=[column.value for column in Column], exceptions=exceptions)
+  footnotes = [footnote.text for footnote in CAR_FOOTNOTES]
+  return template.render(tiers=tiered_cars, columns=[column.value for column in Column], footnotes=footnotes)
 
 
 if __name__ == "__main__":
@@ -189,7 +189,7 @@ if __name__ == "__main__":
 
   tiered_cars = list(get_tiered_cars())
 
-  tiered_cars_dict = {'tiers': {}, 'columns': [column.value for column in Column], 'exceptions': [exception.text for exception in CAR_EXCEPTIONS]}
+  tiered_cars_dict = {'tiers': {}, 'columns': [column.value for column in Column], 'footnotes': [footnote.text for footnote in CAR_FOOTNOTES]}
   for idx, tier in enumerate(Tier):
     tiered_cars_dict['tiers'][tier.name.title()] = tiered_cars[idx][1]
   print(tiered_cars_dict)
