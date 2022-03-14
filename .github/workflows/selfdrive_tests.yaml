@@ -245,7 +245,7 @@ jobs:
     - name: Run unit tests
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test && \
-                        coverage run selfdrive/test/test_fingerprints.py && \
+                        coverage run selfdrive/car/tests/test_fingerprints.py && \
                         $UNIT_TEST common && \
                         $UNIT_TEST opendbc/can && \
                         $UNIT_TEST selfdrive/boardd && \
