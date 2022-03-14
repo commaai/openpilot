@@ -1,5 +1,6 @@
 from cereal import car
 from selfdrive.car import CarInfo, dbc_dict
+from selfdrive.car.docs import Footnote
 Ecu = car.CarParams.Ecu
 
 
@@ -52,12 +53,12 @@ class CAR:
 
 CAR_INFO = {
   CAR.HOLDEN_ASTRA: CarInfo("Holden Astra 2017", "Adaptive Cruise"),
-  CAR.VOLT: CarInfo("Chevrolet Volt 2017-18", "Adaptive Cruise", footnotes=[3], min_enable_speed=0),
+  CAR.VOLT: CarInfo("Chevrolet Volt 2017-18", "Adaptive Cruise", footnotes=[Footnote.OBD_II], min_enable_speed=0),
   CAR.CADILLAC_ATS: CarInfo("Cadillac ATS Premium Performance 2018", "Adaptive Cruise"),
   CAR.MALIBU: CarInfo("Chevrolet Malibu Premier 2017", "Adaptive Cruise"),
-  CAR.ACADIA: CarInfo("GMC Acadia 2018", "Adaptive Cruise", "https://www.youtube.com/watch?v=0ZN6DdsBUZo", footnotes=[3]),
+  CAR.ACADIA: CarInfo("GMC Acadia 2018", "Adaptive Cruise", "https://www.youtube.com/watch?v=0ZN6DdsBUZo", footnotes=[Footnote.OBD_II]),
   CAR.BUICK_REGAL: CarInfo("Buick Regal Essence 2018", "Adaptive Cruise"),
-  CAR.ESCALADE_ESV: CarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS", footnotes=[3]),
+  CAR.ESCALADE_ESV: CarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS", footnotes=[Footnote.OBD_II]),
 }
 
 

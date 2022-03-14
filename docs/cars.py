@@ -10,7 +10,7 @@ from common.params import Params
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.test.test_routes import non_tested_cars
-from selfdrive.car.docs import Tier, Column, StarColumns, MAKES_GOOD_STEERING_TORQUE, CAR_FOOTNOTES, get_footnote, get_star_icon
+from selfdrive.car.docs import Tier, Column, StarColumns, MAKES_GOOD_STEERING_TORQUE, Footnote, get_footnote, get_star_icon
 
 
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS_generated.md")
@@ -45,13 +45,13 @@ class Car:
       footnote = get_footnote(car_info, column)
       if column in StarColumns:
         # Demote if footnote specifies a star
-        if footnote is not None and footnote.star is not None:
-          row[row_idx] = footnote.star
+        if footnote is not None and footnote.value.star is not None:
+          row[row_idx] = footnote.value.star
         star_count += row[row_idx] == "full"
         row[row_idx] = get_star_icon(row[row_idx])
 
       if footnote is not None:
-        superscript_number = list(CAR_FOOTNOTES.values()).index(footnote) + 1
+        superscript_number = list(Footnote).index(footnote) + 1
         row[row_idx] += "<sup>{}</sup>".format(superscript_number)
 
     return row, star_count
@@ -89,7 +89,7 @@ def generate_cars_md(tiered_cars):
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)  # TODO: remove lstrip_blocks if not needed
 
-  footnotes = [footnote.text for footnote in CAR_FOOTNOTES.values()]
+  footnotes = map(lambda fn: fn.value.text, Footnote)
   return template.render(tiers=tiered_cars, columns=[column.value for column in Column], footnotes=footnotes)
 
 

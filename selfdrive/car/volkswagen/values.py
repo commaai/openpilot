@@ -3,6 +3,7 @@ from typing import Dict
 
 from cereal import car
 from selfdrive.car import CarInfo, dbc_dict
+from selfdrive.car.docs import Footnote
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -89,8 +90,8 @@ class CAR:
 
 
 CAR_INFO = {
-  CAR.ARTEON_MK1: CarInfo("Volkswagen Arteon 2018, 2021", "Driver Assistance", footnotes=[6]),
-  CAR.ATLAS_MK1: CarInfo("Volkswagen Atlas 2018-19, 2022", "Driver Assistance", footnotes=[6]),
+  CAR.ARTEON_MK1: CarInfo("Volkswagen Arteon 2018, 2021", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
+  CAR.ATLAS_MK1: CarInfo("Volkswagen Atlas 2018-19, 2022", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
   CAR.GOLF_MK7: [
     CarInfo("Volkswagen e-Golf 2014, 2019-20", "Driver Assistance"),
     CarInfo("Volkswagen Golf 2015-20", "Driver Assistance"),
@@ -105,17 +106,17 @@ CAR_INFO = {
     CarInfo("Volkswagen Jetta 2018-20", "Driver Assistance"),
     CarInfo("Volkswagen Jetta GLI 2021", "Driver Assistance"),
   ],
-  CAR.PASSAT_MK8: CarInfo("Volkswagen Passat 2016-18", "Driver Assistance", footnotes=[5]),
+  CAR.PASSAT_MK8: CarInfo("Volkswagen Passat 2016-18", "Driver Assistance", footnotes=[Footnote.PASSAT]),
   CAR.POLO_MK6: CarInfo("Volkswagen Polo 2020", "Driver Assistance"),
-  CAR.TAOS_MK1: CarInfo("Volkswagen Taos 2022", "Driver Assistance", footnotes=[6]),
-  CAR.TCROSS_MK1: CarInfo("Volkswagen T-Cross 2021", "Driver Assistance", footnotes=[6]),
-  CAR.TIGUAN_MK2: CarInfo("Volkswagen Tiguan 2020-22", "Driver Assistance", footnotes=[6]),
+  CAR.TAOS_MK1: CarInfo("Volkswagen Taos 2022", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TCROSS_MK1: CarInfo("Volkswagen T-Cross 2021", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TIGUAN_MK2: CarInfo("Volkswagen Tiguan 2020-22", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
   CAR.TOURAN_MK2: CarInfo("Volkswagen Touran 2017", "Driver Assistance"),
   CAR.TRANSPORTER_T61: [
-    CarInfo("Volkswagen Caravelle 2020", "Driver Assistance", footnotes=[6]),
-    CarInfo("Volkswagen California 2021", "Driver Assistance", footnotes=[6]),
+    CarInfo("Volkswagen Caravelle 2020", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
+    CarInfo("Volkswagen California 2021", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
   ],
-  CAR.TROC_MK1: CarInfo("Volkswagen T-Roc 2021", "Driver Assistance", footnotes=[6]),
+  CAR.TROC_MK1: CarInfo("Volkswagen T-Roc 2021", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
   CAR.AUDI_A3_MK3: [
     CarInfo("Audi A3 2014-19", "ACC + Lane Assist"),
     CarInfo("Audi A3 Sportback e-tron 2017-18", "ACC + Lane Assist"),
@@ -125,7 +126,7 @@ CAR_INFO = {
   CAR.AUDI_Q3_MK2: CarInfo("Audi Q3 2020-21", "ACC + Lane Assist"),
   CAR.SEAT_ATECA_MK1: CarInfo("SEAT Ateca 2018", "Driver Assistance"),
   CAR.SEAT_LEON_MK3: CarInfo("SEAT Leon 2014-20", "Driver Assistance"),
-  CAR.SKODA_KAMIQ_MK1: CarInfo("Škoda Kamiq 2021", "Driver Assistance", footnotes=[4]),
+  CAR.SKODA_KAMIQ_MK1: CarInfo("Škoda Kamiq 2021", "Driver Assistance", footnotes=[Footnote.KAMIQ]),
   CAR.SKODA_KAROQ_MK1: CarInfo("Škoda Karoq 2019", "Driver Assistance"),
   CAR.SKODA_KODIAQ_MK1: CarInfo("Škoda Kodiaq 2018-19", "Driver Assistance"),
   CAR.SKODA_SCALA_MK1: CarInfo("Škoda Scala 2020", "Driver Assistance"),
