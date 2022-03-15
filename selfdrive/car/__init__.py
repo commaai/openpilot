@@ -1,6 +1,7 @@
 # functions common among cars
+from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, List, NamedTuple
+from typing import Optional, List
 
 from cereal import car
 from common.numpy_fast import clip
@@ -9,13 +10,15 @@ from common.numpy_fast import clip
 STD_CARGO_KG = 136.
 
 
-class CarInfo(NamedTuple):
+@dataclass
+class CarInfo:
   name: str
   package: str
   video_link: Optional[str] = None
   footnotes: Optional[List[Enum]] = None
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
+  good_torque: bool = False
 
 
 def gen_empty_fingerprint():

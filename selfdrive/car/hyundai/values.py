@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Dict, List, Union
 
 from cereal import car
@@ -71,54 +72,58 @@ class CAR:
   GENESIS_G90 = "GENESIS G90 2017"
 
 
-GOOD_TORQUE = True
+@dataclass
+class HyundaiCarInfo(CarInfo):
+  package: str = "SCC + LKAS"
+  good_torque: bool = True
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.ELANTRA: CarInfo("Hyundai Elantra 2017-19", "SCC + LKAS", min_enable_speed=19 * CV.MPH_TO_MS),
-  CAR.ELANTRA_2021: CarInfo("Hyundai Elantra 2021-22", "SCC + LKAS", "https://youtu.be/_EdYQtV52-c"),
-  CAR.ELANTRA_HEV_2021: CarInfo("Hyundai Elantra Hybrid 2021", "SCC + LKAS", "https://youtu.be/_EdYQtV52-c"),
-  CAR.HYUNDAI_GENESIS: CarInfo("Hyundai Genesis 2015-16", "SCC + LKAS", min_enable_speed=19 * CV.MPH_TO_MS),
-  CAR.IONIQ: CarInfo("Hyundai Ioniq Hybrid 2017-19", "SCC + LKAS"),
-  CAR.IONIQ_HEV_2022: CarInfo("Hyundai Ioniq Hybrid 2020-22", "SCC + LFA"),
-  CAR.IONIQ_EV_LTD: CarInfo("Hyundai Ioniq Electric 2019", "SCC + LKAS"),
-  CAR.IONIQ_EV_2020: CarInfo("Hyundai Ioniq Electric 2020", "SCC + LKAS"),
-  CAR.IONIQ_PHEV: CarInfo("Hyundai Ioniq Plug-In Hybrid 2020-21", "SCC + LKAS"),
-  CAR.KONA: CarInfo("Hyundai Kona 2020", "SCC + LKAS"),
-  CAR.KONA_EV: CarInfo("Hyundai Kona Electric 2018-19", "SCC + LKAS"),
-  CAR.KONA_HEV: CarInfo("Hyundai Kona Hybrid 2020", "SCC + LKAS", "https://youtu.be/_EdYQtV52-c"),
-  CAR.SANTA_FE: CarInfo("Hyundai Santa Fe 2019-20", "All"),
-  CAR.SANTA_FE_2022: CarInfo("Hyundai Santa Fe 2021-22", "All"),
-  CAR.SANTA_FE_HEV_2022: CarInfo("Hyundai Santa Fe Hybrid 2022", "All"),
-  CAR.SANTA_FE_PHEV_2022: CarInfo("Hyundai Santa Fe Plug-In Hybrid 2022", "All"),
-  CAR.SONATA: CarInfo("Hyundai Sonata 2020-22", "All", "https://www.youtube.com/watch?v=ix63r9kE3Fw"),
-  CAR.SONATA_LF: CarInfo("Hyundai Sonata 2018-19", "SCC + LKAS"),
+
+CAR_INFO: Dict[str, Union[HyundaiCarInfo, List[HyundaiCarInfo]]] = {
+  CAR.ELANTRA: HyundaiCarInfo("Hyundai Elantra 2017-19", min_enable_speed=19 * CV.MPH_TO_MS),
+  CAR.ELANTRA_2021: HyundaiCarInfo("Hyundai Elantra 2021-22", video_link="https://youtu.be/_EdYQtV52-c"),
+  CAR.ELANTRA_HEV_2021: HyundaiCarInfo("Hyundai Elantra Hybrid 2021", video_link="https://youtu.be/_EdYQtV52-c"),
+  CAR.HYUNDAI_GENESIS: HyundaiCarInfo("Hyundai Genesis 2015-16", min_enable_speed=19 * CV.MPH_TO_MS),
+  CAR.IONIQ: HyundaiCarInfo("Hyundai Ioniq Hybrid 2017-19"),
+  CAR.IONIQ_HEV_2022: HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", "SCC + LFA"),
+  CAR.IONIQ_EV_LTD: HyundaiCarInfo("Hyundai Ioniq Electric 2019"),
+  CAR.IONIQ_EV_2020: HyundaiCarInfo("Hyundai Ioniq Electric 2020"),
+  CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-In Hybrid 2020-21"),
+  CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020"),
+  CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-19"),
+  CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", video_link="https://youtu.be/_EdYQtV52-c"),
+  CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All"),
+  CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-22", "All"),
+  CAR.SANTA_FE_HEV_2022: HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022", "All"),
+  CAR.SANTA_FE_PHEV_2022: HyundaiCarInfo("Hyundai Santa Fe Plug-In Hybrid 2022", "All"),
+  CAR.SONATA: HyundaiCarInfo("Hyundai Sonata 2020-22", "All", video_link="https://www.youtube.com/watch?v=ix63r9kE3Fw"),
+  CAR.SONATA_LF: HyundaiCarInfo("Hyundai Sonata 2018-19"),
   CAR.PALISADE: [
-    CarInfo("Hyundai Palisade 2020-21", "All", "https://youtu.be/TAnDqjF4fDY?t=456"),
-    CarInfo("Kia Telluride 2020", "SCC + LKAS"),
+    HyundaiCarInfo("Hyundai Palisade 2020-21", "All", video_link="https://youtu.be/TAnDqjF4fDY?t=456"),
+    HyundaiCarInfo("Kia Telluride 2020"),
   ],
-  CAR.VELOSTER: CarInfo("Hyundai Veloster 2019-20", "SCC + LKAS", min_enable_speed=5. * CV.MPH_TO_MS),
-  CAR.SONATA_HYBRID: CarInfo("Hyundai Sonata Hybrid 2021-22", "All"),
+  CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS),
+  CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2021-22", "All"),
 
   # Kia
-  CAR.KIA_FORTE: CarInfo("Kia Forte 2018-21", "SCC + LKAS"),
-  CAR.KIA_K5_2021: CarInfo("Kia K5 2021-22", "SCC + LFA"),
-  CAR.KIA_NIRO_EV: CarInfo("Kia Niro Electric 2019-22", "All", "https://www.youtube.com/watch?v=lT7zcG6ZpGo"),
-  CAR.KIA_NIRO_HEV: CarInfo("Kia Niro Plug-In Hybrid 2019", "SCC + LKAS", min_enable_speed=10. * CV.MPH_TO_MS),
-  CAR.KIA_NIRO_HEV_2021: CarInfo("Kia Niro Hybrid 2021-22", "SCC + LKAS"),
+  CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2018-21"),
+  CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "SCC + LFA"),
+  CAR.KIA_NIRO_EV: HyundaiCarInfo("Kia Niro Electric 2019-22", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo"),
+  CAR.KIA_NIRO_HEV: HyundaiCarInfo("Kia Niro Plug-In Hybrid 2019", min_enable_speed=10. * CV.MPH_TO_MS),
+  CAR.KIA_NIRO_HEV_2021: HyundaiCarInfo("Kia Niro Hybrid 2021-22"),
   CAR.KIA_OPTIMA: [
-    CarInfo("Kia Optima 2017", "SCC + LKAS", min_steer_speed=32. * CV.MPH_TO_MS),
-    CarInfo("Kia Optima 2019", "SCC + LKAS"),
+    HyundaiCarInfo("Kia Optima 2017", min_steer_speed=32. * CV.MPH_TO_MS),
+    HyundaiCarInfo("Kia Optima 2019"),
   ],
-  CAR.KIA_SELTOS: CarInfo("Kia Seltos 2021", "SCC + LKAS"),
-  CAR.KIA_SORENTO: CarInfo("Kia Sorento 2018-19", "SCC + LKAS", "https://www.youtube.com/watch?v=Fkh3s6WHJz8"),
-  CAR.KIA_STINGER: CarInfo("Kia Stinger 2018", "SCC + LKAS", "https://www.youtube.com/watch?v=MJ94qoofYw0"),
-  CAR.KIA_CEED: CarInfo("Kia Ceed 2019", "SCC + LKAS"),
+  CAR.KIA_SELTOS: HyundaiCarInfo("Kia Seltos 2021"),
+  CAR.KIA_SORENTO: HyundaiCarInfo("Kia Sorento 2018-19", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8"),
+  CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0"),
+  CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019"),
 
   # Genesis
-  CAR.GENESIS_G70: CarInfo("Genesis G70 2018", "All"),
-  CAR.GENESIS_G70_2020: CarInfo("Genesis G70 2020", "All"),
-  CAR.GENESIS_G80: CarInfo("Genesis G80 2018", "All"),
-  CAR.GENESIS_G90: CarInfo("Genesis G90 2018", "All"),
+  CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018", "All"),
+  CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", "All"),
+  CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2018", "All"),
+  CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2018", "All"),
 }
 
 class Buttons:

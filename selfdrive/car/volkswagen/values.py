@@ -1,4 +1,5 @@
 from collections import defaultdict
+from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
 
@@ -105,53 +106,57 @@ class Footnote(Enum):
     Column.MODEL)
 
 
-GOOD_TORQUE = True
+@dataclass
+class VWCarInfo(CarInfo):
+  package: str = "Driver Assistance"
+  good_torque: bool = True
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.ARTEON_MK1: CarInfo("Volkswagen Arteon 2018, 2021", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
-  CAR.ATLAS_MK1: CarInfo("Volkswagen Atlas 2018-19, 2022", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
+
+CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
+  CAR.ARTEON_MK1: VWCarInfo("Volkswagen Arteon 2018, 2021", footnotes=[Footnote.VW_HARNESS]),
+  CAR.ATLAS_MK1: VWCarInfo("Volkswagen Atlas 2018-19, 2022", footnotes=[Footnote.VW_HARNESS]),
   CAR.GOLF_MK7: [
-    CarInfo("Volkswagen e-Golf 2014, 2019-20", "Driver Assistance"),
-    CarInfo("Volkswagen Golf 2015-20", "Driver Assistance"),
-    CarInfo("Volkswagen Golf Alltrack 2017-18", "Driver Assistance"),
-    CarInfo("Volkswagen Golf GTE 2016", "Driver Assistance"),
-    CarInfo("Volkswagen Golf GTI 2018-20", "Driver Assistance"),
-    CarInfo("Volkswagen Golf R 2016-19", "Driver Assistance"),
-    CarInfo("Volkswagen Golf SportsVan 2016", "Driver Assistance"),
-    CarInfo("Volkswagen Golf SportWagen 2015", "Driver Assistance"),
+    VWCarInfo("Volkswagen e-Golf 2014, 2019-20"),
+    VWCarInfo("Volkswagen Golf 2015-20"),
+    VWCarInfo("Volkswagen Golf Alltrack 2017-18"),
+    VWCarInfo("Volkswagen Golf GTE 2016"),
+    VWCarInfo("Volkswagen Golf GTI 2018-20"),
+    VWCarInfo("Volkswagen Golf R 2016-19"),
+    VWCarInfo("Volkswagen Golf SportsVan 2016"),
+    VWCarInfo("Volkswagen Golf SportWagen 2015"),
   ],
   CAR.JETTA_MK7: [
-    CarInfo("Volkswagen Jetta 2018-20", "Driver Assistance"),
-    CarInfo("Volkswagen Jetta GLI 2021", "Driver Assistance"),
+    VWCarInfo("Volkswagen Jetta 2018-20"),
+    VWCarInfo("Volkswagen Jetta GLI 2021"),
   ],
-  CAR.PASSAT_MK8: CarInfo("Volkswagen Passat 2016-18", "Driver Assistance", footnotes=[Footnote.PASSAT]),
-  CAR.POLO_MK6: CarInfo("Volkswagen Polo 2020", "Driver Assistance"),
-  CAR.TAOS_MK1: CarInfo("Volkswagen Taos 2022", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
-  CAR.TCROSS_MK1: CarInfo("Volkswagen T-Cross 2021", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
-  CAR.TIGUAN_MK2: CarInfo("Volkswagen Tiguan 2020-22", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
-  CAR.TOURAN_MK2: CarInfo("Volkswagen Touran 2017", "Driver Assistance"),
+  CAR.PASSAT_MK8: VWCarInfo("Volkswagen Passat 2016-18", footnotes=[Footnote.PASSAT]),
+  CAR.POLO_MK6: VWCarInfo("Volkswagen Polo 2020"),
+  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2020-22", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TOURAN_MK2: VWCarInfo("Volkswagen Touran 2017"),
   CAR.TRANSPORTER_T61: [
-    CarInfo("Volkswagen Caravelle 2020", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
-    CarInfo("Volkswagen California 2021", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
+    VWCarInfo("Volkswagen Caravelle 2020", footnotes=[Footnote.VW_HARNESS]),
+    VWCarInfo("Volkswagen California 2021", footnotes=[Footnote.VW_HARNESS]),
   ],
-  CAR.TROC_MK1: CarInfo("Volkswagen T-Roc 2021", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS]),
   CAR.AUDI_A3_MK3: [
-    CarInfo("Audi A3 2014-19", "ACC + Lane Assist"),
-    CarInfo("Audi A3 Sportback e-tron 2017-18", "ACC + Lane Assist"),
-    CarInfo("Audi S3 2015-17", "ACC + Lane Assist"),
+    VWCarInfo("Audi A3 2014-19", "ACC + Lane Assist"),
+    VWCarInfo("Audi A3 Sportback e-tron 2017-18", "ACC + Lane Assist"),
+    VWCarInfo("Audi S3 2015-17", "ACC + Lane Assist"),
   ],
-  CAR.AUDI_Q2_MK1: CarInfo("Audi Q2 2018", "ACC + Lane Assist"),
-  CAR.AUDI_Q3_MK2: CarInfo("Audi Q3 2020-21", "ACC + Lane Assist"),
-  CAR.SEAT_ATECA_MK1: CarInfo("SEAT Ateca 2018", "Driver Assistance"),
-  CAR.SEAT_LEON_MK3: CarInfo("SEAT Leon 2014-20", "Driver Assistance"),
-  CAR.SKODA_KAMIQ_MK1: CarInfo("Škoda Kamiq 2021", "Driver Assistance", footnotes=[Footnote.KAMIQ]),
-  CAR.SKODA_KAROQ_MK1: CarInfo("Škoda Karoq 2019", "Driver Assistance"),
-  CAR.SKODA_KODIAQ_MK1: CarInfo("Škoda Kodiaq 2018-19", "Driver Assistance"),
-  CAR.SKODA_SCALA_MK1: CarInfo("Škoda Scala 2020", "Driver Assistance"),
-  CAR.SKODA_SUPERB_MK3: CarInfo("Škoda Superb 2015-18", "Driver Assistance"),
+  CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018", "ACC + Lane Assist"),
+  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2020-21", "ACC + Lane Assist"),
+  CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
+  CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
+  CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.KAMIQ]),
+  CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019"),
+  CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2018-19"),
+  CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020"),
+  CAR.SKODA_SUPERB_MK3: VWCarInfo("Škoda Superb 2015-18"),
   CAR.SKODA_OCTAVIA_MK3: [
-    CarInfo("Škoda Octavia 2015, 2018-19", "Driver Assistance"),
-    CarInfo("Škoda Octavia RS 2016", "Driver Assistance"),
+    VWCarInfo("Škoda Octavia 2015, 2018-19"),
+    VWCarInfo("Škoda Octavia RS 2016"),
   ],
 }
 

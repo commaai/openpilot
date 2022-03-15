@@ -23,16 +23,7 @@ def get_all_footnotes():
   return all_footnotes
 
 
-def get_makes_good_torque():
-  makes_good_torque = []
-  for make, good_torque in get_interface_attr("GOOD_TORQUE").items():
-    if good_torque:
-      makes_good_torque.append(make)
-  return makes_good_torque
-
-
 ALL_FOOTNOTES = get_all_footnotes()
-MAKES_GOOD_STEERING_TORQUE = get_makes_good_torque()
 
 
 class CarRow:
@@ -54,7 +45,7 @@ class CarRow:
       min_enable_speed = car_info.min_enable_speed
 
     stars = [CP.openpilotLongitudinalControl and not CP.radarOffCan, min_enable_speed <= 0., min_steer_speed <= 0.,
-             CP.carName in MAKES_GOOD_STEERING_TORQUE, CP.carFingerprint not in non_tested_cars]
+             car_info.good_torque, CP.carFingerprint not in non_tested_cars]
     row = [self.make, self.model, car_info.package, *map(lambda star: "full" if star else "empty", stars)]
 
     # Check for car footnotes and star demotions

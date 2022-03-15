@@ -1,4 +1,5 @@
 from collections import defaultdict
+from dataclasses import dataclass
 from enum import Enum, IntFlag
 from typing import Dict, List, Union
 
@@ -86,64 +87,68 @@ class Footnote(Enum):
     Column.STEERING_TORQUE, star="half")
 
 
-GOOD_TORQUE = True
+@dataclass
+class ToyotaCarInfo(CarInfo):
+  package: str = "All"
+  good_torque: bool = True
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+
+CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   # Toyota
-  CAR.ALPHARD_TSS2: CarInfo("Toyota Alphard 2019-20", "All"),
-  CAR.AVALON: CarInfo("Toyota Avalon 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
-  CAR.AVALON_2019: CarInfo("Toyota Avalon 2019-21", "TSS-P", footnotes=[Footnote.DSU]),
-  CAR.AVALONH_2019: CarInfo("Toyota Avalon Hybrid 2019-21", "TSS-P", footnotes=[Footnote.DSU]),
-  CAR.AVALON_TSS2: CarInfo("Toyota Avalon 2022", "All"),
-  CAR.CAMRY: CarInfo("Toyota Camry 2018-20", "All", "https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
-  CAR.CAMRYH: CarInfo("Toyota Camry Hybrid 2018-20", "All", "https://www.youtube.com/watch?v=Q2DYY0AWKgk", footnotes=[Footnote.CAMRY]),
-  CAR.CAMRY_TSS2: CarInfo("Toyota Camry 2021-22", "All", footnotes=[Footnote.CAMRY]),
-  CAR.CAMRYH_TSS2: CarInfo("Toyota Camry Hybrid 2021-22", "All"),
-  CAR.CHR: CarInfo("Toyota C-HR 2017-21", "All"),
-  CAR.CHRH: CarInfo("Toyota C-HR Hybrid 2017-19", "All"),
-  CAR.COROLLA: CarInfo("Toyota Corolla 2017-19", "All", footnotes=[Footnote.DSU]),
+  CAR.ALPHARD_TSS2: ToyotaCarInfo("Toyota Alphard 2019-20"),
+  CAR.AVALON: ToyotaCarInfo("Toyota Avalon 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.AVALON_2019: ToyotaCarInfo("Toyota Avalon 2019-21", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.AVALONH_2019: ToyotaCarInfo("Toyota Avalon Hybrid 2019-21", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.AVALON_TSS2: ToyotaCarInfo("Toyota Avalon 2022"),
+  CAR.CAMRY: ToyotaCarInfo("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
+  CAR.CAMRYH: ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk", footnotes=[Footnote.CAMRY]),
+  CAR.CAMRY_TSS2: ToyotaCarInfo("Toyota Camry 2021-22", footnotes=[Footnote.CAMRY]),
+  CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-22"),
+  CAR.CHR: ToyotaCarInfo("Toyota C-HR 2017-21"),
+  CAR.CHRH: ToyotaCarInfo("Toyota C-HR Hybrid 2017-19"),
+  CAR.COROLLA: ToyotaCarInfo("Toyota Corolla 2017-19", footnotes=[Footnote.DSU]),
   CAR.COROLLA_TSS2: [
-    CarInfo("Toyota Corolla 2020-22", "All", "https://www.youtube.com/watch?v=_66pXk0CBYA"),
-    CarInfo("Toyota Corolla Hatchback 2019-22", "All", "https://www.youtube.com/watch?v=_66pXk0CBYA"),
+    ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
+    ToyotaCarInfo("Toyota Corolla Hatchback 2019-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
   ],
   CAR.COROLLAH_TSS2: [
-    CarInfo("Toyota Corolla Hybrid 2020-22", "All"),
-    CarInfo("Lexus UX Hybrid 2019-21", "All"),
+    ToyotaCarInfo("Toyota Corolla Hybrid 2020-22"),
+    ToyotaCarInfo("Lexus UX Hybrid 2019-21"),
   ],
-  CAR.HIGHLANDER: CarInfo("Toyota Highlander 2017-19", "All", "https://www.youtube.com/watch?v=0wS0wXSLzoo", footnotes=[Footnote.DSU]),
-  CAR.HIGHLANDER_TSS2: CarInfo("Toyota Highlander 2020-22", "All"),
-  CAR.HIGHLANDERH: CarInfo("Toyota Highlander Hybrid 2017-19", "All", footnotes=[Footnote.DSU]),
-  CAR.HIGHLANDERH_TSS2: CarInfo("Toyota Highlander Hybrid 2020-22", "All"),
+  CAR.HIGHLANDER: ToyotaCarInfo("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo", footnotes=[Footnote.DSU]),
+  CAR.HIGHLANDER_TSS2: ToyotaCarInfo("Toyota Highlander 2020-22"),
+  CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19", footnotes=[Footnote.DSU]),
+  CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-22"),
   CAR.PRIUS: [
-    CarInfo("Toyota Prius 2016-20", "TSS-P", "https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
-    CarInfo("Toyota Prius Prime 2017-20", "All", "https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
+    ToyotaCarInfo("Toyota Prius 2016-20", "TSS-P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
+    ToyotaCarInfo("Toyota Prius Prime 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
   ],
-  CAR.PRIUS_V: CarInfo("Toyota Prius v 2017", "TSS-P", min_enable_speed=MIN_ACC_SPEED, footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
+  CAR.PRIUS_V: ToyotaCarInfo("Toyota Prius v 2017", "TSS-P", min_enable_speed=MIN_ACC_SPEED, footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
   CAR.PRIUS_TSS2: [
-    CarInfo("Toyota Prius 2021-22", "All", "https://www.youtube.com/watch?v=J58TvCpUd4U"),
-    CarInfo("Toyota Prius Prime 2021-22", "All", "https://www.youtube.com/watch?v=J58TvCpUd4U"),
+    ToyotaCarInfo("Toyota Prius 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
+    ToyotaCarInfo("Toyota Prius Prime 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
   ],
-  CAR.RAV4: CarInfo("Toyota RAV4 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
-  CAR.RAV4H: CarInfo("Toyota RAV4 Hybrid 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
-  CAR.RAV4_TSS2: CarInfo("Toyota RAV4 2019-21", "All", "https://www.youtube.com/watch?v=wJxjDd42gGA"),
-  CAR.RAV4H_TSS2: CarInfo("Toyota RAV4 Hybrid 2019-21", "All"),
-  CAR.MIRAI: CarInfo("Toyota Mirai 2021", "All"),
-  CAR.SIENNA: CarInfo("Toyota Sienna 2018-20", "All", "https://www.youtube.com/watch?v=q1UPOo4Sh68", footnotes=[Footnote.DSU]),
+  CAR.RAV4: ToyotaCarInfo("Toyota RAV4 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.RAV4H: ToyotaCarInfo("Toyota RAV4 Hybrid 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.RAV4_TSS2: ToyotaCarInfo("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
+  CAR.RAV4H_TSS2: ToyotaCarInfo("Toyota RAV4 Hybrid 2019-21"),
+  CAR.MIRAI: ToyotaCarInfo("Toyota Mirai 2021"),
+  CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", footnotes=[Footnote.DSU]),
 
   # Lexus
-  CAR.LEXUS_CTH: CarInfo("Lexus CT Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_ESH: CarInfo("Lexus ES Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_ES_TSS2: CarInfo("Lexus ES 2019-21", "All"),
-  CAR.LEXUS_ESH_TSS2: CarInfo("Lexus ES Hybrid 2019-21", "All"),
-  CAR.LEXUS_IS: CarInfo("Lexus IS 2017-19", "All"),
-  CAR.LEXUS_NX: CarInfo("Lexus NX 2018-19", "All", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_NXH: CarInfo("Lexus NX Hybrid 2018-19", "All", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_NX_TSS2: CarInfo("Lexus NX 2020", "All"),
-  CAR.LEXUS_RC: CarInfo("Lexus RC 2020", "All"),
-  CAR.LEXUS_RX: CarInfo("Lexus RX 2016-18", "All", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_RXH: CarInfo("Lexus RX Hybrid 2016-19", "All", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_RX_TSS2: CarInfo("Lexus RX 2020-21", "All"),
-  CAR.LEXUS_RXH_TSS2: CarInfo("Lexus RX Hybrid 2020-21", "All"),
+  CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-21"),
+  CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-21"),
+  CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
+  CAR.LEXUS_NX: ToyotaCarInfo("Lexus NX 2018-19", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_NXH: ToyotaCarInfo("Lexus NX Hybrid 2018-19", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_NX_TSS2: ToyotaCarInfo("Lexus NX 2020"),
+  CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2020"),
+  CAR.LEXUS_RX: ToyotaCarInfo("Lexus RX 2016-18", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_RXH: ToyotaCarInfo("Lexus RX Hybrid 2016-19", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-21"),
+  CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
 }
 
 # (addr, cars, bus, 1/freq*100, vl)
