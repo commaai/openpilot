@@ -120,7 +120,7 @@ class Controls:
     put_nonblocking("CarParamsCache", cp_bytes)
 
     self.CC = car.CarControl.new_message()
-    self.CS = car.CarState.new_message()
+    self.CS_prev = car.CarState.new_message()
     self.AM = AlertManager()
     self.events = Events()
 
@@ -195,8 +195,8 @@ class Controls:
       return
 
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0
-    if (CS.gasPressed and not self.CS.gasPressed) or \
-      (CS.brakePressed and (not self.CS.brakePressed or not CS.standstill)):
+    if (CS.gasPressed and not self.CS_prev.gasPressed) or \
+      (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)):
       self.events.add(EventName.pedalPressed)
 
     self.events.add_from_msg(CS.events)
@@ -735,7 +735,7 @@ class Controls:
     self.prof.checkpoint("Sent")
 
     self.update_button_timers(CS.buttonEvents)
-    self.CS = CS
+    self.CS_prev = CS
 
   def controlsd_thread(self):
     while True:
