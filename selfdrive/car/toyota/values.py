@@ -76,7 +76,7 @@ CAR_INFO = {
   # Toyota
   CAR.ALPHARD_TSS2: CarInfo("Toyota Alphard 2019-20", "All"),
   CAR.AVALON: CarInfo("Toyota Avalon 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
-  CAR.AVALON_2019: CarInfo("Toyota Avalon 2019-21", "TSS-P"),
+  CAR.AVALON_2019: CarInfo("Toyota Avalon 2019-21", "TSS-P", footnotes=[Footnote.DSU]),
   CAR.AVALONH_2019: CarInfo("Toyota Avalon Hybrid 2019-21", "TSS-P", footnotes=[Footnote.DSU]),
   CAR.AVALON_TSS2: CarInfo("Toyota Avalon 2022", "All"),
   CAR.CAMRY: CarInfo("Toyota Camry 2018-20", "All", "https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
