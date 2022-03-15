@@ -22,11 +22,12 @@ class CarController():
     self.gas = 0
     self.accel = 0
 
-  def update(self, c, CS, frame, actuators, pcm_cancel_cmd, hud_alert,
-             left_line, right_line, lead, left_lane_depart, right_lane_depart):
+  def update(self, CC, CS, frame):
+    actuators = CC.actuators
+    hud_control = CC.hudControl
 
     # gas and brake
-    if CS.CP.enableGasInterceptor and c.longActive:
+    if CS.CP.enableGasInterceptor and CC.longActive:
       MAX_INTERCEPTOR_GAS = 0.5
       # RAV4 has very sensitive gas pedal
       if CS.CP.carFingerprint in (CAR.RAV4, CAR.RAV4H, CAR.HIGHLANDER, CAR.HIGHLANDERH):
@@ -49,7 +50,7 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # Cut steering while we're in a known fault state (2s)
-    if not c.latActive or CS.steer_state in (9, 25):
+    if not CC.latActive or CS.steer_state in (9, 25):
       apply_steer = 0
       apply_steer_req = 0
     else:
@@ -57,7 +58,7 @@ class CarController():
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
-    if not c.enabled and CS.pcm_acc_status:
+    if not CC.enabled and CS.pcm_acc_status:
       pcm_cancel_cmd = 1
 
     # on entering standstill, send standstill request
@@ -89,7 +90,7 @@ class CarController():
 
     # we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
-      lead = lead or CS.out.vEgo < 12.    # at low speed we always assume the lead is present so ACC can be engaged
+      lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
 
       # Lexus IS uses a different cancellation message
       if pcm_cancel_cmd and CS.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
@@ -109,8 +110,8 @@ class CarController():
     # ui mesg is at 1Hz but we send asap if:
     # - there is something to display
     # - there is something to stop displaying
-    fcw_alert = hud_alert == VisualAlert.fcw
-    steer_alert = hud_alert in (VisualAlert.steerRequired, VisualAlert.ldw)
+    fcw_alert = hud_control.visualAlert == VisualAlert.fcw
+    steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
     send_ui = False
     if ((fcw_alert or steer_alert) and not self.alert_active) or \
@@ -121,14 +122,16 @@ class CarController():
       # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
       send_ui = True
 
-    if (frame % 100 == 0 or send_ui):
-      can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, left_line, right_line, left_lane_depart, right_lane_depart, c.enabled))
+    if frame % 100 == 0 or send_ui:
+      can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.left_line,
+                                         hud_control.right_line, hud_control.left_lane_depart,
+                                         hud_control.right_lane_depart, CC.enabled))
 
     if frame % 100 == 0 and CS.CP.enableDsu:
       can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
-    for (addr, cars, bus, fr_step, vl) in STATIC_DSU_MSGS:
+    for addr, cars, bus, fr_step, vl in STATIC_DSU_MSGS:
       if frame % fr_step == 0 and CS.CP.enableDsu and CS.CP.carFingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
 
