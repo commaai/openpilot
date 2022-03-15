@@ -740,7 +740,7 @@ class Controls:
     self.prof.checkpoint("Sent")
 
     self.update_button_timers(CS.buttonEvents)
-    self.CS_prev = CS.as_reader()
+    self.CS_prev = CS
 
   def controlsd_thread(self):
     while True:
