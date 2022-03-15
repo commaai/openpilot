@@ -7,9 +7,9 @@ from sortedcontainers import SortedList
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
+from selfdrive.car.docs import Tier, Column, StarColumns, Footnote, MAKES_GOOD_STEERING_TORQUE, get_footnote, get_star_icon
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.test.test_routes import non_tested_cars
-from selfdrive.car.docs import Tier, Column, StarColumns, Footnote, MAKES_GOOD_STEERING_TORQUE, get_footnote, get_star_icon
 
 
 class Car:
