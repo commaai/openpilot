@@ -25,7 +25,7 @@ CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[No
 
 
 def get_star_icon(variant):
-  return '<a href="#"><img src="assets/icon-star-{}.svg" width="22" /></a>'.format(variant)
+  return f'<a href="#"><img src="assets/icon-star-{variant}.svg" width="22" /></a>'
 
 
 def get_footnote(car_info, column):
