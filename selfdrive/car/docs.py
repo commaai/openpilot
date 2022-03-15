@@ -13,9 +13,9 @@ class Column(Enum):
   MAKE = "Make"
   MODEL = "Model"
   PACKAGE = "Supported Package"
-  LONGITUDINAL = "openpilot Longitudinal"
-  FSR_LONGITUDINAL = "FSR Longitudinal"
-  FSR_STEERING = "FSR Steering"
+  LONGITUDINAL = "openpilot ACC"
+  FSR_LONGITUDINAL = "Stop and Go"
+  FSR_STEERING = "Steer to 0"
   STEERING_TORQUE = "Steering Torque"
   SUPPORTED = "Actively Maintained"
 

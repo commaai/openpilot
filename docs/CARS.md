@@ -36,7 +36,7 @@ How We Rate The Cars
 
 ## Gold Cars
 
-|Make|Model|Supported Package|openpilot Longitudinal|FSR Longitudinal|FSR Steering|Steering Torque|Actively Maintained|
+|Make|Model|Supported Package|openpilot ACC|Stop and Go|Steer to 0|Steering Torque|Actively Maintained|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
 |Genesis|G70 2020|All|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
 |Hyundai|Elantra 2021-22|SCC + LKAS|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
@@ -79,7 +79,7 @@ How We Rate The Cars
 
 ## Silver Cars
 
-|Make|Model|Supported Package|openpilot Longitudinal|FSR Longitudinal|FSR Steering|Steering Torque|Actively Maintained|
+|Make|Model|Supported Package|openpilot ACC|Stop and Go|Steer to 0|Steering Torque|Actively Maintained|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
 |Audi|A3 2014-19|ACC + Lane Assist|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
 |Audi|A3 Sportback e-tron 2017-18|ACC + Lane Assist|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
@@ -145,7 +145,7 @@ How We Rate The Cars
 
 ## Bronze Cars
 
-|Make|Model|Supported Package|openpilot Longitudinal|FSR Longitudinal|FSR Steering|Steering Torque|Actively Maintained|
+|Make|Model|Supported Package|openpilot ACC|Stop and Go|Steer to 0|Steering Torque|Actively Maintained|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
 |Acura|ILX 2016-19|AcuraWatch Plus|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
 |Acura|RDX 2016-18|AcuraWatch Plus|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
