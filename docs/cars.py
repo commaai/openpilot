@@ -44,7 +44,7 @@ class Car:
     if car_info.min_enable_speed is not None:
       min_enable_speed = car_info.min_enable_speed
 
-    stars = [CP.openpilotLongitudinalControl and not CP.radarOffCan, min_enable_speed <= 1e-3, min_steer_speed <= 1e-3,
+    stars = [CP.openpilotLongitudinalControl and not CP.radarOffCan, min_enable_speed <= 0., min_steer_speed <= 0.,
              CP.carName in MAKES_GOOD_STEERING_TORQUE, CP.carFingerprint not in non_tested_cars]
     row = [self.make, self.model, car_info.package, *map(lambda star: "full" if star else "empty", stars)]
 
