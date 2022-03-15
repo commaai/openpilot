@@ -509,8 +509,7 @@ int Localizer::locationd_thread() {
           this->handle_msg(log);
         }
       }
-    }
-    else{
+    } else {
       filterInitialized = sm.allAliveAndValid();
     }
     
@@ -521,7 +520,7 @@ int Localizer::locationd_thread() {
       bool gpsOK = this->isGpsOK();
 
       MessageBuilder msg_builder;
-      kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK, filterValid);
+      kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK, filterInitialized);
       pm.send("liveLocationKalman", bytes.begin(), bytes.size());
 
       if (cnt % 1200 == 0 && gpsOK) {  // once a minute
