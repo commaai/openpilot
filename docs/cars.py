@@ -60,7 +60,7 @@ class CarRow:
         row[row_idx] = get_star_icon(row[row_idx])
 
       if footnote is not None:
-        row[row_idx] += "<sup>{}</sup>".format(ALL_FOOTNOTES[footnote])
+        row[row_idx] += "[<sup>{}</sup>](#Footnotes)".format(ALL_FOOTNOTES[footnote])
 
     return row, star_count
 
@@ -93,7 +93,7 @@ def get_tiered_cars():
 
 
 def generate_cars_md(tiered_cars):
-  template_fn = os.path.join(BASEDIR, "docs", "CARS_template.md")
+  template_fn = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True)
 
