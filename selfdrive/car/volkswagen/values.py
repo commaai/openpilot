@@ -105,6 +105,8 @@ class Footnote(Enum):
     Column.MODEL)
 
 
+GOOD_TORQUE = True
+
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.ARTEON_MK1: CarInfo("Volkswagen Arteon 2018, 2021", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),
   CAR.ATLAS_MK1: CarInfo("Volkswagen Atlas 2018-19, 2022", "Driver Assistance", footnotes=[Footnote.VW_HARNESS]),

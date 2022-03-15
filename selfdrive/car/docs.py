@@ -23,8 +23,6 @@ class Column(Enum):
 StarColumns = list(Column)[3:]
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
-MAKES_GOOD_STEERING_TORQUE = ["toyota", "hyundai", "volkswagen"]
-
 
 def get_star_icon(variant):
   return '<a href="#"><img src="assets/icon-star-{}.svg" width="22" /></a>'.format(variant)

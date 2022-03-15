@@ -7,7 +7,7 @@ from sortedcontainers import SortedList
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
-from selfdrive.car.docs import Tier, Column, StarColumns, MAKES_GOOD_STEERING_TORQUE, get_footnote, get_star_icon
+from selfdrive.car.docs import Tier, Column, StarColumns, get_footnote, get_star_icon
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.car.tests.routes import non_tested_cars
 
@@ -23,7 +23,16 @@ def get_all_footnotes():
   return all_footnotes
 
 
+def get_makes_good_torque():
+  makes_good_torque = []
+  for make, good_torque in get_interface_attr("GOOD_TORQUE").items():
+    if good_torque:
+      makes_good_torque.append(make)
+  return makes_good_torque
+
+
 ALL_FOOTNOTES = get_all_footnotes()
+MAKES_GOOD_STEERING_TORQUE = get_makes_good_torque()
 
 
 class CarRow:

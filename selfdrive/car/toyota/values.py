@@ -86,6 +86,8 @@ class Footnote(Enum):
     Column.STEERING_TORQUE, star="half")
 
 
+GOOD_TORQUE = True
+
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   # Toyota
   CAR.ALPHARD_TSS2: CarInfo("Toyota Alphard 2019-20", "All"),

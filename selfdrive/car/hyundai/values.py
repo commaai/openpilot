@@ -71,6 +71,8 @@ class CAR:
   GENESIS_G90 = "GENESIS G90 2017"
 
 
+GOOD_TORQUE = True
+
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.ELANTRA: CarInfo("Hyundai Elantra 2017-19", "SCC + LKAS", min_enable_speed=19 * CV.MPH_TO_MS),
   CAR.ELANTRA_2021: CarInfo("Hyundai Elantra 2021-22", "SCC + LKAS", "https://youtu.be/_EdYQtV52-c"),
