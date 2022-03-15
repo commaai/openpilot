@@ -2,6 +2,7 @@ from enum import IntFlag
 
 from cereal import car
 from selfdrive.car import CarInfo, dbc_dict
+from selfdrive.car.docs import Footnote
 from selfdrive.config import Conversions as CV
 
 Ecu = car.CarParams.Ecu
@@ -95,13 +96,11 @@ CAR_INFO = {
     CarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   ],
   CAR.ACCORDH: CarInfo("Honda Accord Hybrid 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS),
-  CAR.CIVIC: CarInfo("Honda Civic Sedan/Coupe 2016-18", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.CIVIC: CarInfo("Honda Civic 2016-18", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.CIVIC_BOSCH: [
-    CarInfo("Honda Civic Sedan/Coupe 2019-20", "All", "https://www.youtube.com/watch?v=4Iz1Mz5LGF8", min_steer_speed=2. * CV.MPH_TO_MS),
+    CarInfo("Honda Civic 2019-20", "All", "https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS),
     CarInfo("Honda Civic Hatchback 2017-21", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
-  # TODO: same as sedan/coupe, but no ALC under 12. make sure diesel exception is in readme
-  # CAR.CIVIC_BOSCH_DIESEL: CarInfo("Honda Civic Sedan 1.6 DIESEL", "All"),
   CAR.ACURA_ILX: CarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),
   CAR.CRV: CarInfo("Honda CR-V 2015-16", "Touring", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.CRV_5G: CarInfo("Honda CR-V 2017-21", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),

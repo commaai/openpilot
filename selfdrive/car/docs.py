@@ -36,6 +36,9 @@ class Footnote(Enum):
   CAMRY = CarFootnote(
     "28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
     Column.FSR_LONGITUDINAL)
+  CIVIC_DIESEL = CarFootnote(
+    "2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph.",
+    Column.FSR_STEERING)
   OBD_II = CarFootnote(
     "Requires an [OBD-II](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness]" +
     "(https://github.com/commaai/openpilot/wiki/GM#hardware). NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).",
