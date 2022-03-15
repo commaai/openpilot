@@ -24,7 +24,6 @@ class Column(Enum):
 StarColumns = list(Column)[3:]
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
-# TODO: which other makes?
 MAKES_GOOD_STEERING_TORQUE = ["toyota", "hyundai", "volkswagen"]
 
 
