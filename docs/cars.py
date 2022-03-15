@@ -38,7 +38,7 @@ class CarRow:
     min_steer_speed = CP.minSteerSpeed
     if car_info.min_steer_speed is not None:
       min_steer_speed = car_info.min_steer_speed
-      assert CP.minSteerSpeed == 0, "Minimum steer speed set in both CarInfo and CarParams for {}".format(CP.carFingerprint)
+      assert CP.minSteerSpeed == 0, f"Minimum steer speed set in both CarInfo and CarParams for {CP.carFingerprint}"
 
     min_enable_speed = CP.minEnableSpeed
     if car_info.min_enable_speed is not None:
@@ -60,7 +60,7 @@ class CarRow:
         row[row_idx] = get_star_icon(row[row_idx])
 
       if footnote is not None:
-        row[row_idx] += "[<sup>{}</sup>](#Footnotes)".format(ALL_FOOTNOTES[footnote])
+        row[row_idx] += f"[<sup>{ALL_FOOTNOTES[footnote]}</sup>](#Footnotes)"
 
     return row, star_count
 

@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import Dict, List, Union
 
 from cereal import car
-from selfdrive.car import CarInfo, dbc_dict
 from common.conversions import Conversions as CV
+from selfdrive.car import CarInfo, dbc_dict
 Ecu = car.CarParams.Ecu
 
 # Steer torque limits
