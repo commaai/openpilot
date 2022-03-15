@@ -1,6 +1,8 @@
+from enum import Enum
+
 from cereal import car
 from selfdrive.car import CarInfo, dbc_dict
-from selfdrive.car.docs import Footnote
+from selfdrive.car.docs import CarFootnote, Column
 Ecu = car.CarParams.Ecu
 
 
@@ -49,6 +51,13 @@ class CAR:
   ACADIA = "GMC ACADIA DENALI 2018"
   BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
+
+
+class Footnote(Enum):
+  OBD_II = CarFootnote(
+    "Requires an [OBD-II](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness]" +
+    "(https://github.com/commaai/openpilot/wiki/GM#hardware). NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).",
+    Column.MODEL)
 
 
 CAR_INFO = {

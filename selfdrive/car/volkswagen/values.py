@@ -1,9 +1,10 @@
 from collections import defaultdict
+from enum import Enum
 from typing import Dict
 
 from cereal import car
 from selfdrive.car import CarInfo, dbc_dict
-from selfdrive.car.docs import Footnote
+from selfdrive.car.docs import CarFootnote, Column
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -87,6 +88,21 @@ class CAR:
   SKODA_SCALA_MK1 = "SKODA SCALA 1ST GEN"           # Chassis NW, Mk1 Skoda Scala and Skoda Kamiq
   SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"         # Chassis 3V/NP, Mk3 Skoda Superb and variants
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
+
+
+class Footnote(Enum):
+  KAMIQ = CarFootnote(
+    "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
+    Column.MODEL)
+  PASSAT = CarFootnote(
+    "Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform.",
+    Column.MODEL)
+  VW_HARNESS = CarFootnote(
+    "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
+    "store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black " +
+    "(older design) or light brown (newer design). For the newer design, in the interim, choose \"VW J533 Development\" " +
+    "from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.",
+    Column.MODEL)
 
 
 CAR_INFO = {

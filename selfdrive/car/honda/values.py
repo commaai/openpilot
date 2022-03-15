@@ -1,8 +1,8 @@
-from enum import IntFlag
+from enum import Enum, IntFlag
 
 from cereal import car
 from selfdrive.car import CarInfo, dbc_dict
-from selfdrive.car.docs import Footnote
+from selfdrive.car.docs import CarFootnote, Column
 from selfdrive.config import Conversions as CV
 
 Ecu = car.CarParams.Ecu
@@ -88,6 +88,12 @@ class CAR:
   RIDGELINE = "HONDA RIDGELINE 2017"
   INSIGHT = "HONDA INSIGHT 2019"
   HONDA_E = "HONDA E 2020"
+
+
+class Footnote(Enum):
+  CIVIC_DIESEL = CarFootnote(
+    "2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph.",
+    Column.FSR_STEERING)
 
 
 CAR_INFO = {

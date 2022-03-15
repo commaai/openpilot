@@ -7,9 +7,23 @@ from sortedcontainers import SortedList
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
-from selfdrive.car.docs import Tier, Column, StarColumns, Footnote, MAKES_GOOD_STEERING_TORQUE, get_footnote, get_star_icon
+from selfdrive.car.docs import Tier, Column, StarColumns, MAKES_GOOD_STEERING_TORQUE, get_footnote, get_star_icon
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.test.test_routes import non_tested_cars
+
+
+def get_all_footnotes():
+  all_footnotes = {}
+  i = 1
+  for _, footnotes in get_interface_attr("Footnote").items():
+    if footnotes is not None:
+      for footnote in footnotes:
+        all_footnotes[footnote] = i
+        i += 1
+  return all_footnotes
+
+
+ALL_FOOTNOTES = get_all_footnotes()
 
 
 class Car:
@@ -46,8 +60,7 @@ class Car:
         row[row_idx] = get_star_icon(row[row_idx])
 
       if footnote is not None:
-        superscript_number = list(Footnote).index(footnote) + 1
-        row[row_idx] += "<sup>{}</sup>".format(superscript_number)
+        row[row_idx] += "<sup>{}</sup>".format(ALL_FOOTNOTES[footnote])
 
     return row, star_count
 
@@ -84,7 +97,7 @@ def generate_cars_md(tiered_cars):
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True)
 
-  footnotes = map(lambda fn: fn.value.text, Footnote)
+  footnotes = map(lambda fn: fn.value.text, ALL_FOOTNOTES)
   return template.render(tiers=tiered_cars, columns=[column.value for column in Column], footnotes=footnotes)
 
 
