@@ -17,7 +17,7 @@ from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.test.test_routes import routes, non_tested_cars
+from selfdrive.car.tests.routes import routes, non_tested_cars
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 
@@ -28,11 +28,6 @@ PandaType = log.PandaState.PandaType
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
-
-# TODO: get updated routes for these cars
-ignore_can_valid = [
-  HYUNDAI.SANTA_FE,
-]
 
 ignore_addr_checks_valid = [
   GM.BUICK_REGAL,
@@ -135,8 +130,7 @@ class TestCarModel(unittest.TestCase):
       if i > 200:
         can_invalid_cnt += not CS.canValid
 
-    if self.car_model not in ignore_can_valid:
-      self.assertLess(can_invalid_cnt, 50)
+    self.assertLess(can_invalid_cnt, 50)
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"

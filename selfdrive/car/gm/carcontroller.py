@@ -1,11 +1,11 @@
 from cereal import car
+from common.conversions import Conversions as CV
 from common.realtime import DT_CTRL
 from common.numpy_fast import interp
-from selfdrive.config import Conversions as CV
+from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams
-from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -27,8 +27,7 @@ class CarController():
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
 
-  def update(self, c, enabled, CS, frame, actuators,
-             hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
+  def update(self, c, CS, frame, actuators, hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
 
@@ -41,7 +40,7 @@ class CarController():
     if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
       self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
     elif (frame % P.STEER_STEP) == 0:
-      lkas_enabled = c.active and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED
+      lkas_enabled = c.latActive and CS.out.vEgo > P.MIN_STEER_SPEED
       if lkas_enabled:
         new_steer = int(round(actuators.steer * P.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
@@ -58,7 +57,7 @@ class CarController():
 
     # Gas/regen and brakes - all at 25Hz
     if (frame % 4) == 0:
-      if not c.active:
+      if not c.longActive:
         # Stock ECU sends max regen when not enabled.
         self.apply_gas = P.MAX_ACC_REGEN
         self.apply_brake = 0
@@ -68,15 +67,15 @@ class CarController():
 
       idx = (frame // 4) % 4
 
-      at_full_stop = enabled and CS.out.standstill
-      near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
+      at_full_stop = c.longActive and CS.out.standstill
+      near_stop = c.longActive and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
       can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
-      can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, enabled, at_full_stop))
+      can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, c.longActive, at_full_stop))
 
     # Send dashboard UI commands (ACC status), 25hz
     if (frame % 4) == 0:
       send_fcw = hud_alert == VisualAlert.fcw
-      can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, enabled, hud_v_cruise * CV.MS_TO_KPH, hud_show_car, send_fcw))
+      can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, c.longActive, hud_v_cruise * CV.MS_TO_KPH, hud_show_car, send_fcw))
 
     # Radar needs to know current speed and yaw rate (50hz),
     # and that ADAS is alive (10hz)

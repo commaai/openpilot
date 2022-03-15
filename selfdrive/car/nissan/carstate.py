@@ -3,7 +3,7 @@ from collections import deque
 from cereal import car
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 

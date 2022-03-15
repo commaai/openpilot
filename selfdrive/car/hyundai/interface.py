@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from common.params import Params
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.car.hyundai.values import CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
@@ -32,7 +32,7 @@ class CarInterface(CarInterfaceBase):
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
-    # added to selfdrive/test/test_routes, we can remove it from this list.
+    # added to selfdrive/car/tests/routes.py, we can remove it from this list.
     ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, CAR.ELANTRA_GT_I30}
 
     ret.steerActuatorDelay = 0.1  # Default delay
@@ -302,8 +302,6 @@ class CarInterface(CarInterfaceBase):
 
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
-    if self.CS.park_brake:
-      events.add(EventName.parkBrake)
 
     if self.CS.CP.openpilotLongitudinalControl:
       buttonEvents = []
@@ -352,8 +350,8 @@ class CarInterface(CarInterfaceBase):
 
   def apply(self, c):
     hud_control = c.hudControl
-    ret = self.CC.update(c, c.enabled, self.CS, self.frame, c.actuators,
-                         c.cruiseControl.cancel, hud_control.visualAlert, hud_control.setSpeed, hud_control.leftLaneVisible,
-                         hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart)
+    ret = self.CC.update(c, self.CS, self.frame, c.actuators, c.cruiseControl.cancel, hud_control.visualAlert,
+                         hud_control.setSpeed, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                         hud_control.leftLaneDepart, hud_control.rightLaneDepart)
     self.frame += 1
     return ret

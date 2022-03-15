@@ -12,8 +12,7 @@ Once you've cloned and are in openpilot, this command will download PlotJuggler 
 
 ```
 $ ./juggle.py -h
-usage: juggle.py [-h] [--demo] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [--install]
-                 [route_or_segment_name] [segment_count]
+usage: juggle.py [-h] [--demo] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [--install] [--dbc DBC] [route_or_segment_name] [segment_count]
 
 A helper to run PlotJuggler on openpilot routes
 
@@ -23,13 +22,15 @@ positional arguments:
   segment_count         The number of segments to plot (default: None)
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --demo             Use the demo route instead of providing one (default: False)
-  --qlog             Use qlogs (default: False)
-  --can              Parse CAN data (default: False)
-  --stream           Start PlotJuggler in streaming mode (default: False)
-  --layout [LAYOUT]  Run PlotJuggler with a pre-defined layout (default: None)
-  --install          Install or update PlotJuggler + plugins (default: False)
+  -h, --help            show this help message and exit
+  --demo                Use the demo route instead of providing one (default: False)
+  --qlog                Use qlogs (default: False)
+  --can                 Parse CAN data (default: False)
+  --stream              Start PlotJuggler in streaming mode (default: False)
+  --layout [LAYOUT]     Run PlotJuggler with a pre-defined layout (default: None)
+  --install             Install or update PlotJuggler + plugins (default: False)
+  --dbc DBC             Set the DBC name to load for parsing CAN data. If not set, the DBC will be
+                        automatically inferred from the logs. (default: None)
 ```
 
 Examples using route name:

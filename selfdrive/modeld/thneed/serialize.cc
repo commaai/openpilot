@@ -63,14 +63,14 @@ void Thneed::load(const char *filename) {
 
   map<string, cl_program> g_programs;
   for (const auto &[name, source] : jdat["programs"].object_items()) {
-    if (record & THNEED_DEBUG) printf("building %s with size %zu\n", name.c_str(), source.string_value().size());
+    if (debug >= 1) printf("building %s with size %zu\n", name.c_str(), source.string_value().size());
     g_programs[name] = cl_program_from_source(context, device_id, source.string_value());
   }
 
   for (auto &obj : jdat["binaries"].array_items()) {
     string name = obj["name"].string_value();
     size_t length = obj["length"].int_value();
-    if (record & THNEED_DEBUG) printf("binary %s with size %zu\n", name.c_str(), length);
+    if (debug >= 1) printf("binary %s with size %zu\n", name.c_str(), length);
     g_programs[name] = cl_program_from_binary(context, device_id, (const uint8_t*)&buf[ptr], length);
     ptr += length;
   }

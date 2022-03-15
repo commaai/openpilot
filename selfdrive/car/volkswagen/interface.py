@@ -186,8 +186,6 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic])
 
     # Vehicle health and operation safety checks
-    if self.CS.parkingBrakeSet:
-      events.add(EventName.parkBrake)
     if self.CS.tsk_status in (6, 7):
       events.add(EventName.accFaulted)
 
@@ -211,7 +209,7 @@ class CarInterface(CarInterfaceBase):
 
   def apply(self, c):
     hud_control = c.hudControl
-    ret = self.CC.update(c, c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
+    ret = self.CC.update(c, self.CS, self.frame, self.ext_bus, c.actuators,
                          hud_control.visualAlert,
                          hud_control.leftLaneVisible,
                          hud_control.rightLaneVisible,
