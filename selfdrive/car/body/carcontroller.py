@@ -1,8 +1,8 @@
 from cereal import car
 from common.numpy_fast import clip, interp
-from selfdrive.car.nissan import nissancan
+from selfdrive.car.body import bodycan
 from opendbc.can.packer import CANPacker
-from selfdrive.car.nissan.values import CAR, CarControllerParams
+from selfdrive.car.body.values import CAR, CarControllerParams
 
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -58,25 +58,25 @@ class CarController():
     self.last_angle = apply_angle
 
     if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA) and cruise_cancel:
-        can_sends.append(nissancan.create_acc_cancel_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, frame))
+        can_sends.append(bodycan.create_acc_cancel_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, frame))
 
     # TODO: Find better way to cancel!
     # For some reason spamming the cancel button is unreliable on the Leaf
     # We now cancel by making propilot think the seatbelt is unlatched,
     # this generates a beep and a warning message every time you disengage
     if self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC) and frame % 2 == 0:
-        can_sends.append(nissancan.create_cancel_msg(self.packer, CS.cancel_msg, cruise_cancel))
+        can_sends.append(bodycan.create_cancel_msg(self.packer, CS.cancel_msg, cruise_cancel))
 
-    can_sends.append(nissancan.create_steering_control(
+    can_sends.append(bodycan.create_steering_control(
         self.packer, apply_angle, frame, c.enabled, self.lkas_max_torque))
 
     if lkas_hud_msg and lkas_hud_info_msg:
       if frame % 2 == 0:
-        can_sends.append(nissancan.create_lkas_hud_msg(
+        can_sends.append(bodycan.create_lkas_hud_msg(
           self.packer, lkas_hud_msg, c.enabled, left_line, right_line, left_lane_depart, right_lane_depart))
 
       if frame % 50 == 0:
-        can_sends.append(nissancan.create_lkas_hud_info_msg(
+        can_sends.append(bodycan.create_lkas_hud_info_msg(
           self.packer, lkas_hud_info_msg, steer_hud_alert
         ))
 
