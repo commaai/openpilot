@@ -81,7 +81,7 @@ def get_tiered_cars():
 
       # Some candidates have multiple variants
       if not isinstance(car_info, list):
-        car_info = [car_info]
+        car_info = (car_info, )
 
       for _car_info in car_info:
         car = CarRow(_car_info, CP)
