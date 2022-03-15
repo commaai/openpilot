@@ -50,9 +50,24 @@ OFFROAD_DANGER_TEMP = 79.5 if TICI else 70.0
 
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 
+tz_by_type: Optional[Dict[str, int]] = None
+def populate_tz_by_type():
+  global tz_by_type
+  tz_by_type = {}
+  for n in os.listdir("/sys/devices/virtual/thermal"):
+    if not n.startswith("thermal_zone"):
+      continue
+    with open(os.path.join("/sys/devices/virtual/thermal", n, "type")) as f:
+      tz_by_type[f.read().strip()] = int(n.lstrip("thermal_zone"))
+
 def read_tz(x):
   if x is None:
     return 0
+
+  if isinstance(x, str):
+    if tz_by_type is None:
+      populate_tz_by_type()
+    x = tz_by_type[x]
 
   try:
     with open(f"/sys/devices/virtual/thermal/thermal_zone{x}/temp") as f:

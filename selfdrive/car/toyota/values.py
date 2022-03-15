@@ -3,9 +3,9 @@ from enum import Enum, IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
+from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict, CarInfo
 from selfdrive.car.docs import CarFootnote, Column
-from selfdrive.config import Conversions as CV
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS

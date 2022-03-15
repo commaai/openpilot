@@ -2,7 +2,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import CarInfo, dbc_dict
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 Ecu = car.CarParams.Ecu
 
 # Steer torque limits
