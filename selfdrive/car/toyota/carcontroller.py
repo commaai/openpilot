@@ -10,8 +10,9 @@ from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-class CarController():
+class CarController:
   def __init__(self, dbc_name, CP, VM):
+    self.frame = 0
     self.last_steer = 0
     self.alert_active = False
     self.last_standstill = False
@@ -22,9 +23,10 @@ class CarController():
     self.gas = 0
     self.accel = 0
 
-  def update(self, CC, CS, frame):
+  def update(self, CC, CS):
     actuators = CC.actuators
     hud_control = CC.hudControl
+    pcm_cancel_cmd = CC.cruiseControl.cancel
 
     # gas and brake
     if CS.CP.enableGasInterceptor and CC.longActive:
@@ -79,17 +81,17 @@ class CarController():
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
-    can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
-    if frame % 2 == 0 and CS.CP.carFingerprint in TSS2_CAR:
-      can_sends.append(create_lta_steer_command(self.packer, 0, 0, frame // 2))
+    can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, self.frame))
+    if self.frame % 2 == 0 and CS.CP.carFingerprint in TSS2_CAR:
+      can_sends.append(create_lta_steer_command(self.packer, 0, 0, self.frame // 2))
 
     # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
-    # if frame % 2 == 0:
-    #   can_sends.append(create_steer_command(self.packer, 0, 0, frame // 2))
-    #   can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg, apply_steer_req, frame // 2))
+    # if self.frame % 2 == 0:
+    #   can_sends.append(create_steer_command(self.packer, 0, 0, self.frame // 2))
+    #   can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg, apply_steer_req, self.frame // 2))
 
     # we can spam can to cancel the system even if we are using lat only control
-    if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
+    if (self.frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
       lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
 
       # Lexus IS uses a different cancellation message
@@ -101,10 +103,10 @@ class CarController():
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type))
 
-    if frame % 2 == 0 and CS.CP.enableGasInterceptor and CS.CP.openpilotLongitudinalControl:
+    if self.frame % 2 == 0 and CS.CP.enableGasInterceptor and CS.CP.openpilotLongitudinalControl:
       # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
       # This prevents unexpected pedal range rescaling
-      can_sends.append(create_gas_interceptor_command(self.packer, interceptor_gas_cmd, frame // 2))
+      can_sends.append(create_gas_interceptor_command(self.packer, interceptor_gas_cmd, self.frame // 2))
       self.gas = interceptor_gas_cmd
 
     # ui mesg is at 1Hz but we send asap if:
@@ -122,17 +124,17 @@ class CarController():
       # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
       send_ui = True
 
-    if frame % 100 == 0 or send_ui:
-      can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.left_line,
-                                         hud_control.right_line, hud_control.left_lane_depart,
-                                         hud_control.right_lane_depart, CC.enabled))
+    if self.frame % 100 == 0 or send_ui:
+      can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
+                                         hud_control.rightLaneVisible, hud_control.leftLaneDepart,
+                                         hud_control.rightLaneDepart, CC.enabled))
 
-    if frame % 100 == 0 and CS.CP.enableDsu:
+    if self.frame % 100 == 0 and CS.CP.enableDsu:
       can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
     for addr, cars, bus, fr_step, vl in STATIC_DSU_MSGS:
-      if frame % fr_step == 0 and CS.CP.enableDsu and CS.CP.carFingerprint in cars:
+      if self.frame % fr_step == 0 and CS.CP.enableDsu and CS.CP.carFingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
 
     new_actuators = actuators.copy()
@@ -140,4 +142,5 @@ class CarController():
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
 
+    self.frame += 1
     return new_actuators, can_sends
