@@ -15,8 +15,8 @@ How We Rate The Cars
     <th width="50%">openpilot Longitudinal</th>
     <th>Full-Speed Range (FSR) Longitudinal</th>
   </tr>
-    <td valign="top"><img style="float: left;" src="assets/icon-star-full.png" width="22" /> - openpilot is able to control gas and brakes<br/><img style="float: left;" src="assets/icon-star-half.png" width="22" /> - openpilot is able to control the gas and brakes with some restrictions<br/><img style="float: left;" src="assets/icon-star-empty.png" width="22" /> - The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system</td>
-    <td valign="top"><img style="float: left;" src="assets/icon-star-full.png" width="22" /> - Adaptive Cruise Control (ACC) operates down to 0 mph<br/><img style="float: left;" src="assets/icon-star-empty.png" width="22" /> - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.</td>
+    <td valign="top"><img style="float: left;" src="assets/icon-star-full.svg" width="22" /> - openpilot is able to control gas and brakes<br/><img style="float: left;" src="assets/icon-star-half.svg" width="22" /> - openpilot is able to control the gas and brakes with some restrictions<br/><img style="float: left;" src="assets/icon-star-empty.svg" width="22" /> - The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system</td>
+    <td valign="top"><img style="float: left;" src="assets/icon-star-full.svg" width="22" /> - Adaptive Cruise Control (ACC) operates down to 0 mph<br/><img style="float: left;" src="assets/icon-star-empty.svg" width="22" /> - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.</td>
   </tr>
 </table>
 
@@ -25,8 +25,8 @@ How We Rate The Cars
     <th width="50%">Full-Speed Range (FSR) Steering</th>
     <th>Steering Torque</th>
   </tr>
-    <td valign="top"><img style="float: left;" src="assets/icon-star-full.png" width="22" /> - openpilot can control the steering wheel down to 0 mph<br/><img style="float: left;" src="assets/icon-star-empty.png" width="22" /> - No steering control below certain speeds</td>
-    <td valign="top"><img style="float: left;" src="assets/icon-star-full.png" width="22" /> - Car has enough steering torque for comfortable highway driving<br/><img style="float: left;" src="assets/icon-star-empty.png" width="22" /> - Limited ability to make turns</td>
+    <td valign="top"><img style="float: left;" src="assets/icon-star-full.svg" width="22" /> - openpilot can control the steering wheel down to 0 mph<br/><img style="float: left;" src="assets/icon-star-empty.svg" width="22" /> - No steering control below certain speeds</td>
+    <td valign="top"><img style="float: left;" src="assets/icon-star-full.svg" width="22" /> - Car has enough steering torque for comfortable highway driving<br/><img style="float: left;" src="assets/icon-star-empty.svg" width="22" /> - Limited ability to make turns</td>
   </tr>
 </table>
 
@@ -35,7 +35,7 @@ How We Rate The Cars
     <th>Actively Maintained</th>
     <td style="visibility:hidden;" width="50%"></td>
   </tr>
-    <td valign="top"><img style="float: left;" src="assets/icon-star-full.png" width="22" /> - Mainline software support, harness hardware sold by comma, lots of users, primary development target<br/><img style="float: left;" src="assets/icon-star-empty.png" width="22" /> - Low user count, community maintained, harness hardware sold by comma</td>
+    <td valign="top"><img style="float: left;" src="assets/icon-star-full.svg" width="22" /> - Mainline software support, harness hardware sold by comma, lots of users, primary development target<br/><img style="float: left;" src="assets/icon-star-empty.svg" width="22" /> - Low user count, community maintained, harness hardware sold by comma</td>
   </tr>
 </table>
 
@@ -113,7 +113,7 @@ How We Rate The Cars
 |Lexus|RX Hybrid 2016-19|All|<img src="assets/icon-star-half.svg" width="22" /><sup>1</sup>|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
 |SEAT|Ateca 2018|Driver Assistance|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
 |SEAT|Leon 2014-20|Driver Assistance|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
-|Toyota|Avalon 2019-21|TSS-P|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
+|Toyota|Avalon 2019-21|TSS-P|<img src="assets/icon-star-half.svg" width="22" /><sup>1</sup>|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
 |Toyota|Avalon Hybrid 2019-21|TSS-P|<img src="assets/icon-star-half.svg" width="22" /><sup>1</sup>|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
 |Toyota|C-HR 2017-21|All|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
 |Toyota|C-HR Hybrid 2017-19|All|<img src="assets/icon-star-empty.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|<img src="assets/icon-star-full.svg" width="22" />|
