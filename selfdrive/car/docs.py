@@ -27,7 +27,7 @@ MAKES_GOOD_STEERING_TORQUE = ["toyota", "hyundai", "volkswagen"]
 
 
 def get_star_icon(variant):
-  return '<img src="assets/icon-star-{}.svg" width="22" />'.format(variant)
+  return '<a href="#"><img src="assets/icon-star-{}.svg" width="22" /></a>'.format(variant)
 
 
 def get_footnote(car_info, column):
