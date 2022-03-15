@@ -82,7 +82,7 @@ def get_tiered_cars():
 def generate_cars_md(tiered_cars):
   template_fn = os.path.join(BASEDIR, "docs", "CARS_template.md")
   with open(template_fn, "r") as f:
-    template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)  # TODO: remove lstrip_blocks if not needed
+    template = jinja2.Template(f.read(), trim_blocks=True)
 
   footnotes = map(lambda fn: fn.value.text, Footnote)
   return template.render(tiers=tiered_cars, columns=[column.value for column in Column], footnotes=footnotes)
