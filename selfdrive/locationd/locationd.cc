@@ -498,11 +498,11 @@ int Localizer::locationd_thread() {
   SubMaster sm(service_list, nullptr, { "gpsLocationExternal" });
 
   uint64_t cnt = 0;
-  bool filterValid = false;
+  bool filterInitialized = false;
 
   while (!do_exit) {
     sm.update();
-    if (filterValid){
+    if (filterInitialized){
       for (const char* service : service_list) {
         if (sm.updated(service) && sm.valid(service)){
           const cereal::Event::Reader log = sm[service];
@@ -511,7 +511,7 @@ int Localizer::locationd_thread() {
       }
     }
     else{
-      filterValid = sm.allAliveAndValid();
+      filterInitialized = sm.allAliveAndValid();
     }
     
     if (sm.updated("cameraOdometry")) {
