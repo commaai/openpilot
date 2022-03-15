@@ -1,4 +1,6 @@
 from collections import namedtuple
+from typing import Dict, List, Union
+
 from selfdrive.car import CarInfo, dbc_dict
 from cereal import car
 
@@ -11,7 +13,7 @@ class CAR:
   AP2_MODELS = 'TESLA AP2 MODEL S'
 
 
-CAR_INFO = {
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", "All"),
   CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", "All"),
 }

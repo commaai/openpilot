@@ -1,4 +1,5 @@
 from enum import Enum, IntFlag
+from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import CarInfo, dbc_dict
@@ -96,7 +97,7 @@ class Footnote(Enum):
     Column.FSR_STEERING)
 
 
-CAR_INFO = {
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.ACCORD: [
     CarInfo("Honda Accord 2018-21", "All", "https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
     CarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),

@@ -1,5 +1,6 @@
 # functions common among cars
-from collections import namedtuple
+from enum import Enum
+from typing import Optional, List, NamedTuple
 
 from cereal import car
 from common.numpy_fast import clip
@@ -7,7 +8,14 @@ from common.numpy_fast import clip
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
 
-CarInfo = namedtuple('CarInfo', ['name', 'package', 'video_link', 'footnotes', 'min_steer_speed', 'min_enable_speed'], defaults=[None, None, None, None])
+
+class CarInfo(NamedTuple):
+  name: str
+  package: str
+  video_link: Optional[str] = None
+  footnotes: Optional[List[Enum]] = None
+  min_steer_speed: Optional[float] = None
+  min_enable_speed: Optional[float] = None
 
 
 def gen_empty_fingerprint():

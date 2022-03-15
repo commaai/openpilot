@@ -1,3 +1,5 @@
+from typing import Dict, List, Union
+
 from selfdrive.car import CarInfo, dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -19,7 +21,7 @@ class CAR:
   JEEP_CHEROKEE_2019 = "JEEP GRAND CHEROKEE 2019" # includes 2020 Trailhawk
 
 
-CAR_INFO = {
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.PACIFICA_2017_HYBRID: CarInfo("Chrysler Pacifica Hybrid 2017-18", "Adaptive Cruise"),
   CAR.PACIFICA_2019_HYBRID: CarInfo("Chrysler Pacifica Hybrid 2019-21", "Adaptive Cruise"),
   CAR.PACIFICA_2018: CarInfo("Chrysler Pacifica 2017-18", "Adaptive Cruise"),

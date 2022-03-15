@@ -1,3 +1,5 @@
+from typing import Dict, List, Union
+
 from selfdrive.car import CarInfo, dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -24,7 +26,7 @@ class CAR:
   CX5_2022 = "MAZDA CX-5 2022"
 
 
-CAR_INFO = {
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.CX5: CarInfo("Mazda CX-5 2017, 2019", "All"),  # FIXME: verify years for first 4
   CAR.CX9: CarInfo("Mazda CX-9 2016-17", "All"),
   CAR.MAZDA3: CarInfo("Mazda 3 2017", "All"),

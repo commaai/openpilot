@@ -1,5 +1,6 @@
 from collections import defaultdict
 from enum import Enum, IntFlag
+from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict, CarInfo
@@ -85,7 +86,7 @@ class Footnote(Enum):
     Column.STEERING_TORQUE, star="half")
 
 
-CAR_INFO = {
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   # Toyota
   CAR.ALPHARD_TSS2: CarInfo("Toyota Alphard 2019-20", "All"),
   CAR.AVALON: CarInfo("Toyota Avalon 2016-18", "TSS-P", footnotes=[Footnote.DSU]),

@@ -1,3 +1,5 @@
+from typing import Dict, List, Union
+
 from cereal import car
 from selfdrive.car import CarInfo, dbc_dict
 from selfdrive.config import Conversions as CV
@@ -69,7 +71,7 @@ class CAR:
   GENESIS_G90 = "GENESIS G90 2017"
 
 
-CAR_INFO = {
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.ELANTRA: CarInfo("Hyundai Elantra 2017-19", "SCC + LKAS", min_enable_speed=19 * CV.MPH_TO_MS),
   CAR.ELANTRA_2021: CarInfo("Hyundai Elantra 2021-22", "SCC + LKAS", "https://youtu.be/_EdYQtV52-c"),
   CAR.ELANTRA_HEV_2021: CarInfo("Hyundai Elantra Hybrid 2021", "SCC + LKAS", "https://youtu.be/_EdYQtV52-c"),
