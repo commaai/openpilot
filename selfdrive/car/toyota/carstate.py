@@ -31,6 +31,7 @@ class CarState(CarStateBase):
     ret.doorOpen = any([cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FR"],
                         cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RR"]])
     ret.seatbeltUnlatched = cp.vl["BODY_CONTROL_STATE"]["SEATBELT_DRIVER_UNLATCHED"] != 0
+    ret.parkingBrake = cp.vl["BODY_CONTROL_STATE"]["PARKING_BRAKE"] == 1
 
     ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
     ret.brakeHoldActive = cp.vl["ESP_CONTROL"]["BRAKE_HOLD_ACTIVE"] == 1
@@ -140,6 +141,7 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_RL", "BODY_CONTROL_STATE"),
       ("DOOR_OPEN_RR", "BODY_CONTROL_STATE"),
       ("SEATBELT_DRIVER_UNLATCHED", "BODY_CONTROL_STATE"),
+      ("PARKING_BRAKE", "BODY_CONTROL_STATE"),
       ("TC_DISABLED", "ESP_CONTROL"),
       ("BRAKE_HOLD_ACTIVE", "ESP_CONTROL"),
       ("STEER_FRACTION", "STEER_ANGLE_SENSOR"),
