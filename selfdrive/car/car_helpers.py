@@ -59,7 +59,7 @@ def load_interfaces(brand_names):
   return ret
 
 
-def get_interface_attr(attr: str, default: Optional[Any]=None) -> Dict[str, Any]:
+def get_interface_attr(attr: str, default: Optional = None) -> Dict[str, Any]:
   # returns given attribute from each interface
   brand_names = {}
   for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:

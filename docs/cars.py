@@ -26,7 +26,7 @@ def get_all_footnotes():
 ALL_FOOTNOTES = get_all_footnotes()
 
 
-class Car:
+class CarRow:
   def __init__(self, car_info, CP):
     self.make, self.model = car_info.name.split(' ', 1)
     self.row, star_count = self.get_row(car_info, CP)
@@ -84,7 +84,7 @@ def get_tiered_cars():
         car_info = [car_info]
 
       for _car_info in car_info:
-        car = Car(_car_info, CP)
+        car = CarRow(_car_info, CP)
         tiered_cars[car.tier].add(car)
 
   # Return tier name and car rows for each tier
@@ -111,4 +111,4 @@ if __name__ == "__main__":
   with open(cars_md_fn, 'w') as f:
     f.write(generate_cars_md(tiered_cars))
 
-  print('Generated and written to {}'.format(cars_md_fn))
+  print(f"Generated and written to {cars_md_fn}")
