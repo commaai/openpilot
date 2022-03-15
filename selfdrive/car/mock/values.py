@@ -7,4 +7,4 @@ class CAR:
   MOCK = 'mock'
 
 
-CAR_INFO: Dict[int, Union[CarInfo, List[CarInfo]]] = {}
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {}
