@@ -34,7 +34,7 @@ class CarRow:
 
   def get_row(self, car_info, CP):
     # TODO: add YouTube videos
-    # Some minimum steering speeds are not yet in CarParams
+    # TODO: set all the min steer speeds in carParams and remove this
     min_steer_speed = CP.minSteerSpeed
     if car_info.min_steer_speed is not None:
       min_steer_speed = car_info.min_steer_speed
