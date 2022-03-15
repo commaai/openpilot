@@ -2,8 +2,8 @@ from collections import defaultdict
 from enum import IntFlag
 
 from cereal import car
+from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.config import Conversions as CV
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS

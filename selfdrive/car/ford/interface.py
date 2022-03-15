@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.car.ford.values import MAX_ANGLE
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -66,7 +66,7 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
 
     ret = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                               c.hudControl.visualAlert, c.cruiseControl.cancel)
+                         c.hudControl.visualAlert, c.cruiseControl.cancel)
 
     self.frame += 1
     return ret
