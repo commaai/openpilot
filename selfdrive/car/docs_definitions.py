@@ -78,7 +78,7 @@ class Star(Enum):
   EMPTY = "empty"
 
   def get_icon(variant):
-    return f'<a href="#"><img src="assets/icon-star-{variant.value}.svg" width="22" /></a>'
+    return f'<a href="#"><img valign="top" src="assets/icon-star-{variant.value}.svg" width="22" /></a>'
 
 
 StarColumns = list(Column)[3:]
