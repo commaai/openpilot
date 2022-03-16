@@ -28,7 +28,7 @@ class CAR:
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.CX5: CarInfo("Mazda CX-5 2017, 2019", "All"),  # FIXME: verify years for first 4
+  CAR.CX5: CarInfo("Mazda CX-5 2017, 2019", "All"),  # TODO: verify years for first 4
   CAR.CX9: CarInfo("Mazda CX-9 2016-17", "All"),
   CAR.MAZDA3: CarInfo("Mazda 3 2017", "All"),
   CAR.MAZDA6: CarInfo("Mazda 6 2017", "All"),

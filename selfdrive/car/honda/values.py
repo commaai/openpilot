@@ -100,13 +100,13 @@ FOOTNOTES: Dict[str, CarFootnote] = {
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.ACCORD: [
-    CarInfo("Honda Accord 2018-21", "All", "https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
+    CarInfo("Honda Accord 2018-21", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
     CarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   ],
   CAR.ACCORDH: CarInfo("Honda Accord Hybrid 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   CAR.CIVIC: CarInfo("Honda Civic 2016-18", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.CIVIC_BOSCH: [
-    CarInfo("Honda Civic 2019-20", "All", "https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[FOOTNOTES["CIVIC_DIESEL"]], min_steer_speed=2. * CV.MPH_TO_MS),
+    CarInfo("Honda Civic 2019-20", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[FOOTNOTES["CIVIC_DIESEL"]], min_steer_speed=2. * CV.MPH_TO_MS),
     CarInfo("Honda Civic Hatchback 2017-21", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
   CAR.ACURA_ILX: CarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),

@@ -1,8 +1,8 @@
 from typing import Dict, List, Union
 
+from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
-from cereal import car
 Ecu = car.CarParams.Ecu
 
 MAX_ANGLE = 87.  # make sure we never command the extremes (0xfff) which cause latching fault

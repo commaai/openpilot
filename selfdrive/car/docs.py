@@ -64,8 +64,7 @@ def generate_cars_md(tier_car_rows: Iterator[Tuple[str, List[str]]], template_fn
 
   footnotes = map(lambda fn: fn.text, ALL_FOOTNOTES)
   return template.render(tiers=tier_car_rows, columns=[column.value for column in Column], footnotes=footnotes,
-                         star_full=Star.FULL.get_icon(), star_half=Star.HALF.get_icon(),
-                         star_empty=Star.EMPTY.get_icon())
+                         star_full=Star.FULL.icon, star_half=Star.HALF.icon, star_empty=Star.EMPTY.icon)
 
 
 if __name__ == "__main__":

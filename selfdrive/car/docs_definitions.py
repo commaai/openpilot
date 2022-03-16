@@ -37,6 +37,7 @@ class CarInfo:
       footnote = get_footnote(self.footnotes, column)
       if footnote is not None and footnote.star is not None:
         stars[idx] = footnote.star
+
     return stars
 
   def get_row(self, all_footnotes, stars):
@@ -46,7 +47,7 @@ class CarInfo:
     # Check for car footnotes and get star icons
     for row_idx, column in enumerate(Column):
       if column in StarColumns:
-        row[row_idx] = row[row_idx].get_icon()
+        row[row_idx] = row[row_idx].icon
 
       footnote = get_footnote(self.footnotes, column)
       if footnote is not None:
@@ -77,8 +78,9 @@ class Star(Enum):
   HALF = "half"
   EMPTY = "empty"
 
-  def get_icon(variant):
-    return f'<a href="#"><img valign="top" src="assets/icon-star-{variant.value}.svg" width="22" /></a>'
+  @property
+  def icon(self):
+    return f'<a href="#"><img valign="top" src="assets/icon-star-{self.value}.svg" width="22" /></a>'
 
 
 StarColumns = list(Column)[3:]
