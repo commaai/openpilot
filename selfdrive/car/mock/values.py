@@ -1,6 +1,6 @@
 from typing import Dict, List, Union
 
-from selfdrive.car import CarInfo
+from selfdrive.car.docs_definitions import CarInfo
 
 
 class CAR:

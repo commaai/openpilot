@@ -4,7 +4,7 @@ import os
 
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.car.docs_definitions import Column, Tier
+from selfdrive.car.docs_definitions import Column, Tier, Star
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.car.tests.routes import non_tested_cars
@@ -39,10 +39,12 @@ def get_tier_car_rows():
 
       # Some candidates have multiple variants
       if not isinstance(car_info, list):
-        car_info = (car_info, )
+        car_info = (car_info,)
 
       for _car_info in car_info:
-        tier_car_rows[_car_info.tier].append(_car_info.get_row(CP, non_tested_cars, ALL_FOOTNOTES))
+        stars = _car_info.get_stars(CP, non_tested_cars)
+        tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(stars.count(Star.FULL), Tier.BRONZE)
+        tier_car_rows[tier].append(_car_info.get_row(ALL_FOOTNOTES, stars))
 
   # Return tier title and car rows for each tier
   for tier, car_rows in tier_car_rows.items():
