@@ -12,25 +12,25 @@ How We Rate The Cars
 ---
 
 ### openpilot Adaptive Cruise Control (ACC)
-- <a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - openpilot is able to control gas and brakes
-- <a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a> - openpilot is able to control the gas and brakes with some restrictions
-- <a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system
+- <a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - openpilot is able to control the gas and brakes.
+- <a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a> - openpilot is able to control the gas and brakes with some restrictions.
+- <a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system.
 
 ### Stop and Go
-- <a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Adaptive Cruise Control (ACC) operates down to 0 mph
+- <a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Adaptive Cruise Control (ACC) operates down to 0 mph.
 - <a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.
 
 ### Steer to 0
-- <a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - openpilot can control the steering wheel down to 0 mph
-- <a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - No steering control below certain speeds
+- <a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - openpilot can control the steering wheel down to 0 mph.
+- <a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - No steering control below certain speeds.
 
 ### Steering Torque
-- <a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Car has enough steering torque for comfortable highway driving
-- <a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - Limited ability to make turns
+- <a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Car has enough steering torque for comfortable highway driving.
+- <a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - Limited ability to make turns.
 
 ### Actively Maintained
-- <a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Mainline software support, harness hardware sold by comma, lots of users, primary development target
-- <a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - Low user count, community maintained, harness hardware not sold by comma
+- <a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Mainline software support, harness hardware sold by comma, lots of users, primary development target.
+- <a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - Low user count, community maintained, harness hardware not sold by comma.
 
 **All supported cars can move between the tiers as support changes.**
 
