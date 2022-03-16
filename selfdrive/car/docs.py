@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 import jinja2
 import os
+from typing import Dict, List
 
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.car.docs_definitions import Column, Tier, Star
+from selfdrive.car.docs_definitions import CarFootnote, Column, Star, Tier
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.car.tests.routes import non_tested_cars
 
 
-def get_all_footnotes():
+def get_all_footnotes() -> Dict[CarFootnote, int]:
   all_footnotes = {}
   i = 1
   for _, footnotes in get_interface_attr("FOOTNOTES").items():
@@ -21,10 +22,10 @@ def get_all_footnotes():
   return all_footnotes
 
 
-ALL_FOOTNOTES = get_all_footnotes()
+ALL_FOOTNOTES: Dict[CarFootnote, int] = get_all_footnotes()
 
 
-def get_tier_car_rows():
+def get_tier_car_rows() -> List[List[str]]:
   tier_car_rows = {tier: [] for tier in Tier}
 
   for models in get_interface_attr("CAR_INFO").values():
@@ -51,7 +52,7 @@ def get_tier_car_rows():
     yield [tier.name.title(), sorted(car_rows)]
 
 
-def generate_cars_md(tier_car_rows):
+def generate_cars_md(tier_car_rows: List[List[str]]) -> str:
   template_fn = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True)

@@ -74,7 +74,7 @@ class CAR:
   LEXUS_RXH_TSS2 = "LEXUS RX HYBRID 2020"
 
 
-FOOTNOTES = {
+FOOTNOTES: Dict[str, CarFootnote] = {
   "DSU": CarFootnote(
     "When disconnecting the Driver Support Unit (DSU), openpilot Adaptive Cruise Control (ACC) will replace " +
     "stock Adaptive Cruise Control (ACC). NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).",

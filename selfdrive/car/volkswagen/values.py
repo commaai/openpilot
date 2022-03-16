@@ -90,7 +90,7 @@ class CAR:
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
 
 
-FOOTNOTES = {
+FOOTNOTES: Dict[str, CarFootnote] = {
   "KAMIQ": CarFootnote(
     "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
     Column.MODEL),

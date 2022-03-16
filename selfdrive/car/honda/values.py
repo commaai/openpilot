@@ -91,7 +91,7 @@ class CAR:
   HONDA_E = "HONDA E 2020"
 
 
-FOOTNOTES = {
+FOOTNOTES: Dict[str, CarFootnote] = {
   "CIVIC_DIESEL": CarFootnote(
     "2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph.",
     Column.FSR_STEERING),
