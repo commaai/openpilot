@@ -7,7 +7,6 @@ from selfdrive.car.interfaces import CarInterfaceBase
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
-    self.cp_adas = self.CS.get_adas_can_parser(CP)
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
@@ -27,7 +26,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 17
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
-    ret.radarOffCan = True
+    ret.radarOffCan = False
 
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
@@ -39,11 +38,10 @@ class CarInterface(CarInterfaceBase):
   def update(self, c, can_strings):
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
-    self.cp_adas.update_strings(can_strings)
 
-    ret = self.CS.update(self.cp, self.cp_adas, self.cp_cam)
+    ret = self.CS.update(self.cp, self.cp_cam)
 
-    ret.canValid = self.cp.can_valid and self.cp_adas.can_valid and self.cp_cam.can_valid
+    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
     buttonEvents = []
     be = car.CarState.ButtonEvent.new_message()
