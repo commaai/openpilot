@@ -1054,10 +1054,11 @@ void CameraState::set_camera_exposure(float grey_frac) {
                                                   };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_IMX390) {
-    // TODO: is this right?
-    uint32_t real_exposure_time = (exposure_time >= 0x7d0) ? 1 : (0x7d0 - exposure_time);
-    uint32_t real_gain = int(gain/0.3);
-    //printf("%d expose: %d gain: %d\n", camera_num, exposure_time, real_gain);
+    // if gain is sub 1, we have to use exposure to mimic sub 1 gains
+    uint32_t real_exposure_time = (gain < 1.0) ? (exposure_time*gain) : exposure_time;
+    real_exposure_time = (exposure_time >= 0x7d0) ? 1 : (0x7d0 - exposure_time);
+    uint32_t real_gain = int((10*log10(fmax(1.0, gain)))/0.3);
+    //printf("%d expose: %d gain: %f = %d\n", camera_num, exposure_time, gain, real_gain);
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x000c, real_exposure_time&0xFF}, {0x000d, real_exposure_time>>8},
       {0x0010, real_exposure_time&0xFF}, {0x0011, real_exposure_time>>8},
