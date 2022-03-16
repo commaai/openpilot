@@ -50,7 +50,7 @@ class TestCarModel(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    #if cls.car_model != "HONDA RIDGELINE 2017":
+    #if cls.car_model != "HONDA ACCORD 2018":
     #  raise unittest.SkipTest
 
     if cls.route is None:
@@ -96,6 +96,9 @@ class TestCarModel(unittest.TestCase):
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [])
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
+
+    if cls.CP.pcmCruise:
+      raise unittest.SkipTest
 
   def setUp(self):
     self.CI = self.CarInterface(self.CP, self.CarController, self.CarState)
@@ -197,6 +200,7 @@ class TestCarModel(unittest.TestCase):
         self.safety.safety_rx_hook(to_send)
         self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
 
+    controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(lambda: 0)
     for can in self.can_msgs:
@@ -235,11 +239,20 @@ class TestCarModel(unittest.TestCase):
             checks['controlsAllowed'] += not self.safety.get_controls_allowed()
         else:
           checks['controlsAllowed'] += not CS.cruiseState.enabled and self.safety.get_controls_allowed()
+      else:
+        # TODO: make panda enter controls on the falling edge like openpilot on these cars
+        if self.CP.carName not in ("gm"):
+          # Check for enable events on rising edge of controls allowed
+          button_enable = any(evt.enable for evt in CS.events)
+          checks['controlsAllowed'] += button_enable != (self.safety.get_controls_allowed and not controls_allowed_prev)
+          if button_enable != (self.safety.get_controls_allowed and not controls_allowed_prev):
+            print(button_enable, (self.safety.get_controls_allowed and not controls_allowed_prev))
 
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
 
       CS_prev = CS
+      controls_allowed_prev = self.safety.get_controls_allowed()
 
     # TODO: add flag to toyota safety
     if self.CP.carFingerprint == TOYOTA.SIENNA and checks['brakePressed'] < 25:
