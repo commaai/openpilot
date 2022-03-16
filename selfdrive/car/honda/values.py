@@ -1,9 +1,9 @@
-from enum import Enum, IntFlag
+from enum import IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
-from selfdrive.car import CarInfo, dbc_dict
-from selfdrive.car.docs import CarFootnote, Column
+from selfdrive.car import dbc_dict
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column
 from common.conversions import Conversions as CV
 
 Ecu = car.CarParams.Ecu
@@ -91,10 +91,11 @@ class CAR:
   HONDA_E = "HONDA E 2020"
 
 
-class Footnote(Enum):
-  CIVIC_DIESEL = CarFootnote(
+FOOTNOTES = {
+  "CIVIC_DIESEL": CarFootnote(
     "2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph.",
-    Column.FSR_STEERING)
+    Column.FSR_STEERING),
+}
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
@@ -105,7 +106,7 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.ACCORDH: CarInfo("Honda Accord Hybrid 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   CAR.CIVIC: CarInfo("Honda Civic 2016-18", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.CIVIC_BOSCH: [
-    CarInfo("Honda Civic 2019-20", "All", "https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS),
+    CarInfo("Honda Civic 2019-20", "All", "https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[FOOTNOTES["CIVIC_DIESEL"]], min_steer_speed=2. * CV.MPH_TO_MS),
     CarInfo("Honda Civic Hatchback 2017-21", "Honda Sensing", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
   CAR.ACURA_ILX: CarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),

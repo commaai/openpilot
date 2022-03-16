@@ -1,11 +1,10 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
-from selfdrive.car import CarInfo, dbc_dict
-from selfdrive.car.docs import CarFootnote, Column
+from selfdrive.car import dbc_dict
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -91,19 +90,20 @@ class CAR:
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
 
 
-class Footnote(Enum):
-  KAMIQ = CarFootnote(
+FOOTNOTES = {
+  "KAMIQ": CarFootnote(
     "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
-    Column.MODEL)
-  PASSAT = CarFootnote(
+    Column.MODEL),
+  "PASSAT": CarFootnote(
     "Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform.",
-    Column.MODEL)
-  VW_HARNESS = CarFootnote(
+    Column.MODEL),
+  "VW_HARNESS": CarFootnote(
     "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
     "store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black " +
     "(older design) or light brown (newer design). For the newer design, in the interim, choose \"VW J533 Development\" " +
     "from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.",
-    Column.MODEL)
+    Column.MODEL),
+}
 
 
 @dataclass
@@ -113,8 +113,8 @@ class VWCarInfo(CarInfo):
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
-  CAR.ARTEON_MK1: VWCarInfo("Volkswagen Arteon 2018, 2021", footnotes=[Footnote.VW_HARNESS]),
-  CAR.ATLAS_MK1: VWCarInfo("Volkswagen Atlas 2018-19, 2022", footnotes=[Footnote.VW_HARNESS]),
+  CAR.ARTEON_MK1: VWCarInfo("Volkswagen Arteon 2018, 2021", footnotes=[FOOTNOTES["VW_HARNESS"]]),
+  CAR.ATLAS_MK1: VWCarInfo("Volkswagen Atlas 2018-19, 2022", footnotes=[FOOTNOTES["VW_HARNESS"]]),
   CAR.GOLF_MK7: [
     VWCarInfo("Volkswagen e-Golf 2014, 2019-20"),
     VWCarInfo("Volkswagen Golf 2015-20"),
@@ -129,17 +129,17 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Jetta 2018-20"),
     VWCarInfo("Volkswagen Jetta GLI 2021"),
   ],
-  CAR.PASSAT_MK8: VWCarInfo("Volkswagen Passat 2016-18", footnotes=[Footnote.PASSAT]),
+  CAR.PASSAT_MK8: VWCarInfo("Volkswagen Passat 2016-18", footnotes=[FOOTNOTES["PASSAT"]]),
   CAR.POLO_MK6: VWCarInfo("Volkswagen Polo 2020"),
-  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS]),
-  CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS]),
-  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2020-22", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[FOOTNOTES["VW_HARNESS"]]),
+  CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[FOOTNOTES["VW_HARNESS"]]),
+  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2020-22", footnotes=[FOOTNOTES["VW_HARNESS"]]),
   CAR.TOURAN_MK2: VWCarInfo("Volkswagen Touran 2017"),
   CAR.TRANSPORTER_T61: [
-    VWCarInfo("Volkswagen Caravelle 2020", footnotes=[Footnote.VW_HARNESS]),
-    VWCarInfo("Volkswagen California 2021", footnotes=[Footnote.VW_HARNESS]),
+    VWCarInfo("Volkswagen Caravelle 2020", footnotes=[FOOTNOTES["VW_HARNESS"]]),
+    VWCarInfo("Volkswagen California 2021", footnotes=[FOOTNOTES["VW_HARNESS"]]),
   ],
-  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[FOOTNOTES["VW_HARNESS"]]),
   CAR.AUDI_A3_MK3: [
     VWCarInfo("Audi A3 2014-19", "ACC + Lane Assist"),
     VWCarInfo("Audi A3 Sportback e-tron 2017-18", "ACC + Lane Assist"),
@@ -149,7 +149,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2020-21", "ACC + Lane Assist"),
   CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
-  CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.KAMIQ]),
+  CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[FOOTNOTES["KAMIQ"]]),
   CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019"),
   CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2018-19"),
   CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020"),
