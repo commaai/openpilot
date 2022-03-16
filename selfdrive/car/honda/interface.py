@@ -403,9 +403,9 @@ class CarInterface(CarInterfaceBase):
     for b in ret.buttonEvents:
 
       # do enable on both accel and decel buttons
-      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
-        if not self.CP.pcmCruise:
-          events.add(EventName.buttonEnable)
+      if not self.CP.pcmCruise:
+        if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
+            events.add(EventName.buttonEnable)
 
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
