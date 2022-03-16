@@ -8,7 +8,6 @@ from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import log, car
-from common.params import Params
 from common.realtime import DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 from selfdrive.car.fingerprints import all_known_cars
@@ -56,9 +55,7 @@ class TestCarModel(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    params = Params()
-    params.clear_all()
-
+    disable_radar = False
     for seg in (2, 1, 0):
       try:
         lr = LogReader(get_url(cls.route, seg))
@@ -75,7 +72,7 @@ class TestCarModel(unittest.TestCase):
           can_msgs.append(msg)
         elif msg.which() == "carParams":
           if msg.carParams.openpilotLongitudinalControl:
-            params.put_bool("DisableRadar", True)
+            disable_radar = True
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break
@@ -85,7 +82,7 @@ class TestCarModel(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [])
+    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [], disable_radar)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
