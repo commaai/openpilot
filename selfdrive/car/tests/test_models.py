@@ -188,9 +188,9 @@ class TestCarModel(unittest.TestCase):
         to_send = package_can_msg(msg)
         self.safety.safety_rx_hook(to_send)
         self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
-    self.safety.set_controls_allowed(0)
 
-    dat = defaultdict(list)
+    if not self.CP.pcmCruise:
+      self.safety.set_controls_allowed(0)
 
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
@@ -240,27 +240,10 @@ class TestCarModel(unittest.TestCase):
         if button_enable and not mismatch:
           self.safety.set_controls_allowed(False)
 
-        if button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev):
-          print(CS.events)
-          print(button_enable, self.safety.get_controls_allowed(), controls_allowed_prev)
-
-        dat['gas'].append(self.safety.get_gas_pressed_prev())
-        dat['brake'].append(self.safety.get_brake_pressed_prev())
-        dat['button enable'].append(int(button_enable)*0.7 - 0.2)
-        dat['controls allowed'].append(self.safety.get_controls_allowed())
-
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
 
       CS_prev = CS
-
-    #if checks['controlsAllowed'] > 0:
-    #  import matplotlib.pyplot as plt
-    #  for k, v in dat.items():
-    #    plt.plot(v, label=k)
-    #  plt.legend()
-    #  plt.title(self.CP.carFingerprint)
-    #  plt.show()
 
     # TODO: add flag to toyota safety
     if self.CP.carFingerprint == TOYOTA.SIENNA and checks['brakePressed'] < 25:
