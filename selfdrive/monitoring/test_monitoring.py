@@ -27,6 +27,9 @@ def make_msg(face_detected, distracted=False, model_uncertain=False):
   ds.rightBlinkProb = 1. * distracted
   ds.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
   ds.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
+  # TODO: test both separately when e2e is used
+  ds.readyProb = [0., 0., 0., 0.]
+  ds.notReadyProb = [0., 0.]
   return ds
 
 
@@ -57,11 +60,11 @@ class TestMonitoring(unittest.TestCase):
     events = []
     for idx in range(len(msgs)):
       e = Events()
-      DS.get_pose(msgs[idx], [0, 0, 0], 0, engaged[idx])
+      DS.update_states(msgs[idx], [0, 0, 0], 0, engaged[idx])
       # cal_rpy and car_speed don't matter here
 
       # evaluate events at 10Hz for tests
-      DS.update(e, interaction[idx], engaged[idx], standstill[idx])
+      DS.update_events(e, interaction[idx], engaged[idx], standstill[idx])
       events.append(e)
     assert len(events) == len(msgs), f"got {len(events)} for {len(msgs)} driverState input msgs"
     return events, DS
