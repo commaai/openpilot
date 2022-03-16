@@ -50,6 +50,9 @@ class TestCarModel(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    #if cls.car_model != "HONDA RIDGELINE 2017":
+    #  raise unittest.SkipTest
+
     if cls.route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
@@ -59,7 +62,12 @@ class TestCarModel(unittest.TestCase):
     params = Params()
     params.clear_all()
 
-    for seg in [2, 1, 0]:
+    for seg in (2, 1, 0):
+      #from tools.lib.route import Route
+      #from tools.lib.logreader import MultiLogIterator
+      #r = Route("97bbe58ea225ad1d|2022-03-08--12-54-42")
+      #lr = MultiLogIterator(r.log_paths()[3:4])
+
       try:
         lr = LogReader(get_url(cls.route, seg))
       except Exception:
@@ -189,6 +197,7 @@ class TestCarModel(unittest.TestCase):
         self.safety.safety_rx_hook(to_send)
         self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
 
+    CS_prev = car.CarState.new_message()
     checks = defaultdict(lambda: 0)
     for can in self.can_msgs:
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
@@ -217,10 +226,20 @@ class TestCarModel(unittest.TestCase):
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
 
       if self.CP.pcmCruise:
-        checks['controlsAllowed'] += not CS.cruiseState.enabled and self.safety.get_controls_allowed()
+        # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
+        # On Honda Nidec, we always engage on the rising edge of the PCM cruise state, but
+        # openpilot brakes to zero even if the min ACC speed is non-zero (i.e. the PCM disengages).
+        if self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH:
+          # only the rising edges are expected to match
+          if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
+            checks['controlsAllowed'] += not self.safety.get_controls_allowed()
+        else:
+          checks['controlsAllowed'] += not CS.cruiseState.enabled and self.safety.get_controls_allowed()
 
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
+
+      CS_prev = CS
 
     # TODO: add flag to toyota safety
     if self.CP.carFingerprint == TOYOTA.SIENNA and checks['brakePressed'] < 25:
