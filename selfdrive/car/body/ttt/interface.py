@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-import serial
-import struct
-import time
-from hexdump import hexdump
 import numpy as np
 import cereal.messaging as messaging
 
@@ -65,57 +61,36 @@ if __name__ == "__main__":
   atexit.register(done)
 
   sm = messaging.SubMaster(['sensorEvents', 'liveLocationKalman', 'testJoystick'])
-  gyro = 0
-  accel = None
-  dt = 1/dtn
-  intgyro = None
 
-  kp = 1300 # 1000
-  ki = 0 #0.7
-  kd = 280 # 250
+  kp = 1300
+  ki = 0
+  kd = 280
   i = 0
   d = 0
   i_speed = 0
   i_tq = 0
 
-  last_err = 0
-
-
-  #set_point = np.deg2rad(-2)
   set_point = np.deg2rad(-0)
 
-  acc_err = 0
+  accel_err = 0
 
-  joy_x, joy_y = 0, 0
-  measured_speed = 0
-  measured_steer = 0
-  desired_speed = 0
-  desired_steer = 0
-  time = 0.0
-  torque_a_filt = 0.0
-  torque_b_filt = 0.0
+  speed_measured = 0
+  speed_desired = 0
+  torque_right_filtered = 0.0
+  torque_left_filtered = 0.0
   v_ego = 0.0
   while 1:
-    time += dt
     sm.update()
 
-    try:
-      joy_x = sm['testJoystick'].axes[0]
-      joy_y = sm['testJoystick'].axes[1]
-    except Exception:
-      pass
-
-
     alpha = 1.0
-    desired_speed = (1. - alpha)*desired_speed + alpha *(joy_y/2)
-    desired_steer = (1. - alpha)*desired_steer + alpha*joy_x
+    speed_desired = (1. - alpha)*speed_desired
     kp_speed = 0.001
-    ki_speed = 0 #0.00001
-    i_speed += ki_speed * (desired_speed - measured_speed)
+    ki_speed = 0
+    i_speed += ki_speed * (speed_desired - speed_measured)
     i_speed = np.clip(i_speed, -0.1, 0.1)
-    set_point = kp_speed * (desired_speed - measured_speed) + i_speed
+    set_point = kp_speed * (speed_desired - speed_measured) + i_speed
     try:
-      err = (-sm['liveLocationKalman'].orientationNED.value[1]) - set_point
+      angle_err = (-sm['liveLocationKalman'].orientationNED.value[1]) - set_point
       d_new = -sm['liveLocationKalman'].angularVelocityDevice.value[1]
       alpha_d = 1.0
       d = (1. - alpha_d) * d + alpha * d_new
@@ -124,78 +99,48 @@ if __name__ == "__main__":
       print("can't subscribe?")
       continue
 
-    #err += np.deg2rad(joy_y)/50
-
-
-    #print(np.rad2deg(intgyro), np.rad2deg(accel))
-    #rk.keep_time()
-
-    i += err
+    i += angle_err
     i = np.clip(i, -2, 2)
-    last_err = err
 
     can_strs = messaging.drain_sock_raw(can_sock, wait_for_one=False)
     cs = ci.update(None, can_strs, v_ego)
-    #car_events = self.events.to_msg()
     cs_send = messaging.new_message('carState')
-    #cs_send.valid = CS.canValid
     cs_send.carState = cs
-    #cs_send.carState.events = car_events
     pm.send('carState', cs_send)
 
-    measured_speed = 0.5 * (cs.wheelSpeeds.fl + cs.wheelSpeeds.fr)
+    speed_measured = 0.5 * (cs.wheelSpeeds.fl + cs.wheelSpeeds.fr)
     v_ego_alpha = .03
-    v_ego = (1.0 - v_ego_alpha) * v_ego + alpha * measured_speed
-    measured_steer = cs.wheelSpeeds.fl - cs.wheelSpeeds.fr
+    v_ego = (1.0 - v_ego_alpha) * v_ego + alpha * speed_measured
 
     ret = car.CarControl.new_message()
-    speed = int(np.clip(err*kp + acc_err*ki + d*kd, -1000, 1000))
-
-    #kp_steer = 0.2
-    #diff_torque = kp_steer * (desired_steer - measured_steer)
+    speed = int(np.clip(angle_err*kp + accel_err*ki + d*kd, -1000, 1000))
 
     kp_diff = 0.95
     kd_diff = 0.1
     p_tq = (cs.wheelSpeeds.fl - cs.wheelSpeeds.fr)
 
-    diff_torque = int(np.clip(p_tq*kp_diff + i_tq*kd_diff, -100, 100))
+    torque_diff = int(np.clip(p_tq*kp_diff + i_tq*kd_diff, -100, 100))
 
     i_tq += (cs.wheelSpeeds.fl - cs.wheelSpeeds.fr)
-    #ret.actuators.steer = speed + diff_torque
-    #ret.actuators.accel = speed - diff_torque
-    #A = 200
-    #print(time)
-    #ret.actuators.steer = float(A * np.sin(50*time)) # speed + diff_torque
-    #ret.actuators.accel = float(A * np.sin(50*time)) # speed - diff_torque
-    #diff_torque = -int(np.clip(diff_torque, -10, 10))
-    #diff_torque *= -1
-    print(f'diff : {diff_torque}')
-    #diff_torque = 0
-    torque_a = speed + diff_torque
-    torque_b = speed - diff_torque
+    print(f'diff : {torque_diff}')
+    torque_r = speed + torque_diff
+    torque_l = speed - torque_diff
 
-    if torque_a > 0: torque_a += 10
-    else: torque_a -= 10
-    if torque_b > 0: torque_b += 10
-    else: torque_b -= 10
+    if torque_r > 0: torque_r += 10
+    else: torque_r -= 10
+    if torque_l > 0: torque_l += 10
+    else: torque_l -= 10
 
     alpha_torque = 1.
-    torque_a_filt = (1. - alpha_torque) * torque_a_filt + alpha_torque * torque_a
-    torque_b_filt = (1. - alpha_torque) * torque_b_filt + alpha_torque * torque_b
-    ret.actuators.steer = int(np.clip(torque_a_filt, -1000, 1000))
-    ret.actuators.accel = int(np.clip(torque_b_filt, -1000, 1000))
-    #ret.actuators.steer = -25
-    #ret.actuators.accel = -25
-    #ret.actuators.steer = joy_x*2
-    #ret.actuators.accel = 5
-    #ret.actuators.accel =
-    #print("%7.2f %7.2f %7.2f %7.2f" % (err*180/3.1415, err, acc_err, d), cs.wheelSpeeds, ret.actuators.accel, joy_x, joy_y)
-    print(f'joy forward : {joy_y}, joy steer: {joy_x}')
+    torque_right_filtered = (1. - alpha_torque) * torque_right_filtered + alpha_torque * torque_r
+    torque_left_filtered = (1. - alpha_torque) * torque_left_filtered + alpha_torque * torque_l
+    ret.actuators.steer = int(np.clip(torque_right_filtered, -1000, 1000))
+    ret.actuators.accel = int(np.clip(torque_left_filtered, -1000, 1000))
     print(f'Set point : {set_point}')
     print(f'speeds : {cs.wheelSpeeds}')
-    print(f'err angle : {err}')
-    acc_err += cs.wheelSpeeds.fl + cs.wheelSpeeds.fr
-    print(f'acc_err : {acc_err}')
+    print(f'err angle : {angle_err}')
+    accel_err += cs.wheelSpeeds.fl + cs.wheelSpeeds.fr
+    print(f'accel_err : {accel_err}')
     print(f'd : {d}')
     msgs = ci.apply(ret)
     pm.send('sendcan', can_list_to_can_capnp(msgs, msgtype='sendcan'))

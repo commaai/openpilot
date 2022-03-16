@@ -1,11 +1,5 @@
-from cereal import car
-from common.numpy_fast import clip, interp
 from selfdrive.car.body import bodycan
 from opendbc.can.packer import CANPacker
-from selfdrive.car.body.values import CAR, CarControllerParams
-
-
-VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 class CarController():
@@ -24,6 +18,8 @@ class CarController():
     can_sends = []
 
     apply_angle = actuators.steeringAngleDeg
+
+    # print(c.pitch) # Value from sm['liveLocationKalman'].orientationNED.value[1]
 
     torque_l = 60
     torque_r = 60

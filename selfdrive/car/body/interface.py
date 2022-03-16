@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car.body.values import CAR
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
@@ -41,6 +40,7 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp)
 
     ret.canValid = self.cp.can_valid
+    # print(c.pitch) # Value from sm['liveLocationKalman'].orientationNED.value[1]
 
     self.CS.out = ret.as_reader()
     return self.CS.out

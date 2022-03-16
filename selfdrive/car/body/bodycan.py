@@ -1,4 +1,3 @@
-import copy
 from selfdrive.car.body.values import CAR
 
 
