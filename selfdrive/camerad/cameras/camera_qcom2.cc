@@ -318,8 +318,7 @@ int CameraState::sensors_init() {
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
-  //power->power_settings[0].config_val_low = 19200000; //Hz
-  power->power_settings[0].config_val_low = 24000000; //Hz
+  power->power_settings[0].config_val_low = (camera_id == CAMERA_ID_AR0231) ? 19200000 : 24000000; //Hz
   power = power_set_wait(power, 10);
 
   // 8,1 is this reset?
@@ -1046,14 +1045,26 @@ void CameraState::set_camera_exposure(float grey_frac) {
   }
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
 
-  /*uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
-  struct i2c_random_wr_payload exp_reg_array[] = {
-                                                  {0x3366, analog_gain_reg},
-                                                  {0x3362, (uint16_t)(dc_gain_enabled ? 0x1 : 0x0)},
-                                                  {0x3012, (uint16_t)exposure_time},
-                                                };*/
-  /*struct i2c_random_wr_payload exp_reg_array[] = {
-  sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);*/
+  if (camera_id == CAMERA_ID_AR0231) {
+    uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
+    struct i2c_random_wr_payload exp_reg_array[] = {
+                                                    {0x3366, analog_gain_reg},
+                                                    {0x3362, (uint16_t)(dc_gain_enabled ? 0x1 : 0x0)},
+                                                    {0x3012, (uint16_t)exposure_time},
+                                                  };
+    sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
+  } else if (camera_id == CAMERA_ID_IMX390) {
+    // TODO: is this right?
+    uint32_t real_exposure_time = (exposure_time >= 0x7d0) ? 1 : (0x7d0 - exposure_time);
+    uint32_t real_gain = int(gain/0.3);
+    //printf("%d expose: %d gain: %d\n", camera_num, exposure_time, real_gain);
+    struct i2c_random_wr_payload exp_reg_array[] = {
+      {0x000c, real_exposure_time&0xFF}, {0x000d, real_exposure_time>>8},
+      {0x0010, real_exposure_time&0xFF}, {0x0011, real_exposure_time>>8},
+      {0x0018, real_gain&0xFF}, {0x0019, real_gain>>8},
+    };
+    sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+  }
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {

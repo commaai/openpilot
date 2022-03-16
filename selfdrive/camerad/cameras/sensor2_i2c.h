@@ -15,8 +15,8 @@ struct i2c_random_wr_payload init_array_imx390[] = {
   {0x3650, 0},  // CU_MODE
 
   // exposure
-  {0x000c, 0x0f}, {0x000d, 0x00},
-  {0x0010, 0x0f}, {0x0011, 0x00},
+  {0x000c, 0xc0}, {0x000d, 0x07},
+  {0x0010, 0xc0}, {0x0011, 0x07},
 
   // WUXGA mode
   // not in datasheet, from https://github.com/bogsen/STLinux-Kernel/blob/master/drivers/media/platform/tegra/imx185.c
