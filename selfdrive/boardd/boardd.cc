@@ -115,7 +115,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     return false;
   }
 
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
+  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1);
 
   Params p = Params();
 
