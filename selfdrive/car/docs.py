@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import jinja2
 import os
-from typing import Dict, List
+from typing import Dict, Iterator, List, Tuple
 
 from common.basedir import BASEDIR
 from common.params import Params
@@ -27,8 +27,8 @@ CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
-def get_tier_car_rows() -> List[List[str]]:
-  tier_car_rows = {tier: [] for tier in Tier}
+def get_tier_car_rows() -> Iterator[Tuple[str, List[str]]]:
+  tier_car_rows: Dict[Tier, list] = {tier: [] for tier in Tier}
 
   # TODO: Remove Hyundai exceptions once full long support is added
   # Cars that can disable radar have openpilot longitudinal
@@ -55,10 +55,10 @@ def get_tier_car_rows() -> List[List[str]]:
 
   # Return tier title and car rows for each tier
   for tier, car_rows in tier_car_rows.items():
-    yield [tier.name.title(), sorted(car_rows)]
+    yield tier.name.title(), sorted(car_rows)
 
 
-def generate_cars_md(tier_car_rows: List[List[str]], template_fn: str) -> str:
+def generate_cars_md(tier_car_rows: Iterator[Tuple[str, List[str]]], template_fn: str) -> str:
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True)
 
