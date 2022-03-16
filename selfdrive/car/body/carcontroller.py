@@ -27,7 +27,7 @@ class CarController():
 
     torque_l = 60
     torque_r = 60
-    can_sends.append(bodycan.create_steering_control(
+    can_sends.append(bodycan.create_control(
         self.packer, torque_l, torque_r))
 
     new_actuators = actuators.copy()

@@ -32,8 +32,6 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = 0
     ret.steeringTorque = 0
 
-    self.steeringTorqueSamples.append(ret.steeringTorque)
-
     ret.steeringPressed = False
 
     ret.steeringAngleDeg = 0
@@ -42,7 +40,7 @@ class CarState(CarStateBase):
 
     ret.gearShifter = self.parse_gear_shifter("D")
 
-    self.lkas_enabled = True
+    self.lkas_enabled = False
 
     return ret
 
@@ -55,7 +53,9 @@ class CarState(CarStateBase):
       ("BAT_VOLTAGE", "BODY_SENSOR"),
     ]
 
-    checks = []
+    checks = [
+      ("BODY_SENSOR", 20),
+    ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
 
