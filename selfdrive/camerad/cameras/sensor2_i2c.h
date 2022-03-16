@@ -4,7 +4,7 @@ struct i2c_random_wr_payload stop_reg_array[] = {{0x301A, 0x918}};*/
 struct i2c_random_wr_payload start_reg_array[] = {{0x0, 0}};
 
 struct i2c_random_wr_payload init_array_imx390[] = {
-  {0x2008, 0xdd}, {0x2009, 0x04}, {0x200a, 0x00}, // MODE_VMAX
+  {0x2008, 0xd0}, {0x2009, 0x07}, {0x200a, 0x00}, // MODE_VMAX = time between frames
   {0x200C, 0xe4}, {0x200D, 0x0c},  // MODE_HMAX
 
   // crop 
@@ -17,8 +17,8 @@ struct i2c_random_wr_payload init_array_imx390[] = {
   {0x3650, 0},  // CU_MODE
 
   // exposure
-  {0x000c, 0x7f}, {0x000d, 0x02},
-  {0x0010, 0x7f}, {0x0011, 0x02},
+  {0x000c, 0x0f}, {0x000d, 0x00},
+  {0x0010, 0x0f}, {0x0011, 0x00},
 
   // WUXGA mode
   // not in datasheet, from https://github.com/bogsen/STLinux-Kernel/blob/master/drivers/media/platform/tegra/imx185.c
@@ -28,9 +28,6 @@ struct i2c_random_wr_payload init_array_imx390[] = {
   {0x201c, 0xe1}, {0x201d, 0x12},   // image read amount
   {0x21ee, 0xc4}, {0x21ef, 0x04},   // image send amount (1220 is the end)
   {0x21f0, 0xc4}, {0x21f1, 0x04},   // image processing amount
-
-  // analog gain
-  //{0x001a, 0x0c}, {0x001b, 0x00},
 
   // disable a bunch of errors causing blanking
   {0x0390, 0x00}, {0x0391, 0x00}, {0x0392, 0x00},

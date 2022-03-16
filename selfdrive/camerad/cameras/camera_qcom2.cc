@@ -243,12 +243,14 @@ void CameraState::sensors_init() {
   switch (camera_num) {
     case 0:
       // port 0
-      i2c_info->slave_addr = 0x20;
+      //i2c_info->slave_addr = 0x20;
+      i2c_info->slave_addr = 0x34;
       probe->camera_id = 0;
       break;
     case 1:
       // port 1
-      i2c_info->slave_addr = 0x30;
+      //i2c_info->slave_addr = 0x30;
+      i2c_info->slave_addr = 0x36;
       probe->camera_id = 1;
       break;
     case 2:
@@ -1024,9 +1026,9 @@ void CameraState::set_camera_exposure(float grey_frac) {
                                                   {0x3366, analog_gain_reg},
                                                   {0x3362, (uint16_t)(dc_gain_enabled ? 0x1 : 0x0)},
                                                   {0x3012, (uint16_t)exposure_time},
-                                                };
-  sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
-              CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);*/
+                                                };*/
+  /*struct i2c_random_wr_payload exp_reg_array[] = {
+  sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);*/
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
