@@ -4,26 +4,21 @@ from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.car.body.values import DBC
 
-TORQUE_SAMPLES = 12
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
-  def update(self, cp, cp_cam):
+  def update(self, cp):
     ret = car.CarState.new_message()
 
-    ret.wheelSpeeds = self.get_wheel_speeds(
-      cp.vl["BODY_SENSOR"]["SPEED_L"],
-      cp.vl["BODY_SENSOR"]["SPEED_R"],
-      cp.vl["BODY_SENSOR"]["SPEED_L"],
-      cp.vl["BODY_SENSOR"]["SPEED_R"],
-    )
-    ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
+    ret.wheelSpeeds.fl = cp.vl['BODY_SENSOR']['SPEED_L']
+    ret.wheelSpeeds.fr = cp.vl['BODY_SENSOR']['SPEED_R']
+
+    ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr) / 2.
 
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgoRaw < 0.01
+    ret.standstill = abs(ret.vEgo) < 100
 
     ret.cruiseState.enabled = True
     ret.cruiseState.available = True
@@ -40,8 +35,6 @@ class CarState(CarStateBase):
 
     ret.gearShifter = self.parse_gear_shifter("D")
 
-    self.lkas_enabled = False
-
     return ret
 
   @staticmethod
@@ -57,12 +50,4 @@ class CarState(CarStateBase):
       ("BODY_SENSOR", 20),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
-
-
-  @staticmethod
-  def get_cam_can_parser(CP):
-    signals = []
-    checks = []
-
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
+    return CANParser(DBC[CP.carFingerprint][], signals, checks, 1)

@@ -20,10 +20,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.1
 
-    ret.mass = 1610 + STD_CARGO_KG
-    ret.wheelbase = 2.705
+    ret.mass = 9
+    ret.wheelbase = 0.406
     ret.centerToFront = ret.wheelbase * 0.44
-    ret.steerRatio = 17
+    ret.steerRatio = 1
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.radarOffCan = False
@@ -37,26 +37,14 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def update(self, c, can_strings):
     self.cp.update_strings(can_strings)
-    self.cp_cam.update_strings(can_strings)
 
-    ret = self.CS.update(self.cp, self.cp_cam)
+    ret = self.CS.update(self.cp)
 
-    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
-
-    buttonEvents = []
-    be = car.CarState.ButtonEvent.new_message()
-    be.type = car.CarState.ButtonEvent.Type.accelCruise
-    buttonEvents.append(be)
-
-    events = self.create_common_events(ret)
-
-    if self.CS.lkas_enabled:
-      events.add(car.CarEvent.EventName.invalidLkasSetting)
-
-    ret.events = events.to_msg()
+    ret.canValid = self.cp.can_valid
 
     self.CS.out = ret.as_reader()
     return self.CS.out
+
 
   def apply(self, c):
     hud_control = c.hudControl
