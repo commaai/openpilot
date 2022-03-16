@@ -40,7 +40,7 @@ public:
 
   void sensors_start();
   void sensors_poke(int request_id);
-  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool as_word);
+  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
   int sensors_init();
 
   void camera_open();
