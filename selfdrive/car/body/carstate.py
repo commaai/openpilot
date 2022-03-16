@@ -50,4 +50,4 @@ class CarState(CarStateBase):
       ("BODY_SENSOR", 20),
     ]
 
-    return CANParser(DBC[CP.carFingerprint][], signals, checks, 1)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
