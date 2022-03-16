@@ -32,7 +32,6 @@ class CarController():
     self.speed_desired = 0
     self.torque_right_filtered = 0.0
     self.torque_left_filtered = 0.0
-    self.v_ego = 0.0
     # ////////////////////////////////
 
   def update(self, c, CS, frame, actuators, cruise_cancel, hud_alert,
@@ -64,20 +63,17 @@ class CarController():
     self.i += angle_err
     self.i = np.clip(self.i, -2, 2)
 
-    self.speed_measured = (CS.wheelSpeeds.fl + CS.wheelSpeeds.fr) / 2
-    v_ego_alpha = .03
-    self.v_ego = (1.0 - v_ego_alpha) * self.v_ego + alpha * self.speed_measured
+    self.speed_measured = (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2
 
     speed = int(np.clip(angle_err*self.kp + self.accel_err*self.ki + self.d*self.kd, -1000, 1000))
 
     kp_diff = 0.95
     kd_diff = 0.1
-    p_tq = (CS.wheelSpeeds.fl - CS.wheelSpeeds.fr)
+    p_tq = (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
 
     torque_diff = int(np.clip(p_tq*kp_diff + self.i_tq*kd_diff, -100, 100))
 
-    self.i_tq += (CS.wheelSpeeds.fl - CS.wheelSpeeds.fr)
-    print(f'diff : {torque_diff}')
+    self.i_tq += (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
     torque_r = speed + torque_diff
     torque_l = speed - torque_diff
 
@@ -91,7 +87,7 @@ class CarController():
     self.torque_left_filtered = (1. - alpha_torque) * self.torque_left_filtered + alpha_torque * torque_l
     torque_r = int(np.clip(self.torque_right_filtered, -1000, 1000))
     torque_l = int(np.clip(self.torque_left_filtered, -1000, 1000))
-    self.accel_err += CS.wheelSpeeds.fl + CS.wheelSpeeds.fr
+    self.accel_err += CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr
     # ///////////////////////////////////////
     can_sends = []
 
