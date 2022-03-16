@@ -23,10 +23,16 @@ def get_all_footnotes() -> Dict[CarFootnote, int]:
 
 
 ALL_FOOTNOTES: Dict[CarFootnote, int] = get_all_footnotes()
+CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
+CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
 def get_tier_car_rows() -> List[List[str]]:
   tier_car_rows = {tier: [] for tier in Tier}
+
+  # TODO: Remove Hyundai exceptions once full long support is added
+  # Cars that can disable radar have openpilot longitudinal
+  Params().put_bool("DisableRadar", True)
 
   for models in get_interface_attr("CAR_INFO").values():
     for model, car_info in models.items():
@@ -52,8 +58,7 @@ def get_tier_car_rows() -> List[List[str]]:
     yield [tier.name.title(), sorted(car_rows)]
 
 
-def generate_cars_md(tier_car_rows: List[List[str]]) -> str:
-  template_fn = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
+def generate_cars_md(tier_car_rows: List[List[str]], template_fn: str) -> str:
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True)
 
@@ -65,14 +70,6 @@ def generate_cars_md(tier_car_rows: List[List[str]]) -> str:
 
 if __name__ == "__main__":
   # Auto generates supported cars documentation
-
-  # TODO: Remove these Hyundai exceptions once full long support is added
-  # Cars that can disable radar have openpilot longitudinal
-  Params().put_bool("DisableRadar", True)
-  tier_car_rows = get_tier_car_rows()
-
-  cars_md_fn = os.path.join(BASEDIR, "docs", "CARS.md")
-  with open(cars_md_fn, 'w') as f:
-    f.write(generate_cars_md(tier_car_rows))
-
-  print(f"Generated and written to {cars_md_fn}")
+  with open(CARS_MD_OUT, 'w') as f:
+    f.write(generate_cars_md(get_tier_car_rows(), CARS_MD_TEMPLATE))
+  print(f"Generated and written to {CARS_MD_OUT}")
