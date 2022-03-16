@@ -94,6 +94,7 @@ class Controls:
     get_one_can(self.can_sock)
 
     self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
+    self.CP.unsafeMode = 0  # see panda/board/safety_declarations.h for allowed values
 
     # read params
     self.is_metric = params.get_bool("IsMetric")
@@ -119,6 +120,7 @@ class Controls:
     put_nonblocking("CarParamsCache", cp_bytes)
 
     self.CC = car.CarControl.new_message()
+    self.CS_prev = car.CarState.new_message()
     self.AM = AlertManager()
     self.events = Events()
 
@@ -191,6 +193,11 @@ class Controls:
     if not self.initialized:
       self.events.add(EventName.controlsInitializing)
       return
+
+    # Disable on rising edge of gas or brake. Also disable on brake when speed > 0
+    if (CS.gasPressed and not self.CS_prev.gasPressed) or \
+      (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)):
+      self.events.add(EventName.pedalPressed)
 
     self.events.add_from_msg(CS.events)
     self.events.add_from_msg(self.sm['driverMonitoringState'].events)
@@ -733,6 +740,7 @@ class Controls:
     self.prof.checkpoint("Sent")
 
     self.update_button_timers(CS.buttonEvents)
+    self.CS_prev = CS
 
   def controlsd_thread(self):
     while True:
