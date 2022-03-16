@@ -3,7 +3,6 @@ from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
 from common.numpy_fast import interp
-from common.params import Params
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -28,7 +27,7 @@ class CarInterface(CarInterfaceBase):
       return CarControllerParams.NIDEC_ACCEL_MIN, interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
 
@@ -38,7 +37,7 @@ class CarInterface(CarInterfaceBase):
 
       # Disable the radar and let openpilot control longitudinal
       # WARNING: THIS DISABLES AEB!
-      ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
+      ret.openpilotLongitudinalControl = disable_radar
 
       ret.pcmCruise = not ret.openpilotLongitudinalControl
     else:
