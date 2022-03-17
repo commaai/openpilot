@@ -20,8 +20,10 @@ def get_all_footnotes():
 
 
 ALL_FOOTNOTES: Dict[Enum, int] = get_all_footnotes()
-CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
-CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
+# CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
+# CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
+CARS_MD_OUT = os.path.join(BASEDIR, "docs", "vehicles.vue")
+CARS_MD_TEMPLATE = os.path.join(BASEDIR, "docs", "vehicles_template.vue")
 
 
 def get_tier_car_rows() -> Iterator[Tuple[str, List[str]]]:
