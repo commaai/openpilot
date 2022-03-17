@@ -66,10 +66,14 @@ class CarController():
     torque_r = speed + torque_diff
     torque_l = speed - torque_diff
 
-    if torque_r > 0: torque_r += 10
-    else: torque_r -= 10
-    if torque_l > 0: torque_l += 10
-    else: torque_l -= 10
+    if torque_r > 0:
+      torque_r += 10
+    else:
+      torque_r -= 10
+    if torque_l > 0:
+      torque_l += 10
+    else:
+      torque_l -= 10
 
     alpha_torque = 1.
     self.torque_right_filtered = (1. - alpha_torque) * self.torque_right_filtered + alpha_torque * torque_r
