@@ -36,7 +36,7 @@ def get_tier_car_rows() -> Iterator[Tuple[str, List[str]]]:
       if CP.dashcamOnly:
         continue
 
-      # Some candidates have multiple variants
+      # A platform can include multiple car models
       if not isinstance(car_info, list):
         car_info = (car_info,)
 
