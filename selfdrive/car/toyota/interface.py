@@ -39,7 +39,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.3
 
     elif candidate == CAR.PRIUS_V:
-      stop_and_go = True
+      stop_and_go = False
       ret.wheelbase = 2.78
       ret.steerRatio = 17.4
       tire_stiffness_factor = 0.5533
