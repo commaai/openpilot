@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Dict, Iterator, List, Tuple
 
 from common.basedir import BASEDIR
-from common.params import Params
 from selfdrive.car.docs_definitions import Column, Star, Tier
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
@@ -28,15 +27,11 @@ CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 def get_tier_car_rows() -> Iterator[Tuple[str, List[str]]]:
   tier_car_rows: Dict[Tier, list] = {tier: [] for tier in Tier}
 
-  # TODO: Remove Hyundai exceptions once full long support is added
-  # Cars that can disable radar have openpilot longitudinal
-  Params().put_bool("DisableRadar", True)
-
   for models in get_interface_attr("CAR_INFO").values():
     for model, car_info in models.items():
       # Hyundai exception: all have openpilot longitudinal
       fingerprint = {0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}}
-      CP = interfaces[model][0].get_params(model, fingerprint=fingerprint)
+      CP = interfaces[model][0].get_params(model, fingerprint=fingerprint, disable_radar=True)
 
       if CP.dashcamOnly:
         continue
