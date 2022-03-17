@@ -21,9 +21,7 @@ class CarInfo:
       min_steer_speed = self.min_steer_speed
       assert CP.minSteerSpeed == 0, f"Minimum steer speed set in both CarInfo and CarParams for {CP.carFingerprint}"
 
-    # TODO: Prius V has stop and go, but only with smartDSU,
-    # set all the min enable speeds in carParams correctly and remove this
-    # TODO: Fix Prius before merge
+    # TODO: set all the min enable speeds in carParams correctly and remove this
     min_enable_speed = CP.minEnableSpeed
     if self.min_enable_speed is not None:
       min_enable_speed = self.min_enable_speed
