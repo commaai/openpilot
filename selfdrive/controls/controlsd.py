@@ -574,10 +574,10 @@ class Controls:
 
     # Orientation and angle rates can be useful for carcontroller
     # Only calibrated (car) frame is relevant for the carcontroller
-    orientation_value = self.sm['liveLocationKalman'].calibratedOrientationNED.value
+    orientation_value = list(self.sm['liveLocationKalman'].calibratedOrientationNED.value)
     if len(orientation_value) > 2:
       CC.orientationNED = orientation_value
-    angular_rate_value = self.sm['liveLocationKalman'].angularVelocityCalibrated.value
+    angular_rate_value = list(self.sm['liveLocationKalman'].angularVelocityCalibrated.value)
     if len(angular_rate_value) > 2:
       CC.angularVelocity = angular_rate_value
 
