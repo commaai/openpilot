@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Requires nvidia docker - https://github.com/NVIDIA/nvidia-docker
 if ! $(apt list --installed | grep -q nvidia-container-toolkit); then
   read -p "Nvidia docker is required. Do you want to install it now? (y/n)";
@@ -17,7 +18,7 @@ if ! $(apt list --installed | grep -q nvidia-container-toolkit); then
     fi
     sudo systemctl restart docker
   else
-    exit
+    exit 0
   fi
 fi
 
