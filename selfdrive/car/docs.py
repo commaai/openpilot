@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import jinja2
 import os
 from enum import Enum
@@ -54,7 +55,7 @@ def get_tier_car_rows() -> Iterator[Tuple[str, List[str]]]:
 
 def generate_cars_md(tier_car_rows: Iterator[Tuple[str, List[str]]], template_fn: str) -> str:
   with open(template_fn, "r") as f:
-    template = jinja2.Template(f.read(), trim_blocks=True)
+    template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
   return template.render(tiers=tier_car_rows, columns=[column.value for column in Column],
@@ -62,7 +63,13 @@ def generate_cars_md(tier_car_rows: Iterator[Tuple[str, List[str]]], template_fn
 
 
 if __name__ == "__main__":
-  # Auto generates supported cars documentation
-  with open(CARS_MD_OUT, 'w') as f:
-    f.write(generate_cars_md(get_tier_car_rows(), CARS_MD_TEMPLATE))
-  print(f"Generated and written to {CARS_MD_OUT}")
+  parser = argparse.ArgumentParser(description="Auto generates supported cars documentation",
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+  parser.add_argument("--template", default=CARS_MD_TEMPLATE, help="Override default template filename")
+  parser.add_argument("--out", default=CARS_MD_OUT, help="Override default generated filename")
+  args = parser.parse_args()
+
+  with open(args.out, 'w') as f:
+    f.write(generate_cars_md(get_tier_car_rows(), args.template))
+  print(f"Generated and written to {args.out}")
