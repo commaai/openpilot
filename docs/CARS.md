@@ -206,6 +206,7 @@ How We Rate The Cars
 |Volkswagen|Caravelle 2020[<sup>5</sup>](#Footnotes)|Driver Assistance|<a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
 
 
+## Footnotes
 <sup>1</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
 <sup>2</sup>Requires an [OBD-II](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB). <br />
 <sup>3</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
