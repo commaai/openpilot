@@ -8,7 +8,7 @@ class CarInterface(CarInterfaceBase):
     super().__init__(CP, CarController, CarState)
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
 
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "body"
@@ -41,7 +41,6 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp)
 
     ret.canValid = self.cp.can_valid
-    # print(c.pitch) # Value from sm['liveLocationKalman'].orientationNED.value[1]
 
     self.CS.out = ret.as_reader()
     return self.CS.out
