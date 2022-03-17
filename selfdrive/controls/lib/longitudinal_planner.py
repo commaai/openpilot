@@ -116,6 +116,7 @@ class Planner:
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState'])
 
     longitudinalPlan = plan_send.longitudinalPlan
+    longitudinalPlan.frameId = sm['modelV2'].frameId
     longitudinalPlan.modelMonoTime = sm.logMonoTime['modelV2']
     longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.logMonoTime['modelV2']
 
