@@ -13,7 +13,7 @@ from selfdrive.car.tests.routes import non_tested_cars
 
 def get_all_footnotes():
   all_footnotes = []
-  for _, footnotes in sorted(get_interface_attr("Footnote").items()):
+  for _, footnotes in get_interface_attr("Footnote").items():
     if footnotes is not None:
       all_footnotes += footnotes
   return {fn: idx + 1 for idx, fn in enumerate(all_footnotes)}
