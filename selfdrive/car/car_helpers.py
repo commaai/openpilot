@@ -1,4 +1,6 @@
 import os
+from typing import Any, Dict, List
+
 from common.params import Params
 from common.basedir import BASEDIR
 from selfdrive.version import is_comma_remote, is_tested_branch
@@ -57,19 +59,25 @@ def load_interfaces(brand_names):
   return ret
 
 
-def _get_interface_names():
-  # read all the folders in selfdrive/car and return a dict where:
-  # - keys are all the car names that which we have an interface for
-  # - values are lists of spefic car models for a given car
+def get_interface_attr(attr: str) -> Dict[str, Any]:
+  # returns given attribute from each interface
   brand_names = {}
   for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
     try:
       brand_name = car_folder.split('/')[-1]
-      model_names = __import__(f'selfdrive.car.{brand_name}.values', fromlist=['CAR']).CAR
-      model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
-      brand_names[brand_name] = model_names
+      attr_data = getattr(__import__(f'selfdrive.car.{brand_name}.values', fromlist=[attr]), attr, None)
+      brand_names[brand_name] = attr_data
     except (ImportError, OSError):
       pass
+  return brand_names
+
+
+def _get_interface_names() -> Dict[str, List[str]]:
+  # returns a dict of brand name and its respective models
+  brand_names = {}
+  for brand_name, model_names in get_interface_attr("CAR").items():
+    model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
+    brand_names[brand_name] = model_names
 
   return brand_names
 
