@@ -45,8 +45,6 @@ How We Rate The Cars
 
 {% endfor %}
 
-## Footnotes
-
 {% for footnote in footnotes %}
 <sup>{{loop.index}}</sup>{{footnote}} <br />
 {% endfor %}
