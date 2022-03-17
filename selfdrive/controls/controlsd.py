@@ -572,10 +572,14 @@ class Controls:
   def publish_logs(self, CS, start_time, CC, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
-    orientation_value = self.sm['liveLocationKalman'].orientationNED.value
+    # Orientation and angle rates can be useful for carcontroller
+    # Only calibrated (car) frame is relevant for the carcontroller
+    orientation_value = list(self.sm['liveLocationKalman'].calibratedOrientationNED.value)
     if len(orientation_value) > 2:
-      CC.roll = orientation_value[0]
-      CC.pitch = orientation_value[1]
+      CC.orientationNED = orientation_value
+    angular_rate_value = list(self.sm['liveLocationKalman'].angularVelocityCalibrated.value)
+    if len(angular_rate_value) > 2:
+      CC.angularVelocity = angular_rate_value
 
     CC.cruiseControl.cancel = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
     if self.joystick_mode and self.sm.rcv_frame['testJoystick'] > 0 and self.sm['testJoystick'].buttons[0]:
