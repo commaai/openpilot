@@ -12,25 +12,25 @@ How We Rate The Cars
 ---
 
 ### openpilot Adaptive Cruise Control (ACC)
-- {{star_full}} - openpilot is able to control the gas and brakes.
-- {{star_half}} - openpilot is able to control the gas and brakes with some restrictions.
-- {{star_empty}} - The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system.
+- {{Star.FULL.icon}} - openpilot is able to control the gas and brakes.
+- {{Star.HALF.icon}} - openpilot is able to control the gas and brakes with some restrictions.
+- {{Star.EMPTY.icon}} - The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system.
 
 ### Stop and Go
-- {{star_full}} - Adaptive Cruise Control (ACC) operates down to 0 mph.
-- {{star_empty}} - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.
+- {{Star.FULL.icon}} - Adaptive Cruise Control (ACC) operates down to 0 mph.
+- {{Star.EMPTY.icon}} - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.
 
 ### Steer to 0
-- {{star_full}} - openpilot can control the steering wheel down to 0 mph.
-- {{star_empty}} - No steering control below certain speeds.
+- {{Star.FULL.icon}} - openpilot can control the steering wheel down to 0 mph.
+- {{Star.EMPTY.icon}} - No steering control below certain speeds.
 
 ### Steering Torque
-- {{star_full}} - Car has enough steering torque for comfortable highway driving.
-- {{star_empty}} - Limited ability to make turns.
+- {{Star.FULL.icon}} - Car has enough steering torque for comfortable highway driving.
+- {{Star.EMPTY.icon}} - Limited ability to make turns.
 
 ### Actively Maintained
-- {{star_full}} - Mainline software support, harness hardware sold by comma, lots of users, primary development target.
-- {{star_empty}} - Low user count, community maintained, harness hardware not sold by comma.
+- {{Star.FULL.icon}} - Mainline software support, harness hardware sold by comma, lots of users, primary development target.
+- {{Star.EMPTY.icon}} - Low user count, community maintained, harness hardware not sold by comma.
 
 **All supported cars can move between the tiers as support changes.**
 

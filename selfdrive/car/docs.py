@@ -61,8 +61,8 @@ def generate_cars_md(tier_car_rows: Iterator[Tuple[str, List[str]]], template_fn
     template = jinja2.Template(f.read(), trim_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  return template.render(tiers=tier_car_rows, columns=[column.value for column in Column], footnotes=footnotes,
-                         star_full=Star.FULL.icon, star_half=Star.HALF.icon, star_empty=Star.EMPTY.icon)
+  return template.render(tiers=tier_car_rows, columns=[column.value for column in Column],
+                         footnotes=footnotes, Star=Star)
 
 
 if __name__ == "__main__":
