@@ -4,9 +4,6 @@ from selfdrive.car import scale_rot_inertia, scale_tire_stiffness, gen_empty_fin
 from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
 

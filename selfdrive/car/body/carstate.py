@@ -5,9 +5,6 @@ from selfdrive.car.body.values import DBC
 
 
 class CarState(CarStateBase):
-  def __init__(self, CP):
-    super().__init__(CP)
-
   def update(self, cp):
     ret = car.CarState.new_message()
 
@@ -17,7 +14,7 @@ class CarState(CarStateBase):
     ret.vEgoRaw = ((ret.wheelSpeeds.fl + ret.wheelSpeeds.fr) / 2.) * self.CP.wheelSpeedFactor
 
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = abs(ret.vEgo) < 100
+    ret.standstill = abs(ret.vEgo) < 1
 
     ret.cruiseState.enabled = True
     ret.cruiseState.available = True

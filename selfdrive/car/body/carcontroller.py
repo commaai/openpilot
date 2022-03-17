@@ -43,8 +43,8 @@ class CarController():
     self.i_speed = np.clip(self.i_speed, -0.1, 0.1)
     self.set_point = kp_speed * (self.speed_desired - self.speed_measured) + self.i_speed
 
-    angle_err = (-c.CC.orientationNED[1]) - self.set_point
-    d_new = -c.CC.angularVelocity[1]
+    angle_err = (-c.orientationNED[1]) - self.set_point
+    d_new = -c.angularVelocity[1]
     alpha_d = 1.0
     self.d = (1. - alpha_d) * self.d + alpha * d_new
     self.d =  np.clip(self.d, -1., 1.)
