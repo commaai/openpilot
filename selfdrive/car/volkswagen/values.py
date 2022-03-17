@@ -126,7 +126,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Golf SportWagen 2015"),
   ],
   CAR.JETTA_MK7: [
-    VWCarInfo("Volkswagen Jetta 2018-20"),
+    VWCarInfo("Volkswagen Jetta 2018-21"),
     VWCarInfo("Volkswagen Jetta GLI 2021"),
   ],
   CAR.PASSAT_MK8: VWCarInfo("Volkswagen Passat 2016-18", footnotes=[Footnote.PASSAT]),
