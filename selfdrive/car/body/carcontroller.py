@@ -1,8 +1,7 @@
+import numpy as np
 from selfdrive.car.body import bodycan
 from opendbc.can.packer import CANPacker
 
-import cereal.messaging as messaging
-import numpy as np
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -14,8 +13,6 @@ class CarController():
 
     self.packer = CANPacker(dbc_name)
     # ////////////////////////////////
-    self.sm = messaging.SubMaster(['liveLocationKalman'])
-
     self.kp = 1300
     self.ki = 0
     self.kd = 280
@@ -37,11 +34,7 @@ class CarController():
   def update(self, c, CS, frame, actuators, cruise_cancel, hud_alert,
              left_line, right_line, left_lane_depart, right_lane_depart):
 
-    # print(c.pitch) # Value from sm['liveLocationKalman'].orientationNED.value[1]
-
     # ///////////////////////////////////////
-    self.sm.update()
-
     alpha = 1.0
     self.speed_desired = (1. - alpha)*self.speed_desired
     kp_speed = 0.001
@@ -49,16 +42,12 @@ class CarController():
     self.i_speed += ki_speed * (self.speed_desired - self.speed_measured)
     self.i_speed = np.clip(self.i_speed, -0.1, 0.1)
     self.set_point = kp_speed * (self.speed_desired - self.speed_measured) + self.i_speed
-    try:
-      angle_err = (-self.sm['liveLocationKalman'].orientationNED.value[1]) - self.set_point
-      d_new = -self.sm['liveLocationKalman'].angularVelocityDevice.value[1]
-      alpha_d = 1.0
-      self.d = (1. - alpha_d) * self.d + alpha * d_new
-      self.d =  np.clip(self.d, -1., 1.)
-    except Exception:
-      print("can't subscribe?")
-      # Send 0 torque if can't read?
-      pass
+
+    angle_err = (-c.CC.orientationNED[1]) - self.set_point
+    d_new = -c.CC.angularVelocity[1]
+    alpha_d = 1.0
+    self.d = (1. - alpha_d) * self.d + alpha * d_new
+    self.d =  np.clip(self.d, -1., 1.)
 
     self.i += angle_err
     self.i = np.clip(self.i, -2, 2)
@@ -93,8 +82,6 @@ class CarController():
 
     apply_angle = actuators.steeringAngleDeg
 
-    #torque_l = 60
-    #torque_r = 60
     can_sends.append(bodycan.create_control(
         self.packer, torque_l, torque_r))
 

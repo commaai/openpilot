@@ -21,6 +21,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.mass = 9
     ret.wheelbase = 0.406
+    ret.wheelSpeedFactor = 0.008587
     ret.centerToFront = ret.wheelbase * 0.44
     ret.steerRatio = 1
 
