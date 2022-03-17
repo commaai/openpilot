@@ -23,22 +23,28 @@ class CarInfo:
 
     # TODO: Prius V has stop and go, but only with smartDSU,
     # set all the min enable speeds in carParams correctly and remove this
+    # TODO: Fix Prius before merge
     min_enable_speed = CP.minEnableSpeed
     if self.min_enable_speed is not None:
       min_enable_speed = self.min_enable_speed
 
-    stars = [CP.openpilotLongitudinalControl and not CP.radarOffCan, min_enable_speed <= 0.,
-             min_steer_speed <= 0., self.good_torque, CP.carFingerprint not in non_tested_cars]
+    stars = {
+      Column.LONGITUDINAL: CP.openpilotLongitudinalControl and not CP.radarOffCan,
+      Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
+      Column.FSR_STEERING: min_steer_speed <= 0.,
+      Column.STEERING_TORQUE: self.good_torque,
+      Column.MAINTAINED: CP.carFingerprint not in non_tested_cars,
+    }
 
-    for idx, column in enumerate(StarColumns):
-      stars[idx] = Star.FULL if stars[idx] else Star.EMPTY
+    for column in StarColumns:
+      stars[column] = Star.FULL if stars[column] else Star.EMPTY
 
       # Demote if footnote specifies a star
       footnote = get_footnote(self.footnotes, column)
       if footnote is not None and footnote.value.star is not None:
-        stars[idx] = footnote.value.star
+        stars[column] = footnote.value.star
 
-    return stars
+    return [stars[column] for column in StarColumns]
 
   def get_row(self, all_footnotes, stars):
     # TODO: add YouTube videos
@@ -70,7 +76,7 @@ class Column(Enum):
   FSR_LONGITUDINAL = "Stop and Go"
   FSR_STEERING = "Steer to 0"
   STEERING_TORQUE = "Steering Torque"
-  SUPPORTED = "Actively Maintained"
+  MAINTAINED = "Actively Maintained"
 
 
 class Star(Enum):
