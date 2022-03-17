@@ -11,6 +11,7 @@ from selfdrive.car.subaru.values import CAR as SUBARU
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 from selfdrive.car.tesla.values import CAR as TESLA
+from selfdrive.car.body.values import CAR as COMMA
 
 # TODO: add routes for these cars
 non_tested_cars = [
@@ -20,6 +21,7 @@ non_tested_cars = [
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_OPTIMA_H,
+  COMMA.BODY,
 ]
 
 TestRoute = namedtuple('TestRoute', ['route', 'car_fingerprint'])
