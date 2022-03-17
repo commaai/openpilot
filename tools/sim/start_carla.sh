@@ -2,8 +2,6 @@
 #echo "Your name is $1"
 # Requires nvidia docker - https://github.com/NVIDIA/nvidia-docker
 if ! $(apt list --installed | grep -q nvidia-container-toolkit); then
-#  if [ "$INSTALL" == "1" ]; then
-#  echo "Nvidia docker is required. Do you want to install it now? (y/n)"# Re-run with "start_carla.sh 1" INSTALL=1 to automatically install."
   read -p "Nvidia docker is required. Do you want to install it now? (y/n)";
   if [ "${REPLY}" == "y" ]; then
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
