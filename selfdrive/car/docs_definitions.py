@@ -1,7 +1,7 @@
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, NamedTuple
+from typing import List, Optional
 
 
 @dataclass
@@ -9,7 +9,7 @@ class CarInfo:
   name: str
   package: str
   video_link: Optional[str] = None
-  footnotes: Optional[List[NamedTuple]] = None
+  footnotes: Optional[List[Enum]] = None
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
   good_torque: bool = False
@@ -35,8 +35,8 @@ class CarInfo:
 
       # Demote if footnote specifies a star
       footnote = get_footnote(self.footnotes, column)
-      if footnote is not None and footnote.star is not None:
-        stars[idx] = footnote.star
+      if footnote is not None and footnote.value.star is not None:
+        stars[idx] = footnote.value.star
 
     return stars
 
@@ -87,10 +87,10 @@ StarColumns = list(Column)[3:]
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
 
-def get_footnote(footnotes: Optional[List[CarFootnote]], column: Column) -> Optional[CarFootnote]:
+def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[Enum]:
   # Returns applicable footnote given current column
   if footnotes is not None:
     for fn in footnotes:
-      if fn.column == column:
+      if fn.value.column == column:
         return fn
   return None
