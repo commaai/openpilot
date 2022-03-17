@@ -62,7 +62,7 @@ def load_interfaces(brand_names):
 def get_interface_attr(attr: str) -> Dict[str, Any]:
   # returns given attribute from each interface
   brand_names = {}
-  for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
+  for car_folder in sorted([x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]):
     try:
       brand_name = car_folder.split('/')[-1]
       attr_data = getattr(__import__(f'selfdrive.car.{brand_name}.values', fromlist=[attr]), attr, None)
