@@ -47,8 +47,9 @@ class CarInfo:
     return [stars[column] for column in StarColumns]
 
   def get_row(self, all_footnotes, stars):
-    # TODO: add YouTube videos
-    row = [*self.name.split(' ', 1), self.package, *stars]
+    # TODO: add YouTube vidos
+    make, model = self.name.split(' ', 1)
+    row = [make, model, self.package, *stars]
 
     # Check for car footnotes and get star icons
     for row_idx, column in enumerate(Column):
