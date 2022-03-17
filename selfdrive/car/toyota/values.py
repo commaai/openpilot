@@ -123,7 +123,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Toyota Prius 2016-20", "TSS-P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
     ToyotaCarInfo("Toyota Prius Prime 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
   ],
-  CAR.PRIUS_V: ToyotaCarInfo("Toyota Prius v 2017", "TSS-P", footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
+  CAR.PRIUS_V: ToyotaCarInfo("Toyota Prius v 2017", "TSS-P", min_enable_speed=MIN_ACC_SPEED, footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
   CAR.PRIUS_TSS2: [
     ToyotaCarInfo("Toyota Prius 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
     ToyotaCarInfo("Toyota Prius Prime 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
