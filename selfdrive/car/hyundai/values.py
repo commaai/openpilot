@@ -51,7 +51,7 @@ class CAR:
   SONATA_LF = "HYUNDAI SONATA 2019"
   PALISADE = "HYUNDAI PALISADE 2020"
   VELOSTER = "HYUNDAI VELOSTER 2019"
-  SONATA_HYBRID = "HYUNDAI SONATA HYBRID 2021"
+  SONATA_HYBRID = "HYUNDAI SONATA HYBRID 2020-22"
 
   # Kia
   KIA_FORTE = "KIA FORTE E 2018 & GT 2021"
@@ -103,7 +103,7 @@ CAR_INFO: Dict[str, Union[HyundaiCarInfo, List[HyundaiCarInfo]]] = {
     HyundaiCarInfo("Kia Telluride 2020"),
   ],
   CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS),
-  CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2021-22", "All"),
+  CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", "All"),
 
   # Kia
   CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2018-21"),
@@ -1059,6 +1059,10 @@ FW_VERSIONS = {
       b'\xf1\x8799110L5000\xf1\000DNhe SCC FHCUP      1.00 1.02 99110-L5000         ',
       b'\xf1\000DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
       b'\xf1\x8799110L5000\xf1\000DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
+      b'\xf1\x8799110L5000\xf1\x00DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
+      ],
+    (Ecu.esp, 0x7b0, None): [
+      b'\x00\x00\x00\x00\x00\x00\x00\x00',
       ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x8756310-L5500\xf1\x00DN8 MDPS C 1.00 1.02 56310-L5500 4DNHC102',
@@ -1077,10 +1081,13 @@ FW_VERSIONS = {
       b'\xf1\000PSBG2333  E16\000\000\000\000\000\000\000TDN2H20SA7\0323\xf9\xab',
       b'\xf1\x87PCU\000\000\000\000\000\000\000\000\000\xf1\x81E16\000\000\000\000\000\000\000\xf1\000PSBG2333  E16\000\000\000\000\000\000\000TDN2H20SA7\0323\xf9\xab',
       b'\xf1\x87959102T250\x00\x00\x00\x00\x00\xf1\x81E14\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2333  E14\x00\x00\x00\x00\x00\x00\x00TDN2H20SA6N\xc2\xeeW',
+      b'\xf1\x87959102T250\x00\x00\x00\x00\x00\xf1\x81E09\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2323  E09',
+      b'\x00\x00\x00\x00\x00\x00\x00TDN2H20SA5\x97R\x88\x9e',
       ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x87391162J012',
       b'\xf1\x87391162J013',
+      b'\xf1\x87391062J002'
       ],
   },
   CAR.KIA_SORENTO: {
