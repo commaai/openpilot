@@ -38,7 +38,6 @@ def get_tier_car_rows() -> Iterator[Tuple[str, List[str]]]:
       fingerprint = {0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}}
       CP = interfaces[model][0].get_params(model, fingerprint=fingerprint)
 
-      # Skip community supported
       if CP.dashcamOnly:
         continue
 
