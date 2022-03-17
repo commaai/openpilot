@@ -9,7 +9,7 @@ if ! $(apt list --installed | grep -q nvidia-container-toolkit); then
     curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
     curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
     sudo apt-get update && sudo apt-get install -y nvidia-docker2 # Also installs docker-ce and nvidia-container-toolkit
-    read -p "Just installed docker? Set permanent docker permission for usergroup. (Run 'sudo systemctl restart docker' afterwards and then rerun start_carla.sh) (y/n)"
+    read -p "Just installed docker? Set permanent docker permission for usergroup. Permissions are fully working after logging out. (Run 'sudo systemctl restart docker' afterwards and then rerun start_carla.sh) (y/n)"
     if [ "${REPLY}" == "y" ]; then
         # Adding docker to current usergroup
         sudo groupadd docker
