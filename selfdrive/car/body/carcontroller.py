@@ -13,81 +13,79 @@ class CarController():
 
     self.packer = CANPacker(dbc_name)
     # ////////////////////////////////
-    self.kp = 1300
-    self.ki = 0
-    self.kd = 280
-    self.i = 0
-    self.d = 0
     self.i_speed = 0
-    self.i_tq = 0
 
-    self.set_point = np.deg2rad(-0)
+    self.i_balance = 0
+    self.d_balance = 0
 
-    self.accel_err = 0
+    self.i_torque = 0
 
-    self.speed_measured = 0
-    self.speed_desired = 0
-    self.torque_right_filtered = 0.0
-    self.torque_left_filtered = 0.0
+    self.speed_measured = 0.
+    self.speed_desired = 0.
+
+    self.torque_r_filtered = 0.
+    self.torque_l_filtered = 0.
     # ////////////////////////////////
+
+  @staticmethod
+  def deadband_filter(torque, deadband):
+      if torque > 0:
+        torque += deadband
+      else:
+        torque -= deadband
+      return torque
 
   def update(self, c, CS, frame, actuators, cruise_cancel, hud_alert,
              left_line, right_line, left_lane_depart, right_lane_depart):
 
     # ///////////////////////////////////////
-    alpha = 1.0
-    self.speed_desired = (1. - alpha)*self.speed_desired
+    # Setpoint speed PID
     kp_speed = 0.001
     ki_speed = 0
-    self.i_speed += ki_speed * (self.speed_desired - self.speed_measured)
+    alpha_speed = 1.0
+
+    self.speed_measured = (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
+    self.speed_desired = (1. - alpha_speed)*self.speed_desired
+    p_speed = (self.speed_desired - self.speed_measured)
+    self.i_speed += ki_speed * p_speed
     self.i_speed = np.clip(self.i_speed, -0.1, 0.1)
-    self.set_point = kp_speed * (self.speed_desired - self.speed_measured) + self.i_speed
+    set_point = p_speed * kp_speed + self.i_speed
 
-    angle_err = (-c.orientationNED[1]) - self.set_point
-    d_new = -c.angularVelocity[1]
-    alpha_d = 1.0
-    self.d = (1. - alpha_d) * self.d + alpha * d_new
-    self.d =  np.clip(self.d, -1., 1.)
+    # Balancing PID
+    kp_balance = 1300
+    ki_balance = 0
+    kd_balance = 280
+    alpha_d_balance = 1.0
 
-    self.i += angle_err
-    self.i = np.clip(self.i, -2, 2)
+    p_balance = (-c.orientationNED[1]) - set_point
+    self.i_balance += CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr
+    self.d_balance =  np.clip(((1. - alpha_d_balance) * self.d_balance + alpha_d_balance * -c.angularVelocity[1]), -1., 1.)
+    torque = int(np.clip((p_balance*kp_balance + self.i_balance*ki_balance + self.d_balance*kd_balance), -1000, 1000))
 
-    self.speed_measured = (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2
+    # Positional recovery PID
+    kp_torque = 0.95
+    ki_torque = 0.1
 
-    speed = int(np.clip(angle_err*self.kp + self.accel_err*self.ki + self.d*self.kd, -1000, 1000))
+    p_torque = (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
+    self.i_torque += (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
+    torque_diff = int(np.clip(p_torque*kp_torque + self.i_torque*ki_torque, -100, 100))
 
-    kp_diff = 0.95
-    kd_diff = 0.1
-    p_tq = (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
+    # Combine 2 PIDs outputs
+    torque_r = torque + torque_diff
+    torque_l = torque - torque_diff
 
-    torque_diff = int(np.clip(p_tq*kp_diff + self.i_tq*kd_diff, -100, 100))
-
-    self.i_tq += (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
-    torque_r = speed + torque_diff
-    torque_l = speed - torque_diff
-
-    if torque_r > 0:
-      torque_r += 10
-    else:
-      torque_r -= 10
-    if torque_l > 0:
-      torque_l += 10
-    else:
-      torque_l -= 10
-
+    #Low pass filter
     alpha_torque = 1.
-    self.torque_right_filtered = (1. - alpha_torque) * self.torque_right_filtered + alpha_torque * torque_r
-    self.torque_left_filtered = (1. - alpha_torque) * self.torque_left_filtered + alpha_torque * torque_l
-    torque_r = int(np.clip(self.torque_right_filtered, -1000, 1000))
-    torque_l = int(np.clip(self.torque_left_filtered, -1000, 1000))
-    self.accel_err += CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr
+    self.torque_r_filtered = (1. - alpha_torque) * self.torque_r_filtered + alpha_torque * self.deadband_filter(torque_r, 10)
+    self.torque_l_filtered = (1. - alpha_torque) * self.torque_l_filtered + alpha_torque * self.deadband_filter(torque_l, 10)
+    torque_r = int(np.clip(self.torque_r_filtered, -1000, 1000))
+    torque_l = int(np.clip(self.torque_l_filtered, -1000, 1000))
     # ///////////////////////////////////////
     can_sends = []
 
     apply_angle = actuators.steeringAngleDeg
 
-    can_sends.append(bodycan.create_control(
-        self.packer, torque_l, torque_r))
+    can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r))
 
     new_actuators = actuators.copy()
     new_actuators.steeringAngleDeg = apply_angle
