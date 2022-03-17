@@ -29,7 +29,7 @@ def get_tier_car_rows() -> Iterator[Tuple[str, List[str]]]:
 
   for models in get_interface_attr("CAR_INFO").values():
     for model, car_info in models.items():
-      # Hyundai exception: all have openpilot longitudinal
+      # Hyundai exception: those with radar have openpilot longitudinal
       fingerprint = {0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}}
       CP = interfaces[model][0].get_params(model, fingerprint=fingerprint, disable_radar=True)
 
