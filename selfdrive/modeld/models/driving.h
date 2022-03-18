@@ -100,8 +100,8 @@ struct ModelOutputLaneLinesElement {
 };
 static_assert(sizeof(ModelOutputLaneLinesElement) == (sizeof(ModelOutputYZ)*TRAJECTORY_SIZE*2) + sizeof(float)*LANELINES_MHP_N);
 
-struct ModelOutputLaneLinesPrediction {
-  std::array<float, ModelOutputLaneLinesElement, LANELINES_MHP_N> prediction;
+struct ModelOutputLaneLines {
+  std::array<ModelOutputLaneLinesElement, LANELINES_MHP_N> prediction;
   ModelOutputLinesProb prob;
 
   constexpr const ModelOutputLaneLinesElement &get_lane_idx(int lane_idx) const {
@@ -114,7 +114,7 @@ struct ModelOutputLaneLinesPrediction {
     return prediction[max_idx];
   }
 };
-static_assert(sizeof(ModelOutputLaneLinesPrediction) == (sizeof(ModelOutputLaneLinesElement)*LANELINES_MHP_N) + (sizeof(ModelOutputLinesProb)));
+static_assert(sizeof(ModelOutputLaneLines) == (sizeof(ModelOutputLaneLinesElement)*LANELINES_MHP_N) + (sizeof(ModelOutputLinesProb)));
 
 struct ModelOutputEdgessXY {
   std::array<ModelOutputYZ, TRAJECTORY_SIZE> left;
