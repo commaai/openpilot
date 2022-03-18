@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-import os
 from collections import Counter
 from pprint import pprint
 
-from common.basedir import BASEDIR
+from selfdrive.car.docs import get_tier_car_rows
 
-with open(os.path.join(BASEDIR, "docs/CARS.md")) as f:
-  lines = f.readlines()
-  cars = [l for l in lines if l.strip().startswith("|") and l.strip().endswith("|") and
-                              "Make" not in l and any(c.isalpha() for c in l)]
+if __name__ == "__main__":
+  tiers = list(get_tier_car_rows())
+  cars = [car for tier_cars in tiers for car in tier_cars[1]]
 
-  make_count = Counter(l.split('|')[1].split('|')[0].strip() for l in cars)
-  print("\n", "*"*20, len(cars), "total", "*"*20, "\n")
+  make_count = Counter(l[0] for l in cars)
+  print("\n", "*" * 20, len(cars), "total", "*" * 20, "\n")
   pprint(make_count)
