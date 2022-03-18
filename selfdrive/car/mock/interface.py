@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import math
 from cereal import car
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint, get_safety_config
@@ -33,7 +33,7 @@ class CarInterface(CarInterfaceBase):
     return accel
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "mock"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput)]

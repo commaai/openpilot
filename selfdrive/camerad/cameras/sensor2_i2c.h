@@ -9,7 +9,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x302C, 0x0001}, // VT_SYS_CLK_DIV
   {0x302E, 0x0002}, // PRE_PLL_CLK_DIV
   {0x3030, 0x0032}, // PLL_MULTIPLIER
-  {0x3036, 0x000A}, // OP_WORD_CLK_DIV
+  {0x3036, 0x000C}, // OP_WORD_CLK_DIV
   {0x3038, 0x0001}, // OP_SYS_CLK_DIV
 
   // FORMAT
@@ -46,11 +46,11 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
 
   // Readout Settings
   {0x31AE, 0x0204}, // SERIAL_FORMAT, 4-lane MIPI
-  {0x31AC, 0x0C0A}, // DATA_FORMAT_BITS, 12 -> 10
-  {0x3342, 0x122B}, // MIPI_F1_PDT_EDT
-  {0x3346, 0x122B}, // MIPI_F2_PDT_EDT
-  {0x334A, 0x122B}, // MIPI_F3_PDT_EDT
-  {0x334E, 0x122B}, // MIPI_F4_PDT_EDT
+  {0x31AC, 0x0C0C}, // DATA_FORMAT_BITS, 12 -> 12
+  {0x3342, 0x122C}, // MIPI_F1_PDT_EDT
+  {0x3346, 0x122C}, // MIPI_F2_PDT_EDT
+  {0x334A, 0x122C}, // MIPI_F3_PDT_EDT
+  {0x334E, 0x122C}, // MIPI_F4_PDT_EDT
   {0x3344, 0x0011}, // MIPI_F1_VDT_VC
   {0x3348, 0x0111}, // MIPI_F2_VDT_VC
   {0x334C, 0x0211}, // MIPI_F3_VDT_VC

@@ -24,7 +24,7 @@ class TestLocationdLib(unittest.TestCase):
   def setUp(self):
     header = '''typedef ...* Localizer_t;
 Localizer_t localizer_init();
-void localizer_get_message_bytes(Localizer_t localizer, uint64_t logMonoTime, bool inputsOK, bool sensorsOK, bool gpsOK, char *buff, size_t buff_size);
+void localizer_get_message_bytes(Localizer_t localizer, uint64_t logMonoTime, bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid, char *buff, size_t buff_size);
 void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t size);'''
 
     self.ffi = FFI()
@@ -40,8 +40,8 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
     bytstr = msg_builder.to_bytes()
     self.lib.localizer_handle_msg_bytes(self.localizer, self.ffi.from_buffer(bytstr), len(bytstr))
 
-  def localizer_get_msg(self, t=0, inputsOK=True, sensorsOK=True, gpsOK=True):
-    self.lib.localizer_get_message_bytes(self.localizer, t, inputsOK, sensorsOK, gpsOK, self.ffi.addressof(self.msg_buff, 0), self.buff_size)
+  def localizer_get_msg(self, t=0, inputsOK=True, sensorsOK=True, gpsOK=True, msgValid=True):
+    self.lib.localizer_get_message_bytes(self.localizer, t, inputsOK, sensorsOK, gpsOK, msgValid, self.ffi.addressof(self.msg_buff, 0), self.buff_size)
     return log.Event.from_bytes(self.ffi.buffer(self.msg_buff), nesting_limit=self.buff_size // 8)
 
   def test_liblocalizer(self):
