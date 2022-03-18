@@ -98,6 +98,7 @@ HUDData = namedtuple("HUDData",
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    self.CP = CP
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
@@ -112,20 +113,20 @@ class CarController():
 
     self.params = CarControllerParams(CP)
 
-  def update(self, enabled, active, CS, frame, actuators, pcm_cancel_cmd,
+  def update(self, c, CS, frame, actuators, pcm_cancel_cmd,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
 
-    if active:
+    if c.longActive:
       accel = actuators.accel
-      gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, CS.CP.carFingerprint)
+      gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP.carFingerprint)
     else:
       accel = 0.0
       gas, brake = 0.0, 0.0
 
     # *** apply brake hysteresis ***
-    pre_limit_brake, self.braking, self.brake_steady = actuator_hystereses(brake, self.braking, self.brake_steady, CS.out.vEgo, CS.CP.carFingerprint)
+    pre_limit_brake, self.braking, self.brake_steady = actuator_hystereses(brake, self.braking, self.brake_steady, CS.out.vEgo, self.CP.carFingerprint)
 
     # *** rate limit after the enable check ***
     self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., DT_CTRL)
@@ -136,7 +137,7 @@ class CarController():
     else:
       hud_lanes = 0
 
-    if enabled:
+    if c.enabled:
       if hud_show_car:
         hud_car = 2
       else:
@@ -152,20 +153,18 @@ class CarController():
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_steer = int(interp(-actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
 
-    lkas_active = active and not CS.steer_not_allowed
-
     # Send CAN commands.
     can_sends = []
 
     # tester present - w/ no response (keeps radar disabled)
-    if CS.CP.carFingerprint in HONDA_BOSCH and CS.CP.openpilotLongitudinalControl:
+    if self.CP.carFingerprint in HONDA_BOSCH and self.CP.openpilotLongitudinalControl:
       if (frame % 10) == 0:
         can_sends.append((0x18DAB0F1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 1))
 
     # Send steering command.
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
-      lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
+      c.latActive, self.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
 
     stopping = actuators.longControlState == LongCtrlState.stopping
 
@@ -180,10 +179,10 @@ class CarController():
                       0.5]
     # The Honda ODYSSEY seems to have different PCM_ACCEL
     # msgs, is it other cars too?
-    if CS.CP.enableGasInterceptor:
+    if self.CP.enableGasInterceptor:
       pcm_speed = 0.0
       pcm_accel = int(0.0)
-    elif CS.CP.carFingerprint in HONDA_NIDEC_ALT_PCM_ACCEL:
+    elif self.CP.carFingerprint in HONDA_NIDEC_ALT_PCM_ACCEL:
       pcm_speed_V = [0.0,
                      clip(CS.out.vEgo - 3.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 0.0, 0.0, 100.0),
@@ -198,15 +197,15 @@ class CarController():
       pcm_speed = interp(gas-brake, pcm_speed_BP, pcm_speed_V)
       pcm_accel = int(clip((accel/1.44)/max_accel, 0.0, 1.0) * 0xc6)
 
-    if not CS.CP.openpilotLongitudinalControl:
+    if not self.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
         idx = frame // 2
-        can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, CS.CP.carFingerprint, idx))
+        can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, self.CP.carFingerprint, idx))
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx, CS.CP.carFingerprint))
+        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx, self.CP.carFingerprint))
       elif CS.out.cruiseState.standstill:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint))
+        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, self.CP.carFingerprint))
 
     else:
       # Send gas and brake commands.
@@ -214,10 +213,10 @@ class CarController():
         idx = frame // 2
         ts = frame * DT_CTRL
 
-        if CS.CP.carFingerprint in HONDA_BOSCH:
+        if self.CP.carFingerprint in HONDA_BOSCH:
           self.accel = clip(accel, P.BOSCH_ACCEL_MIN, P.BOSCH_ACCEL_MAX)
           self.gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
-          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, active, accel, self.gas, idx, stopping, CS.CP.carFingerprint))
+          can_sends.extend(hondacan.create_acc_commands(self.packer, c.enabled, c.longActive, accel, self.gas, idx, stopping, self.CP.carFingerprint))
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * P.NIDEC_BRAKE_MAX, 0, P.NIDEC_BRAKE_MAX - 1))
@@ -225,18 +224,18 @@ class CarController():
 
           pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
-            pcm_override, pcm_cancel_cmd, fcw_display, idx, CS.CP.carFingerprint, CS.stock_brake))
+            pcm_override, pcm_cancel_cmd, fcw_display, idx, self.CP.carFingerprint, CS.stock_brake))
           self.apply_brake_last = apply_brake
           self.brake = apply_brake / P.NIDEC_BRAKE_MAX
 
-          if CS.CP.enableGasInterceptor:
+          if self.CP.enableGasInterceptor:
             # way too aggressive at low speed without this
             gas_mult = interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
             # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
             # This prevents unexpected pedal range rescaling
             # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected
             # when you do enable.
-            if active:
+            if c.longActive:
               self.gas = clip(gas_mult * (gas - brake + wind_brake*3/4), 0., 1.)
             else:
               self.gas = 0.0
@@ -247,12 +246,12 @@ class CarController():
       idx = (frame//10) % 4
       hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
                     hud_lanes, fcw_display, acc_alert, steer_required)
-      can_sends.extend(hondacan.create_ui_commands(self.packer, CS.CP, pcm_speed, hud, CS.is_metric, idx, CS.stock_hud))
+      can_sends.extend(hondacan.create_ui_commands(self.packer, self.CP, pcm_speed, hud, CS.is_metric, idx, CS.stock_hud))
 
-      if (CS.CP.openpilotLongitudinalControl) and (CS.CP.carFingerprint not in HONDA_BOSCH):
+      if (self.CP.openpilotLongitudinalControl) and (self.CP.carFingerprint not in HONDA_BOSCH):
         self.speed = pcm_speed
 
-        if not CS.CP.enableGasInterceptor:
+        if not self.CP.enableGasInterceptor:
           self.gas = pcm_accel / 0xc6
 
     new_actuators = actuators.copy()

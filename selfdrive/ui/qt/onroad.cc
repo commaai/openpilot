@@ -20,7 +20,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   QStackedLayout *road_view_layout = new QStackedLayout;
   road_view_layout->setStackingMode(QStackedLayout::StackAll);
-  nvg = new NvgWindow(VISION_STREAM_RGB_BACK, this);
+  nvg = new NvgWindow(VISION_STREAM_RGB_ROAD, this);
   road_view_layout->addWidget(nvg);
   hud = new OnroadHud(this);
   road_view_layout->addWidget(hud);
@@ -97,7 +97,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
   // update stream type
   bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
-  nvg->setStreamType(wide_cam ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK);
+  nvg->setStreamType(wide_cam ? VISION_STREAM_RGB_WIDE_ROAD : VISION_STREAM_RGB_ROAD);
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -186,7 +186,7 @@ void OnroadHud::updateState(const UIState &s) {
     maxspeed *= KM_TO_MILE;
   }
   QString maxspeed_str = cruise_set ? QString::number(std::nearbyint(maxspeed)) : "N/A";
-  float cur_speed = std::max(0.0, sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
+  float cur_speed = sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
 
   setProperty("is_cruise_set", cruise_set);
   setProperty("speed", QString::number(std::nearbyint(cur_speed)));
@@ -222,7 +222,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   configFont(p, "Open Sans", 48, "Regular");
   drawText(p, rc.center().x(), 118, "MAX", is_cruise_set ? 200 : 100);
   if (is_cruise_set) {
-    configFont(p, "Open Sans", 88, is_cruise_set ? "Bold" : "SemiBold");
+    configFont(p, "Open Sans", 88, "Bold");
     drawText(p, rc.center().x(), 212, maxSpeed, 255);
   } else {
     configFont(p, "Open Sans", 80, "SemiBold");
@@ -314,8 +314,8 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {
   }
   // paint path
   QLinearGradient bg(0, height(), 0, height() / 4);
-  bg.setColorAt(0, scene.end_to_end ? redColor() : QColor(255, 255, 255));
-  bg.setColorAt(1, scene.end_to_end ? redColor(0) : QColor(255, 255, 255, 0));
+  bg.setColorAt(0, scene.end_to_end ? redColor() : whiteColor());
+  bg.setColorAt(1, scene.end_to_end ? redColor(0) : whiteColor(0));
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices.v, scene.track_vertices.cnt);
 }

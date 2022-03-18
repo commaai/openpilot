@@ -30,6 +30,7 @@ fi
 
 # TODO: remove protobuf,protobuf-c,swig when casadi can be pip installed
 brew bundle --file=- <<-EOS
+brew "catch2"
 brew "cmake"
 brew "cppcheck"
 brew "git-lfs"
