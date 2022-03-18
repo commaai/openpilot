@@ -28,6 +28,8 @@ constexpr int META_STRIDE = 7;
 constexpr int PLAN_MHP_N = 5;
 constexpr int STOP_LINE_MHP_N = 3;
 
+constexpr int LANELINES_MHP_N = 4;
+
 constexpr int LEAD_MHP_N = 2;
 constexpr int LEAD_TRAJ_LEN = 6;
 constexpr int LEAD_PRED_DIM = 4;
@@ -77,14 +79,6 @@ struct ModelOutputPlans {
 };
 static_assert(sizeof(ModelOutputPlans) == sizeof(ModelOutputPlanPrediction)*PLAN_MHP_N);
 
-struct ModelOutputLinesXY {
-  std::array<ModelOutputYZ, TRAJECTORY_SIZE> left_far;
-  std::array<ModelOutputYZ, TRAJECTORY_SIZE> left_near;
-  std::array<ModelOutputYZ, TRAJECTORY_SIZE> right_near;
-  std::array<ModelOutputYZ, TRAJECTORY_SIZE> right_far;
-};
-static_assert(sizeof(ModelOutputLinesXY) == sizeof(ModelOutputYZ)*TRAJECTORY_SIZE*4);
-
 struct ModelOutputLineProbVal {
   float val_deprecated;
   float val;
@@ -99,12 +93,28 @@ struct ModelOutputLinesProb {
 };
 static_assert(sizeof(ModelOutputLinesProb) == sizeof(ModelOutputLineProbVal)*4);
 
-struct ModelOutputLaneLines {
-  ModelOutputLinesXY mean;
-  ModelOutputLinesXY std;
-  ModelOutputLinesProb prob;
+struct ModelOutputLaneLinesElement {
+  std::array<ModelOutputYZ, TRAJECTORY_SIZE> mean;
+  std::array<ModelOutputYZ, TRAJECTORY_SIZE>  std;
+  std::array<float, LANELINES_MHP_N> prob;
 };
-static_assert(sizeof(ModelOutputLaneLines) == (sizeof(ModelOutputLinesXY)*2) + sizeof(ModelOutputLinesProb));
+static_assert(sizeof(ModelOutputLaneLinesElement) == (sizeof(ModelOutputYZ)*TRAJECTORY_SIZE*2) + sizeof(float)*LANELINES_MHP_N);
+
+struct ModelOutputLaneLinesPrediction {
+  std::array<float, ModelOutputLaneLinesElement, LANELINES_MHP_N> prediction;
+  ModelOutputLinesProb prob;
+
+  constexpr const ModelOutputLaneLinesElement &get_lane_idx(int lane_idx) const {
+    int max_idx = 0;
+    for (int i = 1; i < prediction.size(); i++) {
+      if (prediction[i].prob[lane_idx] > prediction[max_idx].prob[lane_idx]) {
+        max_idx = i;
+      }
+    }
+    return prediction[max_idx];
+  }
+};
+static_assert(sizeof(ModelOutputLaneLinesPrediction) == (sizeof(ModelOutputLaneLinesElement)*LANELINES_MHP_N) + (sizeof(ModelOutputLinesProb)));
 
 struct ModelOutputEdgessXY {
   std::array<ModelOutputYZ, TRAJECTORY_SIZE> left;
