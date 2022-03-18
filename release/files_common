@@ -17,6 +17,7 @@ site_scons/site_tools/cython.py
 
 common/.gitignore
 common/__init__.py
+common/conversions.py
 common/gpio.py
 common/realtime.py
 common/clock.pyx
@@ -58,7 +59,6 @@ common/transformations/transformations.pyx
 common/api/__init__.py
 
 models/supercombo.dlc
-models/big_supercombo.dlc
 models/dmonitoring_model_q.dlc
 
 release/*
@@ -70,12 +70,10 @@ installer/updater/updater
 selfdrive/version.py
 
 selfdrive/__init__.py
-selfdrive/config.py
 selfdrive/sentry.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
-selfdrive/pandad.py
 selfdrive/updated.py
 selfdrive/rtshield.py
 selfdrive/statsd.py
@@ -99,8 +97,10 @@ selfdrive/boardd/panda.h
 selfdrive/boardd/pigeon.cc
 selfdrive/boardd/pigeon.h
 selfdrive/boardd/set_time.py
+selfdrive/boardd/pandad.py
 
 selfdrive/car/__init__.py
+selfdrive/car/docs_definitions.py
 selfdrive/car/car_helpers.py
 selfdrive/car/fingerprints.py
 selfdrive/car/interfaces.py
@@ -337,11 +337,11 @@ selfdrive/sensord/sensord
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
+selfdrive/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
-selfdrive/test/test_fingerprints.py
 selfdrive/test/test_onroad.py
 
 selfdrive/ui/.gitignore
@@ -424,6 +424,7 @@ selfdrive/modeld/transforms/transform.cc
 selfdrive/modeld/transforms/transform.h
 selfdrive/modeld/transforms/transform.cl
 
+selfdrive/modeld/thneed/*.py
 selfdrive/modeld/thneed/thneed.*
 selfdrive/modeld/thneed/serialize.cc
 selfdrive/modeld/thneed/compile.cc

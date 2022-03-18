@@ -9,6 +9,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.apply_steer_last = 0
+    self.CP = CP
 
     self.packer_pt = CANPacker(DBC_FILES.mqb)
 
@@ -21,7 +22,7 @@ class CarController():
 
     self.steer_rate_limited = False
 
-  def update(self, c, enabled, CS, frame, ext_bus, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart, right_lane_depart):
+  def update(self, c, CS, frame, ext_bus, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart, right_lane_depart):
     """ Controls thread """
 
     can_sends = []
@@ -39,7 +40,7 @@ class CarController():
       # torque value. Do that anytime we happen to have 0 torque, or failing that,
       # when exceeding ~1/3 the 360 second timer.
 
-      if c.active and CS.out.vEgo > CS.CP.minSteerSpeed and not (CS.out.standstill or CS.out.steerError or CS.out.steerWarning):
+      if c.latActive:
         new_steer = int(round(actuators.steer * P.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
         self.steer_rate_limited = new_steer != apply_steer
@@ -77,7 +78,7 @@ class CarController():
       else:
         hud_alert = MQB_LDW_MESSAGES["none"]
 
-      can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, enabled,
+      can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, c.enabled,
                                                             CS.out.steeringPressed, hud_alert, left_lane_visible,
                                                             right_lane_visible, CS.ldw_stock_values,
                                                             left_lane_depart, right_lane_depart))
@@ -86,13 +87,13 @@ class CarController():
 
     # FIXME: this entire section is in desperate need of refactoring
 
-    if CS.CP.pcmCruise:
+    if self.CP.pcmCruise:
       if frame > self.graMsgStartFramePrev + P.GRA_VBP_STEP:
-        if not enabled and CS.out.cruiseState.enabled:
+        if c.cruiseControl.cancel:
           # Cancel ACC if it's engaged with OP disengaged.
           self.graButtonStatesToSend = BUTTON_STATES.copy()
           self.graButtonStatesToSend["cancel"] = True
-        elif enabled and CS.esp_hold_confirmation:
+        elif c.enabled and CS.esp_hold_confirmation:
           # Blip the Resume button if we're engaged at standstill.
           # FIXME: This is a naive implementation, improve with visiond or radar input.
           self.graButtonStatesToSend = BUTTON_STATES.copy()

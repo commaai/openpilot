@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.car.ford.values import MAX_ANGLE
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -8,7 +8,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "ford"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
@@ -25,6 +25,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 1.0
     ret.centerToFront = ret.wheelbase * 0.44
     tire_stiffness_factor = 0.5328
+    # TODO: add minSteerSpeed
+    ret.minEnableSpeed = 12. * CV.MPH_TO_MS
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -64,7 +66,7 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
 
     ret = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                               c.hudControl.visualAlert, c.cruiseControl.cancel)
+                         c.hudControl.visualAlert, c.cruiseControl.cancel)
 
     self.frame += 1
     return ret

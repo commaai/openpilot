@@ -1,7 +1,7 @@
 from cereal import car
 from common.realtime import DT_CTRL
 from common.numpy_fast import clip, interp
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfahda_mfc, create_acc_commands, create_acc_opt, create_frt_radar_opt
 from selfdrive.car.hyundai.values import Buttons, CarControllerParams, CAR
@@ -37,6 +37,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    self.CP = CP
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
 
@@ -46,38 +47,35 @@ class CarController():
     self.last_resume_frame = 0
     self.accel = 0
 
-  def update(self, c, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, hud_speed,
+  def update(self, c, CS, frame, actuators, pcm_cancel_cmd, visual_alert, hud_speed,
              left_lane, right_lane, left_lane_depart, right_lane_depart):
     # Steering Torque
     new_steer = int(round(actuators.steer * self.p.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
     self.steer_rate_limited = new_steer != apply_steer
 
-    # disable when temp fault is active, or below LKA minimum speed
-    lkas_active = c.active and not CS.out.steerWarning and CS.out.vEgo >= CS.CP.minSteerSpeed
-
-    if not lkas_active:
+    if not c.latActive:
       apply_steer = 0
 
     self.apply_steer_last = apply_steer
 
     sys_warning, sys_state, left_lane_warning, right_lane_warning = \
-      process_hud_alert(enabled, self.car_fingerprint, visual_alert,
+      process_hud_alert(c.enabled, self.car_fingerprint, visual_alert,
                         left_lane, right_lane, left_lane_depart, right_lane_depart)
 
     can_sends = []
 
     # tester present - w/ no response (keeps radar disabled)
-    if CS.CP.openpilotLongitudinalControl:
+    if self.CP.openpilotLongitudinalControl:
       if (frame % 100) == 0:
         can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
-    can_sends.append(create_lkas11(self.packer, frame, self.car_fingerprint, apply_steer, lkas_active,
-                                   CS.lkas11, sys_warning, sys_state, enabled,
+    can_sends.append(create_lkas11(self.packer, frame, self.car_fingerprint, apply_steer, c.latActive,
+                                   CS.lkas11, sys_warning, sys_state, c.enabled,
                                    left_lane, right_lane,
                                    left_lane_warning, right_lane_warning))
 
-    if not CS.CP.openpilotLongitudinalControl:
+    if not self.CP.openpilotLongitudinalControl:
       if pcm_cancel_cmd:
         can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL))
       elif CS.out.cruiseState.standstill:
@@ -87,9 +85,9 @@ class CarController():
           can_sends.extend([create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL)] * 25)
           self.last_resume_frame = frame
 
-    if frame % 2 == 0 and CS.CP.openpilotLongitudinalControl:
+    if frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
       lead_visible = False
-      accel = actuators.accel if c.active else 0
+      accel = actuators.accel if c.longActive else 0
 
       jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
 
@@ -100,7 +98,8 @@ class CarController():
 
       stopping = (actuators.longControlState == LongCtrlState.stopping)
       set_speed_in_units = hud_speed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
-      can_sends.extend(create_acc_commands(self.packer, enabled, accel, jerk, int(frame / 2), lead_visible, set_speed_in_units, stopping))
+      can_sends.extend(create_acc_commands(self.packer, c.enabled, accel, jerk, int(frame / 2), lead_visible,
+                                           set_speed_in_units, stopping, CS.out.gasPressed))
       self.accel = accel
 
     # 20 Hz LFA MFA message
@@ -108,14 +107,14 @@ class CarController():
                                                    CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.KONA_EV,
                                                    CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.SANTA_FE_2022,
                                                    CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.GENESIS_G70_2020, CAR.SANTA_FE_PHEV_2022):
-      can_sends.append(create_lfahda_mfc(self.packer, enabled))
+      can_sends.append(create_lfahda_mfc(self.packer, c.enabled))
 
     # 5 Hz ACC options
-    if frame % 20 == 0 and CS.CP.openpilotLongitudinalControl:
+    if frame % 20 == 0 and self.CP.openpilotLongitudinalControl:
       can_sends.extend(create_acc_opt(self.packer))
 
     # 2 Hz front radar options
-    if frame % 50 == 0 and CS.CP.openpilotLongitudinalControl:
+    if frame % 50 == 0 and self.CP.openpilotLongitudinalControl:
       can_sends.append(create_frt_radar_opt(self.packer))
 
     new_actuators = actuators.copy()

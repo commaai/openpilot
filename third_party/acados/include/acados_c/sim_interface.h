@@ -57,7 +57,7 @@ typedef enum
 typedef struct
 {
     sim_solver_t sim_solver;
-} sim_solver_plan;
+} sim_solver_plan_t;
 
 
 
@@ -74,7 +74,7 @@ typedef struct
 
 /* config */
 //
-sim_config *sim_config_create(sim_solver_plan plan);
+sim_config *sim_config_create(sim_solver_plan_t plan);
 //
 void sim_config_destroy(void *config);
 
