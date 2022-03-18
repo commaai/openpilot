@@ -1,4 +1,8 @@
+from typing import Dict, List, Union
+from dataclasses import dataclass
+
 from selfdrive.car import dbc_dict
+from selfdrive.car.docs_definitions import CarInfo
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -12,6 +16,15 @@ class CarControllerParams:
 
 class CAR:
   BODY = "COMMA BODY"
+
+@dataclass
+class CommaCarInfo(CarInfo):
+  package: str = "All"
+  good_torque: bool = True
+
+CAR_INFO: Dict[str, Union[CommaCarInfo, List[CommaCarInfo]]] = {
+  CAR.BODY: CommaCarInfo("Comma Body"),
+}
 
 FW_VERSIONS = {
   CAR.BODY: {

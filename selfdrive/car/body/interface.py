@@ -24,6 +24,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.radarOffCan = False
+    ret.openpilotLongitudinalControl = True
 
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
