@@ -13,12 +13,12 @@ from typing import NoReturn
 
 from cereal import log
 import cereal.messaging as messaging
+from common.conversions import Conversions as CV
 from common.params import Params, put_nonblocking
 from common.realtime import set_realtime_priority
 from common.transformations.model import model_height
 from common.transformations.camera import get_view_frame_from_road_frame
 from common.transformations.orientation import rot_from_euler, euler_from_rot
-from selfdrive.config import Conversions as CV
 from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
 

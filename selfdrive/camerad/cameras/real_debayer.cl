@@ -40,12 +40,12 @@ half3 color_correct(half3 rgb) {
 }
 
 half val_from_10(const uchar * source, int gx, int gy) {
-  // parse 10bit
-  int start = gy * FRAME_STRIDE + (5 * (gx / 4));
-  int offset = gx % 4;
-  uint major = (uint)source[start + offset] << 2;
-  uint minor = (source[start + 4] >> (2 * offset)) & 3;
-  half pv = (half)(major + minor);
+  // parse 12bit
+  int start = gy * FRAME_STRIDE + (3 * (gx / 2));
+  int offset = gx % 2;
+  uint major = (uint)source[start + offset] << 4;
+  uint minor = (source[start + 2] >> (4 * offset)) & 0xf;
+  half pv = (half)((major + minor)/4);
 
   // normalize
   pv = max(0.0h, pv - black_level);

@@ -10,7 +10,7 @@ class CarInterface(CarInterfaceBase):
     self.cp_adas = self.CS.get_adas_can_parser(CP)
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
 
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "nissan"
@@ -79,7 +79,7 @@ class CarInterface(CarInterfaceBase):
 
   def apply(self, c):
     hud_control = c.hudControl
-    ret = self.CC.update(c, c.enabled, self.CS, self.frame, c.actuators,
+    ret = self.CC.update(c, self.CS, self.frame, c.actuators,
                          c.cruiseControl.cancel, hud_control.visualAlert,
                          hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                          hud_control.leftLaneDepart, hud_control.rightLaneDepart)

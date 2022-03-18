@@ -5,8 +5,9 @@ import bz2
 import urllib.parse
 import capnp
 
-from tools.lib.filereader import FileReader
 from cereal import log as capnp_log
+from tools.lib.filereader import FileReader
+from tools.lib.route import Route, SegmentName
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator:
@@ -98,6 +99,16 @@ class LogReader:
           pass
       else:
         yield ent
+
+
+def logreader_from_route_or_segment(r):
+  sn = SegmentName(r, allow_route_name=True)
+  route = Route(sn.route_name.canonical_name)
+  if sn.segment_num < 0:
+    return MultiLogIterator(route.log_paths())
+  else:
+    return LogReader(route.log_paths()[sn.segment_num])
+
 
 if __name__ == "__main__":
   import codecs

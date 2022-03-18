@@ -100,6 +100,11 @@ void ONNXModel::addTrafficConvention(float *state, int state_size) {
   traffic_convention_size = state_size;
 }
 
+void ONNXModel::addCalib(float *state, int state_size) {
+  calib_input_buf = state;
+  calib_size = state_size;
+}
+
 void ONNXModel::addImage(float *image_buf, int buf_size) {
   image_input_buf = image_buf;
   image_buf_size = buf_size;
@@ -123,6 +128,9 @@ void ONNXModel::execute() {
   }
   if (traffic_convention_input_buf != NULL) {
     pwrite(traffic_convention_input_buf, traffic_convention_size);
+  }
+  if (calib_input_buf != NULL) {
+    pwrite(calib_input_buf, calib_size);
   }
   if (rnn_input_buf != NULL) {
     pwrite(rnn_input_buf, rnn_state_size);

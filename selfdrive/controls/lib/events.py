@@ -4,8 +4,8 @@ from typing import Dict, Union, Callable, List, Optional
 
 from cereal import log, car
 import cereal.messaging as messaging
+from common.conversions import Conversions as CV
 from common.realtime import DT_CTRL
-from selfdrive.config import Conversions as CV
 from selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
 from selfdrive.version import get_short_branch
 

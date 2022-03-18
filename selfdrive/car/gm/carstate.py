@@ -12,7 +12,6 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.lka_steering_cmd_counter = 0
-    self.park_brake = 0
 
   def update(self, pt_cp, loopback_cp):
     ret = car.CarState.new_message()
@@ -80,7 +79,7 @@ class CarState(CarStateBase):
     #TODO: JJS: Add hasEPB to cereal and use detection rather than hard coding...
     #if self.CP.hasEPB:
     if self.CP.carFingerprint != CAR.SUBURBAN and self.CP.carFingerprint != CAR.TAHOE_NR:
-      self.park_brake = pt_cp.vl["EPBStatus"]["EPBClosed"]
+      self.parkingBrake = pt_cp.vl["EPBStatus"]["EPBClosed"] == 1
 
     ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
     if self.CP.enableGasInterceptor: # Flip CC main logic when pedal is being used for long

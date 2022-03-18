@@ -1,5 +1,9 @@
+from enum import Enum
+from typing import Dict, List, Union
+
 from cereal import car
 from selfdrive.car import dbc_dict
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column
 Ecu = car.CarParams.Ecu
 
 class CarControllerParams():
@@ -57,6 +61,7 @@ class CarControllerParams():
 
 STEER_THRESHOLD = 1.0
 
+
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
   VOLT = "CHEVROLET VOLT PREMIER 2017"
@@ -75,6 +80,48 @@ class CAR:
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
   SILVERADO_NR = "CHEVROLET SILVERADO NO RADAR"
   SUBURBAN = "CHEVROLET SUBURBAN PREMIER 2019"
+
+
+class Footnote(Enum):
+  OBD_II = CarFootnote(
+    "Requires an [OBD-II](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness]" +
+    "(https://github.com/commaai/openpilot/wiki/GM#hardware). NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).",
+    Column.MODEL),
+  PEDAL = CarFootnote(
+    "Requires a [Pedal Interceptor](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness]" +
+    "(https://github.com/commaai/openpilot/wiki/GM#hardware). NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).",
+    Column.MODEL),
+  CAM_HARNESS = CarFootnote(
+    "Currently Requires a [harness box](https://comma.ai/shop/products/harness-box) and [community built camera harness]" +
+    "(https://github.com/commaai/openpilot/wiki/GMCamHarness)",
+    Column.MODEL),
+  STOCK_ACC = CarFootnote(
+    "Supported configuration uses stock ACC",
+    Column.MODEL)
+
+
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+  CAR.HOLDEN_ASTRA: CarInfo("Holden Astra 2017", "Adaptive Cruise"),
+  CAR.VOLT: CarInfo("Chevrolet Volt 2017-18", "Adaptive Cruise", footnotes=[Footnote.OBD_II], min_enable_speed=0),
+  CAR.CADILLAC_ATS: CarInfo("Cadillac ATS Premium Performance 2018", "Adaptive Cruise"),
+  CAR.MALIBU: CarInfo("Chevrolet Malibu Premier 2017", "Adaptive Cruise"),
+  CAR.ACADIA: CarInfo("GMC Acadia 2018", "Adaptive Cruise", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo", footnotes=[Footnote.OBD_II]),
+  CAR.BUICK_REGAL: CarInfo("Buick Regal Essence 2018", "Adaptive Cruise"),
+  CAR.ESCALADE_ESV: CarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS", footnotes=[Footnote.OBD_II]),
+  #TODO: Confirm everything and cleanup. maybe note about missing fingerprints
+  #TODO: Entry for bolt with acc
+  CAR.VOLT_NR: CarInfo("Chevrolet Volt 2016-2019", "LKAS, no ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.PEDAL]),
+  CAR.MALIBU_NR: CarInfo("Chevrolet Malibu 2016-2019", "LKAS, no ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.PEDAL]),
+  CAR.ACADIA_NR: CarInfo("Chevrolet Acadia Denali 2016-2020", "LKAS, no ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.PEDAL]),
+  CAR.BOLT_NR: CarInfo("Chevrolet Bolt EV 2016-2021", "LKAS, no ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.PEDAL]),
+  CAR.EQUINOX_NR: CarInfo("Chevrolet Equinox 2016-2020", "LKAS, no ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.PEDAL]),
+  CAR.TAHOE_NR: CarInfo("Chevrolet Tahoe 2016-2020", "LKAS, Basic ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC]),
+  CAR.SILVERADO_NR: CarInfo("Chevrolet Silverado 2016-2019", "LKAS, Camera-based ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC]),
+  CAR.SUBURBAN: CarInfo("Chevrolet Suburban 2016-2019", "LKAS, Basic ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC]),
+
+
+}
+
 
 class CruiseButtons:
   INIT = 0

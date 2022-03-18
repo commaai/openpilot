@@ -1,13 +1,23 @@
 from collections import namedtuple
+from typing import Dict, List, Union
+
 from selfdrive.car import dbc_dict
+from selfdrive.car.docs_definitions import CarInfo
 from cereal import car
 
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
 
+
 class CAR:
   AP1_MODELS = 'TESLA AP1 MODEL S'
   AP2_MODELS = 'TESLA AP2 MODEL S'
+
+
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+  CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", "All"),
+  CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", "All"),
+}
 
 FINGERPRINTS = {
   CAR.AP2_MODELS: [
