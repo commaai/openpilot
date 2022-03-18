@@ -14,13 +14,13 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 1.0
     ret.steerRateCost = 0.5
 
-    ret.steerActuatorDelay = 0.1
+    ret.steerActuatorDelay = 0.
 
     ret.mass = 9
     ret.wheelbase = 0.406
     ret.wheelSpeedFactor = 0.008587
     ret.centerToFront = ret.wheelbase * 0.44
-    ret.steerRatio = 1
+    ret.steerRatio = 0.5
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.radarOffCan = False
@@ -29,6 +29,8 @@ class CarInterface(CarInterfaceBase):
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
+
+    ret.minEnableSpeed = -1.
 
     return ret
 

@@ -35,10 +35,18 @@ class CarController():
         torque -= deadband
       return torque
 
-  def update(self, c, CS, frame, actuators, cruise_cancel, hud_alert,
+  def update(self, CC, CS, frame, actuators, cruise_cancel, hud_alert,
              left_line, right_line, left_lane_depart, right_lane_depart):
 
+    actuators = CC.actuators
+
     # ///////////////////////////////////////
+    # Steer and accel mixin. Speed should be used as a target? (speed should be in m/s! now it is in RPM)
+    # Mix steer into torque_diff
+    # self.steerRatio = 0.5
+    # torque_r = int(np.clip((actuators.accel*1000) - (actuators.steer*1000) * self.steerRatio, -1000, 1000))
+    # torque_l = int(np.clip((actuators.accel*1000) + (actuators.steer*1000) * self.steerRatio, -1000, 1000))
+    # ////
     # Setpoint speed PID
     kp_speed = 0.001
     ki_speed = 0
@@ -57,9 +65,9 @@ class CarController():
     kd_balance = 280
     alpha_d_balance = 1.0
 
-    p_balance = (-c.orientationNED[1]) - set_point
+    p_balance = (-CC.orientationNED[1]) - set_point
     self.i_balance += CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr
-    self.d_balance =  np.clip(((1. - alpha_d_balance) * self.d_balance + alpha_d_balance * -c.angularVelocity[1]), -1., 1.)
+    self.d_balance =  np.clip(((1. - alpha_d_balance) * self.d_balance + alpha_d_balance * -CC.angularVelocity[1]), -1., 1.)
     torque = int(np.clip((p_balance*kp_balance + self.i_balance*ki_balance + self.d_balance*kd_balance), -1000, 1000))
 
     # Positional recovery PID
