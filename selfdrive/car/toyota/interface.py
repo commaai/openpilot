@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.car.toyota.tunes import LatTunes, LongTunes, set_long_tune, set_lat_tune
-from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, CarControllerParams
+from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -15,22 +15,20 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
+    ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate]
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
-
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
-    # Most cars use this default safety param
-    ret.safetyConfigs[0].safetyParam = 73
+    stop_and_go = False
 
     if candidate == CAR.PRIUS:
-      ret.safetyConfigs[0].safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       stop_and_go = True
       ret.wheelbase = 2.70
       ret.steerRatio = 15.74   # unknown end-to-end spec
@@ -39,6 +37,14 @@ class CarInterface(CarInterfaceBase):
 
       set_lat_tune(ret.lateralTuning, LatTunes.INDI_PRIUS)
       ret.steerActuatorDelay = 0.3
+
+    elif candidate == CAR.PRIUS_V:
+      stop_and_go = True
+      ret.wheelbase = 2.78
+      ret.steerRatio = 17.4
+      tire_stiffness_factor = 0.5533
+      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
+      set_lat_tune(ret.lateralTuning, LatTunes.LQR_RAV4)
 
     elif candidate in (CAR.RAV4, CAR.RAV4H):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
@@ -49,8 +55,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.LQR_RAV4)
 
     elif candidate == CAR.COROLLA:
-      ret.safetyConfigs[0].safetyParam = 88
-      stop_and_go = False
       ret.wheelbase = 2.70
       ret.steerRatio = 18.27
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -99,7 +103,9 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_G)
 
     elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2):
-      stop_and_go = False
+      # starting from 2019, all Avalon variants have stop and go
+      # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
+      stop_and_go = candidate != CAR.AVALON
       ret.wheelbase = 2.82
       ret.steerRatio = 14.8  # Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
       tire_stiffness_factor = 0.7983
@@ -129,20 +135,12 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
 
-    elif candidate in (CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2):
+    elif candidate in (CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ESH):
       stop_and_go = True
       ret.wheelbase = 2.8702
       ret.steerRatio = 16.0  # not optimized
       tire_stiffness_factor = 0.444  # not optimized yet
-      ret.mass = 3704. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
-
-    elif candidate == CAR.LEXUS_ESH:
-      stop_and_go = True
-      ret.wheelbase = 2.8190
-      ret.steerRatio = 16.06
-      tire_stiffness_factor = 0.444  # not optimized yet
-      ret.mass = 3682. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 3677. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
       set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
 
     elif candidate == CAR.SIENNA:
@@ -153,26 +151,14 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4590. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_J)
 
-    elif candidate == CAR.LEXUS_IS:
-      ret.safetyConfigs[0].safetyParam = 77
-      stop_and_go = False
+    elif candidate in (CAR.LEXUS_IS, CAR.LEXUS_RC):
       ret.wheelbase = 2.79908
       ret.steerRatio = 13.3
       tire_stiffness_factor = 0.444
       ret.mass = 3736.8 * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
 
-    elif candidate == CAR.LEXUS_RC:
-      ret.safetyConfigs[0].safetyParam = 77
-      stop_and_go = False
-      ret.wheelbase = 2.73050
-      ret.steerRatio = 13.3
-      tire_stiffness_factor = 0.444
-      ret.mass = 3736.8 * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
-
     elif candidate == CAR.LEXUS_CTH:
-      ret.safetyConfigs[0].safetyParam = 100
       stop_and_go = True
       ret.wheelbase = 2.60
       ret.steerRatio = 18.6
@@ -234,7 +220,9 @@ class CarInterface(CarInterfaceBase):
     # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
     ret.openpilotLongitudinalControl = smartDsu or ret.enableDsu or candidate in TSS2_CAR
 
-    if 0x245 in fingerprint[0]:
+    # we can't use the fingerprint to detect this reliably, since
+    # the EV gas pedal signal can take a couple seconds to appear
+    if candidate in EV_HYBRID_CAR:
       ret.flags |= ToyotaFlags.HYBRID.value
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
@@ -284,12 +272,5 @@ class CarInterface(CarInterfaceBase):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-    hud_control = c.hudControl
-    ret = self.CC.update(c.enabled, c.active, self.CS, self.frame,
-                         c.actuators, c.cruiseControl.cancel,
-                         hud_control.visualAlert, hud_control.leftLaneVisible,
-                         hud_control.rightLaneVisible, hud_control.leadVisible,
-                         hud_control.leftLaneDepart, hud_control.rightLaneDepart)
-
-    self.frame += 1
+    ret = self.CC.update(c, self.CS)
     return ret

@@ -2,7 +2,7 @@ import math
 from cereal import car
 from common.numpy_fast import clip, interp
 from common.realtime import DT_MDL
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
 
 # WARNING: this value was determined based on the model's training distribution,
@@ -37,13 +37,6 @@ class MPC_COST_LAT:
   STEER_RATE = 1.0
 
 
-class MPC_COST_LONG:
-  TTC = 5.0
-  DISTANCE = 0.1
-  ACCELERATION = 10.0
-  JERK = 20.0
-
-
 def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
 
@@ -61,7 +54,7 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled, metric):
   long_press = False
   button_type = None
 
-  v_cruise_delta = 1 if metric else 1.6
+  v_cruise_delta = 1. if metric else CV.MPH_TO_KPH
 
   for b in buttonEvents:
     if b.type.raw in button_timers and not b.pressed:
@@ -98,9 +91,9 @@ def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
 
 def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
   if len(psis) != CONTROL_N:
-    psis = [0.0 for i in range(CONTROL_N)]
-    curvatures = [0.0 for i in range(CONTROL_N)]
-    curvature_rates = [0.0 for i in range(CONTROL_N)]
+    psis = [0.0]*CONTROL_N
+    curvatures = [0.0]*CONTROL_N
+    curvature_rates = [0.0]*CONTROL_N
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays
   delay = CP.steerActuatorDelay + .2

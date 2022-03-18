@@ -37,7 +37,7 @@
 #define MDL_START
 
 // acados
-#include "acados/utils/print.h"
+// #include "acados/utils/print.h"
 #include "acados_c/sim_interface.h"
 #include "acados_c/external_function_interface.h"
 

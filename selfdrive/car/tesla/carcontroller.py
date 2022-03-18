@@ -12,12 +12,12 @@ class CarController():
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
 
-  def update(self, enabled, CS, frame, actuators, cruise_cancel):
+  def update(self, c, CS, frame, actuators, cruise_cancel):
     can_sends = []
 
     # Temp disable steering on a hands_on_fault, and allow for user override
     hands_on_fault = (CS.steer_warning == "EAC_ERROR_HANDS_ON" and CS.hands_on_level >= 3)
-    lkas_enabled = enabled and (not hands_on_fault)
+    lkas_enabled = c.latActive and (not hands_on_fault)
 
     if lkas_enabled:
       apply_angle = actuators.steeringAngleDeg
@@ -50,10 +50,6 @@ class CarController():
     if hands_on_fault:
       cruise_cancel = True
 
-    # Cancel when openpilot is not enabled anymore
-    if not enabled and bool(CS.out.cruiseState.enabled):
-      cruise_cancel = True
-
     if ((frame % 10) == 0 and cruise_cancel):
       # Spam every possible counter value, otherwise it might not be accepted
       for counter in range(16):
@@ -65,4 +61,4 @@ class CarController():
     new_actuators = actuators.copy()
     new_actuators.steeringAngleDeg = apply_angle
 
-    return actuators, can_sends
+    return new_actuators, can_sends

@@ -17,6 +17,7 @@ site_scons/site_tools/cython.py
 
 common/.gitignore
 common/__init__.py
+common/conversions.py
 common/gpio.py
 common/realtime.py
 common/clock.pyx
@@ -69,12 +70,10 @@ installer/updater/updater
 selfdrive/version.py
 
 selfdrive/__init__.py
-selfdrive/config.py
 selfdrive/sentry.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
-selfdrive/pandad.py
 selfdrive/updated.py
 selfdrive/rtshield.py
 selfdrive/statsd.py
@@ -98,8 +97,10 @@ selfdrive/boardd/panda.h
 selfdrive/boardd/pigeon.cc
 selfdrive/boardd/pigeon.h
 selfdrive/boardd/set_time.py
+selfdrive/boardd/pandad.py
 
 selfdrive/car/__init__.py
+selfdrive/car/docs_definitions.py
 selfdrive/car/car_helpers.py
 selfdrive/car/fingerprints.py
 selfdrive/car/interfaces.py
@@ -200,6 +201,8 @@ selfdrive/common/version.h
 
 selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
+selfdrive/common/statlog.h
+selfdrive/common/statlog.cc
 selfdrive/common/util.cc
 selfdrive/common/util.h
 selfdrive/common/queue.h
@@ -230,17 +233,19 @@ selfdrive/controls/radard.py
 selfdrive/controls/lib/__init__.py
 selfdrive/controls/lib/alertmanager.py
 selfdrive/controls/lib/alerts_offroad.json
-selfdrive/controls/lib/events.py
+selfdrive/controls/lib/desire_helper.py
 selfdrive/controls/lib/drive_helpers.py
-selfdrive/controls/lib/latcontrol_pid.py
+selfdrive/controls/lib/events.py
+selfdrive/controls/lib/lane_planner.py
+selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/latcontrol_indi.py
 selfdrive/controls/lib/latcontrol_lqr.py
-selfdrive/controls/lib/latcontrol_angle.py
-selfdrive/controls/lib/longcontrol.py
+selfdrive/controls/lib/latcontrol_pid.py
+selfdrive/controls/lib/latcontrol.py
 selfdrive/controls/lib/lateral_planner.py
-selfdrive/controls/lib/lane_planner.py
-selfdrive/controls/lib/pid.py
+selfdrive/controls/lib/longcontrol.py
 selfdrive/controls/lib/longitudinal_planner.py
+selfdrive/controls/lib/pid.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
 
@@ -332,11 +337,11 @@ selfdrive/sensord/sensord
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
+selfdrive/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
-selfdrive/test/test_fingerprints.py
 selfdrive/test/test_onroad.py
 
 selfdrive/ui/.gitignore
@@ -419,10 +424,13 @@ selfdrive/modeld/transforms/transform.cc
 selfdrive/modeld/transforms/transform.h
 selfdrive/modeld/transforms/transform.cl
 
+selfdrive/modeld/thneed/*.py
 selfdrive/modeld/thneed/thneed.*
 selfdrive/modeld/thneed/serialize.cc
 selfdrive/modeld/thneed/compile.cc
+selfdrive/modeld/thneed/optimizer.cc
 selfdrive/modeld/thneed/include/*
+selfdrive/modeld/thneed/kernels/*.cl
 
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
@@ -565,16 +573,13 @@ opendbc/acura_rdx_2018_can_generated.dbc
 opendbc/acura_rdx_2020_can_generated.dbc
 opendbc/honda_civic_touring_2016_can_generated.dbc
 opendbc/honda_civic_hatchback_ex_2017_can_generated.dbc
-opendbc/honda_civic_sedan_16_diesel_2019_can_generated.dbc
 opendbc/honda_crv_touring_2016_can_generated.dbc
 opendbc/honda_crv_ex_2017_can_generated.dbc
 opendbc/honda_crv_ex_2017_body_generated.dbc
 opendbc/honda_crv_executive_2016_can_generated.dbc
-opendbc/honda_crv_hybrid_2019_can_generated.dbc
 opendbc/honda_fit_ex_2018_can_generated.dbc
 opendbc/honda_odyssey_exl_2018_generated.dbc
 opendbc/honda_odyssey_extreme_edition_2018_china_can_generated.dbc
-opendbc/honda_pilot_touring_2017_can_generated.dbc
 opendbc/honda_insight_ex_2019_can_generated.dbc
 opendbc/acura_ilx_2016_nidec.dbc
 
@@ -591,15 +596,9 @@ opendbc/subaru_outback_2015_generated.dbc
 opendbc/subaru_outback_2019_generated.dbc
 opendbc/subaru_forester_2017_generated.dbc
 
-opendbc/toyota_tssp_pt_generated.dbc
-opendbc/toyota_tssp_hybrid_generated.dbc
-opendbc/toyota_rav4_2017_pt_generated.dbc
-opendbc/toyota_prius_2017_pt_generated.dbc
-opendbc/toyota_corolla_2017_pt_generated.dbc
+opendbc/toyota_tnga_k_pt_generated.dbc
+opendbc/toyota_new_mc_pt_generated.dbc
 opendbc/toyota_nodsu_pt_generated.dbc
-opendbc/toyota_nodsu_hybrid_pt_generated.dbc
-opendbc/lexus_is_2018_pt_generated.dbc
-opendbc/lexus_ct200h_2018_pt_generated.dbc
 opendbc/toyota_adas.dbc
 opendbc/toyota_tss2_adas.dbc
 

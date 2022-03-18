@@ -254,22 +254,6 @@ def format_class_dict(d):
     return out
 
 
-def acados_class2dict(class_instance):
-    """
-    removes the __ artifact from class to dict conversion
-    """
-
-    d = dict(class_instance.__dict__)
-    out = {}
-    for k, v in d.items():
-        if isinstance(v, dict):
-            v = format_class_dict(v)
-
-        out_key = k.split('__', 1)[-1]
-        out[k.replace(k, out_key)] = v
-    return out
-
-
 def get_ocp_nlp_layout():
     python_interface_path = get_python_interface_path()
     abs_path = os.path.join(python_interface_path, 'acados_layout.json')
@@ -432,6 +416,13 @@ def set_up_imported_gnsf_model(acados_formulation):
     acados_formulation.model.phi_fun_jac_y = phi_fun_jac_y
     acados_formulation.model.phi_jac_y_uhat = phi_jac_y_uhat
     acados_formulation.model.get_matrices_fun = get_matrices_fun
+
+    # get_matrices_fun = Function([model_name,'_gnsf_get_matrices_fun'], {dummy},...
+    #  {A, B, C, E, L_x, L_xdot, L_z, L_u, A_LO, c, E_LO, B_LO,...
+    #   nontrivial_f_LO, purely_linear, ipiv_x, ipiv_z, c_LO});
+    get_matrices_out = get_matrices_fun(0)
+    acados_formulation.model.gnsf['nontrivial_f_LO'] = int(get_matrices_out[12])
+    acados_formulation.model.gnsf['purely_linear'] = int(get_matrices_out[13])
 
     if "f_lo_fun_jac_x1k1uz" in gnsf:
         f_lo_fun_jac_x1k1uz = Function.deserialize(gnsf['f_lo_fun_jac_x1k1uz'])

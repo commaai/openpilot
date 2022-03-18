@@ -185,9 +185,14 @@ void blasfeo_dveccp(int m, struct blasfeo_dvec *sx, int xi, struct blasfeo_dvec 
 void blasfeo_dvecsc(int m, double alpha, struct blasfeo_dvec *sx, int xi);
 // y <= alpha*x
 void blasfeo_dveccpsc(int m, double alpha, struct blasfeo_dvec *sx, int xi, struct blasfeo_dvec *sy, int yi);
+// z[idx] += alpha * x
 void blasfeo_dvecad_sp(int m, double alpha, struct blasfeo_dvec *sx, int xi, int *idx, struct blasfeo_dvec *sz, int zi);
+// z[idx] <= alpha * x
 void blasfeo_dvecin_sp(int m, double alpha, struct blasfeo_dvec *sx, int xi, int *idx, struct blasfeo_dvec *sz, int zi);
-void blasfeo_dvecex_sp(int m, double alpha, int *idx, struct blasfeo_dvec *sx, int x, struct blasfeo_dvec *sz, int zi);
+// z <= alpha * x[idx]
+void blasfeo_dvecex_sp(int m, double alpha, int *idx, struct blasfeo_dvec *sx, int xi, struct blasfeo_dvec *sz, int zi);
+// z += alpha * x[idx]
+void blasfeo_dvecexad_sp(int m, double alpha, int *idx, struct blasfeo_dvec *sx, int xi, struct blasfeo_dvec *sz, int zi);
 
 void blasfeo_dveccl(int m,
 	struct blasfeo_dvec *sxm, int xim, struct blasfeo_dvec *sx, int xi,

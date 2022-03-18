@@ -13,6 +13,7 @@ from selfdrive.hardware.tici.amplifier import Amplifier
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
+NM_DEV = NM + '.Device'
 NM_DEV_WL = NM + '.Device.Wireless'
 NM_AP = NM + '.AccessPoint'
 DBUS_PROPS = 'org.freedesktop.DBus.Properties'
@@ -36,6 +37,13 @@ class MM_MODEM_STATE(IntEnum):
        DISCONNECTING = 9
        CONNECTING    = 10
        CONNECTED     = 11
+
+class NMMetered(IntEnum):
+  NM_METERED_UNKNOWN = 0
+  NM_METERED_YES = 1
+  NM_METERED_NO = 2
+  NM_METERED_GUESS_YES = 3
+  NM_METERED_GUESS_NO = 4
 
 TIMEOUT = 0.1
 
@@ -91,11 +99,10 @@ class Tici(HardwareBase):
       primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       primary_connection = self.bus.get_object(NM, primary_connection)
       primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      primary_id = primary_connection.Get(NM_CON_ACT, 'Id', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
       if primary_type == '802-3-ethernet':
         return NetworkType.ethernet
-      elif primary_type == '802-11-wireless' and primary_id != 'Hotspot':
+      elif primary_type == '802-11-wireless':
         return NetworkType.wifi
       else:
         active_connections = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -218,6 +225,86 @@ class Tici(HardwareBase):
 
     return network_strength
 
+  def get_network_metered(self, network_type) -> bool:
+    try:
+      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      primary_connection = self.bus.get_object(NM, primary_connection)
+      primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+      for dev in primary_devices:
+        dev_obj = self.bus.get_object(NM, str(dev))
+        metered_prop = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+        if network_type == NetworkType.wifi:
+          if metered_prop in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
+            return True
+        elif network_type in [NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G]:
+          if metered_prop == NMMetered.NM_METERED_NO:
+            return False
+    except Exception:
+      pass
+
+    return super().get_network_metered(network_type)
+
+  @staticmethod
+  def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
+    upload_speed_kbps = int(upload_speed_kbps)  # Ensure integer value
+    download_speed_kbps = int(download_speed_kbps)  # Ensure integer value
+
+    adapter = "wwan0"
+    ifb = "ifb0"
+
+    sudo = ["sudo"]
+    tc = sudo + ["tc"]
+
+    # check, cmd
+    cleanup = [
+      # Clean up old rules
+      (False, tc + ["qdisc", "del", "dev", adapter, "root"]),
+      (False, tc + ["qdisc", "del", "dev", ifb, "root"]),
+      (False, tc + ["qdisc", "del", "dev", adapter, "ingress"]),
+      (False, tc + ["qdisc", "del", "dev", ifb, "ingress"]),
+
+      # Bring ifb0 down
+      (False, sudo + ["ip", "link", "set", "dev", ifb, "down"]),
+    ]
+
+    upload = [
+      # Create root Hierarchy Token Bucket that sends all trafic to 1:20
+      (True, tc + ["qdisc", "add", "dev", adapter, "root", "handle", "1:", "htb", "default", "20"]),
+
+      # Create class 1:20 with specified rate limit
+      (True, tc + ["class", "add", "dev", adapter, "parent", "1:", "classid", "1:20", "htb", "rate", f"{upload_speed_kbps}kbit"]),
+
+      # Create universal 32 bit filter on adapter that sends all outbound ip traffic through the class
+      (True, tc + ["filter", "add", "dev", adapter, "parent", "1:", "protocol", "ip", "prio", "10", "u32", "match", "ip", "dst", "0.0.0.0/0", "flowid", "1:20"]),
+    ]
+
+    download = [
+      # Bring ifb0 up
+      (True, sudo + ["ip", "link", "set", "dev", ifb, "up"]),
+
+      # Redirect ingress (incoming) to egress ifb0
+      (True, tc + ["qdisc", "add", "dev", adapter, "handle", "ffff:", "ingress"]),
+      (True, tc + ["filter", "add", "dev", adapter, "parent", "ffff:", "protocol", "ip", "u32", "match", "u32", "0", "0", "action", "mirred", "egress", "redirect", "dev", ifb]),
+
+      # Add class and rules for virtual interface
+      (True, tc + ["qdisc", "add", "dev", ifb, "root", "handle", "2:", "htb"]),
+      (True, tc + ["class", "add", "dev", ifb, "parent", "2:", "classid", "2:1", "htb", "rate", f"{download_speed_kbps}kbit"]),
+
+      # Add filter to rule for IP address
+      (True, tc + ["filter", "add", "dev", ifb, "protocol", "ip", "parent", "2:", "prio", "1", "u32", "match", "ip", "src", "0.0.0.0/0", "flowid", "2:1"]),
+    ]
+
+    commands = cleanup
+    if upload_speed_kbps != -1:
+      commands += upload
+    if download_speed_kbps != -1:
+      commands += download
+
+    for check, cmd in commands:
+      subprocess.run(cmd, check=check)
+
   def get_modem_version(self):
     try:
       modem = self.get_modem()
@@ -275,7 +362,13 @@ class Tici(HardwareBase):
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
-    return ThermalConfig(cpu=((1, 2, 3, 4, 5, 6, 7, 8), 1000), gpu=((48,49), 1000), mem=(15, 1000), bat=(None, 1), ambient=(65, 1000), pmic=((35, 36), 1000))
+    return ThermalConfig(cpu=(["cpu%d-silver-usr" % i for i in range(4)] +
+                              ["cpu%d-gold-usr" % i for i in range(4)], 1000),
+                         gpu=(("gpu0-usr", "gpu1-usr"), 1000),
+                         mem=("ddr-usr", 1000),
+                         bat=(None, 1),
+                         ambient=("xo-therm-adc", 1000),
+                         pmic=(("pm8998_tz", "pm8005_tz"), 1000))
 
   def set_screen_brightness(self, percentage):
     try:

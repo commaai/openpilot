@@ -43,6 +43,8 @@ void dmonitoring_init(DMonitoringModelState* s) {
 #else
   s->m = new SNPEModel("../../models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
 #endif
+
+  s->m->addCalib(s->calib, CALIB_LEN);
 }
 
 static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int height) {
@@ -65,7 +67,7 @@ void crop_yuv(uint8_t *raw, int width, int height, uint8_t *y, uint8_t *u, uint8
   }
 }
 
-DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
+DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, float *calib) {
   Rect crop_rect;
   if (width == TICI_CAM_WIDTH) {
     const int cropped_height = tici_dm_crop::width / 1.33;
@@ -166,29 +168,39 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   //fclose(dump_yuv_file2);
 
   double t1 = millis_since_boot();
-  s->m->execute(net_input_buf, yuv_buf_len);
+  s->m->addImage(net_input_buf, yuv_buf_len);
+  for (int i = 0; i < CALIB_LEN; i++) {
+    s->calib[i] = calib[i];
+  }
+  s->m->execute();
   double t2 = millis_since_boot();
 
   DMonitoringResult ret = {0};
   for (int i = 0; i < 3; ++i) {
-    ret.face_orientation[i] = s->output[i];
-    ret.face_orientation_meta[i] = softplus(s->output[6 + i]);
+    ret.face_orientation[i] = s->output[i] * REG_SCALE;
+    ret.face_orientation_meta[i] = exp(s->output[6 + i]);
   }
   for (int i = 0; i < 2; ++i) {
-    ret.face_position[i] = s->output[3 + i];
-    ret.face_position_meta[i] = softplus(s->output[9 + i]);
+    ret.face_position[i] = s->output[3 + i] * REG_SCALE;
+    ret.face_position_meta[i] = exp(s->output[9 + i]);
   }
-  ret.face_prob = s->output[12];
-  ret.left_eye_prob = s->output[21];
-  ret.right_eye_prob = s->output[30];
-  ret.left_blink_prob = s->output[31];
-  ret.right_blink_prob = s->output[32];
-  ret.sg_prob = s->output[33];
-  ret.poor_vision = s->output[34];
-  ret.partial_face = s->output[35];
-  ret.distracted_pose = s->output[36];
-  ret.distracted_eyes = s->output[37];
-  ret.occluded_prob = s->output[38];
+  for (int i = 0; i < 4; ++i) {
+    ret.ready_prob[i] = sigmoid(s->output[39 + i]);
+  }
+  for (int i = 0; i < 2; ++i) {
+    ret.not_ready_prob[i] = sigmoid(s->output[43 + i]);
+  }
+  ret.face_prob = sigmoid(s->output[12]);
+  ret.left_eye_prob = sigmoid(s->output[21]);
+  ret.right_eye_prob = sigmoid(s->output[30]);
+  ret.left_blink_prob = sigmoid(s->output[31]);
+  ret.right_blink_prob = sigmoid(s->output[32]);
+  ret.sg_prob = sigmoid(s->output[33]);
+  ret.poor_vision = sigmoid(s->output[34]);
+  ret.partial_face = sigmoid(s->output[35]);
+  ret.distracted_pose = sigmoid(s->output[36]);
+  ret.distracted_eyes = sigmoid(s->output[37]);
+  ret.occluded_prob = sigmoid(s->output[38]);
   ret.dsp_execution_time = (t2 - t1) / 1000.;
   return ret;
 }
@@ -216,6 +228,8 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setDistractedPose(res.distracted_pose);
   framed.setDistractedEyes(res.distracted_eyes);
   framed.setOccludedProb(res.occluded_prob);
+  framed.setReadyProb(res.ready_prob);
+  framed.setNotReadyProb(res.not_ready_prob);
   if (send_raw_pred) {
     framed.setRawPredictions(raw_pred.asBytes());
   }
