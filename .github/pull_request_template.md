@@ -22,8 +22,8 @@ Route: [a route with the bug fix]
 <!--- ***** Template: Car port *****
 
 **Checklist**
-- [ ] added to README
-- [ ] test route added to [test_routes.py](https://github.com/commaai/openpilot/blob/master/selfdrive/test/test_routes.py)
+- [ ] added to docs/CARS.md
+- [ ] test route added to [routes.py](https://github.com/commaai/openpilot/blob/master/selfdrive/car/tests/routes.py)
 - [ ] route with openpilot:
 - [ ] route with stock system:
 
