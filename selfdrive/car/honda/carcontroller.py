@@ -126,7 +126,7 @@ class CarController:
       gas, brake = 0.0, 0.0
 
     # *** apply brake hysteresis ***
-    pre_limit_brake, self.braking, self.brake_steady = actuator_hystereses(brake, self.braking, self.brake_steady,
+    pre_limit_brake, self.braking, self.brake_steady = actuator_hysteresis(brake, self.braking, self.brake_steady,
                                                                            CS.out.vEgo, self.CP.carFingerprint)
 
     # *** rate limit after the enable check ***
@@ -154,7 +154,7 @@ class CarController:
     apply_steer = int(interp(-actuators.steer * self.params.STEER_MAX,
                              self.params.STEER_LOOKUP_BP, self.params.STEER_LOOKUP_V))
 
-    # Send CAN commands.
+    # Send CAN commands
     can_sends = []
 
     # tester present - w/ no response (keeps radar disabled)
