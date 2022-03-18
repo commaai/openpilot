@@ -22,6 +22,9 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/camerad/cameras/sensor2_i2c.h"
 
+// For debugging:
+// echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
+
 extern ExitHandler do_exit;
 
 const size_t FRAME_WIDTH = 1928;
@@ -32,6 +35,14 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_AR0231] = {
+    .frame_width = FRAME_WIDTH,
+    .frame_height = FRAME_HEIGHT,
+    .frame_stride = FRAME_STRIDE,
+    .bayer = true,
+    .bayer_flip = 1,
+    .hdr = false
+  },
+  [CAMERA_ID_IMX390] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
@@ -160,8 +171,15 @@ void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
 // ************** high level camera helpers ****************
 
 void CameraState::sensors_start() {
-  int start_reg_len = sizeof(start_reg_array) / sizeof(struct i2c_random_wr_payload);
-  sensors_i2c(start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  if (camera_id == CAMERA_ID_AR0231) {
+    int start_reg_len = sizeof(start_reg_array_ar0231) / sizeof(struct i2c_random_wr_payload);
+    sensors_i2c(start_reg_array_ar0231, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
+  } else if (camera_id == CAMERA_ID_IMX390) {
+    int start_reg_len = sizeof(start_reg_array_imx390) / sizeof(struct i2c_random_wr_payload);
+    sensors_i2c(start_reg_array_imx390, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+  } else {
+    assert(false);
+  }
 }
 
 void CameraState::sensors_poke(int request_id) {
@@ -181,7 +199,7 @@ void CameraState::sensors_poke(int request_id) {
   release_fd(multi_cam_state->video0_fd, cam_packet_handle);
 }
 
-void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code) {
+void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
@@ -199,7 +217,7 @@ void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op
   i2c_random_wr->header.count = len;
   i2c_random_wr->header.op_code = 1;
   i2c_random_wr->header.cmd_type = CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR;
-  i2c_random_wr->header.data_type = CAMERA_SENSOR_I2C_TYPE_WORD;
+  i2c_random_wr->header.data_type = data_word ? CAMERA_SENSOR_I2C_TYPE_WORD : CAMERA_SENSOR_I2C_TYPE_BYTE;
   i2c_random_wr->header.addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
   memcpy(i2c_random_wr->random_wr_payload, dat, len*sizeof(struct i2c_random_wr_payload));
 
@@ -220,7 +238,7 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   return (struct cam_cmd_power *)(unconditional_wait + 1);
 };
 
-void CameraState::sensors_init() {
+int CameraState::sensors_init() {
   int video0_fd = multi_cam_state->video0_fd;
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
@@ -239,17 +257,17 @@ void CameraState::sensors_init() {
   switch (camera_num) {
     case 0:
       // port 0
-      i2c_info->slave_addr = 0x20;
+      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x34;
       probe->camera_id = 0;
       break;
     case 1:
       // port 1
-      i2c_info->slave_addr = 0x30;
+      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x30 : 0x36;
       probe->camera_id = 1;
       break;
     case 2:
       // port 2
-      i2c_info->slave_addr = 0x20;
+      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x34;
       probe->camera_id = 2;
       break;
   }
@@ -263,8 +281,15 @@ void CameraState::sensors_init() {
   probe->addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
   probe->op_code = 3;   // don't care?
   probe->cmd_type = CAMERA_SENSOR_CMD_TYPE_PROBE;
-  probe->reg_addr = 0x3000; //0x300a; //0x300b;
-  probe->expected_data = 0x354; //0x7750; //0x885a;
+  if (camera_id == CAMERA_ID_AR0231) {
+    probe->reg_addr = 0x3000;
+    probe->expected_data = 0x354;
+  } else if (camera_id == CAMERA_ID_IMX390) {
+    probe->reg_addr = 0x330;
+    probe->expected_data = 0x1538;
+  } else {
+    assert(false);
+  }
   probe->data_mask = 0;
 
   //buf_desc[1].size = buf_desc[1].length = 148;
@@ -293,7 +318,7 @@ void CameraState::sensors_init() {
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
-  power->power_settings[0].config_val_low = 19200000; //Hz
+  power->power_settings[0].config_val_low = (camera_id == CAMERA_ID_AR0231) ? 19200000 : 24000000; //Hz
   power = power_set_wait(power, 10);
 
   // 8,1 is this reset?
@@ -341,7 +366,6 @@ void CameraState::sensors_init() {
 
   LOGD("probing the sensor");
   int ret = do_cam_control(sensor_fd, CAM_SENSOR_PROBE_CMD, (void *)(uintptr_t)cam_packet_handle, 0);
-  assert(ret == 0);
 
   munmap(i2c_info, buf_desc[0].size);
   release_fd(video0_fd, buf_desc[0].mem_handle);
@@ -349,6 +373,8 @@ void CameraState::sensors_init() {
   release_fd(video0_fd, buf_desc[1].mem_handle);
   munmap(pkt, size);
   release_fd(video0_fd, cam_packet_handle);
+
+  return ret;
 }
 
 void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
@@ -561,9 +587,10 @@ void CameraState::enqueue_req_multi(int start, int n, bool dp) {
 
 // ******************* camera *******************
 
-void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServer * v, int camera_id, int camera_num_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
+void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServer * v, int camera_id_, int camera_num_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   LOGD("camera init %d", camera_num);
   multi_cam_state = multi_cam_state_;
+  camera_id = camera_id_;
   assert(camera_id < std::size(cameras_supported));
   ci = cameras_supported[camera_id];
   assert(ci.frame_width != 0);
@@ -586,17 +613,24 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
 }
 
 void CameraState::camera_open() {
+  int ret;
   sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", camera_num);
   assert(sensor_fd >= 0);
   LOGD("opened sensor for %d", camera_num);
 
   // probe the sensor
   LOGD("-- Probing sensor %d", camera_num);
-  sensors_init();
+  ret = sensors_init();
+  if (ret != 0) {
+    LOGD("AR0231 init failed, trying IMX390");
+    camera_id = CAMERA_ID_IMX390;
+    ret = sensors_init();
+  }
+  assert(ret == 0);
 
   // create session
   struct cam_req_mgr_session_info session_info = {};
-  int ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &session_info, sizeof(session_info));
+  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &session_info, sizeof(session_info));
   LOGD("get session: %d 0x%X", ret, session_info.session_hdl);
   session_handle = session_info.session_hdl;
 
@@ -675,10 +709,13 @@ void CameraState::camera_open() {
   config_isp(0, 0, 1, buf0_handle, 0);
 
   LOG("-- Configuring sensor");
-  sensors_i2c(init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  //sensors_i2c(start_reg_array, std::size(start_reg_array), CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMON);
-  //sensors_i2c(stop_reg_array, std::size(stop_reg_array), CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF);
-
+  if (camera_id == CAMERA_ID_AR0231) {
+    sensors_i2c(init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
+  } else if (camera_id == CAMERA_ID_IMX390) {
+    sensors_i2c(init_array_imx390, std::size(init_array_imx390), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+  } else {
+    assert(false);
+  }
 
   // config csiphy
   LOG("-- Config CSI PHY");
@@ -1008,14 +1045,28 @@ void CameraState::set_camera_exposure(float grey_frac) {
   }
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
 
-  uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
-  struct i2c_random_wr_payload exp_reg_array[] = {
-                                                  {0x3366, analog_gain_reg},
-                                                  {0x3362, (uint16_t)(dc_gain_enabled ? 0x1 : 0x0)},
-                                                  {0x3012, (uint16_t)exposure_time},
-                                                };
-  sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
-              CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  if (camera_id == CAMERA_ID_AR0231) {
+    uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
+    struct i2c_random_wr_payload exp_reg_array[] = {
+                                                    {0x3366, analog_gain_reg},
+                                                    {0x3362, (uint16_t)(dc_gain_enabled ? 0x1 : 0x0)},
+                                                    {0x3012, (uint16_t)exposure_time},
+                                                  };
+    sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
+  } else if (camera_id == CAMERA_ID_IMX390) {
+    // if gain is sub 1, we have to use exposure to mimic sub 1 gains
+    uint32_t real_exposure_time = (gain < 1.0) ? (exposure_time*gain) : exposure_time;
+    // invert real_exposure_time, max exposure is 2
+    real_exposure_time = (exposure_time >= 0x7cf) ? 2 : (0x7cf - exposure_time);
+    uint32_t real_gain = int((10*log10(fmax(1.0, gain)))/0.3);
+    //printf("%d expose: %d gain: %f = %d\n", camera_num, exposure_time, gain, real_gain);
+    struct i2c_random_wr_payload exp_reg_array[] = {
+      {0x000c, real_exposure_time&0xFF}, {0x000d, real_exposure_time>>8},
+      {0x0010, real_exposure_time&0xFF}, {0x0011, real_exposure_time>>8},
+      {0x0018, real_gain&0xFF}, {0x0019, real_gain>>8},
+    };
+    sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+  }
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
