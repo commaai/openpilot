@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 from cereal import car
+from common.conversions import Conversions as CV
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
@@ -38,9 +39,9 @@ def compute_gas_brake(accel, speed, fingerprint):
 # TODO not clear this does anything useful
 def actuator_hysteresis(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
-  brake_hyst_on = 0.02     # to activate brakes exceed this value
-  brake_hyst_off = 0.005   # to deactivate brakes below this value
-  brake_hyst_gap = 0.01    # don't change brake command for small oscillations within this value
+  brake_hyst_on = 0.02    # to activate brakes exceed this value
+  brake_hyst_off = 0.005  # to deactivate brakes below this value
+  brake_hyst_gap = 0.01   # don't change brake command for small oscillations within this value
 
   # *** hysteresis logic to avoid brake blinking. go above 0.1 to trigger
   if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
@@ -101,24 +102,28 @@ HUDData = namedtuple("HUDData",
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
+    self.packer = CANPacker(dbc_name)
+    self.params = CarControllerParams(CP)
+    self.frame = 0
+
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
     self.apply_brake_last = 0
     self.last_pump_ts = 0.
-    self.packer = CANPacker(dbc_name)
 
     self.accel = 0
     self.speed = 0
     self.gas = 0
     self.brake = 0
 
-    self.params = CarControllerParams(CP)
+  def update(self, CC, CS):
+    actuators = CC.actuators
+    hud_control = CC.hudControl
+    hud_v_cruise = hud_control.setSpeed * CV.MS_TO_KPH if hud_control.speedVisible else 255
+    pcm_cancel_cmd = CC.cruiseControl.cancel
 
-  def update(self, c, CS, frame, actuators, pcm_cancel_cmd,
-             hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
-
-    if c.longActive:
+    if CC.longActive:
       accel = actuators.accel
       gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP.carFingerprint)
     else:
@@ -133,20 +138,20 @@ class CarController:
     self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., DT_CTRL)
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
-    if hud_show_lanes:
+    if hud_control.lanesVisible:
       hud_lanes = 1
     else:
       hud_lanes = 0
 
-    if c.enabled:
-      if hud_show_car:
+    if CC.enabled:
+      if hud_control.leadVisible:
         hud_car = 2
       else:
         hud_car = 1
     else:
       hud_car = 0
 
-    fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
+    fcw_display, steer_required, acc_alert = process_hud_alert(hud_control.visualAlert)
 
     # **** process the car messages ****
 
@@ -159,12 +164,12 @@ class CarController:
 
     # tester present - w/ no response (keeps radar disabled)
     if self.CP.carFingerprint in HONDA_BOSCH and self.CP.openpilotLongitudinalControl:
-      if frame % 10 == 0:
+      if self.frame % 10 == 0:
         can_sends.append((0x18DAB0F1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 1))
 
     # Send steering command.
-    idx = frame % 4
-    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, c.latActive, self.CP.carFingerprint,
+    idx = self.frame % 4
+    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, CC.latActive, self.CP.carFingerprint,
                                                       idx, CS.CP.openpilotLongitudinalControl))
 
     stopping = actuators.longControlState == LongCtrlState.stopping
@@ -199,8 +204,8 @@ class CarController:
       pcm_accel = int(clip((accel / 1.44) / max_accel, 0.0, 1.0) * 0xc6)
 
     if not self.CP.openpilotLongitudinalControl:
-      if frame % 2 == 0:
-        idx = frame // 2
+      if self.frame % 2 == 0:
+        idx = self.frame // 2
         can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, self.CP.carFingerprint, idx))
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
@@ -210,14 +215,14 @@ class CarController:
 
     else:
       # Send gas and brake commands.
-      if frame % 2 == 0:
-        idx = frame // 2
-        ts = frame * DT_CTRL
+      if self.frame % 2 == 0:
+        idx = self.frame // 2
+        ts = self.frame * DT_CTRL
 
         if self.CP.carFingerprint in HONDA_BOSCH:
           self.accel = clip(accel, self.params.BOSCH_ACCEL_MIN, self.params.BOSCH_ACCEL_MAX)
           self.gas = interp(accel, self.params.BOSCH_GAS_LOOKUP_BP, self.params.BOSCH_GAS_LOOKUP_V)
-          can_sends.extend(hondacan.create_acc_commands(self.packer, c.enabled, c.longActive, accel, self.gas,
+          can_sends.extend(hondacan.create_acc_commands(self.packer, CC.enabled, CC.longActive, accel, self.gas,
                                                         idx, stopping, self.CP.carFingerprint))
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
@@ -238,15 +243,15 @@ class CarController:
             # This prevents unexpected pedal range rescaling
             # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected
             # when you do enable.
-            if c.longActive:
+            if CC.longActive:
               self.gas = clip(gas_mult * (gas - brake + wind_brake * 3 / 4), 0., 1.)
             else:
               self.gas = 0.0
             can_sends.append(create_gas_interceptor_command(self.packer, self.gas, idx))
 
     # Send dashboard UI commands.
-    if frame % 10 == 0:
-      idx = (frame // 10) % 4
+    if self.frame % 10 == 0:
+      idx = (self.frame // 10) % 4
       hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
                     hud_lanes, fcw_display, acc_alert, steer_required)
       can_sends.extend(hondacan.create_ui_commands(self.packer, self.CP, pcm_speed, hud, CS.is_metric, idx, CS.stock_hud))
@@ -263,4 +268,5 @@ class CarController:
     new_actuators.gas = self.gas
     new_actuators.brake = self.brake
 
+    self.frame += 1
     return new_actuators, can_sends
