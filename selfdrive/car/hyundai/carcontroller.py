@@ -97,7 +97,8 @@ class CarController():
 
       stopping = (actuators.longControlState == LongCtrlState.stopping)
       set_speed_in_units = hud_speed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
-      can_sends.extend(create_acc_commands(self.packer, c.enabled, accel, jerk, int(frame / 2), lead_visible, set_speed_in_units, stopping))
+      can_sends.extend(create_acc_commands(self.packer, c.enabled, accel, jerk, int(frame / 2), lead_visible,
+                                           set_speed_in_units, stopping, CS.out.gasPressed))
       self.accel = accel
 
     # 20 Hz LFA MFA message
