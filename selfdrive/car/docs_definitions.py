@@ -51,14 +51,26 @@ class CarInfo:
 
     # Check for car footnotes and get star icons
     for row_idx, column in enumerate(Column):
+      row_item = RowItem()
       if column in StarColumns:
-        row[row_idx] = row[row_idx].icon
+        row_item.star = row[row_idx]
+      else:
+        row_item.text = row[row_idx]
 
       footnote = get_footnote(self.footnotes, column)
       if footnote is not None:
-        row[row_idx] += f"[<sup>{all_footnotes[footnote]}</sup>](#Footnotes)"
+        row_item.footnote = all_footnotes[footnote]
+        # row[row_idx] += f"[<sup>{all_footnotes[footnote]}</sup>](#Footnotes)"
+      row[row_idx] = row_item
 
     return row
+
+
+@dataclass
+class RowItem:
+  text: Optional[str] = None
+  footnote: Optional[int] = None
+  star: Optional[str] = None
 
 
 class Tier(Enum):
@@ -84,8 +96,12 @@ class Star(Enum):
   EMPTY = "empty"
 
   @property
-  def icon(self):
+  def md_icon(self):
     return f'<a href="#"><img valign="top" src="assets/icon-star-{self.value}.svg" width="22" /></a>'
+
+  @property
+  def html_icon(self):
+    return f'<img src="/supported-cars/icon-star-{self.value}.svg" alt="" class="flex-row-star-icon">'
 
 
 StarColumns = list(Column)[3:]

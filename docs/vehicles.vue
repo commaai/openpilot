@@ -122,271 +122,271 @@
                         <div class="flex-row first col-1"><span class="make-icon make-genesis">Genesis</span></div>
                         <div class="flex-row col-2">G70 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Palisade 2020-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Santa Fe 2019-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Sonata 2020-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Sonata Hybrid 2021-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">Niro Electric 2019-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">Telluride 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">ES 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">ES Hybrid 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">NX 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">RX 2020-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">RX Hybrid 2020-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">UX Hybrid 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Alphard 2019-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Avalon 2022<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Camry 2021-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>[<sup>7</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full[<sup>7</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Camry Hybrid 2021-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Corolla 2020-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Corolla Hatchback 2019-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Corolla Hybrid 2020-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Highlander 2020-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Highlander Hybrid 2020-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Mirai 2021<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Prius 2021-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Prius Prime 2021-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">RAV4 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-gold">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">RAV4 Hybrid 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
 
 
@@ -410,711 +410,711 @@
                         <div class="flex-row first col-1"><span class="make-icon make-audi">Audi</span></div>
                         <div class="flex-row col-2">A3 2014-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">ACC + Lane Assist</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-audi">Audi</span></div>
                         <div class="flex-row col-2">A3 Sportback e-tron 2017-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">ACC + Lane Assist</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-audi">Audi</span></div>
                         <div class="flex-row col-2">Q2 2018<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">ACC + Lane Assist</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-audi">Audi</span></div>
                         <div class="flex-row col-2">Q3 2020-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">ACC + Lane Assist</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-audi">Audi</span></div>
                         <div class="flex-row col-2">S3 2015-17<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">ACC + Lane Assist</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-genesis">Genesis</span></div>
                         <div class="flex-row col-2">G70 2018<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-genesis">Genesis</span></div>
                         <div class="flex-row col-2">G80 2018<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Elantra 2021-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Elantra Hybrid 2021<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Ioniq Electric 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Ioniq Hybrid 2020-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LFA</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Ioniq Plug-In Hybrid 2020-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Kona 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Kona Electric 2018-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Kona Hybrid 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Santa Fe 2021-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Santa Fe Hybrid 2022<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Santa Fe Plug-In Hybrid 2022<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Sonata 2018-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">Ceed 2019<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">Forte 2018-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">K5 2021-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LFA</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">Niro Hybrid 2021-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">Optima 2019<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">Seltos 2021<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">Sorento 2018-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">Stinger 2018<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">CT Hybrid 2017-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">LSS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">ES Hybrid 2017-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">LSS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">NX 2018-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">NX Hybrid 2018-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">RX 2016-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">RX Hybrid 2016-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-seat">SEAT</span></div>
                         <div class="flex-row col-2">Ateca 2018<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-seat">SEAT</span></div>
                         <div class="flex-row col-2">Leon 2014-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Avalon 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">TSS-P</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Avalon Hybrid 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">TSS-P</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">C-HR 2017-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">C-HR Hybrid 2017-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Camry 2018-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>[<sup>7</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full[<sup>7</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Camry Hybrid 2018-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>[<sup>7</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full[<sup>7</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Highlander 2017-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Highlander Hybrid 2017-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">RAV4 Hybrid 2016-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">TSS-P</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Sienna 2018-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Arteon 2018, 2021[<sup>5</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Atlas 2018-19, 2022[<sup>5</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Golf 2015-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Golf Alltrack 2017-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Golf GTE 2016<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Golf GTI 2018-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Golf R 2016-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Golf SportWagen 2015<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Golf SportsVan 2016<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Jetta 2018-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Jetta GLI 2021<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Passat 2016-18[<sup>4</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Polo 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">T-Cross 2021[<sup>5</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">T-Roc 2021[<sup>5</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Taos 2022[<sup>5</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Tiguan 2020-22[<sup>5</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Touran 2017<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">e-Golf 2014, 2019-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-škoda">Škoda</span></div>
                         <div class="flex-row col-2">Kamiq 2021[<sup>3</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-škoda">Škoda</span></div>
                         <div class="flex-row col-2">Karoq 2019<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-škoda">Škoda</span></div>
                         <div class="flex-row col-2">Kodiaq 2018-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-škoda">Škoda</span></div>
                         <div class="flex-row col-2">Octavia 2015, 2018-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-škoda">Škoda</span></div>
                         <div class="flex-row col-2">Octavia RS 2016<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-škoda">Škoda</span></div>
                         <div class="flex-row col-2">Scala 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-silver">
                         <div class="flex-row first col-1"><span class="make-icon make-škoda">Škoda</span></div>
                         <div class="flex-row col-2">Superb 2015-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
 
 
@@ -1138,581 +1138,581 @@
                         <div class="flex-row first col-1"><span class="make-icon make-acura">Acura</span></div>
                         <div class="flex-row col-2">ILX 2016-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">AcuraWatch Plus</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-acura">Acura</span></div>
                         <div class="flex-row col-2">RDX 2016-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">AcuraWatch Plus</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-acura">Acura</span></div>
                         <div class="flex-row col-2">RDX 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-cadillac">Cadillac</span></div>
                         <div class="flex-row col-2">Escalade ESV 2016[<sup>2</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">ACC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-chevrolet">Chevrolet</span></div>
                         <div class="flex-row col-2">Volt 2017-18[<sup>2</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Adaptive Cruise</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-chrysler">Chrysler</span></div>
                         <div class="flex-row col-2">Pacifica 2017-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Adaptive Cruise</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-chrysler">Chrysler</span></div>
                         <div class="flex-row col-2">Pacifica 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Adaptive Cruise</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-chrysler">Chrysler</span></div>
                         <div class="flex-row col-2">Pacifica Hybrid 2017-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Adaptive Cruise</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-chrysler">Chrysler</span></div>
                         <div class="flex-row col-2">Pacifica Hybrid 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Adaptive Cruise</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-gmc">GMC</span></div>
                         <div class="flex-row col-2">Acadia 2018[<sup>2</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Adaptive Cruise</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-genesis">Genesis</span></div>
                         <div class="flex-row col-2">G90 2018<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Accord 2018-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Accord Hybrid 2018-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">CR-V 2015-16<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Touring</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">CR-V 2017-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Honda Sensing</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">CR-V Hybrid 2017-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Honda Sensing</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Civic 2016-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Honda Sensing</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Civic 2019-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a>[<sup>1</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty[<sup>1</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Civic Hatchback 2017-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Honda Sensing</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Fit 2018-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Honda Sensing</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Freed 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Honda Sensing</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">HR-V 2019-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Honda Sensing</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Insight 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Inspire 2018<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Odyssey 2018-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Honda Sensing</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Passport 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Pilot 2016-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Honda Sensing</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">Ridgeline 2017-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Honda Sensing</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-honda">Honda</span></div>
                         <div class="flex-row col-2">e 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Elantra 2017-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Genesis 2015-16<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Ioniq Electric 2019<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Ioniq Hybrid 2017-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-hyundai">Hyundai</span></div>
                         <div class="flex-row col-2">Veloster 2019-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-jeep">Jeep</span></div>
                         <div class="flex-row col-2">Grand Cherokee 2016-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Adaptive Cruise</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-jeep">Jeep</span></div>
                         <div class="flex-row col-2">Grand Cherokee 2019-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Adaptive Cruise</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">Niro Plug-In Hybrid 2019<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-kia">Kia</span></div>
                         <div class="flex-row col-2">Optima 2017<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">SCC + LKAS</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">IS 2017-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-lexus">Lexus</span></div>
                         <div class="flex-row col-2">RC 2020<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-mazda">Mazda</span></div>
                         <div class="flex-row col-2">CX-5 2022<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-mazda">Mazda</span></div>
                         <div class="flex-row col-2">CX-9 2021<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-nissan">Nissan</span></div>
                         <div class="flex-row col-2">Altima 2019-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">ProPILOT</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-nissan">Nissan</span></div>
                         <div class="flex-row col-2">Leaf 2018-22<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">ProPILOT</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-nissan">Nissan</span></div>
                         <div class="flex-row col-2">Rogue 2018-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">ProPILOT</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-nissan">Nissan</span></div>
                         <div class="flex-row col-2">X-Trail 2017<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">ProPILOT</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-subaru">Subaru</span></div>
                         <div class="flex-row col-2">Ascent 2019<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">EyeSight</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-subaru">Subaru</span></div>
                         <div class="flex-row col-2">Crosstrek 2018-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">EyeSight</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-subaru">Subaru</span></div>
                         <div class="flex-row col-2">Forester 2019-21<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">EyeSight</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-subaru">Subaru</span></div>
                         <div class="flex-row col-2">Impreza 2017-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">EyeSight</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Avalon 2016-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">TSS-P</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Corolla 2017-19<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Prius 2016-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">TSS-P</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>8</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>8</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Prius Prime 2017-20<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">All</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>8</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>8</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">Prius v 2017<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">TSS-P</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>8</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>8</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-toyota">Toyota</span></div>
                         <div class="flex-row col-2">RAV4 2016-18<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">TSS-P</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a>[<sup>6</sup>](#Footnotes)</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-half[<sup>6</sup>](#Footnotes).svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">California 2021[<sup>5</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
                     <div class="flex-table row row-bronze">
                         <div class="flex-row first col-1"><span class="make-icon make-volkswagen">Volkswagen</span></div>
                         <div class="flex-row col-2">Caravelle 2020[<sup>5</sup>](#Footnotes)<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">Driver Assistance</div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
-                        <div class="flex-row flex-row-star col-even"><a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-empty.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
+                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-full.svg" alt=""></div>
                     </div>
 
                 </div>

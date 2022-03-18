@@ -21,10 +21,10 @@ def get_all_footnotes():
 
 
 ALL_FOOTNOTES: Dict[Enum, int] = get_all_footnotes()
-# CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
-# CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
-CARS_MD_OUT = os.path.join(BASEDIR, "docs", "vehicles.vue")
-CARS_MD_TEMPLATE = os.path.join(BASEDIR, "docs", "vehicles_template.vue")
+CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
+CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
+# CARS_MD_OUT = os.path.join(BASEDIR, "docs", "vehicles.vue")
+# CARS_MD_TEMPLATE = os.path.join(BASEDIR, "docs", "vehicles_template.vue")
 
 
 def get_tier_car_rows() -> Iterator[Tuple[str, List[str]]]:
@@ -50,7 +50,7 @@ def get_tier_car_rows() -> Iterator[Tuple[str, List[str]]]:
 
   # Return tier title and car rows for each tier
   for tier, car_rows in tier_car_rows.items():
-    yield tier.name.title(), sorted(car_rows)
+    yield tier.name.title(), sorted(car_rows, key=lambda x: x[0].text + x[1].text)
 
 
 def generate_cars_md(tier_car_rows: Iterator[Tuple[str, List[str]]], template_fn: str) -> str:

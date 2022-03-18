@@ -22,26 +22,26 @@
             <div class="rating-row-item rating-row-item-secondary">
                 <p>openpilot Adaptive Cruise Control (ACC)</p>
                 <div class="rating-item">
-                    <img src="/supported-cars/icon-star-full.svg" alt="">
+                    {{Star.FULL.html_icon}}
                     <p>openpilot is able to control the gas and brakes.</p>
                 </div>
                 <div class="rating-item">
-                    <img src="/supported-cars/icon-star-half.svg" alt="">
+                    {{Star.HALF.html_icon}}
                     <p>openpilot is able to control the gas and brakes with some restrictions.</p>
                 </div>
                 <div class="rating-item">
-                    <img src="/supported-cars/icon-star-empty.svg" alt="">
+                    {{Star.EMPTY.html_icon}}
                     <p>The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system.</p>
                 </div>
             </div>
             <div class="rating-row-item rating-row-item-secondary">
                 <p>Stop and Go</p>
                 <div class="rating-item">
-                    <img src="/supported-cars/icon-star-full.svg" alt="">
+                    {{Star.FULL.html_icon}}
                     <p>Adaptive Cruise Control (ACC) operates down to 0 mph.</p>
                 </div>
                 <div class="rating-item">
-                    <img src="/supported-cars/icon-star-empty.svg" alt="">
+                    {{Star.EMPTY.html_icon}}
                     <p>Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.</p>
                 </div>
             </div>
@@ -55,22 +55,22 @@
             <div class="rating-row-item rating-row-item-secondary">
                 <p>Steer to 0</p>
                 <div class="rating-item">
-                    <img src="/supported-cars/icon-star-full.svg" alt="">
+                    {{Star.FULL.html_icon}}
                     <p>openpilot can control the steering wheel down to 0 mph.</p>
                 </div>
                 <div class="rating-item">
-                    <img src="/supported-cars/icon-star-empty.svg" alt="">
+                    {{Star.EMPTY.html_icon}}
                     <p>No steering control below certain speeds.</p>
                 </div>
             </div>
             <div class="rating-row-item rating-row-item-secondary">
                 <p>Steering Torque</p>
                 <div class="rating-item">
-                    <img src="/supported-cars/icon-star-full.svg" alt="">
+                    {{Star.FULL.html_icon}}
                     <p>Car has enough steering torque for comfortable highway driving.</p>
                 </div>
                 <div class="rating-item">
-                    <img src="/supported-cars/icon-star-empty.svg" alt="">
+                    {{Star.EMPTY.html_icon}}
                     <p>Limited ability to make turns.</p>
                 </div>
             </div>
@@ -84,11 +84,11 @@
             <div class="rating-row-item rating-row-item-secondary">
                 <p>Actively Maintained</p>
                 <div class="rating-item">
-                    <img src="/supported-cars/icon-star-full.svg" alt="">
+                    {{Star.FULL.html_icon}}
                     <p>Mainline software support, harness hardware sold by comma, lots of users, primary development target.</p>
                 </div>
                 <div class="rating-item">
-                    <img src="/supported-cars/icon-star-empty.svg" alt="">
+                    {{Star.EMPTY.html_icon}}
                     <p>Low user count, community maintained, harness hardware not sold by comma.</p>
                 </div>
             </div>
@@ -101,6 +101,8 @@
 <section>
     <div class="container">
         <div class="table-container" role="table">
+                    {% set star_tag = '<img src="/supported-cars/icon-star-{}.svg" alt="">' %}
+                    {% set footnote_tag = '<a style=" href="/vehicles/#footnote"><sup>{}</sup></a>' %}
                     {% for tier, car_rows in tiers %}
 
                     <div class="tier tier-{{tier.lower()}}">
@@ -121,14 +123,14 @@
 
                     {% for row in car_rows %}
                     <div class="flex-table row row-{{tier.lower()}}">
-                        <div class="flex-row first col-1"><span class="make-icon make-{{row[0].lower()}}">{{row[0]}}</span></div>
-                        <div class="flex-row col-2">{{row[1]}}<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
-                        <div class="flex-row col-3">{{row[2]}}</div>
-                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-{{row[3]}}.svg" alt=""></div>
-                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-{{row[4]}}.svg" alt=""></div>
-                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-{{row[5]}}.svg" alt=""></div>
-                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-{{row[6]}}.svg" alt=""></div>
-                        <div class="flex-row flex-row-star col-even"><img src="/supported-cars/icon-star-{{row[7]}}.svg" alt=""></div>
+                        <div class="flex-row first col-1"><span class="make-icon make-{{row[0].text.lower()}}">{{row[0].text}}</span></div>
+                        <div class="flex-row col-2">{{row[1].text}}<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
+                        <div class="flex-row col-3">{{row[2].text}}</div>
+                        <div class="flex-row flex-row-star col-even">{{row[3].star.html_icon}}</div>{{footnote_tag.format(row[3].footnote) if row[3].footnote else ''}}
+                        <div class="flex-row flex-row-star col-even">{{row[4].star.html_icon}}</div>
+                        <div class="flex-row flex-row-star col-even">{{row[5].star.html_icon}}</div>
+                        <div class="flex-row flex-row-star col-even">{{row[6].star.html_icon}}</div>
+                        <div class="flex-row flex-row-star col-even">{{row[7].star.html_icon}}</div>
                     </div>
                     {% endfor %}
 
