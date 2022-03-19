@@ -65,7 +65,6 @@ class TestCarModel(unittest.TestCase):
           lr = LogReader(get_url(cls.route, seg))
         else:
           lr = LogReader(Route(cls.route).log_paths()[seg])
-
       except Exception:
         continue
 
@@ -78,11 +77,6 @@ class TestCarModel(unittest.TestCase):
               fingerprint[m.src][m.address] = len(m.dat)
           can_msgs.append(msg)
         elif msg.which() == "carParams":
-          # TODO: do we want to require specifying car model?
-          # if not cls.ci:
-          #   if cls.car_model is None:
-          #     cls.car_model = msg.carParams.carFingerprint
-          #     print(f"Inferring carFingerprint: {cls.car_model}")
           if msg.carParams.openpilotLongitudinalControl:
             disable_radar = True
 
@@ -284,6 +278,7 @@ if __name__ == "__main__":
 
   # Run on user-specified route
   if args.route is not None:
+    # TODO: do we want to require specifying car model?
     assert args.car_model is not None, "Car model needed for tests"
     test_route = TestRoute(args.route, args.car_model, ci=False)
     test_cases = load_tests([test_route])
