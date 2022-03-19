@@ -11,6 +11,8 @@ import carla  # pylint: disable=import-error
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
+
+from common.transformations.camera import tici_d_and_e_focal_length
 from lib.can import can_function
 
 import cereal.messaging as messaging
@@ -26,7 +28,7 @@ from selfdrive.test.helpers import set_params_enabled
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--joystick', action='store_true')
 parser.add_argument('--low_quality', action='store_true')
-parser.add_argument('--c3_cameras', action='store_true')
+parser.add_argument('--only_c2_cameras', action='store_true')
 parser.add_argument('--town', type=str, default='Town04_Opt')
 parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
 
@@ -282,17 +284,17 @@ def bridge(q):
     blueprint.set_attribute('image_size_x', str(W))
     blueprint.set_attribute('image_size_y', str(H))
     blueprint.set_attribute('fov', str(fov))
+    blueprint.set_attribute('focal_distance', str(int(tici_d_and_e_focal_length)))
     blueprint.set_attribute('sensor_tick', '0.05')
     return world.spawn_actor(blueprint, transform, attach_to=vehicle)
 
-  c3_cameras = args.c3_cameras
-  print(c3_cameras)
+  c3_cameras = not args.only_c2_cameras
   camerad = Camerad(wide_camera=c3_cameras)
   road_camera = create_camera(fov=40)
   road_camera.listen(camerad.cam_callback_road)
   cameras = [road_camera]
   if c3_cameras:
-    road_wide_camera = create_camera(fov=160) # todo not sure yet about this fov. 180 doesn't seem to work mostly black screen
+    road_wide_camera = create_camera(fov=165)  # fov bigger than 165 shows unwanted artifacts
     road_wide_camera.listen(camerad.cam_callback_wide_road)
     cameras.append(road_wide_camera)
   vehicle_state = VehicleState()
