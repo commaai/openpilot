@@ -418,17 +418,5 @@ class CarInterface(CarInterfaceBase):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-    hud_control = c.hudControl
-    if hud_control.speedVisible:
-      hud_v_cruise = hud_control.setSpeed * CV.MS_TO_KPH
-    else:
-      hud_v_cruise = 255
-
-    ret = self.CC.update(c, self.CS, self.frame,
-                         c.actuators, c.cruiseControl.cancel,
-                         hud_v_cruise, hud_control.lanesVisible,
-                         hud_show_car=hud_control.leadVisible,
-                         hud_alert=hud_control.visualAlert)
-
-    self.frame += 1
+    ret = self.CC.update(c, self.CS)
     return ret

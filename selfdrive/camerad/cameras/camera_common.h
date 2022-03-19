@@ -25,7 +25,8 @@
 #define CAMERA_ID_LGC920 6
 #define CAMERA_ID_LGC615 7
 #define CAMERA_ID_AR0231 8
-#define CAMERA_ID_MAX 9
+#define CAMERA_ID_IMX390 9
+#define CAMERA_ID_MAX 10
 
 const int UI_BUF_COUNT = 4;
 const int YUV_BUFFER_COUNT = Hardware::EON() ? 100 : 40;
