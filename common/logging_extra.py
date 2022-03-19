@@ -7,8 +7,9 @@ import uuid
 import socket
 import logging
 import traceback
+import time
 from threading import local
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
 
 def json_handler(obj):
@@ -123,6 +124,12 @@ class SwagLogger(logging.Logger):
 
     self.log_local = local()
     self.log_local.ctx = {}
+
+    #TODO: do it similar to rest of code
+    self.timestamps = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+  
+  def timestamp(self, frame_id, service, event):
+    self.timestamps[frame_id][service][event] = current_mili_time() 
 
   def local_ctx(self):
     try:

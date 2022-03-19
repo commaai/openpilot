@@ -28,17 +28,12 @@ avg_times = defaultdict(list)
 fig, gnt = plt.subplots()
 gnt.set_xlim(0, 150)
 gnt.set_ylim(0, len(frames))
-col_list = ['red', 'blue', 'green', 'cyan', 'magenta', 'yellow', 'olive', 'steelblue', 'deeppink', 'darkseagreen', 'coral', 'brown', 'gray']
-colors = {}
-for i, topic in enumerate(list(frames.values())[10].keys()):
-    colors[topic] = col_list[i]
-
+colors = {"road_cam_start":'red', "wide_cam_start":'blue', "driver_cam_start":'green', "road_cam_end":'cyan', "wide_cam_end":'magenta', "driver_cam_end":'yellow', 'roadCameraState':'olive', 'wideRoadCameraState':'steelblue', 'driverCameraState':'deeppink', 'modelV2':'darkseagreen', 'lateralPlan':'coral', 'longitudinalPlan':'brown', 'carControl':'gray'}
 
 count = 0
 for frame, times in frames.items():
     t0 = min(times.values())
     events = {}
-    #for topic, time in dict(sorted(times.items(), key= lambda x: x[1])).items():
     for topic, time in times.items():
         #print("     ", topic, (time-t0)/1e6)
         events[((time-t0)/1e6, 0.3)] = colors[topic]

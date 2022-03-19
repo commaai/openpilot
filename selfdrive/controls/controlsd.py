@@ -486,7 +486,7 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
 
     CC = car.CarControl.new_message()
-    # lat and long should give same Id
+    # lat and long should have the same id (and they have)
     CC.frameId = lat_plan.frameId
     CC.enabled = self.enabled
     # Check which actuators can be enabled
