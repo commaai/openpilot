@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=E1101
+import argparse
 import os
 import importlib
 import unittest
@@ -16,9 +17,10 @@ from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.tests.routes import routes, non_tested_cars
+from selfdrive.car.tests.routes import routes, non_tested_cars, TestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
+from tools.lib.route import Route
 
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
@@ -46,12 +48,20 @@ for i, c in enumerate(sorted(all_known_cars())):
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
-@parameterized_class(('car_model', 'route'), test_cases)
+# @parameterized_class(('car_model', 'route'), test_cases)
 class TestCarModel(unittest.TestCase):
+  # def __init__(self, methodName, car_model, route):
+  #   print(car_model)
+  #   # unittest.TestCase.__init__(self, (car_model, route))
+  #   # super(TestCarModel, self).__init__(*args, **kwargs)
+  #   self.car_model = car_model
+  #   self.route = route
+  #   super(TestCarModel, self).__init__(methodName)
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
+    # print(f'{cls.car_model=}, {cls.route=}')
     if cls.route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
@@ -61,7 +71,11 @@ class TestCarModel(unittest.TestCase):
     disable_radar = False
     for seg in (2, 1, 0):
       try:
-        lr = LogReader(get_url(cls.route, seg))
+        if cls.ci:
+          lr = LogReader(get_url(cls.route, seg))
+        else:
+          lr = LogReader(Route(cls.route).log_paths()[seg])
+
       except Exception:
         continue
 
@@ -74,6 +88,11 @@ class TestCarModel(unittest.TestCase):
               fingerprint[m.src][m.address] = len(m.dat)
           can_msgs.append(msg)
         elif msg.which() == "carParams":
+          # TODO: do we want to require specifying car model?
+          # if not cls.ci:
+          #   if cls.car_model is None:
+          #     cls.car_model = msg.carParams.carFingerprint
+          #     print(f"Inferring carFingerprint: {cls.car_model}")
           if msg.carParams.openpilotLongitudinalControl:
             disable_radar = True
 
@@ -253,5 +272,31 @@ class TestCarModel(unittest.TestCase):
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
+
+def load_tests(_routes):
+  test_cases = unittest.TestSuite()
+  print(_routes)
+  for route, car_model, ci in _routes:
+    print(route)
+    test = TestCarModel
+    test.car_model = car_model
+    test.route = route
+    test.ci = ci
+    test_cases.addTest(unittest.TestLoader().loadTestsFromTestCase(test))
+  return test_cases
+
+
 if __name__ == "__main__":
-  unittest.main()
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--route", help="Specify route to run tests on")
+  parser.add_argument("--car_model", help="Specify car model for test route")
+  args = parser.parse_args()
+
+  # Run on user-specified route
+  if args.route is not None:
+    assert args.car_model is not None, "Car model needed for tests"
+    test_route = TestRoute(args.route, args.car_model, ci=False)
+    test_cases = load_tests([test_route])
+  else:
+    test_cases = load_tests(routes)
+  unittest.TextTestRunner().run(test_cases)
