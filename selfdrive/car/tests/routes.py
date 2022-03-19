@@ -23,7 +23,7 @@ non_tested_cars = [
   HYUNDAI.KIA_OPTIMA_H,
 ]
 
-TestRoute = namedtuple('TestRoute', ['route', 'car_fingerprint', 'ci'], defaults=[True])
+TestRoute = namedtuple('TestRoute', ['route', 'car_model', 'ci'], defaults=[True])
 
 routes = [
   TestRoute("d6ac8ebdb47bc549|2022-03-31--13-10-06", COMMA.BODY),

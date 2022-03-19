@@ -6,7 +6,6 @@ import importlib
 import unittest
 from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
-from parameterized import parameterized_class
 
 from cereal import log, car
 from common.realtime import DT_CTRL
@@ -38,7 +37,7 @@ ignore_addr_checks_valid = [
 # build list of test cases
 routes_by_car = defaultdict(set)
 for r in routes:
-  routes_by_car[r.car_fingerprint].add(r.route)
+  routes_by_car[r.car_model].add(r.route)
 
 test_cases: List[Tuple[str, Optional[str]]] = []
 for i, c in enumerate(sorted(all_known_cars())):
@@ -48,20 +47,11 @@ for i, c in enumerate(sorted(all_known_cars())):
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
-# @parameterized_class(('car_model', 'route'), test_cases)
 class TestCarModel(unittest.TestCase):
-  # def __init__(self, methodName, car_model, route):
-  #   print(car_model)
-  #   # unittest.TestCase.__init__(self, (car_model, route))
-  #   # super(TestCarModel, self).__init__(*args, **kwargs)
-  #   self.car_model = car_model
-  #   self.route = route
-  #   super(TestCarModel, self).__init__(methodName)
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
-    # print(f'{cls.car_model=}, {cls.route=}')
     if cls.route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
@@ -274,14 +264,14 @@ class TestCarModel(unittest.TestCase):
 
 
 def load_tests(_routes):
+  # TODO: see if there's a cleaner way to do this
   test_cases = unittest.TestSuite()
-  print(_routes)
-  for route, car_model, ci in _routes:
-    print(route)
+  for test_route in _routes:
     test = TestCarModel
-    test.car_model = car_model
-    test.route = route
-    test.ci = ci
+    for field in test_route._fields:
+      setattr(test, field, getattr(test_route, field))
+
+    # discover tests
     test_cases.addTest(unittest.TestLoader().loadTestsFromTestCase(test))
   return test_cases
 
@@ -299,4 +289,5 @@ if __name__ == "__main__":
     test_cases = load_tests([test_route])
   else:
     test_cases = load_tests(routes)
+
   unittest.TextTestRunner().run(test_cases)
