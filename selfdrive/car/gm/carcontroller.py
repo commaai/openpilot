@@ -100,7 +100,7 @@ class CarController():
     elif CS.CP.openpilotLongitudinalControl:
       # Gas/regen and brakes - all at 25Hz
       if (frame % 4) == 0:
-        if not c.active:
+        if not c.longActive:
           # Stock ECU sends max regen when not enabled.
           self.apply_gas = P.MAX_ACC_REGEN
           self.apply_brake = 0
