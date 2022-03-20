@@ -190,7 +190,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4300. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
-    elif candidate == CAR.ALPHARD_TSS2:
+    elif candidate in (CAR.ALPHARD_TSS2, CAR.ALPHARDH_TSS2):
       stop_and_go = True
       ret.wheelbase = 3.00
       ret.steerRatio = 14.2
