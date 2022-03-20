@@ -315,7 +315,7 @@ def bridge(q):
   steer_manual_multiplier = 45 * STEER_RATIO  # keyboard signal is always 1
   while True:
     if is_timeout(args.timeout):
-      print("Stopping because of stop_after")
+      print("Stopping because of timeout")
       break
     # 1. Read the throttle, steer and brake from op or manual controls
     # 2. Set instructions in Carla
