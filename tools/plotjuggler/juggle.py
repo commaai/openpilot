@@ -75,7 +75,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
 
-def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=None):
+def juggle_route(route_or_segment_name, segment_count, data_dir, qlog, can, layout, dbc=None):
   segment_start = 0
   if 'cabana' in route_or_segment_name:
     query = parse_qs(urlparse(route_or_segment_name).query)
@@ -90,7 +90,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
     if route_or_segment_name.segment_num != -1 and segment_count is None:
       segment_count = 1
 
-    r = Route(route_or_segment_name.route_name.canonical_name)
+    r = Route(route_or_segment_name.route_name.canonical_name, data_dir=data_dir)
     logs = r.qlog_paths() if qlog else r.log_paths()
 
   segment_end = segment_start + segment_count if segment_count else None
@@ -132,6 +132,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A helper to run PlotJuggler on openpilot routes",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+  parser.add_argument("--data_dir", help="Local directory with routes")
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
   parser.add_argument("--can", action="store_true", help="Parse CAN data")
