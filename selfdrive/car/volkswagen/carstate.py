@@ -171,6 +171,7 @@ class CarState(CarStateBase):
       ("AB_Gurtschloss_BF", "Airbag_02"),        # Seatbelt status, passenger
       ("ESP_Fahrer_bremst", "ESP_05"),           # Brake pedal pressed
       ("ESP_Bremsdruck", "ESP_05"),              # Brake pressure applied
+      
       ("MO_Fahrpedalrohwert_01", "Motor_20"),    # Accelerator pedal value
       ("EPS_Lenkmoment", "LH_EPS_03"),           # Absolute driver torque input
       ("EPS_VZ_Lenkmoment", "LH_EPS_03"),        # Driver torque input sign
@@ -179,6 +180,7 @@ class CarState(CarStateBase):
       ("ESP_Haltebestaetigung", "ESP_21"),       # ESP hold confirmation
       ("KBI_MFA_v_Einheit_02", "Einheiten_01"),  # MPH vs KMH speed display
       ("KBI_Handbremse", "Kombi_01"),            # Manual handbrake applied
+      ("ESP_05","ESP_Autohold_aktiv"),           # Autohold hold car 
       ("TSK_Status", "TSK_06"),                  # ACC engagement status from drivetrain coordinator
       ("GRA_Hauptschalter", "GRA_ACC_01"),       # ACC button, on/off
       ("GRA_Abbrechen", "GRA_ACC_01"),           # ACC button, cancel
