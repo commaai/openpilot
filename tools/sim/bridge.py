@@ -28,9 +28,10 @@ parser.add_argument('--joystick', action='store_true')
 parser.add_argument('--low_quality', action='store_true')
 parser.add_argument('--town', type=str, default='Town04_Opt')
 parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
+parser.add_argument('--timeout', type=int, default=0)
 
 args = parser.parse_args()
-
+script_start_time = time.time()
 W, H = 1928, 1208
 REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
@@ -39,6 +40,8 @@ STEER_RATIO = 15.
 pm = messaging.PubMaster(['roadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl', 'controlsState'])
 
+def is_timeout(timeout):
+  return timeout > 0 and time.time() - script_start_time > timeout
 
 class VehicleState:
   def __init__(self):
@@ -219,7 +222,7 @@ def can_function_runner(vs: VehicleState, exit_event: threading.Event):
 def bridge(q):
   # setup CARLA
   client = carla.Client("127.0.0.1", 2000)
-  client.set_timeout(10.0)
+  client.set_timeout(5.0)
   world = client.load_world(args.town)
 
   settings = world.get_settings()
@@ -310,8 +313,10 @@ def bridge(q):
   throttle_manual_multiplier = 0.7  # keyboard signal is always 1
   brake_manual_multiplier = 0.7  # keyboard signal is always 1
   steer_manual_multiplier = 45 * STEER_RATIO  # keyboard signal is always 1
-
   while True:
+    if is_timeout(args.timeout):
+      print("Stopping because of stop_after")
+      break
     # 1. Read the throttle, steer and brake from op or manual controls
     # 2. Set instructions in Carla
     # 3. Send current carstate to op via can
@@ -428,7 +433,6 @@ def bridge(q):
       world.tick()
 
     rk.keep_time()
-
   # Clean up resources in the opposite order they were created.
   exit_event.set()
   for t in reversed(threads):
@@ -440,13 +444,14 @@ def bridge(q):
 
 
 def bridge_keep_alive(q: Any):
-  while 1:
+  while True:
     try:
       bridge(q)
       break
-    except RuntimeError:
+    except RuntimeError as e:
+      if is_timeout(args.timeout):
+        raise Exception(f"Failed to connect with bridge within {args.timeout} seconds") from e
       print("Restarting bridge...")
-
 
 if __name__ == "__main__":
   # make sure params are in a good state
