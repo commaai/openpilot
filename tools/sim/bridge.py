@@ -470,8 +470,8 @@ def bridge_keep_alive(q: Any):
     try:
       bridge(q)
       break
-    except RuntimeError:
-      print("Restarting bridge...")
+    except RuntimeError as e:
+      print("Restarting bridge. Error:", e)
 
 
 if __name__ == "__main__":
