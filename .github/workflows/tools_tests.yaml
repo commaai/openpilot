@@ -10,10 +10,13 @@ env:
   OPENPILOT_DIR: "/openpilot"
   TIMEOUT_SIM: 60
   TIMEOUT_Test: 50
-  BUILD: |
+  BUILD_BASE: |
       docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
       docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
       docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+  BUILD_SIM: |
+      docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
+      docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
   RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e \
        GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
   RUN2: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
@@ -28,7 +31,9 @@ jobs:
       with:
         submodules: true
     - name: Build Docker image
-      run: eval "$BUILD" #Want to do this later
+      run: |
+        eval "$BUILD_BASE"
+        eval "$BUILD_SIM"
     - name: run carla
       run: |
         docker pull carlasim/carla:0.9.12
@@ -76,9 +81,8 @@ jobs:
 
     - name: Build Docker image
       run: |
-        eval "$BUILD"
-        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
-        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
+        eval "$BUILD_BASE"
+        eval "$BUILD_SIM"
     - name: Push to container registry
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
