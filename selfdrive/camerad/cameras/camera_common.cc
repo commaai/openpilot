@@ -374,15 +374,20 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
 
   uint32_t cnt = 0;
   while (!do_exit) {
+    //cloudlog.timestamp(cs.buf.cur_frame_data.frame_id, "camerad", thread_name+": Start");
+    //cloudlog.timestamp(thread_name+": Start");
     if (!cs->buf.acquire()) continue;
 
     callback(cameras, cs, cnt);
 
     if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
       // this takes 10ms???
+	//cloudlog.timestamp(thread_name+": Send thumbnail");
       publish_thumbnail(cameras->pm, &(cs->buf));
+	//cloudlog.timestamp(thread_name+": Send thumbnail done");
     }
     cs->buf.release();
+  //cloudlog.timestamp(thread_name+": End");
     ++cnt;
   }
   return NULL;

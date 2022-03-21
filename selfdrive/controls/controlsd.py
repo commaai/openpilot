@@ -486,7 +486,7 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
 
     CC = car.CarControl.new_message()
-    # lat and long should have the same id (and they have)
+    # lat and long should have the same id (and they do)
     CC.frameId = lat_plan.frameId
     CC.enabled = self.enabled
     # Check which actuators can be enabled
@@ -630,6 +630,7 @@ class Controls:
       # send car controls over can
       self.last_actuators, can_sends = self.CI.apply(CC)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
+      cloudlog.timestamp("sendcan Published")
       CC.actuatorsOutput = self.last_actuators
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
@@ -686,6 +687,7 @@ class Controls:
       controlsState.lateralControlState.indiState = lac_log
 
     self.pm.send('controlsState', dat)
+    cloudlog.timestamp("controlState Published")
 
     # carState
     car_events = self.events.to_msg()
@@ -694,12 +696,14 @@ class Controls:
     cs_send.carState = CS
     cs_send.carState.events = car_events
     self.pm.send('carState', cs_send)
+    cloudlog.timestamp("carState Published")
 
     # carEvents - logged every second or on change
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
       ce_send = messaging.new_message('carEvents', len(self.events))
       ce_send.carEvents = car_events
       self.pm.send('carEvents', ce_send)
+      cloudlog.timestamp("carEvents Published")
     self.events_prev = self.events.names.copy()
 
     # carParams - logged every 50 seconds (> 1 per segment)
@@ -707,12 +711,14 @@ class Controls:
       cp_send = messaging.new_message('carParams')
       cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
+      cloudlog.timestamp("carParams Published")
 
     # carControl
     cc_send = messaging.new_message('carControl')
     cc_send.valid = CS.canValid
     cc_send.carControl = CC
     self.pm.send('carControl', cc_send)
+    cloudlog.timestamp("carControl Published")
 
     # copy CarControl to pass to CarInterface on the next iteration
     self.CC = CC

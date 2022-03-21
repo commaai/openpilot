@@ -36,10 +36,15 @@ def plannerd_thread(sm=None, pm=None):
     sm.update()
 
     if sm.updated['modelV2']:
+      cloudlog.timestamp("Model updated")
       lateral_planner.update(sm)
+      cloudlog.timestamp("lateral planner updated")
       lateral_planner.publish(sm, pm)
+      cloudlog.timestamp("lateral planner published")
       longitudinal_planner.update(sm)
+      cloudlog.timestamp("longitudinal planner updated")
       longitudinal_planner.publish(sm, pm)
+      cloudlog.timestamp("longitudinal planner published")
 
 
 def main(sm=None, pm=None):

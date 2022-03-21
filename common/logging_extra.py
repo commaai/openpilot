@@ -125,12 +125,6 @@ class SwagLogger(logging.Logger):
     self.log_local = local()
     self.log_local.ctx = {}
 
-    #TODO: do it similar to rest of code
-    self.timestamps = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
-  
-  def timestamp(self, frame_id, service, event):
-    self.timestamps[frame_id][service][event] = current_mili_time() 
-
   def local_ctx(self):
     try:
       return self.log_local.ctx
@@ -169,6 +163,16 @@ class SwagLogger(logging.Logger):
       self.debug(evt)
     else:
       self.info(evt)
+
+  def timestamp(self, event_name, *args, **kwargs):
+    tstp = NiceOrderedDict()
+    tstp['timestamp'] = NiceOrderedDict()
+    tstp['timestamp']["event"] = event_name 
+    tstp['timestamp']["time"] = int(time.time()*1000)
+    if args:
+      tstp['timestamp']['args'] = args
+    tstp['timestamp'].update(kwargs)
+    self.debug(tstp)
 
   def findCaller(self, stack_info=False, stacklevel=1):
     """

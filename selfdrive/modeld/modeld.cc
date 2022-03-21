@@ -89,6 +89,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       LOGE("vipc_client_main no frame");
       continue;
     }
+    //cloudlog.timestamp("vicp read main")
 
     if (use_extra_client) {
       // Keep receiving extra frames until frame id matches main camera
@@ -100,6 +101,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
         LOGE("vipc_client_extra no frame");
         continue;
       }
+      //cloudlog.timestamp("vicp read extra")
 
       if (std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
         LOGE("frames out of sync! main: %d (%.5f), extra: %d (%.5f)",
@@ -133,8 +135,10 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       vec_desire[desire] = 1.0;
     }
 
+    //cloudlog.timestamp("Model start")
     double mt1 = millis_since_boot();
     ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire);
+    //cloudlog.timestamp("Model end")
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 
@@ -152,6 +156,8 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
                   kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
     posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
+
+    //cloudlog.timestamp("Model published")
 
     //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
     last = mt1;
