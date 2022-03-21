@@ -231,7 +231,7 @@ class CarlaBridge:
 
     while True:
       try:
-        self.run(q, timeout)
+        self._run(q, timeout)
         break
       except RuntimeError as e:
         if self.is_timeout(timeout):
@@ -241,7 +241,7 @@ class CarlaBridge:
   def is_timeout(self, timeout):
     return timeout > 0 and time.time() - self.start_connecting_time > timeout
 
-  def run(self, q, max_duration):
+  def _run(self, q, max_duration):
     client = connect_carla_client()
     world = client.load_world(args.town)
 
