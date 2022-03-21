@@ -27,7 +27,7 @@ class CANBUS:
 
 
 class DBC_FILES:
-  faw = "faw"  # Used for all cars with MQB-style CAN messaging
+  faw = "faw"
 
 
 DBC = defaultdict(lambda: dbc_dict(DBC_FILES.faw, None))  # type: Dict[str, Dict[str, str]]
