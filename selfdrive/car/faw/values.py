@@ -49,4 +49,13 @@ CAR_INFO: Dict[str, Union[FAWCarInfo, List[FAWCarInfo]]] = {
 
 
 # TODO -- UDS fingerprinting known to work relatively easily
-# FW_VERSIONS = {}
+FW_VERSIONS = {
+  CAR.HONGQI_HS5_G1: {
+    (Ecu.engine, 0x7e0, None): [
+      b'PLACEHOLDER',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'PLACEHOLDER',
+    ],
+  }
+}
