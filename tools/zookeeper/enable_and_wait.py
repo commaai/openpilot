@@ -7,11 +7,11 @@ from socket import gethostbyname
 from tools.zookeeper import Zookeeper
 
 def is_online(ip):
-  try:
-      addr = gethostbyname(ip)
-      return (os.system(f"ping -c 1 {addr} > /dev/null") == 0)
-  except:
-      return False
+    try:
+        addr = gethostbyname(ip)
+        return (os.system(f"ping -c 1 {addr} > /dev/null") == 0)
+    except:
+        return False
 
 if __name__ == "__main__":
   z = Zookeeper()
