@@ -118,6 +118,7 @@ class CarState(CarStateBase):
       ("EPS_TORQUE", "EPS_2"),
       ("EPS_TORQUE_DIRECTION", "EPS_2"),
       ("DRIVER_INPUT_TORQUE", "EPS_2"),
+      ("STATUS", "ACC")
     ]
 
     checks = [
