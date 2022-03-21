@@ -184,6 +184,9 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
       # TODO: Improve stability in turns 
       # still working on improving lateral
+      
+      # TODO: Should steerRateCost and ActuatorDelay be converted to BPV arrays?
+      # TODO: Check if the actuator delay changes based on vehicle speed
       ret.steerRateCost = 0.5
       ret.steerActuatorDelay = 0.
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
