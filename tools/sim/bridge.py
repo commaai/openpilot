@@ -11,7 +11,7 @@ import carla  # pylint: disable=import-error
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
-from lib.can import can_function
+from tools.sim.lib.can import can_function
 
 import cereal.messaging as messaging
 from cereal import log
@@ -453,7 +453,6 @@ class CarlaBridge:
 
       if rk.frame % 5 == 0:
         world.tick()
-
       rk.keep_time()
     # Clean up resources in the opposite order they were created.
     exit_event.set()
@@ -482,10 +481,10 @@ if __name__ == "__main__":
 
   if args.joystick:
     # start input poll for joystick
-    from lib.manual_ctrl import wheel_poll_thread
+    from tools.sim.lib.manual_ctrl import wheel_poll_thread
     wheel_poll_thread(_q)
     p.join()
   else:
     # start input poll for keyboard
-    from lib.keyboard_ctrl import keyboard_poll_thread
+    from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
     keyboard_poll_thread(_q)
