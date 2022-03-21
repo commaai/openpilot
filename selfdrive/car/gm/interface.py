@@ -234,9 +234,9 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = -1 * CV.MPH_TO_MS
       ret.mass = 2241. + STD_CARGO_KG
       ret.wheelbase = 3.745
-      ret.steerRatio = 23.3 # Determined by skip # 16.3 # From a 2019 SILVERADO
+      ret.steerRatio = 16.3 # Determined by skip # 16.3 # From a 2019 SILVERADO
       ret.centerToFront = ret.wheelbase * 0.49
-      ret.steerActuatorDelay = 0.1 # Determined by skip # 0.075
+      ret.steerActuatorDelay = 0.11 # Determined by skip # 0.075
       ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
 
     elif candidate == CAR.SUBURBAN:
