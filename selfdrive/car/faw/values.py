@@ -44,7 +44,7 @@ class FAWCarInfo(CarInfo):
 
 
 CAR_INFO: Dict[str, Union[FAWCarInfo, List[FAWCarInfo]]] = {
-  CAR.HONGQI_HS5_G1: FAWCarInfo("FAW Hongqi HS5 ????"),
+  CAR.HONGQI_HS5_G1: FAWCarInfo("Hongqi HS5 ????"),
 }
 
 
