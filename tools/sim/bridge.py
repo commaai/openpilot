@@ -477,7 +477,7 @@ if __name__ == "__main__":
   carla_bridge = CarlaBridge()
 
   _q: Any = Queue()
-  p = Process(target=carla_bridge.bridge_keep_alive, args=(_q), daemon=True)
+  p = Process(target=carla_bridge.bridge_keep_alive, args=(_q,), daemon=True)
   p.start()
 
   if args.joystick:
