@@ -14,7 +14,7 @@ class CarState(CarStateBase):
     self.lka_steering_cmd_counter = 0
     self.parkingBrake = 0
 
-  def update(self, pt_cp, loopback_cp):
+  def update(self, pt_cp, loopback_cp, body_cp):
     ret = car.CarState.new_message()
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
@@ -173,3 +173,16 @@ class CarState(CarStateBase):
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK)
+
+  @staticmethod
+  def get_body_can_parser(CP):
+    #OBD2 Harness only
+    signals = [
+      
+    ]
+
+    checks = [
+      
+    ]
+    
+    return CANParser(DBC[CP.carFingerprint]["body"], signals, checks, CanBus.SW_GMLAN)

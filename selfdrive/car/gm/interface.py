@@ -272,9 +272,10 @@ class CarInterface(CarInterfaceBase):
   def update(self, c, can_strings):
     self.cp.update_strings(can_strings)
     self.cp_loopback.update_strings(can_strings)
+    self.cp_body.update_strings(can_strings)
 
-    ret = self.CS.update(self.cp, self.cp_loopback)
-
+    ret = self.CS.update(self.cp, self.cp_loopback, self.cp_body)
+    #Intentionally not checking canvalid for body / SW
     ret.canValid = self.cp.can_valid and self.cp_loopback.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
