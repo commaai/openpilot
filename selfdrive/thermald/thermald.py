@@ -270,7 +270,7 @@ def thermald_thread(end_event, hw_queue):
           try:
             with open("/sys/block/nvme0n1/device/model") as f:
               model = f.read().strip()
-            if not model.startswith("xSamsung SSD 980") and params.get("Offroad_BadNvme") is None:
+            if not model.startswith("Samsung SSD 980") and params.get("Offroad_BadNvme") is None:
               set_offroad_alert_if_changed("Offroad_BadNvme", True)
               cloudlog.event("Unsupported NVMe", model=model, error=True)
           except Exception:
