@@ -20,7 +20,11 @@ class CarControllerParams:
   STEER_MAX = 1500
   STEER_DELTA_UP = 10       # 1.5s time to peak torque
   STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
-  STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+
+  # these are for std torque limits
+  STEER_DRIVER_MULTIPLIER = 10  # TODO: find value that makes sense
+  STEER_DRIVER_FACTOR = 10  # TODO: doesn't totally match
+  STEER_DRIVER_ALLOWANCE = (STEER_MAX / (384 / 50)) / STEER_DRIVER_FACTOR  # TODO: copied from Hyundai
 
 
 class ToyotaFlags(IntFlag):

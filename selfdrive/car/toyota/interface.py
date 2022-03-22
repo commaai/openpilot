@@ -198,6 +198,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4305. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_J)
 
+    if ret.lateralTuning.which() == 'pid':
+      ret.lateralTuning.pid.kpV = [p / 10. for p in ret.lateralTuning.pid.kpV]
+      ret.lateralTuning.pid.kiV = [p / 10. for p in ret.lateralTuning.pid.kiV]
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
