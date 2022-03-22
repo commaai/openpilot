@@ -170,7 +170,7 @@ class SwagLogger(logging.Logger):
     tstp['timestamp'] = NiceOrderedDict()
     tstp['timestamp']["event"] = event_name 
     tstp['timestamp']["frameId"] = frame_id
-    tstp['timestamp']["time"] = sec_since_boot()/1e9
+    tstp['timestamp']["time"] = sec_since_boot()*1e9
     if args:
       tstp['timestamp']['args'] = args
     tstp['timestamp'].update(kwargs)
