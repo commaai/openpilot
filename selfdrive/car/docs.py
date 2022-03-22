@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Dict, Iterator, List, Tuple
 
 from common.basedir import BASEDIR
-from selfdrive.car.docs_definitions import Column, Star, Tier
+from selfdrive.car.docs_definitions import Column, RowItem, Star, Tier
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.car.tests.routes import non_tested_cars
@@ -23,11 +23,9 @@ def get_all_footnotes():
 ALL_FOOTNOTES: Dict[Enum, int] = get_all_footnotes()
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
-# CARS_MD_OUT = os.path.join(BASEDIR, "docs", "vehicles.vue")
-# CARS_MD_TEMPLATE = os.path.join(BASEDIR, "docs", "vehicles_template.vue")
 
 
-def get_tier_car_rows() -> Iterator[Tuple[str, List[str]]]:  # TODO: update typing
+def get_tier_car_rows() -> List[Tuple[Tier, List[RowItem]]]:
   tier_car_rows: Dict[Tier, list] = {tier: [] for tier in Tier}
 
   for models in get_interface_attr("CAR_INFO").values():
@@ -48,12 +46,14 @@ def get_tier_car_rows() -> Iterator[Tuple[str, List[str]]]:  # TODO: update typi
         tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(stars.count(Star.FULL), Tier.BRONZE)
         tier_car_rows[tier].append(_car_info.get_row(ALL_FOOTNOTES, stars))
 
-  # Return tier title and car rows for each tier
+  # Return tier enum and car rows for each tier
+  tiers = []
   for tier, car_rows in tier_car_rows.items():
-    yield tier, sorted(car_rows, key=lambda x: x[0].text + x[1].text)
+    tiers.append((tier, sorted(car_rows, key=lambda x: x[0].text + x[1].text)))
+  return tiers
 
 
-def generate_cars_md(tier_car_rows: Iterator[Tuple[str, List[str]]], template_fn: str) -> str:
+def generate_cars_md(tier_car_rows: List[Tuple[Tier, List[RowItem]]], template_fn: str) -> str:
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
