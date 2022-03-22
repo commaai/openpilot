@@ -11,6 +11,7 @@ import time
 from threading import local
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
+from common.realtime import sec_since_boot
 
 def json_handler(obj):
   # if isinstance(obj, (datetime.date, datetime.time)):
@@ -168,11 +169,11 @@ class SwagLogger(logging.Logger):
     tstp = NiceOrderedDict()
     tstp['timestamp'] = NiceOrderedDict()
     tstp['timestamp']["event"] = event_name 
-    tstp['timestamp']["time"] = int(time.time()*1000)
+    tstp['timestamp']["time"] = sec_since_boot()
     if args:
       tstp['timestamp']['args'] = args
     tstp['timestamp'].update(kwargs)
-    self.debug(tstp)
+    self.error(tstp)
 
   def findCaller(self, stack_info=False, stacklevel=1):
     """

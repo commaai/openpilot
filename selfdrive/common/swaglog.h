@@ -2,6 +2,7 @@
 
 #include "selfdrive/common/timing.h"
 
+#define CLOUDLOG_TIMESTAMP 40
 #define CLOUDLOG_DEBUG 10
 #define CLOUDLOG_INFO 20
 #define CLOUDLOG_WARNING 30
@@ -13,9 +14,18 @@
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
+
 #define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
                                            __func__, \
                                            fmt, ## __VA_ARGS__)
+
+#define cloudlog_t(lvl, fmt, ...)                                 \
+{                                                                 \
+  uint64_t ns = nanos_since_boot();                               \
+  std::string msg = std::string("{'timestamp': {'event':") + std::string(fmt) + std::string("},{'time':") + std::to_string(ns);   \
+  cloudlog(lvl, msg.c_str(), ## __VA_ARGS__);                             \
+}
+
 
 #define cloudlog_rl(burst, millis, lvl, fmt, ...)   \
 {                                                   \
@@ -46,6 +56,7 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   }                                                 \
 }
 
+#define LOGT(fmt, ...) cloudlog_t(CLOUDLOG_TIMESTAMP, fmt, ## __VA_ARGS__)
 #define LOGD(fmt, ...) cloudlog(CLOUDLOG_DEBUG, fmt, ## __VA_ARGS__)
 #define LOG(fmt, ...) cloudlog(CLOUDLOG_INFO, fmt, ## __VA_ARGS__)
 #define LOGW(fmt, ...) cloudlog(CLOUDLOG_WARNING, fmt, ## __VA_ARGS__)

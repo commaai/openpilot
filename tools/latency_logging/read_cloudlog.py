@@ -1,11 +1,13 @@
 from selfdrive.swaglog import cloudlog
-
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
 
-r = Route("9f583b1d93915c31|2022-03-18--08-31-46")
+import json
+
+r = Route("9f583b1d93915c31|2022-03-21--15-09-53")
 lr = LogReader(r.log_paths()[0])
 
 for msg in lr:
   if msg.which() == "logMessage":
-    print(msg)
+    msg_json = json.loads(msg.logMessage)
+    print(msg_json)
