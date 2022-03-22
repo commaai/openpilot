@@ -37,7 +37,7 @@ def plannerd_thread(sm=None, pm=None):
 
     if sm.updated['modelV2']:
       frame_id = sm['modelV2'].frameId
-      cloudlog.timestamp("Model updated", frame_id)
+      cloudlog.timestamp("ModelV2 recived", frame_id)
       lateral_planner.update(sm)
       cloudlog.timestamp("lateral planner updated", frame_id)
       lateral_planner.publish(sm, pm)
