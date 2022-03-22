@@ -60,6 +60,7 @@ class CarInfo:
       footnote = get_footnote(self.footnotes, column)
       if footnote is not None:
         row_item.footnote = all_footnotes[footnote]
+        # TODO: we can also specify footnote in RowItem and get rid of the template footnote variables
         # row[row_idx] += f"[<sup>{all_footnotes[footnote]}</sup>](#Footnotes)"
       row[row_idx] = row_item
 
@@ -69,7 +70,7 @@ class CarInfo:
 @dataclass
 class RowItem:
   text: Optional[str] = None
-  footnote: Optional[int] = None
+  footnote: Optional[int] = None  # TODO: if we change to '' then we can get rid of if statements in templates
   star: Optional[str] = None
 
 
@@ -101,7 +102,7 @@ class Star(Enum):
 
   @property
   def html_icon(self):
-    return f'<img src="/supported-cars/icon-star-{self.value}.svg" alt="" class="flex-row-star-icon">'
+    return f'<img src="/supported-cars/icon-star-{self.value}.svg" alt="">'
 
 
 StarColumns = list(Column)[3:]
