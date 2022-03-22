@@ -450,8 +450,7 @@ void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
 void camerad_thread() {
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
 #if defined(QCOM) || defined(QCOM2)
-  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM,
-                                         CL_CONTEXT_PERF_HINT_QCOM, CL_PERF_HINT_HIGH_QCOM, 0};
+  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
   cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
 #else
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
