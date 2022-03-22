@@ -22,7 +22,7 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
 #define cloudlog_t(lvl, event_name, frame_id, ...)                                 \
 {                                                                 \
   uint64_t ns = nanos_since_boot();                               \
-  std::string msg = std::string("{'timestamp': {'event':") + std::string(event_name) + std::string(",'frameId':")+ std::to_string(frame_id) + std::string(",'time':") + std::to_string(ns)+std::string("}}");   \
+  std::string msg = std::string("{'timestamp': {'event': '") + std::string(event_name) + std::string("' ,'frameId':")+ std::to_string(frame_id) + std::string(",'time':") + std::to_string(ns)+std::string("}}");   \
   cloudlog(lvl, msg.c_str(), ## __VA_ARGS__);                             \
 }
 

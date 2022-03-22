@@ -89,11 +89,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       LOGE("vipc_client_main no frame");
       continue;
     }
-    // TODO: path planner timeout?
-    sm.update(0);
-    int desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
-    frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
-    LOGT("vicp read main", frame_id)
+    LOGT("vicp read main", meta_main.frame_id)
 
     if (use_extra_client) {
       // Keep receiving extra frames until frame id matches main camera
@@ -105,7 +101,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
         LOGE("vipc_client_extra no frame");
         continue;
       }
-	LOGT("vicp read extra", frame_id)
+	LOGT("vicp read extra", meta_main.frame_id)
 
       if (std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
         LOGE("frames out of sync! main: %d (%.5f), extra: %d (%.5f)",
@@ -118,6 +114,10 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       meta_extra = meta_main;
     }
 
+    // TODO: path planner timeout?
+    sm.update(0);
+    int desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
+    frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
     if (sm.updated("liveCalibration")) {
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
       Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
@@ -135,10 +135,10 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       vec_desire[desire] = 1.0;
     }
 
-    LOGT("Model start", frame_id);
+    LOGT("Model start", meta_main.frame_id);
     double mt1 = millis_since_boot();
     ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire);
-    LOGT("Model end", frame_id);
+    LOGT("Model end", meta_main.frame_id);
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 
@@ -157,7 +157,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
                   kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
     posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
 
-    LOGT("Model published", frame_id);
+    LOGT("Model published", meta_main.frame_id);
 
     //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
     last = mt1;
