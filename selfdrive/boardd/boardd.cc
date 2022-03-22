@@ -115,7 +115,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     return false;
   }
 
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1);
+  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ALL_OUTPUT);
 
   Params p = Params();
 
@@ -135,7 +135,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     util::sleep_for(20);
   }
 
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1);
+  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ALL_OUTPUT);
 
   std::string params;
   LOGW("waiting for params to set safety model");
