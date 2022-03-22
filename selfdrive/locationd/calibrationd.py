@@ -129,7 +129,7 @@ class Calibrator():
       self.cal_status = Calibration.INVALID
 
     # If spread is too high, assume mounting was changed and reset to last block.
-    # Make the transition smooth. Abrupt transitions are not good foor feedback loop through supercombo model.
+    # Make the transition smooth. Abrupt transitions are not good for feedback loop through supercombo model.
     if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == Calibration.CALIBRATED:
       self.reset(self.rpys[self.block_idx - 1], valid_blocks=INPUTS_NEEDED, smooth_from=self.rpy)
 
@@ -146,7 +146,7 @@ class Calibrator():
     else:
       return self.rpy
 
-  def handle_cam_odom(self, trans, rot, trans_std, rot_std):
+  def handle_cam_odom(self, trans, rot, trans_std):
     self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
 
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
@@ -213,8 +213,7 @@ def calibrationd_thread(sm=None, pm=None) -> NoReturn:
       calibrator.handle_v_ego(sm['carState'].vEgo)
       new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                            sm['cameraOdometry'].rot,
-                                           sm['cameraOdometry'].transStd,
-                                           sm['cameraOdometry'].rotStd)
+                                           sm['cameraOdometry'].transStd)
 
       if DEBUG and new_rpy is not None:
         print('got new rpy', new_rpy)
