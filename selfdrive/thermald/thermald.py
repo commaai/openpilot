@@ -305,7 +305,10 @@ def thermald_thread(end_event, hw_queue):
 
       params.put_bool("IsEngaged", False)
       engaged_prev = False
-      HARDWARE.set_power_save(not should_start)
+
+      # this can take more than a second
+      t = threading.Thread(target=HARDWARE.set_power_save, args=(not should_start, ))
+      t.start()
 
     if sm.updated['controlsState']:
       engaged = sm['controlsState'].enabled
