@@ -19,10 +19,10 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
                                            __func__, \
                                            fmt, ## __VA_ARGS__)
 
-#define cloudlog_t(lvl, fmt, ...)                                 \
+#define cloudlog_t(lvl, event_name, frame_id, ...)                                 \
 {                                                                 \
   uint64_t ns = nanos_since_boot();                               \
-  std::string msg = std::string("{'timestamp': {'event':") + std::string(fmt) + std::string("},{'time':") + std::to_string(ns);   \
+  std::string msg = std::string("{'timestamp': {'event':") + std::string(event_name) + std::string("},{'frameId':")+ std::to_string(frame_id) + std::string("},{'time':") + std::to_string(ns);   \
   cloudlog(lvl, msg.c_str(), ## __VA_ARGS__);                             \
 }
 
@@ -56,7 +56,7 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   }                                                 \
 }
 
-#define LOGT(fmt, ...) cloudlog_t(CLOUDLOG_TIMESTAMP, fmt, ## __VA_ARGS__)
+#define LOGT(event_name , frame_id, ...) cloudlog_t(CLOUDLOG_TIMESTAMP, event_name, frame_id, ## __VA_ARGS__)
 #define LOGD(fmt, ...) cloudlog(CLOUDLOG_DEBUG, fmt, ## __VA_ARGS__)
 #define LOG(fmt, ...) cloudlog(CLOUDLOG_INFO, fmt, ## __VA_ARGS__)
 #define LOGW(fmt, ...) cloudlog(CLOUDLOG_WARNING, fmt, ## __VA_ARGS__)

@@ -100,15 +100,3 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   log(levelnum, filename, lineno, func, msg_buf, log_s);
   free(msg_buf);
 }
-
-//void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
-//                const char* fmt, ...) {
-//  json11::Json timestamp = json11::Json::object {
-//	  {"timestamp":{
-//	       {"event", fmt},
-//	       {"time", nanos_since_boot()}
-//	       }
-//	  }
-//  };
-//  cloudlog_e(levelnum, filename, lineno, func, timestamp);   	  
-//}

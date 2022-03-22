@@ -487,7 +487,8 @@ class Controls:
 
     CC = car.CarControl.new_message()
     # lat and long should have the same id (and they do)
-    CC.frameId = lat_plan.frameId
+    frame_id = lat_plan.frameId
+    CC.frameId = frame_id
     CC.enabled = self.enabled
     # Check which actuators can be enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
@@ -630,7 +631,7 @@ class Controls:
       # send car controls over can
       self.last_actuators, can_sends = self.CI.apply(CC)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
-      cloudlog.timestamp("sendcan Published")
+      cloudlog.timestamp("sendcan Published", frame_id)
       CC.actuatorsOutput = self.last_actuators
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
@@ -687,7 +688,7 @@ class Controls:
       controlsState.lateralControlState.indiState = lac_log
 
     self.pm.send('controlsState', dat)
-    cloudlog.timestamp("controlState Published")
+    cloudlog.timestamp("controlState Published", frame_id)
 
     # carState
     car_events = self.events.to_msg()
@@ -696,14 +697,14 @@ class Controls:
     cs_send.carState = CS
     cs_send.carState.events = car_events
     self.pm.send('carState', cs_send)
-    cloudlog.timestamp("carState Published")
+    cloudlog.timestamp("carState Published", frame_id)
 
     # carEvents - logged every second or on change
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
       ce_send = messaging.new_message('carEvents', len(self.events))
       ce_send.carEvents = car_events
       self.pm.send('carEvents', ce_send)
-      cloudlog.timestamp("carEvents Published")
+      cloudlog.timestamp("carEvents Published", frame_id)
     self.events_prev = self.events.names.copy()
 
     # carParams - logged every 50 seconds (> 1 per segment)
@@ -711,14 +712,14 @@ class Controls:
       cp_send = messaging.new_message('carParams')
       cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
-      cloudlog.timestamp("carParams Published")
+      cloudlog.timestamp("carParams Published", frame_id)
 
     # carControl
     cc_send = messaging.new_message('carControl')
     cc_send.valid = CS.canValid
     cc_send.carControl = CC
     self.pm.send('carControl', cc_send)
-    cloudlog.timestamp("carControl Published")
+    cloudlog.timestamp("carControl Published", frame_id)
 
     # copy CarControl to pass to CarInterface on the next iteration
     self.CC = CC
