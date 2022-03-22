@@ -101,8 +101,7 @@
 <section>
     <div class="container">
         <div class="table-container" role="table">
-                    {% set star_tag = '<img src="/supported-cars/icon-star-{}.svg" alt="">' %}
-                    {% set footnote_tag = '<a style=" href="/vehicles/#footnote"><sup>{}</sup></a>' %}
+                    {% set footnote_tag = '<a style="position: absolute;" href="/vehicles/#footnote"><sup>{}</sup></a>' %}
                     {% for tier, car_rows in tiers %}
 
                     <div class="tier tier-{{tier.lower()}}">
@@ -126,11 +125,9 @@
                         <div class="flex-row first col-1"><span class="make-icon make-{{row[0].text.lower()}}">{{row[0].text}}</span></div>
                         <div class="flex-row col-2">{{row[1].text}}<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">{{row[2].text}}</div>
-                        <div class="flex-row flex-row-star col-even">{{row[3].star.html_icon}}</div>{{footnote_tag.format(row[3].footnote) if row[3].footnote else ''}}
-                        <div class="flex-row flex-row-star col-even">{{row[4].star.html_icon}}</div>
-                        <div class="flex-row flex-row-star col-even">{{row[5].star.html_icon}}</div>
-                        <div class="flex-row flex-row-star col-even">{{row[6].star.html_icon}}</div>
-                        <div class="flex-row flex-row-star col-even">{{row[7].star.html_icon}}</div>
+                        {% for star_col in row if star_col.star is not none %}
+                        <div class="flex-row flex-row-star col-even"><div class="flex-row-star-container">{{star_col.star.html_icon}}{{footnote_tag.format(star_col.footnote) if star_col.footnote else ''}}</div></div>
+                        {% endfor %}
                     </div>
                     {% endfor %}
 
