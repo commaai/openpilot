@@ -90,7 +90,6 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       continue;
     }
     LOGT("vicp read main", meta_main.frame_id)
-
     if (use_extra_client) {
       // Keep receiving extra frames until frame id matches main camera
       do {
@@ -101,7 +100,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
         LOGE("vipc_client_extra no frame");
         continue;
       }
-	LOGT("vicp read extra", meta_main.frame_id)
+      LOGT("vicp read extra", meta_main.frame_id)
 
       if (std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
         LOGE("frames out of sync! main: %d (%.5f), extra: %d (%.5f)",

@@ -374,24 +374,22 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
 
   uint32_t cnt = 0;
   while (!do_exit) {
-    //cloudlog.timestamp(cs.buf.cur_frame_data.frame_id, "camerad", thread_name+": Start");
+    if (!cs->buf.acquire()) continue;
+
     uint32_t frame_id = cs->buf.cur_frame_data.frame_id;
     LOGT((std::string(thread_name)+std::string(": Start")).c_str(), frame_id);
-    if (!cs->buf.acquire()) continue;
 
     callback(cameras, cs, cnt);
 
+
     if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
       // this takes 10ms???
-	//cloudlog.timestamp(thread_name+": Send thumbnail");
-	LOGT((std::string(thread_name)+std::string(": Send thumbnail")).c_str(), frame_id);
+      LOGT((std::string(thread_name)+std::string(": Send thumbnail")).c_str(), frame_id);
       publish_thumbnail(cameras->pm, &(cs->buf));
-	//cloudlog.timestamp(thread_name+": Send thumbnail done");
-	LOGT((std::string(thread_name)+std::string(": Send thumbnail done")).c_str(), frame_id);
+      LOGT((std::string(thread_name)+std::string(": Send thumbnail done")).c_str(), frame_id);
     }
     cs->buf.release();
-  //cloudlog.timestamp(thread_name+": End");
-    LOGT((std::string(thread_name)+std::string(": End")).c_str(), frame_id);
+    LOGT((std::string(thread_name)+std::string(": Released")).c_str(), frame_id);
     ++cnt;
   }
   return NULL;
