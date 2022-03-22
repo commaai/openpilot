@@ -168,13 +168,13 @@ class SwagLogger(logging.Logger):
   def timestamp(self, event_name, frame_id, *args, **kwargs):
     tstp = NiceOrderedDict()
     tstp['timestamp'] = NiceOrderedDict()
-    tstp['timestamp']["event"] = event_name 
+    tstp['timestamp']["event"] = event_name
     tstp['timestamp']["frameId"] = frame_id
     tstp['timestamp']["time"] = sec_since_boot()*1e9
     if args:
       tstp['timestamp']['args'] = args
     tstp['timestamp'].update(kwargs)
-    self.error(tstp)
+    self.debug(tstp)
 
   def findCaller(self, stack_info=False, stacklevel=1):
     """

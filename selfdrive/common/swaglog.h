@@ -2,7 +2,7 @@
 
 #include "selfdrive/common/timing.h"
 
-#define CLOUDLOG_TIMESTAMP 40
+#define CLOUDLOG_TIMESTAMP 10
 #define CLOUDLOG_DEBUG 10
 #define CLOUDLOG_INFO 20
 #define CLOUDLOG_WARNING 30

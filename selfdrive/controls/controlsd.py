@@ -627,6 +627,7 @@ class Controls:
     if current_alert:
       hudControl.visualAlert = current_alert.visual_alert
 
+    frame_id = CC.frameId
     if not self.read_only and self.initialized:
       # send car controls over can
       self.last_actuators, can_sends = self.CI.apply(CC)
