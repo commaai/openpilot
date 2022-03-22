@@ -104,8 +104,8 @@
                     {% set footnote_tag = '<a style="position: absolute;" href="/vehicles/#footnote"><sup>{}</sup></a>' %}
                     {% for tier, car_rows in tiers %}
 
-                    <div class="tier tier-{{tier.lower()}}">
-                        <span class="font-Monument">{{tier}} <span style="opacity:0.67;"><br>{{car_rows|length}} cars</span></span>
+                    <div class="tier tier-{{tier.name.lower()}}">
+                        <span class="font-Monument">{{tier.name.title()}} <span style="opacity:0.67;"><br>{{car_rows|length}} cars</span></span>
                         <p>The best openpilot experience. Great highway driving and beyond.</p>
                     </div>
 
@@ -121,7 +121,7 @@
                     </div>
 
                     {% for row in car_rows %}
-                    <div class="flex-table row row-{{tier.lower()}}">
+                    <div class="flex-table row row-{{tier.name.lower()}}">
                         <div class="flex-row first col-1"><span class="make-icon make-{{row[0].text.lower()}}">{{row[0].text}}</span></div>
                         <div class="flex-row col-2">{{row[1].text}}<a href="#" style="display:none;" target="_blank" class="link-youtube"></a></div>
                         <div class="flex-row col-3">{{row[2].text}}</div>
@@ -136,15 +136,14 @@
 
         <div class="footnote-flex" id="footnote">
             <div>
-                <p class="table-footnote"><span id="">1</span>When disconnecting the Driver Support Unit (DSU), openpilot Adaptive Cruise Control (ACC) will replace stock Adaptive Cruise Control (ACC). <b><i> NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b></p>
-                <p class="table-footnote"><span id="">2</span>28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.</p>
-                <p class="table-footnote"><span id="">3</span>Requires an <a href="https://comma.ai/shop/products/comma-car-harness">OBD-II car harness</a> and <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. <b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b></p>
-                <p class="table-footnote"><span id="">4</span>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.</p>
+                {% for footnote in footnotes[:4] %}
+                <p class="table-footnote"><span id="">{{loop.index}}</span>{{footnote}}</p>
+                {% endfor %}
             </div>
             <div>
-                <p class="table-footnote"><span id="">5</span>Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform.</p>
-                <p class="table-footnote"><span id="">6</span>Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black (older design) or light brown (newer design). For the newer design, in the interim, choose "VW J533 Development" from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.</p>
-                <p class="table-footnote"><span id="">7</span>An inaccurate steering wheel angle sensor makes precise control difficult.</p>
+                {% for footnote in footnotes[4:] %}
+                <p class="table-footnote"><span id="">{{loop.index + 4}}</span>{{footnote}}</p>
+                {% endfor %}
             </div>
         </div>
     </div>

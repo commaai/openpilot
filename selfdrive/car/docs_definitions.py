@@ -44,7 +44,7 @@ class CarInfo:
 
     return [stars[column] for column in StarColumns]
 
-  def get_row(self, all_footnotes, stars):
+  def get_row(self, all_footnotes, stars):  # -> List[RowItem]:
     # TODO: add YouTube vidos
     make, model = self.name.split(' ', 1)
     row = [make, model, self.package, *stars]
@@ -75,9 +75,9 @@ class RowItem:
 
 
 class Tier(Enum):
-  GOLD = "Gold"
-  SILVER = "Silver"
-  BRONZE = "Bronze"
+  GOLD = "The best openpilot experience. Great highway driving and beyond."
+  SILVER = "A solid highway driving experience, but is limited by stock longitudinal. May be upgraded in the future."
+  BRONZE = "A good highway experience, but may have limited performance in traffic and on sharp turns."
 
 
 class Column(Enum):

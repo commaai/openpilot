@@ -1,12 +1,12 @@
 # Supported Cars
 
-A supported vehicle is one that just works when you install openpilot on a compatible device. Every car performs differently with openpilot, but we aim for all supported cars to provide a solid highway experience in the US market.
+A supported vehicle is one that just works when you install a comma device. Every car performs differently with openpilot, but all supported cars should provide a better experience than any stock system.
 
 Cars are organized into three tiers:
 
-- Gold - The best openpilot experience. Great highway driving with continual updates.
-- Silver - A solid highway experience, but is limited by stock longitudinal.
-- Bronze - A solid highway experience, but will have limited performance in stop-and-go. May have ACC and ALC speed limitations.
+{% for tier, car_rows in tiers %}
+- {{tier.name.title()}} - {{tier.value}}
+{% endfor %}
 
 How We Rate The Cars
 ---
@@ -36,7 +36,7 @@ How We Rate The Cars
 
 {% set footnote_tag = '[<sup>{}</sup>](#Footnotes)' %}
 {% for tier, car_rows in tiers %}
-## {{tier}} Cars
+## {{tier.name.title()}} Cars
 
 |{{columns | join('|')}}|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
