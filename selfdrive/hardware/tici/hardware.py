@@ -416,6 +416,10 @@ class Tici(HardwareBase):
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
 
+    # setup governors
+    os.system("sudo su -c 'echo performance > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'")
+    os.system("sudo su -c 'echo performance > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'")
+
   def get_networks(self):
     r = {}
 

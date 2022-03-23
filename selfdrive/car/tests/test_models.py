@@ -47,6 +47,7 @@ for i, c in enumerate(sorted(all_known_cars())):
 @parameterized_class(('car_model', 'route'), test_cases)
 class TestCarModel(unittest.TestCase):
 
+  @unittest.skipUnless(__name__ == "__main__", "Long running test. Run individually.")
   @classmethod
   def setUpClass(cls):
     if cls.route is None:
