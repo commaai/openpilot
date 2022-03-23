@@ -10,15 +10,16 @@ timestamps = json.load(json_file)
 
 
 for frame_id, services in timestamps.items():
-    t0 = min([min(events.values())for events in services.values()])
+    t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
     print(frame_id)
-    d = defaultdict( lambda: ("",""))
+    d = defaultdict( lambda: ("","",[]))
     for service, events in services.items():
-        for event, time in events.items():
-            time = (time-t0)/1e6
-            d[time] = (service, event)
+        for event, times in events.items():
+            key = (min(times)-t0)/1e6
+            times = [(int(time)-t0)/1e6 for time in times]
+            d[key] = (service, event, times)
     s = sorted(d.items())
-    print(tabulate([[item[1][0], item[1][1], item[0]] for item in s], headers=["service", "event", "time (ms)"]))
+    print(tabulate([[item[1][0], item[1][1], item[1][2]] for item in s], headers=["service", "event", "time (ms)"]))
     print()
 
 exit()
