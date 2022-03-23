@@ -44,8 +44,8 @@ class CarInfo:
 
     return [stars[column] for column in StarColumns]
 
-  def get_row(self, all_footnotes, stars):  # -> List[RowItem]:
-    # TODO: add YouTube vidos
+  def get_row(self, all_footnotes, stars):
+    # TODO: add YouTube videos
     make, model = self.name.split(' ', 1)
     row = [make, model, self.package, *stars]
 
