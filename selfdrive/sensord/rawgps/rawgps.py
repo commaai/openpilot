@@ -68,8 +68,8 @@ def send_recv(serial, packet_type, packet_payload):
 
 TYPES_FOR_RAW_PACKET_LOGGING = [
   0x1476,
-  0x1477,
-  0x1480,
+  #0x1477,
+  #0x1480,
 
   #0x1478,
   #0x1756,
@@ -121,7 +121,102 @@ svStructNames = ["svId", "observationState", "observations",
   "azimuth", "elevation", "carrierPhaseCyclesIntegral", "carrierPhaseCyclesFraction",
   "fineSpeed", "fineSpeedUncertainty", "cycleSlipCount"]
 
+
+position_packet = """
+  uint8       u_Version;                /* Version number of DM log */
+  uint32      q_Fcount;                 /* Local millisecond counter */
+  uint8       u_PosSource;              /* Source of position information */ /*  0: None 1: Weighted least-squares 2: Kalman filter 3: Externally injected 4: Internal database    */
+  uint32      q_Reserved1;              /* Reserved memory field */
+  uint16      w_PosVelFlag;             /* Position velocity bit field: (see DM log 0x1476 documentation) */
+  uint32      q_PosVelFlag2;            /* Position velocity 2 bit field: (see DM log 0x1476 documentation) */
+  uint8       u_FailureCode;            /* Failure code: (see DM log 0x1476 documentation) */
+  uint16      w_FixEvents;              /* Fix events bit field: (see DM log 0x1476 documentation) */
+  uint32 _fake_align_week_number;
+  uint16      w_GpsWeekNumber;          /* GPS week number of position */
+  uint32      q_GpsFixTimeMs;           /* GPS fix time of week of in milliseconds */
+  uint8       u_GloNumFourYear;         /* Number of Glonass four year cycles */
+  uint16      w_GloNumDaysInFourYear;   /* Glonass calendar day in four year cycle */
+  uint32      q_GloFixTimeMs;           /* Glonass fix time of day in milliseconds */
+  uint32      q_PosCount;               /* Integer count of the number of unique positions reported */
+  uint64      t_DblFinalPosLatLon[2];   /* Final latitude and longitude of position in radians */
+  uint32      q_FltFinalPosAlt;         /* Final height-above-ellipsoid altitude of position */
+  uint32      q_FltHeadingRad;          /* User heading in radians */
+  uint32      q_FltHeadingUncRad;       /* User heading uncertainty in radians */
+  uint32      q_FltVelEnuMps[3];        /* User velocity in east, north, up coordinate frame. In meters per second. */
+  uint32      q_FltVelSigmaMps[3];      /* Gaussian 1-sigma value for east, north, up components of user velocity */
+  uint32      q_FltClockBiasMeters;     /* Receiver clock bias in meters */
+  uint32      q_FltClockBiasSigmaMeters;  /* Gaussian 1-sigma value for receiver clock bias in meters */
+  uint32      q_FltGGTBMeters;          /* GPS to Glonass time bias in meters */
+  uint32      q_FltGGTBSigmaMeters;     /* Gaussian 1-sigma value for GPS to Glonass time bias uncertainty in meters */
+  uint32      q_FltGBTBMeters;          /* GPS to BeiDou time bias in meters */
+  uint32      q_FltGBTBSigmaMeters;     /* Gaussian 1-sigma value for GPS to BeiDou time bias uncertainty in meters */
+  uint32      q_FltBGTBMeters;          /* BeiDou to Glonass time bias in meters */
+  uint32      q_FltBGTBSigmaMeters;     /* Gaussian 1-sigma value for BeiDou to Glonass time bias uncertainty in meters */
+  uint32      q_FltFiltGGTBMeters;      /* Filtered GPS to Glonass time bias in meters */
+  uint32      q_FltFiltGGTBSigmaMeters; /* Filtered Gaussian 1-sigma value for GPS to Glonass time bias uncertainty in meters */
+  uint32      q_FltFiltGBTBMeters;      /* Filtered GPS to BeiDou time bias in meters */
+  uint32      q_FltFiltGBTBSigmaMeters; /* Filtered Gaussian 1-sigma value for GPS to BeiDou time bias uncertainty in meters */
+  uint32      q_FltFiltBGTBMeters;      /* Filtered BeiDou to Glonass time bias in meters */
+  uint32      q_FltFiltBGTBSigmaMeters; /* Filtered Gaussian 1-sigma value for BeiDou to Glonass time bias uncertainty in meters */
+  uint32      q_FltSftOffsetSec;        /* SFT offset as computed by WLS in seconds */
+  uint32      q_FltSftOffsetSigmaSec;   /* Gaussian 1-sigma value for SFT offset in seconds */
+  uint32      q_FltClockDriftMps;       /* Clock drift (clock frequency bias) in meters per second */
+  uint32      q_FltClockDriftSigmaMps;  /* Gaussian 1-sigma value for clock drift in meters per second */
+  uint32      q_FltFilteredAlt;         /* Filtered height-above-ellipsoid altitude in meters as computed by WLS */
+  uint32      q_FltFilteredAltSigma;    /* Gaussian 1-sigma value for filtered height-above-ellipsoid altitude in meters */
+  uint32      q_FltRawAlt;              /* Raw height-above-ellipsoid altitude in meters as computed by WLS */
+  uint32      q_FltRawAltSigma;         /* Gaussian 1-sigma value for raw height-above-ellipsoid altitude in meters */
+  uint32      q_FltPdop;                /* 3D position dilution of precision as computed from the unweighted 
+  uint32      q_FltHdop;                /* Horizontal position dilution of precision as computed from the unweighted least-squares covariance matrix */
+  uint32      q_FltVdop;                /* Vertical position dilution of precision as computed from the unweighted least-squares covariance matrix */
+  uint8       u_EllipseConfidence;      /* Statistical measure of the confidence (percentage) associated with the uncertainty ellipse values */
+  uint32      q_FltEllipseAngle;        /* Angle of semimajor axis with respect to true North, with increasing angles moving clockwise from North. In units of degrees. */
+  uint32      q_FltEllipseSemimajorAxis;  /* Semimajor axis of final horizontal position uncertainty error ellipse.  In units of meters. */
+  uint32      q_FltEllipseSemiminorAxis;  /* Semiminor axis of final horizontal position uncertainty error ellipse.  In units of meters. */
+  uint32      q_FltPosSigmaVertical;    /* Gaussian 1-sigma value for final position height-above-ellipsoid altitude in meters */
+  uint8       u_HorizontalReliability;  /* Horizontal position reliability 0: Not set 1: Very Low 2: Low 3: Medium 4: High    */
+  uint8       u_VerticalReliability;    /* Vertical position reliability */
+  uint16      w_Reserved2;              /* Reserved memory field */
+  uint32      q_FltGnssHeadingRad;      /* User heading in radians derived from GNSS only solution  */
+  uint32      q_FltGnssHeadingUncRad;   /* User heading uncertainty in radians derived from GNSS only solution  */
+  uint32      q_SensorDataUsageMask;    /* Denotes which additional sensor data were used to compute this position fix.  BIT[0] 0x00000001 <96> Accelerometer BIT[1] 0x00000002 <96> Gyro 0x0000FFFC - Reserved A bit set to 1 indicates that certain fields as defined by the SENSOR_AIDING_MASK were aided with sensor data*/
+  uint32      q_SensorAidMask;         /* Denotes which component of the position report was assisted with additional sensors defined in SENSOR_DATA_USAGE_MASK BIT[0] 0x00000001 <96> Heading aided with sensor data BIT[1] 0x00000002 <96> Speed aided with sensor data BIT[2] 0x00000004 <96> Position aided with sensor data BIT[3] 0x00000008 <96> Velocity aided with sensor data 0xFFFFFFF0 <96> Reserved */
+  uint32   align[14];
+  uint8       u_NumGpsSvsUsed;          /* The number of GPS SVs used in the fix */
+  uint8       u_TotalGpsSvs;            /* Total number of GPS SVs detected by searcher, including ones not used in position calculation */
+  uint8       u_NumGloSvsUsed;          /* The number of Glonass SVs used in the fix */
+  uint8       u_TotalGloSvs;            /* Total number of Glonass SVs detected by searcher, including ones not used in position calculation */
+  uint8       u_NumBdsSvsUsed;          /* The number of BeiDou SVs used in the fix */
+  uint8       u_TotalBdsSvs;            /* Total number of BeiDou SVs detected by searcher, including ones not used in position calculation */
+"""
+
+
 if __name__ == "__main__":
+  st = "<"
+  nams = []
+  for l in position_packet.strip().split("\n"):
+    typ, nam = l.split(";")[0].split()
+    print(typ, nam)
+    if '_Flt' in nam:
+      st += "f"
+    elif '_Dbl' in nam:
+      st += "d"
+    elif typ == "uint8":
+      st += "B"
+    elif typ == "uint32":
+      st += "I"
+    elif typ == "uint16":
+      st += "H"
+    elif typ == "uint64":
+      st += "Q"
+    else:
+      assert False
+    nams.append(nam)
+    if '[' in nam:
+      more = int(nam.split("[")[1].split("]")[0])-1
+      st += st[-1]*more
+      nams += nams[-1:]*more
+
   serial = open_serial()
   serial.flush()
 
@@ -134,8 +229,22 @@ if __name__ == "__main__":
     (log_inner_length, log_type, log_time), log_payload = unpack_from('<HHQ', inner_log_packet), inner_log_packet[calcsize('<HHQ'):]
     print("%x len %d" % (log_type, len(log_payload)))
 
-    if log_type == 0x1476:
-      #hexdump(log_payload)
+    if log_type == 0x1476 and log_payload[5] != 4:
+      #hexdump(log_payload[0:calcsize(st)]) #+0x100])
+      #ret = unpack(st, log_payload[0:227])
+      ret = unpack(st, log_payload[0:calcsize(st)])
+      sats = log_payload[calcsize(st):]
+      dd = {}
+      for x,y in list(zip(nams, ret)):
+        print(x,y)
+        dd[x] = y
+    
+      #hexdump(sats)
+      for i in range(dd['u_NumGpsSvsUsed']):
+        s = unpack("<BBBBHffff", sats[0x20+i*0x16:0x20+(i+1)*0x16])
+        print(s)
+
+
       pass
 
     if log_type == 0x1477: # or log_type == 0x1480:
