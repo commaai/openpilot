@@ -254,8 +254,8 @@ class Controls:
 
     if not CS.canValid:
       pass
-    # TODO:fix regression
-    #self.events.add(EventName.canError)
+      #TODO: Regression
+      #self.events.add(EventName.canError)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
@@ -267,7 +267,9 @@ class Controls:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
 
       if safety_mismatch or self.mismatch_counter >= 200:
-        self.events.add(EventName.controlsMismatch)
+        pass
+        #TODO: Regression
+        #self.events.add(EventName.controlsMismatch)
 
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
@@ -278,7 +280,8 @@ class Controls:
     elif not self.sm.valid["pandaStates"]:
       self.events.add(EventName.usbError)
     elif not self.sm.all_alive_and_valid() or self.can_rcv_error:
-      self.events.add(EventName.commIssue)
+      #TODO: Regression
+      #self.events.add(EventName.commIssue)
       if not self.logged_comm_issue:
         invalid = [s for s, valid in self.sm.valid.items() if not valid]
         not_alive = [s for s, alive in self.sm.alive.items() if not alive]
@@ -290,7 +293,9 @@ class Controls:
     if not self.sm['liveParameters'].valid:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['lateralPlan'].mpcSolutionValid:
-      self.events.add(EventName.plannerError)
+      pass
+      #TODO: Regression
+      #self.events.add(EventName.plannerError)
     if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
@@ -304,7 +309,9 @@ class Controls:
       cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
       self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
       if self.cruise_mismatch_counter > int(3. / DT_CTRL):
-        self.events.add(EventName.cruiseMismatch)
+        pass
+        #TODO: Regression
+        #self.events.add(EventName.cruiseMismatch)
 
     # Check for FCW
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.25
@@ -346,7 +353,9 @@ class Controls:
       # Check if all manager processes are running
       not_running = {p.name for p in self.sm['managerState'].processes if not p.running}
       if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
-        self.events.add(EventName.processNotRunning)
+        pass
+        # TODO: Regression
+        #self.events.add(EventName.processNotRunning)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     speeds = self.sm['longitudinalPlan'].speeds
