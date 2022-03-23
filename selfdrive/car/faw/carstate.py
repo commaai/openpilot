@@ -118,7 +118,6 @@ class CarState(CarStateBase):
       ("EPS_TORQUE", "EPS_2"),
       ("EPS_TORQUE_DIRECTION", "EPS_2"),
       ("DRIVER_INPUT_TORQUE", "EPS_2"),
-      ("STATUS", "ACC")
     ]
 
     checks = [
@@ -128,7 +127,6 @@ class CarState(CarStateBase):
       ("ABS_2", 100),
       ("EPS_1", 50),
       ("EPS_2", 50),
-      ("ACC", 50),
     ]
 
     return CANParser(DBC_FILES.faw, signals, checks, CANBUS.pt)
@@ -137,9 +135,11 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = [
       # sig_name, sig_address
+      ("STATUS", "ACC")
     ]
     checks = [
       # sig_address, frequency
+      ("ACC", 50),
     ]
 
     return CANParser(DBC_FILES.faw, signals, checks, CANBUS.cam)
