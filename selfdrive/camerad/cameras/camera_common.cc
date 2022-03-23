@@ -376,11 +376,13 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
+    //TODO: is this frame id fake, maybe it is created in the callback
     uint32_t frame_id = cs->buf.cur_frame_data.frame_id;
     LOGT((std::string(thread_name)+std::string(": Start")).c_str(), frame_id);
 
     callback(cameras, cs, cnt);
 
+    LOGT((std::string(thread_name)+std::string(": END")).c_str(), frame_id);
 
     if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
       // this takes 10ms???
@@ -447,7 +449,10 @@ void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   if (env_send_driver) {
     framed.setImage(get_frame_image(&c->buf));
   }
+  uint32_t frame_id = c->buf.cur_frame_data.frame_id;
+  LOGT("DriverCamera: Image set", frame_id);
   s->pm->send("driverCameraState", msg);
+  LOGT("DriverCamera: Published", frame_id);
 }
 
 

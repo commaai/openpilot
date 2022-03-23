@@ -8,9 +8,16 @@ from collections import defaultdict
 
 timestamps = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
-r = Route("9f583b1d93915c31|2022-03-22--15-59-29")
+#r = Route("9f583b1d93915c31|2022-03-22--15-59-29")
+r = Route("9f583b1d93915c31|2022-03-22--18-06-12")
 lr = LogReader(r.log_paths()[0])
 
+for msg in lr:
+    if msg.which() == "logMessage":
+        msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
+        if "logMonoTime" in msg:
+            print(msg)
+exit()
 for msg in lr:
   if msg.which() == "logMessage":
     msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
@@ -21,9 +28,12 @@ for msg in lr:
             service = jmsg['ctx']['daemon']
             event = jmsg['msg']['timestamp']['event']
             time = jmsg['msg']['timestamp']['time']
-            timestamps[frame_id][service][event].append(time)
+            if jmsg['msg']['timestamp']['translate']:
+                timestamps[frame_id][service][event].append()
+            else:
+                timestamps[frame_id][service][event].append(time)
         except :
-            print( msg)
+            print(msg)
 
 del timestamps[0]
 

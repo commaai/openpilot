@@ -18,7 +18,7 @@ for frame_id, services in timestamps.items():
             time = (time-t0)/1e6
             d[time] = (service, event)
     s = sorted(d.items())
-    print(tabulate([[item[1][0], item[1][1], item[0]] for item in s], headers=["service", "event", "time"]))
+    print(tabulate([[item[1][0], item[1][1], item[0]] for item in s], headers=["service", "event", "time (ms)"]))
     print()
 
 exit()
