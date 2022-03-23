@@ -1,4 +1,4 @@
-from struct import unpack, calcsize
+from struct import unpack_from, calcsize
 
 LOG_GNSS_POSITION_REPORT = 0x1476
 LOG_GNSS_GPS_MEASUREMENT_REPORT = 0x1477
@@ -218,4 +218,5 @@ def dict_unpacker(ss, camelcase = False):
   st, nams = parse_struct(ss)
   if camelcase:
     nams = [name_to_camelcase(x) for x in nams]
-  return lambda x: dict(zip(nams, unpack(st, x[0:calcsize(st)])))
+  sz = calcsize(st)
+  return lambda x: dict(zip(nams, unpack_from(st, x))), sz

@@ -81,7 +81,6 @@ def setup_logs(diag, types_to_log):
   assert status == LOG_CONFIG_SUCCESS_S
 
   log_masks = unpack_from('<16I', payload, calcsize(header_spec))
-  print(log_masks)
 
   for log_type, log_mask_bitsize in enumerate(log_masks):
     if log_mask_bitsize:
