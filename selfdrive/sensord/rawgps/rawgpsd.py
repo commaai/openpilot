@@ -88,13 +88,13 @@ if __name__ == "__main__":
         sats = log_payload[size_gps_meas:]
         unpack_meas_sv, size_meas_sv = unpack_gps_meas_sv, size_gps_meas_sv
         report.source = 0  # gps
-        measurement_status_fields = itertools.chain(measurementStatusFields.items(), measurementStatusGPSFields.items())
+        get_measurement_status_fields = lambda: itertools.chain(measurementStatusFields.items(), measurementStatusGPSFields.items())
       elif log_type == LOG_GNSS_GLONASS_MEASUREMENT_REPORT:
         dat = unpack_glonass_meas(log_payload)
         sats = log_payload[size_glonass_meas:]
         unpack_meas_sv, size_meas_sv = unpack_glonass_meas_sv, size_glonass_meas_sv
         report.source = 1  # glonass
-        measurement_status_fields = itertools.chain(measurementStatusFields.items(), measurementStatusGlonassFields.items())
+        get_measurement_status_fields = lambda: itertools.chain(measurementStatusFields.items(), measurementStatusGlonassFields.items())
       else:
         assert False
 
@@ -121,7 +121,7 @@ if __name__ == "__main__":
           elif k == "hemmingErrorCount":
             sv.glonassHemmingErrorCount = v
           elif k == "measurementStatus":
-            for kk,vv in measurement_status_fields:
+            for kk,vv in get_measurement_status_fields():
               setattr(sv.measurementStatus, kk, bool(v & (1<<vv)))
           elif k == "miscStatus":
             for kk,vv in miscStatusFields.items():
