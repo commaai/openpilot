@@ -91,7 +91,7 @@ class CarInfo:
   @typing.no_type_check
   def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
-    if item in StarColumns:
+    if column in StarColumns:
       item = star_icon.format(item.value)
 
     footnote = get_footnote(self.footnotes, column)
