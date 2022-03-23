@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 import os
 import itertools
-from struct import unpack_from
+from struct import unpack_from, calcsize
 import cereal.messaging as messaging
 
 from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs
-from selfdrive.sensord.rawgps.structs import *
+from selfdrive.sensord.rawgps.structs import dict_unpacker
+from selfdrive.sensord.rawgps.structs import gps_measurement_report, gps_measurement_report_sv
+from selfdrive.sensord.rawgps.structs import glonass_measurement_report, glonass_measurement_report_sv
+from selfdrive.sensord.rawgps.structs import LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT
 
 miscStatusFields = {
   "multipathEstimateIsValid": 0,
@@ -88,13 +91,13 @@ if __name__ == "__main__":
         sats = log_payload[size_gps_meas:]
         unpack_meas_sv, size_meas_sv = unpack_gps_meas_sv, size_gps_meas_sv
         report.source = 0  # gps
-        get_measurement_status_fields = lambda: itertools.chain(measurementStatusFields.items(), measurementStatusGPSFields.items())
+        measurement_status_fields = (measurementStatusFields.items(), measurementStatusGPSFields.items())
       elif log_type == LOG_GNSS_GLONASS_MEASUREMENT_REPORT:
         dat = unpack_glonass_meas(log_payload)
         sats = log_payload[size_glonass_meas:]
         unpack_meas_sv, size_meas_sv = unpack_glonass_meas_sv, size_glonass_meas_sv
         report.source = 1  # glonass
-        get_measurement_status_fields = lambda: itertools.chain(measurementStatusFields.items(), measurementStatusGlonassFields.items())
+        measurement_status_fields = (measurementStatusFields.items(), measurementStatusGlonassFields.items())
       else:
         assert False
 
@@ -121,7 +124,7 @@ if __name__ == "__main__":
           elif k == "hemmingErrorCount":
             sv.glonassHemmingErrorCount = v
           elif k == "measurementStatus":
-            for kk,vv in get_measurement_status_fields():
+            for kk,vv in itertools.chain(*measurement_status_fields):
               setattr(sv.measurementStatus, kk, bool(v & (1<<vv)))
           elif k == "miscStatus":
             for kk,vv in miscStatusFields.items():
