@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import time
 from serial import Serial
 from crcmod import mkCrcFun
 from hexdump import hexdump
@@ -8,9 +9,11 @@ from struct import pack, unpack_from, calcsize, unpack
 def unlock_serial():
   os.system('sudo su -c \'echo "1-1.1:1.0" > /sys/bus/usb/drivers/option/unbind\'')
   os.system('sudo su -c \'echo "1-1.1:1.0" > /sys/bus/usb/drivers/option/bind\'')
+  time.sleep(0.5)
   os.system("sudo chmod 666 /dev/ttyUSB0")
 
 def open_serial():
+  # TODO: this is a hack to get around modemmanager's exclusive open
   try:
     return Serial("/dev/ttyUSB0", baudrate=115200, rtscts=True, dsrdtr=True)
   except Exception:
@@ -45,10 +48,13 @@ LOG_CONFIG_SET_MASK_OP = 3
 LOG_CONFIG_SUCCESS_S = 0
 
 def recv(serial):
-  raw_payload = b''
-  while not raw_payload.endswith(TRAILER_CHAR):
+  raw_payload = []
+  while 1:
     char_read = serial.read()
-    raw_payload += char_read
+    raw_payload.append(char_read)
+    if char_read.endswith(TRAILER_CHAR):
+      break
+  raw_payload = b''.join(raw_payload)
   unframed_message = hdlc_decapsulate(raw_payload)
   return unframed_message[0], unframed_message[1:]
 
@@ -61,7 +67,7 @@ def send_recv(serial, packet_type, packet_payload):
   return opcode, payload
 
 TYPES_FOR_RAW_PACKET_LOGGING = [
-  #0x1476,
+  0x1476,
   0x1477,
   0x1480,
 
@@ -106,6 +112,14 @@ def setup_rawgps():
       assert operation == LOG_CONFIG_SET_MASK_OP
       assert status == LOG_CONFIG_SUCCESS_S
 
+svStructNames = ["svId", "observationState", "observations", 
+  "goodObservations", "gpsParityErrorCount", "filterStages",
+  "carrierNoise", "latency", "predetectInterval", "postdetections",
+  "unfilteredMeasurementIntegral", "unfilteredMeasurementFraction", 
+  "unfilteredTimeUncertainty", "unfilteredSpeed", "unfilteredSpeedUncertainty",
+  "measurementStatus", "miscStatus", "multipathEstimate", 
+  "azimuth", "elevation", "carrierPhaseCyclesIntegral", "carrierPhaseCyclesFraction",
+  "fineSpeed", "fineSpeedUncertainty", "cycleSlipCount"]
 
 if __name__ == "__main__":
   serial = open_serial()
@@ -118,9 +132,13 @@ if __name__ == "__main__":
     assert opcode == DIAG_LOG_F
     (pending_msgs, log_outer_length), inner_log_packet = unpack_from('<BH', payload), payload[calcsize('<BH'):]
     (log_inner_length, log_type, log_time), log_payload = unpack_from('<HHQ', inner_log_packet), inner_log_packet[calcsize('<HHQ'):]
-    print("%x" % log_type)
+    print("%x len %d" % (log_type, len(log_payload)))
 
-    if log_type == 0x1477 or log_type == 0x1480:
+    if log_type == 0x1476:
+      #hexdump(log_payload)
+      pass
+
+    if log_type == 0x1477: # or log_type == 0x1480:
       if log_type == 0x1477:
         dat = unpack("<BIHIffffB", log_payload[0:28])
         ll = 28
@@ -132,7 +150,7 @@ if __name__ == "__main__":
       L = 70
       assert len(sats)//dat[-1] == L
       for i in range(dat[-1]):
-        sat = unpack("<BbBBBBBHhBHIffffIBIffiHffBI", sats[L*i:L*i+L])
+        sat = dict(zip(svStructNames, unpack("<BbBBBBBHhBHIffffIBIffiHffBI", sats[L*i:L*i+L])[:-1]))
         print("  ", sat)
 
 
