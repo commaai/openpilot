@@ -2,8 +2,7 @@ from cereal import car
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Union
-import typing
+from typing import Dict, List, Optional, Union, no_type_check
 
 
 class Tier(Enum):
@@ -88,7 +87,7 @@ class CarInfo:
 
     self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
 
-  @typing.no_type_check
+  @no_type_check
   def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
