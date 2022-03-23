@@ -226,10 +226,13 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
+    LOGTT("sendcan received", event.getLogMonoTime(), true);
+
     //Dont send if older than 1 second
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
         panda->can_send(event.getSendcan());
+	LOGTT((std::string("sendcan sent to panda: ")+std::string(panda->usb_serial)).c_str(), event.getLogMonoTime() , true);
       }
     }
   }

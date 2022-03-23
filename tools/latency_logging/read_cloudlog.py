@@ -8,7 +8,7 @@ from collections import defaultdict
 
 timestamps = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
-r = Route("9f583b1d93915c31|2022-03-22--15-13-06")
+r = Route("9f583b1d93915c31|2022-03-22--15-59-29")
 lr = LogReader(r.log_paths()[0])
 
 for msg in lr:
