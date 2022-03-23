@@ -18,18 +18,21 @@ export const state = () => ({
   ],
   supportedVehicles: {
     {% for tier, car_rows in tiers %}
-    '{{tier.name.title()}}': [
-      {% for row in car_rows %}
-      [
-        '{{row[0].text}}',
-        '{{row[1].text}}',
-        '{{row[2].text}}',
-        {% for star_col in row if star_col.star is not none %}
-        '{{star_col.star.html_icon}}{{footnote_tag.format(star_col.footnote) if star_col.footnote else ''}}',
+    '{{tier.name.title()}}': {
+      description: '{{ tier.value | replace("'", "\\'") }}',
+      rows: [
+        {% for row in car_rows %}
+        [
+          '{{row[0].text}}',
+          '{{row[1].text}}',
+          '{{row[2].text}}',
+          {% for star_col in row if star_col.star is not none %}
+          '{{star_col.star.html_icon}}{{footnote_tag.format(star_col.footnote) if star_col.footnote else ''}}',
+          {% endfor %}
+        ],
         {% endfor %}
       ],
-      {% endfor %}
-    ],
+    },
     {% endfor %}
   },
 })

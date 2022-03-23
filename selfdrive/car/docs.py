@@ -58,7 +58,6 @@ def generate_cars_md(tier_car_rows: List[Tuple[Tier, List[RowItem]]], template_f
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  print(tier_car_rows[0][1][0])
   return template.render(tiers=tier_car_rows, columns=[column.value for column in Column],
                          footnotes=footnotes, Star=Star)
 
