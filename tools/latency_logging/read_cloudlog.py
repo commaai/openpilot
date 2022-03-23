@@ -9,8 +9,7 @@ from collections import defaultdict
 timestamps = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 translationdict = {}
 
-#r = Route("9f583b1d93915c31|2022-03-22--15-59-29")
-r = Route("9f583b1d93915c31|2022-03-23--12-47-33")
+r = Route("9f583b1d93915c31|2022-03-23--14-47-10")
 lr = LogReader(r.log_paths()[0])
 
 for msg in lr:
@@ -34,14 +33,6 @@ for msg in lr:
     timestamps[frame_id][service][event].append(time)
 
 del timestamps[0]
-'''
-
-timestampsshort = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
-for frame_id, services in timestamps.items():
-    for service, events in services.items():
-        for event, times in events.items():
-            timestampsshort[frame_id][service][event] = min(times)
-'''
 
 with open('timestamps.json', 'w') as outfile:
     json.dump(timestamps, outfile)

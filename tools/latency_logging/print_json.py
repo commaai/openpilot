@@ -22,7 +22,7 @@ for frame_id, services in timestamps.items():
     print(tabulate([[item[1][0], item[1][1], item[1][2]] for item in s], headers=["service", "event", "time (ms)"]))
     print()
 
-exit()
+'''
 fig, gnt = plt.subplots()
 maxx = max([max([max(events.values()) for events in services.values()]) for services in timestamps.values()])/1e6
 gnt.set_xlim(0, 150)
@@ -51,3 +51,4 @@ for frame_id, services in timestamps.items():
     count+=1
 print(tabulate([[event, sum(times)/len(times), max(times), len(times)] for event, times in avg_times.items()], headers=["event", "avg", "max", "len"]))
 plt.show(block=True)
+'''
