@@ -44,16 +44,17 @@ if __name__ == "__main__":
         qcom_speed = i.unfilteredSpeed
         car.append((i.svId, tm.pseudorange, ublox_speed, qcom_psuedorange, qcom_speed, tm.cno))
 
-    pr_err, speed_err = [], []
+    pr_err, speed_err = 0., 0.
     for c in car:
       ublox_psuedorange, ublox_speed, qcom_psuedorange, qcom_speed = c[1:5]
-      pr_err.append(ublox_psuedorange - qcom_psuedorange)
-      speed_err.append(ublox_speed - qcom_speed)
-    pr_err, speed_err = sum(pr_err)/len(pr_err), sum(speed_err)/len(speed_err)
+      pr_err += ublox_psuedorange - qcom_psuedorange
+      speed_err += ublox_speed - qcom_speed
+    pr_err /= len(car)
+    speed_err /= len(car)
     print("avg psuedorange err %f avg speed err %f" % (pr_err, speed_err))
     for c in sorted(car, key=lambda x: abs(x[1] - x[3] - pr_err)):
       svid, ublox_psuedorange, ublox_speed, qcom_psuedorange, qcom_speed, cno = c
-      print("svid: %3d  pseudorange: %10.2f m  speed: %8.2f m/s   meas: %12.2f  speed: %10.2f   meas_err: %10.3f speed_err: %8.3f cno: %d" % \
+      print("svid: %3d  pseudorange: %10.2f m  speed: %8.2f m/s   meas: %12.2f  speed: %10.2f   meas_err: %10.3f speed_err: %8.3f cno: %d" %
         (svid, ublox_psuedorange, ublox_speed, qcom_psuedorange, qcom_speed,
         ublox_psuedorange - qcom_psuedorange - pr_err, ublox_speed - qcom_speed - speed_err, cno))
 
