@@ -21,13 +21,16 @@ export const state = () => ({
     {% for tier, cars in tiers %}
     '{{tier.name.title()}}': {
       description: '{{tier.value | replace("'", "\\'")}}',
-      rows: [
+      cars: [
         {% for car_info in cars %}
-        [
-          {% for column in Column %}
-          '{{car_info.get_column(column, star_icon, footnote_tag)}}',
-          {% endfor %}
-        ],
+        {
+          video_link: '{{car_info.video_link}}',
+          row: [
+            {% for column in Column %}
+            '{{car_info.get_column(column, star_icon, footnote_tag)}}',
+            {% endfor %}
+          ]
+        },
         {% endfor %}
       ],
     },
