@@ -3,7 +3,7 @@ import os
 from serial import Serial
 from crcmod import mkCrcFun
 from hexdump import hexdump
-from struct import pack, unpack_from, calcsize
+from struct import pack, unpack_from, calcsize, unpack
 
 def unlock_serial():
   os.system('sudo su -c \'echo "1-1.1:1.0" > /sys/bus/usb/drivers/option/unbind\'')
@@ -38,6 +38,7 @@ def hdlc_decapsulate(payload):
   assert payload[-2:] == pack('<H', ccitt_crc16(payload[:-2]))
   return payload[:-2]
 
+DIAG_LOG_F = 16
 DIAG_LOG_CONFIG_F = 115
 LOG_CONFIG_RETRIEVE_ID_RANGES_OP = 1
 LOG_CONFIG_SET_MASK_OP = 3
@@ -53,29 +54,33 @@ def recv(serial):
 
 def send_recv(serial, packet_type, packet_payload):
   serial.write(hdlc_encapsulate(bytes([packet_type]) + packet_payload))
-  return recv(serial)
+  while 1:
+    opcode, payload = recv(serial)
+    if opcode != DIAG_LOG_F:
+      break
+  return opcode, payload
 
 TYPES_FOR_RAW_PACKET_LOGGING = [
   #0x1476,
   0x1477,
-  0x1478,
   0x1480,
-  0x1756,
-  0x1886,
 
-  0x14DE,
-  0x14E1,
+  #0x1478,
+  #0x1756,
+  #0x1886,
 
-  0x1838,
-  0x147B,
-  0x147E,
-  0x1488,
-  0x1516,
+  #0x14DE,
+  #0x14E1,
+
+  #0x1838,
+  #0x147B,
+  #0x147E,
+  #0x1488,
+  #0x1516,
 ]
 
-if __name__ == "__main__":
-  serial = open_serial()
-
+def setup_rawgps():
+  os.system("mmcli -m 0 --location-enable-gps-raw --location-enable-gps-nmea")
   opcode, payload = send_recv(serial, DIAG_LOG_CONFIG_F, pack('<3xI', LOG_CONFIG_RETRIEVE_ID_RANGES_OP))
 
   header_spec = '<3xII'
@@ -101,9 +106,34 @@ if __name__ == "__main__":
       assert operation == LOG_CONFIG_SET_MASK_OP
       assert status == LOG_CONFIG_SUCCESS_S
 
+
+if __name__ == "__main__":
+  serial = open_serial()
+  serial.flush()
+
+  setup_rawgps()
+
   while 1:
     opcode, payload = recv(serial)
-    print(opcode)
+    assert opcode == DIAG_LOG_F
+    (pending_msgs, log_outer_length), inner_log_packet = unpack_from('<BH', payload), payload[calcsize('<BH'):]
+    (log_inner_length, log_type, log_time), log_payload = unpack_from('<HHQ', inner_log_packet), inner_log_packet[calcsize('<HHQ'):]
+    print("%x" % log_type)
+
+    if log_type == 0x1477 or log_type == 0x1480:
+      if log_type == 0x1477:
+        dat = unpack("<BIHIffffB", log_payload[0:28])
+        ll = 28
+      else:
+        dat = unpack("<BIBHIffffB", log_payload[0:29])
+        ll = 29
+      print(dat)
+      sats = log_payload[ll:]
+      L = 70
+      assert len(sats)//dat[-1] == L
+      for i in range(dat[-1]):
+        sat = unpack("<BbBBBBBHhBHIffffIBIffiHffBI", sats[L*i:L*i+L])
+        print("  ", sat)
 
 
   #header_spec = '<3xII'
