@@ -150,7 +150,7 @@ if __name__ == "__main__":
       L = 70
       assert len(sats)//dat[-1] == L
       for i in range(dat[-1]):
-        sat = dict(zip(svStructNames, unpack("<BbBBBBBHhBHIffffIBIffiHffBI", sats[L*i:L*i+L])[:-1]))
+        sat = dict(zip(svStructNames, unpack("<BBBBHBHhBHIffffIBIffiHffBI", sats[L*i:L*i+L])[:-1]))
         print("  ", sat)
 
 
