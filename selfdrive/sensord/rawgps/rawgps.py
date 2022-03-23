@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 import os
 import time
+import numpy as np
 from serial import Serial
 from crcmod import mkCrcFun
 from hexdump import hexdump
 from struct import pack, unpack_from, calcsize, unpack
+import cereal.messaging as messaging
+
+from laika import constants
 
 def unlock_serial():
   os.system('sudo su -c \'echo "1-1.1:1.0" > /sys/bus/usb/drivers/option/unbind\'')
@@ -67,8 +71,8 @@ def send_recv(serial, packet_type, packet_payload):
   return opcode, payload
 
 TYPES_FOR_RAW_PACKET_LOGGING = [
-  0x1476,
-  #0x1477,
+  #0x1476,
+  0x1477,
   #0x1480,
 
   #0x1478,
@@ -166,6 +170,7 @@ position_packet = """
   uint32      q_FltFilteredAltSigma;    /* Gaussian 1-sigma value for filtered height-above-ellipsoid altitude in meters */
   uint32      q_FltRawAlt;              /* Raw height-above-ellipsoid altitude in meters as computed by WLS */
   uint32      q_FltRawAltSigma;         /* Gaussian 1-sigma value for raw height-above-ellipsoid altitude in meters */
+  uint32   align_Flt[14];
   uint32      q_FltPdop;                /* 3D position dilution of precision as computed from the unweighted 
   uint32      q_FltHdop;                /* Horizontal position dilution of precision as computed from the unweighted least-squares covariance matrix */
   uint32      q_FltVdop;                /* Vertical position dilution of precision as computed from the unweighted least-squares covariance matrix */
@@ -181,7 +186,6 @@ position_packet = """
   uint32      q_FltGnssHeadingUncRad;   /* User heading uncertainty in radians derived from GNSS only solution  */
   uint32      q_SensorDataUsageMask;    /* Denotes which additional sensor data were used to compute this position fix.  BIT[0] 0x00000001 <96> Accelerometer BIT[1] 0x00000002 <96> Gyro 0x0000FFFC - Reserved A bit set to 1 indicates that certain fields as defined by the SENSOR_AIDING_MASK were aided with sensor data*/
   uint32      q_SensorAidMask;         /* Denotes which component of the position report was assisted with additional sensors defined in SENSOR_DATA_USAGE_MASK BIT[0] 0x00000001 <96> Heading aided with sensor data BIT[1] 0x00000002 <96> Speed aided with sensor data BIT[2] 0x00000004 <96> Position aided with sensor data BIT[3] 0x00000008 <96> Velocity aided with sensor data 0xFFFFFFF0 <96> Reserved */
-  uint32   align[14];
   uint8       u_NumGpsSvsUsed;          /* The number of GPS SVs used in the fix */
   uint8       u_TotalGpsSvs;            /* Total number of GPS SVs detected by searcher, including ones not used in position calculation */
   uint8       u_NumGloSvsUsed;          /* The number of Glonass SVs used in the fix */
@@ -196,7 +200,7 @@ if __name__ == "__main__":
   nams = []
   for l in position_packet.strip().split("\n"):
     typ, nam = l.split(";")[0].split()
-    print(typ, nam)
+    #print(typ, nam)
     if '_Flt' in nam:
       st += "f"
     elif '_Dbl' in nam:
@@ -220,7 +224,12 @@ if __name__ == "__main__":
   serial = open_serial()
   serial.flush()
 
-  setup_rawgps()
+  #setup_rawgps()
+
+  C = 299792458 #/1000.0
+
+  sm = messaging.SubMaster(['ubloxGnss'])
+  meas = None
 
   while 1:
     opcode, payload = recv(serial)
@@ -228,6 +237,10 @@ if __name__ == "__main__":
     (pending_msgs, log_outer_length), inner_log_packet = unpack_from('<BH', payload), payload[calcsize('<BH'):]
     (log_inner_length, log_type, log_time), log_payload = unpack_from('<HHQ', inner_log_packet), inner_log_packet[calcsize('<HHQ'):]
     print("%x len %d" % (log_type, len(log_payload)))
+
+    sm.update()
+    if sm['ubloxGnss'].which() == "measurementReport":
+      meas = sm['ubloxGnss'].measurementReport.measurements
 
     if log_type == 0x1476 and log_payload[5] != 4:
       #hexdump(log_payload[0:calcsize(st)]) #+0x100])
@@ -258,9 +271,65 @@ if __name__ == "__main__":
       sats = log_payload[ll:]
       L = 70
       assert len(sats)//dat[-1] == L
+      car = []
       for i in range(dat[-1]):
         sat = dict(zip(svStructNames, unpack("<BBBBHBHhBHIffffIBIffiHffBI", sats[L*i:L*i+L])[:-1]))
-        print("  ", sat)
+
+        if (sat['measurementStatus'] & (1<<2)) == 0:
+          continue
+        if (sat['measurementStatus'] & (1<<13)) != 0:
+          continue
+
+        #if sat['observationState'] not in [5,7]:
+        #  continue
+        #  car.append((sat['svId'], "svid: %3d  pseudorange: %f m  doppler: %f hz" % (sat['svId'], pr, sat['unfilteredSpeed'])))
+        tm = None
+        if meas is not None:
+          for m in meas:
+            if sat['svId'] == m.svId and m.gnssId == 0 and m.sigId == 0:
+              tm = m
+        if tm is None:
+          continue
+
+        ublox_speed = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * tm.doppler
+        recv_time = dat[3] / 1000.
+        sat_time = (sat['unfilteredMeasurementIntegral'] + sat['unfilteredMeasurementFraction'] + sat['latency']) / 1000.
+        qcom_psuedorange = (recv_time - sat_time)*constants.SPEED_OF_LIGHT
+
+        #print(sat)
+        car.append((sat['svId'], tm.pseudorange, ublox_speed, qcom_psuedorange, sat['unfilteredSpeed']))
+
+        #pr = (dat[3] - (sat['unfilteredMeasurementIntegral'] + sat['unfilteredMeasurementFraction'])) * C
+
+        #print("svid: %3d  pseudorange: %10.2f m  speed: %8.2f m/s   meas: %12.2f  speed: %10.2f   rat %f off %f lat %d" % \
+        #  (sat['svId'], tm.pseudorange, ublox_speed, qcom_psuedorange, sat['unfilteredSpeed'],
+        #    ublox_speed - sat['unfilteredSpeed'] + 65.153366, tm.pseudorange - qcom_psuedorange - 733596.055438, sat['latency']))
+
+        """
+        if sat['observationState'] in [5,7]:
+          prr = (dat[3]-sat['unfilteredMeasurementIntegral']) - sat['unfilteredMeasurementFraction']
+          prr_std = sat['unfilteredTimeUncertainty']
+          print("svid: %2d -- pr(m): %.2f  pr_std: %.2f  speed: %.2f m/s  speed_std: %.2f m/s" % (sat['svId'], prr*C, prr_std*C, sat['unfilteredSpeed'], sat['unfilteredSpeedUncertainty']))
+        """
+        #print(sat['svId'], sat['observationState'], sat['unfilteredMeasurementIntegral'], sat['unfilteredMeasurementFraction'], C*sat['unfilteredTimeUncertainty'], sat['unfilteredSpeed'], sat['unfilteredSpeedUncertainty'])
+        #print("  ", sat)
+
+      pr_err = []
+      speed_err = []
+      for c in car:
+        svid, ublox_psuedorange, ublox_speed, qcom_psuedorange, qcom_speed = c
+        pr_err.append(ublox_psuedorange - qcom_psuedorange)
+        speed_err.append(ublox_speed - qcom_speed)
+      pr_err = np.mean(pr_err)
+      speed_err = np.mean(speed_err)
+      print("avg psuedorange err %f avg speed err %f" % (pr_err, speed_err))
+
+      for c in sorted(car):
+        svid, ublox_psuedorange, ublox_speed, qcom_psuedorange, qcom_speed = c
+        print("svid: %3d  pseudorange: %10.2f m  speed: %8.2f m/s   meas: %12.2f  speed: %10.2f   meas_err: %f speed_err: %f" % \
+          (svid, ublox_psuedorange, ublox_speed, qcom_psuedorange, qcom_speed,
+          ublox_psuedorange - qcom_psuedorange - pr_err, ublox_speed - qcom_speed - speed_err))
+
 
 
   #header_spec = '<3xII'
