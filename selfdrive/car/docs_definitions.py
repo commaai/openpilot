@@ -89,7 +89,7 @@ class CarInfo:
     self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
 
   @typing.no_type_check
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
+  def get_column(self, column: Column, star_icon: str, footnote_tag: str, video_link_tag: Optional[str] = None) -> str:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
       item = star_icon.format(item.value)
@@ -97,5 +97,8 @@ class CarInfo:
     footnote = get_footnote(self.footnotes, column)
     if footnote is not None:
       item += footnote_tag.format(self.all_footnotes[footnote])
+
+    if column == Column.MODEL and self.video_link is not None and video_link_tag is not None:
+      item += video_link_tag.format(self.video_link)
 
     return item
