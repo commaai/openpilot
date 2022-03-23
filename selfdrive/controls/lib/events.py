@@ -493,6 +493,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 1.),
   },
 
+  EventName.clutchPressed: {
+    ET.WARNING: Alert(
+      "Clutch Pressed",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
+  },
+
   # Thrown when the fan is driven at >50% but is not rotating
   EventName.fanMalfunction: {
     ET.PERMANENT: NormalPermanentAlert("Fan Malfunction", "Contact Support"),
