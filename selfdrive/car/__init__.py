@@ -68,8 +68,8 @@ def apply_std_steer_torque_limits(apply_torque, apply_torque_last, driver_torque
 def apply_toyota_steer_torque_limits(apply_torque, apply_torque_last, driver_torque, LIMITS):
   # limits due to driver torque
   driver_torque = 0 if abs(driver_torque) <= 10 else driver_torque
-  driver_torque_max = driver_torque + (interp(abs(driver_torque), [10, 100], [LIMITS.STEER_MAX, LIMITS.STEER_MAX / 5]))
-  driver_torque_min = driver_torque - interp(abs(driver_torque), [10, 100], [LIMITS.STEER_MAX, LIMITS.STEER_MAX / 5])
+  driver_torque_max = driver_torque + (interp(abs(driver_torque), [100, 300], [LIMITS.STEER_MAX, LIMITS.STEER_MAX / 5]))
+  driver_torque_min = driver_torque - interp(abs(driver_torque), [100, 300], [LIMITS.STEER_MAX, LIMITS.STEER_MAX / 5])
 
   apply_torque = clip(apply_torque, driver_torque_max, driver_torque_min)
   apply_torque = clip(apply_torque, -LIMITS.STEER_MAX, LIMITS.STEER_MAX)
