@@ -631,9 +631,10 @@ class Controls:
     if not self.read_only and self.initialized:
       # send car controls over can
       self.last_actuators, can_sends = self.CI.apply(CC)
-      sendcan_msg = can_list_to_can_capnp(can_sends, msgtype='sendcan')
-      self.pm.send('sendcan', sendcan_msg , valid=CS.canValid)
-      cloudlog.event("translation", logMonoTime=sendcan_msg.logMonoTime, frameId=frame_id, debug=True)
+      sendcan_bytes = can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid)
+      self.pm.send('sendcan', sendcan_bytes)
+      sendcanMonoTime = log.Event.from_bytes(sendcan_bytes).logMonoTime
+      cloudlog.event("translation", logMonoTime=sendcanMonoTime, frameId=frame_id, debug=True)
       cloudlog.timestamp("sendcan Published", frame_id)
       CC.actuatorsOutput = self.last_actuators
 
