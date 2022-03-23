@@ -83,7 +83,7 @@ class CarState(CarStateBase):
     # Update ACC radar status.
     # TODO: populate this properly, need an available signal and overrides (11 avail?, 27 gas override?, 19 coastdown?)
     ret.cruiseState.available = True
-    ret.cruiseState.enabled = pt_cp.vl["ACC"]["STATUS"] == 20
+    ret.cruiseState.enabled = cam_cp.vl["ACC"]["STATUS"] == 20
 
     # Update ACC setpoint.
     # TODO: populate this
