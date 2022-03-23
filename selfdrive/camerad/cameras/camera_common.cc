@@ -157,6 +157,7 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
+  LOGT("Start acquire camera buffer", cur_frame_data.frame_id);
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
@@ -194,7 +195,7 @@ bool CameraBuf::acquire() {
   cur_yuv_buf->set_frame_id(cur_frame_data.frame_id);
   vipc_server->send(cur_rgb_buf, &extra);
   vipc_server->send(cur_yuv_buf, &extra);
-
+  LOGT("End acquire camera buffer", cur_frame_data.frame_id);
   return true;
 }
 

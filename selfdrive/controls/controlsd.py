@@ -734,9 +734,11 @@ class Controls:
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
+    cloudlog.timestamp("Data sampled", self.sm['lateralPlan'].frameId)
     self.prof.checkpoint("Sample")
 
     self.update_events(CS)
+    cloudlog.timestamp("Events updated", self.sm['lateralPlan'].frameId)
 
     if not self.read_only and self.initialized:
       # Update control state
