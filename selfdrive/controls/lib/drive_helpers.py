@@ -18,7 +18,7 @@ CAR_ROTATION_RADIUS = 0.0
 
 # EU guidelines
 MAX_LATERAL_JERK = 5.0
-MAX_LATERAL_ACCEL = 3.0
+#MAX_LATERAL_ACCEL = 3.0
 
 CRUISE_LONG_PRESS = 50
 CRUISE_NEAREST_FUNC = {
@@ -109,14 +109,16 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
 
   v_ego = max(v_ego, 0.1)
   max_curvature_rate = MAX_LATERAL_JERK / (v_ego**2)
-  max_curvature = MAX_LATERAL_ACCEL / (v_ego**2)
   safe_desired_curvature_rate = clip(desired_curvature_rate,
                                           -max_curvature_rate,
                                           max_curvature_rate)
   safe_desired_curvature = clip(desired_curvature,
                                      current_curvature - max_curvature_rate * DT_MDL,
                                      current_curvature + max_curvature_rate * DT_MDL)
-  safe_desired_curvature = clip(safe_desired_curvature,
-                                     -max_curvature,
-                                     max_curvature)
+
+  # TODO enforce curvature too, likely needs to be aware of roll
+  #max_curvature = MAX_LATERAL_ACCEL / (v_ego**2)
+  #safe_desired_curvature = clip(safe_desired_curvature,
+  #                                   -max_curvature,
+  #                                   max_curvature)
   return safe_desired_curvature, safe_desired_curvature_rate
