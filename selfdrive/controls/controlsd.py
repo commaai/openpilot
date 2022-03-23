@@ -253,7 +253,9 @@ class Controls:
       self.events.add(EventName.laneChange)
 
     if not CS.canValid:
-      self.events.add(EventName.canError)
+      pass
+    # TODO:fix regression
+    #self.events.add(EventName.canError)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
