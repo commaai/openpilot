@@ -25,11 +25,11 @@ export const state = () => ({
         {% for car_info in cars %}
         {
           video_link: '{{car_info.video_link}}',
-          row: [
+          row: {
             {% for column in Column %}
-            '{{car_info.get_column(column, star_icon, footnote_tag)}}',
+            {{column.name.lower()}}: '{{car_info.get_column(column, star_icon, footnote_tag)}}',
             {% endfor %}
-          ]
+          }
         },
         {% endfor %}
       ],
