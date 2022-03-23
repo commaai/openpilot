@@ -118,7 +118,7 @@ class Controls:
     cp_bytes = self.CP.to_bytes()
     params.put("CarParams", cp_bytes)
     put_nonblocking("CarParamsCache", cp_bytes)
-
+    
     self.CC = car.CarControl.new_message()
     self.CS_prev = car.CarState.new_message()
     self.AM = AlertManager()
@@ -174,7 +174,7 @@ class Controls:
     elif self.joystick_mode:
       self.events.add(EventName.joystickDebug, static=True)
       self.startup_event = None
-
+    # TODO: JJS: This next line makes me wonder about timing issues.... LOOK INTO THIS
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)  # off by default
@@ -253,9 +253,7 @@ class Controls:
       self.events.add(EventName.laneChange)
 
     if not CS.canValid:
-      pass
-      #TODO: Regression
-      #self.events.add(EventName.canError)
+      self.events.add(EventName.canError)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
@@ -267,9 +265,7 @@ class Controls:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
 
       if safety_mismatch or self.mismatch_counter >= 200:
-        pass
-        #TODO: Regression
-        #self.events.add(EventName.controlsMismatch)
+        self.events.add(EventName.controlsMismatch)
 
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
@@ -280,8 +276,7 @@ class Controls:
     elif not self.sm.valid["pandaStates"]:
       self.events.add(EventName.usbError)
     elif not self.sm.all_alive_and_valid() or self.can_rcv_error:
-      #TODO: Regression
-      #self.events.add(EventName.commIssue)
+      self.events.add(EventName.commIssue)
       if not self.logged_comm_issue:
         invalid = [s for s, valid in self.sm.valid.items() if not valid]
         not_alive = [s for s, alive in self.sm.alive.items() if not alive]
@@ -293,9 +288,7 @@ class Controls:
     if not self.sm['liveParameters'].valid:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['lateralPlan'].mpcSolutionValid:
-      pass
-      #TODO: Regression
-      #self.events.add(EventName.plannerError)
+      self.events.add(EventName.plannerError)
     if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
@@ -309,9 +302,7 @@ class Controls:
       cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
       self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
       if self.cruise_mismatch_counter > int(3. / DT_CTRL):
-        pass
-        #TODO: Regression
-        #self.events.add(EventName.cruiseMismatch)
+        self.events.add(EventName.cruiseMismatch)
 
     # Check for FCW
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.25
@@ -353,9 +344,7 @@ class Controls:
       # Check if all manager processes are running
       not_running = {p.name for p in self.sm['managerState'].processes if not p.running}
       if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
-        pass
-        # TODO: Regression
-        #self.events.add(EventName.processNotRunning)
+        self.events.add(EventName.processNotRunning)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     speeds = self.sm['longitudinalPlan'].speeds
@@ -719,7 +708,8 @@ class Controls:
       ce_send.carEvents = car_events
       self.pm.send('carEvents', ce_send)
     self.events_prev = self.events.names.copy()
-
+    #TODO: JJS: CP is published every 50 seconds. Maybe live tuner should trigger an update?
+    
     # carParams - logged every 50 seconds (> 1 per segment)
     if (self.sm.frame % int(50. / DT_CTRL) == 0):
       cp_send = messaging.new_message('carParams')
