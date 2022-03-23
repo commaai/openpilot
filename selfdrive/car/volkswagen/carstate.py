@@ -49,7 +49,7 @@ class CarState(CarStateBase):
     ret.gasPressed = ret.gas > 0
     ret.brake = pt_cp.vl["ESP_05"]["ESP_Bremsdruck"] / 250.0  # FIXME: this is pressure in Bar, not sure what OP expects
     ret.brakePressed = bool(pt_cp.vl["ESP_05"]["ESP_Fahrer_bremst"])
-    ret.brakeHoldActive = bool(pt_cp.vl["ESP_05"]["ESP_Autohold_aktiv"])
+    ret.brakeHoldActive = bool(pt_cp.vl["ESP_05"]["ESP_Autohold_Standby"])
     ret.parkingBrake = bool(pt_cp.vl["Kombi_01"]["KBI_Handbremse"])  # FIXME: need to include an EPB check as well
     self.esp_hold_confirmation = pt_cp.vl["ESP_21"]["ESP_Haltebestaetigung"]
 
@@ -99,13 +99,15 @@ class CarState(CarStateBase):
     ret.stockAeb = bool(ext_cp.vl["ACC_10"]["ANB_Teilbremsung_Freigabe"]) or bool(ext_cp.vl["ACC_10"]["ANB_Zielbremsung_Freigabe"])
 
     # Update ACC radar status.
+    self.acc_04_stock_values = ext_cp.vl["ACC_04"]
+    self.acc_type = ext_cp.vl["ACC_06"]["ACC_Typ"]
     self.tsk_status = pt_cp.vl["TSK_06"]["TSK_Status"]
     if self.tsk_status == 2:
       # ACC okay and enabled, but not currently engaged
       ret.cruiseState.available = True
       ret.cruiseState.enabled = False
     elif self.tsk_status in (3, 4, 5):
-      # ACC okay and enabled, currently regulating speed (3) or driver accel override (4) or overrun coast-down (5)
+      # ACC okay and enabled, currently regulating speed (3) or driver accel override (4) or brake only (5)
       ret.cruiseState.available = True
       ret.cruiseState.enabled = True
     else:
@@ -179,7 +181,7 @@ class CarState(CarStateBase):
       ("ESP_Haltebestaetigung", "ESP_21"),       # ESP hold confirmation
       ("KBI_MFA_v_Einheit_02", "Einheiten_01"),  # MPH vs KMH speed display
       ("KBI_Handbremse", "Kombi_01"),            # Manual handbrake applied
-      ("ESP_Autohold_aktiv", "ESP_05"),          # Autohold hold car 
+      ("ESP_Autohold_Standby", "ESP_05"),          # Autohold hold car 
       ("TSK_Status", "TSK_06"),                  # ACC engagement status from drivetrain coordinator
       ("GRA_Hauptschalter", "GRA_ACC_01"),       # ACC button, on/off
       ("GRA_Abbrechen", "GRA_ACC_01"),           # ACC button, cancel
@@ -265,13 +267,20 @@ class MqbExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
   fwd_radar_signals = [
     ("ACC_Wunschgeschw", "ACC_02"),              # ACC set speed
+    ("ACC_Charisma_FahrPr", "ACC_04"),           # Driving profile selection
+    ("ACC_Charisma_Status", "ACC_04"),           # Driving profile status
+    ("ACC_Charisma_Umschaltung", "ACC_04"),      # Driving profile switching
+    ("ACC_Texte_braking_guard", "ACC_04"),       # Part of ACC driver alerts in instrument cluster
+    ("ACC_Typ", "ACC_06"),                       # Basic vs F2S vs SNG
     ("AWV2_Freigabe", "ACC_10"),                 # FCW brake jerk release
     ("ANB_Teilbremsung_Freigabe", "ACC_10"),     # AEB partial braking release
     ("ANB_Zielbremsung_Freigabe", "ACC_10"),     # AEB target braking release
   ]
   fwd_radar_checks = [
+    ("ACC_06", 50),                                 # From J428 ACC radar control module
     ("ACC_10", 50),                                 # From J428 ACC radar control module
     ("ACC_02", 17),                                 # From J428 ACC radar control module
+    ("ACC_04", 17),                                 # From J428 ACC radar control module
   ]
   bsm_radar_signals = [
     ("SWA_Infostufe_SWA_li", "SWA_01"),          # Blind spot object info, left
