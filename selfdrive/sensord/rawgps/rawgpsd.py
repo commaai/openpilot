@@ -101,6 +101,7 @@ if __name__ == "__main__":
 
       msg = messaging.new_message('gpsLocationExternal')
       gps = msg.gpsLocationExternal
+      gps.flags = 1
       gps.latitude = report["t_DblFinalPosLatLon[0]"] * 180/math.pi
       gps.longitude = report["t_DblFinalPosLatLon[1]"] * 180/math.pi
       gps.altitude = report["q_FltFinalPosAlt"]
