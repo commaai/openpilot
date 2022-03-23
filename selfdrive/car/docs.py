@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Dict, Iterator, List, Tuple
 
 from common.basedir import BASEDIR
-from selfdrive.car.docs_definitions import Column, RowItem, Star, Tier
+from selfdrive.car.docs_definitions import Column, CarInfo, Star, Tier
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.car.tests.routes import non_tested_cars
@@ -25,8 +25,8 @@ CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
-def get_tier_car_rows() -> List[Tuple[Tier, List[RowItem]]]:
-  tier_car_rows: Dict[Tier, list] = {tier: [] for tier in Tier}
+def get_tier_car_info() -> List[Tuple[Tier, List[CarInfo]]]:  # TODO: update typing for all this
+  tier_car_info: Dict[Tier, list] = {tier: [] for tier in Tier}
 
   for models in get_interface_attr("CAR_INFO").values():
     for model, car_info in models.items():
@@ -42,24 +42,22 @@ def get_tier_car_rows() -> List[Tuple[Tier, List[RowItem]]]:
         car_info = (car_info,)
 
       for _car_info in car_info:
-        stars = _car_info.get_stars(CP, non_tested_cars)
-        tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(stars.count(Star.FULL), Tier.BRONZE)
-        tier_car_rows[tier].append(_car_info.get_row(ALL_FOOTNOTES, stars))
+        _car_info.init(CP, non_tested_cars, ALL_FOOTNOTES)
+        tier_car_info[_car_info.tier].append(_car_info)
 
   # Return tier enum and car rows for each tier
   tiers = []
-  for tier, car_rows in tier_car_rows.items():
-    tiers.append((tier, sorted(car_rows, key=lambda x: x[0].text + x[1].text)))
+  for tier, car_rows in tier_car_info.items():
+    tiers.append((tier, sorted(car_rows, key=lambda x: x.make + x.model)))
   return tiers
 
 
-def generate_cars_md(tier_car_rows: List[Tuple[Tier, List[RowItem]]], template_fn: str) -> str:
+def generate_cars_md(tier_car_info: List[Tuple[Tier, List[CarInfo]]], template_fn: str) -> str:
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  return template.render(tiers=tier_car_rows, columns=[column.value for column in Column],
-                         footnotes=footnotes, Star=Star)
+  return template.render(tiers=tier_car_info, Star=Star, Column=Column, footnotes=footnotes)
 
 
 if __name__ == "__main__":
@@ -71,5 +69,5 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   with open(args.out, 'w') as f:
-    f.write(generate_cars_md(get_tier_car_rows(), args.template))
+    f.write(generate_cars_md(get_tier_car_info(), args.template))
   print(f"Generated and written to {args.out}")

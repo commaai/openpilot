@@ -14,7 +14,7 @@ class CarInfo:
   min_enable_speed: Optional[float] = None
   good_torque: bool = False
 
-  def get_stars(self, CP, non_tested_cars):
+  def init(self, CP, non_tested_cars, all_footnotes):
     # TODO: set all the min steer speeds in carParams and remove this
     min_steer_speed = CP.minSteerSpeed
     if self.min_steer_speed is not None:
@@ -26,7 +26,12 @@ class CarInfo:
     if self.min_enable_speed is not None:
       min_enable_speed = self.min_enable_speed
 
-    stars = {
+    self.make, self.model = self.name.split(' ', 1)
+    self.row = {
+      Column.MAKE: self.make,
+      Column.MODEL: self.model,
+      Column.PACKAGE: self.package,
+      # StarColumns
       Column.LONGITUDINAL: CP.openpilotLongitudinalControl and not CP.radarOffCan,
       Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
       Column.FSR_STEERING: min_steer_speed <= 0.,
@@ -34,44 +39,27 @@ class CarInfo:
       Column.MAINTAINED: CP.carFingerprint not in non_tested_cars,
     }
 
+    self.all_footnotes = all_footnotes
     for column in StarColumns:
-      stars[column] = Star.FULL if stars[column] else Star.EMPTY
+      self.row[column] = Star.FULL if self.row[column] else Star.EMPTY
 
       # Demote if footnote specifies a star
       footnote = get_footnote(self.footnotes, column)
       if footnote is not None and footnote.value.star is not None:
-        stars[column] = footnote.value.star
+        self.row[column] = footnote.value.star
 
-    return [stars[column] for column in StarColumns]
+    self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
 
-  def get_row(self, all_footnotes, stars):
-    # TODO: add YouTube videos
-    make, model = self.name.split(' ', 1)
-    row = [make, model, self.package, *stars]
+  def get_column(self, column, star_icon, footnote_tag):
+    item = self.row[column]
+    if column in StarColumns:
+      item = star_icon.format(item.value)
 
-    # Check for car footnotes and get star icons
-    for row_idx, column in enumerate(Column):
-      row_item = RowItem()
-      if column in StarColumns:
-        row_item.star = row[row_idx]
-      else:
-        row_item.text = row[row_idx]
+    footnote = get_footnote(self.footnotes, column)
+    if footnote is not None:
+      item += footnote_tag.format(self.all_footnotes[footnote])
 
-      footnote = get_footnote(self.footnotes, column)
-      if footnote is not None:
-        row_item.footnote = all_footnotes[footnote]
-        # TODO: we can also specify footnote in RowItem and get rid of the template footnote variables
-        # row[row_idx] += f"[<sup>{all_footnotes[footnote]}</sup>](#Footnotes)"
-      row[row_idx] = row_item
-
-    return row
-
-
-@dataclass
-class RowItem:
-  text: Optional[str] = None
-  footnote: Optional[int] = None  # TODO: if we change to '' then we can get rid of if statements in templates
-  star: Optional[str] = None
+    return item
 
 
 class Tier(Enum):
@@ -95,14 +83,6 @@ class Star(Enum):
   FULL = "full"
   HALF = "half"
   EMPTY = "empty"
-
-  @property
-  def md_icon(self):
-    return f'<a href="#"><img valign="top" src="assets/icon-star-{self.value}.svg" width="22" /></a>'
-
-  @property
-  def html_icon(self):
-    return f'<img src="/supported-cars/icon-star-{self.value}.svg" alt="">'
 
 
 StarColumns = list(Column)[3:]
