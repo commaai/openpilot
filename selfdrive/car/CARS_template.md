@@ -7,7 +7,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 
 Cars are organized into three tiers:
 
-{% for tier, cars in tiers %}
+{% for tier in tiers %}
 - {{tier.name.title()}} - {{tier.value}}
 {% endfor %}
 
@@ -37,7 +37,7 @@ How We Rate The Cars
 
 **All supported cars can move between the tiers as support changes.**
 
-{% for tier, cars in tiers %}
+{% for tier, cars in tiers.items() %}
 ## {{tier.name.title()}} Cars
 
 |{{Column | map(attribute='value') | join('|')}}|

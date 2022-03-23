@@ -25,8 +25,8 @@ CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
-def get_tier_car_info() -> List[Tuple[Tier, List[CarInfo]]]:
-  tier_car_info: Dict[Tier, list] = {tier: [] for tier in Tier}
+def get_tier_car_info() -> Dict[Tier, List[CarInfo]]:
+  tier_car_info: Dict[Tier, List[CarInfo]] = {tier: [] for tier in Tier}
 
   for models in get_interface_attr("CAR_INFO").values():
     for model, car_info in models.items():
@@ -45,14 +45,14 @@ def get_tier_car_info() -> List[Tuple[Tier, List[CarInfo]]]:
         _car_info.init(CP, non_tested_cars, ALL_FOOTNOTES)
         tier_car_info[_car_info.tier].append(_car_info)
 
-  # Return tier enum and car rows for each tier
-  tiers = []
+  # Sort cars by make and model + year
   for tier, cars in tier_car_info.items():
-    tiers.append((tier, sorted(cars, key=lambda x: x.make + x.model)))
-  return tiers
+    tier_car_info[tier] = sorted(cars, key=lambda x: x.make + x.model)
+
+  return tier_car_info
 
 
-def generate_cars_md(tier_car_info: List[Tuple[Tier, List[CarInfo]]], template_fn: str) -> str:
+def generate_cars_md(tier_car_info: Dict[Tier, List[CarInfo]], template_fn: str) -> str:
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
