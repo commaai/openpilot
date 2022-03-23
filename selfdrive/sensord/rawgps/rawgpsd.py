@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 import os
 import itertools
+import math
 from struct import unpack_from, calcsize
 import cereal.messaging as messaging
+from cereal import log
 
 from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs
 from selfdrive.sensord.rawgps.structs import dict_unpacker
 from selfdrive.sensord.rawgps.structs import gps_measurement_report, gps_measurement_report_sv
 from selfdrive.sensord.rawgps.structs import glonass_measurement_report, glonass_measurement_report_sv
 from selfdrive.sensord.rawgps.structs import LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT
+from selfdrive.sensord.rawgps.structs import position_report, LOG_GNSS_POSITION_REPORT
 
 miscStatusFields = {
   "multipathEstimateIsValid": 0,
@@ -64,12 +67,21 @@ if __name__ == "__main__":
     LOG_GNSS_GPS_MEASUREMENT_REPORT,
     LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
   ]
+  pub_types = ['qcomGnss']
+  if int(os.getenv("PUBLISH_EXTERNAL", "0")) == 1:
+    unpack_position, _ = dict_unpacker(position_report)
+    log_types.append(LOG_GNSS_POSITION_REPORT)
+    pub_types.append("gpsLocationExternal")
 
   os.system("mmcli -m 0 --location-enable-gps-raw --location-enable-gps-nmea")
   diag = ModemDiag()
-  setup_logs(diag, log_types)
+  try:
+    setup_logs(diag, log_types)
+  except Exception:
+    setup_logs(diag, log_types)
+  print("setup logs done")
 
-  pm = messaging.PubMaster(['qcomGnss'])
+  pm = messaging.PubMaster(pub_types)
 
   while 1:
     opcode, payload = diag.recv()
@@ -78,9 +90,34 @@ if __name__ == "__main__":
     (log_inner_length, log_type, log_time), log_payload = unpack_from('<HHQ', inner_log_packet), inner_log_packet[calcsize('<HHQ'):]
     if log_type not in log_types:
       continue
-    
-    msg = messaging.new_message('qcomGnss')
+    #print("got log: %x" % log_type)
+
+    if log_type == LOG_GNSS_POSITION_REPORT:
+      report = unpack_position(log_payload)
+      if report["u_PosSource"] != 2:
+        continue
+      vNED = [report["q_FltVelEnuMps[1]"], report["q_FltVelEnuMps[0]"], -report["q_FltVelEnuMps[2]"]]
+      vNEDsigma = [report["q_FltVelSigmaMps[1]"], report["q_FltVelSigmaMps[0]"], -report["q_FltVelSigmaMps[2]"]]
+
+      msg = messaging.new_message('gpsLocationExternal')
+      gps = msg.gpsLocationExternal
+      gps.latitude = report["t_DblFinalPosLatLon[0]"] * 180/math.pi
+      gps.longitude = report["t_DblFinalPosLatLon[1]"] * 180/math.pi
+      gps.altitude = report["q_FltFinalPosAlt"]
+      gps.speed = math.sqrt(sum([x**2 for x in vNED]))
+      gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
+      gps.timestamp = report['w_GpsWeekNumber']*604800*1000 + report['q_GpsFixTimeMs']
+      gps.source = log.GpsLocationData.SensorSource.qcom
+      gps.vNED = vNED
+      gps.verticalAccuracy = report["q_FltVdop"]
+      gps.bearingAccuracyDeg = report["q_FltHeadingUncRad"] * 180/math.pi
+      gps.speedAccuracy = math.sqrt(sum([x**2 for x in vNEDsigma]))
+
+      pm.send('gpsLocationExternal', msg)
+
     if log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
+      msg = messaging.new_message('qcomGnss')
+
       gnss = msg.qcomGnss
       gnss.logTs = log_time
       gnss.init('measurementReport')
@@ -134,4 +171,4 @@ if __name__ == "__main__":
           else:
             setattr(sv, k, v)
     
-    pm.send('qcomGnss', msg)
+      pm.send('qcomGnss', msg)

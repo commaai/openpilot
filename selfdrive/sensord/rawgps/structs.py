@@ -207,11 +207,13 @@ def parse_struct(ss):
     else:
       print("unknown type", typ)
       assert False
-    nams.append(nam)
     if '[' in nam:
-      more = int(nam.split("[")[1].split("]")[0])-1
-      st += st[-1]*more
-      nams += nams[-1:]*more
+      cnt = int(nam.split("[")[1].split("]")[0])
+      st += st[-1]*(cnt-1)
+      for i in range(cnt):
+        nams.append("%s[%d]" % (nam.split("[")[0], i))
+    else:
+      nams.append(nam)
   return st, nams
 
 def dict_unpacker(ss, camelcase = False):
