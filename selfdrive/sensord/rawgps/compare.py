@@ -13,18 +13,21 @@ if __name__ == "__main__":
     if not sm.updated['qcomGnss'] or meas is None:
       continue
     report = sm['qcomGnss'].measurementReport
-    if report.source != 0:
+    if report.source not in [0, 1]:
       continue
+    GLONASS = report.source == 1
     recv_time = report.milliseconds / 1000
 
     car = []
     print("qcom has ", list(sorted([x.svId for x in report.sv])))
-    print("ublox has", list(sorted([x.svId for x in meas])))
+    print("ublox has", list(sorted([x.svId for x in meas if x.gnssId == (6 if GLONASS else 0)])))
     for i in report.sv:
       # match to ublox
       tm = None
       for m in meas:
-        if i.svId == m.svId and m.gnssId == 0 and m.sigId == 0:
+        if i.svId == m.svId and m.gnssId == 0 and m.sigId == 0 and not GLONASS:
+          tm = m
+        if (i.svId-64) == m.svId and m.gnssId == 6 and m.sigId == 0 and GLONASS:
           tm = m
       if tm is None:
         continue
@@ -33,7 +36,11 @@ if __name__ == "__main__":
         sat_time = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency) / 1000
         ublox_psuedorange = tm.pseudorange
         qcom_psuedorange = (recv_time - sat_time)*constants.SPEED_OF_LIGHT
-        ublox_speed = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * tm.doppler
+        if GLONASS:
+          glonass_freq = tm.glonassFrequencyIndex - 7
+          ublox_speed = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq*constants.GLONASS_L1_DELTA)) * (tm.doppler)
+        else:
+          ublox_speed = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * tm.doppler
         qcom_speed = i.unfilteredSpeed
         car.append((i.svId, tm.pseudorange, ublox_speed, qcom_psuedorange, qcom_speed, tm.cno))
 
