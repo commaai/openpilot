@@ -3,16 +3,16 @@ import argparse
 import jinja2
 import os
 from enum import Enum
-from typing import Dict, Iterator, List, Tuple
+from typing import Dict, List, Tuple
 
 from common.basedir import BASEDIR
-from selfdrive.car.docs_definitions import Column, CarInfo, Star, Tier
+from selfdrive.car.docs_definitions import CarInfo, Column, Star, Tier
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.car.tests.routes import non_tested_cars
 
 
-def get_all_footnotes():
+def get_all_footnotes() -> Dict[Enum, int]:
   all_footnotes = []
   for _, footnotes in get_interface_attr("Footnote").items():
     if footnotes is not None:
@@ -25,7 +25,7 @@ CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
-def get_tier_car_info() -> List[Tuple[Tier, List[CarInfo]]]:  # TODO: update typing for all this
+def get_tier_car_info() -> List[Tuple[Tier, List[CarInfo]]]:
   tier_car_info: Dict[Tier, list] = {tier: [] for tier in Tier}
 
   for models in get_interface_attr("CAR_INFO").values():
@@ -47,8 +47,8 @@ def get_tier_car_info() -> List[Tuple[Tier, List[CarInfo]]]:  # TODO: update typ
 
   # Return tier enum and car rows for each tier
   tiers = []
-  for tier, car_rows in tier_car_info.items():
-    tiers.append((tier, sorted(car_rows, key=lambda x: x.make + x.model)))
+  for tier, cars in tier_car_info.items():
+    tiers.append((tier, sorted(cars, key=lambda x: x.make + x.model)))
   return tiers
 
 
@@ -57,7 +57,7 @@ def generate_cars_md(tier_car_info: List[Tuple[Tier, List[CarInfo]]], template_f
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  return template.render(tiers=tier_car_info, Star=Star, Column=Column, footnotes=footnotes)
+  return template.render(tiers=tier_car_info, footnotes=footnotes, Star=Star, Column=Column)
 
 
 if __name__ == "__main__":
