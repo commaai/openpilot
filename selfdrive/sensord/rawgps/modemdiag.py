@@ -1,4 +1,5 @@
 import os
+import time
 from serial import Serial
 from crcmod import mkCrcFun
 from struct import pack, unpack_from, calcsize
@@ -8,7 +9,8 @@ class ModemDiag:
     self.serial = self.open_serial()
 
   def open_serial(self):
-    op = lambda: Serial("/dev/ttyUSB0", baudrate=115200, rtscts=True, dsrdtr=True)
+    def op():
+      return Serial("/dev/ttyUSB0", baudrate=115200, rtscts=True, dsrdtr=True)
     try:
       serial = op()
     except Exception:
@@ -93,6 +95,7 @@ def setup_logs(diag, types_to_log):
           log_type,
           log_mask_bitsize
       ) + bytes(log_mask))
+      assert opcode == DIAG_LOG_CONFIG_F
       operation, status = unpack_from(header_spec, payload)
       assert operation == LOG_CONFIG_SET_MASK_OP
       assert status == LOG_CONFIG_SUCCESS_S
