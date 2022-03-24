@@ -25,31 +25,31 @@ private:
   int currentIndex = 0;
 
   // Bounding boxes for each training guide step
-  const QRect continueBtnStandard = {1610, 0, 310, 1080};
+  const QRect continueBtnStandard = {1620, 0, 300, 1080};
   QVector<QRect> boundingRectStandard {
-    QRect(650, 710, 720, 190),
+    QRect(112, 804, 619, 166),
+    continueBtnStandard,
+    continueBtnStandard,  // done
+    QRect(1488, 564, 229, 309),  // path
+    QRect(1515, 547, 158, 73),  //triangle
+    continueBtnStandard,
+    QRect(1611, 664, 174, 153),  // set
+    QRect(1220, 0, 700, 680),  // dm face
+    QRect(1353, 516, 406, 112),  // alert
+    QRect(112, 820, 996, 148),  // dm yes/no
+    QRect(1412, 199, 316, 333),  // set speed
+    continueBtnStandard,
+    QRect(1237, 66, 683, 1014), // steering wheel
+    continueBtnStandard,
+    QRect(1438, 112, 351, 854),  // traffic light
+    QRect(1242, 504, 405, 258),  // brake pedal
     continueBtnStandard,
     continueBtnStandard,
-    QRect(1442, 565, 230, 310),
-    QRect(1515, 562, 133, 60),
-    continueBtnStandard,
-    QRect(1580, 630, 215, 130),
-    QRect(1210, 0, 485, 590),
-    QRect(1460, 400, 375, 210),
-    QRect(166, 842, 1019, 148),
-    QRect(1460, 210, 300, 310),
-    continueBtnStandard,
-    QRect(1375, 80, 545, 1000),
-    continueBtnStandard,
-    QRect(1610, 130, 280, 800),
-    QRect(1385, 485, 400, 270),
-    continueBtnStandard,
-    continueBtnStandard,
-    QRect(1036, 769, 718, 189),
-    QRect(201, 769, 718, 189),
+    QRect(630, 804, 626, 164),
+    QRect(108, 804, 426, 164),
   };
 
-  const QRect continueBtnWide = {1850, 0, 310, 1080};
+  const QRect continueBtnWide = {1844, 0, 324, 1088};
   QVector<QRect> boundingRectWide {
     QRect(654, 721, 718, 189),
     continueBtnWide,
