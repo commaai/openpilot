@@ -49,7 +49,7 @@ class CarController():
     # ////
     # Setpoint speed PID
     kp_speed = 0.001
-    ki_speed = 0
+    ki_speed = 0.00001
     alpha_speed = 1.0
 
     self.speed_measured = (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.

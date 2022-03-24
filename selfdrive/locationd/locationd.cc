@@ -241,9 +241,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
       // 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
       //this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
 
-      auto meas = Vector3d(-(v[2] - 0.09440369/2),
-                           -(v[1] + 0.07664083/2),
-                           -(v[0] + 0.27722352/2));
+      auto meas = Vector3d(-v[2], -v[1], -v[0]);
       if (meas.norm() < ACCEL_SANITY_CHECK) {
         this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
       }
