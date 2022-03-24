@@ -10,7 +10,7 @@ timestamps = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 translationdict = {}
 
 #r = Route("9f583b1d93915c31|2022-03-23--14-47-10")
-r = Route("9f583b1d93915c31|2022-03-24--13-07-23")
+r = Route("9f583b1d93915c31|2022-03-24--16-15-18")
 lr = LogReader(r.log_paths()[0])
 '''
 for msg in lr:
@@ -27,6 +27,8 @@ for msg in lr:
     frame_id = jmsg['msg']['frameId']
     translationdict[logMonoTime] = frame_id
 
+
+print(translationdict)
 for msg in lr:
   if msg.which() == "logMessage" and "timestamp" in msg.logMessage:
     msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
@@ -34,20 +36,13 @@ for msg in lr:
     service = jmsg['ctx']['daemon']
     event = jmsg['msg']['timestamp']['event']
     time = jmsg['msg']['timestamp']['time']
-    frame_id = ""
-    try:
-        frame_id = jmsg['ctx']['frame_id']
-    except:
-        print(msg)
+    frame_id = jmsg['ctx']['frame_id']
     if jmsg['msg']['timestamp']['translate']:
-        try:
-            frame_id = translationdict[frame_id]
-        except:
-            #print("NO TRANSLATION")
-            pass
+        frame_id = translationdict[int(frame_id)]
     timestamps[frame_id][service][event].append(time)
 
-del timestamps[0]
+
+print(timestamps[1].keys())
 
 with open('timestamps.json', 'w') as outfile:
     json.dump(timestamps, outfile)

@@ -229,6 +229,7 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
 
 //setenv("FRAME_ID", std::to_string(event.getLogMonoTime()).c_str(),1);
     set_frame_id(event.getLogMonoTime());
+    LOGW(event.getLogMonoTime());
 
     LOGTT("sendcan received", true);
 
