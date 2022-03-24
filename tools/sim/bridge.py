@@ -39,6 +39,7 @@ STEER_RATIO = 15.
 pm = messaging.PubMaster(['roadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl', 'controlsState'])
 
+startTime = time.time()
 
 class VehicleState:
   def __init__(self):
@@ -94,7 +95,7 @@ class Camerad:
     yuv_cl = cl_array.empty_like(rgb_cl)
     self.krnl(self.queue, (np.int32(self.Wdiv4), np.int32(self.Hdiv4)), None, rgb_cl.data, yuv_cl.data).wait()
     yuv = np.resize(yuv_cl.get(), np.int32(rgb.size / 2))
-    eof = self.frame_id * 0.05
+    eof = int((time.time() - startTime) * 1000000000)
 
     # TODO: remove RGB send once the last RGB vipc subscriber is removed
     self.vipc_server.send(VisionStreamType.VISION_STREAM_RGB_ROAD, img.tobytes(), self.frame_id, eof, eof)
