@@ -127,7 +127,7 @@ def main() -> NoReturn:
       gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
       # TODO: this probably isn't right, use laika for this
       gps.timestamp = report['w_GpsWeekNumber']*604800*1000 + report['q_GpsFixTimeMs']
-      gps.source = log.GpsLocationData.SensorSource.qcom
+      gps.source = log.GpsLocationData.SensorSource.qcomdiag
       gps.vNED = vNED
       gps.verticalAccuracy = report["q_FltVdop"]
       gps.bearingAccuracyDeg = report["q_FltHeadingUncRad"] * 180/math.pi
@@ -190,7 +190,7 @@ def main() -> NoReturn:
             pass
           else:
             setattr(sv, k, v)
-    
+
       pm.send('qcomGnss', msg)
 
 if __name__ == "__main__":
