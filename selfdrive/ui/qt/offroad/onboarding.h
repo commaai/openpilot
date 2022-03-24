@@ -49,28 +49,28 @@ private:
     QRect(108, 804, 426, 164),
   };
 
-  const QRect continueBtnWide = {1844, 0, 324, 1088};
+  const QRect continueBtnWide = {1840, 0, 320, 1080};
   QVector<QRect> boundingRectWide {
-    QRect(654, 721, 718, 189),
+    QRect(112, 804, 619, 165),
     continueBtnWide,
     continueBtnWide,
-    QRect(1690, 570, 165, 300),
-    QRect(1690, 560, 133, 60),
+    QRect(1608, 558, 270, 312),  // path
+    QRect(1680, 546, 148, 73), // triangle
     continueBtnWide,
-    QRect(1820, 630, 180, 155),
-    QRect(1360, 0, 460, 620),
-    QRect(1570, 400, 375, 215),
-    QRect(167, 842, 1018, 148),
-    QRect(1610, 210, 295, 310),
+    QRect(1823, 631, 177, 154), // set
+    QRect(1350, 0, 810, 650),
+    QRect(1553, 516, 406, 112), // alert
+    QRect(112, 804, 1126, 164), // dm yesno
+    QRect(1598, 199, 316, 333),  // set speed
     continueBtnWide,
-    QRect(1555, 90, 610, 990),
+    QRect(1364, 90, 796, 990),  // steering wheel
     continueBtnWide,
-    QRect(1600, 140, 280, 790),
-    QRect(1385, 490, 750, 270),
+    QRect(1593, 114, 318, 853),  // traffic light
+    QRect(1379, 511, 391, 243), // brake pedal
     continueBtnWide,
     continueBtnWide,
-    QRect(1138, 755, 718, 189),
-    QRect(303, 755, 718, 189),
+    QRect(630, 804, 626, 164),
+    QRect(108, 804, 426, 164),
   };
 
   QString img_path;
