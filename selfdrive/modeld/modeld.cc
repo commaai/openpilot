@@ -92,7 +92,8 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       continue;
     }
     //TODO: SET CONTEXT
-    setenv("FRAME_ID", std::to_string(meta_main.frame_id).c_str(), 1);
+    //setenv("FRAME_ID", std::to_string(meta_main.frame_id).c_str(), 1);
+    set_frame_id(meta_main.frame_id);
     LOGT("vicp read main")
     if (use_extra_client) {
       // Keep receiving extra frames until frame id matches main camera

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 from cereal import car
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
@@ -36,7 +37,8 @@ def plannerd_thread(sm=None, pm=None):
     sm.update()
 
     if sm.updated['modelV2']:
-      os.environ["FRAME_ID"] = str(sm['modelV2'].frameId)
+      #os.environ["FRAME_ID"] = str(sm['modelV2'].frameId)
+      cloudlog.bind(frame_id=sm['modelV2'].frameId)
       cloudlog.timestamp("ModelV2 recived")
       lateral_planner.update(sm)
       cloudlog.timestamp("lateral planner updated")

@@ -734,7 +734,8 @@ class Controls:
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
-    os.environ["FRAME_ID"] = str(self.sm['lateralPlan'].frameId)
+    #os.environ["FRAME_ID"] = str(self.sm['lateralPlan'].frameId)
+    cloudlog.bind(frame_id=sm['lateralPlan'].frameId)
     cloudlog.timestamp("Data sampled")
     self.prof.checkpoint("Sample")
 

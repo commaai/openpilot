@@ -227,7 +227,8 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
-    setenv("FRAME_ID", std::to_string(event.getLogMonoTime()).c_str(),1);
+//setenv("FRAME_ID", std::to_string(event.getLogMonoTime()).c_str(),1);
+    set_frame_id(event.getLogMonoTime());
 
     LOGTT("sendcan received", true);
 

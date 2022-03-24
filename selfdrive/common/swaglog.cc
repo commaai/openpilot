@@ -47,10 +47,6 @@ class SwaglogState : public LogState {
     if (daemon_name) {
       ctx_j["daemon"] = daemon_name;
     }
-    char* frame_id = getenv("FRAME_ID");
-    if (frame_id) {
-      ctx_j["frame_id"] = frame_id;
-    }
     ctx_j["version"] = COMMA_VERSION;
     ctx_j["dirty"] = !getenv("CLEAN");
 
@@ -65,9 +61,14 @@ class SwaglogState : public LogState {
 
     initialized = true;
   }
+
 };
 
 static SwaglogState s = {};
+
+static void set_frame_id(uint32_t frame_id){
+  s.ctx_j["frame_id"] = std::to_string(frame_id).c_str();
+}
 
 static void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
   if (levelnum >= s.print_level) {

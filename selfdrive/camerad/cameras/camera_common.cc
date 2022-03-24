@@ -376,7 +376,8 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   uint32_t cnt = 0;
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
-    setenv("FRAME_ID", std::to_string(cs->buf.cur_frame_data.frame_id).c_str(),1);
+    //setenv("FRAME_ID", std::to_string(cs->buf.cur_frame_data.frame_id).c_str(),1);
+    set_frame_id(cs->buf.cur_frame_data.frame_id);
     LOGT((std::string(thread_name)+std::string(": Start")).c_str());
 
     callback(cameras, cs, cnt);
