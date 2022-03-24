@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 import os
+import sys
+import signal
 import itertools
 import math
+from typing import NoReturn
 from struct import unpack_from, calcsize
+
 import cereal.messaging as messaging
 from cereal import log
+from selfdrive.swaglog import cloudlog
 
 from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs
 from selfdrive.sensord.rawgps.structs import dict_unpacker
@@ -56,7 +61,7 @@ measurementStatusGlonassFields = {
   "glonassTimeMarkValid": 17
 }
 
-if __name__ == "__main__":
+def main() -> NoReturn:
   unpack_gps_meas, size_gps_meas = dict_unpacker(gps_measurement_report, True)
   unpack_gps_meas_sv, size_gps_meas_sv = dict_unpacker(gps_measurement_report_sv, True)
 
@@ -75,11 +80,24 @@ if __name__ == "__main__":
 
   os.system("mmcli -m 0 --location-enable-gps-raw --location-enable-gps-nmea")
   diag = ModemDiag()
-  try:
-    setup_logs(diag, log_types)
-  except Exception:
-    setup_logs(diag, log_types)
-  print("setup logs done")
+
+  def try_setup_logs(diag, log_types):
+    for i in range(5):
+      try:
+        setup_logs(diag, log_types)
+        break
+      except Exception:
+        pass
+
+  def disable_logs(sig, frame):
+    os.system("mmcli -m 0 --location-disable-gps-raw --location-disable-gps-nmea")
+    cloudlog.warning("rawgpsd: shutting down")
+    try_setup_logs(diag, [])
+    cloudlog.warning("rawgpsd: logs disabled")
+    sys.exit(0)
+  signal.signal(signal.SIGINT, disable_logs)
+  try_setup_logs(diag, log_types)
+  cloudlog.warning("rawgpsd: setup logs done")
 
   pm = messaging.PubMaster(pub_types)
 
@@ -107,6 +125,7 @@ if __name__ == "__main__":
       gps.altitude = report["q_FltFinalPosAlt"]
       gps.speed = math.sqrt(sum([x**2 for x in vNED]))
       gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
+      # TODO: this probably isn't right, use laika for this
       gps.timestamp = report['w_GpsWeekNumber']*604800*1000 + report['q_GpsFixTimeMs']
       gps.source = log.GpsLocationData.SensorSource.qcom
       gps.vNED = vNED
@@ -173,3 +192,6 @@ if __name__ == "__main__":
             setattr(sv, k, v)
     
       pm.send('qcomGnss', msg)
+
+if __name__ == "__main__":
+  main()

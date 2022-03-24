@@ -44,6 +44,10 @@ if __name__ == "__main__":
         qcom_speed = i.unfilteredSpeed
         car.append((i.svId, tm.pseudorange, ublox_speed, qcom_psuedorange, qcom_speed, tm.cno))
 
+    if len(car) == 0:
+      print("nothing to compare")
+      continue
+
     pr_err, speed_err = 0., 0.
     for c in car:
       ublox_psuedorange, ublox_speed, qcom_psuedorange, qcom_speed = c[1:5]
