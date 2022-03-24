@@ -82,7 +82,7 @@ def main() -> NoReturn:
   diag = ModemDiag()
 
   def try_setup_logs(diag, log_types):
-    for i in range(5):
+    for _ in range(5):
       try:
         setup_logs(diag, log_types)
         break
