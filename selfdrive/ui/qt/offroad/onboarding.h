@@ -54,8 +54,8 @@ private:
     QRect(112, 804, 619, 165),
     continueBtnWide,
     continueBtnWide,
-    QRect(1608, 558, 270, 312),  // path
-    QRect(1680, 546, 148, 73), // triangle
+    QRect(1641, 558, 210, 313),  // path
+    QRect(1662, 528, 184, 108), // triangle
     continueBtnWide,
     QRect(1823, 631, 177, 154), // set
     QRect(1350, 0, 810, 650),
