@@ -10,14 +10,15 @@ timestamps = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 translationdict = {}
 
 #r = Route("9f583b1d93915c31|2022-03-23--14-47-10")
-r = Route("9f583b1d93915c31|2022-03-23--19-31-25")
+r = Route("9f583b1d93915c31|2022-03-24--13-07-23")
 lr = LogReader(r.log_paths()[0])
-
+'''
 for msg in lr:
   if msg.which() == "logMessage":
       print(msg)
 
 exit()
+'''
 for msg in lr:
   if msg.which() == "logMessage" and "translation" in msg.logMessage:
     msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
@@ -33,9 +34,17 @@ for msg in lr:
     service = jmsg['ctx']['daemon']
     event = jmsg['msg']['timestamp']['event']
     time = jmsg['msg']['timestamp']['time']
-    frame_id = jmsg['msg']['timestamp']['frameId']
+    frame_id = ""
+    try:
+        frame_id = jmsg['ctx']['frame_id']
+    except:
+        print(msg)
     if jmsg['msg']['timestamp']['translate']:
-        frame_id = translationdict[frame_id]
+        try:
+            frame_id = translationdict[frame_id]
+        except:
+            #print("NO TRANSLATION")
+            pass
     timestamps[frame_id][service][event].append(time)
 
 del timestamps[0]
