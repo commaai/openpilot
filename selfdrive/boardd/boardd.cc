@@ -1,6 +1,7 @@
 #include "selfdrive/boardd/boardd.h"
 
 #include <sched.h>
+#include <string>
 #include <sys/cdefs.h>
 #include <sys/resource.h>
 #include <sys/types.h>
@@ -226,13 +227,15 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
-    LOGTT("sendcan received", event.getLogMonoTime(), true);
+    setenv("FRAME_ID", std::to_string(event.getLogMonoTime()).c_str(),1);
+
+    LOGTT("sendcan received", true);
 
     //Dont send if older than 1 second
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
         panda->can_send(event.getSendcan());
-	LOGTT((std::string("sendcan sent to panda: ")+std::string(panda->usb_serial)).c_str(), event.getLogMonoTime() , true);
+	LOGTT((std::string("sendcan sent to panda: ")+std::string(panda->usb_serial)).c_str() , true);
       }
     }
   }

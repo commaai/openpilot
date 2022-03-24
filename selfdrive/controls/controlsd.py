@@ -635,7 +635,7 @@ class Controls:
       self.pm.send('sendcan', sendcan_bytes)
       sendcanMonoTime = log.Event.from_bytes(sendcan_bytes).logMonoTime
       cloudlog.event("translation", logMonoTime=sendcanMonoTime, frameId=frame_id, debug=True)
-      cloudlog.timestamp("sendcan Published", frame_id)
+      cloudlog.timestamp("sendcan Published")
       CC.actuatorsOutput = self.last_actuators
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
@@ -692,7 +692,7 @@ class Controls:
       controlsState.lateralControlState.indiState = lac_log
 
     self.pm.send('controlsState', dat)
-    cloudlog.timestamp("controlState Published", frame_id)
+    cloudlog.timestamp("controlState Published")
 
     # carState
     car_events = self.events.to_msg()
@@ -701,7 +701,7 @@ class Controls:
     cs_send.carState = CS
     cs_send.carState.events = car_events
     self.pm.send('carState', cs_send)
-    cloudlog.timestamp("carState Published", frame_id)
+    cloudlog.timestamp("carState Published")
 
     # carEvents - logged every second or on change
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
@@ -716,14 +716,14 @@ class Controls:
       cp_send = messaging.new_message('carParams')
       cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
-      cloudlog.timestamp("carParams Published", frame_id)
+      cloudlog.timestamp("carParams Published")
 
     # carControl
     cc_send = messaging.new_message('carControl')
     cc_send.valid = CS.canValid
     cc_send.carControl = CC
     self.pm.send('carControl', cc_send)
-    cloudlog.timestamp("carControl Published", frame_id)
+    cloudlog.timestamp("carControl Published")
 
     # copy CarControl to pass to CarInterface on the next iteration
     self.CC = CC
@@ -734,11 +734,12 @@ class Controls:
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
-    cloudlog.timestamp("Data sampled", self.sm['lateralPlan'].frameId)
+    os.environ["FRAME_ID"] = str(self.sm['lateralPlan'].frameId)
+    cloudlog.timestamp("Data sampled")
     self.prof.checkpoint("Sample")
 
     self.update_events(CS)
-    cloudlog.timestamp("Events updated", self.sm['lateralPlan'].frameId)
+    cloudlog.timestamp("Events updated")
 
     if not self.read_only and self.initialized:
       # Update control state

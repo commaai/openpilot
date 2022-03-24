@@ -35,6 +35,7 @@ a.out
 config.json
 clcache
 compile_commands.json
+tools/latency_logging/timestamps.json
 
 persist
 board/obj/

@@ -19,17 +19,17 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
                                            __func__, \
                                            fmt, ## __VA_ARGS__)
 
-#define cloudlog_t_translate(lvl, event_name, frame_id, translate,...)                                 \
+#define cloudlog_t_translate(lvl, event_name, translate,...)                                 \
 {                                                                 \
   uint64_t ns = nanos_since_boot();                               \
-  std::string json_msg = std::string("{'timestamp': {'event': '") + std::string(event_name) + std::string("' ,'frameId':")+ std::to_string(frame_id) + std::string(",'time':") + std::to_string(ns)+ std::string(",'translate':") + std::to_string(translate)+std::string("}}");   \
+  std::string json_msg = std::string("{'timestamp': {'event': '") + std::string(event_name) + std::string(",'time':") + std::to_string(ns)+ std::string(",'translate':") + std::to_string(translate)+std::string("}}");   \
   cloudlog(lvl, json_msg.c_str(), ## __VA_ARGS__);                             \
 }
 
-#define cloudlog_t(lvl, event_name, frame_id,...)                                 \
+#define cloudlog_t(lvl, event_name,...)                                 \
 {                                                                 \
   uint64_t ns = nanos_since_boot();                               \
-  std::string json_msg = std::string("{'timestamp': {'event': '") + std::string(event_name) + std::string("' ,'frameId':")+ std::to_string(frame_id) + std::string(",'time':") + std::to_string(ns)+ std::string(",'translate':") + std::string("false")+std::string("}}");   \
+  std::string json_msg = std::string("{'timestamp': {'event': '") + std::string(event_name)+ std::string(",'time':") + std::to_string(ns)+ std::string(",'translate':") + std::string("false")+std::string("}}");   \
   cloudlog(lvl, json_msg.c_str(), ## __VA_ARGS__);                             \
 }
 
@@ -62,8 +62,8 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   }                                                 \
 }
 
-#define LOGTT(event_name , frame_id, translate, ...) cloudlog_t_translate(CLOUDLOG_TIMESTAMP, event_name, frame_id, translate,## __VA_ARGS__)
-#define LOGT(event_name , frame_id, ...) cloudlog_t(CLOUDLOG_TIMESTAMP, event_name, frame_id,## __VA_ARGS__)
+#define LOGTT(event_name , translate, ...) cloudlog_t_translate(CLOUDLOG_TIMESTAMP, event_name, translate,## __VA_ARGS__)
+#define LOGT(event_name , ...) cloudlog_t(CLOUDLOG_TIMESTAMP, event_name, ## __VA_ARGS__)
 #define LOGD(fmt, ...) cloudlog(CLOUDLOG_DEBUG, fmt, ## __VA_ARGS__)
 #define LOG(fmt, ...) cloudlog(CLOUDLOG_INFO, fmt, ## __VA_ARGS__)
 #define LOGW(fmt, ...) cloudlog(CLOUDLOG_WARNING, fmt, ## __VA_ARGS__)

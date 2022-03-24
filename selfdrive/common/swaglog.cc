@@ -47,6 +47,10 @@ class SwaglogState : public LogState {
     if (daemon_name) {
       ctx_j["daemon"] = daemon_name;
     }
+    char* frame_id = getenv("FRAME_ID");
+    if (frame_id) {
+      ctx_j["frame_id"] = frame_id;
+    }
     ctx_j["version"] = COMMA_VERSION;
     ctx_j["dirty"] = !getenv("CLEAN");
 

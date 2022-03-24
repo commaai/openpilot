@@ -1032,14 +1032,13 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   if ((c == &s->road_cam && env_send_road) || (c == &s->wide_road_cam && env_send_wide_road)) {
     framed.setImage(get_frame_image(b));
   }
-  uint32_t frame_id = c->buf.cur_frame_data.frame_id;
-  LOGT((std::string(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera")+std::string(": Image set")).c_str(), frame_id);
+  LOGT((std::string(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera")+std::string(": Image set")).c_str());
   if (c == &s->road_cam) {
     framed.setTransform(b->yuv_transform.v);
-    LOGT((std::string(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera")+std::string(": Transformed")).c_str(), frame_id);
+    LOGT((std::string(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera")+std::string(": Transformed")).c_str());
   }
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
-  LOGT((std::string(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera")+std::string(": Published")).c_str(), frame_id);
+  LOGT((std::string(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera")+std::string(": Published")).c_str());
 
   const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
   const int skip = 2;

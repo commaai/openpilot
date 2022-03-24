@@ -13,6 +13,11 @@ r = Route("9f583b1d93915c31|2022-03-23--14-47-10")
 lr = LogReader(r.log_paths()[0])
 
 for msg in lr:
+  if msg.which() == "logMessage":
+      print(msg)
+
+exit()
+for msg in lr:
   if msg.which() == "logMessage" and "translation" in msg.logMessage:
     msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
     jmsg = json.loads(msg)

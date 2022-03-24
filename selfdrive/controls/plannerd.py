@@ -36,16 +36,16 @@ def plannerd_thread(sm=None, pm=None):
     sm.update()
 
     if sm.updated['modelV2']:
-      frame_id = sm['modelV2'].frameId
-      cloudlog.timestamp("ModelV2 recived", frame_id)
+      os.environ["FRAME_ID"] = str(sm['modelV2'].frameId)
+      cloudlog.timestamp("ModelV2 recived")
       lateral_planner.update(sm)
-      cloudlog.timestamp("lateral planner updated", frame_id)
+      cloudlog.timestamp("lateral planner updated")
       lateral_planner.publish(sm, pm)
-      cloudlog.timestamp("lateral planner published", frame_id)
+      cloudlog.timestamp("lateral planner published")
       longitudinal_planner.update(sm)
-      cloudlog.timestamp("longitudinal planner updated",frame_id)
+      cloudlog.timestamp("longitudinal planner updated")
       longitudinal_planner.publish(sm, pm)
-      cloudlog.timestamp("longitudinal planner published", frame_id)
+      cloudlog.timestamp("longitudinal planner published")
 
 
 def main(sm=None, pm=None):
