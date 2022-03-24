@@ -1,6 +1,8 @@
 Version 0.8.14 (2022-0X-XX)
 ========================
  * bigmodel!
+ * Toyota Alphard Hybrid 2021 support
+ * Toyota Avalon Hybrid 2022 support
 
 Version 0.8.13 (2022-02-18)
 ========================

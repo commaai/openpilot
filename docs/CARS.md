@@ -1,12 +1,12 @@
 # Supported Cars
 
-A supported vehicle is one that just works when you install openpilot on a compatible device. Every car performs differently with openpilot, but we aim for all supported cars to provide a solid highway experience in the US market.
+A supported vehicle is one that just works when you install a comma device. Every car performs differently with openpilot, but all supported cars should provide a better experience than any stock system.
 
 Cars are organized into three tiers:
 
-- Gold - The best openpilot experience. Great highway driving with continual updates.
-- Silver - A solid highway experience, but is limited by stock longitudinal.
-- Bronze - A solid highway experience, but will have limited performance in stop-and-go. May have ACC and ALC speed limitations.
+- Gold - The best openpilot experience. Great highway driving and beyond.
+- Silver - A solid highway driving experience, but is limited by stock longitudinal. May be upgraded in the future.
+- Bronze - A good highway experience, but may have limited performance in traffic and on sharp turns.
 
 How We Rate The Cars
 ---
@@ -52,7 +52,9 @@ How We Rate The Cars
 |Lexus|RX Hybrid 2020-21|All|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
 |Lexus|UX Hybrid 2019-21|All|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
 |Toyota|Alphard 2019-20|All|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
+|Toyota|Alphard Hybrid 2021|All|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
 |Toyota|Avalon 2022|All|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
+|Toyota|Avalon Hybrid 2022|All|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
 |Toyota|Camry 2021-22|All|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>[<sup>4</sup>](#Footnotes)|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
 |Toyota|Camry Hybrid 2021-22|All|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
 |Toyota|Corolla 2020-22|All|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="#"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
@@ -207,9 +209,9 @@ How We Rate The Cars
 
 
 ## Footnotes
-<sup>1</sup>Requires an [OBD-II](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB). <br />
+<sup>1</sup>Requires an <a href="https://comma.ai/shop/products/comma-car-harness">OBD-II car harness</a> and <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. <b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b> <br />
 <sup>2</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
-<sup>3</sup>When disconnecting the Driver Support Unit (DSU), openpilot Adaptive Cruise Control (ACC) will replace stock Adaptive Cruise Control (ACC). NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB). <br />
+<sup>3</sup>When disconnecting the Driver Support Unit (DSU), openpilot Adaptive Cruise Control (ACC) will replace stock Adaptive Cruise Control (ACC). <b><i> NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b> <br />
 <sup>4</sup>28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>5</sup>An inaccurate steering wheel angle sensor makes precise control difficult. <br />
 <sup>6</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />

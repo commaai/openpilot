@@ -40,8 +40,8 @@ public:
 
   void sensors_start();
   void sensors_poke(int request_id);
-  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code);
-  void sensors_init();
+  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
+  int sensors_init();
 
   void camera_open();
   void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type);
@@ -62,6 +62,7 @@ public:
   int frame_id_last;
   int idx_offset;
   bool skipped;
+  int camera_id;
 
   CameraBuf buf;
 };
@@ -72,7 +73,6 @@ typedef struct MultiCameraState {
   unique_fd isp_fd;
   int device_iommu;
   int cdm_iommu;
-
 
   CameraState road_cam;
   CameraState wide_road_cam;
