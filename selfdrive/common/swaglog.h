@@ -14,6 +14,7 @@
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
+void set_frame_id(uint32_t frame_id);
 
 #define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
                                            __func__, \
@@ -22,14 +23,14 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
 #define cloudlog_t_translate(lvl, event_name, translate,...)                                 \
 {                                                                 \
   uint64_t ns = nanos_since_boot();                               \
-  std::string json_msg = std::string("{'timestamp': {'event': '") + std::string(event_name) + std::string(",'time':") + std::to_string(ns)+ std::string(",'translate':") + std::to_string(translate)+std::string("}}");   \
+  std::string json_msg = std::string("{'timestamp': {'event': '") + std::string(event_name) + std::string("','time':") + std::to_string(ns)+ std::string(",'translate':") + std::to_string(translate)+std::string("}}");   \
   cloudlog(lvl, json_msg.c_str(), ## __VA_ARGS__);                             \
 }
 
 #define cloudlog_t(lvl, event_name,...)                                 \
 {                                                                 \
   uint64_t ns = nanos_since_boot();                               \
-  std::string json_msg = std::string("{'timestamp': {'event': '") + std::string(event_name)+ std::string(",'time':") + std::to_string(ns)+ std::string(",'translate':") + std::string("false")+std::string("}}");   \
+  std::string json_msg = std::string("{'timestamp': {'event': '") + std::string(event_name)+ std::string("','time':") + std::to_string(ns)+ std::string(",'translate':") + std::string("false")+std::string("}}");   \
   cloudlog(lvl, json_msg.c_str(), ## __VA_ARGS__);                             \
 }
 
