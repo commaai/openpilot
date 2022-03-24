@@ -31,7 +31,7 @@ private:
     continueBtnStandard,
     continueBtnStandard,
     QRect(1476, 565, 253, 308),
-    QRect(1510, 536, 167, 92),
+    QRect(1501, 529, 184, 108),
     continueBtnStandard,
     QRect(1613, 665, 178, 153),
     QRect(1220, 0, 420, 730),
