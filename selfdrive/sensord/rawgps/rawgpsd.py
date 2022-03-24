@@ -105,7 +105,11 @@ def main() -> NoReturn:
     opcode, payload = diag.recv()
     assert opcode == DIAG_LOG_F
     (pending_msgs, log_outer_length), inner_log_packet = unpack_from('<BH', payload), payload[calcsize('<BH'):]
+    if pending_msgs > 0:
+      cloudlog.debug("have %d pending messages" % pending_msgs)
+    assert log_outer_length == len(inner_log_packet)
     (log_inner_length, log_type, log_time), log_payload = unpack_from('<HHQ', inner_log_packet), inner_log_packet[calcsize('<HHQ'):]
+    assert log_inner_length == len(inner_log_packet)
     if log_type not in log_types:
       continue
     #print("got log: %x" % log_type)
