@@ -29,20 +29,20 @@ private:
   QVector<QRect> boundingRectStandard {
     QRect(112, 804, 619, 166),
     continueBtnStandard,
-    continueBtnStandard,  // done
-    QRect(1476, 565, 253, 308),  // path
-    QRect(1510, 536, 167, 92),  //triangle
     continueBtnStandard,
-    QRect(1613, 665, 178, 153),  // set
-    QRect(1220, 0, 420, 730),  // dm face
-    QRect(1335, 499, 440, 147),  // alert
-    QRect(112, 820, 996, 148),  // dm yes/no
-    QRect(1412, 199, 316, 333),  // set speed
+    QRect(1476, 565, 253, 308),
+    QRect(1510, 536, 167, 92),
     continueBtnStandard,
-    QRect(1237, 63, 683, 1017), // steering wheel
+    QRect(1613, 665, 178, 153),
+    QRect(1220, 0, 420, 730),
+    QRect(1335, 499, 440, 147),
+    QRect(112, 820, 996, 148),
+    QRect(1412, 199, 316, 333),
     continueBtnStandard,
-    QRect(1455, 110, 313, 860),  // traffic light
-    QRect(1253, 519, 383, 228),  // brake pedal
+    QRect(1237, 63, 683, 1017),
+    continueBtnStandard,
+    QRect(1455, 110, 313, 860),
+    QRect(1253, 519, 383, 228),
     continueBtnStandard,
     continueBtnStandard,
     QRect(630, 804, 626, 164),
@@ -54,19 +54,19 @@ private:
     QRect(112, 804, 619, 165),
     continueBtnWide,
     continueBtnWide,
-    QRect(1641, 558, 210, 313),  // path
-    QRect(1662, 528, 184, 108), // triangle
+    QRect(1641, 558, 210, 313),
+    QRect(1662, 528, 184, 108),
     continueBtnWide,
-    QRect(1814, 621, 211, 170), // set
-    QRect(1350, 0, 497, 755),  // driver
-    QRect(1553, 516, 406, 112), // alert
-    QRect(112, 804, 1126, 164), // dm yesno
-    QRect(1598, 199, 316, 333),  // set speed
+    QRect(1814, 621, 211, 170),
+    QRect(1350, 0, 497, 755),
+    QRect(1553, 516, 406, 112),
+    QRect(112, 804, 1126, 164),
+    QRect(1598, 199, 316, 333),
     continueBtnWide,
-    QRect(1364, 90, 796, 990),  // steering wheel
+    QRect(1364, 90, 796, 990),
     continueBtnWide,
-    QRect(1593, 114, 318, 853),  // traffic light
-    QRect(1379, 511, 391, 243), // brake pedal
+    QRect(1593, 114, 318, 853),
+    QRect(1379, 511, 391, 243),
     continueBtnWide,
     continueBtnWide,
     QRect(630, 804, 626, 164),
