@@ -30,19 +30,19 @@ private:
     QRect(112, 804, 619, 166),
     continueBtnStandard,
     continueBtnStandard,  // done
-    QRect(1488, 564, 229, 309),  // path
-    QRect(1515, 547, 158, 73),  //triangle
+    QRect(1476, 565, 253, 308),  // path
+    QRect(1510, 536, 167, 92),  //triangle
     continueBtnStandard,
-    QRect(1611, 664, 174, 153),  // set
-    QRect(1220, 0, 700, 680),  // dm face
-    QRect(1353, 516, 406, 112),  // alert
+    QRect(1613, 665, 178, 153),  // set
+    QRect(1220, 0, 420, 730),  // dm face
+    QRect(1335, 499, 440, 147),  // alert
     QRect(112, 820, 996, 148),  // dm yes/no
     QRect(1412, 199, 316, 333),  // set speed
     continueBtnStandard,
-    QRect(1237, 66, 683, 1014), // steering wheel
+    QRect(1237, 63, 683, 1017), // steering wheel
     continueBtnStandard,
-    QRect(1438, 112, 351, 854),  // traffic light
-    QRect(1242, 504, 405, 258),  // brake pedal
+    QRect(1455, 110, 313, 860),  // traffic light
+    QRect(1253, 519, 383, 228),  // brake pedal
     continueBtnStandard,
     continueBtnStandard,
     QRect(630, 804, 626, 164),
@@ -57,8 +57,8 @@ private:
     QRect(1641, 558, 210, 313),  // path
     QRect(1662, 528, 184, 108), // triangle
     continueBtnWide,
-    QRect(1823, 631, 177, 154), // set
-    QRect(1350, 0, 810, 650),
+    QRect(1814, 621, 211, 170), // set
+    QRect(1350, 0, 497, 755),  // driver
     QRect(1553, 516, 406, 112), // alert
     QRect(112, 804, 1126, 164), // dm yesno
     QRect(1598, 199, 316, 333),  // set speed
