@@ -148,7 +148,6 @@ CameraBuf::~CameraBuf() {
 }
 
 bool CameraBuf::acquire() {
-  LOGT("Start acquire camera buffer");
   if (!safe_queue.try_pop(cur_buf_idx, 1)) return false;
 
   if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
@@ -159,6 +158,7 @@ bool CameraBuf::acquire() {
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
   set_frame_id(cur_frame_data.frame_id);
+  LOGT("Start acquire camera buffer");
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;

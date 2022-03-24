@@ -67,7 +67,7 @@ class SwaglogState : public LogState {
 static SwaglogState s = {};
 
 
-void set_frame_id(uint32_t frame_id){
+void set_frame_id(uint64_t frame_id){
   s.ctx_j["frame_id"] = std::to_string(frame_id).c_str();
 }
 
