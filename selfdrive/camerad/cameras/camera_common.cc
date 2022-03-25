@@ -387,9 +387,7 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
 
     if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
       // this takes 10ms???
-      LOGT((std::string(thread_name)+std::string(": Send thumbnail")).c_str(), frame_id);
       publish_thumbnail(cameras->pm, &(cs->buf));
-      LOGT((std::string(thread_name)+std::string(": Send thumbnail done")).c_str(), frame_id);
     }
     cs->buf.release();
     LOGT((std::string(thread_name)+std::string(": Released")).c_str(), frame_id);
@@ -450,8 +448,6 @@ void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   if (env_send_driver) {
     framed.setImage(get_frame_image(&c->buf));
   }
-  uint32_t frame_id = c->buf.cur_frame_data.frame_id;
-  LOGT("DriverCamera: Image set", frame_id);
   s->pm->send("driverCameraState", msg);
 }
 

@@ -130,7 +130,7 @@ def manager_thread() -> None:
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
 
   started_prev = False
-  logEvents = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState', 'modelV2',  'lateralPlan', 'longitudinalPlan', 'carControl', 'sendcan']
+  logEvents = ['roadCameraState', 'wideRoadCameraState','modelV2',  'lateralPlan', 'longitudinalPlan', 'carControl', 'sendcan']
   sm = messaging.SubMaster(['deviceState']+logEvents)
   pm = messaging.PubMaster(['managerState'])
 
