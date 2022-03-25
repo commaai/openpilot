@@ -3,6 +3,7 @@ from selfdrive.car.body import bodycan
 from opendbc.can.packer import CANPacker
 MAX_TORQUE = 500
 MAX_TORQUE_RATE = 50
+MAX_ANGLE_ERROR = 7
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
