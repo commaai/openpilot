@@ -173,13 +173,12 @@ def manager_thread() -> None:
       break
 
 def logTimestamps(sm, events):
-    for event in events:
-        if sm.updated(event):
-            frame_id = sm[event].frameId
-            if event == sendcan:
-                frame_id = sm.logMonoTime[event]
-            cloudlog.timestamp(event+": Published", frame_id, event == "sendcan")
-
+  for event in events:
+    if sm.updated[event]:
+      if event != "sendcan":
+        cloudlog.timestamp(event+": Published", sm[event].frameId)
+      else:
+        cloudlog.timestamp(event+": Published", sm.logMonoTime[event], True)
 
 def main() -> None:
   prepare_only = os.getenv("PREPAREONLY") is not None
