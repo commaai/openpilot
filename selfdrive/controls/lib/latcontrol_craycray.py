@@ -4,12 +4,12 @@ from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from cereal import log
 
 
-class LatControlPID(LatControl):
+class LatControlCrayCray(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    self.pid = PIController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
-                            (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                            k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0)
+    self.pid = PIController((CP.lateralTuning.craycray.kpBP, CP.lateralTuning.craycray.kpV),
+                            (CP.lateralTuning.craycray.kiBP, CP.lateralTuning.craycray.kiV),
+                            k_f=CP.lateralTuning.craycray.kf, pos_limit=1.0, neg_limit=-1.0)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
 
   def reset(self):
