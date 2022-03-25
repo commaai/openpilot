@@ -13,7 +13,8 @@ translationdict = {}
 
 #r = Route("9f583b1d93915c31|2022-03-23--14-47-10") clean commit
 #r = Route("9f583b1d93915c31|2022-03-24--19-31-10") current (no pub tlogs) update()
-r = Route("9f583b1d93915c31|2022-03-24--20-10-09") # current update(0)
+#r = Route("9f583b1d93915c31|2022-03-24--20-10-09") # current update(0)
+r = Route("9f583b1d93915c31|2022-03-25--11-59-11") # rec and pub
 lr = LogReader(r.log_paths()[0])
 
 for msg in lr:

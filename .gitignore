@@ -54,6 +54,7 @@ selfdrive/camerad/test/ae_gray_test
 selfdrive/modeld/_modeld
 selfdrive/modeld/_dmonitoringmodeld
 /src/
+tools/latency_logging/timestamps.json
 
 one
 openpilot
