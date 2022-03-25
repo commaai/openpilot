@@ -11,7 +11,6 @@
 #include <chrono>
 
 #include <zmq.h>
-#include "json11.hpp"
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/version.h"
