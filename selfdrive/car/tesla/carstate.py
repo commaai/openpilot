@@ -44,7 +44,7 @@ class CarState(CarStateBase):
     ret.steeringTorque = -cp.vl["EPAS_sysStatus"]["EPAS_torsionBarTorque"]
     ret.steeringPressed = (self.hands_on_level > 0)
     ret.steerFaultPermanent = steer_status == "EAC_FAULT"
-    ret.steerFaultTemporary = self.steer_warning != "EAC_ERROR_IDLE"
+    ret.steerFaultTemporary = (self.steer_warning not in ("EAC_ERROR_IDLE", "EAC_ERROR_HANDS_ON"))
 
     # Cruise state
     cruise_state = self.can_define.dv["DI_state"]["DI_cruiseState"].get(int(cp.vl["DI_state"]["DI_cruiseState"]), None)

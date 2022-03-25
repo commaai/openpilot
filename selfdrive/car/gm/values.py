@@ -84,8 +84,9 @@ class CAR:
 
 class Footnote(Enum):
   OBD_II = CarFootnote(
-    "Requires an [OBD-II](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness]" +
-    "(https://github.com/commaai/openpilot/wiki/GM#hardware). NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).",
+    'Requires an <a href="https://comma.ai/shop/products/comma-car-harness">OBD-II car harness</a> and ' +
+    '<a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. ' +
+    '<b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b>',
     Column.MODEL),
   PEDAL = CarFootnote(
     "Requires a [Pedal Interceptor](https://comma.ai/shop/products/comma-car-harness) car harness and [community built ASCM harness]" +
@@ -97,7 +98,7 @@ class Footnote(Enum):
     Column.MODEL),
   STOCK_ACC = CarFootnote(
     "Supported configuration uses stock ACC",
-    Column.MODEL)
+    Column.MODEL),
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {

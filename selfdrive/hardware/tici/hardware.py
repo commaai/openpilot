@@ -24,19 +24,19 @@ MM_MODEM_SIMPLE = MM + ".Modem.Simple"
 MM_SIM = MM + ".Sim"
 
 class MM_MODEM_STATE(IntEnum):
-       FAILED        = -1
-       UNKNOWN       = 0
-       INITIALIZING  = 1
-       LOCKED        = 2
-       DISABLED      = 3
-       DISABLING     = 4
-       ENABLING      = 5
-       ENABLED       = 6
-       SEARCHING     = 7
-       REGISTERED    = 8
-       DISCONNECTING = 9
-       CONNECTING    = 10
-       CONNECTED     = 11
+  FAILED        = -1
+  UNKNOWN       = 0
+  INITIALIZING  = 1
+  LOCKED        = 2
+  DISABLED      = 3
+  DISABLING     = 4
+  ENABLING      = 5
+  ENABLED       = 6
+  SEARCHING     = 7
+  REGISTERED    = 8
+  DISCONNECTING = 9
+  CONNECTING    = 10
+  CONNECTED     = 11
 
 class NMMetered(IntEnum):
   NM_METERED_UNKNOWN = 0
@@ -194,14 +194,14 @@ class Tici(HardwareBase):
       return None
 
   def parse_strength(self, percentage):
-      if percentage < 25:
-        return NetworkStrength.poor
-      elif percentage < 50:
-        return NetworkStrength.moderate
-      elif percentage < 75:
-        return NetworkStrength.good
-      else:
-        return NetworkStrength.great
+    if percentage < 25:
+      return NetworkStrength.poor
+    elif percentage < 50:
+      return NetworkStrength.moderate
+    elif percentage < 75:
+      return NetworkStrength.good
+    else:
+      return NetworkStrength.great
 
   def get_network_strength(self, network_type):
     network_strength = NetworkStrength.unknown
@@ -415,6 +415,10 @@ class Tici(HardwareBase):
 
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
+
+    # setup governors
+    os.system("sudo su -c 'echo performance > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'")
+    os.system("sudo su -c 'echo performance > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'")
 
   def get_networks(self):
     r = {}
