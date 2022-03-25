@@ -28,7 +28,7 @@ for msg in lr:
     translationdict[logMonoTime] = frame_id
 
 
-print(translationdict)
+i = 0
 for msg in lr:
   if msg.which() == "logMessage" and "timestamp" in msg.logMessage:
     msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
@@ -38,11 +38,14 @@ for msg in lr:
     time = jmsg['msg']['timestamp']['time']
     frame_id = jmsg['ctx']['frame_id']
     if jmsg['msg']['timestamp']['translate']:
-        frame_id = translationdict[int(frame_id)]
-    timestamps[frame_id][service][event].append(time)
+        try:
+            frame_id = translationdict[int(frame_id)]
+        except:
+            i+=1
+            continue
+    timestamps[int(frame_id)][service][event].append(time)
 
-
-print(timestamps[1].keys())
+print("Num failed translations:", i)
 
 with open('timestamps.json', 'w') as outfile:
     json.dump(timestamps, outfile)
