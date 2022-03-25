@@ -56,7 +56,7 @@ if TICI:
   PROCS.update({
     "./loggerd": 70.0,
     "selfdrive.controls.controlsd": 31.0,
-    "./camerad": 36.8,
+    "./camerad": 41.0,
     "./_ui": 33.0,
     "selfdrive.controls.plannerd": 11.7,
     "./_dmonitoringmodeld": 10.0,
@@ -106,6 +106,7 @@ def check_cpu_usage(first_proc, last_proc):
   r = True
   dt = (last_proc.logMonoTime - first_proc.logMonoTime) / 1e9
   for proc_name, normal_cpu_usage in PROCS.items():
+    err = ""
     first, last = None, None
     try:
       first = [p for p in first_proc.procLog.procs if proc_name in p.cmdline][0]
@@ -115,15 +116,16 @@ def check_cpu_usage(first_proc, last_proc):
       if cpu_usage > max(normal_cpu_usage * 1.15, normal_cpu_usage + 5.0):
         # cpu usage is high while playing sounds
         if not (proc_name == "./_soundd" and cpu_usage < 65.):
-          result += f"Warning {proc_name} using more CPU than normal\n"
-          r = False
+          err = "using more CPU than normal"
       elif cpu_usage < min(normal_cpu_usage * 0.65, max(normal_cpu_usage - 1.0, 0.0)):
-        result += f"Warning {proc_name} using less CPU than normal\n"
-        r = False
-      result += f"{proc_name.ljust(35)}  {cpu_usage:.2f}%\n"
+        err = "using less CPU than normal"
     except IndexError:
-      result += f"{proc_name.ljust(35)}  NO METRICS FOUND {first=} {last=}\n"
+      err = f"NO METRICS FOUND {first=} {last=}\n"
+
+    result += f"{proc_name.ljust(35)}  {cpu_usage:5.2f}% ({normal_cpu_usage:5.2f}%) {err}\n"
+    if len(err) > 0:
       r = False
+
   result += "------------------------------------------------\n"
   print(result)
   return r

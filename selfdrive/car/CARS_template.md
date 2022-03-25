@@ -1,46 +1,50 @@
+{% set footnote_tag = '[<sup>{}</sup>](#Footnotes)' -%}
+{% set star_icon = '<a href="#"><img valign="top" src="assets/icon-star-{}.svg" width="22" /></a>' -%}
+
 # Supported Cars
 
-A supported vehicle is one that just works when you install openpilot on a compatible device. Every car performs differently with openpilot, but we aim for all supported cars to provide a solid highway experience in the US market.
+A supported vehicle is one that just works when you install a comma device. Every car performs differently with openpilot, but all supported cars should provide a better experience than any stock system.
 
 Cars are organized into three tiers:
 
-- Gold - The best openpilot experience. Great highway driving with continual updates.
-- Silver - A solid highway experience, but is limited by stock longitudinal.
-- Bronze - A solid highway experience, but will have limited performance in stop-and-go. May have ACC and ALC speed limitations.
+{% for tier in tiers %}
+- {{tier.name.title()}} - {{tier.value}}
+{% endfor %}
 
 How We Rate The Cars
 ---
 
 ### openpilot Adaptive Cruise Control (ACC)
-- {{Star.FULL.icon}} - openpilot is able to control the gas and brakes.
-- {{Star.HALF.icon}} - openpilot is able to control the gas and brakes with some restrictions.
-- {{Star.EMPTY.icon}} - The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system.
+- {{star_icon.format(Star.FULL.value)}} - openpilot is able to control the gas and brakes.
+- {{star_icon.format(Star.HALF.value)}} - openpilot is able to control the gas and brakes with some restrictions.
+- {{star_icon.format(Star.EMPTY.value)}} - The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system.
 
 ### Stop and Go
-- {{Star.FULL.icon}} - Adaptive Cruise Control (ACC) operates down to 0 mph.
-- {{Star.EMPTY.icon}} - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.
+- {{star_icon.format(Star.FULL.value)}} - Adaptive Cruise Control (ACC) operates down to 0 mph.
+- {{star_icon.format(Star.EMPTY.value)}} - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.
 
 ### Steer to 0
-- {{Star.FULL.icon}} - openpilot can control the steering wheel down to 0 mph.
-- {{Star.EMPTY.icon}} - No steering control below certain speeds.
+- {{star_icon.format(Star.FULL.value)}} - openpilot can control the steering wheel down to 0 mph.
+- {{star_icon.format(Star.EMPTY.value)}} - No steering control below certain speeds.
 
 ### Steering Torque
-- {{Star.FULL.icon}} - Car has enough steering torque for comfortable highway driving.
-- {{Star.EMPTY.icon}} - Limited ability to make turns.
+- {{star_icon.format(Star.FULL.value)}} - Car has enough steering torque for comfortable highway driving.
+- {{star_icon.format(Star.EMPTY.value)}} - Limited ability to make turns.
 
 ### Actively Maintained
-- {{Star.FULL.icon}} - Mainline software support, harness hardware sold by comma, lots of users, primary development target.
-- {{Star.EMPTY.icon}} - Low user count, community maintained, harness hardware not sold by comma.
+- {{star_icon.format(Star.FULL.value)}} - Mainline software support, harness hardware sold by comma, lots of users, primary development target.
+- {{star_icon.format(Star.EMPTY.value)}} - Low user count, community maintained, harness hardware not sold by comma.
 
 **All supported cars can move between the tiers as support changes.**
 
-{% for tier, car_rows in tiers %}
-## {{tier}} Cars
+{% for tier, cars in tiers.items() %}
+## {{tier.name.title()}} Cars
 
-|{{columns | join('|')}}|
+|{{Column | map(attribute='value') | join('|')}}|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
-{% for row in car_rows %}
-|{{row | join('|')}}|
+{% for car_info in cars %}
+|{% for column in Column %}{{car_info.get_column(column, star_icon, footnote_tag)}}|{% endfor %}
+
 {% endfor %}
 
 {% endfor %}
