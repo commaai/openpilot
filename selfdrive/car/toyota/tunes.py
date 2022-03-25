@@ -52,12 +52,12 @@ def set_long_tune(tune, name):
 def set_lat_tune(tune, name):
   if name == LatTunes.CRAYCRAY_PRIUS:
     tune.init('craycray')
-    tune.pid.kiBP = [0.0]
-    tune.pid.kpBP = [0.0]
+    tune.craycray.kiBP = [0.0]
+    tune.craycray.kpBP = [0.0]
     MAX_TORQUE = 1.5
-    tune.pid.kpV = [2.0/MAX_TORQUE]
-    tune.pid.kiV = [0.025/MAX_TORQUE]
-    tune.pid.kf = 1.0 / MAX_TORQUE
+    tune.craycray.kpV = [2.0/MAX_TORQUE]
+    tune.craycray.kiV = [0.025/MAX_TORQUE]
+    tune.craycray.kf = 1.0 / MAX_TORQUE
 
   elif name == LatTunes.LQR_RAV4:
     tune.init('lqr')
