@@ -41,11 +41,9 @@ def plannerd_thread(sm=None, pm=None):
       lateral_planner.update(sm)
       cloudlog.timestamp("lateral planner updated", frame_id)
       lateral_planner.publish(sm, pm)
-      cloudlog.timestamp("lateral planner published", frame_id)
       longitudinal_planner.update(sm)
       cloudlog.timestamp("longitudinal planner updated",frame_id)
       longitudinal_planner.publish(sm, pm)
-      cloudlog.timestamp("longitudinal planner published", frame_id)
 
 
 def main(sm=None, pm=None):

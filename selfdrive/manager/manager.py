@@ -130,11 +130,14 @@ def manager_thread() -> None:
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
 
   started_prev = False
-  sm = messaging.SubMaster(['deviceState'])
+  logEvents = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState', 'modelV2',  'lateralPlan', 'longitudinalPlan', 'carControl', 'sendcan']
+  sm = messaging.SubMaster(['deviceState']+logEvents)
   pm = messaging.PubMaster(['managerState'])
 
   while True:
     sm.update()
+    logTimestamps(sm, logEvents)
+
     not_run = ignore[:]
 
     started = sm['deviceState'].started
@@ -168,6 +171,14 @@ def manager_thread() -> None:
 
     if shutdown:
       break
+
+def logTimestamps(sm, events):
+    for event in events:
+        if sm.updated(event):
+            frame_id = sm[event].frameId
+            if event == sendcan:
+                frame_id = sm.logMonoTime[event]
+            cloudlog.timestamp(event+": Published", frame_id, event == "sendcan")
 
 
 def main() -> None:

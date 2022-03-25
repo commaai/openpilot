@@ -635,7 +635,6 @@ class Controls:
       self.pm.send('sendcan', sendcan_bytes)
       sendcanMonoTime = log.Event.from_bytes(sendcan_bytes).logMonoTime
       cloudlog.event("translation", logMonoTime=sendcanMonoTime, frameId=frame_id, debug=True)
-      cloudlog.timestamp("sendcan Published", frame_id)
       CC.actuatorsOutput = self.last_actuators
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
@@ -692,7 +691,6 @@ class Controls:
       controlsState.lateralControlState.indiState = lac_log
 
     self.pm.send('controlsState', dat)
-    cloudlog.timestamp("controlState Published", frame_id)
 
     # carState
     car_events = self.events.to_msg()
@@ -701,14 +699,12 @@ class Controls:
     cs_send.carState = CS
     cs_send.carState.events = car_events
     self.pm.send('carState', cs_send)
-    cloudlog.timestamp("carState Published", frame_id)
 
     # carEvents - logged every second or on change
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
       ce_send = messaging.new_message('carEvents', len(self.events))
       ce_send.carEvents = car_events
       self.pm.send('carEvents', ce_send)
-      cloudlog.timestamp("carEvents Published", frame_id)
     self.events_prev = self.events.names.copy()
 
     # carParams - logged every 50 seconds (> 1 per segment)
@@ -716,14 +712,12 @@ class Controls:
       cp_send = messaging.new_message('carParams')
       cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
-      cloudlog.timestamp("carParams Published", frame_id)
 
     # carControl
     cc_send = messaging.new_message('carControl')
     cc_send.valid = CS.canValid
     cc_send.carControl = CC
     self.pm.send('carControl', cc_send)
-    cloudlog.timestamp("carControl Published", frame_id)
 
     # copy CarControl to pass to CarInterface on the next iteration
     self.CC = CC

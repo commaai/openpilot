@@ -1039,7 +1039,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
     LOGT((std::string(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera")+std::string(": Transformed")).c_str(), frame_id);
   }
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
-  LOGT((std::string(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera")+std::string(": Published")).c_str(), frame_id);
 
   const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
   const int skip = 2;

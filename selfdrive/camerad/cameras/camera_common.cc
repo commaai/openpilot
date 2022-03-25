@@ -453,7 +453,6 @@ void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   uint32_t frame_id = c->buf.cur_frame_data.frame_id;
   LOGT("DriverCamera: Image set", frame_id);
   s->pm->send("driverCameraState", msg);
-  LOGT("DriverCamera: Published", frame_id);
 }
 
 
