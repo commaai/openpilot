@@ -98,7 +98,7 @@ class Footnote(Enum):
     Column.MODEL),
   STOCK_ACC = CarFootnote(
     "Supported configuration uses stock ACC",
-    Column.MODEL),
+    Column.MODEL)
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
@@ -118,9 +118,7 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.EQUINOX_NR: CarInfo("Chevrolet Equinox 2016-2020", "LKAS, no ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.PEDAL]),
   CAR.TAHOE_NR: CarInfo("Chevrolet Tahoe 2016-2020", "LKAS, Basic ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC]),
   CAR.SILVERADO_NR: CarInfo("Chevrolet Silverado 2016-2019", "LKAS, Camera-based ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC]),
-  CAR.SUBURBAN: CarInfo("Chevrolet Suburban 2016-2019", "LKAS, Basic ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC]),
-
-
+  CAR.SUBURBAN: CarInfo("Chevrolet Suburban 2016-2019", "LKAS, Basic ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC])
 }
 
 
