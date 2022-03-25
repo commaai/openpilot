@@ -1,7 +1,8 @@
 import numpy as np
 from selfdrive.car.body import bodycan
 from opendbc.can.packer import CANPacker
-
+MAX_TORQUE = 500
+MAX_TORQUE_RATE = 50
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -65,7 +66,8 @@ class CarController():
     kd_balance = 280
     alpha_d_balance = 1.0
 
-    p_balance = (-CC.orientationNED[1]) - set_point
+    # Clip angle error, this is enough to get up from stands
+    p_balance = np.clip((-CC.orientationNED[1]) - set_point, np.radians(-MAX_ANGLE_ERROR), np.radians(MAX_ANGLE_ERROR))
     self.i_balance += CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr
     self.d_balance =  np.clip(((1. - alpha_d_balance) * self.d_balance + alpha_d_balance * -CC.angularVelocity[1]), -1., 1.)
     torque = int(np.clip((p_balance*kp_balance + self.i_balance*ki_balance + self.d_balance*kd_balance), -1000, 1000))
@@ -82,12 +84,16 @@ class CarController():
     torque_r = torque + torque_diff
     torque_l = torque - torque_diff
 
-    #Low pass filter
-    alpha_torque = 1.
-    self.torque_r_filtered = (1. - alpha_torque) * self.torque_r_filtered + alpha_torque * self.deadband_filter(torque_r, 10)
-    self.torque_l_filtered = (1. - alpha_torque) * self.torque_l_filtered + alpha_torque * self.deadband_filter(torque_l, 10)
-    torque_r = int(np.clip(self.torque_r_filtered, -1000, 1000))
-    torque_l = int(np.clip(self.torque_l_filtered, -1000, 1000))
+    #Torque rate limits
+    self.torque_r_filtered =  np.clip(self.deadband_filter(torque_r, 10) ,
+                                      self.torque_r_filtered - MAX_TORQUE_RATE,
+                                      self.torque_r_filtered +  MAX_TORQUE_RATE)
+    self.torque_l_filtered =  np.clip(self.deadband_filter(torque_l, 10),
+                                      self.torque_l_filtered - MAX_TORQUE_RATE,
+                                      self.torque_l_filtered +  MAX_TORQUE_RATE)
+    torque_r = int(np.clip(self.torque_r_filtered, -MAX_TORQUE, MAX_TORQUE))
+    torque_l = int(np.clip(self.torque_l_filtered, -MAX_TORQUE, MAX_TORQUE))
+
     # ///////////////////////////////////////
     can_sends = []
 
@@ -97,5 +103,7 @@ class CarController():
 
     new_actuators = actuators.copy()
     new_actuators.steeringAngleDeg = apply_angle
+    new_actuators.accel = torque_l
+    new_actuators.steer = torque_r
 
     return new_actuators, can_sends

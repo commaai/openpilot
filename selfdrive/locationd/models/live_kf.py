@@ -78,7 +78,7 @@ class LiveKalman():
   obs_noise_diag = {ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
                     ObservationKind.PHONE_ACCEL: np.array([.5**2, .5**2, .5**2]),
                     ObservationKind.CAMERA_ODO_ROTATION: np.array([0.05**2, 0.05**2, 0.05**2]),
-                    ObservationKind.NO_ROT: np.array([100**2, 100**2, .1**2]),
+                    ObservationKind.NO_ROT: np.array([10**2, 10**2, .1**2]),
                     ObservationKind.NO_ACCEL: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.ECEF_POS: np.array([5**2, 5**2, 5**2]),
                     ObservationKind.ECEF_VEL: np.array([.5**2, .5**2, .5**2]),
@@ -100,7 +100,7 @@ class LiveKalman():
     vroll, vpitch, vyaw = omega
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
     acceleration = state[States.ACCELERATION, :]
-    # acc_bias = state[States.ACC_BIAS, :]
+    acc_bias = state[States.ACC_BIAS, :]
 
     dt = sp.Symbol('dt')
 
@@ -183,7 +183,7 @@ class LiveKalman():
 
     pos = sp.Matrix([x, y, z])
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
-    h_acc_sym = (gravity + acceleration)
+    h_acc_sym = (gravity + acceleration + acc_bias)
     h_acc_stationary_sym = acceleration
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
     h_pos_sym = sp.Matrix([x, y, z])

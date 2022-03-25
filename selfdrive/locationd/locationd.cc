@@ -198,8 +198,6 @@ VectorXd Localizer::get_stdev() {
 void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log) {
   MatrixXdr ecef_vel_R = Vector3d::Constant(1. * 1.).asDiagonal();
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { Vector3d(0., 0., 0.) }, { ecef_vel_R });
-  MatrixXdr ecef_pos_R = Vector3d::Constant(100. * 100.).asDiagonal();
-  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_POS, { Vector3d(3.88e6, -3.37e6, 3.76e6) }, { ecef_pos_R });
   this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
   // TODO does not yet account for double sensor readings in the log
   for (int i = 0; i < log.size(); i++) {
