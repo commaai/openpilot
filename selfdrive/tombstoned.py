@@ -153,9 +153,9 @@ def report_tombstone_apport(fn):
     # Try to find first entry in openpilot, fall back to first line
     for line in stacktrace_s:
       if "at selfdrive/" in line:
-          crash_function = line
-          found = True
-          break
+        crash_function = line
+        found = True
+        break
 
     if not found:
       crash_function = stacktrace_s[1]

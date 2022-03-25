@@ -61,10 +61,10 @@ def replay_manager_state(s, msgs):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
 
   while True:
-      new_m = messaging.new_message('managerState')
-      new_m.managerState.processes = [{'name': name, 'running': True} for name in managed_processes]
-      pm.send(s, new_m)
-      rk.keep_time()
+    new_m = messaging.new_message('managerState')
+    new_m.managerState.processes = [{'name': name, 'running': True} for name in managed_processes]
+    pm.send(s, new_m)
+    rk.keep_time()
 
 
 def replay_device_state(s, msgs):

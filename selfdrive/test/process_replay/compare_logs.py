@@ -25,7 +25,7 @@ def save_log(dest, log_msgs, compress=True):
     dat = bz2.compress(dat)
 
   with open(dest, "wb") as f:
-   f.write(dat)
+    f.write(dat)
 
 
 def remove_ignored_fields(msg, ignore):
