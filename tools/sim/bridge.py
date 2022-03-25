@@ -39,7 +39,6 @@ STEER_RATIO = 15.
 pm = messaging.PubMaster(['roadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl', 'controlsState'])
 
-startTime = time.time()
 
 class VehicleState:
   def __init__(self):
