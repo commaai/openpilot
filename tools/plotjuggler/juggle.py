@@ -12,8 +12,6 @@ import argparse
 
 from common.basedir import BASEDIR
 from selfdrive.test.process_replay.compare_logs import save_log
-from tools.lib.api import CommaApi
-from tools.lib.auth_config import get_token
 from tools.lib.robust_logreader import RobustLogReader
 from tools.lib.route import Route, SegmentName
 from urllib.parse import urlparse, parse_qs
