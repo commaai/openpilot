@@ -178,8 +178,8 @@ def logTimestamps(sm, events):
       pubTime = sm.logMonoTime[event]
       recTime = sm.rcv_time[event] * 1e9
       if event != "sendcan":
-        cloudlog.timestamp(event+": Published", sm[event].frameId, False time=pubTime)
-        cloudlog.timestamp(event+": Received", sm[event].frameId, False time=recTime)
+        cloudlog.timestamp(event+": Published", sm[event].frameId, False, time=pubTime)
+        cloudlog.timestamp(event+": Received", sm[event].frameId, False, time=recTime)
       else:
         cloudlog.timestamp(event+": Published", sm.logMonoTime[event], True, time=pubTime)
         cloudlog.timestamp(event+": Published", sm.logMonoTime[event], True, time=recTime)
