@@ -119,8 +119,6 @@ def check_cpu_usage(first_proc, last_proc):
           err = "using more CPU than normal"
       elif cpu_usage < min(normal_cpu_usage * 0.65, max(normal_cpu_usage - 1.0, 0.0)):
         err = "using less CPU than normal"
-        result += f"Warning {proc_name} using less CPU than normal\n"
-      result += f"{proc_name.ljust(35)}  {cpu_usage:.2f}%\n"
     except IndexError:
       err = f"NO METRICS FOUND {first=} {last=}\n"
 
