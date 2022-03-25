@@ -9,7 +9,11 @@ from collections import defaultdict
 timestamps = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 translationdict = {}
 
-r = Route("9f583b1d93915c31|2022-03-23--14-47-10")
+
+
+#r = Route("9f583b1d93915c31|2022-03-23--14-47-10") clean commit
+#r = Route("9f583b1d93915c31|2022-03-24--19-31-10") current (no pub tlogs) update()
+r = Route("9f583b1d93915c31|2022-03-24--20-10-09") # current update(0)
 lr = LogReader(r.log_paths()[0])
 
 for msg in lr:
@@ -20,6 +24,7 @@ for msg in lr:
     frame_id = jmsg['msg']['frameId']
     translationdict[logMonoTime] = frame_id
 
+i = 0
 for msg in lr:
   if msg.which() == "logMessage" and "timestamp" in msg.logMessage:
     msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
@@ -29,8 +34,13 @@ for msg in lr:
     time = jmsg['msg']['timestamp']['time']
     frame_id = jmsg['msg']['timestamp']['frameId']
     if jmsg['msg']['timestamp']['translate']:
-        frame_id = translationdict[frame_id]
+        try:
+            frame_id = translationdict[frame_id]
+        except:
+            i+=1
     timestamps[frame_id][service][event].append(time)
+
+print("Num failed translations:",i)
 
 del timestamps[0]
 

@@ -1,8 +1,8 @@
 import cereal.messaging as messaging
 
 # in subscriber
-sm = messaging.SubMaster(['procLog'])
+sm = messaging.SubMaster(['sendcan'])
 while 1:
   sm.update()
-  if sm.updated['procLog']:
-      print(sm['procLog'])
+  if sm.updated['sendcan']:
+      print(sm.rcv_time['sendcan'], sm.logMonoTime['sendcan'])
