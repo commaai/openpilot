@@ -8,7 +8,7 @@ class LongTunes(Enum):
   TSS = 2
 
 class LatTunes(Enum):
-  INDI_PRIUS = 0
+  CRAYCRAY_PRIUS = 0
   LQR_RAV4 = 1
   PID_A = 2
   PID_B = 3
@@ -50,16 +50,14 @@ def set_long_tune(tune, name):
 
 ###### LAT ######
 def set_lat_tune(tune, name):
-  if name == LatTunes.INDI_PRIUS:
-    tune.init('indi')
-    tune.indi.innerLoopGainBP = [0.]
-    tune.indi.innerLoopGainV = [4.0]
-    tune.indi.outerLoopGainBP = [0.]
-    tune.indi.outerLoopGainV = [3.0]
-    tune.indi.timeConstantBP = [0.]
-    tune.indi.timeConstantV = [1.0]
-    tune.indi.actuatorEffectivenessBP = [0.]
-    tune.indi.actuatorEffectivenessV = [1.0]
+  if name == LatTunes.CRAYCRAY_PRIUS:
+    tune.init('craycray')
+    tune.pid.kiBP = [0.0]
+    tune.pid.kpBP = [0.0]
+    MAX_TORQUE = 1.5
+    tune.pid.kpV = [2.0/MAX_TORQUE]
+    tune.pid.kiV = [0.025/MAX_TORQUE]
+    tune.pid.kf = 1.0 / MAX_TORQUE
 
   elif name == LatTunes.LQR_RAV4:
     tune.init('lqr')

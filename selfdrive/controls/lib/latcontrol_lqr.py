@@ -30,7 +30,7 @@ class LatControlLQR(LatControl):
     super().reset()
     self.i_lqr = 0.0
 
-  def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate):
+  def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate, llk):
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     torque_scale = (0.45 + CS.vEgo / 60.0)**2  # Scale actuator model with speed
