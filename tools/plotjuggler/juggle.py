@@ -79,9 +79,9 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
   segment_start = 0
   if 'cabana' in route_or_segment_name:
     query = parse_qs(urlparse(route_or_segment_name).query)
-    api = CommaApi(get_token())
-    logs = api.get(f'v1/route/{query["route"][0]}/log_urls?sig={query["sig"][0]}&exp={query["exp"][0]}')
-  elif route_or_segment_name.startswith("http://") or route_or_segment_name.startswith("https://") or os.path.isfile(route_or_segment_name):
+    route_or_segment_name = query["route"][0]
+
+  if route_or_segment_name[:7] in ("http://", "https://") or os.path.isfile(route_or_segment_name):
     logs = [route_or_segment_name]
   else:
     route_or_segment_name = SegmentName(route_or_segment_name, allow_route_name=True)
