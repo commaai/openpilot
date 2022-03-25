@@ -51,7 +51,7 @@ private:
 
   const QRect continueBtnWide = {1840, 0, 320, 1080};
   QVector<QRect> boundingRectWide {
-    QRect(112, 804, 619, 165),
+    QRect(112, 804, 618, 164),
     continueBtnWide,
     continueBtnWide,
     QRect(1641, 558, 210, 313),
