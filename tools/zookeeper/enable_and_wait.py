@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import os
 import sys
 import time
@@ -7,11 +6,11 @@ from socket import gethostbyname, gaierror
 from tools.zookeeper import Zookeeper
 
 def is_online(ip):
-    try:
-        addr = gethostbyname(ip)
-        return (os.system(f"ping -c 1 {addr} > /dev/null") == 0)
-    except gaierror:
-        return False
+  try:
+    addr = gethostbyname(ip)
+    return (os.system(f"ping -c 1 {addr} > /dev/null") == 0)
+  except gaierror:
+    return False
 
 if __name__ == "__main__":
   z = Zookeeper()
