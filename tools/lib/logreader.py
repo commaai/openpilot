@@ -67,6 +67,8 @@ class MultiLogIterator:
       self._inc()
     return True
 
+  def reset(self):
+    self.__init__(self._log_paths, sort_by_time=self.sort_by_time)
 
 class LogReader:
   def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False):
