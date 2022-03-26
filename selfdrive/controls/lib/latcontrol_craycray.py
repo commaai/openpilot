@@ -35,7 +35,7 @@ class LatControlCrayCray(LatControl):
     else:
       # TODO lateral acceleration works great at high speed, not so much at low speed
       if self.use_steering_angle:
-        actual_curvature = VM.calc_curvature(-(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
+        actual_curvature = -VM.calc_curvature(CS.steeringAngleDeg - params.angleOffsetDeg, CS.vEgo, params.roll)
       else:
         actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
       desired_lateral_accel = desired_curvature * CS.vEgo**2
