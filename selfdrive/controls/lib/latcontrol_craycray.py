@@ -2,7 +2,7 @@ from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from cereal import log
 
-CURVATURE_SCALE = 200
+CURVATURE_SCALE = 400
 
 
 class LatControlCrayCray(LatControl):
