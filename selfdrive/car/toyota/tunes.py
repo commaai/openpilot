@@ -54,7 +54,7 @@ def set_lat_tune(tune, name):
     tune.init('craycray')
     tune.craycray.kiBP = [0.0]
     tune.craycray.kpBP = [0.0]
-    MAX_TORQUE = 1.5
+    MAX_TORQUE = 2.0
     tune.craycray.kpV = [2.0/MAX_TORQUE]
     tune.craycray.kiV = [0.025/MAX_TORQUE]
     tune.craycray.kf = 0.5 / MAX_TORQUE
