@@ -46,6 +46,7 @@ class LatControlCrayCray(LatControl):
 
       output_torque = self.pid.update(setpoint, measurement, override=CS.steeringPressed,
                                       feedforward=desired_lateral_accel, speed=CS.vEgo)
+      pid_log.angleError = setpoint - measurement
       pid_log.active = True
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i

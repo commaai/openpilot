@@ -724,6 +724,8 @@ class Controls:
       controlsState.lateralControlState.angleState = lac_log
     elif lat_tuning == 'pid':
       controlsState.lateralControlState.pidState = lac_log
+    elif lat_tuning == 'craycray':
+      controlsState.lateralControlState.pidState = lac_log
     elif lat_tuning == 'lqr':
       controlsState.lateralControlState.lqrState = lac_log
     elif lat_tuning == 'indi':
