@@ -57,7 +57,7 @@ def set_lat_tune(tune, name):
     MAX_TORQUE = 2.0
     tune.craycray.kpV = [2.0/MAX_TORQUE]
     tune.craycray.kiV = [0.025/MAX_TORQUE]
-    tune.craycray.kf = 0.5 / MAX_TORQUE
+    tune.craycray.kf = 0.75 / MAX_TORQUE
 
   elif name == LatTunes.LQR_RAV4:
     tune.init('lqr')
