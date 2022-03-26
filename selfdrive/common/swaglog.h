@@ -20,30 +20,25 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
                                            __func__, \
                                            fmt, ## __VA_ARGS__)
 
-#define cloudlog_t_translate(lvl, event_name, frame_id, translate,...)                                 \
+#define cloudlog_t_e(lvl, event_name, info, ...)                           \
 {                                                                 \
-  uint64_t ns = nanos_since_boot();                               \
-  json11::Json tspt_j = json11::Json::object {                      \
-    {"timestamp", json11::Json::object{{"event", event_name},                           \
-                   {"frame_id", std::to_string(frame_id)},                          \
-                   {"time", std::to_string(ns)},                                   \
-                   {"translate", translate}}                     \
-   }};                                                \
-  cloudlog(lvl, tspt_j.dump().c_str(), ## __VA_ARGS__);                             \
+  json11::Json tspt_e_j = json11::Json::object {                    \
+    {"timestampExtra", json11::Json::object{{"event", event_name},     \
+                   {"info", info}}                  \
+    }};                                                           \
+  cloudlog(lvl, tspt_e_j.dump().c_str(), ## __VA_ARGS__);           \
 }
 
-#define cloudlog_t(lvl, event_name, frame_id,...)                                 \
+#define cloudlog_t(lvl, event_name, ...)                           \
 {                                                                 \
   uint64_t ns = nanos_since_boot();                               \
-  json11::Json tspt_j = json11::Json::object {                      \
-    {"timestamp", json11::Json::object{{"event", event_name},                           \
-                   {"frame_id", std::to_string(frame_id)},                          \
-                   {"time", std::to_string(ns)},                                   \
-                   {"translate", false}}                     \
-    }};                                                \
-  cloudlog(lvl, tspt_j.dump().c_str(), ## __VA_ARGS__);                             \
+  json11::Json tspt_j = json11::Json::object {                    \
+    {"timestamp", json11::Json::object{{"event", event_name},     \
+                   {"time", std::to_string(ns)}}                  \
+    }};                                                           \
+  cloudlog(lvl, tspt_j.dump().c_str(), ## __VA_ARGS__);           \
 }
-
+ 
 #define cloudlog_rl(burst, millis, lvl, fmt, ...)   \
 {                                                   \
   static uint64_t __begin = 0;                      \
@@ -73,8 +68,8 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   }                                                 \
 }
 
-#define LOGTT(event_name , frame_id, translate, ...) cloudlog_t_translate(CLOUDLOG_TIMESTAMP, event_name, frame_id, translate,## __VA_ARGS__)
-#define LOGT(event_name , frame_id, ...) cloudlog_t(CLOUDLOG_TIMESTAMP, event_name, frame_id,## __VA_ARGS__)
+#define LOGT(event_name , ...) cloudlog_t(CLOUDLOG_TIMESTAMP, event_name,## __VA_ARGS__)
+#define LOGTE(event_name, info, ...) cloudlog_t_e(CLOUDLOG_TIMESTAMP, event_name, info,## __VA_ARGS__)
 #define LOGD(fmt, ...) cloudlog(CLOUDLOG_DEBUG, fmt, ## __VA_ARGS__)
 #define LOG(fmt, ...) cloudlog(CLOUDLOG_INFO, fmt, ## __VA_ARGS__)
 #define LOGW(fmt, ...) cloudlog(CLOUDLOG_WARNING, fmt, ## __VA_ARGS__)

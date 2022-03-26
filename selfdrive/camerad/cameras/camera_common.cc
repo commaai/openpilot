@@ -9,6 +9,7 @@
 
 #include "libyuv.h"
 #include <jpeglib.h>
+#include "json11.hpp"
 
 #include "selfdrive/camerad/imgproc/utils.h"
 #include "selfdrive/common/clutil.h"
@@ -157,7 +158,9 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
-  LOGT("Start acquire camera buffer", cur_frame_data.frame_id);
+  json11::Json frame_id_j = json11::Json::object{{"frameId", std::to_string(cur_frame_data.frame_id)}};
+  LOGTE("Pipeline start", frame_id_j);
+  LOGT("Start acquire camera buffer");
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
@@ -376,21 +379,16 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   uint32_t cnt = 0;
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
-
-    //TODO: is this frame id fake, maybe it is created in the callback
-    uint32_t frame_id = cs->buf.cur_frame_data.frame_id;
-    LOGT((std::string(thread_name)+std::string(": Start")).c_str(), frame_id);
+    LOGT((std::string(thread_name)+std::string(": Start")).c_str());
 
     callback(cameras, cs, cnt);
-
-    LOGT((std::string(thread_name)+std::string(": END")).c_str(), frame_id);
 
     if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
       // this takes 10ms???
       publish_thumbnail(cameras->pm, &(cs->buf));
     }
     cs->buf.release();
-    LOGT((std::string(thread_name)+std::string(": Released")).c_str(), frame_id);
+    LOGT((std::string(thread_name)+std::string(": Released")).c_str());
     ++cnt;
   }
   return NULL;

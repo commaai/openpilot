@@ -486,8 +486,8 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
 
     CC = car.CarControl.new_message()
-    # lat and long should have the same id (and they do)
-    frame_id = lat_plan.frameId
+    # consider frameId updated when both are updated
+    frame_id = min(lat_plan.frameId, long_plan.frameId)
     CC.frameId = frame_id
     CC.enabled = self.enabled
     # Check which actuators can be enabled
@@ -632,9 +632,8 @@ class Controls:
       # send car controls over can
       self.last_actuators, can_sends = self.CI.apply(CC)
       sendcan_bytes = can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid)
+      cloudlog.timestampExtra("translation", {"logMonoTime": logMonoTime=log.Event.from_bytes(sendcan_bytes).logMonoTime})
       self.pm.send('sendcan', sendcan_bytes)
-      sendcanMonoTime = log.Event.from_bytes(sendcan_bytes).logMonoTime
-      cloudlog.event("translation", logMonoTime=sendcanMonoTime, frameId=frame_id, debug=True)
       CC.actuatorsOutput = self.last_actuators
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
@@ -728,11 +727,11 @@ class Controls:
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
-    cloudlog.timestamp("Data sampled", self.sm['lateralPlan'].frameId)
+    cloudlog.timestamp("Data sampled")
     self.prof.checkpoint("Sample")
 
     self.update_events(CS)
-    cloudlog.timestamp("Events updated", self.sm['lateralPlan'].frameId)
+    cloudlog.timestamp("Events updated")
 
     if not self.read_only and self.initialized:
       # Update control state

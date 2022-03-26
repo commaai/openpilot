@@ -89,7 +89,6 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       LOGE("vipc_client_main no frame");
       continue;
     }
-    LOGT("vicp read main", meta_main.frame_id)
     if (use_extra_client) {
       // Keep receiving extra frames until frame id matches main camera
       do {
@@ -100,7 +99,6 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
         LOGE("vipc_client_extra no frame");
         continue;
       }
-      LOGT("vicp read extra", meta_main.frame_id)
 
       if (std::abs((int64_t)meta_main.timestamp_sof - (int64_t)meta_extra.timestamp_sof) > 10000000ULL) {
         LOGE("frames out of sync! main: %d (%.5f), extra: %d (%.5f)",
@@ -134,16 +132,16 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       vec_desire[desire] = 1.0;
     }
 
-    LOGT("Model start", meta_main.frame_id);
     double mt1 = millis_since_boot();
     ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire);
-    LOGT("Model end", meta_main.frame_id);
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 
     // tracked dropped frames
     uint32_t vipc_dropped_frames = meta_main.frame_id - last_vipc_frame_id - 1;
     float frames_dropped = frame_dropped_filter.update((float)std::min(vipc_dropped_frames, 10U));
+    json11::Json frame_id_j = json11::Json::object{{"frameId", std::to_string(meta_main.frame_id)}};
+    if (frames_dropped)LOGTE("Frames dropped", frame_id_j);
     if (run_count < 10) { // let frame drops warm up
       frame_dropped_filter.reset(0);
       frames_dropped = 0.;

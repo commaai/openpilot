@@ -130,7 +130,7 @@ def manager_thread() -> None:
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
 
   started_prev = False
-  logEvents = ['roadCameraState', 'wideRoadCameraState','modelV2',  'lateralPlan', 'longitudinalPlan', 'carControl', 'sendcan']
+  logEvents = ['roadCameraState', 'wideRoadCameraState','modelV2',  'lateralPlan', 'longitudinalPlan','controlsState', 'sendcan']
   sm = messaging.SubMaster(['deviceState']+logEvents)
   pm = messaging.PubMaster(['managerState'])
 
@@ -172,17 +172,15 @@ def manager_thread() -> None:
     if shutdown:
       break
 
-def logTimestamps(sm, events):
-  for event in events:
-    if sm.updated[event]:
-      pubTime = sm.logMonoTime[event]
-      recTime = sm.rcv_time[event] * 1e9
-      if event != "sendcan":
-        cloudlog.timestamp(event+": Published", sm[event].frameId, False, time=pubTime)
-        cloudlog.timestamp(event+": Received", sm[event].frameId, False, time=recTime)
-      else:
-        cloudlog.timestamp(event+": Published", sm.logMonoTime[event], True, time=pubTime)
-        cloudlog.timestamp(event+": Published", sm.logMonoTime[event], True, time=recTime)
+def logTimestamps(sm, mesgqs):
+  for msgq in msgqs:
+    if sm.updated[msgq]:
+      sm_info = {}
+      sm_info['name'] = msgq
+      sm_info['logMonoTime'] = sm.logMonoTime[msgq]
+      sm_info['rcvTime'] = sm.rcv_time[msgq]
+      sm_info['smInfo'] = sm[event].to_dict()
+      cloudlog.timestampExtra("msgq", sm_info)
 
 def main() -> None:
   prepare_only = os.getenv("PREPAREONLY") is not None

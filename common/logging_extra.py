@@ -165,17 +165,19 @@ class SwagLogger(logging.Logger):
     else:
       self.info(evt)
 
-  def timestamp(self, event_name, frame_id, translate=False, time=0,*args, **kwargs):
+  def timestamp(self, event_name):
     tstp = NiceOrderedDict()
     tstp['timestamp'] = NiceOrderedDict()
     tstp['timestamp']["event"] = event_name
-    tstp['timestamp']["frameId"] = frame_id
-    tstp['timestamp']["time"] = time if time else sec_since_boot()*1e9
-    tstp['timestamp']["translate"] = translate
-    if args:
-      tstp['timestamp']['args'] = args
-    tstp['timestamp'].update(kwargs)
+    tstp['timestamp']["time"] = sec_since_boot()*1e9
     self.debug(tstp)
+
+  def timestampExtra(self, event_name, info):
+    extra_info = NiceOrderedDict()
+    extra_info['timestampExtra'] = NiceOrderedDict()
+    extra_info['timestampExtra']["event"] = event_name
+    extra_info['timestampExtra']["info"] = info 
+    self.debug(extra_info)
 
   def findCaller(self, stack_info=False, stacklevel=1):
     """

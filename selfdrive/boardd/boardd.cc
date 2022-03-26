@@ -20,6 +20,7 @@
 #include <thread>
 
 #include <libusb-1.0/libusb.h>
+#include "json11.hpp"
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
@@ -226,15 +227,15 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
-    LOGTT("sendcan received", event.getLogMonoTime(), true);
-
     //Dont send if older than 1 second
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
         panda->can_send(event.getSendcan());
-	LOGTT((std::string("sendcan sent to panda: ")+std::string(panda->usb_serial)).c_str(), event.getLogMonoTime() , true);
+	LOGT((std::string("sendcan sent to panda: ")+std::string(panda->usb_serial)).c_str());
       }
     }
+    json11::Json time_j = json11::Json::object{{"logMonoTime", std::to_string(event.getLogMonoTime())}};
+    LOGTE("Pipeline end", time_j);
   }
 }
 
