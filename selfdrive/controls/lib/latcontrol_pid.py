@@ -1,7 +1,6 @@
 import math
 
 from selfdrive.controls.lib.pid import PIController
-from selfdrive.controls.lib.drive_helpers import get_steer_max
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from cereal import log
 
@@ -33,9 +32,8 @@ class LatControlPID(LatControl):
       pid_log.active = False
       self.pid.reset()
     else:
-      steers_max = get_steer_max(CP, CS.vEgo)
-      self.pid.pos_limit = steers_max
-      self.pid.neg_limit = -steers_max
+      self.pid.pos_limit = self.steer_max
+      self.pid.neg_limit = -self.steer_max
 
       # offset does not contribute to resistive torque
       steer_feedforward = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
@@ -49,6 +47,6 @@ class LatControlPID(LatControl):
       pid_log.i = self.pid.i
       pid_log.f = self.pid.f
       pid_log.output = output_steer
-      pid_log.saturated = self._check_saturation(steers_max - abs(output_steer) < 1e-3, CS)
+      pid_log.saturated = self._check_saturation(self.steer_max - abs(output_steer) < 1e-3, CS)
 
     return output_steer, angle_steers_des, pid_log
