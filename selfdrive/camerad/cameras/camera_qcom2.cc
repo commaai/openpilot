@@ -1032,7 +1032,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   if ((c == &s->road_cam && env_send_road) || (c == &s->wide_road_cam && env_send_wide_road)) {
     framed.setImage(get_frame_image(b));
   }
-  uint32_t frame_id = c->buf.cur_frame_data.frame_id;
   LOGT((std::string(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera")+std::string(": Image set")).c_str());
   if (c == &s->road_cam) {
     framed.setTransform(b->yuv_transform.v);
