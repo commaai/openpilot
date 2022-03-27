@@ -585,12 +585,14 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.02 56310-CLAC0 4TSHC102',
+      b'\xf1\x00TM  MDPS C 1.00 1.02 56310-CLEC0 4TSHC102',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TMP MFC  AT USA LHD 1.00 1.03 99211-S1500 210224',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8795441-3D121\x00\xf1\x81E16\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2333  E16\x00\x00\x00\x00\x00\x00\x00TTM2P16SA0o\x88^\xbe',
+      b'\xf1\x8795441-3D121\x00\xf1\x81E16\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2333  E16\x00\x00\x00\x00\x00\x00\x00TTM2P16SA1\x0b\xc5\x0f\xea',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x87391312MTF0',
