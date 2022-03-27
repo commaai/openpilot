@@ -404,9 +404,9 @@ class Controls:
     if not self.CP.pcmCruise:
       self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.button_timers, self.enabled, self.is_metric)
     else:
-      if CS.cruiseState.enabled:
+      if CS.cruiseState.available:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
-      elif not CS.cruiseState.available:
+      else:
         self.v_cruise_kph = 0
 
     # decrement the soft disable timer at every step, as it's reset on
