@@ -1,13 +1,8 @@
 import cereal.messaging as messaging
+import capnp
 
 # in subscriber
-sm = messaging.SubMaster(['lateralPlan'])
+sm = messaging.SubMaster(["sendcan"])
 while 1:
   sm.update()
-  if sm.updated['lateralPlan']:
-      d ={}
-      d["logMessage"] = sm['lateralPlan'].to_dict()
-      d["logMonoTime"] = sm.logMonoTime['lateralPlan']
-      d["recvTime"] = sm.rcv_time['lateralPlan']
-      print(d)
-      break
+  print([can.to_dict() for can in sm["sendcan"]])

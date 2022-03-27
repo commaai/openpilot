@@ -22,8 +22,10 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
 
 #define cloudlog_t_e(lvl, event_name, info, ...)                           \
 {                                                                 \
+  uint64_t ns = nanos_since_boot();                               \
   json11::Json tspt_e_j = json11::Json::object {                    \
     {"timestampExtra", json11::Json::object{{"event", event_name},     \
+                   {"time", std::to_string(ns)},                  \
                    {"info", info}}                  \
     }};                                                           \
   cloudlog(lvl, tspt_e_j.dump().c_str(), ## __VA_ARGS__);           \

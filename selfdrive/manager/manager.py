@@ -176,7 +176,7 @@ def logTimestamps(sm, mesgqs):
   for msgq in msgqs:
     if sm.updated[msgq]:
       sm_info = {}
-      sm_info['name'] = msgq
+      sm_info['msg_name'] = msgq
       sm_info['logMonoTime'] = sm.logMonoTime[msgq]
       sm_info['rcvTime'] = sm.rcv_time[msgq]
       sm_info['smInfo'] = sm[event].to_dict()
