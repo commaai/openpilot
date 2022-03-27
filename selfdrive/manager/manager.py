@@ -5,6 +5,7 @@ import signal
 import subprocess
 import sys
 import traceback
+import capnp
 from typing import List, Tuple, Union
 
 import cereal.messaging as messaging
@@ -172,14 +173,17 @@ def manager_thread() -> None:
     if shutdown:
       break
 
-def logTimestamps(sm, mesgqs):
+def logTimestamps(sm, msgqs):
   for msgq in msgqs:
     if sm.updated[msgq]:
       sm_info = {}
       sm_info['name'] = msgq
       sm_info['logMonoTime'] = sm.logMonoTime[msgq]
       sm_info['rcvTime'] = sm.rcv_time[msgq]
-      sm_info['smInfo'] = sm[event].to_dict()
+      try:
+        sm_info['smInfo'] = sm[msgq].to_dict()
+      except:
+        sm_info['smInfo'] = [o.to_dict() for o in sm[msgq]]
       cloudlog.timestampExtra("msgq", sm_info)
 
 def main() -> None:
