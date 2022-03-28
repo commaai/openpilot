@@ -4,6 +4,7 @@ import sys
 import signal
 import itertools
 import math
+import time
 from typing import NoReturn
 from struct import unpack_from, calcsize
 
@@ -17,6 +18,8 @@ from selfdrive.sensord.rawgps.structs import gps_measurement_report, gps_measure
 from selfdrive.sensord.rawgps.structs import glonass_measurement_report, glonass_measurement_report_sv
 from selfdrive.sensord.rawgps.structs import LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT
 from selfdrive.sensord.rawgps.structs import position_report, LOG_GNSS_POSITION_REPORT
+
+DEBUG = int(os.getenv("DEBUG", "0"))==1
 
 miscStatusFields = {
   "multipathEstimateIsValid": 0,
@@ -78,6 +81,8 @@ def main() -> NoReturn:
     log_types.append(LOG_GNSS_POSITION_REPORT)
     pub_types.append("gpsLocationExternal")
 
+  # disable DPO power savings for more accuracy
+  os.system("mmcli -m 0 --command='AT+QGPSCFG=\"dpoenable\",0'")
   os.system("mmcli -m 0 --location-enable-gps-raw --location-enable-gps-nmea")
   diag = ModemDiag()
 
@@ -112,8 +117,8 @@ def main() -> NoReturn:
     assert log_inner_length == len(inner_log_packet)
     if log_type not in log_types:
       continue
-    #print("got log: %x" % log_type)
-
+    if DEBUG:
+      print("%.2f: got log: %x len %d" % (time.time(), log_type, len(log_payload)))
     if log_type == LOG_GNSS_POSITION_REPORT:
       report = unpack_position(log_payload)
       if report["u_PosSource"] != 2:
@@ -171,29 +176,30 @@ def main() -> NoReturn:
           pass
         else:
           setattr(report, k, v)
-      assert len(sats)//dat['svCount'] == size_meas_sv
       report.init('sv', dat['svCount'])
-      for i in range(dat['svCount']):
-        sv = report.sv[i]
-        sv.init('measurementStatus')
-        sat = unpack_meas_sv(sats[size_meas_sv*i:size_meas_sv*(i+1)])
-        for k,v in sat.items():
-          if k == "parityErrorCount":
-            sv.gpsParityErrorCount = v
-          elif k == "frequencyIndex":
-            sv.glonassFrequencyIndex = v
-          elif k == "hemmingErrorCount":
-            sv.glonassHemmingErrorCount = v
-          elif k == "measurementStatus":
-            for kk,vv in itertools.chain(*measurement_status_fields):
-              setattr(sv.measurementStatus, kk, bool(v & (1<<vv)))
-          elif k == "miscStatus":
-            for kk,vv in miscStatusFields.items():
-              setattr(sv.measurementStatus, kk, bool(v & (1<<vv)))
-          elif k == "pad":
-            pass
-          else:
-            setattr(sv, k, v)
+      if dat['svCount'] > 0:
+        assert len(sats)//dat['svCount'] == size_meas_sv
+        for i in range(dat['svCount']):
+          sv = report.sv[i]
+          sv.init('measurementStatus')
+          sat = unpack_meas_sv(sats[size_meas_sv*i:size_meas_sv*(i+1)])
+          for k,v in sat.items():
+            if k == "parityErrorCount":
+              sv.gpsParityErrorCount = v
+            elif k == "frequencyIndex":
+              sv.glonassFrequencyIndex = v
+            elif k == "hemmingErrorCount":
+              sv.glonassHemmingErrorCount = v
+            elif k == "measurementStatus":
+              for kk,vv in itertools.chain(*measurement_status_fields):
+                setattr(sv.measurementStatus, kk, bool(v & (1<<vv)))
+            elif k == "miscStatus":
+              for kk,vv in miscStatusFields.items():
+                setattr(sv.measurementStatus, kk, bool(v & (1<<vv)))
+            elif k == "pad":
+              pass
+            else:
+              setattr(sv, k, v)
 
       pm.send('qcomGnss', msg)
 
