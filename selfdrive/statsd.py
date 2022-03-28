@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import NoReturn, List, Dict
+from typing import NoReturn, Union, List, Dict
 
 from common.params import Params
 from cereal.messaging import SubMaster
@@ -52,11 +52,19 @@ class StatLog:
 
 def main() -> NoReturn:
   dongle_id = Params().get("DongleId", encoding='utf-8')
-  def get_influxdb_line(measurement: str, value: float, timestamp: datetime, tags: dict) -> str:
+  def get_influxdb_line(measurement: str, value: Union[float, Dict[str, float]],  timestamp: datetime, tags: dict) -> str:
     res = f"{measurement}"
     for k, v in tags.items():
       res += f",{k}={str(v)}"
-    res += f" value={value},dongle_id=\"{dongle_id}\" {int(timestamp.timestamp() * 1e9)}\n"
+    res += " "
+
+    if isinstance(value, float):
+      res += f"value={value}"
+    else:
+      for k, v in value.items():
+        res += f"{k}={v},"
+
+    res += f"dongle_id=\"{dongle_id}\" {int(timestamp.timestamp() * 1e9)}\n"
     return res
 
   # open statistics socket
@@ -121,13 +129,17 @@ def main() -> NoReturn:
         sample_count = len(values)
         sample_sum = sum(values)
 
-        result += get_influxdb_line(f"sample.{key}.count", sample_count, current_time, tags)
-        result += get_influxdb_line(f"sample.{key}.min", values[0], current_time, tags)
-        result += get_influxdb_line(f"sample.{key}.max", values[-1], current_time, tags)
-        result += get_influxdb_line(f"sample.{key}.mean", sample_sum / sample_count, current_time, tags)
+        stats = {
+          'count': sample_count,
+          'min': values[0],
+          'max': values[-1],
+          'mean': sample_sum / sample_count,
+        }
         for percentile in [0.05, 0.5, 0.95]:
           value = values[int(round(percentile * (sample_count - 1)))]
-          result += get_influxdb_line(f"sample.{key}.p{int(percentile * 100)}", value, current_time, tags)
+          stats[f"p{int(percentile * 100)}"] = value
+
+        result += get_influxdb_line(f"sample.{key}", stats, current_time, tags)
 
       # clear intermediate data
       gauges.clear()
