@@ -114,6 +114,7 @@ class CarState(CarStateBase):
     self.brake_error = cp.vl["TCS13"]["ACCEnable"] != 0 # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = cp.vl["CLU11"]["CF_Clu_CruiseSwState"]
+    self.brake_control_active = cp.vl["TCS13"]["DCEnable"] == 1
 
     return ret
 
@@ -155,6 +156,7 @@ class CarState(CarStateBase):
       ("CF_Clu_AliveCnt1", "CLU11"),
 
       ("ACCEnable", "TCS13"),
+      ("DCEnable", "TCS13"),
       ("ACC_REQ", "TCS13"),
       ("DriverBraking", "TCS13"),
       ("StandStill", "TCS13"),
