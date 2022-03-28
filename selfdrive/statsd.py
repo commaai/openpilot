@@ -59,10 +59,10 @@ def main() -> NoReturn:
     res += " "
 
     if isinstance(value, float):
-      res += f"value={value}"
-    else:
-      for k, v in value.items():
-        res += f"{k}={v},"
+      value = {'value': value}
+
+    for k, v in value.items():
+      res += f"{k}={v},"
 
     res += f"dongle_id=\"{dongle_id}\" {int(timestamp.timestamp() * 1e9)}\n"
     return res
