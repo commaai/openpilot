@@ -11,66 +11,94 @@ translationdict = {}
 
 r = Route("9f583b1d93915c31|2022-03-26--17-25-22") #major changes 
 lr = LogReader(r.log_paths()[0])
+'''
+for msg in lr:
+  if msg.which() == "logMessage" and "timestamp" in msg.logMessage:
+    msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
+    jmsg = json.loads(msg)
+    try:
+        jmsg['msg']['timestamp']
+        service = jmsg['ctx']['daemon']
+        print(service)
+    except:
+        pass
 
-services = ['camera', 'model', 'planner', 'controls', 'board']
+exit()
+'''
+
+services = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 
 msgq_to_service = {}
-msgq_to_service['roadCameraState'] = "camera"
-msgq_to_service['wideRoadCameraState'] = "camera"
-msgq_to_service['modelV2'] = "model"
-msgq_to_service['lateralPlan'] = "planner"
-msgq_to_service['longitudinalPlan'] = "planner"
-msgq_to_service['sendcan'] = "controls"
-msgq_to_service['controlState'] = "controls"
+msgq_to_service['roadCameraState'] = "camerad"
+msgq_to_service['wideRoadCameraState'] = "camerad"
+msgq_to_service['modelV2'] = "modeld"
+msgq_to_service['lateralPlan'] = "plannerd"
+msgq_to_service['longitudinalPlan'] = "plannerd"
+msgq_to_service['sendcan'] = "controlsd"
+msgq_to_service['controlState'] = "controlsd"
 
 service_to_durations = {}
-service_to_durations['camera'] = ['timestampEof', 'timestampSof', 'processingTime']
-service_to_durations['model'] = ['timestampEof', 'modelExeccutionTime', 'gpuExecutionTime']
-service_to_durations['planner'] = ["solverExcecutionTime"]
+service_to_durations['camerad'] = ['timestampEof', 'timestampSof', 'processingTime']
+service_to_durations['modeld'] = ['timestampEof', 'modelExeccutionTime', 'gpuExecutionTime']
+service_to_durations['plannerd'] = ["solverExcecutionTime"]
 
 service_blocks = defaultdict(dict)
-
-# Build service blocks
-for msg in lr:
-    if msg.which() == "logMessage" and ("smInfo" in msg or "timestampExtra" in msg):
-        msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
-        msg = json.loads(msg)
-        #make more robust than strings
-        if "smInfo" in msg:
-            pubTime = msg['timestampExtra']['info']["msgq"]['logMonoTime']
-            rcvTime = msg['timestampExtra']['info']["msgq"]['rcvTime']
-            service = msgq_to_service[msg['timestampsExtra']['info']['msg_name']]
-            smInfo = msg['timestampsExtra']['info']['smInfo']
-            durations = {}
-            for duration in service_to_durations[service]:
-                durations[duration] = smInfo[duration] 
-            frame_id = smInfo['frameId'] 
-            service_blocks[frame_id][service]["End"] = pubTime
-            service_blocks[frame_id][service]["Durations"] = durations
-            next_service = services[services.index(service)+1]
-            service_blocks[frame_id][next_service]["Start"] = rcvTime
-        elif "Pipeline start" in msg:
-            frame_id = msg['timestampExtra']["info"]["frameId"]
-            time = msg['timestampExtra']["time"]
-            service_blocks[frame_id][services[0]]["Start"] = time
-        elif "Pipeline end" in msg:
-            #TODO: needs translation
-            frame_id = msg['timestampExtra']["info"]["frameId"]
-            time = msg['timestampExtra']["time"]
-            service_blocks[frame_id][services[-1]]["End"] = time 
 
 # Build translation dict
 for msg in lr:
   if msg.which() == "logMessage" and "translation" in msg.logMessage:
     msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
-    jmsg = json.loads(msg)
-    logMonoTime = msg['timestampExtra']['info']['logMonoTime']
-    time = msg['timestampExtra']["time"]
-    #TODO get frame_id from publishing time
+    jmsg = json.loads(msg)['msg']['timestampExtra']
+    logMonoTime = jmsg['info']['from']
+    frame_id = jmsg['info']['to']
     translationdict[logMonoTime] = frame_id
 
-# TODO: Insert logs in blocks
-i = 0
+skip_frames = []
+
+# Build service blocks
+for msg in lr:
+    if msg.which() == "logMessage" and ("smInfo" in msg or "timestampExtra" in msg):
+        msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
+        jmsg = json.loads(msg)['msg']['timestampExtra']
+        #make more robust than strings
+        if "smInfo" in msg:
+            pubTime = jmsg['info']["msgq"]['logMonoTime']
+            rcvTime =jmsg['info']["msgq"]['rcvTime']
+            service = msgq_to_service[jmsg['info']['msg_name']]
+            smInfo = jmsg['info']['smInfo']
+            if smInfo['name'] == 'sendcan':
+                frame_id = translationdict[pubTime]
+                service_blocks[frame_id][service]["End"] = pubTime
+                next_service = services[services.index(service)+1]
+                service_blocks[frame_id][next_service]["Start"] = rcvTime
+            else:
+                durations = {}
+                for duration in service_to_durations[service]:
+                    durations[duration] = smInfo[duration] 
+                frame_id = smInfo['frameId'] 
+                if smInfo['name'] == 'modelV2':
+                    if smInfo['framIdExtra'] != frame_id:
+                        skip_frames.append(frame_id)
+                service_blocks[frame_id][service]["End"] = pubTime
+                service_blocks[frame_id][service]["Durations"] = durations
+                next_service = services[services.index(service)+1]
+                service_blocks[frame_id][next_service]["Start"] = rcvTime
+        elif "Pipeline start" in msg:
+            frame_id = jmsg["info"]["frameId"]
+            time = jmsg["time"]
+            service_blocks[frame_id][services[0]]["Start"] = time
+        elif "Pipeline end" in msg:
+            frame_id = translationdict[jmsg["info"]["logMonoTime"]]
+            time = jmsg["time"]
+            service_blocks[frame_id][services[-1]]["End"] = time 
+
+def find_frame_id(time, service):
+    for frame_id, blocks in service_blocks.items():
+        if blocks[service]["Start"] <= time <= blocks[service]["End"]:
+            return frame_id
+    return 0
+
+# Insert logs in blocks
 for msg in lr:
   if msg.which() == "logMessage" and "timestamp" in msg.logMessage:
     msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
@@ -78,17 +106,14 @@ for msg in lr:
     service = jmsg['ctx']['daemon']
     event = jmsg['msg']['timestamp']['event']
     time = jmsg['msg']['timestamp']['time']
-    frame_id = jmsg['msg']['timestamp']['frameId']
-    if jmsg['msg']['timestamp']['translate']:
-        try:
-            frame_id = translationdict[frame_id]
-        except:
-            i+=1
+    frame_id = find_frame_id(time, service) 
     timestamps[frame_id][service][event].append(time)
 
 print("Num failed translations:",i)
 
 del timestamps[0]
+for frame_id in skip_frames:
+    del timestamps[timestamps.keys().index(frame_id)]
 
 with open('timestamps.json', 'w') as outfile:
     json.dump(timestamps, outfile)

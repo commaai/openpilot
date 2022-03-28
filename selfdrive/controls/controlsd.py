@@ -632,7 +632,7 @@ class Controls:
       # send car controls over can
       self.last_actuators, can_sends = self.CI.apply(CC)
       sendcan_bytes = can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid)
-      cloudlog.timestampExtra("translation", {"logMonoTime": log.Event.from_bytes(sendcan_bytes).logMonoTime})
+      cloudlog.timestampExtra("translation", {"from": log.Event.from_bytes(sendcan_bytes).logMonoTime, "to": frame_id})
       self.pm.send('sendcan', sendcan_bytes)
       CC.actuatorsOutput = self.last_actuators
 

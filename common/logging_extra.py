@@ -177,6 +177,7 @@ class SwagLogger(logging.Logger):
     extra_info['timestampExtra'] = NiceOrderedDict()
     extra_info['timestampExtra']["event"] = event_name
     extra_info['timestampExtra']["info"] = info 
+    extra_info['timestampExtra']["time"] = sec_since_boot()*1e9
     self.debug(extra_info)
 
   def findCaller(self, stack_info=False, stacklevel=1):

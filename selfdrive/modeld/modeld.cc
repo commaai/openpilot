@@ -140,8 +140,6 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     // tracked dropped frames
     uint32_t vipc_dropped_frames = meta_main.frame_id - last_vipc_frame_id - 1;
     float frames_dropped = frame_dropped_filter.update((float)std::min(vipc_dropped_frames, 10U));
-    json11::Json frame_id_j = json11::Json::object{{"frameId", std::to_string(meta_main.frame_id)}};
-    if (frames_dropped)LOGTE("Frames dropped", frame_id_j);
     if (run_count < 10) { // let frame drops warm up
       frame_dropped_filter.reset(0);
       frames_dropped = 0.;

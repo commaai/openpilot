@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 from cereal import car
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
@@ -10,6 +11,7 @@ import cereal.messaging as messaging
 
 
 def plannerd_thread(sm=None, pm=None):
+  os.environ['MANAGER_DAEMON'] = "plannerd"
   config_realtime_process(5 if TICI else 2, Priority.CTRL_LOW)
 
   cloudlog.info("plannerd is waiting for CarParams")
