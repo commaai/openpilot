@@ -272,7 +272,7 @@ def load_tests(_routes):
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
-  parser.add_argument("--route", help="Specify route to run tests on")
+  parser.add_argument("route", nargs='?', help="Specify route to run tests on")
   parser.add_argument("--car_model", help="Specify car model for test route")
   args = parser.parse_args()
 
