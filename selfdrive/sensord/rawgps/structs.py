@@ -72,31 +72,31 @@ gps_measurement_report = """
 """
 
 gps_measurement_report_sv = """
-  uint8_t sv_id;
-  uint8_t observation_state; // SVObservationStates
-  uint8_t observations;
-  uint8_t good_observations;
-  uint16_t parity_error_count;
-  uint8_t filter_stages;
-  uint16_t carrier_noise;
-  int16_t latency;
-  uint8_t predetect_interval;
-  uint16_t postdetections;
-  uint32_t unfiltered_measurement_integral;
-  float unfiltered_measurement_fraction;
-  float unfiltered_time_uncertainty;
-  float unfiltered_speed;
-  float unfiltered_speed_uncertainty;
+  uint8_t sv_id;                              // SV PRN
+  uint8_t observation_state;                  // SV Observation state
+  uint8_t observations;                       // Count of all observation (both success and failure)
+  uint8_t good_observations;                  // Count of Good observations
+  uint16_t parity_error_count;                // Carrier to Code filtering N count
+  uint8_t filter_stages;                      // Pre-Detection (Coherent) Interval (msecs)
+  uint16_t carrier_noise;                     // CNo. Units of 0.1 dB
+  int16_t latency;                            // Age of the measurement in msecs (+ve meas Meas precedes ref time)
+  uint8_t predetect_interval;                 // Pre-Detection (Coherent) Interval (msecs)
+  uint16_t postdetections;                    // Num Post-Detections (uints of PreInts
+  uint32_t unfiltered_measurement_integral;   // Range of 0 thru (WEEK_MSECS-1) [msecs]
+  float unfiltered_measurement_fraction;      // Range of 0 thru 0.99999 [msecs]
+  float unfiltered_time_uncertainty;          // Time uncertainty (msec)
+  float unfiltered_speed;                     // Speed estimate (meters/sec)
+  float unfiltered_speed_uncertainty;         // Speed uncertainty estimate (meters/sec)
   uint32_t measurement_status;
   uint8_t misc_status;
   uint32_t multipath_estimate;
-  float azimuth;
-  float elevation;
+  float azimuth;                              // Azimuth (radians)
+  float elevation;                            // Elevation (radians)
   int32_t carrier_phase_cycles_integral;
   uint16_t carrier_phase_cycles_fraction;
-  float fine_speed;
-  float fine_speed_uncertainty;
-  uint8_t cycle_slip_count;
+  float fine_speed;                           // Carrier phase derived speed
+  float fine_speed_uncertainty;               // Carrier phase derived speed UNC
+  uint8_t cycle_slip_count;                   // Increments when a CSlip is detected
   uint32_t pad;
 """
 
