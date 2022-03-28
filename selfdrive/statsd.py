@@ -3,6 +3,7 @@ import os
 import zmq
 import time
 from pathlib import Path
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import NoReturn
 
@@ -81,7 +82,7 @@ def main() -> NoReturn:
 
   last_flush_time = time.monotonic()
   gauges = {}
-  samples = {}
+  samples = defaultdict(list)
   while True:
     started_prev = sm['deviceState'].started
     sm.update()
@@ -98,8 +99,6 @@ def main() -> NoReturn:
           if metric_type == METRIC_TYPE.GAUGE:
             gauges[metric_name] = metric_value
           if metric_type == METRIC_TYPE.SAMPLE:
-            if metric_name not in samples.keys():
-              samples[metric_name] = []
             samples[metric_name].append(metric_value)
           else:
             cloudlog.event("unknown metric type", metric_type=metric_type)
@@ -114,25 +113,25 @@ def main() -> NoReturn:
       current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
       tags['started'] = sm['deviceState'].started
 
-      for gauge_key in gauges:
-        result += get_influxdb_line(f"gauge.{gauge_key}", gauges[gauge_key], current_time, tags)
+      for key, values in gauges:
+        result += get_influxdb_line(f"gauge.{key}", values, current_time, tags)
 
-      for sample_key in samples:
-        samples[sample_key].sort()
-        sample_count = len(samples[sample_key])
-        sample_sum = sum(samples[sample_key])
+      for key, values in samples.items():
+        values.sort()
+        sample_count = len(values)
+        sample_sum = sum(values)
 
-        result += get_influxdb_line(f"sample.{sample_key}.count", sample_count, current_time, tags)
-        result += get_influxdb_line(f"sample.{sample_key}.min", samples[sample_key][0], current_time, tags)
-        result += get_influxdb_line(f"sample.{sample_key}.max", samples[sample_key][-1], current_time, tags)
-        result += get_influxdb_line(f"sample.{sample_key}.mean", sample_sum / sample_count, current_time, tags)
+        result += get_influxdb_line(f"sample.{key}.count", sample_count, current_time, tags)
+        result += get_influxdb_line(f"sample.{key}.min", values[0], current_time, tags)
+        result += get_influxdb_line(f"sample.{key}.max", values[-1], current_time, tags)
+        result += get_influxdb_line(f"sample.{key}.mean", sample_sum / sample_count, current_time, tags)
         for percentile in [0.05, 0.5, 0.95]:
-          value = samples[sample_key][int(round(percentile * (sample_count - 1)))]
-          result += get_influxdb_line(f"sample.{sample_key}.p{int(percentile * 100)}", value, current_time, tags)
+          value = values[int(round(percentile * (sample_count - 1)))]
+          result += get_influxdb_line(f"sample.{key}.p{int(percentile * 100)}", value, current_time, tags)
 
       # clear intermediate data
-      gauges = {}
-      samples = {}
+      gauges.clear()
+      samples.clear()
       last_flush_time = time.monotonic()
 
       # check that we aren't filling up the drive
