@@ -106,7 +106,7 @@ def main() -> NoReturn:
 
           if metric_type == METRIC_TYPE.GAUGE:
             gauges[metric_name] = metric_value
-          if metric_type == METRIC_TYPE.SAMPLE:
+          elif metric_type == METRIC_TYPE.SAMPLE:
             samples[metric_name].append(metric_value)
           else:
             cloudlog.event("unknown metric type", metric_type=metric_type)
