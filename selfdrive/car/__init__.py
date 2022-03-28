@@ -1,6 +1,6 @@
 # functions common among cars
 from cereal import car
-from common.numpy_fast import clip, interp
+from common.numpy_fast import clip
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
