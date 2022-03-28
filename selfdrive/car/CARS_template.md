@@ -1,4 +1,4 @@
-{% set footnote_tag = '[<sup>{}</sup>](#Footnotes)' -%}
+{% set footnote_tag = '[<sup>{}</sup>](#footnotes)' -%}
 {% set star_icon = '<a href="#"><img valign="top" src="assets/icon-star-{}.svg" width="22" /></a>' -%}
 
 # Supported Cars
@@ -49,7 +49,7 @@ How We Rate The Cars
 
 {% endfor %}
 
-## Footnotes
+<a id="footnotes"></a>
 {% for footnote in footnotes %}
 <sup>{{loop.index}}</sup>{{footnote}} <br />
 {% endfor %}
