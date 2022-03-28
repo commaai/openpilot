@@ -183,7 +183,8 @@ def logTimestamps(sm, msgqs):
       try:
         sm_info['smInfo'] = sm[msgq].to_dict()
       except:
-        sm_info['smInfo'] = [o.to_dict() for o in sm[msgq]]
+        #sm_info['smInfo'] = [o.to_dict() for o in sm[msgq]]
+        sm_info['smInfo'] = None
       cloudlog.timestampExtra("msgq", sm_info)
 
 def main() -> None:
