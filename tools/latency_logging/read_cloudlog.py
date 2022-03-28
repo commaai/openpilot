@@ -9,22 +9,8 @@ from collections import defaultdict
 timestamps = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 translationdict = {}
 
-r = Route("9f583b1d93915c31|2022-03-26--17-25-22") #major changes 
+r = Route("9f583b1d93915c31|2022-03-28--10-21-49") 
 lr = LogReader(r.log_paths()[0])
-'''
-for msg in lr:
-  if msg.which() == "logMessage" and "timestamp" in msg.logMessage:
-    msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
-    jmsg = json.loads(msg)
-    try:
-        jmsg['msg']['timestamp']
-        service = jmsg['ctx']['daemon']
-        print(service)
-    except:
-        pass
-
-exit()
-'''
 
 services = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 
@@ -35,9 +21,9 @@ msgq_to_service['modelV2'] = "modeld"
 msgq_to_service['lateralPlan'] = "plannerd"
 msgq_to_service['longitudinalPlan'] = "plannerd"
 msgq_to_service['sendcan'] = "controlsd"
-msgq_to_service['controlState'] = "controlsd"
+msgq_to_service['controlsState'] = "controlsd"
 
-service_to_durations = {}
+service_to_durations = defaultdict(list)
 service_to_durations['camerad'] = ['timestampEof', 'timestampSof', 'processingTime']
 service_to_durations['modeld'] = ['timestampEof', 'modelExeccutionTime', 'gpuExecutionTime']
 service_to_durations['plannerd'] = ["solverExcecutionTime"]
@@ -57,16 +43,17 @@ skip_frames = []
 
 # Build service blocks
 for msg in lr:
-    if msg.which() == "logMessage" and ("smInfo" in msg or "timestampExtra" in msg):
+    if msg.which() == "logMessage" and ("smInfo" in msg.logMessage or "timestampExtra" in msg.logMessage):
         msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}")
         jmsg = json.loads(msg)['msg']['timestampExtra']
         #make more robust than strings
         if "smInfo" in msg:
-            pubTime = jmsg['info']["msgq"]['logMonoTime']
-            rcvTime =jmsg['info']["msgq"]['rcvTime']
-            service = msgq_to_service[jmsg['info']['msg_name']]
+            pubTime = jmsg['info']['logMonoTime']
+            rcvTime =jmsg['info']['rcvTime']*1e9
+            msg_name = jmsg['info']['msg_name']
+            service = msgq_to_service[msg_name]
             smInfo = jmsg['info']['smInfo']
-            if smInfo['name'] == 'sendcan':
+            if msg_name== 'sendcan':
                 frame_id = translationdict[pubTime]
                 service_blocks[frame_id][service]["End"] = pubTime
                 next_service = services[services.index(service)+1]
@@ -75,7 +62,11 @@ for msg in lr:
                 durations = {}
                 for duration in service_to_durations[service]:
                     durations[duration] = smInfo[duration] 
-                frame_id = smInfo['frameId'] 
+                frame_id = 0
+                try:
+                    frame_id = smInfo['frameId'] 
+                except:
+                    print(msg_name)
                 if smInfo['name'] == 'modelV2':
                     if smInfo['framIdExtra'] != frame_id:
                         skip_frames.append(frame_id)
