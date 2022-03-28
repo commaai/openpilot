@@ -8,6 +8,15 @@ from tabulate import tabulate
 json_file = open('timestamps.json')
 timestamps = json.load(json_file)
 
+empty_data = set()
+for frame_id, services in timestamps.items():
+    for service, events in services.items():
+        for event, times in events.items():
+            if len(times) == 0:
+                empty_data.add(frame_id)
+            
+for frame_id in empty_data:
+    del timestamps[frame_id]
 
 for frame_id, services in timestamps.items():
     t0 = min([min([min(times) for times in events.values()]) for events in services.values()])

@@ -158,8 +158,6 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
-  json11::Json frame_id_j = json11::Json::object{{"frameId", std::to_string(cur_frame_data.frame_id)}};
-  LOGTE("Pipeline start", frame_id_j);
   LOGT("Start acquire camera buffer");
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
