@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import NoReturn
+from typing import NoReturn, List, Dict
 
 from common.params import Params
 from cereal.messaging import SubMaster
@@ -82,7 +82,7 @@ def main() -> NoReturn:
 
   last_flush_time = time.monotonic()
   gauges = {}
-  samples = defaultdict(list)
+  samples: Dict[str, List[float]] = defaultdict(list)
   while True:
     started_prev = sm['deviceState'].started
     sm.update()
