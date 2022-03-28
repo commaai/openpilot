@@ -121,8 +121,8 @@ def main() -> NoReturn:
       current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
       tags['started'] = sm['deviceState'].started
 
-      for key, values in gauges:
-        result += get_influxdb_line(f"gauge.{key}", values, current_time, tags)
+      for key, value in gauges.items():
+        result += get_influxdb_line(f"gauge.{key}", value, current_time, tags)
 
       for key, values in samples.items():
         values.sort()
