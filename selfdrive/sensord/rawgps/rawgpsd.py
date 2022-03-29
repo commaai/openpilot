@@ -18,9 +18,7 @@ from selfdrive.sensord.rawgps.structs import gps_measurement_report, gps_measure
 from selfdrive.sensord.rawgps.structs import glonass_measurement_report, glonass_measurement_report_sv
 from selfdrive.sensord.rawgps.structs import oemdre_measurement_report, oemdre_measurement_report_sv
 from selfdrive.sensord.rawgps.structs import LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT
-from selfdrive.sensord.rawgps.structs import position_report, LOG_GNSS_POSITION_REPORT
-
-LOG_GNSS_OEMDRE_MEASUREMENT_REPORT = 0x14DE
+from selfdrive.sensord.rawgps.structs import position_report, LOG_GNSS_POSITION_REPORT, LOG_GNSS_OEMDRE_MEASUREMENT_REPORT
 
 DEBUG = int(os.getenv("DEBUG", "0"))==1
 
