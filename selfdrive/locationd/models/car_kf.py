@@ -86,6 +86,8 @@ class CarKalman(KalmanFilter):
     'center_to_rear',
     'stiffness_front',
     'stiffness_rear',
+    'steer_ratio',
+    'learnSR',
   ]
 
   @staticmethod
@@ -98,7 +100,7 @@ class CarKalman(KalmanFilter):
 
     # globals
     global_vars = [sp.Symbol(name) for name in CarKalman.global_vars]
-    m, j, aF, aR, cF_orig, cR_orig = global_vars
+    m, j, aF, aR, cF_orig, cR_orig, sR, learnSR = global_vars
 
     # make functions and jacobians with sympy
     # state variables
@@ -114,7 +116,7 @@ class CarKalman(KalmanFilter):
     theta = state[States.ROAD_ROLL, :][0, 0]
     sa = state[States.STEER_ANGLE, :][0, 0]
 
-    sR = state[States.STEER_RATIO, :][0, 0]
+    sR = sR*(1.-learnSR) + learnSR*state[States.STEER_RATIO, :][0, 0]
     u, v = state[States.VELOCITY, :]
     r = state[States.YAW_RATE, :][0, 0]
 

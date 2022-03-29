@@ -29,6 +29,8 @@ class ParamsLearner:
     self.kf.filter.set_global("center_to_rear", CP.wheelbase - CP.centerToFront)
     self.kf.filter.set_global("stiffness_front", CP.tireStiffnessFront)
     self.kf.filter.set_global("stiffness_rear", CP.tireStiffnessRear)
+    self.kf.filter.set_global("steer_ratio", CP.steerRatio)
+    self.kf.filter.set_global("learn_sr", 1. if CP.learnSR else 0.)
 
     self.active = False
 
@@ -117,7 +119,10 @@ def main(sm=None, pm=None):
   CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
   cloudlog.info("paramsd got CarParams")
 
-  min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
+  min_sr, max_sr = CP.steerRatio, CP.steerRatio
+  if CP.learnSR:
+    min_sr /= 2
+    max_sr *= 2
 
   params = params_reader.get("LiveParameters")
 
