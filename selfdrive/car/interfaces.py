@@ -124,7 +124,7 @@ class CarInterfaceBase(ABC):
       events.add(EventName.wrongCarMode)
     if cs_out.espDisabled:
       events.add(EventName.espDisabled)
-    if cs_out.gasPressed or cs_out.brakePressed:
+    if cs_out.gasPressed or (cs_out.brakePressed and cs_out.standstill):
       events.add(EventName.pedalPressedPreEnable)
     if cs_out.stockFcw:
       events.add(EventName.stockFcw)
