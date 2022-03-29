@@ -11,7 +11,13 @@ import time
 from threading import local
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
-from common.realtime import sec_since_boot
+
+try:
+    from common.realtime import sec_since_boot
+except ImportError:
+    import time
+    sec_since_boot = time.time
+    print("Warning, using python time.time() instead of faster sec_since_boot")
 
 def json_handler(obj):
   # if isinstance(obj, (datetime.date, datetime.time)):
