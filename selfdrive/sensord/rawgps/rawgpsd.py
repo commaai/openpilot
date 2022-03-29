@@ -7,14 +7,13 @@ import math
 import time
 from hexdump import hexdump
 from typing import NoReturn
-from struct import unpack_from, calcsize
+from struct import unpack_from, calcsize, pack
 
 import cereal.messaging as messaging
 from cereal import log
 from selfdrive.swaglog import cloudlog
 
-from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs
-from selfdrive.sensord.rawgps.modemdiag import *
+from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
 from selfdrive.sensord.rawgps.structs import dict_unpacker
 from selfdrive.sensord.rawgps.structs import gps_measurement_report, gps_measurement_report_sv
 from selfdrive.sensord.rawgps.structs import glonass_measurement_report, glonass_measurement_report_sv
@@ -79,9 +78,9 @@ def main() -> NoReturn:
     LOG_GNSS_GPS_MEASUREMENT_REPORT,
     LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
     LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
-    0x14E0,
+    #0x14E0,
     0x14E1,
-    0x14E2,
+    #0x14E2,
   ]
   pub_types = ['qcomGnss']
   if int(os.getenv("PUBLISH_EXTERNAL", "0")) == 1:
@@ -112,22 +111,16 @@ def main() -> NoReturn:
   try_setup_logs(diag, log_types)
   cloudlog.warning("rawgpsd: setup logs done")
 
-  CGPS_DIAG_START_TASK = 8
+  # enable OEMDRE mode
+  DIAG_SUBSYS_CMD_F = 75
+  DIAG_SUBSYS_GPS = 13
   CGPS_DIAG_PDAPI_CMD = 0x64
-  CGPS_PDCOMM_TD_START_TASK = 0x67
-  CGPS_INIT_CMD = 0
-  CGPS_ACTIVATE_CMD = 7
-  CGPS_SET_PARAM_CMD = 12
-  CGPS_QUERY_VERSION = 200
   CGPS_OEM_CONTROL = 202
   GPSDIAG_OEMFEATURE_DRE = 1
   GPSDIAG_OEM_DRE_ON = 1
-  GPSDIAG_OEM_DRE_OFF = 2
-
-  GPSDIAG_OEMFEATURE_DRSYNC = 2
-  GPSDIAG_OEM_DRSYNC_GET_CFG = 4
 
   # gpsdiag_OemControlReqType
+  """
   opcode, payload = send_recv(diag, DIAG_SUBSYS_CMD_F, pack('<BHBBIIII',
       DIAG_SUBSYS_GPS,           # Subsystem Id
       CGPS_DIAG_PDAPI_CMD,       # Subsystem Command Code
@@ -137,19 +130,14 @@ def main() -> NoReturn:
       GPSDIAG_OEM_DRE_ON,
       0,0
   ))
-  print(opcode)
-  hexdump(payload)
+  """
 
   """
-  opcode, payload = send_recv(diag, DIAG_NV_READ_F, pack('<H', NV_CGPS_DPO_CONTROL))
-  print(opcode)
-  hexdump(payload)
-
   opcode, payload = send_recv(diag, DIAG_NV_READ_F, pack('<H', NV_GNSS_OEM_FEATURE_MASK))
   print(opcode)
   hexdump(payload)
 
-  opcode, payload = send_recv(diag, DIAG_NV_WRITE_F, pack('<HI', NV_GNSS_OEM_FEATURE_MASK, 1))
+  opcode, payload = send_recv(diag, DIAG_NV_WRITE_F, pack('<HIII', NV_GNSS_OEM_FEATURE_MASK, 0, 0 ,0))
   print(opcode)
   hexdump(payload)
 
@@ -157,7 +145,6 @@ def main() -> NoReturn:
   print(opcode)
   hexdump(payload)
   """
-
 
   pm = messaging.PubMaster(pub_types)
 
@@ -174,7 +161,10 @@ def main() -> NoReturn:
       continue
     if DEBUG:
       print("%.2f: got log: %x len %d" % (time.time(), log_type, len(log_payload)))
-    if log_type == LOG_GNSS_POSITION_REPORT:
+    if log_type == LOG_GNSS_OEMDRE_MEASUREMENT_REPORT:
+      #hexdump(log_payload[0:0x100])
+      pass
+    elif log_type == LOG_GNSS_POSITION_REPORT:
       report = unpack_position(log_payload)
       if report["u_PosSource"] != 2:
         continue
