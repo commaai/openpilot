@@ -5,7 +5,6 @@ import signal
 import itertools
 import math
 import time
-from hexdump import hexdump
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
 
