@@ -203,7 +203,7 @@ void UIState::updateStatus() {
       status = STATUS_WARNING;
     } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
       status = STATUS_ALERT;
-    } else if (state == cereal::ControlsState::OpenpilotState::PRE_ENABLE) {
+    } else if (state == cereal::ControlsState::OpenpilotState::PRE_ENABLED) {
       status = STATUS_OVERRIDE;
     } else {
       status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
