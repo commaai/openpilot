@@ -125,9 +125,6 @@ void HttpRequest::requestFinished() {
       nam()->clearConnectionCache();
       error = "Request timed out";
     } else {
-      if (reply->error() == QNetworkReply::ContentAccessDenied || reply->error() == QNetworkReply::AuthenticationRequiredError) {
-        qWarning() << ">>  Unauthorized. Authenticate with tools/lib/auth.py  <<";
-      }
       error = reply->errorString();
     }
     emit requestDone(error, false, reply->error());
