@@ -117,7 +117,7 @@ void HttpRequest::requestFinished() {
   networkTimer->stop();
 
   if (reply->error() == QNetworkReply::NoError) {
-    emit requestDone(reply->readAll(), true);
+    emit requestDone(reply->readAll(), true, reply->error());
   } else {
     QString error;
     if (reply->error() == QNetworkReply::OperationCanceledError) {
@@ -130,7 +130,7 @@ void HttpRequest::requestFinished() {
       }
       error = reply->errorString();
     }
-    emit requestDone(error, false);
+    emit requestDone(error, false, reply->error());
   }
 
   reply->deleteLater();
