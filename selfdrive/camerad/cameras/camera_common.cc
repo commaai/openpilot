@@ -158,7 +158,6 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
-  LOGT("Start acquire camera buffer");
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
@@ -196,7 +195,6 @@ bool CameraBuf::acquire() {
   cur_yuv_buf->set_frame_id(cur_frame_data.frame_id);
   vipc_server->send(cur_rgb_buf, &extra);
   vipc_server->send(cur_yuv_buf, &extra);
-  LOGT("End acquire camera buffer", cur_frame_data.frame_id);
   return true;
 }
 
@@ -377,7 +375,6 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   uint32_t cnt = 0;
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
-    LOGT((std::string(thread_name)+std::string(": Start")).c_str());
 
     callback(cameras, cs, cnt);
 

@@ -1,8 +1,0 @@
-import cereal.messaging as messaging
-import capnp
-
-# in subscriber
-sm = messaging.SubMaster(["lateralPlan", "sendcan"])
-while 1:
-  sm.update()
-  print(sm.logMessage)
