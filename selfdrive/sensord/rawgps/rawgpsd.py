@@ -168,13 +168,37 @@ def main() -> NoReturn:
     if DEBUG:
       print("%.4f: got log: %x len %d" % (time.time(), log_type, len(log_payload)))
     if log_type == LOG_GNSS_OEMDRE_MEASUREMENT_REPORT:
-      report = unpack_oemdre_meas(log_payload)
-      sats = log_payload[size_oemdre_meas:]
+      msg = messaging.new_message('qcomGnss')
 
-      print(report)
-      for i in range(report['svCount']):
+      gnss = msg.qcomGnss
+      gnss.logTs = log_time
+      gnss.init('drMeasurementReport')
+      report = gnss.drMeasurementReport
+
+      dat = unpack_oemdre_meas(log_payload)
+      print(dat)
+      for k,v in dat.items():
+        if k in ["gpsTimeBias", "gpsClockTimeUncertainty"]:
+          k += "Ms"
+        if k == "version":
+          assert v == 2
+        elif k == "svCount" or k.startswith("cdmaClockInfo["):
+          # TODO: should we save cdmaClockInfo?
+          pass
+        elif k == "systemRtcValid":
+          setattr(report, k, bool(v))
+        else:
+          setattr(report, k, v)
+
+      report.init('sv', dat['svCount'])
+      sats = log_payload[size_oemdre_meas:]
+      for i in range(dat['svCount']):
         sat = unpack_oemdre_meas_sv(sats[size_oemdre_meas_sv*i:size_oemdre_meas_sv*(i+1)])
+        sv = report.sv[i]
+        sv.init('measurementStatus')
         print(sat)
+        for k,v in sat.items():
+          setattr(sv, k, v)
     elif log_type == LOG_GNSS_POSITION_REPORT:
       report = unpack_position(log_payload)
       if report["u_PosSource"] != 2:
