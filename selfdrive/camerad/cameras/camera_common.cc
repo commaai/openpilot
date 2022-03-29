@@ -9,7 +9,6 @@
 
 #include "libyuv.h"
 #include <jpeglib.h>
-#include "json11.hpp"
 
 #include "selfdrive/camerad/imgproc/utils.h"
 #include "selfdrive/common/clutil.h"

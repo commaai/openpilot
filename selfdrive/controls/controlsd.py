@@ -486,9 +486,6 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
 
     CC = car.CarControl.new_message()
-    # consider frameId updated when both are updated
-    frame_id = min(lat_plan.frameId, long_plan.frameId)
-    CC.frameId = frame_id
     CC.enabled = self.enabled
     # Check which actuators can be enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
@@ -627,11 +624,12 @@ class Controls:
     if current_alert:
       hudControl.visualAlert = current_alert.visual_alert
 
-    frame_id = CC.frameId
     if not self.read_only and self.initialized:
       # send car controls over can
       self.last_actuators, can_sends = self.CI.apply(CC)
       sendcan_bytes = can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid)
+      # consider frameId updated when both are updated
+      frame_id = min(self.sm['lateralPlan'].frameId, self.sm['longitudinalPlan'].frameId)
       cloudlog.timestampExtra("translation", {"from": log.Event.from_bytes(sendcan_bytes).logMonoTime, "to": frame_id})
       self.pm.send('sendcan', sendcan_bytes)
       CC.actuatorsOutput = self.last_actuators
