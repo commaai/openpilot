@@ -710,19 +710,19 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.roadCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Camera Error",
+    ET.PERMANENT: NormalPermanentAlert("Camera(f) Error",
                                        duration=1.,
                                        creation_delay=30.),
   },
 
   EventName.driverCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Camera Error",
+    ET.PERMANENT: NormalPermanentAlert("Camera(d) Error",
                                        duration=1.,
                                        creation_delay=30.),
   },
 
   EventName.wideRoadCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Camera Error",
+    ET.PERMANENT: NormalPermanentAlert("Camera(e) Error",
                                        duration=1.,
                                        creation_delay=30.),
   },
