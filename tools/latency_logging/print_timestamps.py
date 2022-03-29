@@ -124,7 +124,11 @@ for frame_id, services in service_blocks.items():
             d[key] = (service, event, times)
     s = sorted(d.items())
     print(tabulate([[item[1][0], item[1][1], item[1][2]] for item in s], headers=["service", "event", "time (ms)"]))
-    print(dict(dict(durations)[frame_id]))
+    print("Internal durations:")
+    for service, events in dict(durations)[frame_id].items():
+        print(service)  
+        for event, times in dict(events).items():
+            print("    ", event, times)  
     print()
 
 print("Num skipped due to failed translations:",failed_transl)
