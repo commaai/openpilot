@@ -92,10 +92,17 @@ def main() -> NoReturn:
     log_types.append(LOG_GNSS_POSITION_REPORT)
     pub_types.append("gpsLocationExternal")
 
-  # disable DPO power savings for more accuracy
-  os.system("mmcli -m 0 --command='AT+QGPSCFG=\"dpoenable\",0'")
-  os.system("mmcli -m 0 --location-enable-gps-raw --location-enable-gps-nmea")
+  # connect to modem
   diag = ModemDiag()
+
+  # NV enable OEMDRE
+  # TODO: it has to reboot for this to take effect
+  DIAG_NV_READ_F = 38
+  DIAG_NV_WRITE_F = 39
+  NV_GNSS_OEM_FEATURE_MASK = 7165
+
+  opcode, payload = send_recv(diag, DIAG_NV_WRITE_F, pack('<HI', NV_GNSS_OEM_FEATURE_MASK, 1))
+  opcode, payload = send_recv(diag, DIAG_NV_READ_F, pack('<H', NV_GNSS_OEM_FEATURE_MASK))
 
   def try_setup_logs(diag, log_types):
     for _ in range(5):
@@ -115,6 +122,10 @@ def main() -> NoReturn:
   try_setup_logs(diag, log_types)
   cloudlog.warning("rawgpsd: setup logs done")
 
+  # disable DPO power savings for more accuracy
+  os.system("mmcli -m 0 --command='AT+QGPSCFG=\"dpoenable\",0'")
+  os.system("mmcli -m 0 --location-enable-gps-raw --location-enable-gps-nmea")
+
   # enable OEMDRE mode
   DIAG_SUBSYS_CMD_F = 75
   DIAG_SUBSYS_GPS = 13
@@ -133,24 +144,6 @@ def main() -> NoReturn:
       GPSDIAG_OEM_DRE_ON,
       0,0
   ))
-
-  """
-  DIAG_NV_READ_F = 38
-  DIAG_NV_WRITE_F = 39
-  NV_GNSS_OEM_FEATURE_MASK = 7165
-
-  opcode, payload = send_recv(diag, DIAG_NV_READ_F, pack('<H', NV_GNSS_OEM_FEATURE_MASK))
-  print(opcode)
-  hexdump(payload)
-
-  opcode, payload = send_recv(diag, DIAG_NV_WRITE_F, pack('<HIII', NV_GNSS_OEM_FEATURE_MASK, 0, 0 ,0))
-  print(opcode)
-  hexdump(payload)
-
-  opcode, payload = send_recv(diag, DIAG_NV_READ_F, pack('<H', NV_GNSS_OEM_FEATURE_MASK))
-  print(opcode)
-  hexdump(payload)
-  """
 
   pm = messaging.PubMaster(pub_types)
 
@@ -176,7 +169,6 @@ def main() -> NoReturn:
       report = gnss.drMeasurementReport
 
       dat = unpack_oemdre_meas(log_payload)
-      print(dat)
       for k,v in dat.items():
         if k in ["gpsTimeBias", "gpsClockTimeUncertainty"]:
           k += "Ms"
@@ -196,9 +188,21 @@ def main() -> NoReturn:
         sat = unpack_oemdre_meas_sv(sats[size_oemdre_meas_sv*i:size_oemdre_meas_sv*(i+1)])
         sv = report.sv[i]
         sv.init('measurementStatus')
-        print(sat)
         for k,v in sat.items():
-          setattr(sv, k, v)
+          if k in ["unkn", "measurementStatus2"]:
+            pass
+          elif k == "multipathEstimateValid":
+            sv.measurementStatus.multipathEstimateIsValid = bool(v)
+          elif k == "directionValid":
+            sv.measurementStatus.directionIsValid = bool(v)
+          elif k == "goodParity":
+            setattr(sv, k, bool(v))
+          elif k == "measurementStatus":
+            for kk,vv in measurementStatusFields.items():
+              setattr(sv.measurementStatus, kk, bool(v & (1<<vv)))
+          else:
+            setattr(sv, k, v)
+      pm.send('qcomGnss', msg)
     elif log_type == LOG_GNSS_POSITION_REPORT:
       report = unpack_position(log_payload)
       if report["u_PosSource"] != 2:
