@@ -231,7 +231,7 @@ def ublox_rcv_callback(msg):
   elif (msg_class, msg_id) in {(2, 1 * 16 + 5), (10, 9)}:
     return ["ubloxGnss"]
   else:
-     return []
+    return []
 
 
 CONFIGS = [

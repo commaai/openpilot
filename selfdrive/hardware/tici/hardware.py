@@ -24,19 +24,19 @@ MM_MODEM_SIMPLE = MM + ".Modem.Simple"
 MM_SIM = MM + ".Sim"
 
 class MM_MODEM_STATE(IntEnum):
-       FAILED        = -1
-       UNKNOWN       = 0
-       INITIALIZING  = 1
-       LOCKED        = 2
-       DISABLED      = 3
-       DISABLING     = 4
-       ENABLING      = 5
-       ENABLED       = 6
-       SEARCHING     = 7
-       REGISTERED    = 8
-       DISCONNECTING = 9
-       CONNECTING    = 10
-       CONNECTED     = 11
+  FAILED        = -1
+  UNKNOWN       = 0
+  INITIALIZING  = 1
+  LOCKED        = 2
+  DISABLED      = 3
+  DISABLING     = 4
+  ENABLING      = 5
+  ENABLED       = 6
+  SEARCHING     = 7
+  REGISTERED    = 8
+  DISCONNECTING = 9
+  CONNECTING    = 10
+  CONNECTED     = 11
 
 class NMMetered(IntEnum):
   NM_METERED_UNKNOWN = 0
@@ -53,6 +53,11 @@ NetworkStrength = log.DeviceState.NetworkStrength
 # https://developer.gnome.org/ModemManager/unstable/ModemManager-Flags-and-Enumerations.html#MMModemAccessTechnology
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
+
+
+def sudo_write(val, path):
+  os.system(f"sudo su -c 'echo {val} > {path}'")
+
 
 class Tici(HardwareBase):
   @cached_property
@@ -194,14 +199,14 @@ class Tici(HardwareBase):
       return None
 
   def parse_strength(self, percentage):
-      if percentage < 25:
-        return NetworkStrength.poor
-      elif percentage < 50:
-        return NetworkStrength.moderate
-      elif percentage < 75:
-        return NetworkStrength.good
-      else:
-        return NetworkStrength.great
+    if percentage < 25:
+      return NetworkStrength.poor
+    elif percentage < 50:
+      return NetworkStrength.moderate
+    elif percentage < 75:
+      return NetworkStrength.good
+    else:
+      return NetworkStrength.great
 
   def get_network_strength(self, network_type):
     network_strength = NetworkStrength.unknown
@@ -390,18 +395,16 @@ class Tici(HardwareBase):
     if not powersave_enabled:
       self.amplifier.initialize_configuration()
 
+    # *** CPU config ***
+
     # offline big cluster, leave core 4 online for boardd
     for i in range(5, 8):
-      # TODO: fix permissions with udev
       val = "0" if powersave_enabled else "1"
-      os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
+      sudo_write(val, f"/sys/devices/system/cpu/cpu{i}/online")
 
     for n in ('0', '4'):
-      gov = 'userspace' if powersave_enabled else 'performance'
-      os.system(f"sudo su -c 'echo {gov} > /sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor'")
-
-      if powersave_enabled:
-        os.system(f"sudo su -c 'echo 979200 > /sys/devices/system/cpu/cpufreq/policy{n}/scaling_setspeed'")
+      gov = 'ondemand' if powersave_enabled else 'performance'
+      sudo_write(gov, f"/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor")
 
   def get_gpu_usage_percent(self):
     try:
@@ -415,6 +418,20 @@ class Tici(HardwareBase):
 
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
+
+    # *** GPU config ***
+    sudo_write("0", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
+    sudo_write("0", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
+    sudo_write("1000000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
+    sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
+
+    # setup governors
+    sudo_write("performance", "/sys/class/devfreq/soc:qcom,cpubw/governor")
+    sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor")
+    sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu4/governor")
 
   def get_networks(self):
     r = {}

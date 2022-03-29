@@ -585,12 +585,14 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.02 56310-CLAC0 4TSHC102',
+      b'\xf1\x00TM  MDPS C 1.00 1.02 56310-CLEC0 4TSHC102',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TMP MFC  AT USA LHD 1.00 1.03 99211-S1500 210224',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8795441-3D121\x00\xf1\x81E16\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2333  E16\x00\x00\x00\x00\x00\x00\x00TTM2P16SA0o\x88^\xbe',
+      b'\xf1\x8795441-3D121\x00\xf1\x81E16\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2333  E16\x00\x00\x00\x00\x00\x00\x00TTM2P16SA1\x0b\xc5\x0f\xea',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x87391312MTF0',
@@ -753,10 +755,12 @@ FW_VERSIONS = {
   CAR.GENESIS_G70_2020: {
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00IK  MDPS R 1.00 1.07 57700-G9220 4I2VL107',
+      b'\xf1\x00IK  MDPS R 1.00 1.07 57700-G9420 4I4VL107',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x87VCJLP18407832DN3\x88vXfvUVT\x97eFU\x87d7v\x88eVeveFU\x89\x98\x7f\xff\xb2\xb0\xf1\x81E25\x00\x00\x00',
       b'\x00\x00\x00\x00\xf1\x00bcsh8p54  E25\x00\x00\x00\x00\x00\x00\x00SIK0T33NB4\xecE\xefL',
+      b'\xf1\x87VDKLT18912362DN4wfVfwefeveVUwfvw\x88vWfvUFU\x89\xa9\x8f\xff\x87w\xf1\x81E25\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  E25\x00\x00\x00\x00\x00\x00\x00SIK0T33NB4\xecE\xefL',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00IK__ SCC F-CUP      1.00 1.02 96400-G9100         ',
