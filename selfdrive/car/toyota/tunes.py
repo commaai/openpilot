@@ -8,7 +8,7 @@ class LongTunes(Enum):
   TSS = 2
 
 class LatTunes(Enum):
-  CRAYCRAY_PRIUS = 0
+  INDI_PRIUS = 0
   LQR_RAV4 = 1
   PID_A = 2
   PID_B = 3
@@ -24,6 +24,7 @@ class LatTunes(Enum):
   PID_L = 13
   PID_M = 14
   PID_N = 15
+  TORQUE = 16
 
 
 ###### LONG ######
@@ -50,15 +51,24 @@ def set_long_tune(tune, name):
 
 ###### LAT ######
 def set_lat_tune(tune, name):
-  if name == LatTunes.CRAYCRAY_PRIUS:
-    tune.init('craycray')
-    tune.craycray.kiBP = [0.0]
-    tune.craycray.kpBP = [0.0]
+  if name == LatTunes.TORQUE:
+    tune.init('torque')
+    tune.torque.kiBP = [0.0]
+    tune.torque.kpBP = [0.0]
     MAX_TORQUE = 2.0
-    tune.craycray.kpV = [1.5/MAX_TORQUE]
-    tune.craycray.kiV = [0.0/MAX_TORQUE]
-    tune.craycray.kf = 0.75 / MAX_TORQUE
-
+    tune.torque.kpV = [1.5/MAX_TORQUE]
+    tune.torque.kiV = [0.0/MAX_TORQUE]
+    tune.torque.kf = 0.75 / MAX_TORQUE
+  elif name == LatTunes.INDI_PRIUS:
+    tune.init('indi')
+    tune.indi.innerLoopGainBP = [0.]
+    tune.indi.innerLoopGainV = [4.0]
+    tune.indi.outerLoopGainBP = [0.]
+    tune.indi.outerLoopGainV = [3.0]
+    tune.indi.timeConstantBP = [0.]
+    tune.indi.timeConstantV = [1.0]
+    tune.indi.actuatorEffectivenessBP = [0.]
+    tune.indi.actuatorEffectivenessV = [1.0]
   elif name == LatTunes.LQR_RAV4:
     tune.init('lqr')
     tune.lqr.scale = 1500.0

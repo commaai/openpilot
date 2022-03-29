@@ -5,12 +5,12 @@ from cereal import log
 CURVATURE_SCALE = 400
 
 
-class LatControlCrayCray(LatControl):
+class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    self.pid = PIController((CP.lateralTuning.craycray.kpBP, CP.lateralTuning.craycray.kpV),
-                            (CP.lateralTuning.craycray.kiBP, CP.lateralTuning.craycray.kiV),
-                            k_f=CP.lateralTuning.craycray.kf, pos_limit=1.0, neg_limit=-1.0)
+    self.pid = PIController((CP.lateralTuning.torque.kpBP, CP.lateralTuning.torque.kpV),
+                            (CP.lateralTuning.torque.kiBP, CP.lateralTuning.torque.kiV),
+                            k_f=CP.lateralTuning.torque.kf, pos_limit=1.0, neg_limit=-1.0)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
     self.steer_max = 1.0
     self.pid.pos_limit = self.steer_max
