@@ -434,9 +434,6 @@ class Controls:
             self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
-          elif self.events.any(ET.OVERRIDE):
-            self.state = State.overriding
-
         # SOFT DISABLING
         elif self.state == State.softDisabling:
           if not self.events.any(ET.SOFT_DISABLE):
@@ -456,13 +453,6 @@ class Controls:
           else:
             self.current_alert_types.append(ET.PRE_ENABLE)
 
-        # OVERRIDING
-        elif self.state == State.overriding:
-          if not self.events.any(ET.OVERRIDE):
-            self.state = State.enabled
-          else:
-            self.current_alert_types.append(ET.OVERRIDE)
-
     # DISABLED
     elif self.state == State.disabled:
       if self.events.any(ET.ENABLE):
@@ -472,8 +462,6 @@ class Controls:
         else:
           if self.events.any(ET.PRE_ENABLE):
             self.state = State.preEnabled
-          elif self.events.any(ET.OVERRIDE):
-            self.state = State.overriding
           else:
             self.state = State.enabled
           self.current_alert_types.append(ET.ENABLE)
@@ -481,7 +469,7 @@ class Controls:
             self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
 
     # Check if actuators are enabled
-    self.active = self.state in (State.enabled, State.overriding, State.softDisabling)
+    self.active = self.state in (State.enabled, State.softDisabling)
     if self.active:
       self.current_alert_types.append(ET.WARNING)
 
