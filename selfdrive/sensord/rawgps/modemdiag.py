@@ -66,15 +66,11 @@ class ModemDiag:
 
 # *** end class ***
 
-DIAG_NV_READ_F = 38
-DIAG_NV_WRITE_F = 39
 DIAG_LOG_F = 16
 DIAG_LOG_CONFIG_F = 115
 LOG_CONFIG_RETRIEVE_ID_RANGES_OP = 1
 LOG_CONFIG_SET_MASK_OP = 3
 LOG_CONFIG_SUCCESS_S = 0
-NV_GNSS_OEM_FEATURE_MASK = 7165
-NV_CGPS_DPO_CONTROL = 5596
 
 def send_recv(diag, packet_type, packet_payload):
   diag.send(packet_type, packet_payload)

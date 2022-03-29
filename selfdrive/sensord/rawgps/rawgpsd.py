@@ -17,6 +17,7 @@ from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs
 from selfdrive.sensord.rawgps.structs import dict_unpacker
 from selfdrive.sensord.rawgps.structs import gps_measurement_report, gps_measurement_report_sv
 from selfdrive.sensord.rawgps.structs import glonass_measurement_report, glonass_measurement_report_sv
+from selfdrive.sensord.rawgps.structs import oemdre_measurement_report, oemdre_measurement_report_sv
 from selfdrive.sensord.rawgps.structs import LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT
 from selfdrive.sensord.rawgps.structs import position_report, LOG_GNSS_POSITION_REPORT
 
@@ -74,6 +75,9 @@ def main() -> NoReturn:
   unpack_glonass_meas, size_glonass_meas = dict_unpacker(glonass_measurement_report, True)
   unpack_glonass_meas_sv, size_glonass_meas_sv = dict_unpacker(glonass_measurement_report_sv, True)
 
+  unpack_oemdre_meas, size_oemdre_meas = dict_unpacker(oemdre_measurement_report, True)
+  unpack_oemdre_meas_sv, size_oemdre_meas_sv = dict_unpacker(oemdre_measurement_report_sv, True)
+
   log_types = [
     LOG_GNSS_GPS_MEASUREMENT_REPORT,
     LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
@@ -120,7 +124,6 @@ def main() -> NoReturn:
   GPSDIAG_OEM_DRE_ON = 1
 
   # gpsdiag_OemControlReqType
-  """
   opcode, payload = send_recv(diag, DIAG_SUBSYS_CMD_F, pack('<BHBBIIII',
       DIAG_SUBSYS_GPS,           # Subsystem Id
       CGPS_DIAG_PDAPI_CMD,       # Subsystem Command Code
@@ -130,9 +133,12 @@ def main() -> NoReturn:
       GPSDIAG_OEM_DRE_ON,
       0,0
   ))
-  """
 
   """
+  DIAG_NV_READ_F = 38
+  DIAG_NV_WRITE_F = 39
+  NV_GNSS_OEM_FEATURE_MASK = 7165
+
   opcode, payload = send_recv(diag, DIAG_NV_READ_F, pack('<H', NV_GNSS_OEM_FEATURE_MASK))
   print(opcode)
   hexdump(payload)
@@ -160,10 +166,15 @@ def main() -> NoReturn:
     if log_type not in log_types:
       continue
     if DEBUG:
-      print("%.2f: got log: %x len %d" % (time.time(), log_type, len(log_payload)))
+      print("%.4f: got log: %x len %d" % (time.time(), log_type, len(log_payload)))
     if log_type == LOG_GNSS_OEMDRE_MEASUREMENT_REPORT:
-      #hexdump(log_payload[0:0x100])
-      pass
+      report = unpack_oemdre_meas(log_payload)
+      sats = log_payload[size_oemdre_meas:]
+
+      print(report)
+      for i in range(report['svCount']):
+        sat = unpack_oemdre_meas_sv(sats[size_oemdre_meas_sv*i:size_oemdre_meas_sv*(i+1)])
+        print(sat)
     elif log_type == LOG_GNSS_POSITION_REPORT:
       report = unpack_position(log_payload)
       if report["u_PosSource"] != 2:
