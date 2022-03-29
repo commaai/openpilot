@@ -87,7 +87,7 @@ class CarKalman(KalmanFilter):
     'stiffness_front',
     'stiffness_rear',
     'steer_ratio',
-    'learnSR',
+    'learn_sr',
   ]
 
   @staticmethod
