@@ -9,6 +9,7 @@ from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR,
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+RATE_FAULT_THRESHOLD = 100
 
 
 class CarController:
@@ -21,6 +22,8 @@ class CarController:
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_limited = False
+
+    self.frames_above_rate_threshold = 0
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -54,8 +57,20 @@ class CarController:
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
     self.steer_rate_limited = new_steer != apply_steer
 
-    # Cut steering while we're in a known fault state (2s)
-    if not CC.latActive or CS.steer_state in (9, 25):
+    if abs(CS.out.steeringRateDeg) >= RATE_FAULT_THRESHOLD:
+      self.frames_above_rate_threshold += 1
+    # TODO: unclear if it resets its internal state at another value
+    if not CC.latActive or abs(CS.out.steeringRateDeg) < RATE_FAULT_THRESHOLD:
+      self.frames_above_rate_threshold = 0
+
+    # EPS_STATUS->LKA_STATE either goes to 21 or 25 on rising edge of a steering fault and
+    # the value seems to describe how many frames the steering rate was above 100 deg/s, so
+    # cut torque with some margin for the lower state
+    # Only cut torque when steering angle and rate have opposite signs
+    predicted_steering_fault = self.frames_above_rate_threshold > 18 and (CS.steeringRateDeg * CS.steeringAngleDeg) < 0
+
+    # Cut steering while we're in a known fault state (2s) or about to be
+    if not CC.latActive or CS.steer_state in (9, 25) or predicted_steering_fault:
       apply_steer = 0
       apply_steer_req = 0
     else:
