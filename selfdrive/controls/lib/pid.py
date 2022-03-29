@@ -13,14 +13,17 @@ def apply_deadzone(error, deadzone):
   return error
 
 class PIController():
-  def __init__(self, k_p, k_i, k_f=0., pos_limit=None, neg_limit=None, rate=100):
+  def __init__(self, k_p, k_i, k_f=0., k_d=0., pos_limit=None, neg_limit=None, rate=100):
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
+    self._k_d = k_d   # feedforward gain
     self.k_f = k_f   # feedforward gain
     if isinstance(self._k_p, Number):
       self._k_p = [[0], [self._k_p]]
     if isinstance(self._k_i, Number):
       self._k_i = [[0], [self._k_i]]
+    if isinstance(self._k_d, Number):
+      self._k_d = [[0], [self._k_d]]
 
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
@@ -38,18 +41,24 @@ class PIController():
   def k_i(self):
     return interp(self.speed, self._k_i[0], self._k_i[1])
 
+  @property
+  def k_d(self):
+    return interp(self.speed, self._k_d[0], self._k_d[1])
+
   def reset(self):
     self.p = 0.0
     self.i = 0.0
+    self.d = 0.0
     self.f = 0.0
     self.control = 0
 
-  def update(self, setpoint, measurement, speed=0.0, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
+  def update(self, setpoint, measurement, speed=0.0, override=False, feedforward=0., error_rate=0.0, deadzone=0., freeze_integrator=False):
     self.speed = speed
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))
     self.p = error * self.k_p
     self.f = feedforward * self.k_f
+    self.d = error_rate * self.k_d
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
