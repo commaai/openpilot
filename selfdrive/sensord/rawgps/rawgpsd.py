@@ -81,9 +81,6 @@ def main() -> NoReturn:
     LOG_GNSS_GPS_MEASUREMENT_REPORT,
     LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
     LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
-    #0x14E0,
-    0x14E1,
-    #0x14E2,
   ]
   pub_types = ['qcomGnss']
   if int(os.getenv("PUBLISH_EXTERNAL", "0")) == 1:
