@@ -725,7 +725,7 @@ class Controls:
     elif lat_tuning == 'pid':
       controlsState.lateralControlState.pidState = lac_log
     elif lat_tuning == 'torque':
-      controlsState.lateralControlState.pidState = lac_log
+      controlsState.lateralControlState.torqueState = lac_log
     elif lat_tuning == 'lqr':
       controlsState.lateralControlState.lqrState = lac_log
     elif lat_tuning == 'indi':

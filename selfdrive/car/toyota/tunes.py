@@ -53,11 +53,11 @@ def set_long_tune(tune, name):
 def set_lat_tune(tune, name):
   if name == LatTunes.TORQUE:
     tune.init('torque')
-    tune.torque.kiBP = [0.0]
-    tune.torque.kpBP = [0.0]
+    tune.torque.useSteeringAngle = True
     MAX_TORQUE = 2.0
-    tune.torque.kpV = [1.5/MAX_TORQUE]
-    tune.torque.kiV = [0.0/MAX_TORQUE]
+    tune.torque.kp = 1.5/MAX_TORQUE
+    tune.torque.ki = 0.0/MAX_TORQUE
+    tune.torque.kd = 0.0/MAX_TORQUE
     tune.torque.kf = 0.75 / MAX_TORQUE
   elif name == LatTunes.INDI_PRIUS:
     tune.init('indi')
