@@ -67,8 +67,7 @@ class CarController:
     # EPS_STATUS->LKA_STATE either goes to 21 or 25 on rising edge of a steering fault and
     # the value seems to describe how many frames the steering rate was above 100 deg/s, so
     # cut torque with some margin for the lower state
-    # Only cut torque when steering angle and rate have opposite signs
-    predicted_steering_fault = self.frames_above_rate_threshold > 18  # and (CS.out.steeringRateDeg * CS.out.steeringAngleDeg) < 0
+    predicted_steering_fault = self.frames_above_rate_threshold > 18
 
     # Cut steering while we're in a known fault state (2s) or about to be
     if not CC.latActive or CS.steer_state in (9, 25) or predicted_steering_fault:
