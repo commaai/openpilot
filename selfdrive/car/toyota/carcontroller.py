@@ -9,7 +9,9 @@ from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR,
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-RATE_FAULT_THRESHOLD = 100
+
+STEER_FAULT_MAX_RATE = 100
+STEER_FAULT_MAX_FRAMES = 18
 
 
 class CarController:
@@ -24,7 +26,6 @@ class CarController:
     self.steer_rate_limited = False
 
     self.frames_above_rate_threshold = 0
-    self.predicted_steering_fault_prev = False
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -58,19 +59,17 @@ class CarController:
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
     self.steer_rate_limited = new_steer != apply_steer
 
-    if abs(CS.out.steeringRateDeg) >= RATE_FAULT_THRESHOLD:
-      self.frames_above_rate_threshold += 1
-    # TODO: unclear if it resets its internal state at another value
-    if not CC.latActive or abs(CS.out.steeringRateDeg) < RATE_FAULT_THRESHOLD:
-      self.frames_above_rate_threshold = 0
-
     # EPS_STATUS->LKA_STATE either goes to 21 or 25 on rising edge of a steering fault and
     # the value seems to describe how many frames the steering rate was above 100 deg/s, so
     # cut torque with some margin for the lower state
-    predicted_steering_fault = self.frames_above_rate_threshold > 18
+    if abs(CS.out.steeringRateDeg) > STEER_FAULT_MAX_RATE:
+      self.frames_above_rate_threshold += 1
+    # TODO: unclear if it resets its internal state at another value
+    if not CC.latActive or abs(CS.out.steeringRateDeg) <= STEER_FAULT_MAX_RATE:
+      self.frames_above_rate_threshold = 0
 
-    # Cut steering while we're in a known fault state (2s) or about to be
-    if not CC.latActive or CS.steer_state in (9, 25) or predicted_steering_fault:
+    # Cut steering if we're about to fault the EPS
+    if not CC.latActive or self.frames_above_rate_threshold > STEER_FAULT_MAX_FRAMES:
       apply_steer = 0
       apply_steer_req = 0
     else:
@@ -99,10 +98,6 @@ class CarController:
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
-    if predicted_steering_fault and not self.predicted_steering_fault_prev:
-      apply_steer = 0
-      apply_steer_req = 0
-    self.predicted_steering_fault_prev = predicted_steering_fault
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, self.frame))
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       can_sends.append(create_lta_steer_command(self.packer, 0, 0, self.frame // 2))
