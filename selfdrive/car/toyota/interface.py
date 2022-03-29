@@ -34,7 +34,8 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.74   # unknown end-to-end spec
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.CRAYCRAY_PRIUS)
+      set_lat_tune(ret.lateralTuning, LatTunes.INDI_PRIUS)
+      ret.steerActuatorDelay = 0.3
 
     elif candidate == CAR.PRIUS_V:
       stop_and_go = True
@@ -131,7 +132,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.CRAYCRAY_PRIUS)
+      set_lat_tune(ret.lateralTuning, LatTunes.TORQUE)
 
     elif candidate in (CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ESH):
       stop_and_go = True
