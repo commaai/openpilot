@@ -213,8 +213,8 @@ class Controls:
       # under 7% of space free no enable allowed
       self.events.add(EventName.outOfSpace)
     # TODO: make tici threshold the same
-    # if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not SIMULATION:
-    #   self.events.add(EventName.lowMemory)
+    if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not SIMULATION:
+      self.events.add(EventName.lowMemory)
 
     # TODO: enable this once loggerd CPU usage is more reasonable
     #cpus = list(self.sm['deviceState'].cpuUsagePercent)[:(-1 if EON else None)]
@@ -264,8 +264,8 @@ class Controls:
       else:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
 
-      # if safety_mismatch or self.mismatch_counter >= 200:
-      #   self.events.add(EventName.controlsMismatch)
+      if safety_mismatch or self.mismatch_counter >= 200:
+        self.events.add(EventName.controlsMismatch)
 
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
