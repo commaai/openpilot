@@ -1,3 +1,4 @@
+import math
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from cereal import log
@@ -30,7 +31,7 @@ class LatControlTorque(LatControl):
     else:
       # TODO lateral acceleration works great at high speed, not so much at low speed
       if self.use_steering_angle:
-        actual_curvature = -VM.calc_curvature(CS.steeringAngleDeg - params.angleOffsetDeg, CS.vEgo, params.roll)
+        actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
       else:
         actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
       desired_lateral_accel = desired_curvature * CS.vEgo**2
