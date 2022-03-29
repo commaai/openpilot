@@ -1,4 +1,4 @@
-from selfdrive.controls.lib.pid import PIController
+from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from cereal import log
 
@@ -8,8 +8,7 @@ CURVATURE_SCALE = 400
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    self.pid = PIController(([0.0], [CP.lateralTuning.torque.kp]),
-                            ([0.0], [CP.lateralTuning.torque.ki]),
+    self.pid = PIDController(CP.lateralTuning.torque.kp, CP.lateralTuning.torque.ki, k_d=CP.lateralTuning.torque.kd,
                             k_f=CP.lateralTuning.torque.kf, pos_limit=1.0, neg_limit=-1.0)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
     self.steer_max = 1.0
@@ -39,9 +38,10 @@ class LatControlTorque(LatControl):
 
       setpoint = desired_lateral_accel + CURVATURE_SCALE * desired_curvature
       measurement = actual_lateral_accel + CURVATURE_SCALE * actual_curvature
-      pid_log.error = setpoint - measurement
+      error = setpoint - measurement
+      pid_log.error = error
 
-      output_torque = self.pid.update(setpoint, measurement, override=CS.steeringPressed,
+      output_torque = self.pid.update(error, override=CS.steeringPressed,
                                       feedforward=desired_lateral_accel, speed=CS.vEgo)
       pid_log.active = True
       pid_log.p = self.pid.p
