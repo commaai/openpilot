@@ -29,8 +29,6 @@ CRUISE_INTERVAL_SIGN = {
   car.CarState.ButtonEvent.Type.decelCruise: -1,
 }
 
-ButtonEvent = car.CarState.ButtonEvent
-
 
 class MPC_COST_LAT:
   PATH = 1.0
@@ -60,7 +58,6 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled, metric):
       button_type = b.type.raw
       break
   else:
-    # print(button_timers[ButtonEvent.Type.accelCruise])
     for k in button_timers.keys():
       if button_timers[k] and button_timers[k] % CRUISE_LONG_PRESS == 0:
         button_type = k
