@@ -5,7 +5,6 @@ import signal
 import subprocess
 import sys
 import traceback
-import capnp
 from typing import List, Tuple, Union
 
 import cereal.messaging as messaging

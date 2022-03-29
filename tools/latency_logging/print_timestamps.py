@@ -1,4 +1,3 @@
-from selfdrive.swaglog import cloudlog
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
 from tabulate import tabulate
@@ -130,7 +129,7 @@ for frame_id, services in service_blocks.items():
 
 print("Num skipped due to failed translations:",failed_transl)
 print("Num skipped due to frameId missmatch:",len(skip_frames))
-print("Num skipped due to empty data", len(empty_data))
+print("Num skipped due to empty data:", len(empty_data))
 '''
 fig, gnt = plt.subplots()
 maxx = max([max([max(events.values()) for events in services.values()]) for services in timestamps.values()])/1e6

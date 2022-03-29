@@ -7,9 +7,8 @@ import uuid
 import socket
 import logging
 import traceback
-import time
 from threading import local
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 from contextlib import contextmanager
 
 try:
