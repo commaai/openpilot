@@ -383,7 +383,6 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
       publish_thumbnail(cameras->pm, &(cs->buf));
     }
     cs->buf.release();
-    LOGT((std::string(thread_name)+std::string(": Released")).c_str());
     ++cnt;
   }
   return NULL;

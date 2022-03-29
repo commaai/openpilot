@@ -5,7 +5,7 @@ from tabulate import tabulate
 import json
 from collections import defaultdict
 
-r = Route("9f583b1d93915c31|2022-03-28--13-04-58") 
+r = Route("9f583b1d93915c31|2022-03-28--17-25-12") 
 lr = LogReader(r.log_paths()[0])
 
 services = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
@@ -64,21 +64,21 @@ for msg in lr:
                     skip_frames.append(frame_id)
             for duration in service_to_durations[service]:
                 if duration == 'timestampSof':
-                    service_blocks[frame_id][service]["Start"].append(float(smInfo[duration]))
+                    service_blocks[int(frame_id)][service]["Start"].append(float(smInfo[duration]))
                 else:
-                    durations[frame_id][service][duration].append(smInfo[duration]*1e3)
+                    durations[int(frame_id)][service][duration].append(smInfo[duration]*1e3)
             service_blocks[frame_id][service]["End"].append(float(pubTime))
             next_service = services[services.index(service)+1]
-            service_blocks[frame_id][next_service]["Start"].append( float(rcvTime))
+            service_blocks[int(frame_id)][next_service]["Start"].append( float(rcvTime))
         elif "Pipeline end" in msg:
             frame_id = translate(jmsg["info"]["logMonoTime"])
-            service_blocks[frame_id][services[-1]]["End"].append(float(jmsg["time"]))
-del service_blocks[-1]
-print("Num failed translations:",failed_transl)
+            service_blocks[int(frame_id)][services[-1]]["End"].append(float(jmsg["time"]))
+
+# Exclude bad data
+if failed_transl > 0:
+    del service_blocks[-1]
 for frame_id in skip_frames:
     del service_blocks[list(service_blocks.keys()).index(frame_id)]
-print("Num skipped due to frameId missmatch:",len(skip_frames))
-
 empty_data = set()
 for frame_id in service_blocks.keys():
     for service in services:
@@ -86,7 +86,6 @@ for frame_id in service_blocks.keys():
             empty_data.add(frame_id)
 for frame_id in empty_data:
     del service_blocks[frame_id]
-print("Num deleted due to empty data", len(empty_data))
 
 def find_frame_id(time, service):
     for frame_id, blocks in service_blocks.items():
@@ -110,12 +109,14 @@ for msg in lr:
     event = jmsg['msg']['timestamp']['event']
     time = jmsg['msg']['timestamp']['time']
     frame_id = find_frame_id(time, service) 
-    service_blocks[frame_id][service][event].append(float(time))
+    service_blocks[int(frame_id)][service][event].append(float(time))
+if 0 in service_blocks:
+    del service_blocks[0]
 
 # Print
 for frame_id, services in service_blocks.items():
     t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
-    print(frame_id)
+    print(frame_id, type(frame_id))
     d = defaultdict( lambda: ("","",[]))
     for service, events in services.items():
         for event, times in events.items():
@@ -127,6 +128,9 @@ for frame_id, services in service_blocks.items():
     print(dict(dict(durations)[frame_id]))
     print()
 
+print("Num skipped due to failed translations:",failed_transl)
+print("Num skipped due to frameId missmatch:",len(skip_frames))
+print("Num skipped due to empty data", len(empty_data))
 '''
 fig, gnt = plt.subplots()
 maxx = max([max([max(events.values()) for events in services.values()]) for services in timestamps.values()])/1e6
