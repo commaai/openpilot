@@ -95,7 +95,7 @@ class CarController:
       accel_error = accel - CS.out.aEgo if CC.longActive else 0
 
       # TODO: jerk upper would probably be better from longitudinal planner desired jerk?
-      jerk_upper = clip(2.0 * accel_error, 0.0, 1.5) # zero when error is negative to keep decel control tight
+      jerk_upper = clip(2.0 * accel_error, 0.0, 2.0) # zero when error is negative to keep decel control tight
       jerk_lower = 12.7 # always max value to keep decel control tight
 
       if pid_control and CS.out.standstill and CS.brake_control_active and accel > 0.0:
