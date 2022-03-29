@@ -29,6 +29,8 @@ CRUISE_INTERVAL_SIGN = {
   car.CarState.ButtonEvent.Type.decelCruise: -1,
 }
 
+ButtonEvent = car.CarState.ButtonEvent
+
 
 class MPC_COST_LAT:
   PATH = 1.0
@@ -58,19 +60,32 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled, metric):
       button_type = b.type.raw
       break
   else:
+    # print(button_timers[ButtonEvent.Type.accelCruise])
     for k in button_timers.keys():
       if button_timers[k] and button_timers[k] % CRUISE_LONG_PRESS == 0:
         button_type = k
         long_press = True
+        # print('LONG PRESS: {}'.format(k))
         break
 
+  # if long_press:
+  #   print(f'{button_type=}')
   if button_type:
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
-    if long_press and v_cruise_kph % v_cruise_delta != 0: # partial interval
+    partial_interval = round(v_cruise_kph / v_cruise_delta, 1) % 1 != 0
+    print(f'{v_cruise_kph % v_cruise_delta=}, {v_cruise_kph % v_cruise_delta==0=}')
+    if long_press and partial_interval:  # partial interval
+      print('PARTIAL INTERVAL')
+      print(f'before: {v_cruise_kph=}, {v_cruise_delta=}')
       v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](v_cruise_kph / v_cruise_delta) * v_cruise_delta
+      print(f'after: {v_cruise_kph=}')
     else:
+      if not long_press:
+        print('SINGLE INCREMENT')
+      else:
+        print('INCREMENTING BY 5')
       v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
-    v_cruise_kph = clip(round(v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
+    v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
   return v_cruise_kph
 

@@ -306,6 +306,7 @@ class CarInterface(CarInterfaceBase):
       buttonEvents = []
 
       if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
+        print(self.CS.cruise_buttons)
         be = car.CarState.ButtonEvent.new_message()
         be.type = ButtonType.unknown
         if self.CS.cruise_buttons != 0:

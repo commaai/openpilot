@@ -269,8 +269,8 @@ class Controls:
                                                     LaneChangeState.laneChangeFinishing):
       self.events.add(EventName.laneChange)
 
-    if not CS.canValid:
-      self.events.add(EventName.canError)
+    # if not CS.canValid:
+    #   self.events.add(EventName.canError)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
@@ -293,7 +293,7 @@ class Controls:
     elif not self.sm.valid["pandaStates"]:
       self.events.add(EventName.usbError)
     elif not self.sm.all_alive_and_valid() or self.can_rcv_error:
-      self.events.add(EventName.commIssue)
+      # self.events.add(EventName.commIssue)
       if not self.logged_comm_issue:
         invalid = [s for s, valid in self.sm.valid.items() if not valid]
         not_alive = [s for s, alive in self.sm.alive.items() if not alive]
@@ -346,8 +346,8 @@ class Controls:
         if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000):
           # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
           self.events.add(EventName.noGps)
-      if not self.sm.all_alive(self.camera_packets):
-        self.events.add(EventName.cameraMalfunction)
+      # if not self.sm.all_alive(self.camera_packets):
+      #   self.events.add(EventName.cameraMalfunction)
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
       if self.sm['liveLocationKalman'].excessiveResets:
