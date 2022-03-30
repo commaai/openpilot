@@ -1,8 +1,9 @@
 import argparse
 import json
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import sys
 from collections import defaultdict
-from tabulate import tabulate
 
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
@@ -136,23 +137,22 @@ def fill_intervals(timestamp_logs, service_intervals):
 
 def print_timestamps(service_intervals):
   for frame_id, services in service_intervals.items():
+    print('='*80)
+    print("Frame ID:", frame_id)
+
+    print("Timestamps:")
     t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
-    print(frame_id)
-    d = defaultdict( lambda: ("","",[]))
     for service, events in services.items():
-      for event, times in events.items():
-        key = (min(times)-t0)/1e6
-        times = [(float(time)-t0)/1e6 for time in times]
-        d[key] = (service, event, times)
-    s = sorted(d.items())
-    print(tabulate([[item[1][0], item[1][1], item[1][2]] for item in s], headers=["service", "event", "time (ms)"]))
-    print()
+      print("  "+service)  
+      for event, times in sorted(events.items(), key=lambda x: x[1] if service != 'plannerd' else max(x[1])):
+        times = [(time-t0)/1e6 for time in times]
+        print("    "+'%-50s%-50s' %(event, str(times)))  
+
     print("Internal durations:")
     for service, events in dict(internal_durations)[frame_id].items():
-      print(service)  
+      print("  "+service)  
       for event, times in dict(events).items():
-        print("    ", event, times)  
-    print()
+        print("    "+'%-50s%-50s' %(event, str(times)))  
 
 def graph_timestamps(service_intervals):
   fig, gnt = plt.subplots()
@@ -191,6 +191,7 @@ if __name__ == "__main__":
   exclude_bad_data(set(empty_data+frame_mismatches), service_intervals)
   failed_inserts = fill_intervals(timestamp_logs, service_intervals)
   print_timestamps(service_intervals)
+  graph_timestamps(service_intervals)
 
   print("Num frames skipped due to failed translations:",failed_transl)
   print("Num frames skipped due to frameId missmatch:",len(frame_mismatches))
