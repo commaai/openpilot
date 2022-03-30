@@ -1,7 +1,7 @@
 from cereal import car
-from opendbc.can.parser import CANParser
+from common.conversions import Conversions as CV
 from common.numpy_fast import mean
-from selfdrive.config import Conversions as CV
+from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.ford.values import DBC
 
@@ -23,7 +23,7 @@ class CarState(CarStateBase):
     ret.standstill = not ret.vEgoRaw > 0.001
     ret.steeringAngleDeg = cp.vl["Steering_Wheel_Data_CG1"]["SteWhlRelInit_An_Sns"]
     ret.steeringPressed = not cp.vl["Lane_Keep_Assist_Status"]["LaHandsOff_B_Actl"]
-    ret.steerError = cp.vl["Lane_Keep_Assist_Status"]["LaActDeny_B_Actl"] == 1
+    ret.steerFaultPermanent = cp.vl["Lane_Keep_Assist_Status"]["LaActDeny_B_Actl"] == 1
     ret.cruiseState.speed = cp.vl["Cruise_Status"]["Set_Speed"] * CV.MPH_TO_MS
     ret.cruiseState.enabled = not (cp.vl["Cruise_Status"]["Cruise_State"] in (0, 3))
     ret.cruiseState.available = cp.vl["Cruise_Status"]["Cruise_State"] != 0

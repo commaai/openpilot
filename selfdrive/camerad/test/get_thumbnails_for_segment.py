@@ -24,9 +24,9 @@ if __name__ == "__main__":
   lr = list(LogReader(path))
 
   for msg in tqdm(lr):
-      if msg.which() == 'thumbnail':
-          with open(os.path.join(out_path, f"{msg.thumbnail.frameId}.jpg"), 'wb') as f:
-              f.write(msg.thumbnail.thumbnail)
-      elif msg.which() == 'navThumbnail':
-          with open(os.path.join(out_path, f"nav_{msg.navThumbnail.frameId}.jpg"), 'wb') as f:
-              f.write(msg.navThumbnail.thumbnail)
+    if msg.which() == 'thumbnail':
+      with open(os.path.join(out_path, f"{msg.thumbnail.frameId}.jpg"), 'wb') as f:
+        f.write(msg.thumbnail.thumbnail)
+    elif msg.which() == 'navThumbnail':
+      with open(os.path.join(out_path, f"nav_{msg.navThumbnail.frameId}.jpg"), 'wb') as f:
+        f.write(msg.navThumbnail.thumbnail)

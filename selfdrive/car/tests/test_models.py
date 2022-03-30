@@ -8,16 +8,15 @@ from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import log, car
-from common.params import Params
 from common.realtime import DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.test.test_routes import routes, non_tested_cars
+from selfdrive.car.tests.routes import routes, non_tested_cars
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 
@@ -28,11 +27,6 @@ PandaType = log.PandaState.PandaType
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
-
-# TODO: get updated routes for these cars
-ignore_can_valid = [
-  HYUNDAI.SANTA_FE,
-]
 
 ignore_addr_checks_valid = [
   GM.BUICK_REGAL,
@@ -49,10 +43,13 @@ for i, c in enumerate(sorted(all_known_cars())):
   if i % NUM_JOBS == JOB_ID:
     test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
 
+SKIP_ENV_VAR = "SKIP_LONG_TESTS"
+
 
 @parameterized_class(('car_model', 'route'), test_cases)
 class TestCarModel(unittest.TestCase):
 
+  @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
     if cls.route is None:
@@ -61,10 +58,8 @@ class TestCarModel(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    params = Params()
-    params.clear_all()
-
-    for seg in [2, 1, 0]:
+    disable_radar = False
+    for seg in (2, 1, 0):
       try:
         lr = LogReader(get_url(cls.route, seg))
       except Exception:
@@ -80,7 +75,7 @@ class TestCarModel(unittest.TestCase):
           can_msgs.append(msg)
         elif msg.which() == "carParams":
           if msg.carParams.openpilotLongitudinalControl:
-            params.put_bool("DisableRadar", True)
+            disable_radar = True
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break
@@ -90,7 +85,7 @@ class TestCarModel(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [])
+    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [], disable_radar)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
@@ -101,7 +96,7 @@ class TestCarModel(unittest.TestCase):
     # TODO: check safetyModel is in release panda build
     self.safety = libpandasafety_py.libpandasafety
     set_status = self.safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
-    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyConfigs[0].safetyModel}")
+    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyConfigs}")
     self.safety.init_tests()
 
   def test_car_params(self):
@@ -135,8 +130,7 @@ class TestCarModel(unittest.TestCase):
       if i > 200:
         can_invalid_cnt += not CS.canValid
 
-    if self.car_model not in ignore_can_valid:
-      self.assertLess(can_invalid_cnt, 50)
+    self.assertLess(can_invalid_cnt, 50)
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
@@ -195,6 +189,11 @@ class TestCarModel(unittest.TestCase):
         self.safety.safety_rx_hook(to_send)
         self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
 
+    if not self.CP.pcmCruise:
+      self.safety.set_controls_allowed(0)
+
+    controls_allowed_prev = False
+    CS_prev = car.CarState.new_message()
     checks = defaultdict(lambda: 0)
     for can in self.can_msgs:
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
@@ -220,15 +219,31 @@ class TestCarModel(unittest.TestCase):
       if CS.brakePressed and not self.safety.get_brake_pressed_prev():
         if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
           brake_pressed = False
-        if self.CP.carName == "honda" and self.CI.CS.brake_switch:
-          brake_pressed = False
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
 
       if self.CP.pcmCruise:
-        checks['controlsAllowed'] += not CS.cruiseState.enabled and self.safety.get_controls_allowed()
+        # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
+        # On Honda Nidec, we always engage on the rising edge of the PCM cruise state, but
+        # openpilot brakes to zero even if the min ACC speed is non-zero (i.e. the PCM disengages).
+        if self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH:
+          # only the rising edges are expected to match
+          if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
+            checks['controlsAllowed'] += not self.safety.get_controls_allowed()
+        else:
+          checks['controlsAllowed'] += not CS.cruiseState.enabled and self.safety.get_controls_allowed()
+      else:
+        # Check for enable events on rising edge of controls allowed
+        button_enable = any(evt.enable for evt in CS.events)
+        mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
+        checks['controlsAllowed'] += mismatch
+        controls_allowed_prev = self.safety.get_controls_allowed()
+        if button_enable and not mismatch:
+          self.safety.set_controls_allowed(False)
 
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
+
+      CS_prev = CS
 
     # TODO: add flag to toyota safety
     if self.CP.carFingerprint == TOYOTA.SIENNA and checks['brakePressed'] < 25:

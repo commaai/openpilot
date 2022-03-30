@@ -199,7 +199,7 @@ class NativeProcess(ManagerProcess):
   def start(self) -> None:
     # In case we only tried a non blocking stop we need to stop it before restarting
     if self.shutting_down:
-        self.stop()
+      self.stop()
 
     if self.proc is not None:
       return
@@ -231,7 +231,7 @@ class PythonProcess(ManagerProcess):
   def start(self) -> None:
     # In case we only tried a non blocking stop we need to stop it before restarting
     if self.shutting_down:
-        self.stop()
+      self.stop()
 
     if self.proc is not None:
       return

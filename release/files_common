@@ -17,6 +17,7 @@ site_scons/site_tools/cython.py
 
 common/.gitignore
 common/__init__.py
+common/conversions.py
 common/gpio.py
 common/realtime.py
 common/clock.pyx
@@ -69,12 +70,10 @@ installer/updater/updater
 selfdrive/version.py
 
 selfdrive/__init__.py
-selfdrive/config.py
 selfdrive/sentry.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
-selfdrive/pandad.py
 selfdrive/updated.py
 selfdrive/rtshield.py
 selfdrive/statsd.py
@@ -98,8 +97,10 @@ selfdrive/boardd/panda.h
 selfdrive/boardd/pigeon.cc
 selfdrive/boardd/pigeon.h
 selfdrive/boardd/set_time.py
+selfdrive/boardd/pandad.py
 
 selfdrive/car/__init__.py
+selfdrive/car/docs_definitions.py
 selfdrive/car/car_helpers.py
 selfdrive/car/fingerprints.py
 selfdrive/car/interfaces.py
@@ -336,11 +337,11 @@ selfdrive/sensord/sensord
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
+selfdrive/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
-selfdrive/test/test_fingerprints.py
 selfdrive/test/test_onroad.py
 
 selfdrive/ui/.gitignore
@@ -423,10 +424,13 @@ selfdrive/modeld/transforms/transform.cc
 selfdrive/modeld/transforms/transform.h
 selfdrive/modeld/transforms/transform.cl
 
+selfdrive/modeld/thneed/*.py
 selfdrive/modeld/thneed/thneed.*
 selfdrive/modeld/thneed/serialize.cc
 selfdrive/modeld/thneed/compile.cc
+selfdrive/modeld/thneed/optimizer.cc
 selfdrive/modeld/thneed/include/*
+selfdrive/modeld/thneed/kernels/*.cl
 
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
@@ -569,12 +573,10 @@ opendbc/acura_rdx_2018_can_generated.dbc
 opendbc/acura_rdx_2020_can_generated.dbc
 opendbc/honda_civic_touring_2016_can_generated.dbc
 opendbc/honda_civic_hatchback_ex_2017_can_generated.dbc
-opendbc/honda_civic_sedan_16_diesel_2019_can_generated.dbc
 opendbc/honda_crv_touring_2016_can_generated.dbc
 opendbc/honda_crv_ex_2017_can_generated.dbc
 opendbc/honda_crv_ex_2017_body_generated.dbc
 opendbc/honda_crv_executive_2016_can_generated.dbc
-opendbc/honda_crv_hybrid_2019_can_generated.dbc
 opendbc/honda_fit_ex_2018_can_generated.dbc
 opendbc/honda_odyssey_exl_2018_generated.dbc
 opendbc/honda_odyssey_extreme_edition_2018_china_can_generated.dbc

@@ -373,14 +373,21 @@ class Android(HardwareBase):
     return self.read_param_file("/sys/class/power_supply/usb/present", lambda x: bool(int(x)), False)
 
   def get_current_power_draw(self):
-    # We don't have a good direct way to measure this on android
-    return None
+    if self.get_battery_status() == 'Discharging':
+      # If the battery is discharging, we can use this measurement
+      # On C2: this is low by about 10-15%, probably mostly due to UNO draw not being factored in
+      return ((self.get_battery_voltage() / 1000000) * (self.get_battery_current() / 1000000))
+    else:
+      # We don't have a good direct way to measure this if it's not "discharging"
+      return None
 
   def shutdown(self):
     os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
   def get_thermal_config(self):
-    return ThermalConfig(cpu=((5, 7, 10, 12), 10), gpu=((16,), 10), mem=(2, 10), bat=(29, 1000), ambient=(25, 1), pmic=((22,), 1000))
+    # the thermal sensors on the 820 don't have meaningful names
+    return ThermalConfig(cpu=((5, 7, 10, 12), 10), gpu=((16,), 10), mem=(2, 10),
+                         bat=("battery", 1000), ambient=("pa_therm0", 1), pmic=(("pm8994_tz",), 1000))
 
   def set_screen_brightness(self, percentage):
     with open("/sys/class/leds/lcd-backlight/brightness", "w") as f:

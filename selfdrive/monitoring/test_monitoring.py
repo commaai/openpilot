@@ -27,6 +27,9 @@ def make_msg(face_detected, distracted=False, model_uncertain=False):
   ds.rightBlinkProb = 1. * distracted
   ds.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
   ds.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
+  # TODO: test both separately when e2e is used
+  ds.readyProb = [0., 0., 0., 0.]
+  ds.notReadyProb = [0., 0.]
   return ds
 
 
@@ -57,11 +60,11 @@ class TestMonitoring(unittest.TestCase):
     events = []
     for idx in range(len(msgs)):
       e = Events()
-      DS.get_pose(msgs[idx], [0, 0, 0], 0, engaged[idx])
+      DS.update_states(msgs[idx], [0, 0, 0], 0, engaged[idx])
       # cal_rpy and car_speed don't matter here
 
       # evaluate events at 10Hz for tests
-      DS.update(e, interaction[idx], engaged[idx], standstill[idx])
+      DS.update_events(e, interaction[idx], engaged[idx], standstill[idx])
       events.append(e)
     assert len(events) == len(msgs), f"got {len(events)} for {len(msgs)} driverState input msgs"
     return events, DS
@@ -133,21 +136,21 @@ class TestMonitoring(unittest.TestCase):
   # engaged, invisible driver, down to orange, driver touches wheel; then down to orange again, driver appears
   #  - both actions should clear the alert, but momentary appearance should not
   def test_sometimes_transparent_commuter(self):
-      _visible_time = np.random.choice([0.5, 10])
-      ds_vector = always_no_face[:]*2
-      interaction_vector = always_false[:]*2
-      ds_vector[int((2*INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON):int((2*INVISIBLE_SECONDS_TO_ORANGE+1+_visible_time)/DT_DMON)] = [msg_ATTENTIVE] * int(_visible_time/DT_DMON)
-      interaction_vector[int((INVISIBLE_SECONDS_TO_ORANGE)/DT_DMON):int((INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON)] = [True] * int(1/DT_DMON)
-      events, _ = self._run_seq(ds_vector, interaction_vector, 2*always_true, 2*always_false)
-      self.assertTrue(len(events[int(INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)]) == 0)
-      self.assertEqual(events[int((INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
-      self.assertTrue(len(events[int((INVISIBLE_SECONDS_TO_ORANGE+0.1)/DT_DMON)]) == 0)
-      if _visible_time == 0.5:
-        self.assertEqual(events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
-        self.assertEqual(events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)].names[0], EventName.preDriverUnresponsive)
-      elif _visible_time == 10:
-        self.assertEqual(events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
-        self.assertTrue(len(events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)]) == 0)
+    _visible_time = np.random.choice([0.5, 10])
+    ds_vector = always_no_face[:]*2
+    interaction_vector = always_false[:]*2
+    ds_vector[int((2*INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON):int((2*INVISIBLE_SECONDS_TO_ORANGE+1+_visible_time)/DT_DMON)] = [msg_ATTENTIVE] * int(_visible_time/DT_DMON)
+    interaction_vector[int((INVISIBLE_SECONDS_TO_ORANGE)/DT_DMON):int((INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON)] = [True] * int(1/DT_DMON)
+    events, _ = self._run_seq(ds_vector, interaction_vector, 2*always_true, 2*always_false)
+    self.assertTrue(len(events[int(INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)]) == 0)
+    self.assertEqual(events[int((INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
+    self.assertTrue(len(events[int((INVISIBLE_SECONDS_TO_ORANGE+0.1)/DT_DMON)]) == 0)
+    if _visible_time == 0.5:
+      self.assertEqual(events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
+      self.assertEqual(events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)].names[0], EventName.preDriverUnresponsive)
+    elif _visible_time == 10:
+      self.assertEqual(events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
+      self.assertTrue(len(events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)]) == 0)
 
   # engaged, invisible driver, down to red, driver appears and then touches wheel, then disengages/reengages
   #  - only disengage will clear the alert

@@ -1,8 +1,13 @@
+from enum import Enum
+from typing import Dict, List, Union
+
 from cereal import car
 from selfdrive.car import dbc_dict
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column
 Ecu = car.CarParams.Ecu
 
-class CarControllerParams():
+
+class CarControllerParams:
   STEER_MAX = 300  # Safety limit, not LKA max. Trucks use 600.
   STEER_STEP = 2  # control frames per command
   STEER_DELTA_UP = 7
@@ -38,6 +43,7 @@ class CarControllerParams():
 
 STEER_THRESHOLD = 1.0
 
+
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
   VOLT = "CHEVROLET VOLT PREMIER 2017"
@@ -46,6 +52,26 @@ class CAR:
   ACADIA = "GMC ACADIA DENALI 2018"
   BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
+
+
+class Footnote(Enum):
+  OBD_II = CarFootnote(
+    'Requires an <a href="https://comma.ai/shop/products/comma-car-harness">OBD-II car harness</a> and ' +
+    '<a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. ' +
+    '<b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b>',
+    Column.MODEL)
+
+
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+  CAR.HOLDEN_ASTRA: CarInfo("Holden Astra 2017", "Adaptive Cruise"),
+  CAR.VOLT: CarInfo("Chevrolet Volt 2017-18", "Adaptive Cruise", footnotes=[Footnote.OBD_II], min_enable_speed=0),
+  CAR.CADILLAC_ATS: CarInfo("Cadillac ATS Premium Performance 2018", "Adaptive Cruise"),
+  CAR.MALIBU: CarInfo("Chevrolet Malibu Premier 2017", "Adaptive Cruise"),
+  CAR.ACADIA: CarInfo("GMC Acadia 2018", "Adaptive Cruise", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo", footnotes=[Footnote.OBD_II]),
+  CAR.BUICK_REGAL: CarInfo("Buick Regal Essence 2018", "Adaptive Cruise"),
+  CAR.ESCALADE_ESV: CarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS", footnotes=[Footnote.OBD_II]),
+}
+
 
 class CruiseButtons:
   INIT = 0

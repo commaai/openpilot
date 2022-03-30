@@ -1,5 +1,49 @@
-struct i2c_random_wr_payload start_reg_array[] = {{0x301A, 0x91C}};
-struct i2c_random_wr_payload stop_reg_array[] = {{0x301A, 0x918}};
+struct i2c_random_wr_payload start_reg_array_ar0231[] = {{0x301A, 0x91C}};
+struct i2c_random_wr_payload stop_reg_array_ar0231[] = {{0x301A, 0x918}};
+struct i2c_random_wr_payload start_reg_array_imx390[] = {{0x0, 0}};
+struct i2c_random_wr_payload stop_reg_array_imx390[] = {{0x0, 1}};
+
+struct i2c_random_wr_payload init_array_imx390[] = {
+  {0x2008, 0xd0}, {0x2009, 0x07}, {0x200a, 0x00}, // MODE_VMAX = time between frames
+  {0x200C, 0xe4}, {0x200D, 0x0c},  // MODE_HMAX
+
+  // crop 
+  {0x3410, 0x88}, {0x3411, 0x7},     // CROP_H_SIZE
+  {0x3418, 0xb8}, {0x3419, 0x4},     // CROP_V_SIZE
+  {0x0078, 1}, {0x03c0, 1},
+
+  // external trigger (off)
+  // while images still come in, they are blank with this
+  {0x3650, 0},  // CU_MODE
+
+  // exposure
+  {0x000c, 0xc0}, {0x000d, 0x07},
+  {0x0010, 0xc0}, {0x0011, 0x07},
+
+  // WUXGA mode
+  // not in datasheet, from https://github.com/bogsen/STLinux-Kernel/blob/master/drivers/media/platform/tegra/imx185.c
+  {0x0086, 0xc4}, {0x0087, 0xff},   // WND_SHIFT_V = -60
+  {0x03c6, 0xc4}, {0x03c7, 0xff},   // SM_WND_SHIFT_V_APL = -60
+
+  {0x201c, 0xe1}, {0x201d, 0x12},   // image read amount
+  {0x21ee, 0xc4}, {0x21ef, 0x04},   // image send amount (1220 is the end)
+  {0x21f0, 0xc4}, {0x21f1, 0x04},   // image processing amount
+
+  // disable a bunch of errors causing blanking
+  {0x0390, 0x00}, {0x0391, 0x00}, {0x0392, 0x00},
+
+  // flip bayer
+  {0x2D64, 0x64 + 2},
+
+  // color correction
+  {0x0030, 0xf8}, {0x0031, 0x00},  // red gain
+  {0x0032, 0x9a}, {0x0033, 0x00},  // gr gain
+  {0x0034, 0x9a}, {0x0035, 0x00},  // gb gain
+  {0x0036, 0x22}, {0x0037, 0x01},  // blue gain
+
+  // hdr enable (noise with this on for now)
+  {0x00f9, 0}
+};
 
 struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x301A, 0x0018}, // RESET_REGISTER
@@ -9,7 +53,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x302C, 0x0001}, // VT_SYS_CLK_DIV
   {0x302E, 0x0002}, // PRE_PLL_CLK_DIV
   {0x3030, 0x0032}, // PLL_MULTIPLIER
-  {0x3036, 0x000A}, // OP_WORD_CLK_DIV
+  {0x3036, 0x000C}, // OP_WORD_CLK_DIV
   {0x3038, 0x0001}, // OP_SYS_CLK_DIV
 
   // FORMAT
@@ -46,11 +90,11 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
 
   // Readout Settings
   {0x31AE, 0x0204}, // SERIAL_FORMAT, 4-lane MIPI
-  {0x31AC, 0x0C0A}, // DATA_FORMAT_BITS, 12 -> 10
-  {0x3342, 0x122B}, // MIPI_F1_PDT_EDT
-  {0x3346, 0x122B}, // MIPI_F2_PDT_EDT
-  {0x334A, 0x122B}, // MIPI_F3_PDT_EDT
-  {0x334E, 0x122B}, // MIPI_F4_PDT_EDT
+  {0x31AC, 0x0C0C}, // DATA_FORMAT_BITS, 12 -> 12
+  {0x3342, 0x122C}, // MIPI_F1_PDT_EDT
+  {0x3346, 0x122C}, // MIPI_F2_PDT_EDT
+  {0x334A, 0x122C}, // MIPI_F3_PDT_EDT
+  {0x334E, 0x122C}, // MIPI_F4_PDT_EDT
   {0x3344, 0x0011}, // MIPI_F1_VDT_VC
   {0x3348, 0x0111}, // MIPI_F2_VDT_VC
   {0x334C, 0x0211}, // MIPI_F3_VDT_VC

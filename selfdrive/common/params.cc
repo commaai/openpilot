@@ -115,7 +115,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"GsmRoaming", PERSISTENT},
     {"HardwareSerial", PERSISTENT},
     {"HasAcceptedTerms", PERSISTENT},
-    {"HasPrime", PERSISTENT},
     {"IMEI", PERSISTENT},
     {"InstallDate", PERSISTENT},
     {"IsDriverViewEnabled", CLEAR_ON_MANAGER_START},
@@ -145,6 +144,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PandaSignatures", CLEAR_ON_MANAGER_START},
     {"Passive", PERSISTENT},
     {"PrimeRedirected", PERSISTENT},
+    {"PrimeType", PERSISTENT},
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
     {"ReleaseNotes", PERSISTENT},
@@ -163,6 +163,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ApiCache_DriveStats", PERSISTENT},
     {"ApiCache_NavDestinations", PERSISTENT},
     {"ApiCache_Owner", PERSISTENT},
+    {"Offroad_BadNvme", CLEAR_ON_MANAGER_START},
     {"Offroad_CarUnrecognized", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"Offroad_ChargeDisabled", CLEAR_ON_MANAGER_START },
     {"Offroad_ConnectivityNeeded", CLEAR_ON_MANAGER_START},

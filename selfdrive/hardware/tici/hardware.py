@@ -13,6 +13,7 @@ from selfdrive.hardware.tici.amplifier import Amplifier
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
+NM_DEV = NM + '.Device'
 NM_DEV_WL = NM + '.Device.Wireless'
 NM_AP = NM + '.AccessPoint'
 DBUS_PROPS = 'org.freedesktop.DBus.Properties'
@@ -23,19 +24,26 @@ MM_MODEM_SIMPLE = MM + ".Modem.Simple"
 MM_SIM = MM + ".Sim"
 
 class MM_MODEM_STATE(IntEnum):
-       FAILED        = -1
-       UNKNOWN       = 0
-       INITIALIZING  = 1
-       LOCKED        = 2
-       DISABLED      = 3
-       DISABLING     = 4
-       ENABLING      = 5
-       ENABLED       = 6
-       SEARCHING     = 7
-       REGISTERED    = 8
-       DISCONNECTING = 9
-       CONNECTING    = 10
-       CONNECTED     = 11
+  FAILED        = -1
+  UNKNOWN       = 0
+  INITIALIZING  = 1
+  LOCKED        = 2
+  DISABLED      = 3
+  DISABLING     = 4
+  ENABLING      = 5
+  ENABLED       = 6
+  SEARCHING     = 7
+  REGISTERED    = 8
+  DISCONNECTING = 9
+  CONNECTING    = 10
+  CONNECTED     = 11
+
+class NMMetered(IntEnum):
+  NM_METERED_UNKNOWN = 0
+  NM_METERED_YES = 1
+  NM_METERED_NO = 2
+  NM_METERED_GUESS_YES = 3
+  NM_METERED_GUESS_NO = 4
 
 TIMEOUT = 0.1
 
@@ -45,6 +53,11 @@ NetworkStrength = log.DeviceState.NetworkStrength
 # https://developer.gnome.org/ModemManager/unstable/ModemManager-Flags-and-Enumerations.html#MMModemAccessTechnology
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
+
+
+def sudo_write(val, path):
+  os.system(f"sudo su -c 'echo {val} > {path}'")
+
 
 class Tici(HardwareBase):
   @cached_property
@@ -91,11 +104,10 @@ class Tici(HardwareBase):
       primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       primary_connection = self.bus.get_object(NM, primary_connection)
       primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      primary_id = primary_connection.Get(NM_CON_ACT, 'Id', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
       if primary_type == '802-3-ethernet':
         return NetworkType.ethernet
-      elif primary_type == '802-11-wireless' and primary_id != 'Hotspot':
+      elif primary_type == '802-11-wireless':
         return NetworkType.wifi
       else:
         active_connections = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -187,14 +199,14 @@ class Tici(HardwareBase):
       return None
 
   def parse_strength(self, percentage):
-      if percentage < 25:
-        return NetworkStrength.poor
-      elif percentage < 50:
-        return NetworkStrength.moderate
-      elif percentage < 75:
-        return NetworkStrength.good
-      else:
-        return NetworkStrength.great
+    if percentage < 25:
+      return NetworkStrength.poor
+    elif percentage < 50:
+      return NetworkStrength.moderate
+    elif percentage < 75:
+      return NetworkStrength.good
+    else:
+      return NetworkStrength.great
 
   def get_network_strength(self, network_type):
     network_strength = NetworkStrength.unknown
@@ -217,6 +229,27 @@ class Tici(HardwareBase):
       pass
 
     return network_strength
+
+  def get_network_metered(self, network_type) -> bool:
+    try:
+      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      primary_connection = self.bus.get_object(NM, primary_connection)
+      primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+      for dev in primary_devices:
+        dev_obj = self.bus.get_object(NM, str(dev))
+        metered_prop = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+        if network_type == NetworkType.wifi:
+          if metered_prop in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
+            return True
+        elif network_type in [NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G]:
+          if metered_prop == NMMetered.NM_METERED_NO:
+            return False
+    except Exception:
+      pass
+
+    return super().get_network_metered(network_type)
 
   @staticmethod
   def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
@@ -334,7 +367,13 @@ class Tici(HardwareBase):
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
-    return ThermalConfig(cpu=((1, 2, 3, 4, 5, 6, 7, 8), 1000), gpu=((48,49), 1000), mem=(15, 1000), bat=(None, 1), ambient=(65, 1000), pmic=((35, 36), 1000))
+    return ThermalConfig(cpu=(["cpu%d-silver-usr" % i for i in range(4)] +
+                              ["cpu%d-gold-usr" % i for i in range(4)], 1000),
+                         gpu=(("gpu0-usr", "gpu1-usr"), 1000),
+                         mem=("ddr-usr", 1000),
+                         bat=(None, 1),
+                         ambient=("xo-therm-adc", 1000),
+                         pmic=(("pm8998_tz", "pm8005_tz"), 1000))
 
   def set_screen_brightness(self, percentage):
     try:
@@ -356,18 +395,16 @@ class Tici(HardwareBase):
     if not powersave_enabled:
       self.amplifier.initialize_configuration()
 
+    # *** CPU config ***
+
     # offline big cluster, leave core 4 online for boardd
     for i in range(5, 8):
-      # TODO: fix permissions with udev
       val = "0" if powersave_enabled else "1"
-      os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
+      sudo_write(val, f"/sys/devices/system/cpu/cpu{i}/online")
 
     for n in ('0', '4'):
-      gov = 'userspace' if powersave_enabled else 'performance'
-      os.system(f"sudo su -c 'echo {gov} > /sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor'")
-
-      if powersave_enabled:
-        os.system(f"sudo su -c 'echo 979200 > /sys/devices/system/cpu/cpufreq/policy{n}/scaling_setspeed'")
+      gov = 'ondemand' if powersave_enabled else 'performance'
+      sudo_write(gov, f"/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor")
 
   def get_gpu_usage_percent(self):
     try:
@@ -381,6 +418,20 @@ class Tici(HardwareBase):
 
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
+
+    # *** GPU config ***
+    sudo_write("0", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
+    sudo_write("0", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
+    sudo_write("1000000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
+    sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
+
+    # setup governors
+    sudo_write("performance", "/sys/class/devfreq/soc:qcom,cpubw/governor")
+    sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor")
+    sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu4/governor")
 
   def get_networks(self):
     r = {}

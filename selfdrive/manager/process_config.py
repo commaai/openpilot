@@ -27,7 +27,7 @@ procs = [
   PythonProcess("deleter", "selfdrive.loggerd.deleter", persistent=True),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enabled=(not PC or WEBCAM), driverview=True),
   PythonProcess("logmessaged", "selfdrive.logmessaged", persistent=True),
-  PythonProcess("pandad", "selfdrive.pandad", persistent=True),
+  PythonProcess("pandad", "selfdrive.boardd.pandad", persistent=True),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd"),
   PythonProcess("plannerd", "selfdrive.controls.plannerd"),
   PythonProcess("radard", "selfdrive.controls.radard"),
@@ -42,6 +42,9 @@ procs = [
   PythonProcess("rtshield", "selfdrive.rtshield", enabled=EON),
   PythonProcess("shutdownd", "selfdrive.hardware.eon.shutdownd", enabled=EON),
   PythonProcess("androidd", "selfdrive.hardware.eon.androidd", enabled=EON, persistent=True),
+
+  # Experimental
+  PythonProcess("rawgpsd", "selfdrive.sensord.rawgps.rawgpsd", enabled=os.path.isfile("/persist/comma/use-quectel-rawgps")),
 ]
 
 managed_processes = {p.name: p for p in procs}

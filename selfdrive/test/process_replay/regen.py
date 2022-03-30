@@ -61,10 +61,10 @@ def replay_manager_state(s, msgs):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
 
   while True:
-      new_m = messaging.new_message('managerState')
-      new_m.managerState.processes = [{'name': name, 'running': True} for name in managed_processes]
-      pm.send(s, new_m)
-      rk.keep_time()
+    new_m = messaging.new_message('managerState')
+    new_m.managerState.processes = [{'name': name, 'running': True} for name in managed_processes]
+    pm.send(s, new_m)
+    rk.keep_time()
 
 
 def replay_device_state(s, msgs):
@@ -159,7 +159,7 @@ def replay_cameras(lr, frs):
                                      args=(s, stream, dt, vs, frames, size)))
 
   # hack to make UI work
-  vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
+  vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
   vs.start_listener()
   return vs, p
 

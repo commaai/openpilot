@@ -107,13 +107,13 @@ typedef enum
 
 
 /// Structure to store the configuration of a non-linear program
-typedef struct ocp_nlp_plan
+typedef struct ocp_nlp_plan_t
 {
     /// QP solver configuration.
-    ocp_qp_solver_plan ocp_qp_solver_plan;
+    ocp_qp_solver_plan_t ocp_qp_solver_plan;
 
     /// Simulation solver configuration for each stage.
-    sim_solver_plan *sim_solver_plan;
+    sim_solver_plan_t *sim_solver_plan;
 
     /// Nlp solver type.
     ocp_nlp_solver_t nlp_solver;
@@ -133,7 +133,7 @@ typedef struct ocp_nlp_plan
     /// Horizon length.
     int N;
 
-} ocp_nlp_plan;
+} ocp_nlp_plan_t;
 
 
 /// Structure to store the state/configuration for the non-linear programming solver
@@ -151,7 +151,7 @@ typedef struct ocp_nlp_solver
 /// default/invalid state.
 ///
 /// \param N Horizon length
-ocp_nlp_plan *ocp_nlp_plan_create(int N);
+ocp_nlp_plan_t *ocp_nlp_plan_create(int N);
 
 /// Destructor for plan struct, frees memory.
 ///
@@ -162,7 +162,7 @@ void ocp_nlp_plan_destroy(void* plan_);
 /// Constructs an nlp configuration struct from a plan.
 ///
 /// \param plan The plan (user nlp configuration).
-ocp_nlp_config *ocp_nlp_config_create(ocp_nlp_plan plan);
+ocp_nlp_config *ocp_nlp_config_create(ocp_nlp_plan_t plan);
 
 /// Desctructor of the nlp configuration.
 ///
@@ -371,6 +371,14 @@ void ocp_nlp_eval_cost(ocp_nlp_solver *solver, ocp_nlp_in *nlp_in, ocp_nlp_out *
 
 //
 void ocp_nlp_eval_residuals(ocp_nlp_solver *solver, ocp_nlp_in *nlp_in, ocp_nlp_out *nlp_out);
+
+/// Computes the residuals.
+///
+/// \param solver The solver struct.
+/// \param nlp_in The inputs struct.
+/// \param nlp_out The output struct.
+void ocp_nlp_eval_residuals(ocp_nlp_solver *solver, ocp_nlp_in *nlp_in, ocp_nlp_out *nlp_out);
+
 
 //
 void ocp_nlp_eval_param_sens(ocp_nlp_solver *solver, char *field, int stage, int index, ocp_nlp_out *sens_nlp_out);

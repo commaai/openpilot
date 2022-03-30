@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from common.params import Params
-from selfdrive.config import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
+from common.conversions import Conversions as CV
+from selfdrive.car.hyundai.values import CAR, DBC, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -18,17 +17,22 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "hyundai"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
-    ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1]
+    ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
     # WARNING: disabling radar also disables AEB (and we show the same warning on the instrument cluster as if you manually disabled AEB)
-    ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar") and (candidate not in LEGACY_SAFETY_MODE_CAR)
+    ret.openpilotLongitudinalControl = disable_radar and (candidate not in LEGACY_SAFETY_MODE_CAR)
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
+
+    # These cars have been put into dashcam only due to both a lack of users and test coverage.
+    # These cars likely still work fine. Once a user confirms each car works and a test route is
+    # added to selfdrive/car/tests/routes.py, we can remove it from this list.
+    ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, CAR.ELANTRA_GT_I30}
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerRateCost = 0.5
@@ -297,8 +301,6 @@ class CarInterface(CarInterfaceBase):
 
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
-    if self.CS.park_brake:
-      events.add(EventName.parkBrake)
 
     if self.CS.CP.openpilotLongitudinalControl:
       buttonEvents = []
@@ -346,9 +348,5 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    hud_control = c.hudControl
-    ret = self.CC.update(c, c.enabled, self.CS, self.frame, c.actuators,
-                         c.cruiseControl.cancel, hud_control.visualAlert, hud_control.setSpeed, hud_control.leftLaneVisible,
-                         hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart)
-    self.frame += 1
+    ret = self.CC.update(c, self.CS)
     return ret
