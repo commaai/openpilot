@@ -51,6 +51,7 @@ class LatControlTorque(LatControl):
       pid_log.active = True
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
+      pid_log.d = self.pid.d
       pid_log.f = self.pid.f
       pid_log.output = -output_torque
       pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS)
