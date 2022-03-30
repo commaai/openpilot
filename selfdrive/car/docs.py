@@ -47,7 +47,7 @@ def get_tier_car_info() -> Dict[Tier, List[CarInfo]]:
 
   # Sort cars by make and model + year
   for tier, cars in tier_car_info.items():
-    tier_car_info[tier] = sorted(cars, key=lambda x: (x.make + x.model).lower())
+    tier_car_info[tier] = sorted(cars, key=lambda car: (car.make + car.model).lower())
 
   return tier_car_info
 
