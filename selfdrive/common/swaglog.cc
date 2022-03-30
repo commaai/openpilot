@@ -103,7 +103,8 @@ void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func
                 const char* event_name, ...){
   uint64_t ns = nanos_since_boot();                               
   json11::Json tspt_j = json11::Json::object {                    
-    {"timestamp", json11::Json::object{{"event", event_name},     
+    {"timestamp", json11::Json::object{
+                   {"event", event_name},     
                    {"time", std::to_string(ns)}}                  
     }};                                                           
   cloudlog_e(levelnum,filename,lineno,func, tspt_j.dump().c_str());           
@@ -113,7 +114,8 @@ void cloudlog_t_e(int levelnum, const char* filename, int lineno, const char* fu
                 const char* event_name, const json11::Json info, ...){
   uint64_t ns = nanos_since_boot();                               
   json11::Json tspt_e_j = json11::Json::object {                    
-    {"timestampExtra", json11::Json::object{{"event", event_name},     
+    {"timestampExtra", json11::Json::object{
+                   {"event", event_name},     
                    {"time", std::to_string(ns)},                  
                    {"info", info}}                  
     }};                                                           

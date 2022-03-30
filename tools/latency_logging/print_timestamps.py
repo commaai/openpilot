@@ -1,171 +1,186 @@
-from tools.lib.route import Route
-from tools.lib.logreader import LogReader
-from tabulate import tabulate
+
 import json
 from collections import defaultdict
+from tabulate import tabulate
+
+from tools.lib.route import Route
+from tools.lib.logreader import LogReader
 
 r = Route("9f583b1d93915c31|2022-03-28--17-25-12") 
 lr = LogReader(r.log_paths()[0])
 
-services = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
+SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 
-msgq_to_service = {}
-msgq_to_service['roadCameraState'] = "camerad"
-msgq_to_service['wideRoadCameraState'] = "camerad"
-msgq_to_service['modelV2'] = "modeld"
-msgq_to_service['lateralPlan'] = "plannerd"
-msgq_to_service['longitudinalPlan'] = "plannerd"
-msgq_to_service['sendcan'] = "controlsd"
+MSGQ_TO_SERVICE = {
+        'roadCameraState':'camerad',
+        'wideRoadCameraState':'camerad',
+        'modelV2':'modeld',
+        'lateralPlan':'plannerd',
+        'longitudinalPlan':'plannerd',
+        'sendcan':'controlsd'
+        }
 
-service_to_durations = defaultdict(list)
-service_to_durations['camerad'] = ['timestampSof', 'processingTime']
-service_to_durations['modeld'] = ['modelExecutionTime', 'gpuExecutionTime']
-service_to_durations['plannerd'] = ["solverExecutionTime"]
+SERVICE_TO_DURATIONS = {
+        'camerad':['timestampSof', 'processingTime'],
+        'modeld':['modelExecutionTime', 'gpuExecutionTime'],
+        'plannerd':["solverExecutionTime"]
+        }
 
-# these have to be iterated after the translation event have been made, but prevent reiteration of all logs
-timestampExtra_logs = [] 
-timestamp_logs = []
+def get_relevant_logs(logreader):
+  logs = [[], [], []]
+  for msg in logreader:
+    if msg.which() == "logMessage" and "timestamp" in msg.logMessage:
+      msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}").replace("\\", '')
+      jmsg = json.loads(msg)
+      if "timestampExtra" in jmsg['msg']:
+        if jmsg['msg']['timestampExtra']['event'] == "translation":
+          logs[0].append(jmsg['msg']['timestampExtra'])
+        else:
+          logs[1].append(jmsg['msg']['timestampExtra'])
+      elif "timestamp" in jmsg['msg']:
+        logs[2].append(jmsg)
+    return logs
 
-# Build translation dict while collecting the other logs
-translationdict = {}
-for msg in lr:
-  if msg.which() == "logMessage" and "timestamp" in msg.logMessage:
-    msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}").replace("\\", '')
-    jmsg = json.loads(msg)
-    if "timestampExtra" in jmsg['msg']:
-      if jmsg['msg']['timestampExtra']['event'] == "translation":
-        jmsg = jmsg['msg']['timestampExtra']
-        logMonoTime = jmsg['info']['from']
-        frame_id = jmsg['info']['to']
-        translationdict[float(logMonoTime)] = int(frame_id)
-      else:
-        timestampExtra_logs.append(jmsg['msg']['timestampExtra'])
-    elif "timestamp" in jmsg['msg']:
-      timestamp_logs.append(jmsg)
+def get_translation_lut(translation_logs):
+  translationdict = {}
+  for jmsg in translationdict:
+    logMonoTime = float(jmsg['info']['from'])
+    frame_id = int(jmsg['info']['to'])
+    translationdict[logMonoTime] = frame_id
+  return translationdict
 
-failed_transl = 0
-def translate(logMono):
-  logMono = float(logMono)
-  if logMono in translationdict:
-    return translationdict[logMono]
-  else:
-    global failed_transl
-    failed_transl+=1
-    return -1
+def get_service_intervals(timestampExtra_logs, translationdict):
+  service_intervals = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+  frame_mismatches = []
+  internal_durations = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+  failed_transl = 0
 
-# Build service blocks
-service_blocks = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-skip_frames = []
-durations = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-for jmsg in timestampExtra_logs:
-  if "smInfo" in jmsg['info']:
-    pubTime = jmsg['info']['logMonoTime']
-    rcvTime =jmsg['info']['rcvTime']*1e9
-    msg_name = jmsg['info']['msg_name']
-    service = msgq_to_service[msg_name]
-    smInfo = jmsg['info']['smInfo']
-    frame_id = translate(pubTime) if msg_name == 'sendcan' else smInfo['frameId']
-    if msg_name == 'modelV2':
-      if smInfo['frameIdExtra'] != frame_id:
-        skip_frames.append(frame_id)
-    for duration in service_to_durations[service]:
-      if duration == 'timestampSof':
-        service_blocks[int(frame_id)][service]["Start"].append(float(smInfo[duration]))
-      else:
-        durations[int(frame_id)][service][duration].append(smInfo[duration]*1e3)
-    service_blocks[frame_id][service]["End"].append(float(pubTime))
-    next_service = services[services.index(service)+1]
-    service_blocks[int(frame_id)][next_service]["Start"].append( float(rcvTime))
-  elif "Pipeline end" == jmsg['event']:
-    frame_id = translate(jmsg["info"]["logMonoTime"])
-    service_blocks[int(frame_id)][services[-1]]["End"].append(float(jmsg["time"]))
+  def translate(logMono):
+    return -1 if logMono not in translationdict else translationdict[logMono]
 
-# Exclude bad data
-if failed_transl > 0:
-  del service_blocks[-1]
-for frame_id in skip_frames:
-  del service_blocks[list(service_blocks.keys()).index(frame_id)]
-empty_data = set()
-for frame_id in service_blocks.keys():
-  for service in services:
-    if service not in service_blocks[frame_id]:
-      empty_data.add(frame_id)
-for frame_id in empty_data:
-  del service_blocks[frame_id]
+  for jmsg in timestampExtra_logs:
+    if "smInfo" in jmsg['info']:
+      # retrive info from logs
+      pub_time = float(jmsg['info']['logMonoTime'])
+      rcv_time = float(jmsg['info']['rcvTime']*1e9)
+      msg_name = jmsg['info']['msg_name']
+      service = MSGQ_TO_SERVICE[msg_name]
+      smInfo = jmsg['info']['smInfo']
 
-def find_frame_id(time, service):
-  for frame_id, blocks in service_blocks.items():
-    try:
-      if service == 'plannerd':
-        # plannerd is done when both messages has been sent, other services have their start/end at the first message
-        if min(blocks[service]["Start"]) <= float(time) <= max(blocks[service]["End"]):
-          return frame_id
-      else:
-        if min(blocks[service]["Start"]) <= float(time) <= min(blocks[service]["End"]):
-          return frame_id
-    except:
-      pass
-  return 0
+      # sendcan does not have frame id, translation from its logMonoTime required
+      frame_id = translate(pub_time) if msg_name == 'sendcan' else float(smInfo['frameId'])
+      if frame_id == -1:
+        failed_transl += 1
+        continue
 
-# Insert logs in blocks
-for jmsg in timestamp_logs:
-  service = jmsg['ctx']['daemon']
-  event = jmsg['msg']['timestamp']['event']
-  time = jmsg['msg']['timestamp']['time']
-  frame_id = find_frame_id(time, service) 
-  service_blocks[int(frame_id)][service][event].append(float(time))
-if 0 in service_blocks:
-  del service_blocks[0]
+      # check for frame missmatches in model 
+      if msg_name == 'modelV2':
+        if smInfo['frameIdExtra'] != frame_id:
+          frame_mismatches.append(frame_id)
 
-# Print
-for frame_id, services in service_blocks.items():
-  t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
-  print(frame_id)
-  d = defaultdict( lambda: ("","",[]))
-  for service, events in services.items():
-    for event, times in events.items():
-      key = (min(times)-t0)/1e6
-      times = [(float(time)-t0)/1e6 for time in times]
-      d[key] = (service, event, times)
-  s = sorted(d.items())
-  print(tabulate([[item[1][0], item[1][1], item[1][2]] for item in s], headers=["service", "event", "time (ms)"]))
-  print("Internal durations:")
-  for service, events in dict(durations)[frame_id].items():
-    print(service)  
-    for event, times in dict(events).items():
-      print("    ", event, times)  
-  print()
+      # retrive the internal durations of the messages 
+      for duration in SERVICE_TO_DURATIONS[service]:
+        # use timestampSof as the start time for camera
+        if duration == 'timestampSof':
+          service_intervals[frame_id][service]["Start"].append(float(smInfo[duration]))
+        else:
+          internal_durations[frame_id][service][duration].append(float(smInfo[duration]*1e3))
 
-print("Num skipped due to failed translations:",failed_transl)
-print("Num skipped due to frameId missmatch:",len(skip_frames))
-print("Num skipped due to empty data:", len(empty_data))
-'''
-fig, gnt = plt.subplots()
-maxx = max([max([max(events.values()) for events in services.values()]) for services in timestamps.values()])/1e6
-gnt.set_xlim(0, 150)
-maxy = len(timestamps)
-gnt.set_ylim(0, maxy)
+      service_intervals[frame_id][service]["End"].append(pub_time)
+      next_service = SERVICES[SERVICES.index(service)+1]
+      service_intervals[frame_id][next_service]["Start"].append(rcv_time)
 
-avg_times = defaultdict(list)
+    # sendcan to panda is sent over usb and not logged automatically
+    elif "Pipeline end" == jmsg['event']:
+      frame_id = translate(float(jmsg["info"]["logMonoTime"]))
+      if frame_id == -1:
+        failed_transl += 1
+        continue
+      service_intervals[frame_id][SERVICES[-1]]["End"].append(float(jmsg["time"]))
+  return (service_intervals, frame_mismatches, internal_durations, failed_transl)
 
-count = 0
-for frame_id, services in timestamps.items():
-  t0 = min([min(events.values())for events in services.values()])
-  service_bars = []
-  event_bars = []
-  print(frame_id)
-  for service, events in services.items():
-    start = min(events.values())
-    end = max(events.values())
-    #service_bars.append(((start-t0)/1e6, (end-start)/1e6))
-    for event, time in events.items():
-      t = (time-t0)/1e6
-      event_bars.append((t, 0.1))
-      avg_times[service+"."+event].append(t)
-      print("    ", service+"."+event, t)
-  #gnt.broken_barh(service_bars, (count, 0.9), facecolors=("blue"))
-  gnt.broken_barh(event_bars, (count, 0.9), facecolors=("black"))
-  count+=1
-print(tabulate([[event, sum(times)/len(times), max(times), len(times)] for event, times in avg_times.items()], headers=["event", "avg", "max", "len"]))
-plt.show(block=True)
-'''
+def get_empty_data(service_intervals):
+  for frame_id in service_intervals.keys():
+    for service in SERVICES:
+      if service not in service_intervals[frame_id]:
+        yield frame_id
+
+def exclude_bad_data(frame_ids, service_intervals):
+  for frame_id in frame_ids:
+    del service_intervals[frame_id]
+
+def fill_intervals(timestamp_logs, service_intervals)
+  failed_inserts = 0
+  def find_frame_id(time, service):
+    for frame_id, blocks in service_intervals.items():
+      try:
+        if service == 'plannerd':
+          # plannerd is done when both messages has been sent, other services have their start/end at the first message
+          if min(blocks[service]["Start"]) <= float(time) <= max(blocks[service]["End"]):
+            return frame_id
+        else:
+          if min(blocks[service]["Start"]) <= float(time) <= min(blocks[service]["End"]):
+            return frame_id
+      except:
+        pass
+    return 0
+  for jmsg in timestamp_logs:
+    service = jmsg['ctx']['daemon']
+    event = jmsg['msg']['timestamp']['event']
+    time = float(jmsg['msg']['timestamp']['time'])
+    frame_id = find_frame_id(time, service) 
+    if frame_id:
+      service_intervals[frame_id][service][event].append(time)
+    else:
+      failed_inserts +=1
+  return failed_inserts
+
+def print_timestamps(service_intervals):
+  for frame_id, services in service_intervals.items():
+    t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
+    print(frame_id)
+    d = defaultdict( lambda: ("","",[]))
+    for service, events in services.items():
+      for event, times in events.items():
+        key = (min(times)-t0)/1e6
+        times = [(float(time)-t0)/1e6 for time in times]
+        d[key] = (service, event, times)
+    s = sorted(d.items())
+    print(tabulate([[item[1][0], item[1][1], item[1][2]] for item in s], headers=["service", "event", "time (ms)"]))
+    print("Internal internal_durations:")
+    for service, events in dict(internal_durations)[frame_id].items():
+      print(service)  
+      for event, times in dict(events).items():
+        print("    ", event, times)  
+    print()
+
+def graph_timestamps(service_intervals):
+  fig, gnt = plt.subplots()
+  gnt.set_xlim(0, 150)
+  gnt.set_ylim(0, len(service_intervals))
+  y = 0
+  for frame_id, services in service_intervals.items():
+    t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
+    event_bars = []
+    for service, events in services.items():
+      for event, times in events.items():
+        for time in times:
+          t = (time-t0)/1e6
+          event_bars.append((t, 0.1))
+    gnt.broken_barh(event_bars, (y, 0.9), facecolors=("black"))
+    y+=1
+  plt.show(block=True)
+
+translation_logs, timestampExtra_logs, timestamp_logs = get_relevant_logs(lr)
+translationdict = get_translation_lut(translation_logs)
+service_intervals, frame_mismatches, internal_durations, failed_transl= get_service_intervals(timestampExtra_logs, translationdict)
+empty_data = list(set(get_empty_data(service_intervals)))
+exclude_bad_data(set(empty_data+frame_mismatches), service_intervals)
+failed_inserts = fill_intervals(timestamp_logs, service_intervals)
+print_timestamps(service_intervals)
+
+print("Num frames skipped due to failed translations:",failed_transl)
+print("Num frames skipped due to frameId missmatch:",len(frame_mismatches))
+print("Num frames skipped due to empty data:", len(empty_data))
+print("Num inserts failed:", failed_inserts)
+
