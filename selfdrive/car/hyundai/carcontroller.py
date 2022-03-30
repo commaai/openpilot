@@ -11,7 +11,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 STEER_FAULT_MAX_ANGLE = 90
-STEER_FAULT_MAX_FRAMES = 90
+STEER_FAULT_MAX_FRAMES = 50  # TODO: some cars might have a higher limit
 
 
 def process_hud_alert(enabled, fingerprint, hud_control):
@@ -77,9 +77,9 @@ class CarController:
       if self.frame % 100 == 0:
         can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
-    if not CC.latActive or abs(CS.out.steeringAngleDeg) <= STEER_FAULT_MAX_ANGLE:
+    if not CC.latActive or abs(CS.out.steeringAngleDeg) < STEER_FAULT_MAX_ANGLE:
       self.angle_limit_counter = 0
-    elif abs(CS.out.steeringAngleDeg) > STEER_FAULT_MAX_ANGLE:
+    elif abs(CS.out.steeringAngleDeg) >= STEER_FAULT_MAX_ANGLE:
       self.angle_limit_counter += 1
 
     # stop steering for a cycle to avoid fault
