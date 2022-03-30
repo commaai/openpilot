@@ -21,8 +21,7 @@ ln -snf ${env.TEST_DIR} /data/pythonpath
 if [ -f /EON ]; then
   # kill all old procs in the openpilot cpuset
   while read p; do
-    echo "killing \$p"
-    kill "\$p"
+    kill "\$p" || true
   done < /dev/cpuset/app/tasks
 
   echo \$\$ > /dev/cpuset/app/tasks || true
