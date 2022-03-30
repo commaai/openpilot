@@ -1,6 +1,8 @@
 import numpy as np
+
 from selfdrive.car.body import bodycan
 from opendbc.can.packer import CANPacker
+
 MAX_TORQUE = 500
 MAX_TORQUE_RATE = 50
 MAX_ANGLE_ERROR = 7
@@ -31,11 +33,11 @@ class CarController():
 
   @staticmethod
   def deadband_filter(torque, deadband):
-      if torque > 0:
-        torque += deadband
-      else:
-        torque -= deadband
-      return torque
+    if torque > 0:
+      torque += deadband
+    else:
+      torque -= deadband
+    return torque
 
   def update(self, CC, CS, frame, actuators, cruise_cancel, hud_alert,
              left_line, right_line, left_lane_depart, right_lane_depart):

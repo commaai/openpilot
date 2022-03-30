@@ -2,7 +2,6 @@ moc_*
 *.moc
 
 _mui
-eyes
 watch3
 installer/installers/*
 replay/replay

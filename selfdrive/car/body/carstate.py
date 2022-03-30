@@ -1,6 +1,6 @@
 from cereal import car
-from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
+from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.body.values import DBC
 
 
@@ -16,20 +16,16 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = abs(ret.vEgo) < 1
 
+    # irrelevant for non-car
+    ret.doorOpen = False
+    ret.seatbeltUnlatched = False
+    ret.gearShifter = car.CarState.GearShifter.drive
+    ret.steeringTorque = 0
+    ret.steeringAngleDeg = 0
+    ret.steeringPressed = False
     ret.cruiseState.enabled = True
     ret.cruiseState.available = True
-    ret.seatbeltUnlatched = False
-
     ret.cruiseState.speed = 0
-    ret.steeringTorque = 0
-
-    ret.steeringPressed = False
-
-    ret.steeringAngleDeg = 0
-
-    ret.doorOpen = False
-
-    ret.gearShifter = self.parse_gear_shifter("D")
 
     return ret
 
