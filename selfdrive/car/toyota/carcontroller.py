@@ -25,7 +25,7 @@ class CarController:
     self.standstill_req = False
     self.steer_rate_limited = False
 
-    self.frames_above_rate_threshold = 0
+    self.rate_limit_counter = 0
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -63,13 +63,13 @@ class CarController:
     # the value seems to describe how many frames the steering rate was above 100 deg/s, so
     # cut torque with some margin for the lower state
     if abs(CS.out.steeringRateDeg) > STEER_FAULT_MAX_RATE:
-      self.frames_above_rate_threshold += 1
+      self.rate_limit_counter += 1
     # TODO: unclear if it resets its internal state at another value
     if not CC.latActive or abs(CS.out.steeringRateDeg) <= STEER_FAULT_MAX_RATE:
-      self.frames_above_rate_threshold = 0
+      self.rate_limit_counter = 0
 
     # Cut steering if we're about to fault the EPS
-    if not CC.latActive or self.frames_above_rate_threshold > STEER_FAULT_MAX_FRAMES:
+    if not CC.latActive or self.rate_limit_counter > STEER_FAULT_MAX_FRAMES:
       apply_steer = 0
       apply_steer_req = 0
     else:
