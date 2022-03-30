@@ -20,10 +20,6 @@ fi
 umount /data/safe_staging/merged/ || true
 sudo umount /data/safe_staging/merged/ || true
 
-pkill -f manager.py
-pkill -f athena
-pkill -f selfdrive
-
 export KEYS_PARAM_PATH="/data/params/d/GithubSshKeys"
 if [ -f "/EON" ]; then
   export KEYS_PATH="/data/data/com.termux/files/home/setup_keys"
