@@ -186,7 +186,7 @@ void OnroadHud::updateState(const UIState &s) {
     maxspeed *= KM_TO_MILE;
   }
   QString maxspeed_str = cruise_set ? QString::number(std::nearbyint(maxspeed)) : "N/A";
-  float cur_speed = std::max(0.0, sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
+  float cur_speed = sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
 
   setProperty("is_cruise_set", cruise_set);
   setProperty("speed", QString::number(std::nearbyint(cur_speed)));
@@ -267,6 +267,11 @@ void OnroadHud::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, flo
 }
 
 // NvgWindow
+
+NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, parent) {
+
+}
+
 void NvgWindow::initializeGL() {
   CameraViewWidget::initializeGL();
   qInfo() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
@@ -376,9 +381,9 @@ void NvgWindow::paintGL() {
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
-  if (dt > 66) {
-    // warn on sub 15fps
-    LOGW("slow frame time: %.2f", dt);
+  double fps = fps_filter.update(1. / dt * 1000);
+  if (fps < 15) {
+    LOGW("slow frame rate: %.2f fps", fps);
   }
   prev_draw_t = cur_draw_t;
 }

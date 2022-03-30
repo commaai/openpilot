@@ -15,7 +15,7 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "toyota"
@@ -102,7 +102,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4607. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid limited
       set_lat_tune(ret.lateralTuning, LatTunes.PID_G)
 
-    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2):
+    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2, CAR.AVALONH_TSS2):
       # starting from 2019, all Avalon variants have stop and go
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
       stop_and_go = candidate != CAR.AVALON
@@ -190,7 +190,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4300. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
-    elif candidate == CAR.ALPHARD_TSS2:
+    elif candidate in (CAR.ALPHARD_TSS2, CAR.ALPHARDH_TSS2):
       stop_and_go = True
       ret.wheelbase = 3.00
       ret.steerRatio = 14.2
@@ -272,12 +272,5 @@ class CarInterface(CarInterfaceBase):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-    hud_control = c.hudControl
-    ret = self.CC.update(c, self.CS, self.frame,
-                         c.actuators, c.cruiseControl.cancel,
-                         hud_control.visualAlert, hud_control.leftLaneVisible,
-                         hud_control.rightLaneVisible, hud_control.leadVisible,
-                         hud_control.leftLaneDepart, hud_control.rightLaneDepart)
-
-    self.frame += 1
+    ret = self.CC.update(c, self.CS)
     return ret

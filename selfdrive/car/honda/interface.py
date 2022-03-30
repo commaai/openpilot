@@ -3,7 +3,6 @@ from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
 from common.numpy_fast import interp
-from common.params import Params
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -28,7 +27,7 @@ class CarInterface(CarInterfaceBase):
       return CarControllerParams.NIDEC_ACCEL_MIN, interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
 
@@ -38,7 +37,7 @@ class CarInterface(CarInterfaceBase):
 
       # Disable the radar and let openpilot control longitudinal
       # WARNING: THIS DISABLES AEB!
-      ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
+      ret.openpilotLongitudinalControl = disable_radar
 
       ret.pcmCruise = not ret.openpilotLongitudinalControl
     else:
@@ -403,8 +402,8 @@ class CarInterface(CarInterfaceBase):
     for b in ret.buttonEvents:
 
       # do enable on both accel and decel buttons
-      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
-        if not self.CP.pcmCruise:
+      if not self.CP.pcmCruise:
+        if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
           events.add(EventName.buttonEnable)
 
       # do disable on button down
@@ -419,17 +418,5 @@ class CarInterface(CarInterfaceBase):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-    hud_control = c.hudControl
-    if hud_control.speedVisible:
-      hud_v_cruise = hud_control.setSpeed * CV.MS_TO_KPH
-    else:
-      hud_v_cruise = 255
-
-    ret = self.CC.update(c, self.CS, self.frame,
-                         c.actuators, c.cruiseControl.cancel,
-                         hud_v_cruise, hud_control.lanesVisible,
-                         hud_show_car=hud_control.leadVisible,
-                         hud_alert=hud_control.visualAlert)
-
-    self.frame += 1
+    ret = self.CC.update(c, self.CS)
     return ret

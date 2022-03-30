@@ -48,6 +48,7 @@ class VehicleState:
     self.vel = carla.Vector3D()
     self.cruise_button = 0
     self.is_engaged = False
+    self.ignition = True
 
 
 def steer_rate_limit(old, new):
@@ -94,7 +95,7 @@ class Camerad:
     yuv_cl = cl_array.empty_like(rgb_cl)
     self.krnl(self.queue, (np.int32(self.Wdiv4), np.int32(self.Hdiv4)), None, rgb_cl.data, yuv_cl.data).wait()
     yuv = np.resize(yuv_cl.get(), np.int32(rgb.size / 2))
-    eof = self.frame_id * 0.05
+    eof = int(self.frame_id * 0.05 * 1e9)
 
     # TODO: remove RGB send once the last RGB vipc subscriber is removed
     self.vipc_server.send(VisionStreamType.VISION_STREAM_RGB_ROAD, img.tobytes(), self.frame_id, eof, eof)
@@ -126,13 +127,13 @@ def imu_callback(imu, vehicle_state):
   pm.send('sensorEvents', dat)
 
 
-def panda_state_function(exit_event: threading.Event):
+def panda_state_function(vs: VehicleState, exit_event: threading.Event):
   pm = messaging.PubMaster(['pandaStates'])
   while not exit_event.is_set():
     dat = messaging.new_message('pandaStates', 1)
     dat.valid = True
     dat.pandaStates[0] = {
-      'ignitionLine': True,
+      'ignitionLine': vs.ignition,
       'pandaType': "blackPanda",
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec'
@@ -283,7 +284,7 @@ def bridge(q):
   # launch fake car threads
   threads = []
   exit_event = threading.Event()
-  threads.append(threading.Thread(target=panda_state_function, args=(exit_event,)))
+  threads.append(threading.Thread(target=panda_state_function, args=(vehicle_state, exit_event,)))
   threads.append(threading.Thread(target=peripheral_state_function, args=(exit_event,)))
   threads.append(threading.Thread(target=fake_driver_monitoring, args=(exit_event,)))
   threads.append(threading.Thread(target=can_function_runner, args=(vehicle_state, exit_event,)))
@@ -346,6 +347,8 @@ def bridge(q):
         elif m[1] == "cancel":
           cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
+      elif m[0] == "ignition":
+        vehicle_state.ignition = not vehicle_state.ignition
       elif m[0] == "quit":
         break
 

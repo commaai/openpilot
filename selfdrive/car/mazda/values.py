@@ -1,4 +1,7 @@
+from typing import Dict, List, Union
+
 from selfdrive.car import dbc_dict
+from selfdrive.car.docs_definitions import CarInfo
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -14,6 +17,7 @@ class CarControllerParams:
   STEER_DRIVER_FACTOR = 1         # from dbc
   STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
 
+
 class CAR:
   CX5 = "MAZDA CX-5"
   CX9 = "MAZDA CX-9"
@@ -21,6 +25,17 @@ class CAR:
   MAZDA6 = "MAZDA 6"
   CX9_2021 = "MAZDA CX-9 2021"
   CX5_2022 = "MAZDA CX-5 2022"
+
+
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+  CAR.CX5: CarInfo("Mazda CX-5 2017, 2019", "All"),  # TODO: verify years and torque for first 4
+  CAR.CX9: CarInfo("Mazda CX-9 2016-17", "All"),
+  CAR.MAZDA3: CarInfo("Mazda 3 2017", "All"),
+  CAR.MAZDA6: CarInfo("Mazda 6 2017", "All"),
+  CAR.CX9_2021: CarInfo("Mazda CX-9 2021", "All", good_torque=True),
+  CAR.CX5_2022: CarInfo("Mazda CX-5 2022", "All", good_torque=True),
+}
+
 
 class LKAS_LIMITS:
   STEER_THRESHOLD = 15

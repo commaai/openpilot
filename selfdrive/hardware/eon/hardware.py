@@ -373,8 +373,13 @@ class Android(HardwareBase):
     return self.read_param_file("/sys/class/power_supply/usb/present", lambda x: bool(int(x)), False)
 
   def get_current_power_draw(self):
-    # We don't have a good direct way to measure this on android
-    return None
+    if self.get_battery_status() == 'Discharging':
+      # If the battery is discharging, we can use this measurement
+      # On C2: this is low by about 10-15%, probably mostly due to UNO draw not being factored in
+      return ((self.get_battery_voltage() / 1000000) * (self.get_battery_current() / 1000000))
+    else:
+      # We don't have a good direct way to measure this if it's not "discharging"
+      return None
 
   def shutdown(self):
     os.system('LD_LIBRARY_PATH="" svc power shutdown')

@@ -100,6 +100,7 @@ selfdrive/boardd/set_time.py
 selfdrive/boardd/pandad.py
 
 selfdrive/car/__init__.py
+selfdrive/car/docs_definitions.py
 selfdrive/car/car_helpers.py
 selfdrive/car/fingerprints.py
 selfdrive/car/interfaces.py

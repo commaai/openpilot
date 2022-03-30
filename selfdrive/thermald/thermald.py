@@ -278,9 +278,21 @@ def thermald_thread(end_event, hw_queue):
     onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not onroad_conditions["device_temp_good"]))
 
+    # TODO: this should move to TICI.initialize_hardware, but we currently can't import params there
     if TICI:
-      missing = (not Path("/data/media").is_mount()) and (not os.path.isfile("/persist/comma/living-in-the-moment"))
-      set_offroad_alert_if_changed("Offroad_StorageMissing", missing)
+      if not os.path.isfile("/persist/comma/living-in-the-moment"):
+        if not Path("/data/media").is_mount():
+          set_offroad_alert_if_changed("Offroad_StorageMissing", True)
+        else:
+          # check for bad NVMe
+          try:
+            with open("/sys/block/nvme0n1/device/model") as f:
+              model = f.read().strip()
+            if not model.startswith("Samsung SSD 980") and params.get("Offroad_BadNvme") is None:
+              set_offroad_alert_if_changed("Offroad_BadNvme", True)
+              cloudlog.event("Unsupported NVMe", model=model, error=True)
+          except Exception:
+            pass
 
     # Handle offroad/onroad transition
     should_start = all(onroad_conditions.values())
@@ -325,7 +337,11 @@ def thermald_thread(end_event, hw_queue):
     msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
     current_power_draw = HARDWARE.get_current_power_draw()  # pylint: disable=assignment-from-none
-    msg.deviceState.powerDrawW = current_power_draw if current_power_draw is not None else 0
+    if current_power_draw is not None:
+      statlog.sample("power_draw", current_power_draw)
+      msg.deviceState.powerDrawW = current_power_draw
+    else:
+      msg.deviceState.powerDrawW = 0
 
     # Check if we need to disable charging (handled by boardd)
     msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(onroad_conditions["ignition"], in_car, off_ts)

@@ -1,4 +1,7 @@
+from typing import Dict, List, Union
+
 from selfdrive.car import dbc_dict
+from selfdrive.car.docs_definitions import CarInfo
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -15,6 +18,7 @@ class CarControllerParams:
     self.STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1       # from dbc
 
+
 class CAR:
   ASCENT = "SUBARU ASCENT LIMITED 2019"
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
@@ -24,6 +28,21 @@ class CAR:
   LEGACY_PREGLOBAL = "SUBARU LEGACY 2015 - 2018"
   OUTBACK_PREGLOBAL = "SUBARU OUTBACK 2015 - 2017"
   OUTBACK_PREGLOBAL_2018 = "SUBARU OUTBACK 2018 - 2019"
+
+
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+  CAR.ASCENT: CarInfo("Subaru Ascent 2019", "EyeSight"),
+  CAR.IMPREZA: [
+    CarInfo("Subaru Impreza 2017-19", "EyeSight"),
+    CarInfo("Subaru Crosstrek 2018-20", "EyeSight"),
+  ],
+  CAR.FORESTER: CarInfo("Subaru Forester 2019-21", "EyeSight"),
+  CAR.FORESTER_PREGLOBAL: CarInfo("Subaru Forester 2017-18", "EyeSight"),
+  CAR.LEGACY_PREGLOBAL: CarInfo("Subaru Legacy 2015-18", "EyeSight"),
+  CAR.OUTBACK_PREGLOBAL: CarInfo("Subaru Outback 2015-17", "EyeSight"),
+  CAR.OUTBACK_PREGLOBAL_2018: CarInfo("Subaru Outback 2018-19", "EyeSight"),
+}
+
 
 FINGERPRINTS = {
   CAR.IMPREZA_2020: [{

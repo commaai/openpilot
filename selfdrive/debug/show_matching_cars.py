@@ -10,11 +10,11 @@ candidate_cars = all_legacy_fingerprint_cars()
 
 
 for addr, l in fingerprint.items():
-    dat = messaging.new_message('can', 1)
+  dat = messaging.new_message('can', 1)
 
-    msg = dat.can[0]
-    msg.address = addr
-    msg.dat = " " * l
+  msg = dat.can[0]
+  msg.address = addr
+  msg.dat = " " * l
 
-    candidate_cars = eliminate_incompatible_cars(msg, candidate_cars)
-    print(candidate_cars)
+  candidate_cars = eliminate_incompatible_cars(msg, candidate_cars)
+  print(candidate_cars)
