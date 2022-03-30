@@ -7,7 +7,7 @@ from tabulate import tabulate
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
     
-DEMO_ROUTE = "9f583b1d93915c31|2022-03-28--17-25-12"
+DEMO_ROUTE = "9f583b1d93915c31|2022-03-30--10-28-01"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 
@@ -64,7 +64,6 @@ def get_service_intervals(timestampExtra_logs, translationdict):
     if "smInfo" in jmsg['info']:
       # retrive info from logs
       pub_time = float(jmsg['info']['logMonoTime'])
-      rcv_time = float(jmsg['info']['rcvTime']*1e9)
       msg_name = jmsg['info']['msg_name']
       service = MSGQ_TO_SERVICE[msg_name]
       smInfo = jmsg['info']['smInfo']
@@ -89,8 +88,6 @@ def get_service_intervals(timestampExtra_logs, translationdict):
           internal_durations[frame_id][service][duration].append(float(smInfo[duration]*1e3))
 
       service_intervals[frame_id][service]["End"].append(pub_time)
-      next_service = SERVICES[SERVICES.index(service)+1]
-      service_intervals[frame_id][next_service]["Start"].append(rcv_time)
 
     # sendcan to panda is sent over usb and not logged automatically
     elif "Pipeline end" == jmsg['event']:
@@ -114,27 +111,41 @@ def exclude_bad_data(frame_ids, service_intervals):
 def fill_intervals(timestamp_logs, service_intervals):
   failed_inserts = 0
   def find_frame_id(time, service):
-    for frame_id, blocks in service_intervals.items():
+    prev_service = SERVICES[SERVICES.index(service)-1]
+    for frame_id, intervals in service_intervals.items():
       try:
         if service == 'plannerd':
           # plannerd is done when both messages has been sent, other services have their start/end at the first message
-          if min(blocks[service]["Start"]) <= float(time) <= max(blocks[service]["End"]):
+          if min(intervals[prev_service]["End"]) <= time <= max(blocks[service]["End"]):
+            return frame_id
+        elif service == 'camerad':
+          if min(intervals['camerad']["Start"]) <= time <= min(blocks[service]["End"]):
             return frame_id
         else:
-          if min(blocks[service]["Start"]) <= float(time) <= min(blocks[service]["End"]):
+       #   print(prev_service,service,min(intervals[prev_service]['End']), min(blocks[service]["End"]),max(blocks[service]['End'])-min(blocks[prev_service]["End"]))
+          if min(intervals[service]['End'])-min(blocks[prev_service]["End"]) < 0:
+              print(service, prev_service)
+
+          if min(intervals[prev_service]["End"]) <= time <= min(blocks[service]["End"]):
             return frame_id
       except:
         pass
-    return 0
+    return -1
   for jmsg in timestamp_logs:
-    service = jmsg['ctx']['daemon']
+    service = ""
+    try:
+        service = jmsg['ctx']['daemon']
+    except:
+        continue
     event = jmsg['msg']['timestamp']['event']
     time = float(jmsg['msg']['timestamp']['time'])
     frame_id = find_frame_id(time, service) 
-    if frame_id:
+    if frame_id != -1:
       service_intervals[frame_id][service][event].append(time)
     else:
       failed_inserts +=1
+      print(service, time)
+      #break
   return failed_inserts
 
 def print_timestamps(service_intervals):
@@ -149,7 +160,8 @@ def print_timestamps(service_intervals):
         d[key] = (service, event, times)
     s = sorted(d.items())
     print(tabulate([[item[1][0], item[1][1], item[1][2]] for item in s], headers=["service", "event", "time (ms)"]))
-    print("Internal internal_durations:")
+    print()
+    print("Internal durations:")
     for service, events in dict(internal_durations)[frame_id].items():
       print(service)  
       for event, times in dict(events).items():
@@ -192,7 +204,7 @@ if __name__ == "__main__":
   empty_data = list(set(get_empty_data(service_intervals)))
   exclude_bad_data(set(empty_data+frame_mismatches), service_intervals)
   failed_inserts = fill_intervals(timestamp_logs, service_intervals)
-  print_timestamps(service_intervals)
+  #print_timestamps(service_intervals)
 
   print("Num frames skipped due to failed translations:",failed_transl)
   print("Num frames skipped due to frameId missmatch:",len(frame_mismatches))

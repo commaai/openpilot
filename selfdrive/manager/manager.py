@@ -136,7 +136,7 @@ def manager_thread() -> None:
   pm = messaging.PubMaster(['managerState'])
 
   while True:
-    sm.update()
+    sm.update(0)
     logTimestamps(sm, logEvents)
 
     not_run = ignore[:]
@@ -179,7 +179,6 @@ def logTimestamps(sm, msgqs):
       sm_info = {}
       sm_info['msg_name'] = msgq
       sm_info['logMonoTime'] = sm.logMonoTime[msgq]
-      sm_info['rcvTime'] = sm.rcv_time[msgq]
       try:
         sm_info['smInfo'] = sm[msgq].to_dict()
       except:
