@@ -30,7 +30,7 @@ class ParamsLearner:
     self.kf.filter.set_global("stiffness_front", CP.tireStiffnessFront)
     self.kf.filter.set_global("stiffness_rear", CP.tireStiffnessRear)
     self.kf.filter.set_global("steer_ratio", CP.steerRatio)
-    self.kf.filter.set_global("learn_sr", 1. if CP.learnSR else 0.)
+    self.kf.filter.set_global("learn_sr", 0. if CP.lockSR else 1.)
 
     self.active = False
 
@@ -120,7 +120,7 @@ def main(sm=None, pm=None):
   cloudlog.info("paramsd got CarParams")
 
   min_sr, max_sr = CP.steerRatio, CP.steerRatio
-  if CP.learnSR:
+  if not CP.lockSR:
     min_sr /= 2
     max_sr *= 2
 
