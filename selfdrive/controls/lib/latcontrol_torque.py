@@ -16,6 +16,9 @@ class LatControlTorque(LatControl):
     self.pid.pos_limit = self.steer_max
     self.pid.neg_limit = -self.steer_max
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
+    self.error_rate = 0.0
+    self.last_error = 0.0
+    self.count = 0
 
   def reset(self):
     super().reset()
@@ -23,6 +26,7 @@ class LatControlTorque(LatControl):
 
   def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate, llk):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
+    self.count += 1
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
       output_torque = 0.0
@@ -39,10 +43,18 @@ class LatControlTorque(LatControl):
 
       setpoint = desired_lateral_accel + CURVATURE_SCALE * desired_curvature
       measurement = actual_lateral_accel + CURVATURE_SCALE * actual_curvature
-      pid_log.error = setpoint - measurement
+      error = setpoint - measurement
+      pid_log.error = error
 
-      output_torque = self.pid.update(setpoint, measurement, override=CS.steeringPressed,
-                                      feedforward=desired_lateral_accel, speed=CS.vEgo)
+      # Planner and localizer only run at 20Hz
+      if self.count % 5 == 0:
+        #TODO use constant for frequency
+        self.error_rate = 20 * (error - self.last_error)
+        self.last_error = error
+
+      output_torque = self.pid.update(setpoint, measurement, error_rate=self.error_rate,
+                                      override=CS.steeringPressed, feedforward=desired_lateral_accel,
+                                      speed=CS.vEgo)
       pid_log.active = True
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
