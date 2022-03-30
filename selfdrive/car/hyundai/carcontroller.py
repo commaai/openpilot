@@ -10,6 +10,9 @@ from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
+STEER_FAULT_MAX_ANGLE = 90
+STEER_FAULT_MAX_FRAMES = 90
+
 
 def process_hud_alert(enabled, fingerprint, hud_control):
   sys_warning = (hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw))
@@ -40,6 +43,8 @@ class CarController:
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
     self.frame = 0
+
+    self.angle_limit_counter = 0
 
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
@@ -72,8 +77,20 @@ class CarController:
       if self.frame % 100 == 0:
         can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
+    if not CC.latActive or abs(CS.out.steeringAngleDeg) <= STEER_FAULT_MAX_ANGLE:
+      self.angle_limit_counter = 0
+    elif abs(CS.out.steeringAngleDeg) > STEER_FAULT_MAX_ANGLE:
+      self.angle_limit_counter += 1
+
+    # stop steering for a cycle to avoid fault
+    stop_steering_temp = False
+    if self.angle_limit_counter > STEER_FAULT_MAX_FRAMES:
+      apply_steer = 0
+      stop_steering_temp = True
+      self.angle_limit_counter = 0
+
     can_sends.append(create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, CC.latActive,
-                                   CS.lkas11, sys_warning, sys_state, CC.enabled,
+                                   stop_steering_temp, CS.lkas11, sys_warning, sys_state, CC.enabled,
                                    hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                    left_lane_warning, right_lane_warning))
 
