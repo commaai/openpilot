@@ -1,13 +1,13 @@
-
+import argparse
 import json
+import sys
 from collections import defaultdict
 from tabulate import tabulate
 
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
-
-r = Route("9f583b1d93915c31|2022-03-28--17-25-12") 
-lr = LogReader(r.log_paths()[0])
+    
+DEMO_ROUTE = "9f583b1d93915c31|2022-03-28--17-25-12"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 
@@ -23,7 +23,9 @@ MSGQ_TO_SERVICE = {
 SERVICE_TO_DURATIONS = {
         'camerad':['timestampSof', 'processingTime'],
         'modeld':['modelExecutionTime', 'gpuExecutionTime'],
-        'plannerd':["solverExecutionTime"]
+        'plannerd':["solverExecutionTime"],
+        'controlsd':[],
+        'boardd':[]
         }
 
 def get_relevant_logs(logreader):
@@ -39,11 +41,11 @@ def get_relevant_logs(logreader):
           logs[1].append(jmsg['msg']['timestampExtra'])
       elif "timestamp" in jmsg['msg']:
         logs[2].append(jmsg)
-    return logs
+  return logs
 
 def get_translation_lut(translation_logs):
   translationdict = {}
-  for jmsg in translationdict:
+  for jmsg in translation_logs:
     logMonoTime = float(jmsg['info']['from'])
     frame_id = int(jmsg['info']['to'])
     translationdict[logMonoTime] = frame_id
@@ -109,7 +111,7 @@ def exclude_bad_data(frame_ids, service_intervals):
   for frame_id in frame_ids:
     del service_intervals[frame_id]
 
-def fill_intervals(timestamp_logs, service_intervals)
+def fill_intervals(timestamp_logs, service_intervals):
   failed_inserts = 0
   def find_frame_id(time, service):
     for frame_id, blocks in service_intervals.items():
@@ -171,16 +173,29 @@ def graph_timestamps(service_intervals):
     y+=1
   plt.show(block=True)
 
-translation_logs, timestampExtra_logs, timestamp_logs = get_relevant_logs(lr)
-translationdict = get_translation_lut(translation_logs)
-service_intervals, frame_mismatches, internal_durations, failed_transl= get_service_intervals(timestampExtra_logs, translationdict)
-empty_data = list(set(get_empty_data(service_intervals)))
-exclude_bad_data(set(empty_data+frame_mismatches), service_intervals)
-failed_inserts = fill_intervals(timestamp_logs, service_intervals)
-print_timestamps(service_intervals)
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description="A helper to run timestamp print on openpilot routes",
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
+  parser.add_argument("route_name", nargs='?', help="The route to print")
 
-print("Num frames skipped due to failed translations:",failed_transl)
-print("Num frames skipped due to frameId missmatch:",len(frame_mismatches))
-print("Num frames skipped due to empty data:", len(empty_data))
-print("Num inserts failed:", failed_inserts)
+  if len(sys.argv) == 1:
+    parser.print_help()
+    sys.exit()
+  args = parser.parse_args()
+
+  r = Route(DEMO_ROUTE if args.demo else args.route_name.strip())
+  lr = LogReader(r.log_paths()[0])
+  translation_logs, timestampExtra_logs, timestamp_logs = get_relevant_logs(lr)
+  translationdict = get_translation_lut(translation_logs)
+  service_intervals, frame_mismatches, internal_durations, failed_transl= get_service_intervals(timestampExtra_logs, translationdict)
+  empty_data = list(set(get_empty_data(service_intervals)))
+  exclude_bad_data(set(empty_data+frame_mismatches), service_intervals)
+  failed_inserts = fill_intervals(timestamp_logs, service_intervals)
+  print_timestamps(service_intervals)
+
+  print("Num frames skipped due to failed translations:",failed_transl)
+  print("Num frames skipped due to frameId missmatch:",len(frame_mismatches))
+  print("Num frames skipped due to empty data:", len(empty_data))
+  print("Num inserts failed:", failed_inserts)
 
