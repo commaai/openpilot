@@ -135,16 +135,19 @@ def fill_intervals(timestamp_logs, service_intervals):
       failed_inserts +=1
   return failed_inserts
 
-def print_timestamps(service_intervals):
+def print_timestamps(service_intervals, relative_self):
+  t0 = min([min([min(times) for times in events.values()]) for events in service_intervals[min(service_intervals.keys())].values()])
   for frame_id, services in service_intervals.items():
     print('='*80)
     print("Frame ID:", frame_id)
 
     print("Timestamps:")
-    t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
-    for service, events in services.items():
+    if relative_self:
+      t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
+    for service in SERVICES:
+      events = service_intervals[frame_id][service]
       print("  "+service)  
-      for event, times in sorted(events.items(), key=lambda x, s=service: x[1][0] if s != 'plannerd' else x[1][-1]):
+      for event, times in sorted(events.items(), key=lambda x: x[1][-1]):
         times = [(time-t0)/1e6 for time in times]
         print("    "+'%-50s%-50s' %(event, str(times)))  
 
@@ -154,26 +157,37 @@ def print_timestamps(service_intervals):
       for event, times in dict(events).items():
         print("    "+'%-50s%-50s' %(event, str(times)))  
 
-def graph_timestamps(service_intervals):
+def graph_timestamps(service_intervals, relative_self):
+  t0 = min([min([min(times) for times in events.values()]) for events in service_intervals[min(service_intervals.keys())].values()])
   gnt = plt.subplots()[1]
-  gnt.set_xlim(0, 150)
+  gnt.set_xlim(0, 150 if relative_self else 750)
   gnt.set_ylim(0, len(service_intervals))
   y = 0
-  for services in service_intervals.values():
-    t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
+  for frame_id, services in service_intervals.items():
+    if relative_self:
+      t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
     event_bars = []
-    for events in services.values():
-      for times in events.values():
+    service_bars = []
+    start = min(service_intervals[frame_id]['camerad']["Start"])
+    for service, events in services.items():
+      for event, times in sorted(events.items(), key=lambda x: x[1][-1]):
+        if event == "End":
+            end = max(times) if service != "camerad" else min(times)
+            service_bars.append(((start-t0)/1e6, (end-start)/1e6))
+            start = end
         for time in times:
           t = (time-t0)/1e6
           event_bars.append((t, 0.1))
     gnt.broken_barh(event_bars, (y, 0.9), facecolors=("black"))
+    gnt.broken_barh(service_bars, (y, 0.9), facecolors=(["blue", 'green', 'red', 'yellow', 'purple']))
     y+=1
   plt.show(block=True)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A helper to run timestamp print on openpilot routes",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument("--plot", action="store_true", help="If a plot should be generated")
+  parser.add_argument("--relative_self", action="store_true", help="Print and plot starting a 0 each time")
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("route_name", nargs='?', help="The route to print")
 
@@ -190,8 +204,9 @@ if __name__ == "__main__":
   empty_data = list(set(get_empty_data(service_intervals)))
   exclude_bad_data(set(empty_data+frame_mismatches), service_intervals)
   failed_inserts = fill_intervals(timestamp_logs, service_intervals)
-  print_timestamps(service_intervals)
-  graph_timestamps(service_intervals)
+  print_timestamps(service_intervals, args.relative_self)
+  if args.plot:
+    graph_timestamps(service_intervals, args.relative_self)
 
   print("Num frames skipped due to failed translations:",failed_transl)
   print("Num frames skipped due to frameId missmatch:",len(frame_mismatches))
