@@ -136,7 +136,7 @@ def manager_thread() -> None:
   pm = messaging.PubMaster(['managerState'])
 
   while True:
-    sm.update(0)
+    sm.update()
     logTimestamps(sm, logEvents)
 
     not_run = ignore[:]

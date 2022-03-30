@@ -7,7 +7,7 @@ from tabulate import tabulate
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
     
-DEMO_ROUTE = "9f583b1d93915c31|2022-03-30--10-28-01"
+DEMO_ROUTE = "9f583b1d93915c31|2022-03-30--11-11-53"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 
@@ -69,7 +69,7 @@ def get_service_intervals(timestampExtra_logs, translationdict):
       smInfo = jmsg['info']['smInfo']
 
       # sendcan does not have frame id, translation from its logMonoTime required
-      frame_id = translate(pub_time) if msg_name == 'sendcan' else float(smInfo['frameId'])
+      frame_id = translate(pub_time) if msg_name == 'sendcan' else int(smInfo['frameId'])
       if frame_id == -1:
         failed_transl += 1
         continue
@@ -108,44 +108,30 @@ def exclude_bad_data(frame_ids, service_intervals):
   for frame_id in frame_ids:
     del service_intervals[frame_id]
 
-def fill_intervals(timestamp_logs, service_intervals):
-  failed_inserts = 0
-  def find_frame_id(time, service):
-    prev_service = SERVICES[SERVICES.index(service)-1]
-    for frame_id, intervals in service_intervals.items():
-      try:
-        if service == 'plannerd':
-          # plannerd is done when both messages has been sent, other services have their start/end at the first message
-          if min(intervals[prev_service]["End"]) <= time <= max(blocks[service]["End"]):
-            return frame_id
-        elif service == 'camerad':
-          if min(intervals['camerad']["Start"]) <= time <= min(blocks[service]["End"]):
-            return frame_id
-        else:
-       #   print(prev_service,service,min(intervals[prev_service]['End']), min(blocks[service]["End"]),max(blocks[service]['End'])-min(blocks[prev_service]["End"]))
-          if min(intervals[service]['End'])-min(blocks[prev_service]["End"]) < 0:
-              print(service, prev_service)
+def find_frame_id(time, service):
+  prev_service = SERVICES[SERVICES.index(service)-1]
+  for frame_id, intervals in service_intervals.items():
+    if service == 'camerad':
+      if min(intervals['camerad']["Start"]) <= time <= min(intervals[service]["End"]):
+        return frame_id
+    else:
+      if min(intervals[prev_service]["End"]) <= time <= max(intervals[service]["End"]):
+        return frame_id
+  return -1
 
-          if min(intervals[prev_service]["End"]) <= time <= min(blocks[service]["End"]):
-            return frame_id
-      except:
-        pass
-    return -1
+def fill_intervals(timestamp_logs, service_intervals):
+  t0 = min(service_intervals[min(service_intervals.keys())]['camerad']["Start"])
+  failed_inserts = 0
   for jmsg in timestamp_logs:
-    service = ""
-    try:
-        service = jmsg['ctx']['daemon']
-    except:
-        continue
+    service = jmsg['ctx']['daemon']
     event = jmsg['msg']['timestamp']['event']
     time = float(jmsg['msg']['timestamp']['time'])
+    if time < t0 : continue
     frame_id = find_frame_id(time, service) 
     if frame_id != -1:
       service_intervals[frame_id][service][event].append(time)
     else:
       failed_inserts +=1
-      print(service, time)
-      #break
   return failed_inserts
 
 def print_timestamps(service_intervals):
@@ -204,7 +190,7 @@ if __name__ == "__main__":
   empty_data = list(set(get_empty_data(service_intervals)))
   exclude_bad_data(set(empty_data+frame_mismatches), service_intervals)
   failed_inserts = fill_intervals(timestamp_logs, service_intervals)
-  #print_timestamps(service_intervals)
+  print_timestamps(service_intervals)
 
   print("Num frames skipped due to failed translations:",failed_transl)
   print("Num frames skipped due to frameId missmatch:",len(frame_mismatches))
