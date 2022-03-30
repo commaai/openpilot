@@ -16,6 +16,9 @@ class LatControlTorque(LatControl):
     self.pid.pos_limit = self.steer_max
     self.pid.neg_limit = -self.steer_max
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
+    self.error_rate = 0.0
+    self.last_error = 0.0
+    self.count = 0
 
   def reset(self):
     super().reset()
@@ -23,6 +26,7 @@ class LatControlTorque(LatControl):
 
   def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate, llk):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
+    self.count += 1
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
       output_torque = 0.0
