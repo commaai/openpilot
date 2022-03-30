@@ -5,7 +5,6 @@ import signal
 import subprocess
 import sys
 import traceback
-import capnp
 from typing import List, Tuple, Union
 
 import cereal.messaging as messaging
@@ -181,7 +180,7 @@ def logTimestamps(sm, msgqs):
       sm_info['logMonoTime'] = sm.logMonoTime[msgq]
       try:
         sm_info['smInfo'] = sm[msgq].to_dict()
-      except:
+      except AttributeError:
         sm_info['smInfo'] = None
       cloudlog.timestampExtra("msgq", sm_info)
 

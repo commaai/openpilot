@@ -1,7 +1,6 @@
 import argparse
 import json
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import sys
 from collections import defaultdict
 
@@ -127,7 +126,8 @@ def fill_intervals(timestamp_logs, service_intervals):
     service = jmsg['ctx']['daemon']
     event = jmsg['msg']['timestamp']['event']
     time = float(jmsg['msg']['timestamp']['time'])
-    if time < t0 : continue
+    if time < t0:
+        continue
     frame_id = find_frame_id(time, service) 
     if frame_id != -1:
       service_intervals[frame_id][service][event].append(time)
@@ -144,7 +144,7 @@ def print_timestamps(service_intervals):
     t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
     for service, events in services.items():
       print("  "+service)  
-      for event, times in sorted(events.items(), key=lambda x: x[1] if service != 'plannerd' else max(x[1])):
+      for event, times in sorted(events.items(), key=lambda x, s=service: x[1][0] if s != 'plannerd' else x[1][-1]):
         times = [(time-t0)/1e6 for time in times]
         print("    "+'%-50s%-50s' %(event, str(times)))  
 
@@ -155,15 +155,15 @@ def print_timestamps(service_intervals):
         print("    "+'%-50s%-50s' %(event, str(times)))  
 
 def graph_timestamps(service_intervals):
-  fig, gnt = plt.subplots()
+  gnt = plt.subplots()[1]
   gnt.set_xlim(0, 150)
   gnt.set_ylim(0, len(service_intervals))
   y = 0
-  for frame_id, services in service_intervals.items():
+  for services in service_intervals.values():
     t0 = min([min([min(times) for times in events.values()]) for events in services.values()])
     event_bars = []
-    for service, events in services.items():
-      for event, times in events.items():
+    for events in services.values():
+      for times in events.values():
         for time in times:
           t = (time-t0)/1e6
           event_bars.append((t, 0.1))
