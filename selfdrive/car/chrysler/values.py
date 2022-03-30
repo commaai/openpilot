@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
 from cereal import car
 Ecu = car.CarParams.Ecu
+
 
 class CarControllerParams:
   STEER_MAX = 261         # 262 faults
@@ -19,16 +21,22 @@ class CAR:
   PACIFICA_2018 = "CHRYSLER PACIFICA 2018"  # includes 2017 Pacifica
   PACIFICA_2020 = "CHRYSLER PACIFICA 2020"
   JEEP_CHEROKEE = "JEEP GRAND CHEROKEE V6 2018"  # includes 2017 Trailhawk
-  JEEP_CHEROKEE_2019 = "JEEP GRAND CHEROKEE 2019" # includes 2020 Trailhawk
+  JEEP_CHEROKEE_2019 = "JEEP GRAND CHEROKEE 2019"  # includes 2020 Trailhawk
 
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.PACIFICA_2017_HYBRID: CarInfo("Chrysler Pacifica Hybrid 2017-18", "Adaptive Cruise"),
-  CAR.PACIFICA_2019_HYBRID: CarInfo("Chrysler Pacifica Hybrid 2019-21", "Adaptive Cruise"),
-  CAR.PACIFICA_2018: CarInfo("Chrysler Pacifica 2017-18", "Adaptive Cruise"),
-  CAR.PACIFICA_2020: CarInfo("Chrysler Pacifica 2020", "Adaptive Cruise"),
-  CAR.JEEP_CHEROKEE: CarInfo("Jeep Grand Cherokee 2016-18", "Adaptive Cruise", "https://www.youtube.com/watch?v=eLR9o2JkuRk"),
-  CAR.JEEP_CHEROKEE_2019: CarInfo("Jeep Grand Cherokee 2019-20", "Adaptive Cruise", "https://www.youtube.com/watch?v=jBe4lWnRSu4"),
+@dataclass
+class ChryslerCarInfo(CarInfo):
+  package: str = "Adaptive Cruise"
+  harness: str = "fca"
+
+
+CAR_INFO: Dict[str, Union[ChryslerCarInfo, List[ChryslerCarInfo]]] = {
+  CAR.PACIFICA_2017_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2017-18"),
+  CAR.PACIFICA_2019_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2019-21"),
+  CAR.PACIFICA_2018: ChryslerCarInfo("Chrysler Pacifica 2017-18"),
+  CAR.PACIFICA_2020: ChryslerCarInfo("Chrysler Pacifica 2020"),
+  CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
+  CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-20", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
 }
 
 # Unique CAN messages:

@@ -50,6 +50,7 @@ class CarInfo:
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
   good_torque: bool = False
+  harness: Optional[str] = None
 
   def init(self, CP: car.CarParams, non_tested_cars: List[str], all_footnotes: Dict[Enum, int]):
     # TODO: set all the min steer speeds in carParams and remove this
@@ -74,6 +75,7 @@ class CarInfo:
       Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
       Column.FSR_STEERING: min_steer_speed <= 0.,
       Column.STEERING_TORQUE: self.good_torque,
+      # TODO: when all harnesses are added, add check to maintained
       Column.MAINTAINED: CP.carFingerprint not in non_tested_cars,
     }
 
