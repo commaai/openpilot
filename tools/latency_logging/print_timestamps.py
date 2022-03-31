@@ -127,7 +127,7 @@ def fill_intervals(timestamp_logs, service_intervals):
     event = jmsg['msg']['timestamp']['event']
     time = float(jmsg['msg']['timestamp']['time'])
     if time < t0:
-        continue
+      continue
     frame_id = find_frame_id(time, service) 
     if frame_id != -1:
       service_intervals[frame_id][service][event].append(time)
@@ -169,12 +169,13 @@ def graph_timestamps(service_intervals, relative_self):
     event_bars = []
     service_bars = []
     start = min(service_intervals[frame_id]['camerad']["Start"])
-    for service, events in services.items():
-      for event, times in sorted(events.items(), key=lambda x: x[1][-1]):
+    for service in SERVICES:
+      events = service_intervals[frame_id][service]
+      for event, times in events.items():
         if event == "End":
-            end = max(times) if service != "camerad" else min(times)
-            service_bars.append(((start-t0)/1e6, (end-start)/1e6))
-            start = end
+          end = max(times) if service != "camerad" else min(times)
+          service_bars.append(((start-t0)/1e6, (end-start)/1e6))
+          start = end
         for time in times:
           t = (time-t0)/1e6
           event_bars.append((t, 0.1))
