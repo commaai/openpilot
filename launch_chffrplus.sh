@@ -119,6 +119,15 @@ function tici_init {
     fi
     $DIR/selfdrive/hardware/tici/updater $AGNOS_PY $MANIFEST
   fi
+
+  # put camera/GPU IRQs on core 3
+  sudo su -c 'echo 3 > /proc/irq/7/smp_affinity_list'   # msm_drm
+  sudo su -c 'echo 3 > /proc/irq/237/smp_affinity_list' # cci
+  sudo su -c 'echo 3 > /proc/irq/239/smp_affinity_list' # cpas-cdm
+  sudo su -c 'echo 3 > /proc/irq/241/smp_affinity_list' # ife
+  sudo su -c 'echo 3 > /proc/irq/243/smp_affinity_list' # ife
+  sudo su -c 'echo 3 > /proc/irq/245/smp_affinity_list' # ife-lite
+  sudo su -c 'echo 3 > /proc/irq/565/smp_affinity_list' # kgsl-3d0
 }
 
 function launch {
