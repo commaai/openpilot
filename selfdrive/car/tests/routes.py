@@ -21,12 +21,13 @@ non_tested_cars = [
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_OPTIMA_H,
-  COMMA.BODY,
 ]
 
 TestRoute = namedtuple('TestRoute', ['route', 'car_fingerprint'])
 
 routes = [
+  TestRoute("d6ac8ebdb47bc549|2022-03-31--13-10-06", COMMA.BODY),
+
   TestRoute("0c94aa1e1296d7c6|2021-05-05--19-48-37", CHRYSLER.JEEP_CHEROKEE),
   TestRoute("91dfedae61d7bd75|2021-05-22--20-07-52", CHRYSLER.JEEP_CHEROKEE_2019),
   TestRoute("420a8e183f1aed48|2020-03-05--07-15-29", CHRYSLER.PACIFICA_2017_HYBRID),

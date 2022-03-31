@@ -196,9 +196,6 @@ VectorXd Localizer::get_stdev() {
 }
 
 void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log) {
-  MatrixXdr ecef_vel_R = Vector3d::Constant(1. * 1.).asDiagonal();
-  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { Vector3d(0., 0., 0.) }, { ecef_vel_R });
-  this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
   // TODO does not yet account for double sensor readings in the log
   for (int i = 0; i < log.size(); i++) {
     const cereal::SensorEventData::Reader& sensor_reading = log[i];
@@ -446,14 +443,14 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   this->time_check(t);
   if (log.isSensorEvents()) {
     this->handle_sensors(t, log.getSensorEvents());
-  // } else if (log.isGpsLocationExternal()) {
-  //   this->handle_gps(t, log.getGpsLocationExternal());
-  // } else if (log.isCarState()) {
-  //   this->handle_car_state(t, log.getCarState());
-  // } else if (log.isCameraOdometry()) {
-  //   this->handle_cam_odo(t, log.getCameraOdometry());
-  // } else if (log.isLiveCalibration()) {
-  //   this->handle_live_calib(t, log.getLiveCalibration());
+  } else if (log.isGpsLocationExternal()) {
+    this->handle_gps(t, log.getGpsLocationExternal());
+  } else if (log.isCarState()) {
+    this->handle_car_state(t, log.getCarState());
+  } else if (log.isCameraOdometry()) {
+    this->handle_cam_odo(t, log.getCameraOdometry());
+  } else if (log.isLiveCalibration()) {
+    this->handle_live_calib(t, log.getLiveCalibration());
   }
   this->finite_check();
   this->update_reset_tracker();
@@ -498,24 +495,44 @@ int Localizer::locationd_thread() {
   const std::initializer_list<const char *> service_list =
       { "gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState" };
   PubMaster pm({ "liveLocationKalman" });
-  SubMaster sm(service_list, nullptr, { "sensorEvents" });
+  SubMaster sm(service_list, nullptr, { "gpsLocationExternal" });
 
-  bool filterInitialized = true;
+  uint64_t cnt = 0;
+  bool filterInitialized = false;
 
   while (!do_exit) {
     sm.update();
-    for (const char* service : service_list) {
-      if (sm.updated(service) && sm.valid(service)) {
-        const cereal::Event::Reader log = sm[service];
-        this->handle_msg(log);
-        MessageBuilder msg_builder;
-        uint64_t logMonoTime = sm["sensorEvents"].getLogMonoTime();
-        bool inputsOK = 1;
-        bool sensorsOK = sm.alive("sensorEvents") && sm.valid("sensorEvents");
-        bool gpsOK = 0;
-        kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK, filterInitialized);
-        pm.send("liveLocationKalman", bytes.begin(), bytes.size());
+    if (filterInitialized){
+      for (const char* service : service_list) {
+        if (sm.updated(service) && sm.valid(service)){
+          const cereal::Event::Reader log = sm[service];
+          this->handle_msg(log);
+        }
       }
+    } else {
+      filterInitialized = sm.allAliveAndValid();
+    }
+    
+    if (sm.updated("cameraOdometry")) {
+      uint64_t logMonoTime = sm["cameraOdometry"].getLogMonoTime();
+      bool inputsOK = sm.allAliveAndValid();
+      bool sensorsOK = sm.alive("sensorEvents") && sm.valid("sensorEvents");
+      bool gpsOK = this->isGpsOK();
+
+      MessageBuilder msg_builder;
+      kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK, filterInitialized);
+      pm.send("liveLocationKalman", bytes.begin(), bytes.size());
+
+      if (cnt % 1200 == 0 && gpsOK) {  // once a minute
+        VectorXd posGeo = this->get_position_geodetic();
+        std::string lastGPSPosJSON = util::string_format(
+          "{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}", posGeo(0), posGeo(1), posGeo(2));
+
+        std::thread([] (const std::string gpsjson) {
+          Params().put("LastGPSPosition", gpsjson);
+        }, lastGPSPosJSON).detach();
+      }
+      cnt++;
     }
   }
   return 0;

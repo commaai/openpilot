@@ -9,14 +9,8 @@ MAX_ANGLE_ERROR = 7
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
-    self.car_fingerprint = CP.carFingerprint
-
-    self.lkas_max_torque = 0
-    self.last_angle = 0
-
     self.packer = CANPacker(dbc_name)
-    # ////////////////////////////////
+
     self.i_speed = 0
 
     self.i_balance = 0
@@ -29,7 +23,6 @@ class CarController():
 
     self.torque_r_filtered = 0.
     self.torque_l_filtered = 0.
-    # ////////////////////////////////
 
   @staticmethod
   def deadband_filter(torque, deadband):
@@ -39,17 +32,14 @@ class CarController():
       torque -= deadband
     return torque
 
-  def update(self, CC, CS, frame, actuators, cruise_cancel, hud_alert,
-             left_line, right_line, left_lane_depart, right_lane_depart):
-
-    actuators = CC.actuators
+  def update(self, CC, CS):
 
     # ///////////////////////////////////////
     # Steer and accel mixin. Speed should be used as a target? (speed should be in m/s! now it is in RPM)
     # Mix steer into torque_diff
     # self.steerRatio = 0.5
-    # torque_r = int(np.clip((actuators.accel*1000) - (actuators.steer*1000) * self.steerRatio, -1000, 1000))
-    # torque_l = int(np.clip((actuators.accel*1000) + (actuators.steer*1000) * self.steerRatio, -1000, 1000))
+    # torque_r = int(np.clip((CC.actuators.accel*1000) - (CC.actuators.steer*1000) * self.steerRatio, -1000, 1000))
+    # torque_l = int(np.clip((CC.actuators.accel*1000) + (CC.actuators.steer*1000) * self.steerRatio, -1000, 1000))
     # ////
     # Setpoint speed PID
     kp_speed = 0.001
@@ -87,25 +77,22 @@ class CarController():
     torque_r = torque + torque_diff
     torque_l = torque - torque_diff
 
-    #Torque rate limits
-    self.torque_r_filtered =  np.clip(self.deadband_filter(torque_r, 10) ,
-                                      self.torque_r_filtered - MAX_TORQUE_RATE,
-                                      self.torque_r_filtered +  MAX_TORQUE_RATE)
-    self.torque_l_filtered =  np.clip(self.deadband_filter(torque_l, 10),
-                                      self.torque_l_filtered - MAX_TORQUE_RATE,
-                                      self.torque_l_filtered +  MAX_TORQUE_RATE)
+    # Torque rate limits
+    self.torque_r_filtered = np.clip(self.deadband_filter(torque_r, 10) ,
+                                     self.torque_r_filtered - MAX_TORQUE_RATE,
+                                     self.torque_r_filtered +  MAX_TORQUE_RATE)
+    self.torque_l_filtered = np.clip(self.deadband_filter(torque_l, 10),
+                                     self.torque_l_filtered - MAX_TORQUE_RATE,
+                                     self.torque_l_filtered +  MAX_TORQUE_RATE)
     torque_r = int(np.clip(self.torque_r_filtered, -MAX_TORQUE, MAX_TORQUE))
     torque_l = int(np.clip(self.torque_l_filtered, -MAX_TORQUE, MAX_TORQUE))
 
     # ///////////////////////////////////////
+
     can_sends = []
-
-    apply_angle = actuators.steeringAngleDeg
-
     can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r))
 
-    new_actuators = actuators.copy()
-    new_actuators.steeringAngleDeg = apply_angle
+    new_actuators = CC.actuators.copy()
     new_actuators.accel = torque_l
     new_actuators.steer = torque_r
 

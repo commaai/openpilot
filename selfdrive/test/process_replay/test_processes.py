@@ -12,6 +12,7 @@ from tools.lib.logreader import LogReader
 
 
 original_segments = [
+  ("BODY", "d6ac8ebdb47bc549|2022-03-31--13-10-06--4"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
@@ -30,6 +31,7 @@ original_segments = [
 ]
 
 segments = [
+  ("BODY", "d6ac8ebdb47bc549|2022-03-31--13-10-06--4"),
   ("HYUNDAI", "fakedata|2022-01-20--17-49-04--0"),
   ("TOYOTA", "fakedata|2022-01-20--17-50-51--0"),
   ("TOYOTA2", "fakedata|2022-01-20--17-52-36--0"),
@@ -45,7 +47,7 @@ segments = [
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
-excluded_interfaces = ["mock", "ford", "mazda", "tesla", "body"]
+excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 
