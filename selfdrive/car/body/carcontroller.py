@@ -33,6 +33,8 @@ class CarController():
     return torque
 
   def update(self, CC, CS):
+    if len(CC.orientationNED) == 0 or len(CC.angularVelocity) == 0:
+      return [], CC.actuators.copy()
 
     # ///////////////////////////////////////
     # Steer and accel mixin. Speed should be used as a target? (speed should be in m/s! now it is in RPM)
