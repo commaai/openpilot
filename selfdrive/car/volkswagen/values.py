@@ -120,7 +120,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Golf 2015-20"),
     VWCarInfo("Volkswagen Golf Alltrack 2017-18"),
     VWCarInfo("Volkswagen Golf GTE 2016"),
-    VWCarInfo("Volkswagen Golf GTI 2018-20"),
+    VWCarInfo("Volkswagen Golf GTI 2018-21"),
     VWCarInfo("Volkswagen Golf R 2016-19"),
     VWCarInfo("Volkswagen Golf SportsVan 2016"),
     VWCarInfo("Volkswagen Golf SportWagen 2015"),
@@ -174,17 +174,21 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x873G0906259F \xf1\x890004',
       b'\xf1\x873G0906259P \xf1\x890001',
+      b'\xf1\x875NA907115H \xf1\x890002',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158L \xf1\x893611',
       b'\xf1\x870GC300011L \xf1\x891401',
+      b'\xf1\x870GC300040P \xf1\x891401',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655BK\xf1\x890703\xf1\x82\x0e1616001613121157161111572900',
       b'\xf1\x873Q0959655BK\xf1\x890703\xf1\x82\x0e1616001613121177161113772900',
       b'\xf1\x873Q0959655DL\xf1\x890732\xf1\x82\0161812141812171105141123052J00',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x873Q0909144K \xf1\x895072\xf1\x82\x0571B41815A1',
+      b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571B00817A1',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\00567B0020800',
     ],
     (Ecu.fwdRadar, 0x757, None): [
@@ -245,6 +249,7 @@ FW_VERSIONS = {
       b'\xf1\x8704L906056CL\xf1\x893823',
       b'\xf1\x8704L906056CR\xf1\x895813',
       b'\xf1\x8704L906056HE\xf1\x893758',
+      b'\xf1\x8704L906056HN\xf1\x896590',
       b'\xf1\x870EA906016A \xf1\x898343',
       b'\xf1\x870EA906016E \xf1\x894219',
       b'\xf1\x870EA906016F \xf1\x895002',
@@ -255,6 +260,7 @@ FW_VERSIONS = {
       b'\xf1\x875G0906259N \xf1\x890003',
       b'\xf1\x875G0906259Q \xf1\x890002',
       b'\xf1\x875G0906259Q \xf1\x892313',
+      b'\xf1\x875G0906259T \xf1\x890003',
       b'\xf1\x878V0906259H \xf1\x890002',
       b'\xf1\x878V0906259J \xf1\x890003',
       b'\xf1\x878V0906259K \xf1\x890001',
@@ -294,6 +300,7 @@ FW_VERSIONS = {
       b'\xf1\x870GC300020G \xf1\x892401',
       b'\xf1\x870GC300020G \xf1\x892403',
       b'\xf1\x870GC300020G \xf1\x892404',
+      b'\xf1\x870GC300020N \xf1\x892804',
       b'\xf1\x870GC300043T \xf1\x899999',
     ],
     (Ecu.srs, 0x715, None): [
@@ -303,6 +310,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655AA\xf1\x890388\xf1\x82\0211413001113120043114417121411149113',
       b'\xf1\x875Q0959655AA\xf1\x890388\xf1\x82\0211413001113120053114317121C111C9113',
       b'\xf1\x875Q0959655BH\xf1\x890336\xf1\x82\02314160011123300314211012230229333463100',
+      b'\xf1\x875Q0959655BS\xf1\x890403\xf1\x82\x1314160011123300314240012250229333463100',
       b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\023141600111233003142404A2252229333463100',
       b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\023141600111233003142405A2252229333463100',
       b'\xf1\x875Q0959655C \xf1\x890361\xf1\x82\0211413001112120004110415121610169112',
@@ -353,6 +361,7 @@ FW_VERSIONS = {
       b'\xf1\x875QN909144A \xf1\x895081\xf1\x82\00571A01A18A1',
       b'\xf1\x875QN909144A \xf1\x895081\xf1\x82\x0571A01A17A1',
       b'\xf1\x875QN909144B \xf1\x895082\xf1\x82\00571A01A18A1',
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567A2000400',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x875Q0907567G \xf1\x890390\xf1\x82\00101',
@@ -368,6 +377,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572J \xf1\x890654',
       b'\xf1\x875Q0907572P \xf1\x890682',
       b'\xf1\x875Q0907572R \xf1\x890771',
+      b'\xf1\x875Q0907572S \xf1\x890780',
     ],
   },
   CAR.JETTA_MK7: {
