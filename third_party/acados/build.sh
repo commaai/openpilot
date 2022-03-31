@@ -17,8 +17,8 @@ if [ ! -d acados_repo/ ]; then
   # git clone https://github.com/commaai/acados.git $DIR/acados_repo
 fi
 cd acados_repo
-git fetch
-git checkout 105e06df87f06ea02df4af825867c946b31defdd
+git fetch --all
+git checkout fd2f1d2968d650c8b3bb6aee98ecdfa25e95c3e2
 git submodule update --recursive --init
 
 # build
