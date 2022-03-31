@@ -9,7 +9,7 @@ class CarInterface(CarInterfaceBase):
 
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "body"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.allOutput)]
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.body)]
 
     ret.steerLimitTimer = 1.0
     ret.steerRateCost = 0.5
