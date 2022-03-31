@@ -43,7 +43,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.4
       tire_stiffness_factor = 0.5533
       ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.LQR_RAV4)
+      set_lat_tune(ret.lateralTuning, LatTunes.TORQUE)
 
     elif candidate in (CAR.RAV4, CAR.RAV4H):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
@@ -51,7 +51,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.88   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
       ret.mass = 3650. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      set_lat_tune(ret.lateralTuning, LatTunes.LQR_RAV4)
+      set_lat_tune(ret.lateralTuning, LatTunes.TORQUE)
 
     elif candidate == CAR.COROLLA:
       ret.wheelbase = 2.70
