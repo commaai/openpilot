@@ -64,7 +64,7 @@ class PIController():
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
       i = self.i + error * self.k_i * self.i_rate
-      control = self.p + self.f + i
+      control = self.p + i + self.d + self.f
 
       # Update when changing i will move the control away from the limits
       # or when i will move towards the sign of the error
@@ -73,7 +73,7 @@ class PIController():
          not freeze_integrator:
         self.i = i
 
-    control = self.p + self.f + self.i
+    control = self.p + self.i + self.d + self.f
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
