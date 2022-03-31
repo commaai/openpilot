@@ -198,6 +198,24 @@ struct blasfeo_pm_smat
 	int memsize; // size of needed memory
 	};
 
+struct blasfeo_pm_dvec
+	{
+	double *mem; // pointer to passed chunk of memory
+	double *pa; // pointer to a pm array of doubles, the first is aligned to cache line size
+	int m; // size
+	int pm; // packed size
+	int memsize; // size of needed memory
+	};
+
+struct blasfeo_pm_svec
+	{
+	float *mem; // pointer to passed chunk of memory
+	float *pa; // pointer to a pm array of floats, the first is aligned to cache line size
+	int m; // size
+	int pm; // packed size
+	int memsize; // size of needed memory
+	};
+
 // Explicitly column-major matrix structure
 struct blasfeo_cm_dmat
 	{
@@ -221,11 +239,31 @@ struct blasfeo_cm_smat
 	int memsize; // size of needed memory
 	};
 
+struct blasfeo_cm_dvec
+	{
+	double *mem; // pointer to passed chunk of memory
+	double *pa; // pointer to a m array of doubles, the first is aligned to cache line size
+	int m; // size
+	int memsize; // size of needed memory
+	};
+
+struct blasfeo_cm_svec
+	{
+	float *mem; // pointer to passed chunk of memory
+	float *pa; // pointer to a m array of floats, the first is aligned to cache line size
+	int m; // size
+	int memsize; // size of needed memory
+	};
+
 
 #define BLASFEO_PM_DMATEL(sA,ai,aj) ((sA)->pA[((ai)-((ai)&((sA)->ps-1)))*(sA)->cn+(aj)*((sA)->ps)+((ai)&((sA)->ps-1))])
 #define BLASFEO_PM_SMATEL(sA,ai,aj) ((sA)->pA[((ai)-((ai)&((sA)->ps-1)))*(sA)->cn+(aj)*((sA)->ps)+((ai)&((sA)->ps-1))])
+#define BLASFEO_PM_DVECEL(sa,ai) ((sa)->pa[ai])
+#define BLASFEO_PM_SVECEL(sa,ai) ((sa)->pa[ai])
 #define BLASFEO_CM_DMATEL(sA,ai,aj) ((sA)->pA[(ai)+(aj)*(sA)->m])
 #define BLASFEO_CM_SMATEL(sA,ai,aj) ((sA)->pA[(ai)+(aj)*(sA)->m])
+#define BLASFEO_CM_DVECEL(sa,ai) ((sa)->pa[ai])
+#define BLASFEO_CM_SVECEL(sa,ai) ((sa)->pa[ai])
 
 
 
