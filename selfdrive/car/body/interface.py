@@ -22,7 +22,7 @@ class CarInterface(CarInterfaceBase):
     ret.wheelSpeedFactor = 0.008587
     ret.centerToFront = ret.wheelbase * 0.44
 
-    ret.radarOffCan = False
+    ret.radarOffCan = True
     ret.openpilotLongitudinalControl = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
 

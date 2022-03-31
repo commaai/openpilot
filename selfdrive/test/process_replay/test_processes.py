@@ -69,6 +69,10 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
     for msg in log_msgs:
+      if msg.which() == "carParams":
+        # body doesn't enable
+        if msg.carParams.carName == "body":
+          break
       if msg.which() == "controlsState":
         if msg.controlsState.active:
           break
