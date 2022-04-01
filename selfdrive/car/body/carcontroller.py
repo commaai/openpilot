@@ -1,5 +1,6 @@
 import numpy as np
 
+from common.realtime import DT_CTRL
 from selfdrive.car.body import bodycan
 from opendbc.can.packer import CANPacker
 
@@ -23,6 +24,7 @@ class CarController():
 
     self.torque_r_filtered = 0.
     self.torque_l_filtered = 0.
+    self.wait_counter = int(5. / DT_CTRL)
 
   @staticmethod
   def deadband_filter(torque, deadband):
@@ -33,6 +35,9 @@ class CarController():
     return torque
 
   def update(self, CC, CS):
+    if self.wait_counter > 0:
+      self.wait_counter -= 1
+      return CC.actuators.copy(), []
     if len(CC.orientationNED) == 0 or len(CC.angularVelocity) == 0:
       return CC.actuators.copy(), []
 
