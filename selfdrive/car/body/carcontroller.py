@@ -8,8 +8,10 @@ from selfdrive.car.body.values import SPEED_FROM_RPM
 MAX_TORQUE = 500
 MAX_TORQUE_RATE = 50
 MAX_ANGLE_ERROR = 7
+MAX_POS_INTEGRATOR = 0.2 # meters
+MAX_TURN_INTEGRATOR = 0.1 # meters
 
-MAX_INTEGRATOR = 0.1 # meters
+
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.packer = CANPacker(dbc_name)
@@ -60,8 +62,8 @@ class CarController():
     self.speed_desired = (1. - alpha_speed) * self.speed_desired
     speed_error = self.speed_desired - self.speed_measured
     self.i_speed += speed_error * DT_CTRL
-    self.i_speed = np.clip(self.i_speed, -10*MAX_INTEGRATOR, 10*MAX_INTEGRATOR)
-    set_point = kp_speed * speed_error + np.clip(ki_speed * self.i_speed, -0.1, 0.1)
+    self.i_speed = np.clip(self.i_speed, -MAX_POS_INTEGRATOR, MAX_POS_INTEGRATOR)
+    set_point = kp_speed * speed_error + ki_speed * self.i_speed
 
     # Balancing PID
     kp_balance = 1300
@@ -81,7 +83,7 @@ class CarController():
 
     speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
     self.i_speed_diff += speed_diff_measured * DT_CTRL
-    self.i_speed_diff = np.clip(self.i_speed_diff, -MAX_INTEGRATOR, MAX_INTEGRATOR)
+    self.i_speed_diff = np.clip(self.i_speed_diff, -MAX_TURN_INTEGRATOR, MAX_TURN_INTEGRATOR)
     torque_diff = int(np.clip(kp_turn * speed_diff_measured + ki_turn * self.i_speed_diff, -100, 100))
 
     # Combine 2 PIDs outputs
