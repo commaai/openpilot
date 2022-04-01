@@ -122,6 +122,7 @@ class TestCarModel(unittest.TestCase):
     # TODO: also check for checkusm and counter violations from can parser
     can_invalid_cnt = 0
     CC = car.CarControl.new_message()
+
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
