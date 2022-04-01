@@ -7,7 +7,7 @@ from opendbc.can.packer import CANPacker
 MAX_TORQUE = 500
 MAX_TORQUE_RATE = 50
 MAX_ANGLE_ERROR = 7
-INIT_WAIT = 3  # secs
+INIT_WAIT = 5  # secs
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
