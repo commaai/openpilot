@@ -1,27 +1,29 @@
 #include "selfdrive/ui/qt/body.h"
 
-#include <QLabel>
-#include <QPainter>
+#include <QDebug>
 
-BodyWindow::BodyWindow(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout  = new QVBoxLayout(this);
+BodyWindow::BodyWindow(QWidget *parent) : QLabel(parent) {
+  awake = new QMovie("../assets/body/awake.gif");
+  awake->setCacheMode(QMovie::CacheAll);
+  sleep = new QMovie("../assets/body/sleep.gif");
+  sleep->setCacheMode(QMovie::CacheAll);
 
-  // setup layouts + widgets here
-  QLabel *l = new QLabel("body ui");
-  l->setStyleSheet("color: white; font-size: 30px;");
-  main_layout->addWidget(l, Qt::AlignCenter);
+  setMovie(sleep);
+  movie()->start();
 
-  setAttribute(Qt::WA_OpaquePaintEvent);
+  setScaledContents(true);
+
   QObject::connect(uiState(), &UIState::uiUpdate, this, &BodyWindow::updateState);
 }
 
 void BodyWindow::updateState(const UIState &s) {
-  // do updates based on UIState here
-}
+  const SubMaster &sm = *(s.sm);
 
-void BodyWindow::paintEvent(QPaintEvent *event) {
-  QPainter p(this);
-
-  // do any painting here
-  p.fillRect(rect(), QColor(0, 0, 0, 255));
+  // TODO: use standstill when that's fixed
+  QMovie *m = sm["carState"].getCarState().getVEgoRaw() < 0.2 ? sleep : awake;
+  if (m != movie()) {
+    movie()->stop();
+    setMovie(m);
+    movie()->start();
+  }
 }

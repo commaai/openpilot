@@ -1,19 +1,18 @@
 #pragma once
 
-#include <QStackedLayout>
-#include <QWidget>
+#include <QMovie>
+#include <QLabel>
 
 #include "selfdrive/ui/ui.h"
 
-
-class BodyWindow : public QWidget {
+class BodyWindow : public QLabel {
   Q_OBJECT
 
 public:
   BodyWindow(QWidget* parent = 0);
 
 private:
-  void paintEvent(QPaintEvent *event);
+  QMovie *awake, *sleep;
 
 private slots:
   void updateState(const UIState &s);
