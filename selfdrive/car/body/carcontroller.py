@@ -69,12 +69,11 @@ class CarController():
     kp_balance = 1300
     ki_balance = 0
     kd_balance = 280
-    alpha_d_balance = 1.0
 
     # Clip angle error, this is enough to get up from stands
     p_balance = np.clip((-CC.orientationNED[1]) - set_point, np.radians(-MAX_ANGLE_ERROR), np.radians(MAX_ANGLE_ERROR))
     self.i_balance += CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr
-    self.d_balance = np.clip(((1. - alpha_d_balance) * self.d_balance + alpha_d_balance * -CC.angularVelocity[1]), -1., 1.)
+    self.d_balance = np.clip(-CC.angularVelocity[1], -1., 1.)
     torque = int(np.clip((p_balance*kp_balance + self.i_balance*ki_balance + self.d_balance*kd_balance), -1000, 1000))
 
     # yaw recovery PID
