@@ -82,10 +82,13 @@ class CarController:
     elif abs(CS.out.steeringAngleDeg) >= STEER_FAULT_MAX_ANGLE:
       self.angle_limit_counter += 1
 
-    # stop steering for a cycle to avoid fault
+    # stop steering for a cycle to avoid fault and hold torque with induced temp fault
     stop_steering_temp = False
     if self.angle_limit_counter > STEER_FAULT_MAX_FRAMES:
-      apply_steer = 0
+      # EPS has a 10 frame counter for sending torque when not sending torque request bit
+      # However we only need to do this for one frame to avoid the 90 degree counter and require no panda mods
+      # So both 90 degree and torque request bit error counters should never cause faults
+      # apply_steer = 0
       stop_steering_temp = True
       self.angle_limit_counter = 0
 
