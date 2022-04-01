@@ -1,6 +1,6 @@
 import argparse
 import json
-import plotly.figure_factory as ff
+#import plotly.figure_factory as ff
 import sys
 from collections import defaultdict
 
@@ -197,6 +197,7 @@ def print_timestamps(timestamps, internal_durations, relative_self):
 
 def graph_timestamps(timestamps, relative_self):
   #TODO
+  '''
   t0 = timestamps[min(timestamps.keys())][SERVICES[0]]["Start"] 
   event_bars = []
   service_bars = []
@@ -217,11 +218,12 @@ def graph_timestamps(timestamps, relative_self):
     bar['opacity'] = 0.7
   fig.layout.xaxis.type = 'linear'
   fig.show()
+'''
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A helper to run timestamp print on openpilot routes",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("--plot", action="store_true", help="If a plot should be generated")
+ # parser.add_argument("--plot", action="store_true", help="If a plot should be generated")
   parser.add_argument("--relative_self", action="store_true", help="Print and plot starting a 0 each time")
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("route_name", nargs='?', help="The route to print")
@@ -242,8 +244,8 @@ if __name__ == "__main__":
   failed_inserts = insert_cloudlogs(cloudlog_logs, timestamps)
   fix_boardd_intervals(timestamps)
   print_timestamps(timestamps, internal_durations, args.relative_self)
-  if args.plot:
-    graph_timestamps(timestamps, args.relative_self)
+ # if args.plot:
+  #  graph_timestamps(timestamps, args.relative_self)
 
   print("Num frames skipped due to failed translations:",failed_transl)
   print("Num frames skipped due to frameId missmatch:",len(frame_mismatches))
