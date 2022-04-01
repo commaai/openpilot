@@ -55,7 +55,7 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled, metric):
   for b in buttonEvents:
     if b.type.raw in button_timers and not b.pressed:
       if button_timers[b.type.raw] > CRUISE_LONG_PRESS:
-        return v_cruise_kph  # end long press
+        return v_cruise_kph # end long press
       button_type = b.type.raw
       break
   else:
