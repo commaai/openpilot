@@ -196,9 +196,6 @@ VectorXd Localizer::get_stdev() {
 }
 
 void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log) {
-  MatrixXdr ecef_vel_R = Vector3d::Constant(1. * 1.).asDiagonal();
-  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { Vector3d(0., 0., 0.) }, { ecef_vel_R });
-  this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
   // TODO does not yet account for double sensor readings in the log
   for (int i = 0; i < log.size(); i++) {
     const cereal::SensorEventData::Reader& sensor_reading = log[i];
@@ -446,12 +443,12 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   this->time_check(t);
   if (log.isSensorEvents()) {
     this->handle_sensors(t, log.getSensorEvents());
-  // } else if (log.isGpsLocationExternal()) {
-  //   this->handle_gps(t, log.getGpsLocationExternal());
+  } else if (log.isGpsLocationExternal()) {
+    this->handle_gps(t, log.getGpsLocationExternal());
   // } else if (log.isCarState()) {
   //   this->handle_car_state(t, log.getCarState());
-  // } else if (log.isCameraOdometry()) {
-  //   this->handle_cam_odo(t, log.getCameraOdometry());
+  } else if (log.isCameraOdometry()) {
+    this->handle_cam_odo(t, log.getCameraOdometry());
   // } else if (log.isLiveCalibration()) {
   //   this->handle_live_calib(t, log.getLiveCalibration());
   }
