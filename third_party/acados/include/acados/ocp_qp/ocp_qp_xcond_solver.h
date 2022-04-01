@@ -92,6 +92,7 @@ typedef struct
     acados_size_t (*memory_calculate_size)(void *config, ocp_qp_xcond_solver_dims *dims, void *opts);
     void *(*memory_assign)(void *config, ocp_qp_xcond_solver_dims *dims, void *opts, void *raw_memory);
     void (*memory_get)(void *config_, void *mem_, const char *field, void* value);
+    void (*memory_reset)(void *config, ocp_qp_xcond_solver_dims *dims, ocp_qp_in *qp_in, ocp_qp_out *qp_out, void *opts, void *mem, void *work);
     acados_size_t (*workspace_calculate_size)(void *config, ocp_qp_xcond_solver_dims *dims, void *opts);
     int (*evaluate)(void *config, ocp_qp_xcond_solver_dims *dims, ocp_qp_in *qp_in, ocp_qp_out *qp_out, void *opts, void *mem, void *work);
     void (*eval_sens)(void *config, ocp_qp_xcond_solver_dims *dims, ocp_qp_in *param_qp_in, ocp_qp_out *sens_qp_out, void *opts, void *mem, void *work);
