@@ -17,10 +17,15 @@ BodyWindow::BodyWindow(QWidget *parent) : QLabel(parent) {
 }
 
 void BodyWindow::updateState(const UIState &s) {
+  if (!isVisible()) {
+    return;
+  }
+
   const SubMaster &sm = *(s.sm);
 
-  // TODO: use standstill when that's fixed
-  QMovie *m = std::abs(sm["carState"].getCarState().getVEgo()) < 0.01 ? sleep : awake;
+  // TODO: use carState.standstill when that's fixed
+  const bool standstill = std::abs(sm["carState"].getCarState().getVEgo()) < 0.01;
+  QMovie *m = standstill ? sleep : awake;
   if (m != movie()) {
     movie()->stop();
     setMovie(m);
