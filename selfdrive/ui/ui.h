@@ -57,13 +57,15 @@ struct Alert {
       } else if (controls_missing > CONTROLS_TIMEOUT) {
         // car is started, but controls is lagging or died
         if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
-          return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
-                  "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
-                  AudibleAlert::WARNING_IMMEDIATE};
+          return {};
+//          {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
+//                  "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
+//                  AudibleAlert::WARNING_IMMEDIATE};
         } else {
-          return {"Controls Unresponsive", "Reboot Device",
-                  "controlsUnresponsivePermanent", cereal::ControlsState::AlertSize::MID,
-                  AudibleAlert::NONE};
+          return {};
+//           {"Controls Unresponsive", "Reboot Device",
+//                  "controlsUnresponsivePermanent", cereal::ControlsState::AlertSize::MID,
+//                  AudibleAlert::NONE};
         }
       }
     }
