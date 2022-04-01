@@ -140,10 +140,8 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   std::string params;
   LOGW("waiting for params to set safety model");
   while (true) {
-    for (const auto& panda : pandas) {
-      if (do_exit || !panda->connected || !ignition) {
-        return false;
-      }
+    if (do_exit || !check_all_connected(pandas) || !ignition) {
+      return false;
     }
 
     if (p.getBool("ControlsReady")) {
