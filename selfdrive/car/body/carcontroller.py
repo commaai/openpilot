@@ -60,7 +60,7 @@ class CarController():
     self.speed_desired = (1. - alpha_speed) * self.speed_desired
     speed_error = self.speed_desired - self.speed_measured
     self.i_speed += speed_error * DT_CTRL
-    self.i_speed = np.clip(self.i_speed, -MAX_INTEGRATOR, MAX_INTEGRATOR)
+    self.i_speed = np.clip(self.i_speed, -10*MAX_INTEGRATOR, 10*MAX_INTEGRATOR)
     set_point = kp_speed * speed_error + np.clip(ki_speed * self.i_speed, -0.1, 0.1)
 
     # Balancing PID

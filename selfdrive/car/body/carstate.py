@@ -5,6 +5,10 @@ from selfdrive.car.body.values import DBC
 
 
 class CarState(CarStateBase):
+  def __init__(self, CP):
+    self.still_cnt = 0
+    CarStateBase.__init__(self, CP)
+
   def update(self, cp):
     ret = car.CarState.new_message()
 
@@ -14,7 +18,11 @@ class CarState(CarStateBase):
     ret.vEgoRaw = ((ret.wheelSpeeds.fl + ret.wheelSpeeds.fr) / 2.) * self.CP.wheelSpeedFactor
 
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = False
+    if ret.vEgo < 0.005:
+      self.still_cnt += 1
+    else:
+      self.still_cnt = 0
+    ret.standstill = self.still_cnt > 50
 
     # irrelevant for non-car
     ret.doorOpen = False
