@@ -78,7 +78,7 @@ class CarController():
     torque = int(np.clip((p_balance*kp_balance + self.i_balance*ki_balance + self.d_balance*kd_balance), -1000, 1000))
 
     # yaw recovery PID
-    kp_turn = 1.0 / SPEED_FROM_RPM
+    kp_turn = 0.1 / SPEED_FROM_RPM
     ki_turn = 0.1 / SPEED_FROM_RPM
 
     speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
