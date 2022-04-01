@@ -1,6 +1,6 @@
 #include "selfdrive/ui/qt/body.h"
 
-#include <QDebug>
+#include <cmath>
 
 BodyWindow::BodyWindow(QWidget *parent) : QLabel(parent) {
   awake = new QMovie("../assets/body/awake.gif");
