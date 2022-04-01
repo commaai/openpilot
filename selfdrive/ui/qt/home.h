@@ -8,6 +8,7 @@
 #include <QWidget>
 
 #include "selfdrive/ui/qt/offroad/driverview.h"
+#include "selfdrive/ui/qt/body.h"
 #include "selfdrive/ui/qt/onroad.h"
 #include "selfdrive/ui/qt/sidebar.h"
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
@@ -55,6 +56,10 @@ private:
   Sidebar *sidebar;
   OffroadHome *home;
   OnroadWindow *onroad;
+  BodyWindow *body;
   DriverViewWindow *driver_view;
   QStackedLayout *slayout;
+
+private slots:
+  void updateState(const UIState &s);
 };
