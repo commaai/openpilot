@@ -177,14 +177,6 @@ class SwagLogger(logging.Logger):
     tstp['timestamp']["time"] = sec_since_boot()*1e9
     self.debug(tstp)
 
-  def timestampExtra(self, event_name, info):
-    extra_info = NiceOrderedDict()
-    extra_info['timestampExtra'] = NiceOrderedDict()
-    extra_info['timestampExtra']["event"] = event_name
-    extra_info['timestampExtra']["info"] = info 
-    extra_info['timestampExtra']["time"] = sec_since_boot()*1e9
-    self.debug(extra_info)
-
   def findCaller(self, stack_info=False, stacklevel=1):
     """
     Find the stack frame of the caller so that we can note the source
