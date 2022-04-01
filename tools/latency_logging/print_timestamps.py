@@ -7,7 +7,7 @@ from collections import defaultdict
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
     
-DEMO_ROUTE = "9f583b1d93915c31|2022-03-30--11-11-53"
+DEMO_ROUTE = "9f583b1d93915c31|2022-03-31--13-50-29"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 
@@ -17,7 +17,8 @@ MSGQ_TO_SERVICE = {
         'modelV2':'modeld',
         'lateralPlan':'plannerd',
         'longitudinalPlan':'plannerd',
-        'sendcan':'controlsd'
+        'sendcan':'controlsd',
+        'controlsState':'controlsd'
         }
 
 SERVICE_TO_DURATIONS = {
@@ -44,16 +45,23 @@ def get_relevant_logs(logreader):
 
 def get_translation_LUT(sm_logs):
   translationdict = {}
+  # sendcan is the only message where we cannot identify the frame id with ceirtainty, but assuing it has the same as the next constrolsstate is good enough (sm_logs are sorted by time)
+  latest_sendcan_monotime = 0
   for msg in sm_logs:
-    mono_time = msg.logMonoTime
-    if msg.which() == 'modelV2':
-      translationdict[mono_time]=msg.modelV2.frameId
-    elif msg.which() == 'lateralPlan':
-      translationdict[mono_time]=translationdict[msg.lateralPlan.modelMonoTime]
-    elif msg.which() == 'controlsState':
-      for canMonoTime in msg.controlsState.canMonoTimes:
-        translationdict[canMonoTime]=translationdict[msg.controlsState.lateralPlanMonoTime]
-    return translationdict
+    try:
+      mono_time = msg.logMonoTime
+      if msg.which() == 'modelV2':
+        translationdict[mono_time]=msg.modelV2.frameId
+      elif msg.which() == 'lateralPlan':
+        translationdict[mono_time]=translationdict[msg.lateralPlan.modelMonoTime]
+      elif msg.which() == 'sendcan':
+        latest_sendcan_monotime = msg.logMonoTime
+      elif msg.which() == 'controlsState':
+        if latest_sendcan_monotime:
+          translationdict[latest_sendcan_monotime]=translationdict[msg.controlsState.lateralPlanMonoTime]
+    except KeyError:
+      pass
+  return translationdict
 
 def read_sm_logs(sm_logs, translationdict):
   pub_times = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
@@ -62,6 +70,9 @@ def read_sm_logs(sm_logs, translationdict):
   frame_mismatches = []
   failed_transl = 0
   def translate(logMono):
+    # dont count when logMono is not set yet
+    if logMono == 0: 
+      return -2
     return -1 if logMono not in translationdict else translationdict[logMono]
   for msg in sm_logs:
     msg_name = msg.which()
@@ -77,17 +88,15 @@ def read_sm_logs(sm_logs, translationdict):
     elif msg_name == 'modelV2':
       frame_id = msg.modelV2.frameId
       if msg.modelV2.frameIdExtra != frame_id:
-        frame_mismatches.append(frameId)
+        frame_mismatches.append(frame_id)
     elif msg_name == 'lateralPlan':
-      frame_id = translationdict[msg.lateralPlan.modelMonoTime]
+      frame_id = translate(msg.lateralPlan.modelMonoTime)
     elif msg_name == 'longitudinalPlan':
-      frame_id = translationdict[msg.longitudinalPlan.modelMonoTime]
+      frame_id = translate(msg.longitudinalPlan.modelMonoTime)
     elif msg_name == 'sendcan':
-      frame_id = translationdict[mono_time]
+      frame_id = translate(mono_time)
     elif msg_name == 'controlsState':
-      frame_id = translationdict[msg.controlsState.lateralPlanMonoTime]
-      for canMonoTime in msg.controlsState.canMonoTimes:
-        translationdict[canMonoTime]=frameId
+      frame_id = translate(msg.controlsState.lateralPlanMonoTime)
     if frame_id == -1:
       failed_transl+=1
       continue
@@ -98,34 +107,35 @@ def read_sm_logs(sm_logs, translationdict):
 
 def get_empty_data(pub_times, start_times):
   for frame_id in pub_times.keys():
-    #if no start time
     if frame_id not in start_times.keys():
       yield frame_id
       continue
-    #if not all services
     for service in SERVICES:
-      if service not in pub_times[frame_id]:
+      #boardd publication is not logged
+      if service not in pub_times[frame_id].keys() and service != 'boardd':
         yield frame_id
 
 def exclude_bad_data(frame_ids, pub_times, start_times):
   for frame_id in frame_ids:
-    if frameId in pub_times:
+    if frame_id in pub_times:
       del pub_times[frame_id]
-    if frameId in start_times:
+    if frame_id in start_times:
       del start_times[frame_id]
      
 def build_intervals(pub_times, start_times):
   timestamps = defaultdict(lambda: defaultdict(dict))
   for frame_id, services in pub_times.items():
-    # TODO: boardd
-    if service == 'camerad':
-      timestamps[frame_id][service]["Start"] = min(start_times[frame_id])
-    else:
-      prev_service = SERVICES[SERVICES.index(service)-1]
-      timestamps[frame_id][service]["Start"] = min(min(pub_times[prev_service].values()))
-    timestamps[frame_id][service]["End"] = max(max(pub_times[service].values()))
-    for msg_name, times in pub_times[service].items():
-      timestamps[frame_id][service]["Timestamps"] = [(msg_name+" published", time) for time in times]
+    timestamps[frame_id]['boardd']['Timestamps'] = []
+    for service, msg_names in services.items():
+      if service == 'camerad':
+        timestamps[frame_id][service]["Start"] = min(start_times[frame_id])
+      else:
+        prev_service = SERVICES[SERVICES.index(service)-1]
+        timestamps[frame_id][service]["Start"] = min(min(times) for times in pub_times[frame_id][prev_service].values())
+      timestamps[frame_id][service]["End"] = max(max(msg_names.values()))
+      timestamps[frame_id][service]["Timestamps"] = []
+      for msg_name, times in msg_names.items():
+        timestamps[frame_id][service]["Timestamps"]+=[(msg_name+" published", time) for time in times]
   return timestamps
 
 def find_frame_id(time, service, timestamps):
@@ -134,18 +144,34 @@ def find_frame_id(time, service, timestamps):
       return frame_id
   return -1
 
+## ASSUMES THAT AT LEAST ONE CLOUDLOG IS MADE IN CONTROLSD
 def insert_cloudlogs(cloudlog_logs, timestamps):
+  t0 = timestamps[min(timestamps.keys())][SERVICES[0]]["Start"] 
   failed_inserts = 0
+  latest_controls_frameid = -1
   for jmsg in cloudlog_logs:
+    time = int(jmsg['msg']['timestamp']['time'])
+    if time < t0:
+      continue
     service = jmsg['ctx']['daemon']
     event = jmsg['msg']['timestamp']['event']
-    time = int(jmsg['msg']['timestamp']['time'])
-    frame_id = find_frame_id(time, service, timestamps) 
+    frame_id = latest_controls_frameid if service == "boardd" else find_frame_id(time, service, timestamps)
+    if service == 'controlsd':
+      latest_controls_frameid = frame_id
     if frame_id > -1:
       timestamps[frame_id][service]["Timestamps"].append((event, time))
     else:
       failed_inserts +=1
   return failed_inserts
+
+def fix_boardd_intervals(timestamps):
+  for frame_id in timestamps.keys():
+    event_times = [tup[1] for tup in timestamps[frame_id]['boardd']["Timestamps"]]
+    if len(event_times) > 0:
+      timestamps[frame_id]['boardd']["Start"] = min(event_times)
+      timestamps[frame_id]['boardd']["End"] = max(event_times)
+    else:
+      del timestamps[frame_id]['boardd']
 
 def print_timestamps(timestamps, internal_durations, relative_self):
   t0 = timestamps[min(timestamps.keys())][SERVICES[0]]["Start"] 
@@ -157,10 +183,12 @@ def print_timestamps(timestamps, internal_durations, relative_self):
     if relative_self:
       t0 = timestamps[frame_id][SERVICES[0]]["Start"] 
     for service in SERVICES:
+      if service not in services:
+        continue
       print("  "+service)  
       events = timestamps[frame_id][service]["Timestamps"]
-      for event, time in sorted(events.items(), key=lambda x: x[1]):
-        print("    "+'%-50s%-50s' %(event, str(time)))  
+      for event, time in sorted(events, key=lambda x: x[1]):
+        print("    "+'%-50s%-50s' %(event, str((time-t0)/1e6)))  
 
     print("Internal durations:")
     for service, events in internal_durations[frame_id].items():
@@ -173,19 +201,21 @@ def graph_timestamps(timestamps, relative_self):
   y = 0
   gnt = plt.subplots()[1]
   gnt.set_xlim(0, 150 if relative_self else 750)
-  gnt.set_ylim(0, len(service_intervals))
+  gnt.set_ylim(0, len(timestamps))
   for frame_id, services in timestamps.items():
     if relative_self:
       t0 = timestamps[frame_id][SERVICES[0]]["Start"] 
     event_bars = []
     service_bars = []
     for service in SERVICES:
+      if service not in services:
+        continue
       start = timestamps[frame_id][service]["Start"]
       end = timestamps[frame_id][service]["End"]
       service_bars.append(((start-t0)/1e6,(end-start)/1e6))
       events = timestamps[frame_id][service]["Timestamps"]
-      for event, time in events.items():
-        event_bars.append(((time-t0)/1e6, 0.1))
+      for event in events:
+        event_bars.append(((event[1]-t0)/1e6, 0.1))
     gnt.broken_barh(service_bars, (y, 0.9), facecolors=(["blue", 'green', 'red', 'yellow', 'purple']))
     gnt.broken_barh(event_bars, (y, 0.9), facecolors=("black"))
     y+=1
@@ -211,9 +241,10 @@ if __name__ == "__main__":
   pub_times, start_times, internal_durations, frame_mismatches,failed_transl= read_sm_logs(sm_logs, translationdict)
   empty_data = list(set(get_empty_data(pub_times, start_times)))
   exclude_bad_data(set(empty_data+frame_mismatches), pub_times, start_times)
-  timestamps = build_intervals(pub_time, start_times)
-  failed_inserts = fill_intervals(cloudlog_logs, timestamps)
-  print_timestamps(timestamps, args.relative_self)
+  timestamps = build_intervals(pub_times, start_times)
+  failed_inserts = insert_cloudlogs(cloudlog_logs, timestamps)
+  fix_boardd_intervals(timestamps)
+  print_timestamps(timestamps, internal_durations, args.relative_self)
   if args.plot:
     graph_timestamps(timestamps, args.relative_self)
 
