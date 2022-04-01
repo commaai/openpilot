@@ -59,6 +59,7 @@ private:
   BodyWindow *body;
   DriverViewWindow *driver_view;
   QStackedLayout *slayout;
-  QStackedLayout *onroad_stack;
-  QWidget *active_onroad;
+
+private slots:
+  void updateState(const UIState &s);
 };
