@@ -89,6 +89,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       LOGE("vipc_client_main no frame");
       continue;
     }
+
     if (use_extra_client) {
       // Keep receiving extra frames until frame id matches main camera
       do {

@@ -135,7 +135,6 @@ def manager_thread() -> None:
 
   while True:
     sm.update()
-
     not_run = ignore[:]
 
     started = sm['deviceState'].started
@@ -169,6 +168,7 @@ def manager_thread() -> None:
 
     if shutdown:
       break
+
 
 def main() -> None:
   prepare_only = os.getenv("PREPAREONLY") is not None

@@ -20,7 +20,6 @@
 #include <thread>
 
 #include <libusb-1.0/libusb.h>
-#include "json11.hpp"
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
