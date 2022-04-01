@@ -9,6 +9,7 @@
 #include <mutex>
 #include <string>
 
+#include "json11.hpp"
 #include <zmq.h>
 
 #include "selfdrive/common/util.h"
@@ -85,8 +86,12 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
 
   if (!s.initialized) s.initialize();
 
+  // if msg is json, parse it
+  std::string err;
+  auto json_msg = json11::Json::parse(msg_buf, err);
+
   json11::Json log_j = json11::Json::object {
-    {"msg", msg_buf},
+    {"msg", err.empty()? json_msg : msg_buf},
     {"ctx", s.ctx_j},
     {"levelnum", levelnum},
     {"filename", filename},

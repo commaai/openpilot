@@ -37,7 +37,6 @@ def get_relevant_logs(logreader):
     if msg.which() in msgqs:
       sm_logs.append(msg)
     elif msg.which() == "logMessage" and 'timestamp' in msg.logMessage:
-      msg = msg.logMessage.replace("'", '"').replace('"{', "{").replace('}"', "}").replace("\\", '')
       jmsg = json.loads(msg)
       if "timestamp" in jmsg['msg']:
         cloudlog_logs.append(jmsg)

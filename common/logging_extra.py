@@ -3,6 +3,7 @@ import os
 import sys
 import copy
 import json
+import time
 import uuid
 import socket
 import logging
@@ -11,12 +12,7 @@ from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
 
-try:
-  from common.realtime import sec_since_boot
-except ImportError:
-  import time
-  sec_since_boot = time.monotonic
-  print("Warning, using python time.time() instead of faster sec_since_boot")
+sec_since_boot = time.monotonic
 
 def json_handler(obj):
   # if isinstance(obj, (datetime.date, datetime.time)):
