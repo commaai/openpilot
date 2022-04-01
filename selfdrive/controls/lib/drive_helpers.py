@@ -20,6 +20,7 @@ CAR_ROTATION_RADIUS = 0.0
 MAX_LATERAL_JERK = 5.0
 
 CRUISE_LONG_PRESS = 50
+CRUISE_LONG_PRESS_ERROR = 0.1  # max kph away from full long press interval
 CRUISE_NEAREST_FUNC = {
   car.CarState.ButtonEvent.Type.accelCruise: math.ceil,
   car.CarState.ButtonEvent.Type.decelCruise: math.floor,
@@ -49,28 +50,38 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled, metric):
   long_press = False
   button_type = None
 
-  v_cruise_delta = 1. if metric else CV.MPH_TO_KPH
+  v_cruise_delta = 1. if metric else 1.6  # TODO copy this as class variable
 
   for b in buttonEvents:
+    print(b.type.raw in button_timers and not b.pressed)
     if b.type.raw in button_timers and not b.pressed:
       if button_timers[b.type.raw] > CRUISE_LONG_PRESS:
-        return v_cruise_kph # end long press
+        return v_cruise_kph  # end long press
       button_type = b.type.raw
+      # print('here')
       break
   else:
     for k in button_timers.keys():
       if button_timers[k] and button_timers[k] % CRUISE_LONG_PRESS == 0:
         button_type = k
         long_press = True
+        print('long press!')
         break
 
   if button_type:
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
-    if long_press and v_cruise_kph % v_cruise_delta != 0: # partial interval
+    # print(v_cruise_delta, long_press)
+    closest_interval = round(v_cruise_kph / v_cruise_delta) * v_cruise_delta
+    print('closest_interval: {}'.format(closest_interval))
+    if long_press and abs(closest_interval - v_cruise_kph) > CRUISE_LONG_PRESS_ERROR:  # partial interval
+      print('drive helpers: partial interval!', v_cruise_kph)
       v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](v_cruise_kph / v_cruise_delta) * v_cruise_delta
+      print('after:', v_cruise_kph)
     else:
+      print('drive helpers: FULL interval!', v_cruise_kph)
+      print(v_cruise_kph, v_cruise_kph + v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type])
       v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
-    v_cruise_kph = clip(round(v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
+    v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
   return v_cruise_kph
 
