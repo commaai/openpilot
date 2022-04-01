@@ -445,12 +445,12 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
     this->handle_sensors(t, log.getSensorEvents());
   } else if (log.isGpsLocationExternal()) {
     this->handle_gps(t, log.getGpsLocationExternal());
-  // } else if (log.isCarState()) {
-  //   this->handle_car_state(t, log.getCarState());
+   } else if (log.isCarState()) {
+     this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
     this->handle_cam_odo(t, log.getCameraOdometry());
-  // } else if (log.isLiveCalibration()) {
-  //   this->handle_live_calib(t, log.getLiveCalibration());
+   } else if (log.isLiveCalibration()) {
+     this->handle_live_calib(t, log.getLiveCalibration());
   }
   this->finite_check();
   this->update_reset_tracker();
