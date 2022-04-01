@@ -6,10 +6,6 @@ from selfdrive.car.body.values import DBC
 STARTUP_TICKS = 100
 
 class CarState(CarStateBase):
-  def __init__(self, CP):
-    self.startup_cnt = 0
-    CarStateBase.__init__(self, CP)
-
   def update(self, cp):
     ret = car.CarState.new_message()
 
@@ -19,9 +15,7 @@ class CarState(CarStateBase):
     ret.vEgoRaw = ((ret.wheelSpeeds.fl + ret.wheelSpeeds.fr) / 2.) * self.CP.wheelSpeedFactor
 
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    if self.startup_cnt < STARTUP_TICKS:
-      self.startup_cnt += 1
-    ret.standstill = self.startup_cnt < STARTUP_TICKS
+    ret.standstill = False
 
     # irrelevant for non-car
     ret.doorOpen = False
