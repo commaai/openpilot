@@ -8,10 +8,11 @@ BodyWindow::BodyWindow(QWidget *parent) : QLabel(parent) {
   sleep = new QMovie("../assets/body/sleep.gif");
   sleep->setCacheMode(QMovie::CacheAll);
 
-  setMovie(sleep);
-  movie()->start();
+  QPalette p(Qt::black);
+  setPalette(p);
+  setAutoFillBackground(true);
 
-  setScaledContents(true);
+  setAlignment(Qt::AlignCenter);
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &BodyWindow::updateState);
 }
@@ -27,7 +28,6 @@ void BodyWindow::updateState(const UIState &s) {
   const bool standstill = std::abs(sm["carState"].getCarState().getVEgo()) < 0.01;
   QMovie *m = standstill ? sleep : awake;
   if (m != movie()) {
-    movie()->stop();
     setMovie(m);
     movie()->start();
   }
