@@ -264,6 +264,11 @@ input_note = strcat(input_note, num2str(i_in), ') cost_W_e in column-major forma
 i_in = i_in + 1;
 {%- endif %}
 
+{%- if simulink_opts.inputs.reset_solver %}  {#- reset_solver #}
+input_note = strcat(input_note, num2str(i_in), ') reset_solver determines if iterate is set to all zeros before other initializations (x_init, u_init) are set and before solver is called, size [1]\n ');
+i_in = i_in + 1;
+{%- endif %}
+
 {%- if simulink_opts.inputs.x_init %}  {#- x_init #}
 input_note = strcat(input_note, num2str(i_in), ') initialization of x for all shooting nodes, size [{{ dims.nx * (dims.N+1) }}]\n ');
 i_in = i_in + 1;
