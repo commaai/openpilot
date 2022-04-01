@@ -77,7 +77,7 @@ class CarController():
 
     # yaw recovery PID
     kp_turn = 1.0 / SPEED_FROM_RPM
-    ki_turn = 1.0 / SPEED_FROM_RPM
+    ki_turn = 0.1 / SPEED_FROM_RPM
 
     speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
     self.i_speed_diff += speed_diff_measured * DT_CTRL

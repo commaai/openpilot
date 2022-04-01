@@ -18,7 +18,7 @@ class CarState(CarStateBase):
     ret.vEgoRaw = ((ret.wheelSpeeds.fl + ret.wheelSpeeds.fr) / 2.) * self.CP.wheelSpeedFactor
 
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    if ret.vEgo < 0.005:
+    if abs(ret.vEgo) < 0.005:
       self.still_cnt += 1
     else:
       self.still_cnt = 0
