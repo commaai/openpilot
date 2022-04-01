@@ -1,6 +1,6 @@
 import argparse
 import json
-import matplotlib.pyplot as plt
+import plotly.figure_factory as ff
 import sys
 from collections import defaultdict
 
@@ -196,29 +196,27 @@ def print_timestamps(timestamps, internal_durations, relative_self):
         print("    "+'%-50s%-50s' %(event, str(time)))  
 
 def graph_timestamps(timestamps, relative_self):
+  #TODO
   t0 = timestamps[min(timestamps.keys())][SERVICES[0]]["Start"] 
-  y = 0
-  gnt = plt.subplots()[1]
-  gnt.set_xlim(0, 150 if relative_self else 750)
-  gnt.set_ylim(0, len(timestamps) if relative_self else 10)
+  event_bars = []
+  service_bars = []
   for frame_id, services in timestamps.items():
     if relative_self:
       t0 = timestamps[frame_id][SERVICES[0]]["Start"] 
-    event_bars = []
-    service_bars = []
-    for service in SERVICES:
-      if service not in services:
-        continue
-      start = timestamps[frame_id][service]["Start"]
-      end = timestamps[frame_id][service]["End"]
-      service_bars.append(((start-t0)/1e6,(end-start)/1e6))
+    for service in services.keys():
+      start = (timestamps[frame_id][service]["Start"]-t0)/1e6
+      end = (timestamps[frame_id][service]["End"]-t0)/1e6
+      service_bars.append(dict(Task=frame_id, Start=start, Finish=end, Service=service))
       events = timestamps[frame_id][service]["Timestamps"]
-      for event in events:
-        event_bars.append(((event[1]-t0)/1e6, 0.1))
-    gnt.broken_barh(service_bars, (y, 0.9), facecolors=(["blue", 'green', 'red', 'yellow', 'purple']))
-    gnt.broken_barh(event_bars, (y, 0.9), facecolors=("black"))
-    y+=1
-  plt.show(block=True)
+      for event, time in events:
+        time = (time-t0)/1e6
+        event_bars.append(dict(Task=frame_id, Start=time, End=0.1, Event=event))
+
+  fig = ff.create_gantt(service_bars, index_col="Service", group_tasks=True, show_colorbar=True, show_hover_fill=True)
+  for bar in fig['data']:
+    bar['opacity'] = 0.7
+  fig.layout.xaxis.type = 'linear'
+  fig.show()
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A helper to run timestamp print on openpilot routes",
