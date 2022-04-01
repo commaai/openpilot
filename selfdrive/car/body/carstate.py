@@ -3,10 +3,11 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.body.values import DBC
 
+STARTUP_TICKS = 100
 
 class CarState(CarStateBase):
   def __init__(self, CP):
-    self.still_cnt = 0
+    self.startup_cnt = 0
     CarStateBase.__init__(self, CP)
 
   def update(self, cp):
@@ -18,11 +19,9 @@ class CarState(CarStateBase):
     ret.vEgoRaw = ((ret.wheelSpeeds.fl + ret.wheelSpeeds.fr) / 2.) * self.CP.wheelSpeedFactor
 
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    if abs(ret.vEgo) < 0.005:
-      self.still_cnt += 1
-    else:
-      self.still_cnt = 0
-    ret.standstill = self.still_cnt > 50
+    if self.startup_cnt < STARTUP_TICKS:
+      self.startup_cnt += 1
+    ret.standstill = self.startup_cnt < STARTUP_TICKS
 
     # irrelevant for non-car
     ret.doorOpen = False
