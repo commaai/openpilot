@@ -307,6 +307,7 @@ typedef struct ocp_nlp_res
     struct blasfeo_dvec *res_eq;  // dynamics
     struct blasfeo_dvec *res_ineq;  // inequality constraints
     struct blasfeo_dvec *res_comp;  // complementarity
+    struct blasfeo_dvec tmp;  // tmp
     double inf_norm_res_stat;
     double inf_norm_res_eq;
     double inf_norm_res_ineq;
