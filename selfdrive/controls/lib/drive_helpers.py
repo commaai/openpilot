@@ -20,6 +20,7 @@ CAR_ROTATION_RADIUS = 0.0
 MAX_LATERAL_JERK = 5.0
 
 CRUISE_LONG_PRESS = 50
+CRUISE_LONG_PRESS_ERROR = 0.1  # max kph away from full long press interval
 CRUISE_NEAREST_FUNC = {
   car.CarState.ButtonEvent.Type.accelCruise: math.ceil,
   car.CarState.ButtonEvent.Type.decelCruise: math.floor,
@@ -66,14 +67,13 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled, metric):
 
   if button_type:
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
-    partial_interval = round(v_cruise_kph / v_cruise_delta, 1) % 1 != 0
-    if long_press and partial_interval:
+    closest_interval = round(v_cruise_kph / v_cruise_delta) * v_cruise_delta
+    if long_press and abs(v_cruise_kph - closest_interval) > CRUISE_LONG_PRESS_ERROR:  # partial interval
       v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](v_cruise_kph / v_cruise_delta) * v_cruise_delta
     else:
       v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
-    v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
-  return v_cruise_kph
+  return clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
 
 def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
