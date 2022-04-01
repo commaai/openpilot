@@ -130,13 +130,11 @@ def manager_thread() -> None:
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
 
   started_prev = False
-  logEvents = ['roadCameraState', 'wideRoadCameraState','modelV2',  'lateralPlan', 'longitudinalPlan', 'sendcan']
-  sm = messaging.SubMaster(['deviceState']+logEvents)
+  sm = messaging.SubMaster(['deviceState'])
   pm = messaging.PubMaster(['managerState'])
 
   while True:
     sm.update()
-    logTimestamps(sm, logEvents)
 
     not_run = ignore[:]
 
@@ -171,18 +169,6 @@ def manager_thread() -> None:
 
     if shutdown:
       break
-
-def logTimestamps(sm, msgqs):
-  for msgq in msgqs:
-    if sm.updated[msgq]:
-      sm_info = {}
-      sm_info['msg_name'] = msgq
-      sm_info['logMonoTime'] = sm.logMonoTime[msgq]
-      try:
-        sm_info['smInfo'] = sm[msgq].to_dict()
-      except AttributeError:
-        sm_info['smInfo'] = None
-      cloudlog.timestampExtra("msgq", sm_info)
 
 def main() -> None:
   prepare_only = os.getenv("PREPAREONLY") is not None

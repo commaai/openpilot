@@ -235,8 +235,6 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
         //LOGT("sendcan sent to panda: ",panda->usb_serial);
       }
     }
-    //json11::Json time_j = json11::Json::object{{"logMonoTime", std::to_string(event.getLogMonoTime())}};
-    //LOGTE("Pipeline end", time_j);
   }
 }
 
