@@ -230,8 +230,7 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
         panda->can_send(event.getSendcan());
-	      LOGT((std::string("sendcan sent to panda: ")+std::string(panda->usb_serial)).c_str());
-        //LOGT("sendcan sent to panda: ",panda->usb_serial);
+        LOGT("sendcan sent to panda: ",(panda->usb_serial).c_str());
       }
     }
   }

@@ -1083,12 +1083,10 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   if ((c == &s->road_cam && env_send_road) || (c == &s->wide_road_cam && env_send_wide_road)) {
     framed.setImage(get_frame_image(b));
   }
-  LOGT((std::string(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera")+std::string(": Image set")).c_str());
-  //LOGT(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera",": Image set");
+  LOGT(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera",": Image set");
   if (c == &s->road_cam) {
     framed.setTransform(b->yuv_transform.v);
-    LOGT((std::string(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera")+std::string(": Transformed")).c_str());
-    //LOGT(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera",": Transformed");
+    LOGT(c == &s->road_cam ? "RoadCamera" : "WideRoadCamera",": Transformed");
   }
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
