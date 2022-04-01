@@ -20,7 +20,7 @@ void BodyWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 
   // TODO: use standstill when that's fixed
-  QMovie *m = std::abs(sm["carState"].getCarState().getVEgoRaw()) < 0.1 ? sleep : awake;
+  QMovie *m = std::abs(sm["carState"].getCarState().getVEgo()) < 0.01 ? sleep : awake;
   if (m != movie()) {
     movie()->stop();
     setMovie(m);
