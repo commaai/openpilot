@@ -7,7 +7,7 @@ from collections import defaultdict
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
     
-DEMO_ROUTE = "9f583b1d93915c31|2022-03-31--13-50-29"
+DEMO_ROUTE = "9f583b1d93915c31|2022-04-01--08-55-14"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 
@@ -37,7 +37,7 @@ def get_relevant_logs(logreader):
     if msg.which() in msgqs:
       sm_logs.append(msg)
     elif msg.which() == "logMessage" and 'timestamp' in msg.logMessage:
-      jmsg = json.loads(msg)
+      jmsg = json.loads(msg.logMessage)
       if "timestamp" in jmsg['msg']:
         cloudlog_logs.append(jmsg)
   return (sm_logs, cloudlog_logs)
@@ -200,7 +200,7 @@ def graph_timestamps(timestamps, relative_self):
   y = 0
   gnt = plt.subplots()[1]
   gnt.set_xlim(0, 150 if relative_self else 750)
-  gnt.set_ylim(0, len(timestamps))
+  gnt.set_ylim(0, len(timestamps) if relative_self else 10)
   for frame_id, services in timestamps.items():
     if relative_self:
       t0 = timestamps[frame_id][SERVICES[0]]["Start"] 
