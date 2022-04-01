@@ -7,7 +7,6 @@ from opendbc.can.packer import CANPacker
 MAX_TORQUE = 500
 MAX_TORQUE_RATE = 50
 MAX_ANGLE_ERROR = 7
-INIT_WAIT = 5  # secs
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -25,7 +24,7 @@ class CarController():
 
     self.torque_r_filtered = 0.
     self.torque_l_filtered = 0.
-    self.wait_counter = int(INIT_WAIT / DT_CTRL)
+    self.wait_counter = int(5. / DT_CTRL)
 
   @staticmethod
   def deadband_filter(torque, deadband):
