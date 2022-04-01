@@ -2,6 +2,7 @@
 from cereal import car
 from selfdrive.car import scale_rot_inertia, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.body.values import SPEED_FROM_RPM
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
@@ -20,7 +21,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.mass = 9
     ret.wheelbase = 0.406
-    ret.wheelSpeedFactor = 0.008587
+    ret.wheelSpeedFactor = SPEED_FROM_RPM
     ret.centerToFront = ret.wheelbase * 0.44
 
     ret.radarOffCan = True
