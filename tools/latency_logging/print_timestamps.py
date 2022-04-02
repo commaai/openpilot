@@ -1,6 +1,5 @@
 import argparse
 import json
-#import plotly.figure_factory as ff
 import sys
 from collections import defaultdict
 
@@ -189,31 +188,6 @@ def print_timestamps(timestamps, internal_durations, relative_self):
       for event, time in dict(events).items():
         print("    "+'%-50s%-50s' %(event, str(time)))  
 
-def graph_timestamps(timestamps, relative_self):
-  #TODO
-  '''
-  t0 = timestamps[min(timestamps.keys())][SERVICES[0]]["Start"] 
-  event_bars = []
-  service_bars = []
-  for frame_id, services in timestamps.items():
-    if relative_self:
-      t0 = timestamps[frame_id][SERVICES[0]]["Start"] 
-    for service in services.keys():
-      start = (timestamps[frame_id][service]["Start"]-t0)/1e6
-      end = (timestamps[frame_id][service]["End"]-t0)/1e6
-      service_bars.append(dict(Task=frame_id, Start=start, Finish=end, Service=service))
-      events = timestamps[frame_id][service]["Timestamps"]
-      for event, time in events:
-        time = (time-t0)/1e6
-        event_bars.append(dict(Task=frame_id, Start=time, End=0.1, Event=event))
-
-  fig = ff.create_gantt(service_bars, index_col="Service", group_tasks=True, show_colorbar=True, show_hover_fill=True)
-  for bar in fig['data']:
-    bar['opacity'] = 0.7
-  fig.layout.xaxis.type = 'linear'
-  fig.show()
-'''
-
 def get_timestamps(lr):
   translationdict = get_translation_LUT(lr)
   pub_times, start_times, internal_durations, frame_mismatches,failed_transl = read_logs(lr, translationdict)
@@ -224,12 +198,9 @@ def get_timestamps(lr):
   fix_boardd_intervals(timestamps)
   return (timestamps, internal_durations, failed_transl, len(frame_mismatches), len(empty_data), failed_inserts)
 
-
-
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = "A helper to run timestamp print on openpilot routes",
                                    formatter_class = argparse.ArgumentDefaultsHelpFormatter)
- # parser.add_argument("--plot", action = "store_true", help = "If a plot should be generated")
   parser.add_argument("--relative_self", action = "store_true", help = "Print and plot starting a 0 each time")
   parser.add_argument("--demo", action = "store_true", help = "Use the demo route instead of providing one")
   parser.add_argument("route_name", nargs = '?', help = "The route to print")
@@ -243,8 +214,6 @@ if __name__ == "__main__":
   lr = LogReader(r.log_paths()[0], sort_by_time = True)
   timestamps, internal_durations, failed_transl, frame_mismatches, empty_data, failed_inserts = get_timestamps(lr)
   print_timestamps(timestamps, internal_durations, args.relative_self)
- # if args.plot:
-  #  graph_timestamps(timestamps, args.relative_self)
 
   print("Num frames skipped due to failed translations:",failed_transl)
   print("Num frames skipped due to frameId missmatch:",frame_mismatches)
