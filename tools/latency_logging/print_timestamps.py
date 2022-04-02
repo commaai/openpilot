@@ -12,57 +12,43 @@ DEMO_ROUTE = "9f583b1d93915c31|2022-04-01--08-55-14"
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 
 MSGQ_TO_SERVICE = {
-        'roadCameraState':'camerad',
-        'wideRoadCameraState':'camerad',
-        'modelV2':'modeld',
-        'lateralPlan':'plannerd',
-        'longitudinalPlan':'plannerd',
-        'sendcan':'controlsd',
-        'controlsState':'controlsd'
-        }
+  'roadCameraState' : 'camerad',
+  'wideRoadCameraState' : 'camerad',
+  'modelV2' : 'modeld',
+  'lateralPlan' : 'plannerd',
+  'longitudinalPlan' : 'plannerd',
+  'sendcan' : 'controlsd',
+  'controlsState' : 'controlsd'
+}
 
 SERVICE_TO_DURATIONS = {
-        'camerad':['processingTime'],
-        'modeld':['modelExecutionTime', 'gpuExecutionTime'],
-        'plannerd':["solverExecutionTime"],
-        'controlsd':[],
-        'boardd':[]
-        }
+  'camerad' : ['processingTime'],
+  'modeld' : ['modelExecutionTime', 'gpuExecutionTime'],
+  'plannerd' : ["solverExecutionTime"],
+  'controlsd' : [],
+  'boardd' : []
+}
 
-def get_relevant_logs(logreader):
-  sm_logs = []
-  cloudlog_logs = []
+def get_translation_LUT(logreader):
+  translationdict = {}
+  # sendcan is the only message where we cannot identify the frame id with certainty, but assuming it has the same as the next ConstrolsState is good enough
+  latest_sendcan_monotime = 0
   msgqs = set(MSGQ_TO_SERVICE)
   for msg in logreader:
     if msg.which() in msgqs:
-      sm_logs.append(msg)
-    elif msg.which() == "logMessage" and 'timestamp' in msg.logMessage:
-      jmsg = json.loads(msg.logMessage)
-      if "timestamp" in jmsg['msg']:
-        cloudlog_logs.append(jmsg)
-  return (sm_logs, cloudlog_logs)
-
-def get_translation_LUT(sm_logs):
-  translationdict = {}
-  # sendcan is the only message where we cannot identify the frame id with ceirtainty, but assuing it has the same as the next constrolsstate is good enough (sm_logs are sorted by time)
-  latest_sendcan_monotime = 0
-  for msg in sm_logs:
-    try:
       mono_time = msg.logMonoTime
       if msg.which() == 'modelV2':
-        translationdict[mono_time]=msg.modelV2.frameId
+        translationdict[mono_time] = msg.modelV2.frameId
       elif msg.which() == 'lateralPlan':
-        translationdict[mono_time]=translationdict[msg.lateralPlan.modelMonoTime]
+        translationdict[mono_time] = translationdict[msg.lateralPlan.modelMonoTime]
       elif msg.which() == 'sendcan':
         latest_sendcan_monotime = msg.logMonoTime
       elif msg.which() == 'controlsState':
         if latest_sendcan_monotime:
-          translationdict[latest_sendcan_monotime]=translationdict[msg.controlsState.lateralPlanMonoTime]
-    except KeyError:
-      pass
+          translationdict[latest_sendcan_monotime] = translationdict[msg.controlsState.lateralPlanMonoTime]
   return translationdict
 
-def read_sm_logs(sm_logs, translationdict):
+def read_logs(logreader, translationdict):
   pub_times = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
   start_times = defaultdict(list)
   internal_durations = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
@@ -73,35 +59,37 @@ def read_sm_logs(sm_logs, translationdict):
     if logMono == 0: 
       return -2
     return -1 if logMono not in translationdict else translationdict[logMono]
-  for msg in sm_logs:
-    msg_name = msg.which()
-    mono_time = msg.logMonoTime
-    service = MSGQ_TO_SERVICE[msg_name]
-    frame_id = -1
-    if msg_name == 'roadCameraState':
-      frame_id = msg.roadCameraState.frameId
-      start_times[frame_id].append(msg.roadCameraState.timestampSof)
-    elif msg_name == 'wideRoadCameraState':
-      frame_id = msg.wideRoadCameraState.frameId
-      start_times[frame_id].append(msg.wideRoadCameraState.timestampSof)
-    elif msg_name == 'modelV2':
-      frame_id = msg.modelV2.frameId
-      if msg.modelV2.frameIdExtra != frame_id:
-        frame_mismatches.append(frame_id)
-    elif msg_name == 'lateralPlan':
-      frame_id = translate(msg.lateralPlan.modelMonoTime)
-    elif msg_name == 'longitudinalPlan':
-      frame_id = translate(msg.longitudinalPlan.modelMonoTime)
-    elif msg_name == 'sendcan':
-      frame_id = translate(mono_time)
-    elif msg_name == 'controlsState':
-      frame_id = translate(msg.controlsState.lateralPlanMonoTime)
-    if frame_id == -1:
-      failed_transl+=1
-      continue
-    pub_times[frame_id][service][msg_name].append(mono_time)
-    for duration in SERVICE_TO_DURATIONS[service]:
-      internal_durations[frame_id][service][msg_name+"."+duration] = msg.to_dict()[msg_name][duration] 
+  msgqs = set(MSGQ_TO_SERVICE)
+  for msg in logreader:
+    if msg.which() in msgqs:
+      msg_name = msg.which()
+      mono_time = msg.logMonoTime
+      service = MSGQ_TO_SERVICE[msg_name]
+      frame_id = -1
+      if msg_name == 'roadCameraState':
+        frame_id = msg.roadCameraState.frameId
+        start_times[frame_id].append(msg.roadCameraState.timestampSof)
+      elif msg_name == 'wideRoadCameraState':
+        frame_id = msg.wideRoadCameraState.frameId
+        start_times[frame_id].append(msg.wideRoadCameraState.timestampSof)
+      elif msg_name == 'modelV2':
+        frame_id = msg.modelV2.frameId
+        if msg.modelV2.frameIdExtra != frame_id:
+          frame_mismatches.append(frame_id)
+      elif msg_name == 'lateralPlan':
+        frame_id = translate(msg.lateralPlan.modelMonoTime)
+      elif msg_name == 'longitudinalPlan':
+        frame_id = translate(msg.longitudinalPlan.modelMonoTime)
+      elif msg_name == 'sendcan':
+        frame_id = translate(mono_time)
+      elif msg_name == 'controlsState':
+        frame_id = translate(msg.controlsState.lateralPlanMonoTime)
+      if frame_id == -1:
+        failed_transl += 1
+        continue
+      pub_times[frame_id][service][msg_name].append(mono_time)
+      for duration in SERVICE_TO_DURATIONS[service]:
+        internal_durations[frame_id][service][msg_name+"."+duration] = msg.to_dict()[msg_name][duration] 
   return (pub_times, start_times, internal_durations, frame_mismatches, failed_transl)
 
 def get_empty_data(pub_times, start_times):
@@ -134,7 +122,7 @@ def build_intervals(pub_times, start_times):
       timestamps[frame_id][service]["End"] = max(max(msg_names.values()))
       timestamps[frame_id][service]["Timestamps"] = []
       for msg_name, times in msg_names.items():
-        timestamps[frame_id][service]["Timestamps"]+=[(msg_name+" published", time) for time in times]
+        timestamps[frame_id][service]["Timestamps"] += [(msg_name+" published", time) for time in times]
   return timestamps
 
 def find_frame_id(time, service, timestamps):
@@ -144,23 +132,29 @@ def find_frame_id(time, service, timestamps):
   return -1
 
 ## ASSUMES THAT AT LEAST ONE CLOUDLOG IS MADE IN CONTROLSD
-def insert_cloudlogs(cloudlog_logs, timestamps):
+def insert_cloudlogs(logreader, timestamps):
   t0 = timestamps[min(timestamps.keys())][SERVICES[0]]["Start"] 
   failed_inserts = 0
   latest_controls_frameid = -1
-  for jmsg in cloudlog_logs:
-    time = int(jmsg['msg']['timestamp']['time'])
-    if time < t0:
-      continue
-    service = jmsg['ctx']['daemon']
-    event = jmsg['msg']['timestamp']['event']
-    frame_id = latest_controls_frameid if service == "boardd" else find_frame_id(time, service, timestamps)
-    if service == 'controlsd':
-      latest_controls_frameid = frame_id
-    if frame_id > -1:
-      timestamps[frame_id][service]["Timestamps"].append((event, time))
-    else:
-      failed_inserts +=1
+  for msg in logreader:
+    if msg.which() == "logMessage":
+      try:
+        jmsg = json.loads(msg.logMessage)
+        if "timestamp" in jmsg['msg']:
+          time = int(jmsg['msg']['timestamp']['time'])
+          if time < t0:
+            continue
+          service = jmsg['ctx']['daemon']
+          event = jmsg['msg']['timestamp']['event']
+          frame_id = latest_controls_frameid if service == "boardd" else find_frame_id(time, service, timestamps)
+          if service == 'controlsd':
+            latest_controls_frameid = frame_id
+          if frame_id > -1:
+            timestamps[frame_id][service]["Timestamps"].append((event, time))
+          else:
+            failed_inserts += 1
+      except KeyError:
+        pass
   return failed_inserts
 
 def fix_boardd_intervals(timestamps):
@@ -186,7 +180,7 @@ def print_timestamps(timestamps, internal_durations, relative_self):
         continue
       print("  "+service)  
       events = timestamps[frame_id][service]["Timestamps"]
-      for event, time in sorted(events, key=lambda x: x[1]):
+      for event, time in sorted(events, key = lambda x: x[1]):
         print("    "+'%-50s%-50s' %(event, str((time-t0)/1e6)))  
 
     print("Internal durations:")
@@ -220,13 +214,25 @@ def graph_timestamps(timestamps, relative_self):
   fig.show()
 '''
 
+def get_timestamps(lr):
+  translationdict = get_translation_LUT(lr)
+  pub_times, start_times, internal_durations, frame_mismatches,failed_transl = read_logs(lr, translationdict)
+  empty_data = list(set(get_empty_data(pub_times, start_times)))
+  exclude_bad_data(set(empty_data+frame_mismatches), pub_times, start_times)
+  timestamps = build_intervals(pub_times, start_times)
+  failed_inserts = insert_cloudlogs(lr, timestamps)
+  fix_boardd_intervals(timestamps)
+  return (timestamps, internal_durations, failed_transl, len(frame_mismatches), len(empty_data), failed_inserts)
+
+
+
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="A helper to run timestamp print on openpilot routes",
-                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
- # parser.add_argument("--plot", action="store_true", help="If a plot should be generated")
-  parser.add_argument("--relative_self", action="store_true", help="Print and plot starting a 0 each time")
-  parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
-  parser.add_argument("route_name", nargs='?', help="The route to print")
+  parser = argparse.ArgumentParser(description = "A helper to run timestamp print on openpilot routes",
+                                   formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+ # parser.add_argument("--plot", action = "store_true", help = "If a plot should be generated")
+  parser.add_argument("--relative_self", action = "store_true", help = "Print and plot starting a 0 each time")
+  parser.add_argument("--demo", action = "store_true", help = "Use the demo route instead of providing one")
+  parser.add_argument("route_name", nargs = '?', help = "The route to print")
 
   if len(sys.argv) == 1:
     parser.print_help()
@@ -234,21 +240,14 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   r = Route(DEMO_ROUTE if args.demo else args.route_name.strip())
-  lr = LogReader(r.log_paths()[0], sort_by_time=True)
-  sm_logs, cloudlog_logs = get_relevant_logs(lr)
-  translationdict = get_translation_LUT(sm_logs)
-  pub_times, start_times, internal_durations, frame_mismatches,failed_transl= read_sm_logs(sm_logs, translationdict)
-  empty_data = list(set(get_empty_data(pub_times, start_times)))
-  exclude_bad_data(set(empty_data+frame_mismatches), pub_times, start_times)
-  timestamps = build_intervals(pub_times, start_times)
-  failed_inserts = insert_cloudlogs(cloudlog_logs, timestamps)
-  fix_boardd_intervals(timestamps)
+  lr = LogReader(r.log_paths()[0], sort_by_time = True)
+  timestamps, internal_durations, failed_transl, frame_mismatches, empty_data, failed_inserts = get_timestamps(lr)
   print_timestamps(timestamps, internal_durations, args.relative_self)
  # if args.plot:
   #  graph_timestamps(timestamps, args.relative_self)
 
   print("Num frames skipped due to failed translations:",failed_transl)
-  print("Num frames skipped due to frameId missmatch:",len(frame_mismatches))
-  print("Num frames skipped due to empty data:", len(empty_data))
+  print("Num frames skipped due to frameId missmatch:",frame_mismatches)
+  print("Num frames skipped due to empty data:", empty_data)
   print("Num inserts failed:", failed_inserts)
 

@@ -12,8 +12,6 @@ from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
 
-sec_since_boot = time.monotonic
-
 def json_handler(obj):
   # if isinstance(obj, (datetime.date, datetime.time)):
   #   return obj.isoformat()
@@ -167,11 +165,11 @@ class SwagLogger(logging.Logger):
       self.info(evt)
 
   def timestamp(self, event_name):
+    t = time.monotonic()
     tstp = NiceOrderedDict()
     tstp['timestamp'] = NiceOrderedDict()
     tstp['timestamp']["event"] = event_name
-    tstp['timestamp']["time"] = sec_since_boot()*1e9
-    self.debug(tstp)
+    tstp['timestamp']["time"] = t*1e9
 
   def findCaller(self, stack_info=False, stacklevel=1):
     """

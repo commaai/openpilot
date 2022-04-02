@@ -80,9 +80,10 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
   if (wbuf != nullptr) {
     auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, transform_wide, static_cast<cl_mem*>(s->m->getExtraBuf()));
     s->m->addExtra(net_extra_buf, s->wide_frame->buf_size);
+    LOGT("Extra image added");
   }
   s->m->execute();
-  LOGT("Execution finnished");
+  LOGT("Execution finished");
 
   return (ModelOutput*)&s->output;
 }
