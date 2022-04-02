@@ -6,7 +6,7 @@ from collections import defaultdict
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
     
-DEMO_ROUTE = "9f583b1d93915c31|2022-04-01--08-55-14"
+DEMO_ROUTE = "9f583b1d93915c31|2022-04-01--17-51-29"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 
@@ -180,13 +180,13 @@ def print_timestamps(timestamps, internal_durations, relative_self):
       print("  "+service)  
       events = timestamps[frame_id][service]["Timestamps"]
       for event, time in sorted(events, key = lambda x: x[1]):
-        print("    "+'%-50s%-50s' %(event, str((time-t0)/1e6)))  
+        print("    "+'%-53s%-53s' %(event, str((time-t0)/1e6)))  
 
     print("Internal durations:")
     for service, events in internal_durations[frame_id].items():
       print("  "+service)  
       for event, time in dict(events).items():
-        print("    "+'%-50s%-50s' %(event, str(time)))  
+        print("    "+'%-53s%-53s' %(event, str(time)))  
 
 def get_timestamps(lr):
   translationdict = get_translation_LUT(lr)
