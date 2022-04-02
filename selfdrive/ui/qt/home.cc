@@ -30,17 +30,30 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   onroad = new OnroadWindow(this);
   slayout->addWidget(onroad);
 
+  body = new BodyWindow(this);
+  slayout->addWidget(body);
+
   driver_view = new DriverViewWindow(this);
   connect(driver_view, &DriverViewWindow::done, [=] {
     showDriverView(false);
   });
   slayout->addWidget(driver_view);
   setAttribute(Qt::WA_NoSystemBackground);
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &HomeWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &HomeWindow::offroadTransition);
 }
 
 void HomeWindow::showSidebar(bool show) {
   sidebar->setVisible(show);
+}
+
+void HomeWindow::updateState(const UIState &s) {
+  const SubMaster &sm = *(s.sm);
+
+  // switch to the body UI
+  if (onroad->isVisible() && sm["carParams"].getCarParams().getCarName() == "body") {
+    slayout->setCurrentWidget(body);
+  }
 }
 
 void HomeWindow::offroadTransition(bool offroad) {
@@ -64,7 +77,7 @@ void HomeWindow::showDriverView(bool show) {
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Handle sidebar collapsing
-  if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
+  if ((onroad->isVisible() || body->isVisible()) && (!sidebar->isVisible() || e->x() > sidebar->width())) {
     sidebar->setVisible(!sidebar->isVisible() && !onroad->isMapVisible());
   }
 }

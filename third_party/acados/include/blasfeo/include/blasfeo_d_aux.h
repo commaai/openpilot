@@ -237,6 +237,17 @@ void blasfeo_cm_create_dmat(int m, int n, struct blasfeo_pm_dmat *sA, void *memo
 
 
 
+//
+// BLAS API helper functions
+//
+
+#if ( defined(BLAS_API) & defined(MF_PANELMAJ) )
+// aux
+void blasfeo_cm_dgetr(int m, int n, struct blasfeo_cm_dmat *sA, int ai, int aj, struct blasfeo_cm_dmat *sB, int bi, int bj);
+#endif
+
+
+
 #ifdef __cplusplus
 }
 #endif

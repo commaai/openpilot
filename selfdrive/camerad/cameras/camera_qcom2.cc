@@ -626,6 +626,7 @@ void CameraState::camera_open() {
     camera_id = CAMERA_ID_IMX390;
     ret = sensors_init();
   }
+  LOGD("-- Probing sensor %d done with %d", camera_num, ret);
   assert(ret == 0);
 
   // create session
