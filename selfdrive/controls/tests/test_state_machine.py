@@ -12,9 +12,9 @@ State = log.ControlsState.OpenpilotState
 # The event types that maintain the current state
 MAINTAIN_STATES = {State.enabled: None, State.disabled: None, State.softDisabling: ET.SOFT_DISABLE,
                    State.preEnabled: ET.PRE_ENABLE}
-ALL_STATES = set(State.schema.enumerants.values())
+ALL_STATES = tuple(State.schema.enumerants.values())
 # The event types checked in DISABLED section of state machine
-ENABLE_EVENT_TYPES = {ET.ENABLE, ET.PRE_ENABLE}
+ENABLE_EVENT_TYPES = (ET.ENABLE, ET.PRE_ENABLE)
 ALL_STATES.remove(State.overriding)  # TODO: remove overriding exception
 
 
