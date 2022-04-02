@@ -43,8 +43,8 @@ class CarController:
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
     self.angle_limit_counter = 0
+    self.cut_steer_frames = 0
     self.cut_steer = False
-    self.cut_steer_frames = False
     self.frame = 0
 
     self.apply_steer_last = 0
@@ -78,13 +78,13 @@ class CarController:
       if self.frame % 100 == 0:
         can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
-    if CC.latActive and abs(CS.out.steeringAngleDeg) >= STEER_FAULT_MAX_ANGLE:
+    if CC.latActive and abs(CS.out.steeringAngleDeg) > STEER_FAULT_MAX_ANGLE:
       self.angle_limit_counter += 1
     else:
       self.angle_limit_counter = 0
 
-    # stop requesting steer for two cycles to avoid fault and hold torque with induced temporary fault
-    # two cycles avoids a race condition every
+    # stop requesting torque to avoid 90 degree fault and hold torque with induced temporary fault
+    # two cycles avoids race conditions every few minutes
     if self.angle_limit_counter > STEER_FAULT_MAX_FRAMES:
       self.cut_steer = True
     elif self.cut_steer_frames > 1:
