@@ -9,6 +9,7 @@ class CarInterface(CarInterfaceBase):
 
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
+    ret.notCar = True
     ret.carName = "body"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.body)]
 
