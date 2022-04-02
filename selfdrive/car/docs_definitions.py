@@ -76,8 +76,9 @@ class CarInfo:
       Column.MAINTAINED: CP.carFingerprint not in non_tested_cars,
     }
 
-    if self.name == "comma body":
-      self.row[Column.LONGITUDINAL] = True
+    if CP.notCar:
+      for col in StarColumns:
+        self.row[col] = True
 
     self.all_footnotes = all_footnotes
     for column in StarColumns:

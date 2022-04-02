@@ -70,8 +70,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   if cfg.proc_name == "controlsd":
     for msg in log_msgs:
       if msg.which() == "carParams":
-        # body doesn't enable
-        if msg.carParams.carName == "body":
+        if msg.carParams.notCar:
           break
       if msg.which() == "controlsState":
         if msg.controlsState.active:

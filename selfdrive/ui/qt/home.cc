@@ -50,8 +50,8 @@ void HomeWindow::showSidebar(bool show) {
 void HomeWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 
-  // switch to the body UI
-  if (onroad->isVisible() && sm["carParams"].getCarParams().getCarName() == "body") {
+  // switch to the generic robot UI
+  if (onroad->isVisible() && sm["carParams"].getCarParams().getNotCar()) {
     slayout->setCurrentWidget(body);
   }
 }
