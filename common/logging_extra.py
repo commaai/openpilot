@@ -170,6 +170,7 @@ class SwagLogger(logging.Logger):
     tstp['timestamp'] = NiceOrderedDict()
     tstp['timestamp']["event"] = event_name
     tstp['timestamp']["time"] = t*1e9
+    self.debug(tstp)
 
   def findCaller(self, stack_info=False, stacklevel=1):
     """
