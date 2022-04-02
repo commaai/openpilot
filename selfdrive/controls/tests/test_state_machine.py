@@ -51,6 +51,15 @@ class TestStateMachine(unittest.TestCase):
       self.controlsd.state_transition(self.CS)
       self.assertEqual(State.disabled, self.controlsd.state)
 
+  def test_soft_disable(self):
+    for state in ALL_STATES:
+      if state == State.preEnabled:  # preEnabled considers NO_ENTRY instead
+        continue
+      self.controlsd.events.et = [MAINTAIN_STATES[state], ET.SOFT_DISABLE]
+      self.controlsd.state = state
+      self.controlsd.state_transition(self.CS)
+      self.assertEqual(State.disabled, self.controlsd.state)
+
   def test_no_entry(self):
     # Disabled
     for et in ENABLE_EVENT_TYPES:
@@ -61,7 +70,7 @@ class TestStateMachine(unittest.TestCase):
     # preEnabled also should consider NO_ENTRY
     self.setUp()
     self.controlsd.state = State.preEnabled
-    self.controlsd.events.et = [ET.NO_ENTRY]
+    self.controlsd.events.et = [ET.NO_ENTRY, ET.PRE_ENABLE]
     self.controlsd.state_transition(self.CS)
     self.assertEqual(self.controlsd.state, State.disabled)
 
