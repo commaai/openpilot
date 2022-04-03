@@ -530,11 +530,11 @@ FW_VERSIONS = {
       b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\00521A60804A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572AA\xf1\x890396',
       b'\xf1\x872Q0907572J \xf1\x890156',
       b'\xf1\x872Q0907572Q \xf1\x890342',
       b'\xf1\x872Q0907572R \xf1\x890372',
       b'\xf1\x872Q0907572T \xf1\x890383',
-      b'\xf1\x872Q0907572AA\xf1\x890396',
     ],
   },
   CAR.TOURAN_MK2: {
