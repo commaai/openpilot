@@ -65,6 +65,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
       "../assets/offroad/icon_road.png",
     },
+    {
+      "DisengageOnAccelerator",
+      "Disengage On Accelerator Pedal",
+      "openpilot will disengage when accelerator pedal is pressed.",
+      "../assets/offroad/icon_disengage_on_accelerator.svg",
+    },
 #ifdef ENABLE_MAPS
     {
       "NavSettingTime24h",
