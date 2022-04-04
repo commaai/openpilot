@@ -13,8 +13,8 @@ State = log.ControlsState.OpenpilotState
 # The event types that maintain the current state
 MAINTAIN_STATES = {State.enabled: None, State.disabled: None, State.softDisabling: ET.SOFT_DISABLE,
                    State.preEnabled: ET.PRE_ENABLE}
-ALL_STATES = (state for state in State.schema.enumerants.values() if
-              state != State.overriding)  # TODO: remove overriding exception
+ALL_STATES = tuple((state for state in State.schema.enumerants.values() if
+                    state != State.overriding))  # TODO: remove overriding exception
 # The event types checked in DISABLED section of state machine
 ENABLE_EVENT_TYPES = (ET.ENABLE, ET.PRE_ENABLE)
 
@@ -22,8 +22,8 @@ ENABLE_EVENT_TYPES = (ET.ENABLE, ET.PRE_ENABLE)
 def make_event(event_types):
   event = {}
   for ev in event_types:
-    event[ev] = Alert("", "", AlertStatus.userPrompt, AlertSize.small, Priority.LOW,
-                      VisualAlert.steerRequired, AudibleAlert.prompt, 1.)
+    event[ev] = Alert("", "", AlertStatus.normal, AlertSize.small, Priority.LOW,
+                      VisualAlert.none, AudibleAlert.none, 1.)
   EVENTS[0] = event
   return 0
 
@@ -66,8 +66,7 @@ class TestStateMachine(unittest.TestCase):
       self.assertEqual(self.controlsd.state, State.disabled if state == State.disabled else State.softDisabling)
       self.controlsd.events.clear()
 
-    # Test soft disable timer
-    self.setUp()
+  def test_soft_disable_timer(self):
     self.controlsd.state = State.enabled
     self.controlsd.events.add(make_event([ET.SOFT_DISABLE]))
     self.controlsd.state_transition(self.CS)
@@ -85,14 +84,15 @@ class TestStateMachine(unittest.TestCase):
       self.assertEqual(self.controlsd.state, State.disabled)
       self.controlsd.events.clear()
 
+  def test_no_entry_pre_enable(self):
     # preEnabled with preEnabled event
-    self.setUp()
     self.controlsd.state = State.preEnabled
     self.controlsd.events.add(make_event([ET.NO_ENTRY, ET.PRE_ENABLE]))
     self.controlsd.state_transition(self.CS)
     self.assertEqual(self.controlsd.state, State.disabled)
 
   def test_maintain_states(self):
+    # Given current state's event type, we should maintain state
     for state in ALL_STATES:
       self.controlsd.state = state
       self.controlsd.events.add(make_event([MAINTAIN_STATES[state]]))
