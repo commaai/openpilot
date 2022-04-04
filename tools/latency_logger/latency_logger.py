@@ -166,8 +166,8 @@ if __name__ == "__main__":
                                    formatter_class = argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--relative_self", action = "store_true", help = "Print and plot starting a 0 each time")
   parser.add_argument("--demo", action = "store_true", help = "Use the demo route instead of providing one")
-  parser.add_argument("route_name", nargs = '?', help = "The route to print")
   parser.add_argument("--plot", action="store_true", help="If a plot should be generated")
+  parser.add_argument("route_name", nargs = '?', help = "The route to print")
 
   if len(sys.argv) == 1:
     parser.print_help()
