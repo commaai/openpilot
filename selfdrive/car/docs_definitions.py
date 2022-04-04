@@ -76,6 +76,10 @@ class CarInfo:
       Column.MAINTAINED: CP.carFingerprint not in non_tested_cars,
     }
 
+    if CP.notCar:
+      for col in StarColumns:
+        self.row[col] = True
+
     self.all_footnotes = all_footnotes
     for column in StarColumns:
       self.row[column] = Star.FULL if self.row[column] else Star.EMPTY

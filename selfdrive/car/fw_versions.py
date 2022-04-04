@@ -175,6 +175,13 @@ REQUESTS: List[Request] = [
     [NISSAN_VERSION_RESPONSE_STANDARD],
     rx_offset=NISSAN_RX_OFFSET,
   ),
+  # Body
+  Request(
+    "body",
+    [TESTER_PRESENT_REQUEST, UDS_VERSION_REQUEST],
+    [TESTER_PRESENT_RESPONSE, UDS_VERSION_RESPONSE],
+    bus=0,
+  ),
 ]
 
 
