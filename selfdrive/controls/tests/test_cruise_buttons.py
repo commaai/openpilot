@@ -21,7 +21,6 @@ def clip_mph_speed(speed):
 class TestCruiseButtons(unittest.TestCase):
   enabled = True
   metric = False
-  v_cruise_delta = 1. if metric else CV.MPH_TO_KPH
 
   @staticmethod
   def _get_button_timers(accel=0, decel=0):
