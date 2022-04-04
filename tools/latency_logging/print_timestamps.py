@@ -2,6 +2,8 @@ import argparse
 import json
 import sys
 from collections import defaultdict
+import matplotlib.pyplot as plt
+
 
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
@@ -136,6 +138,28 @@ def print_timestamps(timestamps, internal_durations, relative_self):
       for event, time in internal_durations[frame_id][service]:
         print("    "+'%-53s%-53s' %(event, str(time))) 
 
+def graph_timestamps(timestamps, relative_self):
+  t0 = min(timestamps[min(timestamps.keys())][SERVICES[0]], key=lambda x: x[1])[1]
+  y = 0
+  gnt = plt.subplots()[1]
+  gnt.set_xlim(0, 150 if relative_self else 750)
+  gnt.set_ylim(0, len(timestamps) if relative_self else 10)
+  for frame_id, services in timestamps.items():
+    if relative_self:
+      t0 = min(timestamps[frame_id][SERVICES[0]], key=lambda x: x[1])[1]
+    event_bars = []
+    service_bars = []
+    for service, events in services.items():
+      if len(events)==0:
+        continue
+      start, end = get_interval(frame_id, service,timestamps)
+      service_bars.append(((start-t0)/1e6,(end-start)/1e6))
+      for event in events:
+        event_bars.append(((event[1]-t0)/1e6, 0.1))
+    gnt.broken_barh(service_bars, (y, 0.9), facecolors=(["blue", 'green', 'red', 'yellow', 'purple']))
+    gnt.broken_barh(event_bars, (y, 0.9), facecolors=("black"))
+    y+=1
+  plt.show(block=True)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = "A helper to run timestamp print on openpilot routes",
@@ -143,6 +167,7 @@ if __name__ == "__main__":
   parser.add_argument("--relative_self", action = "store_true", help = "Print and plot starting a 0 each time")
   parser.add_argument("--demo", action = "store_true", help = "Use the demo route instead of providing one")
   parser.add_argument("route_name", nargs = '?', help = "The route to print")
+  parser.add_argument("--plot", action="store_true", help="If a plot should be generated")
 
   if len(sys.argv) == 1:
     parser.print_help()
@@ -154,3 +179,5 @@ if __name__ == "__main__":
   timestamps, internal_durations = read_logs(logreader)
   insert_cloudlogs(logreader, timestamps)
   print_timestamps(timestamps, internal_durations, args.relative_self)
+  if args.plot:
+    graph_timestamps(timestamps, args.relative_self)
