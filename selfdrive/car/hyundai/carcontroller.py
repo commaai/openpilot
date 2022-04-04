@@ -65,6 +65,26 @@ class CarController:
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
                                                                                       hud_control)
 
+
+    if self.CP.carFingerprint == CAR.KIA_EV6:
+      ret = []
+
+      # steering control
+      values = {
+        "LDW_STATUS": 3,
+        "TORQUE_REQUEST": apply_steer,
+        "NEW_SIGNAL_1": 6,
+        "STEER_REQ": 1 if CC.latActive else 0,
+        "STEER_REQ_2": 1 if CC.latActive else 0,
+        "STEER_REQ_3": 1 if CC.latActive else 0,
+      }
+      ret.append(self.packer.make_can_msg("LKAS", 4, values, self.frame % 255))
+
+      new_actuators = actuators.copy()
+      new_actuators.steer = apply_steer / self.params.STEER_MAX
+
+      return new_actuators, ret
+
     can_sends = []
 
     # tester present - w/ no response (keeps radar disabled)
