@@ -18,7 +18,7 @@ class TestCarDocs(unittest.TestCase):
 
   def test_naming_conventions(self):
     # Asserts standard car naming conventions
-    for tier, cars in self.tier_cars.items():
+    for cars in self.tier_cars.values():
       for car in cars:
         tokens = car.model.lower().split(" ")
         self.assertNotIn("phev", tokens, "Use `Plug-In Hybrid`")
