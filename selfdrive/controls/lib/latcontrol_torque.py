@@ -45,7 +45,7 @@ class LatControlTorque(LatControl):
       pid_log.error = error
 
       error_rate = (desired_curvature_rate - actual_curvature_rate) * (CURVATURE_SCALE + CS.vEgo**2)
-      pid_log.error_rate = error_rate
+      pid_log.errorRate = error_rate
 
       output_torque = self.pid.update(setpoint, measurement, error_rate=error_rate,
                                       override=CS.steeringPressed, feedforward=desired_lateral_accel,
