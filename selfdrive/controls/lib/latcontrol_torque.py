@@ -16,9 +16,6 @@ class LatControlTorque(LatControl):
     self.pid.pos_limit = self.steer_max
     self.pid.neg_limit = -self.steer_max
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
-    self.error_rate = 0.0
-    self.last_error = 0.0
-    self.count = 0
 
   def reset(self):
     super().reset()
@@ -26,18 +23,19 @@ class LatControlTorque(LatControl):
 
   def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate, llk):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
-    self.count += 1
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
       output_torque = 0.0
       pid_log.active = False
       self.pid.reset()
     else:
-      # TODO lateral acceleration works great at high speed, not so much at low speed
       if self.use_steering_angle:
         actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
+        actual_curvature_rate = -VM.calc_curvature(math.radians(CS.steeringRateDeg), CS.vEgo, 0.0)
       else:
         actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
+        # TODO this needs to be done accurately, not relevant when these controllers have kd=0
+        actual_curvature_rate = 0.0
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
@@ -46,13 +44,10 @@ class LatControlTorque(LatControl):
       error = setpoint - measurement
       pid_log.error = error
 
-      # Planner and localizer only run at 20Hz
-      if self.count % 5 == 0:
-        #TODO use constant for frequency
-        self.error_rate = 20 * (error - self.last_error)
-        self.last_error = error
+      error_rate = (desired_curvature_rate - actual_curvature_rate) * (CURVATURE_SCALE + CS.vEgo**2)
+      pid_log.error_rate = error_rate
 
-      output_torque = self.pid.update(setpoint, measurement, error_rate=self.error_rate,
+      output_torque = self.pid.update(setpoint, measurement, error_rate=error_rate,
                                       override=CS.steeringPressed, feedforward=desired_lateral_accel,
                                       speed=CS.vEgo)
       pid_log.active = True

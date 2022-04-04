@@ -57,7 +57,7 @@ def set_lat_tune(tune, name):
     MAX_TORQUE = 2.0
     tune.torque.kp = 2.0 / MAX_TORQUE
     tune.torque.ki = 0.0 / MAX_TORQUE
-    tune.torque.kd = 0.0 / MAX_TORQUE
+    tune.torque.kd = 1.0 / MAX_TORQUE
     tune.torque.kf = 0.75 / MAX_TORQUE
   elif name == LatTunes.INDI_PRIUS:
     tune.init('indi')
