@@ -70,7 +70,7 @@ class TestStateMachine(unittest.TestCase):
     self.controlsd.state = State.enabled
     self.controlsd.events.add(make_event([ET.SOFT_DISABLE]))
     self.controlsd.state_transition(self.CS)
-    while self.controlsd.soft_disable_timer > 0:
+    for _ in range(int(SOFT_DISABLE_TIME / DT_CTRL)):
       self.assertEqual(self.controlsd.state, State.softDisabling)
       self.controlsd.state_transition(self.CS)
 
