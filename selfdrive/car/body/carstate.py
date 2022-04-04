@@ -3,6 +3,7 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.body.values import DBC
 
+STARTUP_TICKS = 100
 
 class CarState(CarStateBase):
   def update(self, cp):
