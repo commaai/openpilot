@@ -59,12 +59,8 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["SCC11"]["MainMode_ACC"] == 1
       ret.cruiseState.enabled = cp.vl["SCC12"]["ACCMode"] != 0
       ret.cruiseState.standstill = cp.vl["SCC11"]["SCCInfoDisplay"] == 4.
-
-      if ret.cruiseState.enabled:
-        speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] else CV.KPH_TO_MS
-        ret.cruiseState.speed = cp.vl["SCC11"]["VSetDis"] * speed_conv
-      else:
-        ret.cruiseState.speed = 0
+      speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] else CV.KPH_TO_MS
+      ret.cruiseState.speed = cp.vl["SCC11"]["VSetDis"] * speed_conv
 
     # TODO: Find brake pressure
     ret.brake = 0
