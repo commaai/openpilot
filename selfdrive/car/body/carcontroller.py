@@ -14,6 +14,7 @@ MAX_TURN_INTEGRATOR = 0.1 # meters
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    self.frame = 0
     self.packer = CANPacker(dbc_name)
 
     self.i_speed = 0
@@ -102,10 +103,11 @@ class CarController():
     # ///////////////////////////////////////
 
     can_sends = []
-    can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r))
+    can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r, self.frame // 2))
 
     new_actuators = CC.actuators.copy()
     new_actuators.accel = torque_l
     new_actuators.steer = torque_r
 
+    self.frame += 1
     return new_actuators, can_sends
