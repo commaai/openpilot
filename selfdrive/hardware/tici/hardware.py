@@ -317,6 +317,19 @@ class Tici(HardwareBase):
     except Exception:
       return None
 
+  def get_modem_nv(self):
+    timeout = 0.2  # Default timeout is too short
+    files = (
+      '/nv/item_files/modem/mmode/ue_usage_setting',
+      '/nv/item_files/ims/IMS_enable',
+      '/nv/item_files/modem/mmode/sms_only',
+    )
+    try:
+      modem = self.get_modem()
+      return { fn: str(modem.Command(f'AT+QNVFR="{fn}"', math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)) for fn in files}
+    except Exception:
+      return None
+
   def get_modem_temperatures(self):
     timeout = 0.2  # Default timeout is too short
     try:
