@@ -124,12 +124,12 @@ def insert_cloudlogs(lr, timestamps):
           failed_inserts += 1
   assert failed_inserts < len(timestamps), "Too many failed cloudlog inserts"
 
-def print_timestamps(timestamps, durations ,relative_self):
+def print_timestamps(timestamps, durations ,relative):
   t0 = get_min_time(min(timestamps.keys()), SERVICES[0], timestamps) 
   for frame_id in timestamps.keys():
     print('='*80)
     print("Frame ID:", frame_id)
-    if relative_self:
+    if relative:
       t0 = get_min_time(frame_id, SERVICES[0], timestamps) 
     for service in SERVICES:
       print("  "+service)  
@@ -139,15 +139,15 @@ def print_timestamps(timestamps, durations ,relative_self):
       for event, time in durations[frame_id][service]:
         print("    "+'%-53s%-53s' %(event, str(time*1000))) 
 
-def graph_timestamps(timestamps, relative_self):
+def graph_timestamps(timestamps, relative):
   t0 = get_min_time(min(timestamps.keys()), SERVICES[0], timestamps) 
   fig, ax = plt.subplots()
-  ax.set_xlim(0, 150 if relative_self else 750)
-  ax.set_ylim(0, len(timestamps) if relative_self else 15)
+  ax.set_xlim(0, 150 if relative else 750)
+  ax.set_ylim(0, len(timestamps) if relative else 15)
 
   points = {"x": [], "y": [], "labels": []}
   for frame_id, services in timestamps.items():
-    if relative_self:
+    if relative:
       t0 = get_min_time(frame_id, SERVICES[0], timestamps) 
     service_bars = []
     for service, events in services.items():
@@ -184,6 +184,6 @@ if __name__ == "__main__":
   data, frame_mismatches = read_logs(lr)
   lr.reset()
   insert_cloudlogs(lr, data['timestamp'])
-  print_timestamps(data['timestamp'], data['duration'], args.relative_self)
+  print_timestamps(data['timestamp'], data['duration'], args.relative)
   if args.plot:
-    graph_timestamps(data['timestamp'], args.relative_self)
+    graph_timestamps(data['timestamp'], args.relative)
