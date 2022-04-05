@@ -10,6 +10,7 @@ from common.profiler import Profiler
 from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
 from common.conversions import Conversions as CV
+from panda import ALTERNATIVE_EXPERIENCE
 from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
@@ -102,7 +103,8 @@ class Controls:
 
     # see panda/board/safety_declarations.h for allowed values
     self.disengage_on_accelerator = Params().get_bool("DisengageOnAccelerator")
-    self.CP.alternativeExperience = 1 if not self.disengage_on_accelerator else 0
+    self.CP.alternativeExperience = (0 if self.disengage_on_accelerator else
+                                     ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
 
     # read params
     self.is_metric = params.get_bool("IsMetric")
