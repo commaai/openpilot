@@ -110,7 +110,7 @@ def hw_state_thread(end_event, hw_queue):
           modem_temps = prev_hw_state.modem_temps
 
         # Log modem version once
-        if modem_version is None:
+        if modem_version is None and TICI:
           modem_version = HARDWARE.get_modem_version()  # pylint: disable=assignment-from-none
           if modem_version is not None:
             cloudlog.warning(f"Modem version: {modem_version}")
