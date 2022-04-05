@@ -3,7 +3,7 @@ from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from cereal import log
 
-CURVATURE_SCALE = 400
+CURVATURE_SCALE = 100
 
 
 class LatControlTorque(LatControl):
