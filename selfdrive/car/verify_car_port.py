@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import sys
+
+os.environ['FILEREADER_CACHE'] = '1'
 
 from cereal import car
 from common.realtime import DT_CTRL
@@ -71,7 +74,7 @@ def test_engagement(lr):
         not (carState.gasPressed or carState.brakePressed or carState.steeringPressed):
         engaged_frames += 1
         if engaged_frames >= MIN_ENGAGED_FRAMES:
-          print('Route had had at least {} seconds of being engaged'.format(round(MIN_ENGAGED_FRAMES * DT_CTRL, 2)))
+          print('Route had had at least {} seconds of engagement time'.format(round(MIN_ENGAGED_FRAMES * DT_CTRL, 2)))
           return True
       else:
         engaged_frames = 0
@@ -81,19 +84,28 @@ def test_engagement(lr):
 
 def test_steering_faults(lr):
   CS = None
+  CC = None
   for msg in lr:
-    if msg.which() == "carState":
+    if msg.which() == "carControl":
+      CC = msg.carControl
+
+    elif msg.which() == "carState":
+      if CC is None:
+        continue
       CS = msg.carState
-      assert not (CS.steeringFaultTemporary or CS.steeringFaultPermanent), "Route had at least one steering fault event"
+      steering_fault = (CS.steerFaultTemporary or CS.steerFaultPermanent) and CC.latActive
+      assert not steering_fault, "Route had at least one steering fault event"
 
   assert CS is not None, "No carState packets in logs"
+  print("Route had no steering faults")
 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Verifies new car ports and fingerprints",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument("route_name", nargs='?', help="")
+  parser.add_argument("route_name", nargs='?',
+                      help="Pass a route name with uploaded rlogs to verify against common issues")
 
   if len(sys.argv) == 1:
     parser.print_help()
