@@ -36,6 +36,7 @@ sphinx-rtd-theme = "*"
 breathe = "*"
 subprocess32 = "*"
 tenacity = "*"
+mpld3 = "*"
 
 [packages]
 atomicwrites = "*"
@@ -79,7 +80,6 @@ tqdm = "*"
 urllib3 = "*"
 utm = "*"
 websocket_client = "*"
-mpld3 = "*"
 
 [requires]
 python_version = "3.8"
