@@ -42,9 +42,9 @@ class CarState(CarStateBase):
       ("CHECKSUM", "MOTORS_DATA"),
       ("IGNITION", "VAR_VALUES"),
       ("ENABLE_MOTORS", "VAR_VALUES"),
+      ("FAULT", "VAR_VALUES"),
       ("MOTOR_ERR_L", "VAR_VALUES"),
       ("MOTOR_ERR_R", "VAR_VALUES"),
-      ("FAULT", "VAR_VALUES"),
       ("MCU_TEMP", "BODY_DATA"),
       ("BATT_VOLTAGE", "BODY_DATA"),
     ]
