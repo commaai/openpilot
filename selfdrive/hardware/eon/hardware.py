@@ -404,9 +404,6 @@ class Android(HardwareBase):
     except Exception:
       return 0
 
-  def get_modem_version(self):
-    return None
-
   def get_modem_temperatures(self):
     # Not sure if we can get this on the LeEco
     return []
