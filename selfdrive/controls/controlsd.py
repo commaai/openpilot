@@ -442,6 +442,7 @@ class Controls:
 
           elif self.events.any(ET.OVERRIDE):
             self.state = State.overriding
+            self.current_alert_types.append(ET.OVERRIDE)
 
         # SOFT DISABLING
         elif self.state == State.softDisabling:
