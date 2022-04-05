@@ -17,7 +17,7 @@ class CarControllerParams:
     # If the max stock LKAS request is <384, add your car to this list.
     if CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.ELANTRA_GT_I30, CAR.IONIQ,
                              CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_HEV,
-                             CAR.KIA_OPTIMA_H, CAR.KIA_OPTIMA, CAR.KIA_SORENTO, CAR.KIA_STINGER):
+                             CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO, CAR.KIA_STINGER):
       self.STEER_MAX = 255
     else:
       self.STEER_MAX = 384
@@ -88,14 +88,14 @@ CAR_INFO: Dict[str, Union[HyundaiCarInfo, List[HyundaiCarInfo]]] = {
   CAR.IONIQ_HEV_2022: HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", "SCC + LFA"),
   CAR.IONIQ_EV_LTD: HyundaiCarInfo("Hyundai Ioniq Electric 2019"),
   CAR.IONIQ_EV_2020: HyundaiCarInfo("Hyundai Ioniq Electric 2020"),
-  CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-In Hybrid 2020-21"),
+  CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-21"),
   CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020"),
   CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-19"),
   CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", video_link="https://youtu.be/_EdYQtV52-c"),
   CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All"),
   CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-22", "All"),
   CAR.SANTA_FE_HEV_2022: HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022", "All"),
-  CAR.SANTA_FE_PHEV_2022: HyundaiCarInfo("Hyundai Santa Fe Plug-In Hybrid 2022", "All"),
+  CAR.SANTA_FE_PHEV_2022: HyundaiCarInfo("Hyundai Santa Fe Plug-in Hybrid 2022", "All"),
   CAR.SONATA: HyundaiCarInfo("Hyundai Sonata 2020-22", "All", video_link="https://www.youtube.com/watch?v=ix63r9kE3Fw"),
   CAR.SONATA_LF: HyundaiCarInfo("Hyundai Sonata 2018-19"),
   CAR.PALISADE: [
@@ -109,7 +109,7 @@ CAR_INFO: Dict[str, Union[HyundaiCarInfo, List[HyundaiCarInfo]]] = {
   CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2018-21"),
   CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "SCC + LFA"),
   CAR.KIA_NIRO_EV: HyundaiCarInfo("Kia Niro Electric 2019-22", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo"),
-  CAR.KIA_NIRO_HEV: HyundaiCarInfo("Kia Niro Plug-In Hybrid 2019", min_enable_speed=10. * CV.MPH_TO_MS),
+  CAR.KIA_NIRO_HEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2019", min_enable_speed=10. * CV.MPH_TO_MS),
   CAR.KIA_NIRO_HEV_2021: HyundaiCarInfo("Kia Niro Hybrid 2021-22"),
   CAR.KIA_OPTIMA: [
     HyundaiCarInfo("Kia Optima 2017", min_steer_speed=32. * CV.MPH_TO_MS),

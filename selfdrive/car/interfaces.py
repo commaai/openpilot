@@ -63,9 +63,8 @@ class CarInterfaceBase(ABC):
     # TODO: something with lateralPlan.curvatureRates
     return desired_angle * (v_ego**2)
 
-  @classmethod
-  def get_steer_feedforward_function(cls):
-    return cls.get_steer_feedforward_default
+  def get_steer_feedforward_function(self):
+    return self.get_steer_feedforward_default
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
@@ -124,8 +123,6 @@ class CarInterfaceBase(ABC):
       events.add(EventName.wrongCarMode)
     if cs_out.espDisabled:
       events.add(EventName.espDisabled)
-    if cs_out.gasPressed:
-      events.add(EventName.pedalPressedPreEnable)
     if cs_out.stockFcw:
       events.add(EventName.stockFcw)
     if cs_out.stockAeb:

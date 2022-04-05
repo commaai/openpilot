@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 import sys
+import argparse
 from subprocess import check_output, CalledProcessError
 from panda import Panda
 from panda.python.uds import UdsClient, MessageTimeoutError, SESSION_TYPE, DTC_GROUP_TYPE
+
+parser = argparse.ArgumentParser(description="clear DTC status")
+parser.add_argument("addr", type=lambda x: int(x,0), nargs="?", default=0x7DF) # default is functional (broadcast) address
+parser.add_argument("--bus", type=int, default=0)
+parser.add_argument('--debug', action='store_true')
+args = parser.parse_args()
 
 try:
   check_output(["pidof", "boardd"])
@@ -14,17 +21,20 @@ except CalledProcessError as e:
 
 panda = Panda()
 panda.set_safety_mode(Panda.SAFETY_ELM327)
-address = 0x7DF # functional (broadcast) address
-uds_client = UdsClient(panda, address, bus=0, debug=False)
+uds_client = UdsClient(panda, args.addr, bus=args.bus, debug=args.debug)
 print("extended diagnostic session ...")
 try:
   uds_client.diagnostic_session_control(SESSION_TYPE.EXTENDED_DIAGNOSTIC)
 except MessageTimeoutError:
-  pass # functional address isn't properly handled so a timeout occurs
+  # functional address isn't properly handled so a timeout occurs
+  if args.addr != 0x7DF:
+    raise
 print("clear diagnostic info ...")
 try:
   uds_client.clear_diagnostic_information(DTC_GROUP_TYPE.ALL)
 except MessageTimeoutError:
-  pass # functional address isn't properly handled so a timeout occurs
+  # functional address isn't properly handled so a timeout occurs
+  if args.addr != 0x7DF:
+    pass 
 print("")
 print("you may need to power cycle your vehicle now")

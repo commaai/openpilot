@@ -12,7 +12,7 @@ from tools.lib.logreader import LogReader
 
 
 original_segments = [
-  ("BODY", "d6ac8ebdb47bc549|2022-03-31--13-10-06--4"),        # COMMA.BODY
+  ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
@@ -31,7 +31,7 @@ original_segments = [
 ]
 
 segments = [
-  ("BODY", "d6ac8ebdb47bc549|2022-03-31--13-10-06--4"),
+  ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),
   ("HYUNDAI", "fakedata|2022-01-20--17-49-04--0"),
   ("TOYOTA", "fakedata|2022-01-20--17-50-51--0"),
   ("TOYOTA2", "fakedata|2022-01-20--17-52-36--0"),

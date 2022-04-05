@@ -3,6 +3,7 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.body.values import DBC
 
+STARTUP_TICKS = 100
 
 class CarState(CarStateBase):
   def update(self, cp):
@@ -16,16 +17,13 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = False
 
+    ret.steerFaultPermanent = any([cp.vl['VAR_VALUES']['MOTOR_ERR_L'], cp.vl['VAR_VALUES']['MOTOR_ERR_R'],
+                                   cp.vl['VAR_VALUES']['FAULT']])
+
     # irrelevant for non-car
-    ret.doorOpen = False
-    ret.seatbeltUnlatched = False
     ret.gearShifter = car.CarState.GearShifter.drive
-    ret.steeringTorque = 0
-    ret.steeringAngleDeg = 0
-    ret.steeringPressed = False
     ret.cruiseState.enabled = True
     ret.cruiseState.available = True
-    ret.cruiseState.speed = 0
 
     return ret
 
@@ -37,10 +35,13 @@ class CarState(CarStateBase):
       ("SPEED_R", "MOTORS_DATA"),
       ("ELEC_ANGLE_L", "MOTORS_DATA"),
       ("ELEC_ANGLE_R", "MOTORS_DATA"),
-      ("MOTOR_ERR_L", "MOTORS_DATA"),
-      ("MOTOR_ERR_R", "MOTORS_DATA"),
+      ("COUNTER", "MOTORS_DATA"),
+      ("CHECKSUM", "MOTORS_DATA"),
       ("IGNITION", "VAR_VALUES"),
       ("ENABLE_MOTORS", "VAR_VALUES"),
+      ("FAULT", "VAR_VALUES"),
+      ("MOTOR_ERR_L", "VAR_VALUES"),
+      ("MOTOR_ERR_R", "VAR_VALUES"),
       ("MCU_TEMP", "BODY_DATA"),
       ("BATT_VOLTAGE", "BODY_DATA"),
     ]
