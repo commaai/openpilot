@@ -165,12 +165,13 @@ class SwagLogger(logging.Logger):
       self.info(evt)
 
   def timestamp(self, event_name):
-    t = time.monotonic()
-    tstp = NiceOrderedDict()
-    tstp['timestamp'] = NiceOrderedDict()
-    tstp['timestamp']["event"] = event_name
-    tstp['timestamp']["time"] = t*1e9
-    self.debug(tstp)
+    if LOG_TIMESTAMPS:
+      t = time.monotonic()
+      tstp = NiceOrderedDict()
+      tstp['timestamp'] = NiceOrderedDict()
+      tstp['timestamp']["event"] = event_name
+      tstp['timestamp']["time"] = t*1e9
+      self.debug(tstp)
 
   def findCaller(self, stack_info=False, stacklevel=1):
     """
