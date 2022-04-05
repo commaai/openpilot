@@ -26,8 +26,8 @@ FW_VERSIONS = {
     (Ecu.engine, 0x720, None): [
       b'02/27/2022'
     ],
-    (Ecu.gateway, 0x721, None): [
-      b'githash'
+    (Ecu.debug, 0x721, None): [
+      b'166bd860' # git hash of the firmware used
     ],
   },
 }
