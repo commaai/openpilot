@@ -103,8 +103,9 @@ class Controls:
 
     # see panda/board/safety_declarations.h for allowed values
     self.disengage_on_accelerator = Params().get_bool("DisengageOnAccelerator")
-    self.CP.alternativeExperience = (0 if self.disengage_on_accelerator else
-                                     ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
+    self.CP.alternativeExperience = 0
+    if not self.disengage_on_accelerator:
+      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
     # read params
     self.is_metric = params.get_bool("IsMetric")
