@@ -101,7 +101,7 @@ class Controls:
     else:
       self.CI, self.CP = CI, CI.CP
 
-    # see panda/board/safety_declarations.h for allowed values
+    # set alternative experiences by parameters
     self.disengage_on_accelerator = Params().get_bool("DisengageOnAccelerator")
     self.CP.alternativeExperience = 0
     if not self.disengage_on_accelerator:
