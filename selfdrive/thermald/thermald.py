@@ -98,6 +98,7 @@ def hw_state_thread(end_event, hw_queue):
   count = 0
   registered_count = 0
   prev_hw_state = None
+  modem_version = None
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
@@ -107,6 +108,12 @@ def hw_state_thread(end_event, hw_queue):
         modem_temps = HARDWARE.get_modem_temperatures()
         if len(modem_temps) == 0 and prev_hw_state is not None:
           modem_temps = prev_hw_state.modem_temps
+
+        # Log modem version once
+        if modem_version is None:
+          modem_version = HARDWARE.get_modem_version()  # pylint: disable=assignment-from-none
+          if modem_version is not None:
+            cloudlog.warning(f"Modem version: {modem_version}")
 
         hw_state = HardwareState(
           network_type=network_type,
