@@ -17,8 +17,8 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = False
 
-    ret.steeringFaultPermanent = any([cp.vl['VAR_VALUES']['MOTOR_ERR_L'], cp.vl['VAR_VALUES']['MOTOR_ERR_R'],
-                                      cp.vl['VAR_VALUES']['FAULT']])
+    ret.steerFaultPermanent = any([cp.vl['VAR_VALUES']['MOTOR_ERR_L'], cp.vl['VAR_VALUES']['MOTOR_ERR_R'],
+                                   cp.vl['VAR_VALUES']['FAULT']])
 
     # irrelevant for non-car
     ret.gearShifter = car.CarState.GearShifter.drive
