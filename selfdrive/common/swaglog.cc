@@ -73,26 +73,10 @@ static void log(int levelnum, const char* filename, int lineno, const char* func
   zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
 }
 
-void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
-                const char* fmt, ...) {
-  char* msg_buf = nullptr;
-  va_list args;
-  va_start(args, fmt);
-  int ret = vasprintf(&msg_buf, fmt, args);
-  va_end(args);
-
-  if (ret <= 0 || !msg_buf) return;
-
-  std::lock_guard lk(s.lock);
-
-  if (!s.initialized) s.initialize();
-
-  // if msg is json, parse it
-  std::string err;
-  auto json_msg = json11::Json::parse(msg_buf, err);
-
-  json11::Json log_j = json11::Json::object {
-    {"msg", err.empty()? json_msg : msg_buf},
+json11::Json::object get_json(int levelnum, const char* filename, int lineno, const char* func,
+                              const char* msg){
+  json11::Json::object log_j = json11::Json::object {
+    {"msg", msg},
     {"ctx", s.ctx_j},
     {"levelnum", levelnum},
     {"filename", filename},
@@ -100,27 +84,48 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
     {"funcname", func},
     {"created", seconds_since_epoch()}
   };
+  return log_j;
+}
+
+void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
+                const char* fmt, ...) {
+  char* msg_buf = nullptr;
+  va_list args;
+  va_start(args, fmt);
+  int ret = vasprintf(&msg_buf, fmt, args);
+  va_end(args);
+  if (ret <= 0 || !msg_buf) return;
+
+  std::lock_guard lk(s.lock);
+  if (!s.initialized) s.initialize();
+
+  json11::Json log_j = get_json(levelnum, filename, lineno, func, msg_buf);
   std::string log_s = log_j.dump();
   log(levelnum, filename, lineno, func, msg_buf, log_s);
   free(msg_buf);
 }
 
 void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
-                const char* event_name, ...){
+                const char* fmt, ...){
   if (LOG_TIMESTAMPS) {
     char* msg_buf = nullptr;
     va_list args;
-    va_start(args, event_name);
-    int ret = vasprintf(&msg_buf, event_name, args);
+    va_start(args, fmt);
+    int ret = vasprintf(&msg_buf, fmt, args);
     va_end(args);
     if (ret <= 0 || !msg_buf) return;
 
-    uint64_t ns = nanos_since_boot();                               
-    json11::Json tspt_j = json11::Json::object {                    
-      {"timestamp", json11::Json::object{
-                     {"event", msg_buf},     
-                     {"time", std::to_string(ns)}}                  
-      }};                                                           
-    cloudlog_e(levelnum, filename, lineno, func, tspt_j.dump().c_str());           
+    std::lock_guard lk(s.lock);
+    if (!s.initialized) s.initialize();
+
+    json11::Json::object tstp = get_json(levelnum, filename, lineno, func, msg_buf);
+    tstp["timestamp"] = json11::Json::object{
+      {"event", msg_buf},     
+      {"time", std::to_string(nanos_since_boot())}                  
+    };                                                           
+
+    std::string log_s = ((json11::Json) tstp).dump();
+    log(levelnum, filename, lineno, func, msg_buf, log_s);
+    free(msg_buf);
   }
 }

@@ -14,15 +14,15 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
 void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
-                const char* event_name, ...);
+                const char* fmt, ...);
 
 #define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
                                            __func__, \
                                            fmt, ## __VA_ARGS__)
 
-#define cloudlog_t_m(lvl, evt, ...) cloudlog_t(lvl, __FILE__, __LINE__, \
+#define cloudlog_t_m(lvl, fmt, ...) cloudlog_t(lvl, __FILE__, __LINE__, \
                                                __func__, \
-                                               evt, ## __VA_ARGS__ )
+                                               fmt, ## __VA_ARGS__ )
  
 #define cloudlog_rl(burst, millis, lvl, fmt, ...)   \
 {                                                   \
@@ -53,7 +53,7 @@ void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func
   }                                                 \
 }
 
-#define LOGT(event_name , ...) cloudlog_t_m(CLOUDLOG_DEBUG, event_name,## __VA_ARGS__)
+#define LOGT(fmt, ...) cloudlog_t_m(CLOUDLOG_DEBUG, fmt,## __VA_ARGS__)
 #define LOGD(fmt, ...) cloudlog(CLOUDLOG_DEBUG, fmt, ## __VA_ARGS__)
 #define LOG(fmt, ...) cloudlog(CLOUDLOG_INFO, fmt, ## __VA_ARGS__)
 #define LOGW(fmt, ...) cloudlog(CLOUDLOG_WARNING, fmt, ## __VA_ARGS__)
