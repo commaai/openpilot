@@ -31,11 +31,10 @@ def get_log_reader(route_name):
 
 def verify_route(route_name):
   lr = get_log_reader(route_name)
-  test_fingerprint(lr)
-  lr.reset()
-  test_engagement(lr)
-  lr.reset()
-  test_steering_faults(lr)
+  tests = [test_fingerprint, test_engagement, test_steering_faults]
+  for test in tests:
+    test(lr)
+    lr.reset()
 
 
 def test_fingerprint(lr):
