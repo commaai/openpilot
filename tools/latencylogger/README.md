@@ -1,6 +1,6 @@
 # LatencyLogger
 
-LatencyLogger is a tool to track timestamps for each frame in the pipeline. Timestamps are printed in a table as well as plotted in a graph. All times are in milliseconds. 
+LatencyLogger is a tool to track the time from first pixel to actuation. Timestamps are printed in a table as well as plotted in a graph. Start openpilot with `LOG_TIMESTAMPS=1` set to enable the necessary logging.
 
 ## Usage
 
