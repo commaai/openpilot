@@ -326,7 +326,7 @@ class Tici(HardwareBase):
     )
     try:
       modem = self.get_modem()
-      return { fn: modem.Command(f'AT+QNVFR="{fn}"', math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout) for fn in files}
+      return { fn: str(modem.Command(f'AT+QNVFR="{fn}"', math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)) for fn in files}
     except Exception:
       return None
 
