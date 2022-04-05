@@ -167,7 +167,7 @@ def graph_timestamps(timestamps, relative_self):
   mpld3.show()
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description = "A helper to run timestamp print on openpilot routes",
+  parser = argparse.ArgumentParser(description="A tool for analyzing openpilot's end-to-end latency",
                                    formatter_class = argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--relative", action="store_true", help="Make timestamps relative to the start of each frame")
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
