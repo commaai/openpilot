@@ -10,6 +10,7 @@ def average(avg, sample):
 
 
 if __name__ == '__main__':
+  start_time = datetime.now()
   try:
     if len(sys.argv) > 1 and sys.argv[1] == "--charge":
       print("not disabling charging")
@@ -22,7 +23,6 @@ if __name__ == '__main__':
     power_average = (0., 0)
     capacity_average = (0., 0)
     bat_temp_average = (0., 0)
-    start_time = datetime.now()
     while 1:
       with open("/sys/class/power_supply/bms/voltage_now") as f:
         voltage = int(f.read()) / 1e6   # volts
