@@ -55,7 +55,7 @@ def set_lat_tune(tune, name):
     tune.init('torque')
     tune.torque.useSteeringAngle = True
     MAX_TORQUE = 2.0
-    tune.torque.kp = 2.5 / MAX_TORQUE
+    tune.torque.kp = 1.0 / MAX_TORQUE
     tune.torque.ki = 0.0 / MAX_TORQUE
     tune.torque.kd = 0.0 / MAX_TORQUE
     tune.torque.kf = 0.75 / MAX_TORQUE
