@@ -18,6 +18,7 @@ class LatControlTorque(LatControl):
     self.pid.pos_limit = self.steer_max
     self.pid.neg_limit = -self.steer_max
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
+    self.friction = CP.lateralTuning.torque.friction
 
   def reset(self):
     super().reset()
@@ -33,11 +34,8 @@ class LatControlTorque(LatControl):
     else:
       if self.use_steering_angle:
         actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
-        actual_curvature_rate = -VM.calc_curvature(math.radians(CS.steeringRateDeg), CS.vEgo, 0.0)
       else:
         actual_curvature = llk.angularVelocityCalibrated.value[2] / CS.vEgo
-        # TODO this needs to be done accurately, not relevant when these controllers have kd=0
-        actual_curvature_rate = 0.0
       desired_lateral_accel = desired_curvature * CS.vEgo**2
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
       actual_lateral_accel = actual_curvature * CS.vEgo**2
@@ -50,7 +48,7 @@ class LatControlTorque(LatControl):
       output_torque = self.pid.update(error, override=CS.steeringPressed,
                                       feedforward=desired_lateral_accel, speed=CS.vEgo)
 
-      friction_compensation = interp(desired_lateral_jerk, [-JERK_THRESHOLD, JERK_THRESHOLD], [-0.1, 0.1])
+      friction_compensation = interp(desired_lateral_jerk, [-JERK_THRESHOLD, JERK_THRESHOLD], [-self.friction, self.friction])
       output_torque += friction_compensation
 
       pid_log.active = True
