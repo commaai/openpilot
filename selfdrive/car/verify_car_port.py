@@ -31,7 +31,7 @@ def get_log_reader(route_name):
 
 def verify_route(route_name):
   lr = get_log_reader(route_name)
-  tests = [test_fingerprint, test_engagement, test_steering_faults]
+  tests = [test_car_params, test_engagement, test_steering_faults]
   for test in tests:
     test(lr)
     lr.reset()
@@ -39,26 +39,35 @@ def verify_route(route_name):
   print("SUCCESS: All tests passed")
 
 
-def test_fingerprint(lr):
+def _test_fingerprint(CP):
   """
   If make has FW_VERSIONS defined, then assert fingerprint source is fw
   Else, just check it's not fixed
   """
 
+  fw_versions = get_interface_attr("FW_VERSIONS")[CP.carName]
+  has_fw_versions = fw_versions is not None and len(fw_versions)
+
+  assert CP.carName != "mock"
+  assert len(CP.carFingerprint) > 0
+  if has_fw_versions:
+    assert CP.fingerprintSource == car.CarParams.FingerprintSource.fw
+  else:
+    assert CP.fingerprintSource != car.CarParams.FingerprintSource.fixed
+  assert not CP.fuzzyFingerprint
+  print('SUCCESS: Fingerprinted: {}'.format(CP.carFingerprint))
+
+
+def test_car_params(lr):
+  """
+  Common carParams tests
+  """
+
   for msg in lr:
     if msg.which() == "carParams":
       CP = msg.carParams
-      fw_versions = get_interface_attr("FW_VERSIONS")[CP.carName]
-      has_fw_versions = fw_versions is not None and len(fw_versions)
-
-      assert CP.carName != "mock"
-      assert len(CP.carFingerprint) > 0
-      if has_fw_versions:
-        assert CP.fingerprintSource == car.CarParams.FingerprintSource.fw
-      else:
-        assert CP.fingerprintSource != car.CarParams.FingerprintSource.fixed
-      assert not CP.fuzzyFingerprint
-      print('SUCCESS: Fingerprinted: {}'.format(CP.carFingerprint))
+      assert not CP.dashcamOnly, "openpilot not active, dashcamOnly is True"
+      _test_fingerprint(CP)
       return True
 
   assert False, "No carParams packets in logs"
