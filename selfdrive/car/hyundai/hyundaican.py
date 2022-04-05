@@ -109,7 +109,6 @@ def create_acc_commands(packer, enabled, active, accel, jerk, idx, lead_visible,
   scc14_values = {
     "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
     "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
-    # TODO: figure out what stock does when pressing gas for jerk, and if we set it to 0 do we reduce braking performance?
     "JerkUpperLimit": max(jerk, 1.0) if (active and not stopping) else 0, # stock usually is 1.0 but sometimes uses higher values
     "JerkLowerLimit": max(-jerk, 1.0) if active else 0, # stock usually is 0.5 but sometimes uses higher values
     "ACCMode": 2 if enabled and gas_pressed else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
