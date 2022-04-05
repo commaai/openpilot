@@ -94,9 +94,11 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   va_start(args, fmt);
   int ret = vasprintf(&msg_buf, fmt, args);
   va_end(args);
+
   if (ret <= 0 || !msg_buf) return;
 
   std::lock_guard lk(s.lock);
+
   if (!s.initialized) s.initialize();
 
   json11::Json log_j = get_json(levelnum, filename, lineno, func, msg_buf);
@@ -106,25 +108,30 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
 }
 
 void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
-                const char* fmt, ...){
+                const char* fmt, ...) {
   if (LOG_TIMESTAMPS) {
     char* msg_buf = nullptr;
     va_list args;
     va_start(args, fmt);
     int ret = vasprintf(&msg_buf, fmt, args);
     va_end(args);
+
     if (ret <= 0 || !msg_buf) return;
 
     std::lock_guard lk(s.lock);
+
     if (!s.initialized) s.initialize();
 
-    json11::Json::object tstp = get_json(levelnum, filename, lineno, func, msg_buf);
-    tstp["timestamp"] = json11::Json::object{
-      {"event", msg_buf},     
-      {"time", std::to_string(nanos_since_boot())}                  
-    };                                                           
+    json11::Json::object log_j = get_json(levelnum, filename, lineno, func, msg_buf);
+    json11::Json::object tspt_j = json11::Json::object {
+      {"timestamp", json11::Json::object{
+                  {"event", msg_buf},
+                  {"time", std::to_string(nanos_since_boot())}}
+      }
+    };
+    log_j["msg"] = tspt_j;
 
-    std::string log_s = ((json11::Json) tstp).dump();
+    std::string log_s = ((json11::Json) log_j).dump();
     log(levelnum, filename, lineno, func, msg_buf, log_s);
     free(msg_buf);
   }
