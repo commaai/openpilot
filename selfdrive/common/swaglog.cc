@@ -106,18 +106,20 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
 
 void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
                 const char* event_name, ...){
-  char* msg_buf = nullptr;
-  va_list args;
-  va_start(args, event_name);
-  int ret = vasprintf(&msg_buf, event_name, args);
-  va_end(args);
-  if (ret <= 0 || !msg_buf) return;
+  if(getenv("LOG_TIMESTAMPS")){
+    char* msg_buf = nullptr;
+    va_list args;
+    va_start(args, event_name);
+    int ret = vasprintf(&msg_buf, event_name, args);
+    va_end(args);
+    if (ret <= 0 || !msg_buf) return;
 
-  uint64_t ns = nanos_since_boot();                               
-  json11::Json tspt_j = json11::Json::object {                    
-    {"timestamp", json11::Json::object{
-                   {"event", msg_buf},     
-                   {"time", std::to_string(ns)}}                  
-    }};                                                           
-  cloudlog_e(levelnum,filename,lineno,func, tspt_j.dump().c_str());           
+    uint64_t ns = nanos_since_boot();                               
+    json11::Json tspt_j = json11::Json::object {                    
+      {"timestamp", json11::Json::object{
+                     {"event", msg_buf},     
+                     {"time", std::to_string(ns)}}                  
+      }};                                                           
+    cloudlog_e(levelnum, filename, lineno, func, tspt_j.dump().c_str());           
+  }
 }

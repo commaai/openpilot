@@ -10,6 +10,7 @@ from tools.lib.logreader import logreader_from_route_or_segment
 DEMO_ROUTE = "9f583b1d93915c31|2022-04-01--17-51-29"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
+#Retrive controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored
 MONOTIME_KEYS = ['modelMonoTime', 'lateralPlanMonoTime']
 MSGQ_TO_SERVICE = {
   'roadCameraState': 'camerad',
@@ -62,8 +63,9 @@ def read_logs(lr):
           data['duration'][frame_id][service].append((msg.which()+"."+duration, getattr(msg_obj, duration)))
 
       if service == SERVICES[0]:
-        data['timestamp'][frame_id][service].append((msg.which()+" start", msg_obj.timestampSof))
+        data['timestamp'][frame_id][service].append((msg.which()+" start of frame", msg_obj.timestampSof))
       elif msg.which() == 'controlsState':
+        # Sendcan is published before controlsState, but the frameId is retrived in CS
         data['timestamp'][frame_id][service].append(("sendcan published", latest_sendcan_monotime))
       elif msg.which() == 'modelV2':
         if msg_obj.frameIdExtra != frame_id:
@@ -167,7 +169,7 @@ def graph_timestamps(timestamps, relative_self):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = "A helper to run timestamp print on openpilot routes",
                                    formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("--relative_self", action="store_true", help="Print and plot starting a 0 each time")
+  parser.add_argument("--relative", action="store_true", help="Make timestamps relative to the start of each frame")
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("--plot", action="store_true", help="If a plot should be generated")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route to print")

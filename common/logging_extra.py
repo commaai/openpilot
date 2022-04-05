@@ -12,6 +12,8 @@ from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
 
+LOG_TIMESTAMPS = "LOG_TIMESTAMPS" in os.environ
+
 def json_handler(obj):
   # if isinstance(obj, (datetime.date, datetime.time)):
   #   return obj.isoformat()
