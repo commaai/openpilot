@@ -63,6 +63,7 @@ class SwaglogState : public LogState {
 };
 
 static SwaglogState s = {};
+bool LOG_TIMESTAMPS = getenv("LOG_TIMESTAMPS");
 
 static void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
   if (levelnum >= s.print_level) {
@@ -106,7 +107,7 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
 
 void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
                 const char* event_name, ...){
-  if(getenv("LOG_TIMESTAMPS")){
+  if (LOG_TIMESTAMPS) {
     char* msg_buf = nullptr;
     va_list args;
     va_start(args, event_name);

@@ -21,8 +21,8 @@ void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func
                                            fmt, ## __VA_ARGS__)
 
 #define cloudlog_t_m(lvl, evt, ...) cloudlog_t(lvl, __FILE__, __LINE__, \
-                                           __func__, \
-                                           evt, ## __VA_ARGS__ )
+                                               __func__, \
+                                               evt, ## __VA_ARGS__ )
  
 #define cloudlog_rl(burst, millis, lvl, fmt, ...)   \
 {                                                   \
