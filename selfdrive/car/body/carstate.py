@@ -17,16 +17,13 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = False
 
+    ret.steerFaultPermanent = any([cp.vl['VAR_VALUES']['MOTOR_ERR_L'], cp.vl['VAR_VALUES']['MOTOR_ERR_R'],
+                                   cp.vl['VAR_VALUES']['FAULT']])
+
     # irrelevant for non-car
-    ret.doorOpen = False
-    ret.seatbeltUnlatched = False
     ret.gearShifter = car.CarState.GearShifter.drive
-    ret.steeringTorque = 0
-    ret.steeringAngleDeg = 0
-    ret.steeringPressed = False
     ret.cruiseState.enabled = True
     ret.cruiseState.available = True
-    ret.cruiseState.speed = 0
 
     return ret
 
