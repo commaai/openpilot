@@ -479,7 +479,11 @@ class Controls:
 
         # OVERRIDING
         elif self.state == State.overriding:
-          if not self.events.any(ET.OVERRIDE):
+          if self.events.any(ET.SOFT_DISABLE):
+            self.state = State.softDisabling
+            self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
+            self.current_alert_types.append(ET.SOFT_DISABLE)
+          elif not self.events.any(ET.OVERRIDE):
             self.state = State.enabled
           else:
             self.current_alert_types.append(ET.OVERRIDE)
