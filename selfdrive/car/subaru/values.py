@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
@@ -30,17 +31,26 @@ class CAR:
   OUTBACK_PREGLOBAL_2018 = "SUBARU OUTBACK 2018 - 2019"
 
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.ASCENT: CarInfo("Subaru Ascent 2019", "EyeSight"),
+@dataclass
+class SubaruCarInfo(CarInfo):
+  package: str = "EyeSight"
+
+
+CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
+  CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-20"),
   CAR.IMPREZA: [
-    CarInfo("Subaru Impreza 2017-19", "EyeSight"),
-    CarInfo("Subaru Crosstrek 2018-20", "EyeSight"),
+    SubaruCarInfo("Subaru Impreza 2017-19", good_torque=True),
+    SubaruCarInfo("Subaru Crosstrek 2018-19", good_torque=True),
   ],
-  CAR.FORESTER: CarInfo("Subaru Forester 2019-21", "EyeSight"),
-  CAR.FORESTER_PREGLOBAL: CarInfo("Subaru Forester 2017-18", "EyeSight"),
-  CAR.LEGACY_PREGLOBAL: CarInfo("Subaru Legacy 2015-18", "EyeSight"),
-  CAR.OUTBACK_PREGLOBAL: CarInfo("Subaru Outback 2015-17", "EyeSight"),
-  CAR.OUTBACK_PREGLOBAL_2018: CarInfo("Subaru Outback 2018-19", "EyeSight"),
+  CAR.IMPREZA_2020: [
+    SubaruCarInfo("Subaru Impreza 2020-21"),
+    SubaruCarInfo("Subaru Crosstrek 2020-21"),
+  ],
+  CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21", good_torque=True),
+  CAR.FORESTER_PREGLOBAL: SubaruCarInfo("Subaru Forester 2017-18"),
+  CAR.LEGACY_PREGLOBAL: SubaruCarInfo("Subaru Legacy 2015-18"),
+  CAR.OUTBACK_PREGLOBAL: SubaruCarInfo("Subaru Outback 2015-17"),
+  CAR.OUTBACK_PREGLOBAL_2018: SubaruCarInfo("Subaru Outback 2018-19"),
 }
 
 
