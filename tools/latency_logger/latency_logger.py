@@ -27,7 +27,7 @@ SERVICE_TO_DURATIONS = {
 }
 
 def read_logs(lr):
-  timestamps = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+  data = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
   mono_to_frame = {}
   frame_mismatches = []
   latest_sendcan_monotime = 0
@@ -56,33 +56,36 @@ def read_logs(lr):
           continue
       mono_to_frame[msg.logMonoTime] = frame_id
 
-      timestamps['timestamp'][frame_id][service].append((msg.which()+" published", msg.logMonoTime))
+      data['timestamp'][frame_id][service].append((msg.which()+" published", msg.logMonoTime))
       if service in SERVICE_TO_DURATIONS:
         for duration in SERVICE_TO_DURATIONS[service]:
-          timestamps['duration'][frame_id][service].append((msg.which()+"."+duration, getattr(msg_obj, duration)))
+          data['duration'][frame_id][service].append((msg.which()+"."+duration, getattr(msg_obj, duration)))
 
       if service == SERVICES[0]:
-        timestamps['timestamp'][frame_id][service].append((msg.which()+" start", msg_obj.timestampSof))
+        data['timestamp'][frame_id][service].append((msg.which()+" start", msg_obj.timestampSof))
       elif msg.which() == 'controlsState':
-        timestamps['timestamp'][frame_id][service].append(("sendcan published", latest_sendcan_monotime))
+        data['timestamp'][frame_id][service].append(("sendcan published", latest_sendcan_monotime))
       elif msg.which() == 'modelV2':
         if msg_obj.frameIdExtra != frame_id:
           frame_mismatches.append(frame_id)
 
   # Failed frameId fetches are stored in -1
-  assert sum([len(timestamps['timestamp'][-1][service]) for service in timestamps['timestamp'][-1].keys()]) < 20, "Too many frameId fetch fails"
-  del timestamps['timestamp'][-1]
+  assert sum([len(data['timestamp'][-1][service]) for service in data['timestamp'][-1].keys()]) < 20, "Too many frameId fetch fails"
+  del data['timestamp'][-1]
   assert len(frame_mismatches) < 20, "Too many frame mismatches"
-  return (timestamps, frame_mismatches)
+  return (data, frame_mismatches)
+
+def get_min_time(frame_id, service, timestamps, use_max=False):
+  return min(timestamps[frame_id][service], key=lambda x: x[1])[1] if not use_max else max(timestamps[frame_id][service], key=lambda x: x[1])[1]
 
 def get_interval(frame_id, service, timestamps):
   try:
-    service_max = max(timestamps[frame_id][service], key=lambda x: x[1])[1]
+    service_max = get_min_time(frame_id, service, timestamps, use_max=True) 
     if service == SERVICES[0]:
-      service_min = min(timestamps[frame_id][service], key=lambda x: x[1])[1]
+      service_min = get_min_time(frame_id, service, timestamps) 
       return (service_min, service_max)
     prev_service = SERVICES[SERVICES.index(service)-1]
-    prev_service_max = max(timestamps[frame_id][prev_service], key=lambda x: x[1])[1]
+    prev_service_max = get_min_time(frame_id, prev_service, timestamps, use_max=True) 
     return (prev_service_max, service_max)
   except ValueError:
     return (-1,-1)
@@ -96,7 +99,7 @@ def find_frame_id(time, service, timestamps):
 
 ## ASSUMES THAT AT LEAST ONE CLOUDLOG IS MADE IN CONTROLSD
 def insert_cloudlogs(lr, timestamps):
-  t0 = min(timestamps[min(timestamps.keys())][SERVICES[0]], key=lambda x: x[1])[1]
+  t0 = get_min_time(min(timestamps.keys()), SERVICES[0], timestamps) 
   failed_inserts = 0
   latest_controls_frameid = 0
   for msg in lr:
@@ -119,23 +122,23 @@ def insert_cloudlogs(lr, timestamps):
           failed_inserts += 1
   assert failed_inserts < len(timestamps), "Too many failed cloudlog inserts"
 
-def print_timestamps(timestamps, relative_self):
-  t0 = min(timestamps['timestamp'][min(timestamps['timestamp'].keys())][SERVICES[0]], key=lambda x: x[1])[1]
-  for frame_id in timestamps['timestamp'].keys():
+def print_timestamps(timestamps, durations ,relative_self):
+  t0 = get_min_time(min(timestamps.keys()), SERVICES[0], timestamps) 
+  for frame_id in timestamps.keys():
     print('='*80)
     print("Frame ID:", frame_id)
     if relative_self:
-      t0 = min(timestamps['timestamp'][frame_id][SERVICES[0]], key=lambda x: x[1])[1]
+      t0 = get_min_time(frame_id, SERVICES[0], timestamps) 
     for service in SERVICES:
       print("  "+service)  
-      events = timestamps['timestamp'][frame_id][service]
+      events = timestamps[frame_id][service]
       for event, time in sorted(events, key = lambda x: x[1]):
         print("    "+'%-53s%-53s' %(event, str((time-t0)/1e6)))  
-      for event, time in timestamps['duration'][frame_id][service]:
+      for event, time in durations[frame_id][service]:
         print("    "+'%-53s%-53s' %(event, str(time*1000))) 
 
 def graph_timestamps(timestamps, relative_self):
-  t0 = min(timestamps[min(timestamps.keys())][SERVICES[0]], key=lambda x: x[1])[1]
+  t0 = get_min_time(min(timestamps.keys()), SERVICES[0], timestamps) 
   fig, ax = plt.subplots()
   ax.set_xlim(0, 150 if relative_self else 750)
   ax.set_ylim(0, len(timestamps) if relative_self else 15)
@@ -143,7 +146,7 @@ def graph_timestamps(timestamps, relative_self):
   points = {"x": [], "y": [], "labels": []}
   for frame_id, services in timestamps.items():
     if relative_self:
-      t0 = min(timestamps[frame_id][SERVICES[0]], key=lambda x: x[1])[1]
+      t0 = get_min_time(frame_id, SERVICES[0], timestamps) 
     service_bars = []
     for service, events in services.items():
       start, end = get_interval(frame_id, service,timestamps)
@@ -176,9 +179,9 @@ if __name__ == "__main__":
 
   r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   lr = logreader_from_route_or_segment(r, sort_by_time=True)
-  timestamps, frame_mismatches = read_logs(lr)
+  data, frame_mismatches = read_logs(lr)
   lr.reset()
-  insert_cloudlogs(lr, timestamps['timestamp'])
-  print_timestamps(timestamps, args.relative_self)
+  insert_cloudlogs(lr, data['timestamp'])
+  print_timestamps(data['timestamp'], data['duration'], args.relative_self)
   if args.plot:
-    graph_timestamps(timestamps['timestamp'], args.relative_self)
+    graph_timestamps(data['timestamp'], args.relative_self)
