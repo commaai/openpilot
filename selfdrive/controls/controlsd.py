@@ -239,7 +239,7 @@ class Controls:
 
     # Handle calibration status
     cal_status = self.sm['liveCalibration'].calStatus
-    if False and cal_status != Calibration.CALIBRATED:
+    if cal_status != Calibration.CALIBRATED:
       if cal_status == Calibration.UNCALIBRATED:
         self.events.add(EventName.calibrationIncomplete)
       else:
