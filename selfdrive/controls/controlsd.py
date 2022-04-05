@@ -101,8 +101,8 @@ class Controls:
     else:
       self.CI, self.CP = CI, CI.CP
 
-    # set alternative experiences by parameters
-    self.disengage_on_accelerator = Params().get_bool("DisengageOnAccelerator")
+    # set alternative experiences from parameters
+    self.disengage_on_accelerator = params.get_bool("DisengageOnAccelerator")
     self.CP.alternativeExperience = 0
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
