@@ -117,7 +117,7 @@ def hw_state_thread(end_event, hw_queue):
           modem_nv = HARDWARE.get_modem_nv()  # pylint: disable=assignment-from-none
 
           if (modem_version is not None) and (modem_nv is not None):
-            cloudlog.warning(f"Modem version: {modem_version}", nv=modem_nv)
+            cloudlog.event("modem version", version=modem_version, nv=modem_nv)
 
         hw_state = HardwareState(
           network_type=network_type,
