@@ -269,6 +269,10 @@ def match_fw_to_car_exact(fw_versions_dict):
       if ecu_type not in ESSENTIAL_ECUS and found_version is None:
         continue
 
+      # Virtual debug ecu isn't mandatory don't need to match database
+      if ecu_type == Ecu.debug:
+        continue
+
       if found_version not in expected_versions:
         invalid.append(candidate)
         break
