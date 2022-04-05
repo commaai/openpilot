@@ -34,7 +34,7 @@ class CAR:
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight"
-  good_torque: bool = True
+
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-20"),
@@ -42,7 +42,7 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
     SubaruCarInfo("Subaru Impreza 2017-21"),
     SubaruCarInfo("Subaru Crosstrek 2018-21"),
   ],
-  CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21"),
+  CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21", good_torque=True),
   CAR.FORESTER_PREGLOBAL: SubaruCarInfo("Subaru Forester 2017-18"),
   CAR.LEGACY_PREGLOBAL: SubaruCarInfo("Subaru Legacy 2015-18"),
   CAR.OUTBACK_PREGLOBAL: SubaruCarInfo("Subaru Outback 2015-17"),
