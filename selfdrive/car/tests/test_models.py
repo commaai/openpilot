@@ -111,6 +111,8 @@ class TestCarModel(unittest.TestCase):
       tuning = self.CP.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
+      elif tuning == 'torque':
+        self.assertTrue(len(self.CP.lateralTuning.torque.kf))
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
       else:
