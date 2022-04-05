@@ -1,5 +1,6 @@
 import argparse
 import json
+import mpld3
 import sys
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -140,26 +141,30 @@ def print_timestamps(timestamps, internal_durations, relative_self):
 
 def graph_timestamps(timestamps, relative_self):
   t0 = min(timestamps[min(timestamps.keys())][SERVICES[0]], key=lambda x: x[1])[1]
-  y = 0
-  gnt = plt.subplots()[1]
-  gnt.set_xlim(0, 150 if relative_self else 750)
-  gnt.set_ylim(0, len(timestamps) if relative_self else 10)
+  fig, ax = plt.subplots()
+  ax.set_xlim(0, 150 if relative_self else 750)
+  ax.set_ylim(0, len(timestamps) if relative_self else 15)
+
+  points = {"x": [], "y": [], "labels": []}
   for frame_id, services in timestamps.items():
     if relative_self:
       t0 = min(timestamps[frame_id][SERVICES[0]], key=lambda x: x[1])[1]
-    event_bars = []
     service_bars = []
-    for service, events in services.items():
-      if len(events)==0:
-        continue
+    for i ,(service, events) in enumerate(services.items()):
       start, end = get_interval(frame_id, service,timestamps)
       service_bars.append(((start-t0)/1e6,(end-start)/1e6))
       for event in events:
-        event_bars.append(((event[1]-t0)/1e6, 0.1))
-    gnt.broken_barh(service_bars, (y, 0.9), facecolors=(["blue", 'green', 'red', 'yellow', 'purple']))
-    gnt.broken_barh(event_bars, (y, 0.9), facecolors=("black"))
-    y+=1
-  plt.show(block=True)
+        points["x"].append((event[1]-t0)/1e6)
+        points["y"].append(frame_id+0.45)
+        points["labels"].append(event[0])
+    ax.broken_barh(service_bars, (frame_id, 0.9), facecolors=(["blue", 'green', 'red', 'yellow', 'purple']))
+  scatter = ax.scatter(points['x'], points['y'], marker="d", edgecolor='black')
+
+  ax.legend()
+  tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points["labels"])
+  mpld3.plugins.connect(fig, tooltip)
+  #mpld3.save_html(fig, 'test.html')
+  mpld3.show()
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = "A helper to run timestamp print on openpilot routes",
@@ -178,6 +183,6 @@ if __name__ == "__main__":
   logreader = get_logreader(route)
   timestamps, internal_durations = read_logs(logreader)
   insert_cloudlogs(logreader, timestamps)
-  print_timestamps(timestamps, internal_durations, args.relative_self)
+  #print_timestamps(timestamps, internal_durations, args.relative_self)
   if args.plot:
     graph_timestamps(timestamps, args.relative_self)
