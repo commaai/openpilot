@@ -36,8 +36,15 @@ def verify_route(route_name):
     test(lr)
     lr.reset()
 
+  print("SUCCESS: All tests passed")
+
 
 def test_fingerprint(lr):
+  """
+  If make has FW_VERSIONS defined, then assert fingerprint source is fw
+  Else, just check it's not fixed
+  """
+
   for msg in lr:
     if msg.which() == "carParams":
       CP = msg.carParams
@@ -51,29 +58,32 @@ def test_fingerprint(lr):
       else:
         assert CP.fingerprintSource != car.CarParams.FingerprintSource.fixed
       assert not CP.fuzzyFingerprint
-      print('Fingerprinted: {}'.format(CP.carFingerprint))
+      print('SUCCESS: Fingerprinted: {}'.format(CP.carFingerprint))
       return True
 
   assert False, "No carParams packets in logs"
 
 
 def test_engagement(lr):
-  carState = None
-  engaged_frames = 0  # counts frames openpilot was engaged with no user inputs
+  """
+  Asserts that openpilot was engaged with no user input for a minimum time
+  """
 
+  carState = None
+  engaged_frames = 0
   for msg in lr:
     if msg.which() == "carState":
       carState = msg.carState
 
     elif msg.which() == "controlsState":
-      controlsState = msg.controlsState
       if carState is None:
         continue
+      controlsState = msg.controlsState
       if carState.cruiseState.enabled and controlsState.active and \
         not (carState.gasPressed or carState.brakePressed or carState.steeringPressed):
         engaged_frames += 1
         if engaged_frames >= MIN_ENGAGED_FRAMES:
-          print('Route had had at least {} seconds of engagement time'.format(round(MIN_ENGAGED_FRAMES * DT_CTRL, 2)))
+          print("SUCCESS: Route had at least {} seconds of engagement time".format(round(MIN_ENGAGED_FRAMES * DT_CTRL, 2)))
           return True
       else:
         engaged_frames = 0
@@ -82,6 +92,10 @@ def test_engagement(lr):
 
 
 def test_steering_faults(lr):
+  """
+  Asserts that car didn't experience any steering faults for the duration of the route
+  """
+
   CS = None
   CC = None
   for msg in lr:
@@ -96,7 +110,7 @@ def test_steering_faults(lr):
       assert not steering_fault, "Route had at least one steering fault event"
 
   assert CS is not None, "No carState packets in logs"
-  print("Route had no steering faults")
+  print("SUCCESS: Route had no steering faults")
 
 
 if __name__ == "__main__":
