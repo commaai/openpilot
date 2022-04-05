@@ -1,10 +1,11 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo
+from selfdrive.car.docs_definitions import CarInfo, HarnessInfo
 Ecu = car.CarParams.Ecu
 
 # Steer torque limits
@@ -73,6 +74,24 @@ class CAR:
   GENESIS_G70_2020 = "GENESIS G70 2020"
   GENESIS_G80 = "GENESIS G80 2017"
   GENESIS_G90 = "GENESIS G90 2017"
+
+
+class Harness(Enum):
+  a = HarnessInfo("hyundai-a", "Development", "Hyundai A")
+  b = HarnessInfo("hyundai-b", "Development", "Hyundai B")
+  c = HarnessInfo("hyundai-c", "Development", "Hyundai C")
+  d = HarnessInfo("hyundai-d", "Development", "Hyundai D")
+  e = HarnessInfo("hyundai-e", "Development", "Hyundai E")
+  f = HarnessInfo("hyundai-f", "Development", "Hyundai F")
+  g = HarnessInfo("hyundai-g", "Development", "Hyundai G")
+  h = HarnessInfo("hyundai-h", "Development", "Hyundai H")
+  i = HarnessInfo("hyundai-i", "Development", "Hyundai I")
+  j = HarnessInfo("hyundai-j", "Development", "Hyundai J")
+  k = HarnessInfo("hyundai-k", "Development", "Hyundai K")
+  l = HarnessInfo("hyundai-l", "Development", "Hyundai L")
+  m = HarnessInfo("hyundai-m", "Development", "Hyundai M")
+  n = HarnessInfo("hyundai-n", "Development", "Hyundai N")
+  o = HarnessInfo("hyundai-o", "Development", "Hyundai O")
 
 
 @dataclass
