@@ -40,6 +40,10 @@ class CarController:
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
     self.frame = 0
+    self.cancel_frames = 0
+
+    self.prev_cancel = False
+    self.cancel_duration = 0
 
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
@@ -78,14 +82,28 @@ class CarController:
                                    left_lane_warning, right_lane_warning))
 
     if not self.CP.openpilotLongitudinalControl:
+      if pcm_cancel_cmd and not self.prev_cancel:
+        self.cancel_duration = 0
+
       if pcm_cancel_cmd:
-        can_sends.append(create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL))
+        self.cancel_duration += 1
+        if 0 < self.cancel_frames < 5:
+          print('Sending cancel!')
+          can_sends.extend([create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL)] * 1)
+        elif self.cancel_frames >= 5:
+          self.cancel_frames = -5
+        self.cancel_frames += 1
       elif CS.out.cruiseState.standstill:
         # send resume at a max freq of 10Hz
         if (self.frame - self.last_resume_frame) * DT_CTRL > 0.1:
           # send 25 messages at a time to increases the likelihood of resume being accepted
           can_sends.extend([create_clu11(self.packer, self.frame, CS.clu11, Buttons.RES_ACCEL)] * 25)
           self.last_resume_frame = self.frame
+
+      if not pcm_cancel_cmd and self.prev_cancel:
+        print('Took {} frames to cancel!'.format(self.cancel_duration))
+
+      self.prev_cancel = pcm_cancel_cmd
 
     if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
       accel = actuators.accel
