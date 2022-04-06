@@ -10,6 +10,7 @@ from selfdrive.car.disable_ecu import disable_ecu
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+ENABLE_BUTTONS = (Buttons.RES_DECEL, Buttons.RES_ACCEL)
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
@@ -315,8 +316,12 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam)
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
-    user_enabled = any([btn in [Buttons.RES_DECEL, Buttons.RES_ACCEL] for btn in self.CS.prev_cruise_buttons])
-    user_enabled |= Buttons.CANCEL in self.CS.prev_cruise_buttons and not self.CS.cruiseState.enabled
+    # On some newer model years, the CANCEL button acts as a pause/resume button based on the enabled state
+    # To avoid accidentally re-engaging when we cancel, only allow engagement on specific user button presses
+    user_enabled = any([btn in ENABLE_BUTTONS for btn in self.CS.cruise_buttons])
+    # TODO: make sure this logic is correct
+    # user_enabled |= Buttons.CANCEL in self.CS.cruise_buttons and not self.CS.out.cruiseState.enabled
+
     events = self.create_common_events(ret, pcm_enable=self.CS.CP.pcmCruise, user_enabled=user_enabled)
 
     if self.CS.brake_error:
@@ -325,15 +330,15 @@ class CarInterface(CarInterfaceBase):
     if self.CS.CP.openpilotLongitudinalControl:
       buttonEvents = []
 
-      if self.CS.cruise_buttons != self.CS.prev_cruise_buttons[-1]:
+      if self.CS.cruise_buttons[-1] != self.CS.cruise_buttons[-2]:
         be = car.CarState.ButtonEvent.new_message()
         be.type = ButtonType.unknown
-        if self.CS.cruise_buttons != 0:
+        if self.CS.cruise_buttons[-1] != 0:
           be.pressed = True
-          but = self.CS.cruise_buttons
+          but = self.CS.cruise_buttons[-1]
         else:
           be.pressed = False
-          but = self.CS.prev_cruise_buttons[-1]
+          but = self.CS.cruise_buttons[-2]
         if but == Buttons.RES_ACCEL:
           be.type = ButtonType.accelCruise
         elif but == Buttons.SET_DECEL:
