@@ -23,10 +23,6 @@ class CarController():
     self.i_balance = 0
     self.d_balance = 0
 
-
-    self.speed_measured = 0.
-    self.speed_desired = 0.
-
     self.torque_r_filtered = 0.
     self.torque_l_filtered = 0.
 
@@ -45,22 +41,18 @@ class CarController():
 
     llk_valid = len(CC.orientationNED) > 0 and len(CC.angularVelocity) > 0
     if CC.enabled and llk_valid:
-
-      # Steer and accel mixin. Speed should be used as a target? (speed should be in m/s! now it is in RPM)
-      # Mix steer into torque_diff
-      # self.steerRatio = 0.5
-      # torque_r = int(np.clip((CC.actuators.accel*1000) - (CC.actuators.steer*1000) * self.steerRatio, -1000, 1000))
-      # torque_l = int(np.clip((CC.actuators.accel*1000) + (CC.actuators.steer*1000) * self.steerRatio, -1000, 1000))
-      # ////
+      # Read these from the joystick
+      # TODO: this isn't acceleration, okay?
+      speed_desired = CC.actuators.accel / 5.
+      speed_diff_desired = -CC.actuators.steer
 
       # Setpoint speed PID
       kp_speed = 0.001 / SPEED_FROM_RPM
-      ki_speed = 0.001 / SPEED_FROM_RPM
-      alpha_speed = 1.0
+      ki_speed = 0.002 / SPEED_FROM_RPM
 
-      self.speed_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
-      self.speed_desired = (1. - alpha_speed) * self.speed_desired
-      speed_error = self.speed_desired - self.speed_measured
+      speed_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
+      speed_error = speed_desired - speed_measured
+
       self.i_speed += speed_error * DT_CTRL
       self.i_speed = np.clip(self.i_speed, -MAX_POS_INTEGRATOR, MAX_POS_INTEGRATOR)
       set_point = kp_speed * speed_error + ki_speed * self.i_speed
@@ -77,13 +69,14 @@ class CarController():
       torque = int(np.clip((p_balance*kp_balance + self.i_balance*ki_balance + self.d_balance*kd_balance), -1000, 1000))
 
       # yaw recovery PID
-      kp_turn = 0.1 / SPEED_FROM_RPM
+      kp_turn = 0.95 / SPEED_FROM_RPM
       ki_turn = 0.1 / SPEED_FROM_RPM
 
       speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
-      self.i_speed_diff += speed_diff_measured * DT_CTRL
+      speed_diff_error = speed_diff_measured - speed_diff_desired
+      self.i_speed_diff += speed_diff_error * DT_CTRL
       self.i_speed_diff = np.clip(self.i_speed_diff, -MAX_TURN_INTEGRATOR, MAX_TURN_INTEGRATOR)
-      torque_diff = int(np.clip(kp_turn * speed_diff_measured + ki_turn * self.i_speed_diff, -100, 100))
+      torque_diff = int(np.clip(kp_turn * speed_diff_error + ki_turn * self.i_speed_diff, -100, 100))
 
       # Combine 2 PIDs outputs
       torque_r = torque + torque_diff
