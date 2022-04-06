@@ -90,7 +90,7 @@ class Controls:
       self.CI, self.CP = CI, CI.CP
 
     params = Params()
-    self.joystick_mode = params.get_bool("JoystickDebugMode") or self.CP.notCar
+    self.joystick_mode = params.get_bool("JoystickDebugMode") or (self.CP.notCar and sm is None)
     joystick_packet = ['testJoystick'] if self.joystick_mode else []
 
     self.sm = sm
