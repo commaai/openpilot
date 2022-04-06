@@ -162,7 +162,7 @@ bool CameraBuf::acquire() {
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
 
-  float start_time = millis_since_boot();
+  double start_time = millis_since_boot();
 
   if (debayer) {
     float gain = 0.0;
