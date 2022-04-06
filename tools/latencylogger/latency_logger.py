@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from tools.lib.logreader import logreader_from_route_or_segment
     
-DEMO_ROUTE = "9f583b1d93915c31|2022-04-06--10-46-11"
+DEMO_ROUTE = "9f583b1d93915c31|2022-04-06--11-34-03"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 # Retrive controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored

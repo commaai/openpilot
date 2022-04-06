@@ -97,7 +97,7 @@ static void cloudlog_common(int levelnum, int frame_id, bool is_timestamp, const
       {"event", msg_buf},
       {"time", std::to_string(nanos_since_boot())}
     };
-    if (frame_id  != WITHOUT_FRAMEID) {
+    if (frame_id != WITHOUT_FRAMEID) {
       tspt_j["frame_id"] = frame_id;
     }
     tspt_j = json11::Json::object{{"timestamp", tspt_j}};
