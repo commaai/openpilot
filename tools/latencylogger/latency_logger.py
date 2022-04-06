@@ -143,7 +143,7 @@ def graph_timestamps(timestamps, relative):
   t0 = get_min_time(min(timestamps.keys()), SERVICES[0], timestamps) 
   fig, ax = plt.subplots()
   ax.set_xlim(0, 150 if relative else 750)
-  ax.set_ylim(0, 15 if relative else 15)
+  ax.set_ylim(0, 15)
 
   points = {"x": [], "y": [], "labels": []}
   for frame_id, services in timestamps.items():
@@ -159,19 +159,9 @@ def graph_timestamps(timestamps, relative):
         points["labels"].append(event[0])
     ax.broken_barh(service_bars, (frame_id, 0.9), facecolors=(["blue", 'green', 'red', 'yellow', 'purple']))
 
-  tooltip = None
-  if relative:
-    d = defaultdict(list)
-    for i in range(len(points['x'])):
-      d[points['labels'][i]].append(points['x'][i])
-    print([sum(times)/len(times) for times in d.values()])
-    scatter = ax.scatter([sum(times)/len(times) for times in d.values()], [0]*len(d), marker='d', edgecolor='black')
-    tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=d.keys())
-  else:
-    scatter = ax.scatter(points['x'], points['y'], marker="d", edgecolor='black')
-    tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points["labels"])
-
-  #ax.legend()
+  scatter = ax.scatter(points['x'], points['y'], marker="d", edgecolor='black')
+  tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points["labels"])
+  ax.legend()
   mpld3.plugins.connect(fig, tooltip)
   #mpld3.save_html(fig, 'test.html')
   mpld3.show()
