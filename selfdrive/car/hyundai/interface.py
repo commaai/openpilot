@@ -10,7 +10,8 @@ from selfdrive.car.disable_ecu import disable_ecu
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
-ENABLE_BUTTONS = (Buttons.RES_DECEL, Buttons.RES_ACCEL)
+ENABLE_BUTTONS = (Buttons.RES_ACCEL, Buttons.SET_DECEL)
+
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
