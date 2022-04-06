@@ -48,7 +48,7 @@ class CarController():
 
       # Setpoint speed PID
       kp_speed = 0.001 / SPEED_FROM_RPM
-      ki_speed = 0.001 / SPEED_FROM_RPM
+      ki_speed = 0.002 / SPEED_FROM_RPM
 
       speed_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
       speed_error = speed_desired - speed_measured
