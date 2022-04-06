@@ -20,7 +20,7 @@ optional arguments:
   --demo                Use the demo route instead of providing one (default: False)
   --plot                If a plot should be generated (default: False)
 ```
-To timestamp an event, use `LOGT("msg")` in c++ code or `cloudlog.timestamp("msg")` in python code. If the print is warning for frameId assignment ambiguity, provide the frameId as an optional parameter.
+To timestamp an event, use `LOGT("msg")` in c++ code or `cloudlog.timestamp("msg")` in python code. If the print is warning for frameId assignment ambiguity, use `LOGTF(frameId ,"msg")`.
 
 ## Examples
 Plotting with relative starts each process at time=0 and gives a nice overview.

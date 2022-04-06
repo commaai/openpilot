@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from tools.lib.logreader import logreader_from_route_or_segment
     
-DEMO_ROUTE = "9f583b1d93915c31|2022-04-01--17-51-29"
+DEMO_ROUTE = "9f583b1d93915c31|2022-04-06--10-46-11"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 # Retrive controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored
@@ -110,10 +110,15 @@ def insert_cloudlogs(lr, timestamps):
         time = int(jmsg['msg']['timestamp']['time'])
         service = jmsg['ctx']['daemon']
         event = jmsg['msg']['timestamp']['event']
+
         if time < t0:
           # Filter out controlsd messages which arrive before the camera loop 
           continue
         
+        if "frame_id" in jmsg['msg']['timestamp']:
+          timestamps[jmsg['msg']['timestamp']['frame_id']][service].append((event, time))
+          continue
+
         if service == "boardd":
           timestamps[latest_controls_frameid][service].append((event, time))
         else:
