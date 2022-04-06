@@ -44,6 +44,8 @@ const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
 
 // for debugging
 // note: ONLY_ROAD doesn't work, likely due to a mixup with wideRoad cam in the kernel
+const bool env_only_road = getenv("ONLY_ROAD") != NULL;
+const bool env_only_wide_road = getenv("ONLY_WIDE_ROAD") != NULL;
 const bool env_only_driver = getenv("ONLY_DRIVER") != NULL;
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 

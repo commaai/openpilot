@@ -171,6 +171,7 @@ void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
 // ************** high level camera helpers ****************
 
 void CameraState::sensors_start() {
+  if (!enabled) return;
   if (camera_id == CAMERA_ID_AR0231) {
     int start_reg_len = sizeof(start_reg_array_ar0231) / sizeof(struct i2c_random_wr_payload);
     sensors_i2c(start_reg_array_ar0231, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
@@ -200,6 +201,7 @@ void CameraState::sensors_poke(int request_id) {
 }
 
 void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
+  if (!enabled) return;
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
@@ -522,6 +524,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
 }
 
 void CameraState::enqueue_buffer(int i, bool dp) {
+  if (!enabled) return;
   int ret;
   int request_id = request_ids[i];
 
@@ -579,15 +582,15 @@ void CameraState::enqueue_buffer(int i, bool dp) {
 }
 
 void CameraState::enqueue_req_multi(int start, int n, bool dp) {
-   for (int i=start;i<start+n;++i) {
-     request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
-     enqueue_buffer((i - 1) % FRAME_BUF_COUNT, dp);
-   }
+  for (int i=start;i<start+n;++i) {
+    request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
+    enqueue_buffer((i - 1) % FRAME_BUF_COUNT, dp);
+  }
 }
 
 // ******************* camera *******************
 
-void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServer * v, int camera_id_, int camera_num_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
+void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServer * v, int camera_id_, int camera_num_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type, bool enabled_) {
   LOGD("camera init %d", camera_num);
   multi_cam_state = multi_cam_state_;
   camera_id = camera_id_;
@@ -596,6 +599,8 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
   assert(ci.frame_width != 0);
 
   camera_num = camera_num_;
+  enabled = enabled_;
+  if (!enabled) return;
 
   request_id_last = 0;
   skipped = true;
@@ -613,6 +618,7 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
 }
 
 void CameraState::camera_open() {
+  if (!enabled) return;
   int ret;
   sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", camera_num);
   assert(sensor_fd >= 0);
@@ -781,14 +787,12 @@ void CameraState::camera_open() {
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(s, v, CAMERA_ID_AR0231, 2, 20, device_id, ctx, VISION_STREAM_RGB_DRIVER, VISION_STREAM_DRIVER);
+  s->driver_cam.camera_init(s, v, CAMERA_ID_AR0231, 2, 20, device_id, ctx, VISION_STREAM_RGB_DRIVER, VISION_STREAM_DRIVER, !env_only_road && !env_only_wide_road);
   printf("driver camera initted \n");
-  if (!env_only_driver) {
-    s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_RGB_ROAD, VISION_STREAM_ROAD); // swap left/right
-    printf("road camera initted \n");
-    s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_RGB_WIDE_ROAD, VISION_STREAM_WIDE_ROAD);
-    printf("wide road camera initted \n");
-  }
+  s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_RGB_ROAD, VISION_STREAM_ROAD, !env_only_wide_road && !env_only_driver);
+  printf("road camera initted \n");
+  s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_RGB_WIDE_ROAD, VISION_STREAM_WIDE_ROAD, !env_only_road && !env_only_driver);
+  printf("wide road camera initted \n");
 
   s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
@@ -837,15 +841,14 @@ void cameras_open(MultiCameraState *s) {
 
   s->driver_cam.camera_open();
   printf("driver camera opened \n");
-  if (!env_only_driver) {
-    s->road_cam.camera_open();
-    printf("road camera opened \n");
-    s->wide_road_cam.camera_open();
-    printf("wide road camera opened \n");
-  }
+  s->road_cam.camera_open();
+  printf("road camera opened \n");
+  s->wide_road_cam.camera_open();
+  printf("wide road camera opened \n");
 }
 
 void CameraState::camera_close() {
+  if (!enabled) return;
   int ret;
 
   // stop devices
@@ -891,10 +894,8 @@ void CameraState::camera_close() {
 
 void cameras_close(MultiCameraState *s) {
   s->driver_cam.camera_close();
-  if (!env_only_driver) {
-    s->road_cam.camera_close();
-    s->wide_road_cam.camera_close();
-  }
+  s->road_cam.camera_close();
+  s->wide_road_cam.camera_close();
 
   delete s->sm;
   delete s->pm;
@@ -1099,19 +1100,15 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 void cameras_run(MultiCameraState *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, &s->driver_cam, common_process_driver_camera));
-  if (!env_only_driver) {
-    threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-    threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
-  }
+  if (s->driver_cam.enabled) threads.push_back(start_process_thread(s, &s->driver_cam, common_process_driver_camera));
+  if (s->road_cam.enabled) threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
+  if (s->wide_road_cam.enabled) threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
 
   // start devices
   LOG("-- Starting devices");
   s->driver_cam.sensors_start();
-  if (!env_only_driver) {
-    s->road_cam.sensors_start();
-    s->wide_road_cam.sensors_start();
-  }
+  s->road_cam.sensors_start();
+  s->wide_road_cam.sensors_start();
 
   // poll events
   LOG("-- Dequeueing Video events");

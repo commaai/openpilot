@@ -13,6 +13,7 @@ class CameraState {
 public:
   MultiCameraState *multi_cam_state;
   CameraInfo ci;
+  bool enabled;
 
   std::mutex exp_lock;
 
@@ -44,7 +45,7 @@ public:
   int sensors_init();
 
   void camera_open();
-  void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type);
+  void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type, bool enabled);
   void camera_close();
 
   int32_t session_handle;
