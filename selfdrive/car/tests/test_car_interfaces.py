@@ -39,7 +39,7 @@ class TestCarInterfaces(unittest.TestCase):
       if tuning == 'pid':
         self.assertTrue(len(car_params.lateralTuning.pid.kpV))
       elif tuning == 'torque':
-        self.assertTrue(len(car_params.lateralTuning.torque.kf))
+        self.assertTrue(car_params.lateralTuning.torque.kf > 0)
       elif tuning == 'indi':
         self.assertTrue(len(car_params.lateralTuning.indi.outerLoopGainV))
 
