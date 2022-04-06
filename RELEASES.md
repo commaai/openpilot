@@ -1,6 +1,7 @@
 Version 0.8.14 (2022-0X-XX)
 ========================
  * bigmodel!
+ * comma body support
  * Toyota Alphard Hybrid 2021 support
  * Toyota Avalon Hybrid 2022 support
 
