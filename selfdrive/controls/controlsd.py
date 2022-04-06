@@ -293,12 +293,14 @@ class Controls:
       self.events.add(EventName.radarFault)
     elif not self.sm.valid["pandaStates"]:
       self.events.add(EventName.usbError)
-    elif not self.sm.all_alive_and_valid() or self.can_rcv_error:
+    elif not self.sm.all_checks() or self.can_rcv_error:
 
-      if self.sm.all_freq_ok():
+      if not self.sm.all_alive():
         self.events.add(EventName.commIssue)
-      else:
+      elif not self.sm.all_freq_ok():
         self.events.add(EventName.commIssueAvgFreq)
+      else: # invalid or can_rcv_error.
+        self.events.add(EventName.commIssue)
 
       if not self.logged_comm_issue:
         invalid = [s for s, valid in self.sm.valid.items() if not valid]
@@ -353,8 +355,13 @@ class Controls:
         if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000):
           # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
           self.events.add(EventName.noGps)
+
+      # TODO: split into separate alerts
       if not self.sm.all_alive(self.camera_packets):
         self.events.add(EventName.cameraMalfunction)
+      elif not self.sm.all_freq_ok(self.camera_packets):
+        self.events.add(EventName.cameraMalfunction)
+
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
       if self.sm['liveLocationKalman'].excessiveResets:
@@ -385,7 +392,7 @@ class Controls:
     self.sm.update(0)
 
     if not self.initialized:
-      all_valid = CS.canValid and self.sm.all_alive_and_valid()
+      all_valid = CS.canValid and self.sm.all_checks()
       if all_valid or self.sm.frame * DT_CTRL > 3.5 or SIMULATION:
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
