@@ -10,7 +10,7 @@ from tools.lib.logreader import logreader_from_route_or_segment
 DEMO_ROUTE = "9f583b1d93915c31|2022-04-01--17-51-29"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
-#Retrive controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored
+# Retrive controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored
 MONOTIME_KEYS = ['modelMonoTime', 'lateralPlanMonoTime']
 MSGQ_TO_SERVICE = {
   'roadCameraState': 'camerad',

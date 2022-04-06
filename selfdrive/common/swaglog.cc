@@ -73,7 +73,7 @@ static void log(int levelnum, const char* filename, int lineno, const char* func
   zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
 }
 static void cloudlog_common(int levelnum, bool is_timestamp, const char* filename, int lineno, const char* func,
-                const char* fmt, va_list args) {
+                            const char* fmt, va_list args) {
   char* msg_buf = nullptr;
   int ret = vasprintf(&msg_buf, fmt, args);
   if (ret <= 0 || !msg_buf) return;
@@ -83,7 +83,6 @@ static void cloudlog_common(int levelnum, bool is_timestamp, const char* filenam
   if (!s.initialized) s.initialize();
 
   json11::Json::object log_j = json11::Json::object {
-    {"msg", msg_buf},
     {"ctx", s.ctx_j},
     {"levelnum", levelnum},
     {"filename", filename},
@@ -92,7 +91,7 @@ static void cloudlog_common(int levelnum, bool is_timestamp, const char* filenam
     {"created", seconds_since_epoch()}
   };
 
-  if (is_timestamp){
+  if (is_timestamp) {
     json11::Json::object tspt_j = json11::Json::object {
       {"timestamp", json11::Json::object{
                   {"event", msg_buf},
@@ -100,6 +99,8 @@ static void cloudlog_common(int levelnum, bool is_timestamp, const char* filenam
       }
     };
     log_j["msg"] = tspt_j;
+  } else {
+    log_j["msg"] = msg_buf;
   }
 
   std::string log_s = ((json11::Json)log_j).dump();

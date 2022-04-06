@@ -22,9 +22,9 @@ optional arguments:
 ```
 
 ## Examples
-Plotting with relative_self starts each process at time=0 and gives a nice overview.
+Plotting with relative starts each process at time=0 and gives a nice overview.
 ![relself](https://user-images.githubusercontent.com/42323981/161629832-c6f28874-4b0b-437a-961e-d80adbf8dd97.png)
-Plotting without relative_self provides info about the frames relative time. 
+Plotting without relative provides info about the frames relative time. 
 ![relfirst](https://user-images.githubusercontent.com/42323981/161629886-3283e7c8-1bb0-4f3c-bede-4ceac1d2e140.png)
 
 
