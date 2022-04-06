@@ -1,6 +1,5 @@
 import numpy as np
 
-from common.params import Params
 from common.realtime import DT_CTRL
 from selfdrive.car.body import bodycan
 from opendbc.can.packer import CANPacker
