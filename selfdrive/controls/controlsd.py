@@ -72,18 +72,6 @@ class Controls:
     if TICI:
       self.camera_packets.append("wideRoadCameraState")
 
-    params = Params()
-    self.joystick_mode = params.get_bool("JoystickDebugMode")
-    joystick_packet = ['testJoystick'] if self.joystick_mode else []
-
-    self.sm = sm
-    if self.sm is None:
-      ignore = ['driverCameraState', 'managerState'] if SIMULATION else None
-      self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                     'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState'] + self.camera_packets + joystick_packet,
-                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan'])
-
     self.can_sock = can_sock
     if can_sock is None:
       can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
@@ -100,6 +88,19 @@ class Controls:
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
     else:
       self.CI, self.CP = CI, CI.CP
+
+    params = Params()
+    self.joystick_mode = params.get_bool("JoystickDebugMode") or (self.CP.notCar and sm is None)
+    joystick_packet = ['testJoystick'] if self.joystick_mode else []
+
+    self.sm = sm
+    if self.sm is None:
+      ignore = ['driverCameraState', 'managerState'] if SIMULATION else None
+      self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
+                                     'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
+                                     'managerState', 'liveParameters', 'radarState'] + self.camera_packets + joystick_packet,
+                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan'])
+
 
     # set alternative experiences from parameters
     self.disengage_on_accelerator = params.get_bool("DisengageOnAccelerator")
