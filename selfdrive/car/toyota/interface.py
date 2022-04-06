@@ -224,6 +224,7 @@ class CarInterface(CarInterfaceBase):
       if fw.ecu == "fwdRadar" and fw.fwVersion in [b'\x018821F0R01100\x00\x00\x00\x00']:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONG
         ret.openpilotLongitudinalControl = False
+        ret.radarOffCan = True
 
     # we can't use the fingerprint to detect this reliably, since
     # the EV gas pedal signal can take a couple seconds to appear
