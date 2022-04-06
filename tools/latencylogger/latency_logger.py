@@ -96,8 +96,7 @@ def find_frame_id(time, service, timestamps):
   for frame_id in reversed(timestamps):
     start, end = get_interval(frame_id, service, timestamps)
     if start <= time <= end:
-      return frame_id
-  return -1
+      yield frame_id
 
 ## ASSUMES THAT AT LEAST ONE CLOUDLOG IS MADE IN CONTROLSD
 def insert_cloudlogs(lr, timestamps):
@@ -114,14 +113,22 @@ def insert_cloudlogs(lr, timestamps):
         if time < t0:
           # Filter out controlsd messages which arrive before the camera loop 
           continue
-
-        frame_id = latest_controls_frameid if service == "boardd" else find_frame_id(time, service, timestamps)
-        if frame_id > -1:
-          timestamps[frame_id][service].append((event, time))
-          if service == 'controlsd':
-            latest_controls_frameid = frame_id
+        
+        if service == "boardd":
+          timestamps[latest_controls_frameid][service].append((event, time))
         else:
-          failed_inserts += 1
+          frame_id_gen = find_frame_id(time, service, timestamps)
+          frame_id = next(frame_id_gen, False)
+          if frame_id:
+            if service == 'controlsd':
+              latest_controls_frameid = frame_id
+            if next(frame_id_gen, False):
+              event += " (warning: ambiguity)"
+            timestamps[frame_id][service].append((event, time))
+          else:
+            failed_inserts += 1
+
+  assert latest_controls_frameid > 0, "No timestamp in controlsd"
   assert failed_inserts < len(timestamps), "Too many failed cloudlog inserts"
 
 def print_timestamps(timestamps, durations ,relative):
