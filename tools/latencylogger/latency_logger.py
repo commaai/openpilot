@@ -1,9 +1,10 @@
 import argparse
 import json
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import mpld3
 import sys
 from collections import defaultdict
-import matplotlib.pyplot as plt
 
 from tools.lib.logreader import logreader_from_route_or_segment
     
@@ -58,6 +59,8 @@ def read_logs(lr):
       mono_to_frame[msg.logMonoTime] = frame_id
 
       data['timestamp'][frame_id][service].append((msg.which()+" published", msg.logMonoTime))
+      next_service = SERVICES[SERVICES.index(service)+1]
+      data['timestamp'][frame_id][next_service].append((msg.which()+" received", msg.logMonoTime))
       if service in SERVICE_TO_DURATIONS:
         for duration in SERVICE_TO_DURATIONS[service]:
           data['duration'][frame_id][service].append((msg.which()+"."+duration, getattr(msg_obj, duration)))
@@ -83,12 +86,8 @@ def get_min_time(frame_id, service, timestamps, use_max=False):
 def get_interval(frame_id, service, timestamps):
   try:
     service_max = get_min_time(frame_id, service, timestamps, use_max=True) 
-    if service == SERVICES[0]:
-      service_min = get_min_time(frame_id, service, timestamps) 
-      return (service_min, service_max)
-    prev_service = SERVICES[SERVICES.index(service)-1]
-    prev_service_max = get_min_time(frame_id, prev_service, timestamps, use_max=True) 
-    return (prev_service_max, service_max)
+    service_min = get_min_time(frame_id, service, timestamps) 
+    return (service_min, service_max)
   except ValueError:
     return (-1,-1)
 
@@ -156,25 +155,31 @@ def graph_timestamps(timestamps, relative):
   fig, ax = plt.subplots()
   ax.set_xlim(0, 150 if relative else 750)
   ax.set_ylim(0, 15)
-
+  ax.set_xlabel('milliseconds')
+  ax.set_ylabel('Frame id')
+  colors = ["blue", 'green', 'red', 'yellow', 'purple']
+  assert len(colors) == len(SERVICES), "Each service needs a color"
   points = {"x": [], "y": [], "labels": []}
   for frame_id, services in timestamps.items():
     if relative:
       t0 = get_min_time(frame_id, SERVICES[0], timestamps) 
     service_bars = []
     for service, events in services.items():
-      start, end = get_interval(frame_id, service,timestamps)
-      service_bars.append(((start-t0)/1e6,(end-start)/1e6))
+      start, end = get_interval(frame_id, service, timestamps)
+      service_bars.append(((start-t0)/1e6, (end-start)/1e6))
       for event in events:
+        # Not useful to show in graph
+        if "received" in event[0] or "published" in event[0]:
+          continue
         points["x"].append((event[1]-t0)/1e6)
-        points["y"].append(frame_id+0.45)
+        points["y"].append(frame_id)
         points["labels"].append(event[0])
-    ax.broken_barh(service_bars, (frame_id, 0.9), facecolors=(["blue", 'green', 'red', 'yellow', 'purple']))
+    ax.broken_barh(service_bars, (frame_id-0.45, 0.9), facecolors=(colors), alpha=0.5)
 
   scatter = ax.scatter(points['x'], points['y'], marker="d", edgecolor='black')
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points["labels"])
-  ax.legend()
   mpld3.plugins.connect(fig, tooltip)
+  plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
   #mpld3.save_html(fig, 'test.html')
   mpld3.show()
 
