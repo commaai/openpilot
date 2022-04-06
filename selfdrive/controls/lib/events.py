@@ -660,6 +660,10 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.SOFT_DISABLE: soft_disable_alert("Communication Issue between Processes"),
     ET.NO_ENTRY: NoEntryAlert("Communication Issue between Processes"),
   },
+  EventName.commIssueAvgFreq: {
+    ET.SOFT_DISABLE: soft_disable_alert("Low Communication Rate between Processes"),
+    ET.NO_ENTRY: NoEntryAlert("Low Communication Rate between Processes"),
+  },
 
   # Thrown when manager detects a service exited unexpectedly while driving
   EventName.processNotRunning: {
