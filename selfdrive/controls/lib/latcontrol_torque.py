@@ -4,7 +4,7 @@ from common.numpy_fast import interp
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from cereal import log
 
-CURVATURE_SCALE = 100
+CURVATURE_SCALE = 200
 JERK_THRESHOLD = 0.2
 
 
