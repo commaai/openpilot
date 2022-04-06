@@ -7,7 +7,6 @@
 #include <cassert>
 #include <cstring>
 #include <mutex>
-#include <string>
 
 #include <zmq.h>
 #include "json11.hpp"
@@ -72,7 +71,8 @@ static void log(int levelnum, const char* filename, int lineno, const char* func
   char levelnum_c = levelnum;
   zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
 }
-static void cloudlog_common(int levelnum, bool is_timestamp, const char* filename, int lineno, const char* func,
+
+void cloudlog_common(int levelnum, bool is_timestamp, const char* filename, int lineno, const char* func,
                 const char* fmt, va_list args) {
   char* msg_buf = nullptr;
   int ret = vasprintf(&msg_buf, fmt, args);
@@ -111,7 +111,7 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
                 const char* fmt, ...){
   va_list args;
   va_start(args, fmt);
-  cloudlog_common(levelnum, false, filename, lineno, func, fmt, args);
+  //cloudlog_common(levelnum, false, filename, lineno, func, fmt, args);
   va_end(args);
 }
 
