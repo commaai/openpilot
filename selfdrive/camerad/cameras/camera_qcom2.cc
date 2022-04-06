@@ -314,21 +314,22 @@ int CameraState::sensors_init() {
   power->power_settings[1].power_seq_type = 1; // analog
   power->power_settings[2].power_seq_type = 2; // digital
   power->power_settings[3].power_seq_type = 8; // reset low
-  power = power_set_wait(power, 5);
+  power = power_set_wait(power, 1);
 
   // set clock
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
   power->power_settings[0].config_val_low = (camera_id == CAMERA_ID_AR0231) ? 19200000 : 24000000; //Hz
-  power = power_set_wait(power, 10);
+  power = power_set_wait(power, 1);
 
-  // 8,1 is this reset?
+  // reset high
+  // wait 650000 cycles @ 19.2 mhz = 33.8 ms
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 8;
   power->power_settings[0].config_val_low = 1;
-  power = power_set_wait(power, 100);
+  power = power_set_wait(power, 34);
 
   // probe happens here
 
@@ -787,11 +788,11 @@ void CameraState::camera_open() {
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(s, v, CAMERA_ID_AR0231, 2, 20, device_id, ctx, VISION_STREAM_RGB_DRIVER, VISION_STREAM_DRIVER, !env_only_road && !env_only_wide_road);
+  s->driver_cam.camera_init(s, v, CAMERA_ID_AR0231, 2, 20, device_id, ctx, VISION_STREAM_RGB_DRIVER, VISION_STREAM_DRIVER, !env_disable_driver);
   printf("driver camera initted \n");
-  s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_RGB_ROAD, VISION_STREAM_ROAD, !env_only_wide_road && !env_only_driver);
+  s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_RGB_ROAD, VISION_STREAM_ROAD, !env_disable_road);
   printf("road camera initted \n");
-  s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_RGB_WIDE_ROAD, VISION_STREAM_WIDE_ROAD, !env_only_road && !env_only_driver);
+  s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_RGB_WIDE_ROAD, VISION_STREAM_WIDE_ROAD, !env_disable_wide_road);
   printf("wide road camera initted \n");
 
   s->sm = new SubMaster({"driverState"});
