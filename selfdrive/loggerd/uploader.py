@@ -184,7 +184,7 @@ class Uploader():
     else:
       start_time = time.monotonic()
       stat = self.normal_upload(key, fn)
-      if stat is not None and stat.status_code in (200, 201, 403, 412):
+      if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
         try:
           # tag file as uploaded
           setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
