@@ -23,8 +23,6 @@ class CarController():
     self.i_balance = 0
     self.d_balance = 0
 
-    self.speed_measured = 0.
-
     self.torque_r_filtered = 0.
     self.torque_l_filtered = 0.
 
@@ -52,8 +50,8 @@ class CarController():
       kp_speed = 0.001 / SPEED_FROM_RPM
       ki_speed = 0.001 / SPEED_FROM_RPM
 
-      self.speed_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
-      speed_error = speed_desired - self.speed_measured
+      speed_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
+      speed_error = speed_desired - speed_measured
 
       self.i_speed += speed_error * DT_CTRL
       self.i_speed = np.clip(self.i_speed, -MAX_POS_INTEGRATOR, MAX_POS_INTEGRATOR)
