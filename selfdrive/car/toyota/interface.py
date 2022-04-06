@@ -125,8 +125,6 @@ class CarInterface(CarInterfaceBase):
       for fw in car_fw:
         if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
           set_lat_tune(ret.lateralTuning, LatTunes.PID_I)
-        elif fw.ecu == "fwdRadar" and fw.fwVersion in [b'\x018821F3301100\x00\x00\x00\x00']:
-          ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONG
 
     elif candidate in (CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2):
       stop_and_go = True
@@ -221,6 +219,11 @@ class CarInterface(CarInterfaceBase):
     # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
     ret.openpilotLongitudinalControl = ((smartDsu or ret.enableDsu or candidate in TSS2_CAR) and
                                         not ret.safetyConfigs[0].safetyParam & Panda.FLAG_TOYOTA_STOCK_LONG)
+
+    for fw in car_fw:
+      if fw.ecu == "fwdRadar" and fw.fwVersion in [b'\x018821F0R01100\x00\x00\x00\x00']:
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONG
+        ret.openpilotLongitudinalControl = False
 
     # we can't use the fingerprint to detect this reliably, since
     # the EV gas pedal signal can take a couple seconds to appear
