@@ -60,7 +60,7 @@ class CarController():
 
       if self.joystick_mode:
         # TODO: this isn't acceleration, okay?
-        speed_desired = CC.actuators.accel
+        speed_desired = CC.actuators.accel / 5.
         speed_diff_desired = -CC.actuators.steer
       else:
         speed_desired = 0
