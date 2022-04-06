@@ -24,8 +24,6 @@ class CarController():
     self.i_balance = 0
     self.d_balance = 0
 
-    self.joystick_mode = Params().get_bool("JoystickDebugMode")
-
     self.speed_measured = 0.
 
     self.torque_r_filtered = 0.
@@ -46,25 +44,14 @@ class CarController():
 
     llk_valid = len(CC.orientationNED) > 0 and len(CC.angularVelocity) > 0
     if CC.enabled and llk_valid:
-
-      # Steer and accel mixin. Speed should be used as a target? (speed should be in m/s! now it is in RPM)
-      # Mix steer into torque_diff
-      # self.steerRatio = 0.5
-      # torque_r = int(np.clip((CC.actuators.accel*1000) - (CC.actuators.steer*1000) * self.steerRatio, -1000, 1000))
-      # torque_l = int(np.clip((CC.actuators.accel*1000) + (CC.actuators.steer*1000) * self.steerRatio, -1000, 1000))
-      # ////
+      # Read these from the joystick
+      # TODO: this isn't acceleration, okay?
+      speed_desired = CC.actuators.accel / 5.
+      speed_diff_desired = -CC.actuators.steer
 
       # Setpoint speed PID
       kp_speed = 0.001 / SPEED_FROM_RPM
       ki_speed = 0.001 / SPEED_FROM_RPM
-
-      if self.joystick_mode:
-        # TODO: this isn't acceleration, okay?
-        speed_desired = CC.actuators.accel / 5.
-        speed_diff_desired = -CC.actuators.steer
-      else:
-        speed_desired = 0
-        speed_diff_desired = 0
 
       self.speed_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
       speed_error = speed_desired - self.speed_measured
