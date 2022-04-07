@@ -513,8 +513,8 @@ int Localizer::locationd_thread() {
       filterInitialized = sm.allAliveAndValid();
     }
     
-    if (sm.updated("cameraOdometry")) {
-      uint64_t logMonoTime = sm["cameraOdometry"].getLogMonoTime();
+    if (sm.updated("sensorEvents")) {
+      uint64_t logMonoTime = sm["sensorEvents"].getLogMonoTime();
       bool inputsOK = sm.allAliveAndValid();
       bool sensorsOK = sm.alive("sensorEvents") && sm.valid("sensorEvents");
       bool gpsOK = this->isGpsOK();
