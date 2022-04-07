@@ -616,7 +616,7 @@ void CameraState::camera_open() {
   }
   LOGD("-- Probing sensor %d done with %d", camera_num, ret);
   if (ret != 0) {
-    LOGE("sensor %d failed bringup, disabling")
+    LOGE("** sensor %d FAILED bringup, disabling", camera_num);
     enabled = false;
     return;
   }
