@@ -38,6 +38,10 @@ class PIDController():
   def k_d(self):
     return interp(self.speed, self._k_d[0], self._k_d[1])
 
+  @property
+  def error_integral(self):
+    return self.i/self.k_i
+
   def reset(self):
     self.p = 0.0
     self.i = 0.0

@@ -19,18 +19,10 @@ class CarController():
     self.frame = 0
     self.packer = CANPacker(dbc_name)
 
-    # Speed PID
-    kp_speed = 0.001 / SPEED_FROM_RPM
-    ki_speed = 0.002 / SPEED_FROM_RPM
-    self.speed_pid = PIDController(kp_speed, ki_speed, rate=1/DT_CTRL)
-
-    # Balance PID
-    self.balance_pid = PIDController(1300, 0, k_d=280, rate=1/DT_CTRL)
-
-    # Turn PID
-    kp_turn = 0.95 / SPEED_FROM_RPM
-    ki_turn = 0.1 / SPEED_FROM_RPM
-    self.turn_pid = PIDController(kp_turn, ki_turn, rate=1/DT_CTRL)
+    # Speed, balance and turn PIDs
+    self.speed_pid = PIDController(0.115, k_i=0.23, rate=1/DT_CTRL)
+    self.balance_pid = PIDController(1300, k_i=0, k_d=280, rate=1/DT_CTRL)
+    self.turn_pid = PIDController(110, k_i=11.5, rate=1/DT_CTRL)
 
     self.torque_r_filtered = 0.
     self.torque_l_filtered = 0.
@@ -58,8 +50,8 @@ class CarController():
       speed_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
       speed_error = speed_desired - speed_measured
 
-      freeze_integrator = ((speed_error < 0 and self.speed_pid.i/self.speed_pid.k_i <= -MAX_POS_INTEGRATOR) or
-                           (speed_error > 0 and self.speed_pid.i/self.speed_pid.k_i >= MAX_POS_INTEGRATOR))
+      freeze_integrator = ((speed_error < 0 and self.speed_pid.error_integral <= -MAX_POS_INTEGRATOR) or
+                           (speed_error > 0 and self.speed_pid.error_integral >= MAX_POS_INTEGRATOR))
       angle_setpoint = self.speed_pid.update(speed_error, freeze_integrator=freeze_integrator)
 
 
@@ -71,8 +63,8 @@ class CarController():
 
       speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
       turn_error = speed_diff_measured - speed_diff_desired
-      freeze_integrator = ((turn_error < 0 and self.turn_pid.i/self.turn_pid.k_i <= -MAX_POS_INTEGRATOR) or
-                           (turn_error > 0 and self.turn_pid.i/self.turn_pid.k_i >= MAX_POS_INTEGRATOR))
+      freeze_integrator = ((turn_error < 0 and self.turn_pid.error_integral <= -MAX_POS_INTEGRATOR) or
+                           (turn_error > 0 and self.turn_pid.error_integral >= MAX_POS_INTEGRATOR))
       torque_diff = self.turn_pid.update(turn_error, freeze_integrator=freeze_integrator)
 
       # Combine 2 PIDs outputs
