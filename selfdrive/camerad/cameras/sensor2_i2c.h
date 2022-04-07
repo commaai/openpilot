@@ -70,9 +70,9 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3064, 0x1802}, // SMIA_TEST
   {0x30BA, 0x11F2}, // DIGITAL_CTRL
 
-  // SLAV* MODE
-  {0x30CE, 0x0120},
-  {0x340A, 0xE6}, // E6 // 0000 1110 0110
+  // Enable external trigger and GPIO
+  {0x30CE, 0x0120}, // SLAVE_SH_SYNC_MODE | FRAME_START_MODE
+  {0x340A, 0xE0}, // E0 // 0000 1110 0000
   {0x340C, 0x802}, // 2 // 0000 0000 0010
 
   // Readout timing

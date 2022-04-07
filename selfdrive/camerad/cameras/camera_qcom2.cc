@@ -173,11 +173,9 @@ void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
 void CameraState::sensors_start() {
   if (!enabled) return;
   if (camera_id == CAMERA_ID_AR0231) {
-    int start_reg_len = sizeof(start_reg_array_ar0231) / sizeof(struct i2c_random_wr_payload);
-    sensors_i2c(start_reg_array_ar0231, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
+    sensors_i2c(start_reg_array_ar0231, std::size(start_reg_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_IMX390) {
-    int start_reg_len = sizeof(start_reg_array_imx390) / sizeof(struct i2c_random_wr_payload);
-    sensors_i2c(start_reg_array_imx390, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+    sensors_i2c(start_reg_array_imx390, std::size(start_reg_array_imx390), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   } else {
     assert(false);
   }
@@ -201,7 +199,6 @@ void CameraState::sensors_poke(int request_id) {
 }
 
 void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
-  if (!enabled) return;
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
@@ -256,21 +253,19 @@ int CameraState::sensors_init() {
   struct cam_cmd_i2c_info *i2c_info = (struct cam_cmd_i2c_info *)alloc_w_mmu_hdl(video0_fd, buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
   auto probe = (struct cam_cmd_probe *)(i2c_info + 1);
 
+  probe->camera_id = camera_num;
   switch (camera_num) {
     case 0:
       // port 0
       i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x34;
-      probe->camera_id = 0;
       break;
     case 1:
       // port 1
       i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x30 : 0x36;
-      probe->camera_id = 1;
       break;
     case 2:
       // port 2
       i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x34;
-      probe->camera_id = 2;
       break;
   }
 
@@ -324,11 +319,11 @@ int CameraState::sensors_init() {
   power = power_set_wait(power, 1);
 
   // reset high
-  // wait 650000 cycles @ 19.2 mhz = 33.8 ms
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 8;
   power->power_settings[0].config_val_low = 1;
+  // wait 650000 cycles @ 19.2 mhz = 33.8 ms
   power = power_set_wait(power, 34);
 
   // probe happens here
@@ -525,7 +520,6 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
 }
 
 void CameraState::enqueue_buffer(int i, bool dp) {
-  if (!enabled) return;
   int ret;
   int request_id = request_ids[i];
 
@@ -592,16 +586,16 @@ void CameraState::enqueue_req_multi(int start, int n, bool dp) {
 // ******************* camera *******************
 
 void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServer * v, int camera_id_, int camera_num_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type, bool enabled_) {
-  LOGD("camera init %d", camera_num);
   multi_cam_state = multi_cam_state_;
   camera_id = camera_id_;
-  assert(camera_id < std::size(cameras_supported));
-  ci = cameras_supported[camera_id];
-  assert(ci.frame_width != 0);
-
   camera_num = camera_num_;
   enabled = enabled_;
   if (!enabled) return;
+
+  LOGD("camera init %d", camera_num);
+  assert(camera_id < std::size(cameras_supported));
+  ci = cameras_supported[camera_id];
+  assert(ci.frame_width != 0);
 
   request_id_last = 0;
   skipped = true;
@@ -767,7 +761,7 @@ void CameraState::camera_open() {
   req_mgr_link_info.dev_hdls[1] = sensor_dev_handle;
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK, &req_mgr_link_info, sizeof(req_mgr_link_info));
   link_handle = req_mgr_link_info.link_hdl;
-  LOGD("link: %d hdl: 0x%X", ret, link_handle);
+  LOGD("link: %d session: 0x%X isp: 0x%X sensors: 0x%X link: 0x%X", ret, session_handle, isp_dev_handle, sensor_dev_handle, link_handle);
 
   struct cam_req_mgr_link_control req_mgr_link_control = {0};
   req_mgr_link_control.ops = CAM_REQ_MGR_LINK_ACTIVATE;
@@ -781,8 +775,10 @@ void CameraState::camera_open() {
   LOGD("start csiphy: %d", ret);
   ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
-  ret = device_control(sensor_fd, CAM_START_DEV, session_handle, sensor_dev_handle);
-  LOGD("start sensor: %d", ret);
+
+  // this is unneeded
+  //ret = device_control(sensor_fd, CAM_START_DEV, session_handle, sensor_dev_handle);
+  //LOGD("start sensor: %d", ret);
 
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }
