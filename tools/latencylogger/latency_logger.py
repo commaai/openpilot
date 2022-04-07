@@ -147,8 +147,8 @@ def graph_timestamps(timestamps, relative):
   ax.set_ylim(0, 15)
   ax.set_xlabel('milliseconds')
   ax.set_ylabel('Frame id')
-  colors = ["blue", 'green', 'red', 'yellow', 'purple']
-  assert len(colors) == len(SERVICES), "Each service needs a color"
+  colors = ['blue', 'green', 'red', 'yellow', 'purple']
+  assert len(colors) == len(SERVICES), 'Each service needs a color'
 
   points = {"x": [], "y": [], "labels": []}
   for frame_id, services in timestamps.items():
@@ -159,13 +159,13 @@ def graph_timestamps(timestamps, relative):
       start, end = get_interval(frame_id, service,timestamps)
       service_bars.append(((start-t0)/1e6,(end-start)/1e6))
       for event in events:
-        points["x"].append((event[1]-t0)/1e6)
-        points["y"].append(frame_id)
-        points["labels"].append(event[0])
+        points['x'].append((event[1]-t0)/1e6)
+        points['y'].append(frame_id)
+        points['labels'].append(event[0])
     ax.broken_barh(service_bars, (frame_id-0.45, 0.9), facecolors=(colors), alpha=0.5)
 
-  scatter = ax.scatter(points['x'], points['y'], marker="d", edgecolor='black')
-  tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points["labels"])
+  scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
+  tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
   mpld3.plugins.connect(fig, tooltip)
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
   #mpld3.save_html(fig, 'latencylogger_plot.html')
