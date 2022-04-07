@@ -64,6 +64,7 @@ private:
   void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
   void enqueue_req_multi(int start, int n, bool dp);
   void enqueue_buffer(int i, bool dp);
+  int clear_req_queue();
 
   int sensors_init();
   void sensors_poke(int request_id);

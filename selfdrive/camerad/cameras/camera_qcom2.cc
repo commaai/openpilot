@@ -158,14 +158,15 @@ void release_fd(int video0_fd, uint32_t handle) {
   release(video0_fd, handle);
 }
 
-void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
+int CameraState::clear_req_queue() {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
-  req_mgr_flush_request.session_hdl = session_hdl;
-  req_mgr_flush_request.link_hdl = link_hdl;
+  req_mgr_flush_request.session_hdl = session_handle;
+  req_mgr_flush_request.link_hdl = link_handle;
   req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
   int ret;
-  ret = do_cam_control(fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
   // LOGD("flushed all req: %d", ret);
+  return ret;
 }
 
 // ************** high level camera helpers ****************
@@ -189,7 +190,7 @@ void CameraState::sensors_poke(int request_id) {
   pkt->num_cmd_buf = 0;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.size = size;
-  pkt->header.op_code = 0x7f;
+  pkt->header.op_code = CAM_SENSOR_PACKET_OPCODE_SENSOR_NOP;
   pkt->header.request_id = request_id;
 
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
@@ -905,6 +906,8 @@ void cameras_close(MultiCameraState *s) {
 void CameraState::handle_camera_event(void *evdat) {
   if (!enabled) return;
   struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)evdat;
+  assert(event_data->session_hdl == session_handle);
+  assert(event_data->u.frame_msg.link_hdl == link_handle);
 
   uint64_t timestamp = event_data->u.frame_msg.timestamp;
   int main_id = event_data->u.frame_msg.frame_id;
@@ -916,8 +919,8 @@ void CameraState::handle_camera_event(void *evdat) {
 
     // check for skipped frames
     if (main_id > frame_id_last + 1 && !skipped) {
-      // realign
-      clear_req_queue(multi_cam_state->video0_fd, event_data->session_hdl, event_data->u.frame_msg.link_hdl);
+      LOGE("camera %d realign", camera_num);
+      clear_req_queue();
       enqueue_req_multi(real_id + 1, FRAME_BUF_COUNT - 1, 0);
       skipped = true;
     } else if (main_id == frame_id_last + 1) {
@@ -926,6 +929,7 @@ void CameraState::handle_camera_event(void *evdat) {
 
     // check for dropped requests
     if (real_id > request_id_last + 1) {
+      LOGE("camera %d dropped requests %d %d", camera_num, real_id, request_id_last);
       enqueue_req_multi(request_id_last + 1 + FRAME_BUF_COUNT, real_id - (request_id_last + 1), 0);
     }
 
@@ -947,9 +951,9 @@ void CameraState::handle_camera_event(void *evdat) {
     // dispatch
     enqueue_req_multi(real_id + FRAME_BUF_COUNT, 1, 1);
   } else { // not ready
-    // reset after half second of no response
     if (main_id > frame_id_last + 10) {
-      clear_req_queue(multi_cam_state->video0_fd, event_data->session_hdl, event_data->u.frame_msg.link_hdl);
+      LOGE("camera %d reset after half second of no response", camera_num);
+      clear_req_queue();
       enqueue_req_multi(request_id_last + 1, FRAME_BUF_COUNT, 0);
       frame_id_last = main_id;
       skipped = true;
