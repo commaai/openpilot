@@ -47,7 +47,7 @@ class PIDController():
   def update(self, error, error_rate=0.0, speed=0.0, override=False, feedforward=0., freeze_integrator=False):
     self.speed = speed
 
-    self.p = error * self.k_p
+    self.p = float(error) * self.k_p
     self.f = feedforward * self.k_f
     self.d = error_rate * self.k_d
 
