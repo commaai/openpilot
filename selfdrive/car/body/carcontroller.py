@@ -58,7 +58,7 @@ class CarController():
       speed_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
       speed_error = speed_desired - speed_measured
 
-      freeze_integrator = ((speed_error < 0 and self.speed_pid.i/self.speed_pid.k_i <= MAX_POS_INTEGRATOR) or
+      freeze_integrator = ((speed_error < 0 and self.speed_pid.i/self.speed_pid.k_i <= -MAX_POS_INTEGRATOR) or
                            (speed_error > 0 and self.speed_pid.i/self.speed_pid.k_i >= MAX_POS_INTEGRATOR))
       angle_setpoint = self.speed_pid.update(speed_error, freeze_integrator=freeze_integrator)
 
@@ -71,7 +71,7 @@ class CarController():
 
       speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
       turn_error = speed_diff_measured - speed_diff_desired
-      freeze_integrator = ((turn_error < 0 and self.turn_pid.i/self.turn_pid.k_i <= MAX_POS_INTEGRATOR) or
+      freeze_integrator = ((turn_error < 0 and self.turn_pid.i/self.turn_pid.k_i <= -MAX_POS_INTEGRATOR) or
                            (turn_error > 0 and self.turn_pid.i/self.turn_pid.k_i >= MAX_POS_INTEGRATOR))
       torque_diff = self.turn_pid.update(turn_error, freeze_integrator=freeze_integrator)
 
