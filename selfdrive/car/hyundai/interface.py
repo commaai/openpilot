@@ -10,7 +10,7 @@ from selfdrive.car.disable_ecu import disable_ecu
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
-ENABLE_BUTTONS = (Buttons.RES_ACCEL, Buttons.SET_DECEL)
+ENABLE_BUTTONS = (Buttons.RES_ACCEL, Buttons.SET_DECEL, Buttons.CANCEL)
 
 
 class CarInterface(CarInterfaceBase):
@@ -317,11 +317,9 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam)
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
-    # On some newer model years, the CANCEL button acts as a pause/resume button based on the enabled state
-    # To avoid accidentally re-engaging when we cancel, only allow engagement on specific user button presses
+    # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
+    # To avoid re-engaging when openpilot cancels, only enable on specific user button presses
     user_enabled = any([btn in ENABLE_BUTTONS for btn in self.CS.cruise_buttons])
-    # TODO: make sure this logic is correct
-    # user_enabled |= Buttons.CANCEL in self.CS.cruise_buttons and not self.CS.out.cruiseState.enabled
 
     events = self.create_common_events(ret, pcm_enable=self.CS.CP.pcmCruise, user_enabled=user_enabled)
 
