@@ -182,6 +182,7 @@ void CameraState::sensors_start() {
 }
 
 void CameraState::sensors_poke(int request_id) {
+  if (!enabled) return;
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet);
   struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, size, &cam_packet_handle);
@@ -192,13 +193,18 @@ void CameraState::sensors_poke(int request_id) {
   pkt->header.request_id = request_id;
 
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
-  assert(ret == 0);
+  if (ret != 0) {
+    LOGE("** sensor %d FAILED poke, disabling", camera_num);
+    enabled = false;
+    return;
+  }
 
   munmap(pkt, size);
   release_fd(multi_cam_state->video0_fd, cam_packet_handle);
 }
 
 void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
+  if (!enabled) return;
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
@@ -221,7 +227,12 @@ void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op
   memcpy(i2c_random_wr->random_wr_payload, dat, len*sizeof(struct i2c_random_wr_payload));
 
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
-  assert(ret == 0);
+
+  if (ret != 0) {
+    LOGE("** sensor %d FAILED i2c, disabling", camera_num);
+    enabled = false;
+    return;
+  }
 
   munmap(i2c_random_wr, buf_desc[0].size);
   release_fd(multi_cam_state->video0_fd, buf_desc[0].mem_handle);
