@@ -45,8 +45,6 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, v_ego, gas_presse
   # would have the effect of both enabling and changing speed is checked after the state transition
   if not enabled:
     return v_cruise_kph
-  if enabled and gas_pressed:
-    return initialize_v_cruise(v_ego, buttonEvents, v_cruise_kph)
 
   long_press = False
   button_type = None
@@ -66,6 +64,10 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, v_ego, gas_presse
         button_type = k
         long_press = True
         break
+
+  # If set is pressed while overriding, reset cruise speed to vEgo
+  if enabled and gas_pressed and button_type == car.CarState.ButtonEvent.Type.decelCruise:
+    return int(round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
 
   if button_type:
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
