@@ -10,7 +10,7 @@
 
 #include "selfdrive/modeld/models/dmonitoring.h"
 
-constexpr int MODEL_WIDTH = 320;
+constexpr int MODEL_WIDTH = 1024;
 constexpr int MODEL_HEIGHT = 640;
 
 template <class T>
@@ -23,12 +23,6 @@ static inline void init_yuv_buf(std::vector<uint8_t> &buf, const int width, int 
   uint8_t *y = get_buffer(buf, width * height * 3 / 2);
   uint8_t *u = y + width * height;
   uint8_t *v = u + (width / 2) * (height / 2);
-
-  // needed on comma two to make the padded border black
-  // equivalent to RGB(0,0,0) in YUV space
-  memset(y, 16, width * height);
-  memset(u, 128, (width / 2) * (height / 2));
-  memset(v, 128, (width / 2) * (height / 2));
 }
 
 void dmonitoring_init(DMonitoringModelState* s) {
@@ -54,86 +48,28 @@ static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int h
   return std::make_tuple(y, u, v);
 }
 
-struct Rect {int x, y, w, h;};
-void crop_yuv(uint8_t *raw, int width, int height, uint8_t *y, uint8_t *u, uint8_t *v, const Rect &rect) {
-  uint8_t *raw_y = raw;
+DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, float *calib) {
+  uint8_t *raw_y = (uint8_t *) raw;
   uint8_t *raw_u = raw_y + (width * height);
   uint8_t *raw_v = raw_u + ((width / 2) * (height / 2));
-  for (int r = 0; r < rect.h / 2; r++) {
-    memcpy(y + 2 * r * rect.w, raw_y + (2 * r + rect.y) * width + rect.x, rect.w);
-    memcpy(y + (2 * r + 1) * rect.w, raw_y + (2 * r + rect.y + 1) * width + rect.x, rect.w);
-    memcpy(u + r * (rect.w / 2), raw_u + (r + (rect.y / 2)) * width / 2 + (rect.x / 2), rect.w / 2);
-    memcpy(v + r * (rect.w / 2), raw_v + (r + (rect.y / 2)) * width / 2 + (rect.x / 2), rect.w / 2);
-  }
-}
-
-DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, float *calib) {
-  Rect crop_rect;
-  if (width == TICI_CAM_WIDTH) {
-    const int cropped_height = tici_dm_crop::width / 1.33;
-    crop_rect = {width / 2 - tici_dm_crop::width / 2 + tici_dm_crop::x_offset,
-                 height / 2 - cropped_height / 2 + tici_dm_crop::y_offset,
-                 cropped_height / 2,
-                 cropped_height};
-    if (!s->is_rhd) {
-      crop_rect.x += tici_dm_crop::width - crop_rect.w;
-    }
-  } else {
-    const int adapt_width = 372;
-    crop_rect = {0, 0, adapt_width, height};
-    if (!s->is_rhd) {
-      crop_rect.x += width - crop_rect.w;
-    }
-  }
 
   int resized_width = MODEL_WIDTH;
   int resized_height = MODEL_HEIGHT;
 
-  auto [cropped_y, cropped_u, cropped_v] = get_yuv_buf(s->cropped_buf, crop_rect.w, crop_rect.h);
-  if (!s->is_rhd) {
-    crop_yuv((uint8_t *)stream_buf, width, height, cropped_y, cropped_u, cropped_v, crop_rect);
-  } else {
-    auto [mirror_y, mirror_u, mirror_v] = get_yuv_buf(s->premirror_cropped_buf, crop_rect.w, crop_rect.h);
-    crop_yuv((uint8_t *)stream_buf, width, height, mirror_y, mirror_u, mirror_v, crop_rect);
-    libyuv::I420Mirror(mirror_y, crop_rect.w,
-                       mirror_u, crop_rect.w / 2,
-                       mirror_v, crop_rect.w / 2,
-                       cropped_y, crop_rect.w,
-                       cropped_u, crop_rect.w / 2,
-                       cropped_v, crop_rect.w / 2,
-                       crop_rect.w, crop_rect.h);
-  }
-
   auto [resized_buf, resized_u, resized_v] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
   uint8_t *resized_y = resized_buf;
   libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterBilinear;
-  if (Hardware::TICI()) {
-    libyuv::I420Scale(cropped_y, crop_rect.w,
-                    cropped_u, crop_rect.w / 2,
-                    cropped_v, crop_rect.w / 2,
-                    crop_rect.w, crop_rect.h,
-                    resized_y, resized_width,
-                    resized_u, resized_width / 2,
-                    resized_v, resized_width / 2,
-                    resized_width, resized_height,
-                    mode);
-  } else {
-    const int source_height = 0.7*resized_height;
-    const int extra_height = (resized_height - source_height) / 2;
-    const int extra_width = (resized_width - source_height / 2) / 2;
-    const int source_width = source_height / 2 + extra_width;
-    libyuv::I420Scale(cropped_y, crop_rect.w,
-                    cropped_u, crop_rect.w / 2,
-                    cropped_v, crop_rect.w / 2,
-                    crop_rect.w, crop_rect.h,
-                    resized_y + extra_height * resized_width, resized_width,
-                    resized_u + extra_height / 2 * resized_width / 2, resized_width / 2,
-                    resized_v + extra_height / 2 * resized_width / 2, resized_width / 2,
-                    source_width, source_height,
-                    mode);
-  }
+  libyuv::I420Scale(raw_y, width,
+                  raw_u, width / 2,
+                  raw_v, width / 2,
+                  s->is_rhd ? -width:width, height,
+                  resized_y, resized_width,
+                  resized_u, resized_width / 2,
+                  resized_v, resized_width / 2,
+                  resized_width, resized_height,
+                  mode);
 
-  int yuv_buf_len = (1024/2) * (640/2) * 6; // Y|u|v -> y|y|y|y|u|v
+  int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
   // one shot conversion, O(n) anyway
   // yuvframe2tensor, normalize
