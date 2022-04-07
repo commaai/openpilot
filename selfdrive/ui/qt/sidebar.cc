@@ -76,7 +76,7 @@ void Sidebar::updateState(const UIState &s) {
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     pandaStatus = {"NO\nPANDA", danger_color};
   } else if (s.scene.started && !sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK()) {
-    pandaStatus = {"GPS\nSEARCHING", warning_color};
+    pandaStatus = {"GPS\nSEARCH", warning_color};
   }
   setProperty("pandaStatus", QVariant::fromValue(pandaStatus));
 }

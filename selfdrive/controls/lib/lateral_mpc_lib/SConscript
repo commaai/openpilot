@@ -44,11 +44,14 @@ generated_files = [
 ] + build_files
 
 acados_dir = '#third_party/acados'
+acados_templates_dir = '#pyextra/acados_template/c_templates_tera'
+
 source_list = ['lat_mpc.py',
   f'{acados_dir}/include/acados_c/ocp_nlp_interface.h',
   f'{acados_dir}/aarch64/lib/libacados.so',
   f'{acados_dir}/x86_64/lib/libacados.so',
   f'{acados_dir}/larch64/lib/libacados.so',
+  f'{acados_templates_dir}/acados_solver.in.c',
 ]
 
 lenv = env.Clone()

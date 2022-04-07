@@ -100,9 +100,10 @@ class LateralPlanner:
   def publish(self, sm, pm):
     plan_solution_valid = self.solution_invalid_cnt < 2
     plan_send = messaging.new_message('lateralPlan')
-    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'modelV2'])
+    plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState', 'modelV2'])
 
     lateralPlan = plan_send.lateralPlan
+    lateralPlan.modelMonoTime = sm.logMonoTime['modelV2']
     lateralPlan.laneWidth = float(self.LP.lane_width)
     lateralPlan.dPathPoints = self.y_pts.tolist()
     lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()

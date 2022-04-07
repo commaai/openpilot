@@ -63,3 +63,5 @@ COPY ./tools $HOME/openpilot/tools
 
 WORKDIR $HOME/openpilot
 RUN scons -j$(nproc)
+
+RUN python -c "from selfdrive.test.helpers import set_params_enabled; set_params_enabled()"

@@ -17,7 +17,7 @@ class CarControllerParams:
     # If the max stock LKAS request is <384, add your car to this list.
     if CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.ELANTRA_GT_I30, CAR.IONIQ,
                              CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_HEV,
-                             CAR.KIA_OPTIMA_H, CAR.KIA_OPTIMA, CAR.KIA_SORENTO, CAR.KIA_STINGER):
+                             CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO, CAR.KIA_STINGER):
       self.STEER_MAX = 255
     else:
       self.STEER_MAX = 384
@@ -89,14 +89,14 @@ CAR_INFO: Dict[str, Union[HyundaiCarInfo, List[HyundaiCarInfo]]] = {
   CAR.IONIQ_HEV_2022: HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", "SCC + LFA"),
   CAR.IONIQ_EV_LTD: HyundaiCarInfo("Hyundai Ioniq Electric 2019"),
   CAR.IONIQ_EV_2020: HyundaiCarInfo("Hyundai Ioniq Electric 2020"),
-  CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-In Hybrid 2020-21"),
+  CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-21"),
   CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020"),
   CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-19"),
   CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", video_link="https://youtu.be/_EdYQtV52-c"),
   CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All"),
   CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-22", "All"),
   CAR.SANTA_FE_HEV_2022: HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022", "All"),
-  CAR.SANTA_FE_PHEV_2022: HyundaiCarInfo("Hyundai Santa Fe Plug-In Hybrid 2022", "All"),
+  CAR.SANTA_FE_PHEV_2022: HyundaiCarInfo("Hyundai Santa Fe Plug-in Hybrid 2022", "All"),
   CAR.SONATA: HyundaiCarInfo("Hyundai Sonata 2020-22", "All", video_link="https://www.youtube.com/watch?v=ix63r9kE3Fw"),
   CAR.SONATA_LF: HyundaiCarInfo("Hyundai Sonata 2018-19"),
   CAR.TUCSON_DIESEL_2019: HyundaiCarInfo("Hyundai Tucson Diesel 2019", "SCC + LKAS"),
@@ -105,13 +105,13 @@ CAR_INFO: Dict[str, Union[HyundaiCarInfo, List[HyundaiCarInfo]]] = {
     HyundaiCarInfo("Kia Telluride 2020"),
   ],
   CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS),
-  CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2021-22", "All"),
+  CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", "All"),
 
   # Kia
   CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2018-21"),
   CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "SCC + LFA"),
   CAR.KIA_NIRO_EV: HyundaiCarInfo("Kia Niro Electric 2019-22", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo"),
-  CAR.KIA_NIRO_HEV: HyundaiCarInfo("Kia Niro Plug-In Hybrid 2019", min_enable_speed=10. * CV.MPH_TO_MS),
+  CAR.KIA_NIRO_HEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2019", min_enable_speed=10. * CV.MPH_TO_MS),
   CAR.KIA_NIRO_HEV_2021: HyundaiCarInfo("Kia Niro Hybrid 2021-22"),
   CAR.KIA_OPTIMA: [
     HyundaiCarInfo("Kia Optima 2017", min_steer_speed=32. * CV.MPH_TO_MS),
@@ -959,13 +959,13 @@ FW_VERSIONS = {
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x8758910-Q5450\xf1\000SP ESC \a 101\031\t\005 58910-Q5450',
       b'\xf1\x8758910-Q5450\xf1\000SP ESC \t 101\031\t\005 58910-Q5450',
-     ],
+    ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81616D2051\000\000\000\000\000\000\000\000',
       b'\xf1\x81616D5051\000\000\000\000\000\000\000\000',
       b'\001TSP2KNL06F100J0K',
       b'\001TSP2KNL06F200J0K',
-     ],
+    ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\000SP2 MDPS C 1.00 1.04 56300Q5200          ',
       b'\xf1\000SP2 MDPS C 1.01 1.05 56300Q5200          ',
@@ -978,7 +978,7 @@ FW_VERSIONS = {
       b'\xf1\x87CZLUB49370612JF7h\xa8y\x87\x99\xa7hv\x99\x97fv\x88\x87x\x89x\x96O\xff\x88\xff\xff\xff.@\xf1\x816V2C2051\000\000\xf1\0006V2B0_C2\000\0006V2C2051\000\000CSP4N20NS3\000\000\000\000',
       b'\xf1\x87954A22D200\xf1\x81T01950A1  \xf1\000T0190XBL  T01950A1  DSP2T16X4X950NS6\xd30\xa5\xb9',
       b'\xf1\x87954A22D200\xf1\x81T01950A1  \xf1\000T0190XBL  T01950A1  DSP2T16X4X950NS8\r\xfe\x9c\x8b',
-     ],
+    ],
   },
   CAR.KIA_OPTIMA: {
     (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4110         '],
@@ -991,7 +991,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5001 h32',
       b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.02 95895-D5000 h31',
-      ],
+    ],
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW'],
   },
   CAR.ELANTRA_2021: {
@@ -1079,29 +1079,33 @@ FW_VERSIONS = {
       b'\xf1\x8799110L5000\xf1\000DNhe SCC FHCUP      1.00 1.02 99110-L5000         ',
       b'\xf1\000DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
       b'\xf1\x8799110L5000\xf1\000DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
-      ],
+    ],
+    (Ecu.esp, 0x7b0, None): [
+      b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x81\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x8756310-L5500\xf1\x00DN8 MDPS C 1.00 1.02 56310-L5500 4DNHC102',
       b'\xf1\x8756310-L5450\xf1\x00DN8 MDPS C 1.00 1.02 56310-L5450 4DNHC102',
       b'\xf1\x8756310-L5450\xf1\000DN8 MDPS C 1.00 1.03 56310-L5450 4DNHC103',
-      ],
+    ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00DN8HMFC  AT USA LHD 1.00 1.04 99211-L1000 191016',
       b'\xf1\x00DN8HMFC  AT USA LHD 1.00 1.05 99211-L1000 201109',
       b'\xf1\000DN8HMFC  AT USA LHD 1.00 1.06 99211-L1000 210325',
-      ],
+    ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\000PSBG2333  E14\x00\x00\x00\x00\x00\x00\x00TDN2H20SA6N\xc2\xeeW',
-      b'\xf1\x87959102T250\000\000\000\000\000\xf1\x81E09\000\000\000\000\000\000\000\xf1\000PSBG2323  E09\000\000\000\000\000\000\000TDN2H20SA5\x97R\x88\x9e',
+      b'\xf1\x87959102T250\x00\x00\x00\x00\x00\xf1\x81E09\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2323  E09\x00\x00\x00\x00\x00\x00\x00TDN2H20SA5\x97R\x88\x9e',
       b'\xf1\000PSBG2323  E09\000\000\000\000\000\000\000TDN2H20SA5\x97R\x88\x9e',
       b'\xf1\000PSBG2333  E16\000\000\000\000\000\000\000TDN2H20SA7\0323\xf9\xab',
       b'\xf1\x87PCU\000\000\000\000\000\000\000\000\000\xf1\x81E16\000\000\000\000\000\000\000\xf1\000PSBG2333  E16\000\000\000\000\000\000\000TDN2H20SA7\0323\xf9\xab',
       b'\xf1\x87959102T250\x00\x00\x00\x00\x00\xf1\x81E14\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2333  E14\x00\x00\x00\x00\x00\x00\x00TDN2H20SA6N\xc2\xeeW',
-      ],
+    ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x87391162J012',
       b'\xf1\x87391162J013',
-      ],
+      b'\xf1\x87391062J002',
+    ],
   },
   CAR.KIA_SORENTO: {
     (Ecu.fwdCamera, 0x7c4, None): [

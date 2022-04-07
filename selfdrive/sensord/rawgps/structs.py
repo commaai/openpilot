@@ -16,6 +16,93 @@ LOG_GNSS_PRX_RF_HW_STATUS_REPORT = 0x147E
 LOG_CGPS_SLOW_CLOCK_CLIB_REPORT = 0x1488
 LOG_GNSS_CONFIGURATION_STATE = 0x1516
 
+oemdre_measurement_report = """
+  uint8_t version;
+  uint8_t reason;
+  uint8_t sv_count;
+  uint8_t seq_num;
+  uint8_t seq_max;
+  uint16_t rf_loss;
+
+  uint8_t system_rtc_valid;
+  uint32_t f_count;
+  uint32_t clock_resets;
+  uint64_t system_rtc_time;
+
+  uint8_t gps_leap_seconds;
+  uint8_t gps_leap_seconds_uncertainty;
+  float gps_to_glonass_time_bias_milliseconds;
+  float gps_to_glonass_time_bias_milliseconds_uncertainty;
+
+  uint16_t gps_week;
+  uint32_t gps_milliseconds;
+  uint32_t gps_time_bias;
+  uint32_t gps_clock_time_uncertainty;
+  uint8_t gps_clock_source;
+
+  uint8_t glonass_clock_source;
+  uint8_t glonass_year;
+  uint16_t glonass_day;
+  uint32_t glonass_milliseconds;
+  float glonass_time_bias;
+  float glonass_clock_time_uncertainty;
+
+  float clock_frequency_bias;
+  float clock_frequency_uncertainty;
+  uint8_t frequency_source;
+
+  uint32_t cdma_clock_info[5];
+
+  uint8_t source;
+"""
+
+oemdre_measurement_report_sv = """
+  uint8_t sv_id;
+  uint8_t unkn;
+  int8_t glonass_frequency_index;
+  uint32_t observation_state;
+  uint8_t observations;
+  uint8_t good_observations;
+  uint8_t filter_stages;
+  uint8_t predetect_interval;
+  uint8_t cycle_slip_count;
+  uint16_t postdetections;
+
+  uint32_t measurement_status;
+  uint32_t measurement_status2;
+
+  uint16_t carrier_noise;
+  uint16_t rf_loss;
+  int16_t latency;
+
+  float filtered_measurement_fraction;
+  uint32_t filtered_measurement_integral;
+  float filtered_time_uncertainty;
+  float filtered_speed;
+  float filtered_speed_uncertainty;
+
+  float unfiltered_measurement_fraction;
+  uint32_t unfiltered_measurement_integral;
+  float unfiltered_time_uncertainty;
+  float unfiltered_speed;
+  float unfiltered_speed_uncertainty;
+
+  uint8_t multipath_estimate_valid;
+  uint32_t multipath_estimate;
+  uint8_t direction_valid;
+  float azimuth;
+  float elevation;
+  float doppler_acceleration;
+  float fine_speed;
+  float fine_speed_uncertainty;
+
+  uint64_t carrier_phase;
+  uint32_t f_count;
+
+  uint16_t parity_error_count;
+  uint8_t good_parity;
+"""
+
 glonass_measurement_report = """
   uint8_t version;
   uint32_t f_count;
@@ -184,6 +271,8 @@ def parse_struct(ss):
   st = "<"
   nams = []
   for l in ss.strip().split("\n"):
+    if len(l.strip()) == 0:
+      continue
     typ, nam = l.split(";")[0].split()
     #print(typ, nam)
     if typ == "float" or '_Flt' in nam:
@@ -202,7 +291,7 @@ def parse_struct(ss):
       st += "H"
     elif typ in ["int16", "int16_t"]:
       st += "h"
-    elif typ == "uint64":
+    elif typ in ["uint64", "uint64_t"]:
       st += "Q"
     else:
       print("unknown type", typ)
