@@ -91,7 +91,7 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    if self.CP.carFingerprint in TSS2_CAR:
+    if self.CP.carFingerprint in TSS2_CAR and not self.CP.radarOffCan:
       self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
@@ -219,7 +219,7 @@ class CarState(CarStateBase):
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
     ]
 
-    if CP.carFingerprint in TSS2_CAR:
+    if CP.carFingerprint in TSS2_CAR and not CP.radarOffCan:
       signals.append(("ACC_TYPE", "ACC_CONTROL"))
       checks.append(("ACC_CONTROL", 33))
 
