@@ -766,6 +766,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("CAN Error: Check Connections"),
   },
 
+  EventName.canBusMissing: {},
+
   EventName.steerUnavailable: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("LKAS Fault: Restart the Car"),
     ET.PERMANENT: NormalPermanentAlert("LKAS Fault: Restart the car to engage"),
