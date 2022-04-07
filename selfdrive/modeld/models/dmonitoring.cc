@@ -102,18 +102,16 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
     }
   }
 
-  //printf("preprocess completed. %d \n", yuv_buf_len);
-  //FILE *dump_yuv_file = fopen("/tmp/rawdump.yuv", "wb");
-  //fwrite(resized_buf, yuv_buf_len, sizeof(uint8_t), dump_yuv_file);
-  //fclose(dump_yuv_file);
+  // printf("preprocess completed. %d \n", yuv_buf_len);
+  // FILE *dump_yuv_file = fopen("/tmp/rawdump.yuv", "wb");
+  // fwrite(net_input_buf, yuv_buf_len, sizeof(float), dump_yuv_file);
+  // fclose(dump_yuv_file);
 
-  // *** testing ***
-  // idat = np.frombuffer(open("/tmp/inputdump.yuv", "rb").read(), np.float32).reshape(6, 160, 320)
-  // imshow(cv2.cvtColor(tensor_to_frames(idat[None]/0.0078125+128)[0], cv2.COLOR_YUV2RGB_I420))
-
-  //FILE *dump_yuv_file2 = fopen("/tmp/inputdump.yuv", "wb");
-  //fwrite(net_input_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file2);
-  //fclose(dump_yuv_file2);
+  // # testing:
+  // dat = np.fromfile('/tmp/rawdump.yuv', dtype=np.float32)
+  // dat = dat.reshape(1,6,320,512) * 128. + 128.
+  // frame = tensor_to_frames(dat)[0]
+  // frame = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)
 
   double t1 = millis_since_boot();
   s->m->addImage(net_input_buf, yuv_buf_len);
