@@ -72,14 +72,9 @@ static void log(int levelnum, const char* filename, int lineno, const char* func
   char levelnum_c = levelnum;
   zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
 }
-static void cloudlog_common(int levelnum, bool is_timestamp, const char* filename, int lineno, const char* func,
-                            const char* fmt, va_list args) {
-  char* msg_buf = nullptr;
-  int ret = vasprintf(&msg_buf, fmt, args);
-  if (ret <= 0 || !msg_buf) return;
-
+static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func,
+                            char* msg_buf, json11::Json::object msg_j={}) {
   std::lock_guard lk(s.lock);
-
   if (!s.initialized) s.initialize();
 
   json11::Json::object log_j = json11::Json::object {
@@ -90,17 +85,10 @@ static void cloudlog_common(int levelnum, bool is_timestamp, const char* filenam
     {"funcname", func},
     {"created", seconds_since_epoch()}
   };
-
-  if (is_timestamp) {
-    json11::Json::object tspt_j = json11::Json::object {
-      {"timestamp", json11::Json::object{
-                  {"event", msg_buf},
-                  {"time", std::to_string(nanos_since_boot())}}
-      }
-    };
-    log_j["msg"] = tspt_j;
-  } else {
+  if (msg_j.empty()) {
     log_j["msg"] = msg_buf;
+  } else {
+    log_j["msg"] = msg_j;
   }
 
   std::string log_s = ((json11::Json)log_j).dump();
@@ -112,8 +100,11 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
                 const char* fmt, ...){
   va_list args;
   va_start(args, fmt);
-  cloudlog_common(levelnum, false, filename, lineno, func, fmt, args);
+  char* msg_buf = nullptr;
+  int ret = vasprintf(&msg_buf, fmt, args);
   va_end(args);
+  if (ret <= 0 || !msg_buf) return;
+  cloudlog_common(levelnum, filename, lineno, func, msg_buf);
 }
 
 void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
@@ -121,6 +112,35 @@ void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func
   if (!LOG_TIMESTAMPS) return;
   va_list args;
   va_start(args, fmt);
-  cloudlog_common(levelnum, true, filename, lineno, func, fmt, args);
+  char* msg_buf = nullptr;
+  int ret = vasprintf(&msg_buf, fmt, args);
   va_end(args);
+  if (ret <= 0 || !msg_buf) return;
+  json11::Json::object tspt_j = json11::Json::object{
+    {"timestamp", json11::Json::object{ 
+      {"event", msg_buf},
+      {"time", std::to_string(nanos_since_boot())}}
+    } 
+  };
+  cloudlog_common(levelnum, filename, lineno, func, msg_buf, tspt_j);
 }
+
+void cloudlog_t_f(int levelnum, int frame_id, const char* filename, int lineno, const char* func,
+                const char* fmt, ...){
+  if (!LOG_TIMESTAMPS) return;
+  va_list args;
+  va_start(args, fmt);
+  char* msg_buf = nullptr;
+  int ret = vasprintf(&msg_buf, fmt, args);
+  va_end(args);
+  if (ret <= 0 || !msg_buf) return;
+  json11::Json::object tspt_j = json11::Json::object{
+    {"timestamp", json11::Json::object{ 
+      {"event", msg_buf},
+      {"frame_id", frame_id},
+      {"time", std::to_string(nanos_since_boot())}}
+    } 
+  };
+  cloudlog_common(levelnum, filename, lineno, func, msg_buf, tspt_j);
+}
+
