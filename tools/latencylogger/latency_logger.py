@@ -146,7 +146,7 @@ def graph_timestamps(timestamps, relative):
   ax.set_xlim(0, 150 if relative else 750)
   ax.set_ylim(0, 15)
   ax.set_xlabel('milliseconds')
-  ax.set_ylabel('Frame id')
+  ax.set_ylabel('Frame ID')
   colors = ["blue", 'green', 'red', 'yellow', 'purple']
   assert len(colors) == len(SERVICES), "Each service needs a color"
 
