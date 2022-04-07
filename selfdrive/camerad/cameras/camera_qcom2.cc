@@ -225,7 +225,6 @@ void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op
   memcpy(i2c_random_wr->random_wr_payload, dat, len*sizeof(struct i2c_random_wr_payload));
 
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
-
   if (ret != 0) {
     LOGE("** sensor %d FAILED i2c, disabling", camera_num);
     enabled = false;
@@ -652,7 +651,7 @@ void CameraState::camera_open() {
     assert(false);
   }
 
-  // NOTE: in order to be able to disable road and wide road, we still have to configure the sensor over i2c
+  // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
   // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
   if (!enabled) return;
 
@@ -780,7 +779,7 @@ void CameraState::camera_open() {
   ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
 
-  // this is unneeded
+  // TODO: this is unneeded, should we be doing the start i2c in a different way?
   //ret = device_control(sensor_fd, CAM_START_DEV, session_handle, sensor_dev_handle);
   //LOGD("start sensor: %d", ret);
 
