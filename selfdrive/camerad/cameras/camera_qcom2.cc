@@ -182,7 +182,6 @@ void CameraState::sensors_start() {
 }
 
 void CameraState::sensors_poke(int request_id) {
-  if (!enabled) return;
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet);
   struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, size, &cam_packet_handle);
@@ -204,7 +203,6 @@ void CameraState::sensors_poke(int request_id) {
 }
 
 void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
-  if (!enabled) return;
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
@@ -905,6 +903,7 @@ void cameras_close(MultiCameraState *s) {
 }
 
 void CameraState::handle_camera_event(void *evdat) {
+  if (!enabled) return;
   struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)evdat;
 
   uint64_t timestamp = event_data->u.frame_msg.timestamp;
@@ -959,6 +958,7 @@ void CameraState::handle_camera_event(void *evdat) {
 }
 
 void CameraState::set_camera_exposure(float grey_frac) {
+  if (!enabled) return;
   const float dt = 0.05;
 
   const float ts_grey = 10.0;
