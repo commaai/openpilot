@@ -304,7 +304,8 @@ void NvgWindow::updateFrameMat(int w, int h) {
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
-void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {
+void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
+  const UIScene &scene = s->scene;
   if (!scene.end_to_end) {
     // lanelines
     for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
@@ -318,9 +319,30 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {
     }
   }
   // paint path
+//  float end_path_y = scene.track_vertices.v[scene.track_vertices.cnt / 2].y();
   QLinearGradient bg(0, height(), 0, height() / 4);
-  bg.setColorAt(0, scene.end_to_end ? redColor() : whiteColor());
-  bg.setColorAt(1, scene.end_to_end ? redColor(0) : whiteColor(0));
+//  qDebug() << scene.track_vertices.cnt;
+//  qDebug() << scene.track_vertices.v[scene.track_vertices.cnt / 2] << height();
+  const cereal::ModelDataV2::XYZTData::Reader &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
+  const cereal::ModelDataV2::XYZTData::Reader &rate = (*s->sm)["modelV2"].getModelV2().getOrientationRate();
+  float orientation_rate = rate.getZ().size() > 0 ? std::abs(rate.getZ()[0]) : 0;
+  float orientation_future = orientation.getZ().size() > 0 ? std::abs(orientation.getZ()[16]) : 0;
+  orientation_rate = fmin(orientation_rate * (1 / 0.05), 1);
+//  orientation_future = fmin(orientation_future * (1 / 0.1), 1);
+//  qDebug() << orientation_future << orientation_rate;
+  // path in turn colors
+//  bg.setColorAt(0, QColor::fromHslF(148 / 360., 1, 50 / 100., 1));
+//  bg.setColorAt(0.25, QColor::fromHslF(101 / 360., 1, 65 / 100., 0.8));
+//  bg.setColorAt(.5, QColor::fromHslF(54 / 360., 1, 65 / 100., 0.4));
+//  bg.setColorAt(1, QColor::fromHslF(54 / 360., 1, 65 / 100., 0));
+
+  float path_end_hue = fmax(70, 101 - (orientation_future * 310)) / 360;  // straight: 101, in turns (yellow): 54
+  qDebug() << path_end_hue * 360;
+
+  bg.setColorAt(0, QColor(0, 255, 119, 255));
+  bg.setColorAt(.35 / 1.5, QColor(0, 255, 119, 0.9*255.));
+  bg.setColorAt(.9 / 1.5, QColor::fromHslF(path_end_hue, 1., .65, .8));
+  bg.setColorAt(1. / 1.5, QColor::fromHslF(path_end_hue, 1., .65, .4));
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices.v, scene.track_vertices.cnt);
 }
@@ -366,7 +388,7 @@ void NvgWindow::paintGL() {
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(Qt::NoPen);
 
-    drawLaneLines(painter, s->scene);
+    drawLaneLines(painter, s);
 
     if (s->scene.longitudinal_control) {
       auto leads = (*s->sm)["modelV2"].getModelV2().getLeadsV3();
