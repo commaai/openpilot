@@ -112,7 +112,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3505. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_H)
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4H_TSS2):
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022):
       stop_and_go = True
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
@@ -120,7 +120,13 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3585. * CV.LB_TO_KG + STD_CARGO_KG  # Average between ICE and Hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
 
-      # 2019+ Rav4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
+      # 2022 RAV4 Hybrid has a different radar which also does ACC, so use stock longitudinal
+      # TODO: Write a radar parser and knock out the radar to gain openpilot longitudinal
+      if candidate == CAR.RAV4H_TSS2_2022:
+        ret.radarOffCan = True
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONG
+
+      # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
       # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
       for fw in car_fw:
         if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
@@ -217,14 +223,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableDsu = (len(found_ecus) > 0) and (Ecu.dsu not in found_ecus) and (candidate not in NO_DSU_CAR) and (not smartDsu)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
     # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
-    ret.openpilotLongitudinalControl = ((smartDsu or ret.enableDsu or candidate in TSS2_CAR) and
-                                        not ret.safetyConfigs[0].safetyParam & Panda.FLAG_TOYOTA_STOCK_LONG)
-
-    for fw in car_fw:
-      if fw.ecu == "fwdRadar" and fw.fwVersion in [b'\x018821F0R01100\x00\x00\x00\x00']:
-        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONG
-        ret.openpilotLongitudinalControl = False
-        ret.radarOffCan = True
+    ret.openpilotLongitudinalControl = (smartDsu or ret.enableDsu or candidate in TSS2_CAR) and not ret.radarOffCan
 
     # we can't use the fingerprint to detect this reliably, since
     # the EV gas pedal signal can take a couple seconds to appear
