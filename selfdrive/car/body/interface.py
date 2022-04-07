@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 from cereal import car
 from common.realtime import DT_CTRL
 from selfdrive.car import scale_rot_inertia, scale_tire_stiffness, get_safety_config
@@ -15,6 +16,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "body"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.body)]
 
+    ret.minSteerSpeed = -math.inf
     ret.steerRatio = 0.5
     ret.steerRateCost = 0.5
     ret.steerLimitTimer = 1.0

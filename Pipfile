@@ -36,6 +36,7 @@ sphinx-rtd-theme = "*"
 breathe = "*"
 subprocess32 = "*"
 tenacity = "*"
+mpld3 = "*"
 
 [packages]
 atomicwrites = "*"

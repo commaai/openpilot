@@ -154,6 +154,7 @@ class TestOnroad(unittest.TestCase):
     os.system("pkill -9 -f athena")
 
     # start manager and run openpilot for a minute
+    proc = None
     try:
       manager_path = os.path.join(BASEDIR, "selfdrive/manager/manager.py")
       proc = subprocess.Popen(["python", manager_path])
@@ -182,9 +183,10 @@ class TestOnroad(unittest.TestCase):
       cls.segments = cls.segments[:-1]
 
     finally:
-      proc.terminate()
-      if proc.wait(60) is None:
-        proc.kill()
+      if proc is not None:
+        proc.terminate()
+        if proc.wait(60) is None:
+          proc.kill()
 
     cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.bz2"))) for s in cls.segments]
 

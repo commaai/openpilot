@@ -44,6 +44,8 @@ class CarState(CarStateBase):
       ("MOTOR_ERR_R", "VAR_VALUES"),
       ("MCU_TEMP", "BODY_DATA"),
       ("BATT_VOLTAGE", "BODY_DATA"),
+      ("BATT_PERCENTAGE", "BODY_DATA"),
+      ("CHARGER_CONNECTED", "BODY_DATA"),
     ]
 
     checks = [
