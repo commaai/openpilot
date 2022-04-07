@@ -16,7 +16,7 @@ void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func
                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
 void cloudlog_t_f(int levelnum, int frame_id, const char* filename, int lineno, const char* func,
-                const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
+                  const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
 #define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
                                            __func__, \

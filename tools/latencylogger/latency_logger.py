@@ -172,8 +172,8 @@ def graph_timestamps(timestamps, start_times, end_times, relative):
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points["labels"])
   mpld3.plugins.connect(fig, tooltip)
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
-  mpld3.save_html(fig, 'test.html')
-  mpld3.show()
+  #mpld3.save_html(fig, 'latencylogger_plot.html')
+  mpld3.show(fig)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A tool for analyzing openpilot's end-to-end latency",
