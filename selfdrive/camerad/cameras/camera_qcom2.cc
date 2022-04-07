@@ -244,7 +244,7 @@ int CameraState::sensors_init() {
   struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(video0_fd, size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = -1;
-  pkt->header.op_code = 0x1000003;
+  pkt->header.op_code = 0x1000000 | CAM_SENSOR_PACKET_OPCODE_SENSOR_PROBE;
   pkt->header.size = size;
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
 
@@ -294,14 +294,8 @@ int CameraState::sensors_init() {
   buf_desc[1].type = CAM_CMD_BUF_I2C;
   struct cam_cmd_power *power_settings = (struct cam_cmd_power *)alloc_w_mmu_hdl(video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
   memset(power_settings, 0, buf_desc[1].size);
-  // 7750
-  /*power->count = 2;
-  power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
-  power->power_settings[0].power_seq_type = 2;
-  power->power_settings[1].power_seq_type = 8;
-  power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));*/
 
-  // 885a
+  // power on
   struct cam_cmd_power *power = power_settings;
   power->count = 4;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
@@ -349,13 +343,7 @@ int CameraState::sensors_init() {
   power->power_settings[0].config_val_low = 0;
   power = power_set_wait(power, 1);
 
-  // 7750
-  /*power->count = 1;
-  power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
-  power->power_settings[0].power_seq_type = 2;
-  power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));*/
-
-  // 885a
+  // power off
   power->count = 3;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
   power->power_settings[0].power_seq_type = 2;
@@ -613,7 +601,6 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
 }
 
 void CameraState::camera_open() {
-  if (!enabled) return;
   int ret;
   sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", camera_num);
   assert(sensor_fd >= 0);
@@ -642,6 +629,19 @@ void CameraState::camera_open() {
   assert(sensor_dev_handle_);
   sensor_dev_handle = *sensor_dev_handle_;
   LOGD("acquire sensor dev");
+
+  LOG("-- Configuring sensor");
+  if (camera_id == CAMERA_ID_AR0231) {
+    sensors_i2c(init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
+  } else if (camera_id == CAMERA_ID_IMX390) {
+    sensors_i2c(init_array_imx390, std::size(init_array_imx390), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+  } else {
+    assert(false);
+  }
+
+  // NOTE: in order to be able to disable road and wide road, we still have to configure the sensor over i2c
+  // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
+  if (!enabled) return;
 
   struct cam_isp_in_port_info in_port_info = {
       .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[camera_num],
@@ -709,15 +709,6 @@ void CameraState::camera_open() {
   // config ISP
   alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
   config_isp(0, 0, 1, buf0_handle, 0);
-
-  LOG("-- Configuring sensor");
-  if (camera_id == CAMERA_ID_AR0231) {
-    sensors_i2c(init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
-  } else if (camera_id == CAMERA_ID_IMX390) {
-    sensors_i2c(init_array_imx390, std::size(init_array_imx390), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
-  } else {
-    assert(false);
-  }
 
   // config csiphy
   LOG("-- Config CSI PHY");
