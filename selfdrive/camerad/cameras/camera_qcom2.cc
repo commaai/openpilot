@@ -172,6 +172,7 @@ void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
 
 void CameraState::sensors_start() {
   if (!enabled) return;
+  LOGD("starting sensor %d", camera_num);
   if (camera_id == CAMERA_ID_AR0231) {
     sensors_i2c(start_reg_array_ar0231, std::size(start_reg_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_IMX390) {
