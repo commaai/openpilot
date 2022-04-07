@@ -615,7 +615,11 @@ void CameraState::camera_open() {
     ret = sensors_init();
   }
   LOGD("-- Probing sensor %d done with %d", camera_num, ret);
-  assert(ret == 0);
+  if (ret != 0) {
+    LOGE("sensor %d failed bringup, disabling")
+    enabled = false;
+    return;
+  }
 
   // create session
   struct cam_req_mgr_session_info session_info = {};
