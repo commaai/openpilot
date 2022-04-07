@@ -411,7 +411,7 @@ class Tici(HardwareBase):
     # *** CPU config ***
 
     # offline big cluster, leave core 4 online for boardd
-    for i in range(5, 8):
+    for i in range(4, 8):
       val = "0" if powersave_enabled else "1"
       sudo_write(val, f"/sys/devices/system/cpu/cpu{i}/online")
 
@@ -429,8 +429,25 @@ class Tici(HardwareBase):
   def initialize_hardware(self):
     self.amplifier.initialize_configuration()
 
+    def affine_irq(val, irq):
+      sudo_write(str(val), f"/proc/irq/{irq}/smp_affinity_list")
+
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
+
+    # *** IRQ config ***
+
+    # move these off the default core
+    affine_irq(1, 7)    # msm_drm
+    affine_irq(1, 250)  # msm_vidc
+    affine_irq(1, 8)    # i2c_geni (sensord)
+
+    affine_irq(4, 565)   # kgsl-3d0
+    affine_irq(3, 740)   # xhci-hcd:usb1 goes on the boardd core
+    for irq in range(237, 246):
+      affine_irq(4, irq) # camerad
+
+    sudo_write("f", "/proc/irq/default_smp_affinity")
 
     # *** GPU config ***
     sudo_write("0", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
@@ -472,3 +489,9 @@ class Tici(HardwareBase):
           pass
 
     return r
+
+
+if __name__ == "__main__":
+  t = Tici()
+  t.initialize_hardware()
+  t.set_power_save(False)
