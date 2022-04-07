@@ -7,7 +7,7 @@ import sys
 from collections import defaultdict
 
 from tools.lib.logreader import logreader_from_route_or_segment
-    
+
 DEMO_ROUTE = "9f583b1d93915c31|2022-04-06--11-34-03"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
@@ -57,16 +57,21 @@ def read_logs(lr):
         if continue_outer:
           continue
       mono_to_frame[msg.logMonoTime] = frame_id
-
       data['timestamp'][frame_id][service].append((msg.which()+" published", msg.logMonoTime))
+
       next_service = SERVICES[SERVICES.index(service)+1]
-      data['timestamp'][frame_id][next_service].append((msg.which()+" received", msg.logMonoTime))
+      if not data['start'][frame_id][next_service]:
+        data['start'][frame_id][next_service] = msg.logMonoTime
+      data['end'][frame_id][service] = msg.logMonoTime
+
       if service in SERVICE_TO_DURATIONS:
         for duration in SERVICE_TO_DURATIONS[service]:
           data['duration'][frame_id][service].append((msg.which()+"."+duration, getattr(msg_obj, duration)))
 
       if service == SERVICES[0]:
         data['timestamp'][frame_id][service].append((msg.which()+" start of frame", msg_obj.timestampSof))
+        if not data['start'][frame_id][service]:
+          data['start'][frame_id][service] = msg_obj.timestampSof
       elif msg.which() == 'controlsState':
         # Sendcan is published before controlsState, but the frameId is retrived in CS
         data['timestamp'][frame_id][service].append(("sendcan published", latest_sendcan_monotime))
@@ -80,26 +85,15 @@ def read_logs(lr):
   assert len(frame_mismatches) < 20, "Too many frame mismatches"
   return (data, frame_mismatches)
 
-def get_min_time(frame_id, service, timestamps, use_max=False):
-  return min(timestamps[frame_id][service], key=lambda x: x[1])[1] if not use_max else max(timestamps[frame_id][service], key=lambda x: x[1])[1]
-
-def get_interval(frame_id, service, timestamps):
-  try:
-    service_max = get_min_time(frame_id, service, timestamps, use_max=True) 
-    service_min = get_min_time(frame_id, service, timestamps) 
-    return (service_min, service_max)
-  except ValueError:
-    return (-1,-1)
-
-def find_frame_id(time, service, timestamps):
-  for frame_id in reversed(timestamps):
-    start, end = get_interval(frame_id, service, timestamps)
-    if start <= time <= end:
-      yield frame_id
+def find_frame_id(time, service, start_times, end_times):
+  for frame_id in reversed(start_times):
+    if start_times[frame_id][service] and end_times[frame_id][service]:
+      if start_times[frame_id][service] <= time <= end_times[frame_id][service]:
+        yield frame_id
 
 ## ASSUMES THAT AT LEAST ONE CLOUDLOG IS MADE IN CONTROLSD
-def insert_cloudlogs(lr, timestamps):
-  t0 = get_min_time(min(timestamps.keys()), SERVICES[0], timestamps) 
+def insert_cloudlogs(lr, timestamps, start_times, end_times):
+  t0 = start_times[min(start_times.keys())][SERVICES[0]] 
   failed_inserts = 0
   latest_controls_frameid = 0
   for msg in lr:
@@ -120,8 +114,9 @@ def insert_cloudlogs(lr, timestamps):
 
         if service == "boardd":
           timestamps[latest_controls_frameid][service].append((event, time))
+          end_times[latest_controls_frameid][service] = time
         else:
-          frame_id_gen = find_frame_id(time, service, timestamps)
+          frame_id_gen = find_frame_id(time, service, start_times, end_times)
           frame_id = next(frame_id_gen, False)
           if frame_id:
             if service == 'controlsd':
@@ -131,17 +126,16 @@ def insert_cloudlogs(lr, timestamps):
             timestamps[frame_id][service].append((event, time))
           else:
             failed_inserts += 1
-
   assert latest_controls_frameid > 0, "No timestamp in controlsd"
   assert failed_inserts < len(timestamps), "Too many failed cloudlog inserts"
 
-def print_timestamps(timestamps, durations ,relative):
-  t0 = get_min_time(min(timestamps.keys()), SERVICES[0], timestamps) 
+def print_timestamps(timestamps, durations, start_times, relative):
+  t0 = start_times[min(start_times.keys())][SERVICES[0]] 
   for frame_id in timestamps.keys():
     print('='*80)
     print("Frame ID:", frame_id)
     if relative:
-      t0 = get_min_time(frame_id, SERVICES[0], timestamps) 
+      t0 = start_times[frame_id][SERVICES[0]] 
     for service in SERVICES:
       print("  "+service)  
       events = timestamps[frame_id][service]
@@ -150,8 +144,8 @@ def print_timestamps(timestamps, durations ,relative):
       for event, time in durations[frame_id][service]:
         print("    "+'%-53s%-53s' %(event, str(time*1000))) 
 
-def graph_timestamps(timestamps, relative):
-  t0 = get_min_time(min(timestamps.keys()), SERVICES[0], timestamps) 
+def graph_timestamps(timestamps, start_times, end_times, relative):
+  t0 = start_times[min(start_times.keys())][SERVICES[0]] 
   fig, ax = plt.subplots()
   ax.set_xlim(0, 150 if relative else 750)
   ax.set_ylim(0, 15)
@@ -162,15 +156,13 @@ def graph_timestamps(timestamps, relative):
   points = {"x": [], "y": [], "labels": []}
   for frame_id, services in timestamps.items():
     if relative:
-      t0 = get_min_time(frame_id, SERVICES[0], timestamps) 
+      t0 = start_times[frame_id][SERVICES[0]] 
     service_bars = []
     for service, events in services.items():
-      start, end = get_interval(frame_id, service, timestamps)
+      start = start_times[frame_id][service]
+      end = end_times[frame_id][service]
       service_bars.append(((start-t0)/1e6, (end-start)/1e6))
       for event in events:
-        # Not useful to show in graph
-        if "received" in event[0] or "published" in event[0]:
-          continue
         points["x"].append((event[1]-t0)/1e6)
         points["y"].append(frame_id)
         points["labels"].append(event[0])
@@ -180,7 +172,7 @@ def graph_timestamps(timestamps, relative):
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points["labels"])
   mpld3.plugins.connect(fig, tooltip)
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
-  #mpld3.save_html(fig, 'test.html')
+  mpld3.save_html(fig, 'test.html')
   mpld3.show()
 
 if __name__ == "__main__":
@@ -200,7 +192,7 @@ if __name__ == "__main__":
   lr = logreader_from_route_or_segment(r, sort_by_time=True)
   data, frame_mismatches = read_logs(lr)
   lr.reset()
-  insert_cloudlogs(lr, data['timestamp'])
-  print_timestamps(data['timestamp'], data['duration'], args.relative)
+  insert_cloudlogs(lr, data['timestamp'], data['start'], data['end'])
+  print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
   if args.plot:
-    graph_timestamps(data['timestamp'], args.relative)
+    graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative)
