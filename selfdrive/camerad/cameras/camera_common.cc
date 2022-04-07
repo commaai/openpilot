@@ -110,7 +110,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     camera_bufs[i].allocate(frame_size);
     camera_bufs[i].init_cl(device_id, context);
   }
-  LOGD("allocated %d cl buffers", frame_buf_count);
+  LOGD("allocated %d CL buffers", frame_buf_count);
 
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;

@@ -43,7 +43,6 @@ const bool env_send_road = getenv("SEND_ROAD") != NULL;
 const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
 
 // for debugging
-// note: due to some bug, road and wide road must be disabled together
 const bool env_disable_road = getenv("DISABLE_ROAD") != NULL;
 const bool env_disable_wide_road = getenv("DISABLE_WIDE_ROAD") != NULL;
 const bool env_disable_driver = getenv("DISABLE_DRIVER") != NULL;
