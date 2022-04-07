@@ -49,18 +49,37 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   int resized_width = MODEL_WIDTH;
   int resized_height = MODEL_HEIGHT;
 
-  auto [resized_buf, resized_u, resized_v] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
-  uint8_t *resized_y = resized_buf;
+  auto [resized_y, resized_u, resized_v] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
   libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterBilinear;
-  libyuv::I420Scale(raw_y, width,
-                  raw_u, width / 2,
-                  raw_v, width / 2,
-                  s->is_rhd ? -width:width, height,
-                  resized_y, resized_width,
-                  resized_u, resized_width / 2,
-                  resized_v, resized_width / 2,
-                  resized_width, resized_height,
-                  mode);
+  if (!s->is_rhd) {
+    libyuv::I420Scale(raw_y, width,
+                    raw_u, width / 2,
+                    raw_v, width / 2,
+                    width, height,
+                    resized_y, resized_width,
+                    resized_u, resized_width / 2,
+                    resized_v, resized_width / 2,
+                    resized_width, resized_height,
+                    mode);
+  } else {
+    auto [mirror_y, mirror_u, mirror_v] = get_yuv_buf(s->premirror_resized_buf, resized_width, resized_height);
+    libyuv::I420Scale(raw_y, width,
+                    raw_u, width / 2,
+                    raw_v, width / 2,
+                    width, height,
+                    mirror_y, resized_width,
+                    mirror_u, resized_width / 2,
+                    mirror_v, resized_width / 2,
+                    resized_width, resized_height,
+                    mode);
+    libyuv::I420Mirror(mirror_y, resized_width,
+                    mirror_u, resized_width / 2,
+                    mirror_v, resized_width / 2,
+                    resized_y, resized_width,
+                    resized_u, resized_width / 2,
+                    resized_v, resized_width / 2,
+                    resized_width, resized_height);
+  }
 
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
