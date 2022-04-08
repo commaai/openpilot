@@ -319,7 +319,7 @@ class CarInterface(CarInterfaceBase):
 
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
     # To avoid re-engaging when openpilot cancels, only enable on specific user button presses
-    user_enabled = any([btn in ENABLE_BUTTONS for btn in self.CS.cruise_buttons])
+    user_enabled = any([btn in ENABLE_BUTTONS for btn in self.CS.cruise_buttons]) or any([btn in ENABLE_BUTTONS for btn in self.CS.main_buttons])
 
     events = self.create_common_events(ret, pcm_enable=self.CS.CP.pcmCruise, user_enabled=user_enabled)
 
