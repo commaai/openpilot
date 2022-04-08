@@ -10,7 +10,7 @@ from selfdrive.controls.lib.pid import PIDController
 MAX_TORQUE = 500
 MAX_TORQUE_RATE = 50
 MAX_ANGLE_ERROR = np.radians(7)
-MAX_POS_INTEGRATOR = 0.2  # meters
+MAX_POS_INTEGRATOR = 0.2   # meters
 MAX_TURN_INTEGRATOR = 0.1  # meters
 
 
@@ -54,12 +54,10 @@ class CarController():
                            (speed_error > 0 and self.speed_pid.error_integral >= MAX_POS_INTEGRATOR))
       angle_setpoint = self.speed_pid.update(speed_error, freeze_integrator=freeze_integrator)
 
-
       # Clip angle error, this is enough to get up from stands
       angle_error = np.clip((-CC.orientationNED[1]) - angle_setpoint, -MAX_ANGLE_ERROR, MAX_ANGLE_ERROR)
       angle_error_rate = np.clip(-CC.angularVelocity[1], -1., 1.)
       torque = self.balance_pid.update(angle_error, error_rate=angle_error_rate)
-
 
       speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
       turn_error = speed_diff_measured - speed_diff_desired
