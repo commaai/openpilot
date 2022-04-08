@@ -63,7 +63,7 @@ class CarController:
     # Gas/regen and brakes - all at 25Hz
     if (self.frame % 4) == 0:
       if not CC.longActive:
-        # Stock ECU sends max regen when not enabled.
+        # Stock ECU sends max regen when not enabled
         self.apply_gas = self.params.MAX_ACC_REGEN
         self.apply_brake = 0
       else:
@@ -74,8 +74,9 @@ class CarController:
 
       at_full_stop = CC.longActive and CS.out.standstill
       near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
-      can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
+      # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
       can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
+      can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
 
     # Send dashboard UI commands (ACC status), 25hz
     if (self.frame % 4) == 0:
