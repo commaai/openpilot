@@ -50,7 +50,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   int resized_height = MODEL_HEIGHT;
 
   auto [resized_y, resized_u, resized_v] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
-  libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterBilinear;
+  libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterLinear;
   if (!s->is_rhd) {
     libyuv::I420Scale(raw_y, width,
                     raw_u, width / 2,
