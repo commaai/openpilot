@@ -327,7 +327,6 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
     // straight: 101, in turns: 70
     float curve_hue = fmax(70, 101 - (orientation_future * 310)) / 360.;
 
-    // compensate so gradient ends near middle
     bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 1.0, 0.5, 1.0));
     bg.setColorAt(0.35, QColor::fromHslF(148 / 360., 1.0, 0.5, 0.9));
     bg.setColorAt(0.9, QColor::fromHslF(curve_hue, 1.0, 0.65, 0.8));
