@@ -10,8 +10,8 @@
 
 #include "selfdrive/modeld/models/dmonitoring.h"
 
-constexpr int MODEL_WIDTH = 1024;
-constexpr int MODEL_HEIGHT = 640;
+constexpr int MODEL_WIDTH = 704;
+constexpr int MODEL_HEIGHT = 448;
 
 template <class T>
 static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
