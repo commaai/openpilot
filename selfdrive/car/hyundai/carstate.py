@@ -5,19 +5,16 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_CAR, HYBRID_CAR, Buttons
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_CAR, HYBRID_CAR, PREV_BUTTON_FRAMES, Buttons
 from selfdrive.car.interfaces import CarStateBase
-
-PREV_BUTTON_FRAMES = 3
 
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    # includes current button and two previous
+    # cruise_buttons includes current button and two previous
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_FRAMES, maxlen=PREV_BUTTON_FRAMES)
-    self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_FRAMES, maxlen=PREV_BUTTON_FRAMES)
 
     if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
@@ -114,9 +111,7 @@ class CarState(CarStateBase):
     self.clu11 = copy.copy(cp.vl["CLU11"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.brake_error = cp.vl["TCS13"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
-    if len(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"]):
-      self.cruise_buttons.append(cp.vl["CLU11"]["CF_Clu_CruiseSwState"])
-      self.main_buttons.append(cp.vl["CLU11"]["CF_Clu_CruiseSwMain"])
+    self.cruise_buttons.append(cp.vl["CLU11"]["CF_Clu_CruiseSwState"])
 
     return ret
 
