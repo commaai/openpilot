@@ -46,6 +46,10 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
+  // While we write them right to the log for sync, we also publish the encode idx to the socket
+  const char *service_name = cam_info.type == DriverCam ? "driverEncodeIdx" : (cam_info.type == WideRoadCam ? "wideRoadEncodeIdx" : "roadEncodeIdx");
+  PubMaster pm({service_name});
+
   while (!do_exit) {
     if (!vipc_client.connect(false)) {
       util::sleep_for(5);
@@ -130,6 +134,7 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
             auto bytes = msg.toBytes();
             lh_log(lh, bytes.begin(), bytes.size(), true);
           }
+          pm.send(service_name, msg);
         }
       }
 
@@ -191,6 +196,7 @@ void loggerd_thread() {
   // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
+    LOGD("logging %s (on port %d)", it.name, it.port);
 
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
     assert(sock != NULL);
