@@ -411,7 +411,7 @@ class Tici(HardwareBase):
     # *** CPU config ***
 
     # offline big cluster, leave core 4 online for boardd
-    for i in range(4, 8):
+    for i in range(5, 8):
       val = "0" if powersave_enabled else "1"
       sudo_write(val, f"/sys/devices/system/cpu/cpu{i}/online")
 
@@ -442,10 +442,10 @@ class Tici(HardwareBase):
     affine_irq(1, 250)  # msm_vidc
     affine_irq(1, 8)    # i2c_geni (sensord)
 
-    affine_irq(4, 565)   # kgsl-3d0
-    affine_irq(3, 740)   # xhci-hcd:usb1 goes on the boardd core
+    affine_irq(5, 565)   # kgsl-3d0
+    affine_irq(4, 740)   # xhci-hcd:usb1 goes on the boardd core
     for irq in range(237, 246):
-      affine_irq(4, irq) # camerad
+      affine_irq(5, irq) # camerad
 
     sudo_write("f", "/proc/irq/default_smp_affinity")
 
