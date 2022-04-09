@@ -491,8 +491,10 @@ void Localizer::determine_gps_mode(double current_time) {
 
 int Localizer::locationd_thread() {
   const std::initializer_list<const char *> service_list = {"gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState", "carParams"};
-  PubMaster pm({ "liveLocationKalman" });
-  SubMaster sm(service_list, nullptr, {"gpsLocationExternal"});
+  PubMaster pm({"liveLocationKalman"});
+
+  // TODO: remove carParams once we're always sending at 100Hz
+  SubMaster sm(service_list, nullptr, {"gpsLocationExternal", "carParams"});
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
