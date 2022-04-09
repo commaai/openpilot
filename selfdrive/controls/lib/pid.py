@@ -5,10 +5,10 @@ from common.numpy_fast import clip, interp
 
 
 class PIDController():
-  def __init__(self, k_p, k_i, k_f=0., k_d=0., pos_limit=None, neg_limit=None, rate=100):
-    self._k_p = k_p  # proportional gain
-    self._k_i = k_i  # integral gain
-    self._k_d = k_d   # feedforward gain
+  def __init__(self, k_p, k_i, k_f=0., k_d=0., pos_limit=1e308, neg_limit=-1e308, rate=100):
+    self._k_p = k_p
+    self._k_i = k_i
+    self._k_d = k_d
     self.k_f = k_f   # feedforward gain
     if isinstance(self._k_p, Number):
       self._k_p = [[0], [self._k_p]]
@@ -22,6 +22,7 @@ class PIDController():
 
     self.i_unwind_rate = 0.3 / rate
     self.i_rate = 1.0 / rate
+    self.speed = 0.0
 
     self.reset()
 
@@ -36,6 +37,10 @@ class PIDController():
   @property
   def k_d(self):
     return interp(self.speed, self._k_d[0], self._k_d[1])
+
+  @property
+  def error_integral(self):
+    return self.i/self.k_i
 
   def reset(self):
     self.p = 0.0
