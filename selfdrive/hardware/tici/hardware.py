@@ -463,6 +463,21 @@ class Tici(HardwareBase):
     sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor")
     sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu4/governor")
 
+    # *** modem config ***
+    cmds = [
+      'AT+QNVW=5280,0,"0102000000000000"',
+      'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+      'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
+    ]
+    modem = self.get_modem()
+    for cmd in cmds:
+      try:
+        modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      except Exception:
+        raise
+    os.system('mmcli -m 0 --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
+
+
   def get_networks(self):
     r = {}
 
