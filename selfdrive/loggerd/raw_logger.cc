@@ -23,8 +23,8 @@ extern "C" {
 #include "selfdrive/common/util.h"
 
 RawLogger::RawLogger(const char* filename, CameraType type, int width, int height, int fps,
-                     int bitrate, bool h265, bool downscale, bool write, const char* broadcast_socket)
-  : filename(filename), type(type), broadcast_socket(broadcast_socket), fps(fps) {
+                     int bitrate, bool h265, bool downscale, bool write)
+  : filename(filename), fps(fps) {
 
   // TODO: respect write arg
 

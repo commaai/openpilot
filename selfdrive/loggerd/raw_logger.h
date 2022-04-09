@@ -25,7 +25,6 @@ class RawLogger : public VideoEncoder {
 
 private:
   const char* filename;
-  CameraType type;
   //bool write;
   int fps;
   int counter = 0;
