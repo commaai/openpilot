@@ -5,9 +5,10 @@ import cereal.messaging as messaging
 import multiprocessing
 import numpy as np
 from common.window import Window
-import av
 
 NVIDIA = int(os.getenv("NVIDIA", "0"))
+if not NVIDIA:
+  import av # pylint: disable=import-error
 
 def get_codec():
   # init from stock hevc
