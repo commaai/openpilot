@@ -41,6 +41,7 @@ private:
   void wait_for_state(OMX_STATETYPE state);
   static void callback_handler(OmxEncoder *e);
   static void write_handler(OmxEncoder *e);
+  static void write_and_broadcast_handler(OmxEncoder *e);
   static void handle_out_buf(OmxEncoder *e, OmxBuffer *out_buf);
 
   int width, height, fps;
