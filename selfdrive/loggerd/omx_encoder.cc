@@ -381,6 +381,7 @@ void OmxEncoder::write_handler(OmxEncoder *e){
       OmxEncoder::handle_out_buf(e, out_buf);
 
       edata.setData(kj::heapArray<capnp::byte>(out_buf->data, out_buf->header.nFilledLen));
+      edata.setTimestamp(out_buf->header.nTimeStamp);
       pm.send(service_name, msg);
 
       if (out_buf->header.nFlags & OMX_BUFFERFLAG_EOS) {
