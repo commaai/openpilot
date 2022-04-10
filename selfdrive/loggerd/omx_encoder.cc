@@ -373,17 +373,16 @@ void OmxEncoder::write_handler(OmxEncoder *e){
     PubMaster pm({service_name});
 
     while (!exit) {
+      OmxBuffer *out_buf = e->to_write.pop();
+
       MessageBuilder msg;
       auto edata = (e->type == DriverCam) ? msg.initEvent(true).initDriverEncodeData() :
         ((e->type == WideRoadCam) ? msg.initEvent(true).initWideRoadEncodeData() : msg.initEvent(true).initRoadEncodeData());
-
-      OmxBuffer *out_buf = e->to_write.pop();
-      OmxEncoder::handle_out_buf(e, out_buf);
-
       edata.setData(kj::heapArray<capnp::byte>(out_buf->data, out_buf->header.nFilledLen));
       edata.setTimestamp(out_buf->header.nTimeStamp);
       pm.send(service_name, msg);
 
+      OmxEncoder::handle_out_buf(e, out_buf);
       if (out_buf->header.nFlags & OMX_BUFFERFLAG_EOS) {
         exit = true;
       }
