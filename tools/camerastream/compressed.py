@@ -69,20 +69,35 @@ if __name__ == "__main__":
   cam = int(os.getenv("CAM", "0"))
   if cam == 0:
     sock = messaging.sub_sock("wideRoadEncodeData", None, addr=sys.argv[1], conflate=False)
+    alt_sock = messaging.sub_sock("wideRoadEncodeIdx", None, addr=sys.argv[1], conflate=False)
   elif cam == 1:
     sock = messaging.sub_sock("roadEncodeData", None, addr=sys.argv[1], conflate=False)
+    alt_sock = messaging.sub_sock("roadEncodeIdx", None, addr=sys.argv[1], conflate=False)
   elif cam == 2:
     sock = messaging.sub_sock("driverEncodeData", None, addr=sys.argv[1], conflate=False)
+    alt_sock = messaging.sub_sock("driverEncodeIdx", None, addr=sys.argv[1], conflate=False)
 
+  match = {}
+  last_idx = -1
   while 1:
     msgs = messaging.drain_sock(sock, wait_for_one=True)
+    alt_msgs = messaging.drain_sock(alt_sock, wait_for_one=False)
     if len(msgs) > 15:
       print("FRAME DROP")
       continue
 
+    for evt in alt_msgs:
+      evta = getattr(evt, evt.which())
+      match[evta.timestampEof//1000] = evta
+
     for i,evt in enumerate(msgs):
-      dat = getattr(evt, evt.which()).data
-      print(len(msgs), "%.2f" % (evt.logMonoTime/1e9), len(dat))
+      evta = getattr(evt, evt.which())
+      dat = evta.data
+      lat = ((evt.logMonoTime/1e9) - (evta.timestampEof/1e6))*1000
+      print(len(msgs), "%4d %.3f %.3f latency %.2f ms" % (evta.idx, evt.logMonoTime/1e9, evta.timestampEof/1e6, lat), len(dat), evta.timestampEof in match) #, match[evta.timestamp] if evta.timestamp in match else "")
+      if evta.idx != 0 and evta.idx != (last_idx+1):
+        print("DROP!")
+      last_idx = evta.idx
 
       if NVIDIA:
         codec.write(dat)
