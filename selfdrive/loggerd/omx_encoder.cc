@@ -589,11 +589,7 @@ void OmxEncoder::encoder_open(const char* path) {
 
   // start writer threads
   callback_handler_thread = std::thread(OmxEncoder::callback_handler, this);
-  if (this->remuxing) {
-    write_handler_thread = std::thread(OmxEncoder::write_handler, this);
-  } else {
-    write_handler_thread = std::thread(OmxEncoder::write_and_broadcast_handler, this);
-  }
+  write_handler_thread = std::thread(this->remuxing ? OmxEncoder::write_handler : OmxEncoder::write_and_broadcast_handler, this);
 
   this->is_open = true;
   this->counter = 0;

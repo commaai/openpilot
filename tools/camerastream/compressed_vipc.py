@@ -67,8 +67,7 @@ def decoder_ffmpeg(fn, vipc_server, vst):
 
 import argparse
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description='Decode video streams and broacast on VisionIPC',
-                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser = argparse.ArgumentParser(description='Decode video streams and broacast on VisionIPC')
   parser.add_argument("addr", help="Address of comma 3")
   parser.add_argument('--nvidia', action='store_true', help='Use nvidia instead of ffmpeg')
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")
