@@ -145,6 +145,9 @@ class HardwareBase(ABC):
   def initialize_hardware(self):
     pass
 
+  def configure_modem(self):
+    pass
+
   @abstractmethod
   def get_networks(self):
     pass
