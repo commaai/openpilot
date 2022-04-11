@@ -456,11 +456,9 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   this->update_reset_tracker();
 }
 
-kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
-  bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid)
-{
+kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_builder, bool inputsOK,
+                                                       bool sensorsOK, bool gpsOK, bool msgValid) {
   cereal::Event::Builder evt = msg_builder.initEvent();
-  evt.setLogMonoTime(logMonoTime);
   evt.setValid(msgValid);
   cereal::LiveLocationKalman::Builder liveLoc = evt.initLiveLocationKalman();
   this->build_live_location(liveLoc);
@@ -492,10 +490,11 @@ void Localizer::determine_gps_mode(double current_time) {
 }
 
 int Localizer::locationd_thread() {
-  const std::initializer_list<const char *> service_list =
-      { "gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState" };
-  PubMaster pm({ "liveLocationKalman" });
-  SubMaster sm(service_list, nullptr, { "gpsLocationExternal" });
+  const std::initializer_list<const char *> service_list = {"gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState", "carParams"};
+  PubMaster pm({"liveLocationKalman"});
+
+  // TODO: remove carParams once we're always sending at 100Hz
+  SubMaster sm(service_list, nullptr, {"gpsLocationExternal", "carParams"});
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
@@ -512,15 +511,16 @@ int Localizer::locationd_thread() {
     } else {
       filterInitialized = sm.allAliveAndValid();
     }
-    
-    if (sm.updated("cameraOdometry")) {
-      uint64_t logMonoTime = sm["cameraOdometry"].getLogMonoTime();
+
+    // 100Hz publish for notcars, 20Hz for cars
+    const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "sensorEvents" : "cameraOdometry";
+    if (sm.updated(trigger_msg)) {
       bool inputsOK = sm.allAliveAndValid();
       bool sensorsOK = sm.alive("sensorEvents") && sm.valid("sensorEvents");
       bool gpsOK = this->isGpsOK();
 
       MessageBuilder msg_builder;
-      kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK, filterInitialized);
+      kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, inputsOK, sensorsOK, gpsOK, filterInitialized);
       pm.send("liveLocationKalman", bytes.begin(), bytes.size());
 
       if (cnt % 1200 == 0 && gpsOK) {  // once a minute

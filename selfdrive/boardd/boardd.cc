@@ -364,6 +364,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setHeartbeatLost((bool)(health.heartbeat_lost_pkt));
     ps.setAlternativeExperience(health.alternative_experience_pkt);
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
+    ps.setInterruptLoad(health.interrupt_load);
 
     // Convert faults bitset to capnp list
     std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt);
