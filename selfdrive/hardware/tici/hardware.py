@@ -478,7 +478,7 @@ class Tici(HardwareBase):
         try:
           modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
         except Exception:
-          raise
+          pass
       os.system('mmcli -m 0 --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
 
 
