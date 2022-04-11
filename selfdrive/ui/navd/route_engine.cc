@@ -221,7 +221,7 @@ void RouteEngine::routeUpdate() {
         if (next_segment.isValid()) {
           segment = next_segment;
 
-          recompute_backoff = std::max(0, recompute_backoff - 1);
+          recompute_backoff = 0;
           recompute_countdown = 0;
         } else {
           qWarning() << "Destination reached";
