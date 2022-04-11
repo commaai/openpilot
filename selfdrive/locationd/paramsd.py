@@ -29,11 +29,13 @@ class ParamsLearner:
     self.kf.filter.set_global("stiffness_rear", CP.tireStiffnessRear)
 
     self.active = False
+    self.lockout = True
 
     self.speed = 0.0
     self.roll = 0.0
     self.steering_pressed = False
     self.steering_angle = 0.0
+    self.steering_ratio = CP.steerRatio
 
     self.valid = True
 
@@ -84,11 +86,12 @@ class ParamsLearner:
 
     elif which == 'carState':
       self.steering_angle = msg.steeringAngleDeg
-      self.steering_pressed = msg.steeringPressed
       self.speed = msg.vEgo
 
-      in_linear_region = abs(self.steering_angle) < 45 or not self.steering_pressed
-      self.active = self.speed > 5 and in_linear_region
+      in_linear_region = abs(self.steering_angle) < 3*self.steering_ratio
+      self.active = self.speed > 5 and in_linear_region and not self.lockout
+      
+      self.lockout = not (self.active or abs(self.steering_angle) < 0.2*self.steering_ratio)
 
       if self.active:
         self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(msg.steeringAngleDeg)]]))
