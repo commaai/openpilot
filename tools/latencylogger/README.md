@@ -22,10 +22,11 @@ optional arguments:
 ```
 
 ## Examples
-Plotting with relative starts each process at time=0 and gives a nice overview.
-![relself](https://user-images.githubusercontent.com/42323981/161629832-c6f28874-4b0b-437a-961e-d80adbf8dd97.png)
-Plotting without relative provides info about the frames relative time. 
-![relfirst](https://user-images.githubusercontent.com/42323981/161629886-3283e7c8-1bb0-4f3c-bede-4ceac1d2e140.png)
+Plotting with relative starts each process at time=0 and gives a nice overview. Timestamps are visualized as diamonds. The opacity allows for visualization of overlapping services.
+![relplot-1](https://user-images.githubusercontent.com/42323981/162108651-e0beee14-56e4-466d-8af1-cb37129fd94a.png)
+
+Plotting without relative provides info about the frames relative time.
+![plot-1](https://user-images.githubusercontent.com/42323981/162108694-fbfe907b-a1ee-4cc7-bc8b-162a7d9305d4.png)
 
 
 Printed timestamps of a frame with internal durations.
