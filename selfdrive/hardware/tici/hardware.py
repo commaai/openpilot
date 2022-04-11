@@ -467,7 +467,7 @@ class Tici(HardwareBase):
     sim_id = self.get_sim_info().get('sim_id', '')
 
     # blue prime config
-    if sim_id.startswith('89014'):
+    if sim_id.startswith('8901410'):
       cmds = [
         'AT+QNVW=5280,0,"0102000000000000"',
         'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
