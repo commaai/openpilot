@@ -58,6 +58,9 @@ MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 def sudo_write(val, path):
   os.system(f"sudo su -c 'echo {val} > {path}'")
 
+def affine_irq(val, irq):
+  sudo_write(str(val), f"/proc/irq/{irq}/smp_affinity_list")
+
 
 class Tici(HardwareBase):
   @cached_property
@@ -419,6 +422,12 @@ class Tici(HardwareBase):
       gov = 'ondemand' if powersave_enabled else 'performance'
       sudo_write(gov, f"/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor")
 
+    # *** IRQ config ***
+    affine_irq(5, 565)   # kgsl-3d0
+    affine_irq(4, 740)   # xhci-hcd:usb1 goes on the boardd core
+    for irq in range(237, 246):
+      affine_irq(5, irq) # camerad
+
   def get_gpu_usage_percent(self):
     try:
       used, total = open('/sys/class/kgsl/kgsl-3d0/gpubusy').read().strip().split()
@@ -429,9 +438,6 @@ class Tici(HardwareBase):
   def initialize_hardware(self):
     self.amplifier.initialize_configuration()
 
-    def affine_irq(val, irq):
-      sudo_write(str(val), f"/proc/irq/{irq}/smp_affinity_list")
-
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
 
@@ -441,12 +447,6 @@ class Tici(HardwareBase):
     affine_irq(1, 7)    # msm_drm
     affine_irq(1, 250)  # msm_vidc
     affine_irq(1, 8)    # i2c_geni (sensord)
-
-    affine_irq(5, 565)   # kgsl-3d0
-    affine_irq(4, 740)   # xhci-hcd:usb1 goes on the boardd core
-    for irq in range(237, 246):
-      affine_irq(5, irq) # camerad
-
     sudo_write("f", "/proc/irq/default_smp_affinity")
 
     # *** GPU config ***
