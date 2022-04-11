@@ -59,6 +59,7 @@ class TestCarModel(unittest.TestCase):
       raise Exception(f"missing test route for {cls.car_model}")
 
     disable_radar = False
+
     test_segs = [2, 1, 0]
     if cls.test_route.segment is not None:
       test_segs.insert(0, cls.test_route.segment)
