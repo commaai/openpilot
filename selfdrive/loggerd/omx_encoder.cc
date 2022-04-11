@@ -367,7 +367,6 @@ void OmxEncoder::callback_handler(OmxEncoder *e) {
 void OmxEncoder::write_and_broadcast_handler(OmxEncoder *e){
   bool exit = false;
   const char *service_name = e->type == DriverCam ? "driverEncodeData" : (e->type == WideRoadCam ? "wideRoadEncodeData" : "roadEncodeData");
-  printf("broadcast %s\n", service_name);
   PubMaster pm({service_name});
 
   uint32_t idx = 0;
