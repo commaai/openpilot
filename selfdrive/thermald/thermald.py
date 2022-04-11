@@ -101,6 +101,7 @@ def hw_state_thread(end_event, hw_queue):
 
   modem_version = None
   modem_nv = None
+  modem_configured = False
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
@@ -142,6 +143,12 @@ def hw_state_thread(end_event, hw_queue):
           cloudlog.warning(f"Modem stuck in registered state {hw_state.network_info}. nmcli conn up lte")
           os.system("nmcli conn up lte")
           registered_count = 0
+
+        # TODO: remove this once the config is in AGNOS
+        if not modem_configured and len(HARDWARE.get_sim_info().get('sim_id', '')) > 0:
+          cloudlog.warning("configuring modem")
+          HARDWARE.configure_modem()
+          modem_configured = True
 
         prev_hw_state = hw_state
       except Exception:
