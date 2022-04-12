@@ -144,7 +144,7 @@ void Pigeon::init() {
       case restored:
         LOGW("almanac backup restored");
         // clear the backup
-        send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x0B\x01\x20\x74"s);
+        //send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x0B\x01\x20\x74"s);
         break;
       case no_backup:
         LOGW("no almanac backup found");
