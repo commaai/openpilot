@@ -26,7 +26,7 @@ def read_power():
 
 def read_power_avg():
   pwrs = []
-  for i in range(100):
+  for _ in range(100):
     pwrs.append(read_power())
     time.sleep(0.01)
   power_total, power_som = np.mean([x[0] for x in pwrs]), np.mean([x[1] for x in pwrs])
@@ -35,11 +35,10 @@ def read_power_avg():
 
 def gpio_export(pin):
   try:
-    with open(f"/sys/class/gpio/export", 'w') as f:
+    with open("/sys/class/gpio/export", 'w') as f:
       f.write(str(pin))
-  except Exception as e:
+  except Exception:
     print(f"Failed to export gpio {pin}")
-
 
 if __name__ == "__main__":
   gpio_export(GPIO.CAM0_AVDD_EN)
