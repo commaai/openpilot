@@ -1051,8 +1051,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // Processing a frame takes right about 50ms, so we need to wait a few ms
   // so we don't send i2c commands around the frame start.
   int ms = (nanos_since_boot() - buf.cur_frame_data.timestamp_sof) / 1000000;
-  if (ms < 60) {
-    util::sleep_for(60 - ms);
+  if (ms < 80) {
+    util::sleep_for(80 - ms);
   }
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
 
