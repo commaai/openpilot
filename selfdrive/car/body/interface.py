@@ -42,7 +42,8 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CS.update(self.cp)
 
-    ret.canValid = self.cp.can_valid
+    ret.canValid = self.can_valid
+    ret.canTimeout = self.can_timeout
 
     # wait for everything to init first
     if self.frame > int(5. / DT_CTRL):

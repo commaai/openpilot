@@ -161,7 +161,8 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CS.update(self.cp, self.cp_loopback)
 
-    ret.canValid = self.cp.can_valid and self.cp_loopback.can_valid
+    ret.canValid = self.can_valid
+    ret.canTimeout = self.can_timeout
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     buttonEvents = []

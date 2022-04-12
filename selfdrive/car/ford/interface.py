@@ -48,7 +48,8 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CS.update(self.cp)
 
-    ret.canValid = self.cp.can_valid
+    ret.canValid = self.can_valid
+    ret.canTimeout = self.can_timeout
 
     # events
     events = self.create_common_events(ret)

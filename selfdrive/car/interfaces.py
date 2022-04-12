@@ -33,12 +33,16 @@ class CarInterfaceBase(ABC):
     self.low_speed_alert = False
     self.silent_steer_warning = True
 
+    self.can_parsers = []
     if CarState is not None:
       self.CS = CarState(CP)
+
       self.cp = self.CS.get_can_parser(CP)
       self.cp_cam = self.CS.get_cam_can_parser(CP)
+      self.cp_adas = self.CS.get_adas_can_parser(CP)
       self.cp_body = self.CS.get_body_can_parser(CP)
       self.cp_loopback = self.CS.get_loopback_can_parser(CP)
+      self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
 
     self.CC = None
     if CarController is not None:
@@ -106,6 +110,14 @@ class CarInterfaceBase(ABC):
   @abstractmethod
   def apply(self, c: car.CarControl) -> Tuple[car.CarControl.Actuators, List[bytes]]:
     pass
+
+  @property
+  def can_valid(self):
+    return all(cp.can_valid for cp in self.can_parsers if cp is not None)
+
+  @property
+  def can_timeout(self):
+    return any(cp.can_timeout for cp in self.can_parsers if cp is not None)
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True):
     events = Events()
@@ -252,6 +264,10 @@ class CarStateBase(ABC):
 
   @staticmethod
   def get_cam_can_parser(CP):
+    return None
+
+  @staticmethod
+  def get_adas_can_parser(CP):
     return None
 
   @staticmethod

@@ -171,7 +171,8 @@ class CarInterface(CarInterfaceBase):
     self.cp_cam.update_strings(can_strings)
 
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
-    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
+    ret.canValid = self.can_valid
+    ret.canTimeout = self.can_timeout
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # Check for and process state-change events (button press or release) from
