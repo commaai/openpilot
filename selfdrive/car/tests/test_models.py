@@ -215,8 +215,6 @@ class TestCarModel(unittest.TestCase):
         # panda intentionally has a higher threshold
         if self.CP.carName == "toyota" and 15 < CS.gas < 15*1.5:
           gas_pressed = False
-        if self.CP.carName == "honda":
-          gas_pressed = False
       checks['gasPressed'] += gas_pressed != self.safety.get_gas_pressed_prev()
 
       # TODO: remove this exception once this mismatch is resolved
