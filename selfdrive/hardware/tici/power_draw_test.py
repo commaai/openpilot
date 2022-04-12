@@ -26,10 +26,11 @@ def read_power():
 
 def read_power_avg():
   pwrs = []
-  for i in range(10):
+  for i in range(100):
     pwrs.append(read_power())
     time.sleep(0.01)
-  return np.mean([x[0] for x in pwrs]), np.mean([x[1] for x in pwrs])
+  power_total, power_som = np.mean([x[0] for x in pwrs]), np.mean([x[1] for x in pwrs])
+  return "total %7.2f mW  SOM %7.2f mW" % (power_total, power_som)
 
 
 def gpio_export(pin):
@@ -42,9 +43,9 @@ def gpio_export(pin):
 
 if __name__ == "__main__":
   print("hello")
-  os.system("nmcli radio wifi off")
   os.system('kill $(pgrep -f "python -m selfdrive.athena.manage_athenad")')
   os.system('kill $(pgrep -f "selfdrive.athena.athenad")')
+  # stopping weston turns off lcd3v3
   os.system("sudo service weston stop")
   os.system("sudo service ModemManager stop")
   print("services stopped")
@@ -58,42 +59,41 @@ if __name__ == "__main__":
   gpio_init(GPIO_UBLOX_PWR_EN, True)
   gpio_init(GPIO_LTE_RST_N, True)
   gpio_init(GPIO_LTE_PWRKEY, True)
-
-  # cameras
   gpio_export(GPIO_CAM0_DVDD_EN)
   gpio_export(GPIO_CAM0_AVDD_EN)
   gpio_init(GPIO_CAM0_DVDD_EN, True)
   gpio_init(GPIO_CAM0_AVDD_EN, True)
 
-  print("on")
-  gpio_set(GPIO_STM_RST_N, False)       # this turns panda on
-  gpio_set(GPIO_HUB_RST_N, True)        # this turns hub on
 
-  # lcd off (crashes kernel) -- disabling weston does this
-  #os.system("sudo su -c 'echo 0 > /sys/kernel/debug/regulator/lcd3v3/enable'")
+  gpio_set(GPIO_CAM0_DVDD_EN, False)    # cam 1v2 off
+  gpio_set(GPIO_CAM0_AVDD_EN, False)    # cam 2v8 off
+  gpio_set(GPIO_LTE_RST_N, True)        # quectel off
+  gpio_set(GPIO_UBLOX_PWR_EN, False)    # gps off
+  gpio_set(GPIO_STM_RST_N, True)        # panda off
+  gpio_set(GPIO_HUB_RST_N, False)       # hub off
+  time.sleep(5)
 
-  """
-  gpio_set(GPIO_LTE_RST_N, False)        # this turns quectel on
+  print("baseline: ", read_power_avg())
+  gpio_set(GPIO_CAM0_AVDD_EN, True)
+  time.sleep(2)
+  print("cam avdd: ", read_power_avg())
+  gpio_set(GPIO_CAM0_DVDD_EN, True)
+  time.sleep(2)
+  print("cam dvdd: ", read_power_avg())
+  gpio_set(GPIO_HUB_RST_N, True)
+  time.sleep(2)
+  print("usb hub:  ", read_power_avg())
+  gpio_set(GPIO_STM_RST_N, False)
+  time.sleep(5)
+  print("panda:    ", read_power_avg())
+  gpio_set(GPIO_UBLOX_PWR_EN, True)
+  time.sleep(5)
+  print("gps:      ", read_power_avg())
+  gpio_set(GPIO_LTE_RST_N, False)
   time.sleep(1)
   gpio_set(GPIO_LTE_PWRKEY, True)
   time.sleep(1)
   gpio_set(GPIO_LTE_PWRKEY, False)
-  """
-
-  # off
-  gpio_set(GPIO_LTE_RST_N, True)        # this turns quectel off
-  gpio_set(GPIO_UBLOX_PWR_EN, False)    # this turns gps off
-  gpio_set(GPIO_CAM0_DVDD_EN, False)
-  gpio_set(GPIO_CAM0_AVDD_EN, False)
-  time.sleep(2)
-  os.system("lsusb")
-
-  print("baseline", read_power_avg())
-  gpio_set(GPIO_STM_RST_N, True)
-  gpio_set(GPIO_HUB_RST_N, False)
-  time.sleep(3)
-  print("panda off", read_power_avg())
-  os.system("lsusb")
-
-
+  time.sleep(5)
+  print("quectel:  ", read_power_avg())
 
