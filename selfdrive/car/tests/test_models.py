@@ -16,7 +16,7 @@ from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.tests.routes import routes, non_tested_cars
+from selfdrive.car.tests.routes import non_tested_cars, routes, TestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 
@@ -38,7 +38,7 @@ routes_by_car = defaultdict(set)
 for r in routes:
   routes_by_car[r.car_fingerprint].add(r)
 
-test_cases: List[Tuple[str, Optional[str]]] = []
+test_cases: List[Tuple[str, Optional[TestRoute]]] = []
 for i, c in enumerate(sorted(all_known_cars())):
   if i % NUM_JOBS == JOB_ID:
     test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
