@@ -168,8 +168,13 @@ def graph_timestamps(timestamps, relative):
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
   mpld3.plugins.connect(fig, tooltip)
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
-  #mpld3.save_html(fig, 'latencylogger_plot.html')
-  mpld3.show(fig)
+  return fig
+
+def get_timestamps(lr):
+  data, frame_mismatches = read_logs(lr)
+  lr.reset()
+  insert_cloudlogs(lr, data['timestamp'])
+  return data, frame_mismatches
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A tool for analyzing openpilot's end-to-end latency",
@@ -186,9 +191,7 @@ if __name__ == "__main__":
 
   r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   lr = logreader_from_route_or_segment(r, sort_by_time=True)
-  data, frame_mismatches = read_logs(lr)
-  lr.reset()
-  insert_cloudlogs(lr, data['timestamp'])
+  data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], args.relative)
   if args.plot:
-    graph_timestamps(data['timestamp'], args.relative)
+    mpld3.show(graph_timestamps(data['timestamp'], args.relative))
