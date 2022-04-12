@@ -45,6 +45,8 @@ routes = [
 
   TestRoute("0e7a2ba168465df5|2020-10-18--14-14-22", HONDA.ACURA_RDX_3G),
   TestRoute("a74b011b32b51b56|2020-07-26--17-09-36", HONDA.CIVIC),
+  # Checks there's no controls mismatches due to pedal thresholds
+  TestRoute("cfb32f0fb91b173b|2022-04-06--14-54-45", HONDA.CIVIC, segment=21),
   TestRoute("a859a044a447c2b0|2020-03-03--18-42-45", HONDA.CRV_EU),
   TestRoute("68aac44ad69f838e|2021-05-18--20-40-52", HONDA.CRV),
   TestRoute("14fed2e5fa0aa1a5|2021-05-25--14-59-42", HONDA.CRV_HYBRID),
