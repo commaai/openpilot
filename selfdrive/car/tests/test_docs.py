@@ -20,7 +20,7 @@ class TestCarDocs(unittest.TestCase):
     # Asserts market-standard car naming conventions by make
     for cars in self.tier_cars.values():
       for car in cars:
-        if car.make in ["Hyundai", "Kia"]:
+        if car.car_name == "hyundai":
           tokens = car.model.lower().split(" ")
           self.assertNotIn("phev", tokens, "Use `Plug-in Hybrid`")
           self.assertNotIn("hev", tokens, "Use `Hybrid`")
