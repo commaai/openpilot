@@ -174,7 +174,6 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   params = Params()
 
   os.environ["LOG_ROOT"] = outdir
-
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
 
