@@ -1,13 +1,14 @@
 import argparse
 import json
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import mpld3
 import sys
 from collections import defaultdict
-import matplotlib.pyplot as plt
 
 from tools.lib.logreader import logreader_from_route_or_segment
     
-DEMO_ROUTE = "9f583b1d93915c31|2022-04-01--17-51-29"
+DEMO_ROUTE = "9f583b1d93915c31|2022-04-06--11-34-03"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 # Retrive controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored
@@ -144,6 +145,10 @@ def graph_timestamps(timestamps, relative):
   fig, ax = plt.subplots()
   ax.set_xlim(0, 150 if relative else 750)
   ax.set_ylim(0, 15)
+  ax.set_xlabel('milliseconds')
+  ax.set_ylabel('Frame ID')
+  colors = ['blue', 'green', 'red', 'yellow', 'purple']
+  assert len(colors) == len(SERVICES), 'Each service needs a color'
 
   points = {"x": [], "y": [], "labels": []}
   for frame_id, services in timestamps.items():
@@ -154,17 +159,22 @@ def graph_timestamps(timestamps, relative):
       start, end = get_interval(frame_id, service,timestamps)
       service_bars.append(((start-t0)/1e6,(end-start)/1e6))
       for event in events:
-        points["x"].append((event[1]-t0)/1e6)
-        points["y"].append(frame_id+0.45)
-        points["labels"].append(event[0])
-    ax.broken_barh(service_bars, (frame_id, 0.9), facecolors=(["blue", 'green', 'red', 'yellow', 'purple']))
+        points['x'].append((event[1]-t0)/1e6)
+        points['y'].append(frame_id)
+        points['labels'].append(event[0])
+    ax.broken_barh(service_bars, (frame_id-0.45, 0.9), facecolors=(colors), alpha=0.5)
 
-  scatter = ax.scatter(points['x'], points['y'], marker="d", edgecolor='black')
-  tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points["labels"])
-  ax.legend()
+  scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
+  tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
   mpld3.plugins.connect(fig, tooltip)
-  #mpld3.save_html(fig, 'test.html')
-  mpld3.show()
+  plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
+  return fig
+
+def get_timestamps(lr):
+  data, frame_mismatches = read_logs(lr)
+  lr.reset()
+  insert_cloudlogs(lr, data['timestamp'])
+  return data, frame_mismatches
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A tool for analyzing openpilot's end-to-end latency",
@@ -181,9 +191,7 @@ if __name__ == "__main__":
 
   r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   lr = logreader_from_route_or_segment(r, sort_by_time=True)
-  data, frame_mismatches = read_logs(lr)
-  lr.reset()
-  insert_cloudlogs(lr, data['timestamp'])
+  data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], args.relative)
   if args.plot:
-    graph_timestamps(data['timestamp'], args.relative)
+    mpld3.show(graph_timestamps(data['timestamp'], args.relative))
