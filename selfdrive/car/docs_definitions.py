@@ -63,6 +63,7 @@ class CarInfo:
     if self.min_enable_speed is not None:
       min_enable_speed = self.min_enable_speed
 
+    self.car_name = CP.carName
     self.make, self.model = self.name.split(' ', 1)
     self.row = {
       Column.MAKE: self.make,
