@@ -79,8 +79,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x340C, 0x802},  // GPIO_HIDRV_EN | GPIO0_ISEL=2
 
   // Readout timing
-  {0x300C, 0x07B9}, // LINE_LENGTH_PCK
-  {0x300A, 0x05CB}, // FRAME_LENGTH_LINES
+  {0x300A, 0x04E9}, // FRAME_LENGTH_LINES = 1257
+  {0x300C, 0x06D0}, // LINE_LENGTH_PCK = 1744
   {0x3042, 0x0000}, // EXTRA_DELAY
 
   // Readout Settings
@@ -94,8 +94,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3348, 0x0111}, // MIPI_F2_VDT_VC
   {0x334C, 0x0211}, // MIPI_F3_VDT_VC
   {0x3350, 0x0311}, // MIPI_F4_VDT_VC
-  {0x31B0, 0x0053}, // FRAME_PREAMBLE
-  {0x31B2, 0x003B}, // LINE_PREAMBLE
+  {0x31B0, 0x0052}, // FRAME_PREAMBLE
+  {0x31B2, 0x0039}, // LINE_PREAMBLE
   {0x301A, 0x001C}, // RESET_REGISTER
 
   // Noise Corrections
@@ -112,14 +112,20 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3082, 0x0004}, // OPERATION_MODE_CTRL
   {0x3238, 0x0444}, // EXPOSURE_RATIO
 
-  {0x1008, 0x0361}, // FINE_INTEGRATION_TIME_MIN
-  {0x100C, 0x0589}, // FINE_INTEGRATION_TIME2_MIN
-  {0x100E, 0x07B1}, // FINE_INTEGRATION_TIME3_MIN
-  {0x1010, 0x0139}, // FINE_INTEGRATION_TIME4_MIN
-  {0x3014, 0x08CB}, // FINE_INTEGRATION_TIME_
-  {0x321E, 0x08CB}, // FINE_INTEGRATION_TIME2
-  {0x321E, 0x08CB}, // FINE_INTEGRATION_TIME3
-  {0x321E, 0x0894}, // FINE_INTEGRATION_TIME4
+  {0x1008, 0x0361}, // FINE_INTEGRATION_TIME_MIN = 865
+  {0x100C, 0x0589}, // FINE_INTEGRATION_TIME2_MIN = 1417
+  {0x100E, 0x07B1}, // FINE_INTEGRATION_TIME3_MIN = 1969
+  {0x1010, 0x0139}, // FINE_INTEGRATION_TIME4_MIN = 313
+  {0x3012, 0x07E2}, // COARSE_INTEGRATION_TIME = 2018
+  {0x3014, 0x07E2}, // FINE_INTEGRATION_TIME = 2018
+  // {0x321E, 0x07E2}, // FINE_INTEGRATION_TIME2 = 2018
+  // {0x3222, 0x07E2}, // FINE_INTEGRATION_TIME3 = 2018
+  // {0x3226, 0x07AB}, // FINE_INTEGRATION_TIME4 = 1963
+
+  // Looks like the last fine integration time 
+  // that's actually used needs to be FINE_INTEGRATION_TIME4
+  // Bug in register wizard in case you don't use 4 exposures?
+  {0x321E, 0x07AB}, // FINE_INTEGRATION_TIME2 = 1963
 
   {0x31D0, 0x0000}, // COMPANDING, no good in 10 bit?
   {0x33DA, 0x0000}, // COMPANDING
