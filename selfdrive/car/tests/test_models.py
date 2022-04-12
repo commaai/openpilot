@@ -59,9 +59,9 @@ class TestCarModel(unittest.TestCase):
       raise Exception(f"missing test route for {cls.car_model}")
 
     disable_radar = False
-    test_segs = [2, 1, 0]
+    test_segs = (2, 1, 0)
     if cls.test_route.segment is not None:
-      test_segs = [cls.test_route.segment]
+      test_segs = (cls.test_route.segment,)
 
     for seg in test_segs:
       try:
@@ -84,7 +84,7 @@ class TestCarModel(unittest.TestCase):
       if len(can_msgs) > int(50 / DT_CTRL):
         break
     else:
-      raise Exception(f"Route {repr(cls.test_route.route)} not found or no CAN msgs found. Is it uploaded?")
+      raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
