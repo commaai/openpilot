@@ -5,15 +5,17 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_CAR, HYBRID_CAR, PREV_BUTTON_FRAMES, Buttons
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_CAR, HYBRID_CAR, Buttons
 from selfdrive.car.interfaces import CarStateBase
+
+PREV_BUTTON_FRAMES = 8
 
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    # includes current button and two previous
+
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_FRAMES, maxlen=PREV_BUTTON_FRAMES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_FRAMES, maxlen=PREV_BUTTON_FRAMES)
 
