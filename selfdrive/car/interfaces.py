@@ -104,20 +104,27 @@ class CarInterfaceBase(ABC):
     return ret
 
   @abstractmethod
-  def update(self, c: car.CarControl, can_strings: List[bytes]) -> car.CarState:
+  def _update(self, c: car.CarControl) -> car.CarState:
     pass
+
+  def update(self, c: car.CarControl, can_strings: List[bytes]) -> car.CarState:
+    # parse can
+    for cp in self.can_parsers:
+      if cp is not None:
+        cp.update_strings(can_strings)
+
+    # get CarState
+    ret = self._update(c)
+
+    ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
+    ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
+
+    self.CS.out = ret.as_reader()
+    return ret
 
   @abstractmethod
   def apply(self, c: car.CarControl) -> Tuple[car.CarControl.Actuators, List[bytes]]:
     pass
-
-  @property
-  def can_valid(self):
-    return all(cp.can_valid for cp in self.can_parsers if cp is not None)
-
-  @property
-  def can_timeout(self):
-    return any(cp.can_timeout for cp in self.can_parsers if cp is not None)
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True):
     events = Events()

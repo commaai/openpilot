@@ -75,14 +75,8 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def update(self, c, can_strings):
-
-    self.cp.update_strings(can_strings)
-    self.cp_cam.update_strings(can_strings)
-
+  def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
-    ret.canValid = self.can_valid
-    ret.canTimeout = self.can_timeout
 
     # events
     events = self.create_common_events(ret)
@@ -94,7 +88,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    self.CS.out = ret.as_reader()
     return self.CS.out
 
   def apply(self, c):
