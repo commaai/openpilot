@@ -119,7 +119,9 @@ class CarInterfaceBase(ABC):
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
 
+    # copy back for next iteration
     self.CS.out = ret.as_reader()
+
     return ret
 
   @abstractmethod
