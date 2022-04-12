@@ -7,6 +7,7 @@ import argparse
 # run DM procs
 os.environ["USE_WEBCAM"] = "1"
 
+from cereal import car
 import cereal.messaging as messaging
 from cereal.services import service_list
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
@@ -26,17 +27,30 @@ process_replay_dir = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(process_replay_dir, "fakedata/")
 
 
+def get_safety_param(msgs):
+  """
+  Tries to get safetyParam from log in this order:
+  1. carParams->safetyConfigs[0]->safetyParam
+  2. carParams->safetyConfigs[0]->safetyParamDEPRECATED
+  3. carParams->safetyParamDEPRECATED
+  """
+  cp = [m for m in msgs if m.which() == 'carParams'][0].carParams
+  if len(cp.safetyConfigs):
+    safety_param = cp.safetyConfigs[0].safetyParam
+    if cp.safetyConfigs[0].safetyParamDEPRECATED != 0:
+      safety_param = cp.safetyConfigs[0].safetyParamDEPRECATED
+  else:
+    safety_param = cp.safetyParamDEPRECATED
+  return safety_param
+
+
 def replay_panda_states(s, msgs):
   pm = messaging.PubMaster([s, 'peripheralState'])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() in ['pandaStates', 'pandaStateDEPRECATED']]
 
   # Migrate safety param base on carState
-  cp = [m for m in msgs if m.which() == 'carParams'][0].carParams
-  if len(cp.safetyConfigs):
-    safety_param = cp.safetyConfigs[0].safetyParam
-  else:
-    safety_param = cp.safetyParamDEPRECATED
+  safety_param = get_safety_param(msgs)
 
   while True:
     for m in smsgs:
@@ -53,6 +67,28 @@ def replay_panda_states(s, msgs):
       new_m = messaging.new_message('peripheralState')
       pm.send('peripheralState', new_m)
 
+      rk.keep_time()
+
+
+def replay_car_params(s, msgs):
+  pm = messaging.PubMaster([s, ])
+  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
+  smsgs = [m for m in msgs if m.which() == 'carParams']
+
+  # Migrate safety param from deprecated safetyConfigs field
+  safety_param = get_safety_param(msgs)
+
+  while True:
+    for m in smsgs:
+      new_m = m.as_builder()
+      if len(m.carParams.safetyConfigs):
+        new_m.carParams.safetyConfigs[0].safetyParam = safety_param
+      else:
+        new_m.carParams.safetyConfigs = [car.CarParams.SafetyConfig()]
+        new_m.carParams.safetyConfigs[0].safetyParam = safety_param
+        new_m.carParams.safetyConfigs[0].safetyModel = m.carParams.safetyModelDEPRECATED
+      new_m.logMonoTime = int(sec_since_boot() * 1e9)
+      pm.send(s, new_m)
       rk.keep_time()
 
 
@@ -216,6 +252,14 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
     ],
     'camerad': [
       *cam_procs,
+    ],
+    'controlsd': [
+      multiprocessing.Process(target=replay_service, args=('sendcan', lr)),
+      multiprocessing.Process(target=replay_service, args=('controlsState', lr)),
+      multiprocessing.Process(target=replay_service, args=('carState', lr)),
+      multiprocessing.Process(target=replay_service, args=('carEvents', lr)),
+      multiprocessing.Process(target=replay_service, args=('carControl', lr)),
+      multiprocessing.Process(target=replay_car_params, args=('carParams', lr)),
     ],
   }
 
