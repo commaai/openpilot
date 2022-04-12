@@ -59,27 +59,40 @@ if __name__ == "__main__":
   gpio_init(GPIO_UBLOX_PWR_EN, True)
   gpio_init(GPIO_LTE_RST_N, True)
   gpio_init(GPIO_LTE_PWRKEY, True)
-  gpio_export(GPIO_CAM0_DVDD_EN)
   gpio_export(GPIO_CAM0_AVDD_EN)
-  gpio_init(GPIO_CAM0_DVDD_EN, True)
+  gpio_export(GPIO_CAM0_RSTN)
+  gpio_export(GPIO_CAM1_RSTN)
+  gpio_export(GPIO_CAM2_RSTN)
   gpio_init(GPIO_CAM0_AVDD_EN, True)
+  gpio_init(GPIO_CAM0_RSTN, True)
+  gpio_init(GPIO_CAM1_RSTN, True)
+  gpio_init(GPIO_CAM2_RSTN, True)
 
 
-  gpio_set(GPIO_CAM0_DVDD_EN, False)    # cam 1v2 off
+  os.system("sudo su -c 'echo 0 > /sys/kernel/debug/regulator/camera_rear_ldo/enable'")  # cam 1v2 off
   gpio_set(GPIO_CAM0_AVDD_EN, False)    # cam 2v8 off
   gpio_set(GPIO_LTE_RST_N, True)        # quectel off
   gpio_set(GPIO_UBLOX_PWR_EN, False)    # gps off
   gpio_set(GPIO_STM_RST_N, True)        # panda off
   gpio_set(GPIO_HUB_RST_N, False)       # hub off
+  # cameras in reset
+  gpio_set(GPIO_CAM0_RSTN, False)
+  gpio_set(GPIO_CAM1_RSTN, False)
+  gpio_set(GPIO_CAM2_RSTN, False)
   time.sleep(5)
 
   print("baseline: ", read_power_avg())
   gpio_set(GPIO_CAM0_AVDD_EN, True)
   time.sleep(2)
   print("cam avdd: ", read_power_avg())
-  gpio_set(GPIO_CAM0_DVDD_EN, True)
+  os.system("sudo su -c 'echo 1 > /sys/kernel/debug/regulator/camera_rear_ldo/enable'")
   time.sleep(2)
   print("cam dvdd: ", read_power_avg())
+  gpio_set(GPIO_CAM0_RSTN, True)
+  gpio_set(GPIO_CAM1_RSTN, True)
+  gpio_set(GPIO_CAM2_RSTN, True)
+  time.sleep(2)
+  print("cams up:  ", read_power_avg())
   gpio_set(GPIO_HUB_RST_N, True)
   time.sleep(2)
   print("usb hub:  ", read_power_avg())
