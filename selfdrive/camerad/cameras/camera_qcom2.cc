@@ -64,7 +64,7 @@ const int ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
-const int EXPOSURE_TIME_MAX = 1618; // with HDR, slowest ss, 40ms
+const int EXPOSURE_TIME_MAX = 1780; // with HDR, slowest ss, 40ms
 
 // ************** low level camera helpers ****************
 int do_cam_control(int fd, int op_code, void *handle, int size) {
@@ -746,6 +746,8 @@ void CameraState::camera_open() {
     csiphy_info->lane_cnt = 0x4;
     csiphy_info->secure_mode = 0x0;
     csiphy_info->settle_time = MIPI_SETTLE_CNT * 200000000ULL;
+
+    // TODO: This is wrong, but doesn't seem to matter
     csiphy_info->data_rate = 48000000;  // Calculated by camera_freqs.py
 
     int ret_ = device_config(csiphy_fd, session_handle, csiphy_dev_handle, cam_packet_handle);

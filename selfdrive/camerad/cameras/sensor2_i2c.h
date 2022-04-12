@@ -48,13 +48,16 @@ struct i2c_random_wr_payload init_array_imx390[] = {
 struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x301A, 0x0018}, // RESET_REGISTER
 
-  // CLOCK Settings
-  {0x302A, 0x0006}, // VT_PIX_CLK_DIV
-  {0x302C, 0x0001}, // VT_SYS_CLK_DIV
-  {0x302E, 0x0002}, // PRE_PLL_CLK_DIV
-  {0x3030, 0x0032}, // PLL_MULTIPLIER
-  {0x3036, 0x000C}, // OP_WORD_CLK_DIV
-  {0x3038, 0x0001}, // OP_SYS_CLK_DIV
+  // CLOCK Settings 
+  // Target System Frequency: 88 MHz
+  // Input Clock Frequency: 19.200 MHz
+  // Output data rate (per lane): 58.667 MHz
+  {0x302A, 0x0008}, // VT_PIX_CLK_DIV = 8
+  {0x302C, 0x0001}, // VT_SYS_CLK_DIV = 1
+  {0x302E, 0x0003}, // PRE_PLL_CLK_DIV = 3
+  {0x3030, 0x006E}, // PLL_MULTIPLIER = 110
+  {0x3036, 0x000C}, // OP_PIX_CLK_DIV = 12
+  {0x3038, 0x0001}, // OP_SYS_CLK_DIV = 1
 
   // FORMAT
   {0x3040, 0xC000}, // READ_MODE
@@ -77,7 +80,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
 
   // Readout timing
   {0x300C, 0x07B9}, // LINE_LENGTH_PCK
-  {0x300A, 0x0652}, // FRAME_LENGTH_LINES
+  {0x300A, 0x05CB}, // FRAME_LENGTH_LINES
   {0x3042, 0x0000}, // EXTRA_DELAY
 
   // Readout Settings
