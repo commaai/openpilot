@@ -121,10 +121,11 @@ class CarInterfaceBase(ABC):
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
 
     # copy back for next iteration
+    reader = ret.as_reader()
     if self.CS is not None:
-      self.CS.out = ret.as_reader()
+      self.CS.out = reader
 
-    return ret
+    return reader
 
   @abstractmethod
   def apply(self, c: car.CarControl) -> Tuple[car.CarControl.Actuators, List[bytes]]:
