@@ -72,8 +72,8 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     }
     const int box_size = 220;
     // use approx instead of distort_points
-    int fbox_x = 964.0 + 1530.0 * (is_rhd ? face_x : -face_x);
-    int fbox_y = (450.0 + std::abs(face_x)*100.0) + (1076.0 - std::abs(face_x)*646.0) * face_y;
+    int fbox_x = 1080.0 + 1714.0 * (is_rhd ? face_x : -face_x);
+    int fbox_y = -135.0 + (504.0 + std::abs(face_x)*112.0) + (1205.0 - std::abs(face_x)*724.0) * face_y;
     p.setPen(QPen(QColor(255, 255, 255, alpha * 255), 10));
     p.drawRoundedRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, 35.0, 35.0);
   }
