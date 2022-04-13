@@ -134,6 +134,8 @@ def replay_cameras(lr, frs):
       m = messaging.new_message(s)
       msg = getattr(m, s)
       msg.frameId = rk.frame
+      msg.timestampSof = m.logMonoTime
+      msg.timestampEof = m.logMonoTime
       pm.send(s, m)
 
       vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
