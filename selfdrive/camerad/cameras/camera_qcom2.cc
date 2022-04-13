@@ -64,7 +64,11 @@ const int ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
-const int EXPOSURE_TIME_MAX = 2018; // with HDR, slowest ss, 40ms
+
+// In Trigger Shutter Sync mode the course integration time
+// must not be equal or greater than FRAME_LENGTH_LINES
+// In HDR mode, the sum of all exposure must be less than FRAME_LENGTH_LINES
+const int EXPOSURE_TIME_MAX = 1257; // with HDR, slowest ss, 40ms
 
 // ************** low level camera helpers ****************
 int do_cam_control(int fd, int op_code, void *handle, int size) {
