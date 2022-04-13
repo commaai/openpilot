@@ -41,14 +41,8 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  # returns a car.CarState
-  def update(self, c, can_strings):
-    # ******************* do can recv *******************
-    self.cp.update_strings(can_strings)
-
+  def _update(self, c):
     ret = self.CS.update(self.cp)
-
-    ret.canValid = self.cp.can_valid
 
     # events
     events = self.create_common_events(ret)
@@ -58,8 +52,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    self.CS.out = ret.as_reader()
-    return self.CS.out
+    return ret
 
   # pass in a car.CarControl
   # to be called @ 100hz
