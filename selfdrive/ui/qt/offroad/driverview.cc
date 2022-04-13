@@ -57,16 +57,31 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     return;
   }
 
-  const int width = 2 * height();
-  const QRect rect2 = {rect().center().x() - width / 2, rect().top(), width, rect().height()};
-
   cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState();
   bool face_detected = driver_state.getFaceProb() > 0.5;
+  if (face_detected) {
+    auto fxy_list = driver_state.getFacePosition();
+    auto std_list = driver_state.getFaceOrientationStd();
+    float face_x = fxy_list[0];
+    float face_y = fxy_list[1];
+    float face_std = std::max(std_list[0], std_list[1]);
+
+    float alpha = 0.7;
+    if (face_std > 0.1) {
+      alpha = std::max(0.7 - (face_std-0.1)*4, 0.0);
+    }
+    const int box_size = 144;
+    // use approx instead of distort_points
+    int fbox_x = 964.0 + 1530.0 * (is_rhd ? -face_x : face_x);
+    int fbox_y = (450.0 + std::abs(face_x)*100) + (1076.0 - std::abs(face_x)*646) * face_y;
+    p.setPen(QPen(QColor(255, 255, 255, alpha * 255), 10));
+    p.drawRoundedRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, 35.0, 35.0);
+  }
 
   // icon
   const int img_offset = 60;
-  const int img_x = rect2.left() + img_offset;
-  const int img_y = rect2.bottom() - FACE_IMG_SIZE - img_offset;
+  const int img_x = rect().left() + img_offset;
+  const int img_y = rect().bottom() - FACE_IMG_SIZE - img_offset;
   p.setOpacity(face_detected ? 1.0 : 0.2);
   p.drawPixmap(img_x, img_y, face_img);
 }
