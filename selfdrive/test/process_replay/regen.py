@@ -16,7 +16,7 @@ from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, ti
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.process_replay.process_replay import setup_env
+from selfdrive.test.process_replay.process_replay import setup_env, check_enabled
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
@@ -242,8 +242,13 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
 
   del vs
 
-  r = params.get("CurrentRoute", encoding='utf-8')
-  return os.path.join(outdir, r + "--0")
+  segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
+  seg_path = os.path.join(outdir, segment, "rlog.bz2")
+  # check to make sure openpilot is engaged in the route
+  if not check_enabled(LogReader(seg_path)):
+    raise Exception(f"Route never enabled: {segment}")
+
+  return seg_path
 
 
 def regen_and_save(route, sidx, upload=False, use_route_meta=False):
