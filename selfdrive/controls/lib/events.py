@@ -733,7 +733,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.wideRoadCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - WideRoad (Fisheye)",
+    ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Road Fisheye",
                                        duration=1.,
                                        creation_delay=30.),
   },
