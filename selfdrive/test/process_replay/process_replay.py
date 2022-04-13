@@ -500,7 +500,7 @@ def check_enabled(msgs):
     if msg.which() == "carParams":
       if msg.carParams.notCar:
         return True
-    if msg.which() == "controlsState":
+    elif msg.which() == "controlsState":
       if msg.controlsState.active:
         return True
   return False
