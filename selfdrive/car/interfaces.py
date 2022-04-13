@@ -33,6 +33,7 @@ class CarInterfaceBase(ABC):
     self.low_speed_alert = False
     self.silent_steer_warning = True
 
+    self.CS = None
     self.can_parsers = []
     if CarState is not None:
       self.CS = CarState(CP)
@@ -120,7 +121,8 @@ class CarInterfaceBase(ABC):
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
 
     # copy back for next iteration
-    self.CS.out = ret.as_reader()
+    if self.CS is not None:
+      self.CS.out = ret.as_reader()
 
     return ret
 
