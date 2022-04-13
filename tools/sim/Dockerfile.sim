@@ -15,6 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends\
     libx11-6 \
   && rm -rf /var/lib/apt/lists/*
 
+RUN git clone https://github.com/zeromq/libzmq.git /libzmq && \
+    cd /libzmq  && ./autogen.sh && \
+    ./configure && make && make install
+
 # Intel OpenCL driver
 ARG INTEL_DRIVER=l_opencl_p_18.1.0.015.tgz
 ARG INTEL_DRIVER_URL=http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532
@@ -60,6 +64,9 @@ COPY ./cereal $HOME/openpilot/cereal
 COPY ./panda $HOME/openpilot/panda
 COPY ./selfdrive $HOME/openpilot/selfdrive
 COPY ./tools $HOME/openpilot/tools
+
+RUN sed -i 's/\/tmp\/tools\/openpilot_env\.sh/\/openpilot\/tools\/openpilot_env\.sh/g' ~/.bashrc
+RUN echo "\nln -s -f /usr/local/lib/libzmq.so.5.2.5  /lib/x86_64-linux-gnu/libzmq.so.5" >> ~/.bashrc
 
 WORKDIR $HOME/openpilot
 RUN scons -j$(nproc)

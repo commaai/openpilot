@@ -6,7 +6,7 @@ cd $DIR
 # expose X to the container
 xhost +local:root
 
-docker pull ghcr.io/commaai/openpilot-sim:latest
+# docker pull ghcr.io/commaai/openpilot-sim:latest
 
 OPENPILOT_DIR="/openpilot"
 if ! [[ -z "$MOUNT_OPENPILOT" ]]
