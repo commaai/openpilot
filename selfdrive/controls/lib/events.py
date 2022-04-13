@@ -732,13 +732,13 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
                                        creation_delay=30.),
   },
 
-  EventName.driverCameraError: {
+  EventName.wideRoadCameraError: {
     ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Road Fisheye",
                                        duration=1.,
                                        creation_delay=30.),
   },
 
-  EventName.wideRoadCameraError: {
+  EventName.driverCameraError: {
     ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Driver",
                                        duration=1.,
                                        creation_delay=30.),
