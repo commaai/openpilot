@@ -163,9 +163,13 @@ def setup_git_options(cwd: str) -> None:
 
   # We are using copytree to copy the directory, which also changes
   # inode numbers. Ignore those changes too.
+
+  # Set protocol to the new version (default after git 2.26) to reduce data
+  # usage on git fetch --dry-run from about 400KB to 18KB.
   git_cfg = [
     ("core.trustctime", "false"),
     ("core.checkStat", "minimal"),
+    ("protocol.version", "2"),
   ]
   for option, value in git_cfg:
     run(["git", "config", option, value], cwd)
@@ -411,7 +415,7 @@ def main() -> None:
   wait_helper.sleep(30)
 
   # Run the update loop
-  #  * every 1m, do a lightweight internet/update check
+  #  * every 5m, do a lightweight internet/update check
   #  * every 10m, do a full git fetch
   while not wait_helper.shutdown:
     update_now = wait_helper.ready_event.is_set()
@@ -464,7 +468,8 @@ def main() -> None:
     except Exception:
       cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
-    wait_helper.sleep(60)
+    # TODO: replace this with a good backoff
+    wait_helper.sleep(300)
 
   dismount_overlay()
 
