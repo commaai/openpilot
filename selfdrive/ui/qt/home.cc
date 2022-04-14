@@ -82,6 +82,18 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
 }
 
+void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
+  // switch to the generic robot UI
+  const SubMaster &sm = *(uiState()->sm);
+  if (sm["carParams"].getCarParams().getNotCar()) {
+    if (onroad->isVisible()) {
+      slayout->setCurrentWidget(body);
+    } else if (body->isVisible()) {
+      slayout->setCurrentWidget(onroad);
+    }
+  }
+}
+
 // OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
