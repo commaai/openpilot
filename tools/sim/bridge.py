@@ -292,7 +292,7 @@ def bridge(q):
     t.start()
 
   # can loop
-  rk = Ratekeeper(100, print_delay_threshold=0.05)
+  rk = Ratekeeper(100, "bridge", print_delay_threshold=0.05)
 
   # init
   throttle_ease_out_counter = REPEAT_COUNTER
