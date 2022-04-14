@@ -6,6 +6,7 @@ from common.realtime import DT_DMON
 from selfdrive.hardware import TICI
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
+from common.transformations.camera import tici_d_frame_size
 
 EventName = car.CarEvent.EventName
 
@@ -67,9 +68,9 @@ class DRIVER_MONITOR_SETTINGS():
     self._MAX_TERMINAL_DURATION = int(30 / self._DT_DMON)  # not allowed to engage after 30s of terminal alerts
 
 
-# model output refers to center of cropped image, so need to apply the x displacement offset
-RESIZED_FOCAL = 320.0
-H, W, FULL_W = 320, 160, 426
+# model output refers to center of undistorted+leveled image
+EFL = 598.0 # focal length in K
+W, H = tici_d_frame_size # corrected image has same size as raw
 
 class DistractedType:
   NOT_DISTRACTED = 0
@@ -83,9 +84,9 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib, is_rhd):
 
   pitch_net, yaw_net, roll_net = angles_desc
 
-  face_pixel_position = ((pos_desc[0] + .5)*W - W + FULL_W, (pos_desc[1]+.5)*H)
-  yaw_focal_angle = atan2(face_pixel_position[0] - FULL_W//2, RESIZED_FOCAL)
-  pitch_focal_angle = atan2(face_pixel_position[1] - H//2, RESIZED_FOCAL)
+  face_pixel_position = ((pos_desc[0]+0.5)*W, (pos_desc[1]+0.5)*H)
+  yaw_focal_angle = atan2(face_pixel_position[0] - W//2, EFL)
+  pitch_focal_angle = atan2(face_pixel_position[1] - H//2, EFL)
 
   pitch = pitch_net + pitch_focal_angle
   yaw = -yaw_net + yaw_focal_angle
