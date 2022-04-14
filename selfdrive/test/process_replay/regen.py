@@ -6,7 +6,6 @@ from tqdm import tqdm
 import argparse
 # run DM procs
 os.environ["USE_WEBCAM"] = "1"
-os.environ["ONNX_INIT_PREDICTION"] = "1"
 
 import cereal.messaging as messaging
 from cereal.services import service_list
@@ -219,10 +218,6 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   }
 
   try:
-    # modeld needs time to initialize due to onnx cuda runner
-    managed_processes["modeld"].start()
-    time.sleep(5)
-
     # start procs up
     ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
     ensure_running(managed_processes.values(), started=True, not_run=ignore)
@@ -248,9 +243,9 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   del vs
 
   segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
-  seg_path = os.path.join(outdir, segment)
+  seg_path = os.path.join(outdir, segment, "rlog.bz2")
   # check to make sure openpilot is engaged in the route
-  if not check_enabled(LogReader(os.path.join(seg_path, "rlog.bz2"))):
+  if not check_enabled(LogReader(seg_path)):
     raise Exception(f"Route never enabled: {segment}")
 
   return seg_path
