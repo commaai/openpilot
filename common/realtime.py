@@ -56,7 +56,7 @@ class Ratekeeper:
     self._print_delay_threshold = print_delay_threshold
     self._frame = 0
     self._remaining = 0.0
-    self._process_name = multiprocessing.current_process().name + " " + process_name
+    self._process_name = multiprocessing.current_process().name + f" '{process_name}'"
 
   @property
   def frame(self) -> int:
