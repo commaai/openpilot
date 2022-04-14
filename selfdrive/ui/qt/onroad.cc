@@ -318,7 +318,6 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
     painter.drawPolygon(scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt);
   }
 
-  double cur_t = millis_since_boot();
   // paint path
   QLinearGradient bg(0, height(), 0, height() / 4);
   if (scene.end_to_end) {
@@ -342,8 +341,6 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   }
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices.v, scene.track_vertices.cnt);
-  double elapsed = millis_since_boot() - cur_t;
-  qDebug() << "Took" << elapsed << "ms to draw";
 }
 
 void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd) {
@@ -387,7 +384,10 @@ void NvgWindow::paintGL() {
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(Qt::NoPen);
 
+    double cur_t = millis_since_boot();
     drawLaneLines(painter, s);
+    double elapsed = millis_since_boot() - cur_t;
+    qDebug() << "Took" << elapsed << "ms to draw";
 
     if (s->scene.longitudinal_control) {
       auto leads = (*s->sm)["modelV2"].getModelV2().getLeadsV3();
