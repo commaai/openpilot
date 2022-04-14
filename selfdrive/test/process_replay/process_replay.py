@@ -493,3 +493,14 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
     managed_processes[cfg.proc_name].stop()
 
   return log_msgs
+
+
+def check_enabled(msgs):
+  for msg in msgs:
+    if msg.which() == "carParams":
+      if msg.carParams.notCar:
+        return True
+    elif msg.which() == "controlsState":
+      if msg.controlsState.active:
+        return True
+  return False

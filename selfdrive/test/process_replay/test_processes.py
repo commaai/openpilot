@@ -7,7 +7,7 @@ from typing import Any
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs
-from selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
+from selfdrive.test.process_replay.process_replay import CONFIGS, replay_process, check_enabled
 from tools.lib.logreader import LogReader
 
 
@@ -68,14 +68,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
 
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
-    for msg in log_msgs:
-      if msg.which() == "carParams":
-        if msg.carParams.notCar:
-          break
-      if msg.which() == "controlsState":
-        if msg.controlsState.active:
-          break
-    else:
+    if not check_enabled(log_msgs):
       segment = cmp_log_fn.split("/")[-1].split("_")[0]
       raise Exception(f"Route never enabled: {segment}")
 
