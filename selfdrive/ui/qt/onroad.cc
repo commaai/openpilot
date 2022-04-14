@@ -384,10 +384,7 @@ void NvgWindow::paintGL() {
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(Qt::NoPen);
 
-    double cur_t = millis_since_boot();
     drawLaneLines(painter, s);
-    double elapsed = millis_since_boot() - cur_t;
-    qDebug() << "Took" << elapsed << "ms to draw";
 
     if (s->scene.longitudinal_control) {
       auto leads = (*s->sm)["modelV2"].getModelV2().getLeadsV3();
