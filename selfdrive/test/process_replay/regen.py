@@ -16,6 +16,7 @@ from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, ti
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
+from selfdrive.test.process_replay.process_replay import setup_env
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
@@ -133,6 +134,8 @@ def replay_cameras(lr, frs):
       m = messaging.new_message(s)
       msg = getattr(m, s)
       msg.frameId = rk.frame
+      msg.timestampSof = m.logMonoTime
+      msg.timestampEof = m.logMonoTime
       pm.send(s, m)
 
       vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
@@ -169,15 +172,10 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   if frs is None:
     frs = dict()
 
-  # setup env
+  setup_env()
   params = Params()
-  params.clear_all()
-  params.put_bool("Passive", False)
-  params.put_bool("OpenpilotEnabledToggle", True)
 
   os.environ["LOG_ROOT"] = outdir
-  os.environ["REPLAY"] = "1"
-
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
 

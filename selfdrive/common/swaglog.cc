@@ -125,8 +125,8 @@ void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func
   cloudlog_common(levelnum, filename, lineno, func, msg_buf, tspt_j);
 }
 
-void cloudlog_t_f(int levelnum, int frame_id, const char* filename, int lineno, const char* func,
-                const char* fmt, ...){
+void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
+                int frame_id, const char* fmt, ...){
   if (!LOG_TIMESTAMPS) return;
   va_list args;
   va_start(args, fmt);

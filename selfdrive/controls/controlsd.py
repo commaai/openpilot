@@ -270,7 +270,9 @@ class Controls:
                                                     LaneChangeState.laneChangeFinishing):
       self.events.add(EventName.laneChange)
 
-    if not CS.canValid:
+    if CS.canTimeout:
+      self.events.add(EventName.canBusMissing)
+    elif not CS.canValid:
       self.events.add(EventName.canError)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
@@ -541,7 +543,7 @@ class Controls:
     # Check which actuators can be enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                      CS.vEgo > self.CP.minSteerSpeed and not CS.standstill
-    CC.longActive = self.active and self.state != State.overriding
+    CC.longActive = self.active and not self.events.any(ET.OVERRIDE)
 
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state

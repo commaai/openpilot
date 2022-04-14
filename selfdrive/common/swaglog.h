@@ -15,20 +15,18 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
 void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
-void cloudlog_t_f(int levelnum, int frame_id, const char* filename, int lineno, const char* func,
-                  const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
+void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
+                int frame_id, const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
+
 
 #define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
                                            __func__, \
                                            fmt, ## __VA_ARGS__);
  
-#define cloudlog_t_m(lvl, fmt, ...) cloudlog_t(lvl, __FILE__, __LINE__, \
-                                               __func__, \
-                                               fmt, ## __VA_ARGS__);
+#define cloudlog_t_m(lvl, ...) cloudlog_t(lvl, __FILE__, __LINE__, \
+                                          __func__, \
+                                          __VA_ARGS__);
 
-#define cloudlog_t_f_m(lvl, frame_id, fmt, ...) cloudlog_t_f(lvl, frame_id, __FILE__, __LINE__, \
-                                                             __func__, \
-                                                             fmt, ## __VA_ARGS__);
 
 #define cloudlog_rl(burst, millis, lvl, fmt, ...)   \
 {                                                   \
@@ -59,8 +57,8 @@ void cloudlog_t_f(int levelnum, int frame_id, const char* filename, int lineno, 
   }                                                 \
 }
 
-#define LOGT(fmt, ...) cloudlog_t_m(CLOUDLOG_DEBUG, fmt, ## __VA_ARGS__)
-#define LOGTF(frame_id, fmt, ...) cloudlog_t_f_m(CLOUDLOG_DEBUG, frame_id, fmt, ## __VA_ARGS__)
+
+#define LOGT(...) cloudlog_t(CLOUDLOG_DEBUG, __VA_ARGS__)
 #define LOGD(fmt, ...) cloudlog(CLOUDLOG_DEBUG, fmt, ## __VA_ARGS__)
 #define LOG(fmt, ...) cloudlog(CLOUDLOG_INFO, fmt, ## __VA_ARGS__)
 #define LOGW(fmt, ...) cloudlog(CLOUDLOG_WARNING, fmt, ## __VA_ARGS__)

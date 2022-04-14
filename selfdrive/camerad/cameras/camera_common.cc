@@ -110,6 +110,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     camera_bufs[i].allocate(frame_size);
     camera_bufs[i].init_cl(device_id, context);
   }
+  LOGD("allocated %d CL buffers", frame_buf_count);
 
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
@@ -124,8 +125,10 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
   rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
+  LOGD("created %d UI vipc buffers with size %dx%d", UI_BUF_COUNT, rgb_width, rgb_height);
 
   vipc_server->create_buffers(yuv_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height);
+  LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, rgb_width, rgb_height);
 
   if (ci->bayer) {
     debayer = new Debayer(device_id, context, this, s);
