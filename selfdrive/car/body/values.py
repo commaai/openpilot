@@ -5,6 +5,7 @@ from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
 Ecu = car.CarParams.Ecu
 
+SPEED_FROM_RPM = 0.008587
 
 class CarControllerParams:
   ANGLE_DELTA_BP = [0., 5., 15.]
@@ -23,7 +24,11 @@ CAR_INFO: Dict[str, CarInfo] = {
 FW_VERSIONS = {
   CAR.BODY: {
     (Ecu.engine, 0x720, None): [
+      b'0.0.01',
       b'02/27/2022'
+    ],
+    (Ecu.debug, 0x721, None): [
+      b'166bd860' # git hash of the firmware used
     ],
   },
 }

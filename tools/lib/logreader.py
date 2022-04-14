@@ -103,13 +103,13 @@ class LogReader:
         yield ent
 
 
-def logreader_from_route_or_segment(r):
+def logreader_from_route_or_segment(r, sort_by_time=False):
   sn = SegmentName(r, allow_route_name=True)
   route = Route(sn.route_name.canonical_name)
   if sn.segment_num < 0:
-    return MultiLogIterator(route.log_paths())
+    return MultiLogIterator(route.log_paths(), sort_by_time)
   else:
-    return LogReader(route.log_paths()[sn.segment_num])
+    return LogReader(route.log_paths()[sn.segment_num], sort_by_time)
 
 
 if __name__ == "__main__":

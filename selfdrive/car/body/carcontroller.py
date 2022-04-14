@@ -3,28 +3,29 @@ import numpy as np
 from common.realtime import DT_CTRL
 from selfdrive.car.body import bodycan
 from opendbc.can.packer import CANPacker
+from selfdrive.car.body.values import SPEED_FROM_RPM
+from selfdrive.controls.lib.pid import PIDController
+
 
 MAX_TORQUE = 500
 MAX_TORQUE_RATE = 50
-MAX_ANGLE_ERROR = 7
+MAX_ANGLE_ERROR = np.radians(7)
+MAX_POS_INTEGRATOR = 0.2   # meters
+MAX_TURN_INTEGRATOR = 0.1  # meters
+
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    self.frame = 0
     self.packer = CANPacker(dbc_name)
 
-    self.i_speed = 0
-
-    self.i_balance = 0
-    self.d_balance = 0
-
-    self.i_torque = 0
-
-    self.speed_measured = 0.
-    self.speed_desired = 0.
+    # Speed, balance and turn PIDs
+    self.speed_pid = PIDController(0.115, k_i=0.23, rate=1/DT_CTRL)
+    self.balance_pid = PIDController(1300, k_i=0, k_d=280, rate=1/DT_CTRL)
+    self.turn_pid = PIDController(110, k_i=11.5, rate=1/DT_CTRL)
 
     self.torque_r_filtered = 0.
     self.torque_l_filtered = 0.
-    self.wait_counter = int(5. / DT_CTRL)
 
   @staticmethod
   def deadband_filter(torque, deadband):
@@ -35,72 +36,55 @@ class CarController():
     return torque
 
   def update(self, CC, CS):
-    if self.wait_counter > 0:
-      self.wait_counter -= 1
-      return CC.actuators.copy(), []
-    if len(CC.orientationNED) == 0 or len(CC.angularVelocity) == 0:
-      return CC.actuators.copy(), []
 
-    # ///////////////////////////////////////
-    # Steer and accel mixin. Speed should be used as a target? (speed should be in m/s! now it is in RPM)
-    # Mix steer into torque_diff
-    # self.steerRatio = 0.5
-    # torque_r = int(np.clip((CC.actuators.accel*1000) - (CC.actuators.steer*1000) * self.steerRatio, -1000, 1000))
-    # torque_l = int(np.clip((CC.actuators.accel*1000) + (CC.actuators.steer*1000) * self.steerRatio, -1000, 1000))
-    # ////
-    # Setpoint speed PID
-    kp_speed = 0.001
-    ki_speed = 0.00001
-    alpha_speed = 1.0
+    torque_l = 0
+    torque_r = 0
 
-    self.speed_measured = (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
-    self.speed_desired = (1. - alpha_speed)*self.speed_desired
-    p_speed = (self.speed_desired - self.speed_measured)
-    self.i_speed += ki_speed * p_speed
-    self.i_speed = np.clip(self.i_speed, -0.1, 0.1)
-    set_point = p_speed * kp_speed + self.i_speed
+    llk_valid = len(CC.orientationNED) > 0 and len(CC.angularVelocity) > 0
+    if CC.enabled and llk_valid:
+      # Read these from the joystick
+      # TODO: this isn't acceleration, okay?
+      speed_desired = CC.actuators.accel / 5.
+      speed_diff_desired = -CC.actuators.steer
 
-    # Balancing PID
-    kp_balance = 1300
-    ki_balance = 0
-    kd_balance = 280
-    alpha_d_balance = 1.0
+      speed_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
+      speed_error = speed_desired - speed_measured
 
-    # Clip angle error, this is enough to get up from stands
-    p_balance = np.clip((-CC.orientationNED[1]) - set_point, np.radians(-MAX_ANGLE_ERROR), np.radians(MAX_ANGLE_ERROR))
-    self.i_balance += CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr
-    self.d_balance =  np.clip(((1. - alpha_d_balance) * self.d_balance + alpha_d_balance * -CC.angularVelocity[1]), -1., 1.)
-    torque = int(np.clip((p_balance*kp_balance + self.i_balance*ki_balance + self.d_balance*kd_balance), -1000, 1000))
+      freeze_integrator = ((speed_error < 0 and self.speed_pid.error_integral <= -MAX_POS_INTEGRATOR) or
+                           (speed_error > 0 and self.speed_pid.error_integral >= MAX_POS_INTEGRATOR))
+      angle_setpoint = self.speed_pid.update(speed_error, freeze_integrator=freeze_integrator)
 
-    # Positional recovery PID
-    kp_torque = 0.95
-    ki_torque = 0.1
+      # Clip angle error, this is enough to get up from stands
+      angle_error = np.clip((-CC.orientationNED[1]) - angle_setpoint, -MAX_ANGLE_ERROR, MAX_ANGLE_ERROR)
+      angle_error_rate = np.clip(-CC.angularVelocity[1], -1., 1.)
+      torque = self.balance_pid.update(angle_error, error_rate=angle_error_rate)
 
-    p_torque = (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
-    self.i_torque += (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
-    torque_diff = int(np.clip(p_torque*kp_torque + self.i_torque*ki_torque, -100, 100))
+      speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
+      turn_error = speed_diff_measured - speed_diff_desired
+      freeze_integrator = ((turn_error < 0 and self.turn_pid.error_integral <= -MAX_POS_INTEGRATOR) or
+                           (turn_error > 0 and self.turn_pid.error_integral >= MAX_POS_INTEGRATOR))
+      torque_diff = self.turn_pid.update(turn_error, freeze_integrator=freeze_integrator)
 
-    # Combine 2 PIDs outputs
-    torque_r = torque + torque_diff
-    torque_l = torque - torque_diff
+      # Combine 2 PIDs outputs
+      torque_r = torque + torque_diff
+      torque_l = torque - torque_diff
 
-    # Torque rate limits
-    self.torque_r_filtered = np.clip(self.deadband_filter(torque_r, 10) ,
-                                     self.torque_r_filtered - MAX_TORQUE_RATE,
-                                     self.torque_r_filtered +  MAX_TORQUE_RATE)
-    self.torque_l_filtered = np.clip(self.deadband_filter(torque_l, 10),
-                                     self.torque_l_filtered - MAX_TORQUE_RATE,
-                                     self.torque_l_filtered +  MAX_TORQUE_RATE)
-    torque_r = int(np.clip(self.torque_r_filtered, -MAX_TORQUE, MAX_TORQUE))
-    torque_l = int(np.clip(self.torque_l_filtered, -MAX_TORQUE, MAX_TORQUE))
-
-    # ///////////////////////////////////////
+      # Torque rate limits
+      self.torque_r_filtered = np.clip(self.deadband_filter(torque_r, 10),
+                                       self.torque_r_filtered - MAX_TORQUE_RATE,
+                                       self.torque_r_filtered + MAX_TORQUE_RATE)
+      self.torque_l_filtered = np.clip(self.deadband_filter(torque_l, 10),
+                                       self.torque_l_filtered - MAX_TORQUE_RATE,
+                                       self.torque_l_filtered + MAX_TORQUE_RATE)
+      torque_r = int(np.clip(self.torque_r_filtered, -MAX_TORQUE, MAX_TORQUE))
+      torque_l = int(np.clip(self.torque_l_filtered, -MAX_TORQUE, MAX_TORQUE))
 
     can_sends = []
-    can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r))
+    can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r, self.frame // 2))
 
     new_actuators = CC.actuators.copy()
     new_actuators.accel = torque_l
     new_actuators.steer = torque_r
 
+    self.frame += 1
     return new_actuators, can_sends

@@ -16,6 +16,7 @@ from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, ti
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
+from selfdrive.test.process_replay.process_replay import setup_env, check_enabled
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
@@ -133,6 +134,8 @@ def replay_cameras(lr, frs):
       m = messaging.new_message(s)
       msg = getattr(m, s)
       msg.frameId = rk.frame
+      msg.timestampSof = m.logMonoTime
+      msg.timestampEof = m.logMonoTime
       pm.send(s, m)
 
       vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
@@ -148,7 +151,7 @@ def replay_cameras(lr, frs):
 
     frames = None
     if fr is not None:
-      print(f"Decomressing frames {s}")
+      print(f"Decompressing frames {s}")
       frames = []
       for i in tqdm(range(fr.frame_count)):
         img = fr.get(i, pix_fmt='yuv420p')[0]
@@ -169,15 +172,10 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   if frs is None:
     frs = dict()
 
-  # setup env
+  setup_env()
   params = Params()
-  params.clear_all()
-  params.put_bool("Passive", False)
-  params.put_bool("OpenpilotEnabledToggle", True)
 
   os.environ["LOG_ROOT"] = outdir
-  os.environ["REPLAY"] = "1"
-
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
 
@@ -244,8 +242,13 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
 
   del vs
 
-  r = params.get("CurrentRoute", encoding='utf-8')
-  return os.path.join(outdir, r + "--0")
+  segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
+  seg_path = os.path.join(outdir, segment)
+  # check to make sure openpilot is engaged in the route
+  if not check_enabled(LogReader(os.path.join(seg_path, "rlog.bz2"))):
+    raise Exception(f"Route never enabled: {segment}")
+
+  return seg_path
 
 
 def regen_and_save(route, sidx, upload=False, use_route_meta=False):
