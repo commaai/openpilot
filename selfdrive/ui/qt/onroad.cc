@@ -318,6 +318,7 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
     painter.drawPolygon(scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt);
   }
 
+  double cur_t = millis_since_boot();
   // paint path
   QLinearGradient bg(0, height(), 0, height() / 4);
   if (scene.end_to_end) {
@@ -326,8 +327,10 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
     if (orientation.getZ().size() > 16) {
       orientation_future = std::abs(orientation.getZ()[16]);  // 2.5 seconds
     }
-    // straight: 101, in turns: 70
-    const float curve_hue = fmax(70, 112 - (orientation_future * 420));
+    // straight: 112, in turns: 70
+    float curve_hue = fmax(70, 112 - (orientation_future * 420));
+    // FIXME: painter.drawPolygon can be slow if hue is not rounded
+    curve_hue = int(curve_hue * 100 + 0.5) / 100;
 
     bg.setColorAt(0.0 / 1.5, QColor::fromHslF(148 / 360., 1.0, 0.5, 1.0));
     bg.setColorAt(0.45 / 1.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.8));
@@ -339,6 +342,8 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   }
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices.v, scene.track_vertices.cnt);
+  double elapsed = millis_since_boot() - cur_t;
+  qDebug() << "Took" << elapsed << "ms to draw";
 }
 
 void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd) {
@@ -382,10 +387,7 @@ void NvgWindow::paintGL() {
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(Qt::NoPen);
 
-    double cur_t = millis_since_boot();
     drawLaneLines(painter, s);
-    double elapsed = millis_since_boot() - cur_t;
-    qDebug() << "Took" << elapsed << "ms to draw";
 
     if (s->scene.longitudinal_control) {
       auto leads = (*s->sm)["modelV2"].getModelV2().getLeadsV3();
