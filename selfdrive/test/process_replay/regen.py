@@ -151,7 +151,7 @@ def replay_cameras(lr, frs):
 
     frames = None
     if fr is not None:
-      print(f"Decomressing frames {s}")
+      print(f"Decompressing frames {s}")
       frames = []
       for i in tqdm(range(fr.frame_count)):
         img = fr.get(i, pix_fmt='yuv420p')[0]
