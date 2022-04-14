@@ -63,7 +63,9 @@ class Calibrator:
   def __init__(self, param_put: bool = False):
     self.param_put = param_put
 
-    self.CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+    self.not_car = True
+    if "UIVIEW" not in os.environ:
+      self.not_car = car.CarParams.from_bytes(Params().get("CarParams", block=True)).isCar
 
     # Read saved calibration
     params = Params()
@@ -193,7 +195,7 @@ class Calibrator:
     liveCalibration.rpyCalib = smooth_rpy.tolist()
     liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
 
-    if self.CP.notCar:
+    if self.not_car:
       extrinsic_matrix = get_view_frame_from_road_frame(0, 0, 0, model_height)
       liveCalibration.validBlocks = INPUTS_NEEDED
       liveCalibration.calStatus = Calibration.CALIBRATED

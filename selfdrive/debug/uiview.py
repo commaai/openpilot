@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
+import os
 import time
+
 from cereal import messaging, log
 from selfdrive.manager.process_config import managed_processes
 
 if __name__ == "__main__":
+  os.environ["UIVIEW"] = "1"
   procs = ['camerad', 'ui', 'modeld', 'calibrationd']
 
   for p in procs:
