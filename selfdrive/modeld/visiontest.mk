@@ -51,7 +51,7 @@ libvisiontest_inputs := visiontest.c \
                         transforms/transform.cc \
                         transforms/loadyuv.cc \
                         ../common/clutil.cc \
-                        $(BASEDIR)/selfdrive/common/util.c \
+                        $(BASEDIR)/selfdrive/common/util.cc \
                         $(CEREAL_OBJS)
 
 visiontest: libvisiontest.so
