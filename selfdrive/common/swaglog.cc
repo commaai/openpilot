@@ -107,7 +107,7 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   cloudlog_common(levelnum, filename, lineno, func, msg_buf);
 }
 
-void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
+void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
                 const char* fmt, ...){
   if (!LOG_TIMESTAMPS) return;
   va_list args;
@@ -125,7 +125,7 @@ void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func
   cloudlog_common(levelnum, filename, lineno, func, msg_buf, tspt_j);
 }
 
-void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
+void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
                 int frame_id, const char* fmt, ...){
   if (!LOG_TIMESTAMPS) return;
   va_list args;
