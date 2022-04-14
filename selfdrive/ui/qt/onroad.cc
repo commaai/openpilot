@@ -327,10 +327,10 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
       orientation_future = std::abs(orientation.getZ()[16]);  // 2.5 seconds
     }
     // straight: 101, in turns: 70
-    const float curve_hue = fmax(70, 101 - (orientation_future * 310));
+    const float curve_hue = fmax(70, 112 - (orientation_future * 310));
 
     bg.setColorAt(0.0 / 1.5, QColor::fromHslF(148 / 360., 1.0, 0.5, 1.0));
-    bg.setColorAt(0.45 / 1.5, QColor::fromHslF(101 / 360., 1.0, 0.68, 0.8));
+    bg.setColorAt(0.45 / 1.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.8));
     bg.setColorAt(0.7 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.65, 0.6));
 //    bg.setColorAt(1 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.65, 0.4));
     bg.setColorAt(1.0, QColor::fromHslF(curve_hue / 360., 1.0, 0.65, 0.0));
