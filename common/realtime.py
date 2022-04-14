@@ -70,7 +70,6 @@ class Ratekeeper:
   def keep_time(self) -> bool:
     lagged = self.monitor_time()
     if self._remaining > 0:
-      print("Sleeping", self._remaining)
       time.sleep(self._remaining)
     return lagged
 
