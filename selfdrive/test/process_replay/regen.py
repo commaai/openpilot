@@ -243,9 +243,9 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   del vs
 
   segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
-  seg_path = os.path.join(outdir, segment, "rlog.bz2")
+  seg_path = os.path.join(outdir, segment)
   # check to make sure openpilot is engaged in the route
-  if not check_enabled(LogReader(seg_path)):
+  if not check_enabled(LogReader(os.path.join(seg_path, "rlog.bz2"))):
     raise Exception(f"Route never enabled: {segment}")
 
   return seg_path
