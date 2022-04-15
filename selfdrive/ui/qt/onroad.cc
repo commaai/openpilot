@@ -332,8 +332,8 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
     curve_hue = int(curve_hue * 100 + 0.5) / 100;
 
     bg.setColorAt(0.0 / 1.5, QColor::fromHslF(148 / 360., 1.0, 0.5, 1.0));
-    bg.setColorAt(0.45 / 1.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.8));
-    bg.setColorAt(0.7 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.65, 0.6));
+    bg.setColorAt(0.55 / 1.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.8));
+    bg.setColorAt(0.9 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.65, 0.6));
     bg.setColorAt(1.0, QColor::fromHslF(curve_hue / 360., 1.0, 0.65, 0.0));
   } else {
     bg.setColorAt(0, whiteColor());
