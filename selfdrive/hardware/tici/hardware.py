@@ -453,6 +453,7 @@ class Tici(HardwareBase):
     sudo_write("f", "/proc/irq/default_smp_affinity")
 
     # *** GPU config ***
+    # https://github.com/commaai/agnos-kernel-sdm845/blob/master/arch/arm64/boot/dts/qcom/sdm845-gpu.dtsi#L216
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
