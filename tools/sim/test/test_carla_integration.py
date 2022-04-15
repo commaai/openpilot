@@ -62,7 +62,7 @@ class TestCarlaIntegration(unittest.TestCase):
     test_intervals_5sec = 10
 
     # Set params for simulation to be used for ignored_processes
-    # todo move these to separate file
+    # todo could move these to separate file
     os.environ["PASSIVE"] = "0"
     os.environ["NOBOARD"] = "1"
     os.environ["SIMULATION"] = "1"
