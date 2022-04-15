@@ -39,22 +39,12 @@ def verify_route(route_name):
   print("---\nSUCCESS: All tests passed")
 
 
-def test_blocked_msgs(lr):
-  pandaStates = None
-  for msg in list(lr)[::-1]:
-    if msg.which() == "pandaStates":
-      pandaStates = msg.pandaStates
-
-  assert pandaStates is not None and len(pandaStates), "No pandaStates packets, or list empty"
-  assert pandaStates[0].blockedCnt < 10, "Blocked messages {} is not less than 10".format(pandaStates[0].blockedCnt)
-  print('SUCCESS: Blocked messages under threshold: {} < 10'.format(pandaStates[0].blockedCnt))
-
-
 def _test_fingerprint(CP):
   """
   If make has FW_VERSIONS defined, then assert fingerprint source is fw
   Else, just check it's not fixed
   """
+  # TODO: run on car params and make sure fp matches logs
 
   fw_versions = get_interface_attr("FW_VERSIONS")[CP.carName]
   has_fw_versions = fw_versions is not None and len(fw_versions)
@@ -67,6 +57,19 @@ def _test_fingerprint(CP):
     assert CP.fingerprintSource != car.CarParams.FingerprintSource.fixed
   assert not CP.fuzzyFingerprint
   print('SUCCESS: Fingerprinted: {}'.format(CP.carFingerprint))
+
+
+def test_blocked_msgs(lr):
+  for msg in list(lr)[::-1]:
+    if msg.which() == "pandaStates":
+      if msg.pandaStates[0].ignitionCan or msg.pandaStates[0].ignitionLine:
+        pandaStates = msg.pandaStates
+        break
+  else:
+    assert False, "No pandaStates packets"
+
+  assert pandaStates[0].blockedCnt < 10, "Blocked messages {} is not less than 10".format(pandaStates[0].blockedCnt)
+  print('SUCCESS: Blocked messages under threshold: {} < 10'.format(pandaStates[0].blockedCnt))
 
 
 def test_car_params(lr):
