@@ -125,15 +125,14 @@ void cloudlog_t_common(int levelnum, const char* filename, int lineno, const cha
 }
 
 
-void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
+void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
                 const char* fmt, ...){
   va_list args;
   va_start(args, fmt);
   cloudlog_t_common(levelnum, filename, lineno, func, -1, fmt, args);
   va_end(args);
 }
-
-void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
+void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
                 uint32_t frame_id, const char* fmt, ...){
   va_list args;
   va_start(args, fmt);
