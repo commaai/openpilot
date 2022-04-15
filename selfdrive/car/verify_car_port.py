@@ -31,12 +31,23 @@ def get_log_reader(route_name):
 
 def verify_route(route_name):
   lr = get_log_reader(route_name)
-  tests = [test_car_params, test_engagement, test_steering_faults]
+  tests = [test_blocked_msgs, test_car_params, test_engagement, test_steering_faults]
   for test in tests:
     test(lr)
     lr.reset()
 
-  print("SUCCESS: All tests passed")
+  print("---\nSUCCESS: All tests passed")
+
+
+def test_blocked_msgs(lr):
+  pandaStates = None
+  for msg in list(lr)[::-1]:
+    if msg.which() == "pandaStates":
+      pandaStates = msg.pandaStates
+
+  assert pandaStates is not None and len(pandaStates), "No pandaStates packets, or list empty"
+  assert pandaStates[0].blockedCnt < 10, "Blocked messages {} is not less than 10".format(pandaStates[0].blockedCnt)
+  print('SUCCESS: Blocked messages under threshold: {} < 10'.format(pandaStates[0].blockedCnt))
 
 
 def _test_fingerprint(CP):
