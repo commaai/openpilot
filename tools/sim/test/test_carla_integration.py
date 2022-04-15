@@ -19,6 +19,8 @@ class TestCarlaIntegration(unittest.TestCase):
   """
   Tests need Carla simulator to run
   """
+  subprocess = None
+
   def test_connect_with_carla(self):
     # Test connecting to Carla within 5 seconds and return no RuntimeError
     client = connect_carla_client()
@@ -52,7 +54,7 @@ class TestCarlaIntegration(unittest.TestCase):
           break
 
     not_running = [key for (key, val) in running.items() if not val]
-    self.assertEqual(len(not_running), 0, f"Some processes are not running {not_running}")
+    self.assertEqual(len(not_running), 0, f"Manager processes are not running: {not_running}")
 
   def test_manager_and_bridge(self):
     # test manager.py processes and bridge.py to run correctly for 50 seconds
@@ -68,7 +70,7 @@ class TestCarlaIntegration(unittest.TestCase):
     os.environ["BLOCK"] = "camerad,loggerd"
 
     # Start manager and bridge
-    p = subprocess.Popen("../../../selfdrive/manager/manager.py")
+    self.subprocess = subprocess.Popen("../../../selfdrive/manager/manager.py")
 
     args = sys.argv[2:]  # Remove test arguments when executing this test
     p_bridge = bridge.main(args, keep_alive=False)[0]
@@ -88,16 +90,18 @@ class TestCarlaIntegration(unittest.TestCase):
     # Set shutdown to close manager and bridge processes
     params.put_bool("DoShutdown", True)
     # Process could already be closed
-    if type(p) is subprocess.Popen:
-      p.wait(timeout=10)
+    if type(self.subprocess) is subprocess.Popen:
+      self.subprocess.wait(timeout=10)
       # Closing gracefully
-      self.assertEqual(p.returncode, 0)
+      self.assertEqual(self.subprocess.returncode, 0)
     p_bridge.join()
 
   def tearDown(self):
     print("Teardown")
     Params().put_bool("DoShutdown", True)
     manager.manager_cleanup()
+    if self.subprocess:
+      self.subprocess.wait(5)
 
 
 if __name__ == "__main__":
