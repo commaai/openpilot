@@ -44,10 +44,9 @@ class TestCarlaIntegration(unittest.TestCase):
 
   def assert_processes_running(self, expected_p):
     running = {p: False for p in expected_p}
-    processes = psutil.process_iter()
     for p in expected_p:
       name = managed_processes[p].get_process_state_msg().name
-      for proc in processes:
+      for proc in psutil.process_iter():
         if proc.name().endswith(name):
           running[name] = True
           break
@@ -61,7 +60,7 @@ class TestCarlaIntegration(unittest.TestCase):
     test_intervals_5sec = 10
 
     # Set params for simulation to be used for ignored_processes
-    # todo move these to seperate file
+    # todo move these to separate file
     os.environ["PASSIVE"] = "0"
     os.environ["NOBOARD"] = "1"
     os.environ["SIMULATION"] = "1"
