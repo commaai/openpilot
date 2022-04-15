@@ -32,6 +32,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   body = new BodyWindow(this);
   slayout->addWidget(body);
+  body->setEnabled(false);
 
   driver_view = new DriverViewWindow(this);
   connect(driver_view, &DriverViewWindow::done, [=] {
@@ -51,7 +52,8 @@ void HomeWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 
   // switch to the generic robot UI
-  if (onroad->isVisible() && sm["carParams"].getCarParams().getNotCar()) {
+  if (onroad->isVisible() && !body->isEnabled() && sm["carParams"].getCarParams().getNotCar()) {
+    body->setEnabled(true);
     slayout->setCurrentWidget(body);
   }
 }
