@@ -22,7 +22,7 @@ extern "C" {
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-RawLogger::RawLogger(const char* filename, int width, int height, int fps,
+RawLogger::RawLogger(const char* filename, CameraType type, int width, int height, int fps,
                      int bitrate, bool h265, bool downscale, bool write)
   : filename(filename), fps(fps) {
 

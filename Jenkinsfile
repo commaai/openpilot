@@ -19,8 +19,13 @@ fi
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 if [ -f /EON ]; then
+  # kill all old procs in the openpilot cpuset
+  while read p; do
+    kill "\$p" || true
+  done < /dev/cpuset/app/tasks
+
   echo \$\$ > /dev/cpuset/app/tasks || true
-  echo \$PPID > /dev/cpuset/app/tasks || true
+
   mkdir -p /dev/shm
   chmod 777 /dev/shm
 fi
@@ -205,7 +210,7 @@ pipeline {
 
                 stage('C3: replay') {
                   steps {
-                    phone_steps("tici-party", [
+                    phone_steps("tici3", [
                       ["build", "cd selfdrive/manager && ./build.py"],
                       ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
                     ])

@@ -179,7 +179,7 @@ static void update_state(UIState *s) {
   } else if (Hardware::TICI() && sm.updated("wideRoadCameraState")) {
     auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
 
-    float max_lines = 1904;
+    float max_lines = 1618;
     float max_gain = 10.0;
     float max_ev = max_lines * max_gain / 6;
 
@@ -198,10 +198,13 @@ void UIState::updateStatus() {
   if (scene.started && sm->updated("controlsState")) {
     auto controls_state = (*sm)["controlsState"].getControlsState();
     auto alert_status = controls_state.getAlertStatus();
+    auto state = controls_state.getState();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       status = STATUS_WARNING;
     } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
       status = STATUS_ALERT;
+    } else if (state == cereal::ControlsState::OpenpilotState::PRE_ENABLED || state == cereal::ControlsState::OpenpilotState::OVERRIDING) {
+      status = STATUS_OVERRIDE;
     } else {
       status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }

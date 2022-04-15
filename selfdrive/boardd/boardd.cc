@@ -140,10 +140,8 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   std::string params;
   LOGW("waiting for params to set safety model");
   while (true) {
-    for (const auto& panda : pandas) {
-      if (do_exit || !panda->connected || !ignition) {
-        return false;
-      }
+    if (do_exit || !check_all_connected(pandas) || !ignition) {
+      return false;
     }
 
     if (p.getBool("ControlsReady")) {
@@ -229,7 +227,9 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     //Dont send if older than 1 second
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
+        LOGT("sending sendcan to panda: %s", (panda->usb_serial).c_str());
         panda->can_send(event.getSendcan());
+        LOGT("sendcan sent to panda: %s", (panda->usb_serial).c_str());
       }
     }
   }
@@ -364,6 +364,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setHeartbeatLost((bool)(health.heartbeat_lost_pkt));
     ps.setAlternativeExperience(health.alternative_experience_pkt);
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
+    ps.setInterruptLoad(health.interrupt_load);
 
     // Convert faults bitset to capnp list
     std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt);

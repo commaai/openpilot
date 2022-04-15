@@ -120,7 +120,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Golf 2015-20"),
     VWCarInfo("Volkswagen Golf Alltrack 2017-18"),
     VWCarInfo("Volkswagen Golf GTE 2016"),
-    VWCarInfo("Volkswagen Golf GTI 2018-20"),
+    VWCarInfo("Volkswagen Golf GTI 2018-21"),
     VWCarInfo("Volkswagen Golf R 2016-19"),
     VWCarInfo("Volkswagen Golf SportsVan 2016"),
     VWCarInfo("Volkswagen Golf SportWagen 2015"),
@@ -260,6 +260,7 @@ FW_VERSIONS = {
       b'\xf1\x875G0906259N \xf1\x890003',
       b'\xf1\x875G0906259Q \xf1\x890002',
       b'\xf1\x875G0906259Q \xf1\x892313',
+      b'\xf1\x875G0906259T \xf1\x890003',
       b'\xf1\x878V0906259H \xf1\x890002',
       b'\xf1\x878V0906259J \xf1\x890003',
       b'\xf1\x878V0906259K \xf1\x890001',
@@ -299,6 +300,7 @@ FW_VERSIONS = {
       b'\xf1\x870GC300020G \xf1\x892401',
       b'\xf1\x870GC300020G \xf1\x892403',
       b'\xf1\x870GC300020G \xf1\x892404',
+      b'\xf1\x870GC300020N \xf1\x892804',
       b'\xf1\x870GC300043T \xf1\x899999',
     ],
     (Ecu.srs, 0x715, None): [
@@ -375,6 +377,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572J \xf1\x890654',
       b'\xf1\x875Q0907572P \xf1\x890682',
       b'\xf1\x875Q0907572R \xf1\x890771',
+      b'\xf1\x875Q0907572S \xf1\x890780',
     ],
   },
   CAR.JETTA_MK7: {
@@ -515,6 +518,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158DT\xf1\x893698',
+      b'\xf1\x8709G927158GC\xf1\x893821',
       b'\xf1\x8709G927158GD\xf1\x893820',
       b'\xf1\x870DL300011N \xf1\x892001',
       b'\xf1\x870DL300011N \xf1\x892012',
@@ -532,9 +536,11 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820529A6060603',
       b'\xf1\x875QF909144B \xf1\x895582\xf1\x82\00571A60634A1',
       b'\xf1\x875QM909144B \xf1\x891081\xf1\x82\x0521A60604A1',
+      b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\x0521A60604A1',
       b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\00521A60804A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572AA\xf1\x890396',
       b'\xf1\x872Q0907572J \xf1\x890156',
       b'\xf1\x872Q0907572Q \xf1\x890342',
       b'\xf1\x872Q0907572R \xf1\x890372',

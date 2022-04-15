@@ -1,6 +1,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 #include "selfdrive/loggerd/omx_encoder.h"
+#include "cereal/messaging/messaging.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -153,8 +154,9 @@ static const char* omx_color_fomat_name(uint32_t format) {
 
 
 // ***** encoder functions *****
-OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write) {
+OmxEncoder::OmxEncoder(const char* filename, CameraType type, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write) {
   this->filename = filename;
+  this->type = type;
   this->write = write;
   this->width = width;
   this->height = height;
@@ -362,6 +364,32 @@ void OmxEncoder::callback_handler(OmxEncoder *e) {
   }
 }
 
+void OmxEncoder::write_and_broadcast_handler(OmxEncoder *e){
+  bool exit = false;
+  const char *service_name = e->type == DriverCam ? "driverEncodeData" : (e->type == WideRoadCam ? "wideRoadEncodeData" : "roadEncodeData");
+  PubMaster pm({service_name});
+
+  uint32_t idx = 0;
+  while (!exit) {
+    OmxBuffer *out_buf = e->to_write.pop();
+
+    MessageBuilder msg;
+    auto edata = (e->type == DriverCam) ? msg.initEvent(true).initDriverEncodeData() :
+      ((e->type == WideRoadCam) ? msg.initEvent(true).initWideRoadEncodeData() : msg.initEvent(true).initRoadEncodeData());
+    edata.setData(kj::heapArray<capnp::byte>(out_buf->data, out_buf->header.nFilledLen));
+    edata.setTimestampEof(out_buf->header.nTimeStamp);
+    edata.setIdx(idx++);
+    pm.send(service_name, msg);
+
+    OmxEncoder::handle_out_buf(e, out_buf);
+    if (out_buf->header.nFlags & OMX_BUFFERFLAG_EOS) {
+      exit = true;
+    }
+
+    free(out_buf);
+  }
+}
+
 
 void OmxEncoder::write_handler(OmxEncoder *e){
   bool exit = false;
@@ -561,7 +589,7 @@ void OmxEncoder::encoder_open(const char* path) {
 
   // start writer threads
   callback_handler_thread = std::thread(OmxEncoder::callback_handler, this);
-  write_handler_thread = std::thread(OmxEncoder::write_handler, this);
+  write_handler_thread = std::thread(this->remuxing ? OmxEncoder::write_handler : OmxEncoder::write_and_broadcast_handler, this);
 
   this->is_open = true;
   this->counter = 0;

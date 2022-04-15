@@ -1,5 +1,6 @@
 import os
 import time
+import select
 from serial import Serial
 from crcmod import mkCrcFun
 from struct import pack, unpack_from, calcsize
@@ -7,10 +8,11 @@ from struct import pack, unpack_from, calcsize
 class ModemDiag:
   def __init__(self):
     self.serial = self.open_serial()
+    self.pend = b''
 
   def open_serial(self):
     def op():
-      return Serial("/dev/ttyUSB0", baudrate=115200, rtscts=True, dsrdtr=True)
+      return Serial("/dev/ttyUSB0", baudrate=115200, rtscts=True, dsrdtr=True, timeout=0)
     try:
       serial = op()
     except Exception:
@@ -22,6 +24,8 @@ class ModemDiag:
       os.system("sudo chmod 666 /dev/ttyUSB0")
       serial = op()
     serial.flush()
+    serial.reset_input_buffer()
+    serial.reset_output_buffer()
     return serial
 
   ccitt_crc16 = mkCrcFun(0x11021, initCrc=0, xorOut=0xffff)
@@ -45,13 +49,15 @@ class ModemDiag:
     return payload[:-2]
 
   def recv(self):
-    raw_payload = []
-    while 1:
-      char_read = self.serial.read()
-      raw_payload.append(char_read)
-      if char_read.endswith(self.TRAILER_CHAR):
-        break
+    # self.serial.read_until makes tons of syscalls!
+    raw_payload = [self.pend]
+    while self.TRAILER_CHAR not in raw_payload[-1]:
+      select.select([self.serial.fd], [], [])
+      raw = self.serial.read(0x10000)
+      raw_payload.append(raw)
     raw_payload = b''.join(raw_payload)
+    raw_payload, self.pend = raw_payload.split(self.TRAILER_CHAR, 1)
+    raw_payload += self.TRAILER_CHAR
     unframed_message = self.hdlc_decapsulate(raw_payload)
     return unframed_message[0], unframed_message[1:]
 

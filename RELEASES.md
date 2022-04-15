@@ -1,6 +1,8 @@
 Version 0.8.14 (2022-0X-XX)
 ========================
  * bigmodel!
+ * comma body support
+ * Hyundai Tucson Diesel 2019 support thanks to sunnyhaibin!
  * Toyota Alphard Hybrid 2021 support
  * Toyota Avalon Hybrid 2022 support
 
