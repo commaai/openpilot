@@ -201,7 +201,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
   RI = RadarInterface(CP)
 
-  rk = Ratekeeper(1.0 / CP.radarTimeStep, "radard", print_delay_threshold=None)
+  rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
   RD = RadarD(CP.radarTimeStep, RI.delay)
 
   # TODO: always log leads once we can hide them conditionally

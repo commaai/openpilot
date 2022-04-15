@@ -35,7 +35,7 @@ def send_thread(s, flock):
 
   idx = 0
   ign = True
-  rk = Ratekeeper(1 / DT_CTRL, "can_replay", print_delay_threshold=None)
+  rk = Ratekeeper(1 / DT_CTRL, print_delay_threshold=None)
   while True:
     # handle ignition cycling
     if ENABLE_IGN:

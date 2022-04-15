@@ -2,8 +2,9 @@
 import gc
 import os
 import time
-import multiprocessing
 from typing import Optional
+
+from setproctitle import getproctitle  # pylint: disable=no-name-in-module
 
 from common.clock import sec_since_boot  # pylint: disable=no-name-in-module, import-error
 from selfdrive.hardware import PC, TICI
@@ -49,14 +50,14 @@ def config_realtime_process(core: int, priority: int) -> None:
 
 
 class Ratekeeper:
-  def __init__(self, rate: int, process_name: str = "-", print_delay_threshold: Optional[float] = 0.0) -> None:
+  def __init__(self, rate: int, print_delay_threshold: Optional[float] = 0.0) -> None:
     """Rate in Hz for ratekeeping. print_delay_threshold must be nonnegative."""
     self._interval = 1. / rate
     self._next_frame_time = sec_since_boot() + self._interval
     self._print_delay_threshold = print_delay_threshold
     self._frame = 0
     self._remaining = 0.0
-    self._process_name = multiprocessing.current_process().name + f" '{process_name}'"
+    self._process_name = getproctitle()
 
   @property
   def frame(self) -> int:

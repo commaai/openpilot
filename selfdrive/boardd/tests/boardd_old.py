@@ -150,7 +150,7 @@ def boardd_test_loop():
 
 # *** main loop ***
 def boardd_loop(rate=100):
-  rk = Ratekeeper(rate, "boardd")
+  rk = Ratekeeper(rate)
 
   can_init()
 

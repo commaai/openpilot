@@ -35,7 +35,7 @@ class Plant():
     self.only_lead2=only_lead2
     self.only_radar=only_radar
 
-    self.rk = Ratekeeper(self.rate, "plant", print_delay_threshold=100.0)
+    self.rk = Ratekeeper(self.rate, print_delay_threshold=100.0)
     self.ts = 1. / self.rate
     time.sleep(1)
     self.sm = messaging.SubMaster(['longitudinalPlan'])
