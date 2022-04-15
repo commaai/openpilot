@@ -3,7 +3,6 @@ import os
 import time
 import subprocess
 from common.basedir import BASEDIR
-from common.params import Params
 
 
 class TextWindow:
@@ -32,6 +31,7 @@ class TextWindow:
 
   def wait_for_exit(self):
     if self.text_proc is not None:
+      from common.params import Params
       params = Params()
       while not params.get_bool('DoShutdown'):
         if self.get_status() == 1:
