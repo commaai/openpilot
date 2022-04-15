@@ -3,7 +3,7 @@ import os
 import time
 import subprocess
 from common.basedir import BASEDIR
-from common.params_pyx import Params # pylint: disable=no-name-in-module
+from common.params import Params
 
 
 class TextWindow:

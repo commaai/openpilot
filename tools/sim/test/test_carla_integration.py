@@ -7,7 +7,7 @@ import unittest
 
 import psutil
 
-from common.params_pyx import Params # pylint: disable=no-name-in-module
+from common.params import Params
 from selfdrive.manager import manager
 from selfdrive.manager.process import DaemonProcess
 from selfdrive.manager.process_config import managed_processes
