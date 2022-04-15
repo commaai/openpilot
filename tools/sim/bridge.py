@@ -24,13 +24,6 @@ from common.realtime import DT_DMON, Ratekeeper
 from selfdrive.car.honda.values import CruiseButtons
 from selfdrive.test.helpers import set_params_enabled
 
-parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
-parser.add_argument('--joystick', action='store_true')
-parser.add_argument('--low_quality', action='store_true')
-parser.add_argument('--town', type=str, default='Town04_Opt')
-parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
-
-args = parser.parse_args()
 W, H = 1928, 1208
 REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
@@ -38,6 +31,16 @@ STEER_RATIO = 15.
 
 pm = messaging.PubMaster(['roadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl', 'controlsState'])
+
+
+def parse_args(add_args=None):
+  parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
+  parser.add_argument('--joystick', action='store_true')
+  parser.add_argument('--low_quality', action='store_true')
+  parser.add_argument('--town', type=str, default='Town04_Opt')
+  parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
+
+  return parser.parse_args(add_args)
 
 
 class VehicleState:
@@ -224,28 +227,29 @@ def connect_carla_client(connect_timeout=5):
 
 class CarlaBridge:
 
-  def __init__(self):
-    self.start_connecting_time = None
+  def __init__(self, args):
+    set_params_enabled()
 
-  def bridge_keep_alive(self, q: Any, timeout=0):
-    self.start_connecting_time = time.time()
+    msg = messaging.new_message('liveCalibration')
+    msg.liveCalibration.validBlocks = 20
+    msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
+    Params().put("CalibrationParams", msg.to_bytes())
 
+    self._args = args
+
+  def bridge_keep_alive(self, q: Any, keep_alive):
     while True:
       try:
-        self._run(q, timeout)
+        self._run(q)
         break
       except RuntimeError as e:
-        if self.is_timeout(timeout):
-          raise Exception(f"Failed to connect with bridge within {timeout} seconds") from e
-        print("Restarting bridge...")
+        if not keep_alive:
+          raise
+        print(f"Restarting bridge after error: {e} ")
 
-  def is_timeout(self, timeout):
-    return timeout > 0 and time.time() - self.start_connecting_time > timeout
-
-  def _run(self, q, max_duration):
+  def _run(self, q):
     client = connect_carla_client()
-    world = client.load_world(args.town)
-
+    world = client.load_world(self._args.town)
     settings = world.get_settings()
     settings.synchronous_mode = True  # Enables synchronous mode
     settings.fixed_delta_seconds = 0.05
@@ -253,7 +257,7 @@ class CarlaBridge:
 
     world.set_weather(carla.WeatherParameters.ClearSunset)
 
-    if args.low_quality:
+    if self._args.low_quality:
       world.unload_map_layer(carla.MapLayer.Foliage)
       world.unload_map_layer(carla.MapLayer.Buildings)
       world.unload_map_layer(carla.MapLayer.ParkedVehicles)
@@ -267,10 +271,10 @@ class CarlaBridge:
 
     vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[1]
     spawn_points = world_map.get_spawn_points()
-    assert len(spawn_points) > args.num_selected_spawn_point, \
-      f'''No spawn point {args.num_selected_spawn_point}, try a value between 0 and
+    assert len(spawn_points) > self._args.num_selected_spawn_point, \
+      f'''No spawn point {self._args.num_selected_spawn_point}, try a value between 0 and
       {len(spawn_points)} for this town.'''
-    spawn_point = spawn_points[args.num_selected_spawn_point]
+    spawn_point = spawn_points[self._args.num_selected_spawn_point]
     vehicle = world.spawn_actor(vehicle_bp, spawn_point)
 
     max_steer_angle = vehicle.get_physics_control().wheels[0].max_steer_angle
@@ -334,10 +338,9 @@ class CarlaBridge:
     throttle_manual_multiplier = 0.7  # keyboard signal is always 1
     brake_manual_multiplier = 0.7  # keyboard signal is always 1
     steer_manual_multiplier = 45 * STEER_RATIO  # keyboard signal is always 1
+
+    params = Params()
     while True:
-      if self.is_timeout(max_duration):
-        print("Stopping because max duration is reached")
-        break
       # 1. Read the throttle, steer and brake from op or manual controls
       # 2. Set instructions in Carla
       # 3. Send current carstate to op via can
@@ -450,6 +453,9 @@ class CarlaBridge:
       if rk.frame % PRINT_DECIMATION == 0:
         print("frame: ", "engaged:", is_openpilot_engaged, "; throttle: ", round(vc.throttle, 3), "; steer(c/deg): ",
               round(vc.steer, 3), round(steer_out, 3), "; brake: ", round(vc.brake, 3))
+      if params.get_bool('DoShutdown'):
+        print("Shutdown called. Stopping bridge.py")
+        break
 
       if rk.frame % 5 == 0:
         world.tick()
@@ -464,27 +470,28 @@ class CarlaBridge:
     vehicle.destroy()
 
 
-if __name__ == "__main__":
-  # make sure params are in a good state
-  set_params_enabled()
-
-  msg = messaging.new_message('liveCalibration')
-  msg.liveCalibration.validBlocks = 20
-  msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
-  Params().put("CalibrationParams", msg.to_bytes())
-
-  carla_bridge = CarlaBridge()
+def main(add_args=None, keep_alive=True):
+  _args = parse_args(add_args)
+  carla_bridge = CarlaBridge(_args)
 
   _q: Any = Queue()
-  p = Process(target=carla_bridge.bridge_keep_alive, args=(_q,), daemon=True)
+  p = Process(target=carla_bridge.bridge_keep_alive, args=(_q, keep_alive), daemon=True)
   p.start()
 
-  if args.joystick:
+  return p, _args, _q
+
+
+if __name__ == "__main__":
+  p, _args, _q = main()
+
+  if _args.joystick:
     # start input poll for joystick
     from tools.sim.lib.manual_ctrl import wheel_poll_thread
+
     wheel_poll_thread(_q)
-    p.join()
   else:
     # start input poll for keyboard
     from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
+
     keyboard_poll_thread(_q)
+  p.join()
