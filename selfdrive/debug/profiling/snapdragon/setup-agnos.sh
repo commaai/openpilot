@@ -4,4 +4,4 @@
 
 cd SnapdragonProfiler/service
 mv android real_android
-ln -s iot_rb5_lu/ android
+ln -s agl/ android
