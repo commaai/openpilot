@@ -419,8 +419,10 @@ class Tici(HardwareBase):
       sudo_write(val, f"/sys/devices/system/cpu/cpu{i}/online")
 
     for n in ('0', '4'):
-      gov = 'ondemand' if powersave_enabled else 'performance'
+      gov = 'ondemand' if powersave_enabled else 'userspace'
       sudo_write(gov, f"/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor")
+      if powersave_enabled:
+        sudo_write('1324800', f"/sys/devices/system/cpu/cpufreq/policy{n}/scaling_setspeed")
 
     # *** IRQ config ***
     affine_irq(5, 565)   # kgsl-3d0
@@ -450,8 +452,8 @@ class Tici(HardwareBase):
     sudo_write("f", "/proc/irq/default_smp_affinity")
 
     # *** GPU config ***
-    sudo_write("0", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
-    sudo_write("0", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
