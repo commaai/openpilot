@@ -415,14 +415,15 @@ class Tici(HardwareBase):
 
     # offline big cluster, leave core 4 online for boardd
     for i in range(5, 8):
-      val = "0" if powersave_enabled else "1"
-      sudo_write(val, f"/sys/devices/system/cpu/cpu{i}/online")
+      val = '0' if powersave_enabled else '1'
+      sudo_write(val, f'/sys/devices/system/cpu/cpu{i}/online')
 
     for n in ('0', '4'):
       gov = 'ondemand' if powersave_enabled else 'userspace'
-      sudo_write(gov, f"/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor")
-      if powersave_enabled:
-        sudo_write('1324800', f"/sys/devices/system/cpu/cpufreq/policy{n}/scaling_setspeed")
+      sudo_write(gov, f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor')
+    if not powersave_enabled:
+      sudo_write('1324800', '/sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed')
+      sudo_write('1363200', '/sys/devices/system/cpu/cpufreq/policy4/scaling_setspeed')
 
     # *** IRQ config ***
     affine_irq(5, 565)   # kgsl-3d0
