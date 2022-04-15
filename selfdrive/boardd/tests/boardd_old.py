@@ -197,7 +197,7 @@ def boardd_loop(rate=100):
 
 # *** main loop ***
 def boardd_proxy_loop(rate=100, address="192.168.2.251"):
-  rk = Ratekeeper(rate, "boardd")
+  rk = Ratekeeper(rate)
 
   can_init()
 
