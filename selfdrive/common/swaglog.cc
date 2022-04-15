@@ -107,40 +107,37 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   cloudlog_common(levelnum, filename, lineno, func, msg_buf);
 }
 
-void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
-                const char* fmt, ...){
+void cloudlog_t_common(int levelnum, const char* filename, int lineno, const char* func,
+                uint32_t frame_id, const char* fmt, va_list args){
   if (!LOG_TIMESTAMPS) return;
-  va_list args;
-  va_start(args, fmt);
   char* msg_buf = nullptr;
   int ret = vasprintf(&msg_buf, fmt, args);
-  va_end(args);
   if (ret <= 0 || !msg_buf) return;
-  json11::Json::object tspt_j = json11::Json::object{
-    {"timestamp", json11::Json::object{ 
-      {"event", msg_buf},
-      {"time", std::to_string(nanos_since_boot())}}
-    } 
+  json11::Json::object tspt_j = json11::Json::object{ 
+    {"event", msg_buf},
+    {"time", std::to_string(nanos_since_boot())}
   };
+  if (frame_id > -1) {
+    tspt_j["frame_id"] = std::to_string(frame_id);
+  };
+  tspt_j = json11::Json::object{{"timestamp", tspt_j}};
   cloudlog_common(levelnum, filename, lineno, func, msg_buf, tspt_j);
 }
 
+
 void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
-                int frame_id, const char* fmt, ...){
-  if (!LOG_TIMESTAMPS) return;
+                const char* fmt, ...){
   va_list args;
   va_start(args, fmt);
-  char* msg_buf = nullptr;
-  int ret = vasprintf(&msg_buf, fmt, args);
+  cloudlog_t_common(levelnum, filename, lineno, func, -1, fmt, args);
   va_end(args);
-  if (ret <= 0 || !msg_buf) return;
-  json11::Json::object tspt_j = json11::Json::object{
-    {"timestamp", json11::Json::object{ 
-      {"event", msg_buf},
-      {"frame_id", frame_id},
-      {"time", std::to_string(nanos_since_boot())}}
-    } 
-  };
-  cloudlog_common(levelnum, filename, lineno, func, msg_buf, tspt_j);
+}
+
+void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
+                uint32_t frame_id, const char* fmt, ...){
+  va_list args;
+  va_start(args, fmt);
+  cloudlog_t_common(levelnum, filename, lineno, func, frame_id, fmt, args);
+  va_end(args);
 }
 
