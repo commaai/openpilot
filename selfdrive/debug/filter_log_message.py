@@ -56,7 +56,7 @@ if __name__ == "__main__":
   logs = None
   if len(args.route):
     r = Route(args.route[0])
-    logs = r.log_paths()
+    logs = [q_log if r_log is None else r_log for (q_log, r_log) in zip(r.qlog_paths(), r.log_paths())]
 
   if len(args.route) == 2 and logs:
     n = int(args.route[1])
@@ -71,6 +71,8 @@ if __name__ == "__main__":
         for m in lr:
           if m.which() == 'logMessage':
             print_logmessage(m.logMonoTime, m.logMessage, min_level)
+          elif m.which() == 'errorLogMessage' and 'qlog' in log:
+            print_logmessage(m.logMonoTime, m.errorLogMessage, min_level)
           elif m.which() == 'androidLog':
             print_androidlog(m.logMonoTime, m.androidLog)
   else:
