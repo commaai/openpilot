@@ -52,7 +52,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._YAW_MAX_OFFSET = 0.289
     self._YAW_MIN_OFFSET = -0.0246
 
-    self._POSESTD_THRESHOLD = 0.315
+    self._POSESTD_THRESHOLD = 0.25
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
