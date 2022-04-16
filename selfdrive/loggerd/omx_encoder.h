@@ -54,6 +54,7 @@ private:
   std::thread write_handler_thread;
   int segment_num = -1;
   PubMaster *pm;
+  const char *service_name;
 
   const char* filename;
   FILE *of = nullptr;

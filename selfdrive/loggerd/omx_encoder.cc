@@ -271,11 +271,6 @@ OmxEncoder::OmxEncoder(const char* filename, CameraType type, int width, int hei
     avc.bconstIpred = OMX_TRUE;
 
     OMX_CHECK(OMX_SetParameter(this->handle, OMX_IndexParamVideoAvc, &avc));
-
-    const char *service_name = this->type == DriverCam ? "driverEncodeData" :
-      (this->type == WideRoadCam ? "wideRoadEncodeData" :
-      (this->remuxing ? "qRoadEncodeData" : "roadEncodeData"));
-    pm = new PubMaster({service_name});
   }
 
 
@@ -331,6 +326,11 @@ OmxEncoder::OmxEncoder(const char* filename, CameraType type, int width, int hei
   }
 
   LOGE("omx initialized - in: %d - out %d", this->in_buf_headers.size(), this->out_buf_headers.size());
+
+  service_name = this->type == DriverCam ? "driverEncodeData" :
+    (this->type == WideRoadCam ? "wideRoadEncodeData" :
+    (this->remuxing ? "qRoadEncodeData" : "roadEncodeData"));
+  pm = new PubMaster({service_name});
 }
 
 void OmxEncoder::callback_handler(OmxEncoder *e) {
@@ -385,7 +385,7 @@ void OmxEncoder::write_and_broadcast_handler(OmxEncoder *e){
     edata.setTimestampEof(out_buf->header.nTimeStamp);
     edata.setIdx(idx++);
     edata.setSegmentNum(e->segment_num);
-    pm->send(service_name, msg);
+    e->pm->send(e->service_name, msg);
 
     OmxEncoder::handle_out_buf(e, out_buf);
     if (out_buf->header.nFlags & OMX_BUFFERFLAG_EOS) {
