@@ -204,6 +204,7 @@ FW_VERSIONS = {
       b'\xa3  \024\000',
       b'\xa3 \031\024\000',
       b'\xa3  \x14\x01',
+      b'\xf1\x00\xbb\r\x05',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x8d\xc0\x04\x00',
