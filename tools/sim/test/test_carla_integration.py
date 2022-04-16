@@ -46,8 +46,7 @@ class TestCarlaIntegration(unittest.TestCase):
 
   def assert_processes_running(self, expected_p):
     running = {p: False for p in expected_p}
-    for p in expected_p:
-      name = managed_processes[p].get_process_state_msg().name
+    for name in expected_p:
       for proc in psutil.process_iter():
         if proc.name().endswith(name):
           running[name] = True
