@@ -385,6 +385,7 @@ void OmxEncoder::write_and_broadcast_handler(OmxEncoder *e){
     edata.setTimestampEof(out_buf->header.nTimeStamp);
     edata.setIdx(idx++);
     edata.setSegmentNum(e->segment_num);
+    edata.setFlags(out_buf->header.nFlags);
     e->pm->send(e->service_name, msg);
 
     OmxEncoder::handle_out_buf(e, out_buf);
