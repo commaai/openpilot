@@ -26,6 +26,7 @@ if arch == "Darwin":
 logger_lib = env.Library('logger', src)
 libs.insert(0, logger_lib)
 
+env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
 env.Program('loggerd', ['main.cc'], LIBS=libs)
 env.Program('bootlog.cc', LIBS=libs)
 

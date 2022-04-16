@@ -557,7 +557,7 @@ void OmxEncoder::encoder_open(const char* path) {
     this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
     this->codec_ctx->time_base = (AVRational){ 1, this->fps };
 
-    err = avio_open(&this->ofmt_ctx->pb, this->vid_path, AVIO_FLAG_WRITE);
+    err = avio_open(&this->ofmt_ctx->pb, this->write ? this->vid_path : "/dev/null", AVIO_FLAG_WRITE);
     assert(err >= 0);
 
     this->wrote_codec_config = false;
@@ -574,10 +574,12 @@ void OmxEncoder::encoder_open(const char* path) {
   }
 
   // create camera lock file
-  snprintf(this->lock_path, sizeof(this->lock_path), "%s/%s.lock", path, this->filename);
-  int lock_fd = HANDLE_EINTR(open(this->lock_path, O_RDWR | O_CREAT, 0664));
-  assert(lock_fd >= 0);
-  close(lock_fd);
+  if (this->write) {
+    snprintf(this->lock_path, sizeof(this->lock_path), "%s/%s.lock", path, this->filename);
+    int lock_fd = HANDLE_EINTR(open(this->lock_path, O_RDWR | O_CREAT, 0664));
+    assert(lock_fd >= 0);
+    close(lock_fd);
+  }
 
   // start writer threads
   callback_handler_thread = std::thread(OmxEncoder::callback_handler, this);
