@@ -122,9 +122,6 @@ FW_VERSIONS = {
       b'\x00\x00c\xf4\x00\x00\x00\x00',
       b'\x00\x00d\xdc\x00\x00\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00\xac\x02\x00',
-    ],
     (Ecu.engine, 0x7e0, None): [
       b'\xaa\x61\x66\x73\x07',
       b'\xbeacr\a',
