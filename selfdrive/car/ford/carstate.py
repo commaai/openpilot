@@ -55,8 +55,10 @@ class CarState(CarStateBase):
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
     elif self.CP.transmissionType == TransmissionType.manual:
       ret.clutchPressed = cp.vl["Engine_Clutch_Data"]["CluPdlPos_Pc_Meas"] > 0
-      # TODO: find reverse light signal
-      ret.gearShifter = GearShifter.drive
+      if bool(cp.vl["BCM_Lamp_Stat_FD1"]["RvrseLghtOn_B_Stat"]):
+        ret.gearShifter = GearShifter.reverse
+      else:
+        ret.gearShifter = GearShifter.drive
 
     # safety
     ret.stockFcw = bool(cp_cam.vl["ACCDATA_3"]["FcwVisblWarn_B_Rq"])
@@ -148,9 +150,11 @@ class CarState(CarStateBase):
     elif CP.transmissionType == TransmissionType.manual:
       signals += [
         ("CluPdlPos_Pc_Meas", "Engine_Clutch_Data"),         # PCM clutch (pct)
+        ("RvrseLghtOn_B_Stat", "BCM_Lamp_Stat_FD1"),         # BCM reverse light
       ]
       checks += [
         ("Engine_Clutch_Data", 33),
+        ("BCM_Lamp_Stat_FD1", 1),
       ]
 
     if CP.enableBsm:
