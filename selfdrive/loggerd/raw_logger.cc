@@ -24,7 +24,7 @@ extern "C" {
 
 RawLogger::RawLogger(const char* filename, CameraType type, int in_width, int in_height, int fps,
                      int bitrate, bool h265, int out_width, int out_height, bool write)
-  : filename(filename), fps(fps) {
+  : in_width(in_width), in_height(in_height), filename(filename), fps(fps) {
 
   // TODO: respect write arg
 
@@ -34,8 +34,8 @@ RawLogger::RawLogger(const char* filename, CameraType type, int in_width, int in
 
   codec_ctx = avcodec_alloc_context3(codec);
   assert(codec_ctx);
-  codec_ctx->width = in_width;
-  codec_ctx->height = in_height;
+  codec_ctx->width = out_width;
+  codec_ctx->height = out_height;
   codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 
   // codec_ctx->thread_count = 2;
@@ -52,11 +52,11 @@ RawLogger::RawLogger(const char* filename, CameraType type, int in_width, int in
   assert(frame);
   frame->format = codec_ctx->pix_fmt;
 
-  frame->width = in_width;
-  frame->height = in_height;
-  frame->linesize[0] = in_width;
-  frame->linesize[1] = in_width/2;
-  frame->linesize[2] = in_width/2;
+  frame->width = out_width;
+  frame->height = out_height;
+  frame->linesize[0] = out_width;
+  frame->linesize[1] = out_width/2;
+  frame->linesize[2] = out_width/2;
 
   if (in_width != out_width || in_height != out_height) {
     downscale_buf.resize(out_width * out_height * 3 / 2);

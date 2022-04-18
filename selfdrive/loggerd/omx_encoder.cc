@@ -163,7 +163,7 @@ OmxEncoder::OmxEncoder(const char *filename, CameraType type, int in_width, int 
   this->fps = fps;
   this->remuxing = !h265;
 
-	if (in_width != out_width || in_height != out_height) {
+  if (in_width != out_width || in_height != out_height) {
     this->y_ptr2 = (uint8_t *)malloc(out_width*out_height);
     this->u_ptr2 = (uint8_t *)malloc(out_width*out_height/4);
     this->v_ptr2 = (uint8_t *)malloc(out_width*out_height/4);
@@ -480,7 +480,7 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
               this->y_ptr2, out_width,
               this->u_ptr2, out_width/2,
               this->v_ptr2, out_width/2,
-              this->width, out_height,
+              out_width, out_height,
               libyuv::kFilterNone);
     y_ptr = this->y_ptr2;
     u_ptr = this->u_ptr2;
@@ -632,9 +632,9 @@ OmxEncoder::~OmxEncoder() {
     free(this->codec_config);
   }
 
-	if (in_width != out_width || in_height != out_height) {
+  if (in_width != out_width || in_height != out_height) {
     free(this->y_ptr2);
     free(this->u_ptr2);
     free(this->v_ptr2);
-	}
+  }
 }

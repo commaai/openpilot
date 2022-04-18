@@ -29,6 +29,8 @@ private:
   int counter = 0;
   bool is_open = false;
 
+  int in_width, in_height;
+
   std::string vid_path, lock_path;
 
   const AVCodec *codec = NULL;
