@@ -30,6 +30,7 @@ class ObservationKind:
   ECEF_VEL = 31
   ECEF_ORIENTATION_FROM_GPS = 32
   NO_ACCEL = 33
+  ORB_FEATURES_WIDE = 34
 
   ROAD_FRAME_XY_SPEED = 24  # (x, y) [m/s]
   ROAD_FRAME_YAW_RATE = 25  # [rad/s]
@@ -72,6 +73,7 @@ class ObservationKind:
     'Steer Ratio',
     'Road Frame x speed',
     'Road Roll',
+    'ORB features wide camera',
   ]
 
   @classmethod

@@ -50,6 +50,7 @@ class States():
   CLOCK_ACCELERATION = slice(28, 29)  # clock acceleration in light-meters/s**2,
   ACCELEROMETER_SCALE_UNUSED = slice(29, 30)  # scale of mems accelerometer
   ACCELEROMETER_BIAS = slice(30, 33)  # bias of mems accelerometer
+  WIDE_CAM_OFFSET = slice(33, 36)  # wide camera offset angles in radians (tici only)
   # We curently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_OFFSET).
   # From experiments we see that ACCELEROMETER_BIAS is more correct than ACCELEROMETER_SCALE
 
@@ -70,6 +71,7 @@ class States():
   CLOCK_ACCELERATION_ERR = slice(27, 28)
   ACCELEROMETER_SCALE_ERR_UNUSED = slice(28, 29)
   ACCELEROMETER_BIAS_ERR = slice(29, 32)
+  WIDE_CAM_OFFSET_ERR = slice(32, 35)
 
 
 class LocKalman():
@@ -87,6 +89,7 @@ class LocKalman():
                         0, 0,
                         0,
                         1,
+                        0, 0, 0,
                         0, 0, 0], dtype=np.float64)
 
   # state covariance
@@ -99,11 +102,12 @@ class LocKalman():
                        0.02**2,
                        2**2, 2**2, 2**2,
                        0.01**2,
-                       (0.01)**2, (0.01)**2, (0.01)**2,
+                       0.01**2, 0.01**2, 0.01**2,
                        10**2, 1**2,
                        0.2**2,
                        0.05**2,
-                       0.05**2, 0.05**2, 0.05**2])
+                       0.05**2, 0.05**2, 0.05**2,
+                       0.01**2, 0.01**2, 0.01**2])
 
   # process noise
   Q = np.diag([0.03**2, 0.03**2, 0.03**2,
@@ -119,10 +123,11 @@ class LocKalman():
                (.1)**2, (.01)**2,
                0.005**2,
                (0.02 / 100)**2,
-               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2])
+               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
+               (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
 
   # measurements that need to pass mahalanobis distance outlier rejector
-  maha_test_kinds = [ObservationKind.ORB_FEATURES]  # , ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_RATE]
+  maha_test_kinds = [ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]  # , ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_RATE]
   dim_augment = 7
   dim_augment_err = 6
 
@@ -154,12 +159,14 @@ class LocKalman():
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
     acceleration = state[States.ACCELERATION, :]
     imu_angles = state[States.IMU_OFFSET, :]
-    imu_angles[0, 0] = 0
-    imu_angles[2, 0] = 0
+    imu_angles[0, 0] = 0  # not observable enough
+    imu_angles[2, 0] = 0  # not observable enough
     glonass_bias = state[States.GLONASS_BIAS, :]
     glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :]
     ca = state[States.CLOCK_ACCELERATION, :]
     accel_bias = state[States.ACCELEROMETER_BIAS, :]
+    wide_cam_angles = state[States.WIDE_CAM_OFFSET, :]
+    wide_cam_angles[0, 0] = 0  # not observable enough
 
     dt = sp.Symbol('dt')
 
@@ -308,22 +315,29 @@ class LocKalman():
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
                [h_acc_stationary_sym, ObservationKind.NO_ACCEL, None]]
 
+    wide_cam_rot = euler_rotate(*wide_cam_angles)
     # MSCKF configuration
     if N > 0:
       # experimentally found this is correct value for imx298 with 910 focal length
       # this is a variable so it can change with focus, but we disregard that for now
+      # TODO: this doesnt work for TICI
       focal_scale = 1.01
       # Add observation functions for orb feature tracks
       track_epos_sym = sp.MatrixSymbol('track_epos_sym', 3, 1)
       track_x, track_y, track_z = track_epos_sym
       h_track_sym = sp.Matrix(np.zeros(((1 + N) * 2, 1)))
+      h_track_wide_cam_sym = sp.Matrix(np.zeros(((1 + N) * 2, 1)))
+
       track_pos_sym = sp.Matrix([track_x - x, track_y - y, track_z - z])
       track_pos_rot_sym = quat_rot.T * track_pos_sym
+      track_pos_rot_wide_cam_sym = wide_cam_rot * track_pos_rot_sym
       h_track_sym[-2:, :] = sp.Matrix([focal_scale * (track_pos_rot_sym[1] / track_pos_rot_sym[0]),
                                       focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
+      h_track_wide_cam_sym[-2:, :] = sp.Matrix([focal_scale * (track_pos_rot_wide_cam_sym[1] / track_pos_rot_wide_cam_sym[0]),
+                                                focal_scale * (track_pos_rot_wide_cam_sym[2] / track_pos_rot_wide_cam_sym[0])])
 
       h_msckf_test_sym = sp.Matrix(np.zeros(((1 + N) * 3, 1)))
-      h_msckf_test_sym[-3:, :] = sp.Matrix([track_x - x, track_y - y, track_z - z])
+      h_msckf_test_sym[-3:, :] = track_pos_sym
 
       for n in range(N):
         idx = dim_main + n * dim_augment
@@ -333,14 +347,18 @@ class LocKalman():
         quat_rot = quat_rotate(*q)
         track_pos_sym = sp.Matrix([track_x - x, track_y - y, track_z - z])
         track_pos_rot_sym = quat_rot.T * track_pos_sym
+        track_pos_rot_wide_cam_sym = wide_cam_rot * track_pos_rot_sym
         h_track_sym[n * 2:n * 2 + 2, :] = sp.Matrix([focal_scale * (track_pos_rot_sym[1] / track_pos_rot_sym[0]),
                                                      focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
-        h_msckf_test_sym[n * 3:n * 3 + 3, :] = sp.Matrix([track_x - x, track_y - y, track_z - z])
+        h_track_wide_cam_sym[n * 2: n * 2 + 2, :] = sp.Matrix([focal_scale * (track_pos_rot_wide_cam_sym[1] / track_pos_rot_wide_cam_sym[0]),
+                                                    focal_scale * (track_pos_rot_wide_cam_sym[2] / track_pos_rot_wide_cam_sym[0])])
+        h_msckf_test_sym[n * 3:n * 3 + 3, :] = track_pos_sym
 
       obs_eqs.append([h_msckf_test_sym, ObservationKind.MSCKF_TEST, track_epos_sym])
       obs_eqs.append([h_track_sym, ObservationKind.ORB_FEATURES, track_epos_sym])
+      obs_eqs.append([h_track_wide_cam_sym, ObservationKind.ORB_FEATURES_WIDE, track_epos_sym])
       obs_eqs.append([h_track_sym, ObservationKind.FEATURE_TRACK_TEST, track_epos_sym])
-      msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N, [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES]]
+      msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N, [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]]
     else:
       msckf_params = None
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, msckf_params, maha_test_kinds)
@@ -427,7 +445,7 @@ class LocKalman():
       r = self.predict_and_update_pseudorange(data, t, kind)
     elif kind == ObservationKind.PSEUDORANGE_RATE_GPS or kind == ObservationKind.PSEUDORANGE_RATE_GLONASS:
       r = self.predict_and_update_pseudorange_rate(data, t, kind)
-    elif kind == ObservationKind.ORB_FEATURES:
+    elif kind == ObservationKind.ORB_FEATURES or kind == ObservationKind.ORB_FEATURES_WIDE:
       r = self.predict_and_update_orb_features(data, t, kind)
     elif kind == ObservationKind.MSCKF_TEST:
       r = self.predict_and_update_msckf_test(data, t, kind)
