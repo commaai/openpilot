@@ -326,6 +326,11 @@ OmxEncoder::OmxEncoder(const char* filename, CameraType type, int width, int hei
   }
 
   LOGE("omx initialized - in: %d - out %d", this->in_buf_headers.size(), this->out_buf_headers.size());
+
+  service_name = this->type == DriverCam ? "driverEncodeData" :
+    (this->type == WideRoadCam ? "wideRoadEncodeData" :
+    (this->remuxing ? "qRoadEncodeData" : "roadEncodeData"));
+  pm = new PubMaster({service_name});
 }
 
 void OmxEncoder::callback_handler(OmxEncoder *e) {
@@ -366,37 +371,24 @@ void OmxEncoder::callback_handler(OmxEncoder *e) {
 
 void OmxEncoder::write_and_broadcast_handler(OmxEncoder *e){
   bool exit = false;
-  const char *service_name = e->type == DriverCam ? "driverEncodeData" : (e->type == WideRoadCam ? "wideRoadEncodeData" : "roadEncodeData");
-  PubMaster pm({service_name});
 
+  e->segment_num++;
   uint32_t idx = 0;
   while (!exit) {
     OmxBuffer *out_buf = e->to_write.pop();
 
     MessageBuilder msg;
     auto edata = (e->type == DriverCam) ? msg.initEvent(true).initDriverEncodeData() :
-      ((e->type == WideRoadCam) ? msg.initEvent(true).initWideRoadEncodeData() : msg.initEvent(true).initRoadEncodeData());
+      ((e->type == WideRoadCam) ? msg.initEvent(true).initWideRoadEncodeData() :
+      (e->remuxing ? msg.initEvent(true).initQRoadEncodeData() : msg.initEvent(true).initRoadEncodeData()));
     edata.setData(kj::heapArray<capnp::byte>(out_buf->data, out_buf->header.nFilledLen));
     edata.setTimestampEof(out_buf->header.nTimeStamp);
     edata.setIdx(idx++);
-    pm.send(service_name, msg);
+    edata.setSegmentNum(e->segment_num);
+    edata.setFlags(out_buf->header.nFlags);
+    e->pm->send(e->service_name, msg);
 
     OmxEncoder::handle_out_buf(e, out_buf);
-    if (out_buf->header.nFlags & OMX_BUFFERFLAG_EOS) {
-      exit = true;
-    }
-
-    free(out_buf);
-  }
-}
-
-
-void OmxEncoder::write_handler(OmxEncoder *e){
-  bool exit = false;
-  while (!exit) {
-    OmxBuffer *out_buf = e->to_write.pop();
-    OmxEncoder::handle_out_buf(e, out_buf);
-
     if (out_buf->header.nFlags & OMX_BUFFERFLAG_EOS) {
       exit = true;
     }
@@ -589,7 +581,7 @@ void OmxEncoder::encoder_open(const char* path) {
 
   // start writer threads
   callback_handler_thread = std::thread(OmxEncoder::callback_handler, this);
-  write_handler_thread = std::thread(this->remuxing ? OmxEncoder::write_handler : OmxEncoder::write_and_broadcast_handler, this);
+  write_handler_thread = std::thread(OmxEncoder::write_and_broadcast_handler, this);
 
   this->is_open = true;
   this->counter = 0;

@@ -40,7 +40,6 @@ public:
 private:
   void wait_for_state(OMX_STATETYPE state);
   static void callback_handler(OmxEncoder *e);
-  static void write_handler(OmxEncoder *e);
   static void write_and_broadcast_handler(OmxEncoder *e);
   static void handle_out_buf(OmxEncoder *e, OmxBuffer *out_buf);
 
@@ -53,6 +52,9 @@ private:
   int counter = 0;
   std::thread callback_handler_thread;
   std::thread write_handler_thread;
+  int segment_num = -1;
+  PubMaster *pm;
+  const char *service_name;
 
   const char* filename;
   FILE *of = nullptr;
