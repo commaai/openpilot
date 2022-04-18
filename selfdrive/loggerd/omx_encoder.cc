@@ -455,7 +455,10 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OmxBuffer *out_buf) {
   }
 }
 
-int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, uint64_t ts) {
+int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                             int in_width, int in_height, uint64_t ts) {
+  assert(in_width == this->in_width);
+  assert(in_height == this->in_height);
   if (!this->is_open) {
     return -1;
   }

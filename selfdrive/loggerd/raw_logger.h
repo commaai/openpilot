@@ -18,7 +18,8 @@ class RawLogger : public VideoEncoder {
   RawLogger(const char* filename, CameraType type, int in_width, int in_height, int fps,
             int bitrate, bool h265, int out_width, int out_height, bool write = true);
   ~RawLogger();
-  int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, uint64_t ts);
+  int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                   int in_width, int in_height, uint64_t ts);
   void encoder_open(const char* path);
   void encoder_close();
 
