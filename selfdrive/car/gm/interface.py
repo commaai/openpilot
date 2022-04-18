@@ -143,8 +143,8 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
-      ret.steerMaxBP = [10., 25.]
-      ret.steerMaxV = [1., 1.05]
+      #ret.steerMaxBP = [10., 25.]
+      #ret.steerMaxV = [1., 1.05]
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -192,8 +192,9 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]
       ret.lateralTuning.pid.kf = 0.0002
-      ret.steerMaxBP = [10., 25.]
-      ret.steerMaxV = [1., 1.2]
+      #Deprecated
+      #ret.steerMaxBP = [10., 25.]
+      #ret.steerMaxV = [1., 1.2]
       
       # TODO: Needs refinement for stop and go, doesn't fully stop
       # Assumes the Bolt is using L-Mode for regen braking
