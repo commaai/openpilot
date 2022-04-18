@@ -122,9 +122,9 @@ void RawLogger::encoder_close() {
 }
 
 int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                            int in_width, int in_height, uint64_t ts) {
-  assert(in_width == this->in_width);
-  assert(in_height == this->in_height);
+                            int in_width_, int in_height_, uint64_t ts) {
+  assert(in_width_ == this->in_width);
+  assert(in_height_ == this->in_height);
 
   AVPacket pkt;
   av_init_packet(&pkt);
