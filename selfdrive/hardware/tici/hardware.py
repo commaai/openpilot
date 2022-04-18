@@ -460,7 +460,9 @@ class Tici(HardwareBase):
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
     sudo_write("1000000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
-    sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
+    sudo_write("userspace", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
+    sudo_write("675000000", "/sys/class/kgsl/kgsl-3d0/devfreq/min_freq")
+    sudo_write("675000000", "/sys/class/kgsl/kgsl-3d0/devfreq/max_freq")
 
     # setup governors
     sudo_write("performance", "/sys/class/devfreq/soc:qcom,cpubw/governor")
