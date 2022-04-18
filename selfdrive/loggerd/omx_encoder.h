@@ -22,10 +22,9 @@ struct OmxBuffer {
 // OmxEncoder, lossey codec using hardware hevc
 class OmxEncoder : public VideoEncoder {
 public:
-  OmxEncoder(const char* filename, CameraType type, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write = true);
+  OmxEncoder(const char* filename, CameraType type, int in_width, int in_height, int fps, int bitrate, bool h265, int out_width, int out_height, bool write = true);
   ~OmxEncoder();
-  int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                   int in_width, int in_height, uint64_t ts);
+  int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, uint64_t ts);
   void encoder_open(const char* path);
   void encoder_close();
 
@@ -43,7 +42,8 @@ private:
   static void write_and_broadcast_handler(OmxEncoder *e);
   static void handle_out_buf(OmxEncoder *e, OmxBuffer *out_buf);
 
-  int width, height, fps;
+  int in_width, in_height, fps;
+  int out_width, out_height;
   char vid_path[1024];
   char lock_path[1024];
   bool is_open = false;
@@ -83,7 +83,4 @@ private:
   AVCodecContext *codec_ctx;
   AVStream *out_stream;
   bool remuxing;
-
-  bool downscale;
-  uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
 };
