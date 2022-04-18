@@ -71,7 +71,6 @@ class Planner:
 
     # Reset current state when not engaged, or user is controlling the speed
     reset_state = long_control_state == LongCtrlState.off
-    reset_state = reset_state or sm['carState'].gasPressed
 
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
@@ -115,7 +114,7 @@ class Planner:
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
 
-    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState'])
+    plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
 
     longitudinalPlan = plan_send.longitudinalPlan
     longitudinalPlan.modelMonoTime = sm.logMonoTime['modelV2']

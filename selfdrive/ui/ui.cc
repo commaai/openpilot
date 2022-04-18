@@ -179,7 +179,7 @@ static void update_state(UIState *s) {
   } else if (Hardware::TICI() && sm.updated("wideRoadCameraState")) {
     auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
 
-    float max_lines = 1904;
+    float max_lines = 1618;
     float max_gain = 10.0;
     float max_ev = max_lines * max_gain / 6;
 

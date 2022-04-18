@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
@@ -30,31 +31,28 @@ class CAR:
   OUTBACK_PREGLOBAL_2018 = "SUBARU OUTBACK 2018 - 2019"
 
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.ASCENT: CarInfo("Subaru Ascent 2019", "EyeSight"),
+@dataclass
+class SubaruCarInfo(CarInfo):
+  package: str = "EyeSight"
+
+
+CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
+  CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-20"),
   CAR.IMPREZA: [
-    CarInfo("Subaru Impreza 2017-19", "EyeSight"),
-    CarInfo("Subaru Crosstrek 2018-20", "EyeSight"),
+    SubaruCarInfo("Subaru Impreza 2017-19", good_torque=True),
+    SubaruCarInfo("Subaru Crosstrek 2018-19", good_torque=True),
   ],
-  CAR.FORESTER: CarInfo("Subaru Forester 2019-21", "EyeSight"),
-  CAR.FORESTER_PREGLOBAL: CarInfo("Subaru Forester 2017-18", "EyeSight"),
-  CAR.LEGACY_PREGLOBAL: CarInfo("Subaru Legacy 2015-18", "EyeSight"),
-  CAR.OUTBACK_PREGLOBAL: CarInfo("Subaru Outback 2015-17", "EyeSight"),
-  CAR.OUTBACK_PREGLOBAL_2018: CarInfo("Subaru Outback 2018-19", "EyeSight"),
+  CAR.IMPREZA_2020: [
+    SubaruCarInfo("Subaru Impreza 2020-21"),
+    SubaruCarInfo("Subaru Crosstrek 2020-21"),
+  ],
+  CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21", good_torque=True),
+  CAR.FORESTER_PREGLOBAL: SubaruCarInfo("Subaru Forester 2017-18"),
+  CAR.LEGACY_PREGLOBAL: SubaruCarInfo("Subaru Legacy 2015-18"),
+  CAR.OUTBACK_PREGLOBAL: SubaruCarInfo("Subaru Outback 2015-17"),
+  CAR.OUTBACK_PREGLOBAL_2018: SubaruCarInfo("Subaru Outback 2018-19"),
 }
 
-
-FINGERPRINTS = {
-  CAR.IMPREZA_2020: [{
-    2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 282: 8, 290: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 372: 8, 544: 8, 545: 8, 546: 8, 552: 8, 554: 8, 557: 8, 576: 8, 577: 8, 722: 8, 801: 8, 802: 8, 803: 8, 805: 8, 808: 8, 816: 8, 826: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 1617: 8, 1632: 8, 1650: 8, 1677: 8, 1697: 8, 1722: 8, 1743: 8, 1759: 8, 1786: 5, 1787: 5, 1788: 8, 1809: 8, 1813: 8, 1817: 8, 1821: 8, 1840: 8, 1848: 8, 1924: 8, 1932: 8, 1952: 8, 1960: 8, 1968: 8, 1976: 8, 2015: 8, 2016: 8, 2024: 8
-  },
-  {
-    2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 282: 8, 290: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 544: 8, 545: 8, 546: 8, 554: 8, 557: 8, 576: 8, 577: 8, 801: 8, 802: 8, 803: 8, 805: 8, 808: 8, 816: 8, 826: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 1614: 8, 1617: 8, 1632: 8, 1657: 8, 1658: 8, 1677: 8, 1697: 8, 1743: 8, 1759: 8, 1786: 5, 1787: 5, 1788: 8, 1809: 8, 1813: 8, 1817: 8, 1821: 8, 1840: 8, 1848: 8, 1924: 8, 1932: 8, 1952: 8, 1960: 8
-  }],
-  CAR.FORESTER: [{
-    2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 282: 8, 290: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 372: 8, 544: 8, 545: 8, 546: 8, 552: 8, 554: 8, 557: 8, 576: 8, 577: 8, 722: 8, 801: 8, 802: 8, 803: 8, 805: 8, 808: 8, 811: 8, 816: 8, 826: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 961: 8, 984: 8, 1614: 8, 1617: 8, 1632: 8, 1650: 8, 1651: 8, 1657: 8, 1658: 8, 1677: 8, 1697: 8, 1698: 8, 1722: 8, 1743: 8, 1759: 8, 1787: 5, 1788: 8, 1809: 8, 1813: 8, 1817: 8, 1821: 8, 1840: 8, 1848: 8, 1924: 8, 1932: 8, 1952: 8, 1960: 8
-  }],
-}
 
 FW_VERSIONS = {
   CAR.ASCENT: {
@@ -101,10 +99,11 @@ FW_VERSIONS = {
       b'z\x9c\x19\x80\x01',
       b'z\x94\x08\x90\x00',
       b'z\x84\x19\x90\x00',
+      b'\xf1\x00\xb2\x06\x04',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x7a\xc0\x0c\x00',
-      b'z\xc0\b\x00',
+      b'z\xc0\x08\x00',
       b'\x8a\xc0\x00\x00',
       b'z\xc0\x04\x00',
       b'z\xc0\x00\x00',
@@ -121,6 +120,10 @@ FW_VERSIONS = {
       b'\000\000e\002\037@ \024',
       b'\x00\x00d)\x00\x00\x00\x00',
       b'\x00\x00c\xf4\x00\x00\x00\x00',
+      b'\x00\x00d\xdc\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00\xac\x02\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xaa\x61\x66\x73\x07',

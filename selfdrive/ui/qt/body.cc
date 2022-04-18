@@ -14,6 +14,8 @@ BodyWindow::BodyWindow(QWidget *parent) : QLabel(parent) {
 
   setAlignment(Qt::AlignCenter);
 
+  setAttribute(Qt::WA_TransparentForMouseEvents, true);
+
   QObject::connect(uiState(), &UIState::uiUpdate, this, &BodyWindow::updateState);
 }
 

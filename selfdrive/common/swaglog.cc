@@ -63,6 +63,7 @@ class SwaglogState : public LogState {
 };
 
 static SwaglogState s = {};
+bool LOG_TIMESTAMPS = getenv("LOG_TIMESTAMPS");
 
 static void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
   if (levelnum >= s.print_level) {
@@ -71,23 +72,17 @@ static void log(int levelnum, const char* filename, int lineno, const char* func
   char levelnum_c = levelnum;
   zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
 }
-
-void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
-                const char* fmt, ...) {
+static void cloudlog_common(int levelnum, bool is_timestamp, const char* filename, int lineno, const char* func,
+                            const char* fmt, va_list args) {
   char* msg_buf = nullptr;
-  va_list args;
-  va_start(args, fmt);
   int ret = vasprintf(&msg_buf, fmt, args);
-  va_end(args);
-
   if (ret <= 0 || !msg_buf) return;
 
   std::lock_guard lk(s.lock);
 
   if (!s.initialized) s.initialize();
 
-  json11::Json log_j = json11::Json::object {
-    {"msg", msg_buf},
+  json11::Json::object log_j = json11::Json::object {
     {"ctx", s.ctx_j},
     {"levelnum", levelnum},
     {"filename", filename},
@@ -95,7 +90,37 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
     {"funcname", func},
     {"created", seconds_since_epoch()}
   };
-  std::string log_s = log_j.dump();
+
+  if (is_timestamp) {
+    json11::Json::object tspt_j = json11::Json::object {
+      {"timestamp", json11::Json::object{
+                  {"event", msg_buf},
+                  {"time", std::to_string(nanos_since_boot())}}
+      }
+    };
+    log_j["msg"] = tspt_j;
+  } else {
+    log_j["msg"] = msg_buf;
+  }
+
+  std::string log_s = ((json11::Json)log_j).dump();
   log(levelnum, filename, lineno, func, msg_buf, log_s);
   free(msg_buf);
+}
+
+void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
+                const char* fmt, ...){
+  va_list args;
+  va_start(args, fmt);
+  cloudlog_common(levelnum, false, filename, lineno, func, fmt, args);
+  va_end(args);
+}
+
+void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
+                const char* fmt, ...){
+  if (!LOG_TIMESTAMPS) return;
+  va_list args;
+  va_start(args, fmt);
+  cloudlog_common(levelnum, true, filename, lineno, func, fmt, args);
+  va_end(args);
 }
