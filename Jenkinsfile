@@ -50,18 +50,15 @@ pipeline {
   }
 
   stages {
-    stage('build release') {
+    stage('build release3') {
+      agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
       when {
         branch 'devel-staging'
       }
-
-      stage('release3') {
-        agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-        steps {
-          phone_steps("tici", [
-            ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
-          ])
-        }
+      steps {
+        phone_steps("tici", [
+          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+        ])
       }
     }
 
@@ -83,18 +80,6 @@ pipeline {
           stages {
             stage('parallel tests') {
               parallel {
-                stage('C2: build') {
-                  steps {
-                    phone_steps("eon-build", [
-                      ["build master-ci", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
-                      ["build openpilot", "cd selfdrive/manager && ./build.py"],
-                      ["test manager", "python selfdrive/manager/test/test_manager.py"],
-                      ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-                      ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
-                    ])
-                  }
-                }
-
                 /*
                 stage('Power Consumption Tests') {
                   steps {
