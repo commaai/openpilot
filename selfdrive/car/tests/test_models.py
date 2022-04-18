@@ -37,7 +37,7 @@ ignore_addr_checks_valid = [
 # build list of test cases
 routes_by_car = defaultdict(set)
 for r in routes:
-  routes_by_car[r.car_fingerprint].add(r)
+  routes_by_car[r.car_model].add(r)
 
 test_cases: List[Tuple[str, Optional[TestRoute]]] = []
 for i, c in enumerate(sorted(all_known_cars())):
@@ -52,7 +52,7 @@ class TestCarModel(unittest.TestCase):
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
-    if cls.test_route is None:
+    if cls.route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
         raise unittest.SkipTest
@@ -60,13 +60,13 @@ class TestCarModel(unittest.TestCase):
 
     disable_radar = False
     test_segs = (2, 1, 0)
-    if cls.test_route.segment is not None:
-      test_segs = (cls.test_route.segment,)
+    if cls.segment is not None:
+      test_segs = (cls.segment,)
 
     for seg in test_segs:
       try:
         if cls.ci:
-          lr = LogReader(get_url(cls.test_route.route, seg))
+          lr = LogReader(get_url(cls.route, seg))
         else:
           lr = LogReader(Route(cls.route).log_paths()[seg])
       except Exception:
@@ -87,7 +87,7 @@ class TestCarModel(unittest.TestCase):
       if len(can_msgs) > int(50 / DT_CTRL):
         break
     else:
-      raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
+      raise Exception(f"Route: {repr(cls.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
@@ -275,6 +275,7 @@ def load_tests(_routes):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("route", nargs='?', help="Specify route to run tests on")
+  parser.add_argument("--segment", type=int, nargs='?', help="Specify segment of route to test")
   parser.add_argument("--car_model", help="Specify car model for test route")
   args = parser.parse_args()
 
@@ -282,7 +283,7 @@ if __name__ == "__main__":
   if args.route is not None:
     # TODO: do we want to require specifying car model?
     assert args.car_model is not None, "Car model needed for tests"
-    test_route = TestRoute(args.route, args.car_model, ci=False)
+    test_route = TestRoute(args.route, args.car_model, segment=args.segment, ci=False)
     test_cases = load_tests([test_route])
   else:
     test_cases = load_tests(routes)
