@@ -83,7 +83,7 @@ class HyundaiCarInfo(CarInfo):
 CAR_INFO: Dict[str, Union[HyundaiCarInfo, List[HyundaiCarInfo]]] = {
   CAR.ELANTRA: HyundaiCarInfo("Hyundai Elantra 2017-19", min_enable_speed=19 * CV.MPH_TO_MS),
   CAR.ELANTRA_2021: HyundaiCarInfo("Hyundai Elantra 2021-22", video_link="https://youtu.be/_EdYQtV52-c"),
-  CAR.ELANTRA_HEV_2021: HyundaiCarInfo("Hyundai Elantra Hybrid 2021", video_link="https://youtu.be/_EdYQtV52-c"),
+  CAR.ELANTRA_HEV_2021: HyundaiCarInfo("Hyundai Elantra Hybrid 2021-22", video_link="https://youtu.be/_EdYQtV52-c"),
   CAR.HYUNDAI_GENESIS: HyundaiCarInfo("Hyundai Genesis 2015-16", min_enable_speed=19 * CV.MPH_TO_MS),
   CAR.IONIQ: HyundaiCarInfo("Hyundai Ioniq Hybrid 2017-19"),
   CAR.IONIQ_HEV_2022: HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", "SCC + LFA"),
@@ -1034,6 +1034,7 @@ FW_VERSIONS = {
   },
   CAR.ELANTRA_HEV_2021: {
     (Ecu.fwdCamera, 0x7c4, None) : [
+      b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.05 99210-AA000 210930',
       b'\xf1\000CN7HMFC  AT USA LHD 1.00 1.03 99210-AA000 200819',
     ],
     (Ecu.fwdRadar, 0x7d0, None) : [
@@ -1041,6 +1042,7 @@ FW_VERSIONS = {
       b'\xf1\x8799110BY000\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
     ],
     (Ecu.eps, 0x7d4, None) :[
+      b'\xf1\x8756310/BY050\xf1\x00CN7 MDPS C 1.00 1.03 56310/BY050 4CNHC103',
       b'\xf1\x8756310/BY050\xf1\000CN7 MDPS C 1.00 1.02 56310/BY050 4CNHC102',
     ],
     (Ecu.transmission, 0x7e1, None) :[
