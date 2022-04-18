@@ -19,7 +19,7 @@ class StreamingDecompressor:
     self.req = requests.get(url, stream=True, headers={'Accept-Encoding': None})
     self.file_size = int(self.req.headers['content-length'])
     self.downloaded = 0
-    self.start_time = self.last_read = 0.0 # type: float
+    self.start_time = self.last_read = 0.0
     self.it = self.req.iter_content(chunk_size=1024 * 1024)
     self.decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
     self.eof = False
