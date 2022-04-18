@@ -15,7 +15,7 @@ GearShifter = car.CarState.GearShifter
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    params = CarControllerParams(CP)
+    params = CarControllerParams()
     return params.ACCEL_MIN, params.ACCEL_MAX
 
   # Determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
