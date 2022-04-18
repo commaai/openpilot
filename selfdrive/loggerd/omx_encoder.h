@@ -83,4 +83,6 @@ private:
   AVCodecContext *codec_ctx;
   AVStream *out_stream;
   bool remuxing;
+
+  uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
 };

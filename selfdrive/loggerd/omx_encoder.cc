@@ -163,6 +163,12 @@ OmxEncoder::OmxEncoder(const char *filename, CameraType type, int in_width, int 
   this->fps = fps;
   this->remuxing = !h265;
 
+	if (in_width != out_width || in_height != out_height) {
+    this->y_ptr2 = (uint8_t *)malloc(out_width*out_height);
+    this->u_ptr2 = (uint8_t *)malloc(out_width*out_height/4);
+    this->v_ptr2 = (uint8_t *)malloc(out_width*out_height/4);
+  }
+
   auto component = (OMX_STRING)(h265 ? "OMX.qcom.video.encoder.hevc" : "OMX.qcom.video.encoder.avc");
   int err = OMX_GetHandle(&this->handle, component, this, &omx_callbacks);
   if (err != OMX_ErrorNone) {
@@ -178,11 +184,11 @@ OmxEncoder::OmxEncoder(const char *filename, CameraType type, int in_width, int 
   in_port.nPortIndex = (OMX_U32) PORT_INDEX_IN;
   OMX_CHECK(OMX_GetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR) &in_port));
 
-  in_port.format.video.nFrameWidth = in_width;
-  in_port.format.video.nFrameHeight = in_height;
-  in_port.format.video.nStride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
-  in_port.format.video.nSliceHeight = in_height;
-  in_port.nBufferSize = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, in_width, in_height);
+  in_port.format.video.nFrameWidth = out_width;
+  in_port.format.video.nFrameHeight = out_height;
+  in_port.format.video.nStride = VENUS_Y_STRIDE(COLOR_FMT_NV12, out_width);
+  in_port.format.video.nSliceHeight = out_height;
+  in_port.nBufferSize = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, out_width, out_height);
   in_port.format.video.xFramerate = (this->fps * 65536);
   in_port.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
   // in_port.format.video.eColorFormat = OMX_COLOR_FormatYUV420SemiPlanar;
@@ -465,12 +471,28 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, in_width);
   uint8_t *in_y_ptr = in_buf->pBuffer;
   uint8_t *in_uv_ptr = in_y_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, in_height));
-  int err = libyuv::I420ToNV12(y_ptr, in_width,
-                   u_ptr, in_width/2,
-                   v_ptr, in_width/2,
+
+  if (in_width != out_width || in_height != out_height) {
+    I420Scale(y_ptr, in_width,
+              u_ptr, in_width/2,
+              v_ptr, in_width/2,
+              in_width, in_height,
+              this->y_ptr2, out_width,
+              this->u_ptr2, out_width/2,
+              this->v_ptr2, out_width/2,
+              this->width, out_height,
+              libyuv::kFilterNone);
+    y_ptr = this->y_ptr2;
+    u_ptr = this->u_ptr2;
+    v_ptr = this->v_ptr2;
+  }
+
+  int err = libyuv::I420ToNV12(y_ptr, out_width,
+                   u_ptr, out_width/2,
+                   v_ptr, out_width/2,
                    in_y_ptr, in_y_stride,
                    in_uv_ptr, in_uv_stride,
-                   in_width, in_height);
+                   out_width, out_height);
   assert(err == 0);
 
   in_buf->nFilledLen = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, in_width, in_height);
@@ -609,4 +631,10 @@ OmxEncoder::~OmxEncoder() {
   if (this->codec_config) {
     free(this->codec_config);
   }
+
+	if (in_width != out_width || in_height != out_height) {
+    free(this->y_ptr2);
+    free(this->u_ptr2);
+    free(this->v_ptr2);
+	}
 }
