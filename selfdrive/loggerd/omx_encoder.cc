@@ -210,6 +210,7 @@ OmxEncoder::OmxEncoder(const char *filename, CameraType type, int in_width, int 
   out_port.format.video.nBitrate = bitrate;
   out_port.format.video.eCompressionFormat = h265 ? OMX_VIDEO_CodingHEVC : OMX_VIDEO_CodingAVC;
   out_port.format.video.eColorFormat = OMX_COLOR_FormatUnused;
+
   OMX_CHECK(OMX_SetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR) &out_port));
 
   OMX_CHECK(OMX_GetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR) &out_port));
@@ -498,7 +499,7 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
                    out_width, out_height);
   assert(err == 0);
 
-  in_buf->nFilledLen = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, in_width, in_height);
+  in_buf->nFilledLen = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, out_width, out_height);
   in_buf->nFlags = OMX_BUFFERFLAG_ENDOFFRAME;
   in_buf->nOffset = 0;
   in_buf->nTimeStamp = ts/1000LL;  // OMX_TICKS, in microseconds
