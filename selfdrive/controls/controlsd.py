@@ -271,9 +271,11 @@ class Controls:
       self.events.add(EventName.laneChange)
 
     if CS.canTimeout:
-      self.events.add(EventName.canBusMissing)
+      pass
+      #self.events.add(EventName.canBusMissing)
     elif not CS.canValid:
-      self.events.add(EventName.canError)
+      pass
+      #self.events.add(EventName.canError)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
@@ -285,7 +287,9 @@ class Controls:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
 
       if safety_mismatch or self.mismatch_counter >= 200:
-        self.events.add(EventName.controlsMismatch)
+        pass
+        # JJS disabling controls mismatch event
+        # self.events.add(EventName.controlsMismatch)
 
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
@@ -298,11 +302,17 @@ class Controls:
     elif not self.sm.all_checks() or self.can_rcv_error:
 
       if not self.sm.all_alive():
-        self.events.add(EventName.commIssue)
+        pass
+      # JJS disabling controls mismatch event
+        #self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
-        self.events.add(EventName.commIssueAvgFreq)
+        pass
+        # JJS disabling controls mismatch event
+        #self.events.add(EventName.commIssueAvgFreq)
       else: # invalid or can_rcv_error.
-        self.events.add(EventName.commIssue)
+        pass
+        # JJS disabling controls mismatch event
+        #self.events.add(EventName.commIssue)
 
       if not self.logged_comm_issue:
         invalid = [s for s, valid in self.sm.valid.items() if not valid]
