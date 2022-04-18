@@ -331,8 +331,8 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
     // FIXME: painter.drawPolygon can be slow if hue is not rounded
     curve_hue = int(curve_hue * 100 + 0.5) / 100;
 
-    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 1.0));
-    bg.setColorAt(0.75 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.5));
+    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.5));
+    bg.setColorAt(0.75 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.4));
     bg.setColorAt(1.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.0));
   } else {
     bg.setColorAt(0, whiteColor());
