@@ -12,6 +12,7 @@ Ecu = car.CarParams.Ecu
 
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
+
 class TestFwFingerprint(unittest.TestCase):
   def assertFingerprints(self, candidates, expected):
     candidates = list(candidates)
@@ -41,6 +42,19 @@ class TestFwFingerprint(unittest.TestCase):
           passed = False
 
     self.assertTrue(passed, "Duplicate FW versions found")
+
+  def test_blacklisted_ecus(self):
+    passed = True
+    blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
+    for car_model, ecus in FW_VERSIONS.items():
+      if car_model.startswith("SUBARU"):
+        for ecu in ecus.keys():
+          if ecu[1] in blacklisted_addrs:
+            print(f'{car_model}: Blacklisted ecu: ({ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
+            passed = False
+
+    self.assertTrue(passed, "Blacklisted FW versions found ")
+
 
 if __name__ == "__main__":
   unittest.main()
