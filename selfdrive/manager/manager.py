@@ -131,16 +131,15 @@ def manager_thread() -> None:
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
 
   started_prev = False
-  sm = messaging.SubMaster(['deviceState'])
+  sm = messaging.SubMaster(['deviceState', 'carParams'], poll=['deviceState'])
   pm = messaging.PubMaster(['managerState'])
 
   while True:
     sm.update()
-    not_run = ignore[:]
 
     started = sm['deviceState'].started
     driverview = params.get_bool("IsDriverViewEnabled")
-    ensure_running(managed_processes.values(), started, driverview, not_run)
+    ensure_running(managed_processes.values(), started=started, driverview=driverview, notcar=sm['carParams'].notCar, not_run=ignore)
 
     # trigger an update after going offroad
     if started_prev and not started and 'updated' in managed_processes:
