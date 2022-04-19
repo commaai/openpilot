@@ -68,7 +68,6 @@ typedef struct
     int qp_warm_start;   // qp_warm_start in all but the first sqp iterations
     bool warm_start_first_qp; // to set qp_warm_start in first iteration
     int rti_phase;       // only phase 0 at the moment 
-    int print_level;     // verbosity
     int initialize_t_slacks;  // 0-false or 1-true
 
 } ocp_nlp_sqp_opts;
@@ -107,6 +106,7 @@ typedef struct
     double time_sim;
     double time_sim_la;
     double time_sim_ad;
+    double time_solution_sensitivities;
 
     // statistics
     double *stat;
@@ -122,7 +122,9 @@ typedef struct
 acados_size_t ocp_nlp_sqp_memory_calculate_size(void *config, void *dims, void *opts_);
 //
 void *ocp_nlp_sqp_memory_assign(void *config, void *dims, void *opts_, void *raw_memory);
-
+//
+void ocp_nlp_sqp_memory_reset_qp_solver(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
+    void *opts_, void *mem_, void *work_);
 
 
 /************************************************

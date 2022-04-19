@@ -12,7 +12,7 @@
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/timing.h"
 //#define RUN_DISASSEMBLER
-//#define RUN_OPTIMIZER
+#define RUN_OPTIMIZER
 
 Thneed *g_thneed = NULL;
 int g_fd = -1;
@@ -55,12 +55,12 @@ int ioctl(int filedes, unsigned long request, void *argp) {
   if (thneed != NULL) {
     if (request == IOCTL_KGSL_GPU_COMMAND) {
       struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
-      if (thneed->record & THNEED_RECORD) {
+      if (thneed->record) {
         thneed->timestamp = cmd->timestamp;
         thneed->context_id = cmd->context_id;
         thneed->cmds.push_back(unique_ptr<CachedCommand>(new CachedCommand(thneed, cmd)));
       }
-      if (thneed->record & THNEED_DEBUG) {
+      if (thneed->debug >= 1) {
         printf("IOCTL_KGSL_GPU_COMMAND(%2zu): flags: 0x%lx    context_id: %u  timestamp: %u  numcmds: %d  numobjs: %d\n",
             thneed->cmds.size(),
             cmd->flags,
@@ -70,7 +70,7 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       struct kgsl_gpuobj_sync *cmd = (struct kgsl_gpuobj_sync *)argp;
       struct kgsl_gpuobj_sync_obj *objs = (struct kgsl_gpuobj_sync_obj *)(cmd->objs);
 
-      if (thneed->record & THNEED_DEBUG) {
+      if (thneed->debug >= 2) {
         printf("IOCTL_KGSL_GPUOBJ_SYNC count:%d ", cmd->count);
         for (int i = 0; i < cmd->count; i++) {
           printf(" -- offset:0x%lx len:0x%lx id:%d op:%d  ", objs[i].offset, objs[i].length, objs[i].id, objs[i].op);
@@ -78,21 +78,21 @@ int ioctl(int filedes, unsigned long request, void *argp) {
         printf("\n");
       }
 
-      if (thneed->record & THNEED_RECORD) {
+      if (thneed->record) {
         thneed->cmds.push_back(unique_ptr<CachedSync>(new
               CachedSync(thneed, string((char *)objs, sizeof(struct kgsl_gpuobj_sync_obj)*cmd->count))));
       }
     } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
       struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
-      if (thneed->record & THNEED_DEBUG) {
+      if (thneed->debug >= 1) {
         printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID: context_id: %d  timestamp: %d  timeout: %d\n",
             cmd->context_id, cmd->timestamp, cmd->timeout);
       }
     } else if (request == IOCTL_KGSL_SETPROPERTY) {
-      if (thneed->record & THNEED_DEBUG) {
+      if (thneed->debug >= 1) {
         struct kgsl_device_getproperty *prop = (struct kgsl_device_getproperty *)argp;
         printf("IOCTL_KGSL_SETPROPERTY: 0x%x sizebytes:%zu\n", prop->type, prop->sizebytes);
-        if (thneed->record & THNEED_VERBOSE_DEBUG) {
+        if (thneed->debug >= 2) {
           hexdump((uint8_t *)prop->value, prop->sizebytes);
           if (prop->type == KGSL_PROP_PWR_CONSTRAINT) {
             struct kgsl_device_constraint *constraint = (struct kgsl_device_constraint *)prop->value;
@@ -105,7 +105,7 @@ int ioctl(int filedes, unsigned long request, void *argp) {
     } else if (request == IOCTL_KGSL_GPUOBJ_ALLOC || request == IOCTL_KGSL_GPUOBJ_FREE) {
       // this happens
     } else {
-      if (thneed->record & THNEED_DEBUG) {
+      if (thneed->debug >= 1) {
         printf("other ioctl %lx\n", request);
       }
     }
@@ -197,9 +197,9 @@ void CachedCommand::exec() {
   cache.timestamp = ++thneed->timestamp;
   int ret = ioctl(thneed->fd, IOCTL_KGSL_GPU_COMMAND, &cache);
 
-  if (thneed->record & THNEED_DEBUG) printf("CachedCommand::exec got %d\n", ret);
+  if (thneed->debug >= 1) printf("CachedCommand::exec got %d\n", ret);
 
-  if (thneed->record & THNEED_VERBOSE_DEBUG) {
+  if (thneed->debug >= 2) {
     for (auto &it : kq) {
       it->debug_print(false);
     }
@@ -220,9 +220,11 @@ Thneed::Thneed(bool do_clinit) {
   assert(g_fd != -1);
   fd = g_fd;
   ram = make_unique<GPUMalloc>(0x80000, fd);
-  record = THNEED_RECORD;
+  record = true;
   timestamp = -1;
   g_thneed = this;
+  char *thneed_debug_env = getenv("THNEED_DEBUG");
+  debug = (thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
 }
 
 void Thneed::stop() {
@@ -261,7 +263,7 @@ void Thneed::find_inputs_outputs() {
 void Thneed::copy_inputs(float **finputs) {
   //cl_int ret;
   for (int idx = 0; idx < inputs.size(); ++idx) {
-    if (record & THNEED_DEBUG) printf("copying %lu -- %p -> %p\n", input_sizes[idx], finputs[idx], inputs[idx]);
+    if (debug >= 1) printf("copying %lu -- %p -> %p\n", input_sizes[idx], finputs[idx], inputs[idx]);
     if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
   }
 }
@@ -270,7 +272,7 @@ void Thneed::copy_output(float *foutput) {
   if (output != NULL) {
     size_t sz;
     clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-    if (record & THNEED_DEBUG) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
+    if (debug >= 1) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
     clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
   } else {
     printf("CAUTION: model output is NULL, does it have no outputs?\n");
@@ -287,12 +289,12 @@ void Thneed::wait() {
   int wret = ioctl(fd, IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID, &wait);
   uint64_t te = nanos_since_boot();
 
-  if (record & THNEED_DEBUG) printf("wait %d after %lu us\n", wret, (te-tb)/1000);
+  if (debug >= 1) printf("wait %d after %lu us\n", wret, (te-tb)/1000);
 }
 
 void Thneed::execute(float **finputs, float *foutput, bool slow) {
   uint64_t tb, te;
-  if (record & THNEED_DEBUG) tb = nanos_since_boot();
+  if (debug >= 1) tb = nanos_since_boot();
 
   // ****** copy inputs
   copy_inputs(finputs);
@@ -319,7 +321,7 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   int i = 0;
   for (auto &it : cmds) {
     ++i;
-    if (record & THNEED_DEBUG) printf("run %2d @ %7lu us: ", i, (nanos_since_boot()-tb)/1000);
+    if (debug >= 1) printf("run %2d @ %7lu us: ", i, (nanos_since_boot()-tb)/1000);
     it->exec();
     if ((i == cmds.size()) || slow) wait();
   }
@@ -335,7 +337,7 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
   assert(ret == 0);
 
-  if (record & THNEED_DEBUG) {
+  if (debug >= 1) {
     te = nanos_since_boot();
     printf("model exec in %lu us\n", (te-tb)/1000);
   }
@@ -353,7 +355,7 @@ void Thneed::clinit() {
 cl_int Thneed::clexec() {
   printf("Thneed::clexec: running %lu queued kernels\n", kq.size());
   for (auto &k : kq) {
-    if (record & THNEED_RECORD) ckq.push_back(k);
+    if (record) ckq.push_back(k);
     cl_int ret = k->exec();
     assert(ret == CL_SUCCESS);
   }
@@ -391,7 +393,7 @@ cl_int thneed_clEnqueueNDRangeKernel(cl_command_queue command_queue,
   assert(event_wait_list == NULL);
 
   cl_int ret = 0;
-  if (thneed != NULL && thneed->record & THNEED_RECORD) {
+  if (thneed != NULL && thneed->record) {
     if (thneed->context == NULL) {
       thneed->command_queue = command_queue;
       clGetKernelInfo(kernel, CL_KERNEL_CONTEXT, sizeof(thneed->context), &thneed->context, NULL);
@@ -413,7 +415,7 @@ cl_int thneed_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 cl_int thneed_clFinish(cl_command_queue command_queue) {
   Thneed *thneed = g_thneed;
 
-  if (thneed != NULL && thneed->record & THNEED_RECORD) {
+  if (thneed != NULL && thneed->record) {
     #ifdef RUN_OPTIMIZER
       thneed->optimize();
     #endif
@@ -431,7 +433,7 @@ cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, c
 }
 
 void *dlsym(void *handle, const char *symbol) {
-#if defined(QCOM) || defined(QCOM2)
+#ifdef QCOM2
   void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen + DLSYM_OFFSET);
 #else
   #error "Unsupported platform for thneed"
@@ -520,12 +522,29 @@ cl_int CLQueuedKernel::exec() {
     }
   }
 
-  if (thneed->record & THNEED_DEBUG) {
-    debug_print(thneed->record & THNEED_VERBOSE_DEBUG);
+  if (thneed->debug >= 1) {
+    debug_print(thneed->debug >= 2);
   }
 
   return clEnqueueNDRangeKernel(thneed->command_queue,
     kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);
+}
+
+uint64_t CLQueuedKernel::benchmark() {
+  uint64_t ret = 0;
+  int old_record = thneed->record;
+  thneed->record = 0;
+  clFinish(thneed->command_queue);
+  // TODO: benchmarking at a lower level will make this more accurate
+  for (int i = 0; i < 10; i++) {
+    uint64_t sb = nanos_since_boot();
+    exec();
+    clFinish(thneed->command_queue);
+    uint64_t et = nanos_since_boot() - sb;
+    if (ret == 0 || et < ret) ret = et;
+  }
+  thneed->record = old_record;
+  return ret;
 }
 
 void CLQueuedKernel::debug_print(bool verbose) {

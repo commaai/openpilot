@@ -1,6 +1,6 @@
 from common.numpy_fast import clip
 from cereal import car
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan
 from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams as P
@@ -12,6 +12,7 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.apply_steer_last = 0
+    self.CP = CP
 
     self.packer_pt = CANPacker(DBC_FILES.mqb)
 
@@ -26,7 +27,7 @@ class CarController():
     self.acc_starting = False
     self.acc_stopping = False
 
-  def update(self, c, enabled, CS, frame, ext_bus, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart,
+  def update(self, c, CS, frame, ext_bus, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart,
              right_lane_depart, lead_visible, set_speed, speed_visible):
     """ Controls thread """
 
@@ -37,11 +38,11 @@ class CarController():
     if CS.CP.openpilotLongitudinalControl:
       if frame % P.ACC_CONTROL_STEP == 0:
         if CS.tsk_status in [2, 3, 4, 5]:
-          acc_status = 3 if enabled else 2
+          acc_status = 3 if c.longActive else 2
         else:
           acc_status = CS.tsk_status
 
-        accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if enabled else 0
+        accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if c.longActive else 0
 
         # FIXME: this needs to become a proper state machine
         acc_hold_request, acc_hold_release, acc_hold_type, stopping_distance = False, False, 0, 20.46
@@ -54,7 +55,7 @@ class CarController():
           else:
             acc_hold_type = 3  # hold_standby
             stopping_distance = 0.5
-        elif enabled:
+        elif c.longActive:
           if self.acc_stopping:
             self.acc_starting = True
             self.acc_stopping = False
@@ -68,10 +69,10 @@ class CarController():
         cb_neg = 0.0 if accel < 0 else 0.2  # IDK why, but stock likes to zero this out when accel is negative
 
         idx = (frame / P.ACC_CONTROL_STEP) % 16
-        can_sends.append(volkswagencan.create_mqb_acc_06_control(self.packer_pt, CANBUS.pt, enabled, acc_status,
+        can_sends.append(volkswagencan.create_mqb_acc_06_control(self.packer_pt, CANBUS.pt, c.longActive, acc_status,
                                                                  accel, self.acc_stopping, self.acc_starting,
                                                                  cb_pos, cb_neg, CS.acc_type, idx))
-        can_sends.append(volkswagencan.create_mqb_acc_07_control(self.packer_pt, CANBUS.pt, enabled,
+        can_sends.append(volkswagencan.create_mqb_acc_07_control(self.packer_pt, CANBUS.pt, c.longActive,
                                                                  accel, acc_hold_request, acc_hold_release,
                                                                  acc_hold_type, stopping_distance, idx))
 
@@ -96,7 +97,7 @@ class CarController():
       # torque value. Do that anytime we happen to have 0 torque, or failing that,
       # when exceeding ~1/3 the 360 second timer.
 
-      if c.active and CS.out.vEgo > CS.CP.minSteerSpeed and not (CS.out.standstill or CS.out.steerError or CS.out.steerWarning):
+      if c.latActive:
         new_steer = int(round(actuators.steer * P.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
         self.steer_rate_limited = new_steer != apply_steer
@@ -134,7 +135,7 @@ class CarController():
       else:
         hud_alert = MQB_LDW_MESSAGES["none"]
 
-      can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, enabled,
+      can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, c.enabled,
                                                             CS.out.steeringPressed, hud_alert, left_lane_visible,
                                                             right_lane_visible, CS.ldw_stock_values,
                                                             left_lane_depart, right_lane_depart))
@@ -143,13 +144,13 @@ class CarController():
 
     # FIXME: this entire section is in desperate need of refactoring
 
-    if CS.CP.pcmCruise:
+    if self.CP.pcmCruise:
       if frame > self.graMsgStartFramePrev + P.GRA_VBP_STEP:
-        if not enabled and CS.out.cruiseState.enabled:
+        if c.cruiseControl.cancel:
           # Cancel ACC if it's engaged with OP disengaged.
           self.graButtonStatesToSend = BUTTON_STATES.copy()
           self.graButtonStatesToSend["cancel"] = True
-        elif enabled and CS.esp_hold_confirmation:
+        elif c.enabled and CS.esp_hold_confirmation:
           # Blip the Resume button if we're engaged at standstill.
           # FIXME: This is a naive implementation, improve with visiond or radar input.
           self.graButtonStatesToSend = BUTTON_STATES.copy()

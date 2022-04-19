@@ -1,7 +1,6 @@
 #include <sys/resource.h>
 
 #include <QApplication>
-#include <QSslConfiguration>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
@@ -12,13 +11,7 @@ int main(int argc, char *argv[]) {
   setpriority(PRIO_PROCESS, 0, -20);
 
   qInstallMessageHandler(swagLogMessageHandler);
-  initApp();
-
-  if (Hardware::EON()) {
-    QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-    ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem"));
-    QSslConfiguration::setDefaultConfiguration(ssl);
-  }
+  initApp(argc, argv);
 
   QApplication a(argc, argv);
   MainWindow w;

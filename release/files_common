@@ -17,6 +17,7 @@ site_scons/site_tools/cython.py
 
 common/.gitignore
 common/__init__.py
+common/conversions.py
 common/gpio.py
 common/realtime.py
 common/clock.pyx
@@ -64,17 +65,13 @@ release/*
 
 tools/lib/*
 
-installer/updater/updater
-
 selfdrive/version.py
 
 selfdrive/__init__.py
-selfdrive/config.py
 selfdrive/sentry.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
-selfdrive/pandad.py
 selfdrive/updated.py
 selfdrive/rtshield.py
 selfdrive/statsd.py
@@ -98,8 +95,10 @@ selfdrive/boardd/panda.h
 selfdrive/boardd/pigeon.cc
 selfdrive/boardd/pigeon.h
 selfdrive/boardd/set_time.py
+selfdrive/boardd/pandad.py
 
 selfdrive/car/__init__.py
+selfdrive/car/docs_definitions.py
 selfdrive/car/car_helpers.py
 selfdrive/car/fingerprints.py
 selfdrive/car/interfaces.py
@@ -259,14 +258,6 @@ selfdrive/hardware/__init__.py
 selfdrive/hardware/base.h
 selfdrive/hardware/base.py
 selfdrive/hardware/hw.h
-selfdrive/hardware/eon/__init__.py
-selfdrive/hardware/eon/androidd.py
-selfdrive/hardware/eon/shutdownd.py
-selfdrive/hardware/eon/hardware.h
-selfdrive/hardware/eon/hardware.py
-selfdrive/hardware/eon/neos.py
-selfdrive/hardware/eon/neos.json
-selfdrive/hardware/eon/updater
 selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py
 selfdrive/hardware/tici/amplifier.py
@@ -298,7 +289,6 @@ selfdrive/locationd/models/live_kf.cc
 selfdrive/locationd/calibrationd.py
 
 selfdrive/logcatd/SConscript
-selfdrive/logcatd/logcatd_android.cc
 selfdrive/logcatd/logcatd_systemd.cc
 
 selfdrive/proclogd/SConscript
@@ -328,7 +318,6 @@ selfdrive/loggerd/xattr_cache.py
 
 selfdrive/sensord/SConscript
 selfdrive/sensord/libdiag.h
-selfdrive/sensord/sensors_qcom.cc
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
 selfdrive/sensord/sensors/*.h
@@ -336,11 +325,11 @@ selfdrive/sensord/sensord
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
+selfdrive/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
-selfdrive/test/test_fingerprints.py
 selfdrive/test/test_onroad.py
 
 selfdrive/ui/.gitignore
@@ -362,8 +351,6 @@ selfdrive/ui/qt/offroad/*.h
 selfdrive/ui/qt/offroad/*.qml
 selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.h
-selfdrive/ui/qt/spinner_aarch64
-selfdrive/ui/qt/text_aarch64
 
 selfdrive/ui/replay/*.cc
 selfdrive/ui/replay/*.h
@@ -375,11 +362,8 @@ selfdrive/camerad/snapshot/*
 selfdrive/camerad/include/*
 selfdrive/camerad/cameras/camera_common.h
 selfdrive/camerad/cameras/camera_common.cc
-selfdrive/camerad/cameras/camera_qcom.cc
-selfdrive/camerad/cameras/camera_qcom.h
 selfdrive/camerad/cameras/camera_replay.cc
 selfdrive/camerad/cameras/camera_replay.h
-selfdrive/camerad/cameras/debayer.cl
 selfdrive/camerad/cameras/sensor_i2c.h
 selfdrive/camerad/cameras/sensor2_i2c.h
 
@@ -423,10 +407,13 @@ selfdrive/modeld/transforms/transform.cc
 selfdrive/modeld/transforms/transform.h
 selfdrive/modeld/transforms/transform.cl
 
+selfdrive/modeld/thneed/*.py
 selfdrive/modeld/thneed/thneed.*
 selfdrive/modeld/thneed/serialize.cc
 selfdrive/modeld/thneed/compile.cc
+selfdrive/modeld/thneed/optimizer.cc
 selfdrive/modeld/thneed/include/*
+selfdrive/modeld/thneed/kernels/*.cl
 
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
@@ -442,6 +429,7 @@ selfdrive/assets/.gitignore
 selfdrive/assets/assets.qrc
 selfdrive/assets/*.png
 selfdrive/assets/*.svg
+selfdrive/assets/body/*
 selfdrive/assets/fonts/*.ttf
 selfdrive/assets/icons/*
 selfdrive/assets/images/*
@@ -451,7 +439,6 @@ selfdrive/assets/training/*
 
 third_party/SConscript
 
-third_party/libgralloc/**
 third_party/linux/**
 third_party/opencl/**
 third_party/zlib/*
@@ -472,18 +459,11 @@ third_party/libyuv/lib/**
 third_party/libyuv/larch64/**
 
 third_party/snpe/include/**
-third_party/snpe/aarch64**
-third_party/snpe/larch64**
 third_party/snpe/dsp**
 
 third_party/acados/x86_64/**
-third_party/acados/aarch64/**
 third_party/acados/larch64/**
 third_party/acados/include/**
-
-third_party/android_frameworks_native/**
-third_party/android_hardware_libhardware/**
-third_party/android_system_core/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh
@@ -560,8 +540,8 @@ opendbc/gm_global_a_powertrain_generated.dbc
 opendbc/gm_global_a_object.dbc
 opendbc/gm_global_a_chassis.dbc
 
-opendbc/ford_fusion_2018_pt.dbc
 opendbc/ford_fusion_2018_adas.dbc
+opendbc/ford_lincoln_base_pt.dbc
 
 opendbc/honda_accord_2018_can_generated.dbc
 opendbc/acura_ilx_2016_can_generated.dbc
@@ -569,12 +549,10 @@ opendbc/acura_rdx_2018_can_generated.dbc
 opendbc/acura_rdx_2020_can_generated.dbc
 opendbc/honda_civic_touring_2016_can_generated.dbc
 opendbc/honda_civic_hatchback_ex_2017_can_generated.dbc
-opendbc/honda_civic_sedan_16_diesel_2019_can_generated.dbc
 opendbc/honda_crv_touring_2016_can_generated.dbc
 opendbc/honda_crv_ex_2017_can_generated.dbc
 opendbc/honda_crv_ex_2017_body_generated.dbc
 opendbc/honda_crv_executive_2016_can_generated.dbc
-opendbc/honda_crv_hybrid_2019_can_generated.dbc
 opendbc/honda_fit_ex_2018_can_generated.dbc
 opendbc/honda_odyssey_exl_2018_generated.dbc
 opendbc/honda_odyssey_extreme_edition_2018_china_can_generated.dbc

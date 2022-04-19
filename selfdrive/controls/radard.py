@@ -8,9 +8,8 @@ from cereal import car
 from common.numpy_fast import interp
 from common.params import Params
 from common.realtime import Ratekeeper, Priority, config_realtime_process
-from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
-from selfdrive.controls.lib.radar_helpers import Cluster, Track
+from selfdrive.controls.lib.radar_helpers import Cluster, Track, RADAR_TO_CAMERA
 from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import TICI
 
@@ -164,7 +163,7 @@ class RadarD():
 
     # *** publish radarState ***
     dat = messaging.new_message('radarState')
-    dat.valid = sm.all_alive_and_valid() and len(rr.errors) == 0
+    dat.valid = sm.all_checks() and len(rr.errors) == 0
     radarState = dat.radarState
     radarState.mdMonoTime = sm.logMonoTime['modelV2']
     radarState.canMonoTimes = list(rr.canMonoTimes)

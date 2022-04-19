@@ -1,5 +1,8 @@
 #include "selfdrive/ui/qt/offroad/wifiManager.h"
 
+#include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
+
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
@@ -306,12 +309,13 @@ void WifiManager::initConnections() {
   }
 }
 
-void WifiManager::activateWifiConnection(const QString &ssid) {
+std::optional<QDBusPendingCall> WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
     connecting_to_network = ssid;
-    asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
+    return asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
+  return std::nullopt;
 }
 
 void WifiManager::activateModemConnection(const QDBusObjectPath &path) {
@@ -403,12 +407,32 @@ void WifiManager::addTetheringConnection() {
   call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
 
+void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
+    int prime_type = uiState()->prime_type;
+    int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
+
+    if (!ipv4_forward) {
+      QTimer::singleShot(5000, this, [=] {
+        qWarning() << "net.ipv4.ip_forward = 0";
+        std::system("sudo sysctl net.ipv4.ip_forward=0");
+      });
+    }
+    call->deleteLater();
+}
+
 void WifiManager::setTetheringEnabled(bool enabled) {
   if (enabled) {
     if (!isKnownConnection(tethering_ssid)) {
       addTetheringConnection();
     }
-    activateWifiConnection(tethering_ssid);
+
+    auto pending_call = activateWifiConnection(tethering_ssid);
+
+    if (pending_call) {
+      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
+      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, &WifiManager::tetheringActivated);
+    }
+
   } else {
     deactivateConnectionBySsid(tethering_ssid);
   }

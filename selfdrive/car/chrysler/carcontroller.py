@@ -7,6 +7,7 @@ from opendbc.can.packer import CANPacker
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    self.CP = CP
     self.apply_steer_last = 0
     self.ccframe = 0
     self.prev_frame = -1
@@ -29,11 +30,11 @@ class CarController():
                                                    CS.out.steeringTorqueEps, CarControllerParams)
     self.steer_rate_limited = new_steer != apply_steer
 
-    moving_fast = CS.out.vEgo > CS.CP.minSteerSpeed  # for status message
-    if CS.out.vEgo > (CS.CP.minSteerSpeed - 0.5):  # for command high bit
+    moving_fast = CS.out.vEgo > self.CP.minSteerSpeed  # for status message
+    if CS.out.vEgo > (self.CP.minSteerSpeed - 0.5):  # for command high bit
       self.gone_fast_yet = True
     elif self.car_fingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
-      if CS.out.vEgo < (CS.CP.minSteerSpeed - 3.0):
+      if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
         self.gone_fast_yet = False  # < 14.5m/s stock turns off this bit, but fine down to 13.5
     lkas_active = moving_fast and enabled
 

@@ -7,7 +7,7 @@ from functools import lru_cache
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
-TESTED_BRANCHES = ['devel', 'release2-staging', 'release3-staging', 'dashcam-staging', 'release2', 'release3', 'dashcam']
+TESTED_BRANCHES = ['devel', 'release3-staging', 'dashcam3-staging', 'release3', 'dashcam3']
 
 training_version: bytes = b"0.2.0"
 terms_version: bytes = b"2"
@@ -55,11 +55,15 @@ def get_origin(default: Optional[str] = None) -> Optional[str]:
 
 @cache
 def get_normalized_origin(default: Optional[str] = None) -> Optional[str]:
-  return get_origin()\
-          .replace("git@", "", 1)\
-          .replace(".git", "", 1)\
-          .replace("https://", "", 1)\
-          .replace(":", "/", 1)
+  origin = get_origin()
+
+  if origin is None:
+    return default
+
+  return origin.replace("git@", "", 1) \
+               .replace(".git", "", 1) \
+               .replace("https://", "", 1) \
+               .replace(":", "/", 1)
 
 
 @cache

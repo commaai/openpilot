@@ -14,9 +14,6 @@
 #include <fstream>
 #include <iostream>
 #include <streambuf>
-#ifdef QCOM
-#include <cutils/properties.h>
-#endif
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
@@ -36,9 +33,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (Hardware::EON()) {
-    init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  } else if (Hardware::TICI()) {
+  if (Hardware::TICI()) {
     init.setDeviceType(cereal::InitData::DeviceType::TICI);
   } else {
     init.setDeviceType(cereal::InitData::DeviceType::PC);
@@ -60,20 +55,6 @@ kj::Array<capnp::word> logger_build_init_data() {
 
   init.setKernelVersion(util::read_file("/proc/version"));
   init.setOsVersion(util::read_file("/VERSION"));
-
-#ifdef QCOM
-  {
-    std::vector<std::pair<std::string, std::string> > properties;
-    property_list(append_property, (void*)&properties);
-
-    auto lentries = init.initAndroidProperties().initEntries(properties.size());
-    for (int i=0; i<properties.size(); i++) {
-      auto lentry = lentries[i];
-      lentry.setKey(properties[i].first);
-      lentry.setValue(properties[i].second);
-    }
-  }
-#endif
 
   init.setDirty(!getenv("CLEAN"));
 
@@ -266,16 +247,4 @@ void lh_close(LoggerHandle* h) {
     return;
   }
   pthread_mutex_unlock(&h->lock);
-}
-
-int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
-  const char* dot = strrchr(fpath, '.');
-  if (dot && strcmp(dot, ".lock") == 0) {
-    unlink(fpath);
-  }
-  return 0;
-}
-
-void clear_locks(const std::string log_root) {
-  ftw(log_root.c_str(), clear_locks_fn, 16);
 }

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 from cereal import car
 from math import fabs
-from selfdrive.config import Conversions as CV
+
+from common.conversions import Conversions as CV
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.gm.values import CAR, CruiseButtons, \
                                     AccState, CarControllerParams
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -38,7 +39,7 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
@@ -46,7 +47,7 @@ class CarInterface(CarInterfaceBase):
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
-    # added to selfdrive/test/test_routes, we can remove it from this list.
+    # added to selfdrive/car/tests/routes.py, we can remove it from this list.
     ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL}
 
     # Presence of a camera on the object bus is ok.
@@ -154,13 +155,9 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def update(self, c, can_strings):
-    self.cp.update_strings(can_strings)
-    self.cp_loopback.update_strings(can_strings)
-
+  def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_loopback)
 
-    ret.canValid = self.cp.can_valid and self.cp_loopback.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     buttonEvents = []
@@ -191,8 +188,6 @@ class CarInterface(CarInterfaceBase):
 
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
-    if self.CS.park_brake:
-      events.add(EventName.parkBrake)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
     if self.CS.pcm_acc_status == AccState.FAULTED:
@@ -211,25 +206,8 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    # copy back carState packet to CS
-    self.CS.out = ret.as_reader()
-
-    return self.CS.out
+    return ret
 
   def apply(self, c):
-    hud_control = c.hudControl
-    hud_v_cruise = hud_control.setSpeed
-    if hud_v_cruise > 70:
-      hud_v_cruise = 0
-
-    # For Openpilot, "enabled" includes pre-enable.
-    # In GM, PCM faults out if ACC command overlaps user gas.
-    enabled = c.enabled and not self.CS.out.gasPressed
-
-    ret = self.CC.update(c, enabled, self.CS, self.frame,
-                         c.actuators,
-                         hud_v_cruise, hud_control.lanesVisible,
-                         hud_control.leadVisible, hud_control.visualAlert)
-
-    self.frame += 1
+    ret = self.CC.update(c, self.CS)
     return ret

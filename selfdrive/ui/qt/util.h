@@ -19,6 +19,6 @@ void clearLayout(QLayout* layout);
 void setQtSurfaceFormat();
 QString timeAgo(const QDateTime &date);
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
-void initApp();
+void initApp(int argc, char *argv[]);
 QWidget* topWidget (QWidget* widget);
 QPixmap loadPixmap(const QString &fileName, const QSize &size = {}, Qt::AspectRatioMode aspectRatioMode = Qt::KeepAspectRatio);

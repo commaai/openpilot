@@ -89,13 +89,19 @@ void setQtSurfaceFormat() {
   QSurfaceFormat::setDefaultFormat(fmt);
 }
 
-void initApp() {
+void initApp(int argc, char *argv[]) {
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);
-  setQtSurfaceFormat();
-  if (Hardware::EON()) {
-    QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+
+#ifdef __APPLE__
+  {
+    // Get the devicePixelRatio, and scale accordingly to maintain 1:1 rendering
+    QApplication tmp(argc, argv);
+    qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio() ).toLocal8Bit());
   }
+#endif
+
+  setQtSurfaceFormat();
 }
 
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
