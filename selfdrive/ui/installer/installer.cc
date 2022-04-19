@@ -25,12 +25,7 @@ const std::string GIT_URL = get_str("https://github.com/commaai/openpilot.git" "
 const std::string BRANCH_STR = get_str(BRANCH "?                                                                ");
 
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
-
-#ifdef QCOM
-  #define CONTINUE_PATH "/data/data/com.termux/files/continue.sh"
-#else
-  #define CONTINUE_PATH "/data/continue.sh"
-#endif
+#define CONTINUE_PATH "/data/continue.sh"
 
 const QString CACHE_PATH = "/data/openpilot.cache";
 
@@ -212,12 +207,8 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   run("chmod +x /data/continue.sh.new");
   run("mv /data/continue.sh.new " CONTINUE_PATH);
 
-#ifdef QCOM
-  QTimer::singleShot(100, &QCoreApplication::quit);
-#else
   // wait for the installed software's UI to take over
   QTimer::singleShot(60 * 1000, &QCoreApplication::quit);
-#endif
 }
 
 int main(int argc, char *argv[]) {

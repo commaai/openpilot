@@ -166,7 +166,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ApiCache_Owner", PERSISTENT},
     {"Offroad_BadNvme", CLEAR_ON_MANAGER_START},
     {"Offroad_CarUnrecognized", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
-    {"Offroad_ChargeDisabled", CLEAR_ON_MANAGER_START },
     {"Offroad_ConnectivityNeeded", CLEAR_ON_MANAGER_START},
     {"Offroad_ConnectivityNeededPrompt", CLEAR_ON_MANAGER_START},
     {"Offroad_InvalidTime", CLEAR_ON_MANAGER_START},
