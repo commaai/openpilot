@@ -38,10 +38,6 @@ const char frame_fragment_shader[] =
   "out vec4 colorOut;\n"
   "void main() {\n"
   "  colorOut = texture(uTexture, vTexCoord.xy);\n"
-#ifdef QCOM
-  "  vec3 dz = vec3(0.0627f, 0.0627f, 0.0627f);\n"
-  "  colorOut.rgb = ((vec3(1.0f, 1.0f, 1.0f) - dz) * colorOut.rgb / vec3(1.0f, 1.0f, 1.0f)) + dz;\n"
-#endif
   "}\n";
 
 const mat4 device_transform = {{
@@ -256,20 +252,18 @@ void CameraViewWidget::vipcThread() {
   std::unique_ptr<QOffscreenSurface> surface;
   std::unique_ptr<QOpenGLBuffer> gl_buffer;
 
-  if (!Hardware::EON()) {
-    ctx = std::make_unique<QOpenGLContext>();
-    ctx->setFormat(context()->format());
-    ctx->setShareContext(context());
-    ctx->create();
-    assert(ctx->isValid());
+  ctx = std::make_unique<QOpenGLContext>();
+  ctx->setFormat(context()->format());
+  ctx->setShareContext(context());
+  ctx->create();
+  assert(ctx->isValid());
 
-    surface = std::make_unique<QOffscreenSurface>();
-    surface->setFormat(ctx->format());
-    surface->create();
-    ctx->makeCurrent(surface.get());
-    assert(QOpenGLContext::currentContext() == ctx.get());
-    initializeOpenGLFunctions();
-  }
+  surface = std::make_unique<QOffscreenSurface>();
+  surface->setFormat(ctx->format());
+  surface->create();
+  ctx->makeCurrent(surface.get());
+  assert(QOpenGLContext::currentContext() == ctx.get());
+  initializeOpenGLFunctions();
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream_type != stream_type) {
@@ -283,13 +277,11 @@ void CameraViewWidget::vipcThread() {
         continue;
       }
 
-      if (!Hardware::EON()) {
-        gl_buffer.reset(new QOpenGLBuffer(QOpenGLBuffer::PixelUnpackBuffer));
-        gl_buffer->create();
-        gl_buffer->bind();
-        gl_buffer->setUsagePattern(QOpenGLBuffer::StreamDraw);
-        gl_buffer->allocate(vipc_client->buffers[0].len);
-      }
+      gl_buffer.reset(new QOpenGLBuffer(QOpenGLBuffer::PixelUnpackBuffer));
+      gl_buffer->create();
+      gl_buffer->bind();
+      gl_buffer->setUsagePattern(QOpenGLBuffer::StreamDraw);
+      gl_buffer->allocate(vipc_client->buffers[0].len);
 
       emit vipcThreadConnected(vipc_client.get());
     }
@@ -297,29 +289,29 @@ void CameraViewWidget::vipcThread() {
     if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
       {
         std::lock_guard lk(lock);
-        if (!Hardware::EON()) {
-          void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
 
-          if (texture_buffer == nullptr) {
-            LOGE("gl_buffer->map returned nullptr");
-            continue;
-          }
+        void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
 
-          memcpy(texture_buffer, buf->addr, buf->len);
-          gl_buffer->unmap();
-
-          // copy pixels from PBO to texture object
-          glBindTexture(GL_TEXTURE_2D, texture[buf->idx]->frame_tex);
-          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
-          glBindTexture(GL_TEXTURE_2D, 0);
-          assert(glGetError() == GL_NO_ERROR);
-
-          wait_fence.reset(new WaitFence());
-
-          // Ensure the fence is in the GPU command queue, or waiting on it might block
-          // https://www.khronos.org/opengl/wiki/Sync_Object#Flushing_and_contexts
-          glFlush();
+        if (texture_buffer == nullptr) {
+          LOGE("gl_buffer->map returned nullptr");
+          continue;
         }
+
+        memcpy(texture_buffer, buf->addr, buf->len);
+        gl_buffer->unmap();
+
+        // copy pixels from PBO to texture object
+        glBindTexture(GL_TEXTURE_2D, texture[buf->idx]->frame_tex);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        assert(glGetError() == GL_NO_ERROR);
+
+        wait_fence.reset(new WaitFence());
+
+        // Ensure the fence is in the GPU command queue, or waiting on it might block
+        // https://www.khronos.org/opengl/wiki/Sync_Object#Flushing_and_contexts
+        glFlush();
+
         latest_texture_id = buf->idx;
       }
       // Schedule update. update() will be invoked on the gui thread.

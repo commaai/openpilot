@@ -6,9 +6,7 @@
 
 #include <QDebug>
 
-#ifndef QCOM
 #include "selfdrive/ui/qt/offroad/networking.h"
-#endif
 
 #ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/maps/map_settings.h"
@@ -290,57 +288,8 @@ void SoftwarePanel::updateLabels() {
   osVersionLbl->setText(QString::fromStdString(Hardware::get_os_version()).trimmed());
 }
 
-C2NetworkPanel::C2NetworkPanel(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *layout = new QVBoxLayout(this);
-  layout->setContentsMargins(50, 0, 50, 0);
-
-  ListWidget *list = new ListWidget();
-  list->setSpacing(30);
-  // wifi + tethering buttons
-#ifdef QCOM
-  auto wifiBtn = new ButtonControl("Wi-Fi Settings", "OPEN");
-  QObject::connect(wifiBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_wifi(); });
-  list->addItem(wifiBtn);
-
-  auto tetheringBtn = new ButtonControl("Tethering Settings", "OPEN");
-  QObject::connect(tetheringBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_tethering(); });
-  list->addItem(tetheringBtn);
-#endif
-  ipaddress = new LabelControl("IP Address", "");
-  list->addItem(ipaddress);
-
-  // SSH key management
-  list->addItem(new SshToggle());
-  list->addItem(new SshControl());
-  layout->addWidget(list);
-  layout->addStretch(1);
-}
-
-void C2NetworkPanel::showEvent(QShowEvent *event) {
-  ipaddress->setText(getIPAddress());
-}
-
-QString C2NetworkPanel::getIPAddress() {
-  std::string result = util::check_output("ifconfig wlan0");
-  if (result.empty()) return "";
-
-  const std::string inetaddrr = "inet addr:";
-  std::string::size_type begin = result.find(inetaddrr);
-  if (begin == std::string::npos) return "";
-
-  begin += inetaddrr.length();
-  std::string::size_type end = result.find(' ', begin);
-  if (end == std::string::npos) return "";
-
-  return result.substr(begin, end - begin).c_str();
-}
-
 QWidget *network_panel(QWidget *parent) {
-#ifdef QCOM
-  return new C2NetworkPanel(parent);
-#else
   return new Networking(parent);
-#endif
 }
 
 void SettingsWindow::showEvent(QShowEvent *event) {
@@ -456,10 +405,4 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       background-color: black;
     }
   )");
-}
-
-void SettingsWindow::hideEvent(QHideEvent *event) {
-#ifdef QCOM
-  HardwareEon::close_activities();
-#endif
 }

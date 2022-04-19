@@ -26,7 +26,7 @@ from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
-from selfdrive.hardware import HARDWARE, TICI, EON
+from selfdrive.hardware import HARDWARE, TICI
 from selfdrive.manager.process_config import managed_processes
 
 SOFT_DISABLE_TIME = 3  # seconds
@@ -36,9 +36,8 @@ LANE_DEPARTURE_THRESHOLD = 0.1
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
-IGNORE_PROCESSES = {"rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned",
-                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad",
-                    "statsd", "shutdownd"} | \
+IGNORE_PROCESSES = {"uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "statsd",
+                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad"} | \
                    {k for k, v in managed_processes.items() if not v.enabled}
 
 ThermalStatus = log.DeviceState.ThermalStatus
@@ -220,11 +219,7 @@ class Controls:
     if not self.CP.notCar:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
-    # Create events for battery, temperature, disk space, and memory
-    if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
-       self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
-      # at zero percent battery, while discharging, OP should not allowed
-      self.events.add(EventName.lowBattery)
+    # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
     if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
@@ -235,7 +230,7 @@ class Controls:
       self.events.add(EventName.lowMemory)
 
     # TODO: enable this once loggerd CPU usage is more reasonable
-    #cpus = list(self.sm['deviceState'].cpuUsagePercent)[:(-1 if EON else None)]
+    #cpus = list(self.sm['deviceState'].cpuUsagePercent)
     #if max(cpus, default=0) > 95 and not SIMULATION:
     #  self.events.add(EventName.highCpuUsage)
 

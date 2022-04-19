@@ -37,7 +37,7 @@ from typing import List, Tuple, Optional
 from common.basedir import BASEDIR
 from common.markdown import parse_markdown
 from common.params import Params
-from selfdrive.hardware import EON, TICI, HARDWARE
+from selfdrive.hardware import TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.version import is_tested_branch
@@ -283,42 +283,6 @@ def handle_agnos_update(wait_helper: WaitTimeHelper) -> None:
   set_offroad_alert("Offroad_NeosUpdate", False)
 
 
-def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
-  from selfdrive.hardware.eon.neos import download_neos_update
-
-  cur_neos = HARDWARE.get_os_version()
-  updated_neos = run(["bash", "-c", r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && \
-                       echo -n $REQUIRED_NEOS_VERSION"], OVERLAY_MERGED).strip()
-
-  cloudlog.info(f"NEOS version check: {cur_neos} vs {updated_neos}")
-  if cur_neos == updated_neos:
-    return
-
-  cloudlog.info(f"Beginning background download for NEOS {updated_neos}")
-  set_offroad_alert("Offroad_NeosUpdate", True)
-
-  update_manifest = os.path.join(OVERLAY_MERGED, "selfdrive/hardware/eon/neos.json")
-
-  neos_downloaded = False
-  start_time = time.monotonic()
-  # Try to download for one day
-  while not neos_downloaded and not wait_helper.shutdown and \
-        (time.monotonic() - start_time < 60*60*24):
-    wait_helper.ready_event.clear()
-    try:
-      download_neos_update(update_manifest, cloudlog)
-      neos_downloaded = True
-    except Exception:
-      cloudlog.info("NEOS background download failed, retrying")
-      wait_helper.sleep(120)
-
-  # If the download failed, we'll show the alert again when we retry
-  set_offroad_alert("Offroad_NeosUpdate", False)
-  if not neos_downloaded:
-    raise Exception("Failed to download NEOS update")
-  cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
-
-
 def check_git_fetch_result(fetch_txt: str) -> bool:
   err_msg = "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n"
   return len(fetch_txt) > 0 and (fetch_txt != err_msg)
@@ -360,9 +324,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
       ]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
-      if EON:
-        handle_neos_update(wait_helper)
-      elif TICI:
+      if TICI:
         handle_agnos_update(wait_helper)
 
     # Create the finalized, ready-to-swap update

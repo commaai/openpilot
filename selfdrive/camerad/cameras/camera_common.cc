@@ -18,10 +18,7 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-#ifdef QCOM
-#include "CL/cl_ext_qcom.h"
-#include "selfdrive/camerad/cameras/camera_qcom.h"
-#elif QCOM2
+#if QCOM2
 #include "CL/cl_ext_qcom.h"
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
 #elif WEBCAM
@@ -418,17 +415,6 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   }
 
   static ExpRect rect = def_rect;
-  // use driver face crop for AE
-  if (Hardware::EON() && sm.updated("driverState")) {
-    if (auto state = sm["driverState"].getDriverState(); state.getFaceProb() > 0.4) {
-      auto face_position = state.getFacePosition();
-      int x = is_rhd ? 0 : frame_width - (0.5 * frame_height);
-      x += (face_position[0] * (is_rhd ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height) + x_offset;
-      int y = (face_position[1] + 0.5) * frame_height + y_offset;
-      rect = {std::max(0, x - 72), std::min(b->rgb_width - 1, x + 72), 2,
-              std::max(0, y - 72), std::min(b->rgb_height - 1, y + 72), 1};
-    }
-  }
 
   camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
 }
@@ -452,7 +438,7 @@ void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
 
 void camerad_thread() {
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-#if defined(QCOM) || defined(QCOM2)
+#ifdef QCOM2
   const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
   cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
 #else
