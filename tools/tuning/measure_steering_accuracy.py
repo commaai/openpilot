@@ -123,8 +123,8 @@ if __name__ == "__main__":
         print("DISABLED (not active, standstill, steering override, or lane change)\n")
       for group in display_groups:
         if len(speed_group_stats[group]) > 0:
-          print(f"speed group: {group:10s} {all_groups[group][1]:>91s}")
-          print(f"  {'-'*113}")
+          print(f"speed group: {group:10s} {all_groups[group][1]:>96s}")
+          print(f"  {'-'*118}")
           for k in sorted(speed_group_stats[group].keys()):
             v = speed_group_stats[group][k]
             print(f'  {k:#2}° | actuator:{int(v["steer"] / v["cnt"] * 100):#3}% | error: {round(v["err"] / v["cnt"], 2):2.2f}° | -:{int(v["-"] / v["cnt"] * 100):#3}% | =:{int(v["="] / v["cnt"] * 100):#3}% | +:{int(v["+"] / v["cnt"] * 100):#3}% | lim:{v["limited"]:#5} | sat:{v["saturated"]:#5} | path dev: {round(v["dpp"] / v["cnt"], 2):2.2f}m | total: {v["cnt"]:#5}')
