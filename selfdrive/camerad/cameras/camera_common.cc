@@ -150,7 +150,12 @@ bool CameraBuf::acquire() {
   if (debayer) {
     float gain = 0.0;
     float black_level = 42.0;
+#ifndef QCOM2
+    gain = camera_state->digital_gain;
+    if ((int)gain == 0) gain = 1.0;
+#else
     if (camera_state->camera_id == CAMERA_ID_IMX390) black_level = 64.0;
+#endif
     debayer->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain, black_level, &event);
   } else {
     assert(rgb_stride == camera_state->ci.frame_stride);
