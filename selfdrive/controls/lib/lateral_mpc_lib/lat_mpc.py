@@ -16,7 +16,7 @@ else:
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
 JSON_FILE = os.path.join(LAT_MPC_DIR, "acados_ocp_lat.json")
-X_DIM = 4
+X_DIM = 5
 P_DIM = 2
 MODEL_NAME = 'lat'
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
@@ -30,7 +30,8 @@ def gen_lat_model():
   y_ego = SX.sym('y_ego')
   psi_ego = SX.sym('psi_ego')
   curv_ego = SX.sym('curv_ego')
-  model.x = vertcat(x_ego, y_ego, psi_ego, curv_ego)
+  latacc_ego = SX.sym('latacc_ego')
+  model.x = vertcat(x_ego, y_ego, psi_ego, curv_ego, latacc_ego)
 
   # parameters
   v_ego = SX.sym('v_ego')
@@ -46,14 +47,16 @@ def gen_lat_model():
   y_ego_dot = SX.sym('y_ego_dot')
   psi_ego_dot = SX.sym('psi_ego_dot')
   curv_ego_dot = SX.sym('curv_ego_dot')
+  latacc_ego_dot = SX.sym('latacc_ego_dot')
 
-  model.xdot = vertcat(x_ego_dot, y_ego_dot, psi_ego_dot, curv_ego_dot)
+  model.xdot = vertcat(x_ego_dot, y_ego_dot, psi_ego_dot, curv_ego_dot, latacc_ego_dot)
 
   # dynamics model
   f_expl = vertcat(v_ego * cos(psi_ego) - rotation_radius * sin(psi_ego) * (v_ego * curv_ego),
                    v_ego * sin(psi_ego) + rotation_radius * cos(psi_ego) * (v_ego * curv_ego),
                    v_ego * curv_ego,
-                   curv_rate)
+                   curv_rate,
+                   curv_rate * (v_ego**2))
   model.f_impl_expr = model.xdot - f_expl
   model.f_expl_expr = f_expl
   return model
@@ -88,10 +91,10 @@ def gen_lat_ocp():
   ocp.cost.yref_e = np.zeros((2, ))
   # TODO hacky weights to keep behavior the same
   ocp.model.cost_y_expr = vertcat(y_ego,
-                                  ((v_ego +5.0) * psi_ego),
-                                  ((v_ego +5.0) * 4 * curv_rate))
+                                  ((v_ego + 5.0) * psi_ego),
+                                  (v_ego**2 * curv_rate))
   ocp.model.cost_y_expr_e = vertcat(y_ego,
-                                    ((v_ego +5.0) * psi_ego))
+                                    ((v_ego + 5.0) * psi_ego))
 
   # set constraints
   ocp.constraints.constr_type = 'BGH'
@@ -140,22 +143,23 @@ class LateralMpc():
     self.solve_time = 0.0
     self.cost = 0
 
-  def set_weights(self, path_weight, heading_weight, steer_rate_weight):
-    W = np.asfortranarray(np.diag([path_weight, heading_weight, steer_rate_weight]))
+  def set_weights(self, path_weight, heading_weight, jerk_weight):
+    W = np.asfortranarray(np.diag([path_weight, heading_weight, jerk_weight]))
     for i in range(N):
       self.solver.cost_set(i, 'W', W)
     #TODO hacky weights to keep behavior the same
     self.solver.cost_set(N, 'W', (3/20.)*W[:2,:2])
 
-  def run(self, x0, p, y_pts, heading_pts):
+  def run(self, x0, p, y_pts, heading_pts, jerk_pts):
     x0_cp = np.copy(x0)
     p_cp = np.copy(p)
     self.solver.constraints_set(0, "lbx", x0_cp)
     self.solver.constraints_set(0, "ubx", x0_cp)
-    self.yref[:,0] = y_pts
+    self.yref[:, 0] = y_pts
     v_ego = p_cp[0]
     # rotation_radius = p_cp[1]
-    self.yref[:,1] = heading_pts*(v_ego+5.0)
+    self.yref[:, 1] = heading_pts * (v_ego + 5.0)
+    self.yref[:, 2] = jerk_pts
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
       self.solver.set(i, "p", p_cp)
