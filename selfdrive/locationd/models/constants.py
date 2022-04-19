@@ -27,7 +27,7 @@ class ObservationKind:
   PSEUDORANGE_RATE_GLONASS = 21
   PSEUDORANGE = 22
   PSEUDORANGE_RATE = 23
-  ECEF_VEL = 31
+  ECEF_VEL = 35
   ECEF_ORIENTATION_FROM_GPS = 32
   NO_ACCEL = 33
   ORB_FEATURES_WIDE = 34
@@ -73,7 +73,10 @@ class ObservationKind:
     'Steer Ratio',
     'Road Frame x speed',
     'Road Roll',
+    'ECEF orientation from GPS',
+    'NO accel',
     'ORB features wide camera',
+    'ECEF_VEL',
   ]
 
   @classmethod
