@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <limits>
 #include <mutex>
 #include <string>
 
@@ -64,6 +65,7 @@ class SwaglogState : public LogState {
 
 static SwaglogState s = {};
 bool LOG_TIMESTAMPS = getenv("LOG_TIMESTAMPS");
+uint32_t NO_FRAME_ID = std::numeric_limits<uint32_t>::max();
 
 static void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
   if (levelnum >= s.print_level) {
@@ -97,7 +99,7 @@ static void cloudlog_common(int levelnum, const char* filename, int lineno, cons
 }
 
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
-                const char* fmt, ...){
+                const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
   char* msg_buf = nullptr;
@@ -108,7 +110,7 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
 }
 
 void cloudlog_t_common(int levelnum, const char* filename, int lineno, const char* func,
-                uint32_t frame_id, const char* fmt, va_list args){
+                       uint32_t frame_id, const char* fmt, va_list args) {
   if (!LOG_TIMESTAMPS) return;
   char* msg_buf = nullptr;
   int ret = vasprintf(&msg_buf, fmt, args);
@@ -117,23 +119,23 @@ void cloudlog_t_common(int levelnum, const char* filename, int lineno, const cha
     {"event", msg_buf},
     {"time", std::to_string(nanos_since_boot())}
   };
-  if (frame_id > -1) {
+  if (frame_id < NO_FRAME_ID) {
     tspt_j["frame_id"] = std::to_string(frame_id);
-  };
+  }
   tspt_j = json11::Json::object{{"timestamp", tspt_j}};
   cloudlog_common(levelnum, filename, lineno, func, msg_buf, tspt_j);
 }
 
 
 void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
-                const char* fmt, ...){
+                 const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  cloudlog_t_common(levelnum, filename, lineno, func, -1, fmt, args);
+  cloudlog_t_common(levelnum, filename, lineno, func, NO_FRAME_ID, fmt, args);
   va_end(args);
 }
 void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
-                uint32_t frame_id, const char* fmt, ...){
+                 uint32_t frame_id, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
   cloudlog_t_common(levelnum, filename, lineno, func, frame_id, fmt, args);

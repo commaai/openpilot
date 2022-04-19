@@ -13,10 +13,10 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
 void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
-                const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
+                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
 void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
-                uint32_t frame_id, const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
+                 uint32_t frame_id, const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
 
 #define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
