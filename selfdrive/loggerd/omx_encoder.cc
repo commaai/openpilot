@@ -463,7 +463,7 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 
 void OmxEncoder::encoder_open(const char* path) {
   if (this->write) {
-    writer = new VideoWriter(path, this->filename, this->remuxing, this->width, this->height, this->fps, !this->remuxing);
+    writer = new VideoWriter(path, this->filename, this->remuxing, this->width, this->height, this->fps, !this->remuxing, false);
   }
 
   // start writer threads
