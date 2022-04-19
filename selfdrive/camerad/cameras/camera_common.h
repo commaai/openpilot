@@ -29,7 +29,7 @@
 #define CAMERA_ID_MAX 10
 
 const int UI_BUF_COUNT = 4;
-const int YUV_BUFFER_COUNT = Hardware::EON() ? 100 : 40;
+const int YUV_BUFFER_COUNT = 40;
 
 enum CameraType {
   RoadCam = 0,

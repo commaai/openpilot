@@ -22,9 +22,9 @@ extern "C" {
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-RawLogger::RawLogger(const char* filename, CameraType type, int width, int height, int fps,
-                     int bitrate, bool h265, bool downscale, bool write)
-  : filename(filename), fps(fps) {
+RawLogger::RawLogger(const char* filename, CameraType type, int in_width, int in_height, int fps,
+                     int bitrate, bool h265, int out_width, int out_height, bool write)
+  : in_width_(in_width), in_height_(in_height), filename(filename), fps(fps) {
 
   // TODO: respect write arg
 
@@ -34,8 +34,8 @@ RawLogger::RawLogger(const char* filename, CameraType type, int width, int heigh
 
   codec_ctx = avcodec_alloc_context3(codec);
   assert(codec_ctx);
-  codec_ctx->width = width;
-  codec_ctx->height = height;
+  codec_ctx->width = out_width;
+  codec_ctx->height = out_height;
   codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 
   // codec_ctx->thread_count = 2;
@@ -51,14 +51,14 @@ RawLogger::RawLogger(const char* filename, CameraType type, int width, int heigh
   frame = av_frame_alloc();
   assert(frame);
   frame->format = codec_ctx->pix_fmt;
-  frame->width = width;
-  frame->height = height;
-  frame->linesize[0] = width;
-  frame->linesize[1] = width/2;
-  frame->linesize[2] = width/2;
+  frame->width = out_width;
+  frame->height = out_height;
+  frame->linesize[0] = out_width;
+  frame->linesize[1] = out_width/2;
+  frame->linesize[2] = out_width/2;
 
-  if (downscale) {
-    downscale_buf.resize(width * height * 3 / 2);
+  if (in_width != out_width || in_height != out_height) {
+    downscale_buf.resize(out_width * out_height * 3 / 2);
   }
 }
 
@@ -122,6 +122,8 @@ void RawLogger::encoder_close() {
 
 int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                             int in_width, int in_height, uint64_t ts) {
+  assert(in_width == this->in_width_);
+  assert(in_height == this->in_height_);
   AVPacket pkt;
   av_init_packet(&pkt);
   pkt.data = NULL;

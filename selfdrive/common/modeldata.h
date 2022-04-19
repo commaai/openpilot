@@ -32,13 +32,9 @@ namespace tici_dm_crop {
   const int width = 954;
 };
 
-const mat3 fcam_intrinsic_matrix =
-    Hardware::EON() ? (mat3){{910., 0., 1164.0 / 2,
-                              0., 910., 874.0 / 2,
-                              0., 0., 1.}}
-                    : (mat3){{2648.0, 0.0, 1928.0 / 2,
-                              0.0, 2648.0, 1208.0 / 2,
-                              0.0, 0.0, 1.0}};
+const mat3 fcam_intrinsic_matrix = (mat3){{2648.0, 0.0, 1928.0 / 2,
+                                           0.0, 2648.0, 1208.0 / 2,
+                                           0.0, 0.0, 1.0}};
 
 // tici ecam focal probably wrong? magnification is not consistent across frame
 // Need to retrain model before this can be changed
@@ -47,7 +43,7 @@ const mat3 ecam_intrinsic_matrix = (mat3){{567.0, 0.0, 1928.0 / 2,
                                            0.0, 0.0, 1.0}};
 
 static inline mat3 get_model_yuv_transform(bool bayer = true) {
-  float db_s = Hardware::EON() ? 0.5 : 1.0; // debayering does a 2x downscale on EON
+  float db_s = 1.0;
   const mat3 transform = (mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,

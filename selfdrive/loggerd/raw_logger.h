@@ -15,8 +15,8 @@ extern "C" {
 
 class RawLogger : public VideoEncoder {
  public:
-  RawLogger(const char* filename, CameraType type, int width, int height, int fps,
-            int bitrate, bool h265, bool downscale, bool write = true);
+  RawLogger(const char* filename, CameraType type, int in_width, int in_height, int fps,
+            int bitrate, bool h265, int out_width, int out_height, bool write = true);
   ~RawLogger();
   int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                    int in_width, int in_height, uint64_t ts);
@@ -30,6 +30,7 @@ private:
   int counter = 0;
   bool is_open = false;
 
+  int in_width_, in_height_;
   std::string vid_path, lock_path;
 
   const AVCodec *codec = NULL;

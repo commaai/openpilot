@@ -154,16 +154,15 @@ static const char* omx_color_fomat_name(uint32_t format) {
 
 
 // ***** encoder functions *****
-OmxEncoder::OmxEncoder(const char* filename, CameraType type, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write) {
+OmxEncoder::OmxEncoder(const char* filename, CameraType type, int in_width, int in_height, int fps, int bitrate, bool h265, int out_width, int out_height, bool write)
+  : in_width_(in_width), in_height_(in_height), width(out_width), height(out_height) {
   this->filename = filename;
   this->type = type;
   this->write = write;
-  this->width = width;
-  this->height = height;
   this->fps = fps;
   this->remuxing = !h265;
 
-  this->downscale = downscale;
+  this->downscale = in_width != out_width || in_height != out_height;
   if (this->downscale) {
     this->y_ptr2 = (uint8_t *)malloc(this->width*this->height);
     this->u_ptr2 = (uint8_t *)malloc(this->width*this->height/4);
@@ -233,13 +232,8 @@ OmxEncoder::OmxEncoder(const char* filename, CameraType type, int width, int hei
 
   if (h265) {
     // setup HEVC
-  #ifndef QCOM2
-    OMX_VIDEO_PARAM_HEVCTYPE hevc_type = {0};
-    OMX_INDEXTYPE index_type = (OMX_INDEXTYPE) OMX_IndexParamVideoHevc;
-  #else
     OMX_VIDEO_PARAM_PROFILELEVELTYPE hevc_type = {0};
     OMX_INDEXTYPE index_type = OMX_IndexParamVideoProfileLevelCurrent;
-  #endif
     hevc_type.nSize = sizeof(hevc_type);
     hevc_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
     OMX_CHECK(OMX_GetParameter(this->handle, index_type, (OMX_PTR) &hevc_type));
@@ -464,6 +458,8 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OmxBuffer *out_buf) {
 
 int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                              int in_width, int in_height, uint64_t ts) {
+  assert(in_width == this->in_width_);
+  assert(in_height == this->in_height_);
   int err;
   if (!this->is_open) {
     return -1;
@@ -565,11 +561,6 @@ void OmxEncoder::encoder_open(const char* path) {
     if (this->write) {
       this->of = util::safe_fopen(this->vid_path, "wb");
       assert(this->of);
-#ifndef QCOM2
-      if (this->codec_config_len > 0) {
-        util::safe_fwrite(this->codec_config, 1, this->codec_config_len, this->of);
-      }
-#endif
     }
   }
 
