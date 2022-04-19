@@ -179,6 +179,7 @@ FW_VERSIONS = {
       b'\000\000eb\037@ \"',
       b'\000\000e\x8f\037@ )',
       b'\x00\x00eq\x1f@ "',
+      b'\x00\x00eq\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xca!ap\a',
@@ -188,6 +189,7 @@ FW_VERSIONS = {
       b'\xcc!fp\a',
       b'\xf1\x00\xa2\x10\t',
       b'\xca!f@\x07',
+      b'\xca!fp\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe6\xf5\004\000\000',
