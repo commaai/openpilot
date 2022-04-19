@@ -36,6 +36,7 @@ class MPC_COST_LAT:
   PATH = 1.0
   HEADING = 1.0
   STEER_RATE = 1.0
+  LAT_JERK = 1.0
 
 
 def rate_limit(new_value, last_value, dw_step, up_step):
