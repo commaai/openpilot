@@ -184,8 +184,6 @@ class TestCarModel(unittest.TestCase):
     """
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
-    if not self.CP.enableGasInterceptor:
-      self.skipTest("not gas interceptor")
 
     CC = car.CarControl.new_message()
 
