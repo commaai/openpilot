@@ -108,7 +108,7 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
           continue
 
         if "frame_id" in jmsg['msg']['timestamp']:
-          timestamps[jmsg['msg']['timestamp']['frame_id']][service].append((event, time))
+          timestamps[int(jmsg['msg']['timestamp']['frame_id'])][service].append((event, time))
           continue
 
         if service == "boardd":
