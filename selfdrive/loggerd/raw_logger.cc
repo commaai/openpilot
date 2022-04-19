@@ -57,8 +57,8 @@ RawLogger::RawLogger(const char* filename, CameraType type, int in_width, int in
   frame->linesize[1] = out_width/2;
   frame->linesize[2] = out_width/2;
 
-  if (downscale) {
-    downscale_buf.resize(width * height * 3 / 2);
+  if (in_width != out_width || in_height != out_height) {
+    downscale_buf.resize(out_width * out_height * 3 / 2);
   }
 }
 

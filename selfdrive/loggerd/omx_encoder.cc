@@ -164,7 +164,6 @@ OmxEncoder::OmxEncoder(const char* filename, CameraType type, int in_width, int 
 
   this->downscale = in_width != out_width || in_height != out_height;
   if (this->downscale) {
-    this->downscale = true;
     this->y_ptr2 = (uint8_t *)malloc(this->width*this->height);
     this->u_ptr2 = (uint8_t *)malloc(this->width*this->height/4);
     this->v_ptr2 = (uint8_t *)malloc(this->width*this->height/4);
