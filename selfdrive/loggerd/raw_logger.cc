@@ -22,21 +22,20 @@ extern "C" {
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-RawLogger::RawLogger(const char* filename, int width, int height, int fps,
-                     int bitrate, bool h265, bool downscale, bool write)
-  : filename(filename), fps(fps) {
+RawLogger::RawLogger(const char* filename, CameraType type, int in_width, int in_height, int fps,
+                     int bitrate, bool h265, int out_width, int out_height, bool write)
+  : in_width_(in_width), in_height_(in_height), filename(filename), fps(fps) {
 
   // TODO: respect write arg
 
-  av_register_all();
   codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
   // codec = avcodec_find_encoder(AV_CODEC_ID_FFV1);
   assert(codec);
 
   codec_ctx = avcodec_alloc_context3(codec);
   assert(codec_ctx);
-  codec_ctx->width = width;
-  codec_ctx->height = height;
+  codec_ctx->width = out_width;
+  codec_ctx->height = out_height;
   codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 
   // codec_ctx->thread_count = 2;
@@ -52,14 +51,14 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
   frame = av_frame_alloc();
   assert(frame);
   frame->format = codec_ctx->pix_fmt;
-  frame->width = width;
-  frame->height = height;
-  frame->linesize[0] = width;
-  frame->linesize[1] = width/2;
-  frame->linesize[2] = width/2;
+  frame->width = out_width;
+  frame->height = out_height;
+  frame->linesize[0] = out_width;
+  frame->linesize[1] = out_width/2;
+  frame->linesize[2] = out_width/2;
 
-  if (downscale) {
-    downscale_buf.resize(width * height * 3 / 2);
+  if (in_width != out_width || in_height != out_height) {
+    downscale_buf.resize(out_width * out_height * 3 / 2);
   }
 }
 
@@ -111,8 +110,6 @@ void RawLogger::encoder_close() {
   int err = av_write_trailer(format_ctx);
   assert(err == 0);
 
-  avcodec_close(stream->codec);
-
   err = avio_closep(&format_ctx->pb);
   assert(err == 0);
 
@@ -125,6 +122,8 @@ void RawLogger::encoder_close() {
 
 int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                             int in_width, int in_height, uint64_t ts) {
+  assert(in_width == this->in_width_);
+  assert(in_height == this->in_height_);
   AVPacket pkt;
   av_init_packet(&pkt);
   pkt.data = NULL;
@@ -155,18 +154,32 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
 
   int ret = counter;
 
-  int got_output = 0;
-  int err = avcodec_encode_video2(codec_ctx, &pkt, frame, &got_output);
-  if (err) {
-    LOGE("encoding error\n");
+  int err = avcodec_send_frame(codec_ctx, frame);
+  if (ret < 0) {
+    LOGE("avcode_send_frame error %d", err);
     ret = -1;
-  } else if (got_output) {
+  }
+
+  while (ret >= 0){
+    err = avcodec_receive_packet(codec_ctx, &pkt);
+    if (err == AVERROR_EOF) {
+      break;
+    } else if (err == AVERROR(EAGAIN)) {
+      // Encoder might need a few frames on startup to get started. Keep going
+      ret = 0;
+      break;
+    } else if (err < 0) {
+      LOGE("avcodec_receive_packet error %d", err);
+      ret = -1;
+      break;
+    }
+
     av_packet_rescale_ts(&pkt, codec_ctx->time_base, stream->time_base);
     pkt.stream_index = 0;
 
     err = av_interleaved_write_frame(format_ctx, &pkt);
     if (err < 0) {
-      LOGE("encoder writer error\n");
+      LOGE("av_interleaved_write_frame %d", err);
       ret = -1;
     } else {
       counter++;

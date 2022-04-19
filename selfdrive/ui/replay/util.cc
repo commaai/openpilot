@@ -225,7 +225,7 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
   bool success = complete == parts;
   download_stats.update(url, written, success);
   download_stats.remove(url);
-  
+
   for (const auto &[e, w] : writers) {
     curl_multi_remove_handle(cm, e);
     curl_easy_cleanup(e);

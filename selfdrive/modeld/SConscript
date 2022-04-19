@@ -1,8 +1,10 @@
+import os
+
 Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
 lenv = env.Clone()
 
 libs = [cereal, messaging, common, visionipc, gpucommon,
-        'OpenCL', 'SNPE', 'symphony-cpu', 'capnp', 'zmq', 'kj', 'yuv']
+        'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv']
 
 def get_dlsym_offset():
   """Returns the offset between dlopen and dlsym in libdl.so"""
@@ -23,14 +25,14 @@ common_src = [
 thneed_src = [
   "thneed/thneed.cc",
   "thneed/serialize.cc",
+  "thneed/optimizer.cc",
   "runners/thneedmodel.cc",
 ]
 
 use_thneed = not GetOption('no_thneed')
 
-if arch == "aarch64" or arch == "larch64":
-  libs += ['gsl', 'CB']
-  libs += ['gnustl_shared'] if arch == "aarch64" else ['pthread', 'dl']
+if arch == "larch64":
+  libs += ['gsl', 'CB', 'pthread', 'dl']
 
   if use_thneed:
     common_src += thneed_src
@@ -55,19 +57,30 @@ else:
 
     # no SNPE on Mac
     del libs[libs.index('SNPE')]
-    del libs[libs.index('symphony-cpu')]
     del common_src[common_src.index('runners/snpemodel.cc')]
 
 common_model = lenv.Object(common_src)
 
 # build thneed model
-if use_thneed and arch in ("aarch64", "larch64"):
+if use_thneed and arch == "larch64":
+  fn = File("#models/supercombo").abspath
   compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
-  cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} ../../models/supercombo.dlc ../../models/supercombo.thneed --binary"
+  cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} {fn}.dlc {fn}_badweights.thneed --binary"
 
   lib_paths = ':'.join(Dir(p).abspath for p in lenv["LIBPATH"])
-  cenv = Environment(ENV={'LD_LIBRARY_PATH': f"{lib_paths}:{lenv['ENV']['LD_LIBRARY_PATH']}"})
-  cenv.Command("../../models/supercombo.thneed", ["../../models/supercombo.dlc", compiler], cmd)
+  kernel_path = os.path.join(Dir('.').abspath, "thneed", "kernels")
+  cenv = Environment(ENV={'LD_LIBRARY_PATH': f"{lib_paths}:{lenv['ENV']['LD_LIBRARY_PATH']}", 'KERNEL_PATH': kernel_path})
+
+  kernels = [os.path.join(kernel_path, x) for x in os.listdir(kernel_path) if x.endswith(".cl")]
+  cenv.Command(fn + "_badweights.thneed", [fn + ".dlc", kernels, compiler], cmd)
+
+  from selfdrive.modeld.thneed.weights_fixup import weights_fixup
+  def weights_fixup_action(target, source, env):
+    weights_fixup(target[0].abspath, source[0].abspath, source[1].abspath)
+
+  env = Environment(BUILDERS = {'WeightFixup' : Builder(action = weights_fixup_action)})
+  env.WeightFixup(target=fn + ".thneed", source=[fn+"_badweights.thneed", fn+".dlc"])
+
 
 lenv.Program('_dmonitoringmodeld', [
     "dmonitoringmodeld.cc",

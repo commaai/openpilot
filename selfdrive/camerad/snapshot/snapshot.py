@@ -17,9 +17,9 @@ from selfdrive.manager.process_config import managed_processes
 LM_THRESH = 120  # defined in selfdrive/camerad/imgproc/utils.h
 
 VISION_STREAMS = {
-  "roadCameraState": VisionStreamType.VISION_STREAM_RGB_BACK,
-  "driverCameraState": VisionStreamType.VISION_STREAM_RGB_FRONT,
-  "wideRoadCameraState": VisionStreamType.VISION_STREAM_RGB_WIDE,
+  "roadCameraState": VisionStreamType.VISION_STREAM_RGB_ROAD,
+  "driverCameraState": VisionStreamType.VISION_STREAM_RGB_DRIVER,
+  "wideRoadCameraState": VisionStreamType.VISION_STREAM_RGB_WIDE_ROAD,
 }
 
 

@@ -73,13 +73,8 @@ lenv = {
 
 rpath = lenv["LD_LIBRARY_PATH"].copy()
 
-if arch == "aarch64" or arch == "larch64":
+if arch == "larch64":
   lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
-
-  if arch == "aarch64":
-    # android
-    lenv["ANDROID_DATA"] = os.environ['ANDROID_DATA']
-    lenv["ANDROID_ROOT"] = os.environ['ANDROID_ROOT']
 
   cpppath = [
     "#third_party/opencl/include",
@@ -89,57 +84,45 @@ if arch == "aarch64" or arch == "larch64":
     "/usr/local/lib",
     "/usr/lib",
     "/system/vendor/lib64",
-    "/system/comma/usr/lib",
     f"#third_party/acados/{arch}/lib",
   ]
 
-  if arch == "larch64":
-    libpath += [
-      "#third_party/snpe/larch64",
-      "#third_party/libyuv/larch64/lib",
-      "/usr/lib/aarch64-linux-gnu"
-    ]
-    cpppath += [
-      "#selfdrive/camerad/include",
-    ]
-    cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-    cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-    rpath += ["/usr/local/lib"]
-  else:
-    rpath = []
-    libpath += [
-      "#third_party/snpe/aarch64",
-      "#third_party/libyuv/lib",
-      "/system/vendor/lib64"
-    ]
-    cflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
-    cxxflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
+  libpath += [
+    "#third_party/snpe/larch64",
+    "#third_party/libyuv/larch64/lib",
+    "/usr/lib/aarch64-linux-gnu"
+  ]
+  cpppath += [
+    "#selfdrive/camerad/include",
+  ]
+  cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
+  cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
+  rpath += ["/usr/local/lib"]
 else:
   cflags = []
   cxxflags = []
   cpppath = []
 
+  # MacOS
   if arch == "Darwin":
+    brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
     yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
       f"#third_party/libyuv/{yuv_dir}/lib",
-      "/usr/local/lib",
-      "/opt/homebrew/lib",
-      "/usr/local/Homebrew/Library",
-      "/usr/local/opt/openssl/lib",
-      "/opt/homebrew/opt/openssl/lib",
-      "/usr/local/Cellar",
+      f"{brew_prefix}/lib",
+      f"{brew_prefix}/Library",
+      f"{brew_prefix}/opt/openssl/lib",
+      f"{brew_prefix}/Cellar",
       f"#third_party/acados/{arch}/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
-      "/opt/homebrew/include",
-      "/usr/local/include",
-      "/usr/local/opt/openssl/include",
-      "/opt/homebrew/opt/openssl/include"
+      f"{brew_prefix}/include",
+      f"{brew_prefix}/opt/openssl/include",
     ]
+  # Linux 86_64
   else:
     libpath = [
       "#third_party/acados/x86_64/lib",
@@ -173,8 +156,8 @@ if arch != "Darwin":
   ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
 # Enable swaglog include in submodules
-cflags += ["-DSWAGLOG"]
-cxxflags += ["-DSWAGLOG"]
+cflags += ['-DSWAGLOG="\\"selfdrive/common/swaglog.h\\""']
+cxxflags += ['-DSWAGLOG="\\"selfdrive/common/swaglog.h\\""']
 
 env = Environment(
   ENV=lenv,
@@ -261,6 +244,7 @@ if os.environ.get('SCONS_PROGRESS'):
 
 SHARED = False
 
+# TODO: this can probably be removed
 def abspath(x):
   if arch == 'aarch64':
     pth = os.path.join("/data/pythonpath", x[0].path)
@@ -289,9 +273,7 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning"]
-if arch != "aarch64":
-  qt_modules += ["DBus"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -306,15 +288,6 @@ if arch == "Darwin":
   qt_env["LINKFLAGS"] += ["-F" + os.path.join(qt_env['QTDIR'], "lib")]
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
   qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
-elif arch == "aarch64":
-  qt_env['QTDIR'] = "/system/comma/usr"
-  qt_dirs = [
-    f"/system/comma/usr/include/qt",
-  ]
-  qt_dirs += [f"/system/comma/usr/include/qt/Qt{m}" for m in qt_modules]
-
-  qt_libs = [f"Qt5{m}" for m in qt_modules]
-  qt_libs += ['EGL', 'GLESv3', 'c++_shared']
 else:
   qt_env['QTDIR'] = "/usr"
   qt_dirs = [
@@ -392,7 +365,7 @@ rednose_config = {
   },
 }
 
-if arch not in ["aarch64", "larch64"]:
+if arch != "larch64":
   rednose_config['to_build'].update({
     'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, []),

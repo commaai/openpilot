@@ -23,4 +23,4 @@ if __name__ == "__main__":
     # Fill up to 99 percent
     available_percent = get_available_percent()
     if available_percent < 1.0:
-        break
+      break

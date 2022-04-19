@@ -1,4 +1,7 @@
+from typing import Dict, List, Union
+
 from selfdrive.car import dbc_dict
+from selfdrive.car.docs_definitions import CarInfo
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -10,6 +13,7 @@ class CarControllerParams:
   LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
   STEER_THRESHOLD = 1.0
 
+
 class CAR:
   XTRAIL = "NISSAN X-TRAIL 2017"
   LEAF = "NISSAN LEAF 2018"
@@ -19,6 +23,13 @@ class CAR:
   ROGUE = "NISSAN ROGUE 2019"
   ALTIMA = "NISSAN ALTIMA 2020"
 
+
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+  CAR.XTRAIL: CarInfo("Nissan X-Trail 2017", "ProPILOT"),
+  CAR.LEAF: CarInfo("Nissan Leaf 2018-22", "ProPILOT"),
+  CAR.ROGUE: CarInfo("Nissan Rogue 2018-20", "ProPILOT"),
+  CAR.ALTIMA: CarInfo("Nissan Altima 2019-20", "ProPILOT"),
+}
 
 FINGERPRINTS = {
   CAR.XTRAIL: [

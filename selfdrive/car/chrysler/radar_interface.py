@@ -23,9 +23,7 @@ def _create_radar_can_parser(car_fingerprint):
                      ['REL_SPEED'] * msg_n,
                      RADAR_MSGS_C * 2 +  # LONG_DIST, LAT_DIST
                      RADAR_MSGS_D))  # REL_SPEED
-  # TODO what are the checks actually used for?
-  # honda only checks the last message,
-  # toyota checks all the messages. Which do we want?
+
   checks = list(zip(RADAR_MSGS_C +
                     RADAR_MSGS_D,
                     [20] * msg_n +  # 20Hz (0.05s)

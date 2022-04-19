@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import time
 import argparse
 from inputs import get_gamepad
 
@@ -35,8 +36,9 @@ class Keyboard:
 
 class Joystick:
   def __init__(self):
-    self.min_axis_value = 0
-    self.max_axis_value = 255
+    # TODO: find a way to get this from API, perhaps "inputs" doesn't support it
+    self.min_axis_value = {'ABS_Y': 0., 'ABS_RZ': 0.}
+    self.max_axis_value = {'ABS_Y': 1023., 'ABS_RZ': 255.}
     self.cancel_button = 'BTN_TRIGGER'
     self.axes_values = {'ABS_Y': 0., 'ABS_RZ': 0.}  # gb, steer
 
@@ -47,10 +49,10 @@ class Joystick:
     if event[0] == self.cancel_button and event[1] == 0:  # state 0 is falling edge
       self.cancel = True
     elif event[0] in self.axes_values:
-      self.max_axis_value = max(event[1], self.max_axis_value)
-      self.min_axis_value = min(event[1], self.min_axis_value)
+      self.max_axis_value[event[0]] = max(event[1], self.max_axis_value[event[0]])
+      self.min_axis_value[event[0]] = min(event[1], self.min_axis_value[event[0]])
 
-      norm = -interp(event[1], [self.min_axis_value, self.max_axis_value], [-1., 1.])
+      norm = -interp(event[1], [self.min_axis_value[event[0]], self.max_axis_value[event[0]]], [-1., 1.])
       self.axes_values[event[0]] = norm if abs(norm) > 0.05 else 0.  # center can be noisy, deadzone of 5%
     else:
       return False
@@ -62,6 +64,7 @@ def joystick_thread(use_keyboard):
   joystick_sock = messaging.pub_sock('testJoystick')
   joystick = Keyboard() if use_keyboard else Joystick()
 
+  last_update = 0
   while True:
     ret = joystick.update()
     if ret:
@@ -70,6 +73,10 @@ def joystick_thread(use_keyboard):
       dat.testJoystick.buttons = [joystick.cancel]
       joystick_sock.send(dat.to_bytes())
       print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
+      if "WEB" in os.environ and (last_update + 0.02) < time.time():
+        import requests
+        requests.get("http://"+os.environ["WEB"]+":5000/control/%f/%f" % (joystick.axes_values['ABS_RZ'], joystick.axes_values['ABS_Y']))
+        last_update = time.time()
 
 
 if __name__ == '__main__':
@@ -79,7 +86,7 @@ if __name__ == '__main__':
   parser.add_argument('--keyboard', action='store_true', help='Use your keyboard instead of a joystick')
   args = parser.parse_args()
 
-  if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ:
+  if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ and "WEB" not in os.environ:
     print("The car must be off before running joystickd.")
     exit()
 

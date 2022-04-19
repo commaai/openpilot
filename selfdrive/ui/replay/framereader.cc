@@ -6,6 +6,14 @@
 
 #include "cereal/visionipc/visionbuf.h"
 
+#ifdef __APPLE__
+#define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_VIDEOTOOLBOX
+#define HW_PIX_FMT AV_PIX_FMT_VIDEOTOOLBOX
+#else
+#define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_CUDA
+#define HW_PIX_FMT AV_PIX_FMT_CUDA
+#endif
+
 namespace {
 
 struct buffer_data {
@@ -30,7 +38,7 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
   for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
     if (*p == *hw_pix_fmt) return *p;
   }
-  rWarning("Please run replay with the --no-cuda flag!");
+  rWarning("Please run replay with the --no-hw-decoder flag!");
   // fallback to YUV420p
   *hw_pix_fmt = AV_PIX_FMT_NONE;
   return AV_PIX_FMT_YUV420P;
@@ -57,15 +65,15 @@ FrameReader::~FrameReader() {
   }
 }
 
-bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
+bool FrameReader::load(const std::string &url, bool no_hw_decoder, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
   FileReader f(local_cache, chunk_size, retries);
   std::string data = f.read(url, abort);
   if (data.empty()) return false;
 
-  return load((std::byte *)data.data(), data.size(), no_cuda, abort);
+  return load((std::byte *)data.data(), data.size(), no_hw_decoder, abort);
 }
 
-bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::atomic<bool> *abort) {
+bool FrameReader::load(const std::byte *data, size_t size, bool no_hw_decoder, std::atomic<bool> *abort) {
   input_ctx = avformat_alloc_context();
   if (!input_ctx) return false;
 
@@ -95,7 +103,7 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
   }
 
   AVStream *video = input_ctx->streams[0];
-  AVCodec *decoder = avcodec_find_decoder(video->codec->codec_id);
+  const AVCodec *decoder = avcodec_find_decoder(video->codecpar->codec_id);
   if (!decoder) return false;
 
   decoder_ctx = avcodec_alloc_context3(decoder);
@@ -106,9 +114,9 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
   height = decoder_ctx->height;
   visionbuf_compute_aligned_width_and_height(width, height, &aligned_width, &aligned_height);
 
-  if (has_cuda_device && !no_cuda) {
-    if (!initHardwareDecoder(AV_HWDEVICE_TYPE_CUDA)) {
-      rWarning("No CUDA capable device was found. fallback to CPU decoding.");
+  if (has_hw_decoder && !no_hw_decoder) {
+    if (!initHardwareDecoder(HW_DEVICE_TYPE)) {
+      rWarning("No device with hardware decoder found. fallback to CPU decoding.");
     } else {
       nv12toyuv_buffer.resize(getYUVSize());
     }
@@ -151,7 +159,7 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   int ret = av_hwdevice_ctx_create(&hw_device_ctx, hw_device_type, nullptr, nullptr, 0);
   if (ret < 0) {
     hw_pix_fmt = AV_PIX_FMT_NONE;
-    has_cuda_device = false;
+    has_hw_decoder = false;
     rWarning("Failed to create specified HW device %d.", ret);
     return false;
   }
@@ -219,7 +227,7 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
 }
 
 bool FrameReader::copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
-  if (hw_pix_fmt == AV_PIX_FMT_CUDA) {
+  if (hw_pix_fmt == HW_PIX_FMT) {
     uint8_t *y = yuv ? yuv : nv12toyuv_buffer.data();
     uint8_t *u = y + width * height;
     uint8_t *v = u + (width / 2) * (height / 2);

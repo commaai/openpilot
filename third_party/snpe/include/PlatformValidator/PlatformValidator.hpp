@@ -1,6 +1,6 @@
 // =============================================================================
 //
-// Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+// Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 // All Rights Reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -10,7 +10,32 @@
 #define SNPE_PLATFORMVALIDATOR_HPP
 
 #include "DlSystem/DlEnums.hpp"
-#include "DlSystem/DlMacros.hpp"
+#include "DlSystem/ZdlExportDefine.hpp"
+
+#define DO_PRAGMA(s) _Pragma(#s)
+#define NO_WARNING "-Wunused-variable"
+
+#ifdef __clang__
+#define SNPE_DISABLE_WARNINGS(clang_warning,gcc_warning) \
+_Pragma("clang diagnostic push") \
+DO_PRAGMA(clang diagnostic ignored clang_warning)
+
+#define SNPE_ENABLE_WARNINGS \
+_Pragma("clang diagnostic pop")
+
+#elif defined __GNUC__
+#define SNPE_DISABLE_WARNINGS(clang_warning,gcc_warning) \
+_Pragma("GCC diagnostic push") \
+DO_PRAGMA(GCC diagnostic ignored gcc_warning)
+
+#define SNPE_ENABLE_WARNINGS \
+_Pragma("GCC diagnostic pop")
+
+#else
+#define SNPE_DISABLE_WARNINGS(...)
+#define SNPE_ENABLE_WARNINGS
+#endif
+
 SNPE_DISABLE_WARNINGS("-Wdelete-non-virtual-dtor","-Wdelete-non-virtual-dtor")
 #include <string>
 #include <memory>
@@ -34,7 +59,7 @@ namespace zdl
 *
 */
 
-class zdl::SNPE::PlatformValidator
+class ZDL_EXPORT zdl::SNPE::PlatformValidator
 {
 public:
    /**

@@ -474,14 +474,14 @@ class LocKalman():
     z = trans[:, :3]
     R = np.zeros((len(trans), 3, 3))
     for i, _ in enumerate(z):
-        R[i, :, :] = np.diag(trans[i, 3:]**2)
+      R[i, :, :] = np.diag(trans[i, 3:]**2)
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
   def predict_and_update_odo_rot(self, rot, t, kind):
     z = rot[:, :3]
     R = np.zeros((len(rot), 3, 3))
     for i, _ in enumerate(z):
-        R[i, :, :] = np.diag(rot[i, 3:]**2)
+      R[i, :, :] = np.diag(rot[i, 3:]**2)
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
   def predict_and_update_orb_features(self, tracks, t, kind):
@@ -518,7 +518,7 @@ class LocKalman():
 
     y_full = np.zeros((z.shape[0], z.shape[1] - 3))
     if sum(good_idxs) > 0:
-        y_full[good_idxs] = np.array(ret[6])
+      y_full[good_idxs] = np.array(ret[6])
     ret = ret[:6] + (y_full, z, ecef_pos)
     return ret
 

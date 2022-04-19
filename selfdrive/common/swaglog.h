@@ -9,13 +9,19 @@
 #define CLOUDLOG_CRITICAL 50
 
 
-
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
+                const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
+
+void cloudlog_t(int levelnum, const char* filename, int lineno, const char* func,
                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
 #define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
                                            __func__, \
-                                           fmt, ## __VA_ARGS__)
+                                           fmt, ## __VA_ARGS__);
+ 
+#define cloudlog_t_m(lvl, fmt, ...) cloudlog_t(lvl, __FILE__, __LINE__, \
+                                               __func__, \
+                                               fmt, ## __VA_ARGS__);
 
 #define cloudlog_rl(burst, millis, lvl, fmt, ...)   \
 {                                                   \
@@ -46,6 +52,7 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   }                                                 \
 }
 
+#define LOGT(fmt, ...) cloudlog_t_m(CLOUDLOG_DEBUG, fmt,## __VA_ARGS__)
 #define LOGD(fmt, ...) cloudlog(CLOUDLOG_DEBUG, fmt, ## __VA_ARGS__)
 #define LOG(fmt, ...) cloudlog(CLOUDLOG_INFO, fmt, ## __VA_ARGS__)
 #define LOGW(fmt, ...) cloudlog(CLOUDLOG_WARNING, fmt, ## __VA_ARGS__)
