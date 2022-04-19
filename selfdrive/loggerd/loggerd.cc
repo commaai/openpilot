@@ -67,7 +67,7 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
                                      buf_info.width, buf_info.height, cam_info.record));
       // qcamera encoder
       if (cam_info.has_qcamera) {
-        encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, qcam_info.frame_width, qcam_info.frame_height,
+        encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, buf_info.width, buf_info.height,
                                        qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265,
                                        qcam_info.frame_width, qcam_info.frame_height));
       }
