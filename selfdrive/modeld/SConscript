@@ -31,9 +31,8 @@ thneed_src = [
 
 use_thneed = not GetOption('no_thneed')
 
-if arch == "aarch64" or arch == "larch64":
-  libs += ['gsl', 'CB']
-  libs += ['gnustl_shared'] if arch == "aarch64" else ['pthread', 'dl']
+if arch == "larch64":
+  libs += ['gsl', 'CB', 'pthread', 'dl']
 
   if use_thneed:
     common_src += thneed_src
@@ -64,7 +63,7 @@ else:
 common_model = lenv.Object(common_src)
 
 # build thneed model
-if use_thneed and arch in ("aarch64", "larch64"):
+if use_thneed and arch == "larch64":
   fn = File("#models/supercombo").abspath
   compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
   cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} {fn}.dlc {fn}_badweights.thneed --binary"

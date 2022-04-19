@@ -15,26 +15,25 @@ from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
 from selfdrive.controls.lib.events import EVENTS, ET
-from selfdrive.hardware import EON, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled, release_only
 from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 55.0,
-  "./loggerd": 45.0,
+  "selfdrive.controls.controlsd": 31.0,
+  "./loggerd": 70.0,
+  "./camerad": 41.0,
   "./locationd": 9.1,
-  "selfdrive.controls.plannerd": 22.6,
-  "./_ui": 20.0,
-  "selfdrive.locationd.paramsd": 14.0,
-  "./camerad": 9.16,
+  "selfdrive.controls.plannerd": 11.7,
+  "./_ui": 33.0,
+  "selfdrive.locationd.paramsd": 5.0,
   "./_sensord": 6.17,
-  "selfdrive.controls.radard": 7.0,
+  "selfdrive.controls.radard": 4.5,
   "./_modeld": 4.48,
   "./boardd": 3.63,
-  "./_dmonitoringmodeld": 2.67,
-  "selfdrive.thermald.thermald": 5.36,
+  "./_dmonitoringmodeld": 10.0,
+  "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "./_soundd": 1.0,
   "selfdrive.monitoring.dmonitoringd": 1.90,
@@ -45,26 +44,6 @@ PROCS = {
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
 }
-
-if EON:
-  PROCS.update({
-    "selfdrive.hardware.eon.androidd": 0.4,
-    "selfdrive.hardware.eon.shutdownd": 0.4,
-  })
-
-if TICI:
-  PROCS.update({
-    "./loggerd": 70.0,
-    "selfdrive.controls.controlsd": 31.0,
-    "./camerad": 41.0,
-    "./_ui": 33.0,
-    "selfdrive.controls.plannerd": 11.7,
-    "./_dmonitoringmodeld": 10.0,
-    "selfdrive.locationd.paramsd": 5.0,
-    "selfdrive.controls.radard": 4.5,
-    "selfdrive.thermald.thermald": 3.87,
-  })
-
 
 TIMINGS = {
   # rtols: max/min, rsd
@@ -82,15 +61,8 @@ TIMINGS = {
   "modelV2": [2.5, 0.35],
   "driverState": [2.5, 0.35],
   "liveLocationKalman": [2.5, 0.35],
+  "wideRoadCameraState": [1.5, 0.35],
 }
-if EON:
-  TIMINGS.update({
-    "roadCameraState": [2.5, 0.45],
-  })
-if TICI:
-  TIMINGS.update({
-    "wideRoadCameraState": [1.5, 0.35],
-  })
 
 
 def cputime_total(ct):
@@ -232,12 +204,10 @@ class TestOnroad(unittest.TestCase):
     result += "----------------- Model Timing -----------------\n"
     result += "------------------------------------------------\n"
     # TODO: this went up when plannerd cpu usage increased, why?
-    cfgs = [("driverState", 0.028, 0.026)]
-    if EON:
-      cfgs += [("modelV2", 0.045, 0.04)]
-    else:
-      cfgs += [("modelV2", 0.038, 0.036), ("driverState", 0.028, 0.026)]
-
+    cfgs = [
+      ("modelV2", 0.038, 0.036),
+      ("driverState", 0.028, 0.026),
+    ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
       self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")

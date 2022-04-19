@@ -151,7 +151,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2020"),
   CAR.LEXUS_RX: ToyotaCarInfo("Lexus RX 2016-18", footnotes=[Footnote.DSU]),
   CAR.LEXUS_RXH: ToyotaCarInfo("Lexus RX Hybrid 2016-19", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-21"),
+  CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
   CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
 }
 
@@ -1492,8 +1492,8 @@ FW_VERSIONS = {
   CAR.LEXUS_NX_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x018966378B2100\x00\x00\x00\x00',
+      b'\x018966378B3000\x00\x00\x00\x00',
       b'\x018966378G3000\x00\x00\x00\x00',
-      b'\x018966378B3000\x00\x00\x00\x00'
     ],
     (Ecu.esp, 0x7b0, None): [
       b'\x01F152678221\x00\x00\x00\x00\x00\x00',
@@ -1504,6 +1504,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x750, 0xf): [
       b"\x018821F3301400\x00\x00\x00\x00",
       b'\x018821F3301200\x00\x00\x00\x00',
+      b'\x018821F3301300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F78030A0\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',

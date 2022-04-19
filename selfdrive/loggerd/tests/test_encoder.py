@@ -13,27 +13,19 @@ from tqdm import trange
 
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.hardware import EON, TICI
+from selfdrive.hardware import TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
 from tools.lib.logreader import LogReader
 
 SEGMENT_LENGTH = 2
-if EON:
-  FULL_SIZE = 1253786 # file size for a 2s segment in bytes
-  CAMERAS = [
-    ("fcamera.hevc", 20, FULL_SIZE, "roadEncodeIdx"),
-    ("dcamera.hevc", 10, 770920, "driverEncodeIdx"),
-    ("qcamera.ts", 20, 77066, None),
-  ]
-else:
-  FULL_SIZE = 2507572
-  CAMERAS = [
-    ("fcamera.hevc", 20, FULL_SIZE, "roadEncodeIdx"),
-    ("dcamera.hevc", 20, FULL_SIZE, "driverEncodeIdx"),
-    ("ecamera.hevc", 20, FULL_SIZE, "wideRoadEncodeIdx"),
-    ("qcamera.ts", 20, 77066, None),
-  ]
+FULL_SIZE = 2507572
+CAMERAS = [
+  ("fcamera.hevc", 20, FULL_SIZE, "roadEncodeIdx"),
+  ("dcamera.hevc", 20, FULL_SIZE, "driverEncodeIdx"),
+  ("ecamera.hevc", 20, FULL_SIZE, "wideRoadEncodeIdx"),
+  ("qcamera.ts", 20, 77066, None),
+]
 
 # we check frame count, so we don't have to be too strict on size
 FILE_SIZE_TOLERANCE = 0.5
@@ -44,7 +36,7 @@ class TestEncoder(unittest.TestCase):
   # TODO: all of loggerd should work on PC
   @classmethod
   def setUpClass(cls):
-    if not (EON or TICI):
+    if not TICI:
       raise unittest.SkipTest
 
   def setUp(self):
@@ -93,8 +85,6 @@ class TestEncoder(unittest.TestCase):
         if not record_front and "dcamera" in camera:
           continue
 
-        eon_dcam = EON and (camera == 'dcamera.hevc')
-
         file_path = f"{route_prefix_path}--{i}/{camera}"
 
         # check file exists
@@ -107,7 +97,7 @@ class TestEncoder(unittest.TestCase):
           cmd = "LD_LIBRARY_PATH=/usr/local/lib " + cmd
 
         expected_frames = fps * SEGMENT_LENGTH
-        frame_tolerance = 1 if eon_dcam else 0
+        frame_tolerance = 0
         probe = subprocess.check_output(cmd, shell=True, encoding='utf8')
         frame_count = int(probe.split('\n')[0].strip())
         counts.append(frame_count)
@@ -140,9 +130,8 @@ class TestEncoder(unittest.TestCase):
 
           self.assertTrue(all(valid))
 
-          if not eon_dcam:
-            self.assertEqual(expected_frames * i, encode_idxs[0])
-            first_frames.append(frame_idxs[0])
+          self.assertEqual(expected_frames * i, encode_idxs[0])
+          first_frames.append(frame_idxs[0])
           self.assertEqual(len(set(encode_idxs)), len(encode_idxs))
 
       self.assertEqual(1, len(set(first_frames)))

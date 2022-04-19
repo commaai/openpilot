@@ -65,8 +65,6 @@ release/*
 
 tools/lib/*
 
-installer/updater/updater
-
 selfdrive/version.py
 
 selfdrive/__init__.py
@@ -260,14 +258,6 @@ selfdrive/hardware/__init__.py
 selfdrive/hardware/base.h
 selfdrive/hardware/base.py
 selfdrive/hardware/hw.h
-selfdrive/hardware/eon/__init__.py
-selfdrive/hardware/eon/androidd.py
-selfdrive/hardware/eon/shutdownd.py
-selfdrive/hardware/eon/hardware.h
-selfdrive/hardware/eon/hardware.py
-selfdrive/hardware/eon/neos.py
-selfdrive/hardware/eon/neos.json
-selfdrive/hardware/eon/updater
 selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py
 selfdrive/hardware/tici/amplifier.py
@@ -299,7 +289,6 @@ selfdrive/locationd/models/live_kf.cc
 selfdrive/locationd/calibrationd.py
 
 selfdrive/logcatd/SConscript
-selfdrive/logcatd/logcatd_android.cc
 selfdrive/logcatd/logcatd_systemd.cc
 
 selfdrive/proclogd/SConscript
@@ -329,7 +318,6 @@ selfdrive/loggerd/xattr_cache.py
 
 selfdrive/sensord/SConscript
 selfdrive/sensord/libdiag.h
-selfdrive/sensord/sensors_qcom.cc
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
 selfdrive/sensord/sensors/*.h
@@ -363,8 +351,6 @@ selfdrive/ui/qt/offroad/*.h
 selfdrive/ui/qt/offroad/*.qml
 selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.h
-selfdrive/ui/qt/spinner_aarch64
-selfdrive/ui/qt/text_aarch64
 
 selfdrive/ui/replay/*.cc
 selfdrive/ui/replay/*.h
@@ -376,11 +362,8 @@ selfdrive/camerad/snapshot/*
 selfdrive/camerad/include/*
 selfdrive/camerad/cameras/camera_common.h
 selfdrive/camerad/cameras/camera_common.cc
-selfdrive/camerad/cameras/camera_qcom.cc
-selfdrive/camerad/cameras/camera_qcom.h
 selfdrive/camerad/cameras/camera_replay.cc
 selfdrive/camerad/cameras/camera_replay.h
-selfdrive/camerad/cameras/debayer.cl
 selfdrive/camerad/cameras/sensor_i2c.h
 selfdrive/camerad/cameras/sensor2_i2c.h
 
@@ -456,7 +439,6 @@ selfdrive/assets/training/*
 
 third_party/SConscript
 
-third_party/libgralloc/**
 third_party/linux/**
 third_party/opencl/**
 third_party/zlib/*
@@ -477,18 +459,11 @@ third_party/libyuv/lib/**
 third_party/libyuv/larch64/**
 
 third_party/snpe/include/**
-third_party/snpe/aarch64**
-third_party/snpe/larch64**
 third_party/snpe/dsp**
 
 third_party/acados/x86_64/**
-third_party/acados/aarch64/**
 third_party/acados/larch64/**
 third_party/acados/include/**
-
-third_party/android_frameworks_native/**
-third_party/android_hardware_libhardware/**
-third_party/android_system_core/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh
