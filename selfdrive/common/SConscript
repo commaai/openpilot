@@ -22,9 +22,7 @@ files = [
   'visionimg.cc',
 ]
 
-if arch == "aarch64":
-  _gpu_libs = ['gui', 'adreno_utils']
-elif arch == "larch64":
+if arch == "larch64":
   _gpu_libs = ["GLESv2"]
 else:
   _gpu_libs = ["GL"]

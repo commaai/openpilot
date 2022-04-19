@@ -3,7 +3,7 @@ from cereal import log
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import interp
 from common.realtime import DT_MDL
-from selfdrive.hardware import EON, TICI
+from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
 
 
@@ -13,9 +13,7 @@ TRAJECTORY_SIZE = 33
 # the model knows the difference between TICI and EON
 # so a path offset is not needed
 PATH_OFFSET = 0.00
-if EON:
-  CAMERA_OFFSET = -0.06
-elif TICI:
+if TICI:
   CAMERA_OFFSET = 0.04
 else:
   CAMERA_OFFSET = 0.0

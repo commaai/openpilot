@@ -17,12 +17,12 @@ from common.filter_simple import FirstOrderFilter
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import EON, HARDWARE, PC, TICI
+from selfdrive.hardware import HARDWARE, TICI
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.statsd import statlog
 from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
-from selfdrive.thermald.fan_controller import EonFanController, UnoFanController, TiciFanController
+from selfdrive.thermald.fan_controller import TiciFanController
 from selfdrive.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
@@ -174,7 +174,6 @@ def thermald_thread(end_event, hw_queue):
   started_ts = None
   started_seen = False
   thermal_status = ThermalStatus.green
-  usb_power = True
 
   last_hw_state = HardwareState(
     network_type=NetworkType.none,
@@ -189,7 +188,6 @@ def thermald_thread(end_event, hw_queue):
   temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
   should_start_prev = False
   in_car = False
-  is_uno = False
   engaged_prev = False
 
   params = Params()
@@ -216,18 +214,11 @@ def thermald_thread(end_event, hw_queue):
       pandaState = pandaStates[0]
 
       in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
-      usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
 
       # Setup fan handler on first connect to panda
       if fan_controller is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
-        is_uno = peripheralState.pandaType == log.PandaState.PandaType.uno
-
         if TICI:
           fan_controller = TiciFanController()
-        elif is_uno or PC:
-          fan_controller = UnoFanController()
-        else:
-          fan_controller = EonFanController()
 
     try:
       last_hw_state = hw_queue.get_nowait()
@@ -380,9 +371,6 @@ def thermald_thread(end_event, hw_queue):
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
 
-    if EON and not is_uno:
-      set_offroad_alert_if_changed("Offroad_ChargeDisabled", (not usb_power))
-
     should_start_prev = should_start
     startup_conditions_prev = startup_conditions.copy()
 
@@ -409,9 +397,6 @@ def thermald_thread(end_event, hw_queue):
 
     # report to server once every 10 minutes
     if (count % int(600. / DT_TRML)) == 0:
-      if EON and started_ts is None and msg.deviceState.memoryUsagePercent > 40:
-        cloudlog.event("High offroad memory usage", mem=msg.deviceState.memoryUsagePercent)
-
       cloudlog.event("STATUS_PACKET",
                      count=count,
                      pandaStates=[strip_deprecated_keys(p.to_dict()) for p in pandaStates],
