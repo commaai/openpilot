@@ -49,7 +49,6 @@ struct LogCameraInfo {
   int fps;
   int bitrate;
   bool is_h265;
-  bool downscale;
   bool has_qcamera;
   bool trigger_rotate;
   bool enable;
@@ -64,7 +63,6 @@ const LogCameraInfo cameras_logged[] = {
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
-    .downscale = false,
     .has_qcamera = true,
     .trigger_rotate = true,
     .enable = true,
@@ -77,7 +75,6 @@ const LogCameraInfo cameras_logged[] = {
     .fps = MAIN_FPS,
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
-    .downscale = false,
     .has_qcamera = false,
     .trigger_rotate = true,
     .enable = true,
@@ -90,7 +87,6 @@ const LogCameraInfo cameras_logged[] = {
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
-    .downscale = false,
     .has_qcamera = false,
     .trigger_rotate = true,
     .enable = Hardware::TICI(),
@@ -102,7 +98,6 @@ const LogCameraInfo qcam_info = {
   .fps = MAIN_FPS,
   .bitrate = 256000,
   .is_h265 = false,
-  .downscale = true,
   .frame_width = Hardware::TICI() ? 526 : 480,
   .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
 };

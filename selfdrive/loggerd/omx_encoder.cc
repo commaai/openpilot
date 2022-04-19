@@ -154,16 +154,15 @@ static const char* omx_color_fomat_name(uint32_t format) {
 
 
 // ***** encoder functions *****
-OmxEncoder::OmxEncoder(const char* filename, CameraType type, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write) {
+OmxEncoder::OmxEncoder(const char* filename, CameraType type, int in_width, int in_height, int fps, int bitrate, bool h265, int out_width, int out_height, bool write)
+  : in_width_(in_width), in_height_(in_height), width(out_width), height(out_height) {
   this->filename = filename;
   this->type = type;
   this->write = write;
-  this->width = width;
-  this->height = height;
   this->fps = fps;
   this->remuxing = !h265;
 
-  this->downscale = downscale;
+  this->downscale = in_width != out_width || in_height != out_height;
   if (this->downscale) {
     this->y_ptr2 = (uint8_t *)malloc(this->width*this->height);
     this->u_ptr2 = (uint8_t *)malloc(this->width*this->height/4);
@@ -464,6 +463,8 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OmxBuffer *out_buf) {
 
 int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                              int in_width, int in_height, uint64_t ts) {
+  assert(in_width == this->in_width_);
+  assert(in_height == this->in_height_);
   int err;
   if (!this->is_open) {
     return -1;
