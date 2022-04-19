@@ -232,13 +232,8 @@ OmxEncoder::OmxEncoder(const char* filename, CameraType type, int in_width, int 
 
   if (h265) {
     // setup HEVC
-  #ifndef QCOM2
-    OMX_VIDEO_PARAM_HEVCTYPE hevc_type = {0};
-    OMX_INDEXTYPE index_type = (OMX_INDEXTYPE) OMX_IndexParamVideoHevc;
-  #else
     OMX_VIDEO_PARAM_PROFILELEVELTYPE hevc_type = {0};
     OMX_INDEXTYPE index_type = OMX_IndexParamVideoProfileLevelCurrent;
-  #endif
     hevc_type.nSize = sizeof(hevc_type);
     hevc_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
     OMX_CHECK(OMX_GetParameter(this->handle, index_type, (OMX_PTR) &hevc_type));
@@ -566,11 +561,6 @@ void OmxEncoder::encoder_open(const char* path) {
     if (this->write) {
       this->of = util::safe_fopen(this->vid_path, "wb");
       assert(this->of);
-#ifndef QCOM2
-      if (this->codec_config_len > 0) {
-        util::safe_fwrite(this->codec_config, 1, this->codec_config_len, this->of);
-      }
-#endif
     }
   }
 
