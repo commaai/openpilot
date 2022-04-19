@@ -89,8 +89,8 @@ const LogCameraInfo cameras_logged[] = {
     .is_h265 = true,
     .has_qcamera = false,
     .trigger_rotate = true,
-    .enable = Hardware::TICI(),
-    .record = Hardware::TICI(),
+    .enable = true,
+    .record = true,
   },
 };
 const LogCameraInfo qcam_info = {

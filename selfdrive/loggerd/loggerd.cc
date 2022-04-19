@@ -59,6 +59,10 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
     // init encoders
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
+      if (buf_info.width == 0 && buf_info.height == 0) {
+        LOGE("encoder VIPC has size 0x0, bailing");
+        return;
+      }
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
 
       // main encoder
