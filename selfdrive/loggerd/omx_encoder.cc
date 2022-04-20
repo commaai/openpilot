@@ -324,7 +324,7 @@ OmxEncoder::OmxEncoder(const char* filename, CameraType type, int in_width, int 
   service_name = this->type == DriverCam ? "driverEncodeData" :
     (this->type == WideRoadCam ? "wideRoadEncodeData" :
     (this->remuxing ? "qRoadEncodeData" : "roadEncodeData"));
-  pm = new PubMaster({service_name});
+  pm.reset(new PubMaster({service_name}));
 }
 
 void OmxEncoder::callback_handler(OmxEncoder *e) {
@@ -390,6 +390,7 @@ void OmxEncoder::write_and_broadcast_handler(OmxEncoder *e){
     free(out_buf);
   }
 }
+
 
 void OmxEncoder::handle_out_buf(OmxEncoder *e, OmxBuffer *out_buf) {
   if (!(out_buf->header.nFlags & OMX_BUFFERFLAG_EOS) && e->writer) {
@@ -473,7 +474,7 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 
 void OmxEncoder::encoder_open(const char* path) {
   if (this->write) {
-    writer = new VideoWriter(path, this->filename, this->remuxing, this->width, this->height, this->fps, !this->remuxing, false);
+    writer.reset(new VideoWriter(path, this->filename, this->remuxing, this->width, this->height, this->fps, !this->remuxing, false));
   }
 
   // start writer threads
@@ -503,8 +504,7 @@ void OmxEncoder::encoder_close() {
     callback_handler_thread.join();
     write_handler_thread.join();
 
-    delete writer;
-    writer = NULL;
+    writer.reset();
   }
   this->is_open = false;
 }

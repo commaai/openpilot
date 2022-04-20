@@ -50,7 +50,7 @@ private:
   std::thread callback_handler_thread;
   std::thread write_handler_thread;
   int segment_num = -1;
-  PubMaster *pm;
+  std::unique_ptr<PubMaster> pm;
   const char *service_name;
 
   const char* filename;
@@ -72,7 +72,7 @@ private:
   SafeQueue<OmxBuffer *> to_write;
 
   bool remuxing;
-  VideoWriter *writer = NULL;
+  std::unique_ptr<VideoWriter> writer;
 
   bool downscale;
   uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
