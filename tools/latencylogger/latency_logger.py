@@ -85,7 +85,6 @@ def read_logs(lr):
   assert len(frame_mismatches) < 20, "Too many frame mismatches"
   return (data, frame_mismatches)
 
-
 def find_frame_id(time, service, start_times, end_times):
   for frame_id in reversed(start_times):
     if start_times[frame_id][service] and end_times[frame_id][service]:
@@ -108,6 +107,10 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
           # Filter out controlsd messages which arrive before the camera loop 
           continue
 
+        if "frame_id" in jmsg['msg']['timestamp']:
+          timestamps[int(jmsg['msg']['timestamp']['frame_id'])][service].append((event, time))
+          continue
+
         if service == "boardd":
           timestamps[latest_controls_frameid][service].append((event, time))
           end_times[latest_controls_frameid][service] = time
@@ -117,6 +120,8 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
           if frame_id:
             if service == 'controlsd':
               latest_controls_frameid = frame_id
+            if next(frame_id_gen, False):
+              event += " (warning: ambiguity)"
             timestamps[frame_id][service].append((event, time))
           else:
             failed_inserts += 1
