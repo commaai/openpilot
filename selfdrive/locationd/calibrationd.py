@@ -48,15 +48,16 @@ class Calibration:
 
 
 def is_calibration_valid(rpy: np.ndarray) -> bool:
-  return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
-
+  is_valid: bool = (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
+  return is_valid
 
 def sanity_clip(rpy: np.ndarray) -> np.ndarray:
   if np.isnan(rpy).any():
     rpy = RPY_INIT
-  return np.array([rpy[0],
-                   np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
-                   np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
+  clipped: np.ndarray = np.array([rpy[0],
+                          np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
+                          np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
+  return clipped
 
 
 class Calibrator:
@@ -84,6 +85,7 @@ class Calibrator:
     self.update_status()
 
   def reset(self, rpy_init: np.ndarray = RPY_INIT, valid_blocks: int = 0, smooth_from: Optional[np.ndarray] = None) -> None:
+    self.rpy: np.ndarray
     if not np.isfinite(rpy_init).all():
       self.rpy = RPY_INIT.copy()
     else:
@@ -100,6 +102,8 @@ class Calibrator:
     self.block_idx = 0
     self.v_ego = 0.0
 
+    self.old_rpy: np.ndarray
+    self.old_rpy_weight: float
     if smooth_from is None:
       self.old_rpy = RPY_INIT
       self.old_rpy_weight = 0.0
@@ -145,7 +149,8 @@ class Calibrator:
 
   def get_smooth_rpy(self) -> np.ndarray:
     if self.old_rpy_weight > 0:
-      return self.old_rpy_weight * self.old_rpy + (1.0 - self.old_rpy_weight) * self.rpy
+      smoothed_rpy_weight: np.ndarray = self.old_rpy_weight * self.old_rpy + (1.0 - self.old_rpy_weight) * self.rpy
+      return smoothed_rpy_weight
     else:
       return self.rpy
 
@@ -165,7 +170,7 @@ class Calibrator:
     observed_rpy = np.array([0,
                              -np.arctan2(trans[2], trans[0]),
                              np.arctan2(trans[1], trans[0])])
-    new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
+    new_rpy: np.ndarray = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
     new_rpy = sanity_clip(new_rpy)
 
     self.rpys[self.block_idx] = (self.idx*self.rpys[self.block_idx] + (BLOCK_SIZE - self.idx) * new_rpy) / float(BLOCK_SIZE)

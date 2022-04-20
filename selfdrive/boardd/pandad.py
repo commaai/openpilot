@@ -4,7 +4,7 @@ import os
 import usb1
 import time
 import subprocess
-from typing import NoReturn
+from typing import List, NoReturn
 from functools import cmp_to_key
 
 from panda import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, Panda, PandaDFU
@@ -68,9 +68,15 @@ def panda_sort_cmp(a: Panda, b: Panda):
   # sort by hardware type
   if a_type != b_type:
     return a_type < b_type
-
-  # last resort: sort by serial number
-  return a.get_usb_serial() < b.get_usb_serial()
+  
+  serial_a = a.get_usb_serial()
+  serial_b = b.get_usb_serial()
+  if isinstance(serial_a, str) and isinstance(serial_b, str):
+    # last resort: sort by serial number
+    return serial_a < serial_b
+  else:
+    #TODO handle serial numbers of type None
+    return 0
 
 
 def main() -> NoReturn:
@@ -94,8 +100,10 @@ def main() -> NoReturn:
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
 
       # Flash pandas
-      pandas = []
+      pandas: List[Panda] = []
       for serial in panda_serials:
+        if serial is None:
+          continue
         pandas.append(flash_panda(serial))
 
       # check health for lost heartbeat
@@ -129,7 +137,7 @@ def main() -> NoReturn:
     # run boardd with all connected serials as arguments
     os.environ['MANAGER_DAEMON'] = 'boardd'
     os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
-    subprocess.run(["./boardd", *panda_serials], check=True)
+    subprocess.run(["./boardd", *[x for x in panda_serials if isinstance(x, str)]], check=True)
 
 if __name__ == "__main__":
   main()

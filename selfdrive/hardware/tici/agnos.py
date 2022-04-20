@@ -7,7 +7,7 @@ import struct
 import subprocess
 import time
 import os
-from typing import Generator
+from typing import Dict, Generator, Union
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 
@@ -99,11 +99,16 @@ def get_partition_path(target_slot_number: int, partition: dict) -> str:
   return path
 
 
-def verify_partition(target_slot_number: int, partition: dict) -> bool:
+def verify_partition(target_slot_number: int, partition: Dict[str, Union[str, int]]) -> bool:
   full_check = partition['full_check']
   path = get_partition_path(target_slot_number, partition)
-  partition_size = partition['size']
+  if not isinstance(partition['size'], int):
+    return False
+  partition_size: int = partition['size']
 
+  if not isinstance(partition['hash_raw'], str):
+    return False
+  partition_hash: str = partition['hash_raw']
   with open(path, 'rb+') as out:
     if full_check:
       raw_hash = hashlib.sha256()
@@ -115,10 +120,10 @@ def verify_partition(target_slot_number: int, partition: dict) -> bool:
         raw_hash.update(out.read(n))
         pos += n
 
-      return raw_hash.hexdigest().lower() == partition['hash_raw'].lower()
+      return raw_hash.hexdigest().lower() == partition_hash.lower()
     else:
       out.seek(partition_size)
-      return out.read(64) == partition['hash_raw'].lower().encode()
+      return out.read(64) == partition_hash.lower().encode()
 
 
 def clear_partition_hash(target_slot_number: int, partition: dict) -> None:
