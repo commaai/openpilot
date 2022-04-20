@@ -222,7 +222,7 @@ class PythonProcess(ManagerProcess):
     self.module = module
     self.enabled = enabled
     self.onroad = onroad
-    self.onroad = offroad
+    self.offroad = offroad
     self.driverview = driverview
     self.notcar = notcar
     self.unkillable = unkillable
