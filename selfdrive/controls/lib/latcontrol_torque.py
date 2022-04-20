@@ -2,9 +2,22 @@ import math
 from selfdrive.controls.lib.pid import PIDController
 from common.numpy_fast import interp
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from cereal import log
 
-CURVATURE_SCALE = 200
+# At higher speeds (25+mph) we can assume:
+# Lateral acceleration achieved by a specific car correlates to
+# torque applied to the steering rack. It does not correlate to
+# wheel slip, or to speed.
+
+# This controller applies torque to achieve desired lateral
+# accelerations. To compensate for the low speed effects we
+# use a LOW_SPEED_FACTOR in the error. Additionally there is
+# friction in the steering wheel that needs to be overcome to
+# move it at all, this is compensated for too.
+
+
+LOW_SPEED_FACTOR = 200
 JERK_THRESHOLD = 0.2
 
 
@@ -40,12 +53,12 @@ class LatControlTorque(LatControl):
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo**2
       actual_lateral_accel = actual_curvature * CS.vEgo**2
 
-      setpoint = desired_lateral_accel + CURVATURE_SCALE * desired_curvature
-      measurement = actual_lateral_accel + CURVATURE_SCALE * actual_curvature
+      setpoint = desired_lateral_accel + LOW_SPEED_FACTOR * desired_curvature
+      measurement = actual_lateral_accel + LOW_SPEED_FACTOR * actual_curvature
       error = setpoint - measurement
       pid_log.error = error
 
-      ff = desired_lateral_accel - params.roll * 9.81
+      ff = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
       output_torque = self.pid.update(error,
                                       override=CS.steeringPressed, feedforward=ff,
                                       speed=CS.vEgo,
