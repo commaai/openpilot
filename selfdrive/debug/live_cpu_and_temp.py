@@ -41,8 +41,8 @@ if __name__ == "__main__":
   total_times = [0.]*8
   busy_times = [0.]*8
 
-  prev_proclog:Optional[capnp._DynamicStructReader] = None
-  prev_proclog_t:Optional[int] = None
+  prev_proclog: Optional[capnp._DynamicStructReader] = None
+  prev_proclog_t: Optional[int] = None
 
   while True:
     sm.update()
