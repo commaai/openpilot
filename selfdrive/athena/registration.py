@@ -3,6 +3,7 @@ import time
 import json
 import jwt
 from pathlib import Path
+from typing import Optional
 
 from datetime import datetime, timedelta
 from common.api import api_get
@@ -12,7 +13,6 @@ from common.basedir import PERSIST
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.hardware import HARDWARE, PC
 from selfdrive.swaglog import cloudlog
-from typing import Optional
 
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
