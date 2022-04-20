@@ -38,7 +38,7 @@ REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
-pm = messaging.PubMaster(['roadCameraState', "wideRoadCameraState", 'sensorEvents', 'can', "gpsLocationExternal"])
+pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl', 'controlsState'])
 
 
