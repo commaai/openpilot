@@ -343,6 +343,16 @@ void OmxEncoder::callback_handler(OmxEncoder *e) {
 
     e->to_write.push(new_buffer);
 
+#ifdef QCOM2
+    if (buffer->nFlags & OMX_BUFFERFLAG_CODECCONFIG) {
+      buffer->nTimeStamp = 0;
+    }
+
+    if (buffer->nFlags & OMX_BUFFERFLAG_EOS) {
+      buffer->nTimeStamp = 0;
+    }
+#endif
+
     if (buffer->nFlags & OMX_BUFFERFLAG_EOS) {
       exit = true;
     }
