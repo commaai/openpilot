@@ -17,6 +17,7 @@ class StatlogState : public LogState {
 static StatlogState s = {};
 
 static void log(const char* metric_type, const char* metric, const char* fmt, ...) {
+  std::lock_guard lk(s.lock);
   if (!s.initialized) s.initialize();
 
   char* value_buf = nullptr;

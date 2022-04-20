@@ -24,7 +24,6 @@ class SwaglogState : public LogState {
   json11::Json::object ctx_j;
 
   inline void initialize() {
-    LogState::initialize();
     ctx_j = json11::Json::object {};
     print_level = CLOUDLOG_WARNING;
     const char* print_lvl = getenv("LOGPRINT");
@@ -56,6 +55,7 @@ class SwaglogState : public LogState {
     } else {
       ctx_j["device"] =  "pc";
     }
+    LogState::initialize();
   }
 };
 
@@ -111,7 +111,7 @@ void cloudlog_t_common(int levelnum, const char* filename, int lineno, const cha
   char* msg_buf = nullptr;
   int ret = vasprintf(&msg_buf, fmt, args);
   if (ret <= 0 || !msg_buf) return;
-  json11::Json::object tspt_j = json11::Json::object{ 
+  json11::Json::object tspt_j = json11::Json::object{
     {"event", msg_buf},
     {"time", std::to_string(nanos_since_boot())}
   };
