@@ -9,8 +9,6 @@ from cereal import messaging
 
 from common.params import Params
 from selfdrive.manager import manager
-from selfdrive.manager.process import DaemonProcess
-from selfdrive.manager.process_config import managed_processes
 from tools.sim import bridge
 from tools.sim.bridge import connect_carla_client
 
@@ -46,7 +44,7 @@ class TestCarlaIntegration(unittest.TestCase):
 
   def test_engage(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
-    # Set environment vars to get the exact processes used by manager.py
+    # Set environment vars for manager.py. The same as sim/launch_openpilot.sh
     os.environ["PASSIVE"] = "0"
     os.environ["NOBOARD"] = "1"
     os.environ["SIMULATION"] = "1"
@@ -59,20 +57,15 @@ class TestCarlaIntegration(unittest.TestCase):
     args = sys.argv[2:]  # Remove test arguments when executing this test
     p_bridge, _, q = bridge.main(args, keep_alive=False)
 
-    params = Params()
-    ignore_processes = manager.ignored_processes(params)+['bridge', 'webjoystick']
-    all_processes = [p.name for p in managed_processes.values() if
-                     (type(p) is not DaemonProcess) and p.enabled and (p.name not in ignore_processes)]
     start_time = time.time()
 
     no_car_events_issues_once = False
-    max_time = 10
-    while time.time() < start_time + max_time:
+    max_time_per_test = 20
+    while time.time() < start_time + max_time_per_test:
       sm.update()
-      running = {p.name for p in sm['managerState'].processes if p.running}
-      expected_and_not_running = [p for p in all_processes if p not in running]
+      not_running = {p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning}
 
-      if len(sm['carEvents']) == 0 and len(expected_and_not_running) == 0:
+      if len(sm['carEvents']) == 0 and len(not_running) == 0:
         no_car_events_issues_once = True
         break
 
@@ -81,7 +74,7 @@ class TestCarlaIntegration(unittest.TestCase):
 
     start_time = time.time()
     control_active = False
-    while time.time() < start_time + max_time:
+    while time.time() < start_time + max_time_per_test:
       q.put("cruise_up")  # Try engaging
 
       sm.update()

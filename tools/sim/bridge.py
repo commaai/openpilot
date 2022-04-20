@@ -11,10 +11,7 @@ import carla  # pylint: disable=import-error
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
-
-from common.transformations.camera import tici_d_and_e_focal_length
 from tools.sim.lib.can import can_function
-
 import cereal.messaging as messaging
 from cereal import log
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, \
@@ -31,7 +28,7 @@ REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
-pm = messaging.PubMaster(['roadCameraState', "wideRoadCameraState", 'sensorEvents', 'can', "gpsLocationExternal"])
+pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl', 'controlsState'])
 
 
@@ -75,10 +72,10 @@ class Camerad:
 
     # TODO: remove RGB buffers once the last RGB vipc subscriber is removed
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, W, H)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, W, H)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, False, W, H)
 
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_WIDE_ROAD, 4, True, W, H)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, W, H)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, False, W, H)
     self.vipc_server.start_listener()
 
     # set up for pyopencl rgb to yuv conversion
@@ -306,21 +303,19 @@ class CarlaBridge:
 
     transform = carla.Transform(carla.Location(x=0.8, z=1.13))
 
-    def create_camera(fov):
+    def create_camera(fov, callback):
       blueprint = blueprint_library.find('sensor.camera.rgb')
       blueprint.set_attribute('image_size_x', str(W))
       blueprint.set_attribute('image_size_y', str(H))
       blueprint.set_attribute('fov', str(fov))
-      blueprint.set_attribute('focal_distance', str(int(tici_d_and_e_focal_length)))
-      blueprint.set_attribute('sensor_tick', '0.05')
-      return world.spawn_actor(blueprint, transform, attach_to=vehicle)
+      blueprint.set_attribute('enable_postprocess_effects', 'False')
+      camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
+      camera.listen(callback)
+      return camera
 
     camerad = Camerad()
-    road_camera = create_camera(fov=40)
-    road_camera.listen(camerad.cam_callback_road)
-
-    road_wide_camera = create_camera(fov=163)  # fov bigger than 163 shows unwanted artifacts
-    road_wide_camera.listen(camerad.cam_callback_wide_road)
+    road_camera = create_camera(fov=40, callback=camerad.cam_callback_road)
+    road_wide_camera = create_camera(fov=163, callback=camerad.cam_callback_wide_road)  # fov bigger than 163 shows unwanted artifacts
 
     cameras = [road_camera, road_wide_camera]
 
