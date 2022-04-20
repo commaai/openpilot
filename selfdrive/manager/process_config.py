@@ -14,7 +14,7 @@ procs = [
   NativeProcess("logcatd", "selfdrive/logcatd", ["./logcatd"]),
   NativeProcess("loggerd", "selfdrive/loggerd", ["./loggerd"]),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
-  NativeProcess("navd", "selfdrive/ui/navd", ["./navd"], enabled=(PC or TICI), persistent=True),
+  NativeProcess("navd", "selfdrive/ui/navd", ["./navd"], persistent=True),
   NativeProcess("proclogd", "selfdrive/proclogd", ["./proclogd"]),
   NativeProcess("sensord", "selfdrive/sensord", ["./sensord"], enabled=not PC),
   NativeProcess("ubloxd", "selfdrive/locationd", ["./ubloxd"], enabled=(not PC or WEBCAM)),
@@ -37,6 +37,9 @@ procs = [
   PythonProcess("updated", "selfdrive.updated", enabled=not PC, persistent=True),
   PythonProcess("uploader", "selfdrive.loggerd.uploader", persistent=True),
   PythonProcess("statsd", "selfdrive.statsd", persistent=True),
+
+  NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar=True),
+  PythonProcess("webjoystick", "tools.joystick.web", notcar=True),
 
   # Experimental
   PythonProcess("rawgpsd", "selfdrive.sensord.rawgps.rawgpsd", enabled=os.path.isfile("/persist/comma/use-quectel-rawgps")),
