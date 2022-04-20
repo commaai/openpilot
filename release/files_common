@@ -64,6 +64,7 @@ models/dmonitoring_model_q.dlc
 release/*
 
 tools/lib/*
+tools/joystick/*
 
 selfdrive/version.py
 
