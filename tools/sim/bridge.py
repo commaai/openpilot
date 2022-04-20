@@ -291,7 +291,7 @@ def bridge(q):
   road_camera = create_camera(fov=40)
   road_camera.listen(camerad.cam_callback_road)
 
-  road_wide_camera = create_camera(fov=165)  # fov bigger than 165 shows unwanted artifacts
+  road_wide_camera = create_camera(fov=163)  # fov bigger than 165 shows unwanted artifacts
   road_wide_camera.listen(camerad.cam_callback_wide_road)
 
   cameras = [road_camera, road_wide_camera]
