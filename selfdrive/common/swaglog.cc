@@ -20,10 +20,10 @@ class SwaglogState : public LogState {
  public:
   SwaglogState() : LogState("ipc:///tmp/logmessage") {}
 
-  bool initialized = false;
   json11::Json::object ctx_j;
 
   inline void initialize() {
+    LogState::initialize();
     ctx_j = json11::Json::object {};
     print_level = CLOUDLOG_WARNING;
     const char* print_lvl = getenv("LOGPRINT");
@@ -55,8 +55,6 @@ class SwaglogState : public LogState {
     } else {
       ctx_j["device"] =  "pc";
     }
-
-    initialized = true;
   }
 };
 
