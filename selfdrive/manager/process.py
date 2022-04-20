@@ -304,9 +304,9 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, driverview:
     ))
 
     # Condition that block a process from starting
-    run = run and all((
-      p.enabled,
-      p.name not in not_run,
+    run = run and not any((
+      not p.enabled,
+      p.name in not_run,
       p.notcar and (not notcar),
     ))
 
