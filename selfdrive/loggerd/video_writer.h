@@ -19,7 +19,7 @@ private:
 
   AVFormatContext *ofmt_ctx;
   AVStream *out_stream;
-  bool remuxing;
+  bool remuxing, raw;
 
   bool wrote_codec_config;
 };

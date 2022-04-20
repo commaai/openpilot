@@ -8,7 +8,7 @@
 #include "selfdrive/common/util.h"
 
 VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, bool h265, bool raw)
-  : remuxing(remuxing) {
+  : remuxing(remuxing), raw(raw) {
   vid_path = util::string_format("%s/%s", path, filename);
   lock_path = util::string_format("%s/%s.lock", path, filename);
 
@@ -102,6 +102,7 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
 
 VideoWriter::~VideoWriter() {
   if (this->remuxing) {
+    if (this->raw) { avcodec_close(this->codec_ctx); }
     int err = av_write_trailer(this->ofmt_ctx);
     if (err != 0) LOGE("av_write_trailer failed %d", err);
     avcodec_free_context(&this->codec_ctx);
