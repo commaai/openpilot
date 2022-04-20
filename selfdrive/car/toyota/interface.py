@@ -88,7 +88,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       if candidate in (CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
-        set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_TORQUE=3.0, FRICTION=0.09)
+        set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=2.5, FRICTION=0.05)
       else:
         set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
