@@ -178,6 +178,7 @@ class LogState {
   LogState(const char* _endpoint) {
     endpoint = _endpoint;
   }
+
   inline void initialize() {
     zctx = zmq_ctx_new();
     sock = zmq_socket(zctx, ZMQ_PUSH);
@@ -189,6 +190,7 @@ class LogState {
     zmq_connect(sock, endpoint);
     initialized = true;
   }
+
   ~LogState() {
     zmq_close(sock);
     zmq_ctx_destroy(zctx);
