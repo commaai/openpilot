@@ -170,8 +170,8 @@ class LogState {
  public:
   bool initialized = false;
   std::mutex lock;
-  void *zctx;
-  void *sock;
+  void *zctx = nullptr;
+  void *sock = nullptr;
   int print_level;
   const char* endpoint;
 
@@ -192,7 +192,9 @@ class LogState {
   }
 
   ~LogState() {
-    zmq_close(sock);
-    zmq_ctx_destroy(zctx);
+    if (initialized) {
+      zmq_close(sock);
+      zmq_ctx_destroy(zctx);
+    }
   }
 };
