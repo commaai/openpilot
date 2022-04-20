@@ -6,10 +6,8 @@ from selfdrive.hardware import TICI
 ## -- hardcoded hardware params --
 eon_f_focal_length = 910.0
 eon_d_focal_length = 650.0
-# tici_f: narrow road cam. tici_e: wide road cam
 tici_f_focal_length = 2648.0
-tici_d_and_e_focal_length = 567.0 # probably wrong? magnification is not consistent across frame
-tici_e_focal_length = tici_d_focal_length = tici_d_and_e_focal_length
+tici_e_focal_length = tici_d_focal_length = 567.0 # probably wrong? magnification is not consistent across frame
 
 eon_f_frame_size = (1164, 874)
 eon_d_frame_size = (816, 612)
