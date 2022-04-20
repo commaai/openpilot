@@ -1,3 +1,7 @@
+Version 0.8.13.1 (2022-04-25)
+========================
+ * NEOS 20: improved reliability from bootloop mitigation
+
 Version 0.8.13 (2022-02-18)
 ========================
  * Improved driver monitoring
