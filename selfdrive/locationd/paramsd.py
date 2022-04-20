@@ -178,7 +178,6 @@ def main(sm=None, pm=None):
       angle_offset = clip(math.degrees(x[States.ANGLE_OFFSET] + x[States.ANGLE_OFFSET_FAST]), angle_offset - MAX_ANGLE_OFFSET_DELTA, angle_offset + MAX_ANGLE_OFFSET_DELTA)
 
       msg = messaging.new_message('liveParameters')
-      msg.logMonoTime = sm.logMonoTime['carState']
 
       liveParameters = msg.liveParameters
       liveParameters.posenetValid = True
