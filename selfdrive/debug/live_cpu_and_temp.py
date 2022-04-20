@@ -54,7 +54,6 @@ if __name__ == "__main__":
 
     if sm.updated['procLog']:
       m = sm['procLog']
-      print(type(m))
 
       cores = [0.]*8
       total_times_new = [0.]*8
