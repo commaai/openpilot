@@ -28,7 +28,6 @@ from selfdrive.test.helpers import set_params_enabled
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--joystick', action='store_true')
 parser.add_argument('--low_quality', action='store_true')
-parser.add_argument('--only_c2_cameras', action='store_true')
 parser.add_argument('--town', type=str, default='Town04_Opt')
 parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
 
@@ -66,7 +65,7 @@ def steer_rate_limit(old, new):
 
 
 class Camerad:
-  def __init__(self, wide_camera=False):
+  def __init__(self):
     self.frame_road_id = 0
     self.frame_wide_id = 0
     self.vipc_server = VisionIpcServer("camerad")
@@ -75,9 +74,8 @@ class Camerad:
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, W, H)
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, W, H)
 
-    if wide_camera:
-      self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_WIDE_ROAD, 4, True, W, H)
-      self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, W, H)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_WIDE_ROAD, 4, True, W, H)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, W, H)
     self.vipc_server.start_listener()
 
     # set up for pyopencl rgb to yuv conversion
@@ -289,15 +287,15 @@ def bridge(q):
     blueprint.set_attribute('sensor_tick', '0.05')
     return world.spawn_actor(blueprint, transform, attach_to=vehicle)
 
-  c3_cameras = not args.only_c2_cameras
-  camerad = Camerad(wide_camera=c3_cameras)
+  camerad = Camerad()
   road_camera = create_camera(fov=40)
   road_camera.listen(camerad.cam_callback_road)
-  cameras = [road_camera]
-  if c3_cameras:
-    road_wide_camera = create_camera(fov=165)  # fov bigger than 165 shows unwanted artifacts
-    road_wide_camera.listen(camerad.cam_callback_wide_road)
-    cameras.append(road_wide_camera)
+
+  road_wide_camera = create_camera(fov=165)  # fov bigger than 165 shows unwanted artifacts
+  road_wide_camera.listen(camerad.cam_callback_wide_road)
+
+  cameras = [road_camera, road_wide_camera]
+
   vehicle_state = VehicleState()
 
   # reenable IMU
