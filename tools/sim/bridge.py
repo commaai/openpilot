@@ -11,6 +11,8 @@ import carla  # pylint: disable=import-error
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
+
+from selfdrive.manager.helpers import unblock_stdout
 from tools.sim.lib.can import can_function
 import cereal.messaging as messaging
 from cereal import log
@@ -493,6 +495,7 @@ class CarlaBridge:
 
 
 def main(add_args=None, keep_alive=True):
+  unblock_stdout()  # Fix error when publishing too many lag message
   _args = parse_args(add_args)
   carla_bridge = CarlaBridge(_args)
 
