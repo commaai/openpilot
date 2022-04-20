@@ -363,7 +363,7 @@ class LocKalman():
       msckf_params = None
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, msckf_params, maha_test_kinds)
 
-  def __init__(self, generated_dir, N=4, max_tracks=3000):
+  def __init__(self, generated_dir, N=4):
     name = f"{self.name}_{N}"
 
     self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
@@ -385,7 +385,6 @@ class LocKalman():
     if self.N > 0:
       x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
       self.computer = LstSqComputer(generated_dir, N)
-      self.max_tracks = max_tracks
 
     self.quaternion_idxs = [3, ] + [(self.dim_main + i * self.dim_augment + 3)for i in range(self.N)]
 
@@ -510,8 +509,8 @@ class LocKalman():
     ecef_pos[:] = np.nan
     poses = self.x[self.dim_main:].reshape((-1, 7))
     times = tracks.reshape((len(tracks), self.N + 1, 4))[:, :, 0]
-    good_counter = 0
-    if times.any() and np.allclose(times[0, :-1], self.filter.get_augment_times(), rtol=1e-6):
+    if times.any():
+      assert np.allclose(times[0, :-1], self.filter.get_augment_times(), atol=1e-7, rtol=0.0)
       for i, track in enumerate(tracks):
         img_positions = track.reshape((self.N + 1, 4))[:, 2:]
 
@@ -521,19 +520,20 @@ class LocKalman():
         ecef_pos[i] = self.computer.compute_pos(poses, img_positions[:-1])
         z[i] = img_positions.flatten()
         R[i, :, :] = np.diag([0.005**2] * (k))
-        if np.isfinite(ecef_pos[i][0]):
-          good_counter += 1
-          if good_counter > self.max_tracks:
-            break
+
     good_idxs = np.all(np.isfinite(ecef_pos), axis=1)
+
+    # This code relies on wide and narrow orb features being captured at the same time,
+    # and wide features to be processed first.
+    ret = self.filter.predict_and_update_batch(t, kind, z[good_idxs], R[good_idxs], ecef_pos[good_idxs],
+                                               augment=kind==ObservationKind.ORB_FEATURES)
+    if ret is None:
+      return
+
     # have to do some weird stuff here to keep
     # to have the observations input from mesh3d
     # consistent with the outputs of the filter
     # Probably should be replaced, not sure how.
-    ret = self.filter.predict_and_update_batch(t, kind, z[good_idxs], R[good_idxs], ecef_pos[good_idxs], augment=True)
-    if ret is None:
-      return
-
     y_full = np.zeros((z.shape[0], z.shape[1] - 3))
     if sum(good_idxs) > 0:
       y_full[good_idxs] = np.array(ret[6])

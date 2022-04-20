@@ -64,6 +64,8 @@ class ObservationKind:
     'imu frame eulers',
     'GLONASS pseudorange',
     'GLONASS pseudorange rate',
+    'pseudorange',
+    'pseudorange rate',
 
     'Road Frame x,y speed',
     'Road Frame yaw rate',
