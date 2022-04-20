@@ -44,7 +44,7 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def get_imei(self, slot):
+  def get_imei(self, slot) -> str:
     pass
 
   @abstractmethod

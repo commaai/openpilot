@@ -12,6 +12,7 @@ from common.basedir import PERSIST
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.hardware import HARDWARE, PC
 from selfdrive.swaglog import cloudlog
+from typing import Optional
 
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
@@ -48,7 +49,8 @@ def register(show_spinner=False) -> str:
     # Block until we get the imei
     serial = HARDWARE.get_serial()
     start_time = time.monotonic()
-    imei1, imei2 = None, None
+    imei1:Optional[str] = None
+    imei2:Optional[str] = None
     while imei1 is None and imei2 is None:
       try:
         imei1, imei2 = HARDWARE.get_imei(0), HARDWARE.get_imei(1)
