@@ -266,6 +266,7 @@ FW_VERSIONS = {
   },
   CAR.AVALON_TSS2: {
     (Ecu.esp, 0x7b0, None): [
+      b'\x01F152607240\x00\x00\x00\x00\x00\x00',
       b'\x01F152607280\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
@@ -276,9 +277,11 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F6201200\x00\x00\x00\x00',
+      b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
+      b'\x028646F4104100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.AVALONH_TSS2: {
