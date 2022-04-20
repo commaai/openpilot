@@ -55,11 +55,11 @@ def get_tier_car_info() -> Dict[Tier, List[CarInfo]]:
 
 def generate_cars_md(tier_car_info: Dict[Tier, List[CarInfo]], template_fn: str) -> str:
   with open(template_fn, "r") as f:
-    template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
+    template: jinja2.Template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  return template.render(tiers=tier_car_info, footnotes=footnotes, Star=Star, Column=Column)
-
+  rendered: str = template.render(tiers=tier_car_info, footnotes=footnotes, Star=Star, Column=Column)
+  return rendered
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Auto generates supported cars documentation",

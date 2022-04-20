@@ -28,7 +28,7 @@ def register(show_spinner=False) -> str:
 
   IMEI = params.get("IMEI", encoding='utf8')
   HardwareSerial = params.get("HardwareSerial", encoding='utf8')
-  dongle_id = params.get("DongleId", encoding='utf8')
+  dongle_id: str = params.get("DongleId", encoding='utf8')
   needs_registration = None in (IMEI, HardwareSerial, dongle_id)
 
   pubkey = Path(PERSIST+"/comma/id_rsa.pub")
