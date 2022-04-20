@@ -12,7 +12,6 @@ import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
 
-from common.transformations.camera import tici_f_focal_length
 from lib.can import can_function
 
 import cereal.messaging as messaging
@@ -283,7 +282,6 @@ def bridge(q):
     blueprint.set_attribute('image_size_x', str(W))
     blueprint.set_attribute('image_size_y', str(H))
     blueprint.set_attribute('fov', str(fov))
-    blueprint.set_attribute('focal_distance', str(int(tici_f_focal_length)))  # Use same focal distance for both cameras
     blueprint.set_attribute('sensor_tick', '0.05')
     return world.spawn_actor(blueprint, transform, attach_to=vehicle)
 
