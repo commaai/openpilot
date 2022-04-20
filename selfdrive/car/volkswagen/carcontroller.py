@@ -77,9 +77,14 @@ class CarController():
                                                                  acc_hold_type, stopping_distance, idx))
 
       if frame % P.ACC_HUD_STEP == 0:
+        if lead_visible:
+          lead_distance = 512 if CS.digital_cluster_installed else 8  # TODO: look up actual distance to lead
+        else:
+          lead_distance = 0
+
         idx = (frame / P.ACC_HUD_STEP) % 16
         can_sends.append(volkswagencan.create_mqb_acc_02_control(self.packer_pt, CANBUS.pt, CS.tsk_status,
-                                                                 set_speed * CV.MS_TO_KPH, speed_visible, lead_visible,
+                                                                 set_speed * CV.MS_TO_KPH, speed_visible, lead_distance,
                                                                  idx))
         can_sends.append(volkswagencan.create_mqb_acc_04_control(self.packer_pt, CANBUS.pt, CS.acc_04_stock_values,
                                                                  idx))
