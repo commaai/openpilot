@@ -299,7 +299,6 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, driverview:
     run = any((
       p.offroad and not started,
       p.onroad and started,
-      p.onroad and started,
       p.driverview and driverview,
     ))
 
