@@ -509,6 +509,10 @@ class LocKalman():
     ecef_pos[:] = np.nan
     poses = self.x[self.dim_main:].reshape((-1, 7))
     times = tracks.reshape((len(tracks), self.N + 1, 4))[:, :, 0]
+    if kind==ObservationKind.ORB_FEATURES:
+      pt_std = 0.005
+    else:
+      pt_std = 0.02
     if times.any():
       assert np.allclose(times[0, :-1], self.filter.get_augment_times(), atol=1e-7, rtol=0.0)
       for i, track in enumerate(tracks):
@@ -519,7 +523,7 @@ class LocKalman():
 
         ecef_pos[i] = self.computer.compute_pos(poses, img_positions[:-1])
         z[i] = img_positions.flatten()
-        R[i, :, :] = np.diag([0.005**2] * (k))
+        R[i, :, :] = np.diag([pt_std**2] * (k))
 
     good_idxs = np.all(np.isfinite(ecef_pos), axis=1)
 
