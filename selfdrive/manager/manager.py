@@ -113,14 +113,6 @@ def manager_cleanup() -> None:
 
   cloudlog.info("everything is dead")
 
-def ignored_processes(params:Params):
-  ignore: List[str] = []
-  if params.get("DongleId", encoding='utf8') in (None, UNREGISTERED_DONGLE_ID):
-    ignore += ["manage_athenad", "uploader"]
-  if os.getenv("NOBOARD") is not None:
-    ignore.append("pandad")
-  ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
-  return ignore
 
 def manager_thread() -> None:
   cloudlog.bind(daemon="manager")
@@ -128,7 +120,13 @@ def manager_thread() -> None:
   cloudlog.info({"environ": os.environ})
 
   params = Params()
-  ignore = ignored_processes(params)
+
+  ignore: List[str] = []
+  if params.get("DongleId", encoding='utf8') in (None, UNREGISTERED_DONGLE_ID):
+    ignore += ["manage_athenad", "uploader"]
+  if os.getenv("NOBOARD") is not None:
+    ignore.append("pandad")
+  ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
 

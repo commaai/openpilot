@@ -32,6 +32,7 @@ class TestCarlaIntegration(unittest.TestCase):
 
     params = Params()
     args = sys.argv[2:]  # Remove test arguments when executing this test
+    args.append('--low_quality')
     params.put_bool("DoShutdown", False)
 
     p = bridge.main(args, keep_alive=False)[0]
@@ -55,6 +56,7 @@ class TestCarlaIntegration(unittest.TestCase):
     sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
 
     args = sys.argv[2:]  # Remove test arguments when executing this test
+    args.append('--low_quality')
     p_bridge, _, q = bridge.main(args, keep_alive=False)
 
     start_time = time.time()

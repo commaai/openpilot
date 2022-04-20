@@ -310,7 +310,8 @@ class CarlaBridge:
       blueprint.set_attribute('image_size_x', str(W))
       blueprint.set_attribute('image_size_y', str(H))
       blueprint.set_attribute('fov', str(fov))
-      blueprint.set_attribute('enable_postprocess_effects', 'False')
+      if self._args.low_quality:
+        blueprint.set_attribute('enable_postprocess_effects', 'False')
       camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
       camera.listen(callback)
       return camera
