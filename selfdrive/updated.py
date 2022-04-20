@@ -170,6 +170,7 @@ def setup_git_options(cwd: str) -> None:
     ("core.trustctime", "false"),
     ("core.checkStat", "minimal"),
     ("protocol.version", "2"),
+    ("gc.auto", "0"),
   ]
   for option, value in git_cfg:
     run(["git", "config", option, value], cwd)
@@ -255,6 +256,7 @@ def finalize_update() -> None:
 
   run(["git", "reset", "--hard"], FINALIZED)
   run(["git", "submodule", "foreach", "--recursive", "git", "reset"], FINALIZED)
+  run(["git", "gc"], FINALIZED)
 
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
