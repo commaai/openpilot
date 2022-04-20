@@ -29,22 +29,22 @@ class VehicleModel:
       CP: Car Parameters
     """
     # for math readability, convert long names car params into short names
-    self.m = CP.mass
-    self.j = CP.rotationalInertia
-    self.l = CP.wheelbase
-    self.aF = CP.centerToFront
-    self.aR = CP.wheelbase - CP.centerToFront
-    self.chi = CP.steerRatioRear
+    self.m : float = CP.mass
+    self.j : float = CP.rotationalInertia
+    self.l : float = CP.wheelbase
+    self.aF : float = CP.centerToFront
+    self.aR : float = CP.wheelbase - CP.centerToFront
+    self.chi : float = CP.steerRatioRear
 
-    self.cF_orig = CP.tireStiffnessFront
-    self.cR_orig = CP.tireStiffnessRear
+    self.cF_orig : float = CP.tireStiffnessFront
+    self.cR_orig : float = CP.tireStiffnessRear
     self.update_params(1.0, CP.steerRatio)
 
   def update_params(self, stiffness_factor: float, steer_ratio: float) -> None:
     """Update the vehicle model with a new stiffness factor and steer ratio"""
-    self.cF = stiffness_factor * self.cF_orig
-    self.cR = stiffness_factor * self.cR_orig
-    self.sR = steer_ratio
+    self.cF : float = stiffness_factor * self.cF_orig
+    self.cR : float = stiffness_factor * self.cR_orig
+    self.sR : float = steer_ratio
 
   def steady_state_sol(self, sa: float, u: float, roll: float) -> np.ndarray:
     """Returns the steady state solution.
@@ -163,10 +163,11 @@ def kin_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
   Returns:
     2x1 matrix with steady state solution
   """
-  K = np.zeros((2, 1))
+  K : np.ndarray = np.zeros((2, 1))
   K[0, 0] = VM.aR / VM.sR / VM.l * u
   K[1, 0] = 1. / VM.sR / VM.l * u
-  return K * sa
+  K_scaled : np.ndarray = K * sa  
+  return K_scaled
 
 
 def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, np.ndarray]:
@@ -220,11 +221,11 @@ def dyn_ss_sol(sa: float, u: float, roll: float, VM: VehicleModel) -> np.ndarray
     2x1 matrix with steady state solution
   """
   A, B = create_dyn_state_matrices(u, VM)
-  inp = np.array([[sa], [roll]])
-  return -solve(A, B) @ inp
+  inp : np.ndarray = np.array([[sa], [roll]])
+  solution : np.ndarray =  -solve(A, B) @ inp
+  return solution
 
-
-def calc_slip_factor(VM):
+def calc_slip_factor(VM: VehicleModel) -> float:
   """The slip factor is a measure of how the curvature changes with speed
   it's positive for Oversteering vehicle, negative (usual case) otherwise.
   """

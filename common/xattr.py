@@ -11,7 +11,7 @@ int removexattr(const char *path, const char *name);
 """)
 libc = ffi.dlopen(None)
 
-def setxattr(path, name, value, flags=0):
+def setxattr(path, name, value, flags=0) -> None:
   path = path.encode()
   name = name.encode()
   if libc.setxattr(path, name, value, len(value), flags) == -1:
