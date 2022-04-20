@@ -15,26 +15,25 @@ from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
 from selfdrive.controls.lib.events import EVENTS, ET
-from selfdrive.hardware import EON, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled, release_only
 from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 55.0,
-  "./loggerd": 45.0,
+  "selfdrive.controls.controlsd": 31.0,
+  "./loggerd": 70.0,
+  "./camerad": 41.0,
   "./locationd": 9.1,
-  "selfdrive.controls.plannerd": 22.6,
-  "./_ui": 20.0,
-  "selfdrive.locationd.paramsd": 14.0,
-  "./camerad": 9.16,
+  "selfdrive.controls.plannerd": 11.7,
+  "./_ui": 33.0,
+  "selfdrive.locationd.paramsd": 5.0,
   "./_sensord": 6.17,
-  "selfdrive.controls.radard": 7.0,
+  "selfdrive.controls.radard": 4.5,
   "./_modeld": 4.48,
   "./boardd": 3.63,
-  "./_dmonitoringmodeld": 2.67,
-  "selfdrive.thermald.thermald": 5.36,
+  "./_dmonitoringmodeld": 10.0,
+  "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "./_soundd": 1.0,
   "selfdrive.monitoring.dmonitoringd": 1.90,
@@ -45,26 +44,6 @@ PROCS = {
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
 }
-
-if EON:
-  PROCS.update({
-    "selfdrive.hardware.eon.androidd": 0.4,
-    "selfdrive.hardware.eon.shutdownd": 0.4,
-  })
-
-if TICI:
-  PROCS.update({
-    "./loggerd": 70.0,
-    "selfdrive.controls.controlsd": 31.0,
-    "./camerad": 36.8,
-    "./_ui": 33.0,
-    "selfdrive.controls.plannerd": 11.7,
-    "./_dmonitoringmodeld": 10.0,
-    "selfdrive.locationd.paramsd": 5.0,
-    "selfdrive.controls.radard": 4.5,
-    "selfdrive.thermald.thermald": 3.87,
-  })
-
 
 TIMINGS = {
   # rtols: max/min, rsd
@@ -82,15 +61,8 @@ TIMINGS = {
   "modelV2": [2.5, 0.35],
   "driverState": [2.5, 0.35],
   "liveLocationKalman": [2.5, 0.35],
+  "wideRoadCameraState": [1.5, 0.35],
 }
-if EON:
-  TIMINGS.update({
-    "roadCameraState": [2.5, 0.45],
-  })
-if TICI:
-  TIMINGS.update({
-    "wideRoadCameraState": [1.5, 0.35],
-  })
 
 
 def cputime_total(ct):
@@ -106,6 +78,7 @@ def check_cpu_usage(first_proc, last_proc):
   r = True
   dt = (last_proc.logMonoTime - first_proc.logMonoTime) / 1e9
   for proc_name, normal_cpu_usage in PROCS.items():
+    err = ""
     first, last = None, None
     try:
       first = [p for p in first_proc.procLog.procs if proc_name in p.cmdline][0]
@@ -115,15 +88,16 @@ def check_cpu_usage(first_proc, last_proc):
       if cpu_usage > max(normal_cpu_usage * 1.15, normal_cpu_usage + 5.0):
         # cpu usage is high while playing sounds
         if not (proc_name == "./_soundd" and cpu_usage < 65.):
-          result += f"Warning {proc_name} using more CPU than normal\n"
-          r = False
+          err = "using more CPU than normal"
       elif cpu_usage < min(normal_cpu_usage * 0.65, max(normal_cpu_usage - 1.0, 0.0)):
-        result += f"Warning {proc_name} using less CPU than normal\n"
-        r = False
-      result += f"{proc_name.ljust(35)}  {cpu_usage:.2f}%\n"
+        err = "using less CPU than normal"
     except IndexError:
-      result += f"{proc_name.ljust(35)}  NO METRICS FOUND {first=} {last=}\n"
+      err = f"NO METRICS FOUND {first=} {last=}\n"
+
+    result += f"{proc_name.ljust(35)}  {cpu_usage:5.2f}% ({normal_cpu_usage:5.2f}%) {err}\n"
+    if len(err) > 0:
       r = False
+
   result += "------------------------------------------------\n"
   print(result)
   return r
@@ -152,6 +126,7 @@ class TestOnroad(unittest.TestCase):
     os.system("pkill -9 -f athena")
 
     # start manager and run openpilot for a minute
+    proc = None
     try:
       manager_path = os.path.join(BASEDIR, "selfdrive/manager/manager.py")
       proc = subprocess.Popen(["python", manager_path])
@@ -180,9 +155,10 @@ class TestOnroad(unittest.TestCase):
       cls.segments = cls.segments[:-1]
 
     finally:
-      proc.terminate()
-      if proc.wait(60) is None:
-        proc.kill()
+      if proc is not None:
+        proc.terminate()
+        if proc.wait(60) is None:
+          proc.kill()
 
     cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.bz2"))) for s in cls.segments]
 
@@ -214,7 +190,7 @@ class TestOnroad(unittest.TestCase):
     cfgs = [("lateralPlan", 0.05, 0.05), ("longitudinalPlan", 0.05, 0.05)]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "solverExecutionTime") for m in self.lr if m.which() == s]
-      self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
+      self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
       result += f"'{s}' execution time: max  {max(ts):.5f}s\n"
@@ -228,17 +204,16 @@ class TestOnroad(unittest.TestCase):
     result += "----------------- Model Timing -----------------\n"
     result += "------------------------------------------------\n"
     # TODO: this went up when plannerd cpu usage increased, why?
-    cfgs = [("driverState", 0.028, 0.026)]
-    if EON:
-      cfgs += [("modelV2", 0.045, 0.04)]
-    else:
-      cfgs += [("modelV2", 0.038, 0.036), ("driverState", 0.028, 0.026)]
-
+    cfgs = [
+      ("modelV2", 0.038, 0.036),
+      ("driverState", 0.035, 0.026),
+    ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
-      self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
+      self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
+      result += f"'{s}' execution time: max {max(ts):.5f}s\n"
       result += f"'{s}' execution time: mean {np.mean(ts):.5f}s\n"
     result += "------------------------------------------------\n"
     print(result)

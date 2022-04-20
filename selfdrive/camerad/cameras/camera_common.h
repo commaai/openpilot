@@ -25,10 +25,11 @@
 #define CAMERA_ID_LGC920 6
 #define CAMERA_ID_LGC615 7
 #define CAMERA_ID_AR0231 8
-#define CAMERA_ID_MAX 9
+#define CAMERA_ID_IMX390 9
+#define CAMERA_ID_MAX 10
 
 const int UI_BUF_COUNT = 4;
-const int YUV_BUFFER_COUNT = Hardware::EON() ? 100 : 40;
+const int YUV_BUFFER_COUNT = 40;
 
 enum CameraType {
   RoadCam = 0,
@@ -42,8 +43,9 @@ const bool env_send_road = getenv("SEND_ROAD") != NULL;
 const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
 
 // for debugging
-// note: ONLY_ROAD doesn't work, likely due to a mixup with wideRoad cam in the kernel
-const bool env_only_driver = getenv("ONLY_DRIVER") != NULL;
+const bool env_disable_road = getenv("DISABLE_ROAD") != NULL;
+const bool env_disable_wide_road = getenv("DISABLE_WIDE_ROAD") != NULL;
+const bool env_disable_driver = getenv("DISABLE_DRIVER") != NULL;
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 
 typedef void (*release_cb)(void *cookie, int buf_idx);

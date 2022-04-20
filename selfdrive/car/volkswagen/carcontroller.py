@@ -9,6 +9,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.apply_steer_last = 0
+    self.CP = CP
 
     self.packer_pt = CANPacker(DBC_FILES.mqb)
 
@@ -86,7 +87,7 @@ class CarController():
 
     # FIXME: this entire section is in desperate need of refactoring
 
-    if CS.CP.pcmCruise:
+    if self.CP.pcmCruise:
       if frame > self.graMsgStartFramePrev + P.GRA_VBP_STEP:
         if c.cruiseControl.cancel:
           # Cancel ACC if it's engaged with OP disengaged.

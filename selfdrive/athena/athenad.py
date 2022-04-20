@@ -203,10 +203,10 @@ def upload_handler(end_event: threading.Event) -> None:
         except OSError:
           sz = -1
 
-        cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered)
+        cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=cur_upload_items[tid].retry_count)
         response = _do_upload(cur_upload_items[tid], cb)
 
-        if response.status_code not in (200, 201, 403, 412):
+        if response.status_code not in (200, 201, 401, 403, 412):
           cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
           retry_upload(tid, end_event)
         else:

@@ -12,8 +12,11 @@ class LatControl(ABC):
     self.sat_limit = CP.steerLimitTimer
     self.sat_count = 0.
 
+    # we define the steer torque scale as [-1.0...1.0]
+    self.steer_max = 1.0
+
   @abstractmethod
-  def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate):
+  def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate, llk):
     pass
 
   def reset(self):

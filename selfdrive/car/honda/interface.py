@@ -328,16 +328,8 @@ class CarInterface(CarInterfaceBase):
       disable_ecu(logcan, sendcan, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')
 
   # returns a car.CarState
-  def update(self, c, can_strings):
-    # ******************* do can recv *******************
-    self.cp.update_strings(can_strings)
-    self.cp_cam.update_strings(can_strings)
-    if self.cp_body:
-      self.cp_body.update_strings(can_strings)
-
+  def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
-
-    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid and (self.cp_body is None or self.cp_body.can_valid)
 
     buttonEvents = []
 
@@ -404,7 +396,7 @@ class CarInterface(CarInterfaceBase):
       # do enable on both accel and decel buttons
       if not self.CP.pcmCruise:
         if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
-            events.add(EventName.buttonEnable)
+          events.add(EventName.buttonEnable)
 
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
@@ -412,23 +404,9 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    self.CS.out = ret.as_reader()
-    return self.CS.out
+    return ret
 
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-    hud_control = c.hudControl
-    if hud_control.speedVisible:
-      hud_v_cruise = hud_control.setSpeed * CV.MS_TO_KPH
-    else:
-      hud_v_cruise = 255
-
-    ret = self.CC.update(c, self.CS, self.frame,
-                         c.actuators, c.cruiseControl.cancel,
-                         hud_v_cruise, hud_control.lanesVisible,
-                         hud_show_car=hud_control.leadVisible,
-                         hud_alert=hud_control.visualAlert)
-
-    self.frame += 1
-    return ret
+    return self.CC.update(c, self.CS)

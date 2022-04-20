@@ -35,6 +35,8 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   this should avoid accelerating when losing the target in turns
   """
 
+  # FIXME: This function to calculate lateral accel is incorrect and should use the VehicleModel
+  # The lookup table for turns should also be updated if we do this
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
   a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
@@ -69,7 +71,6 @@ class Planner:
 
     # Reset current state when not engaged, or user is controlling the speed
     reset_state = long_control_state == LongCtrlState.off
-    reset_state = reset_state or sm['carState'].gasPressed
 
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
@@ -113,7 +114,7 @@ class Planner:
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
 
-    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState'])
+    plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
 
     longitudinalPlan = plan_send.longitudinalPlan
     longitudinalPlan.modelMonoTime = sm.logMonoTime['modelV2']

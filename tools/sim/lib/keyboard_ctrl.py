@@ -53,6 +53,8 @@ def keyboard_poll_thread(q: 'Queue[str]'):
       q.put("brake_%f" % 1.0)
     elif c == 'd':
       q.put("steer_%f" % -0.15)
+    elif c == 'i':
+      q.put("ignition")
     elif c == 'q':
       q.put("quit")
       break

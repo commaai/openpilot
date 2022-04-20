@@ -244,7 +244,8 @@ jobs:
       run: eval "$BUILD"
     - name: Run unit tests
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) --test && \
+        ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
+                        scons -j$(nproc) --test && \
                         $UNIT_TEST common && \
                         $UNIT_TEST opendbc/can && \
                         $UNIT_TEST selfdrive/boardd && \
@@ -256,6 +257,7 @@ jobs:
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST selfdrive/hardware/tici && \
+                        $UNIT_TEST selfdrive/modeld && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
                         ./selfdrive/common/tests/test_util && \
@@ -383,7 +385,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/comma_download_cache
-        key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/test/test_routes.py') }}-${{ matrix.job }}
+        key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
     - name: Cache scons
       id: scons-cache
       # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.

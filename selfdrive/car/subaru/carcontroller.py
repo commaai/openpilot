@@ -6,6 +6,7 @@ from opendbc.can.packer import CANPacker
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    self.CP = CP
     self.apply_steer_last = 0
     self.es_distance_cnt = -1
     self.es_lkas_cnt = -1
@@ -33,7 +34,7 @@ class CarController():
       if not c.latActive:
         apply_steer = 0
 
-      if CS.CP.carFingerprint in PREGLOBAL_CARS:
+      if self.CP.carFingerprint in PREGLOBAL_CARS:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, frame, self.p.STEER_STEP))
       else:
         can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, frame, self.p.STEER_STEP))
@@ -43,7 +44,7 @@ class CarController():
 
     # *** alerts and pcm cancel ***
 
-    if CS.CP.carFingerprint in PREGLOBAL_CARS:
+    if self.CP.carFingerprint in PREGLOBAL_CARS:
       if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged

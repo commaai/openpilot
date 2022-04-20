@@ -155,13 +155,9 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def update(self, c, can_strings):
-    self.cp.update_strings(can_strings)
-    self.cp_loopback.update_strings(can_strings)
-
+  def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_loopback)
 
-    ret.canValid = self.cp.can_valid and self.cp_loopback.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     buttonEvents = []
@@ -210,20 +206,8 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    # copy back carState packet to CS
-    self.CS.out = ret.as_reader()
-
-    return self.CS.out
+    return ret
 
   def apply(self, c):
-    hud_control = c.hudControl
-    hud_v_cruise = hud_control.setSpeed
-    if hud_v_cruise > 70:
-      hud_v_cruise = 0
-
-    ret = self.CC.update(c, self.CS, self.frame, c.actuators,
-                         hud_v_cruise, hud_control.lanesVisible,
-                         hud_control.leadVisible, hud_control.visualAlert)
-
-    self.frame += 1
+    ret = self.CC.update(c, self.CS)
     return ret

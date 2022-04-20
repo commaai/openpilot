@@ -18,10 +18,7 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-#ifdef QCOM
-#include "CL/cl_ext_qcom.h"
-#include "selfdrive/camerad/cameras/camera_qcom.h"
-#elif QCOM2
+#if QCOM2
 #include "CL/cl_ext_qcom.h"
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
 #elif WEBCAM
@@ -46,39 +43,23 @@ public:
              ci->frame_width, ci->frame_height, ci->frame_stride,
              b->rgb_width, b->rgb_height, b->rgb_stride,
              ci->bayer_flip, ci->hdr, s->camera_num);
-    const char *cl_file = Hardware::TICI() ? "cameras/real_debayer.cl" : "cameras/debayer.cl";
+    const char *cl_file = "cameras/real_debayer.cl";
     cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float gain, cl_event *debayer_event) {
+  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float gain, float black_level, cl_event *debayer_event) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
 
-    if (Hardware::TICI()) {
-      const int debayer_local_worksize = 16;
-      constexpr int localMemSize = (debayer_local_worksize + 2 * (3 / 2)) * (debayer_local_worksize + 2 * (3 / 2)) * sizeof(short int);
-      const size_t globalWorkSize[] = {size_t(width), size_t(height)};
-      const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
-      CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
-      CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
-    } else {
-      if (hdr_) {
-        // HDR requires a 1-D kernel due to the DPCM compression
-        const size_t debayer_local_worksize = 128;
-        const size_t debayer_work_size = height;  // doesn't divide evenly, is this okay?
-        CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
-        CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, &debayer_local_worksize, 0, 0, debayer_event));
-      } else {
-        const int debayer_local_worksize = 32;
-        assert(width % 2 == 0);
-        const size_t globalWorkSize[] = {size_t(height), size_t(width / 2)};
-        const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
-        CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
-        CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
-      }
-    }
+    const int debayer_local_worksize = 16;
+    constexpr int localMemSize = (debayer_local_worksize + 2 * (3 / 2)) * (debayer_local_worksize + 2 * (3 / 2)) * sizeof(short int);
+    const size_t globalWorkSize[] = {size_t(width), size_t(height)};
+    const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
+    CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
+    CL_CHECK(clSetKernelArg(krnl_, 3, sizeof(float), &black_level));
+    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
   }
 
   ~Debayer() {
@@ -109,6 +90,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     camera_bufs[i].allocate(frame_size);
     camera_bufs[i].init_cl(device_id, context);
   }
+  LOGD("allocated %d CL buffers", frame_buf_count);
 
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
@@ -123,8 +105,10 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
   rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
+  LOGD("created %d UI vipc buffers with size %dx%d", UI_BUF_COUNT, rgb_width, rgb_height);
 
   vipc_server->create_buffers(yuv_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height);
+  LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, rgb_width, rgb_height);
 
   if (ci->bayer) {
     debayer = new Debayer(device_id, context, this, s);
@@ -161,17 +145,18 @@ bool CameraBuf::acquire() {
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
 
-  float start_time = millis_since_boot();
+  double start_time = millis_since_boot();
 
   if (debayer) {
     float gain = 0.0;
-
+    float black_level = 42.0;
 #ifndef QCOM2
     gain = camera_state->digital_gain;
     if ((int)gain == 0) gain = 1.0;
+#else
+    if (camera_state->camera_id == CAMERA_ID_IMX390) black_level = 64.0;
 #endif
-
-    debayer->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain, &event);
+    debayer->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain, black_level, &event);
   } else {
     assert(rgb_stride == camera_state->ci.frame_stride);
     CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0, cur_rgb_buf->len, 0, 0, &event));
@@ -412,17 +397,6 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   }
 
   static ExpRect rect = def_rect;
-  // use driver face crop for AE
-  if (Hardware::EON() && sm.updated("driverState")) {
-    if (auto state = sm["driverState"].getDriverState(); state.getFaceProb() > 0.4) {
-      auto face_position = state.getFacePosition();
-      int x = is_rhd ? 0 : frame_width - (0.5 * frame_height);
-      x += (face_position[0] * (is_rhd ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height) + x_offset;
-      int y = (face_position[1] + 0.5) * frame_height + y_offset;
-      rect = {std::max(0, x - 72), std::min(b->rgb_width - 1, x + 72), 2,
-              std::max(0, y - 72), std::min(b->rgb_height - 1, y + 72), 1};
-    }
-  }
 
   camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
 }
@@ -446,7 +420,7 @@ void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
 
 void camerad_thread() {
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-#if defined(QCOM) || defined(QCOM2)
+#ifdef QCOM2
   const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
   cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
 #else

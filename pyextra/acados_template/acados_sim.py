@@ -294,9 +294,9 @@ class AcadosSim:
         self.solver_options = AcadosSimOpts()
         """Solver Options, type :py:class:`acados_template.acados_sim.AcadosSimOpts`"""
 
-        self.acados_include_path = f'{acados_path}/include'
-        """Path to acados include directors (set automatically), type: `string`"""
-        self.acados_lib_path = f'{acados_path}/lib'
+        self.acados_include_path = os.path.join(acados_path, 'include').replace(os.sep, '/') # the replace part is important on Windows for CMake
+        """Path to acados include directory (set automatically), type: `string`"""
+        self.acados_lib_path = os.path.join(acados_path, 'lib').replace(os.sep, '/') # the replace part is important on Windows for CMake
         """Path to where acados library is located (set automatically), type: `string`"""
 
         self.code_export_directory = 'c_generated_code'

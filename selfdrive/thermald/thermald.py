@@ -17,12 +17,12 @@ from common.filter_simple import FirstOrderFilter
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import EON, HARDWARE, PC, TICI
+from selfdrive.hardware import HARDWARE, TICI
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.statsd import statlog
 from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
-from selfdrive.thermald.fan_controller import EonFanController, UnoFanController, TiciFanController
+from selfdrive.thermald.fan_controller import TiciFanController
 from selfdrive.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
@@ -99,6 +99,10 @@ def hw_state_thread(end_event, hw_queue):
   registered_count = 0
   prev_hw_state = None
 
+  modem_version = None
+  modem_nv = None
+  modem_configured = False
+
   while not end_event.is_set():
     # these are expensive calls. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
@@ -107,6 +111,14 @@ def hw_state_thread(end_event, hw_queue):
         modem_temps = HARDWARE.get_modem_temperatures()
         if len(modem_temps) == 0 and prev_hw_state is not None:
           modem_temps = prev_hw_state.modem_temps
+
+        # Log modem version once
+        if TICI and ((modem_version is None) or (modem_nv is None)):
+          modem_version = HARDWARE.get_modem_version()  # pylint: disable=assignment-from-none
+          modem_nv = HARDWARE.get_modem_nv()  # pylint: disable=assignment-from-none
+
+          if (modem_version is not None) and (modem_nv is not None):
+            cloudlog.event("modem version", version=modem_version, nv=modem_nv)
 
         hw_state = HardwareState(
           network_type=network_type,
@@ -132,6 +144,12 @@ def hw_state_thread(end_event, hw_queue):
           os.system("nmcli conn up lte")
           registered_count = 0
 
+        # TODO: remove this once the config is in AGNOS
+        if not modem_configured and len(HARDWARE.get_sim_info().get('sim_id', '')) > 0:
+          cloudlog.warning("configuring modem")
+          HARDWARE.configure_modem()
+          modem_configured = True
+
         prev_hw_state = hw_state
       except Exception:
         cloudlog.exception("Error getting hardware state")
@@ -156,7 +174,6 @@ def thermald_thread(end_event, hw_queue):
   started_ts = None
   started_seen = False
   thermal_status = ThermalStatus.green
-  usb_power = True
 
   last_hw_state = HardwareState(
     network_type=NetworkType.none,
@@ -171,7 +188,6 @@ def thermald_thread(end_event, hw_queue):
   temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
   should_start_prev = False
   in_car = False
-  is_uno = False
   engaged_prev = False
 
   params = Params()
@@ -198,18 +214,11 @@ def thermald_thread(end_event, hw_queue):
       pandaState = pandaStates[0]
 
       in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
-      usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
 
       # Setup fan handler on first connect to panda
       if fan_controller is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
-        is_uno = peripheralState.pandaType == log.PandaState.PandaType.uno
-
         if TICI:
           fan_controller = TiciFanController()
-        elif is_uno or PC:
-          fan_controller = UnoFanController()
-        else:
-          fan_controller = EonFanController()
 
     try:
       last_hw_state = hw_queue.get_nowait()
@@ -278,9 +287,21 @@ def thermald_thread(end_event, hw_queue):
     onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not onroad_conditions["device_temp_good"]))
 
+    # TODO: this should move to TICI.initialize_hardware, but we currently can't import params there
     if TICI:
-      missing = (not Path("/data/media").is_mount()) and (not os.path.isfile("/persist/comma/living-in-the-moment"))
-      set_offroad_alert_if_changed("Offroad_StorageMissing", missing)
+      if not os.path.isfile("/persist/comma/living-in-the-moment"):
+        if not Path("/data/media").is_mount():
+          set_offroad_alert_if_changed("Offroad_StorageMissing", True)
+        else:
+          # check for bad NVMe
+          try:
+            with open("/sys/block/nvme0n1/device/model") as f:
+              model = f.read().strip()
+            if not model.startswith("Samsung SSD 980") and params.get("Offroad_BadNvme") is None:
+              set_offroad_alert_if_changed("Offroad_BadNvme", True)
+              cloudlog.event("Unsupported NVMe", model=model, error=True)
+          except Exception:
+            pass
 
     # Handle offroad/onroad transition
     should_start = all(onroad_conditions.values())
@@ -325,7 +346,11 @@ def thermald_thread(end_event, hw_queue):
     msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
     current_power_draw = HARDWARE.get_current_power_draw()  # pylint: disable=assignment-from-none
-    msg.deviceState.powerDrawW = current_power_draw if current_power_draw is not None else 0
+    if current_power_draw is not None:
+      statlog.sample("power_draw", current_power_draw)
+      msg.deviceState.powerDrawW = current_power_draw
+    else:
+      msg.deviceState.powerDrawW = 0
 
     # Check if we need to disable charging (handled by boardd)
     msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(onroad_conditions["ignition"], in_car, off_ts)
@@ -345,9 +370,6 @@ def thermald_thread(end_event, hw_queue):
 
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
-
-    if EON and not is_uno:
-      set_offroad_alert_if_changed("Offroad_ChargeDisabled", (not usb_power))
 
     should_start_prev = should_start
     startup_conditions_prev = startup_conditions.copy()
@@ -375,9 +397,6 @@ def thermald_thread(end_event, hw_queue):
 
     # report to server once every 10 minutes
     if (count % int(600. / DT_TRML)) == 0:
-      if EON and started_ts is None and msg.deviceState.memoryUsagePercent > 40:
-        cloudlog.event("High offroad memory usage", mem=msg.deviceState.memoryUsagePercent)
-
       cloudlog.event("STATUS_PACKET",
                      count=count,
                      pandaStates=[strip_deprecated_keys(p.to_dict()) for p in pandaStates],

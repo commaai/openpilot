@@ -7,6 +7,8 @@
 #include <QRegExp>
 #include <QtConcurrent>
 
+#include <array>
+
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/replay.h"
@@ -35,7 +37,11 @@ bool Route::load() {
 bool Route::loadFromServer() {
   QEventLoop loop;
   HttpRequest http(nullptr, !Hardware::PC());
-  QObject::connect(&http, &HttpRequest::requestDone, [&](const QString &json, bool success) {
+  QObject::connect(&http, &HttpRequest::requestDone, [&](const QString &json, bool success, QNetworkReply::NetworkError error) {
+    if (error == QNetworkReply::ContentAccessDenied || error == QNetworkReply::AuthenticationRequiredError) {
+      qWarning() << ">>  Unauthorized. Authenticate with tools/lib/auth.py  <<";
+    }
+
     loop.exit(success ? loadFromJson(json) : 0);
   });
   http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
