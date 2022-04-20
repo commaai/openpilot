@@ -50,6 +50,7 @@ class States():
   CLOCK_ACCELERATION = slice(28, 29)  # clock acceleration in light-meters/s**2,
   ACCELEROMETER_SCALE_UNUSED = slice(29, 30)  # scale of mems accelerometer
   ACCELEROMETER_BIAS = slice(30, 33)  # bias of mems accelerometer
+  # TODO the offset is likely a translation of the sensor, not a rotation of the camera
   WIDE_CAM_OFFSET = slice(33, 36)  # wide camera offset angles in radians (tici only)
   # We curently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_OFFSET).
   # From experiments we see that ACCELEROMETER_BIAS is more correct than ACCELEROMETER_SCALE
@@ -320,7 +321,7 @@ class LocKalman():
     if N > 0:
       # experimentally found this is correct value for imx298 with 910 focal length
       # this is a variable so it can change with focus, but we disregard that for now
-      # TODO: this doesnt work for TICI
+      # TODO: this isn't correct for tici
       focal_scale = 1.01
       # Add observation functions for orb feature tracks
       track_epos_sym = sp.MatrixSymbol('track_epos_sym', 3, 1)
@@ -332,7 +333,7 @@ class LocKalman():
       track_pos_rot_sym = quat_rot.T * track_pos_sym
       track_pos_rot_wide_cam_sym = wide_cam_rot * track_pos_rot_sym
       h_track_sym[-2:, :] = sp.Matrix([focal_scale * (track_pos_rot_sym[1] / track_pos_rot_sym[0]),
-                                      focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
+                                       focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
       h_track_wide_cam_sym[-2:, :] = sp.Matrix([focal_scale * (track_pos_rot_wide_cam_sym[1] / track_pos_rot_wide_cam_sym[0]),
                                                 focal_scale * (track_pos_rot_wide_cam_sym[2] / track_pos_rot_wide_cam_sym[0])])
 
@@ -351,7 +352,7 @@ class LocKalman():
         h_track_sym[n * 2:n * 2 + 2, :] = sp.Matrix([focal_scale * (track_pos_rot_sym[1] / track_pos_rot_sym[0]),
                                                      focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
         h_track_wide_cam_sym[n * 2: n * 2 + 2, :] = sp.Matrix([focal_scale * (track_pos_rot_wide_cam_sym[1] / track_pos_rot_wide_cam_sym[0]),
-                                                    focal_scale * (track_pos_rot_wide_cam_sym[2] / track_pos_rot_wide_cam_sym[0])])
+                                                               focal_scale * (track_pos_rot_wide_cam_sym[2] / track_pos_rot_wide_cam_sym[0])])
         h_msckf_test_sym[n * 3:n * 3 + 3, :] = track_pos_sym
 
       obs_eqs.append([h_msckf_test_sym, ObservationKind.MSCKF_TEST, track_epos_sym])
