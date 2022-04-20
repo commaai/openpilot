@@ -5,7 +5,7 @@ import sys
 import time
 import unittest
 
-import psutil
+from cereal import messaging
 
 from common.params import Params
 from selfdrive.manager import manager
@@ -44,50 +44,58 @@ class TestCarlaIntegration(unittest.TestCase):
     # Assert no exceptions
     self.assertEqual(p.exitcode, 0)
 
-  def assert_processes_running(self, expected_p):
-    running = {p: False for p in expected_p}
-    for name in expected_p:
-      for proc in psutil.process_iter():
-        if proc.name().endswith(name):
-          running[name] = True
-          break
-
-    not_running = [key for (key, val) in running.items() if not val]
-    self.assertEqual(len(not_running), 0, f"Manager processes are not running: {not_running}")
-
-  def test_manager_and_bridge(self):
-    # test manager.py processes and bridge.py to run correctly for 50 seconds
-    startup_time = 10
-    test_intervals_5sec = 10
-
-    # Set params for simulation to be used for ignored_processes
-    # todo could move these to separate file
+  def test_engage(self):
+    # Startup manager and bridge.py. Check processes are running, then engage and verify.
+    # Set environment vars to get the exact processes used by manager.py
     os.environ["PASSIVE"] = "0"
     os.environ["NOBOARD"] = "1"
     os.environ["SIMULATION"] = "1"
     os.environ["FINGERPRINT"] = "HONDA CIVIC 2016"
     os.environ["BLOCK"] = "camerad,loggerd"
 
-    # Start manager and bridge
     self.subprocess = subprocess.Popen("../../../selfdrive/manager/manager.py")
+    sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
 
     args = sys.argv[2:]  # Remove test arguments when executing this test
-    p_bridge = bridge.main(args, keep_alive=False)[0]
-
-    time.sleep(startup_time)
+    p_bridge, _, q = bridge.main(args, keep_alive=False)
 
     params = Params()
-    ignore_processes = manager.ignored_processes(params)
+    ignore_processes = manager.ignored_processes(params)+['bridge', 'webjoystick']
     all_processes = [p.name for p in managed_processes.values() if
                      (type(p) is not DaemonProcess) and p.enabled and (p.name not in ignore_processes)]
+    start_time = time.time()
 
-    # Test for 50 seconds
-    for _ in range(test_intervals_5sec):
-      self.assert_processes_running(all_processes)
-      time.sleep(5)
+    no_car_events_issues_once = False
+    max_time = 10
+    while time.time() < start_time + max_time:
+      sm.update()
+      running = {p.name for p in sm['managerState'].processes if p.running}
+      expected_and_not_running = [p for p in all_processes if p not in running]
+
+      if len(sm['carEvents']) == 0 and len(expected_and_not_running) == 0:
+        no_car_events_issues_once = True
+        break
+
+      time.sleep(0.1)
+    self.assertTrue(no_car_events_issues_once)
+
+    start_time = time.time()
+    control_active = False
+    while time.time() < start_time + max_time:
+      q.put("cruise_up")  # Try engaging
+
+      sm.update()
+
+      if sm['controlsState'].active:
+        control_active = True
+        break
+
+      time.sleep(0.1)
+
+    self.assertTrue(control_active)
 
     # Set shutdown to close manager and bridge processes
-    params.put_bool("DoShutdown", True)
+    Params().put_bool("DoShutdown", True)
     # Process could already be closed
     if type(self.subprocess) is subprocess.Popen:
       self.subprocess.wait(timeout=10)
