@@ -277,20 +277,19 @@ def bridge(q):
 
   transform = carla.Transform(carla.Location(x=0.8, z=1.13))
 
-  def create_camera(fov):
+  def create_camera(fov, callback):
     blueprint = blueprint_library.find('sensor.camera.rgb')
     blueprint.set_attribute('image_size_x', str(W))
     blueprint.set_attribute('image_size_y', str(H))
     blueprint.set_attribute('fov', str(fov))
     blueprint.set_attribute('sensor_tick', '0.05')
-    return world.spawn_actor(blueprint, transform, attach_to=vehicle)
+    camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
+    camera.listen(callback)
+    return camera
 
   camerad = Camerad()
-  road_camera = create_camera(fov=40)
-  road_camera.listen(camerad.cam_callback_road)
-
-  road_wide_camera = create_camera(fov=163)  # fov bigger than 163 shows unwanted artifacts
-  road_wide_camera.listen(camerad.cam_callback_wide_road)
+  road_camera = create_camera(fov=40, callback=camerad.cam_callback_road)
+  road_wide_camera = create_camera(fov=163, callback=camerad.cam_callback_wide_road)  # fov bigger than 163 shows unwanted artifacts
 
   cameras = [road_camera, road_wide_camera]
 
