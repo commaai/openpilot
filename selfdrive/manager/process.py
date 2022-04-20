@@ -257,6 +257,8 @@ class DaemonProcess(ManagerProcess):
     self.module = module
     self.param_name = param_name
     self.enabled = enabled
+    self.onroad = True
+    self.offroad = True
 
   def prepare(self) -> None:
     pass
