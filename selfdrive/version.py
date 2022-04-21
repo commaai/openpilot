@@ -55,7 +55,7 @@ def get_origin(default: Optional[str] = None) -> Optional[str]:
 
 @cache
 def get_normalized_origin(default: Optional[str] = None) -> Optional[str]:
-  origin:Optional[str] = get_origin()
+  origin: Optional[str] = get_origin()
 
   if origin is None:
     return default
