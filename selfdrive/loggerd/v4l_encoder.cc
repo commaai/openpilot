@@ -4,24 +4,20 @@
 #include "selfdrive/loggerd/v4l_encoder.h"
 #include "selfdrive/common/util.h"
 
-// has to be in this order
-#include "selfdrive/loggerd/include/v4l2-controls.h"
-#include <linux/videodev2.h>
-
 // echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
 
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   bool exit = false;
   while (!exit) {
-    v4l2_buffer buf;
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-    int ret = ioctl(e->fd, VIDIOC_DQBUF, &buf);
-    printf("dequeue got %d\n", ret);
+    int ret = e->queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 0, &e->buf_out[0], true);
+    if (ret == -1) {
+      sleep(1);
+      continue;
+    }
 
     // TODO: process
 
-    ret = ioctl(e->fd, VIDIOC_QBUF, &buf);
-    printf("queue got %d\n", ret);
+    e->queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 0, &e->buf_out[0]);
   }
 }
 
@@ -57,8 +53,7 @@ V4LEncoder::V4LEncoder(
     .parm {
       .output {
         // TODO: more stuff here? we don't know
-        .timeperframe {
-          .numerator = 1,
+        .timeperframe { .numerator = 1,
           .denominator = 20
         }
       }
@@ -79,6 +74,10 @@ V4LEncoder::V4LEncoder(
     }
   };
   assert(ioctl(fd, VIDIOC_S_FMT, &fmt_in) == 0);
+
+  LOGD("in buffer size %d, out buffer size %d",
+    fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage,
+    fmt_out.fmt.pix_mp.plane_fmt[0].sizeimage);
 
   struct v4l2_control ctrls[] = {
     { .id = V4L2_CID_MPEG_VIDEO_BITRATE, .value = 10000000},
@@ -101,6 +100,9 @@ V4LEncoder::V4LEncoder(
     .count = 7
   };
   assert(ioctl(fd, VIDIOC_REQBUFS, &reqbuf_in) == 0);
+  for (int i = 0; i < 7; i++) {
+    buf_in[i].allocate(fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage);
+  }
 
   struct v4l2_requestbuffers reqbuf_out = {
     .type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
@@ -108,12 +110,46 @@ V4LEncoder::V4LEncoder(
     .count = 6
   };
   assert(ioctl(fd, VIDIOC_REQBUFS, &reqbuf_out) == 0);
+  for (int i = 0; i < 6; i++) {
+    buf_out[i].allocate(fmt_out.fmt.pix_mp.plane_fmt[0].sizeimage);
+  }
 
   // publish
   service_name = this->type == DriverCam ? "driverEncodeData" :
     (this->type == WideRoadCam ? "wideRoadEncodeData" :
     (this->remuxing ? "qRoadEncodeData" : "roadEncodeData"));
   pm.reset(new PubMaster({service_name}));
+}
+
+int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, bool dequeue) {
+  v4l2_plane plane = {
+    .length = (unsigned int)buf->len,
+    .m {
+      .userptr = (unsigned long)buf->addr,   // get this from VIDIOC_S_FMT
+    },
+    .reserved = {(unsigned int)buf->fd}
+  };
+
+  v4l2_buffer v4l_buf = {
+    .type = buf_type,
+    .index = index,
+    .memory = V4L2_MEMORY_USERPTR,
+    .m {
+      .planes = &plane,
+    },
+    .length = 1,
+    .bytesused = 0,
+    .flags = V4L2_BUF_FLAG_QUEUED|V4L2_BUF_FLAG_TIMESTAMP_COPY
+  };
+  int ret;
+  if (dequeue) {
+    ret = ioctl(fd, VIDIOC_DQBUF, &v4l_buf);
+    printf("dequeue buffer %d: %d type %d errno %d\n", index, ret, buf_type, ret==0 ? 0 : errno);
+  } else {
+    ret = ioctl(fd, VIDIOC_QBUF, &v4l_buf);
+    printf("queue buffer %d: %d type %d errno %d\n", index, ret, buf_type, ret==0 ? 0 : errno);
+  }
+  return ret;
 }
 
 void V4LEncoder::encoder_open(const char* path) {
@@ -124,24 +160,13 @@ void V4LEncoder::encoder_open(const char* path) {
   assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
 
   for (unsigned int i = 0; i < 6; i++) {
-    v4l2_buffer buf = {
-      .type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
-      .index = i,
-      .memory = V4L2_MEMORY_USERPTR,
-      .m {
-        .userptr = (unsigned long)malloc(2373632),   // get this from VIDIOC_S_FMT
-      },
-      .length = 1,
-      .bytesused = 0,
-      .flags = V4L2_BUF_FLAG_QUEUED|V4L2_BUF_FLAG_TIMESTAMP_COPY
-    };
-    int ret = ioctl(fd, VIDIOC_QBUF, &buf);
-    printf("queue buffer %d: %d\n", i, ret);
+    queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
   }
 
   buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
   assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
 
+  dequeue_thread = std::thread(V4LEncoder::dequeue_handler, this);
   this->is_open = true;
 }
 
@@ -149,6 +174,13 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
                   int in_width, int in_height, uint64_t ts) {
   assert(in_width == in_width_);
   assert(in_height == in_height_);
+
+  if (buffer_in < 7) {
+    buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
+    int ret = queue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in]);
+    assert(ret == 0);
+    buffer_in++;
+  }
 
   return 0;
 }
