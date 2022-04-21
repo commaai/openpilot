@@ -69,8 +69,8 @@ jobs:
                           rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
 
-  build_extras:
-    name: build with extras
+  build_all:
+    name: build all
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -79,8 +79,8 @@ jobs:
         submodules: true
     - name: Build Docker image
       run: eval "$BUILD"
-    - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc) --extras"
+    - name: Build openpilot with all flags
+      run: ${{ env.RUN }} "scons -j$(nproc) --extras --test"
 
   #build_mac:
   #  name: build macos
