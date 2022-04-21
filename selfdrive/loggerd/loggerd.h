@@ -25,8 +25,10 @@
 #include "selfdrive/loggerd/encoder.h"
 #include "selfdrive/loggerd/logger.h"
 #ifdef QCOM2
-#include "selfdrive/loggerd/omx_encoder.h"
-#define Encoder OmxEncoder
+/*#include "selfdrive/loggerd/omx_encoder.h"
+#define Encoder OmxEncoder*/
+#include "selfdrive/loggerd/v4l_encoder.h"
+#define Encoder V4LEncoder
 #else
 #include "selfdrive/loggerd/raw_logger.h"
 #define Encoder RawLogger
