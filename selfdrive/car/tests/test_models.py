@@ -209,13 +209,7 @@ class TestCarModel(unittest.TestCase):
 
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
-      # TODO: make the interceptor thresholds in openpilot and panda match, then remove this exception
-      gas_pressed = CS.gasPressed
-      if self.CP.enableGasInterceptor and gas_pressed and not self.safety.get_gas_pressed_prev():
-        # panda intentionally has a higher threshold
-        if self.CP.carName == "toyota" and 15 < CS.gas < 15*1.5:
-          gas_pressed = False
-      checks['gasPressed'] += gas_pressed != self.safety.get_gas_pressed_prev()
+      checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
@@ -256,6 +250,7 @@ class TestCarModel(unittest.TestCase):
 
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
+
 
 if __name__ == "__main__":
   unittest.main()
