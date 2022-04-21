@@ -233,9 +233,9 @@ def can_function_runner(vs: VehicleState, exit_event: threading.Event):
     i += 1
 
 
-def connect_carla_client(connect_timeout=5):
+def connect_carla_client():
   client = carla.Client("127.0.0.1", 2000)
-  client.set_timeout(connect_timeout)
+  client.set_timeout(10)
   return client
 
 
