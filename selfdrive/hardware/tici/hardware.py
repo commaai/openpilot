@@ -419,11 +419,8 @@ class Tici(HardwareBase):
       sudo_write(val, f'/sys/devices/system/cpu/cpu{i}/online')
 
     for n in ('0', '4'):
-      gov = 'ondemand' if powersave_enabled else 'userspace'
+      gov = 'ondemand' if powersave_enabled else 'performance'
       sudo_write(gov, f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor')
-    if not powersave_enabled:
-      sudo_write('1324800', '/sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed')
-      sudo_write('1363200', '/sys/devices/system/cpu/cpufreq/policy4/scaling_setspeed')
 
     # *** IRQ config ***
     affine_irq(5, 565)   # kgsl-3d0
@@ -460,9 +457,7 @@ class Tici(HardwareBase):
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
     sudo_write("1000000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
-    sudo_write("userspace", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
-    sudo_write("675000000", "/sys/class/kgsl/kgsl-3d0/devfreq/min_freq")
-    sudo_write("675000000", "/sys/class/kgsl/kgsl-3d0/devfreq/max_freq")
+    sudo_write("596", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
 
     # setup governors
     sudo_write("performance", "/sys/class/devfreq/soc:qcom,cpubw/governor")
