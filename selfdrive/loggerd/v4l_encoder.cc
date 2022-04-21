@@ -4,20 +4,34 @@
 #include "selfdrive/loggerd/v4l_encoder.h"
 #include "selfdrive/common/util.h"
 
+#include "libyuv.h"
+#include "selfdrive/loggerd/include/msm_media_info.h"
+
 // echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
 
-void V4LEncoder::dequeue_handler(V4LEncoder *e) {
+void V4LEncoder::dequeue_in_handler(V4LEncoder *e) {
   bool exit = false;
   while (!exit) {
-    int ret = e->queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 0, &e->buf_out[0], true);
-    if (ret == -1) {
-      sleep(1);
-      continue;
-    }
+    if (e->buffer_queued == e->buffer_in) { usleep(10*1000); continue; }
+    int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, e->buffer_queued, &e->buf_in[e->buffer_queued], NULL);
+    if (ret == -1) { usleep(10*1000); continue; }
+    e->buffer_queued = (e->buffer_queued + 1) % 7;
+  }
+}
+
+void V4LEncoder::dequeue_out_handler(V4LEncoder *e) {
+  bool exit = false;
+  while (!exit) {
+    unsigned int bytesused;
+    int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, e->buffer_out, &e->buf_out[e->buffer_out], &bytesused);
+    if (ret == -1) { usleep(10*1000); continue; }
+
+    printf("got %d bytes\n", bytesused);
 
     // TODO: process
 
-    e->queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 0, &e->buf_out[0]);
+    e->queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, e->buffer_out, &e->buf_out[e->buffer_out]);
+    e->buffer_out = (e->buffer_out + 1) % 6;
   }
 }
 
@@ -27,7 +41,7 @@ V4LEncoder::V4LEncoder(
   : type(type), in_width_(in_width), in_height_(in_height),
     width(out_width), height(out_height), fps(fps),
     filename(filename), remuxing(!h265), write(write) {
-  fd = open("/dev/video33", O_RDWR|O_NONBLOCK);
+  fd = open("/dev/video33", O_RDWR);
   assert(fd >= 0);
 
   struct v4l2_capability cap;
@@ -121,11 +135,12 @@ V4LEncoder::V4LEncoder(
   pm.reset(new PubMaster({service_name}));
 }
 
-int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, bool dequeue) {
+int V4LEncoder::dequeue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int *bytesused) {
   v4l2_plane plane = {
+    .bytesused = 0,
     .length = (unsigned int)buf->len,
     .m {
-      .userptr = (unsigned long)buf->addr,   // get this from VIDIOC_S_FMT
+      .userptr = (unsigned long)buf->addr,
     },
     .reserved = {(unsigned int)buf->fd}
   };
@@ -141,14 +156,38 @@ int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionB
     .bytesused = 0,
     .flags = V4L2_BUF_FLAG_QUEUED|V4L2_BUF_FLAG_TIMESTAMP_COPY
   };
-  int ret;
-  if (dequeue) {
-    ret = ioctl(fd, VIDIOC_DQBUF, &v4l_buf);
-    printf("dequeue buffer %d: %d type %d errno %d\n", index, ret, buf_type, ret==0 ? 0 : errno);
-  } else {
-    ret = ioctl(fd, VIDIOC_QBUF, &v4l_buf);
-    printf("queue buffer %d: %d type %d errno %d\n", index, ret, buf_type, ret==0 ? 0 : errno);
-  }
+  int ret = ioctl(fd, VIDIOC_DQBUF, &v4l_buf);
+  if (ret == -1 && errno == 11) return ret;
+  
+  //printf("dequeue %d buffer %d: %d errno %d\n", buf_type, index, ret, ret==0 ? 0 : errno);
+  if (bytesused) *bytesused = v4l_buf.m.planes[0].bytesused;
+
+  return ret;
+}
+
+int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf) {
+  v4l2_plane plane = {
+    .length = (unsigned int)buf->len,
+    .m {
+      .userptr = (unsigned long)buf->addr,
+    },
+    .reserved = {(unsigned int)buf->fd}
+  };
+
+  v4l2_buffer v4l_buf = {
+    .type = buf_type,
+    .index = index,
+    .memory = V4L2_MEMORY_USERPTR,
+    .m {
+      .planes = &plane,
+    },
+    .length = 1,
+    .bytesused = 0,
+    .flags = V4L2_BUF_FLAG_QUEUED|V4L2_BUF_FLAG_TIMESTAMP_COPY
+  };
+
+  int ret = ioctl(fd, VIDIOC_QBUF, &v4l_buf);
+  //printf("queue %d buffer %d: %d errno %d\n", buf_type, index, ret, ret==0 ? 0 : errno);
   return ret;
 }
 
@@ -166,7 +205,8 @@ void V4LEncoder::encoder_open(const char* path) {
   buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
   assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
 
-  dequeue_thread = std::thread(V4LEncoder::dequeue_handler, this);
+  dequeue_out_thread = std::thread(V4LEncoder::dequeue_out_handler, this);
+  dequeue_in_thread = std::thread(V4LEncoder::dequeue_in_handler, this);
   this->is_open = true;
 }
 
@@ -175,12 +215,25 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   assert(in_width == in_width_);
   assert(in_height == in_height_);
 
-  if (buffer_in < 7) {
-    buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
-    int ret = queue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in]);
-    assert(ret == 0);
-    buffer_in++;
-  }
+  uint8_t *in_y_ptr = (uint8_t*)buf_in[buffer_in].addr;
+  int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, this->width);
+  int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, this->width);
+  uint8_t *in_uv_ptr = in_y_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, this->height));
+
+  // GRRR COPY
+  int err = libyuv::I420ToNV12(y_ptr, this->width,
+                   u_ptr, this->width/2,
+                   v_ptr, this->width/2,
+                   in_y_ptr, in_y_stride,
+                   in_uv_ptr, in_uv_stride,
+                   this->width, this->height);
+  assert(err == 0);
+
+  // TODO: detect wraparound and block
+  buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
+  int ret = queue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in]);
+  assert(ret == 0);
+  buffer_in = (buffer_in + 1) % 7;
 
   return 0;
 }
