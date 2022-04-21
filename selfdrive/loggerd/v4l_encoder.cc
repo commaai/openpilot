@@ -36,11 +36,14 @@ V4LEncoder::V4LEncoder(
     .type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
     .parm {
       .output {
-        // TODO: frame time and stuff
+        .timeperframe {
+          .numerator = 1,
+          .denominator = 20
+        }
       }
     }
   };
-  assert(ioctl(fd, VIDIOC_S_PARM, &streamparm));
+  assert(ioctl(fd, VIDIOC_S_PARM, &streamparm) == 0);
 
   struct v4l2_format fmt_in = {
     .type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
@@ -101,6 +104,11 @@ void V4LEncoder::encoder_open(const char* path) {
   assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
 
   // TODO: queue up 6 V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
+
+  buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+  assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
+
+  this->is_open = true;
 }
 
 int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
@@ -112,11 +120,14 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 }
 
 void V4LEncoder::encoder_close() {
-  /*v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-  assert(ioctl(fd, VIDIOC_STREAMOFF, &buf_type));
-  v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-  assert(ioctl(fd, VIDIOC_STREAMOFF, &buf_type));
-  writer.reset();*/
+  if (this->is_open) {
+    v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    assert(ioctl(fd, VIDIOC_STREAMOFF, &buf_type) == 0);
+    buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+    assert(ioctl(fd, VIDIOC_STREAMOFF, &buf_type) == 0);
+    writer.reset();
+  }
+  this->is_open = false;
 }
 
 V4LEncoder::~V4LEncoder() {
