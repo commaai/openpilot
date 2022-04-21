@@ -380,11 +380,7 @@ def main() -> None:
 
   first_run = True
   last_fetch_time = 0.0
-  update_failed_count = 0
-
-  # Set initial params for offroad alerts
-  # TODO: set once on startup from manager?
-  set_params(False, 0, None)
+  update_failed_count = 0  # TODO: Load from param?
 
   # Wait for IsOffroad to be set before our first update attempt
   wait_helper = WaitTimeHelper(proc)
