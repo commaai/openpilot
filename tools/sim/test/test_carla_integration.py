@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 import os
+import signal
 import subprocess
-import sys
 import time
 import unittest
+from typing import List
 
 from cereal import messaging
 
-from common.params import Params
-from selfdrive.manager import manager
 from tools.sim import bridge
 from tools.sim.bridge import connect_carla_client
 
@@ -17,7 +16,7 @@ class TestCarlaIntegration(unittest.TestCase):
   """
   Tests need Carla simulator to run
   """
-  subprocess = None
+  processes:List[subprocess.Popen] = []
 
   def test_connect_with_carla(self):
     # Test connecting to Carla within 5 seconds and return no RuntimeError
@@ -30,53 +29,44 @@ class TestCarlaIntegration(unittest.TestCase):
     # Test bridge connect with carla and runs without any errors for 60 seconds
     test_duration = 60
 
-    params = Params()
-    args = sys.argv[2:]  # Remove test arguments when executing this test
-    args.append('--low_quality')
-    params.put_bool("DoShutdown", False)
+    p = bridge.main(['--low_quality'], keep_alive=False)[0]
+    self.processes = [p]
 
-    p = bridge.main(args, keep_alive=False)[0]
     time.sleep(test_duration)
-    params.put_bool("DoShutdown", True)
 
-    p.join()
-    # Assert no exceptions
-    self.assertEqual(p.exitcode, 0)
+    self.assertEqual(p.exitcode, None, f"Process should be running, but exited with code {p.exitcode}")
 
   def test_engage(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
-    # Set environment vars for manager.py. The same as sim/launch_openpilot.sh
-    os.environ["PASSIVE"] = "0"
-    os.environ["NOBOARD"] = "1"
-    os.environ["SIMULATION"] = "1"
-    os.environ["FINGERPRINT"] = "HONDA CIVIC 2016"
-    os.environ["BLOCK"] = "camerad,loggerd"
+    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd='../')
+    self.processes.append(p_manager)
 
-    self.subprocess = subprocess.Popen("../../../selfdrive/manager/manager.py")
     sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
 
-    args = sys.argv[2:]  # Remove test arguments when executing this test
-    args.append('--low_quality')
-    p_bridge, _, q = bridge.main(args, keep_alive=False)
-
-    start_time = time.time()
+    p_bridge, _, q = bridge.main(['--low_quality'], keep_alive=False)
+    self.processes.append(p_bridge)
+    start_time = time.monotonic()
 
     no_car_events_issues_once = False
     max_time_per_test = 20
-    while time.time() < start_time + max_time_per_test:
-      sm.update()
-      not_running = {p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning}
 
-      if len(sm['carEvents']) == 0 and len(not_running) == 0:
+    car_event_issues = []
+    not_running = []
+    while time.monotonic() < start_time + max_time_per_test:
+      sm.update()
+      not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
+      car_event_issues = [event.name for event in sm['carEvents'] if ['issue', 'error'] in event.name.lowercase]
+
+      if len(car_event_issues) == 0 and len(not_running) == 0:
         no_car_events_issues_once = True
         break
 
       time.sleep(0.1)
-    self.assertTrue(no_car_events_issues_once)
+    self.assertTrue(no_car_events_issues_once, f"Failed because of CarEvents '{car_event_issues}' or processes not running '{not_running}'")
 
-    start_time = time.time()
+    start_time = time.monotonic()
     control_active = False
-    while time.time() < start_time + max_time_per_test:
+    while time.monotonic() < start_time + max_time_per_test:
       q.put("cruise_up")  # Try engaging
 
       sm.update()
@@ -89,21 +79,9 @@ class TestCarlaIntegration(unittest.TestCase):
 
     self.assertTrue(control_active, "Simulator never engaged")
 
-    # Set shutdown to close manager and bridge processes
-    Params().put_bool("DoShutdown", True)
-    # Process could already be closed
-    if type(self.subprocess) is subprocess.Popen:
-      self.subprocess.wait(timeout=10)
-      # Closing gracefully
-      self.assertEqual(self.subprocess.returncode, 0)
-    p_bridge.join()
-
   def tearDown(self):
-    print("Teardown")
-    Params().put_bool("DoShutdown", True)
-    manager.manager_cleanup()
-    if self.subprocess:
-      self.subprocess.wait(5)
+    for p in self.processes:
+      os.kill(p.pid, signal.SIGTERM)
 
 
 if __name__ == "__main__":
