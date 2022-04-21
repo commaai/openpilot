@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import argparse
 import math
+import os
 import threading
 import time
-import os
 from multiprocessing import Process, Queue
 from typing import Any
 
@@ -12,18 +12,17 @@ import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
 
-from selfdrive.manager.helpers import unblock_stdout
-from tools.sim.lib.can import can_function
 import cereal.messaging as messaging
 from cereal import log
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, \
-  VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.basedir import BASEDIR
 from common.numpy_fast import clip
 from common.params import Params
 from common.realtime import DT_DMON, Ratekeeper
 from selfdrive.car.honda.values import CruiseButtons
+from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.test.helpers import set_params_enabled
+from tools.sim.lib.can import can_function
 
 W, H = 1928, 1208
 REPEAT_COUNTER = 5
@@ -252,7 +251,7 @@ class CarlaBridge:
 
     self._args = args
 
-  def bridge_keep_alive(self, q: Any, keep_alive):
+  def bridge_keep_alive(self, q: Queue, keep_alive:bool):
     while True:
       try:
         self._run(q)
@@ -262,7 +261,8 @@ class CarlaBridge:
           raise
         print(f"Restarting bridge after error: {e} ")
 
-  def _run(self, q):
+
+  def _run(self, q:Queue):
     client = connect_carla_client()
     world = client.load_world(self._args.town)
     settings = world.get_settings()
@@ -286,8 +286,7 @@ class CarlaBridge:
 
     vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[1]
     spawn_points = world_map.get_spawn_points()
-    assert len(spawn_points) > self._args.num_selected_spawn_point, \
-      f'''No spawn point {self._args.num_selected_spawn_point}, try a value between 0 and
+    assert len(spawn_points) > self._args.num_selected_spawn_point, f'''No spawn point {self._args.num_selected_spawn_point}, try a value between 0 and
       {len(spawn_points)} for this town.'''
     spawn_point = spawn_points[self._args.num_selected_spawn_point]
     vehicle = world.spawn_actor(vehicle_bp, spawn_point)
@@ -354,16 +353,15 @@ class CarlaBridge:
     vc = carla.VehicleControl(throttle=0, steer=0, brake=0, reverse=False)
 
     is_openpilot_engaged = False
-    throttle_out = steer_out = brake_out = 0
-    throttle_op = steer_op = brake_op = 0
-    throttle_manual = steer_manual = brake_manual = 0
+    throttle_out = steer_out = brake_out = 0.
+    throttle_op = steer_op = brake_op = 0.
+    throttle_manual = steer_manual = brake_manual = 0.
 
-    old_steer = old_brake = old_throttle = 0
+    old_steer = old_brake = old_throttle = 0.
     throttle_manual_multiplier = 0.7  # keyboard signal is always 1
     brake_manual_multiplier = 0.7  # keyboard signal is always 1
     steer_manual_multiplier = 45 * STEER_RATIO  # keyboard signal is always 1
 
-    params = Params()
     while True:
       # 1. Read the throttle, steer and brake from op or manual controls
       # 2. Set instructions in Carla
@@ -477,9 +475,6 @@ class CarlaBridge:
       if rk.frame % PRINT_DECIMATION == 0:
         print("frame: ", "engaged:", is_openpilot_engaged, "; throttle: ", round(vc.throttle, 3), "; steer(c/deg): ",
               round(vc.steer, 3), round(steer_out, 3), "; brake: ", round(vc.brake, 3))
-      if params.get_bool('DoShutdown'):
-        print("Shutdown called. Stopping bridge.py")
-        break
 
       if rk.frame % 5 == 0:
         world.tick()
@@ -497,27 +492,27 @@ class CarlaBridge:
 
 def main(add_args=None, keep_alive=True):
   unblock_stdout()  # Fix error when publishing too many lag message
-  _args = parse_args(add_args)
-  carla_bridge = CarlaBridge(_args)
+  args = parse_args(add_args)
+  carla_bridge = CarlaBridge(args)
 
-  _q: Any = Queue()
-  p = Process(target=carla_bridge.bridge_keep_alive, args=(_q, keep_alive), daemon=True)
+  q: Any = Queue()
+  p = Process(target=carla_bridge.bridge_keep_alive, args=(q, keep_alive), daemon=True)
   p.start()
 
-  return p, _args, _q
+  return p, args, q
 
 
 if __name__ == "__main__":
-  p, _args, _q = main()
+  p, args, q = main()
 
-  if _args.joystick:
+  if args.joystick:
     # start input poll for joystick
     from tools.sim.lib.manual_ctrl import wheel_poll_thread
 
-    wheel_poll_thread(_q)
+    wheel_poll_thread(q)
   else:
     # start input poll for keyboard
     from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
 
-    keyboard_poll_thread(_q)
+    keyboard_poll_thread(q)
   p.join()
