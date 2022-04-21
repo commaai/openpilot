@@ -78,7 +78,7 @@ class ManagerProcess(ABC):
   name = ""
 
   last_watchdog_time = 0
-  watchdog_max_dt = None
+  watchdog_max_dt: Optional[int] = None
   watchdog_seen = False
   shutting_down = False
 
