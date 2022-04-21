@@ -383,6 +383,7 @@ def main() -> None:
   update_failed_count = 0
 
   # Set initial params for offroad alerts
+  # TODO: set once on startup from manager?
   set_params(False, 0, None)
 
   # Wait for IsOffroad to be set before our first update attempt
@@ -438,10 +439,11 @@ def main() -> None:
       exception = str(e)
       overlay_init.unlink(missing_ok=True)
 
-    try:
-      set_params(new_version, update_failed_count, exception)
-    except Exception:
-      cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
+    if not wait_helper.shutdown:
+      try:
+        set_params(new_version, update_failed_count, exception)
+      except Exception:
+        cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
     # TODO: replace this with a good backoff
     wait_helper.sleep(300)
