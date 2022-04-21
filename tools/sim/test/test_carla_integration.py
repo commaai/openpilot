@@ -4,10 +4,10 @@ import signal
 import subprocess
 import time
 import unittest
+from multiprocessing import Queue
 from typing import List
 
 from cereal import messaging
-
 from tools.sim import bridge
 from tools.sim.bridge import connect_carla_client
 
@@ -16,7 +16,7 @@ class TestCarlaIntegration(unittest.TestCase):
   """
   Tests need Carla simulator to run
   """
-  processes:List[subprocess.Popen] = []
+  processes: List[subprocess.Popen] = []
 
   def test_connect_with_carla(self):
     # Test connecting to Carla within 5 seconds and return no RuntimeError
@@ -29,7 +29,8 @@ class TestCarlaIntegration(unittest.TestCase):
     # Test bridge connect with carla and runs without any errors for 60 seconds
     test_duration = 60
 
-    p = bridge.main(['--low_quality'], keep_alive=False)[0]
+    q = Queue()
+    p = bridge.main(q, bridge.parse_args(['--low_quality']), keep_alive=False)
     self.processes = [p]
 
     time.sleep(test_duration)
@@ -42,8 +43,8 @@ class TestCarlaIntegration(unittest.TestCase):
     self.processes.append(p_manager)
 
     sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
-
-    p_bridge, _, q = bridge.main(['--low_quality'], keep_alive=False)
+    q = Queue()
+    p_bridge = bridge.main(q, bridge.parse_args(['--low_quality']), keep_alive=False)
     self.processes.append(p_bridge)
     start_time = time.monotonic()
 
