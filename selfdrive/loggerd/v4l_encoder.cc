@@ -27,6 +27,7 @@ void V4LEncoder::dequeue_out_handler(V4LEncoder *e) {
     if (ret == -1) { usleep(10*1000); continue; }
 
     printf("got %d bytes\n", bytesused);
+    e->writer->write((uint8_t*)e->buf_out[e->buffer_out].addr, bytesused, 0, false, false);
 
     // TODO: process
 
@@ -165,8 +166,9 @@ int V4LEncoder::dequeue_buffer(v4l2_buf_type buf_type, unsigned int index, Visio
   return ret;
 }
 
-int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf) {
+int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int bytesused) {
   v4l2_plane plane = {
+    .bytesused = bytesused,
     .length = (unsigned int)buf->len,
     .m {
       .userptr = (unsigned long)buf->addr,
@@ -231,7 +233,7 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 
   // TODO: detect wraparound and block
   buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
-  int ret = queue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in]);
+  int ret = queue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], VENUS_BUFFER_SIZE(COLOR_FMT_NV12, this->width, this->height));
   assert(ret == 0);
   buffer_in = (buffer_in + 1) % 7;
 
