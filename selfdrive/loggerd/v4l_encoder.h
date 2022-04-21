@@ -15,7 +15,13 @@ public:
 private:
   const char* filename;
   CameraType type;
-  int in_width_, in_height_;
-  int width, height, fps;
+  unsigned int in_width_, in_height_;
+  unsigned int width, height, fps;
   bool remuxing, write;
+
+  std::unique_ptr<VideoWriter> writer;
+  int fd;
+
+  std::unique_ptr<PubMaster> pm;
+  const char *service_name;
 };
