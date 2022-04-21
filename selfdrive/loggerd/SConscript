@@ -8,7 +8,7 @@ libs = [common, cereal, messaging, visionipc,
 
 src = ['logger.cc', 'loggerd.cc', 'video_writer.cc']
 if arch == "larch64":
-  src += ['omx_encoder.cc']
+  src += ['omx_encoder.cc', 'v4l_encoder.cc']
   libs += ['OmxCore', 'gsl', 'CB'] + gpucommon
 else:
   src += ['raw_logger.cc']

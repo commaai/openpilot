@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include "selfdrive/loggerd/loggerd.h"
 
 class VideoEncoder {
 public:
