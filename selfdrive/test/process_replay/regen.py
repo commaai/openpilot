@@ -36,6 +36,8 @@ def replay_panda_states(s, msgs):
   cp = [m for m in msgs if m.which() == 'carParams'][0].carParams
   if len(cp.safetyConfigs):
     safety_param = cp.safetyConfigs[0].safetyParam
+    if cp.safetyConfigs[0].safetyParamDEPRECATED != 0:
+      safety_param = cp.safetyConfigs[0].safetyParamDEPRECATED
   else:
     safety_param = cp.safetyParamDEPRECATED
 
