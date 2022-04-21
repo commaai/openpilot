@@ -87,7 +87,7 @@ class TestCarlaIntegration(unittest.TestCase):
 
       time.sleep(0.1)
 
-    self.assertTrue(control_active)
+    self.assertTrue(control_active, "Simulator never engaged")
 
     # Set shutdown to close manager and bridge processes
     Params().put_bool("DoShutdown", True)
