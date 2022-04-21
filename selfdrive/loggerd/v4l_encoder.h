@@ -37,12 +37,11 @@ private:
   std::thread dequeue_in_thread;
 
   int queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int bytesused=0);
-  int dequeue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int *bytesused);
+  int dequeue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int *bytesused=NULL, unsigned int *flags=NULL);
   VisionBuf buf_in[7];
   VisionBuf buf_out[6];
 
   int buffer_queued = 0;
   int buffer_in = 0;
-
   int buffer_out = 0;
 };

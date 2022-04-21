@@ -13,8 +13,9 @@ void V4LEncoder::dequeue_in_handler(V4LEncoder *e) {
   bool exit = false;
   while (!exit) {
     if (e->buffer_queued == e->buffer_in) { usleep(10*1000); continue; }
-    int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, e->buffer_queued, &e->buf_in[e->buffer_queued], NULL);
-    if (ret == -1) { usleep(10*1000); continue; }
+    int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, e->buffer_queued, &e->buf_in[e->buffer_queued]);
+    if (ret != 0) { usleep(10*1000); continue; }
+    //printf("done with frame in buffer %d\n", e->buffer_queued);
     e->buffer_queued = (e->buffer_queued + 1) % 7;
   }
 }
@@ -22,16 +23,17 @@ void V4LEncoder::dequeue_in_handler(V4LEncoder *e) {
 void V4LEncoder::dequeue_out_handler(V4LEncoder *e) {
   bool exit = false;
   while (!exit) {
-    unsigned int bytesused;
-    int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, e->buffer_out, &e->buf_out[e->buffer_out], &bytesused);
-    if (ret == -1) { usleep(10*1000); continue; }
+    unsigned int bytesused, flags;
+    int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, e->buffer_out, &e->buf_out[e->buffer_out], &bytesused, &flags);
+    if (ret != 0) { usleep(10*1000); continue; }
 
-    printf("got %d bytes\n", bytesused);
-    e->writer->write((uint8_t*)e->buf_out[e->buffer_out].addr, bytesused, 0, false, false);
+    printf("got %d bytes in buffer %d with flags 0x%x\n", bytesused, e->buffer_out, flags);
+    e->buf_out[e->buffer_out].sync(VISIONBUF_SYNC_FROM_DEVICE);
+    e->writer->write((uint8_t*)e->buf_out[e->buffer_out].addr, bytesused, 0, false, flags & V4L2_BUF_FLAG_KEYFRAME);
 
     // TODO: process
 
-    e->queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, e->buffer_out, &e->buf_out[e->buffer_out]);
+    ret = e->queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, e->buffer_out, &e->buf_out[e->buffer_out]);
     e->buffer_out = (e->buffer_out + 1) % 6;
   }
 }
@@ -136,7 +138,7 @@ V4LEncoder::V4LEncoder(
   pm.reset(new PubMaster({service_name}));
 }
 
-int V4LEncoder::dequeue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int *bytesused) {
+int V4LEncoder::dequeue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int *bytesused, unsigned int *flags) {
   v4l2_plane plane = {
     .bytesused = 0,
     .length = (unsigned int)buf->len,
@@ -155,13 +157,19 @@ int V4LEncoder::dequeue_buffer(v4l2_buf_type buf_type, unsigned int index, Visio
     },
     .length = 1,
     .bytesused = 0,
-    .flags = V4L2_BUF_FLAG_QUEUED|V4L2_BUF_FLAG_TIMESTAMP_COPY
+    .flags = V4L2_BUF_FLAG_TIMESTAMP_COPY
   };
   int ret = ioctl(fd, VIDIOC_DQBUF, &v4l_buf);
   if (ret == -1 && errno == 11) return ret;
   
-  //printf("dequeue %d buffer %d: %d errno %d\n", buf_type, index, ret, ret==0 ? 0 : errno);
   if (bytesused) *bytesused = v4l_buf.m.planes[0].bytesused;
+  if (flags) *flags = v4l_buf.flags;
+  // this also includes timestamp
+  assert(v4l_buf.m.planes[0].data_offset == 0);
+
+  if (ret != 0 && errno != 11) {
+    printf("dequeue %d buffer %d: %d errno %d\n", buf_type, index, ret, ret==0 ? 0 : errno);
+  }
 
   return ret;
 }
@@ -189,7 +197,9 @@ int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionB
   };
 
   int ret = ioctl(fd, VIDIOC_QBUF, &v4l_buf);
-  //printf("queue %d buffer %d: %d errno %d\n", buf_type, index, ret, ret==0 ? 0 : errno);
+  if (ret != 0) {
+    printf("queue %d buffer %d: %d errno %d\n", buf_type, index, ret, ret==0 ? 0 : errno);
+  }
   return ret;
 }
 
