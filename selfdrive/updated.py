@@ -242,7 +242,7 @@ def init_overlay() -> None:
   cloudlog.info(f"git diff output:\n{git_diff}")
 
 
-def finalize_update() -> None:
+def finalize_update(wait_helper: WaitTimeHelper) -> None:
   """Take the current OverlayFS merged view and finalize a copy outside of
   OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
 
@@ -266,8 +266,11 @@ def finalize_update() -> None:
   except subprocess.CalledProcessError:
     cloudlog.exception(f"Failed git gc, took {time.monotonic() - t:.3f} s")
 
-  set_consistent_flag(True)
-  cloudlog.info("done finalizing overlay")
+  if wait_helper.shutdown:
+    cloudlog.info("got interrupted finalizing overlay")
+  else:
+    set_consistent_flag(True)
+    cloudlog.info("done finalizing overlay")
 
 
 def handle_agnos_update(wait_helper: WaitTimeHelper) -> None:
@@ -338,7 +341,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
         handle_agnos_update(wait_helper)
 
     # Create the finalized, ready-to-swap update
-    finalize_update()
+    finalize_update(wait_helper)
     cloudlog.info("openpilot update successful!")
   else:
     cloudlog.info("nothing new from git at this time")
