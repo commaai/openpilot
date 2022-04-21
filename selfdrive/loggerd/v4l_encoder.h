@@ -36,7 +36,7 @@ private:
   static void dequeue_in_handler(V4LEncoder *e);
   std::thread dequeue_in_thread;
 
-  int queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf);
+  int queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int bytesused=0);
   int dequeue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int *bytesused);
   VisionBuf buf_in[7];
   VisionBuf buf_out[6];
