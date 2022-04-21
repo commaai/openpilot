@@ -22,6 +22,8 @@ repos:
         exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)/'
         additional_dependencies: ['git+https://github.com/numpy/numpy-stubs', 'types-requests', 'types-atomicwrites',
                                   'types-pycurl']
+        args:
+        - --warn-unreachable
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:

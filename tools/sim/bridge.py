@@ -489,7 +489,6 @@ if __name__ == "__main__":
     # start input poll for joystick
     from lib.manual_ctrl import wheel_poll_thread
     wheel_poll_thread(q)
-    p.join()
   else:
     # start input poll for keyboard
     from lib.keyboard_ctrl import keyboard_poll_thread
