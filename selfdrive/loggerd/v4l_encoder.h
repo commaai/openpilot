@@ -4,6 +4,10 @@
 #include "selfdrive/loggerd/loggerd.h"
 #include "selfdrive/loggerd/video_writer.h"
 
+// has to be in this order
+#include "selfdrive/loggerd/include/v4l2-controls.h"
+#include <linux/videodev2.h>
+
 class V4LEncoder : public VideoEncoder {
 public:
   V4LEncoder(const char* filename, CameraType type, int width, int height, int fps, int bitrate, bool h265, int out_width, int out_height, bool write = true);
@@ -28,4 +32,10 @@ private:
 
   static void dequeue_handler(V4LEncoder *e);
   std::thread dequeue_thread;
+
+  int queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, bool dequeue=false);
+  VisionBuf buf_in[7];
+  VisionBuf buf_out[6];
+
+  int buffer_in = 0;
 };
