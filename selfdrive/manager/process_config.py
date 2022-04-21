@@ -38,8 +38,8 @@ procs = [
   PythonProcess("uploader", "selfdrive.loggerd.uploader", offroad=True),
   PythonProcess("statsd", "selfdrive.statsd", offroad=True),
 
-  NativeProcess("bridge", "cereal/messaging", ["./bridge"], offroad=True, notcar=True),
-  PythonProcess("webjoystick", "tools.joystick.web", offroad=True, notcar=True),
+  NativeProcess("bridge", "cereal/messaging", ["./bridge"], onroad=False, notcar=True),
+  PythonProcess("webjoystick", "tools.joystick.web", onroad=False, notcar=True),
 
   # Experimental
   PythonProcess("rawgpsd", "selfdrive.sensord.rawgps.rawgpsd", enabled=os.path.isfile("/persist/comma/use-quectel-rawgps")),
