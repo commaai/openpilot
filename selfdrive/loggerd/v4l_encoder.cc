@@ -174,7 +174,7 @@ int V4LEncoder::dequeue_buffer(v4l2_buf_type buf_type, unsigned int index, Visio
   return ret;
 }
 
-int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int bytesused) {
+int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int bytesused, struct timeval timestamp) {
   v4l2_plane plane = {
     .bytesused = bytesused,
     .length = (unsigned int)buf->len,
@@ -193,7 +193,8 @@ int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionB
     },
     .length = 1,
     .bytesused = 0,
-    .flags = V4L2_BUF_FLAG_QUEUED|V4L2_BUF_FLAG_TIMESTAMP_COPY
+    .flags = V4L2_BUF_FLAG_QUEUED|V4L2_BUF_FLAG_TIMESTAMP_COPY,
+    .timestamp = timestamp
   };
 
   int ret = ioctl(fd, VIDIOC_QBUF, &v4l_buf);
@@ -241,9 +242,17 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
                    this->width, this->height);
   assert(err == 0);
 
+  struct timeval timestamp {
+    .tv_sec = (long)(ts/1000000000),
+    .tv_usec = (long)((ts/1000) % 1000000),
+  };
+
   // TODO: detect wraparound and block
   buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
-  int ret = queue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], VENUS_BUFFER_SIZE(COLOR_FMT_NV12, this->width, this->height));
+  int ret = queue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in],
+    VENUS_BUFFER_SIZE(COLOR_FMT_NV12, this->width, this->height),
+    timestamp
+  );
   assert(ret == 0);
   buffer_in = (buffer_in + 1) % 7;
 
