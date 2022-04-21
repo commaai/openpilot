@@ -9,6 +9,7 @@
 
 #include "selfdrive/common/queue.h"
 #include "selfdrive/loggerd/encoder.h"
+#include "selfdrive/loggerd/loggerd.h"
 #include "selfdrive/loggerd/video_writer.h"
 
 struct OmxBuffer {
