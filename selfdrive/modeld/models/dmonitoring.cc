@@ -10,8 +10,8 @@
 
 #include "selfdrive/modeld/models/dmonitoring.h"
 
-constexpr int MODEL_WIDTH = 704;
-constexpr int MODEL_HEIGHT = 448;
+constexpr int MODEL_WIDTH = 1440;
+constexpr int MODEL_HEIGHT = 960;
 
 template <class T>
 static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
@@ -21,9 +21,6 @@ static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
 
 void dmonitoring_init(DMonitoringModelState* s) {
   s->is_rhd = Params().getBool("IsRHD");
-  for (int x = 0; x < std::size(s->tensor); ++x) {
-    s->tensor[x] = (x - 128.f) * 0.0078125f;
-  }
 
 #ifdef USE_ONNX_MODEL
   s->m = new ONNXModel("../../models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
@@ -42,65 +39,27 @@ static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int h
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, float *calib) {
-  uint8_t *raw_y = (uint8_t *) stream_buf;
-  uint8_t *raw_u = raw_y + (width * height);
-  uint8_t *raw_v = raw_u + ((width / 2) * (height / 2));
+  int v_off = height - MODEL_HEIGHT;
+  int h_off = (width - MODEL_WIDTH) / 2;
+  int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v, frame2tensor done in dsp
 
-  int resized_width = MODEL_WIDTH;
-  int resized_height = MODEL_HEIGHT;
-
-  auto [resized_y, resized_u, resized_v] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
-  libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterLinear;
-  if (!s->is_rhd) {
-    libyuv::I420Scale(raw_y, width,
-                    raw_u, width / 2,
-                    raw_v, width / 2,
-                    width, height,
-                    resized_y, resized_width,
-                    resized_u, resized_width / 2,
-                    resized_v, resized_width / 2,
-                    resized_width, resized_height,
-                    mode);
-  } else {
-    auto [mirror_y, mirror_u, mirror_v] = get_yuv_buf(s->premirror_resized_buf, resized_width, resized_height);
-    libyuv::I420Scale(raw_y, width,
-                    raw_u, width / 2,
-                    raw_v, width / 2,
-                    width, height,
-                    mirror_y, resized_width,
-                    mirror_u, resized_width / 2,
-                    mirror_v, resized_width / 2,
-                    resized_width, resized_height,
-                    mode);
-    libyuv::I420Mirror(mirror_y, resized_width,
-                    mirror_u, resized_width / 2,
-                    mirror_v, resized_width / 2,
-                    resized_y, resized_width,
-                    resized_u, resized_width / 2,
-                    resized_v, resized_width / 2,
-                    resized_width, resized_height);
-  }
-
-  int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
+  uint8_t *raw_buf = (uint8_t *) stream_buf;
+  auto [cropped_y, cropped_u, cropped_v] = get_yuv_buf(s->cropped_buf, MODEL_WIDTH, MODEL_HEIGHT);
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
-  // one shot conversion, O(n) anyway
-  // yuvframe2tensor, normalize
-  for (int r = 0; r < MODEL_HEIGHT/2; r++) {
-    for (int c = 0; c < MODEL_WIDTH/2; c++) {
-      // Y_ul
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (0*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_y[(2*r)*resized_width + 2*c]];
-      // Y_dl
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (1*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_y[(2*r+1)*resized_width + 2*c]];
-      // Y_ur
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_y[(2*r)*resized_width + 2*c+1]];
-      // Y_dr
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_y[(2*r+1)*resized_width + 2*c+1]];
-      // U
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_u[r*resized_width/2 + c]];
-      // V
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_v[r*resized_width/2 + c]];
-    }
-  }
+
+  libyuv::ConvertToI420(raw_buf, (width/2)*(height/2)*6,
+                        cropped_y, MODEL_WIDTH,
+                        cropped_u, MODEL_WIDTH/2,
+                        cropped_v, MODEL_WIDTH/2,
+                        h_off, v_off,
+                        width, height,
+                        MODEL_WIDTH, MODEL_HEIGHT,
+                        libyuv::kRotate0,
+                        libyuv::FOURCC_I420);
+
+  // snpe UserBufferEncodingUnsigned8Bit doesn't work
+  // fast float conversion instead, also scales to 0-1
+  libyuv::ByteToFloat(cropped_y, net_input_buf, 0.003921569f, yuv_buf_len);
 
   // printf("preprocess completed. %d \n", yuv_buf_len);
   // FILE *dump_yuv_file = fopen("/tmp/rawdump.yuv", "wb");

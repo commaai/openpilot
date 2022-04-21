@@ -32,7 +32,7 @@ thneed_src = [
 use_thneed = not GetOption('no_thneed')
 
 if arch == "aarch64" or arch == "larch64":
-  libs += ['gsl', 'CB']
+  libs += ['gsl', 'CB', 'jpeg']
   libs += ['gnustl_shared'] if arch == "aarch64" else ['pthread', 'dl']
 
   if use_thneed:

@@ -37,11 +37,9 @@ typedef struct DMonitoringModelState {
   RunModel *m;
   bool is_rhd;
   float output[OUTPUT_SIZE];
-  std::vector<uint8_t> resized_buf;
-  std::vector<uint8_t> premirror_resized_buf;
+  std::vector<uint8_t> cropped_buf;
   std::vector<float> net_input_buf;
   float calib[CALIB_LEN];
-  float tensor[UINT8_MAX + 1];
 } DMonitoringModelState;
 
 void dmonitoring_init(DMonitoringModelState* s);
