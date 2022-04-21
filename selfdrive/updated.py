@@ -257,7 +257,12 @@ def finalize_update() -> None:
 
   run(["git", "reset", "--hard"], FINALIZED)
   run(["git", "submodule", "foreach", "--recursive", "git", "reset"], FINALIZED)
+
+  cloudlog.info("Starting git gc")
+  t = time.monotonic()
   run(["git", "gc"], FINALIZED)
+  gc_dt = time.monotonic() - t
+  cloudlog.info(f"Done git gc, took {gc_dt:.3f} s")
 
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
