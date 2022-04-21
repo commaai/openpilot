@@ -30,12 +30,19 @@ private:
   std::unique_ptr<PubMaster> pm;
   const char *service_name;
 
-  static void dequeue_handler(V4LEncoder *e);
-  std::thread dequeue_thread;
+  static void dequeue_out_handler(V4LEncoder *e);
+  std::thread dequeue_out_thread;
 
-  int queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, bool dequeue=false);
+  static void dequeue_in_handler(V4LEncoder *e);
+  std::thread dequeue_in_thread;
+
+  int queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf);
+  int dequeue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int *bytesused);
   VisionBuf buf_in[7];
   VisionBuf buf_out[6];
 
+  int buffer_queued = 0;
   int buffer_in = 0;
+
+  int buffer_out = 0;
 };
