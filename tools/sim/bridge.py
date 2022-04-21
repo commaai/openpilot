@@ -490,20 +490,20 @@ class CarlaBridge:
     vehicle.destroy()
 
 
-def main(add_args=None, keep_alive=True):
+def main(queue, arguments, keep_alive=True):
   unblock_stdout()  # Fix error when publishing too many lag message
-  args = parse_args(add_args)
-  carla_bridge = CarlaBridge(args)
+  carla_bridge = CarlaBridge(arguments)
 
-  q: Any = Queue()
-  p = Process(target=carla_bridge.bridge_keep_alive, args=(q, keep_alive), daemon=True)
-  p.start()
+  bridge_p = Process(target=carla_bridge.bridge_keep_alive, args=(queue, keep_alive), daemon=True)
+  bridge_p.start()
 
-  return p, args, q
+  return bridge_p
 
 
 if __name__ == "__main__":
-  p, args, q = main()
+  q: Any = Queue()
+  args = parse_args()
+  p = main(q, args)
 
   if args.joystick:
     # start input poll for joystick
