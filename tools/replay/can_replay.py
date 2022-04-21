@@ -14,7 +14,7 @@ from panda import Panda
 try:
   from panda_jungle import PandaJungle  # pylint: disable=import-error
 except Exception:
-  PandaJungle = None  # type: ignore
+  PandaJungle = None
 
 
 def send_thread(s, flock):
