@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import os
-import signal
 import subprocess
 import time
 import unittest
@@ -35,7 +33,7 @@ class TestCarlaIntegration(unittest.TestCase):
 
     time.sleep(test_duration)
 
-    self.assertEqual(p.exitcode, None, f"Process should be running, but exited with code {p.exitcode}")
+    self.assertEqual(p.exitcode, None, f"Bridge process should be running, but exited with code {p.exitcode}")
 
   def test_engage(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
@@ -46,17 +44,22 @@ class TestCarlaIntegration(unittest.TestCase):
     q = Queue()
     p_bridge = bridge.main(q, bridge.parse_args(['--low_quality']), keep_alive=False)
     self.processes.append(p_bridge)
+    
+    # Wait for bridge to startup
+    time.sleep(10)
+    self.assertEqual(p_bridge.exitcode, None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}")
+
     start_time = time.monotonic()
 
     no_car_events_issues_once = False
-    max_time_per_test = 20
+    max_time_per_test = 10
 
     car_event_issues = []
     not_running = []
     while time.monotonic() < start_time + max_time_per_test:
       sm.update()
       not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
-      car_event_issues = [event.name for event in sm['carEvents'] if ['issue', 'error'] in event.name.lowercase]
+      car_event_issues = [event.name for event in sm['carEvents'] if any([event.noEntry, event.softDisable, event.immediateDisable])]
 
       if len(car_event_issues) == 0 and len(not_running) == 0:
         no_car_events_issues_once = True
@@ -82,7 +85,7 @@ class TestCarlaIntegration(unittest.TestCase):
 
   def tearDown(self):
     for p in self.processes:
-      os.kill(p.pid, signal.SIGTERM)
+      p.terminate()
 
 
 if __name__ == "__main__":
