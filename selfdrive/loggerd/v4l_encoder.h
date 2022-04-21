@@ -25,4 +25,7 @@ private:
 
   std::unique_ptr<PubMaster> pm;
   const char *service_name;
+
+  static void dequeue_handler(V4LEncoder *e);
+  std::thread dequeue_thread;
 };

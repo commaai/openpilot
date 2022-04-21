@@ -1,9 +1,29 @@
 #include <cassert>
 #include <sys/ioctl.h>
-#include <linux/videodev2.h>
 
 #include "selfdrive/loggerd/v4l_encoder.h"
 #include "selfdrive/common/util.h"
+
+// has to be in this order
+#include "selfdrive/loggerd/include/v4l2-controls.h"
+#include <linux/videodev2.h>
+
+// echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
+
+void V4LEncoder::dequeue_handler(V4LEncoder *e) {
+  bool exit = false;
+  while (!exit) {
+    v4l2_buffer buf;
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    int ret = ioctl(e->fd, VIDIOC_DQBUF, &buf);
+    printf("dequeue got %d\n", ret);
+
+    // TODO: process
+
+    ret = ioctl(e->fd, VIDIOC_QBUF, &buf);
+    printf("queue got %d\n", ret);
+  }
+}
 
 V4LEncoder::V4LEncoder(
   const char* filename, CameraType type, int in_width, int in_height,
@@ -36,6 +56,7 @@ V4LEncoder::V4LEncoder(
     .type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
     .parm {
       .output {
+        // TODO: more stuff here? we don't know
         .timeperframe {
           .numerator = 1,
           .denominator = 20
@@ -61,14 +82,13 @@ V4LEncoder::V4LEncoder(
 
   struct v4l2_control ctrls[] = {
     { .id = V4L2_CID_MPEG_VIDEO_BITRATE, .value = 10000000},
-    // TODO: find what these are
-    { .id = V4L2_CTRL_CLASS_MPEG+0x2009, .value = 2},
-    { .id = V4L2_CTRL_CLASS_MPEG+0x2028, .value = 0},
-    { .id = V4L2_CTRL_CLASS_MPEG+0x2029, .value = 15},
-    { .id = V4L2_CTRL_CLASS_MPEG+0x2034, .value = 1},
-    { .id = V4L2_CTRL_CLASS_MPEG+0x2006, .value = 29},
-    { .id = V4L2_CTRL_CLASS_MPEG+0x2007, .value = 0},
-    { .id = V4L2_CTRL_CLASS_MPEG+0x2005, .value = 1},
+    { .id = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL, .value = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL_VBR_CFR},
+    { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_PROFILE, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_PROFILE_MAIN},
+    { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_TIER_LEVEL, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_LEVEL_HIGH_TIER_LEVEL_5},
+    { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_DISABLE},
+    { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = 29},
+    { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_B_FRAMES, .value = 0},
+    { .id = V4L2_CID_MPEG_VIDC_VIDEO_IDR_PERIOD, .value = 1},
   };
 
   for (auto ctrl : ctrls) {
@@ -103,7 +123,21 @@ void V4LEncoder::encoder_open(const char* path) {
   v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
   assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
 
-  // TODO: queue up 6 V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
+  for (unsigned int i = 0; i < 6; i++) {
+    v4l2_buffer buf = {
+      .type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
+      .index = i,
+      .memory = V4L2_MEMORY_USERPTR,
+      .m {
+        .userptr = (unsigned long)malloc(2373632),   // get this from VIDIOC_S_FMT
+      },
+      .length = 1,
+      .bytesused = 0,
+      .flags = V4L2_BUF_FLAG_QUEUED|V4L2_BUF_FLAG_TIMESTAMP_COPY
+    };
+    int ret = ioctl(fd, VIDIOC_QBUF, &buf);
+    printf("queue buffer %d: %d\n", i, ret);
+  }
 
   buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
   assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
