@@ -71,6 +71,7 @@ class ManagerProcess(ABC):
   sigkill = False
   persistent = False
   driverview = False
+  notcar = False
   proc: Optional[Process] = None
   enabled = True
   name = ""
@@ -182,13 +183,14 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, cwd, cmdline, enabled=True, persistent=False, driverview=False, notcar=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
     self.enabled = enabled
     self.persistent = persistent
     self.driverview = driverview
+    self.notcar = notcar
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
@@ -213,12 +215,13 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, module, enabled=True, persistent=False, driverview=False, notcar=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.module = module
     self.enabled = enabled
     self.persistent = persistent
     self.driverview = driverview
+    self.notcar = notcar
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
@@ -284,7 +287,8 @@ class DaemonProcess(ManagerProcess):
     pass
 
 
-def ensure_running(procs: ValuesView[ManagerProcess], started: bool, driverview: bool=False, not_run: Optional[List[str]]=None) -> None:
+def ensure_running(procs: ValuesView[ManagerProcess], started: bool, driverview: bool=False, notcar: bool=False,
+                   not_run: Optional[List[str]]=None) -> None:
   if not_run is None:
     not_run = []
 
@@ -297,6 +301,11 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, driverview:
       p.start()
     elif p.driverview and driverview:
       p.start()
+    elif p.notcar:
+      if notcar:
+        p.start()
+      else:
+        p.stop(block=False)
     elif started:
       p.start()
     else:

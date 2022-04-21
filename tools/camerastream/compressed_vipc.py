@@ -37,15 +37,21 @@ def writer(fn, addr, sock_name):
       fifo_file.write(evta.data)
       fifo_file.flush()
 
-def decoder_nvidia(fn, vipc_server, vst):
+def decoder_nvidia(fn, vipc_server, vst, yuv=False):
   sys.path.append("/raid.dell2/PyNvCodec")
   import PyNvCodec as nvc # pylint: disable=import-error
   decoder = nvc.PyNvDecoder(fn, 0, {"probesize": "32"})
-  conv = nvc.PySurfaceConverter(W, H, nvc.PixelFormat.NV12, nvc.PixelFormat.BGR, 0)
   cc1 = nvc.ColorspaceConversionContext(nvc.ColorSpace.BT_709, nvc.ColorRange.JPEG)
-  nvDwn = nvc.PySurfaceDownloader(W, H, nvc.PixelFormat.BGR, 0)
 
+  conv = nvc.PySurfaceConverter(W, H, nvc.PixelFormat.NV12, nvc.PixelFormat.BGR, 0)
+  nvDwn = nvc.PySurfaceDownloader(W, H, nvc.PixelFormat.BGR, 0)
   img = np.ndarray((H,W,3), dtype=np.uint8)
+
+  if yuv:
+    conv_yuv = nvc.PySurfaceConverter(W, H, nvc.PixelFormat.NV12, nvc.PixelFormat.YUV420, 0)
+    nvDwn_yuv = nvc.PySurfaceDownloader(W, H, nvc.PixelFormat.YUV420, 0)
+    img_yuv = np.ndarray((H*W//2*3), dtype=np.uint8)
+
   cnt = 0
   while 1:
     rawSurface = decoder.DecodeSingleSurface()
@@ -54,15 +60,22 @@ def decoder_nvidia(fn, vipc_server, vst):
     convSurface = conv.Execute(rawSurface, cc1)
     nvDwn.DownloadSingleSurface(convSurface, img)
     vipc_server.send(vst, img.flatten().data, cnt, 0, 0)
+    if yuv:
+      convSurface = conv_yuv.Execute(rawSurface, cc1)
+      nvDwn_yuv.DownloadSingleSurface(convSurface, img_yuv)
+      vipc_server.send(vst+3, img_yuv.flatten().data, cnt, 0, 0)
     cnt += 1
 
-def decoder_ffmpeg(fn, vipc_server, vst):
+def decoder_ffmpeg(fn, vipc_server, vst, yuv=False):
   import av # pylint: disable=import-error
   container = av.open(fn, options={"probesize": "32"})
   cnt = 0
   for frame in container.decode(video=0):
     img = frame.to_ndarray(format=av.video.format.VideoFormat('bgr24'))
     vipc_server.send(vst, img.flatten().data, cnt, 0, 0)
+    if yuv:
+      img_yuv = frame.to_ndarray(format=av.video.format.VideoFormat('yuv420p'))
+      vipc_server.send(vst+3, img_yuv.flatten().data, cnt, 0, 0)
     cnt += 1
 
 import argparse
@@ -70,6 +83,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Decode video streams and broacast on VisionIPC')
   parser.add_argument("addr", help="Address of comma 3")
   parser.add_argument('--nvidia', action='store_true', help='Use nvidia instead of ffmpeg')
+  parser.add_argument('--yuv', action='store_true', help='Also broadcast YUV')
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")
   args = parser.parse_args()
 
@@ -83,6 +97,8 @@ if __name__ == "__main__":
   vipc_server = VisionIpcServer("camerad")
   for vst in cams.values():
     vipc_server.create_buffers(vst, 4, True, W, H)
+    if args.yuv:
+      vipc_server.create_buffers(vst+3, 4, False, W, H)
   vipc_server.start_listener()
 
   for k,v in cams.items():
@@ -92,6 +108,6 @@ if __name__ == "__main__":
     os.mkfifo(FIFO_NAME)
     multiprocessing.Process(target=writer, args=(FIFO_NAME, sys.argv[1], k)).start()
     if args.nvidia:
-      multiprocessing.Process(target=decoder_nvidia, args=(FIFO_NAME, vipc_server, v)).start()
+      multiprocessing.Process(target=decoder_nvidia, args=(FIFO_NAME, vipc_server, v, args.yuv)).start()
     else:
-      multiprocessing.Process(target=decoder_ffmpeg, args=(FIFO_NAME, vipc_server, v)).start()
+      multiprocessing.Process(target=decoder_ffmpeg, args=(FIFO_NAME, vipc_server, v, args.yuv)).start()
