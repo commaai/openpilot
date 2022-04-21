@@ -23,7 +23,7 @@ if __name__ == "__main__":
   desc_text =   "Shows Volkswagen EPS software and coding info, and enables or disables Heading Control Assist " + \
                 "(Lane Assist). Useful for enabling HCA on cars without factory Lane Assist that want to use " + \
                 "openpilot integrated at the CAN gateway (J533)."
-  epilog_text = "This tool is meant to run directly on a vehicle-installed comma two or comma three, with the " + \
+  epilog_text = "This tool is meant to run directly on a vehicle-installed comma three, with the " + \
                 "openpilot/tmux processes stopped. It should also work on a separate PC with a USB-attached comma " + \
                 "panda. Vehicle ignition must be on. Recommend engine not be running when making changes. Must " + \
                 "turn ignition off and on again for any changes to take effect."

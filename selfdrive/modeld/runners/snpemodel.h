@@ -38,7 +38,7 @@ public:
 private:
   std::string model_data;
 
-#if defined(QCOM) || defined(QCOM2)
+#ifdef QCOM2
   zdl::DlSystem::Runtime_t Runtime;
 #endif
 

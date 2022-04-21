@@ -18,9 +18,15 @@ class CarControllerParams:
   ACCEL_MIN = -3.5  # m/s2
 
   STEER_MAX = 1500
-  STEER_DELTA_UP = 10       # 1.5s time to peak torque
-  STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+
+  def __init__(self, CP):
+    if CP.lateralTuning.which == 'torque':
+      self.STEER_DELTA_UP = 15       # 1.0s time to peak torque
+      self.STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
+    else:
+      self.STEER_DELTA_UP = 10       # 1.5s time to peak torque
+      self.STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
 
 
 class ToyotaFlags(IntFlag):
@@ -151,7 +157,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2020"),
   CAR.LEXUS_RX: ToyotaCarInfo("Lexus RX 2016-18", footnotes=[Footnote.DSU]),
   CAR.LEXUS_RXH: ToyotaCarInfo("Lexus RX Hybrid 2016-19", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-21"),
+  CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
   CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
 }
 
@@ -260,6 +266,7 @@ FW_VERSIONS = {
   },
   CAR.AVALON_TSS2: {
     (Ecu.esp, 0x7b0, None): [
+      b'\x01F152607240\x00\x00\x00\x00\x00\x00',
       b'\x01F152607280\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
@@ -270,9 +277,11 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F6201200\x00\x00\x00\x00',
+      b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
+      b'\x028646F4104100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.AVALONH_TSS2: {
@@ -290,6 +299,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
+      b'\x028646F4104100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.CAMRY: {
@@ -1492,8 +1502,8 @@ FW_VERSIONS = {
   CAR.LEXUS_NX_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x018966378B2100\x00\x00\x00\x00',
+      b'\x018966378B3000\x00\x00\x00\x00',
       b'\x018966378G3000\x00\x00\x00\x00',
-      b'\x018966378B3000\x00\x00\x00\x00'
     ],
     (Ecu.esp, 0x7b0, None): [
       b'\x01F152678221\x00\x00\x00\x00\x00\x00',
@@ -1504,6 +1514,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x750, 0xf): [
       b"\x018821F3301400\x00\x00\x00\x00",
       b'\x018821F3301200\x00\x00\x00\x00',
+      b'\x018821F3301300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F78030A0\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',

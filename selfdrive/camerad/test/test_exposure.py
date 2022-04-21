@@ -6,7 +6,7 @@ import numpy as np
 from selfdrive.test.helpers import with_processes
 from selfdrive.camerad.snapshot.snapshot import get_snapshots
 
-from selfdrive.hardware import EON, TICI
+from selfdrive.hardware import TICI
 
 TEST_TIME = 45
 REPEAT = 5
@@ -14,7 +14,7 @@ REPEAT = 5
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not (EON or TICI):
+    if not TICI:
       raise unittest.SkipTest
 
   def _numpy_rgb2gray(self, im):

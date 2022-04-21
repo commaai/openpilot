@@ -4,19 +4,14 @@ Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc', 'gpucommon')
 libs = [common, cereal, messaging, visionipc,
         'zmq', 'capnp', 'kj', 'z',
         'avformat', 'avcodec', 'swscale', 'avutil',
-        'yuv', 'bz2', 'OpenCL']
+        'yuv', 'bz2', 'OpenCL', 'pthread']
 
-src = ['logger.cc', 'loggerd.cc']
-if arch in ["aarch64", "larch64"]:
+src = ['logger.cc', 'loggerd.cc', 'video_writer.cc']
+if arch == "larch64":
   src += ['omx_encoder.cc']
   libs += ['OmxCore', 'gsl', 'CB'] + gpucommon
-  if arch == "aarch64":
-    libs += ['OmxVenc', 'cutils']
-  else:
-    libs += ['pthread']
 else:
   src += ['raw_logger.cc']
-  libs += ['pthread']
 
 if arch == "Darwin":
   # fix OpenCL

@@ -98,7 +98,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
-  update_line_data(s, model_position, 0.5, 1.22, &scene.track_vertices, max_idx);
+  update_line_data(s, model_position, scene.end_to_end ? 0.9 : 0.5, 1.22, &scene.track_vertices, max_idx);
 }
 
 static void update_sockets(UIState *s) {
@@ -166,17 +166,7 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (!Hardware::TICI() && sm.updated("roadCameraState")) {
-    auto camera_state = sm["roadCameraState"].getRoadCameraState();
-
-    float max_lines = Hardware::EON() ? 5408 : 1904;
-    float max_gain = Hardware::EON() ? 1.0: 10.0;
-    float max_ev = max_lines * max_gain;
-
-    float ev = camera_state.getGain() * float(camera_state.getIntegLines());
-
-    scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
-  } else if (Hardware::TICI() && sm.updated("wideRoadCameraState")) {
+  if (Hardware::TICI() && sm.updated("wideRoadCameraState")) {
     auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
 
     float max_lines = 1618;
