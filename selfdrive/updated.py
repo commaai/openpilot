@@ -260,9 +260,11 @@ def finalize_update() -> None:
 
   cloudlog.info("Starting git gc")
   t = time.monotonic()
-  run(["git", "gc"], FINALIZED)
-  gc_dt = time.monotonic() - t
-  cloudlog.info(f"Done git gc, took {gc_dt:.3f} s")
+  try:
+    run(["git", "gc"], FINALIZED)
+    cloudlog.info(f"Done git gc, took {time.monotonic() - t:.3f} s")
+  except subprocess.CalledProcessError:
+    cloudlog.exception(f"Failed git gc, took {time.monotonic() - t:.3f} s")
 
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
