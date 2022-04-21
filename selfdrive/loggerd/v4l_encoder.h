@@ -18,6 +18,7 @@ private:
   unsigned int in_width_, in_height_;
   unsigned int width, height, fps;
   bool remuxing, write;
+  bool is_open = false;
 
   std::unique_ptr<VideoWriter> writer;
   int fd;
