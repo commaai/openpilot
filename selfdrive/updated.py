@@ -171,6 +171,7 @@ def setup_git_options(cwd: str) -> None:
     ("core.checkStat", "minimal"),
     ("protocol.version", "2"),
     ("gc.auto", "0"),
+    ("gc.autoDetach", "false"),
   ]
   for option, value in git_cfg:
     run(["git", "config", option, value], cwd)
