@@ -26,22 +26,22 @@ const char frame_vertex_shader[] =
   "  vTexCoord = aTexCoord;\n"
   "}\n";
 
-const char yuv_fragment_shader[] =
+const char frame_fragment_shader[] =
 #ifdef __APPLE__
   "#version 150 core\n"
 #else
   "#version 300 es\n"
   "precision mediump float;\n"
 #endif
+  "uniform sampler2D uTextureY;\n"
+  "uniform sampler2D uTextureU;\n"
+  "uniform sampler2D uTextureV;\n"
   "in vec2 vTexCoord;\n"
   "out vec4 colorOut;\n"
-  "uniform sampler2D texture_y;\n"
-  "uniform sampler2D texture_u;\n"
-  "uniform sampler2D texture_v;\n"
   "void main() {\n"
-  "  float y = texture(texture_y, vTexCoord).r;\n"
-  "  float u = texture(texture_u, vTexCoord).r - 0.5;\n"
-  "  float v = texture(texture_v, vTexCoord).r - 0.5;\n"
+  "  float y = texture(uTextureY, vTexCoord).r;\n"
+  "  float u = texture(uTextureU, vTexCoord).r - 0.5;\n"
+  "  float v = texture(uTextureV, vTexCoord).r - 0.5;\n"
   "  float r = y + 1.402 * v;\n"
   "  float g = y - 0.344 * u - 0.714 * v;\n"
   "  float b = y + 1.772 * u;\n"
@@ -125,7 +125,7 @@ void CameraViewWidget::initializeGL() {
   program = std::make_unique<QOpenGLShaderProgram>(context());
   bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
   assert(ret);
-  ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, yuv_fragment_shader);
+  ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
   assert(ret);
 
   program->link();
@@ -147,7 +147,8 @@ void CameraViewWidget::initializeGL() {
   glBindBuffer(GL_ARRAY_BUFFER, frame_vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(frame_coords), frame_coords, GL_STATIC_DRAW);
   glEnableVertexAttribArray(frame_pos_loc);
-  glVertexAttribPointer(frame_pos_loc, 2, GL_FLOAT, GL_FALSE, sizeof(frame_coords[0]), (const void *)0);
+  glVertexAttribPointer(frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
+                        sizeof(frame_coords[0]), (const void *)0);
   glEnableVertexAttribArray(frame_texcoord_loc);
   glVertexAttribPointer(frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
                         sizeof(frame_coords[0]), (const void *)(sizeof(float) * 2));
@@ -159,9 +160,9 @@ void CameraViewWidget::initializeGL() {
 
   glGenTextures(3, textures);
   glUseProgram(program->programId());
-  glUniform1i(program->uniformLocation("texture_y"), 0);
-  glUniform1i(program->uniformLocation("texture_u"), 1);
-  glUniform1i(program->uniformLocation("texture_v"), 2);
+  glUniform1i(program->uniformLocation("uTextureY"), 0);
+  glUniform1i(program->uniformLocation("uTextureU"), 1);
+  glUniform1i(program->uniformLocation("uTextureV"), 2);
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
