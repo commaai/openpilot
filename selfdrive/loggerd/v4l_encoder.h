@@ -36,9 +36,6 @@ private:
   static void dequeue_out_handler(V4LEncoder *e);
   std::thread dequeue_out_thread;
 
-  static void dequeue_in_handler(V4LEncoder *e);
-  std::thread dequeue_in_thread;
-
   int queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int bytesused=0, struct timeval timestamp={0});
   int dequeue_buffer(v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL);
 
@@ -46,4 +43,5 @@ private:
   VisionBuf buf_out[BUF_OUT_COUNT];
 
   int buffer_in = 0;
+  int buffer_in_outstanding = 0;
 };
