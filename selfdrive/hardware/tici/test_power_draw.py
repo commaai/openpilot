@@ -4,7 +4,7 @@ import time
 import math
 from collections import OrderedDict
 
-from selfdrive.hardware import HARDWARE
+from selfdrive.hardware import HARDWARE, TICI
 from selfdrive.hardware.tici.power_monitor import get_power
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.manager.manager import manager_cleanup
@@ -19,6 +19,7 @@ POWER = OrderedDict(
 
 class TestPowerDraw(unittest.TestCase):
 
+  @classmethod
   def setUpClass(cls):
     if not TICI:
       raise unittest.SkipTest
