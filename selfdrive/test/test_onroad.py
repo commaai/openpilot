@@ -205,7 +205,7 @@ class TestOnroad(unittest.TestCase):
     result += "------------------------------------------------\n"
     # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [
-      ("modelV2", 0.038, 0.036),
+      ("modelV2", 0.050, 0.036),
       ("driverState", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
