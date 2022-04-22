@@ -431,7 +431,7 @@ void CameraState::config_isp(int dev_handle, int io_mem_handle, int fence, int r
   tmp.resource_hfr = {
     .num_ports = 1,  // 10 for YUV (but I don't think we need them)
     .port_hfr_config[0] = {
-      .resource_type = (dev_handle == isp_dev_handle) ? CAM_ISP_IFE_OUT_RES_RDI_0 : CAM_ISP_IFE_OUT_RES_RDI_1, // CAM_ISP_IFE_OUT_RES_FULL for YUV
+      .resource_type = (uint32_t)((dev_handle == isp_dev_handle) ? CAM_ISP_IFE_OUT_RES_RDI_0 : CAM_ISP_IFE_OUT_RES_RDI_1), // CAM_ISP_IFE_OUT_RES_FULL for YUV
       .subsample_pattern = 1,
       .subsample_period = 0,
       .framedrop_pattern = 1,
@@ -482,9 +482,9 @@ void CameraState::config_isp(int dev_handle, int io_mem_handle, int fence, int r
     io_cfg[0].mem_handle[0] = io_mem_handle;
 		io_cfg[0].planes[0] = (struct cam_plane_cfg){
 		 .width = FRAME_WIDTH,
-		 .height = (dev_handle == isp_dev_handle) ? FRAME_HEIGHT : STATS_HEIGHT,
+		 .height = (uint32_t)((dev_handle == isp_dev_handle) ? FRAME_HEIGHT : STATS_HEIGHT),
 		 .plane_stride = FRAME_STRIDE,
-		 .slice_height = (dev_handle == isp_dev_handle) ? FRAME_HEIGHT : STATS_HEIGHT,
+		 .slice_height = (uint32_t)((dev_handle == isp_dev_handle) ? FRAME_HEIGHT : STATS_HEIGHT),
 		 .meta_stride = 0x0,    // YUV has meta(stride=0x400, size=0x5000)
 		 .meta_size = 0x0,
 		 .meta_offset = 0x0,
