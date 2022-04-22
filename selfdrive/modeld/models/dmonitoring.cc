@@ -39,14 +39,15 @@ static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int h
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, float *calib) {
-  int v_off = height - MODEL_HEIGHT;
-  int h_off = (width - MODEL_WIDTH) / 2;
+  // int v_off = height - MODEL_HEIGHT;
+  // int h_off = (width - MODEL_WIDTH) / 2;
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v, frame2tensor done in dsp
 
-  uint8_t *raw_buf = (uint8_t *) stream_buf;
+  // uint8_t *raw_buf = (uint8_t *) stream_buf;
   auto [cropped_y, cropped_u, cropped_v] = get_yuv_buf(s->cropped_buf, MODEL_WIDTH, MODEL_HEIGHT);
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
 
+  /*
   libyuv::ConvertToI420(raw_buf, (width/2)*(height/2)*6,
                         cropped_y, MODEL_WIDTH,
                         cropped_u, MODEL_WIDTH/2,
@@ -56,6 +57,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                         MODEL_WIDTH, MODEL_HEIGHT,
                         libyuv::kRotate0,
                         libyuv::FOURCC_I420);
+  */
 
   // snpe UserBufferEncodingUnsigned8Bit doesn't work
   // fast float conversion instead, also scales to 0-1
