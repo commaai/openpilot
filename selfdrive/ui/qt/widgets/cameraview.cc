@@ -240,6 +240,8 @@ void CameraViewWidget::paintGL() {
     assert(glGetError() == GL_NO_ERROR);
   }
 
+  glActiveTexture(GL_TEXTURE0);  // qt requires active texture 0
+
   glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
