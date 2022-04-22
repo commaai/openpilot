@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import argparse
+import capnp
 
 from cereal.messaging import SubMaster
 from common.numpy_fast import mean
-
+from typing import Optional
 
 def cputime_total(ct):
   return ct.user + ct.nice + ct.system + ct.idle + ct.iowait + ct.irq + ct.softirq
@@ -40,8 +41,8 @@ if __name__ == "__main__":
   total_times = [0.]*8
   busy_times = [0.]*8
 
-  prev_proclog = None
-  prev_proclog_t = None
+  prev_proclog: Optional[capnp._DynamicStructReader] = None
+  prev_proclog_t: Optional[int] = None
 
   while True:
     sm.update()
@@ -73,7 +74,7 @@ if __name__ == "__main__":
 
       print(f"CPU {100.0 * mean(cores):.2f}% - RAM: {last_mem:.2f}% - Temp {last_temp:.2f}C")
 
-      if args.cpu and prev_proclog is not None:
+      if args.cpu and prev_proclog is not None and prev_proclog_t is not None:
         procs = {}
         dt = (sm.logMonoTime['procLog'] - prev_proclog_t) / 1e9
         for proc in m.procs:

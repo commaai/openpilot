@@ -11,6 +11,7 @@ import carla  # pylint: disable=import-error
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
+
 from lib.can import can_function
 
 import cereal.messaging as messaging
@@ -36,7 +37,7 @@ REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
-pm = messaging.PubMaster(['roadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
+pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl', 'controlsState'])
 
 
@@ -64,12 +65,16 @@ def steer_rate_limit(old, new):
 
 class Camerad:
   def __init__(self):
-    self.frame_id = 0
+    self.frame_road_id = 0
+    self.frame_wide_id = 0
     self.vipc_server = VisionIpcServer("camerad")
 
     # TODO: remove RGB buffers once the last RGB vipc subscriber is removed
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, W, H)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, W, H)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, False, W, H)
+
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_WIDE_ROAD, 4, True, W, H)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, False, W, H)
     self.vipc_server.start_listener()
 
     # set up for pyopencl rgb to yuv conversion
@@ -84,7 +89,17 @@ class Camerad:
     self.Wdiv4 = W // 4 if (W % 4 == 0) else (W + (4 - W % 4)) // 4
     self.Hdiv4 = H // 4 if (H % 4 == 0) else (H + (4 - H % 4)) // 4
 
-  def cam_callback(self, image):
+  def cam_callback_road(self, image):
+    self._cam_callback(image, self.frame_road_id, 'roadCameraState',
+                       VisionStreamType.VISION_STREAM_RGB_ROAD, VisionStreamType.VISION_STREAM_ROAD)
+    self.frame_road_id += 1
+
+  def cam_callback_wide_road(self, image):
+    self._cam_callback(image, self.frame_wide_id, 'wideRoadCameraState',
+                       VisionStreamType.VISION_STREAM_RGB_WIDE_ROAD, VisionStreamType.VISION_STREAM_WIDE_ROAD)
+    self.frame_wide_id += 1
+
+  def _cam_callback(self, image, frame_id, pub_type, rgb_type, yuv_type):
     img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
     img = np.reshape(img, (H, W, 4))
     img = img[:, :, [0, 1, 2]].copy()
@@ -95,21 +110,21 @@ class Camerad:
     yuv_cl = cl_array.empty_like(rgb_cl)
     self.krnl(self.queue, (np.int32(self.Wdiv4), np.int32(self.Hdiv4)), None, rgb_cl.data, yuv_cl.data).wait()
     yuv = np.resize(yuv_cl.get(), np.int32(rgb.size / 2))
-    eof = int(self.frame_id * 0.05 * 1e9)
+    eof = int(frame_id * 0.05 * 1e9)
 
     # TODO: remove RGB send once the last RGB vipc subscriber is removed
-    self.vipc_server.send(VisionStreamType.VISION_STREAM_RGB_ROAD, img.tobytes(), self.frame_id, eof, eof)
-    self.vipc_server.send(VisionStreamType.VISION_STREAM_ROAD, yuv.data.tobytes(), self.frame_id, eof, eof)
+    self.vipc_server.send(rgb_type, img.tobytes(), frame_id, eof, eof)
+    self.vipc_server.send(yuv_type, yuv.data.tobytes(), frame_id, eof, eof)
 
-    dat = messaging.new_message('roadCameraState')
-    dat.roadCameraState = {
+    dat = messaging.new_message(pub_type)
+    msg = {
       "frameId": image.frame,
       "transform": [1.0, 0.0, 0.0,
                     0.0, 1.0, 0.0,
                     0.0, 0.0, 1.0]
     }
-    pm.send('roadCameraState', dat)
-    self.frame_id += 1
+    setattr(dat, pub_type, msg)
+    pm.send(pub_type, dat)
 
 
 def imu_callback(imu, vehicle_state):
@@ -260,15 +275,23 @@ def bridge(q):
   physics_control.gear_switch_time = 0.0
   vehicle.apply_physics_control(physics_control)
 
-  blueprint = blueprint_library.find('sensor.camera.rgb')
-  blueprint.set_attribute('image_size_x', str(W))
-  blueprint.set_attribute('image_size_y', str(H))
-  blueprint.set_attribute('fov', '40')
-  blueprint.set_attribute('sensor_tick', '0.05')
   transform = carla.Transform(carla.Location(x=0.8, z=1.13))
-  camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
+
+  def create_camera(fov, callback):
+    blueprint = blueprint_library.find('sensor.camera.rgb')
+    blueprint.set_attribute('image_size_x', str(W))
+    blueprint.set_attribute('image_size_y', str(H))
+    blueprint.set_attribute('fov', str(fov))
+    blueprint.set_attribute('sensor_tick', '0.05')
+    camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
+    camera.listen(callback)
+    return camera
+
   camerad = Camerad()
-  camera.listen(camerad.cam_callback)
+  road_camera = create_camera(fov=40, callback=camerad.cam_callback_road)
+  road_wide_camera = create_camera(fov=163, callback=camerad.cam_callback_wide_road)  # fov bigger than 163 shows unwanted artifacts
+
+  cameras = [road_camera, road_wide_camera]
 
   vehicle_state = VehicleState()
 
@@ -435,7 +458,8 @@ def bridge(q):
     t.join()
   gps.destroy()
   imu.destroy()
-  camera.destroy()
+  for c in cameras:
+    c.destroy()
   vehicle.destroy()
 
 
@@ -444,8 +468,8 @@ def bridge_keep_alive(q: Any):
     try:
       bridge(q)
       break
-    except RuntimeError:
-      print("Restarting bridge...")
+    except RuntimeError as e:
+      print("Restarting bridge. Error:", e)
 
 
 if __name__ == "__main__":
@@ -465,7 +489,6 @@ if __name__ == "__main__":
     # start input poll for joystick
     from lib.manual_ctrl import wheel_poll_thread
     wheel_poll_thread(q)
-    p.join()
   else:
     # start input poll for keyboard
     from lib.keyboard_ctrl import keyboard_poll_thread

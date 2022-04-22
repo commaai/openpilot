@@ -83,7 +83,7 @@ def connect():
 
 if __name__ == "__main__":
   if PandaJungle is None:
-    print("\33[31m", "WARNING: cannot connect to jungles. Clone the jungle library to enable support:", "\033[0m")
+    print("\33[31m", "WARNING: cannot connect to jungles. Clone the jungle library to enable support:", "\033[0m")  # type: ignore
     print("\033[34m", f"cd {BASEDIR} && git clone https://github.com/commaai/panda_jungle", "\033[0m")
 
   print("Loading log...")

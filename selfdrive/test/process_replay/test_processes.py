@@ -7,7 +7,7 @@ from typing import Any
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs
-from selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
+from selfdrive.test.process_replay.process_replay import CONFIGS, replay_process, check_enabled
 from tools.lib.logreader import LogReader
 
 
@@ -33,11 +33,11 @@ original_segments = [
 segments = [
   ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),
   ("HYUNDAI", "fakedata|2022-01-20--17-49-04--0"),
-  ("TOYOTA", "fakedata|2022-01-20--17-50-51--0"),
-  ("TOYOTA2", "fakedata|2022-01-20--17-52-36--0"),
-  ("TOYOTA3", "fakedata|2022-01-20--17-54-50--0"),
+  ("TOYOTA", "fakedata|2022-04-13--18-53-16--0"),
+  ("TOYOTA2", "fakedata|2022-04-13--18-59-09--0"),
+  ("TOYOTA3", "fakedata|2022-04-13--19-09-53--0"),
   ("HONDA", "fakedata|2022-01-20--17-56-40--0"),
-  ("HONDA2", "fakedata|2022-01-20--17-58-25--0"),
+  ("HONDA2", "fakedata|2022-04-13--19-23-30--0"),
   ("CHRYSLER", "fakedata|2022-01-20--18-00-11--0"),
   ("SUBARU", "fakedata|2022-01-20--18-01-57--0"),
   ("GM", "fakedata|2022-01-20--18-03-41--0"),
@@ -68,14 +68,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
 
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
-    for msg in log_msgs:
-      if msg.which() == "carParams":
-        if msg.carParams.notCar:
-          break
-      if msg.which() == "controlsState":
-        if msg.controlsState.active:
-          break
-    else:
+    if not check_enabled(log_msgs):
       segment = cmp_log_fn.split("/")[-1].split("_")[0]
       raise Exception(f"Route never enabled: {segment}")
 

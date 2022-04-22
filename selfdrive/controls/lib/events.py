@@ -724,6 +724,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.controlsMismatch: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Mismatch"),
+    ET.NO_ENTRY: NoEntryAlert("Controls Mismatch"),
   },
 
   EventName.roadCameraError: {
@@ -732,13 +733,13 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
                                        creation_delay=30.),
   },
 
-  EventName.driverCameraError: {
+  EventName.wideRoadCameraError: {
     ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Road Fisheye",
                                        duration=1.,
                                        creation_delay=30.),
   },
 
-  EventName.wideRoadCameraError: {
+  EventName.driverCameraError: {
     ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Driver",
                                        duration=1.,
                                        creation_delay=30.),
@@ -757,7 +758,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # - CAN data is received, but some message are not received at the right frequency
   # If you're not writing a new car port, this is usually cause by faulty wiring
   EventName.canError: {
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Error: Check Connections"),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Error"),
     ET.PERMANENT: Alert(
       "CAN Error: Check Connections",
       "",
@@ -766,7 +767,15 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("CAN Error: Check Connections"),
   },
 
-  EventName.canBusMissing: {},
+  EventName.canBusMissing: {
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Bus Disconnected"),
+    ET.PERMANENT: Alert(
+      "CAN Bus Disconnected: Likely Faulty Cable",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 1., creation_delay=1.),
+    ET.NO_ENTRY: NoEntryAlert("CAN Bus Disconnected: Check Connections"),
+  },
 
   EventName.steerUnavailable: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("LKAS Fault: Restart the Car"),
