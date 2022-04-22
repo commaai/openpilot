@@ -12,6 +12,7 @@ extern "C" {
 }
 
 #include "selfdrive/loggerd/encoder.h"
+#include "selfdrive/loggerd/loggerd.h"
 #include "selfdrive/loggerd/video_writer.h"
 
 class RawLogger : public VideoEncoder {
