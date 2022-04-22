@@ -268,7 +268,7 @@ class CarlaBridge:
     self._shutdown = True
 
   def bridge_keep_alive(self, q: Queue, retries: int):
-    while True:
+    while not self._shutdown:
       try:
         self._run(q)
         break
