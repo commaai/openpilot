@@ -134,6 +134,7 @@ class Camerad:
   def close(self):
     self._kernel_file.close()
 
+
 def imu_callback(imu, vehicle_state):
   vehicle_state.bearing_deg = math.degrees(imu.compass)
   dat = messaging.new_message('sensorEvents', 2)
@@ -240,7 +241,7 @@ def can_function_runner(vs: VehicleState, exit_event: threading.Event):
 
 def connect_carla_client():
   client = carla.Client("127.0.0.1", 2000)
-  client.set_timeout(15)
+  client.set_timeout(10)
   return client
 
 
@@ -260,20 +261,22 @@ class CarlaBridge:
     self._threads_exit_event = threading.Event()
     self._threads = []
     self._shutdown = False
+    self.started = False
     signal.signal(signal.SIGTERM, self._on_shutdown)
 
   def _on_shutdown(self, signal, frame):
     self._shutdown = True
 
-  def bridge_keep_alive(self, q: Queue, keep_alive: bool):
+  def bridge_keep_alive(self, q: Queue, retries: int):
     while True:
       try:
         self._run(q)
         break
       except RuntimeError as e:
-        if not keep_alive:
+        if retries == 0:
           raise
-        print(f"Restarting bridge after error: {e} ")
+        retries -= 1
+        print(f"Restarting bridge. Retries left {retries}. Error: {e} ")
 
   def _run(self, q: Queue):
     client = connect_carla_client()
@@ -491,6 +494,8 @@ class CarlaBridge:
       if rk.frame % 5 == 0:
         world.tick()
       rk.keep_time()
+      self.started = True
+
     # Clean up resources in the opposite order they were created.
     self.close()
 
@@ -506,21 +511,19 @@ class CarlaBridge:
     for t in reversed(self._threads):
       t.join()
 
-
-def main(queue, arguments, keep_alive=True):
-  unblock_stdout()  # Fix error when publishing too many lag message
-  carla_bridge = CarlaBridge(arguments)
-
-  bridge_p = Process(target=carla_bridge.bridge_keep_alive, args=(queue, keep_alive), daemon=True)
-  bridge_p.start()
-
-  return bridge_p
+  def run(self, queue, retries=-1):
+    unblock_stdout()  # Fix error when publishing too many lag message
+    bridge_p = Process(target=self.bridge_keep_alive, args=(queue, retries), daemon=True)
+    bridge_p.start()
+    return bridge_p
 
 
 if __name__ == "__main__":
   q: Any = Queue()
   args = parse_args()
-  p = main(q, args)
+
+  carla_bridge = CarlaBridge(args)
+  p = carla_bridge.run(q)
 
   if args.joystick:
     # start input poll for joystick
