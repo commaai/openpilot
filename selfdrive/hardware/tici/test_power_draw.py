@@ -10,8 +10,8 @@ from selfdrive.manager.process_config import managed_processes
 from selfdrive.manager.manager import manager_cleanup
 
 POWER = OrderedDict(
-  camerad=2.65,
-  modeld=1.15,
+  camerad=2.58,
+  modeld=0.90,
   dmonitoringmodeld=0.25,
   loggerd=0.45,
 )
