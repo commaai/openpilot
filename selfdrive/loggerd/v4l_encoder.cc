@@ -60,10 +60,11 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       edata.setFlags(flags);
       e->pm->send(e->service_name, msg);
 
-      uint64_t current_tm = event.getLogMonoTime() / 1000;
-      printf("got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms\n", bytesused, index, flags, ts, (current_tm-ts)/1000.);
+      /*uint64_t current_tm = event.getLogMonoTime() / 1000;
+      printf("%20s got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms\n", e->filename, bytesused, index, flags, ts, (current_tm-ts)/1000.);*/
 
-      if (e->write) {
+      // TODO: writing should be moved to loggerd
+      if (e->write && bytesused != 0) {
         e->writer->write(dat.begin(), bytesused, ts, false, flags & V4L2_BUF_FLAG_KEYFRAME);
       }
     }

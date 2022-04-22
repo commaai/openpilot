@@ -25,9 +25,9 @@
 #include "selfdrive/loggerd/encoder.h"
 #include "selfdrive/loggerd/logger.h"
 #ifdef QCOM2
-#include "selfdrive/loggerd/omx_encoder.h"
-#include "selfdrive/loggerd/v4l_encoder.h"
+//#include "selfdrive/loggerd/omx_encoder.h"
 //#define Encoder OmxEncoder
+#include "selfdrive/loggerd/v4l_encoder.h"
 #define Encoder V4LEncoder
 #else
 #include "selfdrive/loggerd/raw_logger.h"
@@ -65,8 +65,7 @@ const LogCameraInfo cameras_logged[] = {
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
-    //.has_qcamera = true,
-    .has_qcamera = false,
+    .has_qcamera = true,
     .trigger_rotate = true,
     .enable = true,
     .record = true,
@@ -80,8 +79,7 @@ const LogCameraInfo cameras_logged[] = {
     .is_h265 = true,
     .has_qcamera = false,
     .trigger_rotate = true,
-    //.enable = true,
-    .enable = false,
+    .enable = true,
     .record = Params().getBool("RecordFront"),
   },
   {
@@ -93,8 +91,7 @@ const LogCameraInfo cameras_logged[] = {
     .is_h265 = true,
     .has_qcamera = false,
     .trigger_rotate = true,
-    //.enable = Hardware::TICI(),
-    .enable = false,
+    .enable = Hardware::TICI(),
     .record = Hardware::TICI(),
   },
 };
