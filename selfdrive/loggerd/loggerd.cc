@@ -197,7 +197,6 @@ void loggerd_thread() {
   // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
-    continue;
     LOGD("logging %s (on port %d)", it.name, it.port);
 
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
