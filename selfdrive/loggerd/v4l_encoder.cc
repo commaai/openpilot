@@ -24,12 +24,14 @@ void V4LEncoder::dequeue_out_handler(V4LEncoder *e) {
   bool exit = false;
   while (!exit) {
     unsigned int bytesused, flags, index;
-    int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags);
+    struct timeval timestamp;
+    int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
     if (ret != 0) { usleep(10*1000); continue; }
+    uint64_t ts = timestamp.tv_sec * 1000000 + timestamp.tv_usec;
 
-    printf("got %d bytes in buffer %d with flags 0x%x\n", bytesused, index, flags);
+    printf("got %d bytes in buffer %d with flags 0x%x and ts %lu\n", bytesused, index, flags, ts);
     e->buf_out[index].sync(VISIONBUF_SYNC_FROM_DEVICE);
-    e->writer->write((uint8_t*)e->buf_out[index].addr, bytesused, 0, false, flags & V4L2_BUF_FLAG_KEYFRAME);
+    e->writer->write((uint8_t*)e->buf_out[index].addr, bytesused, ts, false, flags & V4L2_BUF_FLAG_KEYFRAME);
 
     ret = e->queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
   }
@@ -43,8 +45,6 @@ V4LEncoder::V4LEncoder(
     filename(filename), remuxing(!h265), write(write) {
   fd = open("/dev/video33", O_RDWR);
   assert(fd >= 0);
-
-  remuxing = false;
 
   struct v4l2_capability cap;
   assert(ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0);
@@ -123,7 +123,7 @@ V4LEncoder::V4LEncoder(
       { .id = V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_ALPHA, .value = 0},
       { .id = V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_BETA, .value = 0},
       { .id = V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MODE, .value = 0},
-      // after buffer allocation? why do P/B frame counts change?
+      // after buffer allocation in OMX. why do P/B frame counts change?
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_DISABLE},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = 7},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_B_FRAMES, .value = 1},
@@ -137,20 +137,20 @@ V4LEncoder::V4LEncoder(
   struct v4l2_requestbuffers reqbuf_out = {
     .type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
     .memory = V4L2_MEMORY_USERPTR,
-    .count = 6
+    .count = BUF_OUT_COUNT
   };
   assert(ioctl(fd, VIDIOC_REQBUFS, &reqbuf_out) == 0);
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < BUF_OUT_COUNT; i++) {
     buf_out[i].allocate(fmt_out.fmt.pix_mp.plane_fmt[0].sizeimage);
   }
 
   struct v4l2_requestbuffers reqbuf_in = {
     .type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
     .memory = V4L2_MEMORY_USERPTR,
-    .count = 7
+    .count = BUF_IN_COUNT
   };
   assert(ioctl(fd, VIDIOC_REQBUFS, &reqbuf_in) == 0);
-  for (int i = 0; i < 7; i++) {
+  for (int i = 0; i < BUF_IN_COUNT; i++) {
     buf_in[i].allocate(fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage);
   }
 
@@ -161,7 +161,7 @@ V4LEncoder::V4LEncoder(
   pm.reset(new PubMaster({service_name}));
 }
 
-int V4LEncoder::dequeue_buffer(v4l2_buf_type buf_type, unsigned int *index, unsigned int *bytesused, unsigned int *flags) {
+int V4LEncoder::dequeue_buffer(v4l2_buf_type buf_type, unsigned int *index, unsigned int *bytesused, unsigned int *flags, struct timeval *timestamp) {
   v4l2_plane plane = {0};
   v4l2_buffer v4l_buf = {
     .type = buf_type,
@@ -182,6 +182,7 @@ int V4LEncoder::dequeue_buffer(v4l2_buf_type buf_type, unsigned int *index, unsi
   if (index) *index = v4l_buf.index;
   if (bytesused) *bytesused = v4l_buf.m.planes[0].bytesused;
   if (flags) *flags = v4l_buf.flags;
+  if (timestamp) *timestamp = v4l_buf.timestamp;
   // this also includes timestamp
   assert(v4l_buf.m.planes[0].data_offset == 0);
 
@@ -221,6 +222,8 @@ int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionB
 void V4LEncoder::encoder_open(const char* path) {
   if (this->write) {
     writer.reset(new VideoWriter(path, this->filename, this->remuxing, this->width, this->height, this->fps, !this->remuxing, false));
+    // this is "codecconfig", the default seems okay without extradata
+    writer->write(NULL, 0, 0, true, false);
   }
   v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
   assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
