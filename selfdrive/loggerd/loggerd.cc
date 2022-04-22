@@ -62,9 +62,9 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
 
       // main encoder
-      encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
+      /*encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
                                      cam_info.fps, cam_info.bitrate, cam_info.is_h265,
-                                     buf_info.width, buf_info.height, cam_info.record));
+                                     buf_info.width, buf_info.height, cam_info.record));*/
       // qcamera encoder
       if (cam_info.has_qcamera) {
         encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, buf_info.width, buf_info.height,
