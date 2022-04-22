@@ -45,6 +45,7 @@ public:
   int32_t session_handle;
   int32_t sensor_dev_handle;
   int32_t isp_dev_handle;
+  int32_t isp_dev_handle_stats;
   int32_t csiphy_dev_handle;
 
   int32_t link_handle;
@@ -61,7 +62,7 @@ public:
 
   CameraBuf buf;
 private:
-  void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
+  void config_isp(int dev_handle, int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
   void enqueue_req_multi(int start, int n, bool dp);
   void enqueue_buffer(int i, bool dp);
   int clear_req_queue();

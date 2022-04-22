@@ -30,6 +30,7 @@ extern ExitHandler do_exit;
 const size_t FRAME_WIDTH = 1928;
 const size_t FRAME_HEIGHT = 1208;
 const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
+const size_t STATS_HEIGHT = 4;
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
@@ -373,7 +374,7 @@ int CameraState::sensors_init() {
   return ret;
 }
 
-void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
+void CameraState::config_isp(int dev_handle, int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
   if (io_mem_handle != 0) {
@@ -430,7 +431,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   tmp.resource_hfr = {
     .num_ports = 1,  // 10 for YUV (but I don't think we need them)
     .port_hfr_config[0] = {
-      .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0, // CAM_ISP_IFE_OUT_RES_FULL for YUV
+      .resource_type = (dev_handle == isp_dev_handle) ? CAM_ISP_IFE_OUT_RES_RDI_0 : CAM_ISP_IFE_OUT_RES_RDI_1, // CAM_ISP_IFE_OUT_RES_FULL for YUV
       .subsample_pattern = 1,
       .subsample_period = 0,
       .framedrop_pattern = 1,
@@ -481,9 +482,9 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
     io_cfg[0].mem_handle[0] = io_mem_handle;
 		io_cfg[0].planes[0] = (struct cam_plane_cfg){
 		 .width = FRAME_WIDTH,
-		 .height = FRAME_HEIGHT,
+		 .height = (dev_handle == isp_dev_handle) ? FRAME_HEIGHT : STATS_HEIGHT,
 		 .plane_stride = FRAME_STRIDE,
-		 .slice_height = FRAME_HEIGHT,
+		 .slice_height = (dev_handle == isp_dev_handle) ? FRAME_HEIGHT : STATS_HEIGHT,
 		 .meta_stride = 0x0,    // YUV has meta(stride=0x400, size=0x5000)
 		 .meta_size = 0x0,
 		 .meta_offset = 0x0,
@@ -497,14 +498,14 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
     io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
     io_cfg[0].bpp = 0xc;
-    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
+    io_cfg[0].resource_type = (dev_handle == isp_dev_handle) ? CAM_ISP_IFE_OUT_RES_RDI_0 : CAM_ISP_IFE_OUT_RES_RDI_1;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
     io_cfg[0].subsample_pattern = 0x1;
     io_cfg[0].framedrop_pattern = 0x1;
   }
 
-  int ret = device_config(multi_cam_state->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
+  int ret = device_config(multi_cam_state->isp_fd, session_handle, dev_handle, cam_packet_handle);
   assert(ret == 0);
   if (ret != 0) {
     printf("ISP CONFIG FAILED\n");
@@ -571,7 +572,10 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   // LOGD("Poked sensor");
 
   // push the buffer
-  config_isp(buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
+  config_isp(isp_dev_handle, buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
+
+  // TODO: use separate buffer for stats
+  config_isp(isp_dev_handle_stats, buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
 }
 
 void CameraState::enqueue_req_multi(int start, int n, bool dp) {
@@ -760,6 +764,7 @@ void CameraState::camera_open() {
 
   auto isp_dev_handle_stats_ = device_acquire(multi_cam_state->isp_fd, session_handle, &isp_resource_stats);
   assert(isp_dev_handle_stats_);
+  isp_dev_handle_stats = *isp_dev_handle_stats_;
 
   csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", camera_num);
   assert(csiphy_fd >= 0);
@@ -773,7 +778,8 @@ void CameraState::camera_open() {
 
   // config ISP
   alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
-  config_isp(0, 0, 1, buf0_handle, 0);
+  config_isp(isp_dev_handle, 0, 0, 1, buf0_handle, 0);
+  config_isp(isp_dev_handle_stats, 0, 0, 1, buf0_handle, 0);
 
   // config csiphy
   LOG("-- Config CSI PHY");
@@ -812,9 +818,10 @@ void CameraState::camera_open() {
   LOG("-- Link devices");
   struct cam_req_mgr_link_info req_mgr_link_info = {0};
   req_mgr_link_info.session_hdl = session_handle;
-  req_mgr_link_info.num_devices = 2;
+  req_mgr_link_info.num_devices = 3;
   req_mgr_link_info.dev_hdls[0] = isp_dev_handle;
   req_mgr_link_info.dev_hdls[1] = sensor_dev_handle;
+  req_mgr_link_info.dev_hdls[2] = isp_dev_handle_stats;
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK, &req_mgr_link_info, sizeof(req_mgr_link_info));
   link_handle = req_mgr_link_info.link_hdl;
   LOGD("link: %d session: 0x%X isp: 0x%X sensors: 0x%X link: 0x%X", ret, session_handle, isp_dev_handle, sensor_dev_handle, link_handle);
@@ -830,6 +837,7 @@ void CameraState::camera_open() {
   ret = device_control(csiphy_fd, CAM_START_DEV, session_handle, csiphy_dev_handle);
   LOGD("start csiphy: %d", ret);
   ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
+  ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle_stats);
   LOGD("start isp: %d", ret);
 
   // TODO: this is unneeded, should we be doing the start i2c in a different way?
@@ -908,6 +916,8 @@ void CameraState::camera_close() {
     // LOGD("stop sensor: %d", ret);
     ret = device_control(multi_cam_state->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
     LOGD("stop isp: %d", ret);
+    ret = device_control(multi_cam_state->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle_stats);
+    LOGD("stop isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
     LOGD("stop csiphy: %d", ret);
     // link control stop
@@ -931,6 +941,8 @@ void CameraState::camera_close() {
     // release devices
     LOGD("-- Release devices");
     ret = device_control(multi_cam_state->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
+    LOGD("release isp: %d", ret);
+    ret = device_control(multi_cam_state->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle_stats);
     LOGD("release isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
     LOGD("release csiphy: %d", ret);
@@ -1189,6 +1201,8 @@ void cameras_run(MultiCameraState *s) {
     ret = HANDLE_EINTR(ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev));
     if (ret == 0) {
       if (ev.type == V4L_EVENT_CAM_REQ_MGR_EVENT) {
+        // TODO: how do we separate events from RDI_0 and RDI_1?
+
         struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
         // LOGD("v4l2 event: sess_hdl 0x%X, link_hdl 0x%X, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
         if (env_debug_frames) {
