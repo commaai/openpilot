@@ -44,7 +44,7 @@ class TestCarlaIntegration(unittest.TestCase):
     q = Queue()
     p_bridge = bridge.main(q, bridge.parse_args(['--low_quality']), keep_alive=False)
     self.processes.append(p_bridge)
-    
+
     # Wait for bridge to startup
     time.sleep(10)
     self.assertEqual(p_bridge.exitcode, None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}")
@@ -58,28 +58,28 @@ class TestCarlaIntegration(unittest.TestCase):
     not_running = []
     while time.monotonic() < start_time + max_time_per_test:
       sm.update()
+
       not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
       car_event_issues = [event.name for event in sm['carEvents'] if any([event.noEntry, event.softDisable, event.immediateDisable])]
 
-      if len(car_event_issues) == 0 and len(not_running) == 0:
+      if sm.all_alive() and len(car_event_issues) == 0 and len(not_running) == 0:
         no_car_events_issues_once = True
         break
 
-      time.sleep(0.1)
     self.assertTrue(no_car_events_issues_once, f"Failed because of CarEvents '{car_event_issues}' or processes not running '{not_running}'")
 
     start_time = time.monotonic()
-    control_active = False
+    control_active = 0
     while time.monotonic() < start_time + max_time_per_test:
-      q.put("cruise_up")  # Try engaging
-
       sm.update()
 
-      if sm['controlsState'].active:
-        control_active = True
-        break
+      q.put("cruise_up")  # Try engaging
 
-      time.sleep(0.1)
+      if sm.all_alive() and sm['controlsState'].active:
+        control_active += 1
+
+      if control_active > 100:
+        break
 
     self.assertTrue(control_active, "Simulator never engaged")
 
