@@ -262,7 +262,7 @@ def finalize_update(wait_helper: WaitTimeHelper) -> None:
   t = time.monotonic()
   try:
     run(["git", "gc"], FINALIZED)
-    cloudlog.info(f"Done git gc, took {time.monotonic() - t:.3f} s")
+    cloudlog.event("Done git gc", duration=time.monotonic() - t)
   except subprocess.CalledProcessError:
     cloudlog.exception(f"Failed git gc, took {time.monotonic() - t:.3f} s")
 
