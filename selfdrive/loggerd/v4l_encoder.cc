@@ -9,31 +9,32 @@
 
 // echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
 
-void V4LEncoder::dequeue_in_handler(V4LEncoder *e) {
-  bool exit = false;
-  while (!exit) {
-    // we could work out which buffers are dequeued, but do we care?
-    unsigned int index;
-    int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, &index);
-    if (ret != 0) { usleep(10*1000); continue; }
-    //printf("dequeued frame buffer %d\n", index);
-  }
-}
+#define V4L_BUF_FLAG_FRAME (V4L2_BUF_FLAG_KEYFRAME | V4L2_BUF_FLAG_PFRAME | V4L2_BUF_FLAG_BFRAME)
 
 void V4LEncoder::dequeue_out_handler(V4LEncoder *e) {
-  bool exit = false;
-  while (!exit) {
+  while (1) {
     unsigned int bytesused, flags, index;
     struct timeval timestamp;
+    // sad that this is non-blocking and we have to poll
+    // any better way in the kernel?
     int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
     if (ret != 0) { usleep(10*1000); continue; }
     uint64_t ts = timestamp.tv_sec * 1000000 + timestamp.tv_usec;
-
     printf("got %6d bytes in buffer %d with flags 0x%x and ts %lu\n", bytesused, index, flags, ts);
+
+    // exit if we got a non frame packet
+    if (!(flags & V4L_BUF_FLAG_FRAME)) break;
     e->buf_out[index].sync(VISIONBUF_SYNC_FROM_DEVICE);
-    e->writer->write((uint8_t*)e->buf_out[index].addr, bytesused, ts, false, flags & V4L2_BUF_FLAG_KEYFRAME);
+
+    // TODO: broadcast packet
+
+
+    if (e->write) {
+      e->writer->write((uint8_t*)e->buf_out[index].addr, bytesused, ts, false, flags & V4L2_BUF_FLAG_KEYFRAME);
+    }
 
     ret = e->queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
+    assert(ret == 0);
   }
 }
 
@@ -49,6 +50,8 @@ V4LEncoder::V4LEncoder(
   struct v4l2_capability cap;
   assert(ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0);
   LOGD("opened encoder device %s %s = %d", cap.driver, cap.card, fd);
+  assert(strcmp((const char *)cap.driver, "msm_vidc_driver") == 0);
+  assert(strcmp((const char *)cap.card, "msm_vidc_venc") == 0);
 
   struct v4l2_format fmt_out = {
     .type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
@@ -225,6 +228,7 @@ void V4LEncoder::encoder_open(const char* path) {
     // this is "codecconfig", the default seems okay without extradata
     writer->write(NULL, 0, 0, true, false);
   }
+
   v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
   assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
 
@@ -236,7 +240,6 @@ void V4LEncoder::encoder_open(const char* path) {
   assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
 
   dequeue_out_thread = std::thread(V4LEncoder::dequeue_out_handler, this);
-  dequeue_in_thread = std::thread(V4LEncoder::dequeue_in_handler, this);
   this->is_open = true;
 }
 
@@ -244,6 +247,18 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
                   int in_width, int in_height, uint64_t ts) {
   assert(in_width == in_width_);
   assert(in_height == in_height_);
+
+  // dequeue whatever we can
+  // this could be done in a different thread, but if it's fast it's nice here
+  while (buffer_in_outstanding != 0) {
+    int ret = dequeue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+    // misses should be quite rare
+    if (ret != 0) { LOGW("dequeue frame miss on %s", this->filename); break; }
+    buffer_in_outstanding--;
+    //printf("dequeue frame %u, %d outstanding\n", index, buffer_in_outstanding);
+  }
+  // this should usually be 0
+  assert(buffer_in_outstanding < BUF_IN_COUNT);
 
   uint8_t *in_y_ptr = (uint8_t*)buf_in[buffer_in].addr;
   int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
@@ -272,19 +287,28 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   );
   assert(ret == 0);
   buffer_in = (buffer_in + 1) % BUF_IN_COUNT;
+  buffer_in_outstanding++;
 
   return 0;
 }
 
 void V4LEncoder::encoder_close() {
   if (this->is_open) {
-    /*dequeue_in_thread.join();
-    dequeue_out_thread.join();*/
-
-    v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-    assert(ioctl(fd, VIDIOC_STREAMOFF, &buf_type) == 0);
-    buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-    assert(ioctl(fd, VIDIOC_STREAMOFF, &buf_type) == 0);
+    // dequeue all frames
+    while (buffer_in_outstanding != 0) {
+      int ret = dequeue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+      if (ret != 0) { usleep(10*1000); continue; }
+      buffer_in_outstanding--;
+    }
+    {
+      v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+      assert(ioctl(fd, VIDIOC_STREAMOFF, &buf_type) == 0);
+    }
+    dequeue_out_thread.join();
+    {
+      v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+      assert(ioctl(fd, VIDIOC_STREAMOFF, &buf_type) == 0);
+    }
     writer.reset();
   }
   this->is_open = false;
