@@ -14,10 +14,18 @@ class TestCarlaIntegration(unittest.TestCase):
   """
   Tests need Carla simulator to run
   """
-  processes: List[subprocess.Popen] = []
+  processes: List[subprocess.Popen]
+
+  def setUp(self):
+    self.processes = []
+    # We want to make sure that carla_sim docker is still running. Skip output shell
+    subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=True)
+
+    self.processes.append(subprocess.Popen(".././start_carla.sh"))
+    time.sleep(15)
 
   def test_connect_with_carla(self):
-    # Test connecting to Carla within 5 seconds and return no RuntimeError
+    # Test connecting to Carla within 15 seconds and return no RuntimeError
     client = connect_carla_client()
     assert client is not None
     # Will raise an error if not connected
@@ -44,7 +52,7 @@ class TestCarlaIntegration(unittest.TestCase):
     q = Queue()
     p_bridge = bridge.main(q, bridge.parse_args(['--low_quality']), keep_alive=False)
     self.processes.append(p_bridge)
-    
+
     # Wait for bridge to startup
     time.sleep(10)
     self.assertEqual(p_bridge.exitcode, None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}")
@@ -52,7 +60,7 @@ class TestCarlaIntegration(unittest.TestCase):
     start_time = time.monotonic()
 
     no_car_events_issues_once = False
-    max_time_per_test = 10
+    max_time_per_test = 20
 
     car_event_issues = []
     not_running = []
@@ -84,8 +92,18 @@ class TestCarlaIntegration(unittest.TestCase):
     self.assertTrue(control_active, "Simulator never engaged")
 
   def tearDown(self):
-    for p in self.processes:
+    print("Test shutting down. CommIssues are acceptable")
+    for p in reversed(self.processes):
       p.terminate()
+      time.sleep(5)
+    time.sleep(5)
+    subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=True)
+
+    for p in self.processes:
+      if isinstance(p, subprocess.Popen):
+        p.wait()
+      else:
+        p.join()
 
 
 if __name__ == "__main__":
