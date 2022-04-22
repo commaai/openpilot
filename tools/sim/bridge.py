@@ -2,6 +2,7 @@
 import argparse
 import math
 import os
+import signal
 import threading
 import time
 from multiprocessing import Process, Queue
@@ -86,7 +87,9 @@ class Camerad:
 
     # TODO: move rgb_to_yuv.cl to local dir once the frame stream camera is removed
     kernel_fn = os.path.join(BASEDIR, "selfdrive", "camerad", "transforms", "rgb_to_yuv.cl")
-    prg = cl.Program(self.ctx, open(kernel_fn).read()).build(cl_arg)
+    self._kernel_file = open(kernel_fn)
+
+    prg = cl.Program(self.ctx, self._kernel_file.read()).build(cl_arg)
     self.krnl = prg.rgb_to_yuv
     self.Wdiv4 = W // 4 if (W % 4 == 0) else (W + (4 - W % 4)) // 4
     self.Hdiv4 = H // 4 if (H % 4 == 0) else (H + (4 - H % 4)) // 4
@@ -128,6 +131,8 @@ class Camerad:
     setattr(dat, pub_type, msg)
     pm.send(pub_type, dat)
 
+  def close(self):
+    self._kernel_file.close()
 
 def imu_callback(imu, vehicle_state):
   vehicle_state.bearing_deg = math.degrees(imu.compass)
@@ -235,7 +240,7 @@ def can_function_runner(vs: VehicleState, exit_event: threading.Event):
 
 def connect_carla_client():
   client = carla.Client("127.0.0.1", 2000)
-  client.set_timeout(10)
+  client.set_timeout(15)
   return client
 
 
@@ -250,8 +255,17 @@ class CarlaBridge:
     Params().put("CalibrationParams", msg.to_bytes())
 
     self._args = args
+    self._carla_objects = []
+    self._camerad = None
+    self._threads_exit_event = threading.Event()
+    self._threads = []
+    self._shutdown = False
+    signal.signal(signal.SIGTERM, self._on_shutdown)
 
-  def bridge_keep_alive(self, q: Queue, keep_alive:bool):
+  def _on_shutdown(self, signal, frame):
+    self._shutdown = True
+
+  def bridge_keep_alive(self, q: Queue, keep_alive: bool):
     while True:
       try:
         self._run(q)
@@ -261,8 +275,7 @@ class CarlaBridge:
           raise
         print(f"Restarting bridge after error: {e} ")
 
-
-  def _run(self, q:Queue):
+  def _run(self, q: Queue):
     client = connect_carla_client()
     world = client.load_world(self._args.town)
     settings = world.get_settings()
@@ -290,7 +303,7 @@ class CarlaBridge:
       {len(spawn_points)} for this town.'''
     spawn_point = spawn_points[self._args.num_selected_spawn_point]
     vehicle = world.spawn_actor(vehicle_bp, spawn_point)
-
+    self._carla_objects.append(vehicle)
     max_steer_angle = vehicle.get_physics_control().wheels[0].max_steer_angle
 
     # make tires less slippery
@@ -315,11 +328,11 @@ class CarlaBridge:
       camera.listen(callback)
       return camera
 
-    camerad = Camerad()
-    road_camera = create_camera(fov=40, callback=camerad.cam_callback_road)
-    road_wide_camera = create_camera(fov=163, callback=camerad.cam_callback_wide_road)  # fov bigger than 163 shows unwanted artifacts
+    self._camerad = Camerad()
+    road_camera = create_camera(fov=40, callback=self._camerad.cam_callback_road)
+    road_wide_camera = create_camera(fov=163, callback=self._camerad.cam_callback_wide_road)  # fov bigger than 163 shows unwanted artifacts
 
-    cameras = [road_camera, road_wide_camera]
+    self._carla_objects.extend([road_camera, road_wide_camera])
 
     vehicle_state = VehicleState()
 
@@ -332,14 +345,13 @@ class CarlaBridge:
     gps = world.spawn_actor(gps_bp, transform, attach_to=vehicle)
     gps.listen(lambda gps: gps_callback(gps, vehicle_state))
 
+    self._carla_objects.extend([imu, gps])
     # launch fake car threads
-    threads = []
-    exit_event = threading.Event()
-    threads.append(threading.Thread(target=panda_state_function, args=(vehicle_state, exit_event,)))
-    threads.append(threading.Thread(target=peripheral_state_function, args=(exit_event,)))
-    threads.append(threading.Thread(target=fake_driver_monitoring, args=(exit_event,)))
-    threads.append(threading.Thread(target=can_function_runner, args=(vehicle_state, exit_event,)))
-    for t in threads:
+    self._threads.append(threading.Thread(target=panda_state_function, args=(vehicle_state, self._threads_exit_event,)))
+    self._threads.append(threading.Thread(target=peripheral_state_function, args=(self._threads_exit_event,)))
+    self._threads.append(threading.Thread(target=fake_driver_monitoring, args=(self._threads_exit_event,)))
+    self._threads.append(threading.Thread(target=can_function_runner, args=(vehicle_state, self._threads_exit_event,)))
+    for t in self._threads:
       t.start()
 
     # can loop
@@ -362,7 +374,7 @@ class CarlaBridge:
     brake_manual_multiplier = 0.7  # keyboard signal is always 1
     steer_manual_multiplier = 45 * STEER_RATIO  # keyboard signal is always 1
 
-    while True:
+    while not self._shutdown:
       # 1. Read the throttle, steer and brake from op or manual controls
       # 2. Set instructions in Carla
       # 3. Send current carstate to op via can
@@ -480,14 +492,19 @@ class CarlaBridge:
         world.tick()
       rk.keep_time()
     # Clean up resources in the opposite order they were created.
-    exit_event.set()
-    for t in reversed(threads):
+    self.close()
+
+  def close(self):
+    self._threads_exit_event.set()
+    if self._camerad is not None:
+      self._camerad.close()
+    for s in self._carla_objects:
+      try:
+        s.destroy()
+      except Exception as e:
+        print("Failed to destroy carla object", e)
+    for t in reversed(self._threads):
       t.join()
-    gps.destroy()
-    imu.destroy()
-    for c in cameras:
-      c.destroy()
-    vehicle.destroy()
 
 
 def main(queue, arguments, keep_alive=True):

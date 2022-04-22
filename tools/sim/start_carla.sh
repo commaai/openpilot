@@ -18,6 +18,7 @@ fi
 docker pull carlasim/carla:0.9.12
 
 docker run \
+  --name carla_sim \
   --rm \
   --gpus all \
   --net=host \
