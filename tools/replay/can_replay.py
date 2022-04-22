@@ -11,8 +11,10 @@ from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 from tools.lib.logreader import LogReader
 from panda import Panda
+panda_jungle_import = False
 try:
   from panda_jungle import PandaJungle  # pylint: disable=import-error
+  panda_jungle_import = True
 except Exception:
   PandaJungle = None
 
@@ -82,7 +84,7 @@ def connect():
 
 
 if __name__ == "__main__":
-  if PandaJungle is None:
+  if not panda_jungle_import:
     print("\33[31m", "WARNING: cannot connect to jungles. Clone the jungle library to enable support:", "\033[0m")
     print("\033[34m", f"cd {BASEDIR} && git clone https://github.com/commaai/panda_jungle", "\033[0m")
 
