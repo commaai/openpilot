@@ -129,12 +129,20 @@ __kernel void debayer10(__global const uchar * const in, __global uchar * out, _
   const int y_local = mad24(lid_y, 2, lid_x & 1) + 1;
   const int x_local = (lid_x / 2) * 4 + 1;
 
-  vstore4(vals_from_10(in, x_global, y_global, black_level), 0, cached + mad24(y_local, localRowLen, x_local));
-
+  cached[mad24(y_local, localRowLen, x_local + 0)] = val_from_10(in, x_global + 0, y_global, black_level);
+  cached[mad24(y_local, localRowLen, x_local + 1)] = val_from_10(in, x_global + 1, y_global, black_level);
+  cached[mad24(y_local, localRowLen, x_local + 2)] = val_from_10(in, x_global + 2, y_global, black_level);
+  cached[mad24(y_local, localRowLen, x_local + 3)] = val_from_10(in, x_global + 3, y_global, black_level);
   if (lid_y == 0 && (lid_x & 1) == 0) {
-    vstore4(vals_from_10(in, x_global, y_global - 1, black_level), 0, cached + mad24(y_local - 1, localRowLen, x_local));
+    cached[mad24(y_local - 1, localRowLen, x_local + 0)] = val_from_10(in, x_global + 0, y_global - 1, black_level);
+    cached[mad24(y_local - 1, localRowLen, x_local + 1)] = val_from_10(in, x_global + 1, y_global - 1, black_level);
+    cached[mad24(y_local - 1, localRowLen, x_local + 2)] = val_from_10(in, x_global + 2, y_global - 1, black_level);
+    cached[mad24(y_local - 1, localRowLen, x_local + 3)] = val_from_10(in, x_global + 3, y_global - 1, black_level);
   } else if (lid_y == get_local_size(1) - 1 && lid_x & 1) {
-    vstore4(vals_from_10(in, x_global, y_global + 1, black_level), 0, cached + mad24(y_local + 1, localRowLen, x_local));
+    cached[mad24(y_local + 1, localRowLen, x_local + 0)] = val_from_10(in, x_global + 0, y_global + 1, black_level);
+    cached[mad24(y_local + 1, localRowLen, x_local + 1)] = val_from_10(in, x_global + 1, y_global + 1, black_level);
+    cached[mad24(y_local + 1, localRowLen, x_local + 2)] = val_from_10(in, x_global + 2, y_global + 1, black_level);
+    cached[mad24(y_local + 1, localRowLen, x_local + 3)] = val_from_10(in, x_global + 3, y_global + 1, black_level);
   }
 
   if (lid_x <= 1) {
