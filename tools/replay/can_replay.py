@@ -89,14 +89,11 @@ if __name__ == "__main__":
   print("Loading log...")
   ROUTE = "77611a1fac303767/2020-03-24--09-50-38"
   REPLAY_SEGS = list(range(10, 16))  # route has 82 segments available
-  log_url = "http://data.comma.life/1d10de75f6b8c570/2022-04-06--19-09-11/10/rlog.bz2"
-  # log_url = "http://data.comma.life/715ac05b594e9c59/2021-10-29--12-05-02/22/rlog.bz2"
-  # log_url = "http://data.comma.life/eb5a50f9e98f50b9/2021-12-20--17-42-32/3/rlog.bz2"
-  # log_url = "http://data.comma.life/eb5a50f9e98f50b9/2021-12-28--08-52-02/10/rlog.bz2"
-  lr = LogReader(log_url)
-  start_idx = 0
-  end_idx = 6000
-  CAN_MSGS = [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can'][start_idx:end_idx]
+  CAN_MSGS = []
+  for i in tqdm(REPLAY_SEGS):
+    log_url = f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2"
+    lr = LogReader(log_url)
+    CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
 
 
   # set both to cycle ignition
