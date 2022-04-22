@@ -29,7 +29,7 @@ void V4LEncoder::dequeue_out_handler(V4LEncoder *e) {
     if (ret != 0) { usleep(10*1000); continue; }
     uint64_t ts = timestamp.tv_sec * 1000000 + timestamp.tv_usec;
 
-    printf("got %d bytes in buffer %d with flags 0x%x and ts %lu\n", bytesused, index, flags, ts);
+    printf("got %6d bytes in buffer %d with flags 0x%x and ts %lu\n", bytesused, index, flags, ts);
     e->buf_out[index].sync(VISIONBUF_SYNC_FROM_DEVICE);
     e->writer->write((uint8_t*)e->buf_out[index].addr, bytesused, ts, false, flags & V4L2_BUF_FLAG_KEYFRAME);
 
