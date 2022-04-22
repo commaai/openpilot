@@ -19,7 +19,8 @@ int main(int argc, char *argv[]) {
   {
     QHBoxLayout *hlayout = new QHBoxLayout();
     layout->addLayout(hlayout);
-    hlayout->addWidget(new CameraViewWidget("navd", VISION_STREAM_MAP, false));
+    // TODO: make mapd output YUV
+    // hlayout->addWidget(new CameraViewWidget("navd", VISION_STREAM_MAP, false));
     hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_ROAD, false));
   }
 
