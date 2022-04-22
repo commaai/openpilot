@@ -31,37 +31,27 @@ void dmonitoring_init(DMonitoringModelState* s) {
   s->m->addCalib(s->calib, CALIB_LEN);
 }
 
-static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int height) {
-  uint8_t *y = get_buffer(buf, width * height * 3 / 2);
-  uint8_t *u = y + width * height;
-  uint8_t *v = u + (width /2) * (height / 2);
-  return std::make_tuple(y, u, v);
-}
-
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, float *calib) {
-  // int v_off = height - MODEL_HEIGHT;
-  // int h_off = (width - MODEL_WIDTH) / 2;
+  int v_off = height - MODEL_HEIGHT;
+  int h_off = (width - MODEL_WIDTH) / 2;
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v, frame2tensor done in dsp
 
-  // uint8_t *raw_buf = (uint8_t *) stream_buf;
-  auto [cropped_y, cropped_u, cropped_v] = get_yuv_buf(s->cropped_buf, MODEL_WIDTH, MODEL_HEIGHT);
+  uint8_t *raw_buf = (uint8_t *) stream_buf;
+  // vertical crop free
+  uint8_t *raw_y_start = raw_buf + width * v_off;
+  uint8_t *raw_u_start = raw_buf + width * height + (width / 2) * (v_off / 2);
+  uint8_t *raw_v_start = raw_u_start + (width / 2) * (height / 2);
+
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
 
-  /*
-  libyuv::ConvertToI420(raw_buf, (width/2)*(height/2)*6,
-                        cropped_y, MODEL_WIDTH,
-                        cropped_u, MODEL_WIDTH/2,
-                        cropped_v, MODEL_WIDTH/2,
-                        h_off, v_off,
-                        width, height,
-                        MODEL_WIDTH, MODEL_HEIGHT,
-                        libyuv::kRotate0,
-                        libyuv::FOURCC_I420);
-  */
-
   // snpe UserBufferEncodingUnsigned8Bit doesn't work
-  // fast float conversion instead, also scales to 0-1
-  libyuv::ByteToFloat(cropped_y, net_input_buf, 0.003921569f, yuv_buf_len);
+  // fast float conversion instead, also does h crop and scales to 0-1
+  for (int r = 0; r < MODEL_HEIGHT / 2; ++r) {
+    libyuv::ByteToFloat(raw_y_start + (2*r) * width + h_off, net_input_buf + (2*r) * MODEL_WIDTH, 0.003921569f, MODEL_WIDTH);
+    libyuv::ByteToFloat(raw_y_start + (2*r+1) * width + h_off, net_input_buf + (2*r+1) * MODEL_WIDTH, 0.003921569f, MODEL_WIDTH);
+    libyuv::ByteToFloat(raw_u_start + r * (width / 2) + (h_off / 2), net_input_buf + MODEL_WIDTH * MODEL_HEIGHT + r * MODEL_WIDTH / 2, 0.003921569f, MODEL_WIDTH / 2);
+    libyuv::ByteToFloat(raw_v_start + r * (width / 2) + (h_off / 2), net_input_buf + MODEL_WIDTH * MODEL_HEIGHT * 5 / 4 + r * MODEL_WIDTH / 2, 0.003921569f, MODEL_WIDTH / 2);
+  }
 
   // printf("preprocess completed. %d \n", yuv_buf_len);
   // FILE *dump_yuv_file = fopen("/tmp/rawdump.yuv", "wb");

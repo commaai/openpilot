@@ -32,7 +32,7 @@ thneed_src = [
 use_thneed = not GetOption('no_thneed')
 
 if arch == "larch64":
-  libs += ['gsl', 'CB', 'pthread', 'dl', 'jpeg']
+  libs += ['gsl', 'CB', 'pthread', 'dl']
 
   if use_thneed:
     common_src += thneed_src
