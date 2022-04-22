@@ -93,9 +93,9 @@ class TestCarlaIntegration(unittest.TestCase):
 
     for p in reversed(self.processes):
       if isinstance(p, subprocess.Popen):
-        p.wait(5)
+        p.wait(15)
       else:
-        p.join(5)
+        p.join(15)
     subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
 
 
