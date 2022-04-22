@@ -7,7 +7,7 @@ struct i2c_random_wr_payload init_array_imx390[] = {
   {0x2008, 0xd0}, {0x2009, 0x07}, {0x200a, 0x00}, // MODE_VMAX = time between frames
   {0x200C, 0xe4}, {0x200D, 0x0c},  // MODE_HMAX
 
-  // crop 
+  // crop
   {0x3410, 0x88}, {0x3411, 0x7},     // CROP_H_SIZE
   {0x3418, 0xb8}, {0x3419, 0x4},     // CROP_V_SIZE
   {0x0078, 1}, {0x03c0, 1},
@@ -67,7 +67,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x30A6, 0x0001}, // Y_ODD_INC_
   {0x3402, 0x0788}, // X_OUTPUT_CONTROL
   {0x3404, 0x04B8}, // Y_OUTPUT_CONTROL
-  {0x3064, 0x1802}, // SMIA_TEST
+  {0x3064, 0x1982}, // SMIA_TEST
   {0x30BA, 0x11F2}, // DIGITAL_CTRL
 
   // Enable external trigger and disable GPIO outputs
@@ -114,9 +114,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x100E, 0x07B1}, // FINE_INTEGRATION_TIME3_MIN
   {0x1010, 0x0139}, // FINE_INTEGRATION_TIME4_MIN
   {0x3014, 0x08CB}, // FINE_INTEGRATION_TIME_
-  {0x321E, 0x08CB}, // FINE_INTEGRATION_TIME2
-  {0x321E, 0x08CB}, // FINE_INTEGRATION_TIME3
-  {0x321E, 0x0894}, // FINE_INTEGRATION_TIME4
+  {0x321E, 0x0894}, // FINE_INTEGRATION_TIME2
 
   {0x31D0, 0x0000}, // COMPANDING, no good in 10 bit?
   {0x33DA, 0x0000}, // COMPANDING
