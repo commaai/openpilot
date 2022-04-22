@@ -329,7 +329,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.CP.openpilotLongitudinalControl:
       buttonEvents = []
 
-      if self.CS.cruise_buttons[-1] != self.CS.cruise_buttons[-2]:
+      if self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
         be = car.CarState.ButtonEvent.new_message()
         be.type = ButtonType.unknown
         if self.CS.cruise_buttons[-1] != 0:
@@ -337,7 +337,7 @@ class CarInterface(CarInterfaceBase):
           but = self.CS.cruise_buttons[-1]
         else:
           be.pressed = False
-          but = self.CS.cruise_buttons[-2]
+          but = self.CS.prev_cruise_buttons
         if but == Buttons.RES_ACCEL:
           be.type = ButtonType.accelCruise
         elif but == Buttons.SET_DECEL:
