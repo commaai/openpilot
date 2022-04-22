@@ -58,6 +58,7 @@ public:
     constexpr int localMemSize = (debayer_local_worksize * 2 + 2) * (debayer_local_worksize * 2 + 2) * 2;
     const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
     CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
+    CL_CHECK(clSetKernelArg(krnl_, 3, sizeof(float), &black_level));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
   }
 
@@ -156,7 +157,7 @@ bool CameraBuf::acquire() {
 #else
     if (camera_state->camera_id == CAMERA_ID_IMX390) black_level = 64.0;
 #endif
-    debayer->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain, black_level, &event);
+    debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, gain, black_level, &event);
   } else {
     assert(rgb_stride == camera_state->ci.frame_stride);
     rgb2yuv->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl);

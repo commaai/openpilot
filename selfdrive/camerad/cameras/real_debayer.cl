@@ -73,7 +73,7 @@ inline half val_from_10(const uchar * const source, int gx, int gy, half black_l
   return pv;
 }
 
-half4 vals_from_10(const uchar * const source, const int gx, const int gy) {
+half4 vals_from_10(const uchar * const source, const int gx, const int gy, half black_level) {
   // parse 4x 10bit, requires gx % 4 == 0
   const int start = mad24(gy, FRAME_STRIDE, (5 * (gx / 4)));
 
@@ -129,12 +129,12 @@ __kernel void debayer10(__global const uchar * const in, __global uchar * out, _
   const int y_local = mad24(lid_y, 2, lid_x & 1) + 1;
   const int x_local = (lid_x / 2) * 4 + 1;
 
-  vstore4(vals_from_10(in, x_global, y_global), 0, cached + mad24(y_local, localRowLen, x_local));
+  vstore4(vals_from_10(in, x_global, y_global, black_level), 0, cached + mad24(y_local, localRowLen, x_local));
 
   if (lid_y == 0 && (lid_x & 1) == 0) {
-    vstore4(vals_from_10(in, x_global, y_global - 1), 0, cached + mad24(y_local - 1, localRowLen, x_local));
+    vstore4(vals_from_10(in, x_global, y_global - 1, black_level), 0, cached + mad24(y_local - 1, localRowLen, x_local));
   } else if (lid_y == get_local_size(1) - 1 && lid_x & 1) {
-    vstore4(vals_from_10(in, x_global, y_global + 1), 0, cached + mad24(y_local + 1, localRowLen, x_local));
+    vstore4(vals_from_10(in, x_global, y_global + 1, black_level), 0, cached + mad24(y_local + 1, localRowLen, x_local));
   }
 
   if (lid_x <= 1) {
