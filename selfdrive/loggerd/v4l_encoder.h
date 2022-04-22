@@ -8,6 +8,9 @@
 #include "selfdrive/loggerd/include/v4l2-controls.h"
 #include <linux/videodev2.h>
 
+#define BUF_IN_COUNT 7
+#define BUF_OUT_COUNT 6
+
 class V4LEncoder : public VideoEncoder {
 public:
   V4LEncoder(const char* filename, CameraType type, int width, int height, int fps, int bitrate, bool h265, int out_width, int out_height, bool write = true);
@@ -38,8 +41,9 @@ private:
 
   int queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int bytesused=0, struct timeval timestamp={0});
   int dequeue_buffer(v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL);
-  VisionBuf buf_in[7];
-  VisionBuf buf_out[6];
+
+  VisionBuf buf_in[BUF_IN_COUNT];
+  VisionBuf buf_out[BUF_OUT_COUNT];
 
   int buffer_in = 0;
 };
