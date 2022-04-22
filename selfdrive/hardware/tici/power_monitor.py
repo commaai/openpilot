@@ -2,6 +2,7 @@
 import sys
 import time
 import numpy as np
+from typing import List
 
 from common.realtime import Ratekeeper
 
@@ -10,7 +11,7 @@ def average(avg, sample):
   return ((avg[0] * avg[1] + sample) / (avg[1] + 1), avg[1] + 1)
 
 
-def sample_power(seconds=5) -> float: # W
+def sample_power(seconds=5) -> List[float]:
   rate = 123
   rk = Ratekeeper(rate, print_delay_threshold=None)
 
