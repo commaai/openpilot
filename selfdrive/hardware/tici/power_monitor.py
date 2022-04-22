@@ -1,10 +1,31 @@
 #!/usr/bin/env python3
 import sys
 import time
+import numpy as np
+from typing import List
+
+from common.realtime import Ratekeeper
 
 def average(avg, sample):
   # Weighted avg between existing value and new sample
   return ((avg[0] * avg[1] + sample) / (avg[1] + 1), avg[1] + 1)
+
+
+def sample_power(seconds=5) -> List[float]:
+  rate = 123
+  rk = Ratekeeper(rate, print_delay_threshold=None)
+
+  pwrs = []
+  for _ in range(rate*seconds):
+    with open("/sys/bus/i2c/devices/0-0040/hwmon/hwmon1/power1_input") as f:
+      pwrs.append(int(f.read()) / 1e6)
+    rk.keep_time()
+  return pwrs
+
+def get_power(seconds=5):
+  pwrs = sample_power(seconds)
+  return np.mean(pwrs)
+
 
 if __name__ == '__main__':
 
