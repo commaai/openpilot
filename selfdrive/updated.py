@@ -170,6 +170,8 @@ def setup_git_options(cwd: str) -> None:
     ("core.trustctime", "false"),
     ("core.checkStat", "minimal"),
     ("protocol.version", "2"),
+    ("gc.auto", "0"),
+    ("gc.autoDetach", "false"),
   ]
   for option, value in git_cfg:
     run(["git", "config", option, value], cwd)
@@ -240,7 +242,7 @@ def init_overlay() -> None:
   cloudlog.info(f"git diff output:\n{git_diff}")
 
 
-def finalize_update() -> None:
+def finalize_update(wait_helper: WaitTimeHelper) -> None:
   """Take the current OverlayFS merged view and finalize a copy outside of
   OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
 
@@ -256,8 +258,19 @@ def finalize_update() -> None:
   run(["git", "reset", "--hard"], FINALIZED)
   run(["git", "submodule", "foreach", "--recursive", "git", "reset"], FINALIZED)
 
-  set_consistent_flag(True)
-  cloudlog.info("done finalizing overlay")
+  cloudlog.info("Starting git gc")
+  t = time.monotonic()
+  try:
+    run(["git", "gc"], FINALIZED)
+    cloudlog.event("Done git gc", duration=time.monotonic() - t)
+  except subprocess.CalledProcessError:
+    cloudlog.exception(f"Failed git gc, took {time.monotonic() - t:.3f} s")
+
+  if wait_helper.shutdown:
+    cloudlog.info("got interrupted finalizing overlay")
+  else:
+    set_consistent_flag(True)
+    cloudlog.info("done finalizing overlay")
 
 
 def handle_agnos_update(wait_helper: WaitTimeHelper) -> None:
@@ -328,7 +341,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
         handle_agnos_update(wait_helper)
 
     # Create the finalized, ready-to-swap update
-    finalize_update()
+    finalize_update(wait_helper)
     cloudlog.info("openpilot update successful!")
   else:
     cloudlog.info("nothing new from git at this time")
@@ -367,10 +380,7 @@ def main() -> None:
 
   first_run = True
   last_fetch_time = 0.0
-  update_failed_count = 0
-
-  # Set initial params for offroad alerts
-  set_params(False, 0, None)
+  update_failed_count = 0  # TODO: Load from param?
 
   # Wait for IsOffroad to be set before our first update attempt
   wait_helper = WaitTimeHelper(proc)
@@ -382,14 +392,6 @@ def main() -> None:
   while not wait_helper.shutdown:
     update_now = wait_helper.ready_event.is_set()
     wait_helper.ready_event.clear()
-
-    # Don't run updater while onroad or if the time's wrong
-    time_wrong = datetime.datetime.utcnow().year < 2019
-    is_onroad = not params.get_bool("IsOffroad")
-    if is_onroad or time_wrong:
-      wait_helper.sleep(30)
-      cloudlog.info("not running updater, not offroad")
-      continue
 
     # Attempt an update
     exception = None
@@ -425,10 +427,11 @@ def main() -> None:
       exception = str(e)
       overlay_init.unlink(missing_ok=True)
 
-    try:
-      set_params(new_version, update_failed_count, exception)
-    except Exception:
-      cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
+    if not wait_helper.shutdown:
+      try:
+        set_params(new_version, update_failed_count, exception)
+      except Exception:
+        cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
     # TODO: replace this with a good backoff
     wait_helper.sleep(300)
