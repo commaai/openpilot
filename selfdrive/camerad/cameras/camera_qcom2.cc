@@ -710,6 +710,57 @@ void CameraState::camera_open() {
   isp_dev_handle = *isp_dev_handle_;
   LOGD("acquire isp dev");
 
+  struct cam_isp_in_port_info in_port_info_stats = {
+      .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[camera_num],
+
+      .lane_type = CAM_ISP_LANE_TYPE_DPHY,
+      .lane_num = 4,
+      .lane_cfg = 0x3210,
+
+      .vc = 0x0,
+      .dt = 0x12,  // Embedded data
+      .format = CAM_FORMAT_MIPI_RAW_12,
+
+      .test_pattern = 0x2,  // 0x3?
+      .usage_type = 0x0,
+
+      .left_start = 0,
+      .left_stop = FRAME_WIDTH - 1,
+      .left_width = FRAME_WIDTH,
+
+      .right_start = 0,
+      .right_stop = FRAME_WIDTH - 1,
+      .right_width = FRAME_WIDTH,
+
+      .line_start = 0,
+      .line_stop = 4 - 1,
+      .height = 4,
+
+      .pixel_clk = 0x0,
+      .batch_size = 0x0,
+      .dsp_mode = CAM_ISP_DSP_MODE_NONE,
+      .hbi_cnt = 0x0,
+      .custom_csid = 0x0,
+
+      .num_out_res = 0x1,
+      .data[0] = (struct cam_isp_out_port_info){
+          .res_type = CAM_ISP_IFE_OUT_RES_RDI_1,
+          .format = CAM_FORMAT_MIPI_RAW_12,
+          .width = FRAME_WIDTH,
+          .height = 4,
+          .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
+      },
+  };
+  struct cam_isp_resource isp_resource_stats = {
+      .resource_id = CAM_ISP_RES_ID_PORT,
+      .handle_type = CAM_HANDLE_USER_POINTER,
+      .res_hdl = (uint64_t)&in_port_info_stats,
+      .length = sizeof(in_port_info_stats),
+  };
+
+  auto isp_dev_handle_stats_ = device_acquire(multi_cam_state->isp_fd, session_handle, &isp_resource_stats);
+  assert(isp_dev_handle_stats_);
+
   csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", camera_num);
   assert(csiphy_fd >= 0);
   LOGD("opened csiphy for %d", camera_num);
