@@ -77,25 +77,28 @@ class TestModeld(unittest.TestCase):
 
   def test_dropped_frames(self):
     """
-      modeld should only run on consecutive frames
+      modeld should only run on consecutive road frames
     """
+    frame_id = -1
+    road_frames = list()
     for n in range(1, 50):
-      skip = (n % 10) == 0
-
-      if skip:
+      if (random.random() < 0.1) and n > 3:
         cams = random.choice([(), ('wideRoadCameraState', )])
         self._send_frames(n, cams)
       else:
         self._send_frames(n)
+        road_frames.append(n)
       self._wait()
 
-      frame_id = n-1 if skip else n
+      if len(road_frames) < 3 or road_frames[-1] - road_frames[-2] == 1:
+        frame_id = road_frames[-1]
+
       mdl = self.sm['modelV2']
       odo = self.sm['cameraOdometry']
       self.assertEqual(mdl.frameId, frame_id)
       self.assertEqual(mdl.frameIdExtra, frame_id)
       self.assertEqual(odo.frameId, frame_id)
-      if skip:
+      if n != frame_id:
         self.assertFalse(self.sm.updated['modelV2'])
         self.assertFalse(self.sm.updated['cameraOdometry'])
 
