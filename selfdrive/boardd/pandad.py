@@ -10,6 +10,7 @@ from functools import cmp_to_key
 from panda import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
+from selfdrive.hardware import HARDWARE
 from selfdrive.swaglog import cloudlog
 
 
@@ -89,6 +90,10 @@ def main() -> NoReturn:
 
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
+        if first_run:
+          cloudlog.info("Resetting internal panda")
+          HARDWARE.reset_internal_panda()
+          time.sleep(2)  # wait to come back up
         continue
 
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")

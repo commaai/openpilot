@@ -158,3 +158,6 @@ class HardwareBase(ABC):
   @abstractmethod
   def get_networks(self):
     pass
+
+  def reset_internal_panda(self):
+    pass
