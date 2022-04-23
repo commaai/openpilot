@@ -14,6 +14,8 @@
 #define V4L2_QCOM_BUF_FLAG_EOS 0x02000000
 // echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
 
+const bool env_debug_encoder = getenv("DEBUG_ENCODER") != NULL;
+
 #define checked_ioctl(x,y,z) { int _ret = HANDLE_EINTR(ioctl(x,y,z)); assert(_ret==0); }
 
 static int dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
@@ -41,9 +43,8 @@ static int dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NU
   return ret;
 }
 
-static int queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int bytesused=0, struct timeval timestamp={0}) {
+static int queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={0}) {
   v4l2_plane plane = {
-    .bytesused = bytesused,
     .length = (unsigned int)buf->len,
     .m = { .userptr = (unsigned long)buf->addr, },
     .reserved = {(unsigned int)buf->fd}
@@ -100,12 +101,8 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       struct timeval timestamp;
       int ret = dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
       assert(ret == 0);
-
-      // copy out the data and hand buffer back
       e->buf_out[index].sync(VISIONBUF_SYNC_FROM_DEVICE);
-      auto dat = kj::heapArray<capnp::byte>((uint8_t*)e->buf_out[index].addr, bytesused);
-      ret = queue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
-      assert(ret == 0);
+      uint8_t *buf = (uint8_t*)e->buf_out[index].addr;
 
       // eof packet, we exit
       if (flags & V4L2_QCOM_BUF_FLAG_EOS) exit = true;
@@ -117,19 +114,25 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       auto edata = (e->type == DriverCam) ? event.initDriverEncodeData() :
         ((e->type == WideRoadCam) ? event.initWideRoadEncodeData() :
         (e->remuxing ? event.initQRoadEncodeData() : event.initRoadEncodeData()));
-      edata.setData(dat);
+      edata.setData(kj::arrayPtr<capnp::byte>(buf, bytesused));
       edata.setTimestampEof(ts);
       edata.setIdx(idx++);
       edata.setSegmentNum(e->segment_num);
       edata.setFlags(flags);
       e->pm->send(e->service_name, msg);
 
-      //printf("%20s got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms\n", e->filename, bytesused, index, flags, ts, ((event.getLogMonoTime() / 1000)-ts)/1000.);
+      if (env_debug_encoder) {
+        printf("%20s got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms\n", e->filename, bytesused, index, flags, ts, ((event.getLogMonoTime() / 1000)-ts)/1000.);
+      }
 
       // TODO: writing should be moved to loggerd
       if (e->write && bytesused != 0) {
-        e->writer->write(dat.begin(), bytesused, ts, false, flags & V4L2_BUF_FLAG_KEYFRAME);
+        e->writer->write(buf, bytesused, ts, false, flags & V4L2_BUF_FLAG_KEYFRAME);
       }
+
+      // requeue the buffer
+      ret = queue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
+      assert(ret == 0);
     }
 
     if (pfd.revents & POLLOUT) {
@@ -275,6 +278,7 @@ void V4LEncoder::encoder_open(const char* path) {
   if (this->write) {
     writer.reset(new VideoWriter(path, this->filename, this->remuxing, this->width, this->height, this->fps, !this->remuxing, false));
     // this is "codecconfig", the default seems okay without extradata
+    // TODO: raw_logger does this header write also, refactor to remove from VideoWriter
     writer->write(NULL, 0, 0, true, false);
   }
   dequeue_thread = std::thread(V4LEncoder::dequeue_handler, this);
@@ -285,6 +289,7 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
                   int in_width, int in_height, uint64_t ts) {
   assert(in_width == in_width_);
   assert(in_height == in_height_);
+  assert(is_open);
 
   // reserve buffer
   if (buffer_in_outstanding >= BUF_IN_COUNT) {
@@ -314,10 +319,7 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 
   // push buffer
   buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
-  int ret = queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in],
-    VENUS_BUFFER_SIZE(COLOR_FMT_NV12, in_width, in_height),
-    timestamp
-  );
+  int ret = queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], timestamp);
   assert(ret == 0);
   buffer_in = (buffer_in + 1) % BUF_IN_COUNT;
 
@@ -328,7 +330,9 @@ void V4LEncoder::encoder_close() {
   if (this->is_open) {
     struct v4l2_encoder_cmd encoder_cmd = { .cmd = V4L2_ENC_CMD_STOP };
     checked_ioctl(fd, VIDIOC_ENCODER_CMD, &encoder_cmd);
+    // join waits for V4L2_QCOM_BUF_FLAG_EOS
     dequeue_thread.join();
+    // this means all frames and buffers must be dequeued
     writer.reset();
   }
   this->is_open = false;
