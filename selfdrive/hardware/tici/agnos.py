@@ -38,15 +38,18 @@ class StreamingDecompressor:
       except StopIteration:
         self.eof = True
         break
-      out = self.decompressor.decompress(compressed)
-      self.buf += out
-      self.downloaded += len(out)
+
+      # compute percent and speed from compressed bytes
+      self.downloaded += len(compressed)
       now = time.monotonic()
       if (now - self.last_read > 1):
         percent_done = round(self.downloaded / self.file_size * 100)
         speed = round(self.downloaded / (now -  self.start_time) / 1024)
         print(f"Downloaded {percent_done}% at avg speed {speed} kbps: {percent_done}", flush=True)
         self.last_read = now
+
+      out = self.decompressor.decompress(compressed)
+      self.buf += out
 
     result = self.buf[:length]
     self.buf = self.buf[length:]
