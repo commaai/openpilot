@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-from math import sin
+from math import cos, sin
 from cereal import car
 from opendbc.can.parser import CANParser
 from selfdrive.car.ford.values import CANBUS, DBC
 from selfdrive.car.interfaces import RadarInterfaceBase
 
-RADAR_MSGS = list(range(0x120, 0x15F + 1))  # 64 points
-LAST_MSG = max(RADAR_MSGS)
-NUM_MSGS = len(RADAR_MSGS)
+RADAR_START_ADDR = 0x120
+RADAR_MSG_COUNT = 64
 
 
 def _create_radar_can_parser(CP):
@@ -17,14 +16,15 @@ def _create_radar_can_parser(CP):
   signals = []
   checks = []
 
-  for ii in range(1, NUM_MSGS + 1):
-    msg = f"MRR_Detection_{ii:03d}"
+  for i in range(1, RADAR_MSG_COUNT + 1):
+    msg = f"MRR_Detection_{i:03d}"
     signals += [
-      (f"CAN_DET_VALID_LEVEL_{ii:02d}", msg),
-      (f"CAN_DET_RANGE_{ii:02d}", msg),
-      (f"CAN_DET_AZIMUTH_{ii:02d}", msg),
-      (f"CAN_DET_RANGE_RATE_{ii:02d}", msg),
-      (f"CAN_DET_AMPLITUDE_{ii:02d}", msg),
+      (f"CAN_DET_VALID_LEVEL_{i:02d}", msg),
+      (f"CAN_DET_AZIMUTH_{i:02d}", msg),
+      (f"CAN_DET_RANGE_{i:02d}", msg),
+      (f"CAN_DET_RANGE_RATE_{i:02d}", msg),
+      (f"CAN_DET_AMPLITUDE_{i:02d}", msg),
+      (f"CAN_SCAN_INDEX_2LSB_{i:02d}", msg),
     ]
     checks += [(msg, 20)]
 
@@ -34,7 +34,7 @@ class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
     self.updated_messages = set()
-    self.trigger_msg = LAST_MSG
+    self.trigger_msg = RADAR_START_ADDR + RADAR_MSG_COUNT - 1
     self.track_id = 0
 
     self.rcp = _create_radar_can_parser(CP)
@@ -65,32 +65,38 @@ class RadarInterface(RadarInterfaceBase):
       errors.append("canError")
     ret.errors = errors
 
-    for ii in range(1, NUM_MSGS + 1):
+    for ii in range(1, RADAR_MSG_COUNT + 1):
       msg = self.rcp.vl[f"MRR_Detection_{ii:03d}"]
 
-      if ii not in self.pts:
-        self.pts[ii] = car.RadarData.RadarPoint.new_message()
-        self.pts[ii].trackId = self.track_id
+      # SCAN_INDEX rotates through 0..3 on each message
+      # treat these as separate points
+      scanIndex = msg[f"CAN_SCAN_INDEX_2LSB_{ii:02d}"]
+      i = (ii - 1) * 4 + scanIndex
+
+      if i not in self.pts:
+        self.pts[i] = car.RadarData.RadarPoint.new_message()
+        self.pts[i].trackId = self.track_id
+        self.pts[i].aRel = float('nan')
+        self.pts[i].yvRel = float('nan')
         self.track_id += 1
 
-      # radar point only valid if valid signal asserted
-      valid = msg[f"CAN_DET_VALID_LEVEL_{ii:02d}"] > 0
-      if valid:
-        rel_distance = msg[f"CAN_DET_RANGE_{ii:02d}"]  # m
-        azimuth = msg[f"CAN_DET_AZIMUTH_{ii:02d}"]  # rad
+      valid = bool(msg[f"CAN_DET_VALID_LEVEL_{ii:02d}"])
+      amplitude = msg[f"CAN_DET_AMPLITUDE_{ii:02d}"]            # dBsm [-64|63]
 
-        self.pts[ii].dRel = rel_distance  # m from front of car
-        self.pts[ii].yRel = sin(-azimuth) * rel_distance  # in car frame's y axis, left is positive
-        self.pts[ii].vRel = msg[f"CAN_DET_RANGE_RATE_{ii:02d}"]  # m/s relative velocity
+      if valid and 0 < amplitude <= 15:
+        azimuth = msg[f"CAN_DET_AZIMUTH_{ii:02d}"]              # rad [-3.1416|3.13964]
+        dist = msg[f"CAN_DET_RANGE_{ii:02d}"]                  # m [0|255.984]
+        distRate = msg[f"CAN_DET_RANGE_RATE_{ii:02d}"]         # m/s [-128|127.984]
 
-        # use aRel for debugging AMPLITUDE (reflection size)
-        self.pts[ii].aRel = msg[f"CAN_DET_AMPLITUDE_{ii:02d}"]  # dBsm
+        # *** openpilot radar point ***
+        self.pts[i].dRel = cos(azimuth) * dist                  # m from front of car
+        self.pts[i].yRel = -sin(azimuth) * dist                 # in car frame's y axis, left is positive
+        self.pts[i].vRel = distRate                             # m/s
 
-        self.pts[ii].yvRel = float('nan')
-        self.pts[ii].measured = True
+        self.pts[i].measured = True
 
       else:
-        del self.pts[ii]
+        del self.pts[i]
 
     ret.points = list(self.pts.values())
     return ret
