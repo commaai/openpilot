@@ -314,6 +314,7 @@ selfdrive/loggerd/bootlog.cc
 selfdrive/loggerd/raw_logger.cc
 selfdrive/loggerd/raw_logger.h
 selfdrive/loggerd/include/msm_media_info.h
+selfdrive/loggerd/include/v4l2-controls.h
 
 selfdrive/loggerd/__init__.py
 selfdrive/loggerd/config.py
