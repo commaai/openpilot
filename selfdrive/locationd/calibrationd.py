@@ -170,7 +170,7 @@ class Calibrator:
     observed_rpy = np.array([0,
                              -np.arctan2(trans[2], trans[0]),
                              np.arctan2(trans[1], trans[0])])
-    new_rpy: np.ndarray = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
+    new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
     new_rpy = sanity_clip(new_rpy)
 
     self.rpys[self.block_idx] = (self.idx*self.rpys[self.block_idx] + (BLOCK_SIZE - self.idx) * new_rpy) / float(BLOCK_SIZE)
