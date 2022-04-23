@@ -2,12 +2,12 @@ import argparse
 import json
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-import mpld3
+import mpld3  # pylint: disable=import-error
 import sys
 from collections import defaultdict
 
 from tools.lib.logreader import logreader_from_route_or_segment
-    
+
 DEMO_ROUTE = "9f583b1d93915c31|2022-04-06--11-34-03"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
@@ -37,7 +37,7 @@ def read_logs(lr):
     if msg.which() == 'sendcan':
       latest_sendcan_monotime = msg.logMonoTime
       continue
-    
+
     if msg.which() in MSGQ_TO_SERVICE:
       service = MSGQ_TO_SERVICE[msg.which()]
       msg_obj = getattr(msg, msg.which())
@@ -50,7 +50,7 @@ def read_logs(lr):
         for key in MONOTIME_KEYS:
           if hasattr(msg_obj, key):
             if getattr(msg_obj, key) == 0:
-              # Filter out controlsd messages which arrive before the camera loop 
+              # Filter out controlsd messages which arrive before the camera loop
               continue_outer = True
             elif getattr(msg_obj, key) in mono_to_frame:
               frame_id = mono_to_frame[getattr(msg_obj, key)]
@@ -93,7 +93,7 @@ def find_frame_id(time, service, start_times, end_times):
 
 ## ASSUMES THAT AT LEAST ONE CLOUDLOG IS MADE IN CONTROLSD
 def insert_cloudlogs(lr, timestamps, start_times, end_times):
-  t0 = start_times[min(start_times.keys())][SERVICES[0]] 
+  t0 = start_times[min(start_times.keys())][SERVICES[0]]
   failed_inserts = 0
   latest_controls_frameid = 0
   for msg in lr:
@@ -104,7 +104,7 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
         service = jmsg['ctx']['daemon']
         event = jmsg['msg']['timestamp']['event']
         if time < t0:
-          # Filter out controlsd messages which arrive before the camera loop 
+          # Filter out controlsd messages which arrive before the camera loop
           continue
 
         if "frame_id" in jmsg['msg']['timestamp']:
@@ -136,15 +136,15 @@ def print_timestamps(timestamps, durations, start_times, relative):
     if relative:
       t0 = start_times[frame_id][SERVICES[0]]
     for service in SERVICES:
-      print("  "+service)  
+      print("  "+service)
       events = timestamps[frame_id][service]
       for event, time in sorted(events, key = lambda x: x[1]):
-        print("    "+'%-53s%-53s' %(event, str((time-t0)/1e6)))  
+        print("    "+'%-53s%-53s' %(event, str((time-t0)/1e6)))
       for event, time in durations[frame_id][service]:
-        print("    "+'%-53s%-53s' %(event, str(time*1000))) 
+        print("    "+'%-53s%-53s' %(event, str(time*1000)))
 
 def graph_timestamps(timestamps, start_times, end_times, relative):
-  t0 = start_times[min(start_times.keys())][SERVICES[0]] 
+  t0 = start_times[min(start_times.keys())][SERVICES[0]]
   fig, ax = plt.subplots()
   ax.set_xlim(0, 150 if relative else 750)
   ax.set_ylim(0, 15)
