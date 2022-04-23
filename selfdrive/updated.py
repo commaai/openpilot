@@ -178,8 +178,7 @@ def setup_git_options(cwd: str) -> None:
 def dismount_overlay() -> None:
   if os.path.ismount(OVERLAY_MERGED):
     cloudlog.info("unmounting existing overlay")
-    args = ["sudo", "umount", "-l", OVERLAY_MERGED]
-    run(args)
+    run(["sudo", "umount", "-l", OVERLAY_MERGED])
 
 
 def init_overlay() -> None:
@@ -414,7 +413,7 @@ def main() -> None:
       except Exception:
         cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
-    # infrequent attempts if we successfully checked recently
+    # infrequent attempts if we successfully updated recently
     wait_helper.sleep(5*60 if update_failed_count > 0 else 90*60)
 
   dismount_overlay()
