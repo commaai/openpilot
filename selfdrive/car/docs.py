@@ -58,8 +58,8 @@ def generate_cars_md(tier_car_info: Dict[Tier, List[CarInfo]], template_fn: str)
     template: jinja2.Template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  rendered: str = template.render(tiers=tier_car_info, footnotes=footnotes, Star=Star, Column=Column)
-  return rendered
+  return template.render(tiers=tier_car_info, footnotes=footnotes, Star=Star, Column=Column)
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Auto generates supported cars documentation",
