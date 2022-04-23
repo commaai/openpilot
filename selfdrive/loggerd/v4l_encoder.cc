@@ -8,9 +8,73 @@
 #include "libyuv.h"
 #include "selfdrive/loggerd/include/msm_media_info.h"
 
+// has to be in this order
+#include "selfdrive/loggerd/include/v4l2-controls.h"
+#include <linux/videodev2.h>
+#define V4L2_QCOM_BUF_FLAG_EOS 0x02000000
 // echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
 
-#define V4L_BUF_FLAG_FRAME (V4L2_BUF_FLAG_KEYFRAME | V4L2_BUF_FLAG_PFRAME | V4L2_BUF_FLAG_BFRAME)
+#define checked_ioctl(x,y,z) { int _ret = HANDLE_EINTR(ioctl(x,y,z)); assert(_ret==0); }
+
+static int dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
+  v4l2_plane plane = {0};
+  v4l2_buffer v4l_buf = {
+    .type = buf_type,
+    .memory = V4L2_MEMORY_USERPTR,
+    .m = { .planes = &plane, },
+    .length = 1,
+  };
+  int ret = ioctl(fd, VIDIOC_DQBUF, &v4l_buf);
+  if (ret == -1 && errno == 11) return ret;
+
+  if (ret != 0 && errno != 11) {
+    printf("dequeue %d buffer %d: %d errno %d\n", buf_type, v4l_buf.index, ret, ret==0 ? 0 : errno);
+    return ret;
+  }
+
+  if (index) *index = v4l_buf.index;
+  if (bytesused) *bytesused = v4l_buf.m.planes[0].bytesused;
+  if (flags) *flags = v4l_buf.flags;
+  if (timestamp) *timestamp = v4l_buf.timestamp;
+  assert(v4l_buf.m.planes[0].data_offset == 0);
+
+  return ret;
+}
+
+static int queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int bytesused=0, struct timeval timestamp={0}) {
+  v4l2_plane plane = {
+    .bytesused = bytesused,
+    .length = (unsigned int)buf->len,
+    .m = { .userptr = (unsigned long)buf->addr, },
+    .reserved = {(unsigned int)buf->fd}
+  };
+
+  v4l2_buffer v4l_buf = {
+    .type = buf_type,
+    .index = index,
+    .memory = V4L2_MEMORY_USERPTR,
+    .m = { .planes = &plane, },
+    .length = 1,
+    .bytesused = 0,
+    .flags = V4L2_BUF_FLAG_TIMESTAMP_COPY,
+    .timestamp = timestamp
+  };
+
+  int ret = ioctl(fd, VIDIOC_QBUF, &v4l_buf);
+  if (ret != 0) {
+    printf("queue %d buffer %d: %d errno %d\n", buf_type, index, ret, ret==0 ? 0 : errno);
+  }
+  return ret;
+}
+
+static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) {
+  struct v4l2_requestbuffers reqbuf = {
+    .type = buf_type,
+    .memory = V4L2_MEMORY_USERPTR,
+    .count = count
+  };
+  checked_ioctl(fd, VIDIOC_REQBUFS, &reqbuf);
+}
 
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   e->segment_num++;
@@ -22,7 +86,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   pfd.events = POLLIN | POLLOUT;
   pfd.fd = e->fd;
 
-  while (!exit || e->buffer_in_outstanding > 0) {
+  while (!exit) {
     int rc = poll(&pfd, 1, 1000);
     if (!rc) { printf("poll timeout"); continue; }
 
@@ -34,17 +98,17 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
     if (pfd.revents & POLLIN) {
       unsigned int bytesused, flags, index;
       struct timeval timestamp;
-      int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
+      int ret = dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
       assert(ret == 0);
 
       // copy out the data and hand buffer back
       e->buf_out[index].sync(VISIONBUF_SYNC_FROM_DEVICE);
       auto dat = kj::heapArray<capnp::byte>((uint8_t*)e->buf_out[index].addr, bytesused);
-      ret = e->queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
+      ret = queue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
       assert(ret == 0);
 
       // eof packet, we exit
-      if (!(flags & V4L_BUF_FLAG_FRAME)) exit = true;
+      if (flags & V4L2_QCOM_BUF_FLAG_EOS) exit = true;
       uint64_t ts = timestamp.tv_sec * 1000000 + timestamp.tv_usec;
 
       // broadcast packet
@@ -60,8 +124,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       edata.setFlags(flags);
       e->pm->send(e->service_name, msg);
 
-      /*uint64_t current_tm = event.getLogMonoTime() / 1000;
-      printf("%20s got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms\n", e->filename, bytesused, index, flags, ts, (current_tm-ts)/1000.);*/
+      //printf("%20s got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms\n", e->filename, bytesused, index, flags, ts, ((event.getLogMonoTime() / 1000)-ts)/1000.);
 
       // TODO: writing should be moved to loggerd
       if (e->write && bytesused != 0) {
@@ -70,7 +133,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
     }
 
     if (pfd.revents & POLLOUT) {
-      int ret = e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+      int ret = dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
       assert(ret == 0);
       e->buffer_in_outstanding--;
     }
@@ -87,14 +150,14 @@ V4LEncoder::V4LEncoder(
   assert(fd >= 0);
 
   struct v4l2_capability cap;
-  assert(ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0);
+  checked_ioctl(fd, VIDIOC_QUERYCAP, &cap);
   LOGD("opened encoder device %s %s = %d", cap.driver, cap.card, fd);
   assert(strcmp((const char *)cap.driver, "msm_vidc_driver") == 0);
   assert(strcmp((const char *)cap.card, "msm_vidc_venc") == 0);
 
   struct v4l2_format fmt_out = {
     .type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
-    .fmt {
+    .fmt = {
       .pix_mp = {
         // downscales are free with v4l
         .width = (unsigned int)out_width,
@@ -105,24 +168,25 @@ V4LEncoder::V4LEncoder(
       }
     }
   };
-  assert(ioctl(fd, VIDIOC_S_FMT, &fmt_out) == 0);
+  checked_ioctl(fd, VIDIOC_S_FMT, &fmt_out);
 
   v4l2_streamparm streamparm = {
     .type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
-    .parm {
-      .output {
+    .parm = {
+      .output = {
         // TODO: more stuff here? we don't know
-        .timeperframe { .numerator = 1,
+        .timeperframe = {
+          .numerator = 1,
           .denominator = 20
         }
       }
     }
   };
-  assert(ioctl(fd, VIDIOC_S_PARM, &streamparm) == 0);
+  checked_ioctl(fd, VIDIOC_S_PARM, &streamparm);
 
   struct v4l2_format fmt_in = {
     .type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
-    .fmt {
+    .fmt = {
       .pix_mp = {
         .width = (unsigned int)in_width,
         .height = (unsigned int)in_height,
@@ -132,7 +196,7 @@ V4LEncoder::V4LEncoder(
       }
     }
   };
-  assert(ioctl(fd, VIDIOC_S_FMT, &fmt_in) == 0);
+  checked_ioctl(fd, VIDIOC_S_FMT, &fmt_in);
 
   LOGD("in buffer size %d, out buffer size %d",
     fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage,
@@ -150,7 +214,7 @@ V4LEncoder::V4LEncoder(
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_IDR_PERIOD, .value = 1},
     };
     for (auto ctrl : ctrls) {
-      assert(ioctl(fd, VIDIOC_S_CTRL, &ctrl) == 0);
+      checked_ioctl(fd, VIDIOC_S_CTRL, &ctrl);
     }
   } else {
     struct v4l2_control ctrls[] = {
@@ -172,28 +236,31 @@ V4LEncoder::V4LEncoder(
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_IDR_PERIOD, .value = 1},
     };
     for (auto ctrl : ctrls) {
-      assert(ioctl(fd, VIDIOC_S_CTRL, &ctrl) == 0);
+      checked_ioctl(fd, VIDIOC_S_CTRL, &ctrl);
     }
   }
 
-  struct v4l2_requestbuffers reqbuf_out = {
-    .type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
-    .memory = V4L2_MEMORY_USERPTR,
-    .count = BUF_OUT_COUNT
-  };
-  assert(ioctl(fd, VIDIOC_REQBUFS, &reqbuf_out) == 0);
+  // allocate buffers
+  request_buffers(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, BUF_OUT_COUNT);
   for (int i = 0; i < BUF_OUT_COUNT; i++) {
     buf_out[i].allocate(fmt_out.fmt.pix_mp.plane_fmt[0].sizeimage);
   }
 
-  struct v4l2_requestbuffers reqbuf_in = {
-    .type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
-    .memory = V4L2_MEMORY_USERPTR,
-    .count = BUF_IN_COUNT
-  };
-  assert(ioctl(fd, VIDIOC_REQBUFS, &reqbuf_in) == 0);
+  request_buffers(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, BUF_IN_COUNT);
   for (int i = 0; i < BUF_IN_COUNT; i++) {
     buf_in[i].allocate(fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage);
+  }
+
+  // start encoder
+  v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+  checked_ioctl(fd, VIDIOC_STREAMON, &buf_type);
+  buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+  checked_ioctl(fd, VIDIOC_STREAMON, &buf_type);
+
+  // queue up output buffers
+  for (unsigned int i = 0; i < BUF_OUT_COUNT; i++) {
+    int ret = queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
+    assert(ret == 0);
   }
 
   // publish
@@ -203,62 +270,6 @@ V4LEncoder::V4LEncoder(
   pm.reset(new PubMaster({service_name}));
 }
 
-int V4LEncoder::dequeue_buffer(v4l2_buf_type buf_type, unsigned int *index, unsigned int *bytesused, unsigned int *flags, struct timeval *timestamp) {
-  v4l2_plane plane = {0};
-  v4l2_buffer v4l_buf = {
-    .type = buf_type,
-    .memory = V4L2_MEMORY_USERPTR,
-    .m {
-      .planes = &plane,
-    },
-    .length = 1,
-  };
-  int ret = ioctl(fd, VIDIOC_DQBUF, &v4l_buf);
-  if (ret == -1 && errno == 11) return ret;
-
-  if (ret != 0 && errno != 11) {
-    printf("dequeue %d buffer %d: %d errno %d\n", buf_type, v4l_buf.index, ret, ret==0 ? 0 : errno);
-    return ret;
-  }
-  
-  if (index) *index = v4l_buf.index;
-  if (bytesused) *bytesused = v4l_buf.m.planes[0].bytesused;
-  if (flags) *flags = v4l_buf.flags;
-  if (timestamp) *timestamp = v4l_buf.timestamp;
-  assert(v4l_buf.m.planes[0].data_offset == 0);
-
-  return ret;
-}
-
-int V4LEncoder::queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int bytesused, struct timeval timestamp) {
-  v4l2_plane plane = {
-    .bytesused = bytesused,
-    .length = (unsigned int)buf->len,
-    .m {
-      .userptr = (unsigned long)buf->addr,
-    },
-    .reserved = {(unsigned int)buf->fd}
-  };
-
-  v4l2_buffer v4l_buf = {
-    .type = buf_type,
-    .index = index,
-    .memory = V4L2_MEMORY_USERPTR,
-    .m {
-      .planes = &plane,
-    },
-    .length = 1,
-    .bytesused = 0,
-    .flags = V4L2_BUF_FLAG_TIMESTAMP_COPY,
-    .timestamp = timestamp
-  };
-
-  int ret = ioctl(fd, VIDIOC_QBUF, &v4l_buf);
-  if (ret != 0) {
-    printf("queue %d buffer %d: %d errno %d\n", buf_type, index, ret, ret==0 ? 0 : errno);
-  }
-  return ret;
-}
 
 void V4LEncoder::encoder_open(const char* path) {
   if (this->write) {
@@ -266,17 +277,6 @@ void V4LEncoder::encoder_open(const char* path) {
     // this is "codecconfig", the default seems okay without extradata
     writer->write(NULL, 0, 0, true, false);
   }
-
-  v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-  assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
-
-  for (unsigned int i = 0; i < BUF_OUT_COUNT; i++) {
-    queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
-  }
-
-  buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-  assert(ioctl(fd, VIDIOC_STREAMON, &buf_type) == 0);
-
   dequeue_thread = std::thread(V4LEncoder::dequeue_handler, this);
   this->is_open = true;
 }
@@ -285,6 +285,13 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
                   int in_width, int in_height, uint64_t ts) {
   assert(in_width == in_width_);
   assert(in_height == in_height_);
+
+  // reserve buffer
+  if (buffer_in_outstanding >= BUF_IN_COUNT) {
+    LOGE("ENCODER FRAME DROPPED")
+    return -1;
+  }
+  buffer_in_outstanding++;
 
   uint8_t *in_y_ptr = (uint8_t*)buf_in[buffer_in].addr;
   int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
@@ -305,13 +312,9 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
     .tv_usec = (long)((ts/1000) % 1000000),
   };
 
-  // reserve buffer
-  assert(buffer_in_outstanding < BUF_IN_COUNT);
-  buffer_in_outstanding++;
-
   // push buffer
   buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
-  int ret = queue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in],
+  int ret = queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in],
     VENUS_BUFFER_SIZE(COLOR_FMT_NV12, in_width, in_height),
     timestamp
   );
@@ -323,20 +326,21 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 
 void V4LEncoder::encoder_close() {
   if (this->is_open) {
-    {
-      v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-      assert(ioctl(fd, VIDIOC_STREAMOFF, &buf_type) == 0);
-    }
+    struct v4l2_encoder_cmd encoder_cmd = { .cmd = V4L2_ENC_CMD_STOP };
+    checked_ioctl(fd, VIDIOC_ENCODER_CMD, &encoder_cmd);
     dequeue_thread.join();
-    {
-      v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-      assert(ioctl(fd, VIDIOC_STREAMOFF, &buf_type) == 0);
-    }
     writer.reset();
   }
   this->is_open = false;
 }
 
 V4LEncoder::~V4LEncoder() {
+  encoder_close();
+  v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+  checked_ioctl(fd, VIDIOC_STREAMOFF, &buf_type);
+  request_buffers(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, 0);
+  buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+  checked_ioctl(fd, VIDIOC_STREAMOFF, &buf_type);
+  request_buffers(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 0);
   close(fd);
 }

@@ -4,10 +4,6 @@
 #include "selfdrive/loggerd/loggerd.h"
 #include "selfdrive/loggerd/video_writer.h"
 
-// has to be in this order
-#include "selfdrive/loggerd/include/v4l2-controls.h"
-#include <linux/videodev2.h>
-
 #define BUF_IN_COUNT 7
 #define BUF_OUT_COUNT 6
 
@@ -36,9 +32,6 @@ private:
 
   static void dequeue_handler(V4LEncoder *e);
   std::thread dequeue_thread;
-
-  int queue_buffer(v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, unsigned int bytesused=0, struct timeval timestamp={0});
-  int dequeue_buffer(v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL);
 
   VisionBuf buf_in[BUF_IN_COUNT];
   VisionBuf buf_out[BUF_OUT_COUNT];
