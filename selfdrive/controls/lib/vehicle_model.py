@@ -42,9 +42,9 @@ class VehicleModel:
 
   def update_params(self, stiffness_factor: float, steer_ratio: float) -> None:
     """Update the vehicle model with a new stiffness factor and steer ratio"""
-    self.cF: float = stiffness_factor * self.cF_orig
-    self.cR: float = stiffness_factor * self.cR_orig
-    self.sR: float = steer_ratio
+    self.cF = stiffness_factor * self.cF_orig
+    self.cR = stiffness_factor * self.cR_orig
+    self.sR = steer_ratio
 
   def steady_state_sol(self, sa: float, u: float, roll: float) -> np.ndarray:
     """Returns the steady state solution.
@@ -163,11 +163,10 @@ def kin_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
   Returns:
     2x1 matrix with steady state solution
   """
-  K: np.ndarray = np.zeros((2, 1))
+  K = np.zeros((2, 1))
   K[0, 0] = VM.aR / VM.sR / VM.l * u
   K[1, 0] = 1. / VM.sR / VM.l * u
-  K_scaled: np.ndarray = K * sa  
-  return K_scaled
+  return K * sa
 
 
 def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, np.ndarray]:
@@ -221,9 +220,8 @@ def dyn_ss_sol(sa: float, u: float, roll: float, VM: VehicleModel) -> np.ndarray
     2x1 matrix with steady state solution
   """
   A, B = create_dyn_state_matrices(u, VM)
-  inp: np.ndarray = np.array([[sa], [roll]])
-  solution: np.ndarray =  -solve(A, B) @ inp
-  return solution
+  inp = np.array([[sa], [roll]])
+  return -solve(A, B) @ inp
 
 def calc_slip_factor(VM: VehicleModel) -> float:
   """The slip factor is a measure of how the curvature changes with speed
