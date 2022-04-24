@@ -30,9 +30,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: Check submodules
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
-      run: release/check-submodules.sh
     - name: Cache scons
       id: scons-cache
       # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
@@ -81,6 +78,18 @@ jobs:
       run: eval "$BUILD"
     - name: Build openpilot with all flags
       run: ${{ env.RUN }} "scons -j$(nproc) --extras --test"
+
+  check_submodules:
+    name: build all
+    runs-on: ubuntu-20.04
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Check submodules
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      run: scripts/check-submodules.sh
 
   #build_mac:
   #  name: build macos
