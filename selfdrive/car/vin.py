@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
+import struct
 import traceback
 
 import cereal.messaging as messaging
+import panda.python.uds as uds
 from panda.python.uds import FUNCTIONAL_ADDRS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.swaglog import cloudlog
 
-VIN_REQUEST = b'\x09\x02'
-VIN_RESPONSE = b'\x49\x02\x01'
+VIN_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + struct.pack("!H", uds.DATA_IDENTIFIER_TYPE.VIN)
+VIN_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + struct.pack("!H", uds.DATA_IDENTIFIER_TYPE.VIN)
 VIN_UNKNOWN = "0" * 17
 
 
