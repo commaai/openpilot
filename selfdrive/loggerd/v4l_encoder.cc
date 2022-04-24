@@ -173,9 +173,10 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
     }
 
     if (pfd.revents & POLLOUT) {
-      int ret = dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+      unsigned int index;
+      int ret = dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, &index);
       assert(ret == 0);
-      e->buffer_in_outstanding--;
+      e->free_buf_in.push(index);
     }
   }
 }
@@ -302,6 +303,10 @@ V4LEncoder::V4LEncoder(
     int ret = queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
     assert(ret == 0);
   }
+  // queue up input buffers
+  for (unsigned int i = 0; i < BUF_IN_COUNT; i++) {
+    free_buf_in.push(i);
+  }
 
   // publish
   service_name = this->type == DriverCam ? "driverEncodeData" :
@@ -324,11 +329,7 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   assert(is_open);
 
   // reserve buffer
-  if (buffer_in_outstanding >= BUF_IN_COUNT) {
-    LOGE("ENCODER FRAME DROPPED")
-    return -1;
-  }
-  buffer_in_outstanding++;
+  int buffer_in = free_buf_in.pop();
 
   uint8_t *in_y_ptr = (uint8_t*)buf_in[buffer_in].addr;
   int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
@@ -353,7 +354,6 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
   int ret = queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], timestamp);
   assert(ret == 0);
-  buffer_in = (buffer_in + 1) % BUF_IN_COUNT;
 
   return 0;
 }

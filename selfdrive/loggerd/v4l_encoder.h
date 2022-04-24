@@ -35,9 +35,7 @@ private:
 
   VisionBuf buf_in[BUF_IN_COUNT];
   VisionBuf buf_out[BUF_OUT_COUNT];
-
-  int buffer_in = 0;
-  std::atomic<int> buffer_in_outstanding = 0;
+  SafeQueue<unsigned int> free_buf_in;
 
   static void write_handler(V4LEncoder *e, const char *path);
   std::thread write_handler_thread;
