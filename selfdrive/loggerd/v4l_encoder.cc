@@ -85,7 +85,8 @@ void V4LEncoder::write_handler(V4LEncoder *e, const char *path) {
   // TODO: raw_logger does this header write also, refactor to remove from VideoWriter
   writer.write(NULL, 0, 0, true, false);
 
-  while (1) {
+  bool exit = false;
+  while (!exit) {
     auto out_buf = e->to_write.pop();
 
     capnp::FlatArrayMessageReader cmsg(*out_buf);
@@ -95,11 +96,13 @@ void V4LEncoder::write_handler(V4LEncoder *e, const char *path) {
       ((e->type == WideRoadCam) ? event.getWideRoadEncodeData() :
       (e->remuxing ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
     auto flags = edata.getFlags();
-    if (flags & V4L2_QCOM_BUF_FLAG_EOS) break;
+    if (flags & V4L2_QCOM_BUF_FLAG_EOS) exit = true;
 
     // dangerous cast from const, but should be fine
     auto data = edata.getData();
-    writer.write((uint8_t *)data.begin(), data.size(), edata.getTimestampEof(), false, flags & V4L2_BUF_FLAG_KEYFRAME);
+    if (data.size() > 0) {
+      writer.write((uint8_t *)data.begin(), data.size(), edata.getTimestampEof(), false, flags & V4L2_BUF_FLAG_KEYFRAME);
+    }
 
     // free the data
     delete out_buf;
