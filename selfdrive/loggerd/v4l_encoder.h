@@ -1,5 +1,6 @@
 #pragma once
 
+#include "selfdrive/common/queue.h"
 #include "selfdrive/loggerd/encoder.h"
 #include "selfdrive/loggerd/loggerd.h"
 #include "selfdrive/loggerd/video_writer.h"
@@ -16,6 +17,8 @@ public:
   void encoder_open(const char* path);
   void encoder_close();
 private:
+  int fd;
+
   const char* filename;
   CameraType type;
   unsigned int in_width_, in_height_;
@@ -24,18 +27,19 @@ private:
   bool is_open = false;
   int segment_num = -1;
 
-  std::unique_ptr<VideoWriter> writer;
-  int fd;
-
   std::unique_ptr<PubMaster> pm;
   const char *service_name;
 
   static void dequeue_handler(V4LEncoder *e);
-  std::thread dequeue_thread;
+  std::thread dequeue_handler_thread;
 
   VisionBuf buf_in[BUF_IN_COUNT];
   VisionBuf buf_out[BUF_OUT_COUNT];
 
   int buffer_in = 0;
   std::atomic<int> buffer_in_outstanding = 0;
+
+  static void write_handler(V4LEncoder *e, const char *path);
+  std::thread write_handler_thread;
+  SafeQueue<kj::Array<capnp::word>* > to_write;
 };

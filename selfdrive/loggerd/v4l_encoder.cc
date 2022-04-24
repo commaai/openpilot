@@ -77,6 +77,37 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
   checked_ioctl(fd, VIDIOC_REQBUFS, &reqbuf);
 }
 
+// TODO: writing should be moved to loggerd
+void V4LEncoder::write_handler(V4LEncoder *e, const char *path) {
+  VideoWriter writer(path, e->filename, e->remuxing, e->width, e->height, e->fps, !e->remuxing, false);
+
+  // this is "codecconfig", the default seems okay without extradata
+  // TODO: raw_logger does this header write also, refactor to remove from VideoWriter
+  writer.write(NULL, 0, 0, true, false);
+
+  while (1) {
+    auto out_buf = e->to_write.pop();
+
+    capnp::FlatArrayMessageReader cmsg(*out_buf);
+    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+
+    auto edata = (e->type == DriverCam) ? event.getDriverEncodeData() :
+      ((e->type == WideRoadCam) ? event.getWideRoadEncodeData() :
+      (e->remuxing ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
+    auto flags = edata.getFlags();
+    if (flags & V4L2_QCOM_BUF_FLAG_EOS) break;
+
+    // dangerous cast from const, but should be fine
+    auto data = edata.getData();
+    writer.write((uint8_t *)data.begin(), data.size(), edata.getTimestampEof(), false, flags & V4L2_BUF_FLAG_KEYFRAME);
+
+    // free the data
+    delete out_buf;
+  }
+
+  // VideoWriter is freed on out of scope
+}
+
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   e->segment_num++;
   uint32_t idx = 0;
@@ -119,15 +150,18 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       edata.setIdx(idx++);
       edata.setSegmentNum(e->segment_num);
       edata.setFlags(flags);
-      e->pm->send(e->service_name, msg);
+
+      auto words = new kj::Array<capnp::word>(capnp::messageToFlatArray(msg));
+      auto bytes = words->asBytes();
+      e->pm->send(e->service_name, bytes.begin(), bytes.size());
+      if (e->write) {
+        e->to_write.push(words);
+      } else {
+        delete words;
+      }
 
       if (env_debug_encoder) {
         printf("%20s got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms\n", e->filename, bytesused, index, flags, ts, ((event.getLogMonoTime() / 1000)-ts)/1000.);
-      }
-
-      // TODO: writing should be moved to loggerd
-      if (e->write && bytesused != 0) {
-        e->writer->write(buf, bytesused, ts, false, flags & V4L2_BUF_FLAG_KEYFRAME);
       }
 
       // requeue the buffer
@@ -275,13 +309,8 @@ V4LEncoder::V4LEncoder(
 
 
 void V4LEncoder::encoder_open(const char* path) {
-  if (this->write) {
-    writer.reset(new VideoWriter(path, this->filename, this->remuxing, this->width, this->height, this->fps, !this->remuxing, false));
-    // this is "codecconfig", the default seems okay without extradata
-    // TODO: raw_logger does this header write also, refactor to remove from VideoWriter
-    writer->write(NULL, 0, 0, true, false);
-  }
-  dequeue_thread = std::thread(V4LEncoder::dequeue_handler, this);
+  dequeue_handler_thread = std::thread(V4LEncoder::dequeue_handler, this);
+  if (this->write) write_handler_thread = std::thread(V4LEncoder::write_handler, this, path);
   this->is_open = true;
 }
 
@@ -331,9 +360,8 @@ void V4LEncoder::encoder_close() {
     struct v4l2_encoder_cmd encoder_cmd = { .cmd = V4L2_ENC_CMD_STOP };
     checked_ioctl(fd, VIDIOC_ENCODER_CMD, &encoder_cmd);
     // join waits for V4L2_QCOM_BUF_FLAG_EOS
-    dequeue_thread.join();
-    // this means all frames and buffers must be dequeued
-    writer.reset();
+    dequeue_handler_thread.join();
+    if (this->write) write_handler_thread.join();
   }
   this->is_open = false;
 }
