@@ -522,6 +522,17 @@ class Tici(HardwareBase):
     gpio_set(GPIO.STM_RST_N, 0)
 
 
+  def recover_internal_panda(self):
+    gpio_init(GPIO.STM_RST_N, True)
+    gpio_init(GPIO.STM_BOOT0, True)
+
+    gpio_set(GPIO.STM_RST_N, 1)
+    gpio_set(GPIO.STM_BOOT0, 1)
+    time.sleep(2)
+    gpio_set(GPIO.STM_RST_N, 0)
+    gpio_set(GPIO.STM_BOOT0, 0)
+
+
 if __name__ == "__main__":
   t = Tici()
   t.initialize_hardware()
