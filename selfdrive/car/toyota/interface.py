@@ -38,7 +38,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.74   # unknown end-to-end spec
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.INDI_PRIUS)
+      set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=1.7, FRICTION=0.09, use_steering_angle=False)
       ret.steerActuatorDelay = 0.3
 
     elif candidate == CAR.PRIUS_V:
