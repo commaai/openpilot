@@ -48,15 +48,14 @@ class TestFwFingerprint(unittest.TestCase):
     passed = True
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
     for car_model, ecus in FW_VERSIONS.items():
-      CarInterface, _, _ = interfaces[car_model]
-      CP = CarInterface.get_params(car_model)
+      CP = interfaces[car_model][0].get_params(car_model)
       if CP.carName == 'subaru':
         for ecu in ecus.keys():
           if ecu[1] in blacklisted_addrs:
-            print(f'{car_model}: Blacklisted ecu: ({ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
+            print(f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
             passed = False
 
-    self.assertTrue(passed, "Blacklisted FW versions found ")
+    self.assertTrue(passed, "Blacklisted FW versions found")
 
 
 if __name__ == "__main__":
