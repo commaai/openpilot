@@ -4,8 +4,9 @@ import numpy.polynomial.polynomial as P
 class DiscreteController():
   def __init__(self, gains, rate=100):
     self.gains = np.array(gains)
-    Z = [[[1, 1], [2, -2]], [[1], [1]], [[2, -2], [1-2j, 1+2j]]] # Trapezoidal IPD (filter is in complex term)
-    T = [[[1, 0], [1    ]], [[1], [1]], [[1    ], [1   , .05j]]] # Trapezoidal IPD (filter is in complex term)
+    N = 20 # Filter coefficient. corner frequency in rad/s. 20 = ~3.18hz
+    Z = [[[1, 1], [2, -2]], [[1], [1]], [[2, -2], [1-2j, 1+2j]]] # Trapezoidal IPD
+    T = [[[1, 0], [1    ]], [[1], [1]], [[1    ], [1   , (1/N)*1j]]] # Trapezoidal IPD
     self.G = [[P.polymul(Z[i][j][::-1], P.polyval(1/rate, T[i][j][::-1]))[::-1].real.tolist() for j in range(len(Z[i]))] for i in range(len(Z))]
     self.update_controller()
     self.reset()
