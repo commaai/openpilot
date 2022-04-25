@@ -67,7 +67,7 @@ function install_ubuntu_common_requirements() {
     valgrind
 }
 
-# Install Ubuntu 22.04 lts packages
+# Install Ubuntu 22.04 LTS packages
 function install_ubuntu_latest_requirements() {
   install_ubuntu_common_requirements
 
@@ -77,18 +77,6 @@ function install_ubuntu_latest_requirements() {
     qt5-qmake \
     qtbase5-dev-tools \
     python3-dev
-}
-
-# Install Ubuntu 21.10 packages
-function install_ubuntu_21.10_requirements() {
-  install_ubuntu_common_requirements
-
-  sudo apt-get install -y --no-install-recommends \
-    qtbase5-dev \
-    qtchooser \
-    qt5-qmake \
-    qtbase5-dev-tools\
-    python-dev
 }
 
 # Install Ubuntu 20.04 packages
@@ -107,9 +95,6 @@ if [ -f "/etc/os-release" ]; then
   case "$ID $VERSION_ID" in
     "ubuntu 22.04")
       install_ubuntu_latest_requirements
-      ;;
-    "ubuntu 21.10")
-      install_ubuntu_21.10_requirements
       ;;
     "ubuntu 20.04")
       install_ubuntu_lts_requirements
