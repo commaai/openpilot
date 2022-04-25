@@ -133,7 +133,7 @@ class CarKalman(KalmanFilter):
     C[1, 0] = 0
 
     x = sp.Matrix([v, r])  # lateral velocity, yaw rate
-    x_dot = A * x + B * (sa - angle_offset - angle_offset_fast) - C * theta
+    x_dot = A * x + B * (sa - angle_offset - angle_offset_fast) + C * theta
 
     dt = sp.Symbol('dt')
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))

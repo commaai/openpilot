@@ -65,7 +65,7 @@ class ParamsLearner:
           if yaw_rate_valid:
             self.kf.predict_and_observe(t,
                                         ObservationKind.ROAD_FRAME_YAW_RATE,
-                                        np.array([[-yaw_rate]]),
+                                        np.array([[yaw_rate]]),
                                         np.array([np.atleast_2d(yaw_rate_std**2)]))
 
           self.kf.predict_and_observe(t,
@@ -83,7 +83,7 @@ class ParamsLearner:
         self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, np.array([[steer_ratio]]))
 
     elif which == 'carState':
-      self.steering_angle = msg.steeringAngleDeg
+      self.steering_angle = -msg.steeringAngleDeg
       self.steering_pressed = msg.steeringPressed
       self.speed = msg.vEgo
 
@@ -91,7 +91,7 @@ class ParamsLearner:
       self.active = self.speed > 5 and in_linear_region
 
       if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(msg.steeringAngleDeg)]]))
+        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(self.steering_angle)]]))
         self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[self.speed]]))
 
     if not self.active:
