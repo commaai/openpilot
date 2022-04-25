@@ -42,6 +42,8 @@ class TestCarInterfaces(unittest.TestCase):
         self.assertTrue(car_params.lateralTuning.torque.kf > 0)
       elif tuning == 'indi':
         self.assertTrue(len(car_params.lateralTuning.indi.outerLoopGainV))
+      elif tuning == 'discrete':
+        self.assertTrue(car_params.lateralTuning.discrete)
 
     # Run car interface
     CC = car.CarControl.new_message()

@@ -19,6 +19,7 @@ from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_c
 from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
+from selfdrive.controls.lib.latcontrol_discrete import LatControlDiscrete
 from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
 from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
@@ -146,6 +147,8 @@ class Controls:
       self.LaC = LatControlINDI(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'torque':
       self.LaC = LatControlTorque(self.CP, self.CI)
+    elif self.CP.lateralTuning.which() == 'discrete':
+      self.LaC = LatControlDiscrete(self.CP, self.CI)
 
     self.initialized = False
     self.state = State.disabled
@@ -734,6 +737,8 @@ class Controls:
       controlsState.lateralControlState.torqueState = lac_log
     elif lat_tuning == 'indi':
       controlsState.lateralControlState.indiState = lac_log
+    elif lat_tuning == 'discrete':
+      controlsState.lateralControlState.discreteState = lac_log
 
     self.pm.send('controlsState', dat)
 
