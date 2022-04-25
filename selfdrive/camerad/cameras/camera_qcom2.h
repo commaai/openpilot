@@ -51,9 +51,11 @@ public:
   int32_t link_handle;
 
   int buf0_handle;
+  int buf1_handle;
   int buf_handle[FRAME_BUF_COUNT];
   int buf_stats_handle[FRAME_BUF_COUNT];
   int sync_objs[FRAME_BUF_COUNT];
+  int sync_stats_objs[FRAME_BUF_COUNT];
   int request_ids[FRAME_BUF_COUNT];
   int request_id_last;
   int frame_id_last;

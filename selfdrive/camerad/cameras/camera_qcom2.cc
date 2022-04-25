@@ -542,35 +542,72 @@ void CameraState::enqueue_buffer(int i, bool dp) {
     // LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
   }
 
+  if (buf_stats_handle[i]) {
+    release(multi_cam_state->video0_fd, buf_stats_handle[i]);
+
+    // wait
+    struct cam_sync_wait sync_wait = {0};
+    sync_wait.sync_obj = sync_stats_objs[i];
+    sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
+    ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+    // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
+
+    // destroy old output fence
+    struct cam_sync_info sync_destroy = {0};
+    strcpy(sync_destroy.name, "NodeOutputPortFence");
+    sync_destroy.sync_obj = sync_stats_objs[i];
+    ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
+    // LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
+  }
+
   // do stuff
-  struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
-  req_mgr_sched_request.session_hdl = session_handle;
-  req_mgr_sched_request.link_hdl = link_handle;
-  req_mgr_sched_request.req_id = request_id;
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
-  // LOGD("sched req: %d %d", ret, request_id);
+  {
+    struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
+    req_mgr_sched_request.session_hdl = session_handle;
+    req_mgr_sched_request.link_hdl = link_handle;
+    req_mgr_sched_request.req_id = request_id;
+    ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
+    // LOGD("sched req: %d %d", ret, request_id);
+  }
 
   // create output fence
-  struct cam_sync_info sync_create = {0};
-  strcpy(sync_create.name, "NodeOutputPortFence");
-  ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
-  // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
-  sync_objs[i] = sync_create.sync_obj;
+  {
+    struct cam_sync_info sync_create = {0};
+    strcpy(sync_create.name, "NodeOutputPortFence");
+    ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+    // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
+    sync_objs[i] = sync_create.sync_obj;
+  }
+  {
+    struct cam_sync_info sync_create = {0};
+    strcpy(sync_create.name, "NodeOutputPortFence");
+    ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+    // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
+    sync_stats_objs[i] = sync_create.sync_obj;
+  }
 
   // configure ISP to put the image in place
-  struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
-  mem_mgr_map_cmd.mmu_hdls[0] = multi_cam_state->device_iommu;
-  mem_mgr_map_cmd.num_hdl = 1;
-  mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
-  mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-  // LOGD("map buf req: (fd: %d) 0x%x %d", bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
-  buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
+  {
+    struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
+    mem_mgr_map_cmd.mmu_hdls[0] = multi_cam_state->device_iommu;
+    mem_mgr_map_cmd.num_hdl = 1;
+    mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
+    mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
+    ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+    // LOGD("map buf req: (fd: %d) 0x%x %d", bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
+    buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
+  }
 
-  mem_mgr_map_cmd.fd = buf.camera_bufs_stats[i].fd;
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-  // LOGD("map buf req: (fd: %d) 0x%x %d", bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
-  buf_stats_handle[i] = mem_mgr_map_cmd.out.buf_handle;
+  {
+    struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
+    mem_mgr_map_cmd.mmu_hdls[0] = multi_cam_state->device_iommu;
+    mem_mgr_map_cmd.num_hdl = 1;
+    mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
+    mem_mgr_map_cmd.fd = buf.camera_bufs_stats[i].fd;
+    ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+    // LOGD("map buf req: (fd: %d) 0x%x %d", bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
+    buf_stats_handle[i] = mem_mgr_map_cmd.out.buf_handle;
+  }
 
   // poke sensor
   sensors_poke(request_id);
@@ -578,7 +615,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
 
   // push the buffer
   config_isp(isp_dev_handle, buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
-  config_isp(isp_dev_handle_stats, buf_stats_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
+  config_isp(isp_dev_handle_stats, buf_stats_handle[i], sync_stats_objs[i], request_id, buf1_handle, 65632*(i+1));
 }
 
 void CameraState::enqueue_req_multi(int start, int n, bool dp) {
@@ -781,8 +818,9 @@ void CameraState::camera_open() {
 
   // config ISP
   alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
+  alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf1_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
   config_isp(isp_dev_handle, 0, 0, 1, buf0_handle, 0);
-  config_isp(isp_dev_handle_stats, 0, 0, 1, buf0_handle, 0);
+  config_isp(isp_dev_handle_stats, 0, 0, 1, buf1_handle, 0);
 
   // config csiphy
   LOG("-- Config CSI PHY");

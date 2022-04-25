@@ -148,6 +148,12 @@ bool CameraBuf::acquire() {
   cl_event event;
 
   double start_time = millis_since_boot();
+  
+  uint8_t *stats = (uint8_t*)camera_bufs_stats[cur_buf_idx].addr;
+  for (int i = 0; i < 128; i++){
+    printf("%02x ", stats[i]);
+  }
+  printf("\n");
 
   if (debayer) {
     float gain = 0.0;
