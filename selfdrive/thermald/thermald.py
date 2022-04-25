@@ -293,7 +293,9 @@ def thermald_thread(end_event, hw_queue):
       media = Path("/data/media")
 
       if living_in_the_moment.is_file() and media.is_mount():
+        os.system("sudo mount -o remount,rw /persist")
         living_in_the_moment.unlink()
+        os.system("sudo mount -o remount /persist")
 
       if not living_in_the_moment.is_file():
         if not media.is_mount():
