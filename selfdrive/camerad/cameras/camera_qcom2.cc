@@ -567,15 +567,18 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   // LOGD("map buf req: (fd: %d) 0x%x %d", bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
   buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
 
+  mem_mgr_map_cmd.fd = buf.camera_bufs_stats[i].fd;
+  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+  // LOGD("map buf req: (fd: %d) 0x%x %d", bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
+  buf_stats_handle[i] = mem_mgr_map_cmd.out.buf_handle;
+
   // poke sensor
   sensors_poke(request_id);
   // LOGD("Poked sensor");
 
   // push the buffer
   config_isp(isp_dev_handle, buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
-
-  // TODO: use separate buffer for stats
-  config_isp(isp_dev_handle_stats, buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
+  config_isp(isp_dev_handle_stats, buf_stats_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
 }
 
 void CameraState::enqueue_req_multi(int start, int n, bool dp) {

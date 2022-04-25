@@ -112,6 +112,7 @@ public:
   VisionBuf *cur_rgb_buf;
   VisionBuf *cur_yuv_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs;
+  std::unique_ptr<VisionBuf[]> camera_bufs_stats;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
   int rgb_width, rgb_height, rgb_stride;
 

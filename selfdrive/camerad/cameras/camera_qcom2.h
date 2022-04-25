@@ -52,6 +52,7 @@ public:
 
   int buf0_handle;
   int buf_handle[FRAME_BUF_COUNT];
+  int buf_stats_handle[FRAME_BUF_COUNT];
   int sync_objs[FRAME_BUF_COUNT];
   int request_ids[FRAME_BUF_COUNT];
   int request_id_last;
