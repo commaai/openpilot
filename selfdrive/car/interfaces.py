@@ -175,7 +175,7 @@ class CarInterfaceBase(ABC):
       events.add(EventName.steerUnavailable)
 
     # we engage when pcm is active (rising edge)
-    # and if enabling is allowed
+    # enabling can optionally be blocked by the car interface
     if pcm_enable:
       if cs_out.cruiseState.enabled and not self.CS.out.cruiseState.enabled and allow_enable:
         events.add(EventName.pcmEnable)
