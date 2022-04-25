@@ -12,10 +12,10 @@ import carla  # pylint: disable=import-error
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 
 import cereal.messaging as messaging
 from cereal import log
+from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.basedir import BASEDIR
 from common.numpy_fast import clip
 from common.params import Params
