@@ -320,6 +320,7 @@ void V4LEncoder::encoder_open(const char* path) {
   dequeue_handler_thread = std::thread(V4LEncoder::dequeue_handler, this);
   if (this->write) write_handler_thread = std::thread(V4LEncoder::write_handler, this, path);
   this->is_open = true;
+  this->counter = 0;
 }
 
 int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
@@ -355,7 +356,7 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   int ret = queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], timestamp);
   assert(ret == 0);
 
-  return 0;
+  return this->counter++;
 }
 
 void V4LEncoder::encoder_close() {

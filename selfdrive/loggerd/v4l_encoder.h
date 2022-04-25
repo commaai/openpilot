@@ -26,6 +26,7 @@ private:
   bool remuxing, write;
   bool is_open = false;
   int segment_num = -1;
+  int counter = 0;
 
   std::unique_ptr<PubMaster> pm;
   const char *service_name;
