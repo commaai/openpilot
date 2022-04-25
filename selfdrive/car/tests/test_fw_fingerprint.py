@@ -4,6 +4,7 @@ import unittest
 from parameterized import parameterized
 
 from cereal import car
+from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.fw_versions import match_fw_to_car
 
@@ -47,7 +48,9 @@ class TestFwFingerprint(unittest.TestCase):
     passed = True
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
     for car_model, ecus in FW_VERSIONS.items():
-      if car_model.startswith("SUBARU"):
+      CarInterface, _, _ = interfaces[car_model]
+      CP = CarInterface.get_params(car_model)
+      if CP.carName == 'subaru':
         for ecu in ecus.keys():
           if ecu[1] in blacklisted_addrs:
             print(f'{car_model}: Blacklisted ecu: ({ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
