@@ -12,16 +12,15 @@ import carla  # pylint: disable=import-error
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
+from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 
 import cereal.messaging as messaging
 from cereal import log
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.basedir import BASEDIR
 from common.numpy_fast import clip
 from common.params import Params
 from common.realtime import DT_DMON, Ratekeeper
 from selfdrive.car.honda.values import CruiseButtons
-from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.test.helpers import set_params_enabled
 from tools.sim.lib.can import can_function
 
@@ -512,7 +511,6 @@ class CarlaBridge:
       t.join()
 
   def run(self, queue, retries=-1):
-    unblock_stdout()  # Fix error when publishing too many lag message
     bridge_p = Process(target=self.bridge_keep_alive, args=(queue, retries), daemon=True)
     bridge_p.start()
     return bridge_p
