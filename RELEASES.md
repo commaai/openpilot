@@ -1,6 +1,6 @@
-Version 0.8.13.1 (2022-04-25)
+Version 0.8.13.1 (2022-04-27)
 ========================
- * NEOS 20: improved reliability from bootloop mitigation
+ * NEOS 20: improved reliability
 
 Version 0.8.13 (2022-02-18)
 ========================
