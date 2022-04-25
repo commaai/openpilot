@@ -12,7 +12,7 @@ def linearize_error(error, speed):
 class LatControlDiscrete(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    gains = [g for g in CP.lateralTuning.discrete.gains]
+    gains = [CP.lateralTuning.discrete.ki, CP.lateralTuning.discrete.kp, CP.lateralTuning.discrete.kd]
     self.discrete = DiscreteController(gains, rate=(1 / DT_CTRL))
 
   def reset(self):
