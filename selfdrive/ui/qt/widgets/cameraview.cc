@@ -102,6 +102,7 @@ CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType typ
                                    stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected, Qt::BlockingQueuedConnection);
+  connect(this, &CameraViewWidget::vipcThreadFrameReceived, this, &CameraViewWidget::vipcFrameReceived);
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -162,7 +163,7 @@ void CameraViewWidget::initializeGL() {
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  latest_texture_id = -1;
+  latest_frame = nullptr;
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
@@ -215,7 +216,7 @@ void CameraViewWidget::paintGL() {
 
   std::lock_guard lk(lock);
 
-  if (latest_texture_id == -1) return;
+  if (latest_frame == nullptr) return;
 
   glViewport(0, 0, width(), height());
   // sync with the PBO
@@ -226,9 +227,13 @@ void CameraViewWidget::paintGL() {
   glBindVertexArray(frame_vao);
 
   glUseProgram(program->programId());
+  uint8_t *address[3] = {latest_frame->y, latest_frame->u, latest_frame->v};
   for (int i = 0; i < 3; ++i) {
     glActiveTexture(GL_TEXTURE0 + i);
     glBindTexture(GL_TEXTURE_2D, textures[i]);
+    int width = i == 0 ? stream_width : stream_width / 2;
+    int height = i == 0 ? stream_height : stream_height / 2;
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE, address[i]);
     assert(glGetError() == GL_NO_ERROR);
   }
 
@@ -244,7 +249,7 @@ void CameraViewWidget::paintGL() {
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   makeCurrent();
-  latest_texture_id = -1;
+  latest_frame = nullptr;
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
 
@@ -264,26 +269,14 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   updateFrameMat(width(), height());
 }
 
+void CameraViewWidget::vipcFrameReceived(VisionBuf *buf) {
+  latest_frame = buf;
+  update();
+}
+
 void CameraViewWidget::vipcThread() {
   VisionStreamType cur_stream_type = stream_type;
   std::unique_ptr<VisionIpcClient> vipc_client;
-
-  std::unique_ptr<QOpenGLContext> ctx;
-  std::unique_ptr<QOffscreenSurface> surface;
-  std::unique_ptr<QOpenGLBuffer> gl_buffer;
-
-  ctx = std::make_unique<QOpenGLContext>();
-  ctx->setFormat(context()->format());
-  ctx->setShareContext(context());
-  ctx->create();
-  assert(ctx->isValid());
-
-  surface = std::make_unique<QOffscreenSurface>();
-  surface->setFormat(ctx->format());
-  surface->create();
-  ctx->makeCurrent(surface.get());
-  assert(QOpenGLContext::currentContext() == ctx.get());
-  initializeOpenGLFunctions();
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream_type != stream_type) {
@@ -296,54 +289,10 @@ void CameraViewWidget::vipcThread() {
         QThread::msleep(100);
         continue;
       }
-
-      gl_buffer.reset(new QOpenGLBuffer(QOpenGLBuffer::PixelUnpackBuffer));
-      gl_buffer->create();
-      gl_buffer->bind();
-      gl_buffer->setUsagePattern(QOpenGLBuffer::StreamDraw);
-      gl_buffer->allocate(vipc_client->buffers[0].len);
-
       emit vipcThreadConnected(vipc_client.get());
     }
 
     if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
-      {
-        std::lock_guard lk(lock);
-
-        for (int i = 0; i < 3; i++) {
-          void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
-
-          if (texture_buffer == nullptr) {
-            LOGE("gl_buffer->map returned nullptr");
-            continue;
-          }
-
-          int width = i == 0 ? stream_width : stream_width / 2;
-          int height = i == 0 ? stream_height : stream_height / 2;
-          uint8_t* tex_buf[] = {buf->y, buf->u, buf->v};
-          memcpy(texture_buffer, tex_buf[i], width*height);
-          gl_buffer->unmap();
-
-          // copy pixels from PBO to texture object
-          glBindTexture(GL_TEXTURE_2D, textures[i]);
-          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
-        }
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-        assert(glGetError() == GL_NO_ERROR);
-
-        wait_fence.reset(new WaitFence());
-
-        // Ensure the fence is in the GPU command queue, or waiting on it might block
-        // https://www.khronos.org/opengl/wiki/Sync_Object#Flushing_and_contexts
-        glFlush();
-
-        latest_texture_id = buf->idx;
-      }
-      // Schedule update. update() will be invoked on the gui thread.
-      QMetaObject::invokeMethod(this, "update");
-
-      // TODO: remove later, it's only connected by DriverView.
       emit vipcThreadFrameReceived(buf);
     }
   }
