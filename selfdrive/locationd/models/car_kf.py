@@ -63,10 +63,10 @@ class CarKalman(KalmanFilter):
     math.radians(0.02)**2,
     math.radians(0.25)**2,
 
-    .1**2, .01**2,
+    6**2, .03**2,
     math.radians(0.1)**2,
-    math.radians(0.1)**2,
-    math.radians(1)**2,
+    math.radians(12)**2,
+    math.radians(3)**2,
   ])
 
   P_initial = np.diag([
