@@ -58,7 +58,7 @@ class CarKalman(KalmanFilter):
 
   # process noise
   Q = np.diag([
-    (.05 / 100)**2,
+    (.005 / 100)**2,
     .01**2,
     math.radians(0.02)**2,
     math.radians(0.25)**2,
@@ -68,15 +68,24 @@ class CarKalman(KalmanFilter):
     math.radians(0.1)**2,
     math.radians(1)**2,
   ])
-  P_initial = Q.copy()
+
+  P_initial = np.diag([
+    (2 / 100)**2,
+    .01**2,
+    math.radians(0.08)**2,
+    math.radians(0.25)**2,
+
+    .6**2, .03**2,
+    math.radians(.1)**2,
+    math.radians(1.2)**2,
+    math.radians(.3)**2,
+  ])
+  
 
   obs_noise: Dict[int, Any] = {
-    ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.05)**2),
+    ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(1.0)**2),
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(10.0)**2),
-    ObservationKind.ROAD_ROLL: np.atleast_2d(math.radians(1.0)**2),
-    ObservationKind.STEER_RATIO: np.atleast_2d(5.0**2),
-    ObservationKind.STIFFNESS: np.atleast_2d(0.5**2),
-    ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.1**2),
+    ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.5**2),
   }
 
   global_vars = [
@@ -153,8 +162,6 @@ class CarKalman(KalmanFilter):
       [sp.Matrix([u]), ObservationKind.ROAD_FRAME_X_SPEED, None],
       [sp.Matrix([sa]), ObservationKind.STEER_ANGLE, None],
       [sp.Matrix([angle_offset_fast]), ObservationKind.ANGLE_OFFSET_FAST, None],
-      [sp.Matrix([sR]), ObservationKind.STEER_RATIO, None],
-      [sp.Matrix([sf]), ObservationKind.STIFFNESS, None],
       [sp.Matrix([theta]), ObservationKind.ROAD_ROLL, None],
     ]
 

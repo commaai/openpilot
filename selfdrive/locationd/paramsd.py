@@ -34,6 +34,7 @@ class ParamsLearner:
     self.roll = 0.0
     self.steering_pressed = False
     self.steering_angle = 0.0
+    self.steering_ratio = CP.steerRatio
 
     self.valid = True
 
@@ -73,32 +74,15 @@ class ParamsLearner:
                                       np.array([[self.roll]]),
                                       np.array([np.atleast_2d(roll_std**2)]))
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
-
-        # We observe the current stiffness and steer ratio (with a high observation noise) to bound
-        # the respective estimate STD. Otherwise the STDs keep increasing, causing rapid changes in the
-        # states in longer routes (especially straight stretches).
-        stiffness = float(self.kf.x[States.STIFFNESS])
-        steer_ratio = float(self.kf.x[States.STEER_RATIO])
-        self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, np.array([[stiffness]]))
-        self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, np.array([[steer_ratio]]))
-
     elif which == 'carState':
-      self.steering_angle = msg.steeringAngleDeg
-      self.steering_pressed = msg.steeringPressed
-      self.speed = msg.vEgo
-
-      in_linear_region = abs(self.steering_angle) < 45 or not self.steering_pressed
-      self.active = self.speed > 5 and in_linear_region
+      speed, steering_angle = msg.vEgo, msg.steeringAngleDeg
+      in_linear_region = abs(steering_angle) < 3*self.steering_ratio
+      self.active = speed > 5
 
       if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(msg.steeringAngleDeg)]]))
-        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[self.speed]]))
-
-    if not self.active:
-      # Reset time when stopped so uncertainty doesn't grow
-      self.kf.filter.set_filter_time(t)
-      self.kf.filter.reset_rewind()
-
+        if in_linear_region:
+          self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(steering_angle)]]))
+        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[speed]]))
 
 def main(sm=None, pm=None):
   config_realtime_process([0, 1, 2, 3], 5)
