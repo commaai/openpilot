@@ -232,14 +232,14 @@ void CameraViewWidget::paintGL() {
     assert(glGetError() == GL_NO_ERROR);
   }
 
-  glActiveTexture(GL_TEXTURE0);  // qt requires active texture 0
-
   glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
   glDisableVertexAttribArray(0);
   glBindVertexArray(0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glActiveTexture(GL_TEXTURE0);
 }
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
@@ -320,13 +320,8 @@ void CameraViewWidget::vipcThread() {
 
           int width = i == 0 ? stream_width : stream_width / 2;
           int height = i == 0 ? stream_height : stream_height / 2;
-          if (i == 0) {
-            memcpy(texture_buffer, buf->y, width * height * sizeof(uint8_t));
-          } else if (i == 1) {
-            memcpy(texture_buffer, buf->u, width * height * sizeof(uint8_t));
-          } else if (i == 2) {
-            memcpy(texture_buffer, buf->v, width * height * sizeof(uint8_t));
-          }
+          auto tex_buf = (i==0) ? buf->y : ((i==1) ? buf->u : buf->v);
+          memcpy(texture_buffer, tex_buf, width*height);
           gl_buffer->unmap();
 
           // copy pixels from PBO to texture object
