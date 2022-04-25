@@ -289,8 +289,14 @@ def thermald_thread(end_event, hw_queue):
 
     # TODO: this should move to TICI.initialize_hardware, but we currently can't import params there
     if TICI:
-      if not os.path.isfile("/persist/comma/living-in-the-moment"):
-        if not Path("/data/media").is_mount():
+      living_in_the_moment = Path("/persist/comma/living-in-the-moment")
+      media = Path("/data/media")
+
+      if living_in_the_moment.is_file() and media.is_mount():
+        living_in_the_moment.unlink()
+
+      if not living_in_the_moment.is_file():
+        if not media.is_mount():
           set_offroad_alert_if_changed("Offroad_StorageMissing", True)
         else:
           # check for bad NVMe
