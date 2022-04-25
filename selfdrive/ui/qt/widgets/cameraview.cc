@@ -320,8 +320,8 @@ void CameraViewWidget::vipcThread() {
 
           int width = i == 0 ? stream_width : stream_width / 2;
           int height = i == 0 ? stream_height : stream_height / 2;
-          auto tex_buf = (i==0) ? buf->y : ((i==1) ? buf->u : buf->v);
-          memcpy(texture_buffer, tex_buf, width*height);
+          uint8_t* tex_buf[] = {buf->y, buf->u, buf->v};
+          memcpy(texture_buffer, tex_buf[i], width*height);
           gl_buffer->unmap();
 
           // copy pixels from PBO to texture object
