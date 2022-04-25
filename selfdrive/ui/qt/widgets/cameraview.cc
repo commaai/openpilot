@@ -102,10 +102,7 @@ CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType typ
                                    stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected, Qt::BlockingQueuedConnection);
-  connect(this, &CameraViewWidget::vipcThreadFrameReceived, [=](VisionBuf *buf) {
-    latest_frame = buf;
-    update();
-  });
+  connect(this, &CameraViewWidget::vipcThreadFrameReceived, this, &CameraViewWidget::vipcFrameReceived);
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -270,6 +267,11 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   }
 
   updateFrameMat(width(), height());
+}
+
+void CameraViewWidget::vipcFrameReceived(VisionBuf *buf) {
+  latest_frame = buf;
+  update();
 }
 
 void CameraViewWidget::vipcThread() {
