@@ -248,6 +248,8 @@ V4LEncoder::V4LEncoder(
       { .id = V4L2_CID_MPEG_VIDEO_HEADER_MODE, .value = V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE},
       { .id = V4L2_CID_MPEG_VIDEO_BITRATE, .value = bitrate},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL, .value = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL_VBR_CFR},
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_DISABLE},
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_IDR_PERIOD, .value = 1},
     };
     for (auto ctrl : ctrls) {
       checked_ioctl(fd, VIDIOC_S_CTRL, &ctrl);
@@ -258,10 +260,8 @@ V4LEncoder::V4LEncoder(
     struct v4l2_control ctrls[] = {
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_PROFILE, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_PROFILE_MAIN},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_TIER_LEVEL, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_LEVEL_HIGH_TIER_LEVEL_5},
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_DISABLE},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = 29},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_B_FRAMES, .value = 0},
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_IDR_PERIOD, .value = 1},
     };
     for (auto ctrl : ctrls) {
       checked_ioctl(fd, VIDIOC_S_CTRL, &ctrl);
@@ -278,14 +278,6 @@ V4LEncoder::V4LEncoder(
       { .id = V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_ALPHA, .value = 0},
       { .id = V4L2_CID_MPEG_VIDEO_H264_LOOP_FILTER_BETA, .value = 0},
       { .id = V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MODE, .value = 0},
-      // after buffer allocation in OMX. why do P/B frame counts change?
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_DISABLE},
-      // NOTE: these are set here in OMX, but then they are reset again
-      // This will produce b frames, but the writer can't handle them
-      // There have not been b frames in the past, but this is an avenue to reduce qcam size
-      /*{ .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = 7},
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_B_FRAMES, .value = 1},*/
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_IDR_PERIOD, .value = 1},
     };
     for (auto ctrl : ctrls) {
       checked_ioctl(fd, VIDIOC_S_CTRL, &ctrl);
@@ -294,14 +286,7 @@ V4LEncoder::V4LEncoder(
 
   // allocate buffers
   request_buffers(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, BUF_OUT_COUNT);
-  for (int i = 0; i < BUF_OUT_COUNT; i++) {
-    buf_out[i].allocate(fmt_out.fmt.pix_mp.plane_fmt[0].sizeimage);
-  }
-
   request_buffers(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, BUF_IN_COUNT);
-  for (int i = 0; i < BUF_IN_COUNT; i++) {
-    buf_in[i].allocate(fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage);
-  }
 
   // start encoder
   v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
@@ -311,11 +296,13 @@ V4LEncoder::V4LEncoder(
 
   // queue up output buffers
   for (unsigned int i = 0; i < BUF_OUT_COUNT; i++) {
+    buf_out[i].allocate(fmt_out.fmt.pix_mp.plane_fmt[0].sizeimage);
     int ret = queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
     assert(ret == 0);
   }
   // queue up input buffers
   for (unsigned int i = 0; i < BUF_IN_COUNT; i++) {
+    buf_in[i].allocate(fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage);
     free_buf_in.push(i);
   }
 
