@@ -388,7 +388,7 @@ void CameraState::config_isp(int dev_handle, int io_mem_handle, int io_mem_handl
   // YUV also has patch_offset = 0x1030 and num_patches = 10
 
   if (io_mem_handle != 0) {
-    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*2;
+    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
     pkt->num_io_configs = 2;
   }
 
@@ -414,6 +414,7 @@ void CameraState::config_isp(int dev_handle, int io_mem_handle, int io_mem_handl
   struct isp_packet {
     uint32_t type_0;
     cam_isp_resource_hfr_config resource_hfr;
+    struct cam_isp_port_hfr_config extra_port_hfr_config[1];
 
     uint32_t type_1;
     cam_isp_clock_config clock;
@@ -425,19 +426,26 @@ void CameraState::config_isp(int dev_handle, int io_mem_handle, int io_mem_handl
   } __attribute__((packed)) tmp;
   memset(&tmp, 0, sizeof(tmp));
 
-  // TODO: add port config for RDI_1? Figure out proper packet layout
   tmp.type_0 = CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG;
-  tmp.type_0 |= sizeof(cam_isp_resource_hfr_config) << 8;
-  static_assert(sizeof(cam_isp_resource_hfr_config) == 0x20);
+  tmp.type_0 |= (sizeof(cam_isp_resource_hfr_config) + sizeof(tmp.extra_port_hfr_config)) << 8;
+  static_assert(sizeof(cam_isp_resource_hfr_config) + sizeof(tmp.extra_port_hfr_config) == 0x38);
   tmp.resource_hfr = {
-    .num_ports = 1,  // 10 for YUV (but I don't think we need them)
+    .num_ports = 2,  // 10 for YUV (but I don't think we need them)
     .port_hfr_config[0] = {
       .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0, // CAM_ISP_IFE_OUT_RES_FULL for YUV
       .subsample_pattern = 1,
       .subsample_period = 0,
       .framedrop_pattern = 1,
       .framedrop_period = 0,
-    }};
+    }
+  };
+  tmp.extra_port_hfr_config[0] = {
+    .resource_type = CAM_ISP_IFE_OUT_RES_RDI_1, // CAM_ISP_IFE_OUT_RES_FULL for YUV
+    .subsample_pattern = 1,
+    .subsample_period = 0,
+    .framedrop_pattern = 1,
+    .framedrop_period = 0,
+  };
 
   tmp.type_1 = CAM_ISP_GENERIC_BLOB_TYPE_CLOCK_CONFIG;
   tmp.type_1 |= (sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) << 8;
@@ -469,11 +477,12 @@ void CameraState::config_isp(int dev_handle, int io_mem_handle, int io_mem_handl
     },
   };
 
-  static_assert(offsetof(struct isp_packet, type_2) == 0x60);
-
   buf_desc[1].size = sizeof(tmp);
-  buf_desc[1].offset = io_mem_handle != 0 ? 0x60 : 0;
+
+  // What is this offset?
+  buf_desc[1].offset = io_mem_handle != 0 ? offsetof(struct isp_packet, type_2) : 0;
   buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
+
   buf_desc[1].type = CAM_CMD_BUF_GENERIC;
   buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
   uint32_t *buf2 = (uint32_t *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle, 0x20);
