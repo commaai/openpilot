@@ -521,8 +521,8 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   int ret;
   int request_id = request_ids[i];
 
-  if (buf_handle[i]) {
-    release(multi_cam_state->video0_fd, buf_handle[i]);
+  if (buf_handle[i] && sync_objs[i]) {
+    //release(multi_cam_state->video0_fd, buf_handle[i]);
     // wait
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = sync_objs[i];
@@ -555,16 +555,6 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
   sync_objs[i] = sync_create.sync_obj;
-
-  // configure ISP to put the image in place
-  struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
-  mem_mgr_map_cmd.mmu_hdls[0] = multi_cam_state->device_iommu;
-  mem_mgr_map_cmd.num_hdl = 1;
-  mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
-  mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-  // LOGD("map buf req: (fd: %d) 0x%x %d", bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
-  buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
 
   // poke sensor
   sensors_poke(request_id);
@@ -780,6 +770,19 @@ void CameraState::camera_open() {
   LOGD("start csiphy: %d", ret);
   ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
+
+  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+    // configure ISP to put the image in place
+    struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
+    mem_mgr_map_cmd.mmu_hdls[0] = multi_cam_state->device_iommu;
+    mem_mgr_map_cmd.num_hdl = 1;
+    mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
+    mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
+    ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+    LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
+    buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
+  }
+
 
   // TODO: this is unneeded, should we be doing the start i2c in a different way?
   //ret = device_control(sensor_fd, CAM_START_DEV, session_handle, sensor_dev_handle);
