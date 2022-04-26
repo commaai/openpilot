@@ -4,6 +4,7 @@
 
 #include "selfdrive/loggerd/v4l_encoder.h"
 #include "selfdrive/common/util.h"
+#include "selfdrive/common/timing.h"
 
 #include "libyuv.h"
 #include "selfdrive/loggerd/include/msm_media_info.h"
@@ -13,13 +14,13 @@
 #include <linux/videodev2.h>
 #define V4L2_QCOM_BUF_FLAG_CODECCONFIG 0x00020000
 #define V4L2_QCOM_BUF_FLAG_EOS 0x02000000
-// echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
 
-const bool env_debug_encoder = getenv("DEBUG_ENCODER") != NULL;
+// echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
+const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
 #define checked_ioctl(x,y,z) { int _ret = HANDLE_EINTR(ioctl(x,y,z)); assert(_ret==0); }
 
-static int dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
+static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
   v4l2_plane plane = {0};
   v4l2_buffer v4l_buf = {
     .type = buf_type,
@@ -27,24 +28,16 @@ static int dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NU
     .m = { .planes = &plane, },
     .length = 1,
   };
-  int ret = ioctl(fd, VIDIOC_DQBUF, &v4l_buf);
-  if (ret == -1 && errno == 11) return ret;
-
-  if (ret != 0 && errno != 11) {
-    printf("dequeue %d buffer %d: %d errno %d\n", buf_type, v4l_buf.index, ret, ret==0 ? 0 : errno);
-    return ret;
-  }
+  checked_ioctl(fd, VIDIOC_DQBUF, &v4l_buf);
 
   if (index) *index = v4l_buf.index;
   if (bytesused) *bytesused = v4l_buf.m.planes[0].bytesused;
   if (flags) *flags = v4l_buf.flags;
   if (timestamp) *timestamp = v4l_buf.timestamp;
   assert(v4l_buf.m.planes[0].data_offset == 0);
-
-  return ret;
 }
 
-static int queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={0}) {
+static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={0}) {
   v4l2_plane plane = {
     .length = (unsigned int)buf->len,
     .m = { .userptr = (unsigned long)buf->addr, },
@@ -62,11 +55,7 @@ static int queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, Visi
     .timestamp = timestamp
   };
 
-  int ret = ioctl(fd, VIDIOC_QBUF, &v4l_buf);
-  if (ret != 0) {
-    printf("queue %d buffer %d: %d errno %d\n", buf_type, index, ret, ret==0 ? 0 : errno);
-  }
-  return ret;
+  checked_ioctl(fd, VIDIOC_QBUF, &v4l_buf);
 }
 
 static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) {
@@ -121,18 +110,16 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
 
   while (!exit) {
     int rc = poll(&pfd, 1, 1000);
-    if (!rc) { printf("poll timeout"); continue; }
+    if (!rc) { LOGE("encoder dequeue poll timeout"); continue; }
 
-    /*struct timespec t;
-    clock_gettime(CLOCK_BOOTTIME, &t);
-    uint64_t current_time = t.tv_sec * 1000000000ULL + t.tv_nsec;
-    printf("poll %x at %f ms\n", pfd.revents, current_time/1e6);*/
+    if (env_debug_encoder >= 2) {
+      printf("%20s poll %x at %.2f ms\n", e->filename, pfd.revents, millis_since_boot());
+    }
 
     if (pfd.revents & POLLIN) {
       unsigned int bytesused, flags, index;
       struct timeval timestamp;
-      int ret = dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
-      assert(ret == 0);
+      dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
       e->buf_out[index].sync(VISIONBUF_SYNC_FROM_DEVICE);
       uint8_t *buf = (uint8_t*)e->buf_out[index].addr;
 
@@ -167,14 +154,12 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       }
 
       // requeue the buffer
-      ret = queue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
-      assert(ret == 0);
+      queue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
     }
 
     if (pfd.revents & POLLOUT) {
       unsigned int index;
-      int ret = dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, &index);
-      assert(ret == 0);
+      dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, &index);
       e->free_buf_in.push(index);
     }
   }
@@ -186,7 +171,7 @@ V4LEncoder::V4LEncoder(
   : type(type), in_width_(in_width), in_height_(in_height),
     width(out_width), height(out_height), fps(fps),
     filename(filename), remuxing(!h265), write(write) {
-  fd = open("/dev/video33", O_RDWR|O_NONBLOCK);
+  fd = open("/dev/v4l/by-path/platform-aa00000.qcom_vidc-video-index1", O_RDWR|O_NONBLOCK);
   assert(fd >= 0);
 
   struct v4l2_capability cap;
@@ -297,8 +282,7 @@ V4LEncoder::V4LEncoder(
   // queue up output buffers
   for (unsigned int i = 0; i < BUF_OUT_COUNT; i++) {
     buf_out[i].allocate(fmt_out.fmt.pix_mp.plane_fmt[0].sizeimage);
-    int ret = queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
-    assert(ret == 0);
+    queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
   }
   // queue up input buffers
   for (unsigned int i = 0; i < BUF_IN_COUNT; i++) {
@@ -351,8 +335,7 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 
   // push buffer
   buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
-  int ret = queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], timestamp);
-  assert(ret == 0);
+  queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], timestamp);
 
   return this->counter++;
 }
