@@ -277,11 +277,13 @@ void CameraViewWidget::vipcFrameReceived(VisionBuf *buf) {
 void CameraViewWidget::vipcThread() {
   VisionStreamType cur_stream_type = stream_type;
   std::unique_ptr<VisionIpcClient> vipc_client;
+  VisionIpcBufExtra meta_main = {0};
+  VisionBuf *buf;
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream_type != stream_type) {
       cur_stream_type = stream_type;
-      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream_type, true));
+      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream_type, false));
     }
 
     if (!vipc_client->connected) {
@@ -292,8 +294,20 @@ void CameraViewWidget::vipcThread() {
       emit vipcThreadConnected(vipc_client.get());
     }
 
-    if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
+
+    UIState *s = uiState();
+    qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
+
+    while (meta_main.frame_id < (*s->sm)["modelV2"].getModelV2().getFrameId()) {
+      buf = vipc_client->recv(&meta_main, 1000);
+      qDebug() << "recv loop: camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
+      if (buf == nullptr) break;
+    }
+    if (buf) {
+      qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
       emit vipcThreadFrameReceived(buf);
     }
+    qDebug();
+
   }
 }
