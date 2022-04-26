@@ -7,10 +7,10 @@
 #include "selfdrive/common/timing.h"
 
 #include "libyuv.h"
-#include "selfdrive/loggerd/include/msm_media_info.h"
+#include "msm_media_info.h"
 
 // has to be in this order
-#include "selfdrive/loggerd/include/v4l2-controls.h"
+#include "v4l2-controls.h"
 #include <linux/videodev2.h>
 #define V4L2_QCOM_BUF_FLAG_CODECCONFIG 0x00020000
 #define V4L2_QCOM_BUF_FLAG_EOS 0x02000000
