@@ -88,11 +88,11 @@ int do_cam_control(int fd, int op_code, void *handle, int size) {
   return ret;
 }
 
-std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data) {
+std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources=1) {
   struct cam_acquire_dev_cmd cmd = {
       .session_handle = session_handle,
       .handle_type = CAM_HANDLE_USER_POINTER,
-      .num_resources = (uint32_t)(data ? 1 : 0),
+      .num_resources = (uint32_t)(data ? num_resources : 0),
       .resource_hdl = (uint64_t)data,
   };
   int err = do_cam_control(fd, CAM_ACQUIRE_DEV, &cmd, sizeof(cmd));
@@ -374,11 +374,11 @@ int CameraState::sensors_init() {
   return ret;
 }
 
-void CameraState::config_isp(int dev_handle, int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
+void CameraState::config_isp(int dev_handle, int io_mem_handle, int io_mem_handle_stats, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
   if (io_mem_handle != 0) {
-    size += sizeof(struct cam_buf_io_cfg);
+    size += 2 * sizeof(struct cam_buf_io_cfg);
   }
   struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
@@ -389,7 +389,7 @@ void CameraState::config_isp(int dev_handle, int io_mem_handle, int fence, int r
 
   if (io_mem_handle != 0) {
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*2;
-    pkt->num_io_configs = 1;
+    pkt->num_io_configs = 2;
   }
 
   if (io_mem_handle != 0) {
@@ -425,13 +425,14 @@ void CameraState::config_isp(int dev_handle, int io_mem_handle, int fence, int r
   } __attribute__((packed)) tmp;
   memset(&tmp, 0, sizeof(tmp));
 
+  // TODO: add port config for RDI_1? Figure out proper packet layout
   tmp.type_0 = CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG;
   tmp.type_0 |= sizeof(cam_isp_resource_hfr_config) << 8;
   static_assert(sizeof(cam_isp_resource_hfr_config) == 0x20);
   tmp.resource_hfr = {
     .num_ports = 1,  // 10 for YUV (but I don't think we need them)
     .port_hfr_config[0] = {
-      .resource_type = (uint32_t)((dev_handle == isp_dev_handle) ? CAM_ISP_IFE_OUT_RES_RDI_0 : CAM_ISP_IFE_OUT_RES_RDI_1), // CAM_ISP_IFE_OUT_RES_FULL for YUV
+      .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0, // CAM_ISP_IFE_OUT_RES_FULL for YUV
       .subsample_pattern = 1,
       .subsample_period = 0,
       .framedrop_pattern = 1,
@@ -482,9 +483,9 @@ void CameraState::config_isp(int dev_handle, int io_mem_handle, int fence, int r
     io_cfg[0].mem_handle[0] = io_mem_handle;
 		io_cfg[0].planes[0] = (struct cam_plane_cfg){
 		 .width = FRAME_WIDTH,
-		 .height = (uint32_t)((dev_handle == isp_dev_handle) ? FRAME_HEIGHT : STATS_HEIGHT),
+		 .height = FRAME_HEIGHT,
 		 .plane_stride = FRAME_STRIDE,
-		 .slice_height = (uint32_t)((dev_handle == isp_dev_handle) ? FRAME_HEIGHT : STATS_HEIGHT),
+		 .slice_height = FRAME_HEIGHT,
 		 .meta_stride = 0x0,    // YUV has meta(stride=0x400, size=0x5000)
 		 .meta_size = 0x0,
 		 .meta_offset = 0x0,
@@ -498,11 +499,36 @@ void CameraState::config_isp(int dev_handle, int io_mem_handle, int fence, int r
     io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
     io_cfg[0].bpp = 0xc;
-    io_cfg[0].resource_type = (dev_handle == isp_dev_handle) ? CAM_ISP_IFE_OUT_RES_RDI_0 : CAM_ISP_IFE_OUT_RES_RDI_1;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
+    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
     io_cfg[0].subsample_pattern = 0x1;
     io_cfg[0].framedrop_pattern = 0x1;
+
+    io_cfg[1].mem_handle[0] = io_mem_handle_stats;
+		io_cfg[1].planes[0] = (struct cam_plane_cfg){
+		 .width = FRAME_WIDTH,
+		 .height = STATS_HEIGHT,
+		 .plane_stride = FRAME_STRIDE,
+		 .slice_height = STATS_HEIGHT,
+		 .meta_stride = 0x0,    // YUV has meta(stride=0x400, size=0x5000)
+		 .meta_size = 0x0,
+		 .meta_offset = 0x0,
+		 .packer_config = 0x0,  // 0xb for YUV
+		 .mode_config = 0x0,    // 0x9ef for YUV
+		 .tile_config = 0x0,
+		 .h_init = 0x0,
+		 .v_init = 0x0,
+		};
+    io_cfg[1].format = CAM_FORMAT_MIPI_RAW_12;             // CAM_FORMAT_UBWC_TP10 for YUV
+    io_cfg[1].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
+    io_cfg[1].color_pattern = 0x5;                         // 0x0 for YUV
+    io_cfg[1].bpp = 0xc;
+    io_cfg[1].resource_type = CAM_ISP_IFE_OUT_RES_RDI_1;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
+    io_cfg[1].fence = fence;
+    io_cfg[1].direction = CAM_BUF_OUTPUT;
+    io_cfg[1].subsample_pattern = 0x1;
+    io_cfg[1].framedrop_pattern = 0x1;
   }
 
   int ret = device_config(multi_cam_state->isp_fd, session_handle, dev_handle, cam_packet_handle);
@@ -544,20 +570,6 @@ void CameraState::enqueue_buffer(int i, bool dp) {
 
   if (buf_stats_handle[i]) {
     release(multi_cam_state->video0_fd, buf_stats_handle[i]);
-
-    // wait
-    struct cam_sync_wait sync_wait = {0};
-    sync_wait.sync_obj = sync_stats_objs[i];
-    sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
-    ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
-    // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
-
-    // destroy old output fence
-    struct cam_sync_info sync_destroy = {0};
-    strcpy(sync_destroy.name, "NodeOutputPortFence");
-    sync_destroy.sync_obj = sync_stats_objs[i];
-    ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
-    // LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
   }
 
   // do stuff
@@ -578,13 +590,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
     // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
     sync_objs[i] = sync_create.sync_obj;
   }
-  {
-    struct cam_sync_info sync_create = {0};
-    strcpy(sync_create.name, "NodeOutputPortFence");
-    ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
-    // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
-    sync_stats_objs[i] = sync_create.sync_obj;
-  }
+
 
   // configure ISP to put the image in place
   {
@@ -614,8 +620,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   // LOGD("Poked sensor");
 
   // push the buffer
-  config_isp(isp_dev_handle, buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
-  config_isp(isp_dev_handle_stats, buf_stats_handle[i], sync_stats_objs[i], request_id, buf1_handle, 65632*(i+1));
+  config_isp(isp_dev_handle, buf_handle[i], buf_stats_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
 }
 
 void CameraState::enqueue_req_multi(int start, int n, bool dp) {
@@ -742,17 +747,6 @@ void CameraState::camera_open() {
           .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
       },
   };
-  struct cam_isp_resource isp_resource = {
-      .resource_id = CAM_ISP_RES_ID_PORT,
-      .handle_type = CAM_HANDLE_USER_POINTER,
-      .res_hdl = (uint64_t)&in_port_info,
-      .length = sizeof(in_port_info),
-  };
-
-  auto isp_dev_handle_ = device_acquire(multi_cam_state->isp_fd, session_handle, &isp_resource);
-  assert(isp_dev_handle_);
-  isp_dev_handle = *isp_dev_handle_;
-  LOGD("acquire isp dev");
 
   struct cam_isp_in_port_info in_port_info_stats = {
       .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[camera_num],
@@ -795,16 +789,26 @@ void CameraState::camera_open() {
           .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
       },
   };
-  struct cam_isp_resource isp_resource_stats = {
+
+  struct cam_isp_resource isp_resource[] = {
+    {
+      .resource_id = CAM_ISP_RES_ID_PORT,
+      .handle_type = CAM_HANDLE_USER_POINTER,
+      .res_hdl = (uint64_t)&in_port_info,
+      .length = sizeof(in_port_info),
+    },
+    {
       .resource_id = CAM_ISP_RES_ID_PORT,
       .handle_type = CAM_HANDLE_USER_POINTER,
       .res_hdl = (uint64_t)&in_port_info_stats,
       .length = sizeof(in_port_info_stats),
+    }
   };
 
-  auto isp_dev_handle_stats_ = device_acquire(multi_cam_state->isp_fd, session_handle, &isp_resource_stats);
-  assert(isp_dev_handle_stats_);
-  isp_dev_handle_stats = *isp_dev_handle_stats_;
+  auto isp_dev_handle_ = device_acquire(multi_cam_state->isp_fd, session_handle, &isp_resource, 2);
+  assert(isp_dev_handle_);
+  isp_dev_handle = *isp_dev_handle_;
+  LOGD("acquire isp dev");
 
   csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", camera_num);
   assert(csiphy_fd >= 0);
@@ -818,9 +822,7 @@ void CameraState::camera_open() {
 
   // config ISP
   alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
-  alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf1_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
-  config_isp(isp_dev_handle, 0, 0, 1, buf0_handle, 0);
-  config_isp(isp_dev_handle_stats, 0, 0, 1, buf1_handle, 0);
+  config_isp(isp_dev_handle, 0, 0, 0, 1, buf0_handle, 0);
 
   // config csiphy
   LOG("-- Config CSI PHY");
@@ -859,10 +861,9 @@ void CameraState::camera_open() {
   LOG("-- Link devices");
   struct cam_req_mgr_link_info req_mgr_link_info = {0};
   req_mgr_link_info.session_hdl = session_handle;
-  req_mgr_link_info.num_devices = 3;
+  req_mgr_link_info.num_devices = 2;
   req_mgr_link_info.dev_hdls[0] = isp_dev_handle;
   req_mgr_link_info.dev_hdls[1] = sensor_dev_handle;
-  req_mgr_link_info.dev_hdls[2] = isp_dev_handle_stats;
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK, &req_mgr_link_info, sizeof(req_mgr_link_info));
   link_handle = req_mgr_link_info.link_hdl;
   LOGD("link: %d session: 0x%X isp: 0x%X sensors: 0x%X link: 0x%X", ret, session_handle, isp_dev_handle, sensor_dev_handle, link_handle);
@@ -878,7 +879,6 @@ void CameraState::camera_open() {
   ret = device_control(csiphy_fd, CAM_START_DEV, session_handle, csiphy_dev_handle);
   LOGD("start csiphy: %d", ret);
   ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
-  ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle_stats);
   LOGD("start isp: %d", ret);
 
   // TODO: this is unneeded, should we be doing the start i2c in a different way?
@@ -957,8 +957,6 @@ void CameraState::camera_close() {
     // LOGD("stop sensor: %d", ret);
     ret = device_control(multi_cam_state->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
     LOGD("stop isp: %d", ret);
-    ret = device_control(multi_cam_state->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle_stats);
-    LOGD("stop isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
     LOGD("stop csiphy: %d", ret);
     // link control stop
@@ -982,8 +980,6 @@ void CameraState::camera_close() {
     // release devices
     LOGD("-- Release devices");
     ret = device_control(multi_cam_state->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
-    LOGD("release isp: %d", ret);
-    ret = device_control(multi_cam_state->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle_stats);
     LOGD("release isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
     LOGD("release csiphy: %d", ret);
@@ -1242,8 +1238,6 @@ void cameras_run(MultiCameraState *s) {
     ret = HANDLE_EINTR(ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev));
     if (ret == 0) {
       if (ev.type == V4L_EVENT_CAM_REQ_MGR_EVENT) {
-        // TODO: how do we separate events from RDI_0 and RDI_1?
-
         struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
         // LOGD("v4l2 event: sess_hdl 0x%X, link_hdl 0x%X, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
         if (env_debug_frames) {
