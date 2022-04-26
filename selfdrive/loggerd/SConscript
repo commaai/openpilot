@@ -1,5 +1,4 @@
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc', 'gpucommon')
-
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
 
 libs = [common, cereal, messaging, visionipc,
         'zmq', 'capnp', 'kj', 'z',
