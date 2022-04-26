@@ -40,7 +40,7 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-20"),
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19", good_torque=True),
-    SubaruCarInfo("Subaru Crosstrek 2018-19", good_torque=True),
+    SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26", good_torque=True),
   ],
   CAR.IMPREZA_2020: [
     SubaruCarInfo("Subaru Impreza 2020-21"),
@@ -121,9 +121,6 @@ FW_VERSIONS = {
       b'\x00\x00d)\x00\x00\x00\x00',
       b'\x00\x00c\xf4\x00\x00\x00\x00',
       b'\x00\x00d\xdc\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00\xac\x02\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xaa\x61\x66\x73\x07',
