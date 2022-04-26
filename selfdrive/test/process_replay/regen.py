@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
+import argparse
+import multiprocessing
 import os
 import time
-import multiprocessing
-from tqdm import tqdm
-import argparse
 import traceback
+from tqdm import tqdm
 # run DM procs
 os.environ["USE_WEBCAM"] = "1"
 
@@ -157,7 +157,7 @@ def replay_cameras(lr, frs):
     if fr is not None:
       print(f"Decompressing frames {s}")
       frames = []
-      for i in tqdm(range(10*20)):
+      for i in tqdm(range(fr.frame_count)):
         img = fr.get(i, pix_fmt='yuv420p')[0]
         frames.append(img.flatten().tobytes())
 
