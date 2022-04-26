@@ -1,6 +1,12 @@
 Version 0.8.14 (2022-0X-XX)
 ========================
- * bigmodel!
+ * New driving model
+   * bigmodel
+ * New driver monitoring model
+ * New lateral controller
+   * Smoother control
+   * Simplified tuning
+   * Initially used on TSS2 Corolla and TSS-P Rav4
  * comma body support
  * Hyundai Ioniq Plug-in Hybrid 2019 support thanks to sunnyhaibin!
  * Hyundai Tucson Diesel 2019 support thanks to sunnyhaibin!
