@@ -28,6 +28,7 @@ def flash_panda(panda_serial: str) -> Panda:
   panda = Panda(panda_serial)
 
   fw_signature = get_expected_signature(panda)
+  internal_panda = panda.is_internal() and not panda.bootstub
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
   panda_signature = b"" if panda.bootstub else panda.get_signature()
@@ -41,7 +42,9 @@ def flash_panda(panda_serial: str) -> Panda:
   if panda.bootstub:
     bootstub_version = panda.get_version()
     cloudlog.info(f"Flashed firmware not booting, flashing development bootloader. Bootstub version: {bootstub_version}")
-    panda.recover()
+    if internal_panda:
+      HARDWARE.recover_internal_panda()
+    panda.recover(reset=(not internal_panda))
     cloudlog.info("Done flashing bootloader")
 
   if panda.bootstub:
