@@ -2,6 +2,7 @@ Version 0.8.14 (2022-0X-XX)
 ========================
  * bigmodel!
  * comma body support
+ * Audi RS3 support thanks to jyoung8607!
  * Hyundai Ioniq Plug-in Hybrid 2019 support thanks to sunnyhaibin!
  * Hyundai Tucson Diesel 2019 support thanks to sunnyhaibin!
  * Toyota Alphard Hybrid 2021 support
