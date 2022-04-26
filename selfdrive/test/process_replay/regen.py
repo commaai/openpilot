@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from collections import namedtuple
+from dataclasses import make_dataclass
 import os
 import time
 import multiprocessing
@@ -113,55 +115,59 @@ def replay_service(s, msgs):
 
 
 def replay_cameras(lr, frs):
-  eon_cameras = [
-    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
-    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
-  ]
-  tici_cameras = [
-    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
-    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
-  ]
+  Camera = make_dataclass("Camera", ["dt", "frame_size", "stream_type", "use_extra_client"])
+  cameras = {  # default TICI cameras
+    "roadCameraState": Camera(DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
+    "driverCameraState": Camera(DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
+  }
 
-  def replay_camera(s, stream, dt, vipc_server, frames, size):
-    pm = messaging.PubMaster([s, ])
-    rk = Ratekeeper(1 / dt, print_delay_threshold=None)
+  def replay_camera(stream, camera, vipc_server, frames):
+    pm = messaging.PubMaster([stream, ])
+    rk = Ratekeeper(1 / camera.dt, print_delay_threshold=None)
 
-    img = b"\x00" * int(size[0]*size[1]*3/2)
+    img = b"\x00" * int(camera.size[0] * camera.size[1] * 3 / 2)
     while True:
       if frames is not None:
         img = frames[rk.frame % len(frames)]
 
       rk.keep_time()
 
-      m = messaging.new_message(s)
-      msg = getattr(m, s)
+      m = messaging.new_message(stream)
+      msg = getattr(m, stream)
       msg.frameId = rk.frame
       msg.timestampSof = m.logMonoTime
       msg.timestampEof = m.logMonoTime
-      pm.send(s, m)
+      pm.send(stream, m)
 
       vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+      if camera.use_extra_client:
+        vipc_server.send(VisionStreamType.VISION_STREAM_WIDE_ROAD, img, msg.frameId, msg.timestampSof, msg.timestampEof)
 
   init_data = [m for m in lr if m.which() == 'initData'][0]
-  cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
+  if init_data.initData.deviceType != 'tici':
+    cameras["roadCameraState"].size = eon_f_frame_size
+    cameras["driverCameraState"].size = eon_d_frame_size
+    cameras["driverCameraState"].dt = DT_DMON
 
   # init vipc server and cameras
   p = []
   vs = VisionIpcServer("camerad")
-  for (s, dt, size, stream) in cameras:
-    fr = frs.get(s, None)
+  for stream, camera in cameras.items():
+    fr = frs.get(stream, None)
 
     frames = None
     if fr is not None:
-      print(f"Decompressing frames {s}")
+      print(f"Decompressing frames {stream}")
       frames = []
       for i in tqdm(range(fr.frame_count)):
         img = fr.get(i, pix_fmt='yuv420p')[0]
         frames.append(img.flatten().tobytes())
 
-    vs.create_buffers(stream, 40, False, size[0], size[1])
+    vs.create_buffers(camera.stream_type, 40, False, camera.size[0], camera.size[1])
+    if camera.use_extra_client:
+      vs.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, camera.size[0], camera.size[1])
     p.append(multiprocessing.Process(target=replay_camera,
-                                     args=(s, stream, dt, vs, frames, size)))
+                                     args=(stream, camera, vs, frames)))
 
   # hack to make UI work
   vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
