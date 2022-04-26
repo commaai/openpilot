@@ -298,7 +298,7 @@ void CameraViewWidget::vipcThread() {
     // Wait until camera frame id is behind modelV2, then update once
     while (meta_main.frame_id >= (*s->sm)["modelV2"].getModelV2().getFrameId()) {
       qDebug() << "Sleeping";
-      QThread::msleep(10);
+      QThread::msleep(5);
       if ((meta_main.frame_id - (*s->sm)["modelV2"].getModelV2().getFrameId()) > 40) {
         break;
       }
