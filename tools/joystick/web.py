@@ -50,7 +50,7 @@ def handle_timeout():
   while 1:
     this_time = time.monotonic()
     if (last_send_time+0.5) < this_time:
-      print("timeout, no web in %.2f s" % (this_time-last_send_time))
+      #print("timeout, no web in %.2f s" % (this_time-last_send_time))
       dat = messaging.new_message('testJoystick')
       dat.testJoystick.axes = [0,0]
       dat.testJoystick.buttons = [False]

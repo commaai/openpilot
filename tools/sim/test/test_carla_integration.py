@@ -5,6 +5,7 @@ import unittest
 from multiprocessing import Queue
 
 from cereal import messaging
+from selfdrive.manager.helpers import unblock_stdout
 from tools.sim import bridge
 from tools.sim.bridge import CarlaBridge
 
@@ -21,6 +22,8 @@ class TestCarlaIntegration(unittest.TestCase):
     subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
 
     self.processes.append(subprocess.Popen(".././start_carla.sh"))
+    # Too many lagging messages in bridge.py can cause a crash. This prevents it.
+    unblock_stdout()
 
   def test_run_bridge(self):
     # Test bridge connect with carla and runs without any errors for 60 seconds
