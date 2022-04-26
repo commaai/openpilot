@@ -261,6 +261,7 @@ V4LEncoder::V4LEncoder(
   } else {
     struct v4l2_control ctrls[] = {
       { .id = V4L2_CID_MPEG_VIDEO_BITRATE, .value = bitrate},
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL, .value = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL_VBR_CFR},
       { .id = V4L2_CID_MPEG_VIDEO_H264_PROFILE, .value = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH},
       { .id = V4L2_CID_MPEG_VIDEO_H264_LEVEL, .value = V4L2_MPEG_VIDEO_H264_LEVEL_UNKNOWN},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = 15},
