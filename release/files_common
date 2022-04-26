@@ -299,8 +299,6 @@ selfdrive/proclogd/proclog.h
 
 selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder.h
-selfdrive/loggerd/omx_encoder.cc
-selfdrive/loggerd/omx_encoder.h
 selfdrive/loggerd/v4l_encoder.cc
 selfdrive/loggerd/v4l_encoder.h
 selfdrive/loggerd/video_writer.cc
