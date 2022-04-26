@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from collections import namedtuple
 from dataclasses import make_dataclass
 import os
 import time
