@@ -20,7 +20,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   QStackedLayout *road_view_layout = new QStackedLayout;
   road_view_layout->setStackingMode(QStackedLayout::StackAll);
-  nvg = new NvgWindow(VISION_STREAM_RGB_ROAD, this);
+  nvg = new NvgWindow(VISION_STREAM_ROAD, this);
   road_view_layout->addWidget(nvg);
   hud = new OnroadHud(this);
   road_view_layout->addWidget(hud);
@@ -97,7 +97,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
   // update stream type
   bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
-  nvg->setStreamType(wide_cam ? VISION_STREAM_RGB_WIDE_ROAD : VISION_STREAM_RGB_ROAD);
+  nvg->setStreamType(wide_cam ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -186,7 +186,7 @@ void OnroadHud::updateState(const UIState &s) {
     maxspeed *= KM_TO_MILE;
   }
   QString maxspeed_str = cruise_set ? QString::number(std::nearbyint(maxspeed)) : "N/A";
-  float cur_speed = sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
+  float cur_speed = std::max(0.0, sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
 
   setProperty("is_cruise_set", cruise_set);
   setProperty("speed", QString::number(std::nearbyint(cur_speed)));
