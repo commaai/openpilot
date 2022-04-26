@@ -54,6 +54,7 @@ public:
   int buf_handle[FRAME_BUF_COUNT];
   int buf_stats_handle[FRAME_BUF_COUNT];
   int sync_objs[FRAME_BUF_COUNT];
+  int sync_objs_stats[FRAME_BUF_COUNT];
   int request_ids[FRAME_BUF_COUNT];
   int request_id_last;
   int frame_id_last;
@@ -63,7 +64,7 @@ public:
 
   CameraBuf buf;
 private:
-  void config_isp(int dev_handle, int io_mem_handle, int io_mem_handle_stats, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
+  void config_isp(int dev_handle, int io_mem_handle, int io_mem_handle_stats, int fence, int fence_stats, int request_id, int buf0_mem_handle, int buf0_offset);
   void enqueue_req_multi(int start, int n, bool dp);
   void enqueue_buffer(int i, bool dp);
   int clear_req_queue();
