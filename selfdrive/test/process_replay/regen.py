@@ -228,6 +228,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   try:
     # TODO: make first run of onnxruntime CUDA provider fast
     managed_processes["modeld"].start()
+    managed_processes["dmonitoringmodeld"].start()
     time.sleep(5)
 
     # start procs up
