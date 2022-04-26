@@ -279,6 +279,7 @@ void CameraViewWidget::vipcThread() {
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionIpcBufExtra meta_main = {0};
   VisionBuf *buf;
+  UIState *s = uiState();
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream_type != stream_type) {
@@ -294,18 +295,19 @@ void CameraViewWidget::vipcThread() {
       emit vipcThreadConnected(vipc_client.get());
     }
 
-    UIState *s = uiState();
-    qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
-    bool recv_one = (meta_main.frame_id - (*s->sm)["modelV2"].getModelV2().getFrameId()) > 40;
-    while (meta_main.frame_id < (*s->sm)["modelV2"].getModelV2().getFrameId() || recv_one) {
-      buf = vipc_client->recv(&meta_main, 1000);
-      recv_one = false;
-      qDebug() << "recv loop: camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
-      if (buf == nullptr) break;
-    }
-    if (buf) {
-      qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
+    // Wait until camera frame id is behind modelV2, then update once
+    while (meta_main.frame_id >= (*s->sm)["modelV2"].getModelV2().getFrameId()) {
+      qDebug() << "Sleeping";
+      QThread::msleep(10);
+      if ((meta_main.frame_id - (*s->sm)["modelV2"].getModelV2().getFrameId()) > 40) {
+        break;
+      }
+    };
+
+    if ((buf = vipc_client->recv(&meta_main, 1000))) {
+      qDebug() << "emitting";
       emit vipcThreadFrameReceived(buf);
     }
+    qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
   }
 }
