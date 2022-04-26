@@ -11,6 +11,7 @@
 // has to be in this order
 #include "selfdrive/loggerd/include/v4l2-controls.h"
 #include <linux/videodev2.h>
+#define V4L2_QCOM_BUF_FLAG_CODECCONFIG 0x00020000
 #define V4L2_QCOM_BUF_FLAG_EOS 0x02000000
 // echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
 
@@ -81,10 +82,6 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
 void V4LEncoder::write_handler(V4LEncoder *e, const char *path) {
   VideoWriter writer(path, e->filename, e->remuxing, e->width, e->height, e->fps, !e->remuxing, false);
 
-  // this is "codecconfig", the default seems okay without extradata
-  // TODO: raw_logger does this header write also, refactor to remove from VideoWriter
-  writer.write(NULL, 0, 0, true, false);
-
   bool exit = false;
   while (!exit) {
     auto out_buf = e->to_write.pop();
@@ -101,7 +98,8 @@ void V4LEncoder::write_handler(V4LEncoder *e, const char *path) {
     // dangerous cast from const, but should be fine
     auto data = edata.getData();
     if (data.size() > 0) {
-      writer.write((uint8_t *)data.begin(), data.size(), edata.getTimestampEof(), false, flags & V4L2_BUF_FLAG_KEYFRAME);
+      writer.write((uint8_t *)data.begin(), data.size(), edata.getTimestampEof(),
+        flags & V4L2_QCOM_BUF_FLAG_CODECCONFIG, flags & V4L2_BUF_FLAG_KEYFRAME);
     }
 
     // free the data
@@ -244,10 +242,20 @@ V4LEncoder::V4LEncoder(
     fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage,
     fmt_out.fmt.pix_mp.plane_fmt[0].sizeimage);
 
-  if (h265) {
+  // shared ctrls
+  {
     struct v4l2_control ctrls[] = {
+      { .id = V4L2_CID_MPEG_VIDEO_HEADER_MODE, .value = V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE},
       { .id = V4L2_CID_MPEG_VIDEO_BITRATE, .value = bitrate},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL, .value = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL_VBR_CFR},
+    };
+    for (auto ctrl : ctrls) {
+      checked_ioctl(fd, VIDIOC_S_CTRL, &ctrl);
+    }
+  }
+
+  if (h265) {
+    struct v4l2_control ctrls[] = {
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_PROFILE, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_PROFILE_MAIN},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_TIER_LEVEL, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_LEVEL_HIGH_TIER_LEVEL_5},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_DISABLE},
@@ -260,8 +268,6 @@ V4LEncoder::V4LEncoder(
     }
   } else {
     struct v4l2_control ctrls[] = {
-      { .id = V4L2_CID_MPEG_VIDEO_BITRATE, .value = bitrate},
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL, .value = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL_VBR_CFR},
       { .id = V4L2_CID_MPEG_VIDEO_H264_PROFILE, .value = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH},
       { .id = V4L2_CID_MPEG_VIDEO_H264_LEVEL, .value = V4L2_MPEG_VIDEO_H264_LEVEL_UNKNOWN},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = 15},
@@ -274,8 +280,11 @@ V4LEncoder::V4LEncoder(
       { .id = V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MODE, .value = 0},
       // after buffer allocation in OMX. why do P/B frame counts change?
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_DISABLE},
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = 7},
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_B_FRAMES, .value = 1},
+      // NOTE: these are set here in OMX, but then they are reset again
+      // This will produce b frames, but the writer can't handle them
+      // There have not been b frames in the past, but this is an avenue to reduce qcam size
+      /*{ .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = 7},
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_B_FRAMES, .value = 1},*/
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_IDR_PERIOD, .value = 1},
     };
     for (auto ctrl : ctrls) {
