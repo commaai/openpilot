@@ -294,12 +294,12 @@ void CameraViewWidget::vipcThread() {
       emit vipcThreadConnected(vipc_client.get());
     }
 
-
     UIState *s = uiState();
     qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
-
-    while (meta_main.frame_id < (*s->sm)["modelV2"].getModelV2().getFrameId()) {
+    bool recv_one = (meta_main.frame_id - (*s->sm)["modelV2"].getModelV2().getFrameId()) > 40;
+    while (meta_main.frame_id < (*s->sm)["modelV2"].getModelV2().getFrameId() || recv_one) {
       buf = vipc_client->recv(&meta_main, 1000);
+      recv_one = false;
       qDebug() << "recv loop: camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
       if (buf == nullptr) break;
     }
@@ -307,7 +307,5 @@ void CameraViewWidget::vipcThread() {
       qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
       emit vipcThreadFrameReceived(buf);
     }
-    qDebug();
-
   }
 }
