@@ -114,19 +114,20 @@ def replay_service(s, msgs):
 
 def replay_cameras(lr, frs):
   eon_cameras = [
-    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
-    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
+    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
+    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
   ]
   tici_cameras = [
-    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
-    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
+    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
+    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
   ]
 
-  def replay_camera(s, stream, dt, vipc_server, frames, size):
+  def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
     pm = messaging.PubMaster([s, ])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
 
     img = b"\x00" * int(size[0]*size[1]*3/2)
+    print(size)
     while True:
       if frames is not None:
         img = frames[rk.frame % len(frames)]
@@ -141,6 +142,9 @@ def replay_cameras(lr, frs):
       pm.send(s, m)
 
       vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+      if use_extra_client:
+        vipc_server.send(VisionStreamType.VISION_STREAM_WIDE_ROAD, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+        print('SENDING BOTH')
 
   init_data = [m for m in lr if m.which() == 'initData'][0]
   cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
@@ -148,20 +152,22 @@ def replay_cameras(lr, frs):
   # init vipc server and cameras
   p = []
   vs = VisionIpcServer("camerad")
-  for (s, dt, size, stream) in cameras:
+  for (s, dt, size, stream, use_extra_client) in cameras:
     fr = frs.get(s, None)
 
     frames = None
     if fr is not None:
       print(f"Decompressing frames {s}")
       frames = []
-      for i in tqdm(range(fr.frame_count)):
+      for i in tqdm(range(10 * 20)):
         img = fr.get(i, pix_fmt='yuv420p')[0]
         frames.append(img.flatten().tobytes())
 
     vs.create_buffers(stream, 40, False, size[0], size[1])
+    if use_extra_client:
+      vs.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, size[0], size[1])
     p.append(multiprocessing.Process(target=replay_camera,
-                                     args=(s, stream, dt, vs, frames, size)))
+                                     args=(s, stream, dt, vs, frames, size, use_extra_client)))
 
   # hack to make UI work
   vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
@@ -220,6 +226,10 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   }
 
   try:
+    # TODO: make first run of onnxruntime CUDA provider fast
+    managed_processes["modeld"].start()
+    time.sleep(5)
+
     # start procs up
     ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
     ensure_running(managed_processes.values(), started=True, not_run=ignore)
