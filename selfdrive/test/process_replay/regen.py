@@ -4,6 +4,7 @@ import time
 import multiprocessing
 from tqdm import tqdm
 import argparse
+import traceback
 # run DM procs
 os.environ["USE_WEBCAM"] = "1"
 
@@ -104,12 +105,11 @@ def replay_service(s, msgs):
   pm = messaging.PubMaster([s, ])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() == s]
-  while True:
-    for m in smsgs:
-      new_m = m.as_builder()
-      new_m.logMonoTime = int(sec_since_boot() * 1e9)
-      pm.send(s, new_m)
-      rk.keep_time()
+  for m in smsgs:
+    new_m = m.as_builder()
+    new_m.logMonoTime = int(sec_since_boot() * 1e9)
+    pm.send(s, new_m)
+    rk.keep_time()
 
 
 def replay_cameras(lr, frs):
@@ -157,7 +157,7 @@ def replay_cameras(lr, frs):
     if fr is not None:
       print(f"Decompressing frames {s}")
       frames = []
-      for i in tqdm(range(fr.frame_count)):
+      for i in tqdm(range(10*20)):
         img = fr.get(i, pix_fmt='yuv420p')[0]
         frames.append(img.flatten().tobytes())
 
@@ -223,6 +223,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
     ],
   }
 
+  secs_ran_for = 0
   try:
     # start procs up
     ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
@@ -238,6 +239,9 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
           if not p.is_alive():
             raise Exception(f"{d}'s {p.name} died")
       time.sleep(1)
+      secs_ran_for += 1
+  except Exception:
+    traceback.print_exc()
   finally:
     # kill everything
     for p in managed_processes.values():
@@ -245,8 +249,9 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
     for procs in fake_daemons.values():
       for p in procs:
         p.terminate()
+    del vs
 
-  del vs
+  assert secs_ran_for > 55, "Route did not run for at least 55 seconds ({} seconds)".format(secs_ran_for)
 
   segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
   seg_path = os.path.join(outdir, segment)
