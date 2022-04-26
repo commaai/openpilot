@@ -164,7 +164,8 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       }
 
       if (env_debug_encoder) {
-        printf("%20s got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms\n", e->filename, bytesused, index, flags, ts, ((event.getLogMonoTime() / 1000)-ts)/1000.);
+        printf("%20s got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms (%lu frames free)\n",
+          e->filename, bytesused, index, flags, ts, ((event.getLogMonoTime() / 1000)-ts)/1000., e->free_buf_in.size());
       }
 
       // requeue the buffer
