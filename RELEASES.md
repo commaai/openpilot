@@ -8,6 +8,7 @@ Version 0.8.14 (2022-0X-XX)
    * Simplified tuning
    * Initially used on TSS2 Corolla and TSS-P Rav4
  * comma body support
+ * Audi RS3 support thanks to jyoung8607!
  * Hyundai Ioniq Plug-in Hybrid 2019 support thanks to sunnyhaibin!
  * Hyundai Tucson Diesel 2019 support thanks to sunnyhaibin!
  * Toyota Alphard Hybrid 2021 support
