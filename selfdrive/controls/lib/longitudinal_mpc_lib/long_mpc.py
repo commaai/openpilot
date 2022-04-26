@@ -345,6 +345,8 @@ class LongitudinalMpc:
       self.crash_cnt = 0
 
   def update_with_xva(self, x, v, a):
+    xforward = ((v[1:] + v[:-1]) / 2) * (T_IDXS[1:] - T_IDXS[:-1])
+    x = np.cumsum(np.insert(xforward, 0, x[0]))
     self.yref[:,1] = x
     self.yref[:,2] = v
     self.yref[:,3] = a
