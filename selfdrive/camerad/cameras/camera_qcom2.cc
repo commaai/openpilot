@@ -87,11 +87,11 @@ int do_cam_control(int fd, int op_code, void *handle, int size) {
   return ret;
 }
 
-std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data) {
+std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources=1) {
   struct cam_acquire_dev_cmd cmd = {
       .session_handle = session_handle,
       .handle_type = CAM_HANDLE_USER_POINTER,
-      .num_resources = (uint32_t)(data ? 1 : 0),
+      .num_resources = (uint32_t)(data ? num_resources : 0),
       .resource_hdl = (uint64_t)data,
   };
   int err = do_cam_control(fd, CAM_ACQUIRE_DEV, &cmd, sizeof(cmd));
@@ -416,7 +416,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   // YUV also has patch_offset = 0x1030 and num_patches = 10
 
   if (io_mem_handle != 0) {
-    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*2;
+    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
     pkt->num_io_configs = 1;
   }
 
