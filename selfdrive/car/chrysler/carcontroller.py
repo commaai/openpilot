@@ -18,11 +18,13 @@ class CarController():
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, enabled, CS, actuators, pcm_cancel_cmd, hud_alert):
+  def update(self, CC, CS):
     # this seems needed to avoid steering faults and to force the sync with the EPS counter
     frame = CS.lkas_counter
     if self.prev_frame == frame:
       return car.CarControl.Actuators.new_message(), []
+
+    actuators = CC.actuators
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
@@ -36,7 +38,7 @@ class CarController():
     elif self.car_fingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
       if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
         self.gone_fast_yet = False  # < 14.5m/s stock turns off this bit, but fine down to 13.5
-    lkas_active = moving_fast and enabled
+    lkas_active = moving_fast and CC.latActive
 
     if not lkas_active:
       apply_steer = 0
@@ -47,7 +49,7 @@ class CarController():
 
     #*** control msgs ***
 
-    if pcm_cancel_cmd:
+    if CC.cruiseControl.cancel:
       # TODO: would be better to start from frame_2b3
       new_msg = create_wheel_buttons(self.packer, self.ccframe, cancel=True)
       can_sends.append(new_msg)
@@ -57,7 +59,7 @@ class CarController():
     if (self.ccframe % 25 == 0):  # 0.25s period
       if (CS.lkas_car_model != -1):
         new_msg = create_lkas_hud(
-            self.packer, CS.out.gearShifter, lkas_active, hud_alert,
+            self.packer, CS.out.gearShifter, lkas_active, CC.hudControl.visualAlert,
             self.hud_count, CS.lkas_car_model)
         can_sends.append(new_msg)
         self.hud_count += 1
