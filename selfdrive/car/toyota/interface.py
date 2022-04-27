@@ -223,8 +223,8 @@ class CarInterface(CarInterfaceBase):
     # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
     ret.openpilotLongitudinalControl = (smartDsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR))
 
-    if ret.openpilotLongitudinalControl:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LONGITUDINAL
+    if not ret.openpilotLongitudinalControl:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
 
     # we can't use the fingerprint to detect this reliably, since
     # the EV gas pedal signal can take a couple seconds to appear
