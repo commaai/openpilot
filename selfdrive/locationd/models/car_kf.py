@@ -71,7 +71,7 @@ class CarKalman(KalmanFilter):
 
   P_initial = np.diag([
     (2 / 100)**2,
-    .01**2,
+    .1**2,
     math.radians(0.08)**2,
     math.radians(0.25)**2,
 
