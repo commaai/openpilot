@@ -301,6 +301,8 @@ selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder.h
 selfdrive/loggerd/omx_encoder.cc
 selfdrive/loggerd/omx_encoder.h
+selfdrive/loggerd/video_writer.cc
+selfdrive/loggerd/video_writer.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h
 selfdrive/loggerd/loggerd.cc
@@ -442,8 +444,6 @@ third_party/SConscript
 
 third_party/linux/**
 third_party/opencl/**
-third_party/zlib/*
-third_party/bzip2/*
 third_party/openmax/**
 
 third_party/json11/json11.cpp

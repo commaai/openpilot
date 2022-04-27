@@ -69,6 +69,19 @@ jobs:
                           rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
 
+  build_all:
+    name: build all
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Build openpilot with all flags
+      run: ${{ env.RUN }} "scons -j$(nproc) --extras --test"
+
   #build_mac:
   #  name: build macos
   #  runs-on: macos-latest
