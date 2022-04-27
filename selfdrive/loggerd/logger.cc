@@ -102,6 +102,8 @@ static void lh_log_sentinel(LoggerHandle *h, SentinelType type) {
   auto sen = msg.initEvent().initSentinel();
   sen.setType(type);
   sen.setSignal(h->exit_signal);
+  std::string seg_path(h->segment_path);
+  sen.setSegment(seg_path.substr(seg_path.find("realdata/")+9));
   auto bytes = msg.toBytes();
 
   lh_log(h, bytes.begin(), bytes.size(), true);
