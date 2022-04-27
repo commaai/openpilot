@@ -23,7 +23,7 @@ public:
 signals:
   void clicked();
   void vipcThreadConnected(VisionIpcClient *);
-  void vipcThreadFrameReceived(VisionBuf *);
+  void vipcThreadFrameReceived();
 
 protected:
   void paintGL() override;
@@ -34,6 +34,11 @@ protected:
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   virtual void updateFrameMat(int w, int h);
   void vipcThread();
+  void updateCameraFrame();
+
+  QSharedPointer<VisionIpcClient> vipc_client;
+  VisionIpcBufExtra meta_main = {0};
+  VisionBuf *buf;
 
   struct WaitFence {
     WaitFence() { sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0); }
@@ -61,5 +66,5 @@ protected:
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
-  void vipcFrameReceived(VisionBuf *vipc_client);
+  void vipcFrameReceived();
 };
