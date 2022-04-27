@@ -143,6 +143,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.AUDI_A3_MK3: [
     VWCarInfo("Audi A3 2014-19", "ACC + Lane Assist"),
     VWCarInfo("Audi A3 Sportback e-tron 2017-18", "ACC + Lane Assist"),
+    VWCarInfo("Audi RS3 2018", "ACC + Lane Assist"),
     VWCarInfo("Audi S3 2015-17", "ACC + Lane Assist"),
   ],
   CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018", "ACC + Lane Assist"),
@@ -617,6 +618,7 @@ FW_VERSIONS = {
       b'\xf1\x878V0906259K \xf1\x890001',
       b'\xf1\x878V0906264B \xf1\x890003',
       b'\xf1\x878V0907115B \xf1\x890007',
+      b'\xf1\x878V0907404A \xf1\x890005',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300044T \xf1\x895245',
@@ -628,12 +630,14 @@ FW_VERSIONS = {
       b'\xf1\x870DD300046A \xf1\x891602',
       b'\xf1\x870DD300046F \xf1\x891602',
       b'\xf1\x870DD300046G \xf1\x891601',
+      b'\xf1\x870DL300012E \xf1\x892012',
       b'\xf1\x870GC300013M \xf1\x892402',
       b'\xf1\x870GC300042J \xf1\x891402',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875Q0959655AB\xf1\x890388\xf1\x82\0211111001111111206110412111321139114',
       b'\xf1\x875Q0959655AM\xf1\x890315\xf1\x82\x1311111111111111311411011231129321212100',
+      b'\xf1\x875Q0959655BJ\xf1\x890339\xf1\x82\x1311110011131100311111011731179321342100',
       b'\xf1\x875Q0959655J \xf1\x890825\xf1\x82\023111112111111--171115141112221291163221',
       b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\023121111111211--261117141112231291163221',
       b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\x13121111111111--341117141212231291163221',
@@ -643,6 +647,7 @@ FW_VERSIONS = {
     (Ecu.eps, 0x712, None): [
       b'\xf1\x873Q0909144H \xf1\x895061\xf1\x82\00566G0HA14A1',
       b'\xf1\x873Q0909144K \xf1\x895072\xf1\x82\x0571G0HA16A1',
+      b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571G0JA14A1',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521G0G809A1',
       b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\00503G00303A0',
       b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\00503G00803A0',
