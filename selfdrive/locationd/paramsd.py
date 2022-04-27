@@ -77,11 +77,10 @@ class ParamsLearner:
     elif which == 'carState':
       speed, steering_angle = msg.vEgo, msg.steeringAngleDeg
       in_linear_region = abs(steering_angle) < 3*self.steering_ratio
-      self.active = speed > 5
+      self.active = speed > 5 and in_linear_region
 
       if self.active:
-        if in_linear_region:
-          self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(steering_angle)]]))
+        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(steering_angle)]]))
         self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[speed]]))
 
 def main(sm=None, pm=None):
