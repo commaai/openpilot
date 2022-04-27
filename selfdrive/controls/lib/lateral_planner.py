@@ -42,9 +42,11 @@ class LateralPlanner:
     self.LP.parse_model(md)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
+      self.speed_forward = md.velocity.x
       self.t_idxs = np.array(md.position.t)
       self.plan_yaw = list(md.orientation.z)
-      self.lateral_acceleration = np.array(md.orientationRate.z) * v_ego
+      self.yaw_rate = np.array(md.orientationRate.z)
+      self.lateral_acceleration = self.yaw_rate * self.speed_forward
       self.lateral_jerk = np.gradient(self.lateral_acceleration, self.t_idxs)
     if len(md.position.xStd) == TRAJECTORY_SIZE:
       self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
@@ -68,9 +70,11 @@ class LateralPlanner:
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.1])
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, heading_cost, MPC_COST_LAT.LAT_JERK)
 
-    y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
-    heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
-    jerk_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.lateral_jerk)
+    distance_forward = ((self.speed_forward[1:] + self.speed_forward[:-1]) / 2) * (self.t_idxs[1:] - self.t_idxs[:-1])
+    distance_forward = np.cumsum(np.insert(distance_forward, 0, 0))
+    y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], distance_forward, d_path_xyz[:, 1])
+    heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], distance_forward, self.plan_yaw)
+    jerk_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], distance_forward, self.lateral_jerk)
     self.y_pts = y_pts
 
     assert len(y_pts) == LAT_MPC_N + 1
