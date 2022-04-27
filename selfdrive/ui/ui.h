@@ -24,8 +24,8 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
-const float y_offset = Hardware::EON() ? 0.0 : 150.0;
-const float ZOOM = Hardware::EON() ? 2138.5 : 2912.8;
+const float y_offset = 150.0;
+const float ZOOM = 2912.8;
 
 struct Alert {
   QString text1;

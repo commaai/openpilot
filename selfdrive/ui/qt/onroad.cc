@@ -20,7 +20,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   QStackedLayout *road_view_layout = new QStackedLayout;
   road_view_layout->setStackingMode(QStackedLayout::StackAll);
-  nvg = new NvgWindow(VISION_STREAM_RGB_ROAD, this);
+  nvg = new NvgWindow(VISION_STREAM_ROAD, this);
   road_view_layout->addWidget(nvg);
   hud = new OnroadHud(this);
   road_view_layout->addWidget(hud);
@@ -97,7 +97,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
   // update stream type
   bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
-  nvg->setStreamType(wide_cam ? VISION_STREAM_RGB_WIDE_ROAD : VISION_STREAM_RGB_ROAD);
+  nvg->setStreamType(wide_cam ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -186,7 +186,7 @@ void OnroadHud::updateState(const UIState &s) {
     maxspeed *= KM_TO_MILE;
   }
   QString maxspeed_str = cruise_set ? QString::number(std::nearbyint(maxspeed)) : "N/A";
-  float cur_speed = sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
+  float cur_speed = std::max(0.0, sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
 
   setProperty("is_cruise_set", cruise_set);
   setProperty("speed", QString::number(std::nearbyint(cur_speed)));
@@ -331,10 +331,9 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
     // FIXME: painter.drawPolygon can be slow if hue is not rounded
     curve_hue = int(curve_hue * 100 + 0.5) / 100;
 
-    bg.setColorAt(0.0 / 1.5, QColor::fromHslF(148 / 360., 1.0, 0.5, 1.0));
-    bg.setColorAt(0.55 / 1.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.8));
-    bg.setColorAt(0.9 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.65, 0.6));
-    bg.setColorAt(1.0, QColor::fromHslF(curve_hue / 360., 1.0, 0.65, 0.0));
+    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
+    bg.setColorAt(0.75 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.0));
   } else {
     bg.setColorAt(0, whiteColor());
     bg.setColorAt(1, whiteColor(0));

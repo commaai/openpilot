@@ -20,13 +20,13 @@ from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
-from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
 from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
+from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
-from selfdrive.hardware import HARDWARE, TICI, EON
+from selfdrive.hardware import HARDWARE, TICI
 from selfdrive.manager.process_config import managed_processes
 
 SOFT_DISABLE_TIME = 3  # seconds
@@ -36,9 +36,8 @@ LANE_DEPARTURE_THRESHOLD = 0.1
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
-IGNORE_PROCESSES = {"rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned",
-                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad",
-                    "statsd", "shutdownd"} | \
+IGNORE_PROCESSES = {"uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "statsd",
+                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad"} | \
                    {k for k, v in managed_processes.items() if not v.enabled}
 
 ThermalStatus = log.DeviceState.ThermalStatus
@@ -145,8 +144,8 @@ class Controls:
       self.LaC = LatControlPID(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'indi':
       self.LaC = LatControlINDI(self.CP, self.CI)
-    elif self.CP.lateralTuning.which() == 'lqr':
-      self.LaC = LatControlLQR(self.CP, self.CI)
+    elif self.CP.lateralTuning.which() == 'torque':
+      self.LaC = LatControlTorque(self.CP, self.CI)
 
     self.initialized = False
     self.state = State.disabled
@@ -220,11 +219,7 @@ class Controls:
     if not self.CP.notCar:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
-    # Create events for battery, temperature, disk space, and memory
-    if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
-       self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
-      # at zero percent battery, while discharging, OP should not allowed
-      self.events.add(EventName.lowBattery)
+    # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
     if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
@@ -235,7 +230,7 @@ class Controls:
       self.events.add(EventName.lowMemory)
 
     # TODO: enable this once loggerd CPU usage is more reasonable
-    #cpus = list(self.sm['deviceState'].cpuUsagePercent)[:(-1 if EON else None)]
+    #cpus = list(self.sm['deviceState'].cpuUsagePercent)
     #if max(cpus, default=0) > 95 and not SIMULATION:
     #  self.events.add(EventName.highCpuUsage)
 
@@ -369,7 +364,7 @@ class Controls:
         self.events.add(EventName.localizerMalfunction)
 
       # Check if all manager processes are running
-      not_running = {p.name for p in self.sm['managerState'].processes if not p.running}
+      not_running = {p.name for p in self.sm['managerState'].processes if not p.running and p.shouldBeRunning}
       if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
         self.events.add(EventName.processNotRunning)
 
@@ -543,7 +538,7 @@ class Controls:
     # Check which actuators can be enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                      CS.vEgo > self.CP.minSteerSpeed and not CS.standstill
-    CC.longActive = self.active and not self.events.any(ET.OVERRIDE)
+    CC.longActive = self.active and not self.events.any(ET.OVERRIDE) and self.CP.openpilotLongitudinalControl
 
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
@@ -571,7 +566,7 @@ class Controls:
                                                                              lat_plan.curvatureRates)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.CP, self.VM,
                                                                              params, self.last_actuators, desired_curvature,
-                                                                             desired_curvature_rate)
+                                                                             desired_curvature_rate, self.sm['liveLocationKalman'])
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
@@ -735,8 +730,8 @@ class Controls:
       controlsState.lateralControlState.angleState = lac_log
     elif lat_tuning == 'pid':
       controlsState.lateralControlState.pidState = lac_log
-    elif lat_tuning == 'lqr':
-      controlsState.lateralControlState.lqrState = lac_log
+    elif lat_tuning == 'torque':
+      controlsState.lateralControlState.torqueState = lac_log
     elif lat_tuning == 'indi':
       controlsState.lateralControlState.indiState = lac_log
 
