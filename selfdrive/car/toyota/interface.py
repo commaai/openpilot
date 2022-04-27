@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
 from common.conversions import Conversions as CV
-from panda import Panda
 from selfdrive.car.toyota.tunes import LatTunes, LongTunes, set_long_tune, set_lat_tune
-from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, CarControllerParams
+from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -21,7 +20,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
-    ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate] << 8
+    ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate]
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
@@ -119,12 +118,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.7933
       ret.mass = 3585. * CV.LB_TO_KG + STD_CARGO_KG  # Average between ICE and Hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
-
-      # 2022 RAV4 Hybrid has a different radar which also does ACC, so use stock longitudinal
-      # TODO: Write a radar parser and knock out the radar to gain openpilot longitudinal
-      if candidate == CAR.RAV4H_TSS2_2022:
-        ret.radarOffCan = True
-        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONG
 
       # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
       # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
@@ -224,7 +217,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableDsu = (len(found_ecus) > 0) and (Ecu.dsu not in found_ecus) and (candidate not in NO_DSU_CAR) and (not smartDsu)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
     # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
-    ret.openpilotLongitudinalControl = (smartDsu or ret.enableDsu or candidate in TSS2_CAR) and not ret.radarOffCan
+    ret.openpilotLongitudinalControl = (smartDsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR))
 
     # we can't use the fingerprint to detect this reliably, since
     # the EV gas pedal signal can take a couple seconds to appear

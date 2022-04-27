@@ -6,7 +6,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, EPS_SCALE
+from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE
 
 
 class CarState(CarStateBase):
@@ -91,7 +91,9 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    if self.CP.carFingerprint in TSS2_CAR and not self.CP.radarOffCan:
+    if self.CP.carFingerprint in RADAR_ACC_CAR:
+      self.acc_type = cp.vl["ACC_CONTROL"]["ACC_TYPE"]
+    elif self.CP.carFingerprint in TSS2_CAR:
       self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
@@ -204,6 +206,10 @@ class CarState(CarStateBase):
       ]
       checks.append(("BSM", 1))
 
+    if CP.carFingerprint in RADAR_ACC_CAR:
+      signals.append(("ACC_TYPE", "ACC_CONTROL"))
+      checks.append(("ACC_CONTROL", 33))
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
@@ -219,7 +225,7 @@ class CarState(CarStateBase):
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
     ]
 
-    if CP.carFingerprint in TSS2_CAR and not CP.radarOffCan:
+    if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       signals.append(("ACC_TYPE", "ACC_CONTROL"))
       checks.append(("ACC_CONTROL", 33))
 
