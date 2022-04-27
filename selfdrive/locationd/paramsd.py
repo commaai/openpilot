@@ -76,7 +76,8 @@ class ParamsLearner:
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
     elif which == 'carState':
       speed, steering_angle = msg.vEgo, msg.steeringAngleDeg
-      in_linear_region = abs(steering_angle) < 3*self.steering_ratio
+      self.steering_pressed = msg.steeringPressed
+      in_linear_region = abs(steering_angle) < 3*self.steering_ratio and not self.steering_pressed
       self.active = speed > 5 and in_linear_region
 
       if self.active:
