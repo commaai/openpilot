@@ -503,7 +503,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
   buf_desc[1].type = CAM_CMD_BUF_GENERIC;
   buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
-  uint32_t *buf2 = (uint32_t *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle, 0x20);
+  uint32_t *buf2 = (uint32_t *)mm.alloc(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
   memcpy(buf2, &tmp, sizeof(tmp));
 
   if (io_mem_handle != 0) {
@@ -539,8 +539,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
     printf("ISP CONFIG FAILED\n");
   }
 
-  munmap(buf2, buf_desc[1].size);
-  release_fd(multi_cam_state->video0_fd, buf_desc[1].mem_handle);
+  mm.free(buf2);
   mm.free(pkt);
 }
 
@@ -549,7 +548,6 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   int request_id = request_ids[i];
 
   if (buf_handle[i] && sync_objs[i]) {
-    //release(multi_cam_state->video0_fd, buf_handle[i]);
     // wait
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = sync_objs[i];
@@ -811,7 +809,6 @@ void CameraState::camera_open() {
     buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
   }
 
-
   // TODO: this is unneeded, should we be doing the start i2c in a different way?
   //ret = device_control(sensor_fd, CAM_START_DEV, session_handle, sensor_dev_handle);
   //LOGD("start sensor: %d", ret);
@@ -914,6 +911,11 @@ void CameraState::camera_close() {
     LOGD("release isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
     LOGD("release csiphy: %d", ret);
+
+    for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+      release(multi_cam_state->video0_fd, buf_handle[i]);
+    }
+    LOGD("released buffers");
   }
 
   ret = device_control(sensor_fd, CAM_RELEASE_DEV, session_handle, sensor_dev_handle);
