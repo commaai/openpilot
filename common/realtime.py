@@ -35,12 +35,12 @@ class Priority:
 
 def set_realtime_priority(level: int) -> None:
   if not PC:
-    os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(level))  # type: ignore[attr-defined] # pylint: disable=no-member
+    os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(level))  # type: ignore[attr-defined]
 
 
 def set_core_affinity(cores: List[int]) -> None:
   if not PC:
-    os.sched_setaffinity(0, cores)  # type: ignore[attr-defined] # pylint: disable=no-member
+    os.sched_setaffinity(0, cores)
 
 
 def config_realtime_process(cores: Union[int, List[int]], priority: int) -> None:

@@ -3,7 +3,7 @@ import argparse
 import jinja2
 import os
 from enum import Enum
-from natsort import natsorted  # pylint: disable=import-error
+from natsort import natsorted
 from typing import Dict, List
 
 from common.basedir import BASEDIR
