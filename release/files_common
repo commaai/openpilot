@@ -444,8 +444,6 @@ third_party/SConscript
 
 third_party/linux/**
 third_party/opencl/**
-third_party/zlib/*
-third_party/bzip2/*
 third_party/openmax/**
 
 third_party/json11/json11.cpp
