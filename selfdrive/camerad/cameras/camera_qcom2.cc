@@ -631,7 +631,7 @@ void CameraState::camera_open() {
   assert(sensor_fd >= 0);
   LOGD("opened sensor for %d", camera_num);
 
-  // init memorymanager for this camera (not thread safe)
+  // init memorymanager for this camera
   mm.init(multi_cam_state->video0_fd);
 
   // probe the sensor
