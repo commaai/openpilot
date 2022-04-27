@@ -11,10 +11,14 @@ from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 from tools.lib.logreader import LogReader
 from panda import Panda
+
 try:
-  from panda_jungle import PandaJungle  # pylint: disable=import-error
-except Exception:
-  PandaJungle = None
+  # this bool can be replaced when mypy understands this pattern
+  panda_jungle_imported = True
+  from panda_jungle import PandaJungle  # pylint: disable=import-error  # type: ignore
+except ImportError:
+  PandaJugnle = None
+  panda_jungle_imported = False
 
 
 def send_thread(s, flock):
@@ -82,7 +86,7 @@ def connect():
 
 
 if __name__ == "__main__":
-  if PandaJungle is None:
+  if panda_jungle_imported:
     print("\33[31m", "WARNING: cannot connect to jungles. Clone the jungle library to enable support:", "\033[0m")
     print("\033[34m", f"cd {BASEDIR} && git clone https://github.com/commaai/panda_jungle", "\033[0m")
 
