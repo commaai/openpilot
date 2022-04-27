@@ -560,7 +560,6 @@ void CameraState::enqueue_buffer(int i, bool dp) {
 
     // destroy old output fence
     struct cam_sync_info sync_destroy = {0};
-    strcpy(sync_destroy.name, "NodeOutputPortFence");
     sync_destroy.sync_obj = sync_objs[i];
     ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
     // LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
@@ -862,7 +861,7 @@ void cameras_open(MultiCameraState *s) {
   LOG("-- Subscribing");
   static struct v4l2_event_subscription sub = {0};
   sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
-  sub.id = 2; // should use boot time for sof
+  sub.id = V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS;
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
   printf("req mgr subscribe: %d\n", ret);
 
