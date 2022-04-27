@@ -552,7 +552,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = sync_objs[i];
     sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
-    ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+    ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
 
     buf.camera_bufs_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
@@ -562,11 +562,18 @@ void CameraState::enqueue_buffer(int i, bool dp) {
     struct cam_sync_info sync_destroy = {0};
     strcpy(sync_destroy.name, "NodeOutputPortFence");
     sync_destroy.sync_obj = sync_objs[i];
-    ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
+    ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
     // LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
   }
 
-  // do stuff
+  // create output fence
+  struct cam_sync_info sync_create = {0};
+  strcpy(sync_create.name, "NodeOutputPortFence");
+  ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+  // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
+  sync_objs[i] = sync_create.sync_obj;
+
+  // schedule request with camera request manager
   struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
   req_mgr_sched_request.session_hdl = session_handle;
   req_mgr_sched_request.link_hdl = link_handle;
@@ -574,18 +581,11 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
   // LOGD("sched req: %d %d", ret, request_id);
 
-  // create output fence
-  struct cam_sync_info sync_create = {0};
-  strcpy(sync_create.name, "NodeOutputPortFence");
-  ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
-  // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
-  sync_objs[i] = sync_create.sync_obj;
-
-  // poke sensor
+  // poke sensor, must happen after schedule
   sensors_poke(request_id);
   // LOGD("Poked sensor");
 
-  // push the buffer
+  // submit request to the ife
   config_isp(buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
 }
 
@@ -835,9 +835,9 @@ void cameras_open(MultiCameraState *s) {
   LOGD("opened video0");
 
   // video1 is cam_sync, the target of some ioctls
-  s->video1_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK));
-  assert(s->video1_fd >= 0);
-  LOGD("opened video1");
+  s->cam_sync_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK));
+  assert(s->cam_sync_fd >= 0);
+  LOGD("opened video1 (cam_sync)");
 
   // looks like there's only one of these
   s->isp_fd = open_v4l_by_name_and_index("cam-isp");
