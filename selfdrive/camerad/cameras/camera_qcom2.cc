@@ -158,6 +158,42 @@ void release_fd(int video0_fd, uint32_t handle) {
   release(video0_fd, handle);
 }
 
+void *MemoryManager::alloc(int size, uint32_t *handle) {
+  lock.lock();
+  void *ptr;
+  if (!cached_allocations[size].empty()) {
+    ptr = cached_allocations[size].front();
+    cached_allocations[size].pop();
+    *handle = handle_lookup[ptr];
+  } else {
+    ptr = alloc_w_mmu_hdl(video0_fd, size, handle);
+    handle_lookup[ptr] = *handle;
+    size_lookup[ptr] = size;
+  }
+  lock.unlock();
+  return ptr;
+}
+
+void MemoryManager::free(void *ptr) {
+  lock.lock();
+  cached_allocations[size_lookup[ptr]].push(ptr);
+  lock.unlock();
+}
+
+MemoryManager::~MemoryManager() {
+  for (auto& x : cached_allocations) {
+    while (!x.second.empty()) {
+      void *ptr = x.second.front();
+      x.second.pop();
+      LOGD("freeing cached allocation %p with size %d", ptr, size_lookup[ptr]);
+      munmap(ptr, size_lookup[ptr]);
+      release_fd(video0_fd, handle_lookup[ptr]);
+      handle_lookup.erase(ptr);
+      size_lookup.erase(ptr);
+    }
+  }
+}
+
 int CameraState::clear_req_queue() {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
   req_mgr_flush_request.session_hdl = session_handle;
@@ -186,7 +222,7 @@ void CameraState::sensors_start() {
 void CameraState::sensors_poke(int request_id) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet);
-  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, size, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
   pkt->num_cmd_buf = 0;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.size = size;
@@ -200,15 +236,14 @@ void CameraState::sensors_poke(int request_id) {
     return;
   }
 
-  munmap(pkt, size);
-  release_fd(multi_cam_state->video0_fd, cam_packet_handle);
+  mm.free(pkt);
 }
 
 void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
-  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, size, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
   pkt->num_cmd_buf = 1;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.size = size;
@@ -218,7 +253,7 @@ void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op
   buf_desc[0].size = buf_desc[0].length = sizeof(struct i2c_rdwr_header) + len*sizeof(struct i2c_random_wr_payload);
   buf_desc[0].type = CAM_CMD_BUF_I2C;
 
-  struct cam_cmd_i2c_random_wr *i2c_random_wr = (struct cam_cmd_i2c_random_wr *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
+  struct cam_cmd_i2c_random_wr *i2c_random_wr = (struct cam_cmd_i2c_random_wr *)mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
   i2c_random_wr->header.count = len;
   i2c_random_wr->header.op_code = 1;
   i2c_random_wr->header.cmd_type = CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR;
@@ -233,10 +268,8 @@ void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op
     return;
   }
 
-  munmap(i2c_random_wr, buf_desc[0].size);
-  release_fd(multi_cam_state->video0_fd, buf_desc[0].mem_handle);
-  munmap(pkt, size);
-  release_fd(multi_cam_state->video0_fd, cam_packet_handle);
+  mm.free(i2c_random_wr);
+  mm.free(pkt);
 }
 
 static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
@@ -248,10 +281,9 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
 };
 
 int CameraState::sensors_init() {
-  int video0_fd = multi_cam_state->video0_fd;
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
-  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(video0_fd, size, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.op_code = 0x1000000 | CAM_SENSOR_PACKET_OPCODE_SENSOR_PROBE;
@@ -260,7 +292,7 @@ int CameraState::sensors_init() {
 
   buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_cmd_i2c_info) + sizeof(struct cam_cmd_probe);
   buf_desc[0].type = CAM_CMD_BUF_LEGACY;
-  struct cam_cmd_i2c_info *i2c_info = (struct cam_cmd_i2c_info *)alloc_w_mmu_hdl(video0_fd, buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
+  struct cam_cmd_i2c_info *i2c_info = (struct cam_cmd_i2c_info *)mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
   auto probe = (struct cam_cmd_probe *)(i2c_info + 1);
 
   probe->camera_id = camera_num;
@@ -302,7 +334,7 @@ int CameraState::sensors_init() {
   //buf_desc[1].size = buf_desc[1].length = 148;
   buf_desc[1].size = buf_desc[1].length = 196;
   buf_desc[1].type = CAM_CMD_BUF_I2C;
-  struct cam_cmd_power *power_settings = (struct cam_cmd_power *)alloc_w_mmu_hdl(video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
+  struct cam_cmd_power *power_settings = (struct cam_cmd_power *)mm.alloc(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
   memset(power_settings, 0, buf_desc[1].size);
 
   // power on
@@ -363,12 +395,9 @@ int CameraState::sensors_init() {
   LOGD("probing the sensor");
   int ret = do_cam_control(sensor_fd, CAM_SENSOR_PROBE_CMD, (void *)(uintptr_t)cam_packet_handle, 0);
 
-  munmap(i2c_info, buf_desc[0].size);
-  release_fd(video0_fd, buf_desc[0].mem_handle);
-  munmap(power_settings, buf_desc[1].size);
-  release_fd(video0_fd, buf_desc[1].mem_handle);
-  munmap(pkt, size);
-  release_fd(video0_fd, cam_packet_handle);
+  mm.free(i2c_info);
+  mm.free(power_settings);
+  mm.free(pkt);
 
   return ret;
 }
@@ -379,7 +408,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
   }
-  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, size, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = 0;
   // YUV has kmd_cmd_buf_offset = 1780
@@ -512,9 +541,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
 
   munmap(buf2, buf_desc[1].size);
   release_fd(multi_cam_state->video0_fd, buf_desc[1].mem_handle);
-  // release_fd(multi_cam_state->video0_fd, buf_desc[0].mem_handle);
-  munmap(pkt, size);
-  release_fd(multi_cam_state->video0_fd, cam_packet_handle);
+  mm.free(pkt);
 }
 
 void CameraState::enqueue_buffer(int i, bool dp) {
@@ -605,6 +632,9 @@ void CameraState::camera_open() {
   sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", camera_num);
   assert(sensor_fd >= 0);
   LOGD("opened sensor for %d", camera_num);
+
+  // init memorymanager for this camera (not thread safe)
+  mm.init(multi_cam_state->video0_fd);
 
   // probe the sensor
   LOGD("-- Probing sensor %d", camera_num);
@@ -719,7 +749,7 @@ void CameraState::camera_open() {
   {
     uint32_t cam_packet_handle = 0;
     int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
-    struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, size, &cam_packet_handle);
+    struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
     pkt->num_cmd_buf = 1;
     pkt->kmd_cmd_buf_index = -1;
     pkt->header.size = size;
@@ -728,7 +758,7 @@ void CameraState::camera_open() {
     buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_csiphy_info);
     buf_desc[0].type = CAM_CMD_BUF_GENERIC;
 
-    struct cam_csiphy_info *csiphy_info = (struct cam_csiphy_info *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
+    struct cam_csiphy_info *csiphy_info = (struct cam_csiphy_info *)mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
     csiphy_info->lane_mask = 0x1f;
     csiphy_info->lane_assign = 0x3210;// skip clk. How is this 16 bit for 5 channels??
     csiphy_info->csiphy_3phase = 0x0; // no 3 phase, only 2 conductors per lane
@@ -741,10 +771,8 @@ void CameraState::camera_open() {
     int ret_ = device_config(csiphy_fd, session_handle, csiphy_dev_handle, cam_packet_handle);
     assert(ret_ == 0);
 
-    munmap(csiphy_info, buf_desc[0].size);
-    release_fd(multi_cam_state->video0_fd, buf_desc[0].mem_handle);
-    munmap(pkt, size);
-    release_fd(multi_cam_state->video0_fd, cam_packet_handle);
+    mm.free(csiphy_info);
+    mm.free(pkt);
   }
 
   // link devices
