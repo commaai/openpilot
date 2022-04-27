@@ -3,6 +3,9 @@ Version 0.8.14 (2022-0X-XX)
  * New driving model
    * bigmodel
  * New driver monitoring model
+   * Tweaked network structure to improve output resolution for dsp
+   * Fixed bug in quantization aware training to reduce quantizing errors
+   * Resulted in 7x less MSE and no more random biases at runtime
  * New lateral controller based on physical wheel torque model
    * Much smoother control, consistent across the speed range
    * Effective feedforward that uses road roll
