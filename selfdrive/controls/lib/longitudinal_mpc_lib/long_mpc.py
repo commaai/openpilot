@@ -345,6 +345,11 @@ class LongitudinalMpc:
       self.crash_cnt = 0
 
   def update_with_xva(self, x, v, a):
+    # v, and a are in local frame, but x is wrt the x[0] position
+    # In >90degree turns, x goes to 0 (and may even be -ve)
+    # So, we use integral(v) + x[0] to obtain the forward-distance
+    xforward = ((v[1:] + v[:-1]) / 2) * (T_IDXS[1:] - T_IDXS[:-1])
+    x = np.cumsum(np.insert(xforward, 0, x[0]))
     self.yref[:,1] = x
     self.yref[:,2] = v
     self.yref[:,3] = a

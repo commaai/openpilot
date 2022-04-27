@@ -24,6 +24,7 @@ repos:
                                   'types-pycurl']
         args:
         - --warn-unused-ignores
+        - --warn-redundant-casts
         - --warn-unreachable
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
