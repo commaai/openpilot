@@ -2,13 +2,16 @@ import json
 import math
 import os
 import subprocess
+import time
 from enum import IntEnum
 from functools import cached_property
 from pathlib import Path
 
 from cereal import log
+from common.gpio import gpio_set, gpio_init
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
 from selfdrive.hardware.tici import iwlist
+from selfdrive.hardware.tici.pins import GPIO
 from selfdrive.hardware.tici.amplifier import Amplifier
 
 NM = 'org.freedesktop.NetworkManager'
@@ -510,6 +513,24 @@ class Tici(HardwareBase):
           pass
 
     return r
+
+  def reset_internal_panda(self):
+    gpio_init(GPIO.STM_RST_N, True)
+
+    gpio_set(GPIO.STM_RST_N, 1)
+    time.sleep(2)
+    gpio_set(GPIO.STM_RST_N, 0)
+
+
+  def recover_internal_panda(self):
+    gpio_init(GPIO.STM_RST_N, True)
+    gpio_init(GPIO.STM_BOOT0, True)
+
+    gpio_set(GPIO.STM_RST_N, 1)
+    gpio_set(GPIO.STM_BOOT0, 1)
+    time.sleep(2)
+    gpio_set(GPIO.STM_RST_N, 0)
+    gpio_set(GPIO.STM_BOOT0, 0)
 
 
 if __name__ == "__main__":

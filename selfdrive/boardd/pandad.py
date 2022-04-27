@@ -10,6 +10,7 @@ from functools import cmp_to_key
 from panda import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
+from selfdrive.hardware import HARDWARE
 from selfdrive.swaglog import cloudlog
 
 
@@ -27,6 +28,7 @@ def flash_panda(panda_serial: str) -> Panda:
   panda = Panda(panda_serial)
 
   fw_signature = get_expected_signature(panda)
+  internal_panda = panda.is_internal() and not panda.bootstub
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
   panda_signature = b"" if panda.bootstub else panda.get_signature()
@@ -40,7 +42,9 @@ def flash_panda(panda_serial: str) -> Panda:
   if panda.bootstub:
     bootstub_version = panda.get_version()
     cloudlog.info(f"Flashed firmware not booting, flashing development bootloader. Bootstub version: {bootstub_version}")
-    panda.recover()
+    if internal_panda:
+      HARDWARE.recover_internal_panda()
+    panda.recover(reset=(not internal_panda))
     cloudlog.info("Done flashing bootloader")
 
   if panda.bootstub:
@@ -89,6 +93,10 @@ def main() -> NoReturn:
 
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
+        if first_run:
+          cloudlog.info("Resetting internal panda")
+          HARDWARE.reset_internal_panda()
+          time.sleep(2)  # wait to come back up
         continue
 
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")

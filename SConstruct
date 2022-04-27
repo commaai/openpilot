@@ -183,7 +183,6 @@ env = Environment(
     "#third_party/acados/include/blasfeo/include",
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
-    "#third_party/bzip2",
     "#third_party/libyuv/include",
     "#third_party/openmax/include",
     "#third_party/json11",
