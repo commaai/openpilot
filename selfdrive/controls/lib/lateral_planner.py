@@ -42,7 +42,7 @@ class LateralPlanner:
     self.LP.parse_model(md)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-      self.speed_forward = md.velocity.x
+      self.speed_forward = np.array(md.velocity.x)
       self.t_idxs = np.array(md.position.t)
       self.plan_yaw = list(md.orientation.z)
       self.yaw_rate = np.array(md.orientationRate.z)
