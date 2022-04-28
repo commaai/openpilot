@@ -27,9 +27,14 @@ Then, start the bridge and openpilot in another terminal.
 
 To engage openpilot press 1 a few times while focused on bridge.py to increase the cruise speed.
 
+Or start openpilot without docker with two terminals:
+```
+./launch_openpilot.sh
+./bridge.py
+```
 ## Controls
 
-You can control openpilot driving in the simulation with the following keys
+You can control openpilot driving in the simulation by typing the following keys where bridge.py is running.
 
 |  key  |   functionality   |
 | :---: | :---------------: |

@@ -104,7 +104,7 @@ class Camerad:
   def _cam_callback(self, image, frame_id, pub_type, rgb_type, yuv_type):
     img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
     img = np.reshape(img, (H, W, 4))
-    img = img[:, :, [0, 1, 2]]
+    img = img[:, :, [0, 1, 2]].copy()
 
     # convert RGB frame to YUV
     rgb = np.reshape(img, (H, W * 3))
@@ -342,7 +342,7 @@ class CarlaBridge:
 
     self._camerad = Camerad()
     road_camera = create_camera(fov=40, callback=self._camerad.cam_callback_road)
-    road_wide_camera = create_camera(fov=163, callback=self._camerad.cam_callback_wide_road)  # fov bigger than 163 shows unwanted artifacts
+    road_wide_camera = create_camera(fov=120, callback=self._camerad.cam_callback_wide_road)  # fov bigger than 120 shows unwanted artifacts
 
     self._carla_objects.extend([road_camera, road_wide_camera])
 
