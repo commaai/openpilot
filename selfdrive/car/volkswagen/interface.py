@@ -239,7 +239,6 @@ class CarInterface(CarInterfaceBase):
                          hud_control.leftLaneDepart,
                          hud_control.rightLaneDepart,
                          hud_control.leadVisible,
-                         hud_control.setSpeed,
-                         hud_control.speedVisible)
+                         hud_control.setSpeed)
     self.frame += 1
     return ret

@@ -28,7 +28,7 @@ class CarController():
     self.acc_stopping = False
 
   def update(self, c, CS, frame, ext_bus, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart,
-             right_lane_depart, lead_visible, set_speed, speed_visible):
+             right_lane_depart, lead_visible, set_speed):
     """ Controls thread """
 
     can_sends = []
@@ -84,8 +84,7 @@ class CarController():
 
         idx = (frame / P.ACC_HUD_STEP) % 16
         can_sends.append(volkswagencan.create_mqb_acc_02_control(self.packer_pt, CANBUS.pt, CS.tsk_status,
-                                                                 set_speed * CV.MS_TO_KPH, speed_visible, lead_distance,
-                                                                 idx))
+                                                                 set_speed * CV.MS_TO_KPH, lead_distance, idx))
         can_sends.append(volkswagencan.create_mqb_acc_04_control(self.packer_pt, CANBUS.pt, CS.acc_04_stock_values,
                                                                  idx))
 

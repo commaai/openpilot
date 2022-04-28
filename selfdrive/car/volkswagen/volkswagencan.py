@@ -48,10 +48,10 @@ def create_mqb_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
   }
   return packer.make_can_msg("GRA_ACC_01", bus, values, idx)
 
-def create_mqb_acc_02_control(packer, bus, acc_status, set_speed, speed_visible, lead_distance, idx):
+def create_mqb_acc_02_control(packer, bus, acc_status, set_speed, lead_distance, idx):
   values = {
     "ACC_Status_Anzeige": 3 if acc_status == 5 else acc_status,
-    "ACC_Wunschgeschw": 327.36 if not speed_visible else set_speed,
+    "ACC_Wunschgeschw": set_speed if set_speed < 250 else 327.36,
     "ACC_Gesetzte_Zeitluecke": 3,
     "ACC_Display_Prio": 3,
     "ACC_Abstandsindex": lead_distance,
