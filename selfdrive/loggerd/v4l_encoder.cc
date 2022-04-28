@@ -100,7 +100,7 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
 
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   e->segment_num++;
-  uint32_t idx = 0;
+  uint32_t idx = -1;
   uint32_t offset = 0;
   bool exit = false;
 
@@ -120,12 +120,14 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       printf("%20s poll %x at %.2f ms\n", e->filename, pfd.revents, millis_since_boot());
     }
 
+    int frame_id = -1;
     if (pfd.revents & POLLIN) {
       unsigned int bytesused, flags, index;
       struct timeval timestamp;
       dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
       e->buf_out[index].sync(VISIONBUF_SYNC_FROM_DEVICE);
       uint8_t *buf = (uint8_t*)e->buf_out[index].addr;
+      int64_t ts = timestamp.tv_sec * 1000000 + timestamp.tv_usec;
 
       // eof packet, we exit
       if (flags & V4L2_QCOM_BUF_FLAG_EOS) {
@@ -134,9 +136,10 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         // save header
         header = kj::heapArray<capnp::byte>(buf, bytesused);
       } else {
-        uint64_t ts = timestamp.tv_sec * 1000000 + timestamp.tv_usec;
         VisionIpcBufExtra extra = e->extras.pop();
-        assert(extra.timestamp_sof/1000 == ts);  // stay in sync
+        assert(extra.timestamp_eof/1000 == ts);  // stay in sync
+        frame_id = extra.frame_id;
+        ++idx;
 
         // broadcast packet
         MessageBuilder msg;
@@ -150,7 +153,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         edata.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
         edata.setEncodeId(idx);
         edata.setSegmentNum(e->segment_num);
-        edata.setSegmentId(idx++);
+        edata.setSegmentId(idx);
 
         edata.setFlags(flags);
         edata.setFileOffset(offset);
@@ -160,11 +163,11 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         edata.setData(kj::arrayPtr<capnp::byte>(buf, bytesused));
         if (flags & V4L2_BUF_FLAG_KEYFRAME) edata.setHeader(header);
         e->pm->send(e->service_name, msg);
+      }
 
-        if (env_debug_encoder) {
-          printf("%20s got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms (%lu frames free)\n",
-            e->filename, bytesused, index, flags, ts, ((event.getLogMonoTime() / 1000)-ts)/1000., e->free_buf_in.size());
-        }
+      if (env_debug_encoder) {
+        printf("%20s got %6d bytes in buffer %d with flags %8x idx %4d id %8d ts %ld lat %.2f ms (%lu frames free)\n",
+          e->filename, bytesused, index, flags, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
       }
 
       // requeue the buffer
@@ -342,8 +345,8 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   assert(err == 0);
 
   struct timeval timestamp {
-    .tv_sec = (long)(extra->timestamp_sof/1000000000),
-    .tv_usec = (long)((extra->timestamp_sof/1000) % 1000000),
+    .tv_sec = (long)(extra->timestamp_eof/1000000000),
+    .tv_usec = (long)((extra->timestamp_eof/1000) % 1000000),
   };
 
   // push buffer
