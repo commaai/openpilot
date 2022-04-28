@@ -22,14 +22,3 @@ class TestLaikad(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
-# struct gnssMeasurements {
-#   # Lat,long and alt for debugging purposes.
-#   # Longitude and latitude in degrees.
-#   latitude @1 :Float64;
-#   longitude @2 :Float64;
-#   # In meters above the WGS 84 reference ellipsoid.
-#   altitude @3 :Float64;
-#
-#
-#
-# }
