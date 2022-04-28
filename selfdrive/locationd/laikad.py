@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+from typing import List
 
 from cereal import messaging, log
 from laika import AstroDog, helpers
-from laika.raw_gnss import calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
+from laika.raw_gnss import GNSSMeasurement, calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
 
 
-def process_report(ublox_gnss, dog:AstroDog):
+def process_report(ublox_gnss, dog: AstroDog):
   measurements = None
   report = ublox_gnss.measurementReport
   if len(report.measurements) > 0:
@@ -15,7 +16,7 @@ def process_report(ublox_gnss, dog:AstroDog):
   return measurements
 
 
-def correct_and_pos_fix(processed_measurements, dog:AstroDog):
+def correct_and_pos_fix(processed_measurements: List[GNSSMeasurement], dog: AstroDog):
   # pos fix needs more than 5 processed_measurements
   pos_fix = calc_pos_fix(processed_measurements)
 
@@ -36,7 +37,7 @@ def process_ublox_msg(ublox_msg, dog: AstroDog, pm: messaging.PubMaster):
       return None
     (corrected_pos, _), corrected_measurements = processed
     dat = messaging.new_message('gnssMeasurements')
-    correct_meas_msgs = [create_measurement_msg(m.as_array()) for m in corrected_measurements]
+    correct_meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
 
     dat.gnssMeasurements = {
       "latitude": corrected_pos[0],
@@ -48,7 +49,8 @@ def process_ublox_msg(ublox_msg, dog: AstroDog, pm: messaging.PubMaster):
     pm.send('gnssMeasurements', dat)
 
 
-def create_measurement_msg(m):
+def create_measurement_msg(meas: GNSSMeasurement):
+  m = meas.as_array()
   # state = log.ManagerState.ProcessState.new_message()
   c = log.GnssMeasurements.CorrectedMeasurement.new_message()
   c.CorrectedMeasurement = {
