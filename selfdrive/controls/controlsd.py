@@ -285,12 +285,13 @@ class Controls:
         self.events.add(EventName.relayMalfunction)
 
     # Check for HW or system issues
+    if self.rk.lagging:
+      self.events.add(EventName.controlsdLagging)
     if len(self.sm['radarState'].radarErrors):
       self.events.add(EventName.radarFault)
     elif not self.sm.valid["pandaStates"]:
       self.events.add(EventName.usbError)
     elif not self.sm.all_checks() or self.can_rcv_error:
-
       if not self.sm.all_alive():
         self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
