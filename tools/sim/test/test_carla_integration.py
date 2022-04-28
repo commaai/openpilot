@@ -33,7 +33,7 @@ class TestCarlaIntegration(unittest.TestCase):
 
     carla_bridge = CarlaBridge(bridge.parse_args([]))
     p = carla_bridge.run(Queue(), retries=3)
-    self.processes = [p]
+    self.processes.append(p)
 
     time.sleep(test_duration)
 
@@ -96,12 +96,14 @@ class TestCarlaIntegration(unittest.TestCase):
     for p in reversed(self.processes):
       p.terminate()
 
+    # Stop carla simulator by removing docker container
+    subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
+
     for p in reversed(self.processes):
       if isinstance(p, subprocess.Popen):
         p.wait(15)
       else:
         p.join(15)
-    subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
 
 
 
