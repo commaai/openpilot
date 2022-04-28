@@ -24,12 +24,14 @@ class TestCarlaIntegration(unittest.TestCase):
     self.processes.append(subprocess.Popen(".././start_carla.sh"))
     # Too many lagging messages in bridge.py can cause a crash. This prevents it.
     unblock_stdout()
+    # Wait 10 seconds to startup carla
+    time.sleep(10)
 
   def test_run_bridge(self):
     # Test bridge connect with carla and runs without any errors for 60 seconds
     test_duration = 60
 
-    carla_bridge = CarlaBridge(bridge.parse_args(['--low_quality']))
+    carla_bridge = CarlaBridge(bridge.parse_args([]))
     p = carla_bridge.run(Queue(), retries=3)
     self.processes = [p]
 
@@ -44,7 +46,7 @@ class TestCarlaIntegration(unittest.TestCase):
 
     sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
     q = Queue()
-    carla_bridge = CarlaBridge(bridge.parse_args(['--low_quality']))
+    carla_bridge = CarlaBridge(bridge.parse_args([]))
     p_bridge = carla_bridge.run(q, retries=3)
     self.processes.append(p_bridge)
 
@@ -70,7 +72,7 @@ class TestCarlaIntegration(unittest.TestCase):
         no_car_events_issues_once = True
         break
 
-    self.assertTrue(no_car_events_issues_once, f"Failed because sm offline, or CarEvents '{car_event_issues}' or processes not running '{not_running}'")
+    self.assertTrue(no_car_events_issues_once, f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'")
 
     start_time = time.monotonic()
     min_counts_control_active = 100
