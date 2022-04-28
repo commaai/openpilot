@@ -99,6 +99,9 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
 }*/
 
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
+  std::string dequeue_thread_name = "dq-"+std::string(e->filename);
+  util::set_thread_name(dequeue_thread_name.c_str());
+
   e->segment_num++;
   uint32_t idx = -1;
   bool exit = false;
