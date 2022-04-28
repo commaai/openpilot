@@ -15,21 +15,22 @@ class TestCarlaIntegration(unittest.TestCase):
   Tests need Carla simulator to run
   """
   processes = None
+  carla_process = None
 
   def setUp(self):
     self.processes = []
-    # We want to make sure that carla_sim docker is still running. Skip output shell
+    # We want to make sure that carla_sim docker isn't still running.
     subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
 
-    self.processes.append(subprocess.Popen(".././start_carla.sh"))
+    self.carla_process = subprocess.Popen(".././start_carla.sh")
     # Too many lagging messages in bridge.py can cause a crash. This prevents it.
     unblock_stdout()
     # Wait 10 seconds to startup carla
     time.sleep(10)
 
   def test_run_bridge(self):
-    # Test bridge connect with carla and runs without any errors for 60 seconds
-    test_duration = 60
+    # Test bridge connect with carla and runs without any errors for 30 seconds
+    test_duration = 30
 
     carla_bridge = CarlaBridge(bridge.parse_args([]))
     p = carla_bridge.run(Queue(), retries=3)
@@ -96,15 +97,16 @@ class TestCarlaIntegration(unittest.TestCase):
     for p in reversed(self.processes):
       p.terminate()
 
-    # Stop carla simulator by removing docker container
-    subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
-
     for p in reversed(self.processes):
       if isinstance(p, subprocess.Popen):
         p.wait(15)
       else:
         p.join(15)
 
+    # Stop carla simulator by removing docker container
+    subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
+    if self.carla_process is not None:
+      self.carla_process.wait()
 
 
 if __name__ == "__main__":
