@@ -131,7 +131,7 @@ void MapWindow::timerUpdate() {
     }
   }
 
-  if (sm->updated("navRoute")) {
+  if (sm->updated("navRoute") && (*sm)["navRoute"].getNavRoute().getCoordinates().size()) {
     qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
 
     // Only open the map on setting destination the first time
