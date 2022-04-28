@@ -66,13 +66,21 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       encoders[i]->encoder_open(NULL);
     }
 
+    bool lagging = false;
     while (!do_exit) {
       VisionIpcBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr) continue;
 
       // detect loop around and drop the frames
-      if (buf->get_frame_id() != extra.frame_id) continue;
+      if (buf->get_frame_id() != extra.frame_id) {
+        if (!lagging) {
+          LOGE("encoder lag  buffer id: %d  extra id: %d", buf->get_frame_id(), extra.frame_id);
+          lagging = true;
+        }
+        continue;
+      }
+      lagging = false;
 
       if (cam_info.trigger_rotate) {
         if (!sync_encoders(s, cam_info.type, extra.frame_id)) {
@@ -123,11 +131,14 @@ void encoderd_thread() {
 }
 
 int main() {
-  /*if (Hardware::TICI()) {
+  if (Hardware::TICI()) {
     int ret;
+    // TODO: set realtime when NV12 copy is gone
+    /*ret = util::set_realtime_priority(52);
+    assert(ret == 0);*/
     ret = util::set_core_affinity({7});
     assert(ret == 0);
-  }*/
+  }
   encoderd_thread();
   return 0;
 }
