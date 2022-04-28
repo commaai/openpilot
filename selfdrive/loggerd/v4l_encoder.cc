@@ -101,7 +101,6 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   e->segment_num++;
   uint32_t idx = -1;
-  uint32_t offset = 0;
   bool exit = false;
 
   // POLLIN is capture, POLLOUT is frame
@@ -146,20 +145,15 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         auto event = msg.initEvent(true);
         auto edata = (e->type == DriverCam) ? event.initDriverEncodeIdx() :
           ((e->type == WideRoadCam) ? event.initWideRoadEncodeIdx() :
-          (e->remuxing ? event.initQRoadEncodeIdx() : event.initRoadEncodeIdx()));
+          (e->h265 ? event.initRoadEncodeIdx() : event.initQRoadEncodeIdx()));
         edata.setFrameId(extra.frame_id);
         edata.setTimestampSof(extra.timestamp_sof);
         edata.setTimestampEof(extra.timestamp_eof);
-        edata.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
+        edata.setType(e->h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264);
         edata.setEncodeId(idx);
         edata.setSegmentNum(e->segment_num);
         edata.setSegmentId(idx);
-
         edata.setFlags(flags);
-        edata.setFileOffset(offset);
-        edata.setFileLength(bytesused);
-        offset += bytesused;
-
         edata.setData(kj::arrayPtr<capnp::byte>(buf, bytesused));
         if (flags & V4L2_BUF_FLAG_KEYFRAME) edata.setHeader(header);
         e->pm->send(e->service_name, msg);
@@ -186,7 +180,7 @@ V4LEncoder::V4LEncoder(
   const char* filename, CameraType type, int in_width, int in_height,
   int fps, int bitrate, bool h265, int out_width, int out_height, bool write)
   : type(type), in_width_(in_width), in_height_(in_height),
-    filename(filename), remuxing(!h265) {
+    filename(filename), h265(h265) {
   assert(!write);
   fd = open("/dev/v4l/by-path/platform-aa00000.qcom_vidc-video-index1", O_RDWR|O_NONBLOCK);
   assert(fd >= 0);
@@ -310,7 +304,7 @@ V4LEncoder::V4LEncoder(
   // publish
   service_name = this->type == DriverCam ? "driverEncodeIdx" :
     (this->type == WideRoadCam ? "wideRoadEncodeIdx" :
-    (this->remuxing ? "qRoadEncodeIdx" : "roadEncodeIdx"));
+    (this->h265 ? "roadEncodeIdx" : "qRoadEncodeIdx"));
   pm.reset(new PubMaster({service_name}));
 }
 

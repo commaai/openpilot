@@ -4,6 +4,8 @@ ExitHandler do_exit;
 
 struct EncoderdState {
   int max_waiting = 0;
+
+  // Sync logic for startup
   std::atomic<int> encoders_ready = 0;
   std::atomic<uint32_t> start_frame_id = 0;
   bool camera_ready[WideRoadCam + 1] = {};
@@ -75,7 +77,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       // detect loop around and drop the frames
       if (buf->get_frame_id() != extra.frame_id) {
         if (!lagging) {
-          LOGE("encoder lag  buffer id: %d  extra id: %d", buf->get_frame_id(), extra.frame_id);
+          LOGE("encoder %s lag  buffer id: %d  extra id: %d", cam_info.filename, buf->get_frame_id(), extra.frame_id);
           lagging = true;
         }
         continue;

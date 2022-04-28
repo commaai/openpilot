@@ -21,7 +21,7 @@ private:
   const char* filename;
   CameraType type;
   unsigned int in_width_, in_height_;
-  bool remuxing;
+  bool h265;
   bool is_open = false;
   int segment_num = -1;
   int counter = 0;
