@@ -1,7 +1,7 @@
 Version 0.8.14 (2022-0X-XX)
 ========================
  * New driving model
-   * bigmodel, looks at both cameras on the Comma 3
+   * Bigger model, using both of comma three's road-facing cameras
    * Better at cut-in detection and tight turns
  * New driver monitoring model
    * Tweaked network structure to improve output resolution for dsp
