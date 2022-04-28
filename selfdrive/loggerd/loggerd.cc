@@ -107,7 +107,7 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
-                                               buf->width, buf->height, extra.timestamp_eof);
+                                               buf->width, buf->height, &extra);
 
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d encode_id: %d", extra.frame_id, encode_idx);

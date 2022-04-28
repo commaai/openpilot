@@ -68,7 +68,7 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
 }
 
 // TODO: writing should be moved to loggerd
-void V4LEncoder::write_handler(V4LEncoder *e, const char *path) {
+/*void V4LEncoder::write_handler(V4LEncoder *e, const char *path) {
   VideoWriter writer(path, e->filename, e->remuxing, e->width, e->height, e->fps, !e->remuxing, false);
 
   bool exit = false;
@@ -96,17 +96,21 @@ void V4LEncoder::write_handler(V4LEncoder *e, const char *path) {
   }
 
   // VideoWriter is freed on out of scope
-}
+}*/
 
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   e->segment_num++;
   uint32_t idx = 0;
+  uint32_t offset = 0;
   bool exit = false;
 
   // POLLIN is capture, POLLOUT is frame
   struct pollfd pfd;
   pfd.events = POLLIN | POLLOUT;
   pfd.fd = e->fd;
+
+  // save the header
+  kj::Array<capnp::byte> header;
 
   while (!exit) {
     int rc = poll(&pfd, 1, 1000);
@@ -124,33 +128,43 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       uint8_t *buf = (uint8_t*)e->buf_out[index].addr;
 
       // eof packet, we exit
-      if (flags & V4L2_QCOM_BUF_FLAG_EOS) exit = true;
-      uint64_t ts = timestamp.tv_sec * 1000000 + timestamp.tv_usec;
-
-      // broadcast packet
-      MessageBuilder msg;
-      auto event = msg.initEvent(true);
-      auto edata = (e->type == DriverCam) ? event.initDriverEncodeData() :
-        ((e->type == WideRoadCam) ? event.initWideRoadEncodeData() :
-        (e->remuxing ? event.initQRoadEncodeData() : event.initRoadEncodeData()));
-      edata.setData(kj::arrayPtr<capnp::byte>(buf, bytesused));
-      edata.setTimestampEof(ts);
-      edata.setIdx(idx++);
-      edata.setSegmentNum(e->segment_num);
-      edata.setFlags(flags);
-
-      auto words = new kj::Array<capnp::word>(capnp::messageToFlatArray(msg));
-      auto bytes = words->asBytes();
-      e->pm->send(e->service_name, bytes.begin(), bytes.size());
-      if (e->write) {
-        e->to_write.push(words);
+      if (flags & V4L2_QCOM_BUF_FLAG_EOS) {
+        exit = true;
+      } else if (flags & V4L2_QCOM_BUF_FLAG_CODECCONFIG) {
+        // save header
+        header = kj::heapArray<capnp::byte>(buf, bytesused);
       } else {
-        delete words;
-      }
+        uint64_t ts = timestamp.tv_sec * 1000000 + timestamp.tv_usec;
+        VisionIpcBufExtra extra = e->extras.pop();
+        assert(extra.timestamp_sof/1000 == ts);  // stay in sync
 
-      if (env_debug_encoder) {
-        printf("%20s got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms (%lu frames free)\n",
-          e->filename, bytesused, index, flags, ts, ((event.getLogMonoTime() / 1000)-ts)/1000., e->free_buf_in.size());
+        // broadcast packet
+        MessageBuilder msg;
+        auto event = msg.initEvent(true);
+        auto edata = (e->type == DriverCam) ? event.initDriverEncodeIdx() :
+          ((e->type == WideRoadCam) ? event.initWideRoadEncodeIdx() :
+          (e->remuxing ? event.initQRoadEncodeIdx() : event.initRoadEncodeIdx()));
+        edata.setFrameId(extra.frame_id);
+        edata.setTimestampSof(extra.timestamp_sof);
+        edata.setTimestampEof(extra.timestamp_eof);
+        edata.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
+        edata.setEncodeId(idx);
+        edata.setSegmentNum(e->segment_num);
+        edata.setSegmentId(idx++);
+
+        edata.setFlags(flags);
+        edata.setFileOffset(offset);
+        edata.setFileLength(bytesused);
+        offset += bytesused;
+
+        edata.setData(kj::arrayPtr<capnp::byte>(buf, bytesused));
+        if (flags & V4L2_BUF_FLAG_KEYFRAME) edata.setHeader(header);
+        e->pm->send(e->service_name, msg);
+
+        if (env_debug_encoder) {
+          printf("%20s got %6d bytes in buffer %d with flags %8x and ts %lu lat %.2f ms (%lu frames free)\n",
+            e->filename, bytesused, index, flags, ts, ((event.getLogMonoTime() / 1000)-ts)/1000., e->free_buf_in.size());
+        }
       }
 
       // requeue the buffer
@@ -169,8 +183,8 @@ V4LEncoder::V4LEncoder(
   const char* filename, CameraType type, int in_width, int in_height,
   int fps, int bitrate, bool h265, int out_width, int out_height, bool write)
   : type(type), in_width_(in_width), in_height_(in_height),
-    width(out_width), height(out_height), fps(fps),
-    filename(filename), remuxing(!h265), write(write) {
+    filename(filename), remuxing(!h265) {
+  assert(!write);
   fd = open("/dev/v4l/by-path/platform-aa00000.qcom_vidc-video-index1", O_RDWR|O_NONBLOCK);
   assert(fd >= 0);
 
@@ -291,22 +305,21 @@ V4LEncoder::V4LEncoder(
   }
 
   // publish
-  service_name = this->type == DriverCam ? "driverEncodeData" :
-    (this->type == WideRoadCam ? "wideRoadEncodeData" :
-    (this->remuxing ? "qRoadEncodeData" : "roadEncodeData"));
+  service_name = this->type == DriverCam ? "driverEncodeIdx" :
+    (this->type == WideRoadCam ? "wideRoadEncodeIdx" :
+    (this->remuxing ? "qRoadEncodeIdx" : "roadEncodeIdx"));
   pm.reset(new PubMaster({service_name}));
 }
 
 
 void V4LEncoder::encoder_open(const char* path) {
   dequeue_handler_thread = std::thread(V4LEncoder::dequeue_handler, this);
-  if (this->write) write_handler_thread = std::thread(V4LEncoder::write_handler, this, path);
   this->is_open = true;
   this->counter = 0;
 }
 
 int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                  int in_width, int in_height, uint64_t ts) {
+                  int in_width, int in_height, VisionIpcBufExtra *extra) {
   assert(in_width == in_width_);
   assert(in_height == in_height_);
   assert(is_open);
@@ -329,11 +342,12 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   assert(err == 0);
 
   struct timeval timestamp {
-    .tv_sec = (long)(ts/1000000000),
-    .tv_usec = (long)((ts/1000) % 1000000),
+    .tv_sec = (long)(extra->timestamp_sof/1000000000),
+    .tv_usec = (long)((extra->timestamp_sof/1000) % 1000000),
   };
 
   // push buffer
+  extras.push(*extra);
   buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
   queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], timestamp);
 
@@ -346,7 +360,6 @@ void V4LEncoder::encoder_close() {
     checked_ioctl(fd, VIDIOC_ENCODER_CMD, &encoder_cmd);
     // join waits for V4L2_QCOM_BUF_FLAG_EOS
     dequeue_handler_thread.join();
-    if (this->write) write_handler_thread.join();
   }
   this->is_open = false;
 }
