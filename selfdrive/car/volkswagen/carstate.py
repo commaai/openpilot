@@ -16,6 +16,7 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
     self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
     self.buttonStates = BUTTON_STATES.copy()
+    self.digital_cluster_installed = False
 
   def update(self, pt_cp, cam_cp, ext_cp, trans_type):
     ret = car.CarState.new_message()
@@ -145,6 +146,9 @@ class CarState(CarStateBase):
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = pt_cp.vl["ESP_21"]["ESP_Tastung_passiv"] != 0
 
+    # Update misc car configuration/equipment info
+    self.digital_cluster_installed = bool(pt_cp.vl["Kombi_03"]["KBI_Variante"])
+
     return ret
 
   @staticmethod
@@ -180,6 +184,7 @@ class CarState(CarStateBase):
       ("ESP_Haltebestaetigung", "ESP_21"),       # ESP hold confirmation
       ("KBI_MFA_v_Einheit_02", "Einheiten_01"),  # MPH vs KMH speed display
       ("KBI_Handbremse", "Kombi_01"),            # Manual handbrake applied
+      ("KBI_Variante", "Kombi_03"),              # Digital/full-screen instrument cluster installed
       ("TSK_Status", "TSK_06"),                  # ACC engagement status from drivetrain coordinator
       ("GRA_Hauptschalter", "GRA_ACC_01"),       # ACC button, on/off
       ("GRA_Abbrechen", "GRA_ACC_01"),           # ACC button, cancel
@@ -210,6 +215,7 @@ class CarState(CarStateBase):
       ("Kombi_01", 2),      # From J285 Instrument cluster
       ("Blinkmodi_02", 1),  # From J519 BCM (sent at 1Hz when no lights active, 50Hz when active)
       ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
+      ("Kombi_03", 1),      # From J285 instrument cluster
     ]
 
     if CP.transmissionType == TransmissionType.automatic:

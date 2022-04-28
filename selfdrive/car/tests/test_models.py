@@ -115,8 +115,8 @@ class TestCarModel(unittest.TestCase):
       tuning = self.CP.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
-      elif tuning == 'lqr':
-        self.assertTrue(len(self.CP.lateralTuning.lqr.a))
+      elif tuning == 'torque':
+        self.assertTrue(self.CP.lateralTuning.torque.kf > 0)
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
       else:
@@ -245,6 +245,8 @@ class TestCarModel(unittest.TestCase):
 
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
+        # TODO: fix standstill mismatches for other makes
+        checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
       CS_prev = CS
 
