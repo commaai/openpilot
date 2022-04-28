@@ -251,6 +251,32 @@ def no_gps_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2, creation_delay=300.)
 
+# *** debug alerts ***
+
+def out_of_space_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  full_perc = round(100. - sm['deviceState'].freeSpacePercent)
+  return NormalPermanentAlert("Out of Storage", f"{full_perc}% full")
+
+
+def overheat_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  cpu = max(sm['deviceState'].cpuTempC, default=0.)
+  gpu = max(sm['deviceState'].gpuTempC, default=0.)
+  temp = max((cpu, gpu, sm['deviceState'].memoryTempC))
+  return NormalPermanentAlert("System Overheated", f"{temp} °C")
+
+
+def low_memory_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  return NormalPermanentAlert("Low Memory", f"{sm['deviceState'].memoryUsagePercent}% used")
+
+
+def high_cpu_usage_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  x = max(sm['deviceState'].cpuUsagePercent, default=0.)
+  return NormalPermanentAlert("High CPU Usage", f"{x}% used")
+
+
+def modeld_lagging_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  return NormalPermanentAlert("Driving model lagging", f"{sm['modelV2'].frameDropPerc}% frames dropped")
+
 
 def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   text = "Cruise Mode Disabled"
@@ -578,7 +604,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.outOfSpace: {
-    ET.PERMANENT: NormalPermanentAlert("Out of Storage"),
+    ET.PERMANENT: out_of_space_alert,
     ET.NO_ENTRY: NoEntryAlert("Out of Storage"),
   },
 
@@ -609,7 +635,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.overheat: {
-    ET.PERMANENT: NormalPermanentAlert("System Overheated"),
+    ET.PERMANENT: overheat_alert,
     ET.SOFT_DISABLE: soft_disable_alert("System Overheated"),
     ET.NO_ENTRY: NoEntryAlert("System Overheated"),
   },
@@ -685,6 +711,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   EventName.modeldLagging: {
     ET.SOFT_DISABLE: soft_disable_alert("Driving model lagging"),
     ET.NO_ENTRY: NoEntryAlert("Driving model lagging"),
+    ET.PERMANENT: modeld_lagging_alert,
   },
 
   # Besides predicting the path, lane lines and lead car data the model also
@@ -706,14 +733,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.lowMemory: {
     ET.SOFT_DISABLE: soft_disable_alert("Low Memory: Reboot Your Device"),
-    ET.PERMANENT: NormalPermanentAlert("Low Memory", "Reboot your Device"),
+    ET.PERMANENT: low_memory_alert,
     ET.NO_ENTRY: NoEntryAlert("Low Memory: Reboot Your Device"),
   },
 
   EventName.highCpuUsage: {
     #ET.SOFT_DISABLE: soft_disable_alert("System Malfunction: Reboot Your Device"),
     #ET.PERMANENT: NormalPermanentAlert("System Malfunction", "Reboot your Device"),
-    ET.NO_ENTRY: NoEntryAlert("System Malfunction: Reboot Your Device"),
+    ET.NO_ENTRY: high_cpu_usage_alert,
   },
 
   EventName.accFaulted: {

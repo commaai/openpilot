@@ -45,8 +45,6 @@ from selfdrive.version import is_tested_branch
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
-NEOSUPDATE_DIR = os.getenv("UPDATER_NEOSUPDATE_DIR", "/data/neoupdate")
-
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
 OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
@@ -170,6 +168,8 @@ def setup_git_options(cwd: str) -> None:
     ("core.trustctime", "false"),
     ("core.checkStat", "minimal"),
     ("protocol.version", "2"),
+    ("gc.auto", "0"),
+    ("gc.autoDetach", "false"),
   ]
   for option, value in git_cfg:
     run(["git", "config", option, value], cwd)
@@ -178,10 +178,7 @@ def setup_git_options(cwd: str) -> None:
 def dismount_overlay() -> None:
   if os.path.ismount(OVERLAY_MERGED):
     cloudlog.info("unmounting existing overlay")
-    args = ["umount", "-l", OVERLAY_MERGED]
-    if TICI:
-      args = ["sudo"] + args
-    run(args)
+    run(["sudo", "umount", "-l", OVERLAY_MERGED])
 
 
 def init_overlay() -> None:
@@ -204,8 +201,7 @@ def init_overlay() -> None:
   params.put_bool("UpdateAvailable", False)
   set_consistent_flag(False)
   dismount_overlay()
-  if TICI:
-    run(["sudo", "rm", "-rf", STAGING_ROOT])
+  run(["sudo", "rm", "-rf", STAGING_ROOT])
   if os.path.isdir(STAGING_ROOT):
     shutil.rmtree(STAGING_ROOT)
 
@@ -229,18 +225,15 @@ def init_overlay() -> None:
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
 
   mount_cmd = ["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED]
-  if TICI:
-    run(["sudo"] + mount_cmd)
-    run(["sudo", "chmod", "755", os.path.join(OVERLAY_METADATA, "work")])
-  else:
-    run(mount_cmd)
+  run(["sudo"] + mount_cmd)
+  run(["sudo", "chmod", "755", os.path.join(OVERLAY_METADATA, "work")])
 
   git_diff = run(["git", "diff"], OVERLAY_MERGED, low_priority=True)
   params.put("GitDiff", git_diff)
   cloudlog.info(f"git diff output:\n{git_diff}")
 
 
-def finalize_update() -> None:
+def finalize_update(wait_helper: WaitTimeHelper) -> None:
   """Take the current OverlayFS merged view and finalize a copy outside of
   OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
 
@@ -256,8 +249,19 @@ def finalize_update() -> None:
   run(["git", "reset", "--hard"], FINALIZED)
   run(["git", "submodule", "foreach", "--recursive", "git", "reset"], FINALIZED)
 
-  set_consistent_flag(True)
-  cloudlog.info("done finalizing overlay")
+  cloudlog.info("Starting git gc")
+  t = time.monotonic()
+  try:
+    run(["git", "gc"], FINALIZED)
+    cloudlog.event("Done git gc", duration=time.monotonic() - t)
+  except subprocess.CalledProcessError:
+    cloudlog.exception(f"Failed git gc, took {time.monotonic() - t:.3f} s")
+
+  if wait_helper.shutdown:
+    cloudlog.info("got interrupted finalizing overlay")
+  else:
+    set_consistent_flag(True)
+    cloudlog.info("done finalizing overlay")
 
 
 def handle_agnos_update(wait_helper: WaitTimeHelper) -> None:
@@ -328,7 +332,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
         handle_agnos_update(wait_helper)
 
     # Create the finalized, ready-to-swap update
-    finalize_update()
+    finalize_update(wait_helper)
     cloudlog.info("openpilot update successful!")
   else:
     cloudlog.info("nothing new from git at this time")
@@ -365,31 +369,12 @@ def main() -> None:
   overlay_init = Path(os.path.join(BASEDIR, ".overlay_init"))
   overlay_init.unlink(missing_ok=True)
 
-  first_run = True
-  last_fetch_time = 0.0
-  update_failed_count = 0
-
-  # Set initial params for offroad alerts
-  set_params(False, 0, None)
-
-  # Wait for IsOffroad to be set before our first update attempt
+  update_failed_count = 0  # TODO: Load from param?
   wait_helper = WaitTimeHelper(proc)
-  wait_helper.sleep(30)
 
   # Run the update loop
-  #  * every 5m, do a lightweight internet/update check
-  #  * every 10m, do a full git fetch
   while not wait_helper.shutdown:
-    update_now = wait_helper.ready_event.is_set()
     wait_helper.ready_event.clear()
-
-    # Don't run updater while onroad or if the time's wrong
-    time_wrong = datetime.datetime.utcnow().year < 2019
-    is_onroad = not params.get_bool("IsOffroad")
-    if is_onroad or time_wrong:
-      wait_helper.sleep(30)
-      cloudlog.info("not running updater, not offroad")
-      continue
 
     # Attempt an update
     exception = None
@@ -398,19 +383,16 @@ def main() -> None:
     try:
       init_overlay()
 
+      # TODO: still needed? skip this and just fetch?
+      # Lightweight internt check
       internet_ok, update_available = check_for_update()
       if internet_ok and not update_available:
         update_failed_count = 0
 
-      # Fetch updates at most every 10 minutes
-      if internet_ok and (update_now or time.monotonic() - last_fetch_time > 60*10):
+      # Fetch update
+      if internet_ok:
         new_version = fetch_update(wait_helper)
         update_failed_count = 0
-        last_fetch_time = time.monotonic()
-
-        if first_run and not new_version and os.path.isdir(NEOSUPDATE_DIR):
-          shutil.rmtree(NEOSUPDATE_DIR)
-        first_run = False
     except subprocess.CalledProcessError as e:
       cloudlog.event(
         "update process failed",
@@ -425,13 +407,14 @@ def main() -> None:
       exception = str(e)
       overlay_init.unlink(missing_ok=True)
 
-    try:
-      set_params(new_version, update_failed_count, exception)
-    except Exception:
-      cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
+    if not wait_helper.shutdown:
+      try:
+        set_params(new_version, update_failed_count, exception)
+      except Exception:
+        cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
-    # TODO: replace this with a good backoff
-    wait_helper.sleep(300)
+    # infrequent attempts if we successfully updated recently
+    wait_helper.sleep(5*60 if update_failed_count > 0 else 90*60)
 
   dismount_overlay()
 

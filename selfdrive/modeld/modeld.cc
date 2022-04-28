@@ -129,11 +129,6 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       vec_desire[desire] = 1.0;
     }
 
-    double mt1 = millis_since_boot();
-    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire);
-    double mt2 = millis_since_boot();
-    float model_execution_time = (mt2 - mt1) / 1000.0;
-
     // tracked dropped frames
     uint32_t vipc_dropped_frames = meta_main.frame_id - last_vipc_frame_id - 1;
     float frames_dropped = frame_dropped_filter.update((float)std::min(vipc_dropped_frames, 10U));
@@ -144,10 +139,22 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     run_count++;
 
     float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
+    bool prepare_only = vipc_dropped_frames > 0;
 
-    model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
-                  kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
-    posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
+    if (prepare_only) {
+      LOGE("skipping model eval. Dropped %d frames", vipc_dropped_frames);
+    }
+
+    double mt1 = millis_since_boot();
+    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, prepare_only);
+    double mt2 = millis_since_boot();
+    float model_execution_time = (mt2 - mt1) / 1000.0;
+
+    if (model_output != nullptr) {
+      model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
+                    kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
+      posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
+    }
 
     //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
     last = mt1;
@@ -164,8 +171,8 @@ int main(int argc, char **argv) {
     assert(ret == 0);
   }
 
-  bool main_wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
-  bool use_extra_client = !main_wide_camera;
+  bool main_wide_camera = Params().getBool("EnableWideCamera");
+  bool use_extra_client = !main_wide_camera;  // set for single camera mode
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);

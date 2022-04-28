@@ -255,12 +255,12 @@ def getMessage(service=None, timeout=1000):
 
 
 @dispatcher.add_method
-def getVersion():
+def getVersion() -> Dict[str, str]:
   return {
     "version": get_version(),
-    "remote": get_origin(),
-    "branch": get_short_branch(),
-    "commit": get_commit(),
+    "remote": get_origin(''),
+    "branch": get_short_branch(''),
+    "commit": get_commit(default=''),
   }
 
 

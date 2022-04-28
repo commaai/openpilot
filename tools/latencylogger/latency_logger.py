@@ -177,8 +177,8 @@ def graph_timestamps(timestamps, start_times, end_times, relative):
   return fig
 
 def get_timestamps(lr):
+  lr = list(lr)
   data, frame_mismatches = read_logs(lr)
-  lr.reset()
   insert_cloudlogs(lr, data['timestamp'], data['start'], data['end'])
   return data, frame_mismatches
 

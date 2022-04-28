@@ -69,7 +69,8 @@ class ManagerProcess(ABC):
   unkillable = False
   daemon = False
   sigkill = False
-  persistent = False
+  onroad = True
+  offroad = False
   driverview = False
   notcar = False
   proc: Optional[Process] = None
@@ -77,7 +78,7 @@ class ManagerProcess(ABC):
   name = ""
 
   last_watchdog_time = 0
-  watchdog_max_dt = None
+  watchdog_max_dt: Optional[int] = None
   watchdog_seen = False
   shutting_down = False
 
@@ -183,12 +184,13 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, persistent=False, driverview=False, notcar=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, cwd, cmdline, enabled=True, onroad=True, offroad=False, driverview=False, notcar=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
     self.enabled = enabled
-    self.persistent = persistent
+    self.onroad = onroad
+    self.offroad = offroad
     self.driverview = driverview
     self.notcar = notcar
     self.unkillable = unkillable
@@ -215,11 +217,12 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, enabled=True, persistent=False, driverview=False, notcar=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, module, enabled=True, onroad=True, offroad=False, driverview=False, notcar=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.module = module
     self.enabled = enabled
-    self.persistent = persistent
+    self.onroad = onroad
+    self.offroad = offroad
     self.driverview = driverview
     self.notcar = notcar
     self.unkillable = unkillable
@@ -254,7 +257,8 @@ class DaemonProcess(ManagerProcess):
     self.module = module
     self.param_name = param_name
     self.enabled = enabled
-    self.persistent = True
+    self.onroad = True
+    self.offroad = True
 
   def prepare(self) -> None:
     pass
@@ -293,23 +297,23 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, driverview:
     not_run = []
 
   for p in procs:
-    if p.name in not_run:
-      p.stop(block=False)
-    elif not p.enabled:
-      p.stop(block=False)
-    elif p.persistent:
-      p.start()
-    elif p.driverview and driverview:
-      p.start()
-    elif p.notcar:
-      if notcar:
-        p.start()
-      else:
-        p.stop(block=False)
-    elif started:
+    # Conditions that make a process run
+    run = any((
+      p.offroad and not started,
+      p.onroad and started,
+      p.driverview and driverview,
+      p.notcar and notcar,
+    ))
+
+    # Conditions that block a process from starting
+    run = run and not any((
+      not p.enabled,
+      p.name in not_run,
+    ))
+
+    if run:
       p.start()
     else:
       p.stop(block=False)
 
     p.check_watchdog(started)
-

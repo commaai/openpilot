@@ -324,7 +324,7 @@ OmxEncoder::OmxEncoder(const char* filename, CameraType type, int in_width, int 
   service_name = this->type == DriverCam ? "driverEncodeData" :
     (this->type == WideRoadCam ? "wideRoadEncodeData" :
     (this->remuxing ? "qRoadEncodeData" : "roadEncodeData"));
-  pm = new PubMaster({service_name});
+  pm.reset(new PubMaster({service_name}));
 }
 
 void OmxEncoder::callback_handler(OmxEncoder *e) {
@@ -393,66 +393,12 @@ void OmxEncoder::write_and_broadcast_handler(OmxEncoder *e){
 
 
 void OmxEncoder::handle_out_buf(OmxEncoder *e, OmxBuffer *out_buf) {
-  int err;
-
-  if (out_buf->header.nFlags & OMX_BUFFERFLAG_CODECCONFIG) {
-    if (e->codec_config_len < out_buf->header.nFilledLen) {
-      e->codec_config = (uint8_t *)realloc(e->codec_config, out_buf->header.nFilledLen);
-    }
-    e->codec_config_len = out_buf->header.nFilledLen;
-    memcpy(e->codec_config, out_buf->data, out_buf->header.nFilledLen);
-
-    // TODO: is still needed?
-#ifdef QCOM2
-    out_buf->header.nTimeStamp = 0;
-#endif
-  }
-
-  if (e->of) {
-    //printf("write %d flags 0x%x\n", out_buf->nFilledLen, out_buf->nFlags);
-    size_t written = util::safe_fwrite(out_buf->data, 1, out_buf->header.nFilledLen, e->of);
-    if (written != out_buf->header.nFilledLen) {
-      LOGE("failed to write file.errno=%d", errno);
-    }
-  }
-
-  if (e->remuxing) {
-    if (!e->wrote_codec_config && e->codec_config_len > 0) {
-      // extradata will be freed by av_free() in avcodec_free_context()
-      e->codec_ctx->extradata = (uint8_t*)av_mallocz(e->codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
-      e->codec_ctx->extradata_size = e->codec_config_len;
-      memcpy(e->codec_ctx->extradata, e->codec_config, e->codec_config_len);
-
-      err = avcodec_parameters_from_context(e->out_stream->codecpar, e->codec_ctx);
-      assert(err >= 0);
-      err = avformat_write_header(e->ofmt_ctx, NULL);
-      assert(err >= 0);
-
-      e->wrote_codec_config = true;
-    }
-
-    if (out_buf->header.nTimeStamp > 0) {
-      // input timestamps are in microseconds
-      AVRational in_timebase = {1, 1000000};
-
-      AVPacket pkt;
-      av_init_packet(&pkt);
-      pkt.data = out_buf->data;
-      pkt.size = out_buf->header.nFilledLen;
-
-      enum AVRounding rnd = static_cast<enum AVRounding>(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
-      pkt.pts = pkt.dts = av_rescale_q_rnd(out_buf->header.nTimeStamp, in_timebase, e->ofmt_ctx->streams[0]->time_base, rnd);
-      pkt.duration = av_rescale_q(50*1000, in_timebase, e->ofmt_ctx->streams[0]->time_base);
-
-      if (out_buf->header.nFlags & OMX_BUFFERFLAG_SYNCFRAME) {
-        pkt.flags |= AV_PKT_FLAG_KEY;
-      }
-
-      err = av_write_frame(e->ofmt_ctx, &pkt);
-      if (err < 0) { LOGW("ts encoder write issue"); }
-
-      av_free_packet(&pkt);
-    }
+  if (!(out_buf->header.nFlags & OMX_BUFFERFLAG_EOS) && e->writer) {
+    e->writer->write(out_buf->data,
+      out_buf->header.nFilledLen,
+      out_buf->header.nTimeStamp,
+      out_buf->header.nFlags & OMX_BUFFERFLAG_CODECCONFIG,
+      out_buf->header.nFlags & OMX_BUFFERFLAG_SYNCFRAME);
   }
 }
 
@@ -527,48 +473,9 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 }
 
 void OmxEncoder::encoder_open(const char* path) {
-  int err;
-
-  snprintf(this->vid_path, sizeof(this->vid_path), "%s/%s", path, this->filename);
-  LOGD("encoder_open %s remuxing:%d", this->vid_path, this->remuxing);
-
-  if (this->remuxing) {
-    avformat_alloc_output_context2(&this->ofmt_ctx, NULL, NULL, this->vid_path);
-    assert(this->ofmt_ctx);
-
-    this->out_stream = avformat_new_stream(this->ofmt_ctx, NULL);
-    assert(this->out_stream);
-
-    // set codec correctly
-    av_register_all();
-
-    AVCodec *codec = NULL;
-    codec = avcodec_find_encoder(AV_CODEC_ID_H264);
-    assert(codec);
-
-    this->codec_ctx = avcodec_alloc_context3(codec);
-    assert(this->codec_ctx);
-    this->codec_ctx->width = this->width;
-    this->codec_ctx->height = this->height;
-    this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-    this->codec_ctx->time_base = (AVRational){ 1, this->fps };
-
-    err = avio_open(&this->ofmt_ctx->pb, this->vid_path, AVIO_FLAG_WRITE);
-    assert(err >= 0);
-
-    this->wrote_codec_config = false;
-  } else {
-    if (this->write) {
-      this->of = util::safe_fopen(this->vid_path, "wb");
-      assert(this->of);
-    }
+  if (this->write) {
+    writer.reset(new VideoWriter(path, this->filename, this->remuxing, this->width, this->height, this->fps, !this->remuxing, false));
   }
-
-  // create camera lock file
-  snprintf(this->lock_path, sizeof(this->lock_path), "%s/%s.lock", path, this->filename);
-  int lock_fd = HANDLE_EINTR(open(this->lock_path, O_RDWR | O_CREAT, 0664));
-  assert(lock_fd >= 0);
-  close(lock_fd);
 
   // start writer threads
   callback_handler_thread = std::thread(OmxEncoder::callback_handler, this);
@@ -597,19 +504,7 @@ void OmxEncoder::encoder_close() {
     callback_handler_thread.join();
     write_handler_thread.join();
 
-    if (this->remuxing) {
-      av_write_trailer(this->ofmt_ctx);
-      avcodec_free_context(&this->codec_ctx);
-      avio_closep(&this->ofmt_ctx->pb);
-      avformat_free_context(this->ofmt_ctx);
-    } else {
-      if (this->of) {
-        util::safe_fflush(this->of);
-        fclose(this->of);
-        this->of = nullptr;
-      }
-    }
-    unlink(this->lock_path);
+    writer.reset();
   }
   this->is_open = false;
 }
@@ -643,10 +538,6 @@ OmxEncoder::~OmxEncoder() {
   while (this->to_write.try_pop(write_buf)) {
     free(write_buf);
   };
-
-  if (this->codec_config) {
-    free(this->codec_config);
-  }
 
   if (this->downscale) {
     free(this->y_ptr2);
