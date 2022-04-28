@@ -17,7 +17,7 @@ try:
   panda_jungle_imported = True
   from panda_jungle import PandaJungle  # pylint: disable=import-error  # type: ignore
 except ImportError:
-  PandaJugnle = None
+  PandaJungle = None
   panda_jungle_imported = False
 
 
