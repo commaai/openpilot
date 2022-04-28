@@ -171,10 +171,12 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
       safety_model = cereal::CarParams::SafetyModel::SILENT;
       safety_param = 0U;
     }
+    // FIXME: first two bytes must be empty
+    assert((safety_param >> 16) == 0U);
 
     LOGW("panda %d: setting safety model: %d, param: %d, alternative experience: %d", i, (int)safety_model, safety_param, alternative_experience);
     panda->set_alternative_experience(alternative_experience);
-    panda->set_safety_model(safety_model, safety_param);
+    panda->set_safety_model(safety_model, (uint16_t)safety_param);
   }
 
   return true;
