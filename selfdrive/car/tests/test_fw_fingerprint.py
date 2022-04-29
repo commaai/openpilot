@@ -4,6 +4,7 @@ import unittest
 from parameterized import parameterized
 
 from cereal import car
+from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.fw_versions import match_fw_to_car
 
@@ -11,6 +12,7 @@ CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
 
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
+
 
 class TestFwFingerprint(unittest.TestCase):
   def assertFingerprints(self, candidates, expected):
@@ -41,6 +43,20 @@ class TestFwFingerprint(unittest.TestCase):
           passed = False
 
     self.assertTrue(passed, "Duplicate FW versions found")
+
+  def test_blacklisted_ecus(self):
+    passed = True
+    blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
+    for car_model, ecus in FW_VERSIONS.items():
+      CP = interfaces[car_model][0].get_params(car_model)
+      if CP.carName == 'subaru':
+        for ecu in ecus.keys():
+          if ecu[1] in blacklisted_addrs:
+            print(f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
+            passed = False
+
+    self.assertTrue(passed, "Blacklisted FW versions found")
+
 
 if __name__ == "__main__":
   unittest.main()

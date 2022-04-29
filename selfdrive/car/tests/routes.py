@@ -48,8 +48,6 @@ routes = [
 
   TestRoute("0e7a2ba168465df5|2020-10-18--14-14-22", HONDA.ACURA_RDX_3G),
   TestRoute("a74b011b32b51b56|2020-07-26--17-09-36", HONDA.CIVIC),
-  # Checks there's no controls mismatches due to pedal thresholds
-  TestRoute("cfb32f0fb91b173b|2022-04-06--14-54-45", HONDA.CIVIC, segment=21),
   TestRoute("a859a044a447c2b0|2020-03-03--18-42-45", HONDA.CRV_EU),
   TestRoute("68aac44ad69f838e|2021-05-18--20-40-52", HONDA.CRV),
   TestRoute("14fed2e5fa0aa1a5|2021-05-25--14-59-42", HONDA.CRV_HYBRID),
@@ -89,6 +87,7 @@ routes = [
   TestRoute("fb3fd42f0baaa2f8|2022-03-30--15-25-05", HYUNDAI.TUCSON_DIESEL_2019),
   TestRoute("5875672fc1d4bf57|2020-07-23--21-33-28", HYUNDAI.KIA_SORENTO),
   TestRoute("9c917ba0d42ffe78|2020-04-17--12-43-19", HYUNDAI.PALISADE),
+  TestRoute("3f29334d6134fcd4|2022-03-30--22-00-50", HYUNDAI.IONIQ_PHEV_2019),
   TestRoute("fa8db5869167f821|2021-06-10--22-50-10", HYUNDAI.IONIQ_PHEV),
   TestRoute("2c5cf2dd6102e5da|2020-12-17--16-06-44", HYUNDAI.IONIQ_EV_2020),
   TestRoute("610ebb9faaad6b43|2020-06-13--15-28-36", HYUNDAI.IONIQ_EV_LTD),
@@ -206,4 +205,11 @@ routes = [
 
   TestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.AP1_MODELS),
   TestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
+
+  # Segments that test specific issues
+  # Controls mismatch due to interceptor threshold
+  TestRoute("cfb32f0fb91b173b|2022-04-06--14-54-45", HONDA.CIVIC, segment=21),
+  TestRoute("5a8762b91fc70467|2022-04-14--21-26-20", TOYOTA.RAV4, segment=2),
+  # Controls mismatch due to standstill threshold
+  TestRoute("bec2dcfde6a64235|2022-04-08--14-21-32", HONDA.CRV_HYBRID, segment=22),
 ]

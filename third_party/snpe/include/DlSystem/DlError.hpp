@@ -1,6 +1,6 @@
 //==============================================================================
 //
-//  Copyright (c) 2016-2020 Qualcomm Technologies, Inc.
+//  Copyright (c) 2016-2021 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -59,6 +59,7 @@ enum class ZDL_EXPORT ErrorCode : uint32_t {
    SNPE_DLSYSTEM_BUFFER_CAST_FAILED                      = 216,
    SNPE_DLSYSTEM_WRONG_TRANSITION_TYPE                   = 217,
    SNPE_DLSYSTEM_LAYER_ALREADY_REGISTERED                = 218,
+   SNPE_DLSYSTEM_TENSOR_DIM_INVALID                      = 219,
 
    SNPE_DLSYSTEM_BUFFERENCODING_UNKNOWN                  = 240,
    SNPE_DLSYSTEM_BUFFER_INVALID_PARAM                    = 241,
@@ -89,6 +90,7 @@ enum class ZDL_EXPORT ErrorCode : uint32_t {
    SNPE_NETWORK_MISMATCH_BETWEEN_NAMES_AND_DIMS          = 404,
    SNPE_NETWORK_MISSING_INPUT_NAMES                      = 405,
    SNPE_NETWORK_MISSING_OUTPUT_NAMES                     = 406,
+   SNPE_NETWORK_EXECUTION_FAILED                         = 407,
 
    // Host runtime errors
    SNPE_HOST_RUNTIME_TARGET_UNAVAILABLE                  = 500,
@@ -140,6 +142,13 @@ enum class ZDL_EXPORT ErrorCode : uint32_t {
    SNPE_DSP_RUNTIME_INVALID_PARAM_ERROR                  = 909,
    SNPE_DSP_RUNTIME_SYSTEM_ERROR                         = 910,
    SNPE_DSP_RUNTIME_CRASHED_ERROR                        = 911,
+   SNPE_DSP_BUFFER_SIZE_ERROR                            = 912,
+   SNPE_DSP_UDO_EXECUTE_ERROR                            = 913,
+   SNPE_DSP_UDO_LIB_NOT_REGISTERED_ERROR                 = 914,
+   SNPE_DSP_UDO_INVALID_QUANTIZATION_TYPE_ERROR          = 915,
+   SNPE_DSP_RUNTIME_INVALID_RPC_DRIVER                   = 916,
+   SNPE_DSP_RUNTIME_RPC_PERMISSION_ERROR                 = 917,
+   SNPE_DSP_RUNTIME_DSP_FILE_OPEN_ERROR                  = 918,
 
    // Model validataion errors
    SNPE_MODEL_VALIDATION_LAYER_NOT_SUPPORTED             = 1000,
@@ -196,7 +205,10 @@ enum class ZDL_EXPORT ErrorCode : uint32_t {
 
    // Infrastructure Errors
    SNPE_INFRA_CLUSTERMGR_INSTANCE_INVALID                = 1600,
-   SNPE_INFRA_CLUSTERMGR_EXECUTE_SYNC_FAILED             = 1601
+   SNPE_INFRA_CLUSTERMGR_EXECUTE_SYNC_FAILED             = 1601,
+
+   // Memory Errors
+   SNPE_MEMORY_CORRUPTION_ERROR                          = 1700
 
 };
 

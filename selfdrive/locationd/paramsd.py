@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-import gc
 import math
-
 import json
 import numpy as np
 
 import cereal.messaging as messaging
 from cereal import car
 from common.params import Params, put_nonblocking
-from common.realtime import set_realtime_priority, DT_MDL
+from common.realtime import config_realtime_process, DT_MDL
 from common.numpy_fast import clip
 from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from selfdrive.locationd.models.constants import GENERATED_DIR
@@ -103,8 +101,7 @@ class ParamsLearner:
 
 
 def main(sm=None, pm=None):
-  gc.disable()
-  set_realtime_priority(5)
+  config_realtime_process([0, 1, 2, 3], 5)
 
   if sm is None:
     sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
@@ -178,7 +175,6 @@ def main(sm=None, pm=None):
       angle_offset = clip(math.degrees(x[States.ANGLE_OFFSET] + x[States.ANGLE_OFFSET_FAST]), angle_offset - MAX_ANGLE_OFFSET_DELTA, angle_offset + MAX_ANGLE_OFFSET_DELTA)
 
       msg = messaging.new_message('liveParameters')
-      msg.logMonoTime = sm.logMonoTime['carState']
 
       liveParameters = msg.liveParameters
       liveParameters.posenetValid = True
