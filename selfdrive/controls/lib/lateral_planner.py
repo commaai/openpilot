@@ -18,6 +18,7 @@ class LateralPlanner:
 
     self.last_cloudlog_t = 0
     self.steer_rate_cost = CP.steerRateCost
+    self.r = CAR_ROTATION_RADIUS
     self.solution_invalid_cnt = 0
 
     self.path_xyz = np.zeros((TRAJECTORY_SIZE, 3))
@@ -42,7 +43,7 @@ class LateralPlanner:
     self.LP.parse_model(md)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-      self.speed_forward = np.array(md.velocity.x)
+      self.speed_forward = np.linalg.norm(np.column_stack([md.velocity.x, md.velocity.y, md.velocity.z]), axis=1)
       self.t_idxs = np.array(md.position.t)
       self.plan_yaw = list(md.orientation.z)
       self.yaw_rate = np.array(md.orientationRate.z)
@@ -79,7 +80,7 @@ class LateralPlanner:
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
     # self.x0[4] = v_ego
-    p = np.array([v_ego, CAR_ROTATION_RADIUS])
+    p = np.array([v_ego, self.r])
     self.lat_mpc.run(self.x0,
                      p,
                      y_pts,
