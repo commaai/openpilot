@@ -291,11 +291,8 @@ class Controls:
       self.events.add(EventName.radarFault)
     elif not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
-    elif not self.sm.all_alive(self.camera_packets) and not SIMULATION:
-      self.events.add(EventName.cameraMalfunction)
-    elif not self.sm.all_freq_ok(self.camera_packets) and not SIMULATION:
-      self.events.add(EventName.cameraFrameRate)
     elif not self.sm.all_checks() or self.can_rcv_error:
+
       if not self.sm.all_alive():
         self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
@@ -356,6 +353,11 @@ class Controls:
         if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000):
           # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
           self.events.add(EventName.noGps)
+
+      if not self.sm.all_alive(self.camera_packets):
+        self.events.add(EventName.cameraMalfunction)
+      elif not self.sm.all_freq_ok(self.camera_packets):
+        self.events.add(EventName.cameraFrameRate)
 
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
