@@ -9,6 +9,20 @@
 
 #define FRAME_BUF_COUNT 4
 
+class MemoryManager {
+  public:
+    void init(int _video0_fd) { video0_fd = _video0_fd; }
+    void *alloc(int len, uint32_t *handle);
+    void free(void *ptr);
+    ~MemoryManager();
+  private:
+    std::mutex lock;
+    std::map<void *, uint32_t> handle_lookup;
+    std::map<void *, int> size_lookup;
+    std::map<int, std::queue<void *> > cached_allocations;
+    int video0_fd;
+};
+
 class CameraState {
 public:
   MultiCameraState *multi_cam_state;
@@ -60,6 +74,7 @@ public:
   int camera_id;
 
   CameraBuf buf;
+  MemoryManager mm;
 private:
   void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
   void enqueue_req_multi(int start, int n, bool dp);
@@ -73,7 +88,7 @@ private:
 
 typedef struct MultiCameraState {
   unique_fd video0_fd;
-  unique_fd video1_fd;
+  unique_fd cam_sync_fd;
   unique_fd isp_fd;
   int device_iommu;
   int cdm_iommu;
