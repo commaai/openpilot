@@ -372,6 +372,8 @@ void NvgWindow::paintGL() {
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
+  drawHud(painter);
+
   UIState *s = uiState();
   if (s->worldObjectsVisible()) {
 
@@ -387,8 +389,6 @@ void NvgWindow::paintGL() {
       }
     }
   }
-
-  drawHud(painter);
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
