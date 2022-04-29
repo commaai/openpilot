@@ -248,7 +248,9 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
 }
 
 void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, uint32_t safety_param) {
-  usb_write(0xdc, (uint16_t)safety_model, safety_param);
+  // FIXME: last two bytes must be empty
+  assert((safety_param >> 16) == 0U);
+  usb_write(0xdc, (uint16_t)safety_model, (uint16_t)safety_param);
 }
 
 void Panda::set_alternative_experience(uint16_t alternative_experience) {

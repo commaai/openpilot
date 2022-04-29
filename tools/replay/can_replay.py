@@ -17,7 +17,7 @@ try:
   panda_jungle_imported = True
   from panda_jungle import PandaJungle  # pylint: disable=import-error  # type: ignore
 except ImportError:
-  PandaJugnle = None
+  PandaJungle = None
   panda_jungle_imported = False
 
 
@@ -86,7 +86,7 @@ def connect():
 
 
 if __name__ == "__main__":
-  if panda_jungle_imported:
+  if not panda_jungle_imported:
     print("\33[31m", "WARNING: cannot connect to jungles. Clone the jungle library to enable support:", "\033[0m")
     print("\033[34m", f"cd {BASEDIR} && git clone https://github.com/commaai/panda_jungle", "\033[0m")
 

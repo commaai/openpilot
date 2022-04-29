@@ -695,6 +695,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("Low Communication Rate between Processes"),
   },
 
+  EventName.controlsdLagging: {
+    ET.SOFT_DISABLE: soft_disable_alert("Controls Lagging"),
+    ET.NO_ENTRY: NoEntryAlert("Controls Process Lagging: Reboot Your Device"),
+  },
+
   # Thrown when manager detects a service exited unexpectedly while driving
   EventName.processNotRunning: {
     ET.NO_ENTRY: NoEntryAlert("System Malfunction: Reboot Your Device"),
