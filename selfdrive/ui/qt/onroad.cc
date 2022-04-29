@@ -18,18 +18,13 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   stacked_layout->setStackingMode(QStackedLayout::StackAll);
   main_layout->addLayout(stacked_layout);
 
-  QStackedLayout *road_view_layout = new QStackedLayout;
-  road_view_layout->setStackingMode(QStackedLayout::StackAll);
   nvg = new NvgWindow(VISION_STREAM_ROAD, this);
-  road_view_layout->addWidget(nvg);
-  // hud = new OnroadHud(this);
-  // road_view_layout->addWidget(hud);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
-  split->addLayout(road_view_layout);
+  split->addWidget(nvg);
 
   stacked_layout->addWidget(split_wrapper);
 
@@ -202,6 +197,8 @@ void NvgWindow::updateState(const UIState &s) {
 }
 
 void NvgWindow::drawHud(QPainter &p) {
+  p.save();
+
   // Header gradient
   QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
   bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
@@ -242,6 +239,7 @@ void NvgWindow::drawHud(QPainter &p) {
     drawIcon(p, radius / 2 + (bdr_s * 2), rect().bottom() - footer_h / 2,
              dm_img, QColor(0, 0, 0, 70), dmActive ? 1.0 : 0.2);
   }
+  p.restore();
 }
 
 void NvgWindow::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
