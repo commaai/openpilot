@@ -12,8 +12,7 @@ Version 0.8.14 (2022-0X-XX)
    * Effective feedforward that uses road roll
    * Simplified tuning, all car-specific parameters can be derived from data
    * Initially used on TSS2 Corolla and TSS-P RAV4
- * Add Disengage on Accelerator Pedal toggle
-   * openpilot can now optionally continue to steer while accelerator is pressed
+ * Added toggle to disable disengaging on the accelerator pedal
  * comma body support
  * Audi RS3 support thanks to jyoung8607!
  * Hyundai Ioniq Plug-in Hybrid 2019 support thanks to sunnyhaibin!
