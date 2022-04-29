@@ -112,10 +112,10 @@ class CarController:
     self.apply_brake_last = 0
     self.last_pump_ts = 0.
 
-    self.accel = 0
-    self.speed = 0
-    self.gas = 0
-    self.brake = 0
+    self.accel = 0.0
+    self.speed = 0.0
+    self.gas = 0.0
+    self.brake = 0.0
 
   def update(self, CC, CS):
     actuators = CC.actuators
