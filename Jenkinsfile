@@ -30,7 +30,7 @@ END"""
 
 def phone_steps(String device_type, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
-    timeout(time: 60, unit: 'MINUTES') {
+    timeout(time: 20, unit: 'MINUTES') {
       phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
       steps.each { item ->
         phone(device_ip, item[0], item[1])
@@ -46,7 +46,7 @@ pipeline {
     SOURCE_DIR = "/data/openpilot_source/"
   }
   options {
-      timeout(time: 4, unit: 'HOURS')
+    timeout(time: 4, unit: 'HOURS')
   }
 
   stages {
