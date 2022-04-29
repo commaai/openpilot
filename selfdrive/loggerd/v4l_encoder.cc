@@ -327,10 +327,15 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 
 void V4LEncoder::encoder_close() {
   if (this->is_open) {
+    // pop all the frames before closing, then put the buffers back
+    for (int i = 0; i < BUF_IN_COUNT; i++) free_buf_in.pop();
+    for (int i = 0; i < BUF_IN_COUNT; i++) free_buf_in.push(i);
+    // no frames, stop the encoder
     struct v4l2_encoder_cmd encoder_cmd = { .cmd = V4L2_ENC_CMD_STOP };
     checked_ioctl(fd, VIDIOC_ENCODER_CMD, &encoder_cmd);
     // join waits for V4L2_QCOM_BUF_FLAG_EOS
     dequeue_handler_thread.join();
+    assert(extras.empty());
   }
   this->is_open = false;
 }
