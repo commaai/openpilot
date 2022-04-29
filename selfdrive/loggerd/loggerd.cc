@@ -1,4 +1,5 @@
 #include "selfdrive/loggerd/loggerd.h"
+#include "selfdrive/loggerd/video_writer.h"
 
 ExitHandler do_exit;
 
@@ -191,6 +192,7 @@ void loggerd_thread() {
     bool encoder;
   } QlogState;
   std::unordered_map<SubSocket*, QlogState> qlog_states;
+  std::unordered_map<SubSocket*, std::unique_ptr<VideoWriter> > video_writers;
 
   std::unique_ptr<Context> ctx(Context::create());
   std::unique_ptr<Poller> poller(Poller::create());
@@ -242,20 +244,46 @@ void loggerd_thread() {
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
         const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
-        printf("%s %zu\n", qs.name.c_str(), msg->getSize());
+        //printf("%s %zu\n", qs.name.c_str(), msg->getSize());
 
         if (qs.encoder) {
+          // TODO: aligned buffer makes a copy, is this always required?
           capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg->getData(), msg->getSize()));
           auto event = cmsg.getRoot<cereal::Event>();
           auto edata = (qs.name == "driverEncodeData") ? event.getDriverEncodeData() :
             ((qs.name == "wideRoadEncodeData") ? event.getWideRoadEncodeData() :
             ((qs.name == "qRoadEncodeData") ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
+          auto idx = edata.getIdx();
+
+          const LogCameraInfo &cam_info = (qs.name == "driverEncodeData") ? cameras_logged[1] :
+            ((qs.name == "wideRoadEncodeData") ? cameras_logged[2] :
+            ((qs.name == "qRoadEncodeData") ? qcam_info : cameras_logged[0]));
+
+          #define V4L2_BUF_FLAG_KEYFRAME 0x00000008
+          auto flags = idx.getFlags();
+          if (cam_info.record && !video_writers[sock] && (flags & V4L2_BUF_FLAG_KEYFRAME)) {
+            // only create on pframe
+            video_writers[sock].reset(new VideoWriter(s.segment_path,
+               cam_info.filename, !cam_info.is_h265,
+               cam_info.frame_width, cam_info.frame_height,
+               cam_info.fps, cam_info.is_h265, false));
+            // write the header
+            auto header = edata.getHeader();
+            video_writers[sock]->write((uint8_t *)header.begin(), header.size(),
+              idx.getTimestampEof()/1000, true, false);
+          }
+          if (video_writers[sock]) {
+            auto data = edata.getData();
+            if (data.size() > 0) {
+              video_writers[sock]->write((uint8_t *)data.begin(), data.size(),
+                idx.getTimestampEof()/1000, false, flags & V4L2_BUF_FLAG_KEYFRAME);
+            }
+          }
 
           // put it in log stream as the idx packet
           MessageBuilder bmsg;
           auto evt = bmsg.initEvent(event.getValid());
           evt.setLogMonoTime(event.getLogMonoTime());
-          auto idx = edata.getIdx();
           if (qs.name == "driverEncodeData") { evt.setDriverEncodeIdx(idx); }
           if (qs.name == "wideRoadEncodeData") { evt.setWideRoadEncodeIdx(idx); }
           if (qs.name == "qRoadEncodeData") { evt.setQRoadEncodeIdx(idx); }
