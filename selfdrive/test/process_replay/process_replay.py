@@ -332,6 +332,17 @@ CONFIGS = [
     tolerance=None,
     fake_pubsubmaster=False,
   ),
+  ProcessConfig(
+    proc_name="laikad",
+    pub_sub={
+      "ubloxGnss": ["gnssMeasurements"],
+    },
+    ignore=["logMonoTime"],
+    init_callback=None,
+    should_recv_callback=None,
+    tolerance=None,
+    fake_pubsubmaster=False,
+  ),
 ]
 
 
