@@ -28,18 +28,6 @@ class TestCarlaIntegration(unittest.TestCase):
     # Wait 10 seconds to startup carla
     time.sleep(10)
 
-  def test_run_bridge(self):
-    # Test bridge connect with carla and runs without any errors for 30 seconds
-    test_duration = 30
-
-    carla_bridge = CarlaBridge(bridge.parse_args([]))
-    p = carla_bridge.run(Queue(), retries=3)
-    self.processes.append(p)
-
-    time.sleep(test_duration)
-
-    self.assertEqual(p.exitcode, None, f"Bridge process should be running, but exited with code {p.exitcode}")
-
   def test_engage(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
     p_manager = subprocess.Popen("./launch_openpilot.sh", cwd='../')
