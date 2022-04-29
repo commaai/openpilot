@@ -285,9 +285,11 @@ class Controls:
         self.events.add(EventName.relayMalfunction)
 
     # Check for HW or system issues
-    if len(self.sm['radarState'].radarErrors):
+    if self.rk.lagging:
+      self.events.add(EventName.controlsdLagging)
+    elif len(self.sm['radarState'].radarErrors):
       self.events.add(EventName.radarFault)
-    elif not self.sm.valid["pandaStates"]:
+    elif not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
     elif not self.sm.all_checks() or self.can_rcv_error:
 
@@ -352,10 +354,11 @@ class Controls:
           # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
           self.events.add(EventName.noGps)
 
-      if not self.sm.all_alive(self.camera_packets):
-        self.events.add(EventName.cameraMalfunction)
-      elif not self.sm.all_freq_ok(self.camera_packets):
-        self.events.add(EventName.cameraFrameRate)
+      if not self.rk.lagging:
+        if not self.sm.all_alive(self.camera_packets):
+          self.events.add(EventName.cameraMalfunction)
+        elif not self.sm.all_freq_ok(self.camera_packets):
+          self.events.add(EventName.cameraFrameRate)
 
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
