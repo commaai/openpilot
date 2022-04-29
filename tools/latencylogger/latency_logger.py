@@ -95,11 +95,14 @@ def find_frame_id(time, service, start_times, end_times):
 
 def find_t0(start_times, frame_id=-1):
   frame_id = frame_id if frame_id > -1 else min(start_times.keys())
-  while True:
+  m = max(start_times.keys())
+  while frame_id <= m:
     for service in SERVICES:
       if service in start_times[frame_id]:
         return start_times[frame_id][service]
     frame_id += 1
+  raise Exception('No start time has been set')
+
 
 ## ASSUMES THAT AT LEAST ONE CLOUDLOG IS MADE IN CONTROLSD
 def insert_cloudlogs(lr, timestamps, start_times, end_times):
