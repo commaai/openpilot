@@ -15,27 +15,18 @@ class TestCarlaIntegration(unittest.TestCase):
   Tests need Carla simulator to run
   """
   processes = None
+  carla_process = None
 
   def setUp(self):
     self.processes = []
-    # We want to make sure that carla_sim docker is still running. Skip output shell
+    # We want to make sure that carla_sim docker isn't still running.
     subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
 
-    self.processes.append(subprocess.Popen(".././start_carla.sh"))
+    self.carla_process = subprocess.Popen(".././start_carla.sh")
     # Too many lagging messages in bridge.py can cause a crash. This prevents it.
     unblock_stdout()
-
-  def test_run_bridge(self):
-    # Test bridge connect with carla and runs without any errors for 60 seconds
-    test_duration = 60
-
-    carla_bridge = CarlaBridge(bridge.parse_args(['--low_quality']))
-    p = carla_bridge.run(Queue(), retries=3)
-    self.processes = [p]
-
-    time.sleep(test_duration)
-
-    self.assertEqual(p.exitcode, None, f"Bridge process should be running, but exited with code {p.exitcode}")
+    # Wait 10 seconds to startup carla
+    time.sleep(10)
 
   def test_engage(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
@@ -44,7 +35,7 @@ class TestCarlaIntegration(unittest.TestCase):
 
     sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
     q = Queue()
-    carla_bridge = CarlaBridge(bridge.parse_args(['--low_quality']))
+    carla_bridge = CarlaBridge(bridge.parse_args([]))
     p_bridge = carla_bridge.run(q, retries=3)
     self.processes.append(p_bridge)
 
@@ -70,7 +61,7 @@ class TestCarlaIntegration(unittest.TestCase):
         no_car_events_issues_once = True
         break
 
-    self.assertTrue(no_car_events_issues_once, f"Failed because sm offline, or CarEvents '{car_event_issues}' or processes not running '{not_running}'")
+    self.assertTrue(no_car_events_issues_once, f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'")
 
     start_time = time.monotonic()
     min_counts_control_active = 100
@@ -99,8 +90,11 @@ class TestCarlaIntegration(unittest.TestCase):
         p.wait(15)
       else:
         p.join(15)
-    subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
 
+    # Stop carla simulator by removing docker container
+    subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
+    if self.carla_process is not None:
+      self.carla_process.wait()
 
 
 if __name__ == "__main__":
