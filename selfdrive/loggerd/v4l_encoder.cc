@@ -18,7 +18,7 @@
 // echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
-#define checked_ioctl(x,y,z) { int _ret = HANDLE_EINTR(ioctl(x,y,z)); assert(_ret==0); }
+#define checked_ioctl(x,y,z) { int _ret = HANDLE_EINTR(ioctl(x,y,z)); if (_ret!=0) { LOGE("checked_ioctl failed %d %lx %p", x, y, z); } assert(_ret==0); }
 
 static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
   v4l2_plane plane = {0};
@@ -66,37 +66,6 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
   };
   checked_ioctl(fd, VIDIOC_REQBUFS, &reqbuf);
 }
-
-// TODO: writing should be moved to loggerd
-/*void V4LEncoder::write_handler(V4LEncoder *e, const char *path) {
-  VideoWriter writer(path, e->filename, e->remuxing, e->width, e->height, e->fps, !e->remuxing, false);
-
-  bool exit = false;
-  while (!exit) {
-    auto out_buf = e->to_write.pop();
-
-    capnp::FlatArrayMessageReader cmsg(*out_buf);
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-    auto edata = (e->type == DriverCam) ? event.getDriverEncodeData() :
-      ((e->type == WideRoadCam) ? event.getWideRoadEncodeData() :
-      (e->remuxing ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
-    auto flags = edata.getFlags();
-    if (flags & V4L2_QCOM_BUF_FLAG_EOS) exit = true;
-
-    // dangerous cast from const, but should be fine
-    auto data = edata.getData();
-    if (data.size() > 0) {
-      writer.write((uint8_t *)data.begin(), data.size(), edata.getTimestampEof(),
-        flags & V4L2_QCOM_BUF_FLAG_CODECCONFIG, flags & V4L2_BUF_FLAG_KEYFRAME);
-    }
-
-    // free the data
-    delete out_buf;
-  }
-
-  // VideoWriter is freed on out of scope
-}*/
 
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   std::string dequeue_thread_name = "dq-"+std::string(e->filename);
