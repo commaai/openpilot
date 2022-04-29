@@ -188,6 +188,7 @@ void loggerd_thread() {
   typedef struct QlogState {
     std::string name;
     int counter, freq;
+    bool encoder;
   } QlogState;
   std::unordered_map<SubSocket*, QlogState> qlog_states;
 
@@ -201,11 +202,13 @@ void loggerd_thread() {
 
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
     assert(sock != NULL);
+
     poller->registerSocket(sock);
     qlog_states[sock] = {
       .name = it.name,
       .counter = 0,
       .freq = it.decimation,
+      .encoder = strcmp(it.name+strlen(it.name)-strlen("EncodeData"), "EncodeData")==0
     };
   }
 
@@ -220,13 +223,14 @@ void loggerd_thread() {
   std::vector<std::thread> encoder_threads;
   for (const auto &cam : cameras_logged) {
     if (cam.enable) {
-      encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
+      //encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
       if (cam.trigger_rotate) s.max_waiting++;
     }
   }
 
   uint64_t msg_count = 0, bytes_count = 0;
   double start_ts = millis_since_boot();
+  AlignedBuffer aligned_buf;
   while (!do_exit) {
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
@@ -238,9 +242,33 @@ void loggerd_thread() {
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
         const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
-        logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
-        bytes_count += msg->getSize();
-        delete msg;
+        printf("%s %zu\n", qs.name.c_str(), msg->getSize());
+
+        if (qs.encoder) {
+          capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg->getData(), msg->getSize()));
+          auto event = cmsg.getRoot<cereal::Event>();
+          auto edata = (qs.name == "driverEncodeData") ? event.getDriverEncodeData() :
+            ((qs.name == "wideRoadEncodeData") ? event.getWideRoadEncodeData() :
+            ((qs.name == "qRoadEncodeData") ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
+
+          // put it in log stream as the idx packet
+          MessageBuilder bmsg;
+          auto evt = bmsg.initEvent(event.getValid());
+          evt.setLogMonoTime(event.getLogMonoTime());
+          auto idx = edata.getIdx();
+          if (qs.name == "driverEncodeData") { evt.setDriverEncodeIdx(idx); }
+          if (qs.name == "wideRoadEncodeData") { evt.setWideRoadEncodeIdx(idx); }
+          if (qs.name == "qRoadEncodeData") { evt.setQRoadEncodeIdx(idx); }
+          if (qs.name == "roadEncodeData") { evt.setRoadEncodeIdx(idx); }
+          auto new_msg = bmsg.toBytes();
+          logger_log(&s.logger, (uint8_t *)new_msg.begin(), new_msg.size(), in_qlog);
+          bytes_count += new_msg.size();
+          delete msg;
+        } else {
+          logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
+          bytes_count += msg->getSize();
+          delete msg;
+        }
 
         rotate_if_needed(&s);
 

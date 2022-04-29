@@ -146,9 +146,10 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         // broadcast packet
         MessageBuilder msg;
         auto event = msg.initEvent(true);
-        auto edata = (e->type == DriverCam) ? event.initDriverEncodeIdx() :
-          ((e->type == WideRoadCam) ? event.initWideRoadEncodeIdx() :
-          (e->h265 ? event.initRoadEncodeIdx() : event.initQRoadEncodeIdx()));
+        auto edat = (e->type == DriverCam) ? event.initDriverEncodeData() :
+          ((e->type == WideRoadCam) ? event.initWideRoadEncodeData() :
+          (e->h265 ? event.initRoadEncodeData() : event.initQRoadEncodeData()));
+        auto edata = edat.initIdx();
         edata.setFrameId(extra.frame_id);
         edata.setTimestampSof(extra.timestamp_sof);
         edata.setTimestampEof(extra.timestamp_eof);
@@ -157,8 +158,9 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         edata.setSegmentNum(e->segment_num);
         edata.setSegmentId(idx);
         edata.setFlags(flags);
-        edata.setData(kj::arrayPtr<capnp::byte>(buf, bytesused));
-        if (flags & V4L2_BUF_FLAG_KEYFRAME) edata.setHeader(header);
+        edata.setLen(bytesused);
+        edat.setData(kj::arrayPtr<capnp::byte>(buf, bytesused));
+        if (flags & V4L2_BUF_FLAG_KEYFRAME) edat.setHeader(header);
         e->pm->send(e->service_name, msg);
       }
 
@@ -305,9 +307,9 @@ V4LEncoder::V4LEncoder(
   }
 
   // publish
-  service_name = this->type == DriverCam ? "driverEncodeIdx" :
-    (this->type == WideRoadCam ? "wideRoadEncodeIdx" :
-    (this->h265 ? "roadEncodeIdx" : "qRoadEncodeIdx"));
+  service_name = this->type == DriverCam ? "driverEncodeData" :
+    (this->type == WideRoadCam ? "wideRoadEncodeData" :
+    (this->h265 ? "roadEncodeData" : "qRoadEncodeData"));
   pm.reset(new PubMaster({service_name}));
 }
 
