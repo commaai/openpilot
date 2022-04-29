@@ -11,7 +11,7 @@ For this case, we have a the simulator in low quality by default.
 You can also check out the [CARLA python documentation](https://carla.readthedocs.io/en/latest/python_api/) to find more parameters to tune that might increase performance on your system.
 
 ## Running the simulator
-Start Carla simulator, openpilot and bridge processes:
+Start Carla simulator, openpilot and bridge processes located in tools/sim:
 ``` bash
 # Terminal 1
 ./start_carla.sh
