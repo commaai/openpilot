@@ -6,7 +6,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, EPS_SCALE
+from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE
 
 
 class CarState(CarStateBase):
@@ -91,8 +91,12 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    if self.CP.carFingerprint in TSS2_CAR:
+    if self.CP.carFingerprint in RADAR_ACC_CAR:
+      self.acc_type = cp.vl["ACC_CONTROL"]["ACC_TYPE"]
+      ret.stockFcw = bool(cp.vl["ACC_HUD"]["FCW"])
+    elif self.CP.carFingerprint in TSS2_CAR:
       self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
+      ret.stockFcw = bool(cp_cam.vl["ACC_HUD"]["FCW"])
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
@@ -114,9 +118,6 @@ class CarState(CarStateBase):
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
     ret.stockAeb = bool(cp_cam.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cam.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
-
-    if self.CP.carFingerprint in TSS2_CAR:
-      ret.stockFcw = bool(cp_cam.vl["ACC_HUD"]["FCW"])
 
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
@@ -207,6 +208,16 @@ class CarState(CarStateBase):
       ]
       checks.append(("BSM", 1))
 
+    if CP.carFingerprint in RADAR_ACC_CAR:
+      signals += [
+        ("ACC_TYPE", "ACC_CONTROL"),
+        ("FCW", "ACC_HUD"),
+      ]
+      checks += [
+        ("ACC_CONTROL", 33),
+        ("ACC_HUD", 1),
+      ]
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
@@ -222,7 +233,7 @@ class CarState(CarStateBase):
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
     ]
 
-    if CP.carFingerprint in TSS2_CAR:
+    if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       signals += [
         ("ACC_TYPE", "ACC_CONTROL"),
         ("FCW", "ACC_HUD"),
