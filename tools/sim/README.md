@@ -27,7 +27,7 @@ Start Carla simulator, openpilot and bridge processes:
 ```
 
 ### Bridge usage
-
+_Same commands hold for start_openpilot_docker_
 ```
 $ ./bridge.py -h
 Usage: bridge.py [options]
