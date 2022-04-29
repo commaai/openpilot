@@ -307,7 +307,7 @@ class Controls:
 
     # generic catch-all. ideally, a more specific event should be added above instead
     no_system_errors = len(self.events) != num_events
-    if (not self.sm.all_checks() or self.can_rcv_error) and no_system_errors:
+    if (not self.sm.all_checks() or self.can_rcv_error) and no_system_errors and CS.canValid and not CS.canTimeout:
       if not self.sm.all_alive():
         self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
