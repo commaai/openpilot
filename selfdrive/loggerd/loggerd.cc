@@ -1,5 +1,6 @@
 #include "selfdrive/loggerd/loggerd.h"
 #include "selfdrive/loggerd/video_writer.h"
+#define V4L2_BUF_FLAG_KEYFRAME 0x00000008
 
 ExitHandler do_exit;
 
@@ -184,6 +185,94 @@ void rotate_if_needed(LoggerdState *s) {
   }
 }
 
+struct RemoteEncoder {
+  std::unique_ptr<VideoWriter> writer;
+  int segment = -1;
+  std::vector<Message *> q;
+  int logger_segment = -1;
+  int dropped_frames = 0;
+};
+
+int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re) {
+  const LogCameraInfo &cam_info = (name == "driverEncodeData") ? cameras_logged[1] :
+    ((name == "wideRoadEncodeData") ? cameras_logged[2] :
+    ((name == "qRoadEncodeData") ? qcam_info : cameras_logged[0]));
+  if (!cam_info.record) return 0; // TODO: handle this by not subscribing
+
+  int bytes_count = 0;
+
+  // TODO: AlignedBuffer is making a copy and allocing
+  //AlignedBuffer aligned_buf;
+  //capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg->getData(), msg->getSize()));
+  capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize()));
+  auto event = cmsg.getRoot<cereal::Event>();
+  auto edata = (name == "driverEncodeData") ? event.getDriverEncodeData() :
+    ((name == "wideRoadEncodeData") ? event.getWideRoadEncodeData() :
+    ((name == "qRoadEncodeData") ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
+  auto idx = edata.getIdx();
+  auto flags = idx.getFlags();
+
+  // rotation happened, process the queue (happens before the current message)
+  if (re.logger_segment != s->rotate_segment) {
+    re.logger_segment = s->rotate_segment;
+    for (auto &qmsg: re.q) {
+      bytes_count += handle_encoder_msg(s, qmsg, name, re);
+    }
+    re.q.clear();
+  }
+
+  if (!re.writer) {
+    // only create on pframe
+    if (flags & V4L2_BUF_FLAG_KEYFRAME) {
+      if (re.dropped_frames) {
+        // this should only happen for the first segment, maybe
+        LOGD("%s: dropped %d non pframe packets before init", name.c_str(), re.dropped_frames);
+        re.dropped_frames = 0;
+      }
+      re.writer.reset(new VideoWriter(s->segment_path,
+        cam_info.filename, !cam_info.is_h265,
+        cam_info.frame_width, cam_info.frame_height,
+        cam_info.fps, cam_info.is_h265, false));
+      // write the header
+      auto header = edata.getHeader();
+      re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
+      re.segment = idx.getSegmentNum();
+    } else {
+      ++re.dropped_frames;
+      return bytes_count;
+    }
+  }
+
+  if (re.segment != idx.getSegmentNum()) {
+    if (re.writer) {
+      // encoder is on the next segment, this segment is over so we close the videowriter
+      re.writer.reset();
+      ++s->ready_to_rotate;
+      LOGD("rotate %d -> %d ready %d/%d", re.segment, idx.getSegmentNum(), s->ready_to_rotate.load(), s->max_waiting);
+    }
+    // queue up all the new segment messages, they go in after the rotate
+    re.q.push_back(msg);
+  } else {
+    auto data = edata.getData();
+    re.writer->write((uint8_t *)data.begin(), data.size(), idx.getTimestampEof()/1000, false, flags & V4L2_BUF_FLAG_KEYFRAME);
+
+    // put it in log stream as the idx packet
+    MessageBuilder bmsg;
+    auto evt = bmsg.initEvent(event.getValid());
+    evt.setLogMonoTime(event.getLogMonoTime());
+    if (name == "driverEncodeData") { evt.setDriverEncodeIdx(idx); }
+    if (name == "wideRoadEncodeData") { evt.setWideRoadEncodeIdx(idx); }
+    if (name == "qRoadEncodeData") { evt.setQRoadEncodeIdx(idx); }
+    if (name == "roadEncodeData") { evt.setRoadEncodeIdx(idx); }
+    auto new_msg = bmsg.toBytes();
+    logger_log(&s->logger, (uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
+    delete msg;
+    bytes_count += new_msg.size();
+  }
+
+  return bytes_count;
+}
+
 void loggerd_thread() {
   // setup messaging
   typedef struct QlogState {
@@ -192,7 +281,7 @@ void loggerd_thread() {
     bool encoder;
   } QlogState;
   std::unordered_map<SubSocket*, QlogState> qlog_states;
-  std::unordered_map<SubSocket*, std::unique_ptr<VideoWriter> > video_writers;
+  std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
 
   std::unique_ptr<Context> ctx(Context::create());
   std::unique_ptr<Poller> poller(Poller::create());
@@ -227,6 +316,7 @@ void loggerd_thread() {
     if (cam.enable) {
       //encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
       if (cam.trigger_rotate) s.max_waiting++;
+      if (cam.trigger_rotate && cam.has_qcamera) s.max_waiting++;
     }
   }
 
@@ -247,51 +337,7 @@ void loggerd_thread() {
         //printf("%s %zu\n", qs.name.c_str(), msg->getSize());
 
         if (qs.encoder) {
-          // TODO: aligned buffer makes a copy, is this always required?
-          capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg->getData(), msg->getSize()));
-          auto event = cmsg.getRoot<cereal::Event>();
-          auto edata = (qs.name == "driverEncodeData") ? event.getDriverEncodeData() :
-            ((qs.name == "wideRoadEncodeData") ? event.getWideRoadEncodeData() :
-            ((qs.name == "qRoadEncodeData") ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
-          auto idx = edata.getIdx();
-
-          const LogCameraInfo &cam_info = (qs.name == "driverEncodeData") ? cameras_logged[1] :
-            ((qs.name == "wideRoadEncodeData") ? cameras_logged[2] :
-            ((qs.name == "qRoadEncodeData") ? qcam_info : cameras_logged[0]));
-
-          #define V4L2_BUF_FLAG_KEYFRAME 0x00000008
-          auto flags = idx.getFlags();
-          if (cam_info.record && !video_writers[sock] && (flags & V4L2_BUF_FLAG_KEYFRAME)) {
-            // only create on pframe
-            video_writers[sock].reset(new VideoWriter(s.segment_path,
-               cam_info.filename, !cam_info.is_h265,
-               cam_info.frame_width, cam_info.frame_height,
-               cam_info.fps, cam_info.is_h265, false));
-            // write the header
-            auto header = edata.getHeader();
-            video_writers[sock]->write((uint8_t *)header.begin(), header.size(),
-              idx.getTimestampEof()/1000, true, false);
-          }
-          if (video_writers[sock]) {
-            auto data = edata.getData();
-            if (data.size() > 0) {
-              video_writers[sock]->write((uint8_t *)data.begin(), data.size(),
-                idx.getTimestampEof()/1000, false, flags & V4L2_BUF_FLAG_KEYFRAME);
-            }
-          }
-
-          // put it in log stream as the idx packet
-          MessageBuilder bmsg;
-          auto evt = bmsg.initEvent(event.getValid());
-          evt.setLogMonoTime(event.getLogMonoTime());
-          if (qs.name == "driverEncodeData") { evt.setDriverEncodeIdx(idx); }
-          if (qs.name == "wideRoadEncodeData") { evt.setWideRoadEncodeIdx(idx); }
-          if (qs.name == "qRoadEncodeData") { evt.setQRoadEncodeIdx(idx); }
-          if (qs.name == "roadEncodeData") { evt.setRoadEncodeIdx(idx); }
-          auto new_msg = bmsg.toBytes();
-          logger_log(&s.logger, (uint8_t *)new_msg.begin(), new_msg.size(), in_qlog);
-          bytes_count += new_msg.size();
-          delete msg;
+          bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock]);
         } else {
           logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
           bytes_count += msg->getSize();
