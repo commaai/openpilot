@@ -20,7 +20,8 @@ logger_lib = env.Library('logger', src)
 libs.insert(0, logger_lib)
 
 env.Program('loggerd', ['main.cc', 'loggerd.cc'], LIBS=libs)
-env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
+if arch == "larch64":
+  env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
 env.Program('bootlog.cc', LIBS=libs)
 
 if GetOption('test'):

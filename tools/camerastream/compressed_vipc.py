@@ -11,10 +11,7 @@ V4L2_BUF_FLAG_KEYFRAME = 8
 
 def writer(fn, addr, sock_name):
   import cereal.messaging as messaging
-  HEADER = b"\x00\x00\x00\x01\x40\x01\x0c\x01\xff\xff\x01\x60\x00\x00\x03\x00\xb0\x00\x00\x03\x00\x00\x03\x00\x96\xac\x09\x00\x00\x00\x01\x42\x01\x01\x01\x60\x00\x00\x03\x00\xb0\x00\x00\x03\x00\x00\x03\x00\x96\xa0\x03\xd0\x80\x13\x07\x1b\x2e\x5a\xee\x4c\x92\xea\x00\xbb\x42\x84\xa0\x00\x00\x00\x01\x44\x01\xc0\xe2\x4f\x09\xc1\x80\xc6\x08\x40\x00"
   fifo_file = open(fn, "wb")
-  fifo_file.write(HEADER)
-  fifo_file.flush()
 
   os.environ["ZMQ"] = "1"
   messaging.context = messaging.Context()
@@ -26,12 +23,14 @@ def writer(fn, addr, sock_name):
     msgs = messaging.drain_sock(sock, wait_for_one=True)
     for evt in msgs:
       evta = getattr(evt, evt.which())
-      lat = ((evt.logMonoTime/1e9) - (evta.timestampEof/1e6))*1000
-      print("%2d %4d %.3f %.3f latency %.2f ms" % (len(msgs), evta.idx, evt.logMonoTime/1e9, evta.timestampEof/1e6, lat), len(evta.data), sock_name)
-      if evta.idx != 0 and evta.idx != (last_idx+1):
+      lat = ((evt.logMonoTime/1e9) - (evta.idx.timestampEof/1e9))*1000
+      print("%2d %4d %.3f %.3f latency %.2f ms" % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, lat), len(evta.data), sock_name)
+      if evta.idx.encodeId != 0 and evta.idx.encodeId != (last_idx+1):
         print("DROP!")
-      last_idx = evta.idx
-      if evta.flags & V4L2_BUF_FLAG_KEYFRAME or evta.flags == 0x7f001030:
+      last_idx = evta.idx.encodeId
+      if evta.idx.flags & V4L2_BUF_FLAG_KEYFRAME:
+        fifo_file.write(evta.header)
+        fifo_file.flush()
         seen_iframe = True
       if not seen_iframe:
         print("waiting for iframe")
