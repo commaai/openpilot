@@ -138,7 +138,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
 
       // eof packet, we exit
       if (flags & V4L2_QCOM_BUF_FLAG_EOS) {
-        e->to_write.push(NULL);
+        if (e->write) e->to_write.push(NULL);
         exit = true;
       } else if (flags & V4L2_QCOM_BUF_FLAG_CODECCONFIG) {
         // save header
