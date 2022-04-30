@@ -59,9 +59,8 @@ class CAR:
   KIA_FORTE = "KIA FORTE E 2018 & GT 2021"
   KIA_K5_2021 = "KIA K5 2021"
   KIA_NIRO_EV = "KIA NIRO EV 2020"
-  KIA_NIRO_HEV = "KIA NIRO HYBRID 2019"
+  KIA_NIRO_PHEV = "KIA NIRO HYBRID 2019"
   KIA_NIRO_HEV_2021 = "KIA NIRO HYBRID 2021"
-  KIA_NIRO_PHEV = "KIA NIRO PLUG-IN HYBRID 2018"
   KIA_OPTIMA = "KIA OPTIMA SX 2019 & 2016"
   KIA_OPTIMA_H = "KIA OPTIMA HYBRID 2017 & SPORTS 2019"
   KIA_SELTOS = "KIA SELTOS 2021"
@@ -114,9 +113,11 @@ CAR_INFO: Dict[str, Union[HyundaiCarInfo, List[HyundaiCarInfo]]] = {
   CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2018-21"),
   CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "SCC + LFA"),
   CAR.KIA_NIRO_EV: HyundaiCarInfo("Kia Niro Electric 2019-22", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo"),
-  CAR.KIA_NIRO_HEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2019", min_enable_speed=10. * CV.MPH_TO_MS),
+  CAR.KIA_NIRO_PHEV: [
+    HyundaiCarInfo("Kia Niro Plug-in Hybrid 2019", min_enable_speed=10. * CV.MPH_TO_MS),
+    HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018", min_enable_speed=19. * CV.MPH_TO_MS),
+  ],
   CAR.KIA_NIRO_HEV_2021: HyundaiCarInfo("Kia Niro Hybrid 2021-22"),
-  CAR.KIA_NIRO_PHEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018", "SCC + LKAS", min_enable_speed=19. * CV.MPH_TO_MS),
   CAR.KIA_OPTIMA: [
     HyundaiCarInfo("Kia Optima 2017", min_steer_speed=32. * CV.MPH_TO_MS),
     HyundaiCarInfo("Kia Optima 2019"),
@@ -939,13 +940,15 @@ FW_VERSIONS = {
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.01 99211-Q4500 210428',
     ],
   },
-  CAR.KIA_NIRO_HEV: {
+  CAR.KIA_NIRO_PHEV: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H6F4051\000\000\000\000\000\000\000\000',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b"\xf1\x816U3J2051\000\000\xf1\0006U3H0_C2\000\0006U3J2051\000\000PDE0G16NS2\xf4\'\\\x91",
       b'\xf1\x816U3J2051\000\000\xf1\0006U3H0_C2\000\0006U3J2051\000\000PDE0G16NS2\000\000\000\000',
+      b'\xf1\x816U3H3051\x00\x00\xf1\x006U3H0_C2\x00\x006U3H3051\x00\x00PDE0G16NS1\x13\xcd\x88\x92',
+      b'\xf1\x816U3H3051\x00\x00\xf1\x006U3H0_C2\x00\x006U3H3051\x00\x00PDE0G16NS1\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\000DE  MDPS C 1.00 1.09 56310G5301\000 4DEHC109',
@@ -974,24 +977,6 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DEhe SCC FHCUP      1.00 1.00 99110-G5600         ',
-    ],
-  },
-  CAR.KIA_NIRO_PHEV: {
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x816H6D1051\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x816U3H3051\x00\x00\xf1\x006U3H0_C2\x00\x006U3H3051\x00\x00PDE0G16NS1\x13\xcd\x88\x92',
-      b'\xf1\x816U3H3051\x00\x00\xf1\x006U3H0_C2\x00\x006U3H3051\x00\x00PDE0G16NS1\x00\x00\x00\x00',
-    ],
-    (Ecu.eps, 0x7D4, None): [
-      b'\xf1\x00DE  MDPS C 1.00 1.09 56310G5301\x00 4DEHC109',
-    ],
-    (Ecu.fwdCamera, 0x7C4, None): [
-      b'\xf1\x00DEP MFC  AT USA LHD 1.00 1.01 95740-G5010 170424',
-    ],
-    (Ecu.fwdRadar, 0x7D0, None): [
-      b'\xf1\x00DEhe SCC H-CUP      1.01 1.02 96400-G5100         ',
     ],
   },
   CAR.KIA_SELTOS: {
@@ -1177,13 +1162,13 @@ FEATURES = {
   # which message has the gear
   "use_cluster_gears": {CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KONA},
   "use_tcu_gears": {CAR.KIA_OPTIMA, CAR.SONATA_LF, CAR.VELOSTER, CAR.TUCSON_DIESEL_2019},
-  "use_elect_gears": {CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019, CAR.KIA_NIRO_PHEV},
+  "use_elect_gears": {CAR.KIA_NIRO_EV, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019},
 
   # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
   "use_fca": {CAR.SONATA, CAR.SONATA_HYBRID, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.GENESIS_G70_2020, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS, CAR.KONA_HEV, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.TUCSON_DIESEL_2019},
 }
 
-HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019, CAR.KIA_NIRO_PHEV}  # these cars use a different gas signal
+HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019}  # these cars use a different gas signal
 EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV}
 
 # these cars require a special panda safety mode due to missing counters and checksums in the messages
@@ -1210,9 +1195,8 @@ DBC = {
   CAR.KIA_FORTE: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_K5_2021: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_NIRO_EV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
-  CAR.KIA_NIRO_HEV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
+  CAR.KIA_NIRO_PHEV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.KIA_NIRO_HEV_2021: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_NIRO_PHEV: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SELTOS: dbc_dict('hyundai_kia_generic', None),
