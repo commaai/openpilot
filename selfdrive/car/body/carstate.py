@@ -25,6 +25,8 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = True
     ret.cruiseState.available = True
 
+    ret.batteryPercent = cp.vl["BODY_DATA"]["BATT_PERCENTAGE"]
+
     return ret
 
   @staticmethod
