@@ -5,7 +5,7 @@ libs = [common, cereal, messaging, visionipc,
         'avformat', 'avcodec', 'swscale', 'avutil',
         'yuv', 'bz2', 'OpenCL', 'pthread']
 
-src = ['logger.cc', 'video_writer.cc', 'remote_encoder.cc']
+src = ['logger.cc', 'loggerd.cc', 'video_writer.cc', 'remote_encoder.cc']
 if arch == "larch64":
   src += ['v4l_encoder.cc']
 else:
@@ -19,7 +19,7 @@ if arch == "Darwin":
 logger_lib = env.Library('logger', src)
 libs.insert(0, logger_lib)
 
-env.Program('loggerd', ['main.cc', 'loggerd.cc'], LIBS=libs)
+env.Program('loggerd', ['main.cc'], LIBS=libs)
 if arch == "larch64":
   env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
 env.Program('bootlog.cc', LIBS=libs)
