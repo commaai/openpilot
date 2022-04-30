@@ -107,7 +107,8 @@ class TestEncoder(unittest.TestCase):
 
         # sanity check file size
         file_size = os.path.getsize(file_path)
-        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE))
+        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE),
+                        f"{file_path} size {file_size} isn't close to target size {size}")
 
         # Check encodeIdx
         if encode_idx_name is not None:
