@@ -200,8 +200,8 @@ void loggerd_thread() {
 
   // subscribe to all socks
   for (const auto& it : services) {
-    const bool encoder = strcmp(it.name+strlen(it.name)-strlen("EncodeData"), "EncodeData");
-    if (!it.should_log && !(encoder & USE_REMOTE_ENCODER)) continue;
+    const bool encoder = USE_REMOTE_ENCODER & (strcmp(it.name+strlen(it.name)-strlen("EncodeData"), "EncodeData") == 0);
+    if (!it.should_log && !encoder) continue;
     LOGD("logging %s (on port %d)", it.name, it.port);
 
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);

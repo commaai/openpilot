@@ -135,9 +135,8 @@ void encoderd_thread() {
 int main() {
   if (Hardware::TICI()) {
     int ret;
-    // TODO: set realtime when NV12 copy is gone
-    /*ret = util::set_realtime_priority(52);
-    assert(ret == 0);*/
+    ret = util::set_realtime_priority(52);
+    assert(ret == 0);
     ret = util::set_core_affinity({7});
     assert(ret == 0);
   }
