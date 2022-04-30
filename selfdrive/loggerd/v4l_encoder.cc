@@ -145,10 +145,9 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         header = kj::heapArray<capnp::byte>(buf, bytesused);
       } else {
         e->extras_lock.lock();
-        VisionIpcBufExtra extra = e->extras[ts];
+        VisionIpcBufExtra extra = e->extras.at(ts);
         e->extras.erase(ts);
         e->extras_lock.unlock();
-        assert(ts == extra.timestamp_eof/1000);
 
         frame_id = extra.frame_id;
         ++idx;
