@@ -3,6 +3,7 @@
 #include "selfdrive/common/queue.h"
 #include "selfdrive/loggerd/encoder.h"
 #include "selfdrive/loggerd/loggerd.h"
+#include "selfdrive/loggerd/video_writer.h"
 
 #define BUF_IN_COUNT 7
 #define BUF_OUT_COUNT 6
@@ -37,4 +38,11 @@ private:
   SafeQueue<unsigned int> free_buf_in;
 
   SafeQueue<VisionIpcBufExtra> extras;
+
+  // writing support
+  int width, height, fps;
+  bool write;
+  static void write_handler(V4LEncoder *e, const char *path);
+  std::thread write_handler_thread;
+  SafeQueue<kj::Array<capnp::word>* > to_write;
 };
