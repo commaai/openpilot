@@ -148,6 +148,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         VisionIpcBufExtra extra = e->extras[ts];
         e->extras.erase(ts);
         e->extras_lock.unlock();
+        assert(ts == extra.timestamp_eof/1000);
 
         frame_id = extra.frame_id;
         ++idx;
