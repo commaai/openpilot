@@ -222,11 +222,11 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   }
 
   if (!re.writer) {
-    // only create on pframe
+    // only create on iframe
     if (flags & V4L2_BUF_FLAG_KEYFRAME) {
       if (re.dropped_frames) {
         // this should only happen for the first segment, maybe
-        LOGD("%s: dropped %d non pframe packets before init", name.c_str(), re.dropped_frames);
+        LOGD("%s: dropped %d non iframe packets before init", name.c_str(), re.dropped_frames);
         re.dropped_frames = 0;
       }
       re.writer.reset(new VideoWriter(s->segment_path,
