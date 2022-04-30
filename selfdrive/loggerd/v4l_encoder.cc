@@ -144,8 +144,12 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         // save header
         header = kj::heapArray<capnp::byte>(buf, bytesused);
       } else {
-        VisionIpcBufExtra extra = e->extras.pop();
-        assert(extra.timestamp_eof/1000 == ts);  // stay in sync
+        e->extras_lock.lock();
+        auto ets = e->extras.find(ts);
+        VisionIpcBufExtra extra = ets->second;
+        e->extras.erase(ets);
+        e->extras_lock.unlock();
+
         frame_id = extra.frame_id;
         ++idx;
 
@@ -179,8 +183,8 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       }
 
       if (env_debug_encoder) {
-        printf("%20s got %6d bytes in buffer %d with flags %8x idx %4d id %8d ts %ld lat %.2f ms (%lu frames free)\n",
-          e->filename, bytesused, index, flags, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
+        printf("%20s got(%d) %6d bytes flags %8x idx %4d id %8d ts %ld lat %.2f ms (%lu frames free)\n",
+          e->filename, index, bytesused, flags, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
       }
 
       // requeue the buffer
@@ -263,7 +267,7 @@ V4LEncoder::V4LEncoder(
       { .id = V4L2_CID_MPEG_VIDEO_HEADER_MODE, .value = V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE},
       { .id = V4L2_CID_MPEG_VIDEO_BITRATE, .value = bitrate},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL, .value = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL_VBR_CFR},
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_ENABLE},
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_DISABLE},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_IDR_PERIOD, .value = 1},
     };
     for (auto ctrl : ctrls) {
@@ -341,6 +345,11 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   assert(in_height == in_height_);
   assert(is_open);
 
+  // save extras
+  extras_lock.lock();
+  extras[extra->timestamp_eof/1000] = *extra;
+  extras_lock.unlock();
+
   // reserve buffer
   int buffer_in = free_buf_in.pop();
 
@@ -364,7 +373,6 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   };
 
   // push buffer
-  extras.push(*extra);
   buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
   queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], timestamp);
 
