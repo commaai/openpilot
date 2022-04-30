@@ -37,8 +37,7 @@ private:
   VisionBuf buf_out[BUF_OUT_COUNT];
   SafeQueue<unsigned int> free_buf_in;
 
-  std::mutex extras_lock;
-  std::unordered_map<int64_t, VisionIpcBufExtra> extras;
+  SafeQueue<VisionIpcBufExtra> extras;
 
   // writing support
   int width, height, fps;

@@ -144,10 +144,8 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         // save header
         header = kj::heapArray<capnp::byte>(buf, bytesused);
       } else {
-        e->extras_lock.lock();
-        VisionIpcBufExtra extra = e->extras.at(ts);
-        e->extras.erase(ts);
-        e->extras_lock.unlock();
+        VisionIpcBufExtra extra = e->extras.pop();
+        assert(extra.timestamp_eof/1000 == ts); // stay in sync
 
         frame_id = extra.frame_id;
         ++idx;
@@ -344,11 +342,6 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   assert(in_height == in_height_);
   assert(is_open);
 
-  // save extras
-  extras_lock.lock();
-  extras[extra->timestamp_eof/1000] = *extra;
-  extras_lock.unlock();
-
   // reserve buffer
   int buffer_in = free_buf_in.pop();
 
@@ -372,6 +365,7 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   };
 
   // push buffer
+  extras.push(*extra);
   buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
   queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], timestamp);
 
