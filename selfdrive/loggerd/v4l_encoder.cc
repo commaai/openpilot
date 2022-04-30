@@ -391,6 +391,7 @@ void V4LEncoder::encoder_close() {
     dequeue_handler_thread.join();
     assert(extras.empty());
     if (this->write) write_handler_thread.join();
+    assert(to_write.empty());
   }
   this->is_open = false;
 }
