@@ -1,15 +1,13 @@
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc', 'gpucommon')
-
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
 
 libs = [common, cereal, messaging, visionipc,
         'zmq', 'capnp', 'kj', 'z',
         'avformat', 'avcodec', 'swscale', 'avutil',
         'yuv', 'bz2', 'OpenCL', 'pthread']
 
-src = ['logger.cc', 'loggerd.cc', 'video_writer.cc']
+src = ['logger.cc', 'loggerd.cc', 'video_writer.cc', 'remote_encoder.cc']
 if arch == "larch64":
-  src += ['omx_encoder.cc']
-  libs += ['OmxCore', 'gsl', 'CB'] + gpucommon
+  src += ['v4l_encoder.cc']
 else:
   src += ['raw_logger.cc']
 
@@ -22,6 +20,8 @@ logger_lib = env.Library('logger', src)
 libs.insert(0, logger_lib)
 
 env.Program('loggerd', ['main.cc'], LIBS=libs)
+if arch == "larch64":
+  env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
 env.Program('bootlog.cc', LIBS=libs)
 
 if GetOption('test'):
