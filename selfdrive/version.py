@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from importlib.resources import is_resource
 import os
 import subprocess
 from typing import List, Optional
