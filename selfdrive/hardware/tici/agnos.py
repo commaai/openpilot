@@ -105,6 +105,7 @@ def verify_partition(target_slot_number: int, partition: dict) -> bool:
   partition_size = partition['size']
 
   with open(path, 'rb+') as out:
+    res: bool
     if full_check:
       raw_hash = hashlib.sha256()
 
@@ -115,10 +116,12 @@ def verify_partition(target_slot_number: int, partition: dict) -> bool:
         raw_hash.update(out.read(n))
         pos += n
 
-      return raw_hash.hexdigest().lower() == partition['hash_raw'].lower()
+      res = raw_hash.hexdigest().lower() == partition['hash_raw'].lower()
+      return res
     else:
       out.seek(partition_size)
-      return out.read(64) == partition['hash_raw'].lower().encode()
+      res = out.read(64) == partition['hash_raw'].lower().encode()
+      return res
 
 
 def clear_partition_hash(target_slot_number: int, partition: dict) -> None:

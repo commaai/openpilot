@@ -36,8 +36,8 @@ MAX_ALLOWED_SPREAD = np.radians(2)
 RPY_INIT = np.array([0.0,0.0,0.0])
 
 # These values are needed to accommodate biggest modelframe
-PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
-YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
+PITCH_LIMITS: np.ndarray = np.array([-0.09074112085129739, 0.14907572052989657])
+YAW_LIMITS: np.ndarray = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
 
 
@@ -48,15 +48,17 @@ class Calibration:
 
 
 def is_calibration_valid(rpy: np.ndarray) -> bool:
-  return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
+  is_valid: bool = (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
+  return is_valid
 
 
 def sanity_clip(rpy: np.ndarray) -> np.ndarray:
   if np.isnan(rpy).any():
     rpy = RPY_INIT
-  return np.array([rpy[0],
-                   np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
-                   np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
+  clip: np.ndarray = np.array([rpy[0],
+                               np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
+                               np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
+  return clip
 
 
 class Calibrator:
@@ -84,6 +86,7 @@ class Calibrator:
     self.update_status()
 
   def reset(self, rpy_init: np.ndarray = RPY_INIT, valid_blocks: int = 0, smooth_from: Optional[np.ndarray] = None) -> None:
+    self.rpy: np.ndarray
     if not np.isfinite(rpy_init).all():
       self.rpy = RPY_INIT.copy()
     else:
@@ -145,7 +148,8 @@ class Calibrator:
 
   def get_smooth_rpy(self) -> np.ndarray:
     if self.old_rpy_weight > 0:
-      return self.old_rpy_weight * self.old_rpy + (1.0 - self.old_rpy_weight) * self.rpy
+      smooth_rpy: np.ndarray = self.old_rpy_weight * self.old_rpy + (1.0 - self.old_rpy_weight) * self.rpy
+      return smooth_rpy
     else:
       return self.rpy
 
@@ -165,6 +169,7 @@ class Calibrator:
     observed_rpy = np.array([0,
                              -np.arctan2(trans[2], trans[0]),
                              np.arctan2(trans[1], trans[0])])
+    new_rpy: np.ndarray
     new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
     new_rpy = sanity_clip(new_rpy)
 

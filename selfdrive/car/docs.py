@@ -62,11 +62,12 @@ def sort_by_tier(all_car_info: List[CarInfo]) -> Dict[Tier, List[CarInfo]]:
 
 def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
   with open(template_fn, "r") as f:
-    template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
+    template: jinja2.Template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  return template.render(tiers=sort_by_tier(all_car_info), all_car_info=all_car_info,
-                         footnotes=footnotes, Star=Star, Column=Column)
+  cars_md: str = template.render(tiers=sort_by_tier(all_car_info), all_car_info=all_car_info,
+                                 footnotes=footnotes, Star=Star, Column=Column)
+  return cars_md
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from importlib.resources import is_resource
 import os
 import subprocess
 from typing import List, Optional
@@ -60,21 +61,23 @@ def get_normalized_origin(default: Optional[str] = None) -> Optional[str]:
   if origin is None:
     return default
 
-  return origin.replace("git@", "", 1) \
-               .replace(".git", "", 1) \
-               .replace("https://", "", 1) \
-               .replace(":", "/", 1)
+  normalized: str = origin.replace("git@", "", 1) \
+                          .replace(".git", "", 1) \
+                          .replace("https://", "", 1) \
+                          .replace(":", "/", 1)
+  return normalized
 
 
 @cache
 def get_version() -> str:
   with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")) as _versionf:
-    version = _versionf.read().split('"')[1]
+    version: str = _versionf.read().split('"')[1]
   return version
 
 @cache
 def get_short_version() -> str:
-  return get_version().split('-')[0]
+  short_version: str = get_version().split('-')[0]
+  return short_version
 
 @cache
 def is_prebuilt() -> bool:
@@ -89,7 +92,8 @@ def is_comma_remote() -> bool:
   if origin is None:
     return False
 
-  return origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
+  is_remote: bool = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
+  return is_remote
 
 
 @cache
