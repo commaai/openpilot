@@ -116,7 +116,7 @@ CAR_INFO: Dict[str, Union[HyundaiCarInfo, List[HyundaiCarInfo]]] = {
   CAR.KIA_NIRO_EV: HyundaiCarInfo("Kia Niro Electric 2019-22", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo"),
   CAR.KIA_NIRO_HEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2019", min_enable_speed=10. * CV.MPH_TO_MS),
   CAR.KIA_NIRO_HEV_2021: HyundaiCarInfo("Kia Niro Hybrid 2021-22"),
-  CAR.KIA_NIRO_PHEV: HyundaiCarInfo("Kia Niro Plug-In Hybrid 2018", "SCC + LKAS"),
+  CAR.KIA_NIRO_PHEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018", "SCC + LKAS", min_enable_speed=19. * CV.MPH_TO_MS),
   CAR.KIA_OPTIMA: [
     HyundaiCarInfo("Kia Optima 2017", min_steer_speed=32. * CV.MPH_TO_MS),
     HyundaiCarInfo("Kia Optima 2019"),
