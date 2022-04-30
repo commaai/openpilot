@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-import unittest
-import time
+import os
 import math
+import shutil
+import subprocess
+import time
+import unittest
 from dataclasses import dataclass
 
+from common.basedir import BASEDIR
+from common.timeout import Timeout
+from common.params import Params
 from selfdrive.hardware import HARDWARE, TICI
-from selfdrive.hardware.tici.power_monitor import get_power
+from selfdrive.hardware.tici.power_monitor import get_power, sample_power
+from selfdrive.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.manager.manager import manager_cleanup
 
@@ -37,8 +44,32 @@ class TestPowerDraw(unittest.TestCase):
     HARDWARE.initialize_hardware()
     HARDWARE.set_power_save(False)
 
+    if os.path.isdir(ROOT):
+      shutil.rmtree(ROOT)
+
   def tearDown(self):
     manager_cleanup()
+
+  def test_offroad_power(self):
+    proc = None
+    try:
+      # force offroad
+      Params().delete("HasAcceptedTerms")
+
+      manager_path = os.path.join(BASEDIR, "selfdrive/manager/manager.py")
+      proc = subprocess.Popen(["python", manager_path])
+      time.sleep(45)
+      for n in range(15):
+        print("measuring", n)
+        import numpy as np
+        pwrs = sample_power(10)
+        print("  ", np.mean(pwrs), np.std(pwrs), np.min(pwrs), np.max(pwrs))
+        time.sleep(3)
+    finally:
+      if proc is not None:
+        proc.terminate()
+        if proc.wait(20) is None:
+          proc.kill()
 
   def test_camera_procs(self):
     baseline = get_power()
