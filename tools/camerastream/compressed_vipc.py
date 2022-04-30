@@ -30,18 +30,18 @@ def writer(fn, addr, sock_name):
       last_idx = evta.idx.encodeId
       if evta.idx.flags & V4L2_BUF_FLAG_KEYFRAME:
         fifo_file.write(evta.header)
-        fifo_file.flush()
         seen_iframe = True
       if not seen_iframe:
         print("waiting for iframe")
         continue
       fifo_file.write(evta.data)
-      fifo_file.flush()
+
+FFMPEG_OPTIONS = {"probesize": "32", "flags": "low_delay"}
 
 def decoder_nvidia(fn, vipc_server, vst, yuv=True, rgb=False):
   sys.path.append("/raid.dell2/PyNvCodec")
   import PyNvCodec as nvc # pylint: disable=import-error
-  decoder = nvc.PyNvDecoder(fn, 0, {"probesize": "32"})
+  decoder = nvc.PyNvDecoder(fn, 0, FFMPEG_OPTIONS)
   cc1 = nvc.ColorspaceConversionContext(nvc.ColorSpace.BT_709, nvc.ColorRange.JPEG)
 
   if rgb:
@@ -71,7 +71,7 @@ def decoder_nvidia(fn, vipc_server, vst, yuv=True, rgb=False):
 
 def decoder_ffmpeg(fn, vipc_server, vst, yuv=True, rgb=False):
   import av # pylint: disable=import-error
-  container = av.open(fn, options={"probesize": "32"})
+  container = av.open(fn, options=FFMPEG_OPTIONS)
   cnt = 0
   for frame in container.decode(video=0):
     if rgb:
@@ -86,6 +86,7 @@ import argparse
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Decode video streams and broacast on VisionIPC')
   parser.add_argument("addr", help="Address of comma 3")
+  parser.add_argument('--pipes', action='store_true', help='Only create pipes')
   parser.add_argument('--nvidia', action='store_true', help='Use nvidia instead of ffmpeg')
   parser.add_argument('--rgb', action='store_true', help='Also broadcast RGB')
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")
@@ -111,7 +112,9 @@ if __name__ == "__main__":
       os.unlink(FIFO_NAME)
     os.mkfifo(FIFO_NAME)
     multiprocessing.Process(target=writer, args=(FIFO_NAME, sys.argv[1], k)).start()
-    if args.nvidia:
+    if args.pipes:
+      print("connect to", FIFO_NAME)
+    elif args.nvidia:
       multiprocessing.Process(target=decoder_nvidia, args=(FIFO_NAME, vipc_server, v, True, args.rgb)).start()
     else:
       multiprocessing.Process(target=decoder_ffmpeg, args=(FIFO_NAME, vipc_server, v, True, args.rgb)).start()
