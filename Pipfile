@@ -37,6 +37,7 @@ breathe = "*"
 subprocess32 = "*"
 tenacity = "*"
 mpld3 = "*"
+carla = "==0.9.12"
 
 [packages]
 atomicwrites = "*"

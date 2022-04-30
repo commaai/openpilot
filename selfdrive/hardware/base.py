@@ -44,7 +44,7 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def get_imei(self, slot):
+  def get_imei(self, slot) -> str:
     pass
 
   @abstractmethod
@@ -157,4 +157,10 @@ class HardwareBase(ABC):
 
   @abstractmethod
   def get_networks(self):
+    pass
+
+  def reset_internal_panda(self):
+    pass
+
+  def recover_internal_panda(self):
     pass

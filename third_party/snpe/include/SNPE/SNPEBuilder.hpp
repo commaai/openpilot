@@ -1,6 +1,6 @@
 //==============================================================================
 //
-//  Copyright (c) 2017-2019 Qualcomm Technologies, Inc.
+//  Copyright (c) 2017-2021 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -15,6 +15,7 @@
 #include "DlSystem/DlOptional.hpp"
 #include "DlSystem/TensorShapeMap.hpp"
 #include "DlSystem/PlatformConfig.hpp"
+#include "DlSystem/IOBufferDataTypeMap.hpp"
 #include "DlSystem/RuntimeList.hpp"
 
 namespace zdl {
@@ -274,6 +275,28 @@ public:
     */
    SNPEBuilder& setUnconsumedTensorsAsOutputs(
       bool setOutput);
+
+    /**
+    * @brief Execution terminated when exceeding time limit.
+    *        Only valid for dsp runtime currently.
+    *
+    * @param[in] timeout Time limit value
+    *
+    * @return The current instance of SNPEBuilder.
+    */
+   SNPEBuilder& setTimeOut(
+      uint64_t timeout);
+
+
+   /**
+    * @brief Sets the datatype of the buffer.
+    *        Only valid for dsp runtime currently.
+    *
+    * @param[in] Map of the buffer names and the datatype that needs to be set.
+    *
+    * @return The current instance of SNPEBuilder.
+    */
+   SNPEBuilder& setBufferDataType(const zdl::DlSystem::IOBufferDataTypeMap& dataTypeMap);
 
 };
 /** @} */ /* end_addtogroup c_plus_plus_apis C++ */
