@@ -1,4 +1,5 @@
 # TODO: these are also defined in a header
+
 # GPIO pin definitions
 class GPIO:
   # both GPIO_STM_RST_N and GPIO_LTE_RST_N are misnamed, they are high to reset
@@ -18,5 +19,3 @@ class GPIO:
   CAM0_RSTN = 9
   CAM1_RSTN = 7
   CAM2_RSTN = 12
-
-

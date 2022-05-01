@@ -21,13 +21,8 @@ from selfdrive.version import get_commit
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
-TICI_TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
-EON_TEST_ROUTE = "303055c0002aefd1|2021-11-22--18-36-32"
+TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
 SEGMENT = 0
-if TICI:
-  TEST_ROUTE = TICI_TEST_ROUTE
-else:
-  TEST_ROUTE = EON_TEST_ROUTE
 
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 

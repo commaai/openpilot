@@ -1,4 +1,6 @@
 #include "selfdrive/loggerd/loggerd.h"
+#include "selfdrive/loggerd/remote_encoder.h"
+bool USE_REMOTE_ENCODER = false;
 
 ExitHandler do_exit;
 
@@ -64,11 +66,12 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
       // main encoder
       encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
                                      cam_info.fps, cam_info.bitrate, cam_info.is_h265,
-                                     cam_info.downscale, cam_info.record));
+                                     buf_info.width, buf_info.height, cam_info.record));
       // qcamera encoder
       if (cam_info.has_qcamera) {
-        encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, qcam_info.frame_width, qcam_info.frame_height,
-                                       qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale));
+        encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, buf_info.width, buf_info.height,
+                                       qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265,
+                                       qcam_info.frame_width, qcam_info.frame_height));
       }
     }
 
@@ -106,7 +109,7 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
-                                               buf->width, buf->height, extra.timestamp_eof);
+                                               buf->width, buf->height, &extra);
 
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d encode_id: %d", extra.frame_id, encode_idx);
@@ -187,15 +190,18 @@ void loggerd_thread() {
   typedef struct QlogState {
     std::string name;
     int counter, freq;
+    bool encoder;
   } QlogState;
   std::unordered_map<SubSocket*, QlogState> qlog_states;
+  std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
 
   std::unique_ptr<Context> ctx(Context::create());
   std::unique_ptr<Poller> poller(Poller::create());
 
   // subscribe to all socks
   for (const auto& it : services) {
-    if (!it.should_log) continue;
+    const bool encoder = USE_REMOTE_ENCODER & (strcmp(it.name+strlen(it.name)-strlen("EncodeData"), "EncodeData") == 0);
+    if (!it.should_log && !encoder) continue;
     LOGD("logging %s (on port %d)", it.name, it.port);
 
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
@@ -205,6 +211,7 @@ void loggerd_thread() {
       .name = it.name,
       .counter = 0,
       .freq = it.decimation,
+      .encoder = encoder,
     };
   }
 
@@ -237,9 +244,14 @@ void loggerd_thread() {
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
         const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
-        logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
-        bytes_count += msg->getSize();
-        delete msg;
+
+        if (qs.encoder) {
+          bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock]);
+        } else {
+          logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
+          bytes_count += msg->getSize();
+          delete msg;
+        }
 
         rotate_if_needed(&s);
 

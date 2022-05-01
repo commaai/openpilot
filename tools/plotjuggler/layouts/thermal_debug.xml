@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget parent="main_window" name="Main Window">
+  <Tab tab_name="tab1" containers="1">
+   <Container>
+    <DockSplitter sizes="0.200099;0.200099;0.199606;0.200099;0.200099" orientation="-" count="5">
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range left="0.000000" bottom="62.240001" right="1671.937015" top="81.559998"/>
+       <limitY/>
+       <curve color="#1f77b4" name="/deviceState/cpuTempC/0"/>
+       <curve color="#d62728" name="/deviceState/cpuTempC/1"/>
+       <curve color="#1ac938" name="/deviceState/cpuTempC/2"/>
+       <curve color="#ff7f0e" name="/deviceState/cpuTempC/3"/>
+       <curve color="#f14cc1" name="/deviceState/cpuTempC/4"/>
+       <curve color="#9467bd" name="/deviceState/cpuTempC/5"/>
+       <curve color="#17becf" name="/deviceState/cpuTempC/6"/>
+       <curve color="#bcbd22" name="/deviceState/cpuTempC/7"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range left="0.000000" bottom="56.440473" right="1671.937015" top="82.418528"/>
+       <limitY/>
+       <curve color="#1f77b4" name="/deviceState/pmicTempC/0"/>
+       <curve color="#d62728" name="/deviceState/gpuTempC/0"/>
+       <curve color="#1ac938" name="/deviceState/gpuTempC/1"/>
+       <curve color="#f14cc1" name="/deviceState/memoryTempC"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range left="0.000000" bottom="-0.025000" right="1671.937015" top="1.025000"/>
+       <limitY/>
+       <curve color="#1f77b4" name="/deviceState/thermalStatus"/>
+      </plot>
+     </DockArea>
+     <DockSplitter sizes="0.500152;0.499848" orientation="|" count="2">
+      <DockArea name="...">
+       <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+        <range left="0.000000" bottom="4.185483" right="1671.937015" top="14.634767"/>
+        <limitY/>
+        <curve color="#ff7f0e" name="/deviceState/powerDrawW"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+        <range left="0.000000" bottom="29.475000" right="1671.937015" top="51.525000"/>
+        <limitY/>
+        <curve color="#9467bd" name="/deviceState/fanSpeedPercentDesired"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter sizes="0.500152;0.499848" orientation="|" count="2">
+      <DockArea name="...">
+       <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+        <range left="0.000000" bottom="1.600000" right="1671.937015" top="102.400000"/>
+        <limitY/>
+        <curve color="#1f77b4" name="/deviceState/cpuUsagePercent/0"/>
+        <curve color="#d62728" name="/deviceState/cpuUsagePercent/1"/>
+        <curve color="#1ac938" name="/deviceState/cpuUsagePercent/2"/>
+        <curve color="#ff7f0e" name="/deviceState/cpuUsagePercent/3"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+        <range left="0.000000" bottom="-2.500000" right="1671.937015" top="102.500000"/>
+        <limitY/>
+        <curve color="#f14cc1" name="/deviceState/cpuUsagePercent/4"/>
+        <curve color="#9467bd" name="/deviceState/cpuUsagePercent/5"/>
+        <curve color="#17becf" name="/deviceState/cpuUsagePercent/6"/>
+        <curve color="#bcbd22" name="/deviceState/cpuUsagePercent/7"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="Cereal Subscriber"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

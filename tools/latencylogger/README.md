@@ -20,6 +20,7 @@ optional arguments:
   --demo                Use the demo route instead of providing one (default: False)
   --plot                If a plot should be generated (default: False)
 ```
+To timestamp an event, use `LOGT("msg")` in c++ code or `cloudlog.timestamp("msg")` in python code. If the print is warning for frameId assignment ambiguity, use `LOGT(frameId ,"msg")`.
 
 ## Examples
 Plotting with relative starts each process at time=0 and gives a nice overview. Timestamps are visualized as diamonds. The opacity allows for visualization of overlapping services.
@@ -31,58 +32,64 @@ Plotting without relative provides info about the frames relative time.
 
 Printed timestamps of a frame with internal durations.
 ```
-Frame ID: 303
+Frame ID: 371
   camerad
-    roadCameraState start of frame                       0.0
-    wideRoadCameraState start of frame                   0.091926
-    RoadCamera: Image set                                1.691696
-    RoadCamera: Transformed                              1.812841
-    roadCameraState published                            51.775466
-    wideRoadCameraState published                        54.935164
-    roadCameraState.processingTime                       1.6455530421808362
-    wideRoadCameraState.processingTime                   4.790564067661762
+    wideRoadCameraState start of frame                   0.0
+    roadCameraState start of frame                       0.072395
+    wideRoadCameraState published                        47.804745
+    WideRoadCamera: Image set                            47.839849
+    roadCameraState published                            48.319166
+    RoadCamera: Image set                                48.354478
+    RoadCamera: Transformed                              48.430258
+    wideRoadCameraState.processingTime                   16.733376309275627
+    roadCameraState.processingTime                       16.218071803450584
   modeld
-    Image added                                          56.628788
-    Extra image added                                    57.459923
-    Execution finished                                   75.091306
-    modelV2 published                                    75.24797
-    modelV2.modelExecutionTime                           20.00947669148445
+    Image added                                          51.346522
+    Extra image added                                    53.179467
+    Execution finished                                   71.584437
+    modelV2 published                                    71.76881
+    modelV2.modelExecutionTime                           22.54236489534378
     modelV2.gpuExecutionTime                             0.0
   plannerd
-    lateralPlan published                                80.426861
-    longitudinalPlan published                           85.722781
-    lateralPlan.solverExecutionTime                      1.0600379901006818
-    longitudinalPlan.solverExecutionTime                 1.3830000534653664
+    lateralPlan published                                77.381862
+    longitudinalPlan published                           84.207972
+    lateralPlan.solverExecutionTime                      1.3547739945352077
+    longitudinalPlan.solverExecutionTime                 2.0179999992251396
   controlsd
-    Data sampled                                         89.436221
-    Events updated                                       90.356522
-    sendcan published                                    91.396092
-    controlsState published                              91.77843
-    Data sampled                                         99.885876
-    Events updated                                       100.696855
-    sendcan published                                    101.600489
-    controlsState published                              101.941839
-    Data sampled                                         110.087669
-    Events updated                                       111.025365
-    sendcan published                                    112.305921
-    controlsState published                              112.70451
-    Data sampled                                         119.692803
-    Events updated                                       120.56774
-    sendcan published                                    121.735016
-    controlsState published                              122.142823
-    Data sampled                                         129.264761
-    Events updated                                       130.024282
-    sendcan published                                    130.950364
-    controlsState published                              131.281558
+    Data sampled                                         78.909759
+    Events updated                                       79.711884
+    sendcan published                                    80.721038
+    controlsState published                              81.081398
+    Data sampled                                         88.663748
+    Events updated                                       89.535403
+    sendcan published                                    90.587889
+    controlsState published                              91.019707
+    Data sampled                                         98.667003
+    Events updated                                       99.661261
+    sendcan published                                    100.776507
+    controlsState published                              101.198794
+    Data sampled                                         108.967078
+    Events updated                                       109.95842
+    sendcan published                                    111.263142
+    controlsState published                              111.678085
+    Data sampled                                         118.574923
+    Events updated                                       119.608555
+    sendcan published                                    120.73427
+    controlsState published                              121.111036
+    Data sampled                                         128.596408
+    Events updated                                       129.382283
+    sendcan published                                    130.330083
+    controlsState published                              130.676485
   boardd
-    sending sendcan to panda: 250027001751393037323631   101.705487
-    sendcan sent to panda: 250027001751393037323631      102.042462
-    sending sendcan to panda: 250027001751393037323631   112.416961
-    sendcan sent to panda: 250027001751393037323631      112.792269
-    sending sendcan to panda: 250027001751393037323631   121.850952
-    sendcan sent to panda: 250027001751393037323631      122.231103
-    sending sendcan to panda: 250027001751393037323631   131.045206
-    sendcan sent to panda: 250027001751393037323631      131.351296
-    sending sendcan to panda: 250027001751393037323631   141.340592
-    sendcan sent to panda: 250027001751393037323631      141.700744
+    sending sendcan to panda: 250027001751393037323631   90.7257
+    sendcan sent to panda: 250027001751393037323631      91.078143
+    sending sendcan to panda: 250027001751393037323631   100.941766
+    sendcan sent to panda: 250027001751393037323631      101.306865
+    sending sendcan to panda: 250027001751393037323631   111.411786
+    sendcan sent to panda: 250027001751393037323631      111.754074
+    sending sendcan to panda: 250027001751393037323631   120.875987
+    sendcan sent to panda: 250027001751393037323631      121.188535
+    sending sendcan to panda: 250027001751393037323631   130.454248
+    sendcan sent to panda: 250027001751393037323631      130.757994
+    sending sendcan to panda: 250027001751393037323631   140.353234
 ```

@@ -433,7 +433,7 @@ cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, c
 }
 
 void *dlsym(void *handle, const char *symbol) {
-#if defined(QCOM) || defined(QCOM2)
+#ifdef QCOM2
   void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen + DLSYM_OFFSET);
 #else
   #error "Unsupported platform for thneed"

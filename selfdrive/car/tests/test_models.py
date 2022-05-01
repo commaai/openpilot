@@ -15,7 +15,6 @@ from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
-from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.tests.routes import non_tested_cars, routes, TestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
@@ -115,8 +114,8 @@ class TestCarModel(unittest.TestCase):
       tuning = self.CP.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
-      elif tuning == 'lqr':
-        self.assertTrue(len(self.CP.lateralTuning.lqr.a))
+      elif tuning == 'torque':
+        self.assertTrue(self.CP.lateralTuning.torque.kf > 0)
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
       else:
@@ -209,13 +208,7 @@ class TestCarModel(unittest.TestCase):
 
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
-      # TODO: make the interceptor thresholds in openpilot and panda match, then remove this exception
-      gas_pressed = CS.gasPressed
-      if self.CP.enableGasInterceptor and gas_pressed and not self.safety.get_gas_pressed_prev():
-        # panda intentionally has a higher threshold
-        if self.CP.carName == "toyota" and 15 < CS.gas < 15*1.5:
-          gas_pressed = False
-      checks['gasPressed'] += gas_pressed != self.safety.get_gas_pressed_prev()
+      checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
@@ -245,15 +238,14 @@ class TestCarModel(unittest.TestCase):
 
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
+        # TODO: fix standstill mismatches for other makes
+        checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
       CS_prev = CS
 
-    # TODO: add flag to toyota safety
-    if self.CP.carFingerprint == TOYOTA.SIENNA and checks['brakePressed'] < 25:
-      checks['brakePressed'] = 0
-
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
+
 
 if __name__ == "__main__":
   unittest.main()
