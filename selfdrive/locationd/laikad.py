@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 from typing import List
 
 from cereal import log, messaging
@@ -37,9 +38,9 @@ def process_ublox_msg(ublox_msg, dog: AstroDog, pm: messaging.PubMaster, ublox_m
       return False
 
     corrected = correct_and_pos_fix(processed_measurements, dog)
-    pos_fix, corrected_measurements = corrected  # pylint: disable=unused-variable
+    pos_fix, _ = corrected
     dat = messaging.new_message('gnssMeasurements')
-    # todo send corrected messages instead of processed_measurements. Need fix for less than 6 measurements
+    # todo send corrected messages instead of processed_measurements. Need fix when having less than 6 measurements
     correct_meas_msgs = [create_measurement_msg(m) for m in processed_measurements]
     # pos fix can be an empty list if not enough correct measurements are available
     if len(pos_fix) > 0:
@@ -51,14 +52,13 @@ def process_ublox_msg(ublox_msg, dog: AstroDog, pm: messaging.PubMaster, ublox_m
       "ubloxMonoTime": ublox_mono_time,
       "correctedMeasurements": correct_meas_msgs
     }
-
     pm.send('gnssMeasurements', dat)
     return True
 
 def create_measurement_msg(meas: GNSSMeasurement):
   c = log.GnssMeasurements.CorrectedMeasurement.new_message()
   c.nmeaId = get_nmea_id_from_prn(meas.prn)
-  # c.glonassFrequency = 0 if math.isnan(meas.glonass_freq) else meas.glonass_freq # todo fix
+  c.glonassFrequency = meas.glonass_freq if not math.isnan(meas.glonass_freq) else 0
   c.gnssId = CONSTELLATION_ID_TO_GNSS_ID[meas.prn[0]]
   c.pseudorange = float(meas.observables['C1C'])  # todo should be observables_final when using corrected measurements
   c.pseudorangeStd = float(meas.observables_std['C1C'])
