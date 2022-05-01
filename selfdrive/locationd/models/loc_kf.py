@@ -33,7 +33,7 @@ def parse_pr(m):
   return z_i, R_i, sat_pos_freq_i
 
 
-class States():
+class States:
   ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters
   ECEF_ORIENTATION = slice(3, 7)  # quat for orientation of phone in ecef
   ECEF_VELOCITY = slice(7, 10)  # ecef velocity in m/s
@@ -52,7 +52,7 @@ class States():
   ACCELEROMETER_BIAS = slice(30, 33)  # bias of mems accelerometer
   # TODO the offset is likely a translation of the sensor, not a rotation of the camera
   WIDE_CAM_OFFSET = slice(33, 36)  # wide camera offset angles in radians (tici only)
-  # We curently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_OFFSET).
+  # We currently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_OFFSET).
   # From experiments we see that ACCELEROMETER_BIAS is more correct than ACCELEROMETER_SCALE
 
   # Error-state has different slices because it is an ESKF
@@ -98,7 +98,7 @@ class LocKalman():
                        10**2, 10**2, 10**2,
                        10**2, 10**2, 10**2,
                        1**2, 1**2, 1**2,
-                       1e14, (100)**2,
+                       1e14, 100**2,
                        0.05**2, 0.05**2, 0.05**2,
                        0.02**2,
                        2**2, 2**2, 2**2,

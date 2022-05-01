@@ -260,6 +260,36 @@ void Localizer::input_fake_gps_observations(double current_time) {
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
+void Localizer::handle_gnss_measurements(double current_time, const cereal::GnssMeasurements::Reader& log) {
+  // PSEUDORANGE_GPS, PSEUDORANGE_GLONASS, PSEUDORANGE_RATE_GPS, PSEUDORANGE_RATE_GLONASS
+  for (auto meas: log.getCorrectedMeasurements()){
+    auto observation = (int) meas.getGnssId() == GnssId::GPS;
+  // predict_and_update_pseudorange
+  //  R = np.zeros((len(meas), 1, 1))
+    // sat_pos_freq = np.zeros((len(meas), 4))
+    // z = np.zeros((len(meas), 1))
+    // for i, m in enumerate(meas):
+    //   z_i, R_i, sat_pos_freq_i = parse_pr(m)
+    //   sat_pos_freq[i, :] = sat_pos_freq_i
+    //   z[i, :] = z_i
+    //   R[i, :, :] = R_i
+    //    return self.filter.predict_and_update_batch(t, kind, z, R, sat_pos_freq)
+
+  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
+
+    //predict_and_update_pseudorange_rate
+    // R = np.zeros((len(meas), 1, 1))
+    // z = np.zeros((len(meas), 1))
+    // sat_pos_vel = np.zeros((len(meas), 6))
+    // for i, m in enumerate(meas):
+    //   z_i, R_i, sat_pos_vel_i = parse_prr(m)
+    //   sat_pos_vel[i] = sat_pos_vel_i
+    //   R[i, :, :] = R_i
+    //   z[i, :] = z_i
+    // return self.filter.predict_and_update_batch(t, kind, z, R, sat_pos_vel)
+  }
+}
+
 void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log) {
   // ignore the message if the fix is invalid
   bool gps_invalid_flag = (log.getFlags() % 2 == 0);
