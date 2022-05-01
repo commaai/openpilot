@@ -261,11 +261,20 @@ void Localizer::input_fake_gps_observations(double current_time) {
 }
 
 void Localizer::handle_gnss_measurements(double current_time, const cereal::GnssMeasurements::Reader& log) {
-  // PSEUDORANGE_GPS, PSEUDORANGE_GLONASS, PSEUDORANGE_RATE_GPS, PSEUDORANGE_RATE_GLONASS
+  // PSEUDORANGE_GPS, PSEUDORANGE_GLONASS, 
   for (auto meas: log.getCorrectedMeasurements()){
-    auto observation = (int) meas.getGnssId() == GnssId::GPS;
-  // predict_and_update_pseudorange
-  //  R = np.zeros((len(meas), 1, 1))
+    // predict_and_update_pseudorange
+
+    // parse_pr /////////////
+    // pseudorange = m[GNSSMeasurement.PR]
+    // pseudorange_stdev = m[GNSSMeasurement.PR_STD]
+    // sat_pos_freq_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
+    //                                  np.array([m[GNSSMeasurement.GLONASS_FREQ]])))
+    // z_i = np.atleast_1d(pseudorange)
+    // R_i = np.atleast_2d(pseudorange_stdev**2)
+    // return z_i, R_i, sat_pos_freq_i
+
+    //  R = np.zeros((len(meas), 1, 1))
     // sat_pos_freq = np.zeros((len(meas), 4))
     // z = np.zeros((len(meas), 1))
     // for i, m in enumerate(meas):
@@ -274,20 +283,30 @@ void Localizer::handle_gnss_measurements(double current_time, const cereal::Gnss
     //   z[i, :] = z_i
     //   R[i, :, :] = R_i
     //    return self.filter.predict_and_update_batch(t, kind, z, R, sat_pos_freq)
+    auto pseudo_z = meas.getPseudorange();
+    auto pseudo_R = meas.getPseudorangeStd();
 
-  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
+    // todo need to combine sat pos and glonass frequency
+    auto observation = (meas.getGnssId() == GnssId::GPS) ? OBSERVATION_PSEUDORANGE_GPS: OBSERVATION_PSEUDORANGE_GLONASS;
+    this->kf->predict_and_observe(current_time, observation, { pseudo_z }, { pseudo_R }, { sat_pos_glonass_freq });
 
-    //predict_and_update_pseudorange_rate
-    // R = np.zeros((len(meas), 1, 1))
-    // z = np.zeros((len(meas), 1))
-    // sat_pos_vel = np.zeros((len(meas), 6))
-    // for i, m in enumerate(meas):
-    //   z_i, R_i, sat_pos_vel_i = parse_prr(m)
-    //   sat_pos_vel[i] = sat_pos_vel_i
-    //   R[i, :, :] = R_i
-    //   z[i, :] = z_i
-    // return self.filter.predict_and_update_batch(t, kind, z, R, sat_pos_vel)
+      //predict_and_update_pseudorange_rate
+      // R = np.zeros((len(meas), 1, 1))
+      // z = np.zeros((len(meas), 1))
+      // sat_pos_vel = np.zeros((len(meas), 6))
+      // for i, m in enumerate(meas):
+      //   z_i, R_i, sat_pos_vel_i = parse_prr(m)
+      //   sat_pos_vel[i] = sat_pos_vel_i
+      //   R[i, :, :] = R_i
+      //   z[i, :] = z_i
+      // return self.filter.predict_and_update_batch(t, kind, z, R, sat_pos_vel)
+      // PSEUDORANGE_RATE_GPS, PSEUDORANGE_RATE_GLONASS
+      // todo need to combine sat pos with sat vel 
+      auto observation = (meas.getGnssId() == GnssId::GPS) ? OBSERVATION_PSEUDORANGE_RATE_GPS: OBSERVATION_PSEUDORANGE_RATE_GLONASS;
+      this->kf->predict_and_observe(current_time, observation, { pseudo_rate_z }, { pseudo_rate_R }, {sat_pos_sat_vel});
   }
+  // todo could also use predict_and_update_batch
+  // this->kf->predict_and_update_batch(current_time, observation, { pseudo_rate_z }, { pseudo_rate_R });
 }
 
 void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log) {
