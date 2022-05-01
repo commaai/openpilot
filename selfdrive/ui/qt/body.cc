@@ -1,22 +1,37 @@
-#include "selfdrive/ui/qt/body.h"
-
 #include <cmath>
 
-BodyWindow::BodyWindow(QWidget *parent) : QLabel(parent) {
-  awake = new QMovie("../assets/body/awake.gif");
-  awake->setCacheMode(QMovie::CacheAll);
-  sleep = new QMovie("../assets/body/sleep.gif");
-  sleep->setCacheMode(QMovie::CacheAll);
+#include <QGridLayout>
+#include <QPainter>
 
-  QPalette p(Qt::black);
-  setPalette(p);
-  setAutoFillBackground(true);
+#include "selfdrive/ui/qt/body.h"
 
-  setAlignment(Qt::AlignCenter);
+BodyWindow::BodyWindow(QWidget *parent) : QWidget(parent) {
+  layout = new QGridLayout(this);
+  layout->setMargin(0);
+  layout->setSpacing(0);
 
-  setAttribute(Qt::WA_TransparentForMouseEvents, true);
+  //setAttribute(Qt::WA_TransparentForMouseEvents, true);
+
+  battery = new QLabel();
+  battery->setStyleSheet("QLabel { font-size: 200px; }");
+  battery->setAlignment(Qt::AlignTop | Qt::AlignRight);
+
+  layout->addWidget(battery,0,2);
+  //layout->addWidget(rightEye,0,2);
+  //layout->addWidget(leftEye,0,2);
+  //layout->addWidget(mouth,0,2);
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &BodyWindow::updateState);
+}
+
+void BodyWindow::paintEvent(QPaintEvent *e) {
+  QPainter painter(this);
+  QPen linepen(Qt::red);
+  linepen.setCapStyle(Qt::RoundCap);
+  linepen.setWidth(30);
+  painter.setRenderHint(QPainter::Antialiasing,true);
+  painter.setPen(linepen);
+  painter.drawPoint(200,200);
 }
 
 void BodyWindow::updateState(const UIState &s) {
@@ -27,10 +42,20 @@ void BodyWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 
   // TODO: use carState.standstill when that's fixed
-  const bool standstill = std::abs(sm["carState"].getCarState().getVEgo()) < 0.01;
-  QMovie *m = standstill ? sleep : awake;
-  if (m != movie()) {
-    setMovie(m);
-    movie()->start();
-  }
+  //const bool standstill = std::abs(sm["carState"].getCarState().getVEgo()) < 0.01;
+
+  battery->setText(generateBatteryText(sm["carState"].getCarState().getFuelGauge()));
+}
+
+QString BodyWindow::generateBatteryText(float fuelGauge) {
+  int batteryOkDots = round(5*fuelGauge);
+  int batteryDotsRemain = 5 - batteryOkDots;
+  QString batteryDotsText = "<font color=\"white\">";
+  for (int i=0; i<batteryOkDots; i++)
+    batteryDotsText+="·";
+  batteryDotsText+="</font><font color=\"grey\">";
+  for (int i=0; i<batteryDotsRemain; i++)
+    batteryDotsText+="·";
+  batteryDotsText+="</font>";
+  return batteryDotsText;
 }
