@@ -46,6 +46,7 @@ public:
   void handle_msg_bytes(const char *data, const size_t size);
   void handle_msg(const cereal::Event::Reader& log);
   void handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log);
+  void handle_gnss_measurements(double current_time, const cereal::GnssMeasurements::Reader& log);
   void handle_gps(double current_time, const cereal::GpsLocationData::Reader& log);
   void handle_car_state(double current_time, const cereal::CarState::Reader& log);
   void handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log);
@@ -73,3 +74,5 @@ private:
   bool device_fell = false;
   bool gps_mode = false;
 };
+
+typedef cereal::GnssMeasurements::GnssId GnssId;

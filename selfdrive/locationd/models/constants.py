@@ -84,9 +84,3 @@ class ObservationKind:
   @classmethod
   def to_string(cls, kind):
     return cls.names[kind]
-
-
-SAT_OBS = [ObservationKind.PSEUDORANGE_GPS,
-           ObservationKind.PSEUDORANGE_RATE_GPS,
-           ObservationKind.PSEUDORANGE_GLONASS,
-           ObservationKind.PSEUDORANGE_RATE_GLONASS]
