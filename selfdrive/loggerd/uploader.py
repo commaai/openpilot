@@ -152,7 +152,7 @@ class Uploader():
         with open(fn, "rb") as f:
           data = f.read()
 
-          if not fn.endswith('.bz2'):
+          if fn.endswith('qlog'):
             data = bz2.compress(data)
 
           self.last_resp = requests.put(url, data=data, headers=headers, timeout=10)
