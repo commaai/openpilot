@@ -20,6 +20,8 @@ class CarState(CarStateBase):
     ret.steerFaultPermanent = any([cp.vl['VAR_VALUES']['MOTOR_ERR_L'], cp.vl['VAR_VALUES']['MOTOR_ERR_R'],
                                    cp.vl['VAR_VALUES']['FAULT']])
 
+    ret.fuelGauge = cp.vl["BODY_DATA"]["BATT_PERCENTAGE"] / 100
+
     # irrelevant for non-car
     ret.gearShifter = car.CarState.GearShifter.drive
     ret.cruiseState.enabled = True
