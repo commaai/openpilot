@@ -20,7 +20,7 @@ repos:
     hooks:
     -   id: mypy
         exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)/'
-        additional_dependencies: ['numpy', 'types-atomicwrites', types-Jinja2, 'types-pycurl', 'types-requests']
+        additional_dependencies: ['lxml', 'numpy', 'types-atomicwrites', types-Jinja2, 'types-pycurl', 'types-requests', 'types-certifi']
         args:
         - --warn-redundant-casts
         - --warn-unreachable
