@@ -152,7 +152,7 @@ class Uploader():
         with open(fn, "rb") as f:
           data = f.read()
 
-          if fn.endswith('qlog'):
+          if key.endswith('.bz2') and not fn.endswith('.bz2'):
             data = bz2.compress(data)
 
           self.last_resp = requests.put(url, data=data, headers=headers, timeout=10)
@@ -253,7 +253,8 @@ def uploader_fn(exit_event):
 
     key, fn = d
 
-    if not key.endswith('.bz2'):
+    # qlogs need to be compressed before uploading
+    if key.endswith('qlog'):
       key += ".bz2"
 
     success = uploader.upload(key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
