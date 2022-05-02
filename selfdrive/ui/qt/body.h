@@ -12,10 +12,11 @@ class FaceDotMatrix : public QWidget {
 public:
   FaceDotMatrix(QWidget* parent = 0);
   int dotMargin;
-  int dotWidth;
+  int dotSize;
   int dotsPerSpace;
 
 protected:
+  void paintMatrix(int a[4][4]);
   virtual void paintEvent(QPaintEvent *event);
 };
 
@@ -25,6 +26,10 @@ class Eye : public FaceDotMatrix {
 
 public:
   Eye(QWidget* parent = 0);
+  bool isOpen;
+  
+public slots:
+  void updateState(const UIState &s);
 
 protected:
   void paintEvent(QPaintEvent *event);

@@ -14,41 +14,44 @@ FaceDotMatrix::FaceDotMatrix(QWidget* parent) : QWidget(parent) {
   setAttribute(Qt::WA_TransparentForMouseEvents, true);
 }
 
-void FaceDotMatrix::paintEvent(QPaintEvent *e) {
+void FaceDotMatrix::paintEvent(QPaintEvent *e) {}
+
+void FaceDotMatrix::paintMatrix(int a[4][4]) {
   QPainter painter(this);
   QPen linepen(Qt::white);
   linepen.setCapStyle(Qt::RoundCap);
-  linepen.setWidth(30);
+  linepen.setWidth(dotSize);
   painter.setRenderHint(QPainter::Antialiasing,true);
   painter.setPen(linepen);
-  painter.drawPoint(width()/2, height()/2);
+
+  int m = (dotSize+dotMargin*2);
+  int startPosition = (width() / 2) - (dotsPerSpace/2)*m;
+  for (int i = 0; i<dotsPerSpace; i++) {
+    linepen.setColor(Qt::white);
+    painter.drawPoint(startPosition + i*m + m/2, m/2);
+  }
 }
 
 Eye::Eye(QWidget* parent) : FaceDotMatrix(parent) {
-  dotWidth = 64;
+  dotSize = 64;
   dotMargin = 10;
   dotsPerSpace = 4;
 }
 
 void Eye::paintEvent(QPaintEvent *e) {
-  QPainter painter(this);
-  QPen linepen(Qt::white);
-  linepen.setCapStyle(Qt::RoundCap);
-  linepen.setWidth(dotWidth);
-  painter.setRenderHint(QPainter::Antialiasing,true);
-  painter.setPen(linepen);
-
-  int m = (dotWidth+dotMargin*2);
-  int spaceAvailible = width() / dotsPerSpace;
-
-  if (m > spaceAvailible)
-    m = spaceAvailible;
-
-  int startPosition = (width() / 2) - (dotsPerSpace/2)*m;
-  for (int i = 0; i<dotsPerSpace; i++) {
-    painter.drawPoint(startPosition + i*m + m/2, m);
-  }
+  int a[4][4] = {
+    0,1,1,0,
+    1,1,1,1,
+    1,1,1,1,
+    0,1,1,0
+  };
+  paintMatrix(a);
 }
+
+void Eye::updateState(const UIState &s) {
+  update();
+}
+
 
 Mouth::Mouth(QWidget* parent) : FaceDotMatrix(parent) {
 }
@@ -89,6 +92,8 @@ BodyWindow::BodyWindow(QWidget *parent) : QWidget(parent) {
   layout->addItem(new QSpacerItem(1,1,QSizePolicy::Expanding,QSizePolicy::Expanding), 2, 4);
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &BodyWindow::updateState);
+  QObject::connect(uiState(), &UIState::uiUpdate, leftEye, &Eye::updateState);
+  QObject::connect(uiState(), &UIState::uiUpdate, rightEye, &Eye::updateState);
 }
 
 void BodyWindow::updateState(const UIState &s) {
