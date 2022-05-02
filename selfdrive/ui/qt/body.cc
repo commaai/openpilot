@@ -8,7 +8,7 @@
 
 FaceDotMatrix::FaceDotMatrix(QWidget* parent) : QWidget(parent) {
   QPalette pal = QPalette();
-  pal.setColor(QPalette::Window, Qt::yellow);
+  pal.setColor(QPalette::Window, Qt::black);
   setAutoFillBackground(true); 
   setPalette(pal);
   setAttribute(Qt::WA_TransparentForMouseEvents, true);
@@ -16,7 +16,7 @@ FaceDotMatrix::FaceDotMatrix(QWidget* parent) : QWidget(parent) {
 
 void FaceDotMatrix::paintEvent(QPaintEvent *e) {}
 
-void FaceDotMatrix::paintMatrix(int a[4][4]) {
+void FaceDotMatrix::paintMatrix(float a[4][4]) {
   QPainter painter(this);
   QPen linepen(Qt::white);
   linepen.setCapStyle(Qt::RoundCap);
@@ -28,10 +28,19 @@ void FaceDotMatrix::paintMatrix(int a[4][4]) {
   int xOffset = (width()/2) - 2*m;
   int yOffset = (height()/2) - 2*m;
 
-  for (int i = 0; i<4; i++) {
-    painter.drawPoint(xOffset + i*m + m/2, yOffset + i*m + m/2);
+  float lastPenStrength = 0; // to save calls to change color.
+  for (int j = 0; j<4; j++) {
+    for (int i = 0; i<4; i++) {
+      float p = a[i][j];
+      if (p == 0) continue;
+      if (p != lastPenStrength) {
+        linepen.setColor(QColor(255*p,255*p,255*p));
+        painter.setPen(linepen);
+        lastPenStrength = p;
+      }
+      painter.drawPoint(xOffset + i*m + m/2, yOffset + j*m + m/2);
+    }
   }
-
   
 }
 
@@ -41,9 +50,9 @@ Eye::Eye(QWidget* parent) : FaceDotMatrix(parent) {
 }
 
 void Eye::paintEvent(QPaintEvent *e) {
-  int a[4][4] = {
+  float a[4][4] = {
     0,1,1,0,
-    1,1,1,1,
+    1,0.2,0.5,1,
     1,1,1,1,
     0,1,1,0
   };

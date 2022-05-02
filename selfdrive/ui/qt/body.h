@@ -15,7 +15,7 @@ public:
   int dotSize;
 
 protected:
-  void paintMatrix(int a[4][4]);
+  void paintMatrix(float a[4][4]);
   virtual void paintEvent(QPaintEvent *event);
 };
 
