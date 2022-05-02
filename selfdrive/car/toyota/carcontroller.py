@@ -52,7 +52,7 @@ class CarController:
       start_boost = interp(CS.out.vEgo, [0.0, CREEP_SPEED, 2 * CREEP_SPEED], [0.6, 0.6, 0.0])
       is_accelerating = interp(actuators.accel, [0.0, 0.2], [0.0, 1.0])
       boost = start_boost * is_accelerating
-    pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX) + boost
+    pcm_accel_cmd = clip(actuators.accel + boost, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
