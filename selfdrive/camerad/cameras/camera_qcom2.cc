@@ -1114,6 +1114,27 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   s->set_camera_exposure(grey_frac);
 }
 
+static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
+  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
+  const CameraBuf *b = &c->buf;
+  static ExpRect rect = {96, 1832, 2, 242, 1148, 4};
+  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
+}
+
+static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
+  s->sm->update(0);
+  driver_cam_auto_exposure(c, *(s->sm));
+
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initDriverCameraState();
+  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+  fill_frame_data(framed, c->buf.cur_frame_data);
+  if (env_send_driver) {
+    framed.setImage(get_frame_image(&c->buf));
+  }
+  s->pm->send("driverCameraState", msg);
+}
+
 // called by processing_thread
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
@@ -1139,7 +1160,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 void cameras_run(MultiCameraState *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
-  if (s->driver_cam.enabled) threads.push_back(start_process_thread(s, &s->driver_cam, common_process_driver_camera));
+  if (s->driver_cam.enabled) threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
   if (s->road_cam.enabled) threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
   if (s->wide_road_cam.enabled) threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
 
