@@ -13,7 +13,6 @@ public:
   FaceDotMatrix(QWidget* parent = 0);
   int dotMargin;
   int dotSize;
-  int dotsPerSpace;
 
 protected:
   void paintMatrix(int a[4][4]);

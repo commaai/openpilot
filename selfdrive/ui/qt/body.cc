@@ -25,17 +25,19 @@ void FaceDotMatrix::paintMatrix(int a[4][4]) {
   painter.setPen(linepen);
 
   int m = (dotSize+dotMargin*2);
-  int startPosition = (width() / 2) - (dotsPerSpace/2)*m;
-  for (int i = 0; i<dotsPerSpace; i++) {
-    linepen.setColor(Qt::white);
-    painter.drawPoint(startPosition + i*m + m/2, m/2);
+  int xOffset = (width()/2) - 2*m;
+  int yOffset = (height()/2) - 2*m;
+
+  for (int i = 0; i<4; i++) {
+    painter.drawPoint(xOffset + i*m + m/2, yOffset + i*m + m/2);
   }
+
+  
 }
 
 Eye::Eye(QWidget* parent) : FaceDotMatrix(parent) {
   dotSize = 64;
   dotMargin = 10;
-  dotsPerSpace = 4;
 }
 
 void Eye::paintEvent(QPaintEvent *e) {
