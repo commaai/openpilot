@@ -8,7 +8,7 @@
 
 FaceDotMatrix::FaceDotMatrix(QWidget* parent) : QWidget(parent) {
   QPalette pal = QPalette();
-  pal.setColor(QPalette::Window, Qt::black);
+  pal.setColor(QPalette::Window, Qt::yellow);
   setAutoFillBackground(true); 
   setPalette(pal);
   setAttribute(Qt::WA_TransparentForMouseEvents, true);
@@ -25,32 +25,36 @@ void FaceDotMatrix::paintEvent(QPaintEvent *e) {
 }
 
 Eye::Eye(QWidget* parent) : FaceDotMatrix(parent) {
+  dotWidth = 64;
+  dotMargin = 10;
+  dotsPerSpace = 4;
 }
 
 void Eye::paintEvent(QPaintEvent *e) {
   QPainter painter(this);
   QPen linepen(Qt::white);
   linepen.setCapStyle(Qt::RoundCap);
-  linepen.setWidth(56);
+  linepen.setWidth(dotWidth);
   painter.setRenderHint(QPainter::Antialiasing,true);
   painter.setPen(linepen);
-  painter.drawPoint(width()/2+100, height()/2+100);
+
+  int m = (dotWidth+dotMargin*2);
+  int spaceAvailible = width() / dotsPerSpace;
+
+  if (m > spaceAvailible)
+    m = spaceAvailible;
+
+  int startPosition = (width() / 2) - (dotsPerSpace/2)*m;
+  for (int i = 0; i<dotsPerSpace; i++) {
+    painter.drawPoint(startPosition + i*m + m/2, m);
+  }
 }
 
 Mouth::Mouth(QWidget* parent) : FaceDotMatrix(parent) {
 }
 
 void Mouth::paintEvent(QPaintEvent *e) {
-  printf("%d %d\n", height(), width());
-  QPainter painter(this);
-  QPen linepen(Qt::black);
-  linepen.setCapStyle(Qt::RoundCap);
-  linepen.setWidth(30);
-  painter.setRenderHint(QPainter::Antialiasing,true);
-  painter.setPen(linepen);
-  painter.drawPoint(0,0);
 }
-
 
 BodyWindow::BodyWindow(QWidget *parent) : QWidget(parent) {
   layout = new QGridLayout(this);
@@ -83,8 +87,6 @@ BodyWindow::BodyWindow(QWidget *parent) : QWidget(parent) {
   layout->addWidget(mouth,2,2);
   layout->addItem(new QSpacerItem(1,1,QSizePolicy::Expanding,QSizePolicy::Expanding), 2, 3);
   layout->addItem(new QSpacerItem(1,1,QSizePolicy::Expanding,QSizePolicy::Expanding), 2, 4);
-  
-  
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &BodyWindow::updateState);
 }

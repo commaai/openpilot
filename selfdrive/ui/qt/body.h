@@ -11,6 +11,9 @@ class FaceDotMatrix : public QWidget {
 
 public:
   FaceDotMatrix(QWidget* parent = 0);
+  int dotMargin;
+  int dotWidth;
+  int dotsPerSpace;
 
 protected:
   virtual void paintEvent(QPaintEvent *event);
