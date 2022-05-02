@@ -23,7 +23,6 @@ repos:
         additional_dependencies: ['numpy', 'types-atomicwrites', types-Jinja2, 'types-pycurl', 'types-requests']
         args:
         - --warn-redundant-casts
-        - --warn-return-any
         - --warn-unreachable
         - --warn-unused-ignores
 -   repo: https://github.com/PyCQA/flake8
