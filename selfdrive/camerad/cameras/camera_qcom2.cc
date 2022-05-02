@@ -1131,6 +1131,8 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   fill_frame_data(framed, c->buf.cur_frame_data);
   if (env_send_driver) {
     framed.setImage(get_frame_image(&c->buf));
+  } else if (env_log_raw_frames && c->buf.cur_frame_data.frame_id % 100 == 0) {
+    framed.setImage(get_raw_frame_image(&c->buf, FRAME_HEIGHT*FRAME_STRIDE));
   }
   s->pm->send("driverCameraState", msg);
 }
@@ -1144,6 +1146,8 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   fill_frame_data(framed, b->cur_frame_data);
   if ((c == &s->road_cam && env_send_road) || (c == &s->wide_road_cam && env_send_wide_road)) {
     framed.setImage(get_frame_image(b));
+  } else if (env_log_raw_frames && c->buf.cur_frame_data.frame_id % 100 == 0) {
+    framed.setImage(get_raw_frame_image(b, FRAME_HEIGHT*FRAME_STRIDE));
   }
   LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");
   if (c == &s->road_cam) {
