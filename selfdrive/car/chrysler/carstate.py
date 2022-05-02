@@ -94,6 +94,7 @@ class CarState(CarStateBase):
       ("STEERING_RATE", "STEERING"),
       ("TURN_SIGNALS", "STEERING_LEVERS"),
       ("ACC_STATUS_2", "ACC_2"),
+      ("ACC_FAULTED", "ACC_2"),
       ("HIGH_BEAM_FLASH", "STEERING_LEVERS"),
       ("ACC_SPEED_CONFIG_KPH", "DASHBOARD"),
       ("CRUISE_STATE", "DASHBOARD"),
