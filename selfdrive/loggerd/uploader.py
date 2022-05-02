@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import bz2
 import json
 import os
 import random
@@ -69,7 +70,7 @@ class Uploader():
     self.last_filename = ""
 
     self.immediate_folders = ["crash/", "boot/"]
-    self.immediate_priority = {"qlog.bz2": 0, "qcamera.ts": 1}
+    self.immediate_priority = {"qlog": 0, "qcamera.ts": 1}
 
   def get_upload_sort(self, name):
     if name in self.immediate_priority:
@@ -149,7 +150,12 @@ class Uploader():
         self.last_resp = FakeResponse()
       else:
         with open(fn, "rb") as f:
-          self.last_resp = requests.put(url, data=f, headers=headers, timeout=10)
+          data = f.read()
+
+          if not fn.endswith('.bz2'):
+            data = bz2.compress(data)
+
+          self.last_resp = requests.put(url, data=data, headers=headers, timeout=10)
     except Exception as e:
       self.last_exc = (e, traceback.format_exc())
       raise
@@ -246,6 +252,9 @@ def uploader_fn(exit_event):
       continue
 
     key, fn = d
+
+    if not key.endswith('.bz2'):
+      key += ".bz2"
 
     success = uploader.upload(key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
     if success:
