@@ -25,6 +25,7 @@ repos:
         - --warn-redundant-casts
         - --warn-unreachable
         - --warn-unused-ignores
+        #- --html-report=/home/batman/openpilot
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:

@@ -1,7 +1,7 @@
 # pylint: skip-file
 import numpy as np
-
 from typing import Callable
+
 from common.transformations.transformations import (ecef_euler_from_ned_single,
                                                     euler2quat_single,
                                                     euler2rot_single,
