@@ -253,8 +253,8 @@ def uploader_fn(exit_event):
 
     key, fn = d
 
-    # qlogs need to be compressed before uploading
-    if key.endswith('qlog'):
+    # qlogs and bootlogs need to be compressed before uploading
+    if key.endswith('qlog') or key.startswith('boot/'):
       key += ".bz2"
 
     success = uploader.upload(key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
