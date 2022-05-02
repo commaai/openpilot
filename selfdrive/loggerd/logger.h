@@ -7,7 +7,6 @@
 #include <cstdio>
 #include <memory>
 
-#include <bzlib.h>
 #include <capnp/serialize.h>
 #include <kj/array.h>
 
