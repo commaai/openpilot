@@ -21,11 +21,12 @@ repos:
     -   id: mypy
         exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)/'
         additional_dependencies: ['git+https://github.com/numpy/numpy-stubs', 'types-requests', 'types-atomicwrites',
-                                  'types-pycurl', 'types-certifi']
+                                  'types-pycurl', 'types-certifi', 'lxml']
         args:
         - --warn-unused-ignores
         - --warn-redundant-casts
         - --warn-unreachable
+        #- --html-report=/home/batman/openpilot
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
