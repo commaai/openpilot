@@ -39,7 +39,7 @@ half3 color_correct(half3 rgb) {
 
 inline half val_from_10(const uchar * source, int gx, int gy, half black_level) {
   // parse 12bit
-  int start = gy * FRAME_STRIDE + (3 * (gx / 2));
+  int start = gy * FRAME_STRIDE + (3 * (gx / 2)) + (FRAME_STRIDE * FRAME_OFFSET);
   int offset = gx % 2;
   uint major = (uint)source[start + offset] << 4;
   uint minor = (source[start + 2] >> (4 * offset)) & 0xf;
