@@ -214,16 +214,9 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  std::lock_guard lk(lock);
-
   if (latest_frame == nullptr) return;
 
   glViewport(0, 0, width(), height());
-  // sync with the PBO
-  if (wait_fence) {
-    wait_fence->wait();
-  }
-
   glBindVertexArray(frame_vao);
 
   glUseProgram(program->programId());
