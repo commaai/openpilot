@@ -238,13 +238,13 @@ kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
   return kj::mv(frame_image);
 }
 
-kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b, size_t len) {
+kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
   const uint8_t *dat = (const uint8_t *)b->cur_camera_buf->addr;
 
-  kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(len);
+  kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(b->cur_camera_buf->len);
   uint8_t *resized_dat = frame_image.begin();
 
-  memcpy(resized_dat, dat, len);
+  memcpy(resized_dat, dat, b->cur_camera_buf->len);
 
   return kj::mv(frame_image);
 }
