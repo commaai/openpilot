@@ -70,7 +70,7 @@ TEST_CASE("logger") {
   ExitHandler do_exit;
 
   LoggerState logger = {};
-  logger_init(&logger, "rlog", true);
+  logger_init(&logger, true);
   char segment_path[PATH_MAX] = {};
   int segment = -1;
 

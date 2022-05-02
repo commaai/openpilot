@@ -86,7 +86,7 @@ typedef struct LoggerState {
 
 kj::Array<capnp::word> logger_build_init_data();
 std::string logger_get_route_name();
-void logger_init(LoggerState *s, const char* log_name, bool has_qlog);
+void logger_init(LoggerState *s, bool has_qlog);
 int logger_next(LoggerState *s, const char* root_path,
                             char* out_segment_path, size_t out_segment_path_len,
                             int* out_part);
