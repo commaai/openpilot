@@ -208,7 +208,7 @@ class TestLoggerd(unittest.TestCase):
     time.sleep(1)
     managed_processes["loggerd"].stop()
 
-    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog.bz2")
+    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog")
     lr = list(LogReader(qlog_path))
 
     # check initData and sentinel
