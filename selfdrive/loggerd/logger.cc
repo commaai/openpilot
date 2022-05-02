@@ -143,9 +143,9 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   if (lock_file == NULL) return NULL;
   fclose(lock_file);
 
-  h->log = std::make_unique<BZFile>(h->log_path);
+  h->log = std::make_unique<RawFile>(h->log_path);
   if (s->has_qlog) {
-    h->q_log = std::make_unique<BZFile>(h->qlog_path);
+    h->q_log = std::make_unique<RawFile>(h->qlog_path);
   }
 
   pthread_mutex_init(&h->lock, NULL);

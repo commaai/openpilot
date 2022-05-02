@@ -20,42 +20,25 @@ const std::string LOG_ROOT = Path::log_root();
 
 #define LOGGER_MAX_HANDLES 16
 
-class BZFile {
+class RawFile {
  public:
-  BZFile(const char* path) {
+  RawFile(const char* path) {
     file = util::safe_fopen(path, "wb");
     assert(file != nullptr);
-    int bzerror;
-    bz_file = BZ2_bzWriteOpen(&bzerror, file, 9, 0, 30);
-    assert(bzerror == BZ_OK);
   }
-  ~BZFile() {
-    int bzerror;
-    BZ2_bzWriteClose(&bzerror, bz_file, 0, nullptr, nullptr);
-    if (bzerror != BZ_OK) {
-      LOGE("BZ2_bzWriteClose error, bzerror=%d", bzerror);
-    }
+  ~RawFile() {
     util::safe_fflush(file);
     int err = fclose(file);
     assert(err == 0);
   }
   inline void write(void* data, size_t size) {
-    int bzerror;
-    do {
-      BZ2_bzWrite(&bzerror, bz_file, data, size);
-    } while (bzerror == BZ_IO_ERROR && errno == EINTR);
-
-    if (bzerror != BZ_OK && !error_logged) {
-      LOGE("BZ2_bzWrite error, bzerror=%d", bzerror);
-      error_logged = true;
-    }
+    int written = util::safe_fwrite(data, 1, size, file);
+    assert(written == size);
   }
   inline void write(kj::ArrayPtr<capnp::byte> array) { write(array.begin(), array.size()); }
 
  private:
-  bool error_logged = false;
   FILE* file = nullptr;
-  BZFILE* bz_file = nullptr;
 };
 
 typedef cereal::Sentinel::SentinelType SentinelType;
@@ -69,7 +52,7 @@ typedef struct LoggerHandle {
   char log_path[4096];
   char qlog_path[4096];
   char lock_path[4096];
-  std::unique_ptr<BZFile> log, q_log;
+  std::unique_ptr<RawFile> log, q_log;
 } LoggerHandle;
 
 typedef struct LoggerState {
