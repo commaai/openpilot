@@ -4,6 +4,8 @@ from selfdrive.car.chrysler.values import CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
+EventName = car.CarEvent.EventName
+
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
@@ -56,7 +58,9 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
 
     if ret.vEgo < self.CP.minSteerSpeed:
-      events.add(car.CarEvent.EventName.belowSteerSpeed)
+      events.add(EventName.belowSteerSpeed)
+    if self.CS.acc_faulted:
+      events.add(EventName.accFaulted)
 
     ret.events = events.to_msg()
 
