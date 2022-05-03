@@ -30,7 +30,7 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
 
   // draw battery level
   const int offset = 90;
-  const int radius = 66 / 2;
+  const int radius = 60 / 2;
   const int levels = 5;
   const float interval = 1. / levels;
   for (int i = 0; i < levels; i++) {
