@@ -178,7 +178,7 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic])
 
     # Vehicle health and operation safety checks
-    if self.CS.tsk_status in (6, 7):
+    if ret.accFaulted:
       events.add(EventName.accFaulted)
 
     # Low speed steer alert hysteresis logic
