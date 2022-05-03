@@ -5,8 +5,8 @@ import numpy as np
 from laika import AstroDog
 from laika.helpers import UbloxGnssId
 from laika.raw_gnss import calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
+from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
-from tools.lib.route import Route
 
 
 def get_gnss_measurements(log_reader):
@@ -22,11 +22,12 @@ def get_gnss_measurements(log_reader):
 
 
 class TestUbloxProcessing(unittest.TestCase):
+  NUM_TEST_PROCESS_MEAS = 10
 
   @classmethod
   def setUpClass(cls):
-    path = Route("4cf7a6ad03080c90|2021-09-29--13-46-36").log_paths()[0]
-    cls.gnss_measurements = get_gnss_measurements(LogReader(path))
+    lr = LogReader(get_url("4cf7a6ad03080c90|2021-09-29--13-46-36", 0))
+    cls.gnss_measurements = get_gnss_measurements(lr)
 
   def test_read_ublox_raw(self):
     count_gps = 0
@@ -49,7 +50,7 @@ class TestUbloxProcessing(unittest.TestCase):
     position_fix_found_after_correcting = 0
 
     pos_ests = []
-    for measurements in self.gnss_measurements[:10]:
+    for measurements in self.gnss_measurements[:self.NUM_TEST_PROCESS_MEAS]:
       processed_meas = process_measurements(measurements, dog)
       count_processed_measurements += len(processed_meas)
       pos_fix = calc_pos_fix(processed_meas)
@@ -67,10 +68,12 @@ class TestUbloxProcessing(unittest.TestCase):
     mean_fix = np.mean(np.array(pos_ests)[:, :3], axis=0)
     np.testing.assert_allclose(mean_fix, [-2452306.662377, -4778343.136806, 3428550.090557], rtol=0, atol=1)
 
-    self.assertEqual(position_fix_found, 10)
-    self.assertEqual(position_fix_found_after_correcting, 10)
-    self.assertEqual(count_corrected_measurements, 69)
+    # Note that can happen that there are less corrected measurements compared to processed when they are invalid.
+    # However, not for the current segment
+    self.assertEqual(position_fix_found, self.NUM_TEST_PROCESS_MEAS)
+    self.assertEqual(position_fix_found_after_correcting, self.NUM_TEST_PROCESS_MEAS)
     self.assertEqual(count_processed_measurements, 69)
+    self.assertEqual(count_corrected_measurements, 69)
 
 
 if __name__ == "__main__":
