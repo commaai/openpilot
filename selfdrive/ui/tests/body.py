@@ -14,6 +14,7 @@ if __name__ == "__main__":
 
       for b in range(100, 0, -1):
         msg = messaging.new_message('carState')
+        msg.carState.charging = True
         msg.carState.fuelGauge = b / 100.
         pm.send('carState', msg)
         time.sleep(0.1)
