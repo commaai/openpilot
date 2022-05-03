@@ -1144,8 +1144,12 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   fill_frame_data(framed, b->cur_frame_data);
   if ((c == &s->road_cam && env_send_road) || (c == &s->wide_road_cam && env_send_wide_road)) {
     framed.setImage(get_frame_image(b));
-  } else if (env_log_raw_frames && c == &s->road_cam && c->buf.cur_frame_data.frame_id % 100 == 5) {  // no overlap with qlog decimation
-    framed.setImage(get_raw_frame_image(b));
+  } else if (env_log_raw_frames && c == &s->road_cam) {
+    static int cnt = 0;
+    if (cnt % 100 == 5) {  // no overlap with qlog decimation
+      framed.setImage(get_raw_frame_image(b));
+    }
+    cnt++;
   }
   LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");
   if (c == &s->road_cam) {
