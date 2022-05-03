@@ -5,7 +5,7 @@
 
 #include <QPainter>
 
-BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 1., 1. / UI_FREQ), QLabel(parent) {
+BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QLabel(parent) {
   awake = new QMovie("../assets/body/awake.gif");
   awake->setCacheMode(QMovie::CacheAll);
   sleep = new QMovie("../assets/body/sleep.gif");
