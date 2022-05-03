@@ -13,7 +13,6 @@
 #include "selfdrive/camerad/imgproc/utils.h"
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -376,47 +375,6 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
   return std::thread(processing_thread, cameras, cs, callback);
 }
-
-static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
-  static const bool is_rhd = Params().getBool("IsRHD");
-  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
-  const CameraBuf *b = &c->buf;
-
-  int x_offset = 0, y_offset = 0;
-  int frame_width = b->rgb_width, frame_height = b->rgb_height;
-
-
-  ExpRect def_rect;
-  if (Hardware::TICI()) {
-    x_offset = 630, y_offset = 156;
-    frame_width = 668, frame_height = frame_width / 1.33;
-    def_rect = {96, 1832, 2, 242, 1148, 4};
-  } else {
-    def_rect = {is_rhd ? 0 : b->rgb_width * 3 / 5, is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width, 2,
-                b->rgb_height / 3, b->rgb_height, 1};
-  }
-
-  static ExpRect rect = def_rect;
-
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
-}
-
-void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  int j = Hardware::TICI() ? 1 : 3;
-  if (cnt % j == 0) {
-    s->sm->update(0);
-    driver_cam_auto_exposure(c, *(s->sm));
-  }
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initDriverCameraState();
-  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, c->buf.cur_frame_data);
-  if (env_send_driver) {
-    framed.setImage(get_frame_image(&c->buf));
-  }
-  s->pm->send("driverCameraState", msg);
-}
-
 
 void camerad_thread() {
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);

@@ -59,7 +59,7 @@ void RawLogger::encoder_close() {
 }
 
 int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                            int in_width, int in_height, uint64_t ts) {
+                            int in_width, int in_height, VisionIpcBufExtra *extra) {
   assert(in_width == this->in_width_);
   assert(in_height == this->in_height_);
 
