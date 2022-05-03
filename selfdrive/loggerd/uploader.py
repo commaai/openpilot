@@ -71,7 +71,7 @@ class Uploader():
     self.last_filename = ""
 
     self.immediate_folders = ["crash/", "boot/"]
-    self.immediate_priority = {"qlog": 0, "qcamera.ts": 1}
+    self.immediate_priority = {"qlog": 0, "qlog.bz2": 0, "qcamera.ts": 1}
 
   def get_upload_sort(self, name):
     if name in self.immediate_priority:
@@ -261,7 +261,7 @@ def uploader_fn(exit_event):
     key, fn = d
 
     # qlogs and bootlogs need to be compressed before uploading
-    if key.endswith('qlog') or key.startswith('boot/'):
+    if key.endswith('qlog') or (key.startswith('boot/') and not key.endswith('.bz2')):
       key += ".bz2"
 
     success = uploader.upload(key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
