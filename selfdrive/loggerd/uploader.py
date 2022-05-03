@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import bz2
 import json
 import os
 import random
@@ -12,6 +13,7 @@ from cereal import log
 import cereal.messaging as messaging
 from common.api import Api
 from common.params import Params
+from common.realtime import set_core_affinity
 from selfdrive.hardware import TICI
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
@@ -69,7 +71,7 @@ class Uploader():
     self.last_filename = ""
 
     self.immediate_folders = ["crash/", "boot/"]
-    self.immediate_priority = {"qlog.bz2": 0, "qcamera.ts": 1}
+    self.immediate_priority = {"qlog": 0, "qlog.bz2": 0, "qcamera.ts": 1}
 
   def get_upload_sort(self, name):
     if name in self.immediate_priority:
@@ -149,7 +151,12 @@ class Uploader():
         self.last_resp = FakeResponse()
       else:
         with open(fn, "rb") as f:
-          self.last_resp = requests.put(url, data=f, headers=headers, timeout=10)
+          data = f.read()
+
+          if key.endswith('.bz2') and not fn.endswith('.bz2'):
+            data = bz2.compress(data)
+
+          self.last_resp = requests.put(url, data=data, headers=headers, timeout=10)
     except Exception as e:
       self.last_exc = (e, traceback.format_exc())
       raise
@@ -212,7 +219,13 @@ class Uploader():
     us.lastFilename = self.last_filename
     return msg
 
+
 def uploader_fn(exit_event):
+  try:
+    set_core_affinity([0, 1, 2, 3])
+  except Exception:
+    cloudlog.exception("failed to set core affinity")
+
   clear_locks(ROOT)
 
   params = Params()
@@ -246,6 +259,10 @@ def uploader_fn(exit_event):
       continue
 
     key, fn = d
+
+    # qlogs and bootlogs need to be compressed before uploading
+    if key.endswith('qlog') or (key.startswith('boot/') and not key.endswith('.bz2')):
+      key += ".bz2"
 
     success = uploader.upload(key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
     if success:
