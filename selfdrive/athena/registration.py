@@ -3,6 +3,7 @@ import time
 import json
 import jwt
 from pathlib import Path
+from typing import Optional
 
 from datetime import datetime, timedelta
 from common.api import api_get
@@ -48,7 +49,8 @@ def register(show_spinner=False) -> str:
     # Block until we get the imei
     serial = HARDWARE.get_serial()
     start_time = time.monotonic()
-    imei1, imei2 = None, None
+    imei1: Optional[str] = None
+    imei2: Optional[str] = None
     while imei1 is None and imei2 is None:
       try:
         imei1, imei2 = HARDWARE.get_imei(0), HARDWARE.get_imei(1)

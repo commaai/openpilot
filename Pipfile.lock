@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "7288746fb2afc988e4de2a7d1d3bc2fbef09ce65ca135b6762f3d722c156661b"
+            "sha256": "41e285b10b9b5a353b3eb9c202886e52d22403c369784877aaa35e099aa203a8"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -1142,6 +1142,19 @@
             ],
             "index": "pypi",
             "version": "==4.33.1"
+        },
+        "carla": {
+            "hashes": [
+                "sha256:1ed11b56c781cd15cbd540cacfb59ad348e0a021d898cfd0ff89a585f144da0b",
+                "sha256:20c1e1b72034175824d89b2d86b09ae72b4aca09ea25874dc6251f239297251d",
+                "sha256:6d1122c24af4f6375dc6858fbb0309b61c219b101d8c5a540def4c36c4563fe1",
+                "sha256:9c19ebf6cbbc535bde4baf9e18c72ab349657b34c4202b9751541e4c0d20b3cc",
+                "sha256:a69f6d84b59e2f805b2a417de98f977fe9efe0cfa733da8d75e20d28892da915",
+                "sha256:c3ae0dce3f1354b6311fee21a365947b0ff169249993a913904f676046d2d69f",
+                "sha256:dd392a267e14b785a8f65dafef86e05a92201253e9fb4a01e1e262834f20bed2"
+            ],
+            "index": "pypi",
+            "version": "==0.9.12"
         },
         "certifi": {
             "hashes": [

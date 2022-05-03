@@ -48,8 +48,6 @@ routes = [
 
   TestRoute("0e7a2ba168465df5|2020-10-18--14-14-22", HONDA.ACURA_RDX_3G),
   TestRoute("a74b011b32b51b56|2020-07-26--17-09-36", HONDA.CIVIC),
-  # Checks there's no controls mismatches due to pedal thresholds
-  TestRoute("cfb32f0fb91b173b|2022-04-06--14-54-45", HONDA.CIVIC, segment=21),
   TestRoute("a859a044a447c2b0|2020-03-03--18-42-45", HONDA.CRV_EU),
   TestRoute("68aac44ad69f838e|2021-05-18--20-40-52", HONDA.CRV),
   TestRoute("14fed2e5fa0aa1a5|2021-05-25--14-59-42", HONDA.CRV_HYBRID),
@@ -130,6 +128,7 @@ routes = [
   TestRoute("32a7df20486b0f70|2020-02-06--16-06-50", TOYOTA.RAV4H),
   TestRoute("cdf2f7de565d40ae|2019-04-25--03-53-41", TOYOTA.RAV4_TSS2),
   TestRoute("7e34a988419b5307|2019-12-18--19-13-30", TOYOTA.RAV4H_TSS2),
+  TestRoute("2475fb3eb2ffcc2e|2022-04-29--12-46-23", TOYOTA.RAV4H_TSS2_2022),
   TestRoute("e6a24be49a6cd46e|2019-10-29--10-52-42", TOYOTA.LEXUS_ES_TSS2),
   TestRoute("25057fa6a5a63dfb|2020-03-04--08-44-23", TOYOTA.LEXUS_CTH),
   TestRoute("f49e8041283f2939|2019-05-30--11-51-51", TOYOTA.LEXUS_ESH_TSS2),
@@ -207,4 +206,11 @@ routes = [
 
   TestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.AP1_MODELS),
   TestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
+
+  # Segments that test specific issues
+  # Controls mismatch due to interceptor threshold
+  TestRoute("cfb32f0fb91b173b|2022-04-06--14-54-45", HONDA.CIVIC, segment=21),
+  TestRoute("5a8762b91fc70467|2022-04-14--21-26-20", TOYOTA.RAV4, segment=2),
+  # Controls mismatch due to standstill threshold
+  TestRoute("bec2dcfde6a64235|2022-04-08--14-21-32", HONDA.CRV_HYBRID, segment=22),
 ]

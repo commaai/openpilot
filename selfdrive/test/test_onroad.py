@@ -22,12 +22,12 @@ from tools.lib.logreader import LogReader
 # Baseline CPU usage by process
 PROCS = {
   "selfdrive.controls.controlsd": 31.0,
-  "./loggerd": 70.0,
-  "./camerad": 41.0,
+  "./loggerd": 50.0,
+  "./camerad": 26.0,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 11.7,
-  "./_ui": 33.0,
-  "selfdrive.locationd.paramsd": 5.0,
+  "./_ui": 21.0,
+  "selfdrive.locationd.paramsd": 9.0,
   "./_sensord": 6.17,
   "selfdrive.controls.radard": 4.5,
   "./_modeld": 4.48,
@@ -108,9 +108,9 @@ class TestOnroad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     if "DEBUG" in os.environ:
-      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.bz2")), Path(ROOT).iterdir())
+      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog")), Path(ROOT).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
-      cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.bz2")))
+      cls.lr = list(LogReader(os.path.join(segs[-1], "rlog")))
       return
 
     # setup env
@@ -160,10 +160,10 @@ class TestOnroad(unittest.TestCase):
         if proc.wait(60) is None:
           proc.kill()
 
-    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.bz2"))) for s in cls.segments]
+    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog"))) for s in cls.segments]
 
     # use the second segment by default as it's the first full segment
-    cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog.bz2")))
+    cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
 
   def test_cloudlog_size(self):
     msgs = [m for m in self.lr if m.which() == 'logMessage']
@@ -190,7 +190,7 @@ class TestOnroad(unittest.TestCase):
     cfgs = [("lateralPlan", 0.05, 0.05), ("longitudinalPlan", 0.05, 0.05)]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "solverExecutionTime") for m in self.lr if m.which() == s]
-      self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
+      self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
       result += f"'{s}' execution time: max  {max(ts):.5f}s\n"
@@ -205,14 +205,15 @@ class TestOnroad(unittest.TestCase):
     result += "------------------------------------------------\n"
     # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [
-      ("modelV2", 0.038, 0.036),
-      ("driverState", 0.028, 0.026),
+      ("modelV2", 0.050, 0.036),
+      ("driverState", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
-      self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
+      self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
+      result += f"'{s}' execution time: max {max(ts):.5f}s\n"
       result += f"'{s}' execution time: mean {np.mean(ts):.5f}s\n"
     result += "------------------------------------------------\n"
     print(result)

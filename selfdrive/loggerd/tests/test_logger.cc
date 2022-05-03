@@ -18,10 +18,10 @@ void verify_segment(const std::string &route_path, int segment, int max_segment,
   SentinelType begin_sentinel = segment == 0 ? SentinelType::START_OF_ROUTE : SentinelType::START_OF_SEGMENT;
   SentinelType end_sentinel = segment == max_segment - 1 ? SentinelType::END_OF_ROUTE : SentinelType::END_OF_SEGMENT;
 
-  REQUIRE(!util::file_exists(segment_path + "/rlog.bz2.lock"));
-  for (const char *fn : {"/rlog.bz2", "/qlog.bz2"}) {
+  REQUIRE(!util::file_exists(segment_path + "/rlog.lock"));
+  for (const char *fn : {"/rlog", "/qlog"}) {
     const std::string log_file = segment_path + fn;
-    std::string log = decompressBZ2(util::read_file(log_file));
+    std::string log = util::read_file(log_file);
     REQUIRE(!log.empty());
     int event_cnt = 0, i = 0;
     kj::ArrayPtr<const capnp::word> words((capnp::word *)log.data(), log.size() / sizeof(capnp::word));
@@ -70,7 +70,7 @@ TEST_CASE("logger") {
   ExitHandler do_exit;
 
   LoggerState logger = {};
-  logger_init(&logger, "rlog", true);
+  logger_init(&logger, true);
   char segment_path[PATH_MAX] = {};
   int segment = -1;
 
@@ -78,7 +78,7 @@ TEST_CASE("logger") {
     const int segment_cnt = 100;
     for (int i = 0; i < segment_cnt; ++i) {
       REQUIRE(logger_next(&logger, log_root.c_str(), segment_path, sizeof(segment_path), &segment) == 0);
-      REQUIRE(util::file_exists(std::string(segment_path) + "/rlog.bz2.lock"));
+      REQUIRE(util::file_exists(std::string(segment_path) + "/rlog.lock"));
       REQUIRE(segment == i);
       write_msg(logger.cur_handle);
     }
