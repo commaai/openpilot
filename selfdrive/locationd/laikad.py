@@ -1,20 +1,10 @@
 #!/usr/bin/env python3
-import math
 from typing import List
 
 from cereal import log, messaging
 from laika import AstroDog
-from laika.helpers import CONSTELLATION_ID_TO_GNSS_ID, get_nmea_id_from_prn
+# from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
-
-
-def process_report(ublox_gnss, dog: AstroDog):
-  processed_measurements = None
-  report = ublox_gnss.measurementReport
-  if len(report.measurements) > 0:
-    new_meas = read_raw_ublox(report)
-    processed_measurements = process_measurements(new_meas, dog)
-  return processed_measurements
 
 
 def correct_and_pos_fix(processed_measurements: List[GNSSMeasurement], dog: AstroDog):
@@ -33,8 +23,11 @@ def correct_and_pos_fix(processed_measurements: List[GNSSMeasurement], dog: Astr
 
 def process_ublox_msg(ublox_msg, dog: AstroDog, pm: messaging.PubMaster, ublox_mono_time: int):
   if ublox_msg.which == 'measurementReport':
-    processed_measurements = process_report(ublox_msg, dog)
-    if processed_measurements is None:
+    report = ublox_msg.measurementReport
+    if len(report.measurements) > 0:
+      new_meas = read_raw_ublox(report)
+      processed_measurements = process_measurements(new_meas, dog)
+    else:
       return False
 
     corrected = correct_and_pos_fix(processed_measurements, dog)
@@ -55,11 +48,12 @@ def process_ublox_msg(ublox_msg, dog: AstroDog, pm: messaging.PubMaster, ublox_m
     pm.send('gnssMeasurements', dat)
     return True
 
+
 def create_measurement_msg(meas: GNSSMeasurement):
   c = log.GnssMeasurements.CorrectedMeasurement.new_message()
-  c.nmeaId = get_nmea_id_from_prn(meas.prn)
-  c.glonassFrequency = meas.glonass_freq if not math.isnan(meas.glonass_freq) else 0
-  c.gnssId = CONSTELLATION_ID_TO_GNSS_ID[meas.prn[0]]
+  # c.constellationId = meas.constellation_id.value
+  # c.svId = meas.svId
+  # c.glonassFrequency = meas.glonass_freq if meas.constellation_id == ConstellationId.GLONASS else 0 # todo fix
   c.pseudorange = float(meas.observables['C1C'])  # todo should be observables_final when using corrected measurements
   c.pseudorangeStd = float(meas.observables_std['C1C'])
   c.pseudorangeRate = float(meas.observables['D1C'])  # todo should be observables_final when using corrected measurements
