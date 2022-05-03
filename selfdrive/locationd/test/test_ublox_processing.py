@@ -21,7 +21,7 @@ def get_gnss_measurements(log_reader):
   return gnss_measurements
 
 
-class TestGetFixUblox(unittest.TestCase):
+class TestUbloxProcessing(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
