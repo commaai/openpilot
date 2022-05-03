@@ -47,17 +47,19 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
   p.drawRoundedRect(2055 + m, 18 + m, (75 - 2*m)*fuel, 36 - 2*m, 4, 4);
 
   // charging status
-  p.setPen(Qt::NoPen);
-  p.setBrush(Qt::white);
-  const QPolygonF charger({
-    QPointF(12.31, 0),
-    QPointF(12.31, 16.92),
-    QPointF(18.46, 16.92),
-    QPointF(6.15, 40),
-    QPointF(6.15, 23.08),
-    QPointF(0, 23.08),
-  });
-  p.drawPolygon(charger.translated(2030, 18), Qt::WindingFill);
+  if (charging) {
+    p.setPen(Qt::NoPen);
+    p.setBrush(Qt::white);
+    const QPolygonF charger({
+      QPointF(12.31, 0),
+      QPointF(12.31, 16.92),
+      QPointF(18.46, 16.92),
+      QPointF(6.15, 40),
+      QPointF(6.15, 23.08),
+      QPointF(0, 23.08),
+    });
+    p.drawPolygon(charger.translated(2030, 18));
+  }
 }
 
 
