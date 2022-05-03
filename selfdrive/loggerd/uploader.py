@@ -23,6 +23,8 @@ NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
+UPLOAD_QLOG_QCAM_MAX_SIZE = 1e7  # 10 MB
+
 allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
 force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
@@ -188,7 +190,7 @@ class Uploader():
       except OSError:
         cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
       success = True
-    elif name in self.immediate_priority and sz > 1e7:  # limit qlogs/qcams to 10 MB
+    elif name in self.immediate_priority and sz > UPLOAD_QLOG_QCAM_MAX_SIZE:
       cloudlog.event("uploader_too_large", key=key, fn=fn, sz=sz)
       success = True
     else:
