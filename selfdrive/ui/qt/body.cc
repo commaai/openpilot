@@ -31,12 +31,13 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
   p.translate(2024, 16);
 
   // battery outline + detail
+  const QColor gray = QColor("#737373");
   p.setBrush(Qt::NoBrush);
-  p.setPen(QPen(Qt::gray, 4, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+  p.setPen(QPen(gray, 4, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
   p.drawRoundedRect(2, 2, 78, 36, 8, 8);
 
   p.setPen(Qt::NoPen);
-  p.setBrush(Qt::gray);
+  p.setBrush(gray);
   p.drawRoundedRect(84, 12, 6, 16, 4, 4);
   p.drawRect(84, 12, 3, 16);
 
@@ -44,7 +45,7 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
   double fuel = std::clamp(fuel_filter.x(), 0.2f, 1.0f);
   const int m = 5; // manual margin since we can't do an inner border
   p.setPen(Qt::NoPen);
-  p.setBrush(fuel > 0.25 ? QColor("#32D74B") : Qt::red);
+  p.setBrush(fuel > 0.25 ? QColor("#32D74B") : QColor("#FF453A"));
   p.drawRoundedRect(2 + m, 2 + m, (78 - 2*m)*fuel, 36 - 2*m, 4, 4);
 
   // charging status
