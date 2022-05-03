@@ -6,8 +6,8 @@ from typing import Any
 
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url
-from selfdrive.test.process_replay.compare_logs import compare_logs
-from selfdrive.test.process_replay.process_replay import CONFIGS, replay_process, check_enabled
+from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
+from selfdrive.test.process_replay.process_replay import CONFIGS, check_enabled, replay_process
 from tools.lib.logreader import LogReader
 
 
@@ -55,7 +55,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 FULL_TEST = len(sys.argv) <= 1
 
 
-def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
+def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None, save_logs=False):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
@@ -65,6 +65,10 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   cmp_log_msgs = list(LogReader(cmp_log_path))
 
   log_msgs = replay_process(cfg, lr)
+
+  # will overwrite any existing files, just like update_refs
+  if save_logs:
+    save_log(cmp_log_fn, log_msgs)
 
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
@@ -76,6 +80,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
     return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs, cfg.tolerance)
   except Exception as e:
     return str(e)
+
 
 def format_diff(results, ref_commit):
   diff1, diff2 = "", ""
@@ -106,23 +111,25 @@ def format_diff(results, ref_commit):
         failed = True
   return diff1, diff2, failed
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
 
   # whitelist has precedence over blacklist in case both are defined
   parser.add_argument("--whitelist-procs", type=str, nargs="*", default=[],
-                        help="Whitelist given processes from the test (e.g. controlsd)")
+                      help="Whitelist given processes from the test (e.g. controlsd)")
   parser.add_argument("--whitelist-cars", type=str, nargs="*", default=[],
-                        help="Whitelist given cars from the test (e.g. HONDA)")
+                      help="Whitelist given cars from the test (e.g. HONDA)")
   parser.add_argument("--blacklist-procs", type=str, nargs="*", default=[],
-                        help="Blacklist given processes from the test (e.g. controlsd)")
+                      help="Blacklist given processes from the test (e.g. controlsd)")
   parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[],
-                        help="Blacklist given cars from the test (e.g. HONDA)")
+                      help="Blacklist given cars from the test (e.g. HONDA)")
   parser.add_argument("--ignore-fields", type=str, nargs="*", default=[],
-                        help="Extra fields or msgs to ignore (e.g. carState.events)")
+                      help="Extra fields or msgs to ignore (e.g. carState.events)")
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
-                        help="Msgs to ignore (e.g. carEvents)")
+                      help="Msgs to ignore (e.g. carEvents)")
+  parser.add_argument("--save-logs", action="store_true",
+                      help="Whether to save the generated log files")
   args = parser.parse_args()
 
   cars_whitelisted = len(args.whitelist_cars) > 0
@@ -136,6 +143,7 @@ if __name__ == "__main__":
     sys.exit(1)
 
   print(f"***** testing against commit {ref_commit} *****")
+  sys.exit(1)
 
   # check to make sure all car brands are tested
   if FULL_TEST:
@@ -162,7 +170,7 @@ if __name__ == "__main__":
         continue
 
       cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-      results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
+      results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs, args.save_logs)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   with open(os.path.join(process_replay_dir, "diff.txt"), "w") as f:

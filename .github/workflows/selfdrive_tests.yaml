@@ -314,8 +314,12 @@ jobs:
     - name: Run replay
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
+                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py --save-logs && \
                         coverage xml"
+    - name: Upload reference logs
+      if: ${{ failure() }}
+      run: |
+        echo "Uploading reference logs"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
     - name: Print diff
