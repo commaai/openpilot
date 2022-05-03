@@ -125,6 +125,14 @@ class Uploader():
 
     for name, key, fn in upload_files:
       if name in self.immediate_priority:
+        try:
+          sz = os.path.getsize(fn)
+        except OSError:
+          sz = 0
+
+        if sz > 1e7:  # limit qlogs/qcams to 10 MB
+          continue
+
         return (key, fn)
 
     return None
