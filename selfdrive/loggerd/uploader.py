@@ -184,11 +184,7 @@ class Uploader():
     cloudlog.event("upload_start", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
 
     if sz == 0:
-      try:
-        # tag files of 0 size as uploaded
-        setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
-      except OSError:
-        cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
+      # tag files of 0 size as uploaded
       success = True
     elif name in self.immediate_priority and sz > UPLOAD_QLOG_QCAM_MAX_SIZE:
       cloudlog.event("uploader_too_large", key=key, fn=fn, sz=sz)
@@ -197,12 +193,6 @@ class Uploader():
       start_time = time.monotonic()
       stat = self.normal_upload(key, fn)
       if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
-        try:
-          # tag file as uploaded
-          setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
-        except OSError:
-          cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
-
         self.last_filename = fn
         self.last_time = time.monotonic() - start_time
         self.last_speed = (sz / 1e6) / self.last_time
@@ -211,6 +201,13 @@ class Uploader():
       else:
         success = False
         cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
+
+    if success:
+      # tag file as uploaded
+      try:
+        setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
+      except OSError:
+        cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
 
     return success
 
