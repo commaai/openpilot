@@ -28,7 +28,7 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
-  p.translate(2024, 16);
+  p.translate(width() - 136, 16);
 
   // battery outline + detail
   const QColor gray = QColor("#737373");
@@ -49,7 +49,6 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
   p.drawRoundedRect(2 + m, 2 + m, (78 - 2*m)*fuel, 36 - 2*m, 4, 4);
 
   // charging status
-  p.resetTransform();
   if (charging) {
     p.setPen(Qt::NoPen);
     p.setBrush(Qt::white);
@@ -61,7 +60,7 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
       QPointF(6.15, 23.08),
       QPointF(0, 23.08),
     });
-    p.drawPolygon(charger.translated(2122, 16));
+    p.drawPolygon(charger.translated(98, 0));
   }
 }
 
