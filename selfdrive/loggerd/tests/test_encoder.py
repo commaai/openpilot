@@ -112,7 +112,7 @@ class TestEncoder(unittest.TestCase):
 
         # Check encodeIdx
         if encode_idx_name is not None:
-          rlog_path = f"{route_prefix_path}--{i}/rlog.bz2"
+          rlog_path = f"{route_prefix_path}--{i}/rlog"
           msgs = [m for m in LogReader(rlog_path) if m.which() == encode_idx_name]
           encode_msgs = [getattr(m, encode_idx_name) for m in msgs]
 
