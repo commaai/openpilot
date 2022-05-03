@@ -17,7 +17,7 @@ def get_gnss_measurements(log_reader):
       if ublox_msg.which == 'measurementReport':
         report = ublox_msg.measurementReport
         if len(report.measurements) > 0:
-          gnss_measurements += [read_raw_ublox(report)]
+          gnss_measurements.append(read_raw_ublox(report))
   return gnss_measurements
 
 
