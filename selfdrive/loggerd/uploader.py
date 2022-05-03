@@ -13,6 +13,7 @@ from cereal import log
 import cereal.messaging as messaging
 from common.api import Api
 from common.params import Params
+from common.realtime import set_core_affinity
 from selfdrive.hardware import TICI
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
@@ -218,7 +219,13 @@ class Uploader():
     us.lastFilename = self.last_filename
     return msg
 
+
 def uploader_fn(exit_event):
+  try:
+    set_core_affinity([0, 1, 2, 3])
+  except Exception:
+    cloudlog.exception("failed to set core affinity")
+
   clear_locks(ROOT)
 
   params = Params()
