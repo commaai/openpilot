@@ -38,7 +38,7 @@ class CarController():
     elif self.car_fingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
       if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
         self.gone_fast_yet = False  # < 14.5m/s stock turns off this bit, but fine down to 13.5
-    lkas_active = moving_fast and CC.latActive
+    lkas_active = moving_fast and CC.enabled
 
     if not lkas_active:
       apply_steer = 0
