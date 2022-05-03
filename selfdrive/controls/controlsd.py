@@ -552,6 +552,8 @@ class Controls:
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
 
+    controlsState = log.ControlsState.new_message()
+
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = self.sm.frame
 
@@ -576,6 +578,9 @@ class Controls:
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, params,
                                                                              self.last_actuators, desired_curvature,
                                                                              desired_curvature_rate, self.sm['liveLocationKalman'])
+
+      controlsState.desiredCurvature = desired_curvature
+      controlsState.desiredCurvatureRate = desired_curvature_rate
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
@@ -614,7 +619,7 @@ class Controls:
         cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
         setattr(actuators, p, 0.0)
 
-    return CC, lac_log
+    return CC, controlsState, lac_log
 
   def update_button_timers(self, buttonEvents):
     # increment timer for buttons still pressed
@@ -626,7 +631,7 @@ class Controls:
       if b.type.raw in self.button_timers:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
 
-  def publish_logs(self, CS, start_time, CC, lac_log):
+  def publish_logs(self, CS, CC, controlsState, lac_log, start_time):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
     # Orientation and angle rates can be useful for carcontroller
@@ -701,9 +706,6 @@ class Controls:
     curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, params.roll)
 
     # controlsState
-    dat = messaging.new_message('controlsState')
-    dat.valid = CS.canValid
-    controlsState = dat.controlsState
     if current_alert:
       controlsState.alertText1 = current_alert.alert_text_1
       controlsState.alertText2 = current_alert.alert_text_2
@@ -744,6 +746,9 @@ class Controls:
     elif lat_tuning == 'indi':
       controlsState.lateralControlState.indiState = lac_log
 
+    dat = messaging.new_message('controlsState')
+    dat.valid = CS.canValid
+    dat.controlsState = controlsState
     self.pm.send('controlsState', dat)
 
     # carState
@@ -794,12 +799,12 @@ class Controls:
       self.prof.checkpoint("State transition")
 
     # Compute actuators (runs PID loops and lateral MPC)
-    CC, lac_log = self.state_control(CS)
+    CC, controlsState, lac_log = self.state_control(CS)
 
     self.prof.checkpoint("State Control")
 
     # Publish data
-    self.publish_logs(CS, start_time, CC, lac_log)
+    self.publish_logs(CS, CC, controlsState, lac_log, start_time)
     self.prof.checkpoint("Sent")
 
     self.update_button_timers(CS.buttonEvents)
