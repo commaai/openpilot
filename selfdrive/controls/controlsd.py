@@ -552,8 +552,6 @@ class Controls:
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
 
-    controlsState = log.ControlsState.new_message()
-
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = self.sm.frame
 
@@ -578,11 +576,10 @@ class Controls:
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, params,
                                                                              self.last_actuators, desired_curvature,
                                                                              desired_curvature_rate, self.sm['liveLocationKalman'])
-
-      controlsState.desiredCurvature = desired_curvature
-      controlsState.desiredCurvatureRate = desired_curvature_rate
+      controlsState = log.ControlsState.new_message(desiredCurvature=desired_curvature, desiredCurvatureRate=desired_curvature_rate)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
+      controlsState = log.ControlsState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
         if CC.longActive:
           actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
