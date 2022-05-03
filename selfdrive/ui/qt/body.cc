@@ -66,6 +66,10 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
 
 
 void BodyWindow::updateState(const UIState &s) {
+  if (!isVisible()) {
+    return;
+  }
+
   const SubMaster &sm = *(s.sm);
   auto cs = sm["carState"].getCarState();
 
@@ -73,14 +77,12 @@ void BodyWindow::updateState(const UIState &s) {
   fuel_filter.update(cs.getFuelGauge());
 
   // TODO: use carState.standstill when that's fixed
-  if (isVisible()) {
-    const bool standstill = std::abs(cs.getVEgo()) < 0.01;
-    QMovie *m = standstill ? sleep : awake;
-    if (m != movie()) {
-      setMovie(m);
-      movie()->start();
-    }
-
-    update();
+  const bool standstill = std::abs(cs.getVEgo()) < 0.01;
+  QMovie *m = standstill ? sleep : awake;
+  if (m != movie()) {
+    setMovie(m);
+    movie()->start();
   }
+
+  update();
 }
