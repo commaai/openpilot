@@ -146,6 +146,8 @@ bool CameraBuf::acquire() {
 
   double start_time = millis_since_boot();
 
+  cur_camera_buf = &camera_bufs[cur_buf_idx];
+
   if (debayer) {
     float gain = 0.0;
     float black_level = 42.0;
@@ -233,6 +235,17 @@ kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
       memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*b->rgb_stride*scale+c*3*scale], 3*sizeof(uint8_t));
     }
   }
+  return kj::mv(frame_image);
+}
+
+kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
+  const uint8_t *dat = (const uint8_t *)b->cur_camera_buf->addr;
+
+  kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(b->cur_camera_buf->len);
+  uint8_t *resized_dat = frame_image.begin();
+
+  memcpy(resized_dat, dat, b->cur_camera_buf->len);
+
   return kj::mv(frame_image);
 }
 

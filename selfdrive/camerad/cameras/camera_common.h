@@ -47,6 +47,7 @@ const bool env_disable_road = getenv("DISABLE_ROAD") != NULL;
 const bool env_disable_wide_road = getenv("DISABLE_WIDE_ROAD") != NULL;
 const bool env_disable_driver = getenv("DISABLE_DRIVER") != NULL;
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
+const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
 
 typedef void (*release_cb)(void *cookie, int buf_idx);
 
@@ -111,6 +112,7 @@ public:
   FrameMetadata cur_frame_data;
   VisionBuf *cur_rgb_buf;
   VisionBuf *cur_yuv_buf;
+  VisionBuf *cur_camera_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
   int rgb_width, rgb_height, rgb_stride;
@@ -129,6 +131,7 @@ typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
+kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
 
