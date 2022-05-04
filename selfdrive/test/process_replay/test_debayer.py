@@ -18,6 +18,7 @@ if TICI:
 try:
   import pyopencl as cl
 except ImportError:
+  print("failed to import pyopencl, installing...")
   env = os.environ.copy()
   env["PYOPENCL_CL_PRETEND_VERSION"] = "2.0"
   subprocess.run(["pip", "install", "pyopencl"], env=env, shell=True, check=True)
@@ -108,20 +109,25 @@ if __name__ == "__main__":
 
     try:
       cmp_frames = unbzip_frames(BASE_URL + frame_fn)
-      tolerance = 0
 
       if frames.shape != cmp_frames.shape:
         diff += 'frame shapes not equal\n'
         diff += f'{ref_commit}: {cmp_frames.shape}\n'
         diff += f'HEAD: {frames.shape}\n'
         failed = True
-      else:
-        frame_diff = np.abs(np.subtract(frames, cmp_frames))
-        if not np.all(frame_diff <= tolerance):
+      elif not np.array_equal(frames, cmp_frames):
+        if np.allclose(frames, cmp_frames):
+          diff += 'frames not equal, but are all close\n'
+        else:
           diff += 'frames not equal\n'
-          failed = True
 
-      print(diff)
+        frame_diff = np.abs(np.subtract(frames, cmp_frames))
+        diff += 'different at (i, ref, HEAD):'
+        for i in zip(*np.nonzero(frame_diff)):
+          diff += f'{i}, {cmp_frames[i]}, {frames[i]}'
+
+      with open("debayer_diff.txt", "w") as f:
+        f.write(diff)
     except Exception as e:
       print(str(e))
       failed = True
