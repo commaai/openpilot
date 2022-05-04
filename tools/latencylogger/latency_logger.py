@@ -140,7 +140,7 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
           else:
             failed_inserts += 1
   if latest_controls_frameid == 0:
-    print("Warning, no timestamp in controlsd")
+    print("Warning, no timestamp in controlsd. Implementation assumes that a timestamp is made in controlsd to bind boardd logs to frame ID. Please add such a timestamp.")
   elif failed_inserts > len(timestamps):
     print("Warning, many cloudlog inserts failed", failed_inserts)
 
