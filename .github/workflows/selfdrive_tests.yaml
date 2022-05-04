@@ -320,7 +320,6 @@ jobs:
       if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' }}
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        pip install azure-storage-blob==2.1.0 && \
                         FILEREADER_CACHE=1 CI=1 AZURE_TOKEN=${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }} python selfdrive/test/process_replay/update_refs.py --upload-only"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
