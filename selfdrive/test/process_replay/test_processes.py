@@ -66,15 +66,16 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None, save
 
   log_msgs = replay_process(cfg, lr)
 
-  # will overwrite any existing files, just like update_refs
-  if save_logs:
-    save_log(cmp_log_fn, log_msgs)
-
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
     if not check_enabled(log_msgs):
       segment = cmp_log_fn.split("/")[-1].split("_")[0]
       raise Exception(f"Route never enabled: {segment}")
+
+  # will overwrite any existing files, just like update_refs
+  if save_logs:
+    print('Saving logs to {}'.format(cmp_log_fn))
+    save_log(cmp_log_fn, log_msgs)
 
   try:
     return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs, cfg.tolerance)
@@ -169,10 +170,10 @@ if __name__ == "__main__":
         continue
 
       cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-      with open(cmp_log_fn, 'a') as f:
-        f.write('test file')
-      print('created temp file at {}'.format(cmp_log_fn))
-      sys.exit(1)
+      # with open(cmp_log_fn, 'a') as f:
+      #   f.write('test file')
+      # print('created temp file at {}'.format(cmp_log_fn))
+      # sys.exit(1)
       results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs, args.save_logs)
 
   diff1, diff2, failed = format_diff(results, ref_commit)

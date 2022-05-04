@@ -27,18 +27,17 @@ if __name__ == "__main__":
   with open(ref_commit_fn, "w") as f:
     f.write(ref_commit)
 
-  print('listing dir at: {}'.format(process_replay_dir))
-  print(os.listdir(process_replay_dir))
-  sys.exit(1)
-
   for car_brand, segment in segments:
     if args.only_upload:
       for cfg in CONFIGS:
+        print('listing dir at: {}'.format(process_replay_dir))
+        print(os.listdir(process_replay_dir))
         log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
         if not os.path.exists(log_fn):
           raise Exception("couldn't find file for uploading: {}".format(log_fn))
         upload_file(log_fn, os.path.basename(log_fn))
         os.remove(log_fn)
+        print('Uploaded and removed {}'.format(log_fn))
       continue
 
     r, n = segment.rsplit("--", 1)
