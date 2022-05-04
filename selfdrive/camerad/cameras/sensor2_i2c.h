@@ -91,7 +91,6 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3348, 0x0111}, // MIPI_F2_VDT_VC
   {0x334C, 0x0211}, // MIPI_F3_VDT_VC
   {0x3350, 0x0311}, // MIPI_F4_VDT_VC
-  {0x3352, 0x0000}, // Disable transmission of vertical blanking lines
   {0x31B0, 0x0053}, // FRAME_PREAMBLE
   {0x31B2, 0x003B}, // LINE_PREAMBLE
   {0x301A, 0x001C}, // RESET_REGISTER
