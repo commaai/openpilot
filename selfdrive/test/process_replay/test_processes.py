@@ -51,9 +51,10 @@ segments = [
 excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
+PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # run the full test (including checks) when no args given
-FULL_TEST = False  # len(sys.argv) <= 1
+FULL_TEST = False  # len(sys.argv) <= 1  # TODO: address this
 
 
 def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
@@ -132,20 +133,17 @@ if __name__ == "__main__":
   cars_whitelisted = len(args.whitelist_cars) > 0
   procs_whitelisted = len(args.whitelist_procs) > 0
 
-  process_replay_dir = os.path.dirname(os.path.abspath(__file__))
   try:
-    cmp_ref_commit = open(os.path.join(process_replay_dir, "ref_commit")).read().strip()
+    ref_commit = open(os.path.join(PROC_REPLAY_DIR, "ref_commit")).read().strip()
   except FileNotFoundError:
     print("couldn't find reference commit")
     sys.exit(1)
 
-  cur_commit = None
-  if args.save_logs:
-    cur_commit = get_commit()
-    if cur_commit is None:
-      raise Exception("couldn't get current commit")
+  cur_commit = get_commit()
+  if cur_commit is None:
+    raise Exception("couldn't get current commit")
 
-  print(f"***** testing against commit {cmp_ref_commit} *****")
+  print(f"***** testing against commit {ref_commit} *****")
 
   # check to make sure all car brands are tested
   if FULL_TEST:
@@ -171,16 +169,16 @@ if __name__ == "__main__":
          (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
         continue
 
-      cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{cmp_ref_commit}.bz2")
+      cmp_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
       results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
 
       # will overwrite any existing files, just like update_refs
       if args.save_logs:
-        cur_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+        cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
         save_log(cur_log_fn, log_msgs)
 
-  diff1, diff2, failed = format_diff(results, cmp_ref_commit)
-  with open(os.path.join(process_replay_dir, "diff.txt"), "w") as f:
+  diff1, diff2, failed = format_diff(results, ref_commit)
+  with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
     f.write(diff2)
   print(diff1)
 
