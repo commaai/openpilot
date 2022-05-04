@@ -7,6 +7,7 @@
 #include <QStackedLayout>
 
 #include "selfdrive/common/params.h"
+#include "selfdrive/common/timing.h"
 
 RecordButton::RecordButton(QWidget *parent) : QPushButton(parent) {
   setCheckable(true);
@@ -69,6 +70,7 @@ BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QW
   QObject::connect(btn, &QPushButton::clicked, [=](bool checked) {
     btn->setEnabled(false);
     Params().putBool("DisableLogging", !checked);
+    last_button = nanos_since_boot();
   });
   w->raise();
 
@@ -137,7 +139,7 @@ void BodyWindow::updateState(const UIState &s) {
   }
 
   // update record button state
-  if (sm.updated("managerState")) {
+  if (sm.updated("managerState") && (sm.rcv_time("managerState") - last_button)*1e-9 > 0.5) {
     for (auto proc : sm["managerState"].getManagerState().getProcesses()) {
       if (proc.getName() == "loggerd") {
         btn->setEnabled(true);
