@@ -320,6 +320,7 @@ jobs:
       if: ${{ failure() }}
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
+                        pip install azure && \
                         FILEREADER_CACHE=1 CI=1 python selfdrive/test/process_replay/update_refs.py --only-upload"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
