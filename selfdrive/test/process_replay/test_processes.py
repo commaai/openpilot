@@ -7,7 +7,7 @@ from typing import Any
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
-from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, check_enabled, replay_process
+from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, CI, check_enabled, replay_process
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
@@ -124,8 +124,6 @@ if __name__ == "__main__":
                       help="Extra fields or msgs to ignore (e.g. carState.events)")
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
                       help="Msgs to ignore (e.g. carEvents)")
-  parser.add_argument("--save-logs", action="store_true",
-                      help="Whether to save the generated log files")
   args = parser.parse_args()
 
   cars_whitelisted = len(args.whitelist_cars) > 0
@@ -171,7 +169,7 @@ if __name__ == "__main__":
       results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
 
       # save logs so we can upload on process replay failure
-      if args.save_logs:
+      if CI:
         cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
         save_log(cur_log_fn, log_msgs)
 
