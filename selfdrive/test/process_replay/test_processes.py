@@ -8,6 +8,7 @@ from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.process_replay import CONFIGS, check_enabled, replay_process
+from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
 
@@ -55,7 +56,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 FULL_TEST = len(sys.argv) <= 1
 
 
-def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None, save_logs=False):
+def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
@@ -72,15 +73,10 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None, save
       segment = cmp_log_fn.split("/")[-1].split("_")[0]
       raise Exception(f"Route never enabled: {segment}")
 
-  # will overwrite any existing files, just like update_refs
-  if save_logs:
-    print('Saving logs to {}'.format(cmp_log_fn))
-    save_log(cmp_log_fn, log_msgs)
-
   try:
-    return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs, cfg.tolerance)
+    return compare_logs(cmp_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
   except Exception as e:
-    return str(e)
+    return str(e), log_msgs
 
 
 def format_diff(results, ref_commit):
@@ -138,12 +134,18 @@ if __name__ == "__main__":
 
   process_replay_dir = os.path.dirname(os.path.abspath(__file__))
   try:
-    ref_commit = open(os.path.join(process_replay_dir, "ref_commit")).read().strip()
+    cmp_ref_commit = open(os.path.join(process_replay_dir, "ref_commit")).read().strip()
   except FileNotFoundError:
     print("couldn't find reference commit")
     sys.exit(1)
 
-  print(f"***** testing against commit {ref_commit} *****")
+  cur_commit = None
+  if args.save_logs:
+    cur_commit = get_commit()
+    if cur_commit is None:
+      raise Exception("couldn't get current commit")
+
+  print(f"***** testing against commit {cmp_ref_commit} *****")
 
   # check to make sure all car brands are tested
   if FULL_TEST:
@@ -169,14 +171,20 @@ if __name__ == "__main__":
          (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
         continue
 
-      cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+      cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{cmp_ref_commit}.bz2")
       # with open(cmp_log_fn, 'a') as f:
       #   f.write('test file')
       # print('created temp file at {}'.format(cmp_log_fn))
       # sys.exit(1)
-      results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs, args.save_logs)
+      results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
 
-  diff1, diff2, failed = format_diff(results, ref_commit)
+      # will overwrite any existing files, just like update_refs
+      if args.save_logs:
+        cur_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+        print('Saving logs to {}'.format(cur_log_fn))
+        save_log(cur_log_fn, log_msgs)
+
+  diff1, diff2, failed = format_diff(results, cmp_ref_commit)
   with open(os.path.join(process_replay_dir, "diff.txt"), "w") as f:
     f.write(diff2)
   print(diff1)
