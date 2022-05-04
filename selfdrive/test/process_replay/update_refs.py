@@ -14,9 +14,9 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Updates the reference logs for the current commit")
 
   parser.add_argument("--no-upload", action="store_true")
-  parser.add_argument("--only-upload", action="store_true")  # TODO: split this out into own file upload_refs?
+  parser.add_argument("--upload-only", action="store_true")  # TODO: split this out into own file upload_refs?
   args = parser.parse_args()
-  assert args.no_upload != args.only_upload or not args.no_upload, "Both upload args can't be set"
+  assert args.no_upload != args.upload_only or not args.no_upload, "Both upload args can't be set"
 
   process_replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(process_replay_dir, "ref_commit")
@@ -28,12 +28,10 @@ if __name__ == "__main__":
     f.write(ref_commit)
 
   for car_brand, segment in segments:
-    if args.only_upload:
+    if args.upload_only:
       for cfg in CONFIGS:
         log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-        if not os.path.exists(log_fn):
-          raise Exception("couldn't find file for uploading: {}".format(log_fn))
-        # upload_file(log_fn, os.path.basename(log_fn))
+        upload_file(log_fn, os.path.basename(log_fn))
         os.remove(log_fn)
         print('Uploaded {}'.format(log_fn))
       continue
@@ -48,6 +46,6 @@ if __name__ == "__main__":
 
       if not args.no_upload:
         upload_file(log_fn, os.path.basename(log_fn))
-        os.remove(log_fn)
+        # os.remove(log_fn)
 
   print("Updated reference logs for commit: {}".format(ref_commit))
