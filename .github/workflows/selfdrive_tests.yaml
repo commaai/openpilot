@@ -320,8 +320,7 @@ jobs:
       if: ${{ failure() }}
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        sudo apt-get install azure-cli && \
-#                        az login -u <username> -p {{ secrets.AZURE_TOKEN }} && \
+                        apt-get install azure-cli && \
                         pip install azure && \
                         FILEREADER_CACHE=1 CI=1 python selfdrive/test/process_replay/update_refs.py --only-upload"
     - name: "Upload coverage to Codecov"
