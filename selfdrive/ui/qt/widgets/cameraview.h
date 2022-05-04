@@ -36,9 +36,10 @@ protected:
   void vipcThread();
   void updateCameraFrame();
 
-  QSharedPointer<VisionIpcClient> vipc_client;
+  std::unique_ptr<VisionIpcClient> vipc_client;
   VisionIpcBufExtra meta_main = {0};
   VisionBuf *buf;
+  double last_run_time;
 
   struct WaitFence {
     WaitFence() { sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0); }
@@ -60,11 +61,7 @@ protected:
   int stream_width = 0;
   int stream_height = 0;
   std::atomic<VisionStreamType> stream_type;
-  QThread *vipc_thread = nullptr;
+  void vipcConnected();
 
   GLuint textures[3];
-
-protected slots:
-  void vipcConnected(VisionIpcClient *vipc_client);
-  void vipcFrameReceived();
 };
