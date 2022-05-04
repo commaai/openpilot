@@ -103,6 +103,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DoReboot", CLEAR_ON_MANAGER_START},
     {"DoShutdown", CLEAR_ON_MANAGER_START},
     {"DoUninstall", CLEAR_ON_MANAGER_START},
+    {"EnableLogging", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"EnableWideCamera", CLEAR_ON_MANAGER_START},
     {"EndToEndToggle", PERSISTENT},
     {"ForcePowerDown", CLEAR_ON_MANAGER_START},

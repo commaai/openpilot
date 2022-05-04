@@ -13,6 +13,9 @@ def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
 def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return CP.notCar
 
+def logging(started, params, CP: car.CarParams) -> bool:
+  run = (not CP.notCar) or params.get_bool("EnableLogging")
+  return started and run
 
 procs = [
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
@@ -21,7 +24,7 @@ procs = [
   NativeProcess("clocksd", "selfdrive/clocksd", ["./clocksd"]),
   NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], enabled=(not PC or WEBCAM), callback=driverview),
   NativeProcess("logcatd", "selfdrive/logcatd", ["./logcatd"]),
-  NativeProcess("loggerd", "selfdrive/loggerd", ["./loggerd"]),
+  NativeProcess("loggerd", "selfdrive/loggerd", ["./loggerd"], onroad=False, callback=logging),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
   NativeProcess("navd", "selfdrive/ui/navd", ["./navd"], offroad=True),
   NativeProcess("proclogd", "selfdrive/proclogd", ["./proclogd"]),
