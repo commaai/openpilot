@@ -6,6 +6,7 @@ import unittest
 import subprocess
 import signal
 
+print(os.environ)
 if "CI" in os.environ:
   def tqdm(x):
     return x
