@@ -3,7 +3,7 @@ from common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, CAR, EV_CAR, AccState, CanBus, STEER_THRESHOLD
+from selfdrive.car.gm.values import DBC, CAR, EV_CAR, NO_ASCM, AccState, CanBus, STEER_THRESHOLD
 
 
 class CarState(CarStateBase):
@@ -87,14 +87,17 @@ class CarState(CarStateBase):
       ret.cruiseState.available = (not ret.cruiseState.available)
 
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
-    self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
+    if (self.CP.carFingerprint in NO_ASCM):
+      ret.accFaulted = False
+    else:
+      ret.accFaulted = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.FAULTED
 
     # Regen braking is braking
     if self.car_fingerprint in EV_CAR:
       ret.brakePressed = ret.brakePressed or pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
 
-    ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
-    ret.cruiseState.standstill = self.pcm_acc_status == AccState.STANDSTILL
+    ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
+    ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
 
     return ret
 
