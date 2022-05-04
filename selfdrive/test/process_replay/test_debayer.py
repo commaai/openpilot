@@ -5,6 +5,16 @@ import subprocess
 import bz2
 import numpy as np
 
+from common.basedir import BASEDIR
+from selfdrive.hardware import PC, TICI
+from selfdrive.test.openpilotci import BASE_URL, get_url
+from selfdrive.version import get_commit
+from tools.lib.logreader import LogReader
+from tools.lib.filereader import FileReader
+
+if TICI:
+  os.environ["PYOPENCL_CTX"] = "0"
+
 try:
   import pyopencl as cl
 except ImportError:
@@ -12,12 +22,6 @@ except ImportError:
   env["PYOPENCL_CL_PRETEND_VERSION"] = "2.0"
   subprocess.run(["pip", "install", "pyopencl"], env=env, shell=True, check=True)
   import pyopencl as cl
-
-from selfdrive.hardware import PC, TICI
-from selfdrive.test.openpilotci import BASE_URL, get_url
-from selfdrive.version import get_commit
-from tools.lib.logreader import LogReader
-from tools.lib.filereader import FileReader
 
 TEST_ROUTE = "8345e3b82948d454|2022-05-04--13-45-33"
 SEGMENT = 0
@@ -46,7 +50,7 @@ def debayer_frame(data):
   ctx = cl.create_some_context()
   q = cl.CommandQueue(ctx)
 
-  with open('selfdrive/camerad/cameras/real_debayer.cl') as f:
+  with open(os.path.join(BASEDIR, 'selfdrive/camerad/cameras/real_debayer.cl')) as f:
     build_args = ' -cl-fast-relaxed-math -cl-denorms-are-zero -cl-single-precision-constant' + \
       f' -DFRAME_STRIDE={FRAME_STRIDE} -DRGB_WIDTH={FRAME_WIDTH} -DRGB_HEIGHT={FRAME_HEIGHT} -DCAM_NUM=0'
     if PC:
@@ -131,7 +135,7 @@ if __name__ == "__main__":
     frames_bzip = bzip_frames(frames)
 
     new_commit = get_commit()
-    frame_fn = get_frame_fn(new_commit, TEST_ROUTE, tici=TICI)
+    frame_fn = os.path.join(replay_dir, get_frame_fn(new_commit, TEST_ROUTE, tici=TICI))
     with open(frame_fn, "wb") as f:  # type: ignore
       f.write(frames_bzip)
 
