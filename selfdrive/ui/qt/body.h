@@ -2,11 +2,22 @@
 
 #include <QMovie>
 #include <QLabel>
+#include <QPushButton>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/ui.h"
 
-class BodyWindow : public QLabel {
+class RecordButton : public QPushButton {
+  Q_OBJECT
+
+public:
+  RecordButton(QWidget* parent = 0);
+
+private:
+  void paintEvent(QPaintEvent*) override;
+};
+
+class BodyWindow : public QWidget {
   Q_OBJECT
 
 public:
@@ -15,7 +26,9 @@ public:
 private:
   bool charging = false;
   FirstOrderFilter fuel_filter;
+  QLabel *face;
   QMovie *awake, *sleep;
+  RecordButton *btn;
   void paintEvent(QPaintEvent*) override;
 
 private slots:
