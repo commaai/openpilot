@@ -163,7 +163,6 @@ void CameraViewWidget::initializeGL() {
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
   latest_frame = nullptr;
-
   if (!vipc_client) {
     qDebug() << "Initializing vipc_client";
     vipc_client.reset(new VisionIpcClient(stream_name, stream_type, false));
@@ -179,6 +178,7 @@ void CameraViewWidget::showEvent(QShowEvent *event) {
 }
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
+  qDebug() << "resetting vipc_client";
   vipc_client.reset();
 }
 
@@ -285,12 +285,14 @@ void CameraViewWidget::updateCameraFrame() {
   UIState *s = uiState();
   bool recv_one = (meta_main.frame_id - (*s->sm)["modelV2"].getModelV2().getFrameId()) > 5;
   while (meta_main.frame_id < (*s->sm)["modelV2"].getModelV2().getFrameId() || recv_one) {
-    recv_one = false;
 //    qDebug() << "Getting buf";
     buf = vipc_client->recv(&meta_main, 1000);
 //    qDebug() << "After buf";
+//    qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
     if (buf == nullptr) {
       qDebug() << "frame nullptr!";
+      break;
+    } else if (recv_one) {
       break;
     }
   }
