@@ -99,6 +99,7 @@ if __name__ == "__main__":
   # get diff
   failed = False
   diff = ''
+  diff_file = ''
   if not update:
     with open(ref_commit_fn) as f:
       ref_commit = f.read().strip()
@@ -108,26 +109,31 @@ if __name__ == "__main__":
       cmp_frames = unbzip_frames(BASE_URL + frame_fn)
 
       if frames.shape != cmp_frames.shape:
+        failed = True
         diff += 'frame shapes not equal\n'
         diff += f'{ref_commit}: {cmp_frames.shape}\n'
         diff += f'HEAD: {frames.shape}\n'
-        failed = True
       elif not np.array_equal(frames, cmp_frames):
-        if np.allclose(frames, cmp_frames):
+        failed = True
+        if np.allclose(frames, cmp_frames, atol=1):
           diff += 'frames not equal, but are all close\n'
         else:
           diff += 'frames not equal\n'
 
         frame_diff = np.abs(np.subtract(frames, cmp_frames))
-        if len(np.nonzero(frame_diff)[0]) > 100000:
-          diff += 'different at a large amount of pixels\n'
+        diff_len = len(np.nonzero(frame_diff)[0])
+        if diff_len > 1000000:
+          diff += f'different at a large amount of pixels ({diff_len})\n'
         else:
           diff += 'different at (i, ref, HEAD):\n'
           for i in zip(*np.nonzero(frame_diff)):
-            diff += f'{i}, {cmp_frames[i]}, {frames[i]}\n'
+            diff_file += f'{i}, {cmp_frames[i]}, {frames[i]}\n'
 
-      with open("debayer_diff.txt", "w") as f:
-        f.write(diff)
+      if failed:
+        print(diff)
+        with open("debayer_diff.txt", "w") as f:
+          diff_file = diff + diff_file
+          f.write(diff_file)
     except Exception as e:
       print(str(e))
       failed = True
@@ -150,9 +156,10 @@ if __name__ == "__main__":
     except Exception as e:
       print("failed to upload", e)
 
+  if update:
     with open(ref_commit_fn, 'w') as f:
       f.write(str(new_commit))
 
-    print("\n\nNew ref commit: ", new_commit)
+    print("\nNew ref commit: ", new_commit)
 
   sys.exit(int(failed))
