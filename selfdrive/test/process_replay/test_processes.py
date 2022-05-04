@@ -32,19 +32,19 @@ original_segments = [
 ]
 
 segments = [
-  # ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),
-  # ("HYUNDAI", "fakedata|2022-01-20--17-49-04--0"),
-  # ("TOYOTA", "fakedata|2022-04-29--15-57-12--0"),
-  # ("TOYOTA2", "fakedata|2022-04-29--16-08-01--0"),
+  ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),
+  ("HYUNDAI", "fakedata|2022-01-20--17-49-04--0"),
+  ("TOYOTA", "fakedata|2022-04-29--15-57-12--0"),
+  ("TOYOTA2", "fakedata|2022-04-29--16-08-01--0"),
   ("TOYOTA3", "fakedata|2022-04-29--16-17-39--0"),
-  # ("HONDA", "fakedata|2022-01-20--17-56-40--0"),
-  # ("HONDA2", "fakedata|2022-04-29--16-31-55--0"),
-  # ("CHRYSLER", "fakedata|2022-01-20--18-00-11--0"),
-  # ("SUBARU", "fakedata|2022-01-20--18-01-57--0"),
-  # ("GM", "fakedata|2022-01-20--18-03-41--0"),
-  # ("NISSAN", "fakedata|2022-01-20--18-05-29--0"),
-  # ("VOLKSWAGEN", "fakedata|2022-01-20--18-07-15--0"),
-  # ("MAZDA", "fakedata|2022-01-20--18-09-32--0"),
+  ("HONDA", "fakedata|2022-01-20--17-56-40--0"),
+  ("HONDA2", "fakedata|2022-04-29--16-31-55--0"),
+  ("CHRYSLER", "fakedata|2022-01-20--18-00-11--0"),
+  ("SUBARU", "fakedata|2022-01-20--18-01-57--0"),
+  ("GM", "fakedata|2022-01-20--18-03-41--0"),
+  ("NISSAN", "fakedata|2022-01-20--18-05-29--0"),
+  ("VOLKSWAGEN", "fakedata|2022-01-20--18-07-15--0"),
+  ("MAZDA", "fakedata|2022-01-20--18-09-32--0"),
 ]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
