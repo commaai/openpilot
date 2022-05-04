@@ -54,7 +54,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # run the full test (including checks) when no args given
-FULL_TEST = False  # len(sys.argv) <= 1  # TODO: address this
+FULL_TEST = len(sys.argv) <= 1   # or "CI" in os.environ
 
 
 def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
@@ -172,7 +172,7 @@ if __name__ == "__main__":
       cmp_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
       results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
 
-      # will overwrite any existing files, just like update_refs
+      # save logs so we can upload on process replay failure
       if args.save_logs:
         cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
         save_log(cur_log_fn, log_msgs)

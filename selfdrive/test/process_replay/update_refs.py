@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import sys
 
 from selfdrive.test.openpilotci import upload_file, get_url
 from selfdrive.test.process_replay.compare_logs import save_log
 from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
-from selfdrive.test.process_replay.test_processes import segments
+from selfdrive.test.process_replay.test_processes import segments, PROC_REPLAY_DIR
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
 if __name__ == "__main__":
-  print(os.environ)
   parser = argparse.ArgumentParser(description="Updates the reference logs for the current commit")
 
   parser.add_argument("--no-upload", action="store_true")
@@ -19,8 +17,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
   assert args.no_upload != args.upload_only or not args.no_upload, "Both upload args can't be set"
 
-  process_replay_dir = os.path.dirname(os.path.abspath(__file__))
-  ref_commit_fn = os.path.join(process_replay_dir, "ref_commit")
+  ref_commit_fn = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
   ref_commit = get_commit()
   if ref_commit is None:
@@ -31,7 +28,7 @@ if __name__ == "__main__":
   for car_brand, segment in segments:
     if args.upload_only:
       for cfg in CONFIGS:
-        log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+        log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
         upload_file(log_fn, os.path.basename(log_fn))
         os.remove(log_fn)
         print('Uploaded {}'.format(log_fn))
@@ -42,11 +39,13 @@ if __name__ == "__main__":
 
     for cfg in CONFIGS:
       log_msgs = replay_process(cfg, lr)
-      log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+      log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
       save_log(log_fn, log_msgs)
 
       if not args.no_upload:
         upload_file(log_fn, os.path.basename(log_fn))
-        # os.remove(log_fn)
+        os.remove(log_fn)
 
-  print("Updated reference logs for commit: {}".format(ref_commit))
+  print('done')
+  if args.upload_only:
+    print('new reference commit: {}'.format(ref_commit))
