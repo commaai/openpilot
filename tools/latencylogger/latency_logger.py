@@ -7,7 +7,7 @@ import sys
 from collections import defaultdict
 
 from tools.lib.logreader import logreader_from_route_or_segment
-    
+
 DEMO_ROUTE = "9f583b1d93915c31|2022-04-26--18-49-49"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
@@ -25,7 +25,7 @@ MSGQ_TO_SERVICE = {
 SERVICE_TO_DURATIONS = {
   'camerad': ['processingTime'],
   'modeld': ['modelExecutionTime', 'gpuExecutionTime'],
-  'plannerd': ["solverExecutionTime"],
+  'plannerd': ['solverExecutionTime'],
 }
 
 def read_logs(lr):
@@ -38,7 +38,7 @@ def read_logs(lr):
     if msg.which() == 'sendcan':
       latest_sendcan_monotime = msg.logMonoTime
       continue
-    
+
     if msg.which() in MSGQ_TO_SERVICE:
       service = MSGQ_TO_SERVICE[msg.which()]
       msg_obj = getattr(msg, msg.which())
@@ -105,9 +105,10 @@ def find_t0(start_times, frame_id=-1):
     frame_id += 1
   raise Exception('No start time has been set')
 
-## ASSUMES THAT AT LEAST ONE CLOUDLOG IS MADE IN CONTROLSD
 def insert_cloudlogs(lr, timestamps, start_times, end_times):
-  t0 = find_t0(start_times) 
+  # at least one cloudlog must be made in controlsd
+
+  t0 = find_t0(start_times)
   failed_inserts = 0
   latest_controls_frameid = 0
   for msg in lr:
@@ -118,7 +119,7 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
         service = jmsg['ctx']['daemon']
         event = jmsg['msg']['timestamp']['event']
         if time < t0:
-          # Filter out controlsd messages which arrive before the camera loop 
+          # Filter out controlsd messages which arrive before the camera loop
           continue
 
         if "frame_id" in jmsg['msg']['timestamp']:
@@ -139,29 +140,30 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
             timestamps[frame_id][service].append((event, time))
           else:
             failed_inserts += 1
+
   if latest_controls_frameid == 0:
-    print("Warning, no timestamp in controlsd. Implementation assumes that a timestamp is made in controlsd to bind boardd logs to frame ID. Please add such a timestamp.")
+    print("Warning: failed to bind boardd logs to a frame ID. Add a timestamp cloudlog in controlsd.")
   elif failed_inserts > len(timestamps):
-    print("Warning, many cloudlog inserts failed", failed_inserts)
+    print(f"Warning: failed to bind {failed_inserts} cloudlog timestamps to a frame ID")
 
 def print_timestamps(timestamps, durations, start_times, relative):
-  t0 = find_t0(start_times) 
+  t0 = find_t0(start_times)
   for frame_id in timestamps.keys():
     print('='*80)
     print("Frame ID:", frame_id)
     if relative:
-      t0 = find_t0(start_times, frame_id) 
+      t0 = find_t0(start_times, frame_id)
 
     for service in SERVICES:
-      print("  "+service)  
+      print("  "+service)
       events = timestamps[frame_id][service]
       for event, time in sorted(events, key = lambda x: x[1]):
-        print("    "+'%-53s%-53s' %(event, str((time-t0)/1e6)))  
+        print("    "+'%-53s%-53s' %(event, str((time-t0)/1e6)))
       for event, time in durations[frame_id][service]:
-        print("    "+'%-53s%-53s' %(event, str(time*1000))) 
+        print("    "+'%-53s%-53s' %(event, str(time*1000)))
 
 def graph_timestamps(timestamps, start_times, end_times, relative):
-  t0 = find_t0(start_times) 
+  t0 = find_t0(start_times)
   fig, ax = plt.subplots()
   ax.set_xlim(0, 150 if relative else 750)
   ax.set_ylim(0, 15)
@@ -172,7 +174,7 @@ def graph_timestamps(timestamps, start_times, end_times, relative):
   points = {"x": [], "y": [], "labels": []}
   for i, (frame_id, services) in enumerate(timestamps.items()):
     if relative:
-      t0 = find_t0(start_times, frame_id) 
+      t0 = find_t0(start_times, frame_id)
     service_bars = []
     for service, events in services.items():
       if start_times[frame_id][service] and end_times[frame_id][service]:
