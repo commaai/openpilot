@@ -15,6 +15,10 @@ def get_url(route_name, segment_num, log_type="rlog"):
 def upload_file(path, name):
   from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
 
+  print('CI', os.getenv('CI'))
+  print('FILEREADER_CACHE', os.getenv('FILEREADER_CACHE'))
+  print('AZURE_TOKEN_IN_ENV', "AZURE_TOKEN" in os.environ)
+
   sas_token = None
   if os.path.isfile(TOKEN_PATH):
     sas_token = open(TOKEN_PATH).read().strip()
