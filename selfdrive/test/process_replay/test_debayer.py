@@ -122,9 +122,12 @@ if __name__ == "__main__":
           diff += 'frames not equal\n'
 
         frame_diff = np.abs(np.subtract(frames, cmp_frames))
-        diff += 'different at (i, ref, HEAD):'
-        for i in zip(*np.nonzero(frame_diff)):
-          diff += f'{i}, {cmp_frames[i]}, {frames[i]}'
+        if len(np.nonzero(frame_diff)[0]) > 100000:
+          diff += 'different at a large amount of pixels\n'
+        else:
+          diff += 'different at (i, ref, HEAD):\n'
+          for i in zip(*np.nonzero(frame_diff)):
+            diff += f'{i}, {cmp_frames[i]}, {frames[i]}\n'
 
       with open("debayer_diff.txt", "w") as f:
         f.write(diff)
