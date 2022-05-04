@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import sys
 
 from selfdrive.test.openpilotci import upload_file, get_url
 from selfdrive.test.process_replay.compare_logs import save_log
@@ -25,6 +26,10 @@ if __name__ == "__main__":
     raise Exception("couldn't get ref commit")
   with open(ref_commit_fn, "w") as f:
     f.write(ref_commit)
+
+  print('listing dir at: {}'.format(process_replay_dir))
+  print(os.listdir(process_replay_dir))
+  sys.exit(1)
 
   for car_brand, segment in segments:
     if args.only_upload:

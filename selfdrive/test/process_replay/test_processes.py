@@ -169,6 +169,10 @@ if __name__ == "__main__":
         continue
 
       cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+      with open(cmp_log_fn, 'a') as f:
+        f.write('test file')
+      print('created temp file at {}'.format(cmp_log_fn))
+      sys.exit(1)
       results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs, args.save_logs)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
