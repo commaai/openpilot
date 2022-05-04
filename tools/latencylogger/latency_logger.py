@@ -83,8 +83,10 @@ def read_logs(lr):
         if msg_obj.frameIdExtra != frame_id:
           frame_mismatches.append(frame_id)
 
-  assert frame_id_fails < 20, "Too many frameId fetch fails"
-  assert len(frame_mismatches) < 20, "Too many frame mismatches"
+  if frame_id_fails > 20:
+    print("Warning, many frameId fetch fails", frame_id_fails)
+  if len(frame_mismatches) > 20:
+    print("Warning, many frame mismatches", len(frame_mismatches))
   return (data, frame_mismatches)
 
 def find_frame_id(time, service, start_times, end_times):
@@ -98,11 +100,10 @@ def find_t0(start_times, frame_id=-1):
   m = max(start_times.keys())
   while frame_id <= m:
     for service in SERVICES:
-      if service in start_times[frame_id]:
+      if start_times[frame_id][service]:
         return start_times[frame_id][service]
     frame_id += 1
   raise Exception('No start time has been set')
-
 
 ## ASSUMES THAT AT LEAST ONE CLOUDLOG IS MADE IN CONTROLSD
 def insert_cloudlogs(lr, timestamps, start_times, end_times):
@@ -138,8 +139,10 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
             timestamps[frame_id][service].append((event, time))
           else:
             failed_inserts += 1
-  assert latest_controls_frameid > 0, "No timestamp in controlsd"
-  assert failed_inserts < len(timestamps), "Too many failed cloudlog inserts"
+  if latest_controls_frameid == 0:
+    print("Warning, no timestamp in controlsd. Implementation assumes that a timestamp is made in controlsd to bind boardd logs to frame ID. Please add such a timestamp.")
+  elif failed_inserts > len(timestamps):
+    print("Warning, many cloudlog inserts failed", failed_inserts)
 
 def print_timestamps(timestamps, durations, start_times, relative):
   t0 = find_t0(start_times) 
@@ -159,17 +162,15 @@ def print_timestamps(timestamps, durations, start_times, relative):
 
 def graph_timestamps(timestamps, start_times, end_times, relative):
   t0 = find_t0(start_times) 
-  y0 = min(start_times.keys())
   fig, ax = plt.subplots()
   ax.set_xlim(0, 150 if relative else 750)
-  ax.set_ylim(y0, y0+15)
+  ax.set_ylim(0, 15)
   ax.set_xlabel('milliseconds')
-  ax.set_ylabel('Frame ID')
   colors = ['blue', 'green', 'red', 'yellow', 'purple']
   assert len(colors) == len(SERVICES), 'Each service needs a color'
 
   points = {"x": [], "y": [], "labels": []}
-  for frame_id, services in timestamps.items():
+  for i, (frame_id, services) in enumerate(timestamps.items()):
     if relative:
       t0 = find_t0(start_times, frame_id) 
     service_bars = []
@@ -180,9 +181,9 @@ def graph_timestamps(timestamps, start_times, end_times, relative):
         service_bars.append(((start-t0)/1e6,(end-start)/1e6))
         for event in events:
           points['x'].append((event[1]-t0)/1e6)
-          points['y'].append(frame_id)
+          points['y'].append(i)
           points['labels'].append(event[0])
-    ax.broken_barh(service_bars, (frame_id-0.45, 0.9), facecolors=(colors), alpha=0.5)
+    ax.broken_barh(service_bars, (i-0.45, 0.9), facecolors=(colors), alpha=0.5)
 
   scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
@@ -212,6 +213,7 @@ if __name__ == "__main__":
 
   r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   lr = logreader_from_route_or_segment(r, sort_by_time=True)
+
   data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
   if args.plot:
