@@ -13,6 +13,10 @@ RecordButton::RecordButton(QWidget *parent) : QPushButton(parent) {
   setCheckable(true);
   setChecked(false);
   setFixedSize(148, 148);
+
+  QObject::connect(this, &QPushButton::toggled, [=]() {
+    setEnabled(false);
+  });
 }
 
 void RecordButton::paintEvent(QPaintEvent *event) {
@@ -21,10 +25,10 @@ void RecordButton::paintEvent(QPaintEvent *event) {
 
   QPoint center(width() / 2, height() / 2);
 
-  QColor bg(isChecked() ? "#FFFFFF" : "#404040");
+  QColor bg(isChecked() ? "#FFFFFF" : "#737373");
   QColor accent(isChecked() ? "#FF0000" : "#FFFFFF");
   if (!isEnabled()) {
-    bg = QColor("#737373");
+    bg = QColor("#404040");
     accent = QColor("#FFFFFF");
   }
 
@@ -118,6 +122,11 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
   }
 }
 
+void BodyWindow::offroadTransition(bool offroad) {
+  btn->setChecked(true);
+  btn->setEnabled(true);
+  fuel_filter.reset(1.0);
+}
 
 void BodyWindow::updateState(const UIState &s) {
   if (!isVisible()) {

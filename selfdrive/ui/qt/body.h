@@ -34,4 +34,5 @@ private:
 
 private slots:
   void updateState(const UIState &s);
+  void offroadTransition(bool onroad);
 };
