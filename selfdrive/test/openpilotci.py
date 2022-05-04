@@ -18,6 +18,9 @@ def upload_file(path, name):
   print('CI', os.getenv('CI'))
   print('FILEREADER_CACHE', os.getenv('FILEREADER_CACHE'))
   print('AZURE_TOKEN_IN_ENV', "AZURE_TOKEN" in os.environ)
+  print('AZURE_TOKEN_TYPE', type(os.environ["AZURE_TOKEN"]))
+  if "AZURE_TOKEN" in os.environ and type(os.environ["AZURE_TOKEN"]) == str:
+    print('AZURE_TOKEN_LEN', len(os.environ["AZURE_TOKEN"]))
 
   sas_token = None
   if os.path.isfile(TOKEN_PATH):
