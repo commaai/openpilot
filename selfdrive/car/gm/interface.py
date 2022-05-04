@@ -254,6 +254,29 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
       ret.openpilotLongitudinalControl = False # ASCM vehicles use OP for long
       ret.radarOffCan = True # ASCM vehicles (typically) have radar
+
+    elif candidate == CAR.BOLT_EUV:
+      ret.minEnableSpeed = -1
+      ret.minSteerSpeed = 5 * CV.MPH_TO_MS
+      ret.mass = 1616. + STD_CARGO_KG
+      ret.wheelbase = 2.60096
+      ret.steerRatio = 16.8
+      ret.steerRatioRear = 0.
+      ret.centerToFront = 2.0828 #ret.wheelbase * 0.4 # wild guess
+      tire_stiffness_factor = 1.0
+      # TODO: Improve stability in turns 
+      # still working on improving lateral
+      ret.steerRateCost = 0.5
+      ret.steerActuatorDelay = 0.
+      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]
+      ret.lateralTuning.pid.kf = 0.0002
+      # ret.steerMaxBP = [10., 25.]
+      # ret.steerMaxV = [1., 1.2]
+      ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
+      ret.openpilotLongitudinalControl = False # Using Stock ACC
+      ret.radarOffCan = True # No Radar
+      # Note: No Long tuning as we are using stock long
     
 
          

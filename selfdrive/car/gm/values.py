@@ -61,6 +61,7 @@ class CAR:
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
   SILVERADO_NR = "CHEVROLET SILVERADO NO RADAR"
   SUBURBAN = "CHEVROLET SUBURBAN PREMIER 2019"
+  BOLT_EUV = "CHEVROLET BOLT EUV 2022"
 
 
 class Footnote(Enum):
@@ -99,7 +100,8 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.EQUINOX_NR: CarInfo("Chevrolet Equinox 2016-2020", "LKAS, no ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.PEDAL]),
   CAR.TAHOE_NR: CarInfo("Chevrolet Tahoe 2016-2020", "LKAS, Basic ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC]),
   CAR.SILVERADO_NR: CarInfo("Chevrolet Silverado 2016-2019", "LKAS, Camera-based ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC]),
-  CAR.SUBURBAN: CarInfo("Chevrolet Suburban 2016-2019", "LKAS, Basic ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC])
+  CAR.SUBURBAN: CarInfo("Chevrolet Suburban 2016-2019", "LKAS, Basic ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC]),
+  CAR.BOLT_EUV: CarInfo("Chevrolet BOLT EUV 2022", "LKAS, Camera-based ACC", footnotes=[Footnote.CAM_HARNESS, Footnote.STOCK_ACC])
 }
 
 
@@ -258,10 +260,15 @@ FINGERPRINTS = {
   {
     190: 6, 193: 8, 197: 8, 201: 8, 208: 8, 209: 7, 211: 2, 241: 6, 249: 8, 288: 5, 289: 8, 298: 8, 304: 1, 309: 8, 311: 8, 313: 8, 320: 3, 328: 1, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 413: 8, 451: 8, 452: 8, 453: 6, 455: 7, 460: 5, 463: 3, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 500: 6, 501: 8, 510: 8, 528: 5, 532: 6, 534: 2, 562: 8, 563: 5, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 707: 8, 761: 7, 800: 6, 801: 8, 810: 8, 840: 5, 842: 5, 844: 8, 848: 4, 977: 8, 1001: 8, 1017: 8, 1020: 8, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1265: 8, 1267: 1, 1280: 4, 1300: 8
   }],
+  CAR.BOLT_EUV: [
+  # Chevy Bolt EUV 2019 (Stock VOACC, LKAS)
+  {
+    189: 7, 190: 7, 193: 8, 197: 8, 201: 8, 209: 7, 211: 3, 241: 6, 257: 8, 288: 5, 289: 8, 298: 8, 304: 3, 309: 8, 311: 8, 313: 8, 320: 4, 322: 7, 328: 1, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 451: 8, 452:8, 453: 6, 458: 5, 463: 3, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 500: 6, 501: 8, 528: 5, 532: 6, 560: 8, 562: 8, 563: 5, 565: 5, 566: 8, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 707: 8, 715: 8, 717: 5, 753: 5, 761: 7, 789: 5, 800: 6, 810: 8, 840: 5, 842: 5, 844: 8, 848: 4, 869: 4, 880: 6, 977: 8, 1001: 8, 1017: 8, 1020: 8, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1265: 8, 1280: 4, 1296: 4, 1300: 8, 1930: 7
+  }],
 }
 
-EV_CAR = set([CAR.BOLT_NR, CAR.VOLT, CAR.VOLT_NR])
-NO_ASCM = set([CAR.VOLT_NR, CAR.MALIBU_NR, CAR.ACADIA_NR, CAR.BOLT_NR, CAR.EQUINOX_NR, CAR.TAHOE_NR, CAR.SILVERADO_NR, CAR.SUBURBAN])
+EV_CAR = set([CAR.BOLT_NR, CAR.VOLT, CAR.VOLT_NR, CAR.BOLT_EUV])
+NO_ASCM = set([CAR.VOLT_NR, CAR.MALIBU_NR, CAR.ACADIA_NR, CAR.BOLT_NR, CAR.EQUINOX_NR, CAR.TAHOE_NR, CAR.SILVERADO_NR, CAR.SUBURBAN, CAR.BOLT_EUV])
 
 DBC = {
   CAR.HOLDEN_ASTRA: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis', body_dbc='gm_global_a_lowspeed_1818125'),
@@ -280,4 +287,5 @@ DBC = {
   CAR.TAHOE_NR: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis', body_dbc='gm_global_a_lowspeed_1818125'),
   CAR.SILVERADO_NR: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis', body_dbc='gm_global_a_lowspeed_1818125'),
   CAR.SUBURBAN: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis', body_dbc='gm_global_a_lowspeed_1818125'),
+  CAR.BOLT_EUV: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis', body_dbc='gm_global_a_lowspeed_1818125'),
 }
