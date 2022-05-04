@@ -172,16 +172,11 @@ if __name__ == "__main__":
         continue
 
       cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{cmp_ref_commit}.bz2")
-      # with open(cmp_log_fn, 'a') as f:
-      #   f.write('test file')
-      # print('created temp file at {}'.format(cmp_log_fn))
-      # sys.exit(1)
       results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
 
       # will overwrite any existing files, just like update_refs
       if args.save_logs:
         cur_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-        print('Saving logs to {}'.format(cur_log_fn))
         save_log(cur_log_fn, log_msgs)
 
   diff1, diff2, failed = format_diff(results, cmp_ref_commit)
