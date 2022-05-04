@@ -10,14 +10,16 @@ Version 0.8.14 (2022-0X-XX)
  * New lateral controller based on physical wheel torque model
    * Much smoother control, consistent across the speed range
    * Effective feedforward that uses road roll
-   * Simplified tuning, all car specific parameters can be derived from data
-   * Initially used on TSS2 Corolla and TSS-P Rav4
+   * Simplified tuning, all car-specific parameters can be derived from data
+   * Initially used on TSS2 Corolla and TSS-P RAV4
+ * Added toggle to disable disengaging on the accelerator pedal
  * comma body support
  * Audi RS3 support thanks to jyoung8607!
  * Hyundai Ioniq Plug-in Hybrid 2019 support thanks to sunnyhaibin!
  * Hyundai Tucson Diesel 2019 support thanks to sunnyhaibin!
  * Toyota Alphard Hybrid 2021 support
  * Toyota Avalon Hybrid 2022 support
+ * Toyota RAV4 Hybrid 2022 support
 
 Version 0.8.13 (2022-02-18)
 ========================

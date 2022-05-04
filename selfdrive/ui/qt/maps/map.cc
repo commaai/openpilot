@@ -117,17 +117,15 @@ void MapWindow::timerUpdate() {
     auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
     auto pos = location.getPositionGeodetic();
     auto orientation = location.getCalibratedOrientationNED();
+    auto velocity = location.getVelocityCalibrated();
 
-    localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
+    localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) &&
+     pos.getValid() && orientation.getValid() && velocity.getValid();
 
     if (localizer_valid) {
-      float velocity = location.getVelocityCalibrated().getValue()[0];
-      float bearing = RAD2DEG(orientation.getValue()[2]);
-      auto coordinate = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
-
-      last_position = coordinate;
-      last_bearing = bearing;
-      velocity_filter.update(velocity);
+      last_position = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
+      last_bearing = RAD2DEG(orientation.getValue()[2]);
+      velocity_filter.update(velocity.getValue()[0]);
     }
   }
 

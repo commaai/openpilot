@@ -214,16 +214,10 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  std::lock_guard lk(lock);
-
   if (latest_frame == nullptr) return;
 
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
-  // sync with the PBO
-  if (wait_fence) {
-    wait_fence->wait();
-  }
-
   glBindVertexArray(frame_vao);
 
   glUseProgram(program->programId());
@@ -245,6 +239,7 @@ void CameraViewWidget::paintGL() {
   glBindVertexArray(0);
   glBindTexture(GL_TEXTURE_2D, 0);
   glActiveTexture(GL_TEXTURE0);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 }
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
@@ -253,7 +248,6 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
 
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   for (int i = 0; i < 3; ++i) {
     glBindTexture(GL_TEXTURE_2D, textures[i]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

@@ -48,7 +48,6 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
     int err = avio_open(&this->ofmt_ctx->pb, this->vid_path.c_str(), AVIO_FLAG_WRITE);
     assert(err >= 0);
 
-    this->wrote_codec_config = false;
   } else {
     this->of = util::safe_fopen(this->vid_path.c_str(), "wb");
     assert(this->of);

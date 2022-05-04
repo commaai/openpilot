@@ -299,19 +299,21 @@ selfdrive/proclogd/proclog.h
 
 selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder.h
-selfdrive/loggerd/omx_encoder.cc
-selfdrive/loggerd/omx_encoder.h
+selfdrive/loggerd/v4l_encoder.cc
+selfdrive/loggerd/v4l_encoder.h
 selfdrive/loggerd/video_writer.cc
 selfdrive/loggerd/video_writer.h
+selfdrive/loggerd/remote_encoder.cc
+selfdrive/loggerd/remote_encoder.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h
 selfdrive/loggerd/loggerd.cc
 selfdrive/loggerd/loggerd.h
+selfdrive/loggerd/encoderd.cc
 selfdrive/loggerd/main.cc
 selfdrive/loggerd/bootlog.cc
 selfdrive/loggerd/raw_logger.cc
 selfdrive/loggerd/raw_logger.h
-selfdrive/loggerd/include/msm_media_info.h
 
 selfdrive/loggerd/__init__.py
 selfdrive/loggerd/config.py
@@ -444,7 +446,6 @@ third_party/SConscript
 
 third_party/linux/**
 third_party/opencl/**
-third_party/openmax/**
 
 third_party/json11/json11.cpp
 third_party/json11/json11.hpp

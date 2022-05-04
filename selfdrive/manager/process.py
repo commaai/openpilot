@@ -4,7 +4,7 @@ import signal
 import struct
 import time
 import subprocess
-from typing import Optional, List, ValuesView
+from typing import Optional, Callable, List, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process
 
@@ -12,6 +12,7 @@ from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
 import cereal.messaging as messaging
 import selfdrive.sentry as sentry
+from cereal import car
 from common.basedir import BASEDIR
 from common.params import Params
 from common.realtime import sec_since_boot
@@ -71,8 +72,7 @@ class ManagerProcess(ABC):
   sigkill = False
   onroad = True
   offroad = False
-  driverview = False
-  notcar = False
+  callback: Optional[Callable[[bool, Params, car.CarParams], bool]] = None
   proc: Optional[Process] = None
   enabled = True
   name = ""
@@ -184,15 +184,14 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, onroad=True, offroad=False, driverview=False, notcar=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, cwd, cmdline, enabled=True, onroad=True, offroad=False, callback=None, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
     self.enabled = enabled
     self.onroad = onroad
     self.offroad = offroad
-    self.driverview = driverview
-    self.notcar = notcar
+    self.callback = callback
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
@@ -217,14 +216,13 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, enabled=True, onroad=True, offroad=False, driverview=False, notcar=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, module, enabled=True, onroad=True, offroad=False, callback=None, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.module = module
     self.enabled = enabled
     self.onroad = onroad
     self.offroad = offroad
-    self.driverview = driverview
-    self.notcar = notcar
+    self.callback = callback
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
@@ -291,7 +289,7 @@ class DaemonProcess(ManagerProcess):
     pass
 
 
-def ensure_running(procs: ValuesView[ManagerProcess], started: bool, driverview: bool=False, notcar: bool=False,
+def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None, CP: car.CarParams=None,
                    not_run: Optional[List[str]]=None) -> None:
   if not_run is None:
     not_run = []
@@ -301,9 +299,9 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, driverview:
     run = any((
       p.offroad and not started,
       p.onroad and started,
-      p.driverview and driverview,
-      p.notcar and notcar,
     ))
+    if p.callback is not None and None not in (params, CP):
+      run = run or p.callback(started, params, CP)
 
     # Conditions that block a process from starting
     run = run and not any((

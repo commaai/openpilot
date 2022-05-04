@@ -256,7 +256,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
   seg_path = os.path.join(outdir, segment)
   # check to make sure openpilot is engaged in the route
-  if not check_enabled(LogReader(os.path.join(seg_path, "rlog.bz2"))):
+  if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
     raise Exception(f"Route never enabled: {segment}")
 
   return seg_path
@@ -268,11 +268,11 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
     lr = LogReader(r.log_paths()[args.seg])
     fr = FrameReader(r.camera_paths()[args.seg])
   else:
-    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
+    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
   rpath = regen_segment(lr, {'roadCameraState': fr})
 
-  lr = LogReader(os.path.join(rpath, 'rlog.bz2'))
+  lr = LogReader(os.path.join(rpath, 'rlog2'))
   controls_state_active = [m.controlsState.active for m in lr if m.which() == 'controlsState']
   assert any(controls_state_active), "Segment did not engage"
 
