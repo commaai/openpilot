@@ -48,4 +48,4 @@ if __name__ == "__main__":
         upload_file(log_fn, os.path.basename(log_fn))
         os.remove(log_fn)
 
-  print("done")
+  print("Updated reference logs for commit: {}".format(ref_commit))

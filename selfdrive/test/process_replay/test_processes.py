@@ -143,7 +143,6 @@ if __name__ == "__main__":
     sys.exit(1)
 
   print(f"***** testing against commit {ref_commit} *****")
-  sys.exit(1)
 
   # check to make sure all car brands are tested
   if FULL_TEST:
