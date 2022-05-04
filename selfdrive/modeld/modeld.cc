@@ -171,8 +171,8 @@ int main(int argc, char **argv) {
     assert(ret == 0);
   }
 
-  bool main_wide_camera = Params().getBool("EnableWideCamera");
-  bool use_extra_client = !main_wide_camera;  // set for single camera mode
+  bool main_wide_camera = Hardware::TICI() && Params().getBool("EnableWideCamera");
+  bool use_extra_client = main_wide_camera;  // set for single camera mode
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
