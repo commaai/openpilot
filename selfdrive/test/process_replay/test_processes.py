@@ -52,7 +52,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 # dashcamOnly makes don't need to be tested until a full port is done
 excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
 # run the full test (including checks) when no args given
-FULL_TEST = len(sys.argv) <= 1   # or "CI" in os.environ
+FULL_TEST = len(sys.argv) <= 1 or CI
 
 
 def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
@@ -113,17 +113,17 @@ if __name__ == "__main__":
 
   # whitelist has precedence over blacklist in case both are defined
   parser.add_argument("--whitelist-procs", type=str, nargs="*", default=[],
-                      help="Whitelist given processes from the test (e.g. controlsd)")
+                        help="Whitelist given processes from the test (e.g. controlsd)")
   parser.add_argument("--whitelist-cars", type=str, nargs="*", default=[],
-                      help="Whitelist given cars from the test (e.g. HONDA)")
+                        help="Whitelist given cars from the test (e.g. HONDA)")
   parser.add_argument("--blacklist-procs", type=str, nargs="*", default=[],
-                      help="Blacklist given processes from the test (e.g. controlsd)")
+                        help="Blacklist given processes from the test (e.g. controlsd)")
   parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[],
-                      help="Blacklist given cars from the test (e.g. HONDA)")
+                        help="Blacklist given cars from the test (e.g. HONDA)")
   parser.add_argument("--ignore-fields", type=str, nargs="*", default=[],
-                      help="Extra fields or msgs to ignore (e.g. carState.events)")
+                        help="Extra fields or msgs to ignore (e.g. carState.events)")
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
-                      help="Msgs to ignore (e.g. carEvents)")
+                        help="Msgs to ignore (e.g. carEvents)")
   args = parser.parse_args()
 
   cars_whitelisted = len(args.whitelist_cars) > 0
