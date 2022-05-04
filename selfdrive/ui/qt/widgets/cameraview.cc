@@ -283,16 +283,18 @@ void CameraViewWidget::updateCameraFrame() {
   last_run_time = cur_time;
 
   UIState *s = uiState();
-  bool recv_one = (meta_main.frame_id - (*s->sm)["modelV2"].getModelV2().getFrameId()) > 5;
+  bool recv_one = (meta_main.frame_id - (*s->sm)["modelV2"].getModelV2().getFrameId()) > 5 || meta_main.frame_id < 6;
   while (meta_main.frame_id < (*s->sm)["modelV2"].getModelV2().getFrameId() || recv_one) {
-//    qDebug() << "Getting buf";
+    qDebug() << "Getting buf";
     buf = vipc_client->recv(&meta_main, 1000);
+    recv_one = false;
+//    recv_one = (meta_main.frame_id - (*s->sm)["modelV2"].getModelV2().getFrameId()) > 5;
 //    qDebug() << "After buf";
-//    qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
+    qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
     if (buf == nullptr) {
       qDebug() << "frame nullptr!";
       break;
-    } else if (recv_one) {
+    } else if ((meta_main.frame_id - (*s->sm)["modelV2"].getModelV2().getFrameId()) < -5) {
       break;
     }
   }
@@ -301,5 +303,5 @@ void CameraViewWidget::updateCameraFrame() {
     latest_frame = buf;
     update();
   }
-//  qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
+  qDebug() << "camerad:" << meta_main.frame_id << "modeld:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
 }
