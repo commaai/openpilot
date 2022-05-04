@@ -11,6 +11,7 @@ from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
 if __name__ == "__main__":
+  print(os.environ)
   parser = argparse.ArgumentParser(description="Updates the reference logs for the current commit")
 
   parser.add_argument("--no-upload", action="store_true")
