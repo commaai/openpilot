@@ -128,17 +128,16 @@ def manager_thread() -> None:
     ignore.append("pandad")
   ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
-  ensure_running(managed_processes.values(), started=False, not_run=ignore)
-
   sm = messaging.SubMaster(['deviceState', 'carParams'], poll=['deviceState'])
   pm = messaging.PubMaster(['managerState'])
+
+  ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
 
   while True:
     sm.update()
 
     started = sm['deviceState'].started
-    driverview = params.get_bool("IsDriverViewEnabled")
-    ensure_running(managed_processes.values(), started=started, driverview=driverview, notcar=sm['carParams'].notCar, not_run=ignore)
+    ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
     running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
                        for p in managed_processes.values() if p.proc)
