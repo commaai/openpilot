@@ -25,6 +25,7 @@ public:
 
 private:
   bool charging = false;
+  uint64_t last_button = 0;
   FirstOrderFilter fuel_filter;
   QLabel *face;
   QMovie *awake, *sleep;
@@ -33,4 +34,5 @@ private:
 
 private slots:
   void updateState(const UIState &s);
+  void offroadTransition(bool onroad);
 };
