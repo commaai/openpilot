@@ -22,6 +22,11 @@ void RecordButton::paintEvent(QPaintEvent *event) {
 
   QColor bg(isChecked() ? "#FFFFFF" : "#404040");
   QColor accent(isChecked() ? "#FF0000" : "#FFFFFF");
+  if (!isEnabled()) {
+    bg = QColor("#737373");
+    accent = QColor("#FFFFFF");
+  }
+
   if (isDown()) {
     accent.setAlphaF(0.7);
   }
@@ -62,7 +67,8 @@ BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QW
   btn = new RecordButton(this);
   vlayout->addWidget(btn, 0, Qt::AlignBottom | Qt::AlignRight);
   QObject::connect(btn, &QPushButton::clicked, [=](bool checked) {
-    Params().putBool("EnableLogging", checked);
+    btn->setEnabled(false);
+    Params().putBool("DisableLogging", !checked);
   });
   w->raise();
 
@@ -70,8 +76,6 @@ BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QW
 }
 
 void BodyWindow::paintEvent(QPaintEvent *event) {
-  //QLabel::paintEvent(event);
-
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
@@ -130,6 +134,16 @@ void BodyWindow::updateState(const UIState &s) {
   if (m != face->movie()) {
     face->setMovie(m);
     face->movie()->start();
+  }
+
+  // update record button state
+  if (sm.updated("managerState")) {
+    for (auto proc : sm["managerState"].getManagerState().getProcesses()) {
+      if (proc.getName() == "loggerd") {
+        btn->setEnabled(true);
+        btn->setChecked(proc.getRunning());
+      }
+    }
   }
 
   update();
