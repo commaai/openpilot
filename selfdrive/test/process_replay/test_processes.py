@@ -7,7 +7,7 @@ from typing import Any
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
-from selfdrive.test.process_replay.process_replay import CONFIGS, check_enabled, replay_process
+from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, check_enabled, replay_process
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
@@ -47,12 +47,10 @@ segments = [
   # ("MAZDA", "fakedata|2022-01-20--18-09-32--0"),
 ]
 
+BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
+
 # dashcamOnly makes don't need to be tested until a full port is done
 excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
-
-BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
-PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
-
 # run the full test (including checks) when no args given
 FULL_TEST = len(sys.argv) <= 1   # or "CI" in os.environ
 
