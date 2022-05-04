@@ -12,9 +12,6 @@ from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 from tools.lib.filereader import FileReader
 
-if TICI:
-  os.environ["PYOPENCL_CTX"] = "0"
-
 try:
   import pyopencl as cl
 except ImportError:
