@@ -100,7 +100,7 @@ def debayer_frame(data):
   return y, u, v
 
 def debayer_replay(lr):
-  rgb_frames = []
+  frames = []
 
   for m in lr:
     if m.which() == 'roadCameraState':
@@ -109,9 +109,9 @@ def debayer_replay(lr):
         data = np.frombuffer(cs.image, dtype=np.uint8)
         img = debayer_frame(data)
 
-        rgb_frames.append(img)
+        frames.append(img)
 
-  return rgb_frames
+  return frames
 
 if __name__ == "__main__":
   update = "--update" in sys.argv
@@ -127,7 +127,6 @@ if __name__ == "__main__":
   # get diff
   failed = False
   diff = ''
-  diff_file = ''
   yuv_i = ['y', 'u', 'v']
   if not update:
     with open(ref_commit_fn) as f:
@@ -159,18 +158,17 @@ if __name__ == "__main__":
 
             frame_diff = np.abs(np.subtract(fr, cmp_f))
             diff_len = len(np.nonzero(frame_diff)[0])
-            if diff_len > 10000:
+            if diff_len > 1000:
               diff += f'different at a large amount of pixels ({diff_len})\n'
             else:
-              diff += 'different at (idx, ref, HEAD):\n'
+              diff += 'different at (frame, yuv, pixel, ref, HEAD):\n'
               for k in zip(*np.nonzero(frame_diff)):
-                diff_file += f'{i}, {cmp_f[i]}, {fr[i]}\n'
+                diff += f'{i}, {yuv_i[j]}, {k}, {cmp_f[k]}, {fr[k]}\n'
 
       if failed:
         print(diff)
         with open("debayer_diff.txt", "w") as f:
-          diff_file = diff + diff_file
-          f.write(diff_file)
+          f.write(diff)
     except Exception as e:
       print(str(e))
       failed = True
