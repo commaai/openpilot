@@ -54,9 +54,8 @@ def unbzip_frames(url):
 
   return res
 
-def debayer_frame(data):
+def init_kernels():
   ctx = cl.create_some_context()
-  q = cl.CommandQueue(ctx)
 
   with open(os.path.join(BASEDIR, 'selfdrive/camerad/cameras/real_debayer.cl')) as f:
     build_args = ' -cl-fast-relaxed-math -cl-denorms-are-zero -cl-single-precision-constant' + \
@@ -70,6 +69,11 @@ def debayer_frame(data):
       f' -DUV_WIDTH={UV_WIDTH} -DUV_HEIGHT={UV_HEIGHT} -DRGB_STRIDE={FRAME_WIDTH*3}' + \
       f' -DRGB_SIZE={FRAME_WIDTH*FRAME_HEIGHT}'
     rgb_to_yuv_prg = cl.Program(ctx, f.read()).build(options=build_args)
+
+  return ctx, debayer_prg, rgb_to_yuv_prg
+
+def debayer_frame(ctx, debayer_prg, rgb_to_yuv_prg, data):
+  q = cl.CommandQueue(ctx)
 
   rgb_buff = np.empty(FRAME_WIDTH * FRAME_HEIGHT * 3, dtype=np.uint8)
   yuv_buff = np.empty(FRAME_WIDTH * FRAME_HEIGHT + UV_SIZE * 2, dtype=np.uint8)
@@ -100,14 +104,15 @@ def debayer_frame(data):
   return y, u, v
 
 def debayer_replay(lr):
-  frames = []
+  ctx, debayer_prg, rgb_to_yuv_prg = init_kernels()
 
+  frames = []
   for m in lr:
     if m.which() == 'roadCameraState':
       cs = m.roadCameraState
       if cs.image:
         data = np.frombuffer(cs.image, dtype=np.uint8)
-        img = debayer_frame(data)
+        img = debayer_frame(ctx, debayer_prg, rgb_to_yuv_prg, data)
 
         frames.append(img)
 
