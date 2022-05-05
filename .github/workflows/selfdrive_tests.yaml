@@ -317,7 +317,7 @@ jobs:
                         FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
                         coverage xml"
     - name: Upload reference logs
-      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && (github.event.issue.author_association == 'OWNER' || github.event.issue.author_association == 'MEMBER') }}
+      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN != '' }}
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
                         CI=1 AZURE_TOKEN='${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}' python selfdrive/test/process_replay/update_refs.py"
