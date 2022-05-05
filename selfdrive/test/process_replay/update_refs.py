@@ -20,29 +20,24 @@ if __name__ == "__main__":
   with open(ref_commit_fn, "w") as f:
     f.write(ref_commit)
 
-  # only upload
-  if CI:
-    for car_brand, segment in segments:
-      for cfg in CONFIGS:
-        log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-        if not os.path.exists(log_fn):
-          raise Exception(f"Cannot find log to upload: {log_fn}")
-
-        print(f'Uploading: {log_fn}')
-        upload_file(log_fn, os.path.basename(log_fn))
-        os.remove(log_fn)
-  else:
-    for car_brand, segment in segments:
+  # update refs/upload refs if CI
+  for car_brand, segment in segments:
+    if not CI:
       r, n = segment.rsplit("--", 1)
       lr = LogReader(get_url(r, n))
 
-      for cfg in CONFIGS:
+    for cfg in CONFIGS:
+      log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+      if not CI:
         log_msgs = replay_process(cfg, lr)
-        log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
         save_log(log_fn, log_msgs)
 
-        if not no_upload:
-          upload_file(log_fn, os.path.basename(log_fn))
-          os.remove(log_fn)
+      if not os.path.exists(log_fn):
+        raise Exception(f"Cannot find log to upload: {log_fn}")
+
+      if not no_upload:
+        print(f'Uploading: {log_fn}')
+        upload_file(log_fn, os.path.basename(log_fn))
+        os.remove(log_fn)
 
   print(f'Done\nNew reference commit: {ref_commit}')
