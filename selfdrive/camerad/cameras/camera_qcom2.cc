@@ -682,7 +682,7 @@ void CameraState::camera_open() {
       .lane_cfg = 0x3210,
 
       .vc = 0x0,
-      .dt = 0x2C,  // CSI_RAW12
+      .dt = 0x12,  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
       .format = CAM_FORMAT_MIPI_RAW_12,
 
       .test_pattern = 0x2,  // 0x3?

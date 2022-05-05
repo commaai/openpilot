@@ -7,7 +7,7 @@ struct i2c_random_wr_payload init_array_imx390[] = {
   {0x2008, 0xd0}, {0x2009, 0x07}, {0x200a, 0x00}, // MODE_VMAX = time between frames
   {0x200C, 0xe4}, {0x200D, 0x0c},  // MODE_HMAX
 
-  // crop 
+  // crop
   {0x3410, 0x88}, {0x3411, 0x7},     // CROP_H_SIZE
   {0x3418, 0xb8}, {0x3419, 0x4},     // CROP_V_SIZE
   {0x0078, 1}, {0x03c0, 1},
@@ -83,10 +83,10 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   // Readout Settings
   {0x31AE, 0x0204}, // SERIAL_FORMAT, 4-lane MIPI
   {0x31AC, 0x0C0C}, // DATA_FORMAT_BITS, 12 -> 12
-  {0x3342, 0x122C}, // MIPI_F1_PDT_EDT
-  {0x3346, 0x122C}, // MIPI_F2_PDT_EDT
-  {0x334A, 0x122C}, // MIPI_F3_PDT_EDT
-  {0x334E, 0x122C}, // MIPI_F4_PDT_EDT
+  {0x3342, 0x1212}, // MIPI_F1_PDT_EDT
+  {0x3346, 0x1212}, // MIPI_F2_PDT_EDT
+  {0x334A, 0x1212}, // MIPI_F3_PDT_EDT
+  {0x334E, 0x1212}, // MIPI_F4_PDT_EDT
   {0x3344, 0x0011}, // MIPI_F1_VDT_VC
   {0x3348, 0x0111}, // MIPI_F2_VDT_VC
   {0x334C, 0x0211}, // MIPI_F3_VDT_VC
