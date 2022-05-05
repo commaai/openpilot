@@ -1,25 +1,17 @@
 #!/usr/bin/env python3
 import os
 import sys
-import subprocess
 import bz2
 import numpy as np
 
-from common.basedir import BASEDIR
+import pyopencl as cl  # install with `PYOPENCL_CL_PRETEND_VERSION=2.0 pip install pyopencl`
+
 from selfdrive.hardware import PC, TICI
+from common.basedir import BASEDIR
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 from tools.lib.filereader import FileReader
-
-try:
-  import pyopencl as cl
-except ImportError:
-  print("failed to import pyopencl, installing...")
-  env = os.environ.copy()
-  env["PYOPENCL_CL_PRETEND_VERSION"] = "2.0"
-  subprocess.run(["pip", "install", "pyopencl"], env=env, shell=True, check=True)
-  import pyopencl as cl
 
 TEST_ROUTE = "8345e3b82948d454|2022-05-04--13-45-33"
 SEGMENT = 0
