@@ -1,3 +1,4 @@
+import math
 import os
 from enum import IntEnum
 from typing import Dict, Union, Callable, List, Optional
@@ -141,8 +142,9 @@ class Alert:
 
 
 class NoEntryAlert(Alert):
-  def __init__(self, alert_text_2: str, visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none):
-    super().__init__("openpilot Unavailable", alert_text_2, AlertStatus.normal,
+  def __init__(self, alert_text_2: str, visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none,
+               alert_text_1: str = "openpilot Unavailable"):
+    super().__init__(alert_text_1, alert_text_2, AlertStatus.normal,
                      AlertSize.mid, Priority.LOW, visual_alert,
                      AudibleAlert.refuse, 3.)
 
@@ -258,6 +260,27 @@ def no_gps_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_
 def out_of_space_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   full_perc = round(100. - sm['deviceState'].freeSpacePercent)
   return NormalPermanentAlert("Out of Storage", f"{full_perc}% full")
+
+
+def process_not_running_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
+  return NoEntryAlert("Process Not Running", alert_text_1=', '.join(not_running))
+
+
+def comm_issue_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  invalid = [s for s, valid in sm.valid.items() if not valid]
+  not_alive = [s for s, alive in sm.alive.items() if not alive]
+  lagging = [s for s, freq_ok in sm.freq_ok.items() if not freq_ok]
+  # TODO: better text here
+  return NoEntryAlert("Communication Issue Between Processes", alert_text_1=', '.join(set(invalid + not_alive + lagging)))
+
+
+def calibration_invalid_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  rpy = sm['liveCalibration'].rpyCalib
+  yaw = math.degrees(rpy[2] if len(rpy) == 3 else math.nan)
+  pitch = math.degrees(rpy[1] if len(rpy) == 3 else math.nan)
+  angles = f"Pitch: {pitch}°, Yaw: {yaw}°"
+  return NormalPermanentAlert("CalibrationInvalid", angles)
 
 
 def overheat_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
@@ -653,7 +676,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # and attaching while making sure the device is pointed straight forward and is level.
   # See https://comma.ai/setup for more information
   EventName.calibrationInvalid: {
-    ET.PERMANENT: NormalPermanentAlert("Calibration Invalid", "Remount Device and Recalibrate"),
+    ET.PERMANENT: calibration_invalid_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Calibration Invalid: Remount Device & Recalibrate"),
     ET.NO_ENTRY: NoEntryAlert("Calibration Invalid: Remount Device & Recalibrate"),
   },
@@ -690,7 +713,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # ten times the regular interval, or the average interval is more than 10% too high.
   EventName.commIssue: {
     ET.SOFT_DISABLE: soft_disable_alert("Communication Issue between Processes"),
-    ET.NO_ENTRY: NoEntryAlert("Communication Issue between Processes"),
+    ET.NO_ENTRY: comm_issue_alert,
   },
   EventName.commIssueAvgFreq: {
     ET.SOFT_DISABLE: soft_disable_alert("Low Communication Rate between Processes"),
@@ -704,7 +727,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   # Thrown when manager detects a service exited unexpectedly while driving
   EventName.processNotRunning: {
-    ET.NO_ENTRY: NoEntryAlert("System Malfunction: Reboot Your Device"),
+    ET.NO_ENTRY: process_not_running_alert,
   },
 
   EventName.radarFault: {
