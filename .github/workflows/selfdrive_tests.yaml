@@ -228,60 +228,60 @@ jobs:
       if: always()
       run: cat selfdrive/test/valgrind_logs.txt
 
-#  unit_tests:
-#    name: unit tests
-#    runs-on: ubuntu-20.04
-#    timeout-minutes: 50
-#    steps:
-#    - name: Get current date
-#      id: date
-#      run: echo "::set-output name=time::$(date +'%s')"
-#    - name: Output timestamp
-#      run: echo $TIMESTAMP
-#      env:
-#        TIMESTAMP: ${{ steps.date.outputs.time }}
-#    - uses: actions/checkout@v2
-#      with:
-#        submodules: true
-#    - name: Cache scons
-#      id: scons-cache
-#      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
-#      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
-#      env:
-#        CACHE_SKIP_SAVE: ${{ github.ref != 'refs/heads/master' || github.repository != 'commaai/openpilot' }}
-#      with:
-#        path: /tmp/scons_cache
-#        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-${{ steps.date.outputs.time }}
-#        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-#    - name: Build Docker image
-#      run: eval "$BUILD"
-#    - name: Run unit tests
-#      run: |
-#        ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-#                        scons -j$(nproc) --test && \
-#                        $UNIT_TEST common && \
-#                        $UNIT_TEST opendbc/can && \
-#                        $UNIT_TEST selfdrive/boardd && \
-#                        $UNIT_TEST selfdrive/controls && \
-#                        $UNIT_TEST selfdrive/monitoring && \
-#                        $UNIT_TEST selfdrive/loggerd && \
-#                        $UNIT_TEST selfdrive/car && \
-#                        $UNIT_TEST selfdrive/locationd && \
-#                        $UNIT_TEST selfdrive/athena && \
-#                        $UNIT_TEST selfdrive/thermald && \
-#                        $UNIT_TEST selfdrive/hardware/tici && \
-#                        $UNIT_TEST selfdrive/modeld && \
-#                        $UNIT_TEST tools/lib/tests && \
-#                        ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
-#                        ./selfdrive/common/tests/test_util && \
-#                        ./selfdrive/common/tests/test_swaglog && \
-#                        ./selfdrive/loggerd/tests/test_logger &&\
-#                        ./selfdrive/proclogd/tests/test_proclog && \
-#                        ./selfdrive/ui/replay/tests/test_replay && \
-#                        ./selfdrive/camerad/test/ae_gray_test && \
-#                        coverage xml"
-#    - name: "Upload coverage to Codecov"
-#      uses: codecov/codecov-action@v2
+  unit_tests:
+    name: unit tests
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    steps:
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=time::$(date +'%s')"
+    - name: Output timestamp
+      run: echo $TIMESTAMP
+      env:
+        TIMESTAMP: ${{ steps.date.outputs.time }}
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: ${{ github.ref != 'refs/heads/master' || github.repository != 'commaai/openpilot' }}
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-${{ steps.date.outputs.time }}
+        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Run unit tests
+      run: |
+        ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
+                        scons -j$(nproc) --test && \
+                        $UNIT_TEST common && \
+                        $UNIT_TEST opendbc/can && \
+                        $UNIT_TEST selfdrive/boardd && \
+                        $UNIT_TEST selfdrive/controls && \
+                        $UNIT_TEST selfdrive/monitoring && \
+                        $UNIT_TEST selfdrive/loggerd && \
+                        $UNIT_TEST selfdrive/car && \
+                        $UNIT_TEST selfdrive/locationd && \
+                        $UNIT_TEST selfdrive/athena && \
+                        $UNIT_TEST selfdrive/thermald && \
+                        $UNIT_TEST selfdrive/hardware/tici && \
+                        $UNIT_TEST selfdrive/modeld && \
+                        $UNIT_TEST tools/lib/tests && \
+                        ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
+                        ./selfdrive/common/tests/test_util && \
+                        ./selfdrive/common/tests/test_swaglog && \
+                        ./selfdrive/loggerd/tests/test_logger &&\
+                        ./selfdrive/proclogd/tests/test_proclog && \
+                        ./selfdrive/ui/replay/tests/test_replay && \
+                        ./selfdrive/camerad/test/ae_gray_test && \
+                        coverage xml"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
 
   process_replay:
     name: process replay
@@ -348,103 +348,103 @@ jobs:
   #      ${{ env.RUN }} "scons -j$(nproc) && \
   #                      selfdrive/test/process_replay/model_replay.py"
 
-#  test_longitudinal:
-#    name: longitudinal
-#    runs-on: ubuntu-20.04
-#    timeout-minutes: 50
-#    steps:
-#    - uses: actions/checkout@v2
-#      with:
-#        submodules: true
-#    - name: Cache scons
-#      id: scons-cache
-#      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
-#      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
-#      env:
-#        CACHE_SKIP_SAVE: true
-#      with:
-#        path: /tmp/scons_cache
-#        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-#        restore-keys: |
-#          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-#          scons-
-#    - name: Build Docker image
-#      run: eval "$BUILD"
-#    - name: Test longitudinal
-#      run: |
-#        ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
-#                        scons -j$(nproc) && \
-#                        cd selfdrive/test/longitudinal_maneuvers && \
-#                        coverage run ./test_longitudinal.py && \
-#                        coverage xml"
-#    - name: "Upload coverage to Codecov"
-#      uses: codecov/codecov-action@v2
-#    - uses: actions/upload-artifact@v2
-#      if: always()
-#      continue-on-error: true
-#      with:
-#        name: longitudinal
-#        path: selfdrive/test/longitudinal_maneuvers/out/longitudinal/
+  test_longitudinal:
+    name: longitudinal
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: true
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Test longitudinal
+      run: |
+        ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
+                        scons -j$(nproc) && \
+                        cd selfdrive/test/longitudinal_maneuvers && \
+                        coverage run ./test_longitudinal.py && \
+                        coverage xml"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
+    - uses: actions/upload-artifact@v2
+      if: always()
+      continue-on-error: true
+      with:
+        name: longitudinal
+        path: selfdrive/test/longitudinal_maneuvers/out/longitudinal/
 
-#  test_cars:
-#    name: cars
-#    runs-on: ubuntu-20.04
-#    timeout-minutes: 50
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        job: [0, 1, 2, 3]
-#    steps:
-#    - uses: actions/checkout@v2
-#      with:
-#        submodules: true
-#    - name: Cache dependencies
-#      id: dependency-cache
-#      uses: actions/cache@v2
-#      with:
-#        path: /tmp/comma_download_cache
-#        key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
-#    - name: Cache scons
-#      id: scons-cache
-#      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
-#      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
-#      env:
-#        CACHE_SKIP_SAVE: true
-#      with:
-#        path: /tmp/scons_cache
-#        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-#        restore-keys: |
-#          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-#          scons-
-#    - name: Build Docker image
-#      run: eval "$BUILD"
-#    - name: Test car models
-#      run: |
-#        ${{ env.RUN }} "scons -j$(nproc) --test && \
-#                        FILEREADER_CACHE=1 coverage run -m pytest selfdrive/car/tests/test_models.py && \
-#                        coverage xml && \
-#                        chmod -R 777 /tmp/comma_download_cache"
-#      env:
-#        NUM_JOBS: 4
-#        JOB_ID: ${{ matrix.job }}
-#    - name: "Upload coverage to Codecov"
-#      uses: codecov/codecov-action@v2
+  test_cars:
+    name: cars
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        job: [0, 1, 2, 3]
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: /tmp/comma_download_cache
+        key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: true
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Test car models
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc) --test && \
+                        FILEREADER_CACHE=1 coverage run -m pytest selfdrive/car/tests/test_models.py && \
+                        coverage xml && \
+                        chmod -R 777 /tmp/comma_download_cache"
+      env:
+        NUM_JOBS: 4
+        JOB_ID: ${{ matrix.job }}
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
 
-#  docs:
-#    name: build docs
-#    runs-on: ubuntu-20.04
-#    timeout-minutes: 50
-#    steps:
-#    - uses: actions/checkout@v2
-#      with:
-#        submodules: true
-#    - name: Build docker container
-#      run: |
-#        docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
-#        docker pull $DOCKER_REGISTRY/openpilot-docs:latest || true
-#        DOCKER_BUILDKIT=1 docker build --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
-#    - name: Push docker container
-#      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-#      run: |
-#        $DOCKER_LOGIN
-#        docker push $DOCKER_REGISTRY/openpilot-docs:latest
+  docs:
+    name: build docs
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build docker container
+      run: |
+        docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+        docker pull $DOCKER_REGISTRY/openpilot-docs:latest || true
+        DOCKER_BUILDKIT=1 docker build --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
+    - name: Push docker container
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      run: |
+        $DOCKER_LOGIN
+        docker push $DOCKER_REGISTRY/openpilot-docs:latest
