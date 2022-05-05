@@ -1,11 +1,14 @@
+#ifdef HALF_AS_FLOAT
+#define half float
+#define half3 float3
+#else
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#endif
 
-const __constant half3 color_correction[3] = {
-  // post wb CCM
-  (half3)(1.82717181, -0.31231438, 0.07307673),
-  (half3)(-0.5743977, 1.36858544, -0.53183455),
-  (half3)(-0.25277411, -0.05627105, 1.45875782),
-};
+// post wb CCM
+const __constant half3 color_correction_0 = (half3)(1.82717181, -0.31231438, 0.07307673);
+const __constant half3 color_correction_1 = (half3)(-0.5743977, 1.36858544, -0.53183455);
+const __constant half3 color_correction_2 = (half3)(-0.25277411, -0.05627105, 1.45875782);
 
 // tone mapping params
 const half cpk = 0.75;
@@ -25,15 +28,15 @@ half mf(half x, half cp) {
 }
 
 half3 color_correct(half3 rgb) {
-  half3 ret = (0,0,0);
+  half3 ret = (half3)(0.0, 0.0, 0.0);
   half cpx = 0.01;
-  ret += (half)rgb.x * color_correction[0];
-  ret += (half)rgb.y * color_correction[1];
-  ret += (half)rgb.z * color_correction[2];
+  ret += (half)rgb.x * color_correction_0;
+  ret += (half)rgb.y * color_correction_1;
+  ret += (half)rgb.z * color_correction_2;
   ret.x = mf(ret.x, cpx);
   ret.y = mf(ret.y, cpx);
   ret.z = mf(ret.z, cpx);
-  ret = clamp(0.0h, 255.0h, ret*255.0h);
+  ret = clamp(0.0, 255.0, ret*255.0);
   return ret;
 }
 
@@ -46,7 +49,7 @@ inline half val_from_10(const uchar * source, int gx, int gy, half black_level) 
   half pv = (half)((major + minor)/4);
 
   // normalize
-  pv = max(0.0h, pv - black_level);
+  pv = max((half)0.0, pv - black_level);
   pv /= (1024.0f - black_level);
 
   // correct vignetting
@@ -67,7 +70,7 @@ inline half val_from_10(const uchar * source, int gx, int gy, half black_level) 
     pv = s * pv;
   }
 
-  pv = clamp(0.0h, 1.0h, pv);
+  pv = clamp((half)0.0, (half)1.0, pv);
   return pv;
 }
 
@@ -197,7 +200,7 @@ __kernel void debayer10(const __global uchar * in,
     }
   }
 
-  rgb = clamp(0.0h, 1.0h, rgb);
+  rgb = clamp(0.0, 1.0, rgb);
   rgb = color_correct(rgb);
 
   out[out_idx + 0] = (uchar)(rgb.z);
