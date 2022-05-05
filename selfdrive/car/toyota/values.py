@@ -151,7 +151,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
   CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
   CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-21"),
-  CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-21"),
+  CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-22"),
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
   CAR.LEXUS_NX: ToyotaCarInfo("Lexus NX 2018-19", footnotes=[Footnote.DSU]),
   CAR.LEXUS_NXH: ToyotaCarInfo("Lexus NX Hybrid 2018-19", footnotes=[Footnote.DSU]),
@@ -1450,22 +1450,26 @@ FW_VERSIONS = {
       b'\x028966333T0100\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
       b'\x028966333V4000\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
       b'\x02896633T09000\x00\x00\x00\x00897CF3307001\x00\x00\x00\x00',
+      b'\x01896633T38000\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'F152633423\x00\x00\x00\x00\x00\x00',
       b'F152633680\x00\x00\x00\x00\x00\x00',
       b'F152633681\x00\x00\x00\x00\x00\x00',
+      b'F152633F50\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B33252\x00\x00\x00\x00\x00\x00',
       b'8965B33590\x00\x00\x00\x00\x00\x00',
       b'8965B33690\x00\x00\x00\x00\x00\x00',
+      b'8965B33721\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
       b'\x018821F3301200\x00\x00\x00\x00',
       b'\x018821F3301300\x00\x00\x00\x00',
       b'\x018821F3301400\x00\x00\x00\x00',
+      b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F33030D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
@@ -1474,6 +1478,7 @@ FW_VERSIONS = {
       b'\x028646F3304100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F3304200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F3304300\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
+      b'\x028646F3309100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.LEXUS_ESH: {
