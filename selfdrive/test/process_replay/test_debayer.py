@@ -20,11 +20,19 @@ FRAME_WIDTH = 1928
 FRAME_HEIGHT = 1208
 FRAME_STRIDE = 2896
 
+UV_WIDTH = FRAME_WIDTH // 2
+UV_HEIGHT = FRAME_HEIGHT // 2
+UV_SIZE = UV_WIDTH * UV_HEIGHT
+
 def get_frame_fn(ref_commit, test_route, tici=True):
   return f"{test_route}_debayer{'_tici' if tici else ''}_{ref_commit}.bz2"
 
 def bzip_frames(frames):
-  data = np.array(frames).tobytes()
+  data = bytes()
+  for y, u, v in frames:
+    data += y.tobytes()
+    data += u.tobytes()
+    data += v.tobytes()
   return bz2.compress(data)
 
 def unbzip_frames(url):
@@ -32,9 +40,19 @@ def unbzip_frames(url):
     dat = f.read()
 
   data = bz2.decompress(dat)
-  res = np.frombuffer(data, dtype=np.uint8)
 
-  return res.reshape((-1, FRAME_HEIGHT, FRAME_WIDTH, 3))
+  res = []
+  for y_start in range(0, len(data), FRAME_WIDTH * FRAME_HEIGHT + UV_SIZE * 2):
+    u_start = y_start + FRAME_WIDTH * FRAME_HEIGHT
+    v_start = u_start + UV_SIZE
+
+    y = np.frombuffer(data[y_start: u_start], dtype=np.uint8).reshape((FRAME_HEIGHT, FRAME_WIDTH))
+    u = np.frombuffer(data[u_start: v_start], dtype=np.uint8).reshape((UV_HEIGHT, UV_WIDTH))
+    v = np.frombuffer(data[v_start: v_start + UV_SIZE], dtype=np.uint8).reshape((UV_HEIGHT, UV_WIDTH))
+
+    res.append((y, u, v))
+
+  return res
 
 def debayer_frame(data):
   ctx = cl.create_some_context()
@@ -47,23 +65,39 @@ def debayer_frame(data):
       build_args += ' -DHALF_AS_FLOAT=1'
     debayer_prg = cl.Program(ctx, f.read()).build(options=build_args)
 
-  rgb_old_buff = np.empty(FRAME_WIDTH * FRAME_HEIGHT * 3, dtype=np.uint8)
+  with open(os.path.join(BASEDIR, 'selfdrive/camerad/transforms/rgb_to_yuv.cl')) as f:
+    build_args = f' -cl-fast-relaxed-math -cl-denorms-are-zero -DWIDTH={FRAME_WIDTH} -DHEIGHT={FRAME_HEIGHT}' + \
+      f' -DUV_WIDTH={UV_WIDTH} -DUV_HEIGHT={UV_HEIGHT} -DRGB_STRIDE={FRAME_WIDTH*3}' + \
+      f' -DRGB_SIZE={FRAME_WIDTH*FRAME_HEIGHT}'
+    rgb_to_yuv_prg = cl.Program(ctx, f.read()).build(options=build_args)
+
+  rgb_buff = np.empty(FRAME_WIDTH * FRAME_HEIGHT * 3, dtype=np.uint8)
+  yuv_buff = np.empty(FRAME_WIDTH * FRAME_HEIGHT + UV_SIZE * 2, dtype=np.uint8)
 
   cam_g = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=data)
   rgb_wg = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, FRAME_WIDTH * FRAME_HEIGHT * 3)
+  yuv_g = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, FRAME_WIDTH * FRAME_HEIGHT + UV_SIZE * 2)
 
   local_worksize = (16, 16) if TICI else (8, 8)
   local_mem = cl.LocalMemory(648 if TICI else 400)
   ev1 = debayer_prg.debayer10(q, (FRAME_WIDTH, FRAME_HEIGHT), local_worksize, cam_g, rgb_wg, local_mem, np.float32(42))
-  ev2 = cl.enqueue_copy(q, rgb_old_buff, rgb_wg, wait_for=[ev1])
-  ev2.wait()
-
+  cl.enqueue_copy(q, rgb_buff, rgb_wg, wait_for=[ev1]).wait()
   cl.enqueue_barrier(q)
 
-  res = rgb_old_buff.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))
-  res[:, :, [2, 0]] = res[:, :, [0, 2]]
+  rgb_rg = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=rgb_buff)
+  cl.enqueue_barrier(q)
 
-  return res
+  ev3 = rgb_to_yuv_prg.rgb_to_yuv(q, (FRAME_WIDTH // 4, FRAME_HEIGHT // 4), None, rgb_rg, yuv_g)
+  cl.enqueue_barrier(q)
+
+  cl.enqueue_copy(q, yuv_buff, yuv_g, wait_for=[ev3]).wait()
+  cl.enqueue_barrier(q)
+
+  y = yuv_buff[:FRAME_WIDTH*FRAME_HEIGHT].reshape((FRAME_HEIGHT, FRAME_WIDTH))
+  u = yuv_buff[FRAME_WIDTH*FRAME_HEIGHT:FRAME_WIDTH*FRAME_HEIGHT+UV_SIZE].reshape((UV_HEIGHT, UV_WIDTH))
+  v = yuv_buff[FRAME_WIDTH*FRAME_HEIGHT+UV_SIZE:].reshape((UV_HEIGHT, UV_WIDTH))
+
+  return y, u, v
 
 def debayer_replay(lr):
   rgb_frames = []
@@ -77,7 +111,7 @@ def debayer_replay(lr):
 
         rgb_frames.append(img)
 
-  return np.array(rgb_frames)
+  return rgb_frames
 
 if __name__ == "__main__":
   update = "--update" in sys.argv
@@ -94,6 +128,7 @@ if __name__ == "__main__":
   failed = False
   diff = ''
   diff_file = ''
+  yuv_i = ['y', 'u', 'v']
   if not update:
     with open(ref_commit_fn) as f:
       ref_commit = f.read().strip()
@@ -102,26 +137,34 @@ if __name__ == "__main__":
     try:
       cmp_frames = unbzip_frames(BASE_URL + frame_fn)
 
-      if frames.shape != cmp_frames.shape:
+      if len(frames) != len(cmp_frames):
         failed = True
-        diff += 'frame shapes not equal\n'
-        diff += f'{ref_commit}: {cmp_frames.shape}\n'
-        diff += f'HEAD: {frames.shape}\n'
-      elif not np.array_equal(frames, cmp_frames):
-        failed = True
-        if np.allclose(frames, cmp_frames, atol=1):
-          diff += 'frames not equal, but are all close\n'
-        else:
-          diff += 'frames not equal\n'
+        diff += 'amount of frames not equal\n'
 
-        frame_diff = np.abs(np.subtract(frames, cmp_frames))
-        diff_len = len(np.nonzero(frame_diff)[0])
-        if diff_len > 1000000:
-          diff += f'different at a large amount of pixels ({diff_len})\n'
-        else:
-          diff += 'different at (i, ref, HEAD):\n'
-          for i in zip(*np.nonzero(frame_diff)):
-            diff_file += f'{i}, {cmp_frames[i]}, {frames[i]}\n'
+      for i, (frame, cmp_frame) in enumerate(zip(frames, cmp_frames)):
+        for j in range(3):
+          fr = frame[j]
+          cmp_f = cmp_frame[j]
+          if fr.shape != cmp_f.shape:
+            failed = True
+            diff += f'frame shapes not equal for ({i}, {yuv_i[j]})\n'
+            diff += f'{ref_commit}: {cmp_f.shape}\n'
+            diff += f'HEAD: {fr.shape}\n'
+          elif not np.array_equal(fr, cmp_f):
+            failed = True
+            if np.allclose(fr, cmp_f, atol=1):
+              diff += f'frames not equal for ({i}, {yuv_i[j]}), but are all close\n'
+            else:
+              diff += f'frames not equal for ({i}, {yuv_i[j]})\n'
+
+            frame_diff = np.abs(np.subtract(fr, cmp_f))
+            diff_len = len(np.nonzero(frame_diff)[0])
+            if diff_len > 10000:
+              diff += f'different at a large amount of pixels ({diff_len})\n'
+            else:
+              diff += 'different at (idx, ref, HEAD):\n'
+              for k in zip(*np.nonzero(frame_diff)):
+                diff_file += f'{i}, {cmp_f[i]}, {fr[i]}\n'
 
       if failed:
         print(diff)
@@ -142,8 +185,8 @@ if __name__ == "__main__":
 
     new_commit = get_commit()
     frame_fn = os.path.join(replay_dir, get_frame_fn(new_commit, TEST_ROUTE, tici=TICI))
-    with open(frame_fn, "wb") as f:  # type: ignore
-      f.write(frames_bzip)
+    with open(frame_fn, "wb") as f2:
+      f2.write(frames_bzip)
 
     try:
       upload_file(frame_fn, os.path.basename(frame_fn))
