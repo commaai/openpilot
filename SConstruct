@@ -61,14 +61,22 @@ if arch == "aarch64" and TICI:
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 
+lib_path = ""
+tera_path = ""
+if arch == "Darwin" and real_arch == "i386":
+  lib_path = [Dir(f"#third_party/acados/x86_64/lib").abspath]
+  tera_path = Dir("#").abspath + f"/third_party/acados/x86_64/t_renderer"
+else:
+  lib_path = [Dir(f"#third_party/acados/{arch}/lib").abspath]
+  tera_path = Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
+
 lenv = {
   "PATH": os.environ['PATH'],
-  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
+  "LD_LIBRARY_PATH": lib_path,
   "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
-
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados/include/acados").abspath,
   "ACADOS_PYTHON_INTERFACE_PATH": Dir("#pyextra/acados_template").abspath,
-  "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer",
+  "TERA_PATH": tera_path
 }
 
 rpath = lenv["LD_LIBRARY_PATH"].copy()
@@ -118,7 +126,6 @@ else:
         "/System/Library/Frameworks/OpenGL.framework/Libraries",
       ]
     else:
-      print('test')
       libpath = [
         f"#third_party/libyuv/{yuv_dir}/lib",
         f"{brew_prefix}/lib",
