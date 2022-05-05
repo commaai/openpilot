@@ -121,7 +121,7 @@ class URLFile:
         end = self.get_length() - 1
       else:
         end = min(self._pos + ll, self.get_length()) - 1
-      assert end > 0, "No data from {}".format(self._url)
+      assert end > 0, f"Remote file is empty or doesn't exist: {self._url}"
       if self._pos >= end:
         return b""
       headers.append(f"Range: bytes={self._pos}-{end}")
