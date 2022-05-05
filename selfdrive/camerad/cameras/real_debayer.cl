@@ -30,7 +30,7 @@ HALF mf(HALF x, HALF cp) {
 }
 
 HALF3 color_correct(HALF3 rgb) {
-  HALF3 ret = (0,0,0);
+  HALF3 ret = (HALF3)(0.0, 0.0, 0.0);
   HALF cpx = 0.01;
   ret += (HALF)rgb.x * color_correction_0;
   ret += (HALF)rgb.y * color_correction_1;
@@ -51,7 +51,7 @@ inline HALF val_from_10(const uchar * source, int gx, int gy, HALF black_level) 
   HALF pv = (HALF)((major + minor)/4);
 
   // normalize
-  pv = max(0.0, pv - black_level);
+  pv = max((HALF)0.0, pv - black_level);
   pv /= (1024.0f - black_level);
 
   // correct vignetting
@@ -72,7 +72,7 @@ inline HALF val_from_10(const uchar * source, int gx, int gy, HALF black_level) 
     pv = s * pv;
   }
 
-  pv = clamp(0.0, 1.0, pv);
+  pv = clamp((HALF)0.0, (HALF)1.0, pv);
   return pv;
 }
 
