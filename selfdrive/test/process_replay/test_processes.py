@@ -64,7 +64,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   cmp_log_path = cmp_log_fn if os.path.exists(cmp_log_fn) else BASE_URL + os.path.basename(cmp_log_fn)
   cmp_log_msgs = list(LogReader(cmp_log_path))
   if not len(cmp_log_msgs):
-    raise Exception("Skipping process replay, no log messages for ref commit")
+    raise Exception("No log messages for ref commit")
 
   log_msgs = replay_process(cfg, lr)
 

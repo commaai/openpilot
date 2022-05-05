@@ -25,6 +25,9 @@ if __name__ == "__main__":
     for car_brand, segment in segments:
       for cfg in CONFIGS:
         log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+        if not os.path.exists(log_fn):
+          raise Exception(f"Cannot find log to upload: {log_fn}")
+
         print(f'Uploading: {log_fn}')
         upload_file(log_fn, os.path.basename(log_fn))
         os.remove(log_fn)
