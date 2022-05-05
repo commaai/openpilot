@@ -30,7 +30,7 @@ class Star(Enum):
 
 StarColumns = list(Column)[3:]
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
-HarnessInfo = namedtuple("HarnessInfo", ["harness", "make", "model"])
+HarnessInfo = namedtuple("HarnessInfo", ["harness", "name"])
 
 
 def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[Enum]:

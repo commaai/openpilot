@@ -77,21 +77,21 @@ class CAR:
 
 
 class Harness(Enum):
-  a = HarnessInfo("hyundai-a", "Development", "Hyundai A")
-  b = HarnessInfo("hyundai-b", "Development", "Hyundai B")
-  c = HarnessInfo("hyundai-c", "Development", "Hyundai C")
-  d = HarnessInfo("hyundai-d", "Development", "Hyundai D")
-  e = HarnessInfo("hyundai-e", "Development", "Hyundai E")
-  f = HarnessInfo("hyundai-f", "Development", "Hyundai F")
-  g = HarnessInfo("hyundai-g", "Development", "Hyundai G")
-  h = HarnessInfo("hyundai-h", "Development", "Hyundai H")
-  i = HarnessInfo("hyundai-i", "Development", "Hyundai I")
-  j = HarnessInfo("hyundai-j", "Development", "Hyundai J")
-  k = HarnessInfo("hyundai-k", "Development", "Hyundai K")
-  l = HarnessInfo("hyundai-l", "Development", "Hyundai L")
-  m = HarnessInfo("hyundai-m", "Development", "Hyundai M")
-  n = HarnessInfo("hyundai-n", "Development", "Hyundai N")
-  o = HarnessInfo("hyundai-o", "Development", "Hyundai O")
+  a = HarnessInfo("hyundai-a", "Hyundai A")
+  b = HarnessInfo("hyundai-b", "Hyundai B")
+  c = HarnessInfo("hyundai-c", "Hyundai C")
+  d = HarnessInfo("hyundai-d", "Hyundai D")
+  e = HarnessInfo("hyundai-e", "Hyundai E")
+  f = HarnessInfo("hyundai-f", "Hyundai F")
+  g = HarnessInfo("hyundai-g", "Hyundai G")
+  h = HarnessInfo("hyundai-h", "Hyundai H")
+  i = HarnessInfo("hyundai-i", "Hyundai I")
+  j = HarnessInfo("hyundai-j", "Hyundai J")
+  k = HarnessInfo("hyundai-k", "Hyundai K")
+  l = HarnessInfo("hyundai-l", "Hyundai L")
+  m = HarnessInfo("hyundai-m", "Hyundai M")
+  n = HarnessInfo("hyundai-n", "Hyundai N")
+  o = HarnessInfo("hyundai-o", "Hyundai O")
 
 
 @dataclass
@@ -101,7 +101,7 @@ class HyundaiCarInfo(CarInfo):
 
 
 CAR_INFO: Dict[str, Union[HyundaiCarInfo, List[HyundaiCarInfo]]] = {
-  CAR.ELANTRA: HyundaiCarInfo("Hyundai Elantra 2017-19", min_enable_speed=19 * CV.MPH_TO_MS),
+  CAR.ELANTRA: HyundaiCarInfo("Hyundai Elantra 2017-19", min_enable_speed=19 * CV.MPH_TO_MS, harness=Harness.b),
   CAR.ELANTRA_2021: HyundaiCarInfo("Hyundai Elantra 2021-22", video_link="https://youtu.be/_EdYQtV52-c"),
   CAR.ELANTRA_HEV_2021: HyundaiCarInfo("Hyundai Elantra Hybrid 2021-22", video_link="https://youtu.be/_EdYQtV52-c"),
   CAR.HYUNDAI_GENESIS: HyundaiCarInfo("Hyundai Genesis 2015-16", min_enable_speed=19 * CV.MPH_TO_MS),
