@@ -151,10 +151,6 @@ __kernel void debayer10(const __global uchar * in,
   half n3 = cached[localOffset + localRowLen];
   half n4 = cached[localOffset - 1];
 
-  if (x_global == 100 && y_global == 100) {
-    n4 = 0.5;
-  }
-
   half3 rgb;
 
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
