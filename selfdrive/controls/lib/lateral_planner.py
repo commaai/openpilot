@@ -11,14 +11,14 @@ from cereal import log
 
 
 class LateralPlanner:
-  def __init__(self, CP, use_lanelines=True, wide_camera=False):
+  def __init__(self, CP, use_lanelines=True, wide_camera=False, use_rot_rad=False):
     self.use_lanelines = use_lanelines
     self.LP = LanePlanner(wide_camera)
     self.DH = DesireHelper()
 
     self.last_cloudlog_t = 0
     self.steer_rate_cost = CP.steerRateCost
-    self.r = CP.wheelbase
+    self.r = CP.wheelbase if use_rot_rad else 0.0
     self.solution_invalid_cnt = 0
 
     self.path_xyz = np.zeros((TRAJECTORY_SIZE, 3))
