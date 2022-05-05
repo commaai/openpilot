@@ -127,13 +127,13 @@ __kernel void debayer10(const __global uchar * in,
     cached[localOffset + localRowLen] = val_from_10(in, x_global, y_global+1, black_level);
   }
 
-  if (x_global == 0 && y_global != 0) {  // global left-top (G)
+  if (x_global == 0 && y_global == 0) {  // global left-top (G)
     cached[localOffset - localRowLen - 1] = val_from_10(in, x_global, y_global, black_level);
-  } else if (x_global == 0 && y_global != RGB_HEIGHT - 1) {  // global left-bottom (R)
+  } else if (x_global == 0 && y_global == RGB_HEIGHT - 1) {  // global left-bottom (R)
     cached[localOffset + localRowLen - 1] = val_from_10(in, x_global + 1, y_global - 1, black_level);
-  } else if (x_global == RGB_WIDTH - 1 && y_global != 0) {  // global right-top (B)
+  } else if (x_global == RGB_WIDTH - 1 && y_global == 0) {  // global right-top (B)
     cached[localOffset - localRowLen + 1] = val_from_10(in, x_global - 1, y_global + 1, black_level);
-  } else if (x_global == RGB_WIDTH - 1 && y_global != RGB_HEIGHT - 1) { // global right-bottom (G)
+  } else if (x_global == RGB_WIDTH - 1 && y_global == RGB_HEIGHT - 1) { // global right-bottom (G)
     cached[localOffset + localRowLen + 1] = val_from_10(in, x_global, y_global, black_level);
   } else if (x_local == 0 && y_local == 0) {   // local left-top
     cached[localOffset - localRowLen - 1] = val_from_10(in, x_global - 1, y_global - 1, black_level);
