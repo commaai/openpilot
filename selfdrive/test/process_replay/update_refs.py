@@ -25,6 +25,7 @@ if __name__ == "__main__":
     for car_brand, segment in segments:
       for cfg in CONFIGS:
         log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+        print(f'Uploading: {log_fn}')
         upload_file(log_fn, os.path.basename(log_fn))
         os.remove(log_fn)
   else:
@@ -41,4 +42,4 @@ if __name__ == "__main__":
           upload_file(log_fn, os.path.basename(log_fn))
           os.remove(log_fn)
 
-  print('done\nnew reference commit: {}'.format(ref_commit))
+  print(f'done\nnew reference commit: {ref_commit}')
