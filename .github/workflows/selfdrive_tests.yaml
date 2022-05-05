@@ -317,10 +317,11 @@ jobs:
                         FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
                         coverage xml"
     - name: Upload reference logs
-      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && (secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN != '') }}
+      env:
+        AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
+      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot'}}
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        CI=1 AZURE_TOKEN='${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}' python selfdrive/test/process_replay/update_refs.py"
+        ${{ env.RUN }} "[-z $AZURE_TOKEN] || scons -j$(nproc) && CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/update_refs.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
     - name: Print diff
