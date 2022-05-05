@@ -3,6 +3,8 @@ on:
   schedule:
     - cron: '0 * * * *'
 
+  workflow_dispatch:
+
 env:
   BASE_IMAGE: openpilot-base
   DOCKER_REGISTRY: ghcr.io/commaai
