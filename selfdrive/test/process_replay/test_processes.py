@@ -47,10 +47,11 @@ segments = [
   ("MAZDA", "fakedata|2022-01-20--18-09-32--0"),
 ]
 
-BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
-
 # dashcamOnly makes don't need to be tested until a full port is done
 excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
+
+BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
+
 # run the full test (including checks) when no args given
 FULL_TEST = len(sys.argv) <= 1
 

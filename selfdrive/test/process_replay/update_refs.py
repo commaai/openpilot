@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
   ref_commit = get_commit()
   if ref_commit is None:
-    raise Exception("couldn't get ref commit")
+    raise Exception("Couldn't get ref commit")
   with open(ref_commit_fn, "w") as f:
     f.write(ref_commit)
 
@@ -45,4 +45,4 @@ if __name__ == "__main__":
           upload_file(log_fn, os.path.basename(log_fn))
           os.remove(log_fn)
 
-  print(f'done\nnew reference commit: {ref_commit}')
+  print(f'Done\nNew reference commit: {ref_commit}')
