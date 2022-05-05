@@ -107,15 +107,27 @@ else:
   if arch == "Darwin":
     brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
     yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
-    libpath = [
-      f"#third_party/libyuv/{yuv_dir}/lib",
-      f"{brew_prefix}/lib",
-      f"{brew_prefix}/Library",
-      f"{brew_prefix}/opt/openssl/lib",
-      f"{brew_prefix}/Cellar",
-      f"#third_party/acados/{arch}/lib",
-      "/System/Library/Frameworks/OpenGL.framework/Libraries",
-    ]
+    if real_arch == "arm64":
+      libpath = [
+        f"#third_party/libyuv/{yuv_dir}/lib",
+        f"{brew_prefix}/lib",
+        f"{brew_prefix}/Library",
+        f"{brew_prefix}/opt/openssl/lib",
+        f"{brew_prefix}/Cellar",
+        f"#third_party/acados/{arch}/lib",
+        "/System/Library/Frameworks/OpenGL.framework/Libraries",
+      ]
+    else:
+      print('test')
+      libpath = [
+        f"#third_party/libyuv/{yuv_dir}/lib",
+        f"{brew_prefix}/lib",
+        f"{brew_prefix}/Library",
+        f"{brew_prefix}/opt/openssl/lib",
+        f"{brew_prefix}/Cellar",
+        f"#third_party/acados/x86_64/lib",
+        "/System/Library/Frameworks/OpenGL.framework/Libraries",
+      ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
