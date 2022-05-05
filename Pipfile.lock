@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "41e285b10b9b5a353b3eb9c202886e52d22403c369784877aaa35e099aa203a8"
+            "sha256": "918c8cba5c6a0242dc0f6ea74246176a1c54f0a9395feddf35af2189cc813378"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -1110,6 +1110,28 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'",
             "version": "==21.4.0"
+        },
+        "azure-common": {
+            "hashes": [
+                "sha256:4ac0cd3214e36b6a1b6a442686722a5d8cc449603aa833f3f0f40bda836704a3",
+                "sha256:5c12d3dcf4ec20599ca6b0d3e09e86e146353d443e7fcc050c9a19c1f9df20ad"
+            ],
+            "version": "==1.1.28"
+        },
+        "azure-storage-blob": {
+            "hashes": [
+                "sha256:a8e91a51d4f62d11127c7fd8ba0077385c5b11022f0269f8a2a71b9fc36bef31",
+                "sha256:b90323aad60f207f9f90a0c4cf94c10acc313c20b39403398dfba51f25f7b454"
+            ],
+            "index": "pypi",
+            "version": "==2.1.0"
+        },
+        "azure-storage-common": {
+            "hashes": [
+                "sha256:b01a491a18839b9d05a4fe3421458a0ddb5ab9443c14e487f40d16f9a1dc2fbe",
+                "sha256:ccedef5c67227bc4d6670ffd37cec18fb529a1b7c3a5e53e4096eb0cf23dc73f"
+            ],
+            "version": "==2.1.0"
         },
         "babel": {
             "hashes": [

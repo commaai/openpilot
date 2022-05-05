@@ -32,7 +32,6 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   body = new BodyWindow(this);
   slayout->addWidget(body);
-  body->setEnabled(false);
 
   driver_view = new DriverViewWindow(this);
   connect(driver_view, &DriverViewWindow::done, [=] {
@@ -59,6 +58,7 @@ void HomeWindow::updateState(const UIState &s) {
 }
 
 void HomeWindow::offroadTransition(bool offroad) {
+  body->setEnabled(false);
   sidebar->setVisible(offroad);
   if (offroad) {
     slayout->setCurrentWidget(home);
