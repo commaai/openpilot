@@ -104,36 +104,36 @@ __kernel void debayer10(const __global uchar * in,
   half pv = val_from_10(in, x_global, y_global, black_level);
   cached[localOffset] = pv;
 
-  // don't care
-  if (x_global < 1 || x_global >= RGB_WIDTH - 1 || y_global < 1 || y_global >= RGB_HEIGHT - 1) {
-    return;
-  }
-
   // cache padding
   int localColOffset = -1;
   int globalColOffset = -1;
 
   // cache padding
-  if (x_local < 1) {
+  if (x_global >= 1 && x_local < 1) {
     localColOffset = x_local;
     globalColOffset = -1;
     cached[(y_local + 1) * localRowLen + x_local] = val_from_10(in, x_global-1, y_global, black_level);
-  } else if (x_local >= get_local_size(0) - 1) {
+  } else if (x_global < RGB_WIDTH - 1 && x_local >= get_local_size(0) - 1) {
     localColOffset = x_local + 2;
     globalColOffset = 1;
     cached[localOffset + 1] = val_from_10(in, x_global+1, y_global, black_level);
   }
 
-  if (y_local < 1) {
+  if (y_global >= 1 && y_local < 1) {
     cached[y_local * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global-1, black_level);
     if (localColOffset != -1) {
       cached[y_local * localRowLen + localColOffset] = val_from_10(in, x_global+globalColOffset, y_global-1, black_level);
     }
-  } else if (y_local >= get_local_size(1) - 1) {
+  } else if (y_global < RGB_HEIGHT - 1 && y_local >= get_local_size(1) - 1) {
     cached[(y_local + 2) * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global+1, black_level);
     if (localColOffset != -1) {
       cached[(y_local + 2) * localRowLen + localColOffset] = val_from_10(in, x_global+globalColOffset, y_global+1, black_level);
     }
+  }
+
+  // don't care
+  if (x_global < 1 || x_global >= RGB_WIDTH - 1 || y_global < 1 || y_global >= RGB_HEIGHT - 1) {
+    return;
   }
 
   // sync
