@@ -60,7 +60,9 @@ def debayer_frame(data):
   cam_g = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=data)
   rgb_wg = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, FRAME_WIDTH * FRAME_HEIGHT * 3)
 
-  ev1 = debayer_prg.debayer10(q, (FRAME_WIDTH, FRAME_HEIGHT), (8, 8), cam_g, rgb_wg, cl.LocalMemory(400), np.float32(42))
+  local_worksize = (16, 16) if TICI else (8, 8)
+  local_mem = cl.LocalMemory(648 if TICI else 400)
+  ev1 = debayer_prg.debayer10(q, (FRAME_WIDTH, FRAME_HEIGHT), local_worksize, cam_g, rgb_wg, local_mem, np.float32(42))
   ev2 = cl.enqueue_copy(q, rgb_old_buff, rgb_wg, wait_for=[ev1])
   ev2.wait()
 
