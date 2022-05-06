@@ -107,7 +107,7 @@ def debayer_frame(ctx, debayer_prg, rgb_to_yuv_prg, data, rgb=False):
   v = yuv_buff[FRAME_WIDTH*FRAME_HEIGHT+UV_SIZE:].reshape((UV_HEIGHT, UV_WIDTH))
 
   if rgb:
-    return rgb_buff
+    return rgb_buff.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))[:, :, (2, 1, 0)]
   else:
     return y, u, v
 
