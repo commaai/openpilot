@@ -216,6 +216,7 @@ void CameraViewWidget::paintGL() {
 
   if (latest_frame == nullptr) return;
 
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
 
@@ -238,6 +239,7 @@ void CameraViewWidget::paintGL() {
   glBindVertexArray(0);
   glBindTexture(GL_TEXTURE_2D, 0);
   glActiveTexture(GL_TEXTURE0);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 }
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {

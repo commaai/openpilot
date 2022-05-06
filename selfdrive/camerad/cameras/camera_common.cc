@@ -36,10 +36,10 @@ public:
     hdr_ = ci->hdr;
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
-             "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
+             "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
              "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d",
-             ci->frame_width, ci->frame_height, ci->frame_stride,
+             ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, b->rgb_stride,
              ci->bayer_flip, ci->hdr, s->camera_num);
     const char *cl_file = "cameras/real_debayer.cl";
@@ -81,7 +81,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   frame_buf_count = frame_cnt;
 
   // RAW frame
-  const int frame_size = ci->frame_height * ci->frame_stride;
+  const int frame_size = (ci->frame_height + ci->extra_height) * ci->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
@@ -145,6 +145,8 @@ bool CameraBuf::acquire() {
   cl_event event;
 
   double start_time = millis_since_boot();
+
+  cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   if (debayer) {
     float gain = 0.0;
@@ -233,6 +235,17 @@ kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
       memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*b->rgb_stride*scale+c*3*scale], 3*sizeof(uint8_t));
     }
   }
+  return kj::mv(frame_image);
+}
+
+kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
+  const uint8_t *dat = (const uint8_t *)b->cur_camera_buf->addr;
+
+  kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(b->cur_camera_buf->len);
+  uint8_t *resized_dat = frame_image.begin();
+
+  memcpy(resized_dat, dat, b->cur_camera_buf->len);
+
   return kj::mv(frame_image);
 }
 

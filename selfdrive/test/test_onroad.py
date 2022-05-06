@@ -22,7 +22,7 @@ from tools.lib.logreader import LogReader
 # Baseline CPU usage by process
 PROCS = {
   "selfdrive.controls.controlsd": 31.0,
-  "./loggerd": 70.0,
+  "./loggerd": 50.0,
   "./camerad": 26.0,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 11.7,
@@ -108,9 +108,9 @@ class TestOnroad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     if "DEBUG" in os.environ:
-      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.bz2")), Path(ROOT).iterdir())
+      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog")), Path(ROOT).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
-      cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.bz2")))
+      cls.lr = list(LogReader(os.path.join(segs[-1], "rlog")))
       return
 
     # setup env
@@ -160,10 +160,10 @@ class TestOnroad(unittest.TestCase):
         if proc.wait(60) is None:
           proc.kill()
 
-    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.bz2"))) for s in cls.segments]
+    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog"))) for s in cls.segments]
 
     # use the second segment by default as it's the first full segment
-    cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog.bz2")))
+    cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
 
   def test_cloudlog_size(self):
     msgs = [m for m in self.lr if m.which() == 'logMessage']

@@ -20,6 +20,7 @@ class CarState(CarStateBase):
     ret.steerFaultPermanent = any([cp.vl['VAR_VALUES']['MOTOR_ERR_L'], cp.vl['VAR_VALUES']['MOTOR_ERR_R'],
                                    cp.vl['VAR_VALUES']['FAULT']])
 
+    ret.charging = cp.vl["BODY_DATA"]["CHARGER_CONNECTED"] == 1
     ret.fuelGauge = cp.vl["BODY_DATA"]["BATT_PERCENTAGE"] / 100
 
     # irrelevant for non-car

@@ -3,7 +3,7 @@ Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
 libs = [common, cereal, messaging, visionipc,
         'zmq', 'capnp', 'kj', 'z',
         'avformat', 'avcodec', 'swscale', 'avutil',
-        'yuv', 'bz2', 'OpenCL', 'pthread']
+        'yuv', 'OpenCL', 'pthread']
 
 src = ['logger.cc', 'loggerd.cc', 'video_writer.cc', 'remote_encoder.cc']
 if arch == "larch64":
@@ -25,4 +25,4 @@ if arch == "larch64":
 env.Program('bootlog.cc', LIBS=libs)
 
 if GetOption('test'):
-  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_loggerd.cc', 'tests/test_logger.cc', env.Object('logger_util', '#/selfdrive/ui/replay/util.cc')], LIBS=libs + ['curl', 'crypto'])
+  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_loggerd.cc', 'tests/test_logger.cc'], LIBS=libs + ['curl', 'crypto'])
