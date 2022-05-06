@@ -23,13 +23,13 @@ from selfdrive.manager.process_config import managed_processes
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
-TIMEOUT = 15
+timeout = 15
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config'], defaults=({},))
 
 
 def wait_for_event(evt):
-  if not evt.wait(TIMEOUT):
+  if not evt.wait(timeout):
     if threading.currentThread().getName() == "MainThread":
       # tested process likely died. don't let test just hang
       raise Exception("Timeout reached. Tested process likely crashed.")
@@ -336,6 +336,9 @@ CONFIGS = [
 
 
 def replay_process(cfg, lr, fingerprint=None):
+  if "--longer-timeout" in sys.argv:
+    global timeout
+    timeout = 30
   if cfg.fake_pubsubmaster:
     return python_replay_process(cfg, lr, fingerprint)
   else:
@@ -447,6 +450,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
 
 
 def cpp_replay_process(cfg, lr, fingerprint=None):
+
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(cfg.pub_sub.keys())
 
@@ -461,7 +465,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   managed_processes[cfg.proc_name].start()
 
   try:
-    with Timeout(TIMEOUT):
+    with Timeout(timeout):
       while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
         time.sleep(0)
 
