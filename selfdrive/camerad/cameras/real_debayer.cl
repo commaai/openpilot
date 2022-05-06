@@ -107,42 +107,34 @@ __kernel void debayer10(const __global uchar * in,
   half pv = val_from_10(in, x_global, y_global, black_level);
   cached[localOffset] = pv;
 
-  if (x_global == 0) {  // global left
-    cached[localOffset - 1] = val_from_10(in, x_global+1, y_global, black_level);
-  } else if (x_global == RGB_WIDTH - 1) {  // global right
-    cached[localOffset + 1] = val_from_10(in, x_global-1, y_global, black_level);
-  } else if (x_local == 0) {  // local left
-    cached[localOffset - 1] = val_from_10(in, x_global-1, y_global, black_level);
-  } else if (x_local == get_local_size(0) - 1) {  // local right
-    cached[localOffset + 1] = val_from_10(in, x_global+1, y_global, black_level);
+  // cache padding
+  int localColOffset = -1;
+  int globalColOffset = -1;
+
+  const int x_global_mod = (x_global == 0 || x_global == RGB_WIDTH - 1) ? -1: 1;
+  const int y_global_mod = (y_global == 0 || y_global == RGB_HEIGHT - 1) ? -1: 1;
+
+  // cache padding
+  if (x_global >= 1 && x_local < 1) {
+    localColOffset = x_local;
+    globalColOffset = -1;
+    cached[(y_local + 1) * localRowLen + x_local] = val_from_10(in, x_global-x_global_mod, y_global, black_level);
+  } else if (x_global < RGB_WIDTH - 1 && x_local >= get_local_size(0) - 1) {
+    localColOffset = x_local + 2;
+    globalColOffset = 1;
+    cached[localOffset + 1] = val_from_10(in, x_global+x_global_mod, y_global, black_level);
   }
 
-  if (y_global == 0) {  // global top
-    cached[localOffset - localRowLen] = val_from_10(in, x_global, y_global+1, black_level);
-  } else if (y_global == RGB_HEIGHT - 1) {  // global bottom
-    cached[localOffset + localRowLen] = val_from_10(in, x_global, y_global-1, black_level);
-  } else if (y_local == 0) {  // local top
-    cached[localOffset - localRowLen] = val_from_10(in, x_global, y_global-1, black_level);
-  } else if (y_local == get_local_size(1) - 1) {  // local bottom
-    cached[localOffset + localRowLen] = val_from_10(in, x_global, y_global+1, black_level);
-  }
-
-  if (x_global == 0 && y_global == 0) {  // global left-top (G)
-    cached[localOffset - localRowLen - 1] = val_from_10(in, x_global, y_global, black_level);
-  } else if (x_global == 0 && y_global == RGB_HEIGHT - 1) {  // global left-bottom (R)
-    cached[localOffset + localRowLen - 1] = val_from_10(in, x_global + 1, y_global - 1, black_level);
-  } else if (x_global == RGB_WIDTH - 1 && y_global == 0) {  // global right-top (B)
-    cached[localOffset - localRowLen + 1] = val_from_10(in, x_global - 1, y_global + 1, black_level);
-  } else if (x_global == RGB_WIDTH - 1 && y_global == RGB_HEIGHT - 1) { // global right-bottom (G)
-    cached[localOffset + localRowLen + 1] = val_from_10(in, x_global, y_global, black_level);
-  } else if (x_local == 0 && y_local == 0) {   // local left-top
-    cached[localOffset - localRowLen - 1] = val_from_10(in, x_global - 1, y_global - 1, black_level);
-  } else if (x_local == 0 && y_local == get_local_size(1) - 1) {  // local left-bottom
-    cached[localOffset + localRowLen - 1] = val_from_10(in, x_global - 1, y_global + 1, black_level);
-  } else if (x_local == get_local_size(0) - 1 && y_local == 0) {  // local right-top
-    cached[localOffset - localRowLen + 1] = val_from_10(in, x_global + 1, y_global - 1, black_level);
-  } else if (x_local == get_local_size(0) - 1 && y_local == get_local_size(1) - 1) {  // local right-bottom
-    cached[localOffset + localRowLen + 1] = val_from_10(in, x_global + 1, y_global + 1, black_level);
+  if (y_global >= 1 && y_local < 1) {
+    cached[y_local * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global-y_global_mod, black_level);
+    if (localColOffset != -1) {
+      cached[y_local * localRowLen + localColOffset] = val_from_10(in, x_global+(x_global_mod*globalColOffset), y_global-y_global_mod, black_level);
+    }
+  } else if (y_global < RGB_HEIGHT - 1 && y_local >= get_local_size(1) - 1) {
+    cached[(y_local + 2) * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global+y_global_mod, black_level);
+    if (localColOffset != -1) {
+      cached[(y_local + 2) * localRowLen + localColOffset] = val_from_10(in, x_global+(x_global_mod*globalColOffset), y_global+y_global_mod, black_level);
+    }
   }
 
   // sync
