@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=E1101
 import argparse
+import copy
 import os
 import importlib
 import unittest
@@ -38,19 +39,24 @@ routes_by_car = defaultdict(set)
 for r in routes:
   routes_by_car[r.car_model].add(r)
 
-test_cases: List[Tuple[str, Optional[TestRoute]]] = []
+_test_cases: List[Tuple[str, Optional[TestRoute]]] = []
 for i, c in enumerate(sorted(all_known_cars())):
   if i % NUM_JOBS == JOB_ID:
-    test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
+    _test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
 
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
 class TestCarModel(unittest.TestCase):
+  car_model = None
+  route = None
+  segment = None
+  ci = None
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
+    print(cls.car_model, cls.route)
     if cls.route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
@@ -104,6 +110,7 @@ class TestCarModel(unittest.TestCase):
     set_status = self.safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyConfigs}")
     self.safety.init_tests()
+    print('setUp')
 
   def test_car_params(self):
     if self.CP.dashcamOnly:
@@ -123,6 +130,7 @@ class TestCarModel(unittest.TestCase):
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
       else:
         raise Exception("unkown tuning")
+    print('test car params')
 
   def test_car_interface(self):
     # TODO: also check for checkusm and counter violations from can parser
@@ -138,6 +146,7 @@ class TestCarModel(unittest.TestCase):
         can_invalid_cnt += not CS.canValid
 
     self.assertLess(can_invalid_cnt, 50)
+    print('test car interface')
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
@@ -151,8 +160,10 @@ class TestCarModel(unittest.TestCase):
       if radar_data is not None:
         error_cnt += car.RadarData.Error.canError in radar_data.errors
     self.assertLess(error_cnt, 20)
+    print('test radar interface')
 
   def test_panda_safety_rx_valid(self):
+    print('test_panda_safety_rx_valid')
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
@@ -181,6 +192,7 @@ class TestCarModel(unittest.TestCase):
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_carstate(self):
+    print('test_panda_safety_carstate')
     """
       Assert that panda safety matches openpilot's carState
     """
@@ -251,12 +263,15 @@ class TestCarModel(unittest.TestCase):
 
 
 def load_tests(_routes):
-  # TODO: see if there's a cleaner way to do this
   test_cases = unittest.TestSuite()
-  for test_route in _routes:
-    test = TestCarModel
-    for field in test_route._fields:
-      setattr(test, field, getattr(test_route, field))
+  for car_model, test_route in _test_cases:
+    test = copy.copy(TestCarModel)
+    test.car_model = car_model
+
+    if test_route is not None:
+      test.route = test_route.route if test_route else None
+      test.segment = test_route.segment if test_route else None
+      test.ci = test_route.ci if test_route else None
 
     # discover tests
     test_cases.addTest(unittest.TestLoader().loadTestsFromTestCase(test))
@@ -272,7 +287,6 @@ if __name__ == "__main__":
 
   # Run on user-specified route
   if args.route is not None:
-    # TODO: do we want to require specifying car model?
     assert args.car_model is not None, "Car model needed for tests"
     test_route = TestRoute(args.route, args.car_model, segment=args.segment, ci=False)
     test_cases = load_tests([test_route])
