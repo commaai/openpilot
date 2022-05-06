@@ -134,33 +134,36 @@ __kernel void debayer10(const __global uchar * in,
   const int x_local = mad24(lid_x, 2, 1);
   const int y_local = mad24(lid_y, 2, 1);
 
+  const int x_global_mod = (gid_x == 0 || gid_x == get_global_size(0) - 1) ? -1: 1;
+  const int y_global_mod = (gid_y == 0 || gid_y == get_global_size(1) - 1) ? -1: 1;
+
   vstore2(vals_from_12(in, x_global, y_global + 0, black_level), 0, cached + mad24(y_local + 0, localRowLen, x_local));
   vstore2(vals_from_12(in, x_global, y_global + 1, black_level), 0, cached + mad24(y_local + 1, localRowLen, x_local));
   if (lid_y == 0) {
-    vstore2(vals_from_12(in, x_global, y_global - 1, black_level), 0, cached + mad24(y_local - 1, localRowLen, x_local));
+    vstore2(vals_from_12(in, x_global, y_global - y_global_mod, black_level), 0, cached + mad24(y_local - 1, localRowLen, x_local));
   } else if (lid_y == get_local_size(1) - 1) {
-    vstore2(vals_from_12(in, x_global, y_global + 2, black_level), 0, cached + mad24(y_local + 2, localRowLen, x_local));
+    vstore2(vals_from_12(in, x_global, y_global + y_global_mod + 1, black_level), 0, cached + mad24(y_local + 2, localRowLen, x_local));
   }
 
   if (lid_x == 0) {
-    cached[mad24(y_local + 0, localRowLen, x_local - 1)] = val_from_12(in, x_global - 1, y_global + 0, black_level);
-    cached[mad24(y_local + 1, localRowLen, x_local - 1)] = val_from_12(in, x_global - 1, y_global + 1, black_level);
+    cached[mad24(y_local + 0, localRowLen, x_local - 1)] = val_from_12(in, x_global - x_global_mod, y_global + 0, black_level);
+    cached[mad24(y_local + 1, localRowLen, x_local - 1)] = val_from_12(in, x_global - x_global_mod, y_global + 1, black_level);
   } else if (lid_x == get_local_size(0) - 1) {
-    cached[mad24(y_local + 0, localRowLen, x_local + 2)] = val_from_12(in, x_global + 2, y_global + 0, black_level);
-    cached[mad24(y_local + 1, localRowLen, x_local + 2)] = val_from_12(in, x_global + 2, y_global + 1, black_level);
+    cached[mad24(y_local + 0, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global + 0, black_level);
+    cached[mad24(y_local + 1, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global + 1, black_level);
   }
 
   // sync
   barrier(CLK_LOCAL_MEM_FENCE);
 
   if (lid_x == 0 && lid_y == 0) {
-    cached[mad24(y_local - 1, localRowLen, x_local - 1)] = val_from_12(in, x_global - 1, y_global - 1, black_level);
+    cached[mad24(y_local - 1, localRowLen, x_local - 1)] = val_from_12(in, x_global - x_global_mod, y_global - y_global_mod, black_level);
   } else if (lid_x == get_local_size(0) - 1 && lid_y == 0) {
-    cached[mad24(y_local - 1, localRowLen, x_local + 2)] = val_from_12(in, x_global + 2, y_global - 1, black_level);
+    cached[mad24(y_local - 1, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global - y_global_mod, black_level);
   } else if (lid_x == 0 && lid_y == get_local_size(1) - 1) {
-    cached[mad24(y_local + 2, localRowLen, x_local - 1)] = val_from_12(in, x_global - 1, y_global + 2, black_level);
+    cached[mad24(y_local + 2, localRowLen, x_local - 1)] = val_from_12(in, x_global - x_global_mod, y_global + y_global_mod + 1, black_level);
   } else if (lid_x == get_local_size(0) - 1 && lid_y == get_local_size(1) - 1) {
-    cached[mad24(y_local + 2, localRowLen, x_local + 2)] = val_from_12(in, x_global + 2, y_global + 2, black_level);
+    cached[mad24(y_local + 2, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global + y_global_mod + 1, black_level);
   }
 
   half3 rgb;
