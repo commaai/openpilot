@@ -13,7 +13,6 @@ Currently the following processes are tested:
 * plannerd
 * calibrationd
 * ubloxd
-* laikad
 
 ## Forks
 
