@@ -24,8 +24,10 @@ UV_WIDTH = FRAME_WIDTH // 2
 UV_HEIGHT = FRAME_HEIGHT // 2
 UV_SIZE = UV_WIDTH * UV_HEIGHT
 
+
 def get_frame_fn(ref_commit, test_route, tici=True):
   return f"{test_route}_debayer{'_tici' if tici else ''}_{ref_commit}.bz2"
+
 
 def bzip_frames(frames):
   data = bytes()
@@ -34,6 +36,7 @@ def bzip_frames(frames):
     data += u.tobytes()
     data += v.tobytes()
   return bz2.compress(data)
+
 
 def unbzip_frames(url):
   with FileReader(url) as f:
@@ -54,14 +57,15 @@ def unbzip_frames(url):
 
   return res
 
-def init_kernels():
-  ctx = cl.create_some_context()
+
+def init_kernels(frame_offset=0):
+  ctx = cl.create_some_context(interactive=False)
 
   with open(os.path.join(BASEDIR, 'selfdrive/camerad/cameras/real_debayer.cl')) as f:
     build_args = ' -cl-fast-relaxed-math -cl-denorms-are-zero -cl-single-precision-constant' + \
-      f' -DFRAME_STRIDE={FRAME_STRIDE} -DRGB_WIDTH={FRAME_WIDTH} -DRGB_HEIGHT={FRAME_HEIGHT} -DCAM_NUM=0'
+      f' -DFRAME_STRIDE={FRAME_STRIDE} -DRGB_WIDTH={FRAME_WIDTH} -DRGB_HEIGHT={FRAME_HEIGHT} -DFRAME_OFFSET={frame_offset} -DCAM_NUM=0'
     if PC:
-      build_args += ' -DHALF_AS_FLOAT=1'
+      build_args += ' -DHALF_AS_FLOAT=1 -cl-std=CL2.0'
     debayer_prg = cl.Program(ctx, f.read()).build(options=build_args)
 
   with open(os.path.join(BASEDIR, 'selfdrive/camerad/transforms/rgb_to_yuv.cl')) as f:
@@ -72,7 +76,8 @@ def init_kernels():
 
   return ctx, debayer_prg, rgb_to_yuv_prg
 
-def debayer_frame(ctx, debayer_prg, rgb_to_yuv_prg, data):
+
+def debayer_frame(ctx, debayer_prg, rgb_to_yuv_prg, data, rgb=False):
   q = cl.CommandQueue(ctx)
 
   rgb_buff = np.empty(FRAME_WIDTH * FRAME_HEIGHT * 3, dtype=np.uint8)
@@ -101,7 +106,11 @@ def debayer_frame(ctx, debayer_prg, rgb_to_yuv_prg, data):
   u = yuv_buff[FRAME_WIDTH*FRAME_HEIGHT:FRAME_WIDTH*FRAME_HEIGHT+UV_SIZE].reshape((UV_HEIGHT, UV_WIDTH))
   v = yuv_buff[FRAME_WIDTH*FRAME_HEIGHT+UV_SIZE:].reshape((UV_HEIGHT, UV_WIDTH))
 
-  return y, u, v
+  if rgb:
+    return rgb_buff.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))[:, :, (2, 1, 0)]
+  else:
+    return y, u, v
+
 
 def debayer_replay(lr):
   ctx, debayer_prg, rgb_to_yuv_prg = init_kernels()
@@ -117,6 +126,7 @@ def debayer_replay(lr):
         frames.append(img)
 
   return frames
+
 
 if __name__ == "__main__":
   update = "--update" in sys.argv
@@ -179,7 +189,7 @@ if __name__ == "__main__":
       failed = True
 
   # upload new refs
-  if update or failed:
+  if update or (failed and TICI):
     from selfdrive.test.openpilotci import upload_file
 
     print("Uploading new refs")
