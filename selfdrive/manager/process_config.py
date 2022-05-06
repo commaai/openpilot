@@ -14,7 +14,7 @@ def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return CP.notCar
 
 def logging(started, params, CP: car.CarParams) -> bool:
-  run = (not CP.notCar) or params.get_bool("EnableLogging")
+  run = (not CP.notCar) or not params.get_bool("DisableLogging")
   return started and run
 
 procs = [
