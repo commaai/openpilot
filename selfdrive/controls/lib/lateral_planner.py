@@ -81,7 +81,8 @@ class LateralPlanner:
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
     # self.x0[4] = v_ego
-    p = np.array([v_ego, self.r])
+    r = np.interp(np.abs(self.yaw_rate[0]), [0.2, 0.25], [0.0, self.r])
+    p = np.array([v_ego, r])
     self.lat_mpc.run(self.x0,
                      p,
                      y_pts,
