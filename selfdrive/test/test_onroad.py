@@ -188,7 +188,7 @@ class TestOnroad(unittest.TestCase):
     result += "------------------------------------------------\n"
 
     ts = [getattr(getattr(m, m.which()), "processingTime") for m in self.lr if 'CameraState' in m.which()]
-    self.assertLess(min(ts), 0.1, f"high execution time: {min(ts)}")
+    self.assertLess(min(ts), 0.025, f"high execution time: {min(ts)}")
     result += f"execution time: min  {min(ts):.5f}s\n"
     result += "------------------------------------------------\n"
     print(result)
