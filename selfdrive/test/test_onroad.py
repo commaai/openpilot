@@ -181,6 +181,18 @@ class TestOnroad(unittest.TestCase):
     cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
 
+  def test_camera_processing_time(self):
+    result = "\n"
+    result += "------------------------------------------------\n"
+    result += "-------------- Debayer Timing ------------------\n"
+    result += "------------------------------------------------\n"
+
+    ts = [getattr(getattr(m, m.which()), "processingTime") for m in self.lr if 'CameraState' in m.which()]
+    self.assertLess(min(ts), 0.1, f"high execution time: {min(ts)}")
+    result += f"execution time: min  {min(ts):.5f}s\n"
+    result += "------------------------------------------------\n"
+    print(result)
+
   def test_mpc_execution_timings(self):
     result = "\n"
     result += "------------------------------------------------\n"
