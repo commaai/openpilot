@@ -55,7 +55,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 FULL_TEST = len(sys.argv) <= 1
 
 
-def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
+def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None, timeout=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
@@ -64,7 +64,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   cmp_log_path = cmp_log_fn if os.path.exists(cmp_log_fn) else BASE_URL + os.path.basename(cmp_log_fn)
   cmp_log_msgs = list(LogReader(cmp_log_path))
 
-  log_msgs = replay_process(cfg, lr)
+  log_msgs = replay_process(cfg, lr, override_timeout=timeout)
 
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
@@ -123,6 +123,8 @@ if __name__ == "__main__":
                         help="Extra fields or msgs to ignore (e.g. carState.events)")
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
                         help="Msgs to ignore (e.g. carEvents)")
+  parser.add_argument("--timeout", type=int, default=None,
+                        help="Set timeout of incoming messages")
   args = parser.parse_args()
 
   cars_whitelisted = len(args.whitelist_cars) > 0
@@ -162,7 +164,7 @@ if __name__ == "__main__":
         continue
 
       cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-      results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
+      results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs, args.timeout)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   with open(os.path.join(process_replay_dir, "diff.txt"), "w") as f:

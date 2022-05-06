@@ -5,7 +5,6 @@ Process replay is a regression test designed to identify any changes in the outp
 If the test fails, make sure that you didn't unintentionally change anything. If there are intentional changes, the reference logs will be updated.
 
 Use `test_processes.py` to run the test locally.
-Use `--longer-timeout` to increase the timeout of expected messages to 30 seconds when needed.
 
 Currently the following processes are tested:
 
@@ -15,6 +14,23 @@ Currently the following processes are tested:
 * calibrationd
 * ubloxd
 
+### Usage test_processes.py
+```
+Usage: test_processes.py [-h] [--whitelist-procs PROCS] [--whitelist-cars CARS] [--blacklist-procs PROCS]
+                         [--blacklist-cars CARS] [--ignore-fields FIELDS] [--ignore-msgs MSGS] [--timeout TIMEOUT]
+
+Regression test to identify changes in a process's output
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --whitelist-procs PROCS               Whitelist given processes from the test (e.g. controlsd)
+  --whitelist-cars WHITELIST_CARS       Whitelist given cars from the test (e.g. HONDA)
+  --blacklist-procs BLACKLIST_PROCS     Blacklist given processes from the test (e.g. controlsd)
+  --blacklist-cars BLACKLIST_CARS       Blacklist given cars from the test (e.g. HONDA)
+  --ignore-fields IGNORE_FIELDS         Extra fields or msgs to ignore (e.g. carState.events)
+  --ignore-msgs IGNORE_MSGS             Msgs to ignore (e.g. carEvents)
+  --timeout TIMEOUT                     Set timeout of incoming messages
+```
 ## Forks
 
 openpilot forks can use this test with their own reference logs

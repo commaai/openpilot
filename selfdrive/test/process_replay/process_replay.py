@@ -335,14 +335,16 @@ CONFIGS = [
 ]
 
 
-def replay_process(cfg, lr, fingerprint=None):
-  if "--longer-timeout" in sys.argv:
+def replay_process(cfg, lr, fingerprint=None, override_timeout=None):
+  if override_timeout is not None:
     global timeout
-    timeout = 30
+    timeout = override_timeout
+
   if cfg.fake_pubsubmaster:
     return python_replay_process(cfg, lr, fingerprint)
   else:
     return cpp_replay_process(cfg, lr, fingerprint)
+
 
 def setup_env(simulation=False):
   params = Params()
