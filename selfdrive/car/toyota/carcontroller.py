@@ -54,8 +54,7 @@ class CarController:
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
     self.steer_rate_limited = new_steer != apply_steer
 
-    # Cut steering while we're in a known fault state (2s)
-    if not CC.latActive or CS.steer_state in (9, 25):
+    if not CC.latActive:
       apply_steer = 0
       apply_steer_req = 0
     else:
