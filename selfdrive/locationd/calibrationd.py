@@ -36,8 +36,8 @@ MAX_ALLOWED_SPREAD = np.radians(2)
 RPY_INIT = np.array([0.0,0.0,0.0])
 
 # These values are needed to accommodate biggest modelframe
-PITCH_LIMITS: np.ndarray = np.array([-0.09074112085129739, 0.14907572052989657])
-YAW_LIMITS: np.ndarray = np.array([-0.06912048084718224, 0.06912048084718235])
+PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
+YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
 
 
@@ -48,17 +48,15 @@ class Calibration:
 
 
 def is_calibration_valid(rpy: np.ndarray) -> bool:
-  is_valid: bool = (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
-  return is_valid
+  return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])  # type: ignore
 
 
 def sanity_clip(rpy: np.ndarray) -> np.ndarray:
   if np.isnan(rpy).any():
     rpy = RPY_INIT
-  clip: np.ndarray = np.array([rpy[0],
-                               np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
-                               np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
-  return clip
+  return np.array([rpy[0],
+                  np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
+                  np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
 
 
 class Calibrator:

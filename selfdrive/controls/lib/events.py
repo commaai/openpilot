@@ -135,8 +135,9 @@ class Alert:
     return f"{self.alert_text_1}/{self.alert_text_2} {self.priority} {self.visual_alert} {self.audible_alert}"
 
   def __gt__(self, alert2) -> bool:
-    is_gt: bool = self.priority > alert2.priority
-    return is_gt
+    if not isinstance(alert2, Alert):
+      return False
+    return self.priority > alert2.priority
 
 
 class NoEntryAlert(Alert):

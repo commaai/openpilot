@@ -36,12 +36,14 @@ class Bootlog:
     return timestamp_to_datetime(self._timestamp)
 
   def __eq__(self, b) -> bool:
-    is_eq: bool = self.datetime == b.datetime
-    return is_eq
+    if not isinstance(b, Bootlog):
+      return False
+    return self.datetime == b.datetime
 
   def __lt__(self, b) -> bool:
-    is_lt: bool = self.datetime < b.datetime
-    return is_lt
+    if not isinstance(b, Bootlog):
+      return False
+    return self.datetime < b.datetime
 
 
 def get_bootlogs(dongle_id: str):

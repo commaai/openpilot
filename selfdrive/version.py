@@ -55,22 +55,21 @@ def get_origin(default: Optional[str] = None) -> Optional[str]:
 
 @cache
 def get_normalized_origin(default: Optional[str] = None) -> Optional[str]:
-  origin = get_origin()
+  origin: Optional[str] = get_origin()
 
   if origin is None:
     return default
 
-  normalized: str = origin.replace("git@", "", 1) \
-                          .replace(".git", "", 1) \
-                          .replace("https://", "", 1) \
-                          .replace(":", "/", 1)
-  return normalized
+  return origin.replace("git@", "", 1) \
+               .replace(".git", "", 1) \
+               .replace("https://", "", 1) \
+               .replace(":", "/", 1)
 
 
 @cache
 def get_version() -> str:
   with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")) as _versionf:
-    version: str = _versionf.read().split('"')[1]
+    version = _versionf.read().split('"')[1]
   return version
 
 @cache
@@ -87,12 +86,11 @@ def is_prebuilt() -> bool:
 def is_comma_remote() -> bool:
   # note to fork maintainers, this is used for release metrics. please do not
   # touch this to get rid of the orange startup alert. there's better ways to do that
-  origin = get_origin()
+  origin: Optional[str] = get_origin()
   if origin is None:
     return False
 
-  is_remote: bool = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
-  return is_remote
+  return origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
 
 
 @cache

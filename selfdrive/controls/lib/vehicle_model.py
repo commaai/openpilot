@@ -166,8 +166,7 @@ def kin_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
   K = np.zeros((2, 1))
   K[0, 0] = VM.aR / VM.sR / VM.l * u
   K[1, 0] = 1. / VM.sR / VM.l * u
-  sol: np.ndarray = K * sa
-  return sol
+  return K * sa
 
 
 def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, np.ndarray]:
@@ -222,13 +221,11 @@ def dyn_ss_sol(sa: float, u: float, roll: float, VM: VehicleModel) -> np.ndarray
   """
   A, B = create_dyn_state_matrices(u, VM)
   inp = np.array([[sa], [roll]])
-  sol: np.ndarray = -solve(A, B) @ inp
-  return sol
+  return -solve(A, B) @ inp  # type: ignore
 
 
-def calc_slip_factor(VM) -> float:
+def calc_slip_factor(VM: VehicleModel) -> float:
   """The slip factor is a measure of how the curvature changes with speed
   it's positive for Oversteering vehicle, negative (usual case) otherwise.
   """
-  sf: float = VM.m * (VM.cF * VM.aF - VM.cR * VM.aR) / (VM.l**2 * VM.cF * VM.cR)
-  return sf
+  return VM.m * (VM.cF * VM.aF - VM.cR * VM.aR) / (VM.l**2 * VM.cF * VM.cR)
