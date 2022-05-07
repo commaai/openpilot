@@ -72,6 +72,8 @@ def main():
       msg = process_ublox_msg(ublox_msg, dog, sm.logMonoTime['ubloxGnss'])
       if msg is None:
         msg = messaging.new_message('gnssMeasurements')
+      else:
+        print("goooood msg")
       pm.send('gnssMeasurements', msg)
 
 

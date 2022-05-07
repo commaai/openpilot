@@ -108,7 +108,6 @@ class LiveKalman:
   def generate_code(generated_dir):
     name = LiveKalman.name
     dim_state = LiveKalman.initial_x.shape[0]
-    print('dim_state', dim_state)
     dim_state_err = LiveKalman.initial_P_diag.shape[0]
 
     state_sym = sp.MatrixSymbol('state', dim_state, 1)
@@ -149,6 +148,7 @@ class LiveKalman:
     state_dot[States.ECEF_POS, :] = v
     state_dot[States.ECEF_ORIENTATION, :] = q_dot
     state_dot[States.ECEF_VELOCITY, 0] = quat_rot * acceleration
+    # todo not clean
     state_dot[22, 0] = cd
     state_dot[23, 0] = ca
     #state_dot[States.CLOCK_BIAS, 0][0,0] = cd
@@ -215,7 +215,7 @@ class LiveKalman:
     # extra args
     sat_pos_freq_sym = sp.MatrixSymbol('sat_pos', 4, 1)
     sat_pos_vel_sym = sp.MatrixSymbol('sat_pos_vel', 6, 1)
-    # sat_los_sym = sp.MatrixSymbol('sat_los', 3, 1)
+    # sat_los_sym = sp.MatrixSymbol('sat_los', 3, 1) # todo should fix?
 
     # expand extra args
     sat_x, sat_y, sat_z, glonass_freq = sat_pos_freq_sym
@@ -237,7 +237,7 @@ class LiveKalman:
       ) + cb[0] + glonass_bias[0] + glonass_freq_slope[0] * glonass_freq
     ])
 
-    los_vector = (sp.Matrix(sat_pos_vel_sym[0:3]) - sp.Matrix([x, y, z]))
+    los_vector = (sp.Matrix(sat_pos_vel_sym[:3]) - sp.Matrix([x, y, z]))
     los_vector = los_vector / sp.sqrt(los_vector[0] ** 2 + los_vector[1] ** 2 + los_vector[2] ** 2)
     h_pseudorange_rate_sym = sp.Matrix([los_vector[0] * (sat_vx - vx) +
                                         los_vector[1] * (sat_vy - vy) +
