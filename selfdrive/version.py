@@ -74,8 +74,7 @@ def get_version() -> str:
 
 @cache
 def get_short_version() -> str:
-  short_version: str = get_version().split('-')[0]
-  return short_version
+  return get_version().split('-')[0]  # type: ignore
 
 @cache
 def is_prebuilt() -> bool:
