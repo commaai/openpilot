@@ -70,6 +70,7 @@ class CarState(CarStateBase):
     self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]["COUNTER"]
     self.lkas_car_model = cp_cam.vl["LKAS_HUD"]["CAR_MODEL"]
     self.lkas_status_ok = cp_cam.vl["LKAS_HEARTBIT"]["LKAS_STATUS_OK"]
+    self.button_counter = cp.vl["WHEEL_BUTTONS"]["COUNTER"]
 
     return ret
 
@@ -104,6 +105,7 @@ class CarState(CarStateBase):
       ("COUNTER", "EPS_STATUS",),
       ("TRACTION_OFF", "TRACTION_BUTTON"),
       ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS"),
+      ("COUNTER", "WHEEL_BUTTONS"),
     ]
 
     checks = [
@@ -116,6 +118,7 @@ class CarState(CarStateBase):
       ("ACC_2", 50),
       ("GEAR", 50),
       ("ACCEL_GAS_134", 50),
+      ("WHEEL_BUTTONS", 50),
       ("DASHBOARD", 15),
       ("STEERING_LEVERS", 10),
       ("SEATBELT_STATUS", 2),
