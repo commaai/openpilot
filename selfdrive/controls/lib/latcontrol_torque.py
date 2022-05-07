@@ -62,7 +62,6 @@ class LatControlTorque(LatControl):
       # convert friction into lateral accel units for feedforward
       friction_compensation = interp(desired_lateral_jerk, [-JERK_THRESHOLD, JERK_THRESHOLD], [-self.friction, self.friction])
       ff += friction_compensation / self.CP.lateralTuning.torque.kf
-
       output_torque = self.pid.update(error,
                                       override=CS.steeringPressed, feedforward=ff,
                                       speed=CS.vEgo,
