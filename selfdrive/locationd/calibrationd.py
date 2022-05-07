@@ -55,8 +55,8 @@ def sanity_clip(rpy: np.ndarray) -> np.ndarray:
   if np.isnan(rpy).any():
     rpy = RPY_INIT
   return np.array([rpy[0],
-                  np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
-                  np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
+                   np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
+                   np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
 
 
 class Calibrator:
@@ -84,7 +84,6 @@ class Calibrator:
     self.update_status()
 
   def reset(self, rpy_init: np.ndarray = RPY_INIT, valid_blocks: int = 0, smooth_from: Optional[np.ndarray] = None) -> None:
-    self.rpy: np.ndarray
     if not np.isfinite(rpy_init).all():
       self.rpy = RPY_INIT.copy()
     else:
@@ -146,8 +145,7 @@ class Calibrator:
 
   def get_smooth_rpy(self) -> np.ndarray:
     if self.old_rpy_weight > 0:
-      smooth_rpy: np.ndarray = self.old_rpy_weight * self.old_rpy + (1.0 - self.old_rpy_weight) * self.rpy
-      return smooth_rpy
+      return self.old_rpy_weight * self.old_rpy + (1.0 - self.old_rpy_weight) * self.rpy
     else:
       return self.rpy
 
@@ -167,7 +165,6 @@ class Calibrator:
     observed_rpy = np.array([0,
                              -np.arctan2(trans[2], trans[0]),
                              np.arctan2(trans[1], trans[0])])
-    new_rpy: np.ndarray
     new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
     new_rpy = sanity_clip(new_rpy)
 
