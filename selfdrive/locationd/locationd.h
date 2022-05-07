@@ -75,4 +75,4 @@ private:
   bool gps_mode = false;
 };
 
-typedef cereal::GnssMeasurements::GnssId GnssId;
+typedef cereal::GnssMeasurements::ConstellationId ConstellationId;

@@ -33,6 +33,7 @@ public:
   std::vector<MatrixXdr> get_R(int kind, int n);
 
   std::optional<Estimate> predict_and_observe(double t, int kind, std::vector<Eigen::VectorXd> meas, std::vector<MatrixXdr> R = {});
+  std::optional<Estimate> predict_and_update_batch(double t, int kind, std::vector<Eigen::VectorXd> meas, std::vector<MatrixXdr> R = {}, std::vector<std::vector<double>> extra_args = {{}}, bool augment = false);
   std::optional<Estimate> predict_and_update_odo_speed(std::vector<Eigen::VectorXd> speed, double t, int kind);
   std::optional<Estimate> predict_and_update_odo_trans(std::vector<Eigen::VectorXd> trans, double t, int kind);
   std::optional<Estimate> predict_and_update_odo_rot(std::vector<Eigen::VectorXd> rot, double t, int kind);
