@@ -12,7 +12,10 @@ Provides basic support for GM vehicles with LKAS that do not have an ASCM, inclu
 * Chevy Silverado
 * Chevy Suburban
 
-Restores support for the Grey and White Panda (although you will get bad GPS warnings with a white panda).
+WARNING: Comma 2 support has been removed. It was not my decision, and I
+consider it grossly unethical.
+
+~~Restores support for the Grey and White Panda (although you will get bad GPS warnings with a white panda).~~
 
 Port is intended to be upstreamed when complete, thus _should_ work with all vehicles normally supported by openpilot. However, it presently contains firmware for the Pedal Interceptor that is GM-specific.
 

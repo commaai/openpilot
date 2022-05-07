@@ -1,5 +1,6 @@
-Version 0.8.14-GM8 (2022-02-20)
+Version 0.8.14-GM9 (2022-05-07)
 ========================
+ * Comma removed Comma 2 support from master; C2 will get backported featured in the future
  * Further improved Bolt Tunining thanks to Darknight11
  * Reversed CC main logic with Pedal
  * CarState.gearShifter now more detailed, includes L mode!
@@ -15,19 +16,18 @@ Version 0.8.14-GM8 (2022-02-20)
  * Chevy Bolt EV Support (And several others)
  * Non-ASCM (aka non-radar) GM support
  * GM longitudinal support using Pedal Interceptor (no braking on non-EV)
- * Grey & White Panda Support restored
+ * ~~Grey & White Panda Support restored~~
  * WARNING: Pedal firmware is GM specific
  * Silverado with Cam ACC passthrough
  * Suburban & Tahoe with self-contained ACC
  * Robust and efficient camera detection for forwarding on Panda
  * DBC groundwork for friction braking and AEB on PT
- * Reworked GM values.py with capability for conditional limits
- * Panda now supports multiple limit profiles through safety_param
+ * ~~Reworked GM values.py with capability for conditional limits~~
+ * ~~Panda now supports multiple limit profiles through safety_param~~
  * Cleaned up radar settings
  * TODO: Pedal transform values configurable, store in flash
  * TODO: Pedal low-speed tuning
- * TODO: Auto-detection of B-mode
- * TODO: Auto-detection of B-mode zero-point
+ * TODO: Auto-detection of L-mode zero-point
 
 Version 0.8.14 (2022-0X-XX)
 ========================
