@@ -90,6 +90,12 @@ SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
 SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
 
+CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xf132)
+CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(0xf132)
+
+CHRYSLER_RX_OFFSET = -0x280
 
 @dataclass
 class Request:
@@ -100,6 +106,19 @@ class Request:
   bus: int = 1
 
 REQUESTS: List[Request] = [
+  # Chrysler / FCA / Stellantis
+  (
+    "chrysler",
+    [CHRYSLER_VERSION_REQUEST],
+    [CHRYSLER_VERSION_RESPONSE],
+    CHRYSLER_RX_OFFSET,
+  ),
+  (
+    "chrysler",
+    [CHRYSLER_VERSION_REQUEST],
+    [CHRYSLER_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
+  ),
   # Subaru
   Request(
     "subaru",
