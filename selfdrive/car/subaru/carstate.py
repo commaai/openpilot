@@ -164,17 +164,16 @@ class CarState(CarStateBase):
         ("Brake_Pedal", "Brake_Pedal"),
       ]
 
+      checks.append(("BodyInfo", 1))
       checks.append(("Dash_State2", 1))
       checks.append(("Brake_Pedal", 50))
+      checks.append(("CruiseControl", 50))
 
     if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
       checks.append(("Dashlights", 20))
-      checks.append(("BodyInfo", 1))
-      checks.append(("CruiseControl", 50))
 
     if CP.carFingerprint in (CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
       checks.append(("Dashlights", 10))
-      checks.append(("CruiseControl", 50))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
