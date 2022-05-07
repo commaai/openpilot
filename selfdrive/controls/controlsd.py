@@ -216,14 +216,13 @@ class Controls:
     if not self.CP.notCar:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
-    #TODO: JJS: Restore Error checking
-    # # Handle car events. Ignore when CAN is invalid
-    # if CS.canTimeout:
-    #   self.events.add(EventName.canBusMissing)
-    # elif not CS.canValid:
-    #   self.events.add(EventName.canError)
-    # else:
-    self.events.add_from_msg(CS.events)
+    # Handle car events. Ignore when CAN is invalid
+    if CS.canTimeout:
+      self.events.add(EventName.canBusMissing)
+    elif not CS.canValid:
+      self.events.add(EventName.canError)
+    else:
+      self.events.add_from_msg(CS.events)
 
     # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
@@ -281,9 +280,7 @@ class Controls:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
 
       if safety_mismatch or self.mismatch_counter >= 200:
-        pass
-        # JJS disabling controls mismatch event
-        # self.events.add(EventName.controlsMismatch)
+        self.events.add(EventName.controlsMismatch)
 
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
@@ -312,17 +309,11 @@ class Controls:
     no_system_errors = len(self.events) != num_events
     if (not self.sm.all_checks() or self.can_rcv_error) and no_system_errors and CS.canValid and not CS.canTimeout:
       if not self.sm.all_alive():
-        pass
-        # JJS disabling controls mismatch event
-        #self.events.add(EventName.commIssue)
+        self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
-        pass
-        # JJS disabling controls mismatch event
-        #self.events.add(EventName.commIssueAvgFreq)
+        self.events.add(EventName.commIssueAvgFreq)
       else: # invalid or can_rcv_error.
-        pass
-        # JJS disabling controls mismatch event
-        #self.events.add(EventName.commIssue)
+        self.events.add(EventName.commIssue)
 
       logs = {
         'invalid': [s for s, valid in self.sm.valid.items() if not valid],

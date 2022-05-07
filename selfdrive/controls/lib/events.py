@@ -220,11 +220,7 @@ def startup_master_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
   branch = get_short_branch("")
   if "REPLAY" in os.environ:
     branch = "replay"
-  #TODO: This is a VERY dirty hack
-  #TODO: Add proper event for VOACC / pedal
-  #TODO: Add proper event for Pedal braking warnings on non EVs
-  if CP.enableGasInterceptor:
-    branch = "PDL USE L-MODE, CC MAIN REVERSED"
+
   return StartupAlert("WARNING: This branch is not tested", branch, alert_status=AlertStatus.userPrompt)
 
 def below_engage_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
