@@ -227,14 +227,28 @@ class CarInterface(CarInterfaceBase):
       ret.radarOffCan = True # ASCM vehicles (typically) have radar
 
     elif candidate == CAR.SILVERADO_NR:
-      ret.minEnableSpeed = -1. # engage speed is decided by pcm
+      # Thanks skip for the tune!
+      ret.minEnableSpeed = -1.
       ret.minSteerSpeed = -1 * CV.MPH_TO_MS
-      ret.mass = 2241. + STD_CARGO_KG
+      ret.mass = 2400. + STD_CARGO_KG
       ret.wheelbase = 3.745
-      ret.steerRatio = 16.3 # Determined by skip # 16.3 # From a 2019 SILVERADO
-      ret.centerToFront = ret.wheelbase * 0.49
-      ret.steerActuatorDelay = 0.11 # Determined by skip # 0.075
+      ret.steerRatio = 16.3
+      ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [15., 80.]]
+      ret.lateralTuning.pid.kpV = [0.13, 0.23]
+      ret.centerToFront = ret.wheelbase * .49
+      ret.steerRateCost = .4
+      ret.steerActuatorDelay = 0.11
       ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
+
+      # JJS: just saving previous values for posterity
+      # ret.minEnableSpeed = -1. # engage speed is decided by pcm
+      # ret.minSteerSpeed = -1 * CV.MPH_TO_MS
+      # ret.mass = 2241. + STD_CARGO_KG
+      # ret.wheelbase = 3.745
+      # ret.steerRatio = 16.3 # Determined by skip # 16.3 # From a 2019 SILVERADO
+      # ret.centerToFront = ret.wheelbase * 0.49
+      # ret.steerActuatorDelay = 0.11 # Determined by skip # 0.075
+      # ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
 
     elif candidate == CAR.SUBURBAN:
       ret.minEnableSpeed = -1. # engage speed is decided by pcmFalse
