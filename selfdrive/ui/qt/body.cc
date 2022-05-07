@@ -7,11 +7,16 @@
 #include <QStackedLayout>
 
 #include "selfdrive/common/params.h"
+#include "selfdrive/common/timing.h"
 
 RecordButton::RecordButton(QWidget *parent) : QPushButton(parent) {
   setCheckable(true);
   setChecked(false);
   setFixedSize(148, 148);
+
+  QObject::connect(this, &QPushButton::toggled, [=]() {
+    setEnabled(false);
+  });
 }
 
 void RecordButton::paintEvent(QPaintEvent *event) {
@@ -20,8 +25,13 @@ void RecordButton::paintEvent(QPaintEvent *event) {
 
   QPoint center(width() / 2, height() / 2);
 
-  QColor bg(isChecked() ? "#FFFFFF" : "#404040");
+  QColor bg(isChecked() ? "#FFFFFF" : "#737373");
   QColor accent(isChecked() ? "#FF0000" : "#FFFFFF");
+  if (!isEnabled()) {
+    bg = QColor("#404040");
+    accent = QColor("#FFFFFF");
+  }
+
   if (isDown()) {
     accent.setAlphaF(0.7);
   }
@@ -62,7 +72,9 @@ BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QW
   btn = new RecordButton(this);
   vlayout->addWidget(btn, 0, Qt::AlignBottom | Qt::AlignRight);
   QObject::connect(btn, &QPushButton::clicked, [=](bool checked) {
-    Params().putBool("EnableLogging", checked);
+    btn->setEnabled(false);
+    Params().putBool("DisableLogging", !checked);
+    last_button = nanos_since_boot();
   });
   w->raise();
 
@@ -70,8 +82,6 @@ BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QW
 }
 
 void BodyWindow::paintEvent(QPaintEvent *event) {
-  //QLabel::paintEvent(event);
-
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
@@ -112,6 +122,11 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
   }
 }
 
+void BodyWindow::offroadTransition(bool offroad) {
+  btn->setChecked(true);
+  btn->setEnabled(true);
+  fuel_filter.reset(1.0);
+}
 
 void BodyWindow::updateState(const UIState &s) {
   if (!isVisible()) {
@@ -130,6 +145,16 @@ void BodyWindow::updateState(const UIState &s) {
   if (m != face->movie()) {
     face->setMovie(m);
     face->movie()->start();
+  }
+
+  // update record button state
+  if (sm.updated("managerState") && (sm.rcv_time("managerState") - last_button)*1e-9 > 0.5) {
+    for (auto proc : sm["managerState"].getManagerState().getProcesses()) {
+      if (proc.getName() == "loggerd") {
+        btn->setEnabled(true);
+        btn->setChecked(proc.getRunning());
+      }
+    }
   }
 
   update();

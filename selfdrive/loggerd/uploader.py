@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import bz2
+import io
 import json
 import os
 import random
@@ -22,6 +23,8 @@ from selfdrive.swaglog import cloudlog
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
+
+UPLOAD_QLOG_QCAM_MAX_SIZE = 1e7  # 10 MB
 
 allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
 force_wifi = os.getenv("FORCEWIFI") is not None
@@ -121,11 +124,11 @@ class Uploader():
 
     for name, key, fn in upload_files:
       if any(f in fn for f in self.immediate_folders):
-        return (key, fn)
+        return (name, key, fn)
 
     for name, key, fn in upload_files:
       if name in self.immediate_priority:
-        return (key, fn)
+        return (name, key, fn)
 
     return None
 
@@ -151,10 +154,11 @@ class Uploader():
         self.last_resp = FakeResponse()
       else:
         with open(fn, "rb") as f:
-          data = f.read()
-
           if key.endswith('.bz2') and not fn.endswith('.bz2'):
-            data = bz2.compress(data)
+            data = bz2.compress(f.read())
+            data = io.BytesIO(data)
+          else:
+            data = f
 
           self.last_resp = requests.put(url, data=data, headers=headers, timeout=10)
     except Exception as e:
@@ -172,7 +176,7 @@ class Uploader():
 
     return self.last_resp
 
-  def upload(self, key, fn, network_type, metered):
+  def upload(self, name, key, fn, network_type, metered):
     try:
       sz = os.path.getsize(fn)
     except OSError:
@@ -182,22 +186,15 @@ class Uploader():
     cloudlog.event("upload_start", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
 
     if sz == 0:
-      try:
-        # tag files of 0 size as uploaded
-        setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
-      except OSError:
-        cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
+      # tag files of 0 size as uploaded
+      success = True
+    elif name in self.immediate_priority and sz > UPLOAD_QLOG_QCAM_MAX_SIZE:
+      cloudlog.event("uploader_too_large", key=key, fn=fn, sz=sz)
       success = True
     else:
       start_time = time.monotonic()
       stat = self.normal_upload(key, fn)
       if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
-        try:
-          # tag file as uploaded
-          setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
-        except OSError:
-          cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
-
         self.last_filename = fn
         self.last_time = time.monotonic() - start_time
         self.last_speed = (sz / 1e6) / self.last_time
@@ -206,6 +203,13 @@ class Uploader():
       else:
         success = False
         cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
+
+    if success:
+      # tag file as uploaded
+      try:
+        setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
+      except OSError:
+        cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
 
     return success
 
@@ -258,13 +262,13 @@ def uploader_fn(exit_event):
         time.sleep(60 if offroad else 5)
       continue
 
-    key, fn = d
+    name, key, fn = d
 
     # qlogs and bootlogs need to be compressed before uploading
-    if key.endswith('qlog') or (key.startswith('boot/') and not key.endswith('.bz2')):
+    if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.bz2')):
       key += ".bz2"
 
-    success = uploader.upload(key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
+    success = uploader.upload(name, key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
     if success:
       backoff = 0.1
     elif allow_sleep:

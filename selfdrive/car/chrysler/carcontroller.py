@@ -49,8 +49,7 @@ class CarController:
     # *** control msgs ***
 
     if CC.cruiseControl.cancel:
-      # TODO: would be better to start from frame_2b3
-      can_sends.append(create_wheel_buttons(self.packer, self.frame, cancel=True))
+      can_sends.append(create_wheel_buttons(self.packer, CS.button_counter + 1, cancel=True))
 
     # LKAS_HEARTBIT is forwarded by Panda so no need to send it here.
     # frame is 100Hz (0.01s period)

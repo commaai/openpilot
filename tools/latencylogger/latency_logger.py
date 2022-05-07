@@ -7,7 +7,7 @@ import sys
 from collections import defaultdict
 
 from tools.lib.logreader import logreader_from_route_or_segment
-    
+
 DEMO_ROUTE = "9f583b1d93915c31|2022-04-26--18-49-49"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
@@ -25,7 +25,7 @@ MSGQ_TO_SERVICE = {
 SERVICE_TO_DURATIONS = {
   'camerad': ['processingTime'],
   'modeld': ['modelExecutionTime', 'gpuExecutionTime'],
-  'plannerd': ["solverExecutionTime"],
+  'plannerd': ['solverExecutionTime'],
 }
 
 def read_logs(lr):
@@ -38,7 +38,7 @@ def read_logs(lr):
     if msg.which() == 'sendcan':
       latest_sendcan_monotime = msg.logMonoTime
       continue
-    
+
     if msg.which() in MSGQ_TO_SERVICE:
       service = MSGQ_TO_SERVICE[msg.which()]
       msg_obj = getattr(msg, msg.which())
@@ -83,8 +83,10 @@ def read_logs(lr):
         if msg_obj.frameIdExtra != frame_id:
           frame_mismatches.append(frame_id)
 
-  assert frame_id_fails < 20, "Too many frameId fetch fails"
-  assert len(frame_mismatches) < 20, "Too many frame mismatches"
+  if frame_id_fails > 20:
+    print("Warning, many frameId fetch fails", frame_id_fails)
+  if len(frame_mismatches) > 20:
+    print("Warning, many frame mismatches", len(frame_mismatches))
   return (data, frame_mismatches)
 
 def find_frame_id(time, service, start_times, end_times):
@@ -98,15 +100,15 @@ def find_t0(start_times, frame_id=-1):
   m = max(start_times.keys())
   while frame_id <= m:
     for service in SERVICES:
-      if service in start_times[frame_id]:
+      if start_times[frame_id][service]:
         return start_times[frame_id][service]
     frame_id += 1
   raise Exception('No start time has been set')
 
-
-## ASSUMES THAT AT LEAST ONE CLOUDLOG IS MADE IN CONTROLSD
 def insert_cloudlogs(lr, timestamps, start_times, end_times):
-  t0 = find_t0(start_times) 
+  # at least one cloudlog must be made in controlsd
+
+  t0 = find_t0(start_times)
   failed_inserts = 0
   latest_controls_frameid = 0
   for msg in lr:
@@ -117,7 +119,7 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
         service = jmsg['ctx']['daemon']
         event = jmsg['msg']['timestamp']['event']
         if time < t0:
-          # Filter out controlsd messages which arrive before the camera loop 
+          # Filter out controlsd messages which arrive before the camera loop
           continue
 
         if "frame_id" in jmsg['msg']['timestamp']:
@@ -138,40 +140,41 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
             timestamps[frame_id][service].append((event, time))
           else:
             failed_inserts += 1
-  assert latest_controls_frameid > 0, "No timestamp in controlsd"
-  assert failed_inserts < len(timestamps), "Too many failed cloudlog inserts"
+
+  if latest_controls_frameid == 0:
+    print("Warning: failed to bind boardd logs to a frame ID. Add a timestamp cloudlog in controlsd.")
+  elif failed_inserts > len(timestamps):
+    print(f"Warning: failed to bind {failed_inserts} cloudlog timestamps to a frame ID")
 
 def print_timestamps(timestamps, durations, start_times, relative):
-  t0 = find_t0(start_times) 
+  t0 = find_t0(start_times)
   for frame_id in timestamps.keys():
     print('='*80)
     print("Frame ID:", frame_id)
     if relative:
-      t0 = find_t0(start_times, frame_id) 
+      t0 = find_t0(start_times, frame_id)
 
     for service in SERVICES:
-      print("  "+service)  
+      print("  "+service)
       events = timestamps[frame_id][service]
       for event, time in sorted(events, key = lambda x: x[1]):
-        print("    "+'%-53s%-53s' %(event, str((time-t0)/1e6)))  
+        print("    "+'%-53s%-53s' %(event, str((time-t0)/1e6)))
       for event, time in durations[frame_id][service]:
-        print("    "+'%-53s%-53s' %(event, str(time*1000))) 
+        print("    "+'%-53s%-53s' %(event, str(time*1000)))
 
 def graph_timestamps(timestamps, start_times, end_times, relative):
-  t0 = find_t0(start_times) 
-  y0 = min(start_times.keys())
+  t0 = find_t0(start_times)
   fig, ax = plt.subplots()
   ax.set_xlim(0, 150 if relative else 750)
-  ax.set_ylim(y0, y0+15)
+  ax.set_ylim(0, 15)
   ax.set_xlabel('milliseconds')
-  ax.set_ylabel('Frame ID')
   colors = ['blue', 'green', 'red', 'yellow', 'purple']
   assert len(colors) == len(SERVICES), 'Each service needs a color'
 
   points = {"x": [], "y": [], "labels": []}
-  for frame_id, services in timestamps.items():
+  for i, (frame_id, services) in enumerate(timestamps.items()):
     if relative:
-      t0 = find_t0(start_times, frame_id) 
+      t0 = find_t0(start_times, frame_id)
     service_bars = []
     for service, events in services.items():
       if start_times[frame_id][service] and end_times[frame_id][service]:
@@ -180,9 +183,9 @@ def graph_timestamps(timestamps, start_times, end_times, relative):
         service_bars.append(((start-t0)/1e6,(end-start)/1e6))
         for event in events:
           points['x'].append((event[1]-t0)/1e6)
-          points['y'].append(frame_id)
+          points['y'].append(i)
           points['labels'].append(event[0])
-    ax.broken_barh(service_bars, (frame_id-0.45, 0.9), facecolors=(colors), alpha=0.5)
+    ax.broken_barh(service_bars, (i-0.45, 0.9), facecolors=(colors), alpha=0.5)
 
   scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
@@ -212,6 +215,7 @@ if __name__ == "__main__":
 
   r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   lr = logreader_from_route_or_segment(r, sort_by_time=True)
+
   data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
   if args.plot:

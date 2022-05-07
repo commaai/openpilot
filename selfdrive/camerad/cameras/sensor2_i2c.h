@@ -7,7 +7,7 @@ struct i2c_random_wr_payload init_array_imx390[] = {
   {0x2008, 0xd0}, {0x2009, 0x07}, {0x200a, 0x00}, // MODE_VMAX = time between frames
   {0x200C, 0xe4}, {0x200D, 0x0c},  // MODE_HMAX
 
-  // crop 
+  // crop
   {0x3410, 0x88}, {0x3411, 0x7},     // CROP_H_SIZE
   {0x3418, 0xb8}, {0x3419, 0x4},     // CROP_V_SIZE
   {0x0078, 1}, {0x03c0, 1},
@@ -67,7 +67,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x30A6, 0x0001}, // Y_ODD_INC_
   {0x3402, 0x0788}, // X_OUTPUT_CONTROL
   {0x3404, 0x04B8}, // Y_OUTPUT_CONTROL
-  {0x3064, 0x1802}, // SMIA_TEST
+  {0x3064, 0x1982}, // SMIA_TEST
   {0x30BA, 0x11F2}, // DIGITAL_CTRL
 
   // Enable external trigger and disable GPIO outputs
@@ -83,10 +83,10 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   // Readout Settings
   {0x31AE, 0x0204}, // SERIAL_FORMAT, 4-lane MIPI
   {0x31AC, 0x0C0C}, // DATA_FORMAT_BITS, 12 -> 12
-  {0x3342, 0x122C}, // MIPI_F1_PDT_EDT
-  {0x3346, 0x122C}, // MIPI_F2_PDT_EDT
-  {0x334A, 0x122C}, // MIPI_F3_PDT_EDT
-  {0x334E, 0x122C}, // MIPI_F4_PDT_EDT
+  {0x3342, 0x1212}, // MIPI_F1_PDT_EDT
+  {0x3346, 0x1212}, // MIPI_F2_PDT_EDT
+  {0x334A, 0x1212}, // MIPI_F3_PDT_EDT
+  {0x334E, 0x1212}, // MIPI_F4_PDT_EDT
   {0x3344, 0x0011}, // MIPI_F1_VDT_VC
   {0x3348, 0x0111}, // MIPI_F2_VDT_VC
   {0x334C, 0x0211}, // MIPI_F3_VDT_VC
@@ -101,6 +101,10 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3370, 0x03B1}, // DBLC
   {0x3044, 0x0400}, // DARK_CONTROL
 
+  // Enable temperature sensor
+  {0x30B4, 0x0007}, // TEMPSENS0_CTRL_REG
+  {0x30B8, 0x0007}, // TEMPSENS1_CTRL_REG
+
   // Enable dead pixel correction using
   // the 1D line correction scheme
   {0x31E0, 0x0003},
@@ -114,9 +118,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x100E, 0x07B1}, // FINE_INTEGRATION_TIME3_MIN
   {0x1010, 0x0139}, // FINE_INTEGRATION_TIME4_MIN
   {0x3014, 0x08CB}, // FINE_INTEGRATION_TIME_
-  {0x321E, 0x08CB}, // FINE_INTEGRATION_TIME2
-  {0x321E, 0x08CB}, // FINE_INTEGRATION_TIME3
-  {0x321E, 0x0894}, // FINE_INTEGRATION_TIME4
+  {0x321E, 0x0894}, // FINE_INTEGRATION_TIME2
 
   {0x31D0, 0x0000}, // COMPANDING, no good in 10 bit?
   {0x33DA, 0x0000}, // COMPANDING

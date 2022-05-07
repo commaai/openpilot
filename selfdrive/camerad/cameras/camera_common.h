@@ -52,11 +52,15 @@ const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
 typedef void (*release_cb)(void *cookie, int buf_idx);
 
 typedef struct CameraInfo {
-  int frame_width, frame_height;
-  int frame_stride;
+  uint32_t frame_width, frame_height;
+  uint32_t frame_stride;
   bool bayer;
   int bayer_flip;
   bool hdr;
+  uint32_t frame_offset = 0;
+  uint32_t extra_height = 0;
+  int registers_offset = -1;
+  int stats_offset = -1;
 } CameraInfo;
 
 typedef struct FrameMetadata {

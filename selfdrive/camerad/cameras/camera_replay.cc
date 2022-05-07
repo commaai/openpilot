@@ -30,9 +30,9 @@ void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, unsigned int
   }
 
   CameraInfo ci = {
-      .frame_width = s->frame->width,
-      .frame_height = s->frame->height,
-      .frame_stride = s->frame->width * 3,
+      .frame_width = (uint32_t)s->frame->width,
+      .frame_height = (uint32_t)s->frame->height,
+      .frame_stride = (uint32_t)s->frame->width * 3,
   };
   s->ci = ci;
   s->camera_num = camera_id;
