@@ -59,8 +59,8 @@ class CarController:
       if (enabled                                            # ACC active
           and CS.car_follow == 1                             # lead car
           and CS.out.standstill                              # must be standing still
-          and CS.close_distance > 3                          # acc resume trigger threshold
-          and CS.close_distance < 4.5                        # max operating distance to filter false positives
+          and CS.close_distance > 3                          # acc resume min trigger threshold (m)
+          and CS.close_distance < 4.5                        # acc resume max trigger threshold (m)
           and CS.close_distance > self.prev_close_distance): # distance with lead car is increasing
         self.sng_acc_resume = True
     elif CS.CP.carFingerprint not in PREGLOBAL_CARS:
@@ -75,8 +75,8 @@ class CarController:
           and CS.car_follow == 1                             # lead car
           and CS.cruise_state == 3                           # ACC HOLD (only with EPB)
           and CS.out.standstill                              # must be standing still
-          and CS.close_distance > 150                        # acc resume trigger threshold
-          and CS.close_distance < 255                        # ignore max value
+          and CS.close_distance > 3                          # acc resume min trigger threshold (m)
+          and CS.close_distance < 4.5                        # acc resume max trigger threshold (m)
           and CS.close_distance > self.prev_close_distance): # distance with lead car is increasing
         self.sng_acc_resume = True
       self.prev_cruise_state = CS.cruise_state
