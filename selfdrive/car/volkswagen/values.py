@@ -133,7 +133,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.POLO_MK6: VWCarInfo("Volkswagen Polo 2020"),
   CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS]),
   CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS]),
-  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2020-22", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22", footnotes=[Footnote.VW_HARNESS]),
   CAR.TOURAN_MK2: VWCarInfo("Volkswagen Touran 2017"),
   CAR.TRANSPORTER_T61: [
     VWCarInfo("Volkswagen Caravelle 2020", footnotes=[Footnote.VW_HARNESS]),
@@ -517,6 +517,7 @@ FW_VERSIONS = {
       b'\xf1\x8704L906026EJ\xf1\x893661',
       b'\xf1\x8704L906027G \xf1\x899893',
       b'\xf1\x875N0906259  \xf1\x890002',
+      b'\xf1\x875NA907115E \xf1\x890005',
       b'\xf1\x8783A907115B \xf1\x890005',
       b'\xf1\x8783A907115G \xf1\x890001',
     ],
@@ -527,6 +528,7 @@ FW_VERSIONS = {
       b'\xf1\x870DL300011N \xf1\x892001',
       b'\xf1\x870DL300011N \xf1\x892012',
       b'\xf1\x870DL300013A \xf1\x893005',
+      b'\xf1\x870DL300013G \xf1\x892119',
       b'\xf1\x870DL300013G \xf1\x892120',
     ],
     (Ecu.srs, 0x715, None): [
@@ -534,6 +536,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655BM\xf1\x890403\xf1\x82\02316143231313500314641011750179333423100',
       b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\02312110031333300314240583752379333423100',
       b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\02331310031333336313140013950399333423100',
+      b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\x1331310031333334313140573752379333423100',
       b'\xf1\x875Q0959655CB\xf1\x890421\xf1\x82\x1316143231313500314647021750179333613100',
     ],
     (Ecu.eps, 0x712, None): [

@@ -1,27 +1,14 @@
 #!/usr/bin/env python3
-import math
 from typing import List
 
 from cereal import log, messaging
 from laika import AstroDog
-from laika.helpers import CONSTELLATION_ID_TO_GNSS_ID, get_nmea_id_from_prn
+from laika.helpers import UbloxGnssId
 from laika.raw_gnss import GNSSMeasurement, calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
-
-
-def process_report(ublox_gnss, dog: AstroDog):
-  processed_measurements = None
-  report = ublox_gnss.measurementReport
-  if len(report.measurements) > 0:
-    new_meas = read_raw_ublox(report)
-    processed_measurements = process_measurements(new_meas, dog)
-  return processed_measurements
 
 
 def correct_and_pos_fix(processed_measurements: List[GNSSMeasurement], dog: AstroDog):
   # pos fix needs more than 5 processed_measurements
-  # todo solve the calc_pos_fix when not enough measurements for this timestamp
-  #   could to keep in mind older measurements within time range to ensure
-  #   Or use less satellites to create a fix.
   pos_fix = calc_pos_fix(processed_measurements)
 
   if len(pos_fix) == 0:
@@ -31,35 +18,41 @@ def correct_and_pos_fix(processed_measurements: List[GNSSMeasurement], dog: Astr
   return calc_pos_fix(corrected), corrected
 
 
-def process_ublox_msg(ublox_msg, dog: AstroDog, pm: messaging.PubMaster, ublox_mono_time: int):
+def process_ublox_msg(ublox_msg, dog, ublox_mono_time: int):
   if ublox_msg.which == 'measurementReport':
-    processed_measurements = process_report(ublox_msg, dog)
-    if processed_measurements is None:
-      return False
+    report = ublox_msg.measurementReport
+    if len(report.measurements) == 0:
+      return None
+    new_meas = read_raw_ublox(report)
+    processed_measurements = process_measurements(new_meas, dog)
 
     corrected = correct_and_pos_fix(processed_measurements, dog)
     pos_fix, _ = corrected
-    dat = messaging.new_message('gnssMeasurements')
-    # todo send corrected messages instead of processed_measurements. Need fix when having less than 6 measurements
+    # todo send corrected messages instead of processed_measurements. Need fix for when having less than 6 measurements
     correct_meas_msgs = [create_measurement_msg(m) for m in processed_measurements]
     # pos fix can be an empty list if not enough correct measurements are available
     if len(pos_fix) > 0:
-      corrected_pos = pos_fix[0].tolist()
+      corrected_pos = pos_fix[0][:3].tolist()
     else:
       corrected_pos = [0., 0., 0.]
+    dat = messaging.new_message('gnssMeasurements')
     dat.gnssMeasurements = {
       "position": corrected_pos,
       "ubloxMonoTime": ublox_mono_time,
       "correctedMeasurements": correct_meas_msgs
     }
-    pm.send('gnssMeasurements', dat)
-    return True
+    return dat
+
 
 def create_measurement_msg(meas: GNSSMeasurement):
   c = log.GnssMeasurements.CorrectedMeasurement.new_message()
-  c.nmeaId = get_nmea_id_from_prn(meas.prn)
-  c.glonassFrequency = meas.glonass_freq if not math.isnan(meas.glonass_freq) else 0
-  c.gnssId = CONSTELLATION_ID_TO_GNSS_ID[meas.prn[0]]
+  ublox_gnss_id = meas.ublox_gnss_id
+  if ublox_gnss_id is None:
+    # todo never happens will fix in later pr
+    ublox_gnss_id = UbloxGnssId.GPS
+  c.constellationId = ublox_gnss_id.value
+  c.svId = int(meas.prn[1:])
+  c.glonassFrequency = meas.glonass_freq if meas.ublox_gnss_id == UbloxGnssId.GLONASS else 0
   c.pseudorange = float(meas.observables['C1C'])  # todo should be observables_final when using corrected measurements
   c.pseudorangeStd = float(meas.observables_std['C1C'])
   c.pseudorangeRate = float(meas.observables['D1C'])  # todo should be observables_final when using corrected measurements
@@ -80,7 +73,11 @@ def main():
     # Todo if no internet available use latest ephemeris
     if sm.updated['ubloxGnss']:
       ublox_msg = sm['ubloxGnss']
-      process_ublox_msg(ublox_msg, dog, pm, sm.logMonoTime['ubloxGnss'])
+      msg = process_ublox_msg(ublox_msg, dog, sm.logMonoTime['ubloxGnss'])
+      if msg is None:
+        msg = messaging.new_message('gnssMeasurements')
+      pm.send('gnssMeasurements', msg)
+
 
 
 if __name__ == "__main__":

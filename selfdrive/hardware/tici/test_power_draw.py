@@ -2,19 +2,28 @@
 import unittest
 import time
 import math
-from collections import OrderedDict
+from dataclasses import dataclass
 
 from selfdrive.hardware import HARDWARE, TICI
 from selfdrive.hardware.tici.power_monitor import get_power
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.manager.manager import manager_cleanup
 
-POWER = OrderedDict(
-  camerad=2.58,
-  modeld=0.90,
-  dmonitoringmodeld=0.25,
-  loggerd=0.45,
-)
+
+@dataclass
+class Proc:
+  name: str
+  power: float
+  rtol: float = 0.05
+  atol: float = 0.1
+  warmup: float = 3.
+
+PROCS = [
+  Proc('camerad', 2.5),
+  Proc('modeld', 0.95),
+  Proc('dmonitoringmodeld', 0.25),
+  Proc('loggerd', 0.45, warmup=10.),
+]
 
 
 class TestPowerDraw(unittest.TestCase):
@@ -36,24 +45,24 @@ class TestPowerDraw(unittest.TestCase):
 
     prev = baseline
     used = {}
-    for proc in POWER.keys():
-      managed_processes[proc].start()
-      time.sleep(6)
+    for proc in PROCS:
+      managed_processes[proc.name].start()
+      time.sleep(proc.warmup)
 
       now = get_power(8)
-      used[proc] = now - prev
+      used[proc.name] = now - prev
       prev = now
 
     manager_cleanup()
 
     print("-"*35)
     print(f"Baseline {baseline:.2f}W\n")
-    for proc in POWER.keys():
-      cur = used[proc]
-      expected = POWER[proc]
-      print(f"{proc.ljust(20)} {expected:.2f}W  {cur:.2f}W")
-      with self.subTest(proc=proc):
-        self.assertTrue(math.isclose(cur, expected, rel_tol=0.10, abs_tol=0.1))
+    for proc in PROCS:
+      cur = used[proc.name]
+      expected = proc.power
+      print(f"{proc.name.ljust(20)} {expected:.2f}W  {cur:.2f}W")
+      with self.subTest(proc=proc.name):
+        self.assertTrue(math.isclose(cur, expected, rel_tol=proc.rtol, abs_tol=proc.atol))
     print("-"*35)
 
 

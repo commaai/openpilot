@@ -12,6 +12,7 @@ extern "C" {
 }
 
 #include "selfdrive/loggerd/encoder.h"
+#include "selfdrive/loggerd/loggerd.h"
 #include "selfdrive/loggerd/video_writer.h"
 
 class RawLogger : public VideoEncoder {
@@ -20,7 +21,7 @@ class RawLogger : public VideoEncoder {
             int bitrate, bool h265, int out_width, int out_height, bool write = true);
   ~RawLogger();
   int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                   int in_width, int in_height, uint64_t ts);
+                   int in_width, int in_height, VisionIpcBufExtra *extra);
   void encoder_open(const char* path);
   void encoder_close();
 

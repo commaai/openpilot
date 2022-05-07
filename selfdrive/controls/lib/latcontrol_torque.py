@@ -42,7 +42,8 @@ class LatControlTorque(LatControl):
     if CS.vEgo < MIN_STEER_SPEED or not active:
       output_torque = 0.0
       pid_log.active = False
-      self.pid.reset()
+      if not active:
+        self.pid.reset()
     else:
       if self.use_steering_angle:
         actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
@@ -73,6 +74,8 @@ class LatControlTorque(LatControl):
       pid_log.f = self.pid.f
       pid_log.output = -output_torque
       pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS)
+      pid_log.actualLateralAccel = actual_lateral_accel
+      pid_log.desiredLateralAccel = desired_lateral_accel
 
     # TODO left is positive in this convention
     return -output_torque, 0.0, pid_log

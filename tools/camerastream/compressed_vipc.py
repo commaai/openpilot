@@ -11,10 +11,7 @@ V4L2_BUF_FLAG_KEYFRAME = 8
 
 def writer(fn, addr, sock_name):
   import cereal.messaging as messaging
-  HEADER = b"\x00\x00\x00\x01\x40\x01\x0c\x01\xff\xff\x01\x60\x00\x00\x03\x00\xb0\x00\x00\x03\x00\x00\x03\x00\x96\xac\x09\x00\x00\x00\x01\x42\x01\x01\x01\x60\x00\x00\x03\x00\xb0\x00\x00\x03\x00\x00\x03\x00\x96\xa0\x03\xd0\x80\x13\x07\x1b\x2e\x5a\xee\x4c\x92\xea\x00\xbb\x42\x84\xa0\x00\x00\x00\x01\x44\x01\xc0\xe2\x4f\x09\xc1\x80\xc6\x08\x40\x00"
   fifo_file = open(fn, "wb")
-  fifo_file.write(HEADER)
-  fifo_file.flush()
 
   os.environ["ZMQ"] = "1"
   messaging.context = messaging.Context()
@@ -26,23 +23,25 @@ def writer(fn, addr, sock_name):
     msgs = messaging.drain_sock(sock, wait_for_one=True)
     for evt in msgs:
       evta = getattr(evt, evt.which())
-      lat = ((evt.logMonoTime/1e9) - (evta.timestampEof/1e6))*1000
-      print("%2d %4d %.3f %.3f latency %.2f ms" % (len(msgs), evta.idx, evt.logMonoTime/1e9, evta.timestampEof/1e6, lat), len(evta.data), sock_name)
-      if evta.idx != 0 and evta.idx != (last_idx+1):
+      lat = ((evt.logMonoTime/1e9) - (evta.idx.timestampEof/1e9))*1000
+      print("%2d %4d %.3f %.3f latency %.2f ms" % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, lat), len(evta.data), sock_name)
+      if evta.idx.encodeId != 0 and evta.idx.encodeId != (last_idx+1):
         print("DROP!")
-      last_idx = evta.idx
-      if evta.flags & V4L2_BUF_FLAG_KEYFRAME or evta.flags == 0x7f001030:
+      last_idx = evta.idx.encodeId
+      if evta.idx.flags & V4L2_BUF_FLAG_KEYFRAME:
+        fifo_file.write(evta.header)
         seen_iframe = True
       if not seen_iframe:
         print("waiting for iframe")
         continue
       fifo_file.write(evta.data)
-      fifo_file.flush()
+
+FFMPEG_OPTIONS = {"probesize": "32", "flags": "low_delay"}
 
 def decoder_nvidia(fn, vipc_server, vst, yuv=True, rgb=False):
   sys.path.append("/raid.dell2/PyNvCodec")
   import PyNvCodec as nvc # pylint: disable=import-error
-  decoder = nvc.PyNvDecoder(fn, 0, {"probesize": "32"})
+  decoder = nvc.PyNvDecoder(fn, 0, FFMPEG_OPTIONS)
   cc1 = nvc.ColorspaceConversionContext(nvc.ColorSpace.BT_709, nvc.ColorRange.JPEG)
 
   if rgb:
@@ -72,7 +71,7 @@ def decoder_nvidia(fn, vipc_server, vst, yuv=True, rgb=False):
 
 def decoder_ffmpeg(fn, vipc_server, vst, yuv=True, rgb=False):
   import av # pylint: disable=import-error
-  container = av.open(fn, options={"probesize": "32"})
+  container = av.open(fn, options=FFMPEG_OPTIONS)
   cnt = 0
   for frame in container.decode(video=0):
     if rgb:
@@ -87,6 +86,7 @@ import argparse
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Decode video streams and broacast on VisionIPC')
   parser.add_argument("addr", help="Address of comma 3")
+  parser.add_argument('--pipes', action='store_true', help='Only create pipes')
   parser.add_argument('--nvidia', action='store_true', help='Use nvidia instead of ffmpeg')
   parser.add_argument('--rgb', action='store_true', help='Also broadcast RGB')
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")
@@ -112,7 +112,9 @@ if __name__ == "__main__":
       os.unlink(FIFO_NAME)
     os.mkfifo(FIFO_NAME)
     multiprocessing.Process(target=writer, args=(FIFO_NAME, sys.argv[1], k)).start()
-    if args.nvidia:
+    if args.pipes:
+      print("connect to", FIFO_NAME)
+    elif args.nvidia:
       multiprocessing.Process(target=decoder_nvidia, args=(FIFO_NAME, vipc_server, v, True, args.rgb)).start()
     else:
       multiprocessing.Process(target=decoder_ffmpeg, args=(FIFO_NAME, vipc_server, v, True, args.rgb)).start()

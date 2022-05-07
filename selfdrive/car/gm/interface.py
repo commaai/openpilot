@@ -4,8 +4,7 @@ from math import fabs
 
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
-from selfdrive.car.gm.values import CAR, CruiseButtons, \
-                                    AccState, CarControllerParams
+from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -190,8 +189,6 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
-    if self.CS.pcm_acc_status == AccState.FAULTED:
-      events.add(EventName.accFaulted)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 

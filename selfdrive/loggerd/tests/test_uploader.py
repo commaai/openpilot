@@ -54,11 +54,11 @@ class TestUploader(UploaderTestCase):
 
   def gen_files(self, lock=False, boot=True):
     f_paths = list()
-    for t in ["qlog.bz2", "rlog.bz2", "dcamera.hevc", "fcamera.hevc"]:
+    for t in ["qlog", "rlog", "dcamera.hevc", "fcamera.hevc"]:
       f_paths.append(self.make_file_with_data(self.seg_dir, t, 1, lock=lock))
 
     if boot:
-      f_paths.append(self.make_file_with_data("boot", f"{self.seg_dir}.bz2", 1, lock=lock))
+      f_paths.append(self.make_file_with_data("boot", f"{self.seg_dir}", 1, lock=lock))
     return f_paths
 
   def gen_order(self, seg1, seg2, boot=True):
@@ -84,7 +84,7 @@ class TestUploader(UploaderTestCase):
     self.assertFalse(len(log_handler.upload_order) < len(exp_order), "Some files failed to upload")
     self.assertFalse(len(log_handler.upload_order) > len(exp_order), "Some files were uploaded twice")
     for f_path in exp_order:
-      self.assertTrue(getxattr(os.path.join(self.root, f_path), uploader.UPLOAD_ATTR_NAME), "All files not uploaded")
+      self.assertTrue(getxattr(os.path.join(self.root, f_path.replace('.bz2', '')), uploader.UPLOAD_ATTR_NAME), "All files not uploaded")
 
     self.assertTrue(log_handler.upload_order == exp_order, "Files uploaded in wrong order")
 
@@ -103,7 +103,7 @@ class TestUploader(UploaderTestCase):
     self.assertFalse(len(log_handler.upload_ignored) < len(exp_order), "Some files failed to ignore")
     self.assertFalse(len(log_handler.upload_ignored) > len(exp_order), "Some files were ignored twice")
     for f_path in exp_order:
-      self.assertTrue(getxattr(os.path.join(self.root, f_path), uploader.UPLOAD_ATTR_NAME), "All files not ignored")
+      self.assertTrue(getxattr(os.path.join(self.root, f_path.replace('.bz2', '')), uploader.UPLOAD_ATTR_NAME), "All files not ignored")
 
     self.assertTrue(log_handler.upload_ignored == exp_order, "Files ignored in wrong order")
 
@@ -128,7 +128,7 @@ class TestUploader(UploaderTestCase):
     self.assertFalse(len(log_handler.upload_order) < len(exp_order), "Some files failed to upload")
     self.assertFalse(len(log_handler.upload_order) > len(exp_order), "Some files were uploaded twice")
     for f_path in exp_order:
-      self.assertTrue(getxattr(os.path.join(self.root, f_path), uploader.UPLOAD_ATTR_NAME), "All files not uploaded")
+      self.assertTrue(getxattr(os.path.join(self.root, f_path.replace('.bz2', '')), uploader.UPLOAD_ATTR_NAME), "All files not uploaded")
 
     self.assertTrue(log_handler.upload_order == exp_order, "Files uploaded in wrong order")
 
@@ -143,8 +143,7 @@ class TestUploader(UploaderTestCase):
     self.join_thread()
 
     for f_path in f_paths:
-      self.assertFalse(getxattr(f_path, uploader.UPLOAD_ATTR_NAME), "File upload when locked")
-
+      self.assertFalse(getxattr(f_path.replace('.bz2', ''), uploader.UPLOAD_ATTR_NAME), "File upload when locked")
 
   def test_clear_locks_on_startup(self):
     f_paths = self.gen_files(lock=True, boot=False)
