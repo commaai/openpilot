@@ -48,8 +48,8 @@ class CarState(CarStateBase):
     ret.steeringRateDeg = cp.vl["STEERING"]["STEERING_RATE"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["GEAR"]["PRNDL"], None))
 
-    ret.cruiseState.enabled = cp.vl["ACC_2"]["ACC_STATUS_2"] == 7  # ACC is green
-    ret.cruiseState.available = cp.vl["ACC_2"]["ACC_STATUS_2"] != 1  # ACC is white
+    ret.cruiseState.enabled = cp.vl["ACC_2"]["ACC_STATUS_2"] == 7  # ACC is green.
+    ret.cruiseState.available = ret.cruiseState.enabled  # FIXME: for now same as enabled
     ret.cruiseState.speed = cp.vl["DASHBOARD"]["ACC_SPEED_CONFIG_KPH"] * CV.KPH_TO_MS
     # CRUISE_STATE is a three bit msg, 0 is off, 1 and 2 are Non-ACC mode, 3 and 4 are ACC mode, find if there are other states too
     ret.cruiseState.nonAdaptive = cp.vl["DASHBOARD"]["CRUISE_STATE"] in (1, 2)
