@@ -16,17 +16,17 @@ def load_dlc_weights(fn):
   def extract(rdat):
     idx = rdat.find(b"\x00\x00\x00\x09\x04\x00\x00\x00")
     rdat = rdat[idx+8:]
-    ll = struct.unpack("I", rdat[0:4])[0]
+    ll = struct.unpack("I", rdat[:4])[0]
     buf = np.frombuffer(rdat[4:4+ll*4], dtype=np.float32)
     rdat = rdat[4+ll*4:]
-    dims = struct.unpack("I", rdat[0:4])[0]
+    dims = struct.unpack("I", rdat[:4])[0]
     buf = buf.reshape(struct.unpack("I"*dims, rdat[4:4+dims*4]))
     if len(buf.shape) == 4:
       buf = np.transpose(buf, (3,2,0,1))
     return buf
 
   def parse(tdat):
-    ll = struct.unpack("I", tdat[0:4])[0] + 4
+    ll = struct.unpack("I", tdat[:4])[0] + 4
     return (None, [extract(tdat[0:]), extract(tdat[ll:])])
 
   ptr = 0x20

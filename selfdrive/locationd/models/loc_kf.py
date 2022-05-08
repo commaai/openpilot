@@ -285,7 +285,7 @@ class LocKalman():
       ) + cb[0] + glonass_bias[0] + glonass_freq_slope[0] * glonass_freq
     ])
 
-    los_vector = (sp.Matrix(sat_pos_vel_sym[0:3]) - sp.Matrix([x, y, z]))
+    los_vector = (sp.Matrix(sat_pos_vel_sym[:3]) - sp.Matrix([x, y, z]))
     los_vector = los_vector / sp.sqrt(los_vector[0]**2 + los_vector[1]**2 + los_vector[2]**2)
     h_pseudorange_rate_sym = sp.Matrix([los_vector[0] * (sat_vx - vx) +
                                         los_vector[1] * (sat_vy - vy) +

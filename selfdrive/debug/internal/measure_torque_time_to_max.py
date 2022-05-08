@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
       for item in evt.can:
         if item.address == 0xe4 and item.src == 128:
-          torque_req = struct.unpack('!h', item.dat[0:2])[0]
+          torque_req = struct.unpack('!h', item.dat[:2])[0]
           # print(torque_req)
           active = abs(torque_req) > 0
           if abs(torque_req) < 100:

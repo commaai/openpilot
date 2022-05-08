@@ -91,7 +91,7 @@ def find_color(lidar_surface, color):
   tcolor = 0
   ret = 255
   for x in lidar_surface.get_palette():
-    if x[0:3] == color:
+    if x[:3] == color:
       ret = tcolor
       break
     tcolor += 1

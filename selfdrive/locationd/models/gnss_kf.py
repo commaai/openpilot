@@ -52,7 +52,7 @@ class GNSSKalman():
     # state variables
     state_sym = sp.MatrixSymbol('state', dim_state, 1)
     state = sp.Matrix(state_sym)
-    x, y, z = state[0:3, :]
+    x, y, z = state[:3, :]
     v = state[3:6, :]
     vx, vy, vz = v
     cb, cd, ca = state[6:9, :]
@@ -101,7 +101,7 @@ class GNSSKalman():
       ) + cb + glonass_bias + glonass_freq_slope * glonass_freq
     ])
 
-    los_vector = (sp.Matrix(sat_pos_vel_sym[0:3]) - sp.Matrix([x, y, z]))
+    los_vector = (sp.Matrix(sat_pos_vel_sym[:3]) - sp.Matrix([x, y, z]))
     los_vector = los_vector / sp.sqrt(los_vector[0]**2 + los_vector[1]**2 + los_vector[2]**2)
     h_pseudorange_rate_sym = sp.Matrix([los_vector[0] * (sat_vx - vx) +
                                         los_vector[1] * (sat_vy - vy) +

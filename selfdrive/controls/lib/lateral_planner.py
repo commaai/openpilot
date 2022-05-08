@@ -106,9 +106,9 @@ class LateralPlanner:
     lateralPlan.modelMonoTime = sm.logMonoTime['modelV2']
     lateralPlan.laneWidth = float(self.LP.lane_width)
     lateralPlan.dPathPoints = self.y_pts.tolist()
-    lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()
-    lateralPlan.curvatures = self.lat_mpc.x_sol[0:CONTROL_N, 3].tolist()
-    lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
+    lateralPlan.psis = self.lat_mpc.x_sol[:CONTROL_N, 2].tolist()
+    lateralPlan.curvatures = self.lat_mpc.x_sol[:CONTROL_N, 3].tolist()
+    lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[:CONTROL_N - 1]] + [0.0]
     lateralPlan.lProb = float(self.LP.lll_prob)
     lateralPlan.rProb = float(self.LP.rll_prob)
     lateralPlan.dProb = float(self.LP.d_prob)

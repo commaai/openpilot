@@ -40,7 +40,7 @@ def wait_ready(lib, renderer):
 
 def get_image(lib, renderer):
   buf = lib.map_renderer_get_image(renderer)
-  r = list(buf[0:3 * WIDTH * HEIGHT])
+  r = list(buf[:3 * WIDTH * HEIGHT])
   lib.map_renderer_free_image(renderer, buf)
 
   # Convert to numpy

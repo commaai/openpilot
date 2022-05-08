@@ -49,7 +49,7 @@ def can_health():
       break
     except (USBErrorIO, USBErrorOverflow):
       cloudlog.exception("CAN: BAD HEALTH, RETRYING")
-  v, i = struct.unpack("II", dat[0:8])
+  v, i = struct.unpack("II", dat[:8])
   ign_line, ign_can = struct.unpack("BB", dat[20:22])
   return {"voltage": v, "current": i, "ignition_line": bool(ign_line), "ignition_can": bool(ign_can)}
 
@@ -57,7 +57,7 @@ def __parse_can_buffer(dat):
   ret = []
   for j in range(0, len(dat), 0x10):
     ddat = dat[j:j+0x10]
-    f1, f2 = struct.unpack("II", ddat[0:8])
+    f1, f2 = struct.unpack("II", ddat[:8])
     ret.append((f1 >> 21, f2 >> 16, ddat[8:8 + (f2 & 0xF)], (f2 >> 4) & 0xFF))
   return ret
 
