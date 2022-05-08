@@ -85,7 +85,7 @@ std::optional<Estimate> LiveKalman::predict_and_observe(double t, int kind, std:
   if (R.size() == 0) {
     R = this->get_R(kind, meas.size());
   }
-  return this->filter->predict_and_update_batch(t, kind, get_vec_mapvec(meas), get_vec_mapmat(R));
+  return this->filter->predict_and_update_batch(t, kind, get_vec_mapvec(meas), get_vec_mapmat(R), extra_args, augment);
 }
 
 void LiveKalman::predict(double t) {
