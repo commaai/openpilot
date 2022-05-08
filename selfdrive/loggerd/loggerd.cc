@@ -1,4 +1,6 @@
 #include "selfdrive/loggerd/loggerd.h"
+#include "selfdrive/loggerd/remote_encoder.h"
+bool USE_REMOTE_ENCODER = false;
 
 ExitHandler do_exit;
 
@@ -46,6 +48,10 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
+  // While we write them right to the log for sync, we also publish the encode idx to the socket
+  const char *service_name = cam_info.type == DriverCam ? "driverEncodeIdx" : (cam_info.type == WideRoadCam ? "wideRoadEncodeIdx" : "roadEncodeIdx");
+  PubMaster pm({service_name});
+
   while (!do_exit) {
     if (!vipc_client.connect(false)) {
       util::sleep_for(5);
@@ -58,13 +64,14 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
 
       // main encoder
-      encoders.push_back(new Encoder(cam_info.filename, buf_info.width, buf_info.height,
+      encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
                                      cam_info.fps, cam_info.bitrate, cam_info.is_h265,
-                                     cam_info.downscale, cam_info.record));
+                                     buf_info.width, buf_info.height, cam_info.record));
       // qcamera encoder
       if (cam_info.has_qcamera) {
-        encoders.push_back(new Encoder(qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,
-                                       qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale));
+        encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, buf_info.width, buf_info.height,
+                                       qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265,
+                                       qcam_info.frame_width, qcam_info.frame_height));
       }
     }
 
@@ -102,7 +109,7 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
-                                               buf->width, buf->height, extra.timestamp_eof);
+                                               buf->width, buf->height, &extra);
 
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d encode_id: %d", extra.frame_id, encode_idx);
@@ -130,6 +137,7 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
             auto bytes = msg.toBytes();
             lh_log(lh, bytes.begin(), bytes.size(), true);
           }
+          pm.send(service_name, msg);
         }
       }
 
@@ -182,15 +190,19 @@ void loggerd_thread() {
   typedef struct QlogState {
     std::string name;
     int counter, freq;
+    bool encoder;
   } QlogState;
   std::unordered_map<SubSocket*, QlogState> qlog_states;
+  std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
 
   std::unique_ptr<Context> ctx(Context::create());
   std::unique_ptr<Poller> poller(Poller::create());
 
   // subscribe to all socks
   for (const auto& it : services) {
-    if (!it.should_log) continue;
+    const bool encoder = USE_REMOTE_ENCODER & (strcmp(it.name+strlen(it.name)-strlen("EncodeData"), "EncodeData") == 0);
+    if (!it.should_log && !encoder) continue;
+    LOGD("logging %s (on port %d)", it.name, it.port);
 
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
     assert(sock != NULL);
@@ -199,12 +211,13 @@ void loggerd_thread() {
       .name = it.name,
       .counter = 0,
       .freq = it.decimation,
+      .encoder = encoder,
     };
   }
 
   LoggerdState s;
   // init logger
-  logger_init(&s.logger, "rlog", true);
+  logger_init(&s.logger, true);
   logger_rotate(&s);
   Params().put("CurrentRoute", s.logger.route_name);
 
@@ -231,9 +244,14 @@ void loggerd_thread() {
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
         const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
-        logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
-        bytes_count += msg->getSize();
-        delete msg;
+
+        if (qs.encoder) {
+          bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock]);
+        } else {
+          logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
+          bytes_count += msg->getSize();
+          delete msg;
+        }
 
         rotate_if_needed(&s);
 

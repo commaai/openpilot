@@ -4,6 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+azure-storage-blob = "~=2.1"
 control = "*"
 coverage = "*"
 dictdiffer = "*"
@@ -36,6 +37,8 @@ sphinx-rtd-theme = "*"
 breathe = "*"
 subprocess32 = "*"
 tenacity = "*"
+mpld3 = "*"
+carla = "==0.9.12"
 
 [packages]
 atomicwrites = "*"
@@ -79,6 +82,7 @@ tqdm = "*"
 urllib3 = "*"
 utm = "*"
 websocket_client = "*"
+hatanaka = "*"
 
 [requires]
 python_version = "3.8"

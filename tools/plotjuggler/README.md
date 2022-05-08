@@ -63,7 +63,7 @@ If you create a layout that's useful for others, consider upstreaming it.
 
 ### Tuning
 
-Use this layout to improve your car's tuning and generate plots for tuning PRs. Also see the tuning wiki and tuning PR template.
+Use this layout to improve your car's tuning and generate plots for tuning PRs. Also see the [tuning wiki](https://github.com/commaai/openpilot/wiki/Tuning) and tuning PR template.
 
 `--layout layouts/tuning.xml`
 

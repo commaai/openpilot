@@ -16,6 +16,7 @@ from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, ti
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
+from selfdrive.test.process_replay.process_replay import setup_env, check_enabled
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
@@ -35,6 +36,8 @@ def replay_panda_states(s, msgs):
   cp = [m for m in msgs if m.which() == 'carParams'][0].carParams
   if len(cp.safetyConfigs):
     safety_param = cp.safetyConfigs[0].safetyParam
+    if cp.safetyConfigs[0].safetyParamDEPRECATED != 0:
+      safety_param = cp.safetyConfigs[0].safetyParamDEPRECATED
   else:
     safety_param = cp.safetyParamDEPRECATED
 
@@ -111,19 +114,19 @@ def replay_service(s, msgs):
 
 def replay_cameras(lr, frs):
   eon_cameras = [
-    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
-    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
+    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
+    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
   ]
   tici_cameras = [
-    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
-    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
+    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
+    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
   ]
 
-  def replay_camera(s, stream, dt, vipc_server, frames, size):
+  def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
     pm = messaging.PubMaster([s, ])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
 
-    img = b"\x00" * int(size[0]*size[1]*3/2)
+    img = b"\x00" * int(size[0] * size[1] * 3 / 2)
     while True:
       if frames is not None:
         img = frames[rk.frame % len(frames)]
@@ -133,9 +136,13 @@ def replay_cameras(lr, frs):
       m = messaging.new_message(s)
       msg = getattr(m, s)
       msg.frameId = rk.frame
+      msg.timestampSof = m.logMonoTime
+      msg.timestampEof = m.logMonoTime
       pm.send(s, m)
 
       vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+      if use_extra_client:
+        vipc_server.send(VisionStreamType.VISION_STREAM_WIDE_ROAD, img, msg.frameId, msg.timestampSof, msg.timestampEof)
 
   init_data = [m for m in lr if m.which() == 'initData'][0]
   cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
@@ -143,20 +150,22 @@ def replay_cameras(lr, frs):
   # init vipc server and cameras
   p = []
   vs = VisionIpcServer("camerad")
-  for (s, dt, size, stream) in cameras:
+  for (s, dt, size, stream, use_extra_client) in cameras:
     fr = frs.get(s, None)
 
     frames = None
     if fr is not None:
-      print(f"Decomressing frames {s}")
+      print(f"Decompressing frames {s}")
       frames = []
       for i in tqdm(range(fr.frame_count)):
         img = fr.get(i, pix_fmt='yuv420p')[0]
         frames.append(img.flatten().tobytes())
 
     vs.create_buffers(stream, 40, False, size[0], size[1])
+    if use_extra_client:
+      vs.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, size[0], size[1])
     p.append(multiprocessing.Process(target=replay_camera,
-                                     args=(s, stream, dt, vs, frames, size)))
+                                     args=(s, stream, dt, vs, frames, size, use_extra_client)))
 
   # hack to make UI work
   vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
@@ -169,15 +178,10 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   if frs is None:
     frs = dict()
 
-  # setup env
+  setup_env()
   params = Params()
-  params.clear_all()
-  params.put_bool("Passive", False)
-  params.put_bool("OpenpilotEnabledToggle", True)
 
   os.environ["LOG_ROOT"] = outdir
-  os.environ["REPLAY"] = "1"
-
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
 
@@ -220,6 +224,11 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   }
 
   try:
+    # TODO: make first run of onnxruntime CUDA provider fast
+    managed_processes["modeld"].start()
+    managed_processes["dmonitoringmodeld"].start()
+    time.sleep(5)
+
     # start procs up
     ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
     ensure_running(managed_processes.values(), started=True, not_run=ignore)
@@ -244,8 +253,13 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
 
   del vs
 
-  r = params.get("CurrentRoute", encoding='utf-8')
-  return os.path.join(outdir, r + "--0")
+  segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
+  seg_path = os.path.join(outdir, segment)
+  # check to make sure openpilot is engaged in the route
+  if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
+    raise Exception(f"Route never enabled: {segment}")
+
+  return seg_path
 
 
 def regen_and_save(route, sidx, upload=False, use_route_meta=False):
@@ -254,11 +268,11 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
     lr = LogReader(r.log_paths()[args.seg])
     fr = FrameReader(r.camera_paths()[args.seg])
   else:
-    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
+    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
   rpath = regen_segment(lr, {'roadCameraState': fr})
 
-  lr = LogReader(os.path.join(rpath, 'rlog.bz2'))
+  lr = LogReader(os.path.join(rpath, 'rlog2'))
   controls_state_active = [m.controlsState.active for m in lr if m.which() == 'controlsState']
   assert any(controls_state_active), "Segment did not engage"
 

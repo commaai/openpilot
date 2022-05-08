@@ -2,13 +2,16 @@ import json
 import math
 import os
 import subprocess
+import time
 from enum import IntEnum
 from functools import cached_property
 from pathlib import Path
 
 from cereal import log
+from common.gpio import gpio_set, gpio_init
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
 from selfdrive.hardware.tici import iwlist
+from selfdrive.hardware.tici.pins import GPIO
 from selfdrive.hardware.tici.amplifier import Amplifier
 
 NM = 'org.freedesktop.NetworkManager'
@@ -57,6 +60,9 @@ MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
 def sudo_write(val, path):
   os.system(f"sudo su -c 'echo {val} > {path}'")
+
+def affine_irq(val, irq):
+  sudo_write(str(val), f"/proc/irq/{irq}/smp_affinity_list")
 
 
 class Tici(HardwareBase):
@@ -317,6 +323,19 @@ class Tici(HardwareBase):
     except Exception:
       return None
 
+  def get_modem_nv(self):
+    timeout = 0.2  # Default timeout is too short
+    files = (
+      '/nv/item_files/modem/mmode/ue_usage_setting',
+      '/nv/item_files/ims/IMS_enable',
+      '/nv/item_files/modem/mmode/sms_only',
+    )
+    try:
+      modem = self.get_modem()
+      return { fn: str(modem.Command(f'AT+QNVFR="{fn}"', math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)) for fn in files}
+    except Exception:
+      return None
+
   def get_modem_temperatures(self):
     timeout = 0.2  # Default timeout is too short
     try:
@@ -399,12 +418,18 @@ class Tici(HardwareBase):
 
     # offline big cluster, leave core 4 online for boardd
     for i in range(5, 8):
-      val = "0" if powersave_enabled else "1"
-      sudo_write(val, f"/sys/devices/system/cpu/cpu{i}/online")
+      val = '0' if powersave_enabled else '1'
+      sudo_write(val, f'/sys/devices/system/cpu/cpu{i}/online')
 
     for n in ('0', '4'):
       gov = 'ondemand' if powersave_enabled else 'performance'
-      sudo_write(gov, f"/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor")
+      sudo_write(gov, f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor')
+
+    # *** IRQ config ***
+    affine_irq(5, 565)   # kgsl-3d0
+    affine_irq(4, 740)   # xhci-hcd:usb1 goes on the boardd core
+    for irq in range(237, 246):
+      affine_irq(5, irq) # camerad
 
   def get_gpu_usage_percent(self):
     try:
@@ -419,19 +444,52 @@ class Tici(HardwareBase):
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
 
+    # *** IRQ config ***
+
+    # move these off the default core
+    affine_irq(1, 7)    # msm_drm
+    affine_irq(1, 250)  # msm_vidc
+    affine_irq(1, 8)    # i2c_geni (sensord)
+    sudo_write("f", "/proc/irq/default_smp_affinity")
+
     # *** GPU config ***
-    sudo_write("0", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
-    sudo_write("0", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
+    # https://github.com/commaai/agnos-kernel-sdm845/blob/master/arch/arm64/boot/dts/qcom/sdm845-gpu.dtsi#L216
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
     sudo_write("1000000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
     sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
+    sudo_write("596", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
 
     # setup governors
     sudo_write("performance", "/sys/class/devfreq/soc:qcom,cpubw/governor")
     sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor")
     sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu4/governor")
+
+    # *** VIDC (encoder) config ***
+    sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
+    sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
+
+  def configure_modem(self):
+    sim_id = self.get_sim_info().get('sim_id', '')
+
+    # blue prime config
+    if sim_id.startswith('8901410'):
+      cmds = [
+        'AT+QNVW=5280,0,"0102000000000000"',
+        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
+      ]
+      modem = self.get_modem()
+      for cmd in cmds:
+        try:
+          modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+        except Exception:
+          pass
+      os.system('mmcli -m 0 --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
+
 
   def get_networks(self):
     r = {}
@@ -459,3 +517,27 @@ class Tici(HardwareBase):
           pass
 
     return r
+
+  def reset_internal_panda(self):
+    gpio_init(GPIO.STM_RST_N, True)
+
+    gpio_set(GPIO.STM_RST_N, 1)
+    time.sleep(2)
+    gpio_set(GPIO.STM_RST_N, 0)
+
+
+  def recover_internal_panda(self):
+    gpio_init(GPIO.STM_RST_N, True)
+    gpio_init(GPIO.STM_BOOT0, True)
+
+    gpio_set(GPIO.STM_RST_N, 1)
+    gpio_set(GPIO.STM_BOOT0, 1)
+    time.sleep(2)
+    gpio_set(GPIO.STM_RST_N, 0)
+    gpio_set(GPIO.STM_BOOT0, 0)
+
+
+if __name__ == "__main__":
+  t = Tici()
+  t.initialize_hardware()
+  t.set_power_save(False)

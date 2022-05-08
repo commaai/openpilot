@@ -51,6 +51,7 @@ public slots:
 
 protected:
   void mousePressEvent(QMouseEvent* e) override;
+  void mouseDoubleClickEvent(QMouseEvent* e) override;
 
 private:
   Sidebar *sidebar;
