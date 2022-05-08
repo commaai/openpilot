@@ -74,6 +74,7 @@ class CarController:
       apply_steer_req = 0
     elif self.rate_limit_counter > STEER_FAULT_MAX_FRAMES:
       apply_steer_req = 0
+      self.rate_limit_counter = 0
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
