@@ -26,6 +26,8 @@ class CarController:
     self.steer_rate_limited = False
 
     self.rate_limit_counter = 0
+    self.cut_steer_frames = 0
+    self.cut_steer = False
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -67,14 +69,21 @@ class CarController:
     else:
       # TODO: unclear if it resets its internal state at another value
       self.rate_limit_counter = 0
+      self.cut_steer_frames = 0
+
+    if self.rate_limit_counter > STEER_FAULT_MAX_FRAMES:
+      self.cut_steer = True
+    elif self.cut_steer_frames > 1:
+      self.cut_steer_frames = 0
+      self.cut_steer = False
 
     apply_steer_req = 1
     if not CC.latActive:
+      apply_steer_req = 0
       apply_steer = 0
+    elif self.cut_steer:
+      self.cut_steer_frames += 1
       apply_steer_req = 0
-    elif self.rate_limit_counter > STEER_FAULT_MAX_FRAMES:
-      apply_steer_req = 0
-      self.rate_limit_counter = 0
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
