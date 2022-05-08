@@ -185,9 +185,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]
       ret.lateralTuning.pid.kf = 0.0002
-      #Deprecated
-      #ret.steerMaxBP = [10., 25.]
-      #ret.steerMaxV = [1., 1.2]
       
       # TODO: Needs refinement for stop and go, doesn't fully stop
       # Assumes the Bolt is using L-Mode for regen braking
@@ -221,10 +218,21 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.3 # guess for tourx
       ret.steerRatioRear = 0. # unknown online
       ret.centerToFront = 2.59  # ret.wheelbase * 0.4 # wild guess
-      ret.steerActuatorDelay = 0.075
+      ret.steerActuatorDelay = 0.2
       ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
       ret.openpilotLongitudinalControl = False # ASCM vehicles use OP for long
       ret.radarOffCan = True # ASCM vehicles (typically) have radar
+
+      # According to JYoung, decrease MAX_LAT_ACCEL if it is understeering
+      # friction may need to be increased slowly as well
+      # I'm not sure what to do about centering / wandering
+      MAX_LAT_ACCEL = 2.5
+      ret.lateralTuning.init('torque')
+      ret.lateralTuning.torque.useSteeringAngle = True
+      ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+      ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
+      ret.lateralTuning.torque.ki = 0.50 / MAX_LAT_ACCEL
+      ret.lateralTuning.torque.friction = 0.1
 
     elif candidate == CAR.SILVERADO_NR:
       # Thanks skip for the tune!
@@ -233,12 +241,23 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2400. + STD_CARGO_KG
       ret.wheelbase = 3.745
       ret.steerRatio = 16.3
-      ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [15., 80.]]
-      ret.lateralTuning.pid.kpV = [0.13, 0.23]
+      ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
       ret.centerToFront = ret.wheelbase * .49
       ret.steerRateCost = .4
       ret.steerActuatorDelay = 0.11
-      ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
+      # ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [15., 80.]]
+      # ret.lateralTuning.pid.kpV = [0.13, 0.23]
+
+      # According to JYoung, decrease MAX_LAT_ACCEL if it is understeering
+      # friction may need to be increased slowly as well
+      # I'm not sure what to do about centering / wandering
+      MAX_LAT_ACCEL = 2.5
+      ret.lateralTuning.init('torque')
+      ret.lateralTuning.torque.useSteeringAngle = True
+      ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+      ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
+      ret.lateralTuning.torque.ki = 0.50 / MAX_LAT_ACCEL
+      ret.lateralTuning.torque.friction = 0.1
 
       # JJS: just saving previous values for posterity
       # ret.minEnableSpeed = -1. # engage speed is decided by pcm
@@ -261,6 +280,17 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
       ret.openpilotLongitudinalControl = False # ASCM vehicles use OP for long
       ret.radarOffCan = True # ASCM vehicles (typically) have radar
+
+      # According to JYoung, decrease MAX_LAT_ACCEL if it is understeering
+      # friction may need to be increased slowly as well
+      # I'm not sure what to do about centering / wandering
+      MAX_LAT_ACCEL = 2.0
+      ret.lateralTuning.init('torque')
+      ret.lateralTuning.torque.useSteeringAngle = True
+      ret.lateralTuning.torque.kp = 2.0 / MAX_LAT_ACCEL
+      ret.lateralTuning.torque.kf = 1.0 / MAX_LAT_ACCEL
+      ret.lateralTuning.torque.ki = 0.50 / MAX_LAT_ACCEL
+      ret.lateralTuning.torque.friction = 0.12
 
     elif candidate == CAR.BOLT_EUV:
       ret.minEnableSpeed = -1
