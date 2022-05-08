@@ -297,7 +297,7 @@ class RawFrameReader(BaseFrameReader):
 
   def load_and_debayer(self, img):
     img = np.frombuffer(img, dtype='uint8').reshape(960, 1280)
-    cimg = np.dstack([img[::2, 1::2], ((img[::2, ::2].astype("uint16") + img[1::2, 1::2].astype("uint16")) >> 1).astype("uint8"), img[1::2, 0::2]])
+    cimg = np.dstack([img[::2, 1::2], ((img[::2, ::2].astype("uint16") + img[1::2, 1::2].astype("uint16")) >> 1).astype("uint8"), img[1::2, ::2]])
     return cimg
 
   def get(self, num, count=1, pix_fmt="yuv420p"):
