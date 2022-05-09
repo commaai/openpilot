@@ -51,6 +51,7 @@ segments = [
 excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
+REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 
 def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
@@ -125,7 +126,7 @@ if __name__ == "__main__":
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
                       help="Msgs to ignore (e.g. carEvents)")
   parser.add_argument("--update-refs", action="store_true",
-                      help="Uploads logs and updates ref commit on failure")
+                      help="Regenerates and uploads ref logs on current commit")
   parser.add_argument("--upload-only", action="store_true",
                       help="Skips testing processes and uploads logs from previous run")
   args = parser.parse_args()
@@ -138,7 +139,7 @@ if __name__ == "__main__":
     assert full_test, "Can't whitelist or blacklist when uploading logs"
 
   try:
-    ref_commit = open(os.path.join(PROC_REPLAY_DIR, "ref_commit")).read().strip()
+    ref_commit = open(REF_COMMIT_FN).read().strip()
   except FileNotFoundError:
     print("Couldn't find reference commit")
     sys.exit(1)
@@ -150,7 +151,7 @@ if __name__ == "__main__":
   print(f"***** testing against commit {ref_commit} *****")
 
   # check to make sure all car brands are tested
-  if full_test or upload:
+  if full_test:
     tested_cars = {c.lower() for c, _ in segments}
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
@@ -173,13 +174,12 @@ if __name__ == "__main__":
          (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
         continue
 
+      cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
       if not args.upload_only:
         cmp_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
         results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
-        print(results[segment][cfg.proc_name])
 
         # save logs so we can upload on process replay failure
-        cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
         save_log(cur_log_fn, log_msgs)
 
       if upload:
@@ -195,12 +195,15 @@ if __name__ == "__main__":
 
   if failed:
     print("TEST FAILED")
-    if upload:
-      print(f"New ref commit: {ref_commit}")
-    else:
+    if not upload:
       print("\n\nTo update the reference logs for this test run:")
       print("./test_processes.py --upload-only")
   else:
     print("TEST SUCCEEDED")
+
+  if upload:
+    with open(REF_COMMIT_FN, "w") as f:
+      f.write(cur_commit)
+    print(f"New ref commit: {ref_commit}")
 
   sys.exit(int(failed))
