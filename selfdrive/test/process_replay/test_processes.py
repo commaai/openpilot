@@ -5,7 +5,7 @@ import sys
 from typing import Any
 
 from selfdrive.car.car_helpers import interface_names
-from selfdrive.test.openpilotci import get_url
+from selfdrive.test.openpilotci import get_url, upload_file
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, CI, check_enabled, replay_process
 from selfdrive.version import get_commit
@@ -51,9 +51,6 @@ segments = [
 excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
-
-# run the full test (including checks) when no args given
-FULL_TEST = len(sys.argv) <= 1
 
 
 def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
@@ -116,21 +113,29 @@ if __name__ == "__main__":
 
   # whitelist has precedence over blacklist in case both are defined
   parser.add_argument("--whitelist-procs", type=str, nargs="*", default=[],
-                        help="Whitelist given processes from the test (e.g. controlsd)")
+                      help="Whitelist given processes from the test (e.g. controlsd)")
   parser.add_argument("--whitelist-cars", type=str, nargs="*", default=[],
-                        help="Whitelist given cars from the test (e.g. HONDA)")
+                      help="Whitelist given cars from the test (e.g. HONDA)")
   parser.add_argument("--blacklist-procs", type=str, nargs="*", default=[],
-                        help="Blacklist given processes from the test (e.g. controlsd)")
+                      help="Blacklist given processes from the test (e.g. controlsd)")
   parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[],
-                        help="Blacklist given cars from the test (e.g. HONDA)")
+                      help="Blacklist given cars from the test (e.g. HONDA)")
   parser.add_argument("--ignore-fields", type=str, nargs="*", default=[],
-                        help="Extra fields or msgs to ignore (e.g. carState.events)")
+                      help="Extra fields or msgs to ignore (e.g. carState.events)")
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
-                        help="Msgs to ignore (e.g. carEvents)")
+                      help="Msgs to ignore (e.g. carEvents)")
+  parser.add_argument("--update-refs", action="store_true",
+                      help="Uploads logs and updates ref commit on failure")
+  parser.add_argument("--upload-only", action="store_true",
+                      help="Skips testing processes and uploads logs from previous run")
   args = parser.parse_args()
 
-  cars_whitelisted = len(args.whitelist_cars) > 0
-  procs_whitelisted = len(args.whitelist_procs) > 0
+  full_test = 0 == len(args.whitelist_procs) == len(args.whitelist_cars) == len(args.blacklist_procs) == \
+              len(args.blacklist_cars) == len(args.ignore_fields) == len(args.ignore_msgs)
+  upload = args.update_refs or args.upload_only
+
+  if upload:
+    assert full_test, "Can't whitelist or blacklist when uploading logs"
 
   try:
     ref_commit = open(os.path.join(PROC_REPLAY_DIR, "ref_commit")).read().strip()
@@ -145,15 +150,15 @@ if __name__ == "__main__":
   print(f"***** testing against commit {ref_commit} *****")
 
   # check to make sure all car brands are tested
-  if FULL_TEST:
+  if full_test or upload:
     tested_cars = {c.lower() for c, _ in segments}
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
   results: Any = {}
   for car_brand, segment in segments:
-    if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
-       (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
+    if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
+       (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
       continue
 
     print(f"***** testing route segment {segment} *****\n")
@@ -164,17 +169,24 @@ if __name__ == "__main__":
     lr = LogReader(get_url(r, n))
 
     for cfg in CONFIGS:
-      if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
-         (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
+      if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
+         (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
         continue
 
-      cmp_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-      results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
+      if not args.upload_only:
+        cmp_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+        results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
+        print(results[segment][cfg.proc_name])
 
-      # save logs so we can upload on process replay failure
-      if CI:
+        # save logs so we can upload on process replay failure
         cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
         save_log(cur_log_fn, log_msgs)
+
+      if upload:
+        assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
+        print(f'Uploading: {cur_log_fn}')
+        upload_file(cur_log_fn, os.path.basename(cur_log_fn))
+        os.remove(cur_log_fn)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
@@ -183,8 +195,11 @@ if __name__ == "__main__":
 
   if failed:
     print("TEST FAILED")
-    print("\n\nTo update the reference logs for this test run:")
-    print("./update_refs.py")
+    if upload:
+      print(f"New ref commit: {ref_commit}")
+    else:
+      print("\n\nTo update the reference logs for this test run:")
+      print("./test_processes.py --upload-only")
   else:
     print("TEST SUCCEEDED")
 
