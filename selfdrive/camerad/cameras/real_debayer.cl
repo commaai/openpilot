@@ -11,17 +11,17 @@ const __constant half3 color_correction_1 = (half3)(-0.5743977, 1.36858544, -0.5
 const __constant half3 color_correction_2 = (half3)(-0.25277411, -0.05627105, 1.45875782);
 
 // tone mapping params
-const half cpk = 0.75;
-const half cpb = 0.125;
-const half cpxk = 0.0025;
-const half cpxb = 0.01;
+const half gamma_k = 0.75;
+const half gamma_b = 0.125;
+const half mp_default = 0.01; // ideally midpoint should be adaptive
 
-half mf(half x, half cp) {
-  half rk = 9 - 100*cp;
-  if (x > cp) {
-    return (rk * (x-cp) * (1-(cpk*cp+cpb)) * (1+1/(rk*(1-cp))) / (1+rk*(x-cp))) + cpk*cp + cpb;
-  } else if (x < cp) {
-    return (rk * (x-cp) * (cpk*cp+cpb) * (1+1/(rk*cp)) / (1-rk*(x-cp))) + cpk*cp + cpb;
+half gamma_apply(half x, half mp) {
+  // poly approximation for s curve
+  half rk = 9 - 100*mp;
+  if (x > mp) {
+    return (rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b;
+  } else if (x < mp) {
+    return (rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b;
   } else {
     return x;
   }
@@ -29,13 +29,12 @@ half mf(half x, half cp) {
 
 half3 color_correct(half3 rgb) {
   half3 ret = (half3)(0.0, 0.0, 0.0);
-  half cpx = 0.01;
   ret += (half)rgb.x * color_correction_0;
   ret += (half)rgb.y * color_correction_1;
   ret += (half)rgb.z * color_correction_2;
-  ret.x = mf(ret.x, cpx);
-  ret.y = mf(ret.y, cpx);
-  ret.z = mf(ret.z, cpx);
+  ret.x = gamma_apply(ret.x, mp_default);
+  ret.y = gamma_apply(ret.y, mp_default);
+  ret.z = gamma_apply(ret.z, mp_default);
   ret = clamp(0.0, 255.0, ret*255.0);
   return ret;
 }
