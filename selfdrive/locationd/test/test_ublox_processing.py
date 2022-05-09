@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 from laika import AstroDog
-from laika.helpers import UbloxGnssId
+from laika.helpers import ConstellationId
 from laika.raw_gnss import calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
@@ -34,9 +34,9 @@ class TestUbloxProcessing(unittest.TestCase):
     count_glonass = 0
     for measurements in self.gnss_measurements:
       for m in measurements:
-        if m.ublox_gnss_id == UbloxGnssId.GPS:
+        if m.constellation_id == ConstellationId.GPS:
           count_gps += 1
-        elif m.ublox_gnss_id == UbloxGnssId.GLONASS:
+        elif m.constellation_id == ConstellationId.GLONASS:
           count_glonass += 1
 
     self.assertEqual(count_gps, 5036)
