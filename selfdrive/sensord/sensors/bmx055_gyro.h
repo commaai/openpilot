@@ -13,6 +13,10 @@
 #define BMX055_GYRO_I2C_REG_HBW        0x13
 #define BMX055_GYRO_I2C_REG_FIFO       0x3F
 
+#define BMX055_GYRO_I2C_REG_INT_EN_0  0x15
+#define BMX055_GYRO_I2C_REG_INT_MAP_1 0x18
+
+
 // Constants
 #define BMX055_GYRO_CHIP_ID         0x0F
 
@@ -26,6 +30,9 @@
 #define BMX055_GYRO_RANGE_125       0b100
 
 #define BMX055_GYRO_BW_116HZ 0b0010
+
+#define BMX055_GYRO_DATA_EN         0b10000000
+#define BMX055_GYRO_DATA_TO_INT3    0b00000001
 
 
 class BMX055_Gyro : public I2CSensor {

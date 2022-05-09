@@ -32,9 +32,13 @@
 #define BMX055_MAGN_I2C_REG_DIG_XY2      0x70
 #define BMX055_MAGN_I2C_REG_DIG_XY1      0x71
 
+#define BMX055_MAGN_I2C_REG_INT_EN       0x4E
+
 // Constants
 #define BMX055_MAGN_CHIP_ID     0x32
-#define BMX055_MAGN_FORCED      (0b01 << 1)
+#define BMX055_MAGN_FORCED      0b01
+
+#define BMX055_MAGN_DATA_EN     (1 << 7)
 
 struct trim_data_t {
     int8_t dig_x1;
