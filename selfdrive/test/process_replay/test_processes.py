@@ -128,7 +128,7 @@ if __name__ == "__main__":
   parser.add_argument("--update-refs", action="store_true",
                       help="Regenerates and uploads ref logs on current commit")
   parser.add_argument("--upload-only", action="store_true",
-                      help="Skips testing processes and uploads logs from previous run")
+                      help="Uploads logs from previous test run")
   args = parser.parse_args()
 
   full_test = 0 == len(args.whitelist_procs) == len(args.whitelist_cars) == len(args.blacklist_procs) == \
@@ -204,6 +204,6 @@ if __name__ == "__main__":
   if upload:
     with open(REF_COMMIT_FN, "w") as f:
       f.write(cur_commit)
-    print(f"New ref commit: {ref_commit}")
+    print(f"\n\nUpdated refs. New ref commit: {ref_commit}")
 
   sys.exit(int(failed))
