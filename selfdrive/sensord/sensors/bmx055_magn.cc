@@ -148,6 +148,11 @@ int BMX055_Magn::init() {
     goto fail;
   }
 
+  // enabled new data / DRDY ready interrupt
+  ret = set_register(BMX055_MAGN_I2C_REG_INT_EN, BMX055_MAGN_DATA_EN);
+  if (ret < 0) {
+    goto fail;
+  }
 
   return 0;
 
@@ -222,6 +227,8 @@ void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
   assert(len == sizeof(buffer));
 
   if (parse_xyz(buffer, &_x, &_y, &z)) {
+    // TODO: this never returns true, data never ready to read
+
     event.setSource(cereal::SensorEventData::SensorSource::BMX055);
     event.setVersion(2);
     event.setSensor(SENSOR_MAGNETOMETER_UNCALIBRATED);

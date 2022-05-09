@@ -50,6 +50,18 @@ int BMX055_Gyro::init() {
     goto fail;
   }
 
+  // map data ready interrupt to pin INT1 (GPIO 23)
+  ret = set_register(BMX055_GYRO_I2C_REG_INT_MAP_1, BMX055_GYRO_DATA_TO_INT3);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // enabled new data ready interrupt
+  ret = set_register(BMX055_GYRO_I2C_REG_INT_EN_0, BMX055_GYRO_DATA_EN);
+  if (ret < 0) {
+    goto fail;
+  }
+
 fail:
   return ret;
 }
