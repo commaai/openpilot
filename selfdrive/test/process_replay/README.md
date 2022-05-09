@@ -30,7 +30,7 @@ optional arguments:
   --blacklist-cars BLACKLIST_CARS       Blacklist given cars from the test (e.g. HONDA)
   --ignore-fields IGNORE_FIELDS         Extra fields or msgs to ignore (e.g. carState.events)
   --ignore-msgs IGNORE_MSGS             Msgs to ignore (e.g. carEvents)
-  --update-refs                         Regenerates and uploads ref logs on current commit
+  --update-refs                         Updates reference logs using current commit
   --upload-only                         Skips testing processes and uploads logs from previous test run
 ```
 

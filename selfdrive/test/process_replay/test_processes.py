@@ -124,7 +124,7 @@ if __name__ == "__main__":
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
                       help="Msgs to ignore (e.g. carEvents)")
   parser.add_argument("--update-refs", action="store_true",
-                      help="Regenerates and uploads ref logs on current commit")
+                      help="Updates reference logs using current commit")
   parser.add_argument("--upload-only", action="store_true",
                       help="Skips testing processes and uploads logs from previous test run")
   args = parser.parse_args()
