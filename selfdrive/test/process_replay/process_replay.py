@@ -23,12 +23,12 @@ from selfdrive.manager.process_config import managed_processes
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
-timeout = 15
+TIMEOUT = 15
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config'], defaults=({},))
 
 
-def wait_for_event(evt):
+def wait_for_event(evt, timeout=TIMEOUT):
   if not evt.wait(timeout):
     if threading.currentThread().getName() == "MainThread":
       # tested process likely died. don't let test just hang
@@ -44,6 +44,10 @@ class FakeSocket:
     self.wait = wait
     self.recv_called = threading.Event()
     self.recv_ready = threading.Event()
+    self.timeout = TIMEOUT
+
+  def setTimeout(self, timeout):
+    self.timeout = timeout
 
   def receive(self, non_blocking=False):
     if non_blocking:
@@ -51,7 +55,7 @@ class FakeSocket:
 
     if self.wait:
       self.recv_called.set()
-      wait_for_event(self.recv_ready)
+      wait_for_event(self.recv_ready, self.timeout)
       self.recv_ready.clear()
     return self.data.pop()
 
@@ -94,28 +98,29 @@ class FakeSubMaster(messaging.SubMaster):
     self.update_called = threading.Event()
     self.update_ready = threading.Event()
     self.wait_on_getitem = False
+    self.timeout = TIMEOUT
 
   def __getitem__(self, s):
     # hack to know when fingerprinting is done
     if self.wait_on_getitem:
       self.update_called.set()
-      wait_for_event(self.update_ready)
+      wait_for_event(self.update_ready, self.timeout)
       self.update_ready.clear()
     return self.data[s]
 
   def update(self, timeout=-1):
     self.update_called.set()
-    wait_for_event(self.update_ready)
+    wait_for_event(self.update_ready, self.timeout)
     self.update_ready.clear()
 
   def update_msgs(self, cur_time, msgs):
-    wait_for_event(self.update_called)
+    wait_for_event(self.update_called, self.timeout)
     self.update_called.clear()
     super().update_msgs(cur_time, msgs)
     self.update_ready.set()
 
   def wait_for_update(self):
-    wait_for_event(self.update_called)
+    wait_for_event(self.update_called, self.timeout)
 
 
 class FakePubMaster(messaging.PubMaster):
@@ -132,6 +137,7 @@ class FakePubMaster(messaging.PubMaster):
       self.sock[s] = DumbSocket()
     self.send_called = threading.Event()
     self.get_called = threading.Event()
+    self.timeout = TIMEOUT
 
   def send(self, s, dat):
     self.last_updated = s
@@ -140,11 +146,11 @@ class FakePubMaster(messaging.PubMaster):
     else:
       self.data[s] = dat.as_reader()
     self.send_called.set()
-    wait_for_event(self.get_called)
+    wait_for_event(self.get_called, self.timeout)
     self.get_called.clear()
 
   def wait_for_msg(self):
-    wait_for_event(self.send_called)
+    wait_for_event(self.send_called, self.timeout)
     self.send_called.clear()
     dat = self.data[self.last_updated]
     self.get_called.set()
@@ -335,15 +341,14 @@ CONFIGS = [
 ]
 
 
-def replay_process(cfg, lr, fingerprint=None, override_timeout=None):
-  if override_timeout is not None:
-    global timeout
-    timeout = override_timeout
+def replay_process(cfg, lr, fingerprint=None, timeout=None):
+  if timeout is None:
+    timeout = TIMEOUT
 
   if cfg.fake_pubsubmaster:
-    return python_replay_process(cfg, lr, fingerprint)
+    return python_replay_process(cfg, lr, fingerprint, timeout)
   else:
-    return cpp_replay_process(cfg, lr, fingerprint)
+    return cpp_replay_process(cfg, lr, fingerprint, timeout)
 
 
 def setup_env(simulation=False):
@@ -362,15 +367,21 @@ def setup_env(simulation=False):
   elif "SIMULATION" in os.environ:
     del os.environ["SIMULATION"]
 
-def python_replay_process(cfg, lr, fingerprint=None):
+
+def python_replay_process(cfg, lr, fingerprint=None, timeout=TIMEOUT):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']
 
   fsm = FakeSubMaster(pub_sockets, **cfg.submaster_config)
   fpm = FakePubMaster(sub_sockets)
   args = (fsm, fpm)
+
+  fsm.timeout = timeout
+  fpm.timeout = timeout
+
   if 'can' in list(cfg.pub_sub.keys()):
     can_sock = FakeSocket()
+    can_sock.setTimeout(timeout)
     args = (fsm, fpm, can_sock)
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
@@ -451,8 +462,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
   return log_msgs
 
 
-def cpp_replay_process(cfg, lr, fingerprint=None):
-
+def cpp_replay_process(cfg, lr, fingerprint=None, timeout=TIMEOUT):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(cfg.pub_sub.keys())
 

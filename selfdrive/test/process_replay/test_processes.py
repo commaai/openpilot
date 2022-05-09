@@ -64,7 +64,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None, time
   cmp_log_path = cmp_log_fn if os.path.exists(cmp_log_fn) else BASE_URL + os.path.basename(cmp_log_fn)
   cmp_log_msgs = list(LogReader(cmp_log_path))
 
-  log_msgs = replay_process(cfg, lr, override_timeout=timeout)
+  log_msgs = replay_process(cfg, lr, timeout=timeout)
 
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
