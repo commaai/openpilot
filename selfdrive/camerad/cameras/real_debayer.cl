@@ -52,6 +52,7 @@ inline half get_vignetting_s(float r) {
   } else {
     return (half)(0.53503625f + 0.0000000000022f*r*r);
   }
+}
 
 inline half val_from_12(const uchar * source, int gx, int gy, half black_level) {
   // parse 12bit
@@ -92,16 +93,11 @@ inline half2 vals_from_12(const uchar * source, int gx, int gy, half black_level
 
   // correct vignetting
   if (CAM_NUM == 1) { // fcamera
-    const float r = ((gx)-(RGB_WIDTH/2))*((gx+1)-(RGB_WIDTH/2)) + (gy-(RGB_HEIGHT/2))*(gy-(RGB_HEIGHT/2));
-    if (r < 62500) {
-      pvs *= 1.0f + 0.0000008f * r;
-    } else if (r < 490000) {
-      pvs *= 0.9625f + 0.0000014f*r;
-    } else if (r < 1102500) {
-      pvs *= 1.26434f + 0.0000000000016f*r*r;
-    } else {
-      pvs *= 0.53503625f + 0.0000000000022f*r*r;
-    }
+    gy = (gy - RGB_HEIGHT/2);
+    const int gx0 = (gx - RGB_WIDTH/2);
+    const int gx1 = (gx + 1 - RGB_WIDTH/2);
+    pvs.s0 *= get_vignetting_s(gx0*gx0 + gy*gy);
+    pvs.s1 *= get_vignetting_s(gx1*gx1 + gy*gy);
   }
 
   pvs = clamp(pvs, 0.0, 1.0);
