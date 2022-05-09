@@ -53,7 +53,7 @@ public:
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
 
     const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
-    const int debayer_local_worksize = 20;  // largest value that fits with amount of private memory
+    const int debayer_local_worksize = 16;
     constexpr int localMemSize = (debayer_local_worksize * 2 + 2) * (debayer_local_worksize * 2 + 2) * 2;
     const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
     CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
