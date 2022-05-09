@@ -72,3 +72,5 @@ MOCK=1 selfdrive/boardd/tests/boardd_old.py
 # In another terminal:
 selfdrive/ui/replay/replay <route-name>
 ```
+
+Note that you'll need to ensure that the proper [udev rules](https://github.com/commaai/panda_jungle#udev-rules) have been set up.
