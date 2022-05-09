@@ -20,7 +20,7 @@ Currently the following processes are tested:
 ### Usage
 ```
 Usage: test_processes.py [-h] [--whitelist-procs PROCS] [--whitelist-cars CARS] [--blacklist-procs PROCS]
-                         [--blacklist-cars CARS] [--ignore-fields FIELDS] [--ignore-msgs MSGS] [--timeout TIMEOUT]
+                         [--blacklist-cars CARS] [--ignore-fields FIELDS] [--ignore-msgs MSGS] [--update-refs] [--upload-only]
 Regression test to identify changes in a process's output
 optional arguments:
   -h, --help            show this help message and exit
