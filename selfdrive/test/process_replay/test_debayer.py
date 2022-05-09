@@ -10,7 +10,7 @@ from selfdrive.hardware import PC, TICI
 from common.basedir import BASEDIR
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.version import get_commit
-from selfdrive.camerad.snapshot.snapshot import yuv2rgb
+from selfdrive.camerad.snapshot.snapshot import yuv_to_rgb
 from tools.lib.logreader import LogReader
 from tools.lib.filereader import FileReader
 
@@ -90,7 +90,7 @@ def debayer_frame(ctx, debayer_prg, data, rgb=False):
   v = yuv_buff[FRAME_WIDTH*FRAME_HEIGHT+UV_SIZE:].reshape((UV_HEIGHT, UV_WIDTH))
 
   if rgb:
-    return yuv2rgb(y, u, v)
+    return yuv_to_rgb(y, u, v)
   else:
     return y, u, v
 

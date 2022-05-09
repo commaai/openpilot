@@ -28,7 +28,7 @@ def jpeg_write(fn, dat):
   img.save(fn, "JPEG")
 
 
-def yuv2rgb(y, u, v):
+def yuv_to_rgb(y, u, v):
   ul = np.repeat(np.repeat(u, 2).reshape(u.shape[0], y.shape[1]), 2, axis=0).reshape(y.shape)
   vl = np.repeat(np.repeat(v, 2).reshape(v.shape[0], y.shape[1]), 2, axis=0).reshape(y.shape)
 
@@ -49,7 +49,7 @@ def extract_image(buf, w, h):
   u = np.array(buf[w*h: w*h+(w//2)*(h//2)], dtype=np.uint8).reshape((h//2, w//2))
   v = np.array(buf[w*h+(w//2)*(h//2):], dtype=np.uint8).reshape((h//2, w//2))
 
-  return yuv2rgb(y, u, v)
+  return yuv_to_rgb(y, u, v)
 
 
 def rois_in_focus(lapres: List[float]) -> float:
