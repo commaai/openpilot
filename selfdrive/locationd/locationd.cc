@@ -260,28 +260,31 @@ void Localizer::input_fake_gps_observations(double current_time) {
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
-inline void Localizer::handle_gnss_constellation(double current_time, ConstellationId c_id, std::vector<cereal::GnssMeasurements::CorrectedMeasurement::Reader> meas_per_constellation) {
-  std::vector<VectorXd> pseudo_zs;
-  std::vector<MatrixXdr> pseudo_Rs;
-  std::vector<std::vector<double>> satpos_glonassfreqs;
-  std::vector<int> observations;
+inline void Localizer::handle_gnss_constellation(double current_time, ConstellationId c_id, std::vector<cereal::GnssMeasurements::CorrectedMeasurement::Reader> meas_per_constellation)
+{
+  auto size = meas_per_constellation.size();
+  std::vector<VectorXd> pseudo_zs(size);
+  std::vector<MatrixXdr> pseudo_Rs(size);
+  std::vector<std::vector<double>> satpos_glonassfreqs(size);
 
-  std::vector<VectorXd> pseudo_rate_zs;
-  std::vector<MatrixXdr> pseudo_rate_Rs;
-  std::vector<std::vector<double>> satpos_satvels;
-  auto observation = (c_id == ConstellationId::GPS) ? OBSERVATION_PSEUDORANGE_GPS: OBSERVATION_PSEUDORANGE_GLONASS;
-  auto observation_rate = (c_id == ConstellationId::GPS) ? OBSERVATION_PSEUDORANGE_RATE_GPS: OBSERVATION_PSEUDORANGE_RATE_GLONASS;
+  std::vector<VectorXd> pseudo_rate_zs(size);
+  std::vector<MatrixXdr> pseudo_rate_Rs(size);
+  std::vector<std::vector<double>> satpos_satvels(size);
+  auto observation = (c_id == ConstellationId::GPS) ? OBSERVATION_PSEUDORANGE_GPS : OBSERVATION_PSEUDORANGE_GLONASS;
+  auto observation_rate = (c_id == ConstellationId::GPS) ? OBSERVATION_PSEUDORANGE_RATE_GPS : OBSERVATION_PSEUDORANGE_RATE_GLONASS;
 
-  for (auto meas: meas_per_constellation){
-    pseudo_zs.push_back(Vector3d::Constant(meas.getPseudorange()));
-    pseudo_Rs.push_back(Vector3d::Constant(std::pow(meas.getPseudorangeStd(), 2)).asDiagonal());
+  for (int i = 0; i < size; ++i)
+  {
+    auto meas = meas_per_constellation[i];
+    pseudo_zs[i] = Vector3d::Constant(meas.getPseudorange());
+    pseudo_Rs[i] = Vector3d::Constant(std::pow(meas.getPseudorangeStd(), 2)).asDiagonal();
     auto sp = meas.getSatPos();
-    satpos_glonassfreqs.push_back({sp[0], sp[1], sp[2], (double)meas.getGlonassFrequency()});
+    satpos_glonassfreqs[i] = {sp[0], sp[1], sp[2], (double)meas.getGlonassFrequency()};
 
-    pseudo_rate_zs.push_back(Vector3d::Constant(meas.getPseudorangeRate()));
-    pseudo_rate_Rs.push_back(Vector3d::Constant(std::pow(meas.getPseudorangeRateStd(), 2)).asDiagonal());
+    pseudo_rate_zs[i] = Vector3d::Constant(meas.getPseudorangeRate());
+    pseudo_rate_Rs[i] = Vector3d::Constant(std::pow(meas.getPseudorangeRateStd(), 2)).asDiagonal();
     auto sv = meas.getSatVel();
-    satpos_satvels.push_back({sp[0], sp[1], sp[2], sv[0], sv[1], sv[2]});
+    satpos_satvels[i] = {sp[0], sp[1], sp[2], sv[0], sv[1], sv[2]};
   }
   this->kf->predict_and_observe(current_time, observation, pseudo_zs, pseudo_Rs, satpos_glonassfreqs);
   this->kf->predict_and_observe(current_time, observation_rate, pseudo_rate_zs, pseudo_rate_Rs, satpos_satvels);
@@ -297,9 +300,9 @@ void Localizer::handle_gnss_measurements(double current_time, const cereal::Gnss
     if (c_id == ConstellationId::GPS) meas_gps.push_back(meas);
     else if (c_id == ConstellationId::GLONASS) meas_glonass.push_back(meas);
   }
-  // Todo check if empty meas
-  handle_gnss_constellation(current_time, ConstellationId::GPS, meas_gps);
-  handle_gnss_constellation(current_time, ConstellationId::GLONASS, meas_glonass);
+
+  if (meas_gps.size() > 0) handle_gnss_constellation(current_time, ConstellationId::GPS, meas_gps);
+  if (meas_glonass.size() > 0) handle_gnss_constellation(current_time, ConstellationId::GLONASS, meas_glonass);
 }
 
 void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log) {
@@ -485,6 +488,8 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   this->time_check(t);
   if (log.isSensorEvents()) {
     this->handle_sensors(t, log.getSensorEvents());
+  } else if (log.isGpsLocationExternal()) {
+    this->handle_gps(t, log.getGpsLocationExternal());
   } else if (log.isCarState()) {
     this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
