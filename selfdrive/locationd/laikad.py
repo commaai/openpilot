@@ -3,7 +3,7 @@ from typing import List
 
 from cereal import log, messaging
 from laika import AstroDog
-from laika.helpers import UbloxGnssId
+from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
 
 
@@ -46,13 +46,9 @@ def process_ublox_msg(ublox_msg, dog, ublox_mono_time: int):
 
 def create_measurement_msg(meas: GNSSMeasurement):
   c = log.GnssMeasurements.CorrectedMeasurement.new_message()
-  ublox_gnss_id = meas.ublox_gnss_id
-  if ublox_gnss_id is None:
-    # todo never happens will fix in later pr
-    ublox_gnss_id = UbloxGnssId.GPS
-  c.constellationId = ublox_gnss_id.value
+  c.constellationId = meas.constellation_id.value
   c.svId = int(meas.prn[1:])
-  c.glonassFrequency = meas.glonass_freq if meas.ublox_gnss_id == UbloxGnssId.GLONASS else 0
+  c.glonassFrequency = meas.glonass_freq if meas.constellation_id == ConstellationId.GLONASS else 0
   c.pseudorange = float(meas.observables['C1C'])  # todo should be observables_final when using corrected measurements
   c.pseudorangeStd = float(meas.observables_std['C1C'])
   c.pseudorangeRate = float(meas.observables['D1C'])  # todo should be observables_final when using corrected measurements
