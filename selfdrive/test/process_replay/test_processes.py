@@ -7,7 +7,7 @@ from typing import Any
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url, upload_file
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
-from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, CI, check_enabled, replay_process
+from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, check_enabled, replay_process
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
@@ -128,7 +128,7 @@ if __name__ == "__main__":
   parser.add_argument("--update-refs", action="store_true",
                       help="Regenerates and uploads ref logs on current commit")
   parser.add_argument("--upload-only", action="store_true",
-                      help="Uploads logs from previous test run")
+                      help="Skips testing processes and uploads logs from previous test run")
   args = parser.parse_args()
 
   full_test = 0 == len(args.whitelist_procs) == len(args.whitelist_cars) == len(args.blacklist_procs) == \
