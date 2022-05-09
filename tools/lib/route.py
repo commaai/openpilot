@@ -196,7 +196,25 @@ class SegmentName:
   # TODO: add constructor that takes dongle_id, time_str, segment_num and then create instances
   # of this class instead of manually constructing a segment name (use canonical_name prop instead)
   def __init__(self, name_str: str, allow_route_name=False):
-    self._name_str = name_str
+    # parse data dir
+    # only supporting data_dir if using "--"+"|" delim, dunno when "/" is used
+    #data_dir = None if not name_str.count("|") else name_str.rsplit("/", 1)[0]
+    #self._name_str = name_str if not data_dir else name_str.rsplit("/", 1)[-1]
+
+    #data_dir_parts = name_str.rsplit("/", 1)
+    #if name_str.count("|") and len(data_dir_parts) == 2:
+    #    self._name_str = data_dir_parts[1]
+    #    self._data_dir = data_dir_parts[0]
+    #else:
+    #    self._name_str = name_str
+    #    self._data_dir = None
+
+    data_dir_parts = name_str.rsplit("/", 1)
+    use_data_dir = name_str.count("|") and len(data_dir_parts) == 2
+    (self._name_str, self._data_dir) = \
+      (data_dir_parts[1], data_dir_parts[0]) if use_data_dir else \
+      (name_str, None)
+
     seg_num_delim = "--" if self._name_str.count("--") == 2 else "/"
     name_parts = self._name_str.rsplit(seg_num_delim, 1)
     if allow_route_name and len(name_parts) == 1:
@@ -219,5 +237,8 @@ class SegmentName:
 
   @property
   def route_name(self) -> RouteName: return self._route_name
+
+  @property
+  def data_dir(self) -> str: return self._data_dir
 
   def __str__(self) -> str: return self._canonical_name
