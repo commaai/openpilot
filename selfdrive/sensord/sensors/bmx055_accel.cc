@@ -39,7 +39,25 @@ int BMX055_Accel::init() {
     goto fail;
   }
 
-fail:
+  // map data ready interrupt to pin INT1 (GPIO 21)
+  ret = set_register(BMX055_ACCEL_I2C_REG_INT_MAP_1, BMX055_ACCEL_DATA_TO_INT1);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // set to filtered mode, slow mode
+  ret = set_register(BMX055_ACCEL_I2C_REG_INT_SRC, BMX055_ACCEL_INT_SRC_FILTERED);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // enabled new data ready interrupt
+  ret = set_register(BMX055_ACCEL_I2C_REG_INT_EN_1, BMX055_ACCEL_DATA_EN);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  fail:
   return ret;
 }
 
