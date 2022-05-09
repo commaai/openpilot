@@ -6,6 +6,10 @@
 #include <poll.h>
 #include <linux/gpio.h>
 
+// TODO: check if really needed
+#include <poll.h>
+#include <fcntl.h>
+
 #include "cereal/messaging/messaging.h"
 #include "common/i2c.h"
 #include "common/swaglog.h"
@@ -132,17 +136,17 @@ int sensor_loop() {
   // Sensor init
   std::vector<std::pair<Sensor *, bool>> sensors_init; // Sensor, required
   sensors_init.push_back({&bmx055_accel, false});
-  sensors_init.push_back({&bmx055_gyro, false});
-  sensors_init.push_back({&bmx055_magn, false});
-  sensors_init.push_back({&bmx055_temp, false});
+  //sensors_init.push_back({&bmx055_gyro, false});
+  //sensors_init.push_back({&bmx055_magn, false});
+  //sensors_init.push_back({&bmx055_temp, false});
 
-  sensors_init.push_back({&lsm6ds3_accel, true});
-  sensors_init.push_back({&lsm6ds3_gyro, true});
-  sensors_init.push_back({&lsm6ds3_temp, true});
+  //sensors_init.push_back({&lsm6ds3_accel, true});
+  //sensors_init.push_back({&lsm6ds3_gyro, true});
+  //sensors_init.push_back({&lsm6ds3_temp, true});
 
-  sensors_init.push_back({&mmc5603nj_magn, false});
+  //sensors_init.push_back({&mmc5603nj_magn, false});
 
-  sensors_init.push_back({&light, true});
+  //sensors_init.push_back({&light, true});
 
   bool has_magnetometer = false;
 
@@ -190,7 +194,34 @@ int sensor_loop() {
   while (!do_exit) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    const int num_events = sensors.size();
+
+  const int num_events = sensors.size();
+
+  struct pollfd fdlist[1];
+  int fd;
+
+  // assumed to be configured as exported, defined as input and trigger on raising edge
+  // TODO: cleanUp
+  fd = open("/sys/class/gpio/gpio21/value", O_RDONLY);
+  if (fd < 0) {
+    return 0;
+  }
+
+  fdlist[0].fd = fd;
+  fdlist[0].events = POLLPRI;
+
+  while (1) {
+    int err;
+    //char buf[3];
+
+    err = poll(fdlist, 1, -1);
+    if (-1 == err) {
+      LOGE("poll error");
+      //perror("poll");
+      return 0;
+    }
+    // interrupt reset after 50us
+
     MessageBuilder msg;
     auto sensor_events = msg.initEvent().initSensorEvents(num_events);
 
