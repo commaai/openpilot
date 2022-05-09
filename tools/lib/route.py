@@ -8,9 +8,9 @@ from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
 from tools.lib.helpers import RE
 
-QLOG_FILENAMES = ['qlog.bz2']
+QLOG_FILENAMES = ['qlog', 'qlog.bz2']
 QCAMERA_FILENAMES = ['qcamera.ts']
-LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2']
+LOG_FILENAMES = ['rlog', 'rlog.bz2', 'raw_log.bz2']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']

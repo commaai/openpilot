@@ -468,6 +468,10 @@ class Tici(HardwareBase):
     sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor")
     sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu4/governor")
 
+    # *** VIDC (encoder) config ***
+    sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
+    sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
+
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 

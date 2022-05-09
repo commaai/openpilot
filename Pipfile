@@ -82,6 +82,7 @@ tqdm = "*"
 urllib3 = "*"
 utm = "*"
 websocket_client = "*"
+hatanaka = "*"
 
 [requires]
 python_version = "3.8"
