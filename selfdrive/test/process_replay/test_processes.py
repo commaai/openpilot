@@ -204,6 +204,6 @@ if __name__ == "__main__":
   if upload:
     with open(REF_COMMIT_FN, "w") as f:
       f.write(cur_commit)
-    print(f"\n\nUpdated refs. New ref commit: {ref_commit}")
+    print(f"\n\nUpdated reference logs for commit: {ref_commit}")
 
   sys.exit(int(failed))
