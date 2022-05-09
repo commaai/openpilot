@@ -134,7 +134,7 @@ if __name__ == "__main__":
   upload = args.update_refs or args.upload_only
 
   if upload:
-    assert full_test, "Can't whitelist or blacklist when uploading logs"
+    assert full_test, "Need to run full test when updating refs"
 
   try:
     ref_commit = open(REF_COMMIT_FN).read().strip()
@@ -177,12 +177,12 @@ if __name__ == "__main__":
         cmp_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
         results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
 
-        # save logs so we can upload on process replay failure
+        # save logs so we can upload when updating refs
         save_log(cur_log_fn, log_msgs)
 
       if upload:
+        print(f'Uploading: {os.path.basename(cur_log_fn)}')
         assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
-        print(f'Uploading: {cur_log_fn}')
         upload_file(cur_log_fn, os.path.basename(cur_log_fn))
         os.remove(cur_log_fn)
 
