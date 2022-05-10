@@ -4,8 +4,9 @@
 
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/gpio.h"
 
-BMX055_Accel::BMX055_Accel(I2CBus *bus) : I2CSensor(bus) {}
+BMX055_Accel::BMX055_Accel(I2CBus *bus, int gpio_nr) : I2CSensor(bus), gpio_nr(gpio_nr) {}
 
 int BMX055_Accel::init() {
   int ret = 0;
@@ -19,6 +20,23 @@ int BMX055_Accel::init() {
 
   if(buffer[0] != BMX055_ACCEL_CHIP_ID) {
     LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], BMX055_ACCEL_CHIP_ID);
+    ret = -1;
+    goto fail;
+  }
+
+  // assumed to be exported on boot
+  if (gpio_init(gpio_nr, false) != 0) {
+    ret = -1;
+    goto fail;
+  }
+
+  if (gpio_set_edge(gpio_nr, EDGE_TYPES::rising) != 0) {
+    ret = -1;
+    goto fail;
+  }
+
+  gpio_fd = gpio_get_ro_value_fd(gpio_nr);
+  if (gpio_fd < 0) {
     ret = -1;
     goto fail;
   }
@@ -39,19 +57,16 @@ int BMX055_Accel::init() {
     goto fail;
   }
 
-  // map data ready interrupt to pin INT1 (GPIO 21)
   ret = set_register(BMX055_ACCEL_I2C_REG_INT_MAP_1, BMX055_ACCEL_DATA_TO_INT1);
   if (ret < 0) {
     goto fail;
   }
 
-  // set to filtered mode, slow mode
   ret = set_register(BMX055_ACCEL_I2C_REG_INT_SRC, BMX055_ACCEL_INT_SRC_FILTERED);
   if (ret < 0) {
     goto fail;
   }
 
-  // enabled new data ready interrupt
   ret = set_register(BMX055_ACCEL_I2C_REG_INT_EN_1, BMX055_ACCEL_DATA_EN);
   if (ret < 0) {
     goto fail;
