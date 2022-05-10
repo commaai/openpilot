@@ -5,11 +5,12 @@
 
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/gpio.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
 
-LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus) : I2CSensor(bus) {}
+LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr) : I2CSensor(bus), gpio_nr(gpio_nr) {}
 
 int LSM6DS3_Gyro::init() {
   int ret = 0;
@@ -31,18 +32,47 @@ int LSM6DS3_Gyro::init() {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
+  // assumed to be exported on boot
+  if (gpio_init(gpio_nr, false) != 0) {
+    ret = -1;
+    goto fail;
+  }
+
+  if (gpio_set_edge(gpio_nr, EDGE_TYPES::rising) != 0) {
+    ret = -1;
+    goto fail;
+  }
+
+  gpio_fd = gpio_get_ro_value_fd(gpio_nr);
+  if (gpio_fd < 0) {
+    ret = -1;
+    goto fail;
+  }
+
   // TODO: set scale. Default is +- 250 deg/s
   ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, LSM6DS3_GYRO_ODR_104HZ);
   if (ret < 0) {
     goto fail;
   }
 
+  // enable data ready interrupt for gyro on INT1
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, LSM6DS3_ACCEL_INT1_DRDY_G);
+  if (ret < 0) {
+    goto fail;
+  }
 
 fail:
   return ret;
 }
 
 void LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event) {
+
+  // INT1 shared with accel, check STATUS_REG who triggered
+  uint8_t status_reg = 0;
+  read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
+  if ((status_reg & LSM6DS3_ACCEL_DRDY_GDA) == 0) {
+    return;
+  }
 
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
