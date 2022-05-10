@@ -31,14 +31,15 @@
 
 #define BMX055_GYRO_BW_116HZ 0b0010
 
-#define BMX055_GYRO_DATA_EN         0b10000000
-#define BMX055_GYRO_DATA_TO_INT3    0b00000001
+#define BMX055_GYRO_DATA_EN         (1 << 7)
+#define BMX055_GYRO_DATA_TO_INT3    0b1
 
 
 class BMX055_Gyro : public I2CSensor {
+  int gpio_nr;
   uint8_t get_device_address() {return BMX055_GYRO_I2C_ADDR;}
 public:
-  BMX055_Gyro(I2CBus *bus);
+  BMX055_Gyro(I2CBus *bus, int gpio_nr);
   int init();
-  void get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(cereal::SensorEventData::Builder &event);
 };

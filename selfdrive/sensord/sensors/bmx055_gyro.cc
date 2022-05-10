@@ -4,11 +4,12 @@
 #include <cmath>
 
 #include "common/swaglog.h"
+#include "common/gpio.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
 
-BMX055_Gyro::BMX055_Gyro(I2CBus *bus) : I2CSensor(bus) {}
+BMX055_Gyro::BMX055_Gyro(I2CBus *bus, int gpio_nr) : I2CSensor(bus), gpio_nr(gpio_nr) {}
 
 int BMX055_Gyro::init() {
   int ret = 0;
@@ -22,6 +23,23 @@ int BMX055_Gyro::init() {
 
   if(buffer[0] != BMX055_GYRO_CHIP_ID) {
     LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], BMX055_GYRO_CHIP_ID);
+    ret = -1;
+    goto fail;
+  }
+
+  // assumed to be exported on boot
+  if (gpio_init(gpio_nr, false) != 0) {
+    ret = -1;
+    goto fail;
+  }
+
+  if (gpio_set_edge(gpio_nr, Edgetypes::Rising) != 0) {
+    ret = -1;
+    goto fail;
+  }
+
+  gpio_fd = gpio_get_ro_value_fd(gpio_nr);
+  if (gpio_fd < 0) {
     ret = -1;
     goto fail;
   }
@@ -66,7 +84,7 @@ fail:
   return ret;
 }
 
-void BMX055_Gyro::get_event(cereal::SensorEventData::Builder &event) {
+bool BMX055_Gyro::get_event(cereal::SensorEventData::Builder &event) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
   int len = read_register(BMX055_GYRO_I2C_REG_RATE_X_LSB, buffer, sizeof(buffer));
@@ -89,4 +107,5 @@ void BMX055_Gyro::get_event(cereal::SensorEventData::Builder &event) {
   svec.setV(xyz);
   svec.setStatus(true);
 
+  return true;
 }
