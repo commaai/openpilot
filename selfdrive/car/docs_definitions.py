@@ -96,10 +96,14 @@ class CarInfo:
     self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
 
   @no_type_check
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
+  def get_column(self, column: Column, star_icon: str, footnote_tag: str, harness: bool = False) -> str:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
-      item = star_icon.format(item.value)
+      if harness:
+        harness_name = ("Harness: " + self.harness.value.name) if self.harness is not None and column == Column.MAINTAINED else ""
+        item = star_icon.format(harness_name, item.value)
+      else:
+        item = star_icon.format(item.value)
 
     footnote = get_footnote(self.footnotes, column)
     if footnote is not None:
