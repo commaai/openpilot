@@ -9,7 +9,7 @@
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
 
-BMX055_Gyro::BMX055_Gyro(I2CBus *bus) : I2CSensor(bus) {}
+BMX055_Gyro::BMX055_Gyro(I2CBus *bus, int gpio_nr) : I2CSensor(bus), gpio_nr(gpio_nr) {}
 
 int BMX055_Gyro::init() {
   int ret = 0;
