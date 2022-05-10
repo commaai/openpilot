@@ -7,7 +7,7 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, Codec codec)
+VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec)
   : remuxing(remuxing) {
   vid_path = util::string_format("%s/%s", path, filename);
   lock_path = util::string_format("%s/%s.lock", path, filename);
@@ -18,15 +18,15 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
 
   LOGD("encoder_open %s remuxing:%d", this->vid_path.c_str(), this->remuxing);
   if (this->remuxing) {
-    avformat_alloc_output_context2(&this->ofmt_ctx, NULL, codec == RAW ? "matroska" : NULL, this->vid_path.c_str());
+    avformat_alloc_output_context2(&this->ofmt_ctx, NULL, codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS ? "matroska" : NULL, this->vid_path.c_str());
     assert(this->ofmt_ctx);
 
     // set codec correctly. needed?
     av_register_all();
 
     AVCodec *avcodec = NULL;
-    assert(codec != HEVC);
-    avcodec = avcodec_find_encoder((codec == RAW) ? AV_CODEC_ID_FFVHUFF : AV_CODEC_ID_H264);
+    assert(codec != cereal::EncodeIndex::Type::FULL_H_E_V_C);
+    avcodec = avcodec_find_encoder((codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS) ? AV_CODEC_ID_FFVHUFF : AV_CODEC_ID_H264);
     assert(avcodec);
 
     this->codec_ctx = avcodec_alloc_context3(avcodec);
@@ -36,13 +36,13 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
     this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
     this->codec_ctx->time_base = (AVRational){ 1, fps };
 
-    if (codec == RAW) {
+    if (codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS) {
       // without this, there's just noise
       int err = avcodec_open2(this->codec_ctx, avcodec, NULL);
       assert(err >= 0);
     }
 
-    this->out_stream = avformat_new_stream(this->ofmt_ctx, codec == RAW ? avcodec : NULL);
+    this->out_stream = avformat_new_stream(this->ofmt_ctx, codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS ? avcodec : NULL);
     assert(this->out_stream);
 
     int err = avio_open(&this->ofmt_ctx->pb, this->vid_path.c_str(), AVIO_FLAG_WRITE);

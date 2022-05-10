@@ -18,13 +18,12 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   auto event = msg.initEvent(true);
   auto edat = (e->type == DriverCam) ? event.initDriverEncodeData() :
     ((e->type == WideRoadCam) ? event.initWideRoadEncodeData() :
-    (e->codec == HEVC ? event.initRoadEncodeData() : event.initQRoadEncodeData()));
+    (e->in_width == e->out_width ? event.initRoadEncodeData() : event.initQRoadEncodeData()));
   auto edata = edat.initIdx();
   edata.setFrameId(extra.frame_id);
   edata.setTimestampSof(extra.timestamp_sof);
   edata.setTimestampEof(extra.timestamp_eof);
-  edata.setType(e->codec == RAW ? cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS :
-    (e->codec == HEVC ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264));
+  edata.setType(e->codec);
   edata.setEncodeId(idx);
   edata.setSegmentNum(segment_num);
   edata.setSegmentId(idx);
@@ -45,7 +44,7 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
 
 // TODO: writing should be moved to loggerd
 void VideoEncoder::write_handler(VideoEncoder *e, const char *path) {
-  VideoWriter writer(path, e->filename, e->codec != HEVC, e->out_width, e->out_height, e->fps, e->codec);
+  VideoWriter writer(path, e->filename, e->codec != cereal::EncodeIndex::Type::FULL_H_E_V_C, e->out_width, e->out_height, e->fps, e->codec);
 
   bool first = true;
   kj::Array<capnp::word>* out_buf;

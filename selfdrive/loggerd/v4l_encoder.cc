@@ -148,7 +148,7 @@ void V4LEncoder::encoder_init() {
         // downscales are free with v4l
         .width = (unsigned int)out_width,
         .height = (unsigned int)out_height,
-        .pixelformat = (codec == HEVC) ? V4L2_PIX_FMT_HEVC : V4L2_PIX_FMT_H264,
+        .pixelformat = (codec == cereal::EncodeIndex::Type::FULL_H_E_V_C) ? V4L2_PIX_FMT_HEVC : V4L2_PIX_FMT_H264,
         .field = V4L2_FIELD_ANY,
         .colorspace = V4L2_COLORSPACE_DEFAULT,
       }
@@ -202,7 +202,7 @@ void V4LEncoder::encoder_init() {
     }
   }
 
-  if (codec == HEVC) {
+  if (codec == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
     struct v4l2_control ctrls[] = {
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_PROFILE, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_PROFILE_MAIN},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_TIER_LEVEL, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_LEVEL_HIGH_TIER_LEVEL_5},

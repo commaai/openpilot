@@ -15,7 +15,7 @@
 class VideoEncoder {
 public:
   VideoEncoder(const char* filename, CameraType type, int in_width, int in_height, int fps,
-              int bitrate, Codec codec, int out_width, int out_height, bool write)
+              int bitrate, cereal::EncodeIndex::Type codec, int out_width, int out_height, bool write)
   : filename(filename), type(type), in_width(in_width), in_height(in_height), fps(fps),
     bitrate(bitrate), codec(codec), out_width(out_width), out_height(out_height), write(write) { }
   virtual ~VideoEncoder();
@@ -45,7 +45,7 @@ protected:
   int in_width, in_height;
   int out_width, out_height, fps;
   int bitrate;
-  Codec codec;
+  cereal::EncodeIndex::Type codec;
   CameraType type;
 
 private:

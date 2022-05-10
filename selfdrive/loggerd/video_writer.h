@@ -6,11 +6,11 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-enum Codec { H264, HEVC, RAW };
+#include "cereal/messaging/messaging.h"
 
 class VideoWriter {
 public:
-  VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, Codec codec);
+  VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec);
   void write(uint8_t *data, int len, long long timestamp, bool codecconfig, bool keyframe);
   ~VideoWriter();
 private:
