@@ -10,7 +10,7 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-STATIC_TORQUE_MAX_FRAMES = 500
+STATIC_TORQUE_MAX_FRAMES = 450
 
 
 class CarController:
