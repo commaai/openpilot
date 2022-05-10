@@ -7,20 +7,8 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     ((name == "qRoadEncodeData") ? qcam_info : cameras_logged[0]));
   if (!cam_info.record) return 0; // TODO: handle this by not subscribing
 
-  int bytes_count = 0;
-
-  // TODO: AlignedBuffer is making a copy and allocing
-  //AlignedBuffer aligned_buf;
-  //capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg->getData(), msg->getSize()));
-  capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize()));
-  auto event = cmsg.getRoot<cereal::Event>();
-  auto edata = (name == "driverEncodeData") ? event.getDriverEncodeData() :
-    ((name == "wideRoadEncodeData") ? event.getWideRoadEncodeData() :
-    ((name == "qRoadEncodeData") ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
-  auto idx = edata.getIdx();
-  auto flags = idx.getFlags();
-
   // rotation happened, process the queue (happens before the current message)
+  int bytes_count = 0;
   if (re.logger_segment != s->rotate_segment) {
     re.logger_segment = s->rotate_segment;
     for (auto &qmsg: re.q) {
@@ -28,6 +16,15 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     }
     re.q.clear();
   }
+
+  // extract the message
+  capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize()));
+  auto event = cmsg.getRoot<cereal::Event>();
+  auto edata = (name == "driverEncodeData") ? event.getDriverEncodeData() :
+    ((name == "wideRoadEncodeData") ? event.getWideRoadEncodeData() :
+    ((name == "qRoadEncodeData") ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
+  auto idx = edata.getIdx();
+  auto flags = idx.getFlags();
 
   if (!re.writer) {
     // only create on iframe
@@ -38,9 +35,8 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         re.dropped_frames = 0;
       }
       re.writer.reset(new VideoWriter(s->segment_path,
-        cam_info.filename, !cam_info.is_h265,
-        cam_info.frame_width, cam_info.frame_height,
-        cam_info.fps, cam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264));
+        cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
+        cam_info.frame_width, cam_info.frame_height, cam_info.fps, idx.getType()));
       // write the header
       auto header = edata.getHeader();
       re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
@@ -74,8 +70,10 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     if (name == "roadEncodeData") { evt.setRoadEncodeIdx(idx); }
     auto new_msg = bmsg.toBytes();
     logger_log(&s->logger, (uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
-    delete msg;
     bytes_count += new_msg.size();
+
+    // this frees the message
+    delete msg;
   }
 
   return bytes_count;

@@ -1,6 +1,6 @@
 #include "selfdrive/loggerd/loggerd.h"
 #include "selfdrive/loggerd/remote_encoder.h"
-bool USE_REMOTE_ENCODER = false;
+bool env_remote_encoder = getenv("REMOTE_ENCODER") != NULL;
 
 ExitHandler do_exit;
 
@@ -202,7 +202,7 @@ void loggerd_thread() {
 
   // subscribe to all socks
   for (const auto& it : services) {
-    const bool encoder = USE_REMOTE_ENCODER & (strcmp(it.name+strlen(it.name)-strlen("EncodeData"), "EncodeData") == 0);
+    const bool encoder = env_remote_encoder && (strcmp(it.name+strlen(it.name)-strlen("EncodeData"), "EncodeData") == 0);
     if (!it.should_log && !encoder) continue;
     LOGD("logging %s (on port %d)", it.name, it.port);
 
@@ -228,7 +228,11 @@ void loggerd_thread() {
   std::vector<std::thread> encoder_threads;
   for (const auto &cam : cameras_logged) {
     if (cam.enable) {
-      encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
+      if (env_remote_encoder) {
+        if (cam.has_qcamera) { s.max_waiting++; }
+      } else {
+        encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
+      }
       if (cam.trigger_rotate) s.max_waiting++;
     }
   }
