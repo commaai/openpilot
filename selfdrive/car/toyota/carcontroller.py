@@ -63,7 +63,7 @@ class CarController:
       self.static_torque_counter = 0
 
     if self.static_torque_counter > STATIC_TORQUE_MAX_FRAMES:
-      apply_steer += 1
+      apply_steer += 1 if apply_steer < 0 else -1  # TODO: this isn't quite correct
       self.static_torque_counter = 0
 
     self.steer_rate_limited = new_steer != apply_steer
