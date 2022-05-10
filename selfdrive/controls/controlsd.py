@@ -562,6 +562,8 @@ class Controls:
     if not CC.longActive:
       self.LoC.reset(v_pid=CS.vEgo)
 
+    controlsState = log.ControlsState.new_message()
+
     if not self.joystick_mode:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
@@ -576,10 +578,10 @@ class Controls:
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, params,
                                                                              self.last_actuators, desired_curvature,
                                                                              desired_curvature_rate, self.sm['liveLocationKalman'])
-      controlsState = log.ControlsState.new_message(desiredCurvature=desired_curvature, desiredCurvatureRate=desired_curvature_rate)
+      controlsState.controlsState.desiredCurvature = desired_curvature
+      controlsState.controlsState.desiredCurvatureRate = desired_curvature_rate
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
-      controlsState = log.ControlsState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
         if CC.longActive:
           actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
@@ -628,7 +630,7 @@ class Controls:
       if b.type.raw in self.button_timers:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
 
-  def publish_logs(self, CS, CC, controlsState, lac_log, start_time):
+  def publish_logs(self, CS, CC, controlsState, start_time, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
     # Orientation and angle rates can be useful for carcontroller
@@ -801,7 +803,7 @@ class Controls:
     self.prof.checkpoint("State Control")
 
     # Publish data
-    self.publish_logs(CS, CC, controlsState, lac_log, start_time)
+    self.publish_logs(CS, CC, controlsState, start_time, lac_log)
     self.prof.checkpoint("Sent")
 
     self.update_button_timers(CS.buttonEvents)
