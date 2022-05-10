@@ -17,9 +17,9 @@
   #define GPIO_STM_BOOT0        0
 #endif
 
-enum EDGE_TYPES { rising, falling, both, none };
+enum Edgetypes { Rising, Falling, Both, None };
 
 int gpio_init(int pin_nr, bool output);
 int gpio_set(int pin_nr, bool high);
-int gpio_set_edge(int pin_nr, EDGE_TYPES etype);
+int gpio_set_edge(int pin_nr, Edgetypes etype);
 int gpio_get_ro_value_fd(int pin_nr);
