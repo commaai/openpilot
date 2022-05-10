@@ -76,7 +76,6 @@ class CarInfo:
       Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
       Column.FSR_STEERING: min_steer_speed <= 0.,
       Column.STEERING_TORQUE: self.good_torque,
-      # TODO: when all harnesses are added, add check to maintained
       Column.MAINTAINED: CP.carFingerprint not in non_tested_cars and self.harness is not None,
     }
 
@@ -96,14 +95,14 @@ class CarInfo:
     self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
 
   @no_type_check
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str, harness: bool = False) -> str:
+  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
-      if harness:
-        harness_name = ("Harness: " + self.harness.value.name) if self.harness is not None and column == Column.MAINTAINED else ""
-        item = star_icon.format(harness_name, item.value)
+      # add harness tooltip to actively maintained star
+      if column == Column.MAINTAINED and self.harness is not None:
+        item = star_icon.format("Harness: " + self.harness.value.name, item.value)
       else:
-        item = star_icon.format(item.value)
+        item = star_icon.format("", item.value)
 
     footnote = get_footnote(self.footnotes, column)
     if footnote is not None:

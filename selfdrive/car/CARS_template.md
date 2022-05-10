@@ -44,7 +44,7 @@ How We Rate The Cars
 |{{Column | map(attribute='value') | join('|')}}|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
 {% for car_info in cars %}
-|{% for column in Column %}{{car_info.get_column(column, star_icon_harness, footnote_tag, harness=True)}}|{% endfor %}
+|{% for column in Column %}{{car_info.get_column(column, star_icon_harness, footnote_tag)}}|{% endfor %}
 
 {% endfor %}
 
