@@ -14,7 +14,11 @@
 
 class VideoEncoder {
 public:
-  virtual ~VideoEncoder() {}
+  VideoEncoder(const char* filename, CameraType type, int in_width, int in_height, int fps,
+              int bitrate, Codec codec, int out_width, int out_height, bool write)
+  : filename(filename), type(type), in_width(in_width), in_height(in_height), fps(fps),
+    bitrate(bitrate), codec(codec), out_width(out_width), out_height(out_height), write(write) { }
+  virtual ~VideoEncoder();
   virtual int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                            int in_width, int in_height, VisionIpcBufExtra *extra) = 0;
   virtual void encoder_open(const char* path) = 0;
@@ -38,7 +42,9 @@ public:
 protected:
   bool write;
   const char* filename;
-  int width, height, fps;
+  int in_width, in_height;
+  int out_width, out_height, fps;
+  int bitrate;
   Codec codec;
   CameraType type;
 

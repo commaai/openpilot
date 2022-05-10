@@ -1,11 +1,13 @@
 #include <cassert>
 #include "selfdrive/loggerd/encoder.h"
 
+VideoEncoder::~VideoEncoder() {}
+
 void VideoEncoder::publisher_init() {
   // publish
   service_name = this->type == DriverCam ? "driverEncodeData" :
     (this->type == WideRoadCam ? "wideRoadEncodeData" :
-    (this->width == 1928 ? "roadEncodeData" : "qRoadEncodeData"));
+    (this->in_width == this->out_width ? "roadEncodeData" : "qRoadEncodeData"));
   pm.reset(new PubMaster({service_name}));
 }
 
@@ -43,7 +45,7 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
 
 // TODO: writing should be moved to loggerd
 void VideoEncoder::write_handler(VideoEncoder *e, const char *path) {
-  VideoWriter writer(path, e->filename, e->codec != HEVC, e->width, e->height, e->fps, e->codec);
+  VideoWriter writer(path, e->filename, e->codec != HEVC, e->out_width, e->out_height, e->fps, e->codec);
 
   bool first = true;
   kj::Array<capnp::word>* out_buf;
@@ -53,7 +55,7 @@ void VideoEncoder::write_handler(VideoEncoder *e, const char *path) {
 
     auto edata = (e->type == DriverCam) ? event.getDriverEncodeData() :
       ((e->type == WideRoadCam) ? event.getWideRoadEncodeData() :
-      (e->width == 1928 ? event.getRoadEncodeData() : event.getQRoadEncodeData()));
+      (e->in_width == e->out_width ? event.getRoadEncodeData() : event.getQRoadEncodeData()));
     auto idx = edata.getIdx();
     auto flags = idx.getFlags();
 

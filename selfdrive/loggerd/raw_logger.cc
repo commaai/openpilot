@@ -24,19 +24,7 @@ extern "C" {
 
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
-RawLogger::RawLogger(const char* filename, CameraType type, int in_width, int in_height, int fps,
-                     int bitrate, bool h265, int out_width, int out_height, bool write)
-  : in_width_(in_width), in_height_(in_height) {
-
-  // TODO: this are on the VideoEncoder class
-  this->write = write;
-  this->filename = filename;
-  this->fps = fps;
-  this->width = out_width;
-  this->height = out_height;
-  this->codec = RAW;
-  this->type = type;
-
+void RawLogger::encoder_init() {
   frame = av_frame_alloc();
   assert(frame);
   frame->format = AV_PIX_FMT_YUV420P;
@@ -81,9 +69,9 @@ void RawLogger::encoder_close() {
 }
 
 int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                            int in_width, int in_height, VisionIpcBufExtra *extra) {
-  assert(in_width == this->in_width_);
-  assert(in_height == this->in_height_);
+                            int in_width_, int in_height_, VisionIpcBufExtra *extra) {
+  assert(in_width_ == this->in_width);
+  assert(in_height_ == this->in_height);
 
   if (downscale_buf.size() > 0) {
     uint8_t *out_y = downscale_buf.data();

@@ -267,7 +267,7 @@ void V4LEncoder::encoder_open(const char* path) {
 }
 
 int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                  int in_width, int in_height, VisionIpcBufExtra *extra) {
+                  int in_width_, int in_height_, VisionIpcBufExtra *extra) {
   assert(in_width == in_width_);
   assert(in_height == in_height_);
   assert(is_open);
