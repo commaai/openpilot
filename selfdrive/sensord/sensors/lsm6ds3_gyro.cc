@@ -5,6 +5,7 @@
 
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/gpio.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
