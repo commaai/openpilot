@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
@@ -24,11 +25,16 @@ class CAR:
   ALTIMA = "NISSAN ALTIMA 2020"
 
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.XTRAIL: CarInfo("Nissan X-Trail 2017", "ProPILOT"),
-  CAR.LEAF: CarInfo("Nissan Leaf 2018-22", "ProPILOT"),
-  CAR.ROGUE: CarInfo("Nissan Rogue 2018-20", "ProPILOT"),
-  CAR.ALTIMA: CarInfo("Nissan Altima 2019-20", "ProPILOT"),
+@dataclass
+class NissanCarInfo(CarInfo):
+  package: str = "ProPILOT"
+
+
+CAR_INFO: Dict[str, Union[NissanCarInfo, List[NissanCarInfo]]] = {
+  CAR.XTRAIL: NissanCarInfo("Nissan X-Trail 2017"),
+  CAR.LEAF: NissanCarInfo("Nissan Leaf 2018-22"),
+  CAR.ROGUE: NissanCarInfo("Nissan Rogue 2018-20"),
+  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20"),
 }
 
 FINGERPRINTS = {
