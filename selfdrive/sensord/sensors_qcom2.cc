@@ -3,10 +3,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
-
-// TODO: check if really needed
 #include <poll.h>
-#include <fcntl.h>
 
 #include "cereal/messaging/messaging.h"
 #include "common/i2c.h"
@@ -28,6 +25,57 @@
 #define I2C_BUS_IMU 1
 
 ExitHandler do_exit;
+std::mutex pm_mutex;
+
+void interrupt_loop(std::vector<Sensor *>& gpio_sensors, PubMaster& pm) {
+
+  int cnt_sensors = gpio_sensors.size();
+  std::unique_ptr<struct pollfd[]> fd_list(new struct pollfd[cnt_sensors]);
+
+  for (int i = 0; i < cnt_sensors; ++i) {
+    fd_list[i].fd = gpio_sensors[i]->gpio_fd;
+    fd_list[i].events = POLLPRI;
+  }
+
+  while (!do_exit) {
+    // events are received at 2kHz frequency, the bandwidth devider returns in
+    // case of 125Hz 7 times the same data, this needs to be filtered, or hanled
+    // smart in other way
+
+    // TODO: check here also for epoll? might have a nicer interface
+    int err = poll(fd_list.get(), cnt_sensors, -1); // no timeout
+    if (err == -1) {
+      return;
+    }
+
+    MessageBuilder msg;
+    auto orphanage = msg.getOrphanage();
+    std::vector<capnp::Orphan<cereal::SensorEventData>> collected_events;
+    collected_events.reserve(cnt_sensors);
+
+    for (int i = 0; i < cnt_sensors; ++i) {
+      if ((fd_list[i].revents & POLLPRI) == 0) {
+        continue;
+      }
+
+      auto orphan = orphanage.newOrphan<cereal::SensorEventData>();
+      auto event = orphan.get();
+      if (gpio_sensors[i]->get_event(event)) {
+        // only send collected events
+        collected_events.push_back(kj::mv(orphan));
+      }
+    }
+
+    auto events = msg.initEvent().initSensorEvents(collected_events.size());
+    for (int i = 0; i < collected_events.size(); ++i) {
+      events.adoptWithCaveats(i, kj::mv(collected_events[i]));
+    }
+
+    pm_mutex.lock();
+    pm.send("sensorEvents", msg);
+    pm_mutex.unlock();
+  }
+}
 
 int sensor_loop() {
   I2CBus *i2c_bus_imu;
@@ -39,13 +87,13 @@ int sensor_loop() {
     return -1;
   }
 
-  BMX055_Accel bmx055_accel(i2c_bus_imu);
-  BMX055_Gyro bmx055_gyro(i2c_bus_imu);
+  BMX055_Accel bmx055_accel(i2c_bus_imu, 21);
+  BMX055_Gyro bmx055_gyro(i2c_bus_imu, 23);
   BMX055_Magn bmx055_magn(i2c_bus_imu);
   BMX055_Temp bmx055_temp(i2c_bus_imu);
 
-  LSM6DS3_Accel lsm6ds3_accel(i2c_bus_imu);
-  LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu);
+  LSM6DS3_Accel lsm6ds3_accel(i2c_bus_imu, 84);
+  LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu, 84);
   LSM6DS3_Temp lsm6ds3_temp(i2c_bus_imu);
 
   MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu);
@@ -54,95 +102,64 @@ int sensor_loop() {
 
   // Sensor init
   std::vector<std::pair<Sensor *, bool>> sensors_init; // Sensor, required
-  //sensors_init.push_back({&bmx055_accel, false});
-  //sensors_init.push_back({&bmx055_gyro, false});
+  sensors_init.push_back({&bmx055_accel, false});
+  sensors_init.push_back({&bmx055_gyro, false});
   sensors_init.push_back({&bmx055_magn, false});
-  //sensors_init.push_back({&bmx055_temp, false});
+  sensors_init.push_back({&bmx055_temp, false}); // TODO: read with interrupt gyro
 
-  //sensors_init.push_back({&lsm6ds3_accel, true});
-  //sensors_init.push_back({&lsm6ds3_gyro, true});
-  //sensors_init.push_back({&lsm6ds3_temp, true});
+  sensors_init.push_back({&lsm6ds3_accel, true});
+  sensors_init.push_back({&lsm6ds3_gyro, true});
+  sensors_init.push_back({&lsm6ds3_temp, true}); // TODO: read with interrupt gyro
 
-  //sensors_init.push_back({&mmc5603nj_magn, false});
+  sensors_init.push_back({&mmc5603nj_magn, false});
 
-  //sensors_init.push_back({&light, true});
+  sensors_init.push_back({&light, true});
 
   bool has_magnetometer = false;
 
   // Initialize sensors
   std::vector<Sensor *> sensors;
+  std::vector<Sensor *> interrupt_sensors;
   for (auto &sensor : sensors_init) {
     int err = sensor.first->init();
     if (err < 0) {
       // Fail on required sensors
       if (sensor.second) {
         LOGE("Error initializing sensors");
-        //return -1;
+        delete i2c_bus_imu;
+        return -1;
       }
     } else {
       if (sensor.first == &bmx055_magn || sensor.first == &mmc5603nj_magn) {
         has_magnetometer = true;
       }
-      sensors.push_back(sensor.first);
+
+      // split between interrupt read sensors and non
+      if (sensor.first->gpio_fd != -1) {
+        interrupt_sensors.push_back(sensor.first);
+      }
+      else {
+        sensors.push_back(sensor.first);
+      }
     }
   }
 
   if (!has_magnetometer) {
     LOGE("No magnetometer present");
-    //return -1;
+    delete i2c_bus_imu;
+    return -1;
   }
 
   PubMaster pm({"sensorEvents"});
 
+  // thread for reading events via interrupts
+  std::thread interrupt_thread(&interrupt_loop, std::ref(interrupt_sensors), std::ref(pm));
 
+  // polling loop for non interrupt handled sensors
+  while (!do_exit) {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-  const int num_events = sensors.size();
-
-  struct pollfd fdlist[3];
-
-  // assumed to be configured as exported, defined as input and trigger on raising edge
-  // TODO: cleanUp but works for now
-  int fd_accel = open("/sys/class/gpio/gpio21/value", O_RDONLY);
-  if (fd_accel < 0) { LOGE("FD ACCEL failed"); return 0; }
-  int fd_gyro  = open("/sys/class/gpio/gpio23/value", O_RDONLY);
-  if (fd_gyro < 0)  { LOGE("FD GYRO failed"); return 0; }
-  int fd_magn  = open("/sys/class/gpio/gpio87/value", O_RDONLY);
-  if (fd_magn < 0)  { LOGE("FD MAGN failed"); return 0; }
-
-  fdlist[0].fd = fd_accel;
-  fdlist[0].events = POLLPRI;
-
-  fdlist[1].fd = fd_gyro;
-  fdlist[1].events = POLLPRI;
-
-  fdlist[2].fd = fd_magn;
-  fdlist[2].events = POLLPRI;
-
-  uint64_t start_time = nanos_since_boot();
-  uint64_t f_avg = 0;
-  uint64_t a_cnt = 0;
-
-  while (1) {
-    int err;
-
-    /* events are received at 2kHz frequency, the bandwidth devider returns in the case of 125Hz
-       7 times the same data, this needs to be filtered or handled smart */
-    err = poll(fdlist, 3, -1);
-    if (-1 == err) {
-      return -1;
-    }
-
-    // TODO: check which interrupt triggered using revents
-
-    // timing measurement
-    uint64_t int_time = nanos_since_boot();
-    f_avg += int_time - start_time;
-    a_cnt++;
-    LOGE("t: %lu, %lu", int_time - start_time, f_avg/a_cnt);
-    start_time = int_time;
-
-    // we dont read from the fd as its reset automatically after 50us
-    // so we directly create the message and publish it
+    const int num_events = sensors.size();
     MessageBuilder msg;
     auto sensor_events = msg.initEvent().initSensorEvents(num_events);
 
@@ -151,8 +168,16 @@ int sensor_loop() {
       sensors[i]->get_event(event);
     }
 
+    pm_mutex.lock();
     pm.send("sensorEvents", msg);
+    pm_mutex.unlock();
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
   }
+
+  interrupt_thread.join();
+  delete i2c_bus_imu;
   return 0;
 }
 
