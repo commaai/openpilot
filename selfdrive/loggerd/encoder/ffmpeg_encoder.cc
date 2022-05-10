@@ -1,6 +1,6 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-#include "selfdrive/loggerd/encoder/raw_logger.h"
+#include "selfdrive/loggerd/encoder/ffmpeg_encoder.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -24,7 +24,7 @@ extern "C" {
 
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
-void RawLogger::encoder_init() {
+void FfmpegEncoder::encoder_init() {
   frame = av_frame_alloc();
   assert(frame);
   frame->format = AV_PIX_FMT_YUV420P;
@@ -41,12 +41,12 @@ void RawLogger::encoder_init() {
   publisher_init();
 }
 
-RawLogger::~RawLogger() {
+FfmpegEncoder::~FfmpegEncoder() {
   encoder_close();
   av_frame_free(&frame);
 }
 
-void RawLogger::encoder_open(const char* path) {
+void FfmpegEncoder::encoder_open(const char* path) {
   AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
 
   this->codec_ctx = avcodec_alloc_context3(codec);
@@ -64,14 +64,14 @@ void RawLogger::encoder_open(const char* path) {
   counter = 0;
 }
 
-void RawLogger::encoder_close() {
+void FfmpegEncoder::encoder_close() {
   if (!is_open) return;
   writer_close();
   is_open = false;
 }
 
-int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                            int in_width_, int in_height_, VisionIpcBufExtra *extra) {
+int FfmpegEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                                int in_width_, int in_height_, VisionIpcBufExtra *extra) {
   assert(in_width_ == this->in_width);
   assert(in_height_ == this->in_height);
 

@@ -313,8 +313,8 @@ selfdrive/loggerd/loggerd.h
 selfdrive/loggerd/encoderd.cc
 selfdrive/loggerd/main.cc
 selfdrive/loggerd/bootlog.cc
-selfdrive/loggerd/encoder/raw_logger.cc
-selfdrive/loggerd/encoder/raw_logger.h
+selfdrive/loggerd/encoder/ffmpeg_encoder.cc
+selfdrive/loggerd/encoder/ffmpeg_encoder.h
 
 selfdrive/loggerd/__init__.py
 selfdrive/loggerd/config.py

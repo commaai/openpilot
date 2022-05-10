@@ -28,8 +28,8 @@
 #include "selfdrive/loggerd/encoder/v4l_encoder.h"
 #define Encoder V4LEncoder
 #else
-#include "selfdrive/loggerd/encoder/raw_logger.h"
-#define Encoder RawLogger
+#include "selfdrive/loggerd/encoder/ffmpeg_encoder.h"
+#define Encoder FfmpegEncoder
 #endif
 
 constexpr int MAIN_FPS = 20;

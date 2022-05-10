@@ -9,7 +9,7 @@ src = ['logger.cc', 'loggerd.cc', 'encoder/video_writer.cc', 'remote_encoder.cc'
 if arch == "larch64":
   src += ['encoder/v4l_encoder.cc']
 else:
-  src += ['encoder/raw_logger.cc']
+  src += ['encoder/ffmpeg_encoder.cc']
 
 if arch == "Darwin":
   # fix OpenCL
