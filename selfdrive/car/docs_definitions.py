@@ -96,8 +96,11 @@ class CarInfo:
     self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
 
   @no_type_check
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
+  def get_column(self, column: Column, model_tag: str, star_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
+    if column == Column.MODEL and self.harness is not None:
+      item = model_tag.format(item, f"Harness: {self.harness.value.name}")
+
     if column in StarColumns:
       item = star_icon.format(item.value)
 
@@ -117,6 +120,7 @@ class Harness(Enum):
   fca = HarnessInfo("fca", "FCA")
   vw = HarnessInfo("vw", "VW")
   j533 = HarnessInfo("j533", "J533")
+  hyundai_abababab = HarnessInfo("hyundai-abababab", "Hyundai A")
   hyundai_a = HarnessInfo("hyundai-a", "Hyundai A")
   hyundai_b = HarnessInfo("hyundai-b", "Hyundai B")
   hyundai_c = HarnessInfo("hyundai-c", "Hyundai C")
