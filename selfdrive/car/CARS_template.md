@@ -1,4 +1,3 @@
-{% set model_tag = '[{}](## "{}")' -%}
 {% set footnote_tag = '[<sup>{}</sup>](#footnotes)' -%}
 {% set star_icon = '<a href="#"><img valign="top" src="assets/icon-star-{}.svg" width="22" /></a>' -%}
 
@@ -44,7 +43,7 @@ How We Rate The Cars
 |{{Column | map(attribute='value') | join('|')}}|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
 {% for car_info in cars %}
-|{% for column in Column %}{{car_info.get_column(column, model_tag, star_icon, footnote_tag)}}|{% endfor %}
+|{% for column in Column %}{{car_info.get_column(column, star_icon, footnote_tag)}}|{% endfor %}
 
 {% endfor %}
 
