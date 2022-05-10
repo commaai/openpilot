@@ -143,7 +143,6 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
       kj::arrayPtr<capnp::byte>(pkt.data, (size_t)0), // TODO: get the header
       kj::arrayPtr<capnp::byte>(pkt.data, pkt.size));
 
-    //if (writer) writer->write(pkt.data, pkt.size, pkt.pts, false, pkt.flags & AV_PKT_FLAG_KEY);
     counter++;
   }
   av_packet_unref(&pkt);

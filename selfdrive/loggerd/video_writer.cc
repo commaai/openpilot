@@ -36,6 +36,12 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
     this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
     this->codec_ctx->time_base = (AVRational){ 1, fps };
 
+    if (codec == RAW) {
+      // without this, there's just noise
+      int err = avcodec_open2(this->codec_ctx, avcodec, NULL);
+      assert(err >= 0);
+    }
+
     this->out_stream = avformat_new_stream(this->ofmt_ctx, codec == RAW ? avcodec : NULL);
     assert(this->out_stream);
 
