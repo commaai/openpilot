@@ -22,5 +22,5 @@ public:
   int read_register(uint register_address, uint8_t *buffer, uint8_t len);
   int set_register(uint register_address, uint8_t data);
   virtual int init() = 0;
-  virtual void get_event(cereal::SensorEventData::Builder &event) = 0;
+  virtual bool get_event(cereal::SensorEventData::Builder &event) = 0;
 };

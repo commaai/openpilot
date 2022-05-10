@@ -25,5 +25,5 @@ class MMC5603NJ_Magn : public I2CSensor {
 public:
   MMC5603NJ_Magn(I2CBus *bus);
   int init();
-  void get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(cereal::SensorEventData::Builder &event);
 };

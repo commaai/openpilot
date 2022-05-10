@@ -7,5 +7,5 @@ public:
   int gpio_fd = -1;
   virtual ~Sensor() {};
   virtual int init() = 0;
-  virtual void get_event(cereal::SensorEventData::Builder &event) = 0;
+  virtual bool get_event(cereal::SensorEventData::Builder &event) = 0;
 };

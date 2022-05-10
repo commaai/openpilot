@@ -36,7 +36,7 @@
 
 // Constants
 #define BMX055_MAGN_CHIP_ID     0x32
-#define BMX055_MAGN_FORCED      0b01
+#define BMX055_MAGN_FORCED      (0b01 << 1)
 
 #define BMX055_MAGN_DATA_EN     (1 << 7)
 
@@ -63,5 +63,5 @@ class BMX055_Magn : public I2CSensor{
 public:
   BMX055_Magn(I2CBus *bus);
   int init();
-  void get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(cereal::SensorEventData::Builder &event);
 };

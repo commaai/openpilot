@@ -30,7 +30,7 @@ int BMX055_Accel::init() {
     goto fail;
   }
 
-  if (gpio_set_edge(gpio_nr, EDGE_TYPES::rising) != 0) {
+  if (gpio_set_edge(gpio_nr, Edgetypes::Rising) != 0) {
     ret = -1;
     goto fail;
   }
@@ -76,7 +76,7 @@ int BMX055_Accel::init() {
   return ret;
 }
 
-void BMX055_Accel::get_event(cereal::SensorEventData::Builder &event) {
+bool BMX055_Accel::get_event(cereal::SensorEventData::Builder &event) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
   int len = read_register(BMX055_ACCEL_I2C_REG_X_LSB, buffer, sizeof(buffer));
@@ -99,4 +99,5 @@ void BMX055_Accel::get_event(cereal::SensorEventData::Builder &event) {
   svec.setV(xyz);
   svec.setStatus(true);
 
+  return true;
 }
