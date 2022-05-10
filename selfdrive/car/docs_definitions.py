@@ -120,7 +120,6 @@ class Harness(Enum):
   fca = HarnessInfo("fca", "FCA")
   vw = HarnessInfo("vw", "VW")
   j533 = HarnessInfo("j533", "J533")
-  hyundai_abababab = HarnessInfo("hyundai-abababab", "Hyundai A")
   hyundai_a = HarnessInfo("hyundai-a", "Hyundai A")
   hyundai_b = HarnessInfo("hyundai-b", "Hyundai B")
   hyundai_c = HarnessInfo("hyundai-c", "Hyundai C")
