@@ -13,7 +13,7 @@
 #define BMX055_ACCEL_I2C_REG_HBW    0x13
 #define BMX055_ACCEL_I2C_REG_FIFO   0x3F
 
-#define BMX055_ACCEL_I2C_REG_INT_EN_1      0x17 // enable registers in group 1
+#define BMX055_ACCEL_I2C_REG_INT_EN_1      0x17
 #define BMX055_ACCEL_I2C_REG_INT_MAP_1     0x1A
 #define BMX055_ACCEL_I2C_REG_INT_SRC       0x1E
 
@@ -33,15 +33,16 @@
 #define BMX055_ACCEL_BW_500HZ   0b01110
 #define BMX055_ACCEL_BW_1000HZ  0b01111
 
-#define BMX055_ACCEL_DATA_EN          0b00010000
-#define BMX055_ACCEL_DATA_TO_INT1     0b00000001
-#define BMX055_ACCEL_INT_SRC_FILTERED 0b00000000
+#define BMX055_ACCEL_DATA_EN          0b10000
+#define BMX055_ACCEL_DATA_TO_INT1     0b00001
+#define BMX055_ACCEL_INT_SRC_FILTERED 0b00000
 
 
 class BMX055_Accel : public I2CSensor {
+  int gpio_nr;
   uint8_t get_device_address() {return BMX055_ACCEL_I2C_ADDR;}
 public:
-  BMX055_Accel(I2CBus *bus);
+  BMX055_Accel(I2CBus *bus, int gpio_nr);
   int init();
   void get_event(cereal::SensorEventData::Builder &event);
 };
