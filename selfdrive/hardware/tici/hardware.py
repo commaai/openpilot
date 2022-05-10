@@ -472,6 +472,13 @@ class Tici(HardwareBase):
     sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
     sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
 
+    # *** export GPIO for sensors ***
+    # move to /usr/comma/gpio.sh on next OS update
+    sudo_write("21", "/sys/class/gpio/export")  # BMX ACCEL INT
+    sudo_write("23", "/sys/class/gpio/export")  # BMX GYRO INT
+    sudo_write("87", "/sys/class/gpio/export")  # BMX MAG INT
+    sudo_write("84", "/sys/class/gpio/export")  # LSM INT (ACCEL & GYRO)
+
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
