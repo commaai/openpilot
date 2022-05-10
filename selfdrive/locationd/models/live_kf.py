@@ -20,7 +20,7 @@ def numpy2eigenstring(arr):
   return f"(Eigen::VectorXd({len(arr)}) << {arr_str}).finished()"
 
 
-class States():
+class States:
   ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters
   ECEF_ORIENTATION = slice(3, 7)  # quat for pose of phone in ecef
   ECEF_VELOCITY = slice(7, 10)  # ecef velocity in m/s
@@ -28,6 +28,11 @@ class States():
   GYRO_BIAS = slice(13, 16)  # roll, pitch and yaw biases
   ACCELERATION = slice(16, 19)  # Acceleration in device frame in m/s**2
   ACC_BIAS = slice(19, 22)  # Acceletometer bias in m/s**2
+  CLOCK_BIAS = slice(22, 23)  # clock bias in light-meters,
+  CLOCK_DRIFT = slice(23, 24)  # clock drift in light-meters/s,
+  GLONASS_BIAS = slice(24, 25)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
+  GLONASS_FREQ_SLOPE = slice(25, 26)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
+  CLOCK_ACCELERATION = slice(26, 27)  # clock acceleration in light-meters/s**2,
 
   # Error-state has different slices because it is an ESKF
   ECEF_POS_ERR = slice(0, 3)
@@ -37,9 +42,14 @@ class States():
   GYRO_BIAS_ERR = slice(12, 15)
   ACCELERATION_ERR = slice(15, 18)
   ACC_BIAS_ERR = slice(18, 21)
+  CLOCK_BIAS_ERR = slice(21, 22)
+  CLOCK_DRIFT_ERR = slice(22, 23)
+  GLONASS_BIAS_ERR = slice(23, 24)
+  GLONASS_FREQ_SLOPE_ERR = slice(24, 25)
+  CLOCK_ACCELERATION_ERR = slice(25, 26)
 
-
-class LiveKalman():
+# todo could change name to LiveLocationKalman to match usage in locationd
+class LiveKalman:
   name = 'live'
 
   initial_x = np.array([3.88e6, -3.37e6, 3.76e6,
@@ -48,7 +58,11 @@ class LiveKalman():
                         0, 0, 0,
                         0, 0, 0,
                         0, 0, 0,
-                        0, 0, 0])
+                        0, 0, 0,
+                        0, 0,     # 22,23 CLOCK_BIAS and CLOCK_DRIFT
+                        0, 0,     # 24,25 GLONASS_BIAS GLONASS_FREQ_SLOPE
+                        0])       # 26 CLOCK_ACCELERATION
+
 
   # state covariance
   initial_P_diag = np.array([10**2, 10**2, 10**2,
@@ -57,7 +71,10 @@ class LiveKalman():
                              1**2, 1**2, 1**2,
                              1**2, 1**2, 1**2,
                              100**2, 100**2, 100**2,
-                             0.01**2, 0.01**2, 0.01**2])
+                             0.01**2, 0.01**2, 0.01**2,
+                             1e14, 100**2,  # CLOCK_BIAS and CLOCK_DRIFT
+                             10**2, 1**2,  # GLONASS_BIAS GLONASS_FREQ_SLOPE
+                             0.2**2])  # CLOCK_ACCELERATION
 
   # state covariance when resetting midway in a segment
   reset_orientation_diag = np.array([1**2, 1**2, 1**2])
@@ -73,7 +90,10 @@ class LiveKalman():
                      0.1**2, 0.1**2, 0.1**2,
                      (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
                      3**2, 3**2, 3**2,
-                     0.005**2, 0.005**2, 0.005**2])
+                     0.005**2, 0.005**2, 0.005**2,
+                     .1**2, 0.0**2,  # CLOCK_BIAS and CLOCK_DRIFT
+                     .1**2, .01**2,  # GLONASS_BIAS GLONASS_FREQ_SLOPE
+                     0.005**2])  # CLOCK_ACCELERATION
 
   obs_noise_diag = {ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
                     ObservationKind.PHONE_ACCEL: np.array([.5**2, .5**2, .5**2]),
@@ -102,6 +122,12 @@ class LiveKalman():
     acceleration = state[States.ACCELERATION, :]
     acc_bias = state[States.ACC_BIAS, :]
 
+    cb = state[States.CLOCK_BIAS, :]
+    cd = state[States.CLOCK_DRIFT, :]
+    glonass_bias = state[States.GLONASS_BIAS, :]
+    glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :]
+    ca = state[States.CLOCK_ACCELERATION, :]
+
     dt = sp.Symbol('dt')
 
     # calibration and attitude rotation matrices
@@ -122,6 +148,8 @@ class LiveKalman():
     state_dot[States.ECEF_POS, :] = v
     state_dot[States.ECEF_ORIENTATION, :] = q_dot
     state_dot[States.ECEF_VELOCITY, 0] = quat_rot * acceleration
+    state_dot[States.CLOCK_BIAS, :] = cd
+    state_dot[States.CLOCK_DRIFT, :] = ca
 
     # Basic descretization, 1st order intergrator
     # Can be pretty bad if dt is big
@@ -131,8 +159,10 @@ class LiveKalman():
     state_err = sp.Matrix(state_err_sym)
     quat_err = state_err[States.ECEF_ORIENTATION_ERR, :]
     v_err = state_err[States.ECEF_VELOCITY_ERR, :]
+    cd_err = state_err[States.CLOCK_DRIFT_ERR, :]
     omega_err = state_err[States.ANGULAR_VELOCITY_ERR, :]
     acceleration_err = state_err[States.ACCELERATION_ERR, :]
+    ca_err = state_err[States.CLOCK_ACCELERATION_ERR, :]
 
     # Time derivative of the state error as a function of state error and state
     quat_err_matrix = euler_rotate(quat_err[0], quat_err[1], quat_err[2])
@@ -141,6 +171,8 @@ class LiveKalman():
     state_err_dot[States.ECEF_POS_ERR, :] = v_err
     state_err_dot[States.ECEF_ORIENTATION_ERR, :] = q_err_dot
     state_err_dot[States.ECEF_VELOCITY_ERR, :] = quat_err_matrix * quat_rot * (acceleration + acceleration_err)
+    state_err_dot[States.CLOCK_BIAS_ERR, :] = cd_err
+    state_err_dot[States.CLOCK_DRIFT_ERR, :] = ca_err
     f_err_sym = state_err + dt * state_err_dot
 
     # Observation matrix modifier
@@ -176,6 +208,39 @@ class LiveKalman():
     #
     # Observation functions
     #
+
+    # extra args
+    sat_pos_freq_sym = sp.MatrixSymbol('sat_pos', 4, 1)
+    sat_pos_vel_sym = sp.MatrixSymbol('sat_pos_vel', 6, 1)
+    # sat_los_sym = sp.MatrixSymbol('sat_los', 3, 1) # todo should fix?
+
+    # expand extra args
+    sat_x, sat_y, sat_z, glonass_freq = sat_pos_freq_sym
+    sat_vx, sat_vy, sat_vz = sat_pos_vel_sym[3:]
+
+    h_pseudorange_sym = sp.Matrix([
+      sp.sqrt(
+        (x - sat_x) ** 2 +
+        (y - sat_y) ** 2 +
+        (z - sat_z) ** 2
+      ) + cb[0]
+    ])
+
+    h_pseudorange_glonass_sym = sp.Matrix([
+      sp.sqrt(
+        (x - sat_x) ** 2 +
+        (y - sat_y) ** 2 +
+        (z - sat_z) ** 2
+      ) + cb[0] + glonass_bias[0] + glonass_freq_slope[0] * glonass_freq
+    ])
+
+    los_vector = (sp.Matrix(sat_pos_vel_sym[:3]) - sp.Matrix([x, y, z]))
+    los_vector = los_vector / sp.sqrt(los_vector[0] ** 2 + los_vector[1] ** 2 + los_vector[2] ** 2)
+    h_pseudorange_rate_sym = sp.Matrix([los_vector[0] * (sat_vx - vx) +
+                                        los_vector[1] * (sat_vy - vy) +
+                                        los_vector[2] * (sat_vz - vz) +
+                                        cd[0]])
+
     h_gyro_sym = sp.Matrix([
       vroll + roll_bias,
       vpitch + pitch_bias,
@@ -194,6 +259,10 @@ class LiveKalman():
     obs_eqs = [[h_gyro_sym, ObservationKind.PHONE_GYRO, None],
                [h_phone_rot_sym, ObservationKind.NO_ROT, None],
                [h_acc_sym, ObservationKind.PHONE_ACCEL, None],
+               [h_pseudorange_sym, ObservationKind.PSEUDORANGE_GPS, sat_pos_freq_sym],
+               [h_pseudorange_glonass_sym, ObservationKind.PSEUDORANGE_GLONASS, sat_pos_freq_sym],
+               [h_pseudorange_rate_sym, ObservationKind.PSEUDORANGE_RATE_GPS, sat_pos_vel_sym],
+               [h_pseudorange_rate_sym, ObservationKind.PSEUDORANGE_RATE_GLONASS, sat_pos_vel_sym],
                [h_pos_sym, ObservationKind.ECEF_POS, None],
                [h_vel_sym, ObservationKind.ECEF_VEL, None],
                [h_orientation_sym, ObservationKind.ECEF_ORIENTATION_FROM_GPS, None],
