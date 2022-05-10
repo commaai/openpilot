@@ -5,11 +5,11 @@ libs = [common, cereal, messaging, visionipc,
         'avformat', 'avcodec', 'swscale', 'avutil',
         'yuv', 'OpenCL', 'pthread']
 
-src = ['logger.cc', 'loggerd.cc', 'video_writer.cc', 'remote_encoder.cc']
+src = ['logger.cc', 'loggerd.cc', 'encoder/video_writer.cc', 'remote_encoder.cc', 'encoder/encoder.cc']
 if arch == "larch64":
-  src += ['v4l_encoder.cc']
+  src += ['encoder/v4l_encoder.cc']
 else:
-  src += ['raw_logger.cc']
+  src += ['encoder/ffmpeg_encoder.cc']
 
 if arch == "Darwin":
   # fix OpenCL
@@ -20,8 +20,7 @@ logger_lib = env.Library('logger', src)
 libs.insert(0, logger_lib)
 
 env.Program('loggerd', ['main.cc'], LIBS=libs)
-if arch == "larch64":
-  env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
+env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
 env.Program('bootlog.cc', LIBS=libs)
 
 if GetOption('test'):
