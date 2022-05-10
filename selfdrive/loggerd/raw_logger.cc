@@ -26,7 +26,16 @@ const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("D
 
 RawLogger::RawLogger(const char* filename, CameraType type, int in_width, int in_height, int fps,
                      int bitrate, bool h265, int out_width, int out_height, bool write)
-  : in_width_(in_width), in_height_(in_height), filename(filename), fps(fps), write(write) {
+  : in_width_(in_width), in_height_(in_height) {
+
+  // TODO: this are on the VideoEncoder class
+  this->write = write;
+  this->filename = filename;
+  this->fps = fps;
+  this->width = out_width;
+  this->height = out_height;
+  this->codec = RAW;
+  this->type = type;
 
   frame = av_frame_alloc();
   assert(frame);
@@ -41,11 +50,7 @@ RawLogger::RawLogger(const char* filename, CameraType type, int in_width, int in
     downscale_buf.resize(out_width * out_height * 3 / 2);
   }
 
-  // publish
-  service_name = type == DriverCam ? "driverEncodeData" :
-    (type == WideRoadCam ? "wideRoadEncodeData" :
-    (h265 ? "roadEncodeData" : "qRoadEncodeData"));
-  pm.reset(new PubMaster({service_name}));
+  publisher_init();
 }
 
 RawLogger::~RawLogger() {
@@ -54,12 +59,6 @@ RawLogger::~RawLogger() {
 }
 
 void RawLogger::encoder_open(const char* path) {
-  if (write) {
-    writer = new VideoWriter(path, this->filename, true, frame->width, frame->height, this->fps, false, true);
-    // write the header
-    writer->write(NULL, 0, 0, true, false);
-  }
-
   AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
 
   this->codec_ctx = avcodec_alloc_context3(codec);
@@ -71,12 +70,13 @@ void RawLogger::encoder_open(const char* path) {
   int err = avcodec_open2(this->codec_ctx, codec, NULL);
   assert(err >= 0);
 
+  writer_open(path);
   is_open = true;
 }
 
 void RawLogger::encoder_close() {
   if (!is_open) return;
-  delete writer;
+  writer_close();
   is_open = false;
 }
 
@@ -138,7 +138,12 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
       printf("%20s got %8d bytes flags %8x\n", this->filename, pkt.size, pkt.flags);
     }
 
-    if (writer) writer->write(pkt.data, pkt.size, pkt.pts, false, pkt.flags & AV_PKT_FLAG_KEY);
+    publisher_publish(this, 0, counter, *extra,
+      (pkt.flags & AV_PKT_FLAG_KEY) ? V4L2_BUF_FLAG_KEYFRAME : 0,
+      kj::arrayPtr<capnp::byte>(pkt.data, (size_t)0), // TODO: get the header
+      kj::arrayPtr<capnp::byte>(pkt.data, pkt.size));
+
+    //if (writer) writer->write(pkt.data, pkt.size, pkt.pts, false, pkt.flags & AV_PKT_FLAG_KEY);
     counter++;
   }
   av_packet_unref(&pkt);
