@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, HarnessInfo
+from selfdrive.car.docs_definitions import CarInfo, Harness
 Ecu = car.CarParams.Ecu
 
 # Steer torque limits
@@ -74,24 +74,6 @@ class CAR:
   GENESIS_G70_2020 = "GENESIS G70 2020"
   GENESIS_G80 = "GENESIS G80 2017"
   GENESIS_G90 = "GENESIS G90 2017"
-
-
-class Harness(Enum):
-  a = HarnessInfo("hyundai-a", "Hyundai A")
-  b = HarnessInfo("hyundai-b", "Hyundai B")
-  c = HarnessInfo("hyundai-c", "Hyundai C")
-  d = HarnessInfo("hyundai-d", "Hyundai D")
-  e = HarnessInfo("hyundai-e", "Hyundai E")
-  f = HarnessInfo("hyundai-f", "Hyundai F")
-  g = HarnessInfo("hyundai-g", "Hyundai G")
-  h = HarnessInfo("hyundai-h", "Hyundai H")
-  i = HarnessInfo("hyundai-i", "Hyundai I")
-  j = HarnessInfo("hyundai-j", "Hyundai J")
-  k = HarnessInfo("hyundai-k", "Hyundai K")
-  l = HarnessInfo("hyundai-l", "Hyundai L")
-  m = HarnessInfo("hyundai-m", "Hyundai M")
-  n = HarnessInfo("hyundai-n", "Hyundai N")
-  o = HarnessInfo("hyundai-o", "Hyundai O")
 
 
 @dataclass

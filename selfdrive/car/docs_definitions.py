@@ -51,7 +51,7 @@ class CarInfo:
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
   good_torque: bool = False
-  harness: Optional[str] = None
+  harness: Optional[HarnessInfo] = None
 
   def init(self, CP: car.CarParams, non_tested_cars: List[str], all_footnotes: Dict[Enum, int]):
     # TODO: set all the min steer speeds in carParams and remove this
@@ -106,3 +106,34 @@ class CarInfo:
       item += footnote_tag.format(self.all_footnotes[footnote])
 
     return item
+
+
+class Harness(Enum):
+  # TODO: use strings, remove HarnessInfo, and use Harness(Enum).name, .value
+  nidec = HarnessInfo("nidec", "Honda Nidec")
+  bosch = HarnessInfo("bosch", "Honda Bosch")
+  toyota = HarnessInfo("toyota", "Tubaru")
+  subaru = HarnessInfo("subaru", "Subaru")
+  fca = HarnessInfo("fca", "FCA")
+  vw = HarnessInfo("vw", "VW")
+  j533 = HarnessInfo("j533", "J533")
+  hyundai_a = HarnessInfo("hyundai-a", "Hyundai A")
+  hyundai_b = HarnessInfo("hyundai-b", "Hyundai B")
+  hyundai_c = HarnessInfo("hyundai-c", "Hyundai C")
+  hyundai_d = HarnessInfo("hyundai-d", "Hyundai D")
+  hyundai_e = HarnessInfo("hyundai-e", "Hyundai E")
+  hyundai_f = HarnessInfo("hyundai-f", "Hyundai F")
+  hyundai_g = HarnessInfo("hyundai-g", "Hyundai G")
+  hyundai_h = HarnessInfo("hyundai-h", "Hyundai H")
+  hyundai_i = HarnessInfo("hyundai-i", "Hyundai I")
+  hyundai_j = HarnessInfo("hyundai-j", "Hyundai J")
+  hyundai_k = HarnessInfo("hyundai-k", "Hyundai K")
+  hyundai_l = HarnessInfo("hyundai-l", "Hyundai L")
+  hyundai_m = HarnessInfo("hyundai-m", "Hyundai M")
+  hyundai_n = HarnessInfo("hyundai-n", "Hyundai N")
+  hyundai_o = HarnessInfo("hyundai-o", "Hyundai O")
+  custom = HarnessInfo("custom", "Developer")
+  obd_ii = HarnessInfo("obd-ii", "OBD-II")
+  nissan_a = HarnessInfo("nissan-a", "Nissan A")
+  nissan_b = HarnessInfo("nissan-b", "Nissan B")
+  mazda = HarnessInfo("mazda", "Mazda")
