@@ -64,12 +64,13 @@ def manager_init() -> None:
     raise Exception("Passive must be set to continue")
 
   # Create folders needed for msgq
+  prefix = str(os.getenv("OPENPILOIT_PREFIX"))
   try:
-    os.mkdir("/dev/shm")
+    os.mkdir("/dev/shm/"+prefix)
   except FileExistsError:
     pass
   except PermissionError:
-    print("WARNING: failed to make /dev/shm")
+    print(f"WARNING: failed to make /dev/shm/{prefix}")
 
   # set version params
   params.put("Version", get_version())

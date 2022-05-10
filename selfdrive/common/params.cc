@@ -1,6 +1,7 @@
 #include "selfdrive/common/params.h"
 
 #include <dirent.h>
+#include <filesystem>
 #include <sys/file.h>
 
 #include <csignal>
@@ -182,8 +183,10 @@ std::unordered_map<std::string, uint32_t> keys = {
 } // namespace
 
 Params::Params(const std::string &path) {
+  prefix = std::getenv("OPENPILOIT_PREFIX");
   static std::string default_param_path = ensure_params_path();
   params_path = path.empty() ? default_param_path : ensure_params_path(path);
+  std::filesystem::create_directory(getParamPath());
 }
 
 bool Params::checkKey(const std::string &key) {
