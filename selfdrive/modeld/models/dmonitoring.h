@@ -9,7 +9,7 @@
 
 #define CALIB_LEN 3
 
-#define OUTPUT_SIZE 45
+#define OUTPUT_SIZE 84
 #define REG_SCALE 0.25f
 
 typedef struct DMonitoringResult {
