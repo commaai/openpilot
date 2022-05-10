@@ -28,6 +28,7 @@ class RawLogger : public VideoEncoder {
   void encoder_close();
 
 private:
+  int segment_num = -1;
   int counter = 0;
   bool is_open = false;
 

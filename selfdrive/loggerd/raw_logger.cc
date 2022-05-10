@@ -60,6 +60,8 @@ void RawLogger::encoder_open(const char* path) {
 
   writer_open(path);
   is_open = true;
+  segment_num++;
+  counter = 0;
 }
 
 void RawLogger::encoder_close() {
@@ -126,7 +128,7 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
       printf("%20s got %8d bytes flags %8x\n", this->filename, pkt.size, pkt.flags);
     }
 
-    publisher_publish(this, 0, counter, *extra,
+    publisher_publish(this, e->segment_num, counter, *extra,
       (pkt.flags & AV_PKT_FLAG_KEY) ? V4L2_BUF_FLAG_KEYFRAME : 0,
       kj::arrayPtr<capnp::byte>(pkt.data, (size_t)0), // TODO: get the header
       kj::arrayPtr<capnp::byte>(pkt.data, pkt.size));

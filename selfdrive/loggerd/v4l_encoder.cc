@@ -111,7 +111,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         assert(extra.timestamp_eof/1000 == ts); // stay in sync
         frame_id = extra.frame_id;
         ++idx;
-        e->publisher_publish(e, e->segment_num, idx, extra, flags, header, kj::arrayPtr<capnp::byte>(buf, bytesused))
+        e->publisher_publish(e, e->segment_num, idx, extra, flags, header, kj::arrayPtr<capnp::byte>(buf, bytesused));
       }
 
       if (env_debug_encoder) {
@@ -131,12 +131,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   }
 }
 
-V4LEncoder::V4LEncoder(
-  const char* filename, CameraType type, int in_width, int in_height,
-  int fps, int bitrate, Codec codec, int out_width, int out_height, bool write)
-  : type(type), in_width_(in_width), in_height_(in_height),
-    filename(filename), codec(codec),
-    width(out_width), height(out_height), fps(fps), write(write) {
+void V4LEncoder::encoder_init() {
   fd = open("/dev/v4l/by-path/platform-aa00000.qcom_vidc-video-index1", O_RDWR|O_NONBLOCK);
   assert(fd >= 0);
 

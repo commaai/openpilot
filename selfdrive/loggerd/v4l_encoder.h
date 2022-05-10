@@ -9,8 +9,11 @@
 
 class V4LEncoder : public VideoEncoder {
 public:
-  V4LEncoder(const char* filename, CameraType type, int width, int height, int fps, int bitrate, bool h265, int out_width, int out_height, bool write = true);
+  V4LEncoder(const char* filename, CameraType type, int in_width, int in_height, int fps,
+             int bitrate, Codec codec, int out_width, int out_height, bool write) :
+             VideoEncoder(filename, type, in_width, in_height, fps, bitrate, RAW, out_width, out_height, write) { encoder_init(); }
   ~V4LEncoder();
+  void encoder_init();
   int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                    int in_width, int in_height, VisionIpcBufExtra *extra);
   void encoder_open(const char* path);
@@ -18,8 +21,6 @@ public:
 private:
   int fd;
 
-  unsigned int in_width_, in_height_;
-  bool h265;
   bool is_open = false;
   int segment_num = -1;
   int counter = 0;
