@@ -2,7 +2,7 @@
 #include <sys/ioctl.h>
 #include <poll.h>
 
-#include "selfdrive/loggerd/v4l_encoder.h"
+#include "selfdrive/loggerd/encoder/v4l_encoder.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/timing.h"
 

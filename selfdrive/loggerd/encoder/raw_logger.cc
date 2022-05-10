@@ -1,6 +1,6 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-#include "selfdrive/loggerd/raw_logger.h"
+#include "selfdrive/loggerd/encoder/raw_logger.h"
 
 #include <fcntl.h>
 #include <unistd.h>

@@ -11,9 +11,9 @@ extern "C" {
 #include <libavutil/imgutils.h>
 }
 
-#include "selfdrive/loggerd/encoder.h"
+#include "selfdrive/loggerd/encoder/encoder.h"
 #include "selfdrive/loggerd/loggerd.h"
-#include "selfdrive/loggerd/video_writer.h"
+#include "selfdrive/loggerd/encoder/video_writer.h"
 
 class RawLogger : public VideoEncoder {
  public:

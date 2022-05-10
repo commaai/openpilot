@@ -1,4 +1,4 @@
-#include "selfdrive/loggerd/video_writer.h"
+#include "selfdrive/loggerd/encoder/video_writer.h"
 
 struct RemoteEncoder {
   std::unique_ptr<VideoWriter> writer;
