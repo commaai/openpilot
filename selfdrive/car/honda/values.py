@@ -112,25 +112,25 @@ CAR_INFO: Dict[str, Union[HondaCarInfo, List[HondaCarInfo]]] = {
     HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness="bosch"),
   ],
   CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness="bosch"),
-  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", min_steer_speed=12. * CV.MPH_TO_MS, harness="nidec"),
+  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", harness="nidec"),
   CAR.CIVIC_BOSCH: [
     HondaCarInfo("Honda Civic 2019-20", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS, harness="bosch"),
-    HondaCarInfo("Honda Civic Hatchback 2017-21", min_steer_speed=12. * CV.MPH_TO_MS, harness="bosch"),
+    HondaCarInfo("Honda Civic Hatchback 2017-21", harness="bosch"),
   ],
   CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS, harness="nidec"),
-  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring", min_steer_speed=12. * CV.MPH_TO_MS, harness="nidec"),
-  CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-21", min_steer_speed=12. * CV.MPH_TO_MS, harness="bosch"),
+  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring", harness="nidec"),
+  CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-21", harness="bosch"),
   # CAR.CRV_EU: HondaCarInfo("Honda CR-V EU", "Touring"),  # Euro version of CRV Touring
-  CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", min_steer_speed=12. * CV.MPH_TO_MS, harness="bosch"),
-  CAR.FIT: HondaCarInfo("Honda Fit 2018-19", min_steer_speed=12. * CV.MPH_TO_MS, harness="nidec"),
+  CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", harness="bosch"),
+  CAR.FIT: HondaCarInfo("Honda Fit 2018-19", harness="nidec"),
   CAR.FREED: HondaCarInfo("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS),  # TODO: harness
-  CAR.HRV: HondaCarInfo("Honda HR-V 2019-20", min_steer_speed=12. * CV.MPH_TO_MS, harness="none"),
+  CAR.HRV: HondaCarInfo("Honda HR-V 2019-20", harness="none"),
   CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20", harness="nidec"),
-  CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", min_steer_speed=12. * CV.MPH_TO_MS, harness="nidec"),
+  CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", harness="nidec"),
   CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness="bosch"),
-  CAR.PILOT: HondaCarInfo("Honda Pilot 2016-21", min_steer_speed=12. * CV.MPH_TO_MS, harness="nidec"),
-  CAR.PASSPORT: HondaCarInfo("Honda Passport 2019-21", "All", min_steer_speed=12. * CV.MPH_TO_MS, harness="nidec"),
-  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-21", min_steer_speed=12. * CV.MPH_TO_MS, harness="nidec"),  # TODO: website says we support 2022?
+  CAR.PILOT: HondaCarInfo("Honda Pilot 2016-21", harness="nidec"),
+  CAR.PASSPORT: HondaCarInfo("Honda Passport 2019-21", "All", harness="nidec"),
+  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-21", harness="nidec"),  # TODO: website says we support 2022?
   CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness="bosch"),
   CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness="bosch"),
 }
