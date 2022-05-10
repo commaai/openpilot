@@ -51,7 +51,7 @@ class CarInfo:
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
   good_torque: bool = False
-  harness: Optional[HarnessInfo] = None
+  harness: Optional[Enum] = None
 
   def init(self, CP: car.CarParams, non_tested_cars: List[str], all_footnotes: Dict[Enum, int]):
     # TODO: set all the min steer speeds in carParams and remove this

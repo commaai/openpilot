@@ -115,7 +115,7 @@ class Footnote(Enum):
 class VWCarInfo(CarInfo):
   package: str = "Driver Assistance"
   good_torque: bool = True
-  harness: str = Harness.vw
+  harness: Enum = Harness.vw
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {

@@ -31,7 +31,7 @@ class CAR:
 @dataclass
 class MazdaCarInfo(CarInfo):
   package: str = "All"
-  harness: str = Harness.mazda
+  harness: Harness = Harness.mazda
 
 
 CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
