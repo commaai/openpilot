@@ -21,5 +21,5 @@ class LSM6DS3_Temp : public I2CSensor {
 public:
   LSM6DS3_Temp(I2CBus *bus);
   int init();
-  void get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(cereal::SensorEventData::Builder &event);
 };

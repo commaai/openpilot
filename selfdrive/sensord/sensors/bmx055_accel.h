@@ -33,9 +33,9 @@
 #define BMX055_ACCEL_BW_500HZ   0b01110
 #define BMX055_ACCEL_BW_1000HZ  0b01111
 
-#define BMX055_ACCEL_DATA_EN          0b10000
-#define BMX055_ACCEL_DATA_TO_INT1     0b00001
-#define BMX055_ACCEL_INT_SRC_FILTERED 0b00000
+#define BMX055_ACCEL_DATA_EN          (1 << 4)
+#define BMX055_ACCEL_DATA_TO_INT1     0b1
+#define BMX055_ACCEL_INT_SRC_FILTERED 0b0
 
 
 class BMX055_Accel : public I2CSensor {
@@ -44,5 +44,5 @@ class BMX055_Accel : public I2CSensor {
 public:
   BMX055_Accel(I2CBus *bus, int gpio_nr);
   int init();
-  void get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(cereal::SensorEventData::Builder &event);
 };

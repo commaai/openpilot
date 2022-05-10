@@ -14,5 +14,5 @@ public:
   FileSensor(std::string filename);
   ~FileSensor();
   int init();
-  virtual void get_event(cereal::SensorEventData::Builder &event) = 0;
+  virtual bool get_event(cereal::SensorEventData::Builder &event) = 0;
 };

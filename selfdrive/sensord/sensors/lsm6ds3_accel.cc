@@ -34,7 +34,7 @@ int LSM6DS3_Accel::init() {
     goto fail;
   }
 
-  if (gpio_set_edge(gpio_nr, EDGE_TYPES::rising) != 0) {
+  if (gpio_set_edge(gpio_nr, Edgetypes::Rising) != 0) {
     ret = -1;
     goto fail;
   }
@@ -61,13 +61,13 @@ fail:
   return ret;
 }
 
-void LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
+bool LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
 
   // INT1 shared with gyro, check STATUS_REG who triggered
   uint8_t status_reg = 0;
   read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
   if ((status_reg & LSM6DS3_ACCEL_DRDY_XLDA) == 0) {
-    return;
+    return false;
   }
 
   uint64_t start_time = nanos_since_boot();
@@ -91,4 +91,5 @@ void LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
   svec.setV(xyz);
   svec.setStatus(true);
 
+  return true;
 }

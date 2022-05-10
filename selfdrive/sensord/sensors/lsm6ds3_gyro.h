@@ -27,5 +27,5 @@ class LSM6DS3_Gyro : public I2CSensor {
 public:
   LSM6DS3_Gyro(I2CBus *bus, int gpio_nr);
   int init();
-  void get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(cereal::SensorEventData::Builder &event);
 };
