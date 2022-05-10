@@ -31,9 +31,14 @@ private:
   int fps;
   int counter = 0;
   bool is_open = false;
+  bool write;
+
+  std::unique_ptr<PubMaster> pm;
+  const char *service_name;
 
   int in_width_, in_height_;
 
+  AVCodecContext *codec_ctx;
   AVFrame *frame = NULL;
   std::vector<uint8_t> downscale_buf;
 

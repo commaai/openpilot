@@ -22,10 +22,12 @@ extern "C" {
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
+const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
+
 RawLogger::RawLogger(const char* filename, CameraType type, int in_width, int in_height, int fps,
                      int bitrate, bool h265, int out_width, int out_height, bool write)
-  : in_width_(in_width), in_height_(in_height), filename(filename), fps(fps) {
-  // TODO: respect write arg
+  : in_width_(in_width), in_height_(in_height), filename(filename), fps(fps), write(write) {
+
   frame = av_frame_alloc();
   assert(frame);
   frame->format = AV_PIX_FMT_YUV420P;
@@ -38,6 +40,12 @@ RawLogger::RawLogger(const char* filename, CameraType type, int in_width, int in
   if (in_width != out_width || in_height != out_height) {
     downscale_buf.resize(out_width * out_height * 3 / 2);
   }
+
+  // publish
+  service_name = type == DriverCam ? "driverEncodeData" :
+    (type == WideRoadCam ? "wideRoadEncodeData" :
+    (h265 ? "roadEncodeData" : "qRoadEncodeData"));
+  pm.reset(new PubMaster({service_name}));
 }
 
 RawLogger::~RawLogger() {
@@ -46,9 +54,23 @@ RawLogger::~RawLogger() {
 }
 
 void RawLogger::encoder_open(const char* path) {
-  writer = new VideoWriter(path, this->filename, true, frame->width, frame->height, this->fps, false, true);
-  // write the header
-  writer->write(NULL, 0, 0, true, false);
+  if (write) {
+    writer = new VideoWriter(path, this->filename, true, frame->width, frame->height, this->fps, false, true);
+    // write the header
+    writer->write(NULL, 0, 0, true, false);
+  }
+
+  AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
+
+  this->codec_ctx = avcodec_alloc_context3(codec);
+  assert(this->codec_ctx);
+  this->codec_ctx->width = frame->width;
+  this->codec_ctx->height = frame->height;
+  this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
+  this->codec_ctx->time_base = (AVRational){ 1, fps };
+  int err = avcodec_open2(this->codec_ctx, codec, NULL);
+  assert(err >= 0);
+
   is_open = true;
 }
 
@@ -88,7 +110,7 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
 
   int ret = counter;
 
-  int err = avcodec_send_frame(writer->codec_ctx, frame);
+  int err = avcodec_send_frame(this->codec_ctx, frame);
   if (err < 0) {
     LOGE("avcodec_send_frame error %d", err);
     ret = -1;
@@ -99,7 +121,7 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
   pkt.data = NULL;
   pkt.size = 0;
   while (ret >= 0) {
-    err = avcodec_receive_packet(writer->codec_ctx, &pkt);
+    err = avcodec_receive_packet(this->codec_ctx, &pkt);
     if (err == AVERROR_EOF) {
       break;
     } else if (err == AVERROR(EAGAIN)) {
@@ -112,7 +134,11 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
       break;
     }
 
-    writer->write(pkt.data, pkt.size, pkt.pts, false, pkt.flags & AV_PKT_FLAG_KEY);
+    if (env_debug_encoder) {
+      printf("%20s got %8d bytes flags %8x\n", this->filename, pkt.size, pkt.flags);
+    }
+
+    if (writer) writer->write(pkt.data, pkt.size, pkt.pts, false, pkt.flags & AV_PKT_FLAG_KEY);
     counter++;
   }
   av_packet_unref(&pkt);
