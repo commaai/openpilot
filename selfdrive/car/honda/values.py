@@ -123,14 +123,14 @@ CAR_INFO: Dict[str, Union[HondaCarInfo, List[HondaCarInfo]]] = {
   # CAR.CRV_EU: HondaCarInfo("Honda CR-V EU", "Touring"),  # Euro version of CRV Touring
   CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", harness=Harness.bosch),
   CAR.FIT: HondaCarInfo("Honda Fit 2018-19", harness=Harness.nidec),
-  CAR.FREED: HondaCarInfo("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS),  # TODO: harness
-  CAR.HRV: HondaCarInfo("Honda HR-V 2019-20"),  # TODO: this
+  CAR.FREED: HondaCarInfo("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS, harness=Harness.nidec),
+  CAR.HRV: HondaCarInfo("Honda HR-V 2019-20", harness=Harness.nidec),
   CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20", harness=Harness.nidec),
   CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", harness=Harness.nidec),
   CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
   CAR.PILOT: HondaCarInfo("Honda Pilot 2016-21", harness=Harness.nidec),
   CAR.PASSPORT: HondaCarInfo("Honda Passport 2019-21", "All", harness=Harness.nidec),
-  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-21", harness=Harness.nidec),  # TODO: website says we support 2022?
+  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-21", harness=Harness.nidec),
   CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
   CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
 }
