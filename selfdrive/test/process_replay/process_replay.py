@@ -445,7 +445,6 @@ def python_replay_process(cfg, lr, fingerprint=None):
 
         log_msgs.append(m)
         recv_cnt -= m.which() in recv_socks
-
   return log_msgs
 
 

@@ -66,7 +66,7 @@ def manager_init() -> None:
   # Create folders needed for msgq
   prefix = str(os.getenv("OPENPILOIT_PREFIX"))
   try:
-    os.mkdir("/dev/shm/"+prefix)
+    os.mkdir("/dev/shm/" + prefix)
   except FileExistsError:
     pass
   except PermissionError:
