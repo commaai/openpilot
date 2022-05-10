@@ -13,30 +13,33 @@ const __constant half3 color_correction_2 = (half3)(-0.25277411, -0.05627105, 1.
 // tone mapping params
 const half gamma_k = 0.75;
 const half gamma_b = 0.125;
-const half mp_default = 0.01; // ideally midpoint should be adaptive
+const half mp = 0.01; // ideally midpoint should be adaptive
+const half rk = 9 - 100*mp;
 
-half gamma_apply(half x, half mp) {
+inline half3 gamma_apply(half3 x) {
   // poly approximation for s curve
-  half rk = 9 - 100*mp;
-  if (x > mp) {
-    return (rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b;
-  } else if (x < mp) {
-    return (rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b;
-  } else {
-    return x;
-  }
+  return (x > mp) ?
+    ((rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b) :
+    ((rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b);
 }
 
-half3 color_correct(half3 rgb) {
-  half3 ret = (half3)(0.0, 0.0, 0.0);
-  ret += (half)rgb.x * color_correction_0;
+inline half3 color_correct(half3 rgb) {
+  half3 ret = (half)rgb.x * color_correction_0;
   ret += (half)rgb.y * color_correction_1;
   ret += (half)rgb.z * color_correction_2;
-  ret.x = gamma_apply(ret.x, mp_default);
-  ret.y = gamma_apply(ret.y, mp_default);
-  ret.z = gamma_apply(ret.z, mp_default);
-  ret = clamp(0.0, 255.0, ret*255.0);
-  return ret;
+  return gamma_apply(ret);
+}
+
+inline half get_vignetting_s(float r) {
+  if (r < 62500) {
+    return (half)(1.0f + 0.0000008f*r);
+  } else if (r < 490000) {
+    return (half)(0.9625f + 0.0000014f*r);
+  } else if (r < 1102500) {
+    return (half)(1.26434f + 0.0000000000016f*r*r);
+  } else {
+    return (half)(0.53503625f + 0.0000000000022f*r*r);
+  }
 }
 
 inline half val_from_10(const uchar * source, int gx, int gy, half black_level) {
@@ -55,21 +58,10 @@ inline half val_from_10(const uchar * source, int gx, int gy, half black_level) 
   if (CAM_NUM == 1) { // fcamera
     gx = (gx - RGB_WIDTH/2);
     gy = (gy - RGB_HEIGHT/2);
-    float r = gx*gx + gy*gy;
-    half s;
-    if (r < 62500) {
-      s = (half)(1.0f + 0.0000008f*r);
-    } else if (r < 490000) {
-      s = (half)(0.9625f + 0.0000014f*r);
-    } else if (r < 1102500) {
-      s = (half)(1.26434f + 0.0000000000016f*r*r);
-    } else {
-      s = (half)(0.53503625f + 0.0000000000022f*r*r);
-    }
-    pv = s * pv;
+    pv *= get_vignetting_s(gx*gx + gy*gy);
   }
 
-  pv = clamp((half)0.0, (half)1.0, pv);
+  pv = clamp(pv, (half)0.0, (half)1.0);
   return pv;
 }
 
@@ -197,10 +189,8 @@ __kernel void debayer10(const __global uchar * in,
     }
   }
 
-  rgb = clamp(0.0, 1.0, rgb);
-  rgb = color_correct(rgb);
-
-  out[out_idx + 0] = (uchar)(rgb.z);
-  out[out_idx + 1] = (uchar)(rgb.y);
-  out[out_idx + 2] = (uchar)(rgb.x);
+  uchar3 rgbc = convert_uchar3_sat(color_correct(clamp(rgb, (half)0.0, (half)1.0)) * 255.0);
+  out[out_idx + 0] = rgbc.z;
+  out[out_idx + 1] = rgbc.y;
+  out[out_idx + 2] = rgbc.x;
 }
