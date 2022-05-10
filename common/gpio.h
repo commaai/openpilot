@@ -27,6 +27,8 @@
   #define GPIOCHIP_INT          0
 #endif
 
+enum EDGE_TYPES { rising, falling, both, none };
+
 int gpio_init(int pin_nr, bool output);
 int gpio_set(int pin_nr, bool high);
 
