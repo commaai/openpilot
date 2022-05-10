@@ -116,7 +116,7 @@ class Harness(Enum):
   # TODO: use strings, remove HarnessInfo, and use Harness(Enum).name, .value
   nidec = HarnessInfo("nidec", "Honda Nidec")
   bosch = HarnessInfo("bosch", "Honda Bosch")
-  toyota = HarnessInfo("toyota", "Tubaru")
+  toyota = HarnessInfo("toyota", "Toyota")
   subaru = HarnessInfo("subaru", "Subaru")
   fca = HarnessInfo("fca", "FCA")
   vw = HarnessInfo("vw", "VW")
