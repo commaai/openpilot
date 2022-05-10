@@ -142,7 +142,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22", footnotes=[Footnote.VW_HARNESS], harness=None),
   CAR.TOURAN_MK2: VWCarInfo("Volkswagen Touran 2017"),
   CAR.TRANSPORTER_T61: [
-    VWCarInfo("Volkswagen Caravelle 2020", footnotes=[Footnote.VW_HARNESS], harness=None),
+    VWCarInfo("Volkswagen Caravelle 2020", footnotes=[Footnote.VW_HARNESS]),
     VWCarInfo("Volkswagen California 2021", footnotes=[Footnote.VW_HARNESS], harness=None),
   ],
   CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS], harness=None),
