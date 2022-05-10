@@ -35,9 +35,8 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         re.dropped_frames = 0;
       }
       re.writer.reset(new VideoWriter(s->segment_path,
-        cam_info.filename, !cam_info.is_h265,
-        cam_info.frame_width, cam_info.frame_height, cam_info.fps,
-        cam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264));
+        cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
+        cam_info.frame_width, cam_info.frame_height, cam_info.fps, idx.getType()));
       // write the header
       auto header = edata.getHeader();
       re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
