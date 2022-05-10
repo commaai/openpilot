@@ -1,5 +1,4 @@
-#include "selfdrive/loggerd/video_writer.h"
-#define V4L2_BUF_FLAG_KEYFRAME 0x00000008
+#include "selfdrive/loggerd/encoder/video_writer.h"
 
 struct RemoteEncoder {
   std::unique_ptr<VideoWriter> writer;
