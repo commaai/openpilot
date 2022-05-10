@@ -21,5 +21,5 @@ private:
   AVCodecContext *codec_ctx;
   AVFormatContext *ofmt_ctx;
   AVStream *out_stream;
-  bool remuxing;
+  bool remuxing, raw;
 };

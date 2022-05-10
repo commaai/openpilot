@@ -125,7 +125,7 @@ int FfmpegEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, cons
     }
 
     if (env_debug_encoder) {
-      printf("%20s got %8d bytes flags %8x\n", this->filename, pkt.size, pkt.flags);
+      printf("%20s got %8d bytes flags %8x idx %4d id %8d\n", this->filename, pkt.size, pkt.flags, counter, extra->frame_id);
     }
 
     publisher_publish(this, segment_num, counter, *extra,

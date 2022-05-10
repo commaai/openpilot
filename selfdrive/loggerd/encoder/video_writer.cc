@@ -9,6 +9,7 @@
 
 VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec)
   : remuxing(remuxing) {
+  raw = codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS;
   vid_path = util::string_format("%s/%s", path, filename);
   lock_path = util::string_format("%s/%s.lock", path, filename);
 
@@ -18,7 +19,7 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
 
   LOGD("encoder_open %s remuxing:%d", this->vid_path.c_str(), this->remuxing);
   if (this->remuxing) {
-    avformat_alloc_output_context2(&this->ofmt_ctx, NULL, codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS ? "matroska" : NULL, this->vid_path.c_str());
+    avformat_alloc_output_context2(&this->ofmt_ctx, NULL, raw ? "matroska" : NULL, this->vid_path.c_str());
     assert(this->ofmt_ctx);
 
     // set codec correctly. needed?
@@ -26,7 +27,7 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
 
     AVCodec *avcodec = NULL;
     assert(codec != cereal::EncodeIndex::Type::FULL_H_E_V_C);
-    avcodec = avcodec_find_encoder((codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS) ? AV_CODEC_ID_FFVHUFF : AV_CODEC_ID_H264);
+    avcodec = avcodec_find_encoder(raw ? AV_CODEC_ID_FFVHUFF : AV_CODEC_ID_H264);
     assert(avcodec);
 
     this->codec_ctx = avcodec_alloc_context3(avcodec);
@@ -42,7 +43,7 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
       assert(err >= 0);
     }
 
-    this->out_stream = avformat_new_stream(this->ofmt_ctx, codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS ? avcodec : NULL);
+    this->out_stream = avformat_new_stream(this->ofmt_ctx, raw ? avcodec : NULL);
     assert(this->out_stream);
 
     int err = avio_open(&this->ofmt_ctx->pb, this->vid_path.c_str(), AVIO_FLAG_WRITE);
@@ -101,6 +102,7 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
 
 VideoWriter::~VideoWriter() {
   if (this->remuxing) {
+    if (this->raw) { avcodec_close(this->codec_ctx); }
     int err = av_write_trailer(this->ofmt_ctx);
     if (err != 0) LOGE("av_write_trailer failed %d", err);
     avcodec_free_context(&this->codec_ctx);
