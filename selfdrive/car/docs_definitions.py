@@ -77,7 +77,7 @@ class CarInfo:
       Column.FSR_STEERING: min_steer_speed <= 0.,
       Column.STEERING_TORQUE: self.good_torque,
       # TODO: when all harnesses are added, add check to maintained
-      Column.MAINTAINED: CP.carFingerprint not in non_tested_cars,
+      Column.MAINTAINED: CP.carFingerprint not in non_tested_cars and self.harness is not None,
     }
 
     if CP.notCar:
