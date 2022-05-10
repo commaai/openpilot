@@ -3,9 +3,9 @@ from enum import Enum, IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
+from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column
-from common.conversions import Conversions as CV
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -103,6 +103,7 @@ class Footnote(Enum):
 @dataclass
 class HondaCarInfo(CarInfo):
   package: str = "Honda Sensing"
+  min_steer_speed: float = 12. * CV.MPH_TO_MS
 
 
 CAR_INFO: Dict[str, Union[HondaCarInfo, List[HondaCarInfo]]] = {

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo
+from selfdrive.car.docs_definitions import CarInfo, Harness
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -27,7 +27,7 @@ class CAR:
 @dataclass
 class ChryslerCarInfo(CarInfo):
   package: str = "Adaptive Cruise"
-  harness: str = "fca"
+  harness: str = Harness.fca
 
 
 CAR_INFO: Dict[str, Union[ChryslerCarInfo, List[ChryslerCarInfo]]] = {
