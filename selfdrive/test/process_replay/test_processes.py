@@ -2,6 +2,7 @@
 import argparse
 import os
 import sys
+from multiprocessing import Pool
 from typing import Any
 
 from selfdrive.car.car_helpers import interface_names
@@ -54,6 +55,13 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 # run the full test (including checks) when no args given
 FULL_TEST = len(sys.argv) <= 1
 
+def run_test_process(data):
+  segment, cfg, args, process_replay_dir = data
+  r, n = segment.rsplit("--", 1)
+  lr = LogReader(get_url(r, n))
+  cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+  res = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
+  return (segment, cfg.proc_name, res)
 
 def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
@@ -144,25 +152,45 @@ if __name__ == "__main__":
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
   results: Any = {}
-  for car_brand, segment in segments:
-    if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
-       (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
-      continue
 
-    print(f"***** testing route segment {segment} *****\n")
-
-    results[segment] = {}
-
-    r, n = segment.rsplit("--", 1)
-    lr = LogReader(get_url(r, n))
-
-    for cfg in CONFIGS:
-      if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
-         (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
+  parallel = True
+  if parallel:
+    pool_args: Any = []
+    for car_brand, segment in segments:
+      if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
+         (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
+        continue
+      for cfg in CONFIGS:
+        if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
+           (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
+          continue
+        pool_args.append(segment, cfg, args, process_replay_dir)
+    pool = Pool()
+    p = pool.map_async(run_test_process, pool_args)
+    for tup in p.get():
+      if tup[0] not in results:
+        results[tup[0]] = {}
+      results[tup[0]][tup[1]] = tup[2]
+  else:
+    for car_brand, segment in segments:
+      if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
+         (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
         continue
 
-      cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-      results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
+      print(f"***** testing route segment {segment} *****\n")
+
+      results[segment] = {}
+
+      r, n = segment.rsplit("--", 1)
+      lr = LogReader(get_url(r, n))
+
+      for cfg in CONFIGS:
+        if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
+           (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
+          continue
+
+        cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+        results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   with open(os.path.join(process_replay_dir, "diff.txt"), "w") as f:
