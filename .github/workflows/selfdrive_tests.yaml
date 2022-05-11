@@ -8,6 +8,7 @@ on:
 env:
   BASE_IMAGE: openpilot-base
   DOCKER_REGISTRY: ghcr.io/commaai
+  AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
 
   DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
   BUILD: |
@@ -316,6 +317,11 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc) && \
                         FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
                         coverage xml"
+    - name: Upload reference logs
+      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc) && \
+                        CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py --upload-only"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
     - name: Print diff
