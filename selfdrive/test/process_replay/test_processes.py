@@ -129,7 +129,7 @@ if __name__ == "__main__":
                       help="Skips testing processes and uploads logs from previous test run")
   args = parser.parse_args()
 
-  full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.black_list_procs, args.blcklist_cars, args.ignore_fields, args.ignore_msgs))
+  full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blcklist_cars, args.ignore_fields, args.ignore_msgs))
   upload = args.update_refs or args.upload_only
 
   if upload:
