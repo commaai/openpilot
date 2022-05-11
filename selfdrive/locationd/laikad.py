@@ -29,7 +29,7 @@ def process_ublox_msg(ublox_msg, dog, ublox_mono_time: int):
     processed_measurements = process_measurements(new_meas, dog)
 
     pos_fix, vel_fix, corrected_measurements = correct_and_vel_pos_fix(processed_measurements, dog)
-    # pos fix can be an empty list if not enough correct measurements are available
+    # pos or vel fixes can be an empty list if not enough correct measurements are available
     correct_meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
 
     if len(pos_fix) > 0:
@@ -77,7 +77,6 @@ def main():
       if msg is None:
         msg = messaging.new_message('gnssMeasurements')
       pm.send('gnssMeasurements', msg)
-
 
 
 if __name__ == "__main__":

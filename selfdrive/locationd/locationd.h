@@ -19,6 +19,7 @@
 #include "selfdrive/locationd/models/live_kf.h"
 
 #define POSENET_STD_HIST_HALF 20
+
 typedef cereal::GnssMeasurements::ConstellationId ConstellationId;
 
 class Localizer {
@@ -53,7 +54,6 @@ public:
   void handle_car_state(double current_time, const cereal::CarState::Reader& log);
   void handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log);
   void handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log);
-  void check_initial_position(double time, const cereal::GnssMeasurements::Reader& log);
 
   void input_fake_gps_observations(double current_time);
 
@@ -75,7 +75,8 @@ private:
   double last_gps_fix = 0;
   double reset_tracker = 0.0;
   bool device_fell = false;
-  bool gps_mode = true;
+  bool gps_mode = false;
 
-  inline void handle_gnss_constellation(double current_time, ConstellationId c_id, std::vector<cereal::GnssMeasurements::CorrectedMeasurement::Reader> meas_per_constellation);
+  void handle_gnss_constellation(double current_time, ConstellationId c_id, std::vector<cereal::GnssMeasurements::CorrectedMeasurement::Reader> meas_per_constellation);
+  void check_initial_position(double time, const cereal::GnssMeasurements::Reader& log);
 };
