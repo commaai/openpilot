@@ -1,6 +1,5 @@
 #include "selfdrive/common/params.h"
 
-#include <algorithm>
 #include <dirent.h>
 #include <filesystem>
 #include <string>
