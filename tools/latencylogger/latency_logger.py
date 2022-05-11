@@ -216,7 +216,8 @@ if __name__ == "__main__":
   r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   lr = logreader_from_route_or_segment(r, sort_by_time=True)
 
-  data, _ = get_timestamps(lr)
-  print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
+  data, miss = get_timestamps(lr)
+  #print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
+  print(miss)
   if args.plot:
     mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative))
