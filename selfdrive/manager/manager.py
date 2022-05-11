@@ -30,6 +30,8 @@ def manager_init() -> None:
   # update system time from panda
   set_time(cloudlog)
 
+  os.environ['OPENPILOIT_PREFIX'] = "MANAGER"
+
   # save boot log
   subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
 
