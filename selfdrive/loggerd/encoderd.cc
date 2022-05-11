@@ -50,7 +50,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     // init encoders
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
-      LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
+      LOGW("encoder %s init %dx%d", cam_info.filename, buf_info.width, buf_info.height);
 
       // main encoder
       encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
@@ -140,7 +140,7 @@ int main() {
     ret = util::set_realtime_priority(52);
     assert(ret == 0);
     ret = util::set_core_affinity({7});
-    assert(ret == 0);
+    assert(ret == 0 || Params().getBool("IsOffroad"));
   }
   encoderd_thread();
   return 0;
