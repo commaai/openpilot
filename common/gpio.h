@@ -27,7 +27,7 @@
   #define GPIOCHIP_INT          0
 #endif
 
-enum Edgetype {
+enum EdgeType {
   Rising,
   Falling,
   Both,
