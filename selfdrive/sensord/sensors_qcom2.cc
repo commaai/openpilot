@@ -43,8 +43,11 @@ void interrupt_loop(std::vector<Sensor *>& gpio_sensors, PubMaster& pm) {
     // smart in other way
 
     // TODO: check here also for epoll? might have a nicer interface
-    int err = poll(fd_list.get(), cnt_sensors, -1); // no timeout
+    int err = poll(fd_list.get(), cnt_sensors, 100);
     if (err == -1) {
+      if (errno == EINTR) {
+        continue;
+      }
       return;
     }
 
@@ -58,10 +61,13 @@ void interrupt_loop(std::vector<Sensor *>& gpio_sensors, PubMaster& pm) {
         continue;
       }
 
+      char buf[64];
+      lseek(fd_list[i].fd, 0, SEEK_SET);
+      read(fd_list[i].fd, &buf, std::size(buf));
+
       auto orphan = orphanage.newOrphan<cereal::SensorEventData>();
       auto event = orphan.get();
       if (gpio_sensors[i]->get_event(event)) {
-        // only send collected events
         collected_events.push_back(kj::mv(orphan));
       }
     }
@@ -71,9 +77,10 @@ void interrupt_loop(std::vector<Sensor *>& gpio_sensors, PubMaster& pm) {
       events.adoptWithCaveats(i, kj::mv(collected_events[i]));
     }
 
-    pm_mutex.lock();
-    pm.send("sensorEvents", msg);
-    pm_mutex.unlock();
+    {
+      std::lock_guard<std::mutex> lock(pm_mutex);
+      pm.send("sensorEvents", msg);
+    }
   }
 }
 
@@ -87,13 +94,14 @@ int sensor_loop() {
     return -1;
   }
 
-  BMX055_Accel bmx055_accel(i2c_bus_imu, 21);
-  BMX055_Gyro bmx055_gyro(i2c_bus_imu, 23);
+  // bmx interrupts are triggering faster than the filter bandwidth
+  BMX055_Accel bmx055_accel(i2c_bus_imu);
+  BMX055_Gyro bmx055_gyro(i2c_bus_imu);
   BMX055_Magn bmx055_magn(i2c_bus_imu);
   BMX055_Temp bmx055_temp(i2c_bus_imu);
 
-  LSM6DS3_Accel lsm6ds3_accel(i2c_bus_imu, 84);
-  LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu, 84);
+  LSM6DS3_Accel lsm6ds3_accel(i2c_bus_imu, GPIO_LSM_INT);
+  LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu, GPIO_LSM_INT);
   LSM6DS3_Temp lsm6ds3_temp(i2c_bus_imu);
 
   MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu);
@@ -105,11 +113,11 @@ int sensor_loop() {
   sensors_init.push_back({&bmx055_accel, false});
   sensors_init.push_back({&bmx055_gyro, false});
   sensors_init.push_back({&bmx055_magn, false});
-  sensors_init.push_back({&bmx055_temp, false}); // TODO: read with interrupt gyro
+  sensors_init.push_back({&bmx055_temp, false});
 
   sensors_init.push_back({&lsm6ds3_accel, true});
   sensors_init.push_back({&lsm6ds3_gyro, true});
-  sensors_init.push_back({&lsm6ds3_temp, true}); // TODO: read with interrupt gyro
+  sensors_init.push_back({&lsm6ds3_temp, true});
 
   sensors_init.push_back({&mmc5603nj_magn, false});
 
@@ -134,8 +142,8 @@ int sensor_loop() {
         has_magnetometer = true;
       }
 
-      // split between interrupt read sensors and non
-      if (sensor.first->gpio_fd != -1) {
+      // split between interrupt read sensors and non interrupt read
+      if (sensor.first->has_interrupt_enabled()) {
         interrupt_sensors.push_back(sensor.first);
       }
       else {
@@ -168,9 +176,10 @@ int sensor_loop() {
       sensors[i]->get_event(event);
     }
 
-    pm_mutex.lock();
-    pm.send("sensorEvents", msg);
-    pm_mutex.unlock();
+    {
+      std::lock_guard<std::mutex> lock(pm_mutex);
+      pm.send("sensorEvents", msg);
+    }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
