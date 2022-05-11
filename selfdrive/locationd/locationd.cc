@@ -531,9 +531,7 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   if (log.isGnssMeasurements()){
     t = log.getGnssMeasurements().getUbloxMonoTime() * 1e-9;
   }
-  else{
-    this->time_check(t);
-  }
+  this->time_check(t);
   if (log.isSensorEvents()) {
     this->handle_sensors(t, log.getSensorEvents());
   } else if (log.isGpsLocationExternal()) {
