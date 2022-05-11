@@ -26,9 +26,8 @@ CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
-def get_tier_car_info() -> Dict[Tier, List[CarInfo]]:
-  tier_car_info: Dict[Tier, List[CarInfo]] = {tier: [] for tier in Tier}
-
+def get_all_car_info() -> List[CarInfo]:
+  all_car_info: List[CarInfo] = []
   for models in get_interface_attr("CAR_INFO").values():
     for model, car_info in models.items():
       # Hyundai exception: those with radar have openpilot longitudinal
@@ -43,8 +42,16 @@ def get_tier_car_info() -> Dict[Tier, List[CarInfo]]:
         car_info = (car_info,)
 
       for _car_info in car_info:
-        _car_info.init(CP, non_tested_cars, ALL_FOOTNOTES)
-        tier_car_info[_car_info.tier].append(_car_info)
+        all_car_info.append(_car_info.init(CP, non_tested_cars, ALL_FOOTNOTES))
+
+  # Sort cars by make and model + year
+  return natsorted(all_car_info, key=lambda car: (car.make + car.model).lower())
+
+
+def sort_by_tier(all_car_info: List[CarInfo]) -> Dict[Tier, List[CarInfo]]:
+  tier_car_info: Dict[Tier, List[CarInfo]] = {tier: [] for tier in Tier}
+  for car_info in all_car_info:
+    tier_car_info[car_info.tier].append(car_info)
 
   # Sort cars by make and model + year
   for tier, cars in tier_car_info.items():
@@ -53,12 +60,12 @@ def get_tier_car_info() -> Dict[Tier, List[CarInfo]]:
   return tier_car_info
 
 
-def generate_cars_md(tier_car_info: Dict[Tier, List[CarInfo]], template_fn: str) -> str:
+def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  return template.render(tiers=tier_car_info, footnotes=footnotes, Star=Star, Column=Column)
+  return template.render(tiers=sort_by_tier(all_car_info), footnotes=footnotes, Star=Star, Column=Column)
 
 
 if __name__ == "__main__":
@@ -70,5 +77,5 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   with open(args.out, 'w') as f:
-    f.write(generate_cars_md(get_tier_car_info(), args.template))
+    f.write(generate_cars_md(get_all_car_info(), args.template))
   print(f"Generated and written to {args.out}")
