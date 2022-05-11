@@ -74,10 +74,10 @@ class LogReader:
   def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False):
     data_version = None
     _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
-    with FileReader("/home/batman/junk/testing_closet_rlog") as f:
+    with FileReader(fn) as f:
       dat = f.read()
 
-    if 1:
+    if ext == "":
       # old rlogs weren't bz2 compressed
       ents = capnp_log.Event.read_multiple_bytes(dat)
     elif ext == ".bz2":
