@@ -54,25 +54,25 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 
-def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
+def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
     ignore_msgs = []
 
-  cmp_log_path = cmp_log_fn if os.path.exists(cmp_log_fn) else BASE_URL + os.path.basename(cmp_log_fn)
-  cmp_log_msgs = list(LogReader(cmp_log_path))
+  ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
+  ref_log_msgs = list(LogReader(ref_log_path))
 
   log_msgs = replay_process(cfg, lr)
 
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
     if not check_enabled(log_msgs):
-      segment = cmp_log_fn.split("/")[-1].split("_")[0]
+      segment = ref_log_fn.split("/")[-1].split("_")[0]
       raise Exception(f"Route never enabled: {segment}")
 
   try:
-    return compare_logs(cmp_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
+    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
   except Exception as e:
     return str(e), log_msgs
 
@@ -174,8 +174,8 @@ if __name__ == "__main__":
 
       cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
       if not args.upload_only:
-        cmp_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-        results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
+        ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+        results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
 
         # save logs so we can upload when updating refs
         save_log(cur_log_fn, log_msgs)
