@@ -41,13 +41,13 @@ int LSM6DS3_Gyro::init() {
     goto fail;
   }
 
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_DRDY_CFG, LSM6DS3_ACCEL_DRDY_PULSE_MODE);
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_DRDY_CFG, LSM6DS3_GYRO_DRDY_PULSE_MODE);
   if (ret < 0) {
     goto fail;
   }
 
   // enable data ready interrupt for gyro on INT1
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, LSM6DS3_ACCEL_INT1_DRDY_G);
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, LSM6DS3_GYRO_INT1_DRDY_G);
   if (ret < 0) {
     goto fail;
   }
@@ -61,8 +61,8 @@ bool LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event) {
   if (has_interrupt_enabled()) {
     // INT1 shared with accel, check STATUS_REG who triggered
     uint8_t status_reg = 0;
-    read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
-    if ((status_reg & LSM6DS3_ACCEL_DRDY_GDA) == 0) {
+    read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
+    if ((status_reg & LSM6DS3_GYRO_DRDY_GDA) == 0) {
       return false;
     }
   }
