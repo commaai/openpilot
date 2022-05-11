@@ -91,6 +91,7 @@ class CarInfo:
         self.row[column] = footnote.value.star
 
     self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
+    return self
 
   @no_type_check
   def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
