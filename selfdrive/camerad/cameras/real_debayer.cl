@@ -31,15 +31,7 @@ inline half3 color_correct(half3 rgb) {
 }
 
 inline half get_vignetting_s(float r) {
-  if (r < 62500) {
-    return (half)(1.0f + 0.0000008f*r);
-  } else if (r < 490000) {
-    return (half)(0.9625f + 0.0000014f*r);
-  } else if (r < 1102500) {
-    return (half)(1.26434f + 0.0000000000016f*r*r);
-  } else {
-    return (half)(0.53503625f + 0.0000000000022f*r*r);
-  }
+  return 1.0f + 8.42920549e-07f*r + 1.01787388e-12f*r*r;
 }
 
 inline half val_from_10(const uchar * source, int gx, int gy, half black_level) {
