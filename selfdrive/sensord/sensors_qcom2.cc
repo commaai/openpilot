@@ -38,9 +38,6 @@ void interrupt_loop(std::vector<Sensor *>& gpio_sensors, PubMaster& pm) {
   }
 
   while (!do_exit) {
-    // events are received at 2kHz frequency, the bandwidth devider returns in
-    // case of 125Hz 7 times the same data, this needs to be filtered, or hanled
-    // smart in other way
 
     // TODO: check here also for epoll? might have a nicer interface
     int err = poll(fd_list.get(), cnt_sensors, 100);
