@@ -50,11 +50,13 @@ fail:
 
 bool LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
 
-  // INT1 shared with gyro, check STATUS_REG who triggered
-  uint8_t status_reg = 0;
-  read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
-  if ((status_reg & LSM6DS3_ACCEL_DRDY_XLDA) == 0) {
-    return false;
+  if (has_interrupt_enabled()) {
+    // INT1 shared with gyro, check STATUS_REG who triggered
+    uint8_t status_reg = 0;
+    read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
+    if ((status_reg & LSM6DS3_ACCEL_DRDY_XLDA) == 0) {
+      return false;
+    }
   }
 
   uint64_t start_time = nanos_since_boot();
