@@ -22,14 +22,14 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-#include "selfdrive/loggerd/encoder.h"
+#include "selfdrive/loggerd/encoder/encoder.h"
 #include "selfdrive/loggerd/logger.h"
 #ifdef QCOM2
-#include "selfdrive/loggerd/v4l_encoder.h"
+#include "selfdrive/loggerd/encoder/v4l_encoder.h"
 #define Encoder V4LEncoder
 #else
-#include "selfdrive/loggerd/raw_logger.h"
-#define Encoder RawLogger
+#include "selfdrive/loggerd/encoder/ffmpeg_encoder.h"
+#define Encoder FfmpegEncoder
 #endif
 
 constexpr int MAIN_FPS = 20;
