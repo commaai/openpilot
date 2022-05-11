@@ -69,6 +69,10 @@ void interrupt_loop(std::vector<Sensor *>& gpio_sensors, PubMaster& pm) {
       }
     }
 
+    if (collected_events.size() == 0) {
+      continue;
+    }
+
     auto events = msg.initEvent().initSensorEvents(collected_events.size());
     for (int i = 0; i < collected_events.size(); ++i) {
       events.adoptWithCaveats(i, kj::mv(collected_events[i]));
