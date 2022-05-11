@@ -530,9 +530,7 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   if (log.isSensorEvents()) {
     this->handle_sensors(t, log.getSensorEvents());
   } else if (log.isGpsLocationExternal()) {
-    if (!this->laikad_mode) {
-      this->handle_gps(t, log.getGpsLocationExternal());
-    }
+    this->handle_gps(t, log.getGpsLocationExternal());
   } else if (log.isCarState()) {
     this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
@@ -540,7 +538,6 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   } else if (log.isLiveCalibration()) {
     this->handle_live_calib(t, log.getLiveCalibration());
   } else if (log.isGnssMeasurements()) {
-    this->laikad_mode = true;
     this->handle_gnss_measurements(t, log.getGnssMeasurements());
   }
   this->finite_check();
