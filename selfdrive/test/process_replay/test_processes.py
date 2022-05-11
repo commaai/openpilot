@@ -131,6 +131,8 @@ if __name__ == "__main__":
                         help="Extra fields or msgs to ignore (e.g. carState.events)")
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
                         help="Msgs to ignore (e.g. carEvents)")
+  parser.add_argument("--parallel", action="store_true",
+                        help="Run tests in parallel")
   args = parser.parse_args()
 
   cars_whitelisted = len(args.whitelist_cars) > 0
@@ -153,8 +155,7 @@ if __name__ == "__main__":
 
   results: Any = {}
 
-  parallel = True
-  if parallel:
+  if args.parallel:
     pool_args: Any = []
     for car_brand, segment in segments:
       if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
@@ -164,7 +165,7 @@ if __name__ == "__main__":
         if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
            (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
           continue
-        pool_args.append(segment, cfg, args, process_replay_dir)
+        pool_args.append((segment, cfg, args, process_replay_dir))
     pool = Pool()
     p = pool.map_async(run_test_process, pool_args)
     for tup in p.get():
