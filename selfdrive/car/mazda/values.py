@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
@@ -31,7 +32,7 @@ class CAR:
 @dataclass
 class MazdaCarInfo(CarInfo):
   package: str = "All"
-  harness: Harness = Harness.mazda
+  harness: Enum = Harness.mazda
 
 
 CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
