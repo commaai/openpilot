@@ -31,7 +31,7 @@ inline half3 color_correct(half3 rgb) {
 }
 
 inline half get_vignetting_s(float r) {
-  return 1.0f + 8.42920549e-07f*r + 1.01787388e-12f*r*r;
+  return 1.0f + 1.24072096e-06f*r - 2.47194997e-13f*r*r + 8.79915883e-19f*r*r*r;
 }
 
 inline half val_from_10(const uchar * source, int gx, int gy, half black_level) {
