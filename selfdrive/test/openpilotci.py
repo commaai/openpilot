@@ -15,11 +15,9 @@ def get_url(route_name, segment_num, log_type="rlog"):
 def upload_file(path, name):
   from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
 
-  sas_token = None
+  sas_token = os.environ.get("AZURE_TOKEN", None)
   if os.path.isfile(TOKEN_PATH):
     sas_token = open(TOKEN_PATH).read().strip()
-  elif "AZURE_TOKEN" in os.environ:
-    sas_token = os.environ["AZURE_TOKEN"]
 
   if sas_token is None:
     sas_token = subprocess.check_output("az storage container generate-sas --account-name commadataci --name openpilotci --https-only --permissions lrw \

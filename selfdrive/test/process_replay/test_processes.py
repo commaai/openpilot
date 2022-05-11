@@ -129,8 +129,7 @@ if __name__ == "__main__":
                       help="Skips testing processes and uploads logs from previous test run")
   args = parser.parse_args()
 
-  full_test = 0 == len(args.whitelist_procs) == len(args.whitelist_cars) == len(args.blacklist_procs) == \
-              len(args.blacklist_cars) == len(args.ignore_fields) == len(args.ignore_msgs)
+  full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.black_list_procs, args.blcklist_cars, args.ignore_fields, args.ignore_msgs))
   upload = args.update_refs or args.upload_only
 
   if upload:
@@ -194,7 +193,7 @@ if __name__ == "__main__":
   if failed:
     print("TEST FAILED")
     if not upload:
-      print("\n\nTo update the reference logs for this test run:")
+      print("\n\nTo push the new reference logs for this commit run:")
       print("./test_processes.py --upload-only")
   else:
     print("TEST SUCCEEDED")
