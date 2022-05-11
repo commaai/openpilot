@@ -1,5 +1,4 @@
 {% set footnote_tag = '[<sup>{}</sup>](#footnotes)' -%}
-{% set star_icon_harness = '<a href="##" title="{}"><img valign="top" src="assets/icon-star-{}.svg" width="22" /></a>' -%}
 {% set star_icon = '<a href="##"><img valign="top" src="assets/icon-star-{}.svg" width="22" /></a>' -%}
 
 # Supported Cars
@@ -44,7 +43,7 @@ How We Rate The Cars
 |{{Column | map(attribute='value') | join('|')}}|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
 {% for car_info in cars %}
-|{% for column in Column %}{{car_info.get_column(column, star_icon_harness, footnote_tag)}}|{% endfor %}
+|{% for column in Column %}{{car_info.get_column(column, star_icon, footnote_tag)}}|{% endfor %}
 
 {% endfor %}
 

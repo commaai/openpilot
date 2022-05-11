@@ -98,11 +98,7 @@ class CarInfo:
   def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
-      # add harness tooltip to actively maintained star
-      if column == Column.MAINTAINED and self.harness is not None:
-        item = star_icon.format("Harness: " + self.harness.value, item.value)
-      else:
-        item = star_icon.format("", item.value)
+      item = star_icon.format(item.value)
 
     footnote = get_footnote(self.footnotes, column)
     if footnote is not None:
