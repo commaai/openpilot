@@ -23,7 +23,6 @@
 
 
 class LSM6DS3_Gyro : public I2CSensor {
-  int gpio_nr;
   uint8_t get_device_address() {return LSM6DS3_GYRO_I2C_ADDR;}
   cereal::SensorEventData::SensorSource source = cereal::SensorEventData::SensorSource::LSM6DS3;
 public:

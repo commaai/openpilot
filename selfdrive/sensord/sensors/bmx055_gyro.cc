@@ -8,8 +8,7 @@
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
-
-BMX055_Gyro::BMX055_Gyro(I2CBus *bus, int gpio_nr) : I2CSensor(bus), gpio_nr(gpio_nr) {}
+BMX055_Gyro::BMX055_Gyro(I2CBus *bus, int gpio_nr) : I2CSensor(bus, gpio_nr) {}
 
 int BMX055_Gyro::init() {
   int ret = 0;
@@ -58,13 +57,11 @@ int BMX055_Gyro::init() {
     goto fail;
   }
 
-  // map data ready interrupt to pin INT1 (GPIO 23)
   ret = set_register(BMX055_GYRO_I2C_REG_INT_MAP_1, BMX055_GYRO_DATA_TO_INT3);
   if (ret < 0) {
     goto fail;
   }
 
-  // enabled new data ready interrupt
   ret = set_register(BMX055_GYRO_I2C_REG_INT_EN_0, BMX055_GYRO_DATA_EN);
   if (ret < 0) {
     goto fail;
