@@ -34,7 +34,7 @@ inline half get_vignetting_s(float r) {
   return 1.0f + 1.24072096e-06f*r - 2.47194997e-13f*r*r + 8.79915883e-19f*r*r*r;
 }
 
-inline half val_from_10(const uchar * source, int gx, int gy, half black_level) {
+inline half val_from_10(const uchar * source, int gx, int gy, half black_level, image1d_t vignetting, sampler_t sampler_) {
   // parse 12bit
   int start = gy * FRAME_STRIDE + (3 * (gx / 2)) + (FRAME_STRIDE * FRAME_OFFSET);
   int offset = gx % 2;
@@ -50,7 +50,8 @@ inline half val_from_10(const uchar * source, int gx, int gy, half black_level) 
   if (CAM_NUM == 1) { // fcamera
     gx = (gx - RGB_WIDTH/2);
     gy = (gy - RGB_HEIGHT/2);
-    pv *= get_vignetting_s(gx*gx + gy*gy);
+    const half r = hypot((half)gx, (half)gy);
+    pv *= (half)read_imageh(vignetting, sampler_, r).s0;
   }
 
   pv = clamp(pv, (half)0.0, (half)1.0);
@@ -74,7 +75,9 @@ half phi(half x) {
 __kernel void debayer10(const __global uchar * in,
                         __global uchar * out,
                         __local half * cached,
-                        float black_level
+                        float black_level,
+                        read_only image1d_t vignetting,
+                        sampler_t sampler_
                        )
 {
   const int x_global = get_global_id(0);
@@ -87,7 +90,7 @@ __kernel void debayer10(const __global uchar * in,
 
   int out_idx = 3 * x_global + 3 * y_global * RGB_WIDTH;
 
-  half pv = val_from_10(in, x_global, y_global, black_level);
+  half pv = val_from_10(in, x_global, y_global, black_level, vignetting, sampler_);
   cached[localOffset] = pv;
 
   // cache padding
@@ -101,22 +104,22 @@ __kernel void debayer10(const __global uchar * in,
   if (x_local < 1) {
     localColOffset = x_local;
     globalColOffset = -1;
-    cached[(y_local + 1) * localRowLen + x_local] = val_from_10(in, x_global-x_global_mod, y_global, black_level);
+    cached[(y_local + 1) * localRowLen + x_local] = val_from_10(in, x_global-x_global_mod, y_global, black_level, vignetting, sampler_);
   } else if (x_local >= get_local_size(0) - 1) {
     localColOffset = x_local + 2;
     globalColOffset = 1;
-    cached[localOffset + 1] = val_from_10(in, x_global+x_global_mod, y_global, black_level);
+    cached[localOffset + 1] = val_from_10(in, x_global+x_global_mod, y_global, black_level, vignetting, sampler_);
   }
 
   if (y_local < 1) {
-    cached[y_local * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global-y_global_mod, black_level);
+    cached[y_local * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global-y_global_mod, black_level, vignetting, sampler_);
     if (localColOffset != -1) {
-      cached[y_local * localRowLen + localColOffset] = val_from_10(in, x_global+(x_global_mod*globalColOffset), y_global-y_global_mod, black_level);
+      cached[y_local * localRowLen + localColOffset] = val_from_10(in, x_global+(x_global_mod*globalColOffset), y_global-y_global_mod, black_level, vignetting, sampler_);
     }
   } else if (y_local >= get_local_size(1) - 1) {
-    cached[(y_local + 2) * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global+y_global_mod, black_level);
+    cached[(y_local + 2) * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global+y_global_mod, black_level, vignetting, sampler_);
     if (localColOffset != -1) {
-      cached[(y_local + 2) * localRowLen + localColOffset] = val_from_10(in, x_global+(x_global_mod*globalColOffset), y_global+y_global_mod, black_level);
+      cached[(y_local + 2) * localRowLen + localColOffset] = val_from_10(in, x_global+(x_global_mod*globalColOffset), y_global+y_global_mod, black_level, vignetting, sampler_);
     }
   }
 

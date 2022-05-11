@@ -28,9 +28,15 @@
 
 ExitHandler do_exit;
 
+uint16_t float_to_half(float f) {
+  uint32_t x = *((uint32_t*)&f);
+  return ((x>>16)&0x8000)|((((x&0x7f800000)-0x38000000)>>13)&0x7c00)|((x>>13)&0x03ff);
+}
+
 class Debayer {
 public:
   Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s) {
+    create_vignetting_texture(context);
     char args[4096];
     const CameraInfo *ci = &s->ci;
     hdr_ = ci->hdr;
@@ -48,6 +54,36 @@ public:
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
+  void create_vignetting_texture(cl_context context) {
+    uint16_t data[1139];  // sqrt((w//2)**2 + (h//2)**2)
+    for (int i = 0; i < 1139; i++) {
+      float r = (float)(i * i);
+      if (r < 62500) {
+        data[i] = float_to_half(1.0f + 0.0000008f*r);
+      } else if (r < 490000) {
+        data[i] = float_to_half(0.9625f + 0.0000014f*r);
+      } else if (r < 1102500) {
+        data[i] = float_to_half(1.26434f + 0.0000000000016f*r*r);
+      } else {
+        data[i] = float_to_half(0.53503625f + 0.0000000000022f*r*r);
+      }
+    }
+    cl_image_format format = {
+      .image_channel_order=CL_R,
+      .image_channel_data_type=CL_HALF_FLOAT
+    };
+    cl_image_desc desc = {
+      .image_type=CL_MEM_OBJECT_IMAGE1D,
+      .image_width=1139
+    };
+    cl_int err;
+    vignetting_ = clCreateImage(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &format, &desc, data, &err);
+    LOGE("!!! %d", err);
+
+    sampler_ = clCreateSampler(context, CL_FALSE, CL_ADDRESS_NONE, CL_FILTER_LINEAR, &err);
+    LOGE("!!! %d", err);
+  }
+
   void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float gain, float black_level, cl_event *debayer_event) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
@@ -58,6 +94,8 @@ public:
     const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
     CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
     CL_CHECK(clSetKernelArg(krnl_, 3, sizeof(float), &black_level));
+    CL_CHECK(clSetKernelArg(krnl_, 4, sizeof(cl_mem), &vignetting_));
+    CL_CHECK(clSetKernelArg(krnl_, 5, sizeof(cl_sampler), &sampler_));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
   }
 
@@ -67,6 +105,8 @@ public:
 
 private:
   cl_kernel krnl_;
+  cl_mem vignetting_;
+  cl_sampler sampler_;
   bool hdr_;
 };
 
