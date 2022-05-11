@@ -119,8 +119,9 @@ int sensor_loop() {
     return -1;
   }
 
-  BMX055_Accel bmx055_accel(i2c_bus_imu, 21);
-  BMX055_Gyro bmx055_gyro(i2c_bus_imu, 23);
+  // bmx interrupts are triggering faster than the filter bandwidth
+  BMX055_Accel bmx055_accel(i2c_bus_imu);
+  BMX055_Gyro bmx055_gyro(i2c_bus_imu);
   BMX055_Magn bmx055_magn(i2c_bus_imu);
   BMX055_Temp bmx055_temp(i2c_bus_imu);
 
@@ -137,11 +138,11 @@ int sensor_loop() {
   sensors_init.push_back({&bmx055_accel, false});
   sensors_init.push_back({&bmx055_gyro, false});
   sensors_init.push_back({&bmx055_magn, false});
-  sensors_init.push_back({&bmx055_temp, false}); // TODO: read with interrupt gyro
+  sensors_init.push_back({&bmx055_temp, false});
 
   sensors_init.push_back({&lsm6ds3_accel, true});
   sensors_init.push_back({&lsm6ds3_gyro, true});
-  sensors_init.push_back({&lsm6ds3_temp, true}); // TODO: read with interrupt gyro
+  sensors_init.push_back({&lsm6ds3_temp, true});
 
   sensors_init.push_back({&mmc5603nj_magn, false});
 
