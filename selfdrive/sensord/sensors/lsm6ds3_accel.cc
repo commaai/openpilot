@@ -38,6 +38,11 @@ int LSM6DS3_Accel::init() {
     goto fail;
   }
 
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_DRDY_CFG, LSM6DS3_ACCEL_DRDY_PULSE_MODE);
+  if (ret < 0) {
+    goto fail;
+  }
+
   // enable data ready interrupt for accel on INT1
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, LSM6DS3_ACCEL_INT1_DRDY_XL);
   if (ret < 0) {
