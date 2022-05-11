@@ -1,6 +1,7 @@
 #include "selfdrive/loggerd/loggerd.h"
 #include "selfdrive/loggerd/remote_encoder.h"
-bool env_remote_encoder = getenv("REMOTE_ENCODER") != NULL;
+//bool env_remote_encoder = getenv("REMOTE_ENCODER") != NULL;
+bool env_remote_encoder = true;
 
 ExitHandler do_exit;
 
