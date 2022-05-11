@@ -298,11 +298,12 @@ selfdrive/proclogd/proclog.cc
 selfdrive/proclogd/proclog.h
 
 selfdrive/loggerd/SConscript
-selfdrive/loggerd/encoder.h
-selfdrive/loggerd/v4l_encoder.cc
-selfdrive/loggerd/v4l_encoder.h
-selfdrive/loggerd/video_writer.cc
-selfdrive/loggerd/video_writer.h
+selfdrive/loggerd/encoder/encoder.cc
+selfdrive/loggerd/encoder/encoder.h
+selfdrive/loggerd/encoder/v4l_encoder.cc
+selfdrive/loggerd/encoder/v4l_encoder.h
+selfdrive/loggerd/encoder/video_writer.cc
+selfdrive/loggerd/encoder/video_writer.h
 selfdrive/loggerd/remote_encoder.cc
 selfdrive/loggerd/remote_encoder.h
 selfdrive/loggerd/logger.cc
@@ -312,8 +313,8 @@ selfdrive/loggerd/loggerd.h
 selfdrive/loggerd/encoderd.cc
 selfdrive/loggerd/main.cc
 selfdrive/loggerd/bootlog.cc
-selfdrive/loggerd/raw_logger.cc
-selfdrive/loggerd/raw_logger.h
+selfdrive/loggerd/encoder/ffmpeg_encoder.cc
+selfdrive/loggerd/encoder/ffmpeg_encoder.h
 
 selfdrive/loggerd/__init__.py
 selfdrive/loggerd/config.py
