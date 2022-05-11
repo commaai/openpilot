@@ -31,7 +31,7 @@ int gpio_set(int pin_nr, bool high) {
   return util::write_file(pin_val_path, (void*)(high ? "1" : "0"), 1);
 }
 
-int gpio_set_edge(int pin_nr, Edgetype etype) {
+int gpio_set_edge(int pin_nr, EdgeType etype) {
   char pin_dir_path[50];
   int pin_dir_path_len = snprintf(pin_dir_path, sizeof(pin_dir_path),
                            "/sys/class/gpio/gpio%d/edge", pin_nr);
