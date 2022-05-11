@@ -1,7 +1,5 @@
 import argparse
 import sys
-import cereal.messaging as messaging
-import json
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 
