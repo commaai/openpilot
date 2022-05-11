@@ -22,14 +22,14 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-#include "selfdrive/loggerd/encoder.h"
+#include "selfdrive/loggerd/encoder/encoder.h"
 #include "selfdrive/loggerd/logger.h"
 #ifdef QCOM2
-#include "selfdrive/loggerd/omx_encoder.h"
-#define Encoder OmxEncoder
+#include "selfdrive/loggerd/encoder/v4l_encoder.h"
+#define Encoder V4LEncoder
 #else
-#include "selfdrive/loggerd/raw_logger.h"
-#define Encoder RawLogger
+#include "selfdrive/loggerd/encoder/ffmpeg_encoder.h"
+#define Encoder FfmpegEncoder
 #endif
 
 constexpr int MAIN_FPS = 20;
@@ -67,6 +67,8 @@ const LogCameraInfo cameras_logged[] = {
     .trigger_rotate = true,
     .enable = true,
     .record = true,
+    .frame_width = 1928,
+    .frame_height = 1208,
   },
   {
     .type = DriverCam,
@@ -79,6 +81,8 @@ const LogCameraInfo cameras_logged[] = {
     .trigger_rotate = true,
     .enable = true,
     .record = Params().getBool("RecordFront"),
+    .frame_width = 1928,
+    .frame_height = 1208,
   },
   {
     .type = WideRoadCam,
@@ -91,6 +95,8 @@ const LogCameraInfo cameras_logged[] = {
     .trigger_rotate = true,
     .enable = Hardware::TICI(),
     .record = Hardware::TICI(),
+    .frame_width = 1928,
+    .frame_height = 1208,
   },
 };
 const LogCameraInfo qcam_info = {
@@ -98,6 +104,8 @@ const LogCameraInfo qcam_info = {
   .fps = MAIN_FPS,
   .bitrate = 256000,
   .is_h265 = false,
+  .enable = true,
+  .record = true,
   .frame_width = Hardware::TICI() ? 526 : 480,
   .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
 };

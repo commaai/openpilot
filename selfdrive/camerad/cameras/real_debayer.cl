@@ -1,73 +1,67 @@
+#ifdef HALF_AS_FLOAT
+#define half float
+#define half3 float3
+#else
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#endif
 
-const __constant half3 color_correction[3] = {
-  // post wb CCM
-  (half3)(1.82717181, -0.31231438, 0.07307673),
-  (half3)(-0.5743977, 1.36858544, -0.53183455),
-  (half3)(-0.25277411, -0.05627105, 1.45875782),
-};
+// post wb CCM
+const __constant half3 color_correction_0 = (half3)(1.82717181, -0.31231438, 0.07307673);
+const __constant half3 color_correction_1 = (half3)(-0.5743977, 1.36858544, -0.53183455);
+const __constant half3 color_correction_2 = (half3)(-0.25277411, -0.05627105, 1.45875782);
 
 // tone mapping params
-const half cpk = 0.75;
-const half cpb = 0.125;
-const half cpxk = 0.0025;
-const half cpxb = 0.01;
+const half gamma_k = 0.75;
+const half gamma_b = 0.125;
+const half mp = 0.01; // ideally midpoint should be adaptive
+const half rk = 9 - 100*mp;
 
-half mf(half x, half cp) {
-  half rk = 9 - 100*cp;
-  if (x > cp) {
-    return (rk * (x-cp) * (1-(cpk*cp+cpb)) * (1+1/(rk*(1-cp))) / (1+rk*(x-cp))) + cpk*cp + cpb;
-  } else if (x < cp) {
-    return (rk * (x-cp) * (cpk*cp+cpb) * (1+1/(rk*cp)) / (1-rk*(x-cp))) + cpk*cp + cpb;
-  } else {
-    return x;
-  }
+inline half3 gamma_apply(half3 x) {
+  // poly approximation for s curve
+  return (x > mp) ?
+    ((rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b) :
+    ((rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b);
 }
 
-half3 color_correct(half3 rgb) {
-  half3 ret = (0,0,0);
-  half cpx = 0.01;
-  ret += (half)rgb.x * color_correction[0];
-  ret += (half)rgb.y * color_correction[1];
-  ret += (half)rgb.z * color_correction[2];
-  ret.x = mf(ret.x, cpx);
-  ret.y = mf(ret.y, cpx);
-  ret.z = mf(ret.z, cpx);
-  ret = clamp(0.0h, 255.0h, ret*255.0h);
-  return ret;
+inline half3 color_correct(half3 rgb) {
+  half3 ret = (half)rgb.x * color_correction_0;
+  ret += (half)rgb.y * color_correction_1;
+  ret += (half)rgb.z * color_correction_2;
+  return gamma_apply(ret);
+}
+
+inline half get_vignetting_s(float r) {
+  if (r < 62500) {
+    return (half)(1.0f + 0.0000008f*r);
+  } else if (r < 490000) {
+    return (half)(0.9625f + 0.0000014f*r);
+  } else if (r < 1102500) {
+    return (half)(1.26434f + 0.0000000000016f*r*r);
+  } else {
+    return (half)(0.53503625f + 0.0000000000022f*r*r);
+  }
 }
 
 inline half val_from_10(const uchar * source, int gx, int gy, half black_level) {
   // parse 12bit
-  int start = gy * FRAME_STRIDE + (3 * (gx / 2));
+  int start = gy * FRAME_STRIDE + (3 * (gx / 2)) + (FRAME_STRIDE * FRAME_OFFSET);
   int offset = gx % 2;
   uint major = (uint)source[start + offset] << 4;
   uint minor = (source[start + 2] >> (4 * offset)) & 0xf;
   half pv = (half)((major + minor)/4);
 
   // normalize
-  pv = max(0.0h, pv - black_level);
+  pv = max((half)0.0, pv - black_level);
   pv /= (1024.0f - black_level);
 
   // correct vignetting
   if (CAM_NUM == 1) { // fcamera
     gx = (gx - RGB_WIDTH/2);
     gy = (gy - RGB_HEIGHT/2);
-    float r = gx*gx + gy*gy;
-    half s;
-    if (r < 62500) {
-      s = (half)(1.0f + 0.0000008f*r);
-    } else if (r < 490000) {
-      s = (half)(0.9625f + 0.0000014f*r);
-    } else if (r < 1102500) {
-      s = (half)(1.26434f + 0.0000000000016f*r*r);
-    } else {
-      s = (half)(0.53503625f + 0.0000000000022f*r*r);
-    }
-    pv = s * pv;
+    pv *= get_vignetting_s(gx*gx + gy*gy);
   }
 
-  pv = clamp(0.0h, 1.0h, pv);
+  pv = clamp(pv, (half)0.0, (half)1.0);
   return pv;
 }
 
@@ -104,35 +98,33 @@ __kernel void debayer10(const __global uchar * in,
   half pv = val_from_10(in, x_global, y_global, black_level);
   cached[localOffset] = pv;
 
-  // don't care
-  if (x_global < 1 || x_global >= RGB_WIDTH - 1 || y_global < 1 || y_global >= RGB_HEIGHT - 1) {
-    return;
-  }
-
   // cache padding
   int localColOffset = -1;
   int globalColOffset = -1;
+
+  const int x_global_mod = (x_global == 0 || x_global == RGB_WIDTH - 1) ? -1: 1;
+  const int y_global_mod = (y_global == 0 || y_global == RGB_HEIGHT - 1) ? -1: 1;
 
   // cache padding
   if (x_local < 1) {
     localColOffset = x_local;
     globalColOffset = -1;
-    cached[(y_local + 1) * localRowLen + x_local] = val_from_10(in, x_global-1, y_global, black_level);
+    cached[(y_local + 1) * localRowLen + x_local] = val_from_10(in, x_global-x_global_mod, y_global, black_level);
   } else if (x_local >= get_local_size(0) - 1) {
     localColOffset = x_local + 2;
     globalColOffset = 1;
-    cached[localOffset + 1] = val_from_10(in, x_global+1, y_global, black_level);
+    cached[localOffset + 1] = val_from_10(in, x_global+x_global_mod, y_global, black_level);
   }
 
   if (y_local < 1) {
-    cached[y_local * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global-1, black_level);
+    cached[y_local * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global-y_global_mod, black_level);
     if (localColOffset != -1) {
-      cached[y_local * localRowLen + localColOffset] = val_from_10(in, x_global+globalColOffset, y_global-1, black_level);
+      cached[y_local * localRowLen + localColOffset] = val_from_10(in, x_global+(x_global_mod*globalColOffset), y_global-y_global_mod, black_level);
     }
   } else if (y_local >= get_local_size(1) - 1) {
-    cached[(y_local + 2) * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global+1, black_level);
+    cached[(y_local + 2) * localRowLen + x_local + 1] = val_from_10(in, x_global, y_global+y_global_mod, black_level);
     if (localColOffset != -1) {
-      cached[(y_local + 2) * localRowLen + localColOffset] = val_from_10(in, x_global+globalColOffset, y_global+1, black_level);
+      cached[(y_local + 2) * localRowLen + localColOffset] = val_from_10(in, x_global+(x_global_mod*globalColOffset), y_global+y_global_mod, black_level);
     }
   }
 
@@ -197,10 +189,8 @@ __kernel void debayer10(const __global uchar * in,
     }
   }
 
-  rgb = clamp(0.0h, 1.0h, rgb);
-  rgb = color_correct(rgb);
-
-  out[out_idx + 0] = (uchar)(rgb.z);
-  out[out_idx + 1] = (uchar)(rgb.y);
-  out[out_idx + 2] = (uchar)(rgb.x);
+  uchar3 rgbc = convert_uchar3_sat(color_correct(clamp(rgb, (half)0.0, (half)1.0)) * 255.0);
+  out[out_idx + 0] = rgbc.z;
+  out[out_idx + 1] = rgbc.y;
+  out[out_idx + 2] = rgbc.x;
 }

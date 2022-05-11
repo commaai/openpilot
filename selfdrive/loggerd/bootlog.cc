@@ -49,14 +49,14 @@ static kj::Array<capnp::word> build_boot_log() {
 }
 
 int main(int argc, char** argv) {
-  const std::string path = LOG_ROOT + "/boot/" + logger_get_route_name() + ".bz2";
+  const std::string path = LOG_ROOT + "/boot/" + logger_get_route_name();
   LOGW("bootlog to %s", path.c_str());
 
   // Open bootlog
   bool r = util::create_directories(LOG_ROOT + "/boot/", 0775);
   assert(r);
 
-  BZFile bz_file(path.c_str());
+  RawFile bz_file(path.c_str());
 
   // Write initdata
   bz_file.write(logger_build_init_data().asBytes());

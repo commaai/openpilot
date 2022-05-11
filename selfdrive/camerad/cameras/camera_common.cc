@@ -13,7 +13,6 @@
 #include "selfdrive/camerad/imgproc/utils.h"
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -37,10 +36,10 @@ public:
     hdr_ = ci->hdr;
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
-             "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
+             "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
              "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d",
-             ci->frame_width, ci->frame_height, ci->frame_stride,
+             ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, b->rgb_stride,
              ci->bayer_flip, ci->hdr, s->camera_num);
     const char *cl_file = "cameras/real_debayer.cl";
@@ -82,7 +81,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   frame_buf_count = frame_cnt;
 
   // RAW frame
-  const int frame_size = ci->frame_height * ci->frame_stride;
+  const int frame_size = (ci->frame_height + ci->extra_height) * ci->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
@@ -146,6 +145,8 @@ bool CameraBuf::acquire() {
   cl_event event;
 
   double start_time = millis_since_boot();
+
+  cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   if (debayer) {
     float gain = 0.0;
@@ -234,6 +235,17 @@ kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
       memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*b->rgb_stride*scale+c*3*scale], 3*sizeof(uint8_t));
     }
   }
+  return kj::mv(frame_image);
+}
+
+kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
+  const uint8_t *dat = (const uint8_t *)b->cur_camera_buf->addr;
+
+  kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(b->cur_camera_buf->len);
+  uint8_t *resized_dat = frame_image.begin();
+
+  memcpy(resized_dat, dat, b->cur_camera_buf->len);
+
   return kj::mv(frame_image);
 }
 
@@ -376,47 +388,6 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
   return std::thread(processing_thread, cameras, cs, callback);
 }
-
-static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
-  static const bool is_rhd = Params().getBool("IsRHD");
-  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
-  const CameraBuf *b = &c->buf;
-
-  int x_offset = 0, y_offset = 0;
-  int frame_width = b->rgb_width, frame_height = b->rgb_height;
-
-
-  ExpRect def_rect;
-  if (Hardware::TICI()) {
-    x_offset = 630, y_offset = 156;
-    frame_width = 668, frame_height = frame_width / 1.33;
-    def_rect = {96, 1832, 2, 242, 1148, 4};
-  } else {
-    def_rect = {is_rhd ? 0 : b->rgb_width * 3 / 5, is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width, 2,
-                b->rgb_height / 3, b->rgb_height, 1};
-  }
-
-  static ExpRect rect = def_rect;
-
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
-}
-
-void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  int j = Hardware::TICI() ? 1 : 3;
-  if (cnt % j == 0) {
-    s->sm->update(0);
-    driver_cam_auto_exposure(c, *(s->sm));
-  }
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initDriverCameraState();
-  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, c->buf.cur_frame_data);
-  if (env_send_driver) {
-    framed.setImage(get_frame_image(&c->buf));
-  }
-  s->pm->send("driverCameraState", msg);
-}
-
 
 void camerad_thread() {
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);

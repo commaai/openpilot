@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
@@ -27,13 +28,18 @@ class CAR:
   CX5_2022 = "MAZDA CX-5 2022"
 
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.CX5: CarInfo("Mazda CX-5 2017, 2019", "All"),  # TODO: verify years and torque for first 4
-  CAR.CX9: CarInfo("Mazda CX-9 2016-17", "All"),
-  CAR.MAZDA3: CarInfo("Mazda 3 2017", "All"),
-  CAR.MAZDA6: CarInfo("Mazda 6 2017", "All"),
-  CAR.CX9_2021: CarInfo("Mazda CX-9 2021", "All", good_torque=True),
-  CAR.CX5_2022: CarInfo("Mazda CX-5 2022", "All", good_torque=True),
+@dataclass
+class MazdaCarInfo(CarInfo):
+  package: str = "All"
+
+
+CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
+  CAR.CX5: MazdaCarInfo("Mazda CX-5 2017, 2019"),  # TODO: verify years and torque for first 4
+  CAR.CX9: MazdaCarInfo("Mazda CX-9 2016-17"),
+  CAR.MAZDA3: MazdaCarInfo("Mazda 3 2017"),
+  CAR.MAZDA6: MazdaCarInfo("Mazda 6 2017"),
+  CAR.CX9_2021: MazdaCarInfo("Mazda CX-9 2021", good_torque=True),
+  CAR.CX5_2022: MazdaCarInfo("Mazda CX-5 2022", good_torque=True),
 }
 
 

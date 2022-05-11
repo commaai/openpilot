@@ -1,5 +1,5 @@
 {% set footnote_tag = '[<sup>{}</sup>](#footnotes)' -%}
-{% set star_icon = '<a href="#"><img valign="top" src="assets/icon-star-{}.svg" width="22" /></a>' -%}
+{% set star_icon = '<a href="##"><img valign="top" src="assets/icon-star-{}.svg" width="22" /></a>' -%}
 
 # Supported Cars
 

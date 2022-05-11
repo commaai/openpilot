@@ -86,7 +86,7 @@ def connect():
 
 
 if __name__ == "__main__":
-  if panda_jungle_imported:
+  if not panda_jungle_imported:
     print("\33[31m", "WARNING: cannot connect to jungles. Clone the jungle library to enable support:", "\033[0m")
     print("\033[34m", f"cd {BASEDIR} && git clone https://github.com/commaai/panda_jungle", "\033[0m")
 
