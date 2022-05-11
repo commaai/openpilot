@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 import signal
+import uuid
 from collections import namedtuple
 
 import capnp
@@ -338,6 +339,7 @@ CONFIGS = [
 
 
 def replay_process(cfg, lr, fingerprint=None):
+  os.environ['OPENPILOIT_PREFIX'] = str(uuid.uuid4())
   if cfg.fake_pubsubmaster:
     return python_replay_process(cfg, lr, fingerprint)
   else:
