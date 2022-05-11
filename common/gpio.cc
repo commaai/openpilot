@@ -31,7 +31,7 @@ int gpio_set(int pin_nr, bool high) {
   return util::write_file(pin_val_path, (void*)(high ? "1" : "0"), 1);
 }
 
-int gpio_set_edge(int pin_nr, Edgetypes etype) {
+int gpio_set_edge(int pin_nr, Edgetype etype) {
   char pin_dir_path[50];
   int pin_dir_path_len = snprintf(pin_dir_path, sizeof(pin_dir_path),
                            "/sys/class/gpio/gpio%d/edge", pin_nr);
@@ -40,12 +40,12 @@ int gpio_set_edge(int pin_nr, Edgetypes etype) {
   }
 
   std::string value;
-  switch(etype)
-  {
+  switch(etype) {
       case Rising  : value = "rising"; break;
       case Falling : value = "falling"; break;
       case Both    : value = "both";  break;
-      default      : return 0; // None case, do nothing
+      case None    : return 0;
+      default      : return -1;
   }
 
   return util::write_file(pin_dir_path, (void*)value.c_str(), value.size());
