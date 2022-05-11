@@ -260,8 +260,7 @@ void Localizer::input_fake_gps_observations(double current_time) {
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
-void Localizer::handle_gnss_constellation(double current_time, ConstellationId c_id, std::vector<cereal::GnssMeasurements::CorrectedMeasurement::Reader> meas_per_constellation)
-{
+void Localizer::handle_gnss_constellation(double current_time, ConstellationId c_id, std::vector<cereal::GnssMeasurements::CorrectedMeasurement::Reader> meas_per_constellation) {
   auto size = meas_per_constellation.size();
   std::vector<VectorXd> pseudo_zs(size);
   std::vector<MatrixXdr> pseudo_Rs(size);
@@ -273,8 +272,7 @@ void Localizer::handle_gnss_constellation(double current_time, ConstellationId c
   auto observation = (c_id == ConstellationId::GPS) ? OBSERVATION_PSEUDORANGE_GPS : OBSERVATION_PSEUDORANGE_GLONASS;
   auto observation_rate = (c_id == ConstellationId::GPS) ? OBSERVATION_PSEUDORANGE_RATE_GPS : OBSERVATION_PSEUDORANGE_RATE_GLONASS;
 
-  for (int i = 0; i < size; ++i)
-  {
+  for (int i = 0; i < size; ++i) {
     auto meas = meas_per_constellation[i];
     pseudo_zs[i] = Vector3d::Constant(meas.getPseudorange());
     pseudo_Rs[i] = Vector3d::Constant(std::pow(meas.getPseudorangeStd(), 2)).asDiagonal();
@@ -385,11 +383,11 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
-    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
+    this->reset_kalman(NAN, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R, &initial_pose_ecef_quat);
     this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 100.0) {
     LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
-    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
+    this->reset_kalman(NAN, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R, &initial_pose_ecef_quat);
   }
 
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
@@ -486,13 +484,7 @@ void Localizer::update_reset_tracker() {
   }
 }
 
-void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos, VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R) {
-  VectorXd current_x = this->kf->get_x();
-  current_x.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START) = init_orient;
-  this->reset_kalman(NAN, init_pos, init_vel, init_pos_R, init_vel_R);
-}
-
-void Localizer::reset_kalman(double current_time, VectorXd init_pos, VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R) {
+void Localizer::reset_kalman(double current_time, VectorXd init_pos, VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R, VectorXd* init_orient) {
   // too nonlinear to init on completely wrong
   VectorXd current_x = this->kf->get_x();
   MatrixXdr current_P = this->kf->get_P();
@@ -500,6 +492,9 @@ void Localizer::reset_kalman(double current_time, VectorXd init_pos, VectorXd in
   MatrixXdr reset_orientation_P = this->kf->get_reset_orientation_P();
   int non_ecef_state_err_len = init_P.rows() - (STATE_ECEF_POS_ERR_LEN + STATE_ECEF_ORIENTATION_ERR_LEN + STATE_ECEF_VELOCITY_ERR_LEN);
 
+  if (init_orient != nullptr){
+    current_x.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START) = *init_orient;
+  }
   current_x.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START) = init_vel;
   current_x.segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) = init_pos;
 
@@ -528,14 +523,16 @@ void Localizer::handle_msg_bytes(const char *data, const size_t size) {
 
 void Localizer::handle_msg(const cereal::Event::Reader& log) {
   double t = log.getLogMonoTime() * 1e-9;
-  if (log.isGnssMeasurements()){
+  if (log.isGnssMeasurements()) {
     t = log.getGnssMeasurements().getUbloxMonoTime() * 1e-9;
   }
   this->time_check(t);
   if (log.isSensorEvents()) {
     this->handle_sensors(t, log.getSensorEvents());
   } else if (log.isGpsLocationExternal()) {
-    this->handle_gps(t, log.getGpsLocationExternal());
+    if (!this->laikad_mode) {
+      this->handle_gps(t, log.getGpsLocationExternal());
+    }
   } else if (log.isCarState()) {
     this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
@@ -543,6 +540,7 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   } else if (log.isLiveCalibration()) {
     this->handle_live_calib(t, log.getLiveCalibration());
   } else if (log.isGnssMeasurements()) {
+    this->laikad_mode = true;
     this->handle_gnss_measurements(t, log.getGnssMeasurements());
   }
   this->finite_check();
@@ -587,7 +585,7 @@ int Localizer::locationd_thread() {
   PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, nullptr, {"gpsLocationExternal", "carParams"});
+  SubMaster sm(service_list, nullptr, {"carParams", "gpsLocationExternal", "gnssMeasurements"});
 
   uint64_t cnt = 0;
   bool filterInitialized = false;

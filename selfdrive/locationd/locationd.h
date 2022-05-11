@@ -29,8 +29,8 @@ public:
   int locationd_thread();
 
   void reset_kalman(double current_time = NAN);
-  void reset_kalman(double current_time, Eigen::VectorXd init_pos, Eigen::VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R);
-  void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos, Eigen::VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R);
+  // void reset_kalman(double current_time, Eigen::VectorXd init_pos, Eigen::VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R);
+  void reset_kalman(double current_time, Eigen::VectorXd init_pos, Eigen::VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R, Eigen::VectorXd* init_orient=nullptr);
   void reset_kalman(double current_time, Eigen::VectorXd init_x, MatrixXdr init_P);
   void finite_check(double current_time = NAN);
   void time_check(double current_time = NAN);
@@ -76,6 +76,8 @@ private:
   double reset_tracker = 0.0;
   bool device_fell = false;
   bool gps_mode = false;
+  // Temporary variable to test gnss msgs coming from laikad and disable GpsLocationExternal msgs.
+  bool laikad_mode = false;
 
   void handle_gnss_constellation(double current_time, ConstellationId c_id, std::vector<cereal::GnssMeasurements::CorrectedMeasurement::Reader> meas_per_constellation);
   void check_initial_position(double time, const cereal::GnssMeasurements::Reader& log);

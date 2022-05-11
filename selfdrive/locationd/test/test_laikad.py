@@ -14,6 +14,8 @@ class TestLaikad(unittest.TestCase):
   def test_create_msg_without_errors(self):
     gpstime = GPSTime.from_datetime(datetime.now())
     meas = GNSSMeasurement(ConstellationId.GPS, 1, gpstime.week, gpstime.tow, {'C1C': 0., 'D1C': 0.}, {'C1C': 0., 'D1C': 0.})
+    # Fake observables_final to be correct
+    meas.observables_final = meas.observables
     msg = create_measurement_msg(meas)
 
     self.assertEqual(msg.constellationId, 'gps')
