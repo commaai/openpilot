@@ -14,5 +14,6 @@ public:
   FileSensor(std::string filename);
   ~FileSensor();
   int init();
+  bool has_interrupt_enabled();
   virtual bool get_event(cereal::SensorEventData::Builder &event) = 0;
 };

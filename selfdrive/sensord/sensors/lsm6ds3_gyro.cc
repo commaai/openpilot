@@ -5,12 +5,10 @@
 
 #include "common/swaglog.h"
 #include "common/timing.h"
-#include "common/gpio.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
-
-LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr) : I2CSensor(bus), gpio_nr(gpio_nr) {}
+LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr) : I2CSensor(bus, gpio_nr) {}
 
 int LSM6DS3_Gyro::init() {
   int ret = 0;
@@ -32,19 +30,7 @@ int LSM6DS3_Gyro::init() {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
-  // assumed to be exported on boot
-  if (gpio_init(gpio_nr, false) != 0) {
-    ret = -1;
-    goto fail;
-  }
-
-  if (gpio_set_edge(gpio_nr, Edgetypes::Rising) != 0) {
-    ret = -1;
-    goto fail;
-  }
-
-  gpio_fd = gpio_get_ro_value_fd(gpio_nr);
-  if (gpio_fd < 0) {
+  if (init_gpio() == -1) {
     ret = -1;
     goto fail;
   }

@@ -61,7 +61,7 @@ class BMX055_Magn : public I2CSensor{
   bool perform_self_test();
   bool parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *z);
 public:
-  BMX055_Magn(I2CBus *bus);
+  BMX055_Magn(I2CBus *bus, int gpio_nr = 0);
   int init();
   bool get_event(cereal::SensorEventData::Builder &event);
 };

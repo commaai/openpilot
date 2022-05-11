@@ -63,7 +63,7 @@ static int16_t compensate_z(trim_data_t trim_data, int16_t mag_data_z, uint16_t 
   return (int16_t)retval;
 }
 
-BMX055_Magn::BMX055_Magn(I2CBus *bus) : I2CSensor(bus) {}
+BMX055_Magn::BMX055_Magn(I2CBus *bus, int gpio_nr) : I2CSensor(bus, gpio_nr) {}
 
 int BMX055_Magn::init() {
   int ret;
@@ -222,16 +222,6 @@ bool BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[8];
   int16_t _x, _y, x, y, z;
-
-  // TODO: this needs a revisit...
-  //uint8_t drdy_data = 0;
-  //read_register(BMX055_MAGN_I2C_REG_RHALL_LSB, &drdy_data, sizeof(drdy_data));
-
-  //set_register(BMX055_MAGN_I2C_REG_MAG, BMX055_MAGN_FORCED);
-  //return false;
-
-  //int len = read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
-  //assert(len == sizeof(buffer));
 
   bool parsed = parse_xyz(buffer, &_x, &_y, &z);
   if (parsed) {

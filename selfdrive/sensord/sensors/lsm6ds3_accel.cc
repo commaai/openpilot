@@ -4,9 +4,8 @@
 
 #include "common/swaglog.h"
 #include "common/timing.h"
-#include "common/gpio.h"
 
-LSM6DS3_Accel::LSM6DS3_Accel(I2CBus *bus, int gpio_nr) : I2CSensor(bus), gpio_nr(gpio_nr) {}
+LSM6DS3_Accel::LSM6DS3_Accel(I2CBus *bus, int gpio_nr) : I2CSensor(bus, gpio_nr) {}
 
 int LSM6DS3_Accel::init() {
   int ret = 0;
@@ -28,19 +27,7 @@ int LSM6DS3_Accel::init() {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
-  // assumed to be exported on boot
-  if (gpio_init(gpio_nr, false) != 0) {
-    ret = -1;
-    goto fail;
-  }
-
-  if (gpio_set_edge(gpio_nr, Edgetypes::Rising) != 0) {
-    ret = -1;
-    goto fail;
-  }
-
-  gpio_fd = gpio_get_ro_value_fd(gpio_nr);
-  if (gpio_fd < 0) {
+  if (init_gpio() == -1) {
     ret = -1;
     goto fail;
   }
