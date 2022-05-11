@@ -12,7 +12,7 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-int MAX_PARAM_DIRS = 400;
+int MAX_PARAM_DIRS = 1000;
 
 namespace {
 
