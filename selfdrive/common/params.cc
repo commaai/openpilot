@@ -1,5 +1,6 @@
 #include "selfdrive/common/params.h"
 
+#include <algorithm>
 #include <dirent.h>
 #include <filesystem>
 #include <iterator>
@@ -14,7 +15,7 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-int MAX_PARAM_DIRS = 5;
+int MAX_PARAM_DIRS = 200;
 
 namespace {
 
@@ -189,19 +190,14 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 void clean_param_dirs(std::string path){
   std::filesystem::directory_iterator iter(path.substr(0, path.rfind("/")));
-  auto iter_b = std::filesystem::begin(iter);
-  auto iter_e = std::filesystem::end(iter);
-  if (std::distance(iter_b, iter_e) > MAX_PARAM_DIRS) {
-    std::optional<std::filesystem::directory_entry> oldest;
-    for (std::filesystem::directory_entry entry : iter_b) {
-      if (!oldest.has_value()) oldest = entry;
-      else if (entry.last_write_time() < oldest->last_write_time()) {
-        oldest = entry;
-      }
-      std::cout<<oldest->path()<<std::endl;
-    }
-    std::filesystem::remove_all(oldest->path());
+  int count = 0;
+  std::optional<std::filesystem::directory_entry> oldest;
+  for (std::filesystem::directory_entry entry : iter) {
+    count += 1;
+    if (!oldest.has_value()) oldest = entry;
+    else if (entry.last_write_time() < oldest->last_write_time()) oldest = entry;
   }
+  if (count > MAX_PARAM_DIRS) std::filesystem::remove_all(oldest->path());
 }
 
 Params::Params(const std::string &path) {
@@ -209,7 +205,7 @@ Params::Params(const std::string &path) {
   params_path = path.empty() ? default_param_path : ensure_params_path(path);
   prefix = std::getenv("OPENPILOIT_PREFIX");
   std::filesystem::create_directory(getParamPath());
-  //clean_param_dirs(getParamPath());
+  clean_param_dirs(getParamPath());
 }
 
 bool Params::checkKey(const std::string &key) {
