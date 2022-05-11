@@ -12,3 +12,7 @@ int FileSensor::init() {
 FileSensor::~FileSensor() {
   file.close();
 }
+
+bool FileSensor::has_interrupt_enabled() {
+  return false;
+}
