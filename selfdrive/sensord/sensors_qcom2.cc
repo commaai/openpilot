@@ -90,6 +90,10 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
       continue;
     }
 
+    if (collected_events.size() == 0) {
+      continue;
+    }
+
     auto events = msg.initEvent().initSensorEvents(collected_events.size());
     for (int i = 0; i < collected_events.size(); ++i) {
       events.adoptWithCaveats(i, kj::mv(collected_events[i]));
