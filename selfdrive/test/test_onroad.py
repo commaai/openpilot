@@ -23,7 +23,7 @@ from tools.lib.logreader import LogReader
 PROCS = {
   "selfdrive.controls.controlsd": 31.0,
   "./loggerd": 10.0,
-  "./encoderd": 15.0,
+  "./encoderd": 27.8,
   "./camerad": 26.0,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 11.7,
