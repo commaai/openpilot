@@ -57,11 +57,11 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     return;
   }
 
-  cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState();
-  bool face_detected = driver_state.getFaceProb() > 0.5;
+  cereal::DriverState::Reader driver_data = sm["driverState"].getDriverState().getDriverDataLH(); // TODO: decide by wheel position
+  bool face_detected = driver_data.getFaceProb() > 0.5;
   if (face_detected) {
-    auto fxy_list = driver_state.getFacePosition();
-    auto std_list = driver_state.getFaceOrientationStd();
+    auto fxy_list = driver_data.getFacePosition();
+    auto std_list = driver_data.getFaceOrientationStd();
     float face_x = fxy_list[0];
     float face_y = fxy_list[1];
     float face_std = std::max(std_list[0], std_list[1]);
