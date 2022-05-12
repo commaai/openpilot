@@ -77,33 +77,6 @@ inline half val_from_12(const uchar * source, int gx, int gy, half black_level) 
   return pv;
 }
 
-inline half2 vals_from_12(const uchar * source, int gx, int gy, half black_level) {
-  // parse 2x 12bit, requires gx % 2 == 0
-  int start = gy * FRAME_STRIDE + (3 * (gx / 2));
-
-  const uchar3 l_in = vload3(0, source + start);
-
-  half2 pvs;
-  pvs.s0 = (half)((((uint)l_in.s0 << 4) + ((l_in.s2 >> 0) & 0xf)) / 4);
-  pvs.s1 = (half)((((uint)l_in.s1 << 4) + ((l_in.s2 >> 4) & 0xf)) / 4);
-
-  // normalize
-  pvs = max((half)0.0, pvs - black_level);
-  pvs /= (1024.0 - black_level);
-
-  // correct vignetting
-  if (CAM_NUM == 1) { // fcamera
-    gy = (gy - RGB_HEIGHT/2);
-    const int gx0 = (gx - RGB_WIDTH/2);
-    const int gx1 = (gx + 1 - RGB_WIDTH/2);
-    pvs.s0 *= get_vignetting_s(gx0*gx0 + gy*gy);
-    pvs.s1 *= get_vignetting_s(gx1*gx1 + gy*gy);
-  }
-
-  pvs = clamp(pvs, 0.0, 1.0);
-  return pvs;
-}
-
 inline half get_k(half a, half b, half c, half d) {
   // get_k(va.s0, vb.s1, va.s2, vb.s1);
   return 2.0 - (fabs(a - b) + fabs(c - d));
@@ -133,12 +106,16 @@ __kernel void debayer10(const __global uchar * in,
   const int x_global_mod = (gid_x == 0 || gid_x == get_global_size(0) - 1) ? -1: 1;
   const int y_global_mod = (gid_y == 0 || gid_y == get_global_size(1) - 1) ? -1: 1;
 
-  vstore2(vals_from_12(in, x_global, y_global + 0, black_level), 0, cached + mad24(y_local + 0, localRowLen, x_local));
-  vstore2(vals_from_12(in, x_global, y_global + 1, black_level), 0, cached + mad24(y_local + 1, localRowLen, x_local));
+  cached[mad24(y_local + 0, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global + 0, black_level);
+  cached[mad24(y_local + 0, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global + 0, black_level);
+  cached[mad24(y_local + 1, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global + 1, black_level);
+  cached[mad24(y_local + 1, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global + 1, black_level);
   if (lid_y == 0) {
-    vstore2(vals_from_12(in, x_global, y_global - y_global_mod, black_level), 0, cached + mad24(y_local - 1, localRowLen, x_local));
+    cached[mad24(y_local - 1, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global - y_global_mod, black_level);
+    cached[mad24(y_local - 1, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global - y_global_mod, black_level);
   } else if (lid_y == get_local_size(1) - 1) {
-    vstore2(vals_from_12(in, x_global, y_global + y_global_mod + 1, black_level), 0, cached + mad24(y_local + 2, localRowLen, x_local));
+    cached[mad24(y_local + 2, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global + y_global_mod + 1, black_level);
+    cached[mad24(y_local + 2, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global + y_global_mod + 1, black_level);
   }
 
   if (lid_x == 0) {
@@ -149,9 +126,6 @@ __kernel void debayer10(const __global uchar * in,
     cached[mad24(y_local + 1, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global + 1, black_level);
   }
 
-  // sync
-  barrier(CLK_LOCAL_MEM_FENCE);
-
   if (lid_x == 0 && lid_y == 0) {
     cached[mad24(y_local - 1, localRowLen, x_local - 1)] = val_from_12(in, x_global - x_global_mod, y_global - y_global_mod, black_level);
   } else if (lid_x == get_local_size(0) - 1 && lid_y == 0) {
@@ -161,6 +135,9 @@ __kernel void debayer10(const __global uchar * in,
   } else if (lid_x == get_local_size(0) - 1 && lid_y == get_local_size(1) - 1) {
     cached[mad24(y_local + 2, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global + y_global_mod + 1, black_level);
   }
+
+  // sync
+  barrier(CLK_LOCAL_MEM_FENCE);
 
   half3 rgb;
   uchar3 rgb_out[4];
