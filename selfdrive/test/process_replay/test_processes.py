@@ -7,7 +7,7 @@ from typing import Any, Dict
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url, upload_file
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
-from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, check_enabled, replay_process
+from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_enabled, replay_process
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
@@ -52,7 +52,6 @@ excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
-REPLAYDATA = os.path.join(PROC_REPLAY_DIR, "replaydata/")
 
 
 def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
@@ -172,9 +171,9 @@ if __name__ == "__main__":
          (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
         continue
 
-      cur_log_fn = os.path.join(REPLAYDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+      cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
       if not args.upload_only:
-        ref_log_fn = os.path.join(REPLAYDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+        ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
         results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
 
         # save logs so we can upload when updating refs
