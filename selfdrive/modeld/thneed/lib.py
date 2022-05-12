@@ -23,9 +23,9 @@ def save_thneed(jdat, fn):
     if 'data' in o:
       new_weights.append(o['data'])
       del o['data']
-  new_weights = b''.join(new_weights)
+  new_weights_bytes = b''.join(new_weights)
   with open(fn, "wb") as f:
     j = json.dumps(jdat, ensure_ascii=False).encode('latin_1')
     f.write(struct.pack("I", len(j)))
     f.write(j)
-    f.write(new_weights)
+    f.write(new_weights_bytes)
