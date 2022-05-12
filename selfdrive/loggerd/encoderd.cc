@@ -140,7 +140,7 @@ int main() {
     int ret;
     ret = util::set_realtime_priority(52);
     assert(ret == 0);
-    ret = util::set_core_affinity({7});
+    ret = util::set_core_affinity({3});
     assert(ret == 0 || Params().getBool("IsOffroad"));
   }
   encoderd_thread();
