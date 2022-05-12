@@ -86,12 +86,10 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       }
       lagging = false;
 
-      if (cam_info.trigger_rotate) {
-        if (!sync_encoders(s, cam_info.type, extra.frame_id)) {
-          continue;
-        }
-        if (do_exit) break;
+      if (!sync_encoders(s, cam_info.type, extra.frame_id)) {
+        continue;
       }
+      if (do_exit) break;
 
       // do rotation if required
       const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
@@ -129,7 +127,7 @@ void encoderd_thread() {
   for (const auto &cam : cameras_logged) {
     if (cam.enable) {
       encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
-      if (cam.trigger_rotate) s.max_waiting++;
+      s.max_waiting++;
     }
   }
   for (auto &t : encoder_threads) t.join();
