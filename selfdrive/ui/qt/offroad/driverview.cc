@@ -57,7 +57,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     return;
   }
 
-  cereal::DriverState::Reader driver_data = sm["driverState"].getDriverState().getDriverDataLH(); // TODO: decide by wheel position
+  cereal::DriverState::DriverData::Reader driver_data = sm["driverState"].getDriverState().getDriverDataLH(); // TODO: decide by wheel position
   bool face_detected = driver_data.getFaceProb() > 0.5;
   if (face_detected) {
     auto fxy_list = driver_data.getFacePosition();
