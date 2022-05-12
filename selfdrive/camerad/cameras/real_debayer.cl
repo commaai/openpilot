@@ -52,7 +52,7 @@ inline half val_from_10(const uchar * source, int gx, int gy, half black_level) 
 
   // normalize
   pv = max((half)0.0, pv - black_level);
-  pv /= (1024.0f - black_level);
+  pv /= (1024.0 - black_level);
 
   // correct vignetting
   if (CAM_NUM == 1) { // fcamera
