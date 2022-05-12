@@ -38,7 +38,7 @@ breathe = "*"
 subprocess32 = "*"
 tenacity = "*"
 mpld3 = "*"
-carla = "==0.9.12"
+carla = {version = "==0.9.12", markers="platform_system != 'Darwin'"}
 
 [packages]
 atomicwrites = "*"
