@@ -56,7 +56,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     return;
   }
 
-  cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState()
+  cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState();
   cereal::DriverState::DriverData::Reader driver_data;
 
   is_rhd = driver_state.getWheelOnRight() > 0.5;
