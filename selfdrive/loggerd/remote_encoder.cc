@@ -5,7 +5,6 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   const LogCameraInfo &cam_info = (name == "driverEncodeData") ? cameras_logged[1] :
     ((name == "wideRoadEncodeData") ? cameras_logged[2] :
     ((name == "qRoadEncodeData") ? qcam_info : cameras_logged[0]));
-  if (!cam_info.record) return 0; // TODO: handle this by not subscribing
 
   // rotation happened, process the queue (happens before the current message)
   int bytes_count = 0;
@@ -26,7 +25,8 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   auto idx = edata.getIdx();
   auto flags = idx.getFlags();
 
-  if (!re.writer) {
+  // if we aren't recording, don't create the writer
+  if (!re.writer && cam_info.record) {
     // only create on iframe
     if (flags & V4L2_BUF_FLAG_KEYFRAME) {
       if (re.dropped_frames) {
@@ -48,17 +48,19 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   }
 
   if (re.segment != idx.getSegmentNum()) {
-    if (re.writer) {
+    if (re.q.size() == 0) {
       // encoder is on the next segment, this segment is over so we close the videowriter
       re.writer.reset();
       ++s->ready_to_rotate;
-      LOGD("rotate %d -> %d ready %d/%d", re.segment, idx.getSegmentNum(), s->ready_to_rotate.load(), s->max_waiting);
+      LOGD("rotate %d -> %d ready %d/%d for %s", re.segment, idx.getSegmentNum(), s->ready_to_rotate.load(), s->max_waiting, name.c_str());
     }
     // queue up all the new segment messages, they go in after the rotate
     re.q.push_back(msg);
   } else {
-    auto data = edata.getData();
-    re.writer->write((uint8_t *)data.begin(), data.size(), idx.getTimestampEof()/1000, false, flags & V4L2_BUF_FLAG_KEYFRAME);
+    if (re.writer) {
+      auto data = edata.getData();
+      re.writer->write((uint8_t *)data.begin(), data.size(), idx.getTimestampEof()/1000, false, flags & V4L2_BUF_FLAG_KEYFRAME);
+    }
 
     // put it in log stream as the idx packet
     MessageBuilder bmsg;
