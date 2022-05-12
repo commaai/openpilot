@@ -2,7 +2,6 @@
 import argparse
 import os
 import sys
-import time
 import multiprocessing.pool
 from typing import Any
 
@@ -183,7 +182,6 @@ if __name__ == "__main__":
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
   results: Any = {}
-  t0 = time.time()
   pool_args: Any = []
   for car_brand, segment in segments:
     if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
@@ -219,7 +217,6 @@ if __name__ == "__main__":
       if tup[0] not in results:
         results[tup[0]] = {}
       results[tup[0]][tup[1]] = tup[2]
-  print("Time: ", time.time()-t0)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
