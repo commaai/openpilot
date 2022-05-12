@@ -2,6 +2,7 @@
 import argparse
 import os
 import sys
+import time
 from multiprocessing import Pool
 from typing import Any
 
@@ -155,8 +156,10 @@ if __name__ == "__main__":
 
   results: Any = {}
 
+  t0 = time.time()
   if args.parallel:
     pool_args: Any = []
+    l_readers: Any = {}
     for car_brand, segment in segments:
       if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
          (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
@@ -165,10 +168,22 @@ if __name__ == "__main__":
         if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
            (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
           continue
-        pool_args.append((segment, cfg, args, process_replay_dir))
-    pool = Pool()
-    p = pool.map_async(run_test_process, pool_args)
-    for tup in p.get():
+        if cfg.fake_pubsubmaster:
+          pool_args.append((segment, cfg, args, process_replay_dir))
+        else:
+          if segment not in results:
+            results[segment] = {}
+          if segment in l_readers:
+            lr = l_readers[segment]
+          else:
+            r, n = segment.rsplit("--", 1)
+            lr = LogReader(get_url(r, n))
+            l_readers[segment] = lr
+          cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+          results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
+    pool = Pool(3)
+    p = pool.imap_unordered(run_test_process, pool_args)
+    for tup in p:
       if tup[0] not in results:
         results[tup[0]] = {}
       results[tup[0]][tup[1]] = tup[2]
@@ -192,6 +207,7 @@ if __name__ == "__main__":
 
         cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
         results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
+  print("Time: ", time.time()-t0)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   with open(os.path.join(process_replay_dir, "diff.txt"), "w") as f:
