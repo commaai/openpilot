@@ -57,7 +57,9 @@ class CarInfo:
     min_steer_speed = CP.minSteerSpeed
     if self.min_steer_speed is not None:
       min_steer_speed = self.min_steer_speed
-      assert CP.minSteerSpeed == 0, f"Minimum steer speed set in both CarInfo and CarParams for {CP.carFingerprint}"
+      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
+
+    assert self.harness is not None, f"{CP.carFingerprint}: Need to specify car harness"
 
     # TODO: set all the min enable speeds in carParams correctly and remove this
     min_enable_speed = CP.minEnableSpeed
@@ -75,7 +77,7 @@ class CarInfo:
       Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
       Column.FSR_STEERING: min_steer_speed <= 0.,
       Column.STEERING_TORQUE: self.good_torque,
-      Column.MAINTAINED: CP.carFingerprint not in non_tested_cars and self.harness is not None,
+      Column.MAINTAINED: CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none,
     }
 
     if CP.notCar:
@@ -135,3 +137,4 @@ class Harness(Enum):
   nissan_a = "Nissan A"
   nissan_b = "Nissan B"
   mazda = "Mazda"
+  none = "None"

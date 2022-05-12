@@ -66,6 +66,7 @@ class Footnote(Enum):
 @dataclass
 class GMCarInfo(CarInfo):
   package: str = "Adaptive Cruise"
+  harness: Enum = Harness.none
 
 
 CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
