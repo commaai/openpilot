@@ -217,6 +217,8 @@ if __name__ == "__main__":
       if tup[0] not in results:
         results[tup[0]] = {}
       results[tup[0]][tup[1]] = tup[2]
+    pool.close()
+    pool.join()
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
