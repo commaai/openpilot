@@ -45,7 +45,8 @@ def get_all_car_info() -> List[CarInfo]:
         all_car_info.append(_car_info.init(CP, non_tested_cars, ALL_FOOTNOTES))
 
   # Sort cars by make and model + year
-  return natsorted(all_car_info, key=lambda car: (car.make + car.model).lower())
+  sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: (car.make + car.model).lower())
+  return sorted_cars
 
 
 def sort_by_tier(all_car_info: List[CarInfo]) -> Dict[Tier, List[CarInfo]]:
@@ -65,8 +66,9 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  return template.render(tiers=sort_by_tier(all_car_info), all_car_info=all_car_info,
-                         footnotes=footnotes, Star=Star, Column=Column)
+  cars_md: str = template.render(tiers=sort_by_tier(all_car_info), all_car_info=all_car_info,
+                                 footnotes=footnotes, Star=Star, Column=Column)
+  return cars_md
 
 
 if __name__ == "__main__":
