@@ -44,17 +44,17 @@ inline half3 color_correct(half3 rgb) {
 
 inline half get_vignetting_s(float r) {
   if (r < 62500) {
-    return 1.0 + (half)(0.0000008f*r);
+    return (half)(1.0f + 0.0000008f*r);
   } else if (r < 490000) {
-    return 0.9625 + (half)(0.0000014f*r);
+    return (half)(0.9625f + 0.0000014f*r);
   } else if (r < 1102500) {
-    return 1.26434 + (half)(0.0000000000016f*r*r);
+    return (half)(1.26434f + 0.0000000000016f*r*r);
   } else {
-    return 0.53503625 + (half)(0.0000000000022f*r*r);
+    return (half)(0.53503625f + 0.0000000000022f*r*r);
   }
 }
 
-inline half val_from_12(const uchar * source, int gx, int gy, half black_level) {
+inline half val_from_10(const uchar * source, int gx, int gy, half black_level) {
   // parse 12bit
   int start = gy * FRAME_STRIDE + (3 * (gx / 2)) + (FRAME_STRIDE * FRAME_OFFSET);
   int offset = gx % 2;
@@ -108,34 +108,34 @@ __kernel void debayer10(const __global uchar * in,
   int localColOffset = 0;
   int globalColOffset;
 
-  cached[mad24(y_local + 0, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global + 0, black_level);
-  cached[mad24(y_local + 0, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global + 0, black_level);
-  cached[mad24(y_local + 1, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global + 1, black_level);
-  cached[mad24(y_local + 1, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global + 1, black_level);
+  cached[mad24(y_local + 0, localRowLen, x_local + 0)] = val_from_10(in, x_global + 0, y_global + 0, black_level);
+  cached[mad24(y_local + 0, localRowLen, x_local + 1)] = val_from_10(in, x_global + 1, y_global + 0, black_level);
+  cached[mad24(y_local + 1, localRowLen, x_local + 0)] = val_from_10(in, x_global + 0, y_global + 1, black_level);
+  cached[mad24(y_local + 1, localRowLen, x_local + 1)] = val_from_10(in, x_global + 1, y_global + 1, black_level);
 
   if (lid_x == 0) {  // left edge
     localColOffset = -1;
     globalColOffset = -x_global_mod;
-    cached[mad24(y_local + 0, localRowLen, x_local - 1)] = val_from_12(in, x_global - x_global_mod, y_global + 0, black_level);
-    cached[mad24(y_local + 1, localRowLen, x_local - 1)] = val_from_12(in, x_global - x_global_mod, y_global + 1, black_level);
+    cached[mad24(y_local + 0, localRowLen, x_local - 1)] = val_from_10(in, x_global - x_global_mod, y_global + 0, black_level);
+    cached[mad24(y_local + 1, localRowLen, x_local - 1)] = val_from_10(in, x_global - x_global_mod, y_global + 1, black_level);
   } else if (lid_x == get_local_size(0) - 1) {  // right edge
     localColOffset = 2;
     globalColOffset = x_global_mod + 1;
-    cached[mad24(y_local + 0, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global + 0, black_level);
-    cached[mad24(y_local + 1, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global + 1, black_level);
+    cached[mad24(y_local + 0, localRowLen, x_local + 2)] = val_from_10(in, x_global + x_global_mod + 1, y_global + 0, black_level);
+    cached[mad24(y_local + 1, localRowLen, x_local + 2)] = val_from_10(in, x_global + x_global_mod + 1, y_global + 1, black_level);
   }
 
   if (lid_y == 0) {  // top row
-    cached[mad24(y_local - 1, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global - y_global_mod, black_level);
-    cached[mad24(y_local - 1, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global - y_global_mod, black_level);
+    cached[mad24(y_local - 1, localRowLen, x_local + 0)] = val_from_10(in, x_global + 0, y_global - y_global_mod, black_level);
+    cached[mad24(y_local - 1, localRowLen, x_local + 1)] = val_from_10(in, x_global + 1, y_global - y_global_mod, black_level);
     if (localColOffset != 0) {  // cache corners
-      cached[mad24(y_local - 1, localRowLen, x_local + localColOffset)] = val_from_12(in, x_global + globalColOffset, y_global - y_global_mod, black_level);
+      cached[mad24(y_local - 1, localRowLen, x_local + localColOffset)] = val_from_10(in, x_global + globalColOffset, y_global - y_global_mod, black_level);
     }
   } else if (lid_y == get_local_size(1) - 1) {  // bottom row
-    cached[mad24(y_local + 2, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global + y_global_mod + 1, black_level);
-    cached[mad24(y_local + 2, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global + y_global_mod + 1, black_level);
+    cached[mad24(y_local + 2, localRowLen, x_local + 0)] = val_from_10(in, x_global + 0, y_global + y_global_mod + 1, black_level);
+    cached[mad24(y_local + 2, localRowLen, x_local + 1)] = val_from_10(in, x_global + 1, y_global + y_global_mod + 1, black_level);
     if (localColOffset != 0) {  // cache corners
-      cached[mad24(y_local + 2, localRowLen, x_local + localColOffset)] = val_from_12(in, x_global + globalColOffset, y_global + y_global_mod + 1, black_level);
+      cached[mad24(y_local + 2, localRowLen, x_local + localColOffset)] = val_from_10(in, x_global + globalColOffset, y_global + y_global_mod + 1, black_level);
     }
   }
 
