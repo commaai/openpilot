@@ -65,7 +65,8 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  return template.render(tiers=sort_by_tier(all_car_info), footnotes=footnotes, Star=Star, Column=Column)
+  return template.render(tiers=sort_by_tier(all_car_info), all_car_info=all_car_info,
+                         footnotes=footnotes, Star=Star, Column=Column)
 
 
 if __name__ == "__main__":
