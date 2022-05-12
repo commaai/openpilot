@@ -132,8 +132,8 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringMode
 
   framed.setPoorVision(model_res.poor_vision);
   framed.setWheelOnRight(model_res.wheel_on_right);
-  fill_driver_data(framed.initDriverDataLH(), model_res.driver_state_lhd)
-  fill_driver_data(framed.initDriverDataRH(), model_res.driver_state_rhd)
+  fill_driver_data(framed.initDriverDataLH(), model_res.driver_state_lhd);
+  fill_driver_data(framed.initDriverDataRH(), model_res.driver_state_rhd);
 
   if (send_raw_pred) {
     framed.setRawPredictions(raw_pred.asBytes());
