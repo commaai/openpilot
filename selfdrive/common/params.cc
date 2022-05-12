@@ -197,7 +197,7 @@ void clean_param_dirs(std::string path){
     if (count > MAX_PARAM_DIRS) std::filesystem::remove_all(oldest->path());
   }
   catch (const std::filesystem::__cxx11::filesystem_error&) {
-      LOGW("File already deleted in a parallel process");
+    LOGW("File already deleted in a parallel process");
   }
 }
 
