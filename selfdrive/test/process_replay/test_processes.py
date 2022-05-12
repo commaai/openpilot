@@ -71,22 +71,14 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 def run_test_process(data):
-  segment, cfg, args, upload = data
+  segment, cfg, args, cur_log_fn = data
   r, n = segment.rsplit("--", 1)
   lr = LogReader(get_url(r, n))
-  cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-  if upload:
-    print(f'Uploading: {os.path.basename(cur_log_fn)}')
-    assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
-    upload_file(cur_log_fn, os.path.basename(cur_log_fn))
-    os.remove(cur_log_fn)
-  if not args.upload_only:
-    ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-    res, log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
-    # save logs so we can upload when updating refs
-    save_log(cur_log_fn, log_msgs)
-    return (segment, cfg.proc_name, res)
-  return None
+  ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+  res, log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
+  # save logs so we can upload when updating refs
+  save_log(cur_log_fn, log_msgs)
+  return (segment, cfg.proc_name, res)
 
 
 def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
@@ -192,55 +184,41 @@ if __name__ == "__main__":
 
   results: Any = {}
   t0 = time.time()
-  if args.parallel:
-    pool_args: Any = []
-    for car_brand, segment in segments:
-      if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
-         (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
+  pool_args: Any = []
+  for car_brand, segment in segments:
+    if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
+       (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
+      continue
+    if not args.parallel:
+      print(f"***** testing route segment {segment} *****\n")
+      results[segment] = {}
+      r, n = segment.rsplit("--", 1)
+      lr = LogReader(get_url(r, n))
+    for cfg in CONFIGS:
+      if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
+         (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
         continue
-      for cfg in CONFIGS:
-        if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
-           (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
-          continue
-        pool_args.append((segment, cfg, args, upload))
+      cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+      if not args.upload_only:
+        if args.parallel:
+          pool_args.append((segment, cfg, args, cur_log_fn))
+        else:
+          ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+          results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
+          # save logs so we can upload when updating refs
+          save_log(cur_log_fn, log_msgs)
+      if upload:
+        print(f'Uploading: {os.path.basename(cur_log_fn)}')
+        assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
+        upload_file(cur_log_fn, os.path.basename(cur_log_fn))
+        os.remove(cur_log_fn)
+  if args.parallel:
     pool = NestablePool(7)
     p = pool.map_async(run_test_process, pool_args)
     for tup in p.get():
-      if tup is None: continue
       if tup[0] not in results:
         results[tup[0]] = {}
       results[tup[0]][tup[1]] = tup[2]
-  else:
-    for car_brand, segment in segments:
-      if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
-         (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
-        continue
-
-      print(f"***** testing route segment {segment} *****\n")
-
-      results[segment] = {}
-
-      r, n = segment.rsplit("--", 1)
-      lr = LogReader(get_url(r, n))
-
-      for cfg in CONFIGS:
-        if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
-           (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
-          continue
-
-        cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-        if not args.upload_only:
-          ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-          results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
-
-          # save logs so we can upload when updating refs
-          save_log(cur_log_fn, log_msgs)
-
-        if upload:
-          print(f'Uploading: {os.path.basename(cur_log_fn)}')
-          assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
-          upload_file(cur_log_fn, os.path.basename(cur_log_fn))
-          os.remove(cur_log_fn)
   print("Time: ", time.time()-t0)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
