@@ -31,7 +31,47 @@ void dmonitoring_init(DMonitoringModelState* s) {
   s->m->addCalib(s->calib, CALIB_LEN);
 }
 
-DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, float *calib) {
+void parse_driver_data(DriverStateResult &ds_res, const DMonitoringModelState* s, int out_idx_offset) {
+  for (int i = 0; i < 3; ++i) {
+    ds_res.face_orientation[i] = s->output[out_idx_offset+i] * REG_SCALE;
+    ds_res.face_orientation_std[i] = exp(s->output[out_idx_offset+6+i]);
+  }
+  for (int i = 0; i < 2; ++i) {
+    ds_res.face_position[i] = s->output[out_idx_offset+3+i] * REG_SCALE;
+    ds_res.face_position_std[i] = exp(s->output[out_idx_offset+9+i]);
+  }
+  for (int i = 0; i < 4; ++i) {
+    ds_res.ready_prob[i] = sigmoid(s->output[out_idx_offset+35+i]);
+  }
+  for (int i = 0; i < 2; ++i) {
+    ds_res.not_ready_prob[i] = sigmoid(s->output[out_idx_offset+39+i]);
+  }
+  ds_res.face_prob = sigmoid(s->output[out_idx_offset+12]);
+  ds_res.left_eye_prob = sigmoid(s->output[out_idx_offset+21]);
+  ds_res.right_eye_prob = sigmoid(s->output[out_idx_offset+30]);
+  ds_res.left_blink_prob = sigmoid(s->output[out_idx_offset+31]);
+  ds_res.right_blink_prob = sigmoid(s->output[out_idx_offset+32]);
+  ds_res.sunglasses_prob = sigmoid(s->output[out_idx_offset+33]);
+  ds_res.occluded_prob = sigmoid(s->output[out_idx_offset+34]);
+}
+
+void fill_driver_data(cereal::DriverState::DriverData::Builder ddata, const DriverStateResult &ds_res) {
+  ddata.setFaceOrientation(ds_res.face_orientation);
+  ddata.setFaceOrientationStd(ds_res.face_orientation_std);
+  ddata.setFacePosition(ds_res.face_position);
+  ddata.setFacePositionStd(ds_res.face_position_std);
+  ddata.setFaceProb(ds_res.face_prob);
+  ddata.setLeftEyeProb(ds_res.left_eye_prob);
+  ddata.setRightEyeProb(ds_res.right_eye_prob);
+  ddata.setLeftBlinkProb(ds_res.left_blink_prob);
+  ddata.setRightBlinkProb(ds_res.right_blink_prob);
+  ddata.setSunglassesProb(ds_res.sunglasses_prob);
+  ddata.setOccludedProb(ds_res.occluded_prob);
+  ddata.setReadyProb(ds_res.ready_prob);
+  ddata.setNotReadyProb(ds_res.not_ready_prob);
+}
+
+DMonitoringModelResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, float *calib) {
   int v_off = height - MODEL_HEIGHT;
   int h_off = (width - MODEL_WIDTH) / 2;
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v, frame2tensor done in dsp
@@ -72,61 +112,29 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   s->m->execute();
   double t2 = millis_since_boot();
 
-  DMonitoringResult ret = {0};
-  for (int i = 0; i < 3; ++i) {
-    ret.face_orientation[i] = s->output[i] * REG_SCALE;
-    ret.face_orientation_meta[i] = exp(s->output[6 + i]);
-  }
-  for (int i = 0; i < 2; ++i) {
-    ret.face_position[i] = s->output[3 + i] * REG_SCALE;
-    ret.face_position_meta[i] = exp(s->output[9 + i]);
-  }
-  for (int i = 0; i < 4; ++i) {
-    ret.ready_prob[i] = sigmoid(s->output[39 + i]);
-  }
-  for (int i = 0; i < 2; ++i) {
-    ret.not_ready_prob[i] = sigmoid(s->output[43 + i]);
-  }
-  ret.face_prob = sigmoid(s->output[12]);
-  ret.left_eye_prob = sigmoid(s->output[21]);
-  ret.right_eye_prob = sigmoid(s->output[30]);
-  ret.left_blink_prob = sigmoid(s->output[31]);
-  ret.right_blink_prob = sigmoid(s->output[32]);
-  ret.sg_prob = sigmoid(s->output[33]);
-  ret.poor_vision = sigmoid(s->output[34]);
-  ret.partial_face = sigmoid(s->output[35]);
-  ret.distracted_pose = sigmoid(s->output[36]);
-  ret.distracted_eyes = sigmoid(s->output[37]);
-  ret.occluded_prob = sigmoid(s->output[38]);
-  ret.dsp_execution_time = (t2 - t1) / 1000.;
-  return ret;
+  DMonitoringModelResult model_res = {0};
+  parse_driver_data(model_res.driver_state_lhd, s, 0);
+  parse_driver_data(model_res.driver_state_rhd, s, 41);
+  model_res.poor_vision = sigmoid(s->output[82]);
+  model_res.wheel_on_right = sigmoid(s->output[83]);
+  model_res.dsp_execution_time = (t2 - t1) / 1000.;
+
+  return model_res;
 }
 
-void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time, kj::ArrayPtr<const float> raw_pred) {
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringModelResult &model_res, float execution_time, kj::ArrayPtr<const float> raw_pred) {
   // make msg
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverState();
   framed.setFrameId(frame_id);
   framed.setModelExecutionTime(execution_time);
-  framed.setDspExecutionTime(res.dsp_execution_time);
+  framed.setDspExecutionTime(model_res.dsp_execution_time);
 
-  framed.setFaceOrientation(res.face_orientation);
-  framed.setFaceOrientationStd(res.face_orientation_meta);
-  framed.setFacePosition(res.face_position);
-  framed.setFacePositionStd(res.face_position_meta);
-  framed.setFaceProb(res.face_prob);
-  framed.setLeftEyeProb(res.left_eye_prob);
-  framed.setRightEyeProb(res.right_eye_prob);
-  framed.setLeftBlinkProb(res.left_blink_prob);
-  framed.setRightBlinkProb(res.right_blink_prob);
-  framed.setSunglassesProb(res.sg_prob);
-  framed.setPoorVision(res.poor_vision);
-  framed.setPartialFace(res.partial_face);
-  framed.setDistractedPose(res.distracted_pose);
-  framed.setDistractedEyes(res.distracted_eyes);
-  framed.setOccludedProb(res.occluded_prob);
-  framed.setReadyProb(res.ready_prob);
-  framed.setNotReadyProb(res.not_ready_prob);
+  framed.setPoorVision(model_res.poor_vision);
+  framed.setWheelOnRight(model_res.wheel_on_right);
+  fill_driver_data(framed.initDriverDataLH(), model_res.driver_state_lhd)
+  fill_driver_data(framed.initDriverDataRH(), model_res.driver_state_rhd)
+
   if (send_raw_pred) {
     framed.setRawPredictions(raw_pred.asBytes());
   }
