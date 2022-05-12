@@ -304,14 +304,11 @@ selfdrive/loggerd/encoder/v4l_encoder.cc
 selfdrive/loggerd/encoder/v4l_encoder.h
 selfdrive/loggerd/video_writer.cc
 selfdrive/loggerd/video_writer.h
-selfdrive/loggerd/remote_encoder.cc
-selfdrive/loggerd/remote_encoder.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h
 selfdrive/loggerd/loggerd.cc
 selfdrive/loggerd/loggerd.h
 selfdrive/loggerd/encoderd.cc
-selfdrive/loggerd/main.cc
 selfdrive/loggerd/bootlog.cc
 selfdrive/loggerd/encoder/ffmpeg_encoder.cc
 selfdrive/loggerd/encoder/ffmpeg_encoder.h

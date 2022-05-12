@@ -105,17 +105,3 @@ const LogCameraInfo qcam_info = {
   .frame_width = Hardware::TICI() ? 526 : 480,
   .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
 };
-
-struct LoggerdState {
-  LoggerState logger = {};
-  char segment_path[4096];
-  std::mutex rotate_lock;
-  std::atomic<int> rotate_segment;
-  std::atomic<double> last_camera_seen_tms;
-  std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
-  int max_waiting = 0;
-  double last_rotate_tms = 0.;      // last rotate time in ms
-};
-
-void rotate_if_needed(LoggerdState *s);
-void loggerd_thread();
