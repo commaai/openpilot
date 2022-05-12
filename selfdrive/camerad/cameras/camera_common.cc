@@ -35,8 +35,8 @@ public:
     const CameraInfo *ci = &s->ci;
     hdr_ = ci->hdr;
     snprintf(args, sizeof(args),
-             "-cl-fast-relaxed-math -cl-denorms-are-zero -cl-single-precision-constant -cl-strict-aliasing "
-             "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d  "
+             "-cl-fast-relaxed-math -cl-denorms-are-zero "
+             "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
              "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d",
              ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,

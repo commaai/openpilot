@@ -78,7 +78,6 @@ inline half val_from_12(const uchar * source, int gx, int gy, half black_level) 
 }
 
 inline half get_k(half a, half b, half c, half d) {
-  // get_k(va.s0, vb.s1, va.s2, vb.s1);
   return 2.0 - (fabs(a - b) + fabs(c - d));
 }
 
@@ -114,28 +113,28 @@ __kernel void debayer10(const __global uchar * in,
   cached[mad24(y_local + 1, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global + 1, black_level);
   cached[mad24(y_local + 1, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global + 1, black_level);
 
-  if (lid_x == 0) {
+  if (lid_x == 0) {  // left edge
     localColOffset = -1;
     globalColOffset = -x_global_mod;
     cached[mad24(y_local + 0, localRowLen, x_local - 1)] = val_from_12(in, x_global - x_global_mod, y_global + 0, black_level);
     cached[mad24(y_local + 1, localRowLen, x_local - 1)] = val_from_12(in, x_global - x_global_mod, y_global + 1, black_level);
-  } else if (lid_x == get_local_size(0) - 1) {
+  } else if (lid_x == get_local_size(0) - 1) {  // right edge
     localColOffset = 2;
     globalColOffset = x_global_mod + 1;
     cached[mad24(y_local + 0, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global + 0, black_level);
     cached[mad24(y_local + 1, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global + 1, black_level);
   }
 
-  if (lid_y == 0) {
+  if (lid_y == 0) {  // top row
     cached[mad24(y_local - 1, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global - y_global_mod, black_level);
     cached[mad24(y_local - 1, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global - y_global_mod, black_level);
-    if (localColOffset != 0) {
+    if (localColOffset != 0) {  // cache corners
       cached[mad24(y_local - 1, localRowLen, x_local + localColOffset)] = val_from_12(in, x_global + globalColOffset, y_global - y_global_mod, black_level);
     }
-  } else if (lid_y == get_local_size(1) - 1) {
+  } else if (lid_y == get_local_size(1) - 1) {  // bottom row
     cached[mad24(y_local + 2, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global + y_global_mod + 1, black_level);
     cached[mad24(y_local + 2, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global + y_global_mod + 1, black_level);
-    if (localColOffset != 0) {
+    if (localColOffset != 0) {  // cache corners
       cached[mad24(y_local + 2, localRowLen, x_local + localColOffset)] = val_from_12(in, x_global + globalColOffset, y_global + y_global_mod + 1, black_level);
     }
   }
