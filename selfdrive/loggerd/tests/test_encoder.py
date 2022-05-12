@@ -61,8 +61,8 @@ class TestEncoder(unittest.TestCase):
     Params().put_bool("RecordFront", record_front)
 
     managed_processes['sensord'].start()
-    managed_processes['encoderd'].start()
     managed_processes['loggerd'].start()
+    managed_processes['encoderd'].start()
 
     time.sleep(1.0)
     managed_processes['camerad'].start()
@@ -150,8 +150,8 @@ class TestEncoder(unittest.TestCase):
           while Path(f"{route_prefix_path}--{i}") not in Path(ROOT).iterdir():
             time.sleep(0.1)
     finally:
-      managed_processes['loggerd'].stop()
       managed_processes['encoderd'].stop()
+      managed_processes['loggerd'].stop()
       managed_processes['camerad'].stop()
       managed_processes['sensord'].stop()
 
