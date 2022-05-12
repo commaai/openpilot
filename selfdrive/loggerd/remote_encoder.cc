@@ -25,8 +25,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   auto idx = edata.getIdx();
   auto flags = idx.getFlags();
 
-  // if we aren't recording, don't create the writer
-  if (!re.writer && cam_info.record) {
+  if (!re.recording) {
     // only create on iframe
     if (flags & V4L2_BUF_FLAG_KEYFRAME) {
       if (re.dropped_frames) {
@@ -34,13 +33,17 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         LOGD("%s: dropped %d non iframe packets before init", name.c_str(), re.dropped_frames);
         re.dropped_frames = 0;
       }
-      re.writer.reset(new VideoWriter(s->segment_path,
-        cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-        cam_info.frame_width, cam_info.frame_height, cam_info.fps, idx.getType()));
-      // write the header
-      auto header = edata.getHeader();
-      re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
+      // if we aren't recording, don't create the writer
+      if (cam_info.record) {
+        re.writer.reset(new VideoWriter(s->segment_path,
+          cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
+          cam_info.frame_width, cam_info.frame_height, cam_info.fps, idx.getType()));
+        // write the header
+        auto header = edata.getHeader();
+        re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
+      }
       re.segment = idx.getSegmentNum();
+      re.recording = true;
     } else {
       ++re.dropped_frames;
       return bytes_count;
@@ -48,9 +51,10 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   }
 
   if (re.segment != idx.getSegmentNum()) {
-    if (re.q.size() == 0) {
+    if (re.recording) {
       // encoder is on the next segment, this segment is over so we close the videowriter
       re.writer.reset();
+      re.recording = false;
       ++s->ready_to_rotate;
       LOGD("rotate %d -> %d ready %d/%d for %s", re.segment, idx.getSegmentNum(), s->ready_to_rotate.load(), s->max_waiting, name.c_str());
     }

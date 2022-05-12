@@ -6,6 +6,7 @@ struct RemoteEncoder {
   std::vector<Message *> q;
   int logger_segment = -1;
   int dropped_frames = 0;
+  bool recording = false;
 };
 
 int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re);
