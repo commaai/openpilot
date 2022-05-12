@@ -322,10 +322,10 @@
         },
         "hatanaka": {
             "hashes": [
-                "sha256:0e095d35ed4f607eb77ae47ecb310e4c25f5a6267037b703ea258ed03e5c47da",
-                "sha256:84faa953b4f641a6d3cf8187f1775ba7e7f8d815f7bcd48cfb18553b766cbc41",
-                "sha256:ccf8be554deee2fc70be52bd2f1d3d4dd370001caa74333bf041933d69a19023",
-                "sha256:ce1628029c6b50c142a8fc5f15453c4cf2a3fd88a7128075415aeb5c9a2727d0"
+                "sha256:5a0624f6812b13abb4c996398a60338566885c1786841c4c04de9b1b91da28d2",
+                "sha256:8fda4aa56f27313de75a806a2f5aa83ed5bb2dc7561bebab856a774d06cf1ee7",
+                "sha256:c22970b99169bddaf22e5239672e856a6bc9602c435f8793d26ad49619a70a99",
+                "sha256:ef594d63473782fac46df5b0c92a59211a3efea1d47c1a964244a0abffc9f3f6"
             ],
             "index": "pypi",
             "version": "==2.4"
