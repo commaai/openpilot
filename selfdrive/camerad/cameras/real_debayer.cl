@@ -52,7 +52,7 @@ inline half val_from_10(const uchar * source, int gx, int gy, half black_level) 
 
   // normalize
   pv = max((half)0.0, pv - black_level);
-  pv /= (1024.0f - black_level);
+  pv /= (1024.0 - black_level);
 
   // correct vignetting
   if (CAM_NUM == 1) { // fcamera
@@ -65,18 +65,8 @@ inline half val_from_10(const uchar * source, int gx, int gy, half black_level) 
   return pv;
 }
 
-half fabs_diff(half x, half y) {
-  return fabs(x-y);
-}
-
-half phi(half x) {
-  // detection funtion
-  return 2 - x;
-  // if (x > 1) {
-  //   return 1 / x;
-  // } else {
-  //   return 2 - x;
-  // }
+inline half get_k(half a, half b, half c, half d) {
+  return 2.0 - (fabs(a - b) + fabs(c - d));
 }
 
 __kernel void debayer10(const __global uchar * in,
@@ -88,22 +78,25 @@ __kernel void debayer10(const __global uchar * in,
   const int x_global = get_global_id(0);
   const int y_global = get_global_id(1);
 
+  const int x_local = get_local_id(0);
+  const int y_local = get_local_id(1);
+
   const int localRowLen = 2 + get_local_size(0); // 2 padding
-  const int x_local = get_local_id(0); // 0-15
-  const int y_local = get_local_id(1); // 0-15
-  const int localOffset = (y_local + 1) * localRowLen + x_local + 1; // max 18x18-1
+  const int localColLen = 2 + get_local_size(1);
+
+  const int localOffset = (y_local + 1) * localRowLen + x_local + 1;
 
   int out_idx = 3 * x_global + 3 * y_global * RGB_WIDTH;
 
-  half pv = val_from_10(in, x_global, y_global, black_level);
-  cached[localOffset] = pv;
-
   // cache padding
   int localColOffset = -1;
-  int globalColOffset = -1;
+  int globalColOffset;
 
   const int x_global_mod = (x_global == 0 || x_global == RGB_WIDTH - 1) ? -1: 1;
   const int y_global_mod = (y_global == 0 || y_global == RGB_HEIGHT - 1) ? -1: 1;
+
+  half pv = val_from_10(in, x_global, y_global, black_level);
+  cached[localOffset] = pv;
 
   // cache padding
   if (x_local < 1) {
@@ -146,20 +139,20 @@ __kernel void debayer10(const __global uchar * in,
   if (x_global % 2 == 0) {
     if (y_global % 2 == 0) {
       rgb.y = pv; // G1(R)
-      half k1 = phi(fabs_diff(d1, pv) + fabs_diff(d2, pv));
-      half k2 = phi(fabs_diff(d2, pv) + fabs_diff(d4, pv));
-      half k3 = phi(fabs_diff(d3, pv) + fabs_diff(d4, pv));
-      half k4 = phi(fabs_diff(d1, pv) + fabs_diff(d3, pv));
+      half k1 = get_k(d1, pv, d2, pv);
+      half k2 = get_k(d2, pv, d4, pv);
+      half k3 = get_k(d3, pv, d4, pv);
+      half k4 = get_k(d1, pv, d3, pv);
       // R_G1
       rgb.x = (k2*n2+k4*n4)/(k2+k4);
       // B_G1
       rgb.z = (k1*n1+k3*n3)/(k1+k3);
     } else {
       rgb.z = pv; // B
-      half k1 = phi(fabs_diff(d1, d3) + fabs_diff(d2, d4));
-      half k2 = phi(fabs_diff(n1, n4) + fabs_diff(n2, n3));
-      half k3 = phi(fabs_diff(d1, d2) + fabs_diff(d3, d4));
-      half k4 = phi(fabs_diff(n1, n2) + fabs_diff(n3, n4));
+      half k1 = get_k(d1, d3, d2, d4);
+      half k2 = get_k(n1, n4, n2, n3);
+      half k3 = get_k(d1, d2, d3, d4);
+      half k4 = get_k(n1, n2, n3, n4);
       // G_B
       rgb.y = (k1*(n1+n3)*0.5+k3*(n2+n4)*0.5)/(k1+k3);
       // R_B
@@ -168,20 +161,20 @@ __kernel void debayer10(const __global uchar * in,
   } else {
     if (y_global % 2 == 0) {
       rgb.x = pv; // R
-      half k1 = phi(fabs_diff(d1, d3) + fabs_diff(d2, d4));
-      half k2 = phi(fabs_diff(n1, n4) + fabs_diff(n2, n3));
-      half k3 = phi(fabs_diff(d1, d2) + fabs_diff(d3, d4));
-      half k4 = phi(fabs_diff(n1, n2) + fabs_diff(n3, n4));
+      half k1 = get_k(d1, d3, d2, d4);
+      half k2 = get_k(n1, n4, n2, n3);
+      half k3 = get_k(d1, d2, d3, d4);
+      half k4 = get_k(n1, n2, n3, n4);
       // G_R
       rgb.y = (k1*(n1+n3)*0.5+k3*(n2+n4)*0.5)/(k1+k3);
       // B_R
       rgb.z = (k2*(d2+d3)*0.5+k4*(d1+d4)*0.5)/(k2+k4);
     } else {
       rgb.y = pv; // G2(B)
-      half k1 = phi(fabs_diff(d1, pv) + fabs_diff(d2, pv));
-      half k2 = phi(fabs_diff(d2, pv) + fabs_diff(d4, pv));
-      half k3 = phi(fabs_diff(d3, pv) + fabs_diff(d4, pv));
-      half k4 = phi(fabs_diff(d1, pv) + fabs_diff(d3, pv));
+      half k1 = get_k(d1, pv, d2, pv);
+      half k2 = get_k(d2, pv, d4, pv);
+      half k3 = get_k(d3, pv, d4, pv);
+      half k4 = get_k(d1, pv, d3, pv);
       // R_G2
       rgb.x = (k1*n1+k3*n3)/(k1+k3);
       // B_G2
