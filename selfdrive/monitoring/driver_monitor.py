@@ -77,7 +77,7 @@ class DistractedType:
   DISTRACTED_BLINK = 2
   DISTRACTED_E2E = 4
 
-def face_orientation_from_net(angles_desc, pos_desc, rpy_calib, is_rhd):
+def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   # the output of these angles are in device frame
   # so from driver's perspective, pitch is up and yaw is right
 
@@ -92,7 +92,7 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib, is_rhd):
 
   # no calib for roll
   pitch -= rpy_calib[1]
-  yaw -= rpy_calib[2] * (1 - 2 * int(is_rhd))  # lhd -> -=, rhd -> +=
+  yaw -= rpy_calib[2]
   return roll_net, pitch, yaw
 
 class DriverPose():
@@ -116,12 +116,11 @@ class DriverBlink():
     self.cfactor = 1.
 
 class DriverStatus():
-  def __init__(self, rhd=False, settings=DRIVER_MONITOR_SETTINGS()):
+  def __init__(self, settings=DRIVER_MONITOR_SETTINGS()):
     # init policy settings
     self.settings = settings
 
     # init driver status
-    self.is_rhd_region = rhd
     self.pose = DriverPose(self.settings._POSE_OFFSET_MAX_COUNT)
     self.pose_calibrated = False
     self.blink = DriverBlink()
@@ -232,28 +231,28 @@ class DriverStatus():
                                             self.settings._POSE_YAW_THRESHOLD_STRICT]) / self.settings._POSE_YAW_THRESHOLD
 
   def update_states(self, driver_state, cal_rpy, car_speed, op_engaged):
-    if not all(len(x) > 0 for x in (driver_state.faceOrientation, driver_state.facePosition,
-                                    driver_state.faceOrientationStd, driver_state.facePositionStd,
-                                    driver_state.readyProb, driver_state.notReadyProb)):
+    driver_data = driver_state.driverDataLH # TODO: use wheelOnRight
+    if not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,
+                                    driver_data.faceOrientationStd, driver_data.facePositionStd,
+                                    driver_data.readyProb, driver_data.notReadyProb)):
       return
 
-    self.face_partial = driver_state.partialFace > self.settings._PARTIAL_FACE_THRESHOLD
-    self.face_detected = driver_state.faceProb > self.settings._FACE_THRESHOLD or self.face_partial
-    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_state.faceOrientation, driver_state.facePosition, cal_rpy, self.is_rhd_region)
-    self.pose.pitch_std = driver_state.faceOrientationStd[0]
-    self.pose.yaw_std = driver_state.faceOrientationStd[1]
-    # self.pose.roll_std = driver_state.faceOrientationStd[2]
+    self.face_partial = driver_data.partialFace > self.settings._PARTIAL_FACE_THRESHOLD
+    self.face_detected = driver_data.faceProb > self.settings._FACE_THRESHOLD or self.face_partial
+    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
+    self.pose.pitch_std = driver_data.faceOrientationStd[0]
+    self.pose.yaw_std = driver_data.faceOrientationStd[1]
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
     self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD and not self.face_partial
-    self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.eev1 = driver_state.notReadyProb[1]
-    self.eev2 = driver_state.readyProb[0]
+    self.blink.left_blink = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.blink.right_blink = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.eev1 = driver_data.notReadyProb[1]
+    self.eev2 = driver_data.readyProb[0]
 
     self.distracted_types = self._get_distracted_types()
     self.driver_distracted = (DistractedType.DISTRACTED_POSE in self.distracted_types or
                                             DistractedType.DISTRACTED_BLINK in self.distracted_types) and \
-                                          driver_state.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
+                                          driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
