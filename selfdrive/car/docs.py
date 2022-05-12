@@ -45,7 +45,8 @@ def get_all_car_info() -> List[CarInfo]:
         all_car_info.append(_car_info.init(CP, non_tested_cars, ALL_FOOTNOTES))
 
   # Sort cars by make and model + year
-  return natsorted(all_car_info, key=lambda car: (car.make + car.model).lower())
+  sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: (car.make + car.model).lower())
+  return sorted_cars
 
 
 def sort_by_tier(all_car_info: List[CarInfo]) -> Dict[Tier, List[CarInfo]]:
