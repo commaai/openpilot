@@ -383,7 +383,7 @@ void Replay::stream() {
           publishMessage(evt);
         } else if (camera_server_) {
           if (hasFlag(REPLAY_FLAG_FULL_SPEED)) {
-            camera_server_->waitFinish();
+            camera_server_->waitForSent();
           }
           publishFrame(evt);
         }
@@ -391,7 +391,7 @@ void Replay::stream() {
     }
     // wait for frame to be sent before unlock.(frameReader may be deleted after unlock)
     if (camera_server_) {
-      camera_server_->waitFinish();
+      camera_server_->waitForSent();
     }
 
     if (eit == events_->end() && !hasFlag(REPLAY_FLAG_NO_LOOP)) {
