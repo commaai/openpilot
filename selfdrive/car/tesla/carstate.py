@@ -182,6 +182,7 @@ class CarState(CarStateBase):
       # sig_name, sig_address
       ("DAS_accState", "DAS_control"),
       ("DAS_aebEvent", "DAS_control"),
+      ("DAS_controlCounter", "DAS_control"),
     ]
     checks = [
       # sig_address, frequency
