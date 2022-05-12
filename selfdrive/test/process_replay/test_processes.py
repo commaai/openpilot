@@ -52,6 +52,7 @@ excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
+REPLAYDATA = os.path.join(PROC_REPLAY_DIR, "replaydata/")
 
 
 def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
@@ -171,9 +172,9 @@ if __name__ == "__main__":
          (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
         continue
 
-      cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+      cur_log_fn = os.path.join(REPLAYDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
       if not args.upload_only:
-        ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+        ref_log_fn = os.path.join(REPLAYDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
         results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
 
         # save logs so we can upload when updating refs

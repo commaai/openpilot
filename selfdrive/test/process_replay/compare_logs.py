@@ -24,6 +24,7 @@ def save_log(dest, log_msgs, compress=True):
   if compress:
     dat = bz2.compress(dat)
 
+  os.makedirs(os.path.dirname(dest), exist_ok=True)
   with open(dest, "wb") as f:
     f.write(dat)
 
