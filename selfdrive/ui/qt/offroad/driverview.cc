@@ -31,7 +31,6 @@ DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverState"}), QWidget
 
 void DriverViewScene::showEvent(QShowEvent* event) {
   frame_updated = false;
-  is_rhd = params.getBool("IsRHD");
   params.putBool("IsDriverViewEnabled", true);
 }
 
@@ -57,7 +56,12 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     return;
   }
 
-  cereal::DriverState::DriverData::Reader driver_data = sm["driverState"].getDriverState().getDriverDataLH(); // TODO: decide by wheel position
+  cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState()
+  cereal::DriverState::DriverData::Reader driver_data;
+
+  is_rhd = driver_state.getWheelOnRight() > 0.5;
+  driver_data = is_rhd ? driver_state.getDriverDataRH() : driver_state.getDriverDataLH();
+
   bool face_detected = driver_data.getFaceProb() > 0.5;
   if (face_detected) {
     auto fxy_list = driver_data.getFacePosition();
@@ -72,7 +76,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     }
     const int box_size = 220;
     // use approx instead of distort_points
-    int fbox_x = 1080.0 + 1714.0 * (is_rhd ? face_x : -face_x);
+    int fbox_x = 1080.0 - 1714.0 * face_x;
     int fbox_y = -135.0 + (504.0 + std::abs(face_x)*112.0) + (1205.0 - std::abs(face_x)*724.0) * face_y;
     p.setPen(QPen(QColor(255, 255, 255, alpha * 255), 10));
     p.drawRoundedRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, 35.0, 35.0);
