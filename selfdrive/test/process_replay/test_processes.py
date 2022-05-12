@@ -12,18 +12,17 @@ from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DI
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
+# Hack to allow daemon processes in a Pool. https://stackoverflow.com/a/53180921/10084102
 class NoDaemonProcess(multiprocessing.Process):
-  @property
+  @property # type: ignore
   def daemon(self):
     return False
   @daemon.setter
   def daemon(self, value):
     pass
-
-class NoDaemonContext(type(multiprocessing.get_context())):
+class NoDaemonContext(type(multiprocessing.get_context())): # type: ignore
   Process = NoDaemonProcess
-
-class NestablePool(multiprocessing.pool.Pool):
+class NestablePool(multiprocessing.pool.Pool): # pylint: disable=abstract-method
   def __init__(self, *args, **kwargs):
     kwargs['context'] = NoDaemonContext()
     super(NestablePool, self).__init__(*args, **kwargs)
