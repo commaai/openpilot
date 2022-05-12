@@ -1,10 +1,13 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo
+from selfdrive.car.docs_definitions import CarInfo, Harness
 from cereal import car
+
 Ecu = car.CarParams.Ecu
+
 
 class CarControllerParams:
   def __init__(self, CP):
@@ -34,6 +37,7 @@ class CAR:
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight"
+  harness: Enum = Harness.subaru
 
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {

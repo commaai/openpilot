@@ -5,12 +5,13 @@ from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
+
 
 class CarControllerParams:
   HCA_STEP = 2                   # HCA_01 message frequency 50Hz
@@ -30,12 +31,15 @@ class CarControllerParams:
   STEER_DRIVER_MULTIPLIER = 3    # weight driver torque heavily
   STEER_DRIVER_FACTOR = 1        # from dbc
 
+
 class CANBUS:
   pt = 0
   cam = 2
 
+
 class DBC_FILES:
   mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
+
 
 DBC = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))  # type: Dict[str, Dict[str, str]]
 
@@ -59,6 +63,7 @@ MQB_LDW_MESSAGES = {
   "emergencyAssistChangingLanes": 9,    # "Emergency Assist: Changing lanes..." with urgent beep
   "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
 }
+
 
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
 # chassis code is already listed below, don't add a new CAR, just add to the
@@ -110,11 +115,12 @@ class Footnote(Enum):
 class VWCarInfo(CarInfo):
   package: str = "Driver Assistance"
   good_torque: bool = True
+  harness: Enum = Harness.vw
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
-  CAR.ARTEON_MK1: VWCarInfo("Volkswagen Arteon 2018, 2021", footnotes=[Footnote.VW_HARNESS]),
-  CAR.ATLAS_MK1: VWCarInfo("Volkswagen Atlas 2018-19, 2022", footnotes=[Footnote.VW_HARNESS]),
+  CAR.ARTEON_MK1: VWCarInfo("Volkswagen Arteon 2018, 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.ATLAS_MK1: VWCarInfo("Volkswagen Atlas 2018-19, 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.GOLF_MK7: [
     VWCarInfo("Volkswagen e-Golf 2014, 2018-20"),
     VWCarInfo("Volkswagen Golf 2015-20"),
@@ -131,15 +137,15 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   ],
   CAR.PASSAT_MK8: VWCarInfo("Volkswagen Passat 2016-18", footnotes=[Footnote.PASSAT]),
   CAR.POLO_MK6: VWCarInfo("Volkswagen Polo 2020"),
-  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS]),
-  CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS]),
-  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.TOURAN_MK2: VWCarInfo("Volkswagen Touran 2017"),
   CAR.TRANSPORTER_T61: [
-    VWCarInfo("Volkswagen Caravelle 2020", footnotes=[Footnote.VW_HARNESS]),
-    VWCarInfo("Volkswagen California 2021", footnotes=[Footnote.VW_HARNESS]),
+    VWCarInfo("Volkswagen Caravelle 2020", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen California 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   ],
-  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.AUDI_A3_MK3: [
     VWCarInfo("Audi A3 2014-19", "ACC + Lane Assist"),
     VWCarInfo("Audi A3 Sportback e-tron 2017-18", "ACC + Lane Assist"),

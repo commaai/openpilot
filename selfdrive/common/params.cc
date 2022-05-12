@@ -136,7 +136,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LastAthenaPingTime", CLEAR_ON_MANAGER_START},
     {"LastGPSPosition", PERSISTENT},
     {"LastManagerExitReason", CLEAR_ON_MANAGER_START},
-    {"LastPeripheralPandaType", PERSISTENT},
     {"LastPowerDropDetected", CLEAR_ON_MANAGER_START},
     {"LastSystemShutdown", CLEAR_ON_MANAGER_START},
     {"LastUpdateException", CLEAR_ON_MANAGER_START},
