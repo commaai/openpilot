@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import bz2
 import os
 import time
 import multiprocessing
@@ -273,7 +274,14 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
   rpath = regen_segment(lr, {'roadCameraState': fr})
 
-  lr = LogReader(os.path.join(rpath, 'rlog'))
+  # compress raw rlog before uploading
+  with open(os.path.join(rpath, "rlog"), "rb") as f:
+    data = bz2.compress(f.read())
+  with open(os.path.join(rpath, "rlog.bz2"), "wb") as f:
+    f.write(data)
+  os.remove(os.path.join(rpath, "rlog"))
+
+  lr = LogReader(os.path.join(rpath, 'rlog.bz2'))
   controls_state_active = [m.controlsState.active for m in lr if m.which() == 'controlsState']
   assert any(controls_state_active), "Segment did not engage"
 
