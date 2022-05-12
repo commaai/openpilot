@@ -185,15 +185,20 @@ std::unordered_map<std::string, uint32_t> keys = {
 } // namespace
 
 void clean_param_dirs(std::string path){
-  std::filesystem::directory_iterator iter(path.substr(0, path.rfind("/")));
-  int count = 0;
-  std::optional<std::filesystem::directory_entry> oldest;
-  for (std::filesystem::directory_entry entry : iter) {
-    count += 1;
-    if (!oldest.has_value()) oldest = entry;
-    else if (entry.last_write_time() < oldest->last_write_time()) oldest = entry;
+  try{
+    std::filesystem::directory_iterator iter(path.substr(0, path.rfind("/")));
+    int count = 0;
+    std::optional<std::filesystem::directory_entry> oldest;
+    for (std::filesystem::directory_entry entry : iter) {
+      if (!oldest.has_value()) oldest = entry;
+      else if (entry.last_write_time() < oldest->last_write_time()) oldest = entry;
+      count += 1;
+    }
+    if (count > MAX_PARAM_DIRS) std::filesystem::remove_all(oldest->path());
   }
-  if (count > MAX_PARAM_DIRS) std::filesystem::remove_all(oldest->path());
+  catch (const std::filesystem::__cxx11::filesystem_error&) {
+    LOGW("File already deleted in a parallel process");
+  }
 }
 
 Params::Params(const std::string &path) {
