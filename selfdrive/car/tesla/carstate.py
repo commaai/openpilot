@@ -90,6 +90,7 @@ class CarState(CarStateBase):
     # Messages needed by carcontroller
     self.msg_stw_actn_req = copy.copy(cp.vl["STW_ACTN_RQ"])
     self.acc_state = cp_cam.vl["DAS_control"]["DAS_accState"]
+    self.das_control_counter = cp_cam.vl["DAS_control"]["DAS_controlCounter"]
 
     return ret
 

@@ -9,7 +9,7 @@ class CarController:
     self.CP = CP
     self.frame = 0
     self.last_angle = 0
-    self.long_control_counter = 0
+    self.prev_das_control_counter = None
     self.packer = CANPacker(dbc_name)
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
@@ -42,14 +42,14 @@ class CarController:
     can_sends.append(self.tesla_can.create_steering_control(apply_angle, lkas_enabled, self.frame))
 
     # Longitudinal control (40Hz)
-    if self.CP.openpilotLongitudinalControl and self.frame % 5 in (0, 2):
+    if self.CP.openpilotLongitudinalControl and CS.das_control_counter != self.prev_das_control_counter:
       target_accel = actuators.accel
       target_speed = max(CS.out.vEgo + (target_accel * CarControllerParams.ACCEL_TO_SPEED_MULTIPLIER), 0)
       max_accel = 0 if target_accel < 0 else target_accel
       min_accel = 0 if target_accel > 0 else target_accel
 
-      can_sends.extend(self.tesla_can.create_longitudinal_commands(CS.acc_state, target_speed, min_accel, max_accel, self.long_control_counter))
-      self.long_control_counter += 1
+      can_sends.extend(self.tesla_can.create_longitudinal_commands(CS.acc_state, target_speed, min_accel, max_accel, CS.das_control_counter))
+      self.prev_das_control_counter = CS.das_control_counter
 
     # Cancel on user steering override, since there is no steering torque blending
     if hands_on_fault:
