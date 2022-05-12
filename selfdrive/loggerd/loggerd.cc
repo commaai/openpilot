@@ -253,6 +253,7 @@ void loggerd_thread() {
         const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
 
         if (qs.encoder) {
+          s.last_camera_seen_tms = millis_since_boot();
           bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock]);
         } else {
           logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
