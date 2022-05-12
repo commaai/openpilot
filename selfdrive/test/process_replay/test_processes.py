@@ -3,7 +3,7 @@ import argparse
 import os
 import sys
 import time
-from multiprocessing import Pool
+import multiprocessing.pool
 from typing import Any
 
 from selfdrive.car.car_helpers import interface_names
@@ -12,6 +12,21 @@ from selfdrive.test.process_replay.compare_logs import compare_logs
 from selfdrive.test.process_replay.process_replay import CONFIGS, replay_process, check_enabled
 from tools.lib.logreader import LogReader
 
+class NoDaemonProcess(multiprocessing.Process):
+  @property
+  def daemon(self):
+    return False
+  @daemon.setter
+  def daemon(self, value):
+    pass
+
+class NoDaemonContext(type(multiprocessing.get_context())):
+  Process = NoDaemonProcess
+
+class NestablePool(multiprocessing.pool.Pool):
+  def __init__(self, *args, **kwargs):
+    kwargs['context'] = NoDaemonContext()
+    super(NestablePool, self).__init__(*args, **kwargs)
 
 original_segments = [
   ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),        # COMMA.BODY
@@ -159,7 +174,6 @@ if __name__ == "__main__":
   t0 = time.time()
   if args.parallel:
     pool_args: Any = []
-    l_readers: Any = {}
     for car_brand, segment in segments:
       if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
          (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
@@ -168,22 +182,10 @@ if __name__ == "__main__":
         if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
            (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
           continue
-        if cfg.fake_pubsubmaster:
-          pool_args.append((segment, cfg, args, process_replay_dir))
-        else:
-          if segment not in results:
-            results[segment] = {}
-          if segment in l_readers:
-            lr = l_readers[segment]
-          else:
-            r, n = segment.rsplit("--", 1)
-            lr = LogReader(get_url(r, n))
-            l_readers[segment] = lr
-          cmp_log_fn = os.path.join(process_replay_dir, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-          results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
-    pool = Pool(3)
-    p = pool.imap_unordered(run_test_process, pool_args)
-    for tup in p:
+        pool_args.append((segment, cfg, args, process_replay_dir))
+    pool = NestablePool(7)
+    p = pool.map_async(run_test_process, pool_args)
+    for tup in p.get():
       if tup[0] not in results:
         results[tup[0]] = {}
       results[tup[0]][tup[1]] = tup[2]
