@@ -50,13 +50,16 @@ class CarInfo:
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
   good_torque: bool = False
+  harness: Optional[Enum] = None
 
   def init(self, CP: car.CarParams, non_tested_cars: List[str], all_footnotes: Dict[Enum, int]):
     # TODO: set all the min steer speeds in carParams and remove this
     min_steer_speed = CP.minSteerSpeed
     if self.min_steer_speed is not None:
       min_steer_speed = self.min_steer_speed
-      assert CP.minSteerSpeed == 0, f"Minimum steer speed set in both CarInfo and CarParams for {CP.carFingerprint}"
+      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
+
+    assert self.harness is not None, f"{CP.carFingerprint}: Need to specify car harness"
 
     # TODO: set all the min enable speeds in carParams correctly and remove this
     min_enable_speed = CP.minEnableSpeed
@@ -74,7 +77,7 @@ class CarInfo:
       Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
       Column.FSR_STEERING: min_steer_speed <= 0.,
       Column.STEERING_TORQUE: self.good_torque,
-      Column.MAINTAINED: CP.carFingerprint not in non_tested_cars,
+      Column.MAINTAINED: CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none,
     }
 
     if CP.notCar:
@@ -104,3 +107,34 @@ class CarInfo:
       item += footnote_tag.format(self.all_footnotes[footnote])
 
     return item
+
+
+class Harness(Enum):
+  nidec = "Honda Nidec"
+  bosch = "Honda Bosch"
+  toyota = "Toyota"
+  subaru = "Subaru"
+  fca = "FCA"
+  vw = "VW"
+  j533 = "J533"
+  hyundai_a = "Hyundai A"
+  hyundai_b = "Hyundai B"
+  hyundai_c = "Hyundai C"
+  hyundai_d = "Hyundai D"
+  hyundai_e = "Hyundai E"
+  hyundai_f = "Hyundai F"
+  hyundai_g = "Hyundai G"
+  hyundai_h = "Hyundai H"
+  hyundai_i = "Hyundai I"
+  hyundai_j = "Hyundai J"
+  hyundai_k = "Hyundai K"
+  hyundai_l = "Hyundai L"
+  hyundai_m = "Hyundai M"
+  hyundai_n = "Hyundai N"
+  hyundai_o = "Hyundai O"
+  custom = "Developer"
+  obd_ii = "OBD-II"
+  nissan_a = "Nissan A"
+  nissan_b = "Nissan B"
+  mazda = "Mazda"
+  none = "None"
