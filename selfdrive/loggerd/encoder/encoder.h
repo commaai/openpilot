@@ -49,6 +49,9 @@ protected:
   CameraType type;
 
 private:
+  // total frames encoded
+  int cnt = 0;
+
   // publishing
   std::unique_ptr<PubMaster> pm;
   const char *service_name;
