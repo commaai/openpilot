@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 
-#include "selfdrive/loggerd/encoder/video_writer.h"
+#include "selfdrive/loggerd/video_writer.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 

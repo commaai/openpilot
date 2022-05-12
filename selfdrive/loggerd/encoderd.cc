@@ -93,6 +93,16 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         if (do_exit) break;
       }
 
+      // do rotation if required
+      const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
+      if (cur_seg >= 0 && extra.frame_id >= ((cur_seg + 1) * frames_per_seg) + s->start_frame_id) {
+        for (auto &e : encoders) {
+          e->encoder_close();
+          e->encoder_open(NULL);
+        }
+        ++cur_seg;
+      }
+
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
@@ -101,15 +111,6 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d", extra.frame_id);
         }
-      }
-
-      const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
-      if (cur_seg >= 0 && extra.frame_id >= ((cur_seg + 1) * frames_per_seg) + s->start_frame_id) {
-        for (auto &e : encoders) {
-          e->encoder_close();
-          e->encoder_open(NULL);
-        }
-        ++cur_seg;
       }
     }
   }

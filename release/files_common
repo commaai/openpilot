@@ -302,8 +302,8 @@ selfdrive/loggerd/encoder/encoder.cc
 selfdrive/loggerd/encoder/encoder.h
 selfdrive/loggerd/encoder/v4l_encoder.cc
 selfdrive/loggerd/encoder/v4l_encoder.h
-selfdrive/loggerd/encoder/video_writer.cc
-selfdrive/loggerd/encoder/video_writer.h
+selfdrive/loggerd/video_writer.cc
+selfdrive/loggerd/video_writer.h
 selfdrive/loggerd/remote_encoder.cc
 selfdrive/loggerd/remote_encoder.h
 selfdrive/loggerd/logger.cc
