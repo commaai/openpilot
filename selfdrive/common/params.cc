@@ -12,7 +12,7 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-int MAX_PARAM_DIRS = 2000;
+int MAX_PARAM_DIRS = 400;
 
 namespace {
 
@@ -193,15 +193,15 @@ void clean_param_dirs(std::string path){
     if (!oldest.has_value()) oldest = entry;
     else if (entry.last_write_time() < oldest->last_write_time()) oldest = entry;
   }
-  if (count > MAX_PARAM_DIRS) std::filesystem::remove_all(oldest->path());
+  if (count > MAX_PARAM_DIRS && oldest->exists()) std::filesystem::remove_all(oldest->path());
 }
 
 Params::Params(const std::string &path) {
   static std::string default_param_path = ensure_params_path();
   params_path = path.empty() ? default_param_path : ensure_params_path(path);
   prefix = std::getenv("OPENPILOIT_PREFIX");
-  std::filesystem::create_directory(getParamPath());
   clean_param_dirs(getParamPath());
+  std::filesystem::create_directory(getParamPath());
 }
 
 bool Params::checkKey(const std::string &key) {
