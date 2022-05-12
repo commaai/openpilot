@@ -79,6 +79,7 @@ def dmonitoringd_thread(sm=None, pm=None):
       "isLowStd": driver_status.pose.low_std,
       "hiStdCount": driver_status.hi_stds,
       "isActiveMode": driver_status.active_monitoring_mode,
+      "isRHD": driver_status.wheel_on_right,
     }
     pm.send('driverMonitoringState', dat)
 
