@@ -69,8 +69,8 @@ class Uploader():
     self.immediate_count = 0
 
     # stats for last successfully uploaded file
-    self.last_time = 0
-    self.last_speed = 0
+    self.last_time = 0.0
+    self.last_speed = 0.0
     self.last_filename = ""
 
     self.immediate_folders = ["crash/", "boot/"]
