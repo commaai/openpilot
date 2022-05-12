@@ -115,12 +115,12 @@ __kernel void debayer10(const __global uchar * in,
   cached[mad24(y_local + 1, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global + 1, black_level);
 
   if (lid_x == 0) {
-    localColOffset = x_local - 1;
+    localColOffset = -1;
     globalColOffset = -x_global_mod;
     cached[mad24(y_local + 0, localRowLen, x_local - 1)] = val_from_12(in, x_global - x_global_mod, y_global + 0, black_level);
     cached[mad24(y_local + 1, localRowLen, x_local - 1)] = val_from_12(in, x_global - x_global_mod, y_global + 1, black_level);
   } else if (lid_x == get_local_size(0) - 1) {
-    localColOffset = x_local + 2;
+    localColOffset = 2;
     globalColOffset = x_global_mod + 1;
     cached[mad24(y_local + 0, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global + 0, black_level);
     cached[mad24(y_local + 1, localRowLen, x_local + 2)] = val_from_12(in, x_global + x_global_mod + 1, y_global + 1, black_level);
@@ -130,13 +130,13 @@ __kernel void debayer10(const __global uchar * in,
     cached[mad24(y_local - 1, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global - y_global_mod, black_level);
     cached[mad24(y_local - 1, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global - y_global_mod, black_level);
     if (localColOffset != 0) {
-      cached[mad24(y_local - 1, localRowLen, localColOffset)] = val_from_12(in, x_global + globalColOffset, y_global - y_global_mod, black_level);
+      cached[mad24(y_local - 1, localRowLen, x_local + localColOffset)] = val_from_12(in, x_global + globalColOffset, y_global - y_global_mod, black_level);
     }
   } else if (lid_y == get_local_size(1) - 1) {
     cached[mad24(y_local + 2, localRowLen, x_local + 0)] = val_from_12(in, x_global + 0, y_global + y_global_mod + 1, black_level);
     cached[mad24(y_local + 2, localRowLen, x_local + 1)] = val_from_12(in, x_global + 1, y_global + y_global_mod + 1, black_level);
     if (localColOffset != 0) {
-      cached[mad24(y_local + 2, localRowLen, localColOffset)] = val_from_12(in, x_global + globalColOffset, y_global + y_global_mod, black_level);
+      cached[mad24(y_local + 2, localRowLen, x_local + localColOffset)] = val_from_12(in, x_global + globalColOffset, y_global + y_global_mod + 1, black_level);
     }
   }
 
