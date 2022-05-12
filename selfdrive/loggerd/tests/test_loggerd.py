@@ -140,8 +140,8 @@ class TestLoggerd(unittest.TestCase):
           pm.send(state, camera_state)
         time.sleep(1.0/fps)
 
-      managed_processes["encoderd"].stop()
       managed_processes["loggerd"].stop()
+      managed_processes["encoderd"].stop()
 
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
       for n in range(num_segs):

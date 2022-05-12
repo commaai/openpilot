@@ -150,8 +150,8 @@ class TestEncoder(unittest.TestCase):
           while Path(f"{route_prefix_path}--{i}") not in Path(ROOT).iterdir():
             time.sleep(0.1)
     finally:
-      managed_processes['encoderd'].stop()
       managed_processes['loggerd'].stop()
+      managed_processes['encoderd'].stop()
       managed_processes['camerad'].stop()
       managed_processes['sensord'].stop()
 
