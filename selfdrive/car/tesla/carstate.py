@@ -87,6 +87,9 @@ class CarState(CarStateBase):
 
     # TODO: blindspot
 
+    # AEB
+    ret.stockAeb = (cp_cam.vl["DAS_control"]["DAS_aebEvent"] == 1)
+
     # Messages needed by carcontroller
     self.msg_stw_actn_req = copy.copy(cp.vl["STW_ACTN_RQ"])
     self.acc_state = cp_cam.vl["DAS_control"]["DAS_accState"]
@@ -178,6 +181,7 @@ class CarState(CarStateBase):
     signals = [
       # sig_name, sig_address
       ("DAS_accState", "DAS_control"),
+      ("DAS_aebEvent", "DAS_control"),
     ]
     checks = [
       # sig_address, frequency
