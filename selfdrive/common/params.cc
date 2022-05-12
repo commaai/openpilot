@@ -12,7 +12,7 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-int MAX_PARAM_DIRS = 200;
+int MAX_PARAM_DIRS = 400;
 
 namespace {
 
@@ -184,12 +184,14 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 } // namespace
 
+
 void clean_param_dirs(std::string path){
   try{
     std::filesystem::directory_iterator iter(path.substr(0, path.rfind("/")));
     int count = 0;
     std::optional<std::filesystem::directory_entry> oldest;
     for (std::filesystem::directory_entry entry : iter) {
+      if (entry.path().string().find("MANAGER") != std::string::npos) continue;
       if (!oldest.has_value()) oldest = entry;
       else if (entry.last_write_time() < oldest->last_write_time()) oldest = entry;
       count += 1;
@@ -205,8 +207,8 @@ Params::Params(const std::string &path) {
   static std::string default_param_path = ensure_params_path();
   params_path = path.empty() ? default_param_path : ensure_params_path(path);
   prefix = std::getenv("OPENPILOIT_PREFIX");
-  std::filesystem::create_directory(getParamPath());
   clean_param_dirs(getParamPath());
+  std::filesystem::create_directory(getParamPath());
 }
 
 bool Params::checkKey(const std::string &key) {
