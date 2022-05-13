@@ -52,9 +52,9 @@ public:
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
 
+    const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
     const int debayer_local_worksize = 16;
-    constexpr int localMemSize = (debayer_local_worksize + 2 * (3 / 2)) * (debayer_local_worksize + 2 * (3 / 2)) * sizeof(short int);
-    const size_t globalWorkSize[] = {size_t(width), size_t(height)};
+    constexpr int localMemSize = (debayer_local_worksize * 2 + 2) * (debayer_local_worksize * 2 + 2) * 2;
     const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
     CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
     CL_CHECK(clSetKernelArg(krnl_, 3, sizeof(float), &black_level));
@@ -141,6 +141,7 @@ bool CameraBuf::acquire() {
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
+  cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
 
@@ -157,17 +158,14 @@ bool CameraBuf::acquire() {
 #else
     if (camera_state->camera_id == CAMERA_ID_IMX390) black_level = 64.0;
 #endif
-    debayer->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain, black_level, &event);
+    debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, gain, black_level, &event);
   } else {
     assert(rgb_stride == camera_state->ci.frame_stride);
-    CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0, cur_rgb_buf->len, 0, 0, &event));
+    rgb2yuv->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl);
   }
 
   clWaitForEvents(1, &event);
   CL_CHECK(clReleaseEvent(event));
-
-  cur_yuv_buf = vipc_server->get_buffer(yuv_type);
-  rgb2yuv->queue(q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
@@ -176,9 +174,7 @@ bool CameraBuf::acquire() {
                         cur_frame_data.timestamp_sof,
                         cur_frame_data.timestamp_eof,
   };
-  cur_rgb_buf->set_frame_id(cur_frame_data.frame_id);
   cur_yuv_buf->set_frame_id(cur_frame_data.frame_id);
-  vipc_server->send(cur_rgb_buf, &extra);
   vipc_server->send(cur_yuv_buf, &extra);
 
   return true;
