@@ -639,6 +639,22 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (dc_gain_enabled ? DC_GAIN : 1) * sensor_analog_gains[gain_idx] * exposure_time;
 
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+
+  // Initialize histogram bins
+  int val = 0;
+  for (int i = 0; i < AR0231_NUM_HISTOGRAM_BINS; i++) {
+    ar0231_histogram_bins[i] = val;
+    int width;
+    if (i <= 63) {
+      width = 64;
+    } else if (i <= 183) {
+      width = 512;
+    } else { // if (i <= 243)
+      width = 16534;
+    }
+    val += width;
+    ar0231_histogram_bin_widths[i] = width;
+  }
 }
 
 void CameraState::camera_open() {
@@ -1016,6 +1032,52 @@ std::map<uint16_t, uint16_t> CameraState::ar0231_parse_registers(uint8_t *data, 
   return registers;
 }
 
+std::vector<int> CameraState::ar0231_parse_histogram(uint8_t *data) {
+  std::vector<int> bin_vals;
+  bin_vals.reserve(AR0231_NUM_HISTOGRAM_BINS);
+
+  // Each histogram bin is made up from two 10 bit values.
+  // Two 10 bit values are packed as 3 bytes with some padding:
+  // [      2 bytes      ][             1 byte             ]
+  // [ P1[9:2] | P2[9:2] | P2[1:0] | 0b01 | P1[1:0] | 0b01 ]
+  // So each histogram bin takes up 3 bytes in the original data
+
+  int sum = 0;
+  const int bytes_in_histogram = AR0231_NUM_HISTOGRAM_BINS * 3;
+  for (int i = 15; i < 15 + bytes_in_histogram; i += 3) {
+    uint32_t word_0 = ((uint32_t)data[i + 0] << 2) | ((data[i + 2] >> 2) & 0b11);
+    uint32_t word_1 = ((uint32_t)data[i + 1] << 2) | ((data[i + 2] >> 6) & 0b11);
+    uint32_t val = (word_0 << 10) | word_1;
+
+    sum += val;
+    bin_vals.push_back(val);
+  }
+
+  // Sum of histogram should be the number of green pixels on even rows, i.e. 1/4th of the total pixels
+  // assert(sum == ci.frame_width * ci.frame_height / 4);
+
+  return bin_vals;
+}
+
+double CameraState::ar0231_get_geometric_mean(VisionBuf *camera_buf) {
+  uint8_t *data = (uint8_t*)camera_buf->addr + ci.stats_offset * ci.frame_stride;
+  std::vector<int> histogram = ar0231_parse_histogram(data);
+
+  double sum_logs = 0;
+  int total = 0;
+  for (int i = 0; i < AR0231_NUM_HISTOGRAM_BINS; i++) {
+    total += histogram[i];
+    sum_logs += histogram[i] * log(ar0231_histogram_bins[i] + ar0231_histogram_bin_widths[i] / 2);
+  }
+
+  return exp(sum_logs / total);
+}
+
+double CameraState::get_geometric_mean(VisionBuf *camera_buf) {
+  assert(camera_id == CAMERA_ID_AR0231);
+  return ar0231_get_geometric_mean(camera_buf);
+}
+
 void CameraState::handle_camera_event(void *evdat) {
   if (!enabled) return;
   struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)evdat;
@@ -1076,12 +1138,9 @@ void CameraState::handle_camera_event(void *evdat) {
 
 void CameraState::set_camera_exposure(float grey_frac) {
   if (!enabled) return;
+
   const float dt = 0.05;
-
-  const float ts_grey = 10.0;
   const float ts_ev = 0.05;
-
-  const float k_grey = (dt / ts_grey) / (1.0 + dt / ts_grey);
   const float k_ev = (dt / ts_ev) / (1.0 + dt / ts_ev);
 
   // It takes 3 frames for the commanded exposure settings to take effect. The first frame is already started by the time
@@ -1091,11 +1150,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
   const float cur_ev_ = cur_ev[buf.cur_frame_data.frame_id % 3];
 
-  // Scale target grey between 0.1 and 0.4 depending on lighting conditions
-  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + cur_ev_) / log2(6000.0), 0.1, 0.4);
-  float target_grey = (1.0 - k_grey) * target_grey_fraction + k_grey * new_target_grey;
-
-  float desired_ev = std::clamp(cur_ev_ * target_grey / grey_frac, min_ev, max_ev);
+  float desired_ev = std::clamp(cur_ev_ * target_grey_fraction / grey_frac, min_ev, max_ev);
   float k = (1.0 - k_ev) / 3.0;
   desired_ev = (k * cur_ev[0]) + (k * cur_ev[1]) + (k * cur_ev[2]) + (k_ev * desired_ev);
 
@@ -1106,9 +1161,9 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // Hysteresis around high conversion gain
   // We usually want this on since it results in lower noise, but turn off in very bright day scenes
   bool enable_dc_gain = dc_gain_enabled;
-  if (!enable_dc_gain && target_grey < 0.2) {
+  if (!enable_dc_gain && cur_ev_ > 200) {
     enable_dc_gain = true;
-  } else if (enable_dc_gain && target_grey > 0.3) {
+  } else if (enable_dc_gain && cur_ev_ < 20) {
     enable_dc_gain = false;
   }
 
@@ -1147,7 +1202,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
   exp_lock.lock();
 
   measured_grey_fraction = grey_frac;
-  target_grey_fraction = target_grey;
 
   analog_gain_frac = sensor_analog_gains[new_g];
   gain_idx = new_g;
@@ -1221,16 +1275,8 @@ static void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal
   framed.setTemperaturesC({temp_0, temp_1});
 }
 
-static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
-  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
-  const CameraBuf *b = &c->buf;
-  static ExpRect rect = {96, 1832, 2, 242, 1148, 4};
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
-}
-
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
   s->sm->update(0);
-  driver_cam_auto_exposure(c, *(s->sm));
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
@@ -1243,6 +1289,9 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
     ar0231_process_registers(s, c, framed);
   }
   s->pm->send("driverCameraState", msg);
+
+  float measured_grey = c->buf.cur_frame_data.histogram_geometric_mean / 1024.0;
+  camera_autoexposure(c, measured_grey);
 }
 
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
@@ -1268,9 +1317,8 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
-  const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
-  const int skip = 2;
-  camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip));
+  float measured_grey = c->buf.cur_frame_data.histogram_geometric_mean / 1024.0;
+  camera_autoexposure(c, measured_grey);
 }
 
 void cameras_run(MultiCameraState *s) {

@@ -14,16 +14,10 @@ float3 color_correct(float3 rgb) {
   x += rgb.y * (float3)(-0.5743977, 1.36858544, -0.53183455);
   x += rgb.z * (float3)(-0.25277411, -0.05627105, 1.45875782);
 
-  // tone mapping params
-  const float gamma_k = 0.75;
-  const float gamma_b = 0.125;
-  const float mp = 0.01; // ideally midpoint should be adaptive
-  const float rk = 9 - 100*mp;
-
-  // poly approximation for s curve
-  return (x > mp) ?
-    ((rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b) :
-    ((rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b);
+  // go all out and add an sRGB gamma curve
+  const float3 ph = (1.0 + 0.055)*pow(x, 1/2.4) - 0.055;
+  const float3 pl = x*12.92;
+  return select(ph, pl, islessequal(x, 0.0031308));
 }
 
 float get_vignetting_s(float r) {
@@ -38,13 +32,41 @@ float get_vignetting_s(float r) {
   }
 }
 
-float4 val4_from_12(uchar8 pvs, float gain) {
+float4 decompress_12(uint4 compressed) {
+  // decompress - Legacy kneepoints
+  float4 kn_0 = convert_float4(compressed);
+  float4 kn_2048 = (kn_0 - 2048) * 64 + 2048;
+  float4 kn_3040 = (kn_0 - 3040) * 1024 + 65536;
+  return max(kn_0, max(kn_2048, kn_3040));
+}
+
+float4 tonemap(float4 input, float geometric_mean) {
+  // https://www.cl.cam.ac.uk/teaching/1718/AdvGraph/06_HDR_and_tone_mapping.pdf
+  // Power function (slide 15)
+  // half percentile_99 = 8704.0;
+  // half pv = pow(decompressed / percentile_99, (half)0.6) * 0.50;
+
+  // Sigmoidal tone mapping (slide 30)
+
+  // Optimized case of b = 1
+  float4 decompressed_times_a = input * 0.3;
+  float4 pv = decompressed_times_a / (geometric_mean + decompressed_times_a);
+
+  // half b = 1.0;
+  // float pow_b = pow(decompressed, b);
+  // float pv = pow_b / (pow(geometric_mean / a, b) + pow_b);
+
+  return pv;
+}
+
+float4 val4_from_12(uchar8 pvs, float gain, float geometric_mean) {
   uint4 parsed = (uint4)(((uint)pvs.s0<<4) + (pvs.s1>>4),  // is from the previous 10 bit
                          ((uint)pvs.s2<<4) + (pvs.s4&0xF),
                          ((uint)pvs.s3<<4) + (pvs.s4>>4),
                          ((uint)pvs.s5<<4) + (pvs.s7&0xF));
-  // normalize and scale
-  float4 pv = (convert_float4(parsed) - 168.0) / (4096.0 - 168.0);
+  // float4 pv = tonemap(decompress_12(parsed), geometric_mean);
+  float4 decompressed = decompress_12(parsed) - 168;
+  float4 pv = tonemap(decompressed, geometric_mean);
   return clamp(pv*gain, 0.0, 1.0);
 }
 
@@ -52,7 +74,7 @@ float get_k(float a, float b, float c, float d) {
   return 2.0 - (fabs(a - b) + fabs(c - d));
 }
 
-__kernel void debayer10(const __global uchar * in, __global uchar * out)
+__kernel void debayer10(const __global uchar * in, __global uchar * out, float geometric_mean)
 {
   const int gid_x = get_global_id(0);
   const int gid_y = get_global_id(1);
@@ -82,10 +104,10 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   #endif
 
   // process them to floats
-  float4 va = val4_from_12(dat[0], gain);
-  float4 vb = val4_from_12(dat[1], gain);
-  float4 vc = val4_from_12(dat[2], gain);
-  float4 vd = val4_from_12(dat[3], gain);
+  float4 va = val4_from_12(dat[0], gain, geometric_mean);
+  float4 vb = val4_from_12(dat[1], gain, geometric_mean);
+  float4 vc = val4_from_12(dat[2], gain, geometric_mean);
+  float4 vd = val4_from_12(dat[3], gain, geometric_mean);
 
   if (gid_x == 0) {
     va.s0 = va.s2;

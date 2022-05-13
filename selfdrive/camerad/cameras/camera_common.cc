@@ -46,9 +46,10 @@ public:
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *debayer_event) {
+  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float geometric_mean, cl_event *debayer_event) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
+    CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &geometric_mean));
 
     const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
     const int debayer_local_worksize = 16;
@@ -140,12 +141,16 @@ bool CameraBuf::acquire() {
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
 
-  double start_time = millis_since_boot();
-
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
+  // Parse histogram to find mean/max for tone mapping
+  cur_frame_data.histogram_geometric_mean = camera_state->get_geometric_mean(cur_camera_buf);
+
+  double start_time = millis_since_boot();
+
+
   if (debayer) {
-    debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
+    debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, cur_frame_data.histogram_geometric_mean, &event);
   } else {
     assert(rgb_stride == camera_state->ci.frame_stride);
     rgb2yuv->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl);
