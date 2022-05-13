@@ -36,7 +36,7 @@ class CarState(CarStateBase):
     ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
     ret.brakeHoldActive = cp.vl["ESP_CONTROL"]["BRAKE_HOLD_ACTIVE"] == 1
     if self.CP.enableGasInterceptor:
-      ret.gas = (cp.vl["COMMA_PEDAL_GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["COMMA_PEDAL_GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
+      ret.gas = (cp.vl["INTERCEPTOR_GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["INTERCEPTOR_GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
       ret.gasPressed = ret.gas > 805
     else:
       # TODO: find a new, common signal
@@ -196,9 +196,9 @@ class CarState(CarStateBase):
 
     # add gas interceptor reading if we are using it
     if CP.enableGasInterceptor:
-      signals.append(("INTERCEPTOR_GAS", "COMMA_PEDAL_GAS_SENSOR"))
-      signals.append(("INTERCEPTOR_GAS2", "COMMA_PEDAL_GAS_SENSOR"))
-      checks.append(("COMMA_PEDAL_GAS_SENSOR", 50))
+      signals.append(("INTERCEPTOR_GAS", "INTERCEPTOR_GAS_SENSOR"))
+      signals.append(("INTERCEPTOR_GAS2", "INTERCEPTOR_GAS_SENSOR"))
+      checks.append(("INTERCEPTOR_GAS_SENSOR", 50))
 
     if CP.enableBsm:
       signals += [
