@@ -107,7 +107,9 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, rgb_width);
   int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, rgb_height);
   assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, rgb_width));
-  vipc_server->create_buffers(yuv_type, YUV_BUFFER_COUNT, false, nv12_width, nv12_height);
+  vipc_server->create_buffers(yuv_type, YUV_BUFFER_COUNT, false, nv12_width, 1564); //nv12_height);
+  //vipc_server->create_buffers(yuv_type, YUV_BUFFER_COUNT, false, nv12_width, 1216); //nv12_height);
+  //vipc_server->create_buffers(yuv_type, YUV_BUFFER_COUNT, false, nv12_width, nv12_height);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
 
   if (ci->bayer) {

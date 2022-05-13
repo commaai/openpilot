@@ -52,14 +52,17 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       VisionBuf buf_info = vipc_client.buffers[0];
       LOGW("encoder %s init %dx%d", cam_info.filename, buf_info.width, buf_info.height);
 
+      int width = 1928;
+      int height = 1208;
+
       // main encoder
-      encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
+      encoders.push_back(new Encoder(cam_info.filename, cam_info.type, width, height,
                                      cam_info.fps, cam_info.bitrate,
                                      cam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
-                                     buf_info.width, buf_info.height, false));
+                                     width, height, false));
       // qcamera encoder
       if (cam_info.has_qcamera) {
-        encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, buf_info.width, buf_info.height,
+        encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, width, height,
                                        qcam_info.fps, qcam_info.bitrate,
                                        qcam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
                                        qcam_info.frame_width, qcam_info.frame_height, false));
@@ -103,8 +106,8 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
-        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
-                                               buf->width, buf->height, &extra);
+        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v, buf->width, buf->height, &extra);
+        //int out_id = encoders[i]->encode_frame_vipc(buf, &extra);
 
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d", extra.frame_id);

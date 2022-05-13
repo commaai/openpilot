@@ -247,8 +247,10 @@ void V4LEncoder::encoder_init() {
     queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
   }
   // queue up input buffers
+  // 4804608
   for (unsigned int i = 0; i < BUF_IN_COUNT; i++) {
     buf_in[i].allocate(fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage);
+    //buf_in[i].allocate(3735552);
     free_buf_in.push(i);
   }
 
@@ -262,10 +264,26 @@ void V4LEncoder::encoder_open(const char* path) {
   this->counter = 0;
 }
 
+int V4LEncoder::encode_frame_vipc(VisionBuf* buf, VisionIpcBufExtra *extra) {
+  struct timeval timestamp {
+    .tv_sec = (long)(extra->timestamp_eof/1000000000),
+    .tv_usec = (long)((extra->timestamp_eof/1000) % 1000000),
+  };
+
+  // reserve buffer
+  int buffer_in = free_buf_in.pop();
+
+  // push buffer
+  extras.push(*extra);
+  queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, buf, timestamp);
+
+  return this->counter++;
+}
+
 int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                   int in_width_, int in_height_, VisionIpcBufExtra *extra) {
-  assert(in_width == in_width_);
-  assert(in_height == in_height_);
+  /*assert(in_width == in_width_);
+  assert(in_height == in_height_);*/
   assert(is_open);
 
   // reserve buffer
@@ -285,7 +303,7 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
                    in_uv_ptr, in_uv_stride,
                    in_width, in_height);
   assert(err == 0);*/
-  memcpy(buf_in[buffer_in].addr, y_ptr, in_width*in_height + in_width*in_height/2);
+  memcpy(buf_in[buffer_in].addr, y_ptr, 2048*1216 + 2048*1216/2);  //in_width*in_height + in_width*in_height/2);
 
   struct timeval timestamp {
     .tv_sec = (long)(extra->timestamp_eof/1000000000),
