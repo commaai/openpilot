@@ -12,9 +12,6 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-//const int MAX_PARAM_DIRS = 400;
-//const char* DEFAULT_PREFIX = "DEFAULT";
-
 namespace {
 
 volatile sig_atomic_t params_do_exit = 0;
@@ -65,9 +62,9 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
   return true;
 }
 
-std::string ensure_params_path(const std::string &prefix, const std::string &path = {}) {
+std::string ensure_params_path(const std::string &path = {}) {
   std::string params_path = path.empty() ? Path::params() : path;
-  if (!create_params_path(params_path, params_path + "/d" + prefix)) {
+  if (!create_params_path(params_path, params_path + "/d")) {
     throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
   }
   return params_path;
@@ -186,38 +183,16 @@ std::unordered_map<std::string, uint32_t> keys = {
 } // namespace
 
 
-//void clean_param_dirs(std::string path){
-//  try{
-//    std::filesystem::directory_iterator iter(path.substr(0, path.rfind("/")));
-//    int count = 0;
-//    std::optional<std::filesystem::directory_entry> oldest;
-//    for (std::filesystem::directory_entry entry : iter) {
-//      if (entry.path().string().find(DEFAULT_PREFIX) != std::string::npos) continue;
-//      if (!oldest.has_value()) oldest = entry;
-//      else if (entry.last_write_time() < oldest->last_write_time()) oldest = entry;
-//      count += 1;
-//    }
-//    if (count > MAX_PARAM_DIRS) std::filesystem::remove_all(oldest->path());
-//  }
-//  catch (const std::filesystem::__cxx11::filesystem_error&) {
-//    LOGW("File already deleted in a parallel process");
-//  }
-//}
-
 std::string get_prefix() {
-    const char* env = std::getenv("OPENPILOIT_PREFIX");
-    return env ? "/" + std::string(env) : "";
+  const char* env = std::getenv("OPENPILOIT_PREFIX");
+  return env ? "/" + std::string(env) : "";
 }
 
 Params::Params(const std::string &path) {
+  static std::string default_param_path = ensure_params_path();
+  params_path = path.empty() ? default_param_path : ensure_params_path(path);
   prefix = get_prefix();
-  static std::string default_param_path = ensure_params_path(prefix);
-  params_path = path.empty() ? default_param_path : ensure_params_path(prefix, path);
- // clean_param_dirs(getParamPath());
- // if(!std::filesystem::exists(getParamPath())){
- //   util::create_directories(getParamPath(), 0775);
- // }
-
+  std::filesystem::create_directory(getParamPath());
 }
 
 bool Params::checkKey(const std::string &key) {
