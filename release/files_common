@@ -1,4 +1,6 @@
+.gitattributes
 .gitignore
+.lfsconfig
 LICENSE
 launch_env.sh
 launch_chffrplus.sh
