@@ -16,7 +16,7 @@ def get_car_can_parser():
     ("STEER_TORQUE_REQUEST", 0xe4),
     ("COMPUTER_BRAKE", 0x1fa),
     ("COMPUTER_BRAKE_REQUEST", 0x1fa),
-    ("GAS_COMMAND", 0x200),
+    ("COMMA_PEDAL_GAS_COMMAND", 0x200),
   ]
   checks = [
     (0xe4, 100),
@@ -44,9 +44,9 @@ def can_function(pm, speed, angle, idx, cruise_button, is_engaged):
   msg.append(packer.make_can_msg("SCM_BUTTONS", 0, {"CRUISE_BUTTONS": cruise_button}, idx))
 
   values = {"COUNTER_PEDAL": idx & 0xF}
-  checksum = crc8_pedal(packer.make_can_msg("GAS_SENSOR", 0, {"COUNTER_PEDAL": idx & 0xF}, -1)[2][:-1])
+  checksum = crc8_pedal(packer.make_can_msg("COMMA_PEDAL_GAS_SENSOR", 0, {"COUNTER_PEDAL": idx & 0xF}, -1)[2][:-1])
   values["CHECKSUM_PEDAL"] = checksum
-  msg.append(packer.make_can_msg("GAS_SENSOR", 0, values, -1))
+  msg.append(packer.make_can_msg("COMMA_PEDAL_GAS_SENSOR", 0, values, -1))
 
   msg.append(packer.make_can_msg("GEARBOX", 0, {"GEAR": 4, "GEAR_SHIFTER": 8}, idx))
   msg.append(packer.make_can_msg("GAS_PEDAL_2", 0, {}, idx))
@@ -86,8 +86,8 @@ def sendcan_function(sendcan):
   else:
     brake = 0.0
 
-  if cp.vl[0x200]['GAS_COMMAND'] > 0:
-    gas = ( cp.vl[0x200]['GAS_COMMAND'] + 83.3 ) / (0.253984064 * 2**16)
+  if cp.vl[0x200]['COMMA_PEDAL_GAS_COMMAND'] > 0:
+    gas = ( cp.vl[0x200]['COMMA_PEDAL_GAS_COMMAND'] + 83.3 ) / (0.253984064 * 2**16)
   else:
     gas = 0.0
 

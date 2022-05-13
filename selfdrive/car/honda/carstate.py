@@ -134,9 +134,9 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
-    signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR"))
-    signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR"))
-    checks.append(("GAS_SENSOR", 50))
+    signals.append(("INTERCEPTOR_GAS", "COMMA_PEDAL_GAS_SENSOR"))
+    signals.append(("INTERCEPTOR_GAS2", "COMMA_PEDAL_GAS_SENSOR"))
+    checks.append(("COMMA_PEDAL_GAS_SENSOR", 50))
 
   if CP.openpilotLongitudinalControl:
     signals += [
@@ -236,7 +236,7 @@ class CarState(CarStateBase):
 
     if self.CP.enableGasInterceptor:
       # Same threshold as panda, equivalent to 1e-5 with previous DBC scaling
-      ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
+      ret.gas = (cp.vl["COMMA_PEDAL_GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["COMMA_PEDAL_GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
       ret.gasPressed = ret.gas > 492
     else:
       ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
