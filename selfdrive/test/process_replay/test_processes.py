@@ -171,39 +171,26 @@ if __name__ == "__main__":
     if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
        (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
       continue
-    if not args.jobs:
-      print(f"***** testing route segment {segment} *****\n")
-      results[segment] = {}
-      r, n = segment.rsplit("--", 1)
-      lr = LogReader(get_url(r, n))
     for cfg in CONFIGS:
       if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
          (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
         continue
       cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-      if not args.upload_only:
-        if args.jobs:
-          pool_args.append((segment, cfg, args, cur_log_fn))
-        else:
-          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-          results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
-
-          # save logs so we can upload when updating refs
-          save_log(cur_log_fn, log_msgs)
+      pool_args.append((segment, cfg, args, cur_log_fn))
       if upload:
         print(f'Uploading: {os.path.basename(cur_log_fn)}')
         assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
         upload_file(cur_log_fn, os.path.basename(cur_log_fn))
         os.remove(cur_log_fn)
-  if args.jobs:
-    pool = Pool(7)
-    p = pool.map_async(run_test_process, pool_args)
-    for tup in p.get():
-      if tup[0] not in results:
-        results[tup[0]] = {}
-      results[tup[0]][tup[1]] = tup[2]
-    pool.close()
-    pool.join()
+  jobs = 7 if args.jobs else 1
+  pool = Pool(jobs)
+  p = pool.map_async(run_test_process, pool_args)
+  for tup in p.get():
+    if tup[0] not in results:
+      results[tup[0]] = {}
+    results[tup[0]][tup[1]] = tup[2]
+  pool.close()
+  pool.join()
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   if not args.upload_only:
