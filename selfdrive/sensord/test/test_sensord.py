@@ -20,6 +20,13 @@ CONFIGURATIONS = (
     ('lsm6ds3', 'temperature'),
     ('rpr0521', 'light'),
   },
+  {
+    ('lsm6ds3', 'acceleration'),
+    ('lsm6ds3', 'gyroUncalibrated'),
+    ('lsm6ds3', 'temperature'),
+    ('mmc5603nj', 'magneticUncalibrated'),
+    ('rpr0521', 'light'),
+  }
 )
 
 
