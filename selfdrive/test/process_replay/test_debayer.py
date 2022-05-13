@@ -10,6 +10,7 @@ from selfdrive.hardware import PC, TICI
 from common.basedir import BASEDIR
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.version import get_commit
+from selfdrive.camerad.snapshot.snapshot import yuv_to_rgb
 from tools.lib.logreader import LogReader
 from tools.lib.filereader import FileReader
 
@@ -68,38 +69,20 @@ def init_kernels(frame_offset=0):
       build_args += ' -DHALF_AS_FLOAT=1 -cl-std=CL2.0'
     debayer_prg = cl.Program(ctx, f.read()).build(options=build_args)
 
-  with open(os.path.join(BASEDIR, 'selfdrive/camerad/transforms/rgb_to_yuv.cl')) as f:
-    build_args = f' -cl-fast-relaxed-math -cl-denorms-are-zero -DWIDTH={FRAME_WIDTH} -DHEIGHT={FRAME_HEIGHT}' + \
-      f' -DUV_WIDTH={UV_WIDTH} -DUV_HEIGHT={UV_HEIGHT} -DRGB_STRIDE={FRAME_WIDTH*3}' + \
-      f' -DRGB_SIZE={FRAME_WIDTH*FRAME_HEIGHT}'
-    rgb_to_yuv_prg = cl.Program(ctx, f.read()).build(options=build_args)
+  return ctx, debayer_prg
 
-  return ctx, debayer_prg, rgb_to_yuv_prg
-
-
-def debayer_frame(ctx, debayer_prg, rgb_to_yuv_prg, data, rgb=False):
+def debayer_frame(ctx, debayer_prg, data, rgb=False):
   q = cl.CommandQueue(ctx)
 
-  rgb_buff = np.empty(FRAME_WIDTH * FRAME_HEIGHT * 3, dtype=np.uint8)
   yuv_buff = np.empty(FRAME_WIDTH * FRAME_HEIGHT + UV_SIZE * 2, dtype=np.uint8)
 
   cam_g = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=data)
-  rgb_wg = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, FRAME_WIDTH * FRAME_HEIGHT * 3)
   yuv_g = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, FRAME_WIDTH * FRAME_HEIGHT + UV_SIZE * 2)
 
-  local_worksize = (16, 16) if TICI else (8, 8)
-  local_mem = cl.LocalMemory(648 if TICI else 400)
-  ev1 = debayer_prg.debayer10(q, (FRAME_WIDTH, FRAME_HEIGHT), local_worksize, cam_g, rgb_wg, local_mem, np.float32(42))
-  cl.enqueue_copy(q, rgb_buff, rgb_wg, wait_for=[ev1]).wait()
-  cl.enqueue_barrier(q)
-
-  rgb_rg = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=rgb_buff)
-  cl.enqueue_barrier(q)
-
-  ev3 = rgb_to_yuv_prg.rgb_to_yuv(q, (FRAME_WIDTH // 4, FRAME_HEIGHT // 4), None, rgb_rg, yuv_g)
-  cl.enqueue_barrier(q)
-
-  cl.enqueue_copy(q, yuv_buff, yuv_g, wait_for=[ev3]).wait()
+  local_worksize = (20, 20) if TICI else (4, 4)
+  local_mem = cl.LocalMemory(3528 if TICI else 400)
+  ev1 = debayer_prg.debayer10(q, (UV_WIDTH, UV_HEIGHT), local_worksize, cam_g, yuv_g, local_mem, np.float32(42))
+  cl.enqueue_copy(q, yuv_buff, yuv_g, wait_for=[ev1]).wait()
   cl.enqueue_barrier(q)
 
   y = yuv_buff[:FRAME_WIDTH*FRAME_HEIGHT].reshape((FRAME_HEIGHT, FRAME_WIDTH))
@@ -107,13 +90,13 @@ def debayer_frame(ctx, debayer_prg, rgb_to_yuv_prg, data, rgb=False):
   v = yuv_buff[FRAME_WIDTH*FRAME_HEIGHT+UV_SIZE:].reshape((UV_HEIGHT, UV_WIDTH))
 
   if rgb:
-    return rgb_buff.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))[:, :, (2, 1, 0)]
+    return yuv_to_rgb(y, u, v)
   else:
     return y, u, v
 
 
 def debayer_replay(lr):
-  ctx, debayer_prg, rgb_to_yuv_prg = init_kernels()
+  ctx, debayer_prg = init_kernels()
 
   frames = []
   for m in lr:
@@ -121,7 +104,7 @@ def debayer_replay(lr):
       cs = m.roadCameraState
       if cs.image:
         data = np.frombuffer(cs.image, dtype=np.uint8)
-        img = debayer_frame(ctx, debayer_prg, rgb_to_yuv_prg, data)
+        img = debayer_frame(ctx, debayer_prg, data)
 
         frames.append(img)
 
@@ -173,7 +156,7 @@ if __name__ == "__main__":
 
             frame_diff = np.abs(np.subtract(fr, cmp_f))
             diff_len = len(np.nonzero(frame_diff)[0])
-            if diff_len > 1000:
+            if diff_len > 10000:
               diff += f'different at a large amount of pixels ({diff_len})\n'
             else:
               diff += 'different at (frame, yuv, pixel, ref, HEAD):\n'
