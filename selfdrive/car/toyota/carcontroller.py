@@ -10,8 +10,9 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-STEER_FAULT_MAX_RATE = 100
-STEER_FAULT_MAX_FRAMES = 18
+# globals for fault workaround
+MAX_STEER_RATE = 100  # deg/s
+MAX_STEER_RATE_FRAMES = 18  # 180 ms
 
 
 class CarController:
@@ -62,17 +63,16 @@ class CarController:
     # EPS_STATUS->LKA_STATE either goes to 21 or 25 on rising edge of a steering fault and
     # the value seems to describe how many frames the steering rate was above 100 deg/s, so
     # cut torque with some margin for the lower state
-    if CC.latActive and abs(CS.out.steeringRateDeg) >= STEER_FAULT_MAX_RATE:
+    if CC.latActive and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
       self.rate_limit_counter += 1
     else:
-      # TODO: unclear if it resets its internal state at another value
       self.rate_limit_counter = 0
 
     apply_steer_req = 1
     if not CC.latActive:
       apply_steer = 0
       apply_steer_req = 0
-    elif self.rate_limit_counter > STEER_FAULT_MAX_FRAMES:
+    elif self.rate_limit_counter > MAX_STEER_RATE_FRAMES:
       apply_steer_req = 0
       self.rate_limit_counter = 0
 
