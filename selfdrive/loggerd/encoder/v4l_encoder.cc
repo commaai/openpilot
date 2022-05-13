@@ -2,7 +2,7 @@
 #include <sys/ioctl.h>
 #include <poll.h>
 
-#include "selfdrive/loggerd/v4l_encoder.h"
+#include "selfdrive/loggerd/encoder/v4l_encoder.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/timing.h"
 
@@ -67,42 +67,6 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
   checked_ioctl(fd, VIDIOC_REQBUFS, &reqbuf);
 }
 
-// TODO: writing should be moved to loggerd
-void V4LEncoder::write_handler(V4LEncoder *e, const char *path) {
-  VideoWriter writer(path, e->filename, !e->h265, e->width, e->height, e->fps, e->h265, false);
-
-  bool first = true;
-  kj::Array<capnp::word>* out_buf;
-  while ((out_buf = e->to_write.pop())) {
-    capnp::FlatArrayMessageReader cmsg(*out_buf);
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-    auto edata = (e->type == DriverCam) ? event.getDriverEncodeData() :
-      ((e->type == WideRoadCam) ? event.getWideRoadEncodeData() :
-      (e->h265 ? event.getRoadEncodeData() : event.getQRoadEncodeData()));
-    auto idx = edata.getIdx();
-    auto flags = idx.getFlags();
-
-    if (first) {
-      assert(flags & V4L2_BUF_FLAG_KEYFRAME);
-      auto header = edata.getHeader();
-      writer.write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
-      first = false;
-    }
-
-    // dangerous cast from const, but should be fine
-    auto data = edata.getData();
-    if (data.size() > 0) {
-      writer.write((uint8_t *)data.begin(), data.size(), idx.getTimestampEof()/1000, false, flags & V4L2_BUF_FLAG_KEYFRAME);
-    }
-
-    // free the data
-    delete out_buf;
-  }
-
-  // VideoWriter is freed on out of scope
-}
-
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   std::string dequeue_thread_name = "dq-"+std::string(e->filename);
   util::set_thread_name(dequeue_thread_name.c_str());
@@ -138,7 +102,6 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
 
       // eof packet, we exit
       if (flags & V4L2_QCOM_BUF_FLAG_EOS) {
-        if (e->write) e->to_write.push(NULL);
         exit = true;
       } else if (flags & V4L2_QCOM_BUF_FLAG_CODECCONFIG) {
         // save header
@@ -146,37 +109,9 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       } else {
         VisionIpcBufExtra extra = e->extras.pop();
         assert(extra.timestamp_eof/1000 == ts); // stay in sync
-
         frame_id = extra.frame_id;
         ++idx;
-
-        // broadcast packet
-        MessageBuilder msg;
-        auto event = msg.initEvent(true);
-        auto edat = (e->type == DriverCam) ? event.initDriverEncodeData() :
-          ((e->type == WideRoadCam) ? event.initWideRoadEncodeData() :
-          (e->h265 ? event.initRoadEncodeData() : event.initQRoadEncodeData()));
-        auto edata = edat.initIdx();
-        edata.setFrameId(extra.frame_id);
-        edata.setTimestampSof(extra.timestamp_sof);
-        edata.setTimestampEof(extra.timestamp_eof);
-        edata.setType(e->h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264);
-        edata.setEncodeId(idx);
-        edata.setSegmentNum(e->segment_num);
-        edata.setSegmentId(idx);
-        edata.setFlags(flags);
-        edata.setLen(bytesused);
-        edat.setData(kj::arrayPtr<capnp::byte>(buf, bytesused));
-        if (flags & V4L2_BUF_FLAG_KEYFRAME) edat.setHeader(header);
-
-        auto words = new kj::Array<capnp::word>(capnp::messageToFlatArray(msg));
-        auto bytes = words->asBytes();
-        e->pm->send(e->service_name, bytes.begin(), bytes.size());
-        if (e->write) {
-          e->to_write.push(words);
-        } else {
-          delete words;
-        }
+        e->publisher_publish(e, e->segment_num, idx, extra, flags, header, kj::arrayPtr<capnp::byte>(buf, bytesused));
       }
 
       if (env_debug_encoder) {
@@ -196,12 +131,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   }
 }
 
-V4LEncoder::V4LEncoder(
-  const char* filename, CameraType type, int in_width, int in_height,
-  int fps, int bitrate, bool h265, int out_width, int out_height, bool write)
-  : type(type), in_width_(in_width), in_height_(in_height),
-    filename(filename), h265(h265),
-    width(out_width), height(out_height), fps(fps), write(write) {
+void V4LEncoder::encoder_init() {
   fd = open("/dev/v4l/by-path/platform-aa00000.qcom_vidc-video-index1", O_RDWR|O_NONBLOCK);
   assert(fd >= 0);
 
@@ -218,7 +148,7 @@ V4LEncoder::V4LEncoder(
         // downscales are free with v4l
         .width = (unsigned int)out_width,
         .height = (unsigned int)out_height,
-        .pixelformat = h265 ? V4L2_PIX_FMT_HEVC : V4L2_PIX_FMT_H264,
+        .pixelformat = (codec == cereal::EncodeIndex::Type::FULL_H_E_V_C) ? V4L2_PIX_FMT_HEVC : V4L2_PIX_FMT_H264,
         .field = V4L2_FIELD_ANY,
         .colorspace = V4L2_COLORSPACE_DEFAULT,
       }
@@ -272,7 +202,7 @@ V4LEncoder::V4LEncoder(
     }
   }
 
-  if (h265) {
+  if (codec == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
     struct v4l2_control ctrls[] = {
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_PROFILE, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_PROFILE_MAIN},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_TIER_LEVEL, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_LEVEL_HIGH_TIER_LEVEL_5},
@@ -321,23 +251,18 @@ V4LEncoder::V4LEncoder(
     free_buf_in.push(i);
   }
 
-  // publish
-  service_name = this->type == DriverCam ? "driverEncodeData" :
-    (this->type == WideRoadCam ? "wideRoadEncodeData" :
-    (this->h265 ? "roadEncodeData" : "qRoadEncodeData"));
-  pm.reset(new PubMaster({service_name}));
+  publisher_init();
 }
-
 
 void V4LEncoder::encoder_open(const char* path) {
   dequeue_handler_thread = std::thread(V4LEncoder::dequeue_handler, this);
-  if (this->write) write_handler_thread = std::thread(V4LEncoder::write_handler, this, path);
+  writer_open(path);
   this->is_open = true;
   this->counter = 0;
 }
 
 int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                  int in_width, int in_height, VisionIpcBufExtra *extra) {
+                  int in_width_, int in_height_, VisionIpcBufExtra *extra) {
   assert(in_width == in_width_);
   assert(in_height == in_height_);
   assert(is_open);
@@ -383,8 +308,7 @@ void V4LEncoder::encoder_close() {
     // join waits for V4L2_QCOM_BUF_FLAG_EOS
     dequeue_handler_thread.join();
     assert(extras.empty());
-    if (this->write) write_handler_thread.join();
-    assert(to_write.empty());
+    writer_close();
   }
   this->is_open = false;
 }

@@ -1,10 +1,12 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo
+from selfdrive.car.docs_definitions import CarInfo, Harness
 from cereal import car
 Ecu = car.CarParams.Ecu
+
 
 class CarControllerParams:
   STEER_MAX = 261         # 262 faults
@@ -20,12 +22,13 @@ class CAR:
   PACIFICA_2018 = "CHRYSLER PACIFICA 2018"  # includes 2017 Pacifica
   PACIFICA_2020 = "CHRYSLER PACIFICA 2020"
   JEEP_CHEROKEE = "JEEP GRAND CHEROKEE V6 2018"  # includes 2017 Trailhawk
-  JEEP_CHEROKEE_2019 = "JEEP GRAND CHEROKEE 2019" # includes 2020 Trailhawk
+  JEEP_CHEROKEE_2019 = "JEEP GRAND CHEROKEE 2019"  # includes 2020 Trailhawk
 
 
 @dataclass
 class ChryslerCarInfo(CarInfo):
   package: str = "Adaptive Cruise"
+  harness: Enum = Harness.fca
 
 
 CAR_INFO: Dict[str, Union[ChryslerCarInfo, List[ChryslerCarInfo]]] = {

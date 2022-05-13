@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import Dict, List, Union
+from enum import Enum
 
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo
+from selfdrive.car.docs_definitions import CarInfo, Harness
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -28,13 +29,14 @@ class CAR:
 @dataclass
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT"
+  harness: Enum = Harness.nissan_a
 
 
 CAR_INFO: Dict[str, Union[NissanCarInfo, List[NissanCarInfo]]] = {
   CAR.XTRAIL: NissanCarInfo("Nissan X-Trail 2017"),
   CAR.LEAF: NissanCarInfo("Nissan Leaf 2018-22"),
   CAR.ROGUE: NissanCarInfo("Nissan Rogue 2018-20"),
-  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20"),
+  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", harness=Harness.nissan_b),
 }
 
 FINGERPRINTS = {

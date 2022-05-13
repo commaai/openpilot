@@ -11,9 +11,7 @@ public:
   CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS] = nullptr, bool send_yuv = false);
   ~CameraServer();
   void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx);
-  inline void waitFinish() {
-    while (publishing_ > 0) usleep(0);
-  }
+  void waitForSent();
 
 protected:
   struct Camera {

@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Star
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, Star
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -100,6 +100,7 @@ class Footnote(Enum):
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
   good_torque: bool = True
+  harness: Enum = Harness.toyota
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
