@@ -24,6 +24,8 @@ from selfdrive.manager.process_config import managed_processes
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
+PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
+FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config'], defaults=({},))
 
