@@ -7,7 +7,7 @@ MIN_STEER_SPEED = 0.3
 
 
 class LatControl(ABC):
-  def __init__(self, CP):
+  def __init__(self, CP, CI):
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
     self.sat_count = 0.
