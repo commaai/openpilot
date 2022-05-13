@@ -4,7 +4,6 @@
 #include <sys/file.h>
 
 #include <csignal>
-#include <string>
 #include <unordered_map>
 
 #include "selfdrive/common/swaglog.h"
@@ -61,9 +60,9 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
   return true;
 }
 
-std::string ensure_params_path(const std::string &path = {}) {
+std::string ensure_params_path(const std::string &prefix, const std::string &path = {}) {
   std::string params_path = path.empty() ? Path::params() : path;
-  if (!create_params_path(params_path, params_path + "/d")) {
+  if (!create_params_path(params_path, params_path + prefix)) {
     throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
   }
   return params_path;
@@ -182,16 +181,11 @@ std::unordered_map<std::string, uint32_t> keys = {
 } // namespace
 
 
-std::string get_prefix() {
-  const char* env = std::getenv("OPENPILOIT_PREFIX");
-  return env ? "/" + std::string(env) : "";
-}
-
 Params::Params(const std::string &path) {
-  static std::string default_param_path = ensure_params_path();
-  params_path = path.empty() ? default_param_path : ensure_params_path(path);
-  prefix = get_prefix();
-  util::create_directories(getParamPath(), 0775);
+  const char* env = std::getenv("OPENPILOIT_PREFIX");
+  prefix = env ? "/d/" + std::string(env) : "/d";
+  std::string default_param_path = ensure_params_path(prefix);
+  params_path = path.empty() ? default_param_path : ensure_params_path(prefix, path);
 }
 
 bool Params::checkKey(const std::string &key) {
