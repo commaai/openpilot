@@ -31,7 +31,7 @@ class LatControlTorque(LatControl):
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
     self.kf = CP.lateralTuning.torque.kf
-    
+
   def reset(self):
     super().reset()
     self.pid.reset()
