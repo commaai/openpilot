@@ -138,6 +138,15 @@ pipeline {
                   }
                 }
 
+                stage('sensord') {
+                  steps {
+                    phone_steps("tici-party", [
+                      ["build", "cd selfdrive/manager && ./build.py"],
+                      ["test sensord", "python selfdrive/sensord/test/test_sensord.py"],
+                    ])
+                  }
+                }
+
                 stage('replay') {
                   steps {
                     phone_steps("tici3", [
