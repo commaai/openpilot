@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 import signal
+import uuid
 from collections import namedtuple
 
 import capnp
@@ -336,12 +337,22 @@ CONFIGS = [
   ),
 ]
 
+def setup_prefix():
+  os.environ['OPENPILOIT_PREFIX'] = str(uuid.uuid4())
+
+def teardown_prefix():
+  params_path = '/data/params' if os.environ.get('TICI', 0) else os.environ['HOME'] + '/.comma/params'
+  symlink_path = params_path + "/d/" + os.environ['OPENPILOIT_PREFIX']
+  os.remove(symlink_path)
 
 def replay_process(cfg, lr, fingerprint=None):
+  setup_prefix()
   if cfg.fake_pubsubmaster:
-    return python_replay_process(cfg, lr, fingerprint)
+    res = python_replay_process(cfg, lr, fingerprint)
   else:
-    return cpp_replay_process(cfg, lr, fingerprint)
+    res = cpp_replay_process(cfg, lr, fingerprint)
+  teardown_prefix()
+  return res
 
 def setup_env(simulation=False):
   params = Params()
