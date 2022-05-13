@@ -439,7 +439,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     local_sock.connect(('127.0.0.1', local_port))
-    local_sock.setblocking(0)
+    local_sock.setblocking(False)
 
     proxy_end_event = threading.Event()
     threads = [

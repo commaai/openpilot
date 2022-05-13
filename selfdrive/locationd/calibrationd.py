@@ -48,7 +48,7 @@ class Calibration:
 
 
 def is_calibration_valid(rpy: np.ndarray) -> bool:
-  return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
+  return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])  # type: ignore
 
 
 def sanity_clip(rpy: np.ndarray) -> np.ndarray:

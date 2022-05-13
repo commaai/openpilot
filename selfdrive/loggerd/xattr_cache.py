@@ -4,7 +4,7 @@ from common.xattr import getxattr as getattr1
 from common.xattr import setxattr as setattr1
 
 cached_attributes: Dict[Tuple, bytes] = {}
-def getxattr(path: str, attr_name: bytes) -> bytes:
+def getxattr(path: str, attr_name: str) -> bytes:
   if (path, attr_name) not in cached_attributes:
     response = getattr1(path, attr_name)
     cached_attributes[(path, attr_name)] = response

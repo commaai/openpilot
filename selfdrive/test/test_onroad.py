@@ -23,7 +23,7 @@ from tools.lib.logreader import LogReader
 PROCS = {
   "selfdrive.controls.controlsd": 31.0,
   "./loggerd": 50.0,
-  "./camerad": 26.0,
+  "./camerad": 16.5,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 11.7,
   "./_ui": 21.0,
@@ -59,7 +59,7 @@ TIMINGS = {
   "roadCameraState": [2.5, 0.35],
   "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
-  "driverState": [2.5, 0.35],
+  "driverState": [2.5, 0.40],
   "liveLocationKalman": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }

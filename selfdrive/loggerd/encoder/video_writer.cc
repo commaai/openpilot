@@ -1,5 +1,3 @@
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
 #include <cassert>
 #include <cstdlib>
 
@@ -23,11 +21,8 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
     assert(this->ofmt_ctx);
 
     // set codec correctly. needed?
-    av_register_all();
-
-    AVCodec *avcodec = NULL;
     assert(codec != cereal::EncodeIndex::Type::FULL_H_E_V_C);
-    avcodec = avcodec_find_encoder(raw ? AV_CODEC_ID_FFVHUFF : AV_CODEC_ID_H264);
+    const AVCodec *avcodec = avcodec_find_encoder(raw ? AV_CODEC_ID_FFVHUFF : AV_CODEC_ID_H264);
     assert(avcodec);
 
     this->codec_ctx = avcodec_alloc_context3(avcodec);
@@ -95,7 +90,7 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
       int err = av_interleaved_write_frame(ofmt_ctx, &pkt);
       if (err < 0) { LOGW("ts encoder write issue"); }
 
-      av_free_packet(&pkt);
+      av_packet_unref(&pkt);
     }
   }
 }
