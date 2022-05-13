@@ -84,7 +84,7 @@ def create_acc_commands(packer, enabled, active, accel, jerk_upper, idx, lead_vi
 
   scc11_values = {
     "MainMode_ACC": 1,
-    "TauGapSet": 4,
+    "TauGapSet": 4,  # TODO: experiment with this
     "VSetDis": set_speed if enabled else 0,
     "AliveCounterACC": idx % 0x10,
     "ObjValid": 1,  # close lead makes controls tighter
