@@ -89,20 +89,14 @@ class CarController:
 
     if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
       accel = actuators.accel
-      jerk = 0
-
-      if CC.longActive:
-        jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
-        if accel < 0:
-          accel = interp(accel - CS.out.aEgo, [-1.0, -0.5], [2 * accel, accel])
-
+      jerk_upper = clip(2.0 * (accel - CS.out.aEgo), 1.0, 12.7) if CC.longActive else 0
       accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
       lead_visible = False
       stopping = actuators.longControlState == LongCtrlState.stopping
       set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
-      can_sends.extend(create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2), lead_visible,
-                                           set_speed_in_units, stopping, CS.out.gasPressed))
+      can_sends.extend(create_acc_commands(self.packer, CC.enabled, CC.active, accel, jerk_upper, int(self.frame / 2),
+                                           lead_visible, set_speed_in_units, stopping, CS.out.gasPressed))
       self.accel = accel
 
     # 20 Hz LFA MFA message
