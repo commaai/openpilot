@@ -12,7 +12,7 @@ Rgb2Yuv::Rgb2Yuv(cl_context ctx, cl_device_id device_id, int width, int height, 
            "-DCL_DEBUG "
 #endif
            "-DWIDTH=%d -DHEIGHT=%d -DUV_WIDTH=%d -DUV_HEIGHT=%d -DRGB_STRIDE=%d -DRGB_SIZE=%d",
-           width, height, width, height / 2, rgb_stride, width * height);
+           2048, height, 2048, height / 2, rgb_stride, 2048 * 1216);
 
   cl_program prg = cl_program_from_file(ctx, device_id, "transforms/rgb_to_yuv.cl", args);
   krnl = CL_CHECK_ERR(clCreateKernel(prg, "rgb_to_yuv", &err));
