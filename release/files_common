@@ -112,17 +112,17 @@ selfdrive/car/tests/test_car_interfaces.py
 
 selfdrive/car/body/*.py
 selfdrive/car/chrysler/*.py
+selfdrive/car/ford/*.py
+selfdrive/car/gm/*.py
 selfdrive/car/honda/*.py
 selfdrive/car/hyundai/*.py
-selfdrive/car/toyota/*.py
-selfdrive/car/nissan/*.py
-selfdrive/car/volkswagen/*.py
-selfdrive/car/gm/*.py
-selfdrive/car/ford/*.py
-selfdrive/car/subaru/*.py
 selfdrive/car/mazda/*.py
-selfdrive/car/tesla/*.py
 selfdrive/car/mock/*.py
+selfdrive/car/nissan/*.py
+selfdrive/car/subaru/*.py
+selfdrive/car/tesla/*.py
+selfdrive/car/toyota/*.py
+selfdrive/car/volkswagen/*.py
 
 selfdrive/clocksd/.gitignore
 selfdrive/clocksd/SConscript
