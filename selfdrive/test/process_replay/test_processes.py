@@ -131,6 +131,7 @@ if __name__ == "__main__":
 
   full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
   upload = args.update_refs or args.upload_only
+  os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
 
   if upload:
     assert full_test, "Need to run full test when updating refs"
