@@ -9,7 +9,7 @@ from selfdrive.test.helpers import with_processes
 
 TEST_TIMESPAN = 10
 
-CONFIGURATIONS = (
+SENSOR_CONFIGURATIONS = (
   {
     ('bmx055', 'acceleration'),
     ('bmx055', 'gyroUncalibrated'),
@@ -71,7 +71,7 @@ class TestSensord(unittest.TestCase):
           continue
         seen.add((str(measurement.source), measurement.which()))
 
-    self.assertIn(seen, CONFIGURATIONS)
+    self.assertIn(seen, SENSOR_CONFIGURATIONS)
 
 
 if __name__ == "__main__":
