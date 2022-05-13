@@ -2,7 +2,7 @@ import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
 from selfdrive.swaglog import cloudlog
-from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
+from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc, X_DIM
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N, CAR_ROTATION_RADIUS
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.controls.lib.desire_helper import DesireHelper
@@ -27,9 +27,9 @@ class LateralPlanner:
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
 
     self.lat_mpc = LateralMpc()
-    self.reset_mpc(np.zeros(4))
+    self.reset_mpc(np.zeros(X_DIM))
 
-  def reset_mpc(self, x0=np.zeros(4)):
+  def reset_mpc(self, x0=np.zeros(X_DIM)):
     self.x0 = x0
     self.lat_mpc.reset(x0=self.x0)
 
@@ -42,8 +42,12 @@ class LateralPlanner:
     self.LP.parse_model(md)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
+      self.speed_forward = np.linalg.norm(np.column_stack([md.velocity.x, md.velocity.y, md.velocity.z]), axis=1)
       self.t_idxs = np.array(md.position.t)
       self.plan_yaw = list(md.orientation.z)
+      self.yaw_rate = np.array(md.orientationRate.z)
+      self.lateral_acceleration = self.yaw_rate * self.speed_forward
+      self.lateral_jerk = np.gradient(self.lateral_acceleration, self.t_idxs)
     if len(md.position.xStd) == TRAJECTORY_SIZE:
       self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
 
@@ -67,9 +71,14 @@ class LateralPlanner:
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.0])
       self.lat_mpc.set_weights(path_cost, heading_cost, self.steer_rate_cost)
 
-    y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
-    heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
+    distance_forward = ((self.speed_forward[1:] + self.speed_forward[:-1]) / 2) * (self.t_idxs[1:] - self.t_idxs[:-1])
+    distance_forward = np.cumsum(np.insert(distance_forward, 0, 0))
+
+    y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], distance_forward, d_path_xyz[:, 1])
+    heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], distance_forward, self.plan_yaw)
+    jerk_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], distance_forward, self.lateral_jerk)
     self.y_pts = y_pts
+    self.jerk_pts = jerk_pts
 
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
@@ -78,7 +87,8 @@ class LateralPlanner:
     self.lat_mpc.run(self.x0,
                      p,
                      y_pts,
-                     heading_pts)
+                     heading_pts,
+                     jerk_pts)
     # init state for next
     self.x0[3] = interp(DT_MDL, self.t_idxs[:LAT_MPC_N + 1], self.lat_mpc.x_sol[:, 3])
 
@@ -108,7 +118,7 @@ class LateralPlanner:
     lateralPlan.dPathPoints = self.y_pts.tolist()
     lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()
     lateralPlan.curvatures = self.lat_mpc.x_sol[0:CONTROL_N, 3].tolist()
-    lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
+    lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [float(self.jerk_pts[CONTROL_N-1]/(self.speed_forward[CONTROL_N-1]**2))]
     lateralPlan.lProb = float(self.LP.lll_prob)
     lateralPlan.rProb = float(self.LP.rll_prob)
     lateralPlan.dProb = float(self.LP.d_prob)
