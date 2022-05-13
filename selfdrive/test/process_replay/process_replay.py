@@ -341,9 +341,11 @@ def setup_prefix():
   os.environ['OPENPILOIT_PREFIX'] = str(uuid.uuid4())
 
 def teardown_prefix():
-  params_path = '/data/params' if os.environ.get('TICI', 0) else os.environ['HOME'] + '/.comma/params'
-  symlink_path = params_path + "/d/" + os.environ['OPENPILOIT_PREFIX']
-  os.remove(symlink_path)
+  prefix = os.environ.get('OPENPILOIT_PREFIX', 0)
+  if prefix:
+    params_path = '/data/params' if os.environ.get('TICI', 0) else os.environ['HOME'] + '/.comma/params'
+    symlink_path = params_path + prefix
+    os.remove(symlink_path)
 
 def replay_process(cfg, lr, fingerprint=None):
   setup_prefix()
