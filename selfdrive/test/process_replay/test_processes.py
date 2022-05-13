@@ -185,18 +185,19 @@ if __name__ == "__main__":
         upload_file(cur_log_fn, os.path.basename(cur_log_fn))
         os.remove(cur_log_fn)
 
-  diff1, diff2, failed = format_diff(results, ref_commit)
-  with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
-    f.write(diff2)
-  print(diff1)
+  if not args.upload_only:
+    diff1, diff2, failed = format_diff(results, ref_commit)
+    with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
+      f.write(diff2)
+    print(diff1)
 
-  if failed:
-    print("TEST FAILED")
-    if not upload:
-      print("\n\nTo push the new reference logs for this commit run:")
-      print("./test_processes.py --upload-only")
-  else:
-    print("TEST SUCCEEDED")
+    if failed:
+      print("TEST FAILED")
+      if not args.update_refs:
+        print("\n\nTo push the new reference logs for this commit run:")
+        print("./test_processes.py --upload-only")
+    else:
+      print("TEST SUCCEEDED")
 
   if upload:
     with open(REF_COMMIT_FN, "w") as f:
