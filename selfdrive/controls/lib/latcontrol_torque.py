@@ -25,7 +25,6 @@ JERK_THRESHOLD = 0.2
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    self.CP = CP
     self.pid = PIDController(CP.lateralTuning.torque.kp, CP.lateralTuning.torque.ki,
                              k_f=CP.lateralTuning.torque.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
