@@ -2,7 +2,7 @@
 import argparse
 import os
 import sys
-from typing import Any
+from typing import Any, Dict
 
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url, upload_file
@@ -94,7 +94,7 @@ def format_diff(results, ref_commit):
         diff1 += f"\t\t{diff}\n"
         failed = True
       elif len(diff):
-        cnt = {}
+        cnt: Dict[str, int] = {}
         for d in diff:
           diff2 += f"\t{str(d)}\n"
 

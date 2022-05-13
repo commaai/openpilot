@@ -317,13 +317,6 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc) && \
                         FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
                         coverage xml"
-    - name: Upload reference logs
-      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py --upload-only"
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v2
     - name: Print diff
       if: always()
       run: cat selfdrive/test/process_replay/diff.txt
@@ -333,6 +326,13 @@ jobs:
       with:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
+    - name: Upload reference logs
+      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc) && \
+                        CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py --upload-only"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
 
   #model_replay:
   #  name: model replay
