@@ -185,8 +185,8 @@ if __name__ == "__main__":
         upload_file(cur_log_fn, os.path.basename(cur_log_fn))
         os.remove(cur_log_fn)
 
+  diff1, diff2, failed = format_diff(results, ref_commit)
   if not args.upload_only:
-    diff1, diff2, failed = format_diff(results, ref_commit)
     with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
       f.write(diff2)
     print(diff1)
