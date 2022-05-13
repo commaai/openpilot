@@ -459,7 +459,6 @@ opendbc/can/common.h
 opendbc/can/common.pxd
 opendbc/can/common_dbc.h
 opendbc/can/dbc.cc
-opendbc/can/dbc_template.cc
 opendbc/can/packer.cc
 opendbc/can/packer.py
 opendbc/can/packer_pyx.pyx
