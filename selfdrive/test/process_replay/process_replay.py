@@ -300,18 +300,18 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
   ),
-  ProcessConfig(
-    proc_name="locationd",
-    pub_sub={
-      "cameraOdometry": ["liveLocationKalman"],
-      "sensorEvents": [], "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
-    },
-    ignore=["logMonoTime", "valid"],
-    init_callback=get_car_params,
-    should_recv_callback=None,
-    tolerance=NUMPY_TOLERANCE,
-    fake_pubsubmaster=False,
-  ),
+#  ProcessConfig(
+#    proc_name="locationd",
+#    pub_sub={
+#      "cameraOdometry": ["liveLocationKalman"],
+#      "sensorEvents": [], "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
+#    },
+#    ignore=["logMonoTime", "valid"],
+#    init_callback=get_car_params,
+#    should_recv_callback=None,
+#    tolerance=NUMPY_TOLERANCE,
+#    fake_pubsubmaster=False,
+#  ),
   ProcessConfig(
     proc_name="paramsd",
     pub_sub={
@@ -324,28 +324,26 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
   ),
-  ProcessConfig(
-    proc_name="ubloxd",
-    pub_sub={
-      "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
-    },
-    ignore=["logMonoTime"],
-    init_callback=None,
-    should_recv_callback=ublox_rcv_callback,
-    tolerance=None,
-    fake_pubsubmaster=False,
-  ),
+#  ProcessConfig(
+#    proc_name="ubloxd",
+#    pub_sub={
+#      "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
+#    },
+#    ignore=["logMonoTime"],
+#    init_callback=None,
+#    should_recv_callback=ublox_rcv_callback,
+#    tolerance=None,
+#    fake_pubsubmaster=False,
+#  ),
 ]
 
 def setup_prefix():
   os.environ['OPENPILOIT_PREFIX'] = str(uuid.uuid4())
 
 def teardown_prefix():
-  prefix = os.environ.get('OPENPILOIT_PREFIX', 0)
-  if prefix:
-    params_path = '/data/params' if os.environ.get('TICI', 0) else os.environ['HOME'] + '/.comma/params'
-    symlink_path = params_path + prefix
-    os.remove(symlink_path)
+  params_path = '/data/params' if os.environ.get('TICI', 0) else os.environ['HOME'] + '/.comma/params'
+  symlink_path = params_path + "/" +os.environ['OPENPILOIT_PREFIX']
+  os.remove(symlink_path)
 
 def replay_process(cfg, lr, fingerprint=None):
   setup_prefix()
