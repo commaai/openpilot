@@ -26,7 +26,24 @@ CONFIGURATIONS = (
     ('lsm6ds3', 'temperature'),
     ('mmc5603nj', 'magneticUncalibrated'),
     ('rpr0521', 'light'),
-  }
+  },
+  {
+    ('bmx055', 'acceleration'),
+    ('bmx055', 'gyroUncalibrated'),
+    ('bmx055', 'magneticUncalibrated'),
+    ('bmx055', 'temperature'),
+    ('lsm6ds3trc', 'acceleration'),
+    ('lsm6ds3trc', 'gyroUncalibrated'),
+    ('lsm6ds3trc', 'temperature'),
+    ('rpr0521', 'light'),
+  },
+  {
+    ('lsm6ds3trc', 'acceleration'),
+    ('lsm6ds3trc', 'gyroUncalibrated'),
+    ('lsm6ds3trc', 'temperature'),
+    ('mmc5603nj', 'magneticUncalibrated'),
+    ('rpr0521', 'light'),
+  },
 )
 
 
