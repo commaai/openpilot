@@ -4,7 +4,6 @@
 #include <sys/file.h>
 
 #include <csignal>
-#include <filesystem>
 #include <string>
 #include <unordered_map>
 
@@ -192,7 +191,7 @@ Params::Params(const std::string &path) {
   static std::string default_param_path = ensure_params_path();
   params_path = path.empty() ? default_param_path : ensure_params_path(path);
   prefix = get_prefix();
-  std::filesystem::create_directory(getParamPath());
+  util::create_directories(getParamPath(), 0775);
 }
 
 bool Params::checkKey(const std::string &key) {
