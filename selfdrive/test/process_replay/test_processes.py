@@ -8,7 +8,7 @@ from typing import Any, Dict
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url, upload_file
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
-from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, check_enabled, replay_process
+from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_enabled, replay_process
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
@@ -157,6 +157,7 @@ if __name__ == "__main__":
 
   full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
   upload = args.update_refs or args.upload_only
+  os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
 
   if upload:
     assert full_test, "Need to run full test when updating refs"
@@ -185,7 +186,7 @@ if __name__ == "__main__":
     if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
        (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
       continue
-    if not args.parallel:
+    if not args.jobs:
       print(f"***** testing route segment {segment} *****\n")
       results[segment] = {}
       r, n = segment.rsplit("--", 1)
@@ -194,13 +195,14 @@ if __name__ == "__main__":
       if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
          (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
         continue
-      cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+      cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
       if not args.upload_only:
-        if args.parallel:
+        if args.jobs:
           pool_args.append((segment, cfg, args, cur_log_fn))
         else:
-          ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
           results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
+
           # save logs so we can upload when updating refs
           save_log(cur_log_fn, log_msgs)
       if upload:
@@ -208,7 +210,7 @@ if __name__ == "__main__":
         assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
         upload_file(cur_log_fn, os.path.basename(cur_log_fn))
         os.remove(cur_log_fn)
-  if args.parallel:
+  if args.jobs:
     pool = NestablePool(7)
     p = pool.map_async(run_test_process, pool_args)
     for tup in p.get():
@@ -219,17 +221,18 @@ if __name__ == "__main__":
     pool.join()
 
   diff1, diff2, failed = format_diff(results, ref_commit)
-  with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
-    f.write(diff2)
-  print(diff1)
+  if not args.upload_only:
+    with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
+      f.write(diff2)
+    print(diff1)
 
-  if failed:
-    print("TEST FAILED")
-    if not upload:
-      print("\n\nTo push the new reference logs for this commit run:")
-      print("./test_processes.py --upload-only")
-  else:
-    print("TEST SUCCEEDED")
+    if failed:
+      print("TEST FAILED")
+      if not args.update_refs:
+        print("\n\nTo push the new reference logs for this commit run:")
+        print("./test_processes.py --upload-only")
+    else:
+      print("TEST SUCCEEDED")
 
   if upload:
     with open(REF_COMMIT_FN, "w") as f:

@@ -524,7 +524,6 @@ opendbc/can/common.h
 opendbc/can/common.pxd
 opendbc/can/common_dbc.h
 opendbc/can/dbc.cc
-opendbc/can/dbc.py
 opendbc/can/dbc_template.cc
 opendbc/can/packer.cc
 opendbc/can/packer.py
@@ -532,9 +531,6 @@ opendbc/can/packer_pyx.pyx
 opendbc/can/parser.cc
 opendbc/can/parser.py
 opendbc/can/parser_pyx.pyx
-opendbc/can/process_dbc.py
-opendbc/can/dbc_out/.gitkeep
-opendbc/can/dbc_out/.gitignore
 
 opendbc/chrysler_pacifica_2017_hybrid.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
