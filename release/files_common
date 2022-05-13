@@ -531,8 +531,6 @@ opendbc/can/packer_pyx.pyx
 opendbc/can/parser.cc
 opendbc/can/parser.py
 opendbc/can/parser_pyx.pyx
-opendbc/can/dbc_out/.gitkeep
-opendbc/can/dbc_out/.gitignore
 
 opendbc/chrysler_pacifica_2017_hybrid.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
