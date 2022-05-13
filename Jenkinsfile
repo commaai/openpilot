@@ -124,6 +124,7 @@ pipeline {
                       ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
+                      ["test sensord", "python selfdrive/sensord/test/test_sensord.py"],
                     ])
                   }
                 }
@@ -134,15 +135,6 @@ pipeline {
                       ["build", "cd selfdrive/manager && ./build.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
                       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
-                    ])
-                  }
-                }
-
-                stage('sensord') {
-                  steps {
-                    phone_steps("tici-party", [
-                      ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test sensord", "python selfdrive/sensord/test/test_sensord.py"],
                     ])
                   }
                 }
