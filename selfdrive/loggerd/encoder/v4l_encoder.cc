@@ -249,7 +249,7 @@ void V4LEncoder::encoder_init() {
   // queue up input buffers
   // 4804608
   for (unsigned int i = 0; i < BUF_IN_COUNT; i++) {
-    buf_in[i].allocate(fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage);
+    //buf_in[i].allocate(fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage);
     //buf_in[i].allocate(3735552);
     free_buf_in.push(i);
   }
@@ -275,6 +275,7 @@ int V4LEncoder::encode_frame_vipc(VisionBuf* buf, VisionIpcBufExtra *extra) {
 
   // push buffer
   extras.push(*extra);
+  //buf->sync(VISIONBUF_SYNC_TO_DEVICE);
   queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, buf, timestamp);
 
   return this->counter++;
