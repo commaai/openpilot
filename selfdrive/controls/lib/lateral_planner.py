@@ -18,7 +18,7 @@ class LateralPlanner:
 
     self.last_cloudlog_t = 0
     self.steer_rate_cost = CP.steerRateCost
-    self.r = CP.wheelbase if use_rot_rad else 0.0
+    self.r = 2.0 if use_rot_rad else 0.0
     self.solution_invalid_cnt = 0
 
     self.path_xyz = np.zeros((TRAJECTORY_SIZE, 3))
@@ -46,9 +46,6 @@ class LateralPlanner:
       self.speed_forward = np.linalg.norm(np.column_stack([md.velocity.x, md.velocity.y, md.velocity.z]), axis=1)
       self.t_idxs = np.array(md.position.t)
       self.plan_yaw = list(md.orientation.z)
-      self.yaw_rate = np.array(md.orientationRate.z)
-      self.lateral_acceleration = self.yaw_rate * self.speed_forward
-      self.lateral_jerk = np.gradient(self.lateral_acceleration, self.t_idxs)
     if len(md.position.xStd) == TRAJECTORY_SIZE:
       self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
 
@@ -75,19 +72,16 @@ class LateralPlanner:
     distance_forward = np.cumsum(np.insert(distance_forward, 0, 0))
     y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], distance_forward, d_path_xyz[:, 1])
     heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], distance_forward, self.plan_yaw)
-    jerk_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], distance_forward, self.lateral_jerk)
     self.y_pts = y_pts
 
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
     # self.x0[4] = v_ego
-    r = np.interp(np.abs(self.yaw_rate[0]), [0.2, 0.25], [0.0, self.r])
-    p = np.array([v_ego, r])
+    p = np.array([v_ego, self.r])
     self.lat_mpc.run(self.x0,
                      p,
                      y_pts,
-                     heading_pts,
-                     jerk_pts)
+                     heading_pts)
     # init state for next
     # mpc.u_sol is the desired curvature rate given x0 curv state. 
     # with x0[3] = measured_curvature, this would be the actual desired rate.
