@@ -56,9 +56,9 @@ EOS
 
 # Install an older gcc-arm-embedded for M1 Mac Silicon support with Xcode 13.3~
 brew uninstall gcc-arm-embedded || true
-curl -L https://github.com/Homebrew/homebrew-cask/raw/d407663b8017a0a062c7fc0b929faf2e16abd1ff/Casks/gcc-arm-embedded.rb > gcc-arm-embedded.rb
-brew install --cask gcc-arm-embedded.rb
-rm gcc-arm-embedded.rb
+curl -L https://github.com/Homebrew/homebrew-cask/raw/d407663b8017a0a062c7fc0b929faf2e16abd1ff/Casks/gcc-arm-embedded.rb > /tmp/gcc-arm-embedded.rb
+brew install --cask /tmp/gcc-arm-embedded.rb
+rm /tmp/gcc-arm-embedded.rb
 
 echo "[ ] finished brew install t=$SECONDS"
 
