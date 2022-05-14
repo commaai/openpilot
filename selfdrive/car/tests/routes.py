@@ -29,7 +29,7 @@ non_tested_cars = [
 TestRoute = namedtuple('TestRoute', ['route', 'car_fingerprint', 'segment'], defaults=(None,))
 
 routes = [
-  TestRoute("d6ac8ebdb47bc549|2022-03-31--13-10-06", COMMA.BODY),
+  TestRoute("efdf9af95e71cd84|2022-05-13--19-03-31", COMMA.BODY),
 
   TestRoute("0c94aa1e1296d7c6|2021-05-05--19-48-37", CHRYSLER.JEEP_CHEROKEE),
   TestRoute("91dfedae61d7bd75|2021-05-22--20-07-52", CHRYSLER.JEEP_CHEROKEE_2019),
