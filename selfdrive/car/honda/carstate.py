@@ -303,13 +303,10 @@ class CarState(CarStateBase):
     else:
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
 
+    self.stock_hud = False
     if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
       self.stock_hud = cp_cam.vl["ACC_HUD"]
-      ret.stockFcw = False
-    elif self.CP.carFingerprint in HONDA_BOSCH:
-      self.stock_hud = False
-      ret.stockFcw = False
-    else:
+    elif self.CP.carFingerprint not in HONDA_BOSCH:
       ret.stockFcw = cp_cam.vl["BRAKE_COMMAND"]["FCW"] != 0
       self.stock_hud = cp_cam.vl["ACC_HUD"]
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
