@@ -13,7 +13,6 @@ extern "C" {
 
 #include "selfdrive/loggerd/encoder/encoder.h"
 #include "selfdrive/loggerd/loggerd.h"
-#include "selfdrive/loggerd/encoder/video_writer.h"
 
 class FfmpegEncoder : public VideoEncoder {
  public:

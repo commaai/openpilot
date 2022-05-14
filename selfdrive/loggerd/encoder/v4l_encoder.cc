@@ -115,8 +115,8 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       }
 
       if (env_debug_encoder) {
-        printf("%20s got(%d) %6d bytes flags %8x idx %4d id %8d ts %ld lat %.2f ms (%lu frames free)\n",
-          e->filename, index, bytesused, flags, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
+        printf("%20s got(%d) %6d bytes flags %8x idx %3d/%4d id %8d ts %ld lat %.2f ms (%lu frames free)\n",
+          e->filename, index, bytesused, flags, e->segment_num, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
       }
 
       // requeue the buffer
