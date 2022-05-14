@@ -182,7 +182,7 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 
 Params::Params(const std::string &path) {
-  const char* env = std::getenv("OPENPILOIT_PREFIX");
+  const char* env = std::getenv("OPENPILOT_PREFIX");
   prefix = env ? "/" + std::string(env) : "/d";
   std::string default_param_path = ensure_params_path(prefix);
   params_path = path.empty() ? default_param_path : ensure_params_path(prefix, path);

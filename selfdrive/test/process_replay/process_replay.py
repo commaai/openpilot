@@ -341,8 +341,8 @@ def setup_prefix():
   os.environ['OPENPILOT_PREFIX'] = str(uuid.uuid4())
 
 def teardown_prefix():
-  params_path = '/data/params' if os.environ.get('TICI', 0) else os.environ['HOME'] + '/.comma/params'
-  symlink_path = params_path + "/" + os.environ['OPENPILOT_PREFIX']
+  params_path = '/data/params/' if os.environ.get('TICI', 0) else os.environ['HOME'] + '/.comma/params/'
+  symlink_path = params_path + os.environ['OPENPILOT_PREFIX']
   os.remove(symlink_path)
   msg_path = '/dev/shm/' + os.environ['OPENPILOT_PREFIX']
   os.remove(msg_path)
