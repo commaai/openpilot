@@ -69,4 +69,4 @@ if [ ! -z "$BRANCH" ]; then
   git push -f origin master-ci:$BRANCH
 fi
 
-echo "[-] done T=$SECONDS"
+echo "[-] done T=$SECONDS, ready at $TARGET_DIR"

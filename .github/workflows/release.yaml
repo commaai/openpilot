@@ -1,9 +1,8 @@
 name: release
 on:
-  push:
-  #schedule:
-  #  - cron: '0 * * * *'
-  #workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
   build_masterci:
