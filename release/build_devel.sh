@@ -11,9 +11,6 @@ fi
 
 # set git identity
 source $DIR/identity.sh
-if [ ! -z "$KEY_FILE" ]; then
-  export GIT_SSH_COMMAND="ssh -i $KEY_FILE -o StrictHostKeyChecking=accept-new"
-fi
 
 echo "[-] Setting up repo T=$SECONDS"
 

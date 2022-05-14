@@ -23,6 +23,12 @@ jobs:
         lfs: true
         submodules: true
         fetch-depth: 0
-    - name: Build master-ci
-      run: |
-        PUSH=test-master-ci release/build_devel.sh
+    - run: |
+        source release/identity.sh
+        date > generated.txt
+        git add .
+        git commit -m "generated"
+        git push
+    #- name: Build master-ci
+    #  run: |
+    #    #PUSH=test-master-ci release/build_devel.sh
