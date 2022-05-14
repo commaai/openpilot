@@ -17,6 +17,7 @@ echo "[-] Setting up repo T=$SECONDS"
 cd $SOURCE_DIR
 git fetch origin
 
+rm -rf $TARGET_DIR
 mkdir -p $TARGET_DIR
 cd $TARGET_DIR
 cp -r $SOURCE_DIR/.git $TARGET_DIR
