@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
+import multiprocessing.pool
 import os
 import sys
-from multiprocessing import Pool
 from typing import Any, Dict
 
 from selfdrive.car.car_helpers import interface_names
@@ -12,6 +12,20 @@ from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DI
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
+# Hack to allow daemon processes in a Pool. https://stackoverflow.com/a/53180921/10084102
+class NoDaemonProcess(multiprocessing.Process):
+  @property # type: ignore
+  def daemon(self):
+    return False
+  @daemon.setter
+  def daemon(self, value):
+    pass
+class NoDaemonContext(type(multiprocessing.get_context())): # type: ignore
+  Process = NoDaemonProcess
+class NestablePool(multiprocessing.pool.Pool): # pylint: disable=abstract-method
+  def __init__(self, *args, **kwargs):
+    kwargs['context'] = NoDaemonContext()
+    super(NestablePool, self).__init__(*args, **kwargs)
 
 original_segments = [
   ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),        # COMMA.BODY
@@ -183,7 +197,7 @@ if __name__ == "__main__":
         upload_file(cur_log_fn, os.path.basename(cur_log_fn))
         os.remove(cur_log_fn)
   jobs = 7 if args.jobs else 1
-  pool = Pool(jobs)
+  pool = NestablePool(jobs)
   p = pool.map_async(run_test_process, pool_args)
   for tup in p.get():
     if tup[0] not in results:
