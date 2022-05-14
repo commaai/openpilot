@@ -33,6 +33,7 @@ git reset --hard master-ci
 git checkout master-ci
 git reset --hard origin/devel
 git clean -xdf
+git lfs uninstall
 
 # remove everything except .git
 echo "[-] erasing old openpilot T=$SECONDS"
