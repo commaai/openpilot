@@ -7,6 +7,7 @@ from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADA
 # 2 = ACC-CAN - camera side
 # 3 = F-CAN A - OBDII port
 
+
 def get_pt_bus(car_fingerprint):
   if car_fingerprint in HONDA_BOSCH_RADARLESS:
     return 2
@@ -22,6 +23,7 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
     return get_pt_bus(car_fingerprint)
   # normally steering commands are sent to radar, which forwards them to powertrain bus
   return 0
+
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?
@@ -82,6 +84,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, idx, stopping, car_
   commands.append(packer.make_can_msg("ACC_CONTROL_ON", bus, acc_control_on_values, idx))
 
   return commands
+
 
 def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx, radar_disabled):
   values = {
