@@ -1,0 +1,27 @@
+name: release
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  build_masterci:
+    name: build master-ci
+    runs-on: ubuntu-20.04
+    timeout-minutes: 60
+    if: github.repository == 'commaai/openpilot'
+    steps:
+    - name: Wait for green check mark
+      uses: lewagon/wait-on-check-action@v0.2
+      with:
+        ref: master
+        wait-interval: 30
+        running-workflow-name: 'build master-ci'
+    - uses: actions/checkout@v3
+      with:
+        lfs: true
+        submodules: true
+        fetch-depth: 0
+    - name: Build master-ci
+      run: |
+        BRANCH=test-master-ci release/build_devel.sh
