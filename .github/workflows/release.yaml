@@ -12,15 +12,15 @@ jobs:
     timeout-minutes: 60
     if: github.repository == 'commaai/openpilot'
     steps:
-    - name: Wait for green check mark
-      uses: lewagon/wait-on-check-action@v0.2
-      with:
-        ref: master
-        wait-interval: 30
-        running-workflow-name: 'build prebuilt'
+    #- name: Wait for green check mark
+    #  uses: lewagon/wait-on-check-action@v0.2
+    #  with:
+    #    ref: master
+    #    wait-interval: 30
+    #    running-workflow-name: 'build prebuilt'
     - uses: actions/checkout@v2
       with:
         submodules: true
     - name: Build master-ci
       run: |
-        release/build_devel.sh
+        PUSH=test-master-ci release/build_devel.sh
