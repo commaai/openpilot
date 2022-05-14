@@ -20,7 +20,9 @@ jobs:
     #    running-workflow-name: 'build prebuilt'
     - uses: actions/checkout@v2
       with:
+        lfs: true
         submodules: true
+        fetch-depth: 0
     - name: Build master-ci
       run: |
         PUSH=test-master-ci release/build_devel.sh
