@@ -237,16 +237,13 @@ selfdrive/loggerd/encoder/encoder.cc
 selfdrive/loggerd/encoder/encoder.h
 selfdrive/loggerd/encoder/v4l_encoder.cc
 selfdrive/loggerd/encoder/v4l_encoder.h
-selfdrive/loggerd/encoder/video_writer.cc
-selfdrive/loggerd/encoder/video_writer.h
-selfdrive/loggerd/remote_encoder.cc
-selfdrive/loggerd/remote_encoder.h
+selfdrive/loggerd/video_writer.cc
+selfdrive/loggerd/video_writer.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h
 selfdrive/loggerd/loggerd.cc
 selfdrive/loggerd/loggerd.h
 selfdrive/loggerd/encoderd.cc
-selfdrive/loggerd/main.cc
 selfdrive/loggerd/bootlog.cc
 selfdrive/loggerd/encoder/ffmpeg_encoder.cc
 selfdrive/loggerd/encoder/ffmpeg_encoder.h
@@ -459,7 +456,6 @@ opendbc/can/common.h
 opendbc/can/common.pxd
 opendbc/can/common_dbc.h
 opendbc/can/dbc.cc
-opendbc/can/dbc_template.cc
 opendbc/can/packer.cc
 opendbc/can/packer.py
 opendbc/can/packer_pyx.pyx
