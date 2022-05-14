@@ -147,11 +147,13 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud, fr
     'SET_ME_X41': 0x41,
     'STEERING_REQUIRED': hud.steer_required,
     'SOLID_LANES': hud.lanes,
-    'LANE_LINES': 3,
-    'DASHED_LANES': hud.lanes,
     'BEEP': 0,
-    'LKAS_PROBLEM': 0 if frame > 200 else 1,  # TODO: understand this better, does car need to see it fall after an initial warm up?
   }
+
+  if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
+    lkas_hud_values['LANE_LINES'] = 3
+    lkas_hud_values['DASHED_LANES'] = hud.lanes
+    lkas_hud_values['LKAS_PROBLEM'] = 0 if frame > 200 else 1  # TODO: understand this better, does car need to see it fall after an initial warm up?
 
   if not (CP.flags & HondaFlags.BOSCH_EXT_HUD):
     lkas_hud_values['SET_ME_X48'] = 0x48
