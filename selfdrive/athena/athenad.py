@@ -1,38 +1,43 @@
 #!/usr/bin/env python3
 import base64
+import bz2
 import hashlib
 import io
 import json
 import os
-import sys
 import queue
 import random
 import select
 import socket
+import subprocess
+import sys
+import tempfile
 import threading
 import time
-import tempfile
 from collections import namedtuple
+from datetime import datetime
 from functools import partial
 from typing import Any, Dict
 
 import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
-from websocket import ABNF, WebSocketTimeoutException, WebSocketException, create_connection
+from websocket import (ABNF, WebSocketException, WebSocketTimeoutException,
+                       create_connection)
 
 import cereal.messaging as messaging
+from cereal import log
 from cereal.services import service_list
 from common.api import Api
-from common.file_helpers import CallbackReader
 from common.basedir import PERSIST
+from common.file_helpers import CallbackReader
 from common.params import Params
-from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE, PC
+from common.realtime import sec_since_boot, set_core_affinity
+from selfdrive.hardware import HARDWARE, PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
-from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
-from selfdrive.version import get_version, get_origin, get_short_branch, get_commit
 from selfdrive.statsd import STATS_DIR
+from selfdrive.swaglog import SWAGLOG_DIR, cloudlog
+from selfdrive.version import get_commit, get_origin, get_short_branch, get_version
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -44,7 +49,10 @@ RECONNECT_TIMEOUT_S = 70
 
 RETRY_DELAY = 10  # seconds
 MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
+MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
+
+NetworkType = log.DeviceState.NetworkType
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
@@ -53,9 +61,19 @@ upload_queue: Any = queue.Queue()
 low_priority_send_queue: Any = queue.Queue()
 log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
-UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress'], defaults=(0, False, 0))
+UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress', 'allow_cellular'], defaults=(0, False, 0, False))
 
 cur_upload_items: Dict[int, Any] = {}
+
+
+def strip_bz2_extension(fn):
+  if fn.endswith('.bz2'):
+    return fn[:-4]
+  return fn
+
+
+class AbortTransferException(Exception):
+  pass
 
 
 class UploadQueueCache():
@@ -128,11 +146,13 @@ def jsonrpc_handler(end_event):
       send_queue.put_nowait(json.dumps({"error": str(e)}))
 
 
-def retry_upload(tid: int, end_event: threading.Event) -> None:
+def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = True) -> None:
   if cur_upload_items[tid].retry_count < MAX_RETRY_COUNT:
     item = cur_upload_items[tid]
+    new_retry_count = item.retry_count + 1 if increase_count else item.retry_count
+
     item = item._replace(
-      retry_count=item.retry_count + 1,
+      retry_count=new_retry_count,
       progress=0,
       current=False
     )
@@ -148,6 +168,7 @@ def retry_upload(tid: int, end_event: threading.Event) -> None:
 
 
 def upload_handler(end_event: threading.Event) -> None:
+  sm = messaging.SubMaster(['deviceState'])
   tid = threading.get_ident()
 
   while not end_event.is_set():
@@ -160,19 +181,52 @@ def upload_handler(end_event: threading.Event) -> None:
         cancelled_uploads.remove(cur_upload_items[tid].id)
         continue
 
+      # Remove item if too old
+      age = datetime.now() - datetime.fromtimestamp(cur_upload_items[tid].created_at / 1000)
+      if age.total_seconds() > MAX_AGE:
+        cloudlog.event("athena.upload_handler.expired", item=cur_upload_items[tid], error=True)
+        continue
+
+      # Check if uploading over metered connection is allowed
+      sm.update(0)
+      metered = sm['deviceState'].networkMetered
+      network_type = sm['deviceState'].networkType.raw
+      if metered and (not cur_upload_items[tid].allow_cellular):
+        retry_upload(tid, end_event, False)
+        continue
+
       try:
         def cb(sz, cur):
+          # Abort transfer if connection changed to metered after starting upload
+          sm.update(0)
+          metered = sm['deviceState'].networkMetered
+          if metered and (not cur_upload_items[tid].allow_cellular):
+            raise AbortTransferException
+
           cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
-        response = _do_upload(cur_upload_items[tid], cb)
-        if response.status_code not in (200, 201, 403, 412):
-          cloudlog.warning(f"athena.upload_handler.retry {response.status_code} {cur_upload_items[tid]}")
-          retry_upload(tid, end_event)
-        UploadQueueCache.cache(upload_queue)
-      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
-        cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_items[tid]}")
+        fn = cur_upload_items[tid].path
+        try:
+          sz = os.path.getsize(fn)
+        except OSError:
+          sz = -1
 
+        cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=cur_upload_items[tid].retry_count)
+        response = _do_upload(cur_upload_items[tid], cb)
+
+        if response.status_code not in (200, 201, 401, 403, 412):
+          cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
+          retry_upload(tid, end_event)
+        else:
+          cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type, metered=metered)
+
+        UploadQueueCache.cache(upload_queue)
+      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError):
+        cloudlog.event("athena.upload_handler.timeout", fn=fn, sz=sz, network_type=network_type, metered=metered)
         retry_upload(tid, end_event)
+      except AbortTransferException:
+        cloudlog.event("athena.upload_handler.abort", fn=fn, sz=sz, network_type=network_type, metered=metered)
+        retry_upload(tid, end_event, False)
 
     except queue.Empty:
       pass
@@ -181,14 +235,29 @@ def upload_handler(end_event: threading.Event) -> None:
 
 
 def _do_upload(upload_item, callback=None):
-  with open(upload_item.path, "rb") as f:
-    size = os.fstat(f.fileno()).st_size
+  path = upload_item.path
+  compress = False
+
+  # If file does not exist, but does exist without the .bz2 extension we will compress on the fly
+  if not os.path.exists(path) and os.path.exists(strip_bz2_extension(path)):
+    path = strip_bz2_extension(path)
+    compress = True
+
+  with open(path, "rb") as f:
+    if compress:
+      cloudlog.event("athena.upload_handler.compress", fn=path, fn_orig=upload_item.path)
+      data = bz2.compress(f.read())
+      size = len(data)
+      data = io.BytesIO(data)
+    else:
+      size = os.fstat(f.fileno()).st_size
+      data = f
 
     if callback:
-      f = CallbackReader(f, callback, size)
+      data = CallbackReader(data, callback, size)
 
     return requests.put(upload_item.url,
-                        data=f,
+                        data=data,
                         headers={**upload_item.headers, 'Content-Length': str(size)},
                         timeout=30)
 
@@ -209,12 +278,12 @@ def getMessage(service=None, timeout=1000):
 
 
 @dispatcher.add_method
-def getVersion():
+def getVersion() -> Dict[str, str]:
   return {
     "version": get_version(),
-    "remote": get_origin(),
-    "branch": get_short_branch(),
-    "commit": get_commit(),
+    "remote": get_origin(''),
+    "branch": get_short_branch(''),
+    "commit": get_commit(default=''),
   }
 
 
@@ -273,23 +342,36 @@ def reboot():
 
 @dispatcher.add_method
 def uploadFileToUrl(fn, url, headers):
-  return uploadFilesToUrls([[fn, url, headers]])
+  return uploadFilesToUrls([{
+    "fn": fn,
+    "url": url,
+    "headers": headers,
+  }])
 
 
 @dispatcher.add_method
 def uploadFilesToUrls(files_data):
   items = []
   failed = []
-  for fn, url, headers in files_data:
-    if len(fn) == 0 or fn[0] == '/' or '..' in fn:
-      failed.append(fn)
-      continue
-    path = os.path.join(ROOT, fn)
-    if not os.path.exists(path):
+  for file in files_data:
+    fn = file.get('fn', '')
+    if len(fn) == 0 or fn[0] == '/' or '..' in fn or 'url' not in file:
       failed.append(fn)
       continue
 
-    item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None)
+    path = os.path.join(ROOT, fn)
+    if not os.path.exists(path) and not os.path.exists(strip_bz2_extension(path)):
+      failed.append(fn)
+      continue
+
+    item = UploadItem(
+      path=path,
+      url=file['url'],
+      headers=file.get('headers', {}),
+      created_at=int(time.time() * 1000),
+      id=None,
+      allow_cellular=file.get('allow_cellular', False),
+    )
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
     item = item._replace(id=upload_id)
     upload_queue.put_nowait(item)
@@ -329,6 +411,18 @@ def primeActivated(activated):
   return {"success": 1}
 
 
+@dispatcher.add_method
+def setBandwithLimit(upload_speed_kbps, download_speed_kbps):
+  if not TICI:
+    return {"success": 0, "error": "only supported on comma three"}
+
+  try:
+    HARDWARE.set_bandwidth_limit(upload_speed_kbps, download_speed_kbps)
+    return {"success": 1}
+  except subprocess.CalledProcessError as e:
+    return {"success": 0, "error": "failed to set limit", "stdout": e.stdout, "stderr": e.stderr}
+
+
 def startLocalProxy(global_end_event, remote_ws_uri, local_port):
   try:
     if local_port not in LOCAL_PORT_WHITELIST:
@@ -345,7 +439,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     local_sock.connect(('127.0.0.1', local_port))
-    local_sock.setblocking(0)
+    local_sock.setblocking(False)
 
     proxy_end_event = threading.Event()
     threads = [
@@ -387,13 +481,19 @@ def getNetworkType():
 
 
 @dispatcher.add_method
+def getNetworkMetered():
+  network_type = HARDWARE.get_network_type()
+  return HARDWARE.get_network_metered(network_type)
+
+
+@dispatcher.add_method
 def getNetworks():
   return HARDWARE.get_networks()
 
 
 @dispatcher.add_method
 def takeSnapshot():
-  from selfdrive.camerad.snapshot.snapshot import snapshot, jpeg_write
+  from selfdrive.camerad.snapshot.snapshot import jpeg_write, snapshot
   ret = snapshot()
   if ret is not None:
     def b64jpeg(x):
@@ -604,6 +704,11 @@ def backoff(retries):
 
 
 def main():
+  try:
+    set_core_affinity([0, 1, 2, 3])
+  except Exception:
+    cloudlog.exception("failed to set core affinity")
+
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf-8')
   UploadQueueCache.initialize(upload_queue)

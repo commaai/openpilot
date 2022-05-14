@@ -1,7 +1,7 @@
 from cereal import car
+from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 
@@ -53,12 +53,13 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = cp.vl["DASHBOARD"]["ACC_SPEED_CONFIG_KPH"] * CV.KPH_TO_MS
     # CRUISE_STATE is a three bit msg, 0 is off, 1 and 2 are Non-ACC mode, 3 and 4 are ACC mode, find if there are other states too
     ret.cruiseState.nonAdaptive = cp.vl["DASHBOARD"]["CRUISE_STATE"] in (1, 2)
+    ret.accFaulted = cp.vl["ACC_2"]["ACC_FAULTED"] != 0
 
     ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     steer_state = cp.vl["EPS_STATUS"]["LKAS_STATE"]
-    ret.steerError = steer_state == 4 or (steer_state == 0 and ret.vEgo > self.CP.minSteerSpeed)
+    ret.steerFaultPermanent = steer_state == 4 or (steer_state == 0 and ret.vEgo > self.CP.minSteerSpeed)
 
     ret.genericToggle = bool(cp.vl["STEERING_LEVERS"]["HIGH_BEAM_FLASH"])
 
@@ -69,6 +70,7 @@ class CarState(CarStateBase):
     self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]["COUNTER"]
     self.lkas_car_model = cp_cam.vl["LKAS_HUD"]["CAR_MODEL"]
     self.lkas_status_ok = cp_cam.vl["LKAS_HEARTBIT"]["LKAS_STATUS_OK"]
+    self.button_counter = cp.vl["WHEEL_BUTTONS"]["COUNTER"]
 
     return ret
 
@@ -93,6 +95,7 @@ class CarState(CarStateBase):
       ("STEERING_RATE", "STEERING"),
       ("TURN_SIGNALS", "STEERING_LEVERS"),
       ("ACC_STATUS_2", "ACC_2"),
+      ("ACC_FAULTED", "ACC_2"),
       ("HIGH_BEAM_FLASH", "STEERING_LEVERS"),
       ("ACC_SPEED_CONFIG_KPH", "DASHBOARD"),
       ("CRUISE_STATE", "DASHBOARD"),
@@ -102,6 +105,7 @@ class CarState(CarStateBase):
       ("COUNTER", "EPS_STATUS",),
       ("TRACTION_OFF", "TRACTION_BUTTON"),
       ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS"),
+      ("COUNTER", "WHEEL_BUTTONS"),
     ]
 
     checks = [
@@ -114,6 +118,7 @@ class CarState(CarStateBase):
       ("ACC_2", 50),
       ("GEAR", 50),
       ("ACCEL_GAS_134", 50),
+      ("WHEEL_BUTTONS", 50),
       ("DASHBOARD", 15),
       ("STEERING_LEVERS", 10),
       ("SEATBELT_STATUS", 2),

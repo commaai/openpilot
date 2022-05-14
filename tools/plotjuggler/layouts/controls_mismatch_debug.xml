@@ -1,27 +1,34 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <root>
- <tabbed_widget name="Main Window" parent="main_window">
+ <tabbed_widget parent="main_window" name="Main Window">
   <Tab containers="1" tab_name="tab1">
    <Container>
-    <DockSplitter sizes="0.332965;0.334071;0.332965" orientation="-" count="3">
+    <DockSplitter orientation="-" sizes="0.249729;0.250814;0.249729;0.249729" count="4">
      <DockArea name="...">
-      <plot style="Lines" mode="TimeSeries">
-       <range left="0.000000" top="1.025000" bottom="-0.025000" right="59.900659"/>
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range bottom="-0.025000" left="0.000000" right="119.992934" top="1.025000"/>
        <limitY/>
        <curve name="/controlsState/enabled" color="#1f77b4"/>
        <curve name="/pandaStates/0/controlsAllowed" color="#d62728"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot style="Lines" mode="TimeSeries">
-       <range left="0.000000" top="-10.627637" bottom="-15.150799" right="59.900659"/>
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range bottom="-8.840137" left="0.000000" right="119.992934" top="12.881991"/>
        <limitY/>
        <curve name="/controlsState/cumLagMs" color="#9467bd"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot style="Lines" mode="TimeSeries">
-       <range left="0.000447" top="1.025000" bottom="-0.025000" right="59.900939"/>
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range bottom="-0.100000" left="0.000000" right="119.992934" top="0.100000"/>
+       <limitY/>
+       <curve name="/pandaStates/0/blockedCnt" color="#d62728"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range bottom="-0.025000" left="0.000000" right="119.992934" top="1.025000"/>
        <limitY/>
        <curve name="/carState/gasPressed" color="#1ac938"/>
        <curve name="/carState/brakePressed" color="#ff7f0e"/>

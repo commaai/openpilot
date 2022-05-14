@@ -57,9 +57,7 @@ void recv_log(int thread_cnt, int thread_msg_cnt) {
     REQUIRE(ctx["version"].string_value() == COMMA_VERSION);
 
     std::string device = "pc";
-    if (Hardware::EON()) {
-      device = "eon";
-    } else if (Hardware::TICI()) {
+    if (Hardware::TICI()) {
       device = "tici";
     }
     REQUIRE(ctx["device"].string_value() == device);

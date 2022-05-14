@@ -15,7 +15,7 @@ const std::initializer_list<std::pair<std::string, std::string>> keyboard_shortc
     {"shift+s", "-10s"},
     {"m", "+60s"},
     {"shift+m", "-60s"},
-    {"p", "Pause/Resume"},
+    {"space", "Pause/Resume"},
     {"e", "Next Engagement"},
     {"d", "Next Disengagement"},
   },
@@ -241,7 +241,7 @@ void ConsoleUI::updateProgressBar(uint64_t cur, uint64_t total, bool success) {
 
 void ConsoleUI::updateSummary() {
   const auto &route = replay->route();
-  mvwprintw(w[Win::Stats], 0, 0, "Route: %s, %d segments", qPrintable(route->name()), route->segments().size());
+  mvwprintw(w[Win::Stats], 0, 0, "Route: %s, %lu segments", qPrintable(route->name()), route->segments().size());
   mvwprintw(w[Win::Stats], 1, 0, "Car Fingerprint: %s", replay->carFingerprint().c_str());
   wrefresh(w[Win::Stats]);
 }

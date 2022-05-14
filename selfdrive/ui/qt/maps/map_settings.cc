@@ -115,10 +115,11 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   stack->addWidget(main_widget);
   stack->addWidget(no_prime_widget);
-  stack->setCurrentIndex(1);
+  stack->setCurrentIndex(uiState()->prime_type ? 0 : 1);
 
   QVBoxLayout *wrapper = new QVBoxLayout(this);
   wrapper->addWidget(stack);
+
 
   clear();
 
@@ -183,8 +184,9 @@ void MapPanel::updateCurrentRoute() {
 }
 
 void MapPanel::parseResponse(const QString &response, bool success) {
+  stack->setCurrentIndex((uiState()->prime_type || success) ? 0 : 1);
+
   if (!success) {
-    stack->setCurrentIndex(1);
     return;
   }
 
@@ -283,7 +285,6 @@ void MapPanel::parseResponse(const QString &response, bool success) {
   }
 
   recent_layout->addStretch();
-  stack->setCurrentIndex(0);
   repaint();
 }
 

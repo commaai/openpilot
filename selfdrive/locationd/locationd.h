@@ -35,8 +35,8 @@ public:
   bool isGpsOK();
   void determine_gps_mode(double current_time);
 
-  kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
-    bool inputsOK, bool sensorsOK, bool gpsOK);
+  kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder,
+    bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid);
   void build_live_location(cereal::LiveLocationKalman::Builder& fix);
 
   Eigen::VectorXd get_position_geodetic();

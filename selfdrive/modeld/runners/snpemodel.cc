@@ -7,16 +7,18 @@
 #include <cstring>
 
 #include "selfdrive/common/util.h"
+#include "selfdrive/common/timing.h"
 
 void PrintErrorStringAndExit() {
   std::cerr << zdl::DlSystem::getLastErrorString() << std::endl;
   std::exit(EXIT_FAILURE);
 }
 
-SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime) {
+SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra) {
   output = loutput;
   output_size = loutput_size;
-#if defined(QCOM) || defined(QCOM2)
+  use_extra = luse_extra;
+#ifdef QCOM2
   if (runtime==USE_GPU_RUNTIME) {
     Runtime = zdl::DlSystem::Runtime_t::GPU;
   } else if (runtime==USE_DSP_RUNTIME) {
@@ -37,7 +39,7 @@ SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int 
   // create model runner
   zdl::SNPE::SNPEBuilder snpeBuilder(container.get());
   while (!snpe) {
-#if defined(QCOM) || defined(QCOM2)
+#ifdef QCOM2
     snpe = snpeBuilder.setOutputLayers({})
                       .setRuntimeProcessor(Runtime)
                       .setUseUserSuppliedBuffers(true)
@@ -89,6 +91,25 @@ SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int 
     inputMap.add(input_tensor_name, inputBuffer.get());
   }
 
+  if (use_extra) {
+    const char *extra_tensor_name = strListi.at(1);
+    const auto &extraDims_opt = snpe->getInputDimensions(extra_tensor_name);
+    const zdl::DlSystem::TensorShape& bufferShape = *extraDims_opt;
+    std::vector<size_t> strides(bufferShape.rank());
+    strides[strides.size() - 1] = sizeof(float);
+    size_t product = 1;
+    for (size_t i = 0; i < bufferShape.rank(); i++) product *= bufferShape[i];
+    size_t stride = strides[strides.size() - 1];
+    for (size_t i = bufferShape.rank() - 1; i > 0; i--) {
+      stride *= bufferShape[i];
+      strides[i-1] = stride;
+    }
+    printf("extra product is %lu\n", product);
+    extraBuffer = ubFactory.createUserBuffer(NULL, product*sizeof(float), strides, &userBufferEncodingFloat);
+
+    inputMap.add(extra_tensor_name, extraBuffer.get());
+  }
+
   // create output buffer
   {
     const zdl::DlSystem::TensorShape& bufferShape = snpe->getInputOutputBufferAttributes(output_tensor_name)->getDims();
@@ -120,13 +141,29 @@ void SNPEModel::addDesire(float *state, int state_size) {
   desireBuffer = this->addExtra(state, state_size, 1);
 }
 
+void SNPEModel::addCalib(float *state, int state_size) {
+  calib = state;
+  calibBuffer = this->addExtra(state, state_size, 1);
+}
+
+void SNPEModel::addImage(float *image_buf, int buf_size) {
+  input = image_buf;
+  input_size = buf_size;
+}
+
+void SNPEModel::addExtra(float *image_buf, int buf_size) {
+  extra = image_buf;
+  extra_size = buf_size;
+}
+
 std::unique_ptr<zdl::DlSystem::IUserBuffer> SNPEModel::addExtra(float *state, int state_size, int idx) {
   // get input and output names
+  const auto real_idx = idx + (use_extra ? 1 : 0);
   const auto &strListi_opt = snpe->getInputTensorNames();
   if (!strListi_opt) throw std::runtime_error("Error obtaining Input tensor names");
   const auto &strListi = *strListi_opt;
-  const char *input_tensor_name = strListi.at(idx);
-  printf("adding index %d: %s\n", idx, input_tensor_name);
+  const char *input_tensor_name = strListi.at(real_idx);
+  printf("adding index %d: %s\n", real_idx, input_tensor_name);
 
   zdl::DlSystem::UserBufferEncodingFloat userBufferEncodingFloat;
   zdl::DlSystem::IUserBufferFactory& ubFactory = zdl::SNPE::SNPEFactory::getUserBufferFactory();
@@ -136,13 +173,17 @@ std::unique_ptr<zdl::DlSystem::IUserBuffer> SNPEModel::addExtra(float *state, in
   return ret;
 }
 
-void SNPEModel::execute(float *net_input_buf, int buf_size) {
+void SNPEModel::execute() {
 #ifdef USE_THNEED
   if (Runtime == zdl::DlSystem::Runtime_t::GPU) {
-    float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
     if (thneed == NULL) {
-      bool ret = inputBuffer->setBufferAddress(net_input_buf);
+      bool ret = inputBuffer->setBufferAddress(input);
       assert(ret == true);
+      if (use_extra) {
+        assert(extra != NULL);
+        bool extra_ret = extraBuffer->setBufferAddress(extra);
+        assert(extra_ret == true);
+      }
       if (!snpe->execute(inputMap, outputMap)) {
         PrintErrorStringAndExit();
       }
@@ -159,7 +200,16 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
       memcpy(outputs_golden, output, output_size*sizeof(float));
       memset(output, 0, output_size*sizeof(float));
       memset(recurrent, 0, recurrent_size*sizeof(float));
-      thneed->execute(inputs, output);
+      uint64_t start_time = nanos_since_boot();
+      if (extra != NULL) {
+        float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
+        thneed->execute(inputs, output);
+      } else {
+        float *inputs[4] = {recurrent, trafficConvention, desire, input};
+        thneed->execute(inputs, output);
+      }
+      uint64_t elapsed_time = nanos_since_boot() - start_time;
+      printf("ran model in %.2f ms\n", float(elapsed_time)/1e6);
 
       if (memcmp(output, outputs_golden, output_size*sizeof(float)) == 0) {
         printf("thneed selftest passed\n");
@@ -171,12 +221,22 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
       }
       free(outputs_golden);
     } else {
-      thneed->execute(inputs, output);
+      if (use_extra) {
+        float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
+        thneed->execute(inputs, output);
+      } else {
+        float *inputs[4] = {recurrent, trafficConvention, desire, input};
+        thneed->execute(inputs, output);
+      }
     }
   } else {
 #endif
-    bool ret = inputBuffer->setBufferAddress(net_input_buf);
+    bool ret = inputBuffer->setBufferAddress(input);
     assert(ret == true);
+    if (use_extra) {
+      bool extra_ret = extraBuffer->setBufferAddress(extra);
+      assert(extra_ret == true);
+    }
     if (!snpe->execute(inputMap, outputMap)) {
       PrintErrorStringAndExit();
     }

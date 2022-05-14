@@ -71,6 +71,7 @@ typedef struct ocp_qp_qpdunes_memory_
     qpData_t qpData;
     double time_qp_solver_call;
     int iter;
+    int status;
 
 } ocp_qp_qpdunes_memory;
 

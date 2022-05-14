@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
@@ -65,12 +65,15 @@ class CarState(CarStateBase):
     # Either due to low speed or hands off
     lkas_blocked = cp.vl["STEER_RATE"]["LKAS_BLOCK"] == 1
 
-    # LKAS is enabled at 52kph going up and disabled at 45kph going down
-    # wait for LKAS_BLOCK signal to clear when going up since it lags behind the speed sometimes
-    if speed_kph > LKAS_LIMITS.ENABLE_SPEED and not lkas_blocked:
+    if self.CP.minSteerSpeed > 0:
+      # LKAS is enabled at 52kph going up and disabled at 45kph going down
+      # wait for LKAS_BLOCK signal to clear when going up since it lags behind the speed sometimes
+      if speed_kph > LKAS_LIMITS.ENABLE_SPEED and not lkas_blocked:
+        self.lkas_allowed_speed = True
+      elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
+        self.lkas_allowed_speed = False
+    else:
       self.lkas_allowed_speed = True
-    elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
-      self.lkas_allowed_speed = False
 
     # TODO: the signal used for available seems to be the adaptive cruise signal, instead of the main on
     #       it should be used for carState.cruiseState.nonAdaptive instead
@@ -87,8 +90,7 @@ class CarState(CarStateBase):
     # Check if LKAS is disabled due to lack of driver torque when all other states indicate
     # it should be enabled (steer lockout). Don't warn until we actually get lkas active
     # and lose it again, i.e, after initial lkas activation
-
-    ret.steerWarning = self.lkas_allowed_speed and lkas_blocked
+    ret.steerFaultTemporary = self.lkas_allowed_speed and lkas_blocked
 
     self.acc_active_last = ret.cruiseState.enabled
 
@@ -98,7 +100,7 @@ class CarState(CarStateBase):
     self.lkas_disabled = cp_cam.vl["CAM_LANEINFO"]["LANE_LINES"] == 0
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
     self.cam_laneinfo = cp_cam.vl["CAM_LANEINFO"]
-    ret.steerError = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
+    ret.steerFaultPermanent = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
 
     return ret
 

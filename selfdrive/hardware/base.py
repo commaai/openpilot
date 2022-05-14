@@ -2,7 +2,11 @@ from abc import abstractmethod, ABC
 from collections import namedtuple
 from typing import Dict
 
+from cereal import log
+
 ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient', 'pmic'])
+NetworkType = log.DeviceState.NetworkType
+
 
 class HardwareBase(ABC):
   @staticmethod
@@ -40,7 +44,7 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def get_imei(self, slot):
+  def get_imei(self, slot) -> str:
     pass
 
   @abstractmethod
@@ -65,6 +69,13 @@ class HardwareBase(ABC):
 
   @abstractmethod
   def get_network_strength(self, network_type):
+    pass
+
+  def get_network_metered(self, network_type) -> bool:
+    return network_type not in (NetworkType.none, NetworkType.wifi, NetworkType.ethernet)
+
+  @staticmethod
+  def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
     pass
 
   @abstractmethod
@@ -123,9 +134,11 @@ class HardwareBase(ABC):
   def get_gpu_usage_percent(self):
     pass
 
-  @abstractmethod
   def get_modem_version(self):
-    pass
+    return None
+
+  def get_modem_nv(self):
+    return None
 
   @abstractmethod
   def get_modem_temperatures(self):
@@ -139,6 +152,15 @@ class HardwareBase(ABC):
   def initialize_hardware(self):
     pass
 
+  def configure_modem(self):
+    pass
+
   @abstractmethod
   def get_networks(self):
+    pass
+
+  def reset_internal_panda(self):
+    pass
+
+  def recover_internal_panda(self):
     pass

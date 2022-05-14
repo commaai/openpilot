@@ -1,6 +1,6 @@
 //=============================================================================
 //
-//  Copyright (c) 2017-2018 Qualcomm Technologies, Inc.
+//  Copyright (c) 2017-2018,2021 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -190,10 +190,37 @@ public:
      */
    std::string getPlatformOptions() const { return m_PlatformOptions; }
 
+    /**
+      * @brief Sets the platform options
+      *
+      * @param[in] optionName Name of platform options"
+      * @param[in] value Value of specified optionName
+      *
+      * @return If true, add "optionName:value" to platform options if optionName don't exist, otherwise update the
+      *         value of specified optionName.
+      *         If false, the platform options will not be changed.
+      */
+   bool setPlatformOptionValue(const std::string& optionName, const std::string& value);
+
+    /**
+       * @brief Removes the platform options
+       *
+       * @param[in] optionName Name of platform options"
+       * @param[in] value Value of specified optionName
+       *
+       * @return If true, removed "optionName:value" to platform options if optionName don't exist, do nothing.
+       *         If false, the platform options will not be changed.
+       */
+    bool removePlatformOptionValue(const std::string& optionName, const std::string& value);
+
+   static void SetIsUserGLBuffer(bool isUserGLBuffer);
+   static bool GetIsUserGLBuffer();
+
 private:
    PlatformType_t m_PlatformType;
    PlatformConfigInfo m_PlatformConfigInfo;
    std::string m_PlatformOptions;
+   static bool m_IsUserGLBuffer;
 };
 
 /** @} */ /* end_addtogroup c_plus_plus_apis C++ */

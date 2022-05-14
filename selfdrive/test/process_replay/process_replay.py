@@ -24,6 +24,8 @@ from selfdrive.manager.process_config import managed_processes
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
+PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
+FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config'], defaults=({},))
 
@@ -231,7 +233,7 @@ def ublox_rcv_callback(msg):
   elif (msg_class, msg_id) in {(2, 1 * 16 + 5), (10, 9)}:
     return ["ubloxGnss"]
   else:
-     return []
+    return []
 
 
 CONFIGS = [
@@ -346,6 +348,8 @@ def setup_env(simulation=False):
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
   params.put_bool("Passive", False)
+  params.put_bool("DisengageOnAccelerator", True)
+  params.put_bool("EnableWideCamera", False)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
@@ -388,7 +392,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
     for msg in lr:
       if msg.which() == 'carParams':
         car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-        if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
+        if msg.carParams.fingerprintSource == "fw" and (car_fingerprint in FW_VERSIONS):
           Params().put("CarParamsCache", msg.carParams.as_builder().to_bytes())
         else:
           os.environ['SKIP_FW_QUERY'] = "1"
@@ -492,3 +496,14 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
     managed_processes[cfg.proc_name].stop()
 
   return log_msgs
+
+
+def check_enabled(msgs):
+  for msg in msgs:
+    if msg.which() == "carParams":
+      if msg.carParams.notCar:
+        return True
+    elif msg.which() == "controlsState":
+      if msg.controlsState.active:
+        return True
+  return False

@@ -1,5 +1,5 @@
+from common.conversions import Conversions as CV
 from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_RADARLESS, CAR, CarControllerParams
-from selfdrive.config import Conversions as CV
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -142,13 +142,12 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud, fr
 
   lkas_hud_values = {
     'SET_ME_X41': 0x41,
-    'SET_ME_X48': 0x48,
     'STEERING_REQUIRED': hud.steer_required,
     'SOLID_LANES': hud.lanes,
     'LANE_LINES': 3,
     'DASHED_LANES': hud.lanes,
     'BEEP': 0,
-    'LKAS_PROBLEM': 0 if frame > 200 else 1,
+    'LKAS_PROBLEM': 0 if frame > 200 else 1,  # TODO: understand this better, does car need to see it fall after an initial warm up?
   }
 
   if not (CP.flags & HondaFlags.BOSCH_EXT_HUD):

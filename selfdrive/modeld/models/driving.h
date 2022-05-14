@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionipc_client.h"
 #include "selfdrive/common/mat.h"
 #include "selfdrive/common/modeldata.h"
 #include "selfdrive/common/util.h"
@@ -25,6 +26,7 @@ constexpr int BLINKER_LEN = 6;
 constexpr int META_STRIDE = 7;
 
 constexpr int PLAN_MHP_N = 5;
+constexpr int STOP_LINE_MHP_N = 3;
 
 constexpr int LEAD_MHP_N = 2;
 constexpr int LEAD_TRAJ_LEN = 6;
@@ -147,6 +149,37 @@ struct ModelOutputLeads {
 };
 static_assert(sizeof(ModelOutputLeads) == (sizeof(ModelOutputLeadPrediction)*LEAD_MHP_N) + (sizeof(float)*LEAD_MHP_SELECTION));
 
+struct ModelOutputStopLineElement {
+  ModelOutputXYZ position;
+  ModelOutputXYZ rotation;
+  float speed;
+  float time;
+};
+static_assert(sizeof(ModelOutputStopLineElement) == (sizeof(ModelOutputXYZ)*2 + sizeof(float)*2));
+
+struct ModelOutputStopLinePrediction {
+  ModelOutputStopLineElement mean;
+  ModelOutputStopLineElement std;
+  float prob;
+};
+static_assert(sizeof(ModelOutputStopLinePrediction) == (sizeof(ModelOutputStopLineElement)*2 + sizeof(float)));
+
+struct ModelOutputStopLines {
+  std::array<ModelOutputStopLinePrediction, STOP_LINE_MHP_N> prediction;
+  float prob;
+
+  constexpr const ModelOutputStopLinePrediction &get_best_prediction(int t_idx) const {
+    int max_idx = 0;
+    for (int i = 1; i < prediction.size(); i++) {
+      if (prediction[i].prob > prediction[max_idx].prob) {
+        max_idx = i;
+      }
+    }
+    return prediction[max_idx];
+  }
+};
+static_assert(sizeof(ModelOutputStopLines) == (sizeof(ModelOutputStopLinePrediction)*STOP_LINE_MHP_N) + sizeof(float));
+
 struct ModelOutputPose {
   ModelOutputXYZ velocity_mean;
   ModelOutputXYZ rotation_mean;
@@ -205,6 +238,7 @@ struct ModelOutput {
   const ModelOutputLaneLines lane_lines;
   const ModelOutputRoadEdges road_edges;
   const ModelOutputLeads leads;
+  const ModelOutputStopLines stop_lines;
   const ModelOutputMeta meta;
   const ModelOutputPose pose;
 };
@@ -220,6 +254,7 @@ constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + TEMPORAL_SIZE;
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {
   ModelFrame *frame;
+  ModelFrame *wide_frame;
   std::array<float, NET_OUTPUT_SIZE> output = {};
   std::unique_ptr<RunModel> m;
 #ifdef DESIRE
@@ -232,10 +267,10 @@ struct ModelState {
 };
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context);
-ModelOutput *model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
-                           const mat3 &transform, float *desire_in);
+ModelOutput *model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* buf_wide,
+                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool prepare_only);
 void model_free(ModelState* s);
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                    const ModelOutput &net_outputs, uint64_t timestamp_eof,
                    float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid);
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,

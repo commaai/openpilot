@@ -4,16 +4,33 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
+ARCH=$(uname -m)
+
+if [[ $SHELL == "/bin/zsh" ]]; then
+  RC_FILE="$HOME/.zshrc"
+elif [[ $SHELL == "/bin/bash" ]]; then
+  RC_FILE="$HOME/.bashrc"
+fi
 
 # Install brew if required
 if [[ $(command -v brew) == "" ]]; then
   echo "Installing Hombrew"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
   echo "[ ] installed brew t=$SECONDS"
+
+  # make brew available now
+  if [[ $ARCH == "x86_64" ]]; then
+      echo 'eval "$(/usr/local/homebrew/bin/brew shellenv)"' >> $RC_FILE
+      eval "$(/usr/local/homebrew/bin/brew shellenv)"
+  else
+      echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $RC_FILE
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+  fi
 fi
 
 # TODO: remove protobuf,protobuf-c,swig when casadi can be pip installed
 brew bundle --file=- <<-EOS
+brew "catch2"
 brew "cmake"
 brew "cppcheck"
 brew "git-lfs"
@@ -35,25 +52,28 @@ brew "zeromq"
 brew "protobuf"
 brew "protobuf-c"
 brew "swig"
-cask "gcc-arm-embedded"
 EOS
+
+# Install gcc-arm-embedded 10.3-2021.10. 11.x is broken on M1 Macs with Xcode 13.3~
+brew uninstall gcc-arm-embedded || true
+curl -L https://github.com/Homebrew/homebrew-cask/raw/d407663b8017a0a062c7fc0b929faf2e16abd1ff/Casks/gcc-arm-embedded.rb > /tmp/gcc-arm-embedded.rb
+brew install --cask /tmp/gcc-arm-embedded.rb
+rm /tmp/gcc-arm-embedded.rb
 
 echo "[ ] finished brew install t=$SECONDS"
 
-if [[ $SHELL == "/bin/zsh" ]]; then
-  RC_FILE="$HOME/.zshrc"
-elif [[ $SHELL == "/bin/bash" ]]; then
-  RC_FILE="$HOME/.bash_profile"
-fi
+BREW_PREFIX=$(brew --prefix)
 
-export LDFLAGS="$LDFLAGS -L/usr/local/opt/zlib/lib"
-export LDFLAGS="$LDFLAGS -L/usr/local/opt/bzip2/lib"
-export LDFLAGS="$LDFLAGS -L/usr/local/opt/openssl@1.1/lib"
-export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/zlib/include"
-export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/bzip2/include"
-export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/openssl@1.1/include"
-export PATH="$PATH:/usr/local/opt/openssl@1.1/bin"
-export PATH="$PATH:/usr/local/bin"
+# archive backend tools for pip dependencies
+export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/zlib/lib"
+export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/bzip2/lib"
+export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/zlib/include"
+export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/bzip2/include"
+
+# pycurl curl/openssl backend dependencies
+export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/openssl@3/lib"
+export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/openssl@3/include"
+export PYCURL_SSL_LIBRARY=openssl
 
 # openpilot environment
 if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then

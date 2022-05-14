@@ -31,7 +31,7 @@ public:
   bool timeout() const;
 
 signals:
-  void requestDone(const QString &response, bool success);
+  void requestDone(const QString &response, bool success, QNetworkReply::NetworkError error);
 
 protected:
   QNetworkReply *reply = nullptr;
