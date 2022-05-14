@@ -118,7 +118,7 @@ CAR_INFO: Dict[str, Union[HondaCarInfo, List[HondaCarInfo]]] = {
     HondaCarInfo("Honda Civic 2019-20", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS, harness=Harness.bosch),
     HondaCarInfo("Honda Civic Hatchback 2017-21", harness=Harness.bosch),
   ],
-  CAR.CIVIC_2022: HondaCarInfo("Honda Civic 2022", "All"),  # TODO: add harness
+  CAR.CIVIC_2022: HondaCarInfo("Honda Civic 2022", "All", harness=Harness.bosch),  # TODO: is it the same bosch connector?
   CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS, harness=Harness.nidec),
   CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring", harness=Harness.nidec),
   CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-21", harness=Harness.bosch),

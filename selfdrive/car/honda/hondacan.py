@@ -1,5 +1,5 @@
 from common.conversions import Conversions as CV
-from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_RADARLESS, CAR, CarControllerParams
+from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CAR, CarControllerParams
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -8,10 +8,10 @@ from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_RADARLESS,
 # 3 = F-CAN A - OBDII port
 
 def get_pt_bus(car_fingerprint):
-  if car_fingerprint in HONDA_BOSCH:
-    return 1
-  elif car_fingerprint in HONDA_RADARLESS:
+  if car_fingerprint in HONDA_BOSCH_RADARLESS:
     return 2
+  elif car_fingerprint in HONDA_BOSCH:
+    return 1
   else:
     return 0
 
