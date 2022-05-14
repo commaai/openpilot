@@ -62,6 +62,7 @@ class TestEncoder(unittest.TestCase):
 
     managed_processes['sensord'].start()
     managed_processes['loggerd'].start()
+    managed_processes['encoderd'].start()
 
     time.sleep(1.0)
     managed_processes['camerad'].start()
@@ -150,6 +151,7 @@ class TestEncoder(unittest.TestCase):
             time.sleep(0.1)
     finally:
       managed_processes['loggerd'].stop()
+      managed_processes['encoderd'].stop()
       managed_processes['camerad'].stop()
       managed_processes['sensord'].stop()
 
