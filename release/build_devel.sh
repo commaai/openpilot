@@ -4,8 +4,10 @@ set -ex
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
-TARGET_DIR="$(mktemp -d)"
-SOURCE_DIR="$(git rev-parse --show-toplevel)"
+SOURCE_DIR="$(git -C $DIR rev-parse --show-toplevel)"
+if [ -z "$TARGET_DIR" ]; then
+  TARGET_DIR="$(mktemp -d)"
+fi
 
 # set git identity
 source $DIR/identity.sh
