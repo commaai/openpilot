@@ -24,4 +24,4 @@ jobs:
         fetch-depth: 0
     - name: Build master-ci
       run: |
-        BRANCH=test-master-ci release/build_devel.sh
+        BRANCH=master-ci release/build_devel.sh
