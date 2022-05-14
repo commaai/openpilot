@@ -62,6 +62,26 @@ pipeline {
       }
     }
 
+    stage('build master-ci') {
+      agent {
+        docker {
+          image 'ghcr.io/commaai/openpilot-base'
+          args '--user=root'
+        }
+      }
+      /*
+      when {
+        branch 'master'
+      }
+      */
+      steps {
+        sh "git config --global --add safe.directory \$PWD"
+        withCredentials([file(credentialsId: 'deploykey', variable: 'key_file')]) {
+          sh script: "KEY_FILE=${key_file} PUSH=test-master-ci release/build_devel.sh", label: "build master-ci"
+        }
+      }
+    }
+
     stage('openpilot tests') {
       when {
         not {
@@ -150,18 +170,6 @@ pipeline {
 
               }
             }
-
-            stage('Push master-ci') {
-              when {
-                branch 'master'
-              }
-              steps {
-                phone_steps("tici-build", [
-                  ["push devel", "cd $SOURCE_DIR/release && PUSH='master-ci' ./build_devel.sh"],
-                ])
-              }
-            }
-
           }
 
           post {
@@ -176,4 +184,3 @@ pipeline {
     }
   }
 }
-
