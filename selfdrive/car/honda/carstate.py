@@ -115,7 +115,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     else:
       checks.append(("CRUISE_PARAMS", 50))
 
-  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_22):
+  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022):
     signals.append(("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK"))
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals.append(("DRIVERS_DOOR_OPEN", "SCM_BUTTONS"))
@@ -196,7 +196,7 @@ class CarState(CarStateBase):
     # STANDSTILL->WHEELS_MOVING bit can be noisy around zero, so use XMISSION_SPEED
     # panda checks if the signal is non-zero
     ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 1e-5
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_22):
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022):
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]["DRIVERS_DOOR_OPEN"])
     elif self.CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
       ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]["DRIVERS_DOOR_OPEN"])
@@ -240,7 +240,7 @@ class CarState(CarStateBase):
 
     # TODO: set for all cars
     if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH,
-                                  CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_22):
+                                  CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022):
       ret.parkingBrake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
 
     gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
@@ -260,7 +260,7 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in HONDA_BOSCH or self.CP.carFingerprint in HONDA_RADARLESS:
       if not self.CP.openpilotLongitudinalControl:
-        if self.CP.carFingerprint == CAR.CIVIC_22:
+        if self.CP.carFingerprint == CAR.CIVIC_2022:
             ret.cruiseState.nonAdaptive = cp_cam.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"] != 0
             ret.cruiseState.standstill = cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] == 252.
         else:
@@ -268,7 +268,7 @@ class CarState(CarStateBase):
             ret.cruiseState.standstill = cp.vl["ACC_HUD"]["CRUISE_SPEED"] == 252.
 
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
-        if self.CP.carFingerprint == CAR.CIVIC_22:
+        if self.CP.carFingerprint == CAR.CIVIC_2022:
             ret.cruiseState.speed = self.v_cruise_pcm_prev if cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.MPH_TO_MS
         else:
             ret.cruiseState.speed = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.KPH_TO_MS

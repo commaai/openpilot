@@ -75,7 +75,7 @@ class CAR:
   CIVIC = "HONDA CIVIC 2016"
   CIVIC_BOSCH = "HONDA CIVIC (BOSCH) 2019"
   CIVIC_BOSCH_DIESEL = "HONDA CIVIC SEDAN 1.6 DIESEL 2019"
-  CIVIC_22 = "HONDA CIVIC 2022"
+  CIVIC_2022 = "HONDA CIVIC 2022"
   ACURA_ILX = "ACURA ILX 2016"
   CRV = "HONDA CR-V 2016"
   CRV_5G = "HONDA CR-V 2017"
@@ -118,7 +118,7 @@ CAR_INFO: Dict[str, Union[HondaCarInfo, List[HondaCarInfo]]] = {
     HondaCarInfo("Honda Civic 2019-20", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS, harness=Harness.bosch),
     HondaCarInfo("Honda Civic Hatchback 2017-21", harness=Harness.bosch),
   ],
-  CAR.CIVIC_22: HondaCarInfo("Honda Civic 2022", "All"),  # TODO: add harness
+  CAR.CIVIC_2022: HondaCarInfo("Honda Civic 2022", "All"),  # TODO: add harness
   CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS, harness=Harness.nidec),
   CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring", harness=Harness.nidec),
   CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-21", harness=Harness.bosch),
@@ -1392,38 +1392,38 @@ FW_VERSIONS = {
       b'57114-TYF-E030\x00\x00'
     ],
   },
-  CAR.CIVIC_22:{
-    (Ecu.eps, 0x18DA30F1, None):[
+  CAR.CIVIC_2022: {
+    (Ecu.eps, 0x18DA30F1, None): [
       b'39990-T39-A130\x00\x00',
-      b'39990-T43-J020\x00\x00', #hatch
+      b'39990-T43-J020\x00\x00',  # hatch
     ],
-    (Ecu.gateway, 0x18DAEFF1, None):[
+    (Ecu.gateway, 0x18DAEFF1, None): [
       b'38897-T20-A020\x00\x00',
-      b'38897-T20-A510\x00\x00', #hatch
+      b'38897-T20-A510\x00\x00',  # hatch
       b'38897-T21-A010\x00\x00',
     ],
-    (Ecu.srs, 0x18DA53F1, None):[
+    (Ecu.srs, 0x18DA53F1, None): [
       b'77959-T20-A970\x00\x00',
-      b'77959-T47-A940\x00\x00', #hatch
+      b'77959-T47-A940\x00\x00',  # hatch
     ],
-    (Ecu.combinationMeter, 0x18DA60F1, None):[
+    (Ecu.combinationMeter, 0x18DA60F1, None): [
       b'78108-T21-A220\x00\x00',
       b'78108-T21-A620\x00\x00',
-      b'78108-T23-A110\x00\x00', #hatch
+      b'78108-T23-A110\x00\x00',  # hatch
     ],
-    (Ecu.vsa, 0x18DA28F1, None):[
+    (Ecu.vsa, 0x18DA28F1, None): [
       b'57114-T20-AB40\x00\x00',
-      b'57114-T43-JB30\x00\x00', #hatch
+      b'57114-T43-JB30\x00\x00',  # hatch
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-65D-A020\x00\x00',
-      b'28101-65D-A120\x00\x00', #hatch
+      b'28101-65D-A120\x00\x00',  # hatch
       b'28101-65H-A020\x00\x00',
     ],
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-64L-A540\x00\x00',
       b'37805-64S-A540\x00\x00',
-      b'37805-64S-A720\x00\x00', #hatch
+      b'37805-64S-A720\x00\x00',  # hatch
     ],
   },
 }
@@ -1451,7 +1451,7 @@ DBC = {
   CAR.RIDGELINE: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
   CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
-  CAR.CIVIC_22: dbc_dict('honda_civic_ex_2022_can_generated', None),
+  CAR.CIVIC_2022: dbc_dict('honda_civic_ex_2022_can_generated', None),
 }
 
 STEER_THRESHOLD = {
@@ -1464,6 +1464,6 @@ HONDA_NIDEC_ALT_PCM_ACCEL = {CAR.ODYSSEY}
 HONDA_NIDEC_ALT_SCM_MESSAGES = {CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.FREED, CAR.HRV, CAR.ODYSSEY_CHN,
                                 CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE}
 HONDA_BOSCH = {CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
-               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E}
+               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022}
 HONDA_BOSCH_ALT_BRAKE_SIGNAL = {CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G}
-HONDA_RADARLESS = {CAR.CIVIC_22, }
+HONDA_BOSCH_RADARLESS = {CAR.CIVIC_2022}
