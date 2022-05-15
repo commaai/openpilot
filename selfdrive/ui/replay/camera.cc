@@ -25,7 +25,7 @@ void CameraServer::startVipcServer() {
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
       rInfo("camera[%d] frame size %dx%d", cam.type, cam.width, cam.height);
-      vipc_server_->create_buffers(cam.yuv_type, YUV_BUFFER_COUNT, false, cam.width, cam.height);
+      vipc_server_->create_buffers(cam.stream_type, YUV_BUFFER_COUNT, false, cam.width, cam.height);
       if (!cam.thread.joinable()) {
         cam.thread = std::thread(&CameraServer::cameraThread, this, std::ref(cam));
       }
@@ -36,7 +36,7 @@ void CameraServer::startVipcServer() {
 
 void CameraServer::cameraThread(Camera &cam) {
   auto read_frame = [&](FrameReader *fr, int frame_id) {
-    VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
+    VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.stream_type);
     bool ret = fr->get(frame_id, yuv_buf ? (uint8_t *)yuv_buf->addr : nullptr);
     return ret ? yuv_buf : nullptr;
   };
