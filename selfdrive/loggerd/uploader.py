@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import bz2
-import errno
 import io
 import json
 import os
@@ -105,13 +104,9 @@ class Uploader():
         # skip files already uploaded
         try:
           is_uploaded = getxattr(fn, UPLOAD_ATTR_NAME)
-        except OSError as e:
-          # ENODATA means attribute hasn't been set
-          if e.errno == errno.ENODATA:
-            is_uploaded = False
-          else:
-            cloudlog.event("uploader_getxattr_failed", exc=self.last_exc, key=key, fn=fn)
-            is_uploaded = True  # deleter could have deleted
+        except OSError:
+          cloudlog.event("uploader_getxattr_failed", exc=self.last_exc, key=key, fn=fn)
+          is_uploaded = True  # deleter could have deleted
         if is_uploaded:
           continue
 
