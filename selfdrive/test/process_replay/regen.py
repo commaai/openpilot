@@ -165,8 +165,6 @@ def replay_cameras(lr, frs):
     p.append(multiprocessing.Process(target=replay_camera,
                                      args=(s, stream, dt, vs, frames, size, use_extra_client)))
 
-  # hack to make UI work
-  vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
   vs.start_listener()
   return vs, p
 
