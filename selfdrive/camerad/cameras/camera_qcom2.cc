@@ -31,6 +31,9 @@ const size_t FRAME_WIDTH = 1928;
 const size_t FRAME_HEIGHT = 1208;
 const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
 
+const size_t AR0231_REGISTERS_HEIGHT = 2;
+const size_t AR0231_STATS_HEIGHT = 2;
+
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
@@ -38,17 +41,24 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
+    .extra_height = AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT,
+
+    .registers_offset = 0,
+    .frame_offset = AR0231_REGISTERS_HEIGHT,
+    .stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT,
+
     .bayer = true,
     .bayer_flip = 1,
-    .hdr = false
+    .hdr = false,
   },
   [CAMERA_ID_IMX390] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
+
     .bayer = true,
     .bayer_flip = 1,
-    .hdr = false
+    .hdr = false,
   },
 };
 
@@ -87,11 +97,11 @@ int do_cam_control(int fd, int op_code, void *handle, int size) {
   return ret;
 }
 
-std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data) {
+std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources=1) {
   struct cam_acquire_dev_cmd cmd = {
       .session_handle = session_handle,
       .handle_type = CAM_HANDLE_USER_POINTER,
-      .num_resources = (uint32_t)(data ? 1 : 0),
+      .num_resources = (uint32_t)(data ? num_resources : 0),
       .resource_hdl = (uint64_t)data,
   };
   int err = do_cam_control(fd, CAM_ACQUIRE_DEV, &cmd, sizeof(cmd));
@@ -158,6 +168,42 @@ void release_fd(int video0_fd, uint32_t handle) {
   release(video0_fd, handle);
 }
 
+void *MemoryManager::alloc(int size, uint32_t *handle) {
+  lock.lock();
+  void *ptr;
+  if (!cached_allocations[size].empty()) {
+    ptr = cached_allocations[size].front();
+    cached_allocations[size].pop();
+    *handle = handle_lookup[ptr];
+  } else {
+    ptr = alloc_w_mmu_hdl(video0_fd, size, handle);
+    handle_lookup[ptr] = *handle;
+    size_lookup[ptr] = size;
+  }
+  lock.unlock();
+  return ptr;
+}
+
+void MemoryManager::free(void *ptr) {
+  lock.lock();
+  cached_allocations[size_lookup[ptr]].push(ptr);
+  lock.unlock();
+}
+
+MemoryManager::~MemoryManager() {
+  for (auto& x : cached_allocations) {
+    while (!x.second.empty()) {
+      void *ptr = x.second.front();
+      x.second.pop();
+      LOGD("freeing cached allocation %p with size %d", ptr, size_lookup[ptr]);
+      munmap(ptr, size_lookup[ptr]);
+      release_fd(video0_fd, handle_lookup[ptr]);
+      handle_lookup.erase(ptr);
+      size_lookup.erase(ptr);
+    }
+  }
+}
+
 int CameraState::clear_req_queue() {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
   req_mgr_flush_request.session_hdl = session_handle;
@@ -186,7 +232,7 @@ void CameraState::sensors_start() {
 void CameraState::sensors_poke(int request_id) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet);
-  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, size, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
   pkt->num_cmd_buf = 0;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.size = size;
@@ -200,15 +246,14 @@ void CameraState::sensors_poke(int request_id) {
     return;
   }
 
-  munmap(pkt, size);
-  release_fd(multi_cam_state->video0_fd, cam_packet_handle);
+  mm.free(pkt);
 }
 
 void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
-  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, size, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
   pkt->num_cmd_buf = 1;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.size = size;
@@ -218,7 +263,7 @@ void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op
   buf_desc[0].size = buf_desc[0].length = sizeof(struct i2c_rdwr_header) + len*sizeof(struct i2c_random_wr_payload);
   buf_desc[0].type = CAM_CMD_BUF_I2C;
 
-  struct cam_cmd_i2c_random_wr *i2c_random_wr = (struct cam_cmd_i2c_random_wr *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
+  struct cam_cmd_i2c_random_wr *i2c_random_wr = (struct cam_cmd_i2c_random_wr *)mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
   i2c_random_wr->header.count = len;
   i2c_random_wr->header.op_code = 1;
   i2c_random_wr->header.cmd_type = CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR;
@@ -233,10 +278,8 @@ void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op
     return;
   }
 
-  munmap(i2c_random_wr, buf_desc[0].size);
-  release_fd(multi_cam_state->video0_fd, buf_desc[0].mem_handle);
-  munmap(pkt, size);
-  release_fd(multi_cam_state->video0_fd, cam_packet_handle);
+  mm.free(i2c_random_wr);
+  mm.free(pkt);
 }
 
 static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
@@ -248,10 +291,9 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
 };
 
 int CameraState::sensors_init() {
-  int video0_fd = multi_cam_state->video0_fd;
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
-  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(video0_fd, size, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.op_code = 0x1000000 | CAM_SENSOR_PACKET_OPCODE_SENSOR_PROBE;
@@ -260,7 +302,7 @@ int CameraState::sensors_init() {
 
   buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_cmd_i2c_info) + sizeof(struct cam_cmd_probe);
   buf_desc[0].type = CAM_CMD_BUF_LEGACY;
-  struct cam_cmd_i2c_info *i2c_info = (struct cam_cmd_i2c_info *)alloc_w_mmu_hdl(video0_fd, buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
+  struct cam_cmd_i2c_info *i2c_info = (struct cam_cmd_i2c_info *)mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
   auto probe = (struct cam_cmd_probe *)(i2c_info + 1);
 
   probe->camera_id = camera_num;
@@ -302,7 +344,7 @@ int CameraState::sensors_init() {
   //buf_desc[1].size = buf_desc[1].length = 148;
   buf_desc[1].size = buf_desc[1].length = 196;
   buf_desc[1].type = CAM_CMD_BUF_I2C;
-  struct cam_cmd_power *power_settings = (struct cam_cmd_power *)alloc_w_mmu_hdl(video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
+  struct cam_cmd_power *power_settings = (struct cam_cmd_power *)mm.alloc(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
   memset(power_settings, 0, buf_desc[1].size);
 
   // power on
@@ -363,12 +405,9 @@ int CameraState::sensors_init() {
   LOGD("probing the sensor");
   int ret = do_cam_control(sensor_fd, CAM_SENSOR_PROBE_CMD, (void *)(uintptr_t)cam_packet_handle, 0);
 
-  munmap(i2c_info, buf_desc[0].size);
-  release_fd(video0_fd, buf_desc[0].mem_handle);
-  munmap(power_settings, buf_desc[1].size);
-  release_fd(video0_fd, buf_desc[1].mem_handle);
-  munmap(pkt, size);
-  release_fd(video0_fd, cam_packet_handle);
+  mm.free(i2c_info);
+  mm.free(power_settings);
+  mm.free(pkt);
 
   return ret;
 }
@@ -379,7 +418,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
   }
-  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, size, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = 0;
   // YUV has kmd_cmd_buf_offset = 1780
@@ -387,7 +426,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   // YUV also has patch_offset = 0x1030 and num_patches = 10
 
   if (io_mem_handle != 0) {
-    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*2;
+    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
     pkt->num_io_configs = 1;
   }
 
@@ -474,16 +513,16 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
   buf_desc[1].type = CAM_CMD_BUF_GENERIC;
   buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
-  uint32_t *buf2 = (uint32_t *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle, 0x20);
+  uint32_t *buf2 = (uint32_t *)mm.alloc(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
   memcpy(buf2, &tmp, sizeof(tmp));
 
   if (io_mem_handle != 0) {
     io_cfg[0].mem_handle[0] = io_mem_handle;
 		io_cfg[0].planes[0] = (struct cam_plane_cfg){
-		 .width = FRAME_WIDTH,
-		 .height = FRAME_HEIGHT,
-		 .plane_stride = FRAME_STRIDE,
-		 .slice_height = FRAME_HEIGHT,
+		 .width = ci.frame_width,
+		 .height = ci.frame_height + ci.extra_height,
+		 .plane_stride = ci.frame_stride,
+		 .slice_height = ci.frame_height + ci.extra_height,
 		 .meta_stride = 0x0,    // YUV has meta(stride=0x400, size=0x5000)
 		 .meta_size = 0x0,
 		 .meta_offset = 0x0,
@@ -510,24 +549,20 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
     printf("ISP CONFIG FAILED\n");
   }
 
-  munmap(buf2, buf_desc[1].size);
-  release_fd(multi_cam_state->video0_fd, buf_desc[1].mem_handle);
-  // release_fd(multi_cam_state->video0_fd, buf_desc[0].mem_handle);
-  munmap(pkt, size);
-  release_fd(multi_cam_state->video0_fd, cam_packet_handle);
+  mm.free(buf2);
+  mm.free(pkt);
 }
 
 void CameraState::enqueue_buffer(int i, bool dp) {
   int ret;
   int request_id = request_ids[i];
 
-  if (buf_handle[i]) {
-    release(multi_cam_state->video0_fd, buf_handle[i]);
+  if (buf_handle[i] && sync_objs[i]) {
     // wait
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = sync_objs[i];
     sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
-    ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+    ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
 
     buf.camera_bufs_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
@@ -535,13 +570,19 @@ void CameraState::enqueue_buffer(int i, bool dp) {
 
     // destroy old output fence
     struct cam_sync_info sync_destroy = {0};
-    strcpy(sync_destroy.name, "NodeOutputPortFence");
     sync_destroy.sync_obj = sync_objs[i];
-    ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
+    ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
     // LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
   }
 
-  // do stuff
+  // create output fence
+  struct cam_sync_info sync_create = {0};
+  strcpy(sync_create.name, "NodeOutputPortFence");
+  ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+  // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
+  sync_objs[i] = sync_create.sync_obj;
+
+  // schedule request with camera request manager
   struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
   req_mgr_sched_request.session_hdl = session_handle;
   req_mgr_sched_request.link_hdl = link_handle;
@@ -549,28 +590,11 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
   // LOGD("sched req: %d %d", ret, request_id);
 
-  // create output fence
-  struct cam_sync_info sync_create = {0};
-  strcpy(sync_create.name, "NodeOutputPortFence");
-  ret = do_cam_control(multi_cam_state->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
-  // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
-  sync_objs[i] = sync_create.sync_obj;
-
-  // configure ISP to put the image in place
-  struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
-  mem_mgr_map_cmd.mmu_hdls[0] = multi_cam_state->device_iommu;
-  mem_mgr_map_cmd.num_hdl = 1;
-  mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
-  mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-  // LOGD("map buf req: (fd: %d) 0x%x %d", bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
-  buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
-
-  // poke sensor
+  // poke sensor, must happen after schedule
   sensors_poke(request_id);
   // LOGD("Poked sensor");
 
-  // push the buffer
+  // submit request to the ife
   config_isp(buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
 }
 
@@ -615,6 +639,9 @@ void CameraState::camera_open() {
   sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", camera_num);
   assert(sensor_fd >= 0);
   LOGD("opened sensor for %d", camera_num);
+
+  // init memorymanager for this camera
+  mm.init(multi_cam_state->video0_fd);
 
   // probe the sensor
   LOGD("-- Probing sensor %d", camera_num);
@@ -665,23 +692,23 @@ void CameraState::camera_open() {
       .lane_cfg = 0x3210,
 
       .vc = 0x0,
-      .dt = 0x2C,  // CSI_RAW12
+      .dt = 0x12, // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
       .format = CAM_FORMAT_MIPI_RAW_12,
 
       .test_pattern = 0x2,  // 0x3?
       .usage_type = 0x0,
 
       .left_start = 0,
-      .left_stop = FRAME_WIDTH - 1,
-      .left_width = FRAME_WIDTH,
+      .left_stop = ci.frame_width - 1,
+      .left_width = ci.frame_width,
 
       .right_start = 0,
-      .right_stop = FRAME_WIDTH - 1,
-      .right_width = FRAME_WIDTH,
+      .right_stop = ci.frame_width - 1,
+      .right_width = ci.frame_width,
 
       .line_start = 0,
-      .line_stop = FRAME_HEIGHT - 1,
-      .height = FRAME_HEIGHT,
+      .line_stop = ci.frame_height + ci.extra_height - 1,
+      .height = ci.frame_height + ci.extra_height,
 
       .pixel_clk = 0x0,
       .batch_size = 0x0,
@@ -693,8 +720,8 @@ void CameraState::camera_open() {
       .data[0] = (struct cam_isp_out_port_info){
           .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
           .format = CAM_FORMAT_MIPI_RAW_12,
-          .width = FRAME_WIDTH,
-          .height = FRAME_HEIGHT,
+          .width = ci.frame_width,
+          .height = ci.frame_height + ci.extra_height,
           .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
       },
   };
@@ -729,7 +756,7 @@ void CameraState::camera_open() {
   {
     uint32_t cam_packet_handle = 0;
     int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
-    struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, size, &cam_packet_handle);
+    struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
     pkt->num_cmd_buf = 1;
     pkt->kmd_cmd_buf_index = -1;
     pkt->header.size = size;
@@ -738,7 +765,7 @@ void CameraState::camera_open() {
     buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_csiphy_info);
     buf_desc[0].type = CAM_CMD_BUF_GENERIC;
 
-    struct cam_csiphy_info *csiphy_info = (struct cam_csiphy_info *)alloc_w_mmu_hdl(multi_cam_state->video0_fd, buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
+    struct cam_csiphy_info *csiphy_info = (struct cam_csiphy_info *)mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
     csiphy_info->lane_mask = 0x1f;
     csiphy_info->lane_assign = 0x3210;// skip clk. How is this 16 bit for 5 channels??
     csiphy_info->csiphy_3phase = 0x0; // no 3 phase, only 2 conductors per lane
@@ -751,10 +778,8 @@ void CameraState::camera_open() {
     int ret_ = device_config(csiphy_fd, session_handle, csiphy_dev_handle, cam_packet_handle);
     assert(ret_ == 0);
 
-    munmap(csiphy_info, buf_desc[0].size);
-    release_fd(multi_cam_state->video0_fd, buf_desc[0].mem_handle);
-    munmap(pkt, size);
-    release_fd(multi_cam_state->video0_fd, cam_packet_handle);
+    mm.free(csiphy_info);
+    mm.free(pkt);
   }
 
   // link devices
@@ -780,6 +805,18 @@ void CameraState::camera_open() {
   LOGD("start csiphy: %d", ret);
   ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
+
+  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+    // configure ISP to put the image in place
+    struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
+    mem_mgr_map_cmd.mmu_hdls[0] = multi_cam_state->device_iommu;
+    mem_mgr_map_cmd.num_hdl = 1;
+    mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
+    mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
+    ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+    LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
+    buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
+  }
 
   // TODO: this is unneeded, should we be doing the start i2c in a different way?
   //ret = device_control(sensor_fd, CAM_START_DEV, session_handle, sensor_dev_handle);
@@ -807,9 +844,9 @@ void cameras_open(MultiCameraState *s) {
   LOGD("opened video0");
 
   // video1 is cam_sync, the target of some ioctls
-  s->video1_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK));
-  assert(s->video1_fd >= 0);
-  LOGD("opened video1");
+  s->cam_sync_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK));
+  assert(s->cam_sync_fd >= 0);
+  LOGD("opened video1 (cam_sync)");
 
   // looks like there's only one of these
   s->isp_fd = open_v4l_by_name_and_index("cam-isp");
@@ -834,7 +871,7 @@ void cameras_open(MultiCameraState *s) {
   LOG("-- Subscribing");
   static struct v4l2_event_subscription sub = {0};
   sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
-  sub.id = 2; // should use boot time for sof
+  sub.id = V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS;
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
   printf("req mgr subscribe: %d\n", ret);
 
@@ -883,6 +920,11 @@ void CameraState::camera_close() {
     LOGD("release isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
     LOGD("release csiphy: %d", ret);
+
+    for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+      release(multi_cam_state->video0_fd, buf_handle[i]);
+    }
+    LOGD("released buffers");
   }
 
   ret = device_control(sensor_fd, CAM_RELEASE_DEV, session_handle, sensor_dev_handle);
@@ -901,6 +943,70 @@ void cameras_close(MultiCameraState *s) {
 
   delete s->sm;
   delete s->pm;
+}
+
+std::map<uint16_t, std::pair<int, int>> CameraState::ar0231_build_register_lut(uint8_t *data) {
+  // This function builds a lookup table from register address, to a pair of indices in the
+  // buffer where to read this address. The buffer contains padding bytes,
+  // as well as markers to indicate the type of the next byte.
+  //
+  // 0xAA is used to indicate the MSB of the address, 0xA5 for the LSB of the address.
+  // Every byte of data (MSB and LSB) is preceded by 0x5A. Specifying an address is optional
+  // for contigous ranges. See page 27-29 of the AR0231 Developer guide for more information.
+
+  int max_i[] = {1828 / 2 * 3, 1500 / 2 * 3};
+  auto get_next_idx = [](int cur_idx) {
+    return (cur_idx % 3 == 1) ? cur_idx + 2 : cur_idx + 1; // Every third byte is padding
+  };
+
+  std::map<uint16_t, std::pair<int, int>> registers;
+  for (int register_row = 0; register_row < 2; register_row++) {
+    uint8_t *registers_raw = data + ci.frame_stride * register_row;
+    assert(registers_raw[0] == 0x0a); // Start of line
+
+    int value_tag_count = 0;
+    int first_val_idx = 0;
+    uint16_t cur_addr = 0;
+
+    for (int i = 1; i <= max_i[register_row]; i = get_next_idx(get_next_idx(i))) {
+      int val_idx = get_next_idx(i);
+
+      uint8_t tag = registers_raw[i];
+      uint16_t val = registers_raw[val_idx];
+
+      if (tag == 0xAA) { // Register MSB tag
+        cur_addr = val << 8;
+      } else if (tag == 0xA5) { // Register LSB tag
+        cur_addr |= val;
+        cur_addr -= 2; // Next value tag will increment address again
+      } else if (tag == 0x5A) { // Value tag
+
+        // First tag
+        if (value_tag_count % 2 == 0) {
+          cur_addr += 2;
+          first_val_idx = val_idx;
+        } else {
+          registers[cur_addr] = std::make_pair(first_val_idx + ci.frame_stride * register_row, val_idx + ci.frame_stride * register_row);
+        }
+
+        value_tag_count++;
+      }
+    }
+  }
+  return registers;
+}
+
+std::map<uint16_t, uint16_t> CameraState::ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs) {
+  if (ar0231_register_lut.empty()) {
+    ar0231_register_lut = ar0231_build_register_lut(data);
+  }
+
+  std::map<uint16_t, uint16_t> registers;
+  for (uint16_t addr : addrs) {
+    auto offset = ar0231_register_lut[addr];
+    registers[addr] = ((uint16_t)data[offset.first] << 8) | data[offset.second];
+  }
+  return registers;
 }
 
 void CameraState::handle_camera_event(void *evdat) {
@@ -1082,7 +1188,49 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   s->set_camera_exposure(grey_frac);
 }
 
-// called by processing_thread
+static float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_reg) {
+  // See AR0231 Developer Guide - page 36
+  float slope = (125.0 - 55.0) / ((float)calib1 - (float)calib2);
+  float t0 = 55.0 - slope * (float)calib2;
+  return t0 + slope * (float)data_reg;
+}
+
+static void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed){
+  uint8_t *data = (uint8_t*)c->buf.cur_camera_buf->addr + c->ci.registers_offset;
+  auto registers = c->ar0231_parse_registers(data, {0x2000, 0x2002, 0x20b0, 0x20b2, 0x30c6, 0x30c8, 0x30ca, 0x30cc});
+
+  uint32_t frame_id = ((uint32_t)registers[0x2000] << 16) | registers[0x2002];
+  framed.setFrameIdSensor(frame_id);
+
+  float temp_0 = ar0231_parse_temp_sensor(registers[0x30c6], registers[0x30c8], registers[0x20b0]);
+  float temp_1 = ar0231_parse_temp_sensor(registers[0x30ca], registers[0x30cc], registers[0x20b2]);
+  framed.setTemperaturesC({temp_0, temp_1});
+}
+
+static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
+  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
+  const CameraBuf *b = &c->buf;
+  static ExpRect rect = {96, 1832, 2, 242, 1148, 4};
+  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
+}
+
+static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
+  s->sm->update(0);
+  driver_cam_auto_exposure(c, *(s->sm));
+
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initDriverCameraState();
+  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+  fill_frame_data(framed, c->buf.cur_frame_data);
+  if (env_send_driver) {
+    framed.setImage(get_frame_image(&c->buf));
+  }
+  if (c->camera_id == CAMERA_ID_AR0231) {
+    ar0231_process_registers(s, c, framed);
+  }
+  s->pm->send("driverCameraState", msg);
+}
+
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
@@ -1091,12 +1239,19 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   fill_frame_data(framed, b->cur_frame_data);
   if ((c == &s->road_cam && env_send_road) || (c == &s->wide_road_cam && env_send_wide_road)) {
     framed.setImage(get_frame_image(b));
+  } else if (env_log_raw_frames && c == &s->road_cam && cnt % 100 == 5) {  // no overlap with qlog decimation
+    framed.setImage(get_raw_frame_image(b));
   }
   LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");
   if (c == &s->road_cam) {
     framed.setTransform(b->yuv_transform.v);
     LOGT(c->buf.cur_frame_data.frame_id, "%s: Transformed", "RoadCamera");
   }
+
+  if (c->camera_id == CAMERA_ID_AR0231) {
+    ar0231_process_registers(s, c, framed);
+  }
+
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
   const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
@@ -1107,7 +1262,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 void cameras_run(MultiCameraState *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
-  if (s->driver_cam.enabled) threads.push_back(start_process_thread(s, &s->driver_cam, common_process_driver_camera));
+  if (s->driver_cam.enabled) threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
   if (s->road_cam.enabled) threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
   if (s->wide_road_cam.enabled) threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
 
@@ -1166,3 +1321,4 @@ void cameras_run(MultiCameraState *s) {
 
   cameras_close(s);
 }
+

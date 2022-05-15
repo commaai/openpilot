@@ -15,7 +15,6 @@ from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
-from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.tests.routes import non_tested_cars, routes, TestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
@@ -144,11 +143,11 @@ class TestCarModel(unittest.TestCase):
     assert RI
 
     error_cnt = 0
-    for msg in self.can_msgs:
-      radar_data = RI.update((msg.as_builder().to_bytes(),))
-      if radar_data is not None:
-        error_cnt += car.RadarData.Error.canError in radar_data.errors
-    self.assertLess(error_cnt, 20)
+    for i, msg in enumerate(self.can_msgs):
+      rr = RI.update((msg.as_builder().to_bytes(),))
+      if rr is not None and i > 50:
+        error_cnt += car.RadarData.Error.canError in rr.errors
+    self.assertEqual(error_cnt, 0)
 
   def test_panda_safety_rx_valid(self):
     if self.CP.dashcamOnly:
@@ -243,10 +242,6 @@ class TestCarModel(unittest.TestCase):
         checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
       CS_prev = CS
-
-    # TODO: add flag to toyota safety
-    if self.CP.carFingerprint == TOYOTA.SIENNA and checks['brakePressed'] < 25:
-      checks['brakePressed'] = 0
 
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
