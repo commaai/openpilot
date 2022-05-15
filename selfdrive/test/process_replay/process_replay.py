@@ -350,6 +350,7 @@ def setup_env(simulation=False):
   params.put_bool("Passive", False)
   params.put_bool("DisengageOnAccelerator", True)
   params.put_bool("EnableWideCamera", False)
+  params.put_bool("DisableLogging", False)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
