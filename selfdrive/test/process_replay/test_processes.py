@@ -135,7 +135,6 @@ def format_diff(results, ref_commit):
 
 
 if __name__ == "__main__":
-  assert "ZMQ" not in os.environ, "Messaging backend must be MSGQ"
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
 
   # whitelist has precedence over blacklist in case both are defined
