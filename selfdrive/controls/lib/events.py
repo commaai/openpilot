@@ -264,7 +264,7 @@ def overheat_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, sof
   cpu = max(sm['deviceState'].cpuTempC, default=0.)
   gpu = max(sm['deviceState'].gpuTempC, default=0.)
   temp = max((cpu, gpu, sm['deviceState'].memoryTempC))
-  return NormalPermanentAlert("System Overheated", f"{temp} °C")
+  return NormalPermanentAlert("System Overheated", f"{temp:.0f} °C")
 
 
 def low_memory_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
