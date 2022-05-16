@@ -1196,7 +1196,14 @@ static float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t
 }
 
 static void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed){
+  const uint8_t expected_preamble[] = {0x0a, 0xaa, 0x55, 0x20, 0xa5, 0x55};
   uint8_t *data = (uint8_t*)c->buf.cur_camera_buf->addr + c->ci.registers_offset;
+
+  if (memcmp(data, expected_preamble, std::size(expected_preamble)) != 0){
+    LOGE("unexpected register data found");
+    return;
+  }
+
   auto registers = c->ar0231_parse_registers(data, {0x2000, 0x2002, 0x20b0, 0x20b2, 0x30c6, 0x30c8, 0x30ca, 0x30cc});
 
   uint32_t frame_id = ((uint32_t)registers[0x2000] << 16) | registers[0x2002];
