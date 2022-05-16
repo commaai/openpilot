@@ -183,8 +183,7 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
-  jobs = 7 if args.jobs else 1
-  pool = NestablePool(jobs)
+  pool = NestablePool(args.jobs)
 
   lreaders: Any = {}
   p1 = pool.map_async(get_logreader, [seg for car, seg in segments])
