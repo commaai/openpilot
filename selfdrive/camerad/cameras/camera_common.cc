@@ -22,8 +22,6 @@
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
 #elif WEBCAM
 #include "selfdrive/camerad/cameras/camera_webcam.h"
-#else
-#include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
 
 ExitHandler do_exit;
