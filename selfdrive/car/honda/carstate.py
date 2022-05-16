@@ -333,7 +333,7 @@ class CarState(CarStateBase):
 
     # TODO: note: looks like on radarless we get acc_hud from the camera
     # so make sure everything is correct and we don't add any signals we don't need to
-    if CP.carFingerprint in HONDA_RADARLESS:
+    if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
       signals += [
         ("CRUISE_SPEED", "ACC_HUD"),
         ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
