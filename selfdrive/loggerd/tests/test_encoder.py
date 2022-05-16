@@ -24,7 +24,7 @@ CAMERAS = [
   ("fcamera.hevc", 20, FULL_SIZE, "roadEncodeIdx"),
   ("dcamera.hevc", 20, FULL_SIZE, "driverEncodeIdx"),
   ("ecamera.hevc", 20, FULL_SIZE, "wideRoadEncodeIdx"),
-  ("qcamera.ts", 20, 77066, None),
+  ("qcamera.ts", 20, 130000, None),
 ]
 
 # we check frame count, so we don't have to be too strict on size
@@ -98,13 +98,12 @@ class TestEncoder(unittest.TestCase):
           cmd = "LD_LIBRARY_PATH=/usr/local/lib " + cmd
 
         expected_frames = fps * SEGMENT_LENGTH
-        frame_tolerance = 0
         probe = subprocess.check_output(cmd, shell=True, encoding='utf8')
         frame_count = int(probe.split('\n')[0].strip())
         counts.append(frame_count)
 
-        self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
-                        f"segment #{i}: {camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+        self.assertEqual(frame_count, expected_frames,
+                         f"segment #{i}: {camera} failed frame count check: expected {expected_frames}, got {frame_count}")
 
         # sanity check file size
         file_size = os.path.getsize(file_path)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
 import sys
 import argparse
 import numpy as np

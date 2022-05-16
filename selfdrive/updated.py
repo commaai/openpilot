@@ -33,9 +33,9 @@ import time
 import threading
 from pathlib import Path
 from typing import List, Tuple, Optional
+from markdown_it import MarkdownIt
 
 from common.basedir import BASEDIR
-from common.markdown import parse_markdown
 from common.params import Params
 from selfdrive.hardware import TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
@@ -126,7 +126,7 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
       with open(os.path.join(FINALIZED, "RELEASES.md"), "rb") as f:
         r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
       try:
-        params.put("ReleaseNotes", parse_markdown(r.decode("utf-8")))
+        params.put("ReleaseNotes", MarkdownIt().render(r.decode("utf-8")))
       except Exception:
         params.put("ReleaseNotes", r + b"\n")
     except Exception:
