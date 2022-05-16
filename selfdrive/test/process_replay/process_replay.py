@@ -340,6 +340,14 @@ CONFIGS = [
 
 def setup_prefix():
   os.environ['OPENPILOT_PREFIX'] = str(uuid.uuid4())
+  msg_path = '/dev/shm/' + os.environ['OPENPILOT_PREFIX']
+  try:
+    os.mkdir(msg_path)
+  except FileExistsError:
+    pass
+  except PermissionError:
+    print(f"WARNING: failed to make {msg_path}")
+
 
 def teardown_prefix():
   params_path = '/data/params/' if os.environ.get('TICI', 0) else os.environ['HOME'] + '/.comma/params/'
