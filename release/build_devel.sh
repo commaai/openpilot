@@ -46,20 +46,23 @@ if [ ! -z "$EXTRA_FILES" ]; then
   cp -pR --parents $EXTRA_FILES $TARGET_DIR/
 fi
 
+# in the directory
+cd $TARGET_DIR
+rm -f panda/board/obj/panda.bin.signed
+
 # append source commit hash and build date to version
 GIT_HASH=$(git --git-dir=$SOURCE_DIR/.git rev-parse --short HEAD)
 DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
 VERSION=$(cat selfdrive/common/version.h | awk -F\" '{print $2}')
 echo "#define COMMA_VERSION \"$VERSION-$GIT_HASH-$DATETIME\"" > selfdrive/common/version.h
 
-# in the directory
-cd $TARGET_DIR
-rm -f panda/board/obj/panda.bin.signed
-
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
 git status
-git commit -a -m "openpilot v$VERSION release"
+git commit -a -m "openpilot v$VERSION release
+
+master commit: $GIT_HASH
+date: $DATETIME"
 
 if [ ! -z "$PUSH" ]; then
   echo "[-] Pushing to $PUSH T=$SECONDS"
