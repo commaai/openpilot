@@ -55,14 +55,17 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 def run_test_process(data):
-  segment, cfg, args, cur_log_fn = data
-  r, n = segment.rsplit("--", 1)
-  lr = LogReader(get_url(r, n))
+  segment, cfg, args, cur_log_fn, lr = data
   ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
   res, log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
   # save logs so we can upload when updating refs
   save_log(cur_log_fn, log_msgs)
   return (segment, cfg.proc_name, res)
+
+def get_logreader(segment):
+  r, n = segment.rsplit("--", 1)
+  lr = LogReader(get_url(r, n))
+  return (segment, lr)
 
 def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
@@ -165,7 +168,16 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
-  results: Any = {}
+  jobs = 7 if args.jobs else 1
+  pool = Pool(jobs)
+
+  lreaders: Any = {}
+  p1 = pool.map_async(get_logreader, [seg for car, seg in segments])
+  for tup in p1.get():
+    if tup[0] not in lreaders:
+      lreaders[tup[0]] = {}
+    lreaders[tup[0]] = tup[1]
+
   pool_args: Any = []
   for car_brand, segment in segments:
     if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
@@ -176,16 +188,16 @@ if __name__ == "__main__":
          (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
         continue
       cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-      pool_args.append((segment, cfg, args, cur_log_fn))
+      pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment]))
       if upload:
         print(f'Uploading: {os.path.basename(cur_log_fn)}')
         assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
         upload_file(cur_log_fn, os.path.basename(cur_log_fn))
         os.remove(cur_log_fn)
-  jobs = 7 if args.jobs else 1
-  pool = Pool(jobs)
-  p = pool.map_async(run_test_process, pool_args)
-  for tup in p.get():
+
+  results: Any = {}
+  p2 = pool.map_async(run_test_process, pool_args)
+  for tup in p2.get():
     if tup[0] not in results:
       results[tup[0]] = {}
     results[tup[0]][tup[1]] = tup[2]
