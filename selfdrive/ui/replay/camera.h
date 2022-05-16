@@ -2,7 +2,7 @@
 
 #include <unistd.h>
 #include "cereal/visionipc/visionipc_server.h"
-#include "selfdrive/common/queue.h"
+#include "common/queue.h"
 #include "selfdrive/ui/replay/framereader.h"
 #include "selfdrive/ui/replay/logreader.h"
 

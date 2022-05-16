@@ -6,7 +6,7 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/api.h"
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 
 const qreal REROUTE_DISTANCE = 25;
 const float MANEUVER_TRANSITION_THRESHOLD = 10;

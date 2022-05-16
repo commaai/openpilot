@@ -8,10 +8,10 @@
 
 #include <eigen3/Eigen/Dense>
 
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/swaglog.h"
+#include "common/clutil.h"
+#include "common/params.h"
+#include "common/timing.h"
+#include "common/swaglog.h"
 
 constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
 constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;

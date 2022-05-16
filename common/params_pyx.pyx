@@ -4,7 +4,7 @@ from libcpp cimport bool
 from libcpp.string cimport string
 import threading
 
-cdef extern from "selfdrive/common/params.h":
+cdef extern from "common/params.h":
   cpdef enum ParamKeyType:
     PERSISTENT
     CLEAR_ON_MANAGER_START

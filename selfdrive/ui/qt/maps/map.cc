@@ -6,7 +6,7 @@
 #include <QPainterPath>
 #include <QFileInfo>
 
-#include "selfdrive/common/swaglog.h"
+#include "common/swaglog.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"

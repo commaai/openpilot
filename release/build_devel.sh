@@ -51,14 +51,14 @@ if [ ! -z "$EXTRA_FILES" ]; then
   cp -pR --parents $EXTRA_FILES $TARGET_DIR/
 fi
 
-# in the directory
-cd $TARGET_DIR
-rm -f panda/board/obj/panda.bin.signed
-
 # include source commit hash and build date in commit
 GIT_HASH=$(git --git-dir=$SOURCE_DIR/.git rev-parse HEAD)
 DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
 VERSION=$(cat $SOURCE_DIR/selfdrive/common/version.h | awk -F\" '{print $2}')
+
+# in the directory
+cd $TARGET_DIR
+rm -f panda/board/obj/panda.bin.signed
 
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .

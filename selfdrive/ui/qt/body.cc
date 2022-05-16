@@ -6,8 +6,8 @@
 #include <QPainter>
 #include <QStackedLayout>
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
+#include "common/params.h"
+#include "common/timing.h"
 
 RecordButton::RecordButton(QWidget *parent) : QPushButton(parent) {
   setCheckable(true);

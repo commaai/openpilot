@@ -12,8 +12,8 @@
 #include <QJsonDocument>
 #include <QNetworkRequest>
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/util.h"
+#include "common/params.h"
+#include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
 
