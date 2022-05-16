@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Build Docker image
@@ -42,28 +42,16 @@ jobs:
       IMAGE_NAME: openpilot-sim
     if: github.repository == 'commaai/openpilot'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
+        lfs: true
         submodules: true
-
-    # HACK: cache LFS objects since they count against our quota
-    # https://github.com/actions/checkout/issues/165#issuecomment-657673315
-    - name: Create LFS file list
-      run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
-    - name: Restore LFS cache
-      uses: actions/cache@v2
-      id: lfs-cache
-      with:
-        path: .git/lfs
-        key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}
-    - name: Git LFS Pull
-      run: git lfs pull
-
-    - name: Build Docker image
-      run: |
-        eval "$BUILD"
-        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
-        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
+    - name: Build base image
+      run: eval "$BUILD"
+    - name: Pull latest simulator image
+      run: eval "$BUILD"docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
+    - name: Build simulator image
+      run: docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
     - name: Push to container registry
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |

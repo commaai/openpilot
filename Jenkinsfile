@@ -80,27 +80,6 @@ pipeline {
           stages {
             stage('parallel tests') {
               parallel {
-                /*
-                stage('Power Consumption Tests') {
-                  steps {
-                    lock(resource: "", label: "c2-zookeeper", inversePrecedence: true, variable: 'device_ip', quantity: 1) {
-                      timeout(time: 90, unit: 'MINUTES') {
-                        sh script: "/home/batman/tools/zookeeper/enable_and_wait.py $device_ip 120", label: "turn on device"
-                        phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
-                        phone(device_ip, "build", "scons -j4 && sync")
-                        sh script: "/home/batman/tools/zookeeper/disable.py $device_ip", label: "turn off device"
-                        sh script: "/home/batman/tools/zookeeper/enable_and_wait.py $device_ip 120", label: "turn on device"
-                        sh script: "/home/batman/tools/zookeeper/check_consumption.py 60 3", label: "idle power consumption after boot"
-                        sh script: "/home/batman/tools/zookeeper/ignition.py 1", label: "go onroad"
-                        sh script: "/home/batman/tools/zookeeper/check_consumption.py 60 10", label: "onroad power consumption"
-                        sh script: "/home/batman/tools/zookeeper/ignition.py 0", label: "go offroad"
-                        sh script: "/home/batman/tools/zookeeper/check_consumption.py 60 2", label: "idle power consumption offroad"
-                      }
-                    }
-                  }
-                }
-                */
-
                 stage('build') {
                   environment {
                     R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
