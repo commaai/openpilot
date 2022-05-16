@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/bash
 
 git remote add upstream https://github.com/commaai/openpilot.git
 cd cereal
