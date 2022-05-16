@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 
-#include "selfdrive/loggerd/encoder/video_writer.h"
+#include "selfdrive/loggerd/video_writer.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
@@ -88,7 +88,7 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
 
       // TODO: can use av_write_frame for non raw?
       int err = av_interleaved_write_frame(ofmt_ctx, &pkt);
-      if (err < 0) { LOGW("ts encoder write issue"); }
+      if (err < 0) { LOGW("ts encoder write issue len: %d ts: %lu", len, timestamp); }
 
       av_packet_unref(&pkt);
     }

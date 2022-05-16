@@ -50,7 +50,6 @@ struct LogCameraInfo {
   int bitrate;
   bool is_h265;
   bool has_qcamera;
-  bool trigger_rotate;
   bool enable;
   bool record;
 };
@@ -64,7 +63,6 @@ const LogCameraInfo cameras_logged[] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .has_qcamera = true,
-    .trigger_rotate = true,
     .enable = true,
     .record = true,
     .frame_width = 1928,
@@ -78,7 +76,6 @@ const LogCameraInfo cameras_logged[] = {
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
     .has_qcamera = false,
-    .trigger_rotate = true,
     .enable = true,
     .record = Params().getBool("RecordFront"),
     .frame_width = 1928,
@@ -92,7 +89,6 @@ const LogCameraInfo cameras_logged[] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .has_qcamera = false,
-    .trigger_rotate = true,
     .enable = Hardware::TICI(),
     .record = Hardware::TICI(),
     .frame_width = 1928,
@@ -109,26 +105,3 @@ const LogCameraInfo qcam_info = {
   .frame_width = Hardware::TICI() ? 526 : 480,
   .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
 };
-
-struct LoggerdState {
-  LoggerState logger = {};
-  char segment_path[4096];
-  std::mutex rotate_lock;
-  std::condition_variable rotate_cv;
-  std::atomic<int> rotate_segment;
-  std::atomic<double> last_camera_seen_tms;
-  std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
-  int max_waiting = 0;
-  double last_rotate_tms = 0.;      // last rotate time in ms
-
-  // Sync logic for startup
-  std::atomic<int> encoders_ready = 0;
-  std::atomic<uint32_t> start_frame_id = 0;
-  bool camera_ready[WideRoadCam + 1] = {};
-  bool camera_synced[WideRoadCam + 1] = {};
-};
-
-bool sync_encoders(LoggerdState *s, CameraType cam_type, uint32_t frame_id);
-bool trigger_rotate_if_needed(LoggerdState *s, int cur_seg, uint32_t frame_id);
-void rotate_if_needed(LoggerdState *s);
-void loggerd_thread();

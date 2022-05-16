@@ -19,6 +19,7 @@ fi
 
 # set git identity
 source $DIR/identity.sh
+export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
 echo "[-] Setting up repo T=$SECONDS"
 rm -rf $BUILD_DIR
@@ -75,7 +76,7 @@ find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf panda/board panda/certs panda/crypto
 rm -rf .sconsign.dblite Jenkinsfile release/
-rm models/supercombo.dlc
+rm selfdrive/modeld/models/supercombo.dlc
 
 # Move back signed panda fw
 mkdir -p panda/board/obj
