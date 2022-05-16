@@ -140,7 +140,7 @@ if __name__ == "__main__":
                       help="Updates reference logs using current commit")
   parser.add_argument("--upload-only", action="store_true",
                       help="Skips testing processes and uploads logs from previous test run")
-  parser.add_argument("--jobs", action="store_true")
+  parser.add_argument("-j", "--jobs", type=int, default=1)
   args = parser.parse_args()
 
   full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
@@ -168,8 +168,7 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
-  jobs = 7 if args.jobs else 1
-  pool = Pool(jobs)
+  pool = Pool(args.jobs)
 
   lreaders: Any = {}
   p1 = pool.map_async(get_logreader, [seg for car, seg in segments])
