@@ -28,7 +28,6 @@ common/logging_extra.py
 common/numpy_fast.py
 common/params.py
 common/params_pyx.pyx
-common/xattr.py
 common/profiler.py
 common/basedir.py
 common/dict_helpers.py
@@ -56,9 +55,6 @@ common/transformations/transformations.pxd
 common/transformations/transformations.pyx
 
 common/api/__init__.py
-
-models/supercombo.dlc
-models/dmonitoring_model_q.dlc
 
 release/*
 
@@ -306,7 +302,6 @@ selfdrive/camerad/cameras/camera_common.h
 selfdrive/camerad/cameras/camera_common.cc
 selfdrive/camerad/cameras/camera_replay.cc
 selfdrive/camerad/cameras/camera_replay.h
-selfdrive/camerad/cameras/sensor_i2c.h
 selfdrive/camerad/cameras/sensor2_i2c.h
 
 selfdrive/camerad/transforms/rgb_to_yuv.cc
@@ -341,6 +336,8 @@ selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
 selfdrive/modeld/models/dmonitoring.cc
 selfdrive/modeld/models/dmonitoring.h
+selfdrive/modeld/models/supercombo.dlc
+selfdrive/modeld/models/dmonitoring_model_q.dlc
 
 selfdrive/modeld/transforms/loadyuv.cc
 selfdrive/modeld/transforms/loadyuv.h
