@@ -79,30 +79,6 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def get_battery_capacity(self):
-    pass
-
-  @abstractmethod
-  def get_battery_status(self):
-    pass
-
-  @abstractmethod
-  def get_battery_current(self):
-    pass
-
-  @abstractmethod
-  def get_battery_voltage(self):
-    pass
-
-  @abstractmethod
-  def get_battery_charging(self):
-    pass
-
-  @abstractmethod
-  def set_battery_charging(self, on):
-    pass
-
-  @abstractmethod
   def get_usb_present(self):
     pass
 

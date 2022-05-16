@@ -70,11 +70,7 @@ class Camerad:
     self.frame_wide_id = 0
     self.vipc_server = VisionIpcServer("camerad")
 
-    # TODO: remove RGB buffers once the last RGB vipc subscriber is removed
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, W, H)
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, False, W, H)
-
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_WIDE_ROAD, 4, True, W, H)
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, False, W, H)
     self.vipc_server.start_listener()
 
@@ -92,16 +88,14 @@ class Camerad:
     self.Hdiv4 = H // 4 if (H % 4 == 0) else (H + (4 - H % 4)) // 4
 
   def cam_callback_road(self, image):
-    self._cam_callback(image, self.frame_road_id, 'roadCameraState',
-                       VisionStreamType.VISION_STREAM_RGB_ROAD, VisionStreamType.VISION_STREAM_ROAD)
+    self._cam_callback(image, self.frame_road_id, 'roadCameraState', VisionStreamType.VISION_STREAM_ROAD)
     self.frame_road_id += 1
 
   def cam_callback_wide_road(self, image):
-    self._cam_callback(image, self.frame_wide_id, 'wideRoadCameraState',
-                       VisionStreamType.VISION_STREAM_RGB_WIDE_ROAD, VisionStreamType.VISION_STREAM_WIDE_ROAD)
+    self._cam_callback(image, self.frame_wide_id, 'wideRoadCameraState', VisionStreamType.VISION_STREAM_WIDE_ROAD)
     self.frame_wide_id += 1
 
-  def _cam_callback(self, image, frame_id, pub_type, rgb_type, yuv_type):
+  def _cam_callback(self, image, frame_id, pub_type, yuv_type):
     img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
     img = np.reshape(img, (H, W, 4))
     img = img[:, :, [0, 1, 2]].copy()
@@ -114,8 +108,6 @@ class Camerad:
     yuv = np.resize(yuv_cl.get(), rgb.size // 2)
     eof = int(frame_id * 0.05 * 1e9)
 
-    # TODO: remove RGB send once the last RGB vipc subscriber is removed
-    self.vipc_server.send(rgb_type, img.tobytes(), frame_id, eof, eof)
     self.vipc_server.send(yuv_type, yuv.data.tobytes(), frame_id, eof, eof)
 
     dat = messaging.new_message(pub_type)
