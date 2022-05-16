@@ -19,9 +19,10 @@ jobs:
         running-workflow-name: 'build master-ci'
     - uses: actions/checkout@v3
       with:
-        lfs: true
         submodules: true
         fetch-depth: 0
+    - name: Pull LFS
+      run: git lfs pull
     - name: Build master-ci
       run: |
         BRANCH=master-ci release/build_devel.sh

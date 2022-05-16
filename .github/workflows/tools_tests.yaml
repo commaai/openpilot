@@ -44,8 +44,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        lfs: true
         submodules: true
+    - name: Pull LFS
+      run: git lfs pull
     - name: Build base image
       run: eval "$BUILD"
     - name: Pull latest simulator image
