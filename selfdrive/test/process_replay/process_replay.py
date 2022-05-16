@@ -344,7 +344,8 @@ def setup_prefix():
 def teardown_prefix():
   params_path = '/data/params/' if os.environ.get('TICI', 0) else os.environ['HOME'] + '/.comma/params/'
   symlink_path = params_path + os.environ['OPENPILOT_PREFIX']
-  os.remove(symlink_path)
+  if os.path.exists(symlink_path):
+    os.remove(symlink_path)
   msg_path = '/dev/shm/' + os.environ['OPENPILOT_PREFIX']
   shutil.rmtree(msg_path, ignore_errors=True)
 
