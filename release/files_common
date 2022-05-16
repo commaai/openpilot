@@ -56,9 +56,6 @@ common/transformations/transformations.pyx
 
 common/api/__init__.py
 
-models/supercombo.dlc
-models/dmonitoring_model_q.dlc
-
 release/*
 
 tools/lib/*
@@ -340,6 +337,8 @@ selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
 selfdrive/modeld/models/dmonitoring.cc
 selfdrive/modeld/models/dmonitoring.h
+selfdrive/modeld/models/supercombo.dlc
+selfdrive/modeld/models/dmonitoring_model_q.dlc
 
 selfdrive/modeld/transforms/loadyuv.cc
 selfdrive/modeld/transforms/loadyuv.h
