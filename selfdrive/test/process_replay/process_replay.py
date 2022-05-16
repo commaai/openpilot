@@ -4,6 +4,7 @@ import os
 import sys
 import threading
 import time
+import shutil
 import signal
 import uuid
 from collections import namedtuple
@@ -345,7 +346,7 @@ def teardown_prefix():
   symlink_path = params_path + os.environ['OPENPILOT_PREFIX']
   os.remove(symlink_path)
   msg_path = '/dev/shm/' + os.environ['OPENPILOT_PREFIX']
-  os.remove(msg_path)
+  shutil.rmtree(msg_path, ignore_errors=True)
 
 
 def replay_process(cfg, lr, fingerprint=None):
