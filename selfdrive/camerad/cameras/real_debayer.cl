@@ -38,13 +38,13 @@ float get_vignetting_s(float r) {
   }
 }
 
-float4 precolor_correct_12(uchar8 pvs, float scale) {
+float4 precolor_correct_12(uchar8 pvs, float scale, float bias) {
   uint4 parsed = (uint4)(((uint)pvs.s0<<4) + (pvs.s1>>4),  // is from the previous 10 bit
                          ((uint)pvs.s2<<4) + (pvs.s4&0xF),
                          ((uint)pvs.s3<<4) + (pvs.s4>>4),
                          ((uint)pvs.s5<<4) + (pvs.s7&0xF));
   // normalize and scale
-  float4 pv = (convert_float4(parsed) - 168.0) / (4096.0 - 168.0);
+  float4 pv = (convert_float4(parsed) - bias) / (4096.0 - bias);
   return clamp(pv*scale, 0.0, 1.0);
 }
 
@@ -52,7 +52,7 @@ float get_k(float a, float b, float c, float d) {
   return 2.0 - (fabs(a - b) + fabs(c - d));
 }
 
-__kernel void debayer10(const __global uchar * in, __global uchar * out)
+__kernel void debayer10(const __global uchar * in, __global uchar * out, float black_level)
 {
   const int gid_x = get_global_id(0);
   const int gid_y = get_global_id(1);
@@ -81,10 +81,11 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   #endif
 
   float4 va, vb, vc, vd;
-  va = precolor_correct_12(vac, scale);
-  vb = precolor_correct_12(vbc, scale);
-  vc = precolor_correct_12(vcc, scale);
-  vd = precolor_correct_12(vdc, scale);
+  const float bias = black_level * 4.;
+  va = precolor_correct_12(vac, scale, bias);
+  vb = precolor_correct_12(vbc, scale, bias);
+  vc = precolor_correct_12(vcc, scale, bias);
+  vd = precolor_correct_12(vdc, scale, bias);
 
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   const float k01 = get_k(va.s0, vb.s1, va.s2, vb.s1);
