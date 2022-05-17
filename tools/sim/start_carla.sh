@@ -15,7 +15,7 @@ if ! $(apt list --installed | grep -q nvidia-container-toolkit); then
   fi
 fi
 
-docker pull carlasim/carla:0.9.12
+docker pull carlasim/carla:0.9.13
 
 docker run \
   --name carla_sim \
@@ -24,5 +24,5 @@ docker run \
   --net=host \
   -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
   -it \
-  carlasim/carla:0.9.12 \
+  carlasim/carla:0.9.13 \
   /bin/bash ./CarlaUE4.sh -opengl -nosound -RenderOffScreen -benchmark -fps=20 -quality-level=Low
