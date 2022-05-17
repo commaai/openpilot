@@ -48,6 +48,7 @@ const bool env_disable_wide_road = getenv("DISABLE_WIDE_ROAD") != NULL;
 const bool env_disable_driver = getenv("DISABLE_DRIVER") != NULL;
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
+const bool env_enable_stats = getenv("ENABLE_STATS") != NULL;
 
 typedef void (*release_cb)(void *cookie, int buf_idx);
 

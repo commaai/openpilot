@@ -31,8 +31,8 @@ const size_t FRAME_WIDTH = 1928;
 const size_t FRAME_HEIGHT = 1208;
 const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
 
-// const size_t AR0231_REGISTERS_HEIGHT = 2;
-// const size_t AR0231_STATS_HEIGHT = 2;
+const size_t AR0231_REGISTERS_HEIGHT = 2;
+const size_t AR0231_STATS_HEIGHT = 2;
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
@@ -41,6 +41,11 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
+    .extra_height = env_enable_stats ? (uint32_t)(AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT) : 0,
+
+    .registers_offset = env_enable_stats ? 0 : -1,
+    .frame_offset = env_enable_stats ? (uint32_t)AR0231_REGISTERS_HEIGHT : 0,
+    .stats_offset = env_enable_stats ? (int)(AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT) : -1,
 
     .bayer = true,
     .bayer_flip = 1,
