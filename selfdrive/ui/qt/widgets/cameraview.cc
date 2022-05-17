@@ -222,12 +222,13 @@ void CameraViewWidget::paintGL() {
 
   VisionBuf *latest_frame;
   std::deque<int>::iterator it = std::find(frame_ids.begin(), frame_ids.end(), draw_frame_id);
-  if (it != frame_ids.end() && frame_ids[frame_ids.size() - 1] < FRAME_BUFFER_LEN) {
-    latest_frame = frames[it - frame_ids.begin()];
-    qDebug() << "Drawing frame:" << frame_ids[it - frame_ids.begin()];
-  } else {
+  if (it == frame_ids.end() || frame_ids[frame_ids.size() - 1] < FRAME_BUFFER_LEN) {
     latest_frame = frames[frames.size() - 1];
-    qDebug() << "Drawing frame:" << frame_ids[frames.size() - 1];
+    qDebug() << "Drawing latest frame:" << frame_ids[frames.size() - 1];
+  } else {
+    int frame_id = it - frame_ids.begin();
+    latest_frame = frames[frame_id];
+    qDebug() << "Drawing frame:" << frame_ids[frame_id];
   }
   qDebug() << "CameraViewWidget::paintGL: frame to draw:" << draw_frame_id;
 
