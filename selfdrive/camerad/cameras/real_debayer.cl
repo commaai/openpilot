@@ -10,9 +10,9 @@
 
 float3 color_correct(float3 rgb) {
   // color correction
-  float3 x = rgb.x * (1.82717181, -0.31231438, 0.07307673);
-  x += rgb.y * (-0.5743977, 1.36858544, -0.53183455);
-  x += rgb.z * (-0.25277411, -0.05627105, 1.45875782);
+  float3 x = rgb.x * (float3)(1.82717181, -0.31231438, 0.07307673);
+  x += rgb.y * (float3)(-0.5743977, 1.36858544, -0.53183455);
+  x += rgb.z * (float3)(-0.25277411, -0.05627105, 1.45875782);
 
   // tone mapping params
   const float gamma_k = 0.75;
