@@ -38,14 +38,14 @@ float get_vignetting_s(float r) {
   }
 }
 
-float4 precolor_correct_12(uchar8 pvs, float scale) {
+float4 val4_from_12(uchar8 pvs, float gain) {
   uint4 parsed = (uint4)(((uint)pvs.s0<<4) + (pvs.s1>>4),  // is from the previous 10 bit
                          ((uint)pvs.s2<<4) + (pvs.s4&0xF),
                          ((uint)pvs.s3<<4) + (pvs.s4>>4),
                          ((uint)pvs.s5<<4) + (pvs.s7&0xF));
   // normalize and scale
   float4 pv = (convert_float4(parsed) - 168.0) / (4096.0 - 168.0);
-  return clamp(pv*scale, 0.0, 1.0);
+  return clamp(pv*gain, 0.0, 1.0);
 }
 
 float get_k(float a, float b, float c, float d) {
@@ -66,25 +66,27 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   // TODO: this is wrong at the edges
   start = max(0, start-FRAME_STRIDE-2);
 
-  uchar8 vac = vload8(0, in + start + FRAME_STRIDE*0);
-  uchar8 vbc = vload8(0, in + start + FRAME_STRIDE*1);
-  uchar8 vcc = vload8(0, in + start + FRAME_STRIDE*2);
-  uchar8 vdc = vload8(0, in + start + FRAME_STRIDE*3);
+  // read in 8x4 chars
+  uchar8 dat[4];
+  dat[0] = vload8(0, in + start + FRAME_STRIDE*0);
+  dat[1] = vload8(0, in + start + FRAME_STRIDE*1);
+  dat[2] = vload8(0, in + start + FRAME_STRIDE*2);
+  dat[3] = vload8(0, in + start + FRAME_STRIDE*3);
 
   // correct vignetting
   #if VIGNETTING
     int gx = (gid_x*2 - RGB_WIDTH/2);
     int gy = (gid_y*2 - RGB_HEIGHT/2);
-    const float scale = get_vignetting_s(gx*gx + gy*gy);
+    const float gain = get_vignetting_s(gx*gx + gy*gy);
   #else
-    const float scale = 1.0;
+    const float gain = 1.0;
   #endif
 
-  float4 va, vb, vc, vd;
-  va = precolor_correct_12(vac, scale);
-  vb = precolor_correct_12(vbc, scale);
-  vc = precolor_correct_12(vcc, scale);
-  vd = precolor_correct_12(vdc, scale);
+  // process them to floats
+  float4 va = val4_from_12(dat[0], gain);
+  float4 vb = val4_from_12(dat[1], gain);
+  float4 vc = val4_from_12(dat[2], gain);
+  float4 vd = val4_from_12(dat[3], gain);
 
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   const float k01 = get_k(va.s0, vb.s1, va.s2, vb.s1);
