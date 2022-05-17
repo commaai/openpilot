@@ -38,27 +38,14 @@ float get_vignetting_s(float r) {
   }
 }
 
-ushort val_from_12(const uchar * source, int gx, int gy) {
-  // parse 12bit
-  int start = gy * FRAME_STRIDE + (3 * (gx / 2)) + (FRAME_STRIDE * FRAME_OFFSET);
-  int offset = gx % 2;
-  uint major = (uint)source[start + offset] << 4;
-  uint minor = (source[start + 2] >> (4 * offset)) & 0xf;
-  return (major + minor);
-}
-
-float4 precolor_correct(ushort4 pvs, int gx, int gy) {
-  // normalize
-  float4 pv = max(0.0, convert_float4(pvs) - 168.0) / (4096.0 - 168.0);
-
-  // correct vignetting
-  #if VIGNETTING
-    gx = (gx - RGB_WIDTH/2);
-    gy = (gy - RGB_HEIGHT/2);
-    pv *= get_vignetting_s(gx*gx + gy*gy);
-  #endif
-
-  return clamp(pv, 0.0, 1.0);
+float4 precolor_correct_12(uchar8 pvs, float scale) {
+  uint4 parsed = (uint4)(((uint)pvs.s0<<4) + (pvs.s1>>4),  // is from the previous 10 bit
+                         ((uint)pvs.s2<<4) + (pvs.s4&0xF),
+                         ((uint)pvs.s3<<4) + (pvs.s4>>4),
+                         ((uint)pvs.s5<<4) + (pvs.s7&0xF));
+  // normalize and scale
+  float4 pv = (convert_float4(parsed) - 168.0) / (4096.0 - 168.0);
+  return clamp(pv*scale, 0.0, 1.0);
 }
 
 float get_k(float a, float b, float c, float d) {
@@ -73,41 +60,31 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   float3 rgb;
   uchar3 rgb_out[4];
 
-  // load 4x4 conv data
-  ushort4 vas, vbs, vcs, vds;
+  int start = 2 * gid_y * FRAME_STRIDE + (3 * gid_x) + (FRAME_STRIDE * FRAME_OFFSET);
 
-  const int gid_x2 = gid_x*2;
-  const int gid_x2m1 = gid_x == 0 ? gid_x2+1 : gid_x2-1;
-  const int gid_x2p2 = gid_x == (RGB_WIDTH-2) ? gid_x2+0 : gid_x2+2;
-  const int gid_y2 = gid_y*2;
-  const int gid_y2m1 = gid_y == 0 ? gid_y2+1 : gid_y2-1;
-  const int gid_y2p2 = gid_y == (RGB_HEIGHT-2) ? gid_y2+0 : gid_y2+2;
+  // deal with x/y offset
+  // TODO: this is wrong at the edges
+  start = max(0, start-FRAME_STRIDE-2);
 
-  vas.s0 = val_from_12(in, gid_x2m1, gid_y2m1);
-  vas.s1 = val_from_12(in, gid_x2+0, gid_y2m1);
-  vas.s2 = val_from_12(in, gid_x2+1, gid_y2m1);
-  vas.s3 = val_from_12(in, gid_x2p2, gid_y2m1);
+  uchar8 vac = vload8(0, in + start + FRAME_STRIDE*0);
+  uchar8 vbc = vload8(0, in + start + FRAME_STRIDE*1);
+  uchar8 vcc = vload8(0, in + start + FRAME_STRIDE*2);
+  uchar8 vdc = vload8(0, in + start + FRAME_STRIDE*3);
 
-  vbs.s0 = val_from_12(in, gid_x2m1, gid_y*2+0);
-  vbs.s1 = val_from_12(in, gid_x2+0, gid_y*2+0); // G(R)
-  vbs.s2 = val_from_12(in, gid_x2+1, gid_y*2+0); // R
-  vbs.s3 = val_from_12(in, gid_x2p2, gid_y*2+0);
-
-  vcs.s0 = val_from_12(in, gid_x2m1, gid_y*2+1);
-  vcs.s1 = val_from_12(in, gid_x2+0, gid_y*2+1); // B
-  vcs.s2 = val_from_12(in, gid_x2+1, gid_y*2+1); // G(B)
-  vcs.s3 = val_from_12(in, gid_x2p2, gid_y*2+1);
-
-  vds.s0 = val_from_12(in, gid_x2m1, gid_y2p2);
-  vds.s1 = val_from_12(in, gid_x2+0, gid_y2p2);
-  vds.s2 = val_from_12(in, gid_x2+1, gid_y2p2);
-  vds.s3 = val_from_12(in, gid_x2p2, gid_y2p2);
+  // correct vignetting
+  #if VIGNETTING
+    int gx = (gid_x*2 - RGB_WIDTH/2);
+    int gy = (gid_y*2 - RGB_HEIGHT/2);
+    const float scale = get_vignetting_s(gx*gx + gy*gy);
+  #else
+    const float scale = 1.0;
+  #endif
 
   float4 va, vb, vc, vd;
-  va = precolor_correct(vas, gid_x2, gid_y2);
-  vb = precolor_correct(vbs, gid_x2, gid_y2);
-  vc = precolor_correct(vcs, gid_x2, gid_y2);
-  vd = precolor_correct(vds, gid_x2, gid_y2);
+  va = precolor_correct_12(vac, scale);
+  vb = precolor_correct_12(vbc, scale);
+  vc = precolor_correct_12(vcc, scale);
+  vd = precolor_correct_12(vdc, scale);
 
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   const float k01 = get_k(va.s0, vb.s1, va.s2, vb.s1);
