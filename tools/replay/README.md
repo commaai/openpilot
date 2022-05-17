@@ -61,7 +61,7 @@ cd selfdrive/ui && ./watch3
 
 ## Stream CAN messages to your device
 
-Replay CAN messages as they were recorded using a [panda jungle](https://comma.ai/shop/products/panda-jungle). The jungle has 6x OBD-C ports for connecting all your comma devices.
+Replay CAN messages as they were recorded using a [panda jungle](https://comma.ai/shop/products/panda-jungle). The jungle has 6x OBD-C ports for connecting all your comma devices. Check out the [jungle repo](https://github.com/commaai/panda_jungle) for more info.
 
 `can_replay.py` is a convenient script for when any CAN data will do.
 
