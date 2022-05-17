@@ -308,8 +308,9 @@ void Localizer::handle_gnss_measurements(double time, const cereal::GnssMeasurem
 void Localizer::check_initial_position(double current_time, const cereal::GnssMeasurements::Reader& log) {
   Geodetic geodetic_pos = ecef2geodetic({log.getPositionECEF()[0],log.getPositionECEF()[1],log.getPositionECEF()[2]});
   bool gps_lat_lng_alt_insane = ((std::abs(geodetic_pos.lat) > 90) || (std::abs(geodetic_pos.lon) > 180) || (std::abs(geodetic_pos.alt) > ALTITUDE_SANITY_CHECK));
+  bool gps_accuracy_insane = log.getBearingAccuracyDeg() <= 0;
 
-  if (gps_lat_lng_alt_insane) {
+  if (gps_lat_lng_alt_insane || gps_accuracy_insane) {
     this->determine_gps_mode(current_time);
     return;
   }
@@ -330,13 +331,31 @@ void Localizer::check_initial_position(double current_time, const cereal::GnssMe
   this->unix_timestamp_millis = current_time;
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
 
-  if (gps_est_error > 100.0) {
+  VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
+  VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
+  VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, DEG2RAD(log.getBearingDeg()));
+  VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
+
+  for (int i = 0; i < orientation_error.size(); i++) {
+    orientation_error(i) = std::fmod(orientation_error(i), 2.0 * M_PI);
+    if (orientation_error(i) < 0.0) {
+      orientation_error(i) += 2.0 * M_PI;
+    }
+    orientation_error(i) -= M_PI;
+  }
+  VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
+
+  if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
+    LOGE("Locationd vs gnss msg orientation difference too large, kalman reset");
+    this->reset_kalman(NAN, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R, &initial_pose_ecef_quat);
+    this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
+  } else if (gps_est_error > 100.0) {
     // work in progress
     LOGE("Locationd vs gnss msg position difference too large, kalman reset");
     LOGE("ecef_pos gnss: %f, %f, %f", ecef_pos[0], ecef_pos[1], ecef_pos[2]);
     LOGE("ecef_vel gnss: %f, %f, %f", ecef_vel_not_conv[0], ecef_vel_not_conv[1], ecef_vel_not_conv[2]);
     LOGE("ecef_vel_converted gnss: %f, %f, %f", ecef_vel[0], ecef_vel[1], ecef_vel[2]);
-    this->reset_kalman(NAN, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
+    this->reset_kalman(NAN, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R, &initial_pose_ecef_quat);
   }
 }
 
@@ -353,7 +372,6 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     this->determine_gps_mode(current_time);
     return;
   }
-
   // Process message
   this->last_gps_fix = current_time;
   this->gps_mode = true;
@@ -529,8 +547,8 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   this->time_check(t);
   if (log.isSensorEvents()) {
     this->handle_sensors(t, log.getSensorEvents());
-  } else if (log.isGpsLocationExternal()) {
-    this->handle_gps(t, log.getGpsLocationExternal());
+ } else if (log.isGpsLocationExternal()) {
+   this->handle_gps(t, log.getGpsLocationExternal());
   } else if (log.isCarState()) {
     this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
