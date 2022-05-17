@@ -16,7 +16,6 @@ import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
-from common.basedir import PARAMS
 from common.timeout import Timeout
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.car_helpers import get_car, interfaces
@@ -341,7 +340,7 @@ CONFIGS = [
 
 def setup_prefix():
   os.environ['OPENPILOT_PREFIX'] = str(uuid.uuid4())
-  msg_path = '/dev/shm/' + os.environ['OPENPILOT_PREFIX']
+  msg_path = os.path.join('/dev/shm', os.environ['OPENPILOT_PREFIX'])
   try:
     os.mkdir(msg_path)
   except FileExistsError:
@@ -351,7 +350,7 @@ def setup_prefix():
 def teardown_prefix():
   if not os.environ.get("OPENPILOT_PREFIX", 0):
     return
-  symlink_path = os.path.join(PARAMS, os.environ['OPENPILOT_PREFIX'])
+  symlink_path = os.path.join(Params.get_param_path(), os.environ['OPENPILOT_PREFIX'])
   if os.path.exists(symlink_path):
     shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
     os.remove(symlink_path)
