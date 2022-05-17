@@ -60,7 +60,7 @@ inline half val_from_10(const uchar * source, int gx, int gy, half black_level) 
   int offset = gx % 2;
   uint major = (uint)source[start + offset] << 4;
   uint minor = (source[start + 2] >> (4 * offset)) & 0xf;
-  half pv = (half)((major + minor)/4);
+  half pv = ((half)(major + minor)) / 4.0;
 
   // normalize
   pv = max((half)0.0, pv - black_level);
