@@ -54,7 +54,7 @@ inline half get_vignetting_s(float r) {
   }
 }
 
-inline half val_from_10(const uchar * source, int gx, int gy, half black_level) {
+inline half val_from_12(const uchar * source, int gx, int gy, half black_level) {
   // parse 12bit
   int start = gy * FRAME_STRIDE + (3 * (gx / 2)) + (FRAME_STRIDE * FRAME_OFFSET);
   int offset = gx % 2;
@@ -67,11 +67,11 @@ inline half val_from_10(const uchar * source, int gx, int gy, half black_level) 
   pv /= (1024.0 - black_level);
 
   // correct vignetting
-  if (CAM_NUM == 1) { // fcamera
+  #if CAM_NUM == 1
     gx = (gx - RGB_WIDTH/2);
     gy = (gy - RGB_HEIGHT/2);
     pv *= get_vignetting_s(gx*gx + gy*gy);
-  }
+  #endif
 
   pv = clamp(pv, (half)0.0, (half)1.0);
   return pv;
@@ -83,7 +83,6 @@ inline half get_k(half a, half b, half c, half d) {
 
 __kernel void debayer10(const __global uchar * in,
                         __global uchar * out,
-                        __local half * cached,
                         float black_level
                        )
 {
@@ -95,25 +94,25 @@ __kernel void debayer10(const __global uchar * in,
 
   half4 va, vb, vc, vd;
 
-  va.s0 = val_from_10(in, gid_x*2-1, gid_y*2-1, black_level);
-  va.s1 = val_from_10(in, gid_x*2+0, gid_y*2-1, black_level);
-  va.s2 = val_from_10(in, gid_x*2+1, gid_y*2-1, black_level);
-  va.s3 = val_from_10(in, gid_x*2+2, gid_y*2-1, black_level);
+  va.s0 = val_from_12(in, gid_x*2-1, gid_y*2-1, black_level);
+  va.s1 = val_from_12(in, gid_x*2+0, gid_y*2-1, black_level);
+  va.s2 = val_from_12(in, gid_x*2+1, gid_y*2-1, black_level);
+  va.s3 = val_from_12(in, gid_x*2+2, gid_y*2-1, black_level);
 
-  vb.s0 = val_from_10(in, gid_x*2-1, gid_y*2+0, black_level);
-  vb.s1 = val_from_10(in, gid_x*2+0, gid_y*2+0, black_level); // G(R)
-  vb.s2 = val_from_10(in, gid_x*2+1, gid_y*2+0, black_level); // R
-  vb.s3 = val_from_10(in, gid_x*2+2, gid_y*2+0, black_level);
+  vb.s0 = val_from_12(in, gid_x*2-1, gid_y*2+0, black_level);
+  vb.s1 = val_from_12(in, gid_x*2+0, gid_y*2+0, black_level); // G(R)
+  vb.s2 = val_from_12(in, gid_x*2+1, gid_y*2+0, black_level); // R
+  vb.s3 = val_from_12(in, gid_x*2+2, gid_y*2+0, black_level);
 
-  vc.s0 = val_from_10(in, gid_x*2-1, gid_y*2+1, black_level);
-  vc.s1 = val_from_10(in, gid_x*2+0, gid_y*2+1, black_level); // B
-  vc.s2 = val_from_10(in, gid_x*2+1, gid_y*2+1, black_level); // G(B)
-  vc.s3 = val_from_10(in, gid_x*2+2, gid_y*2+1, black_level);
+  vc.s0 = val_from_12(in, gid_x*2-1, gid_y*2+1, black_level);
+  vc.s1 = val_from_12(in, gid_x*2+0, gid_y*2+1, black_level); // B
+  vc.s2 = val_from_12(in, gid_x*2+1, gid_y*2+1, black_level); // G(B)
+  vc.s3 = val_from_12(in, gid_x*2+2, gid_y*2+1, black_level);
 
-  vd.s0 = val_from_10(in, gid_x*2-1, gid_y*2+2, black_level);
-  vd.s1 = val_from_10(in, gid_x*2+0, gid_y*2+2, black_level);
-  vd.s2 = val_from_10(in, gid_x*2+1, gid_y*2+2, black_level);
-  vd.s3 = val_from_10(in, gid_x*2+2, gid_y*2+2, black_level);
+  vd.s0 = val_from_12(in, gid_x*2-1, gid_y*2+2, black_level);
+  vd.s1 = val_from_12(in, gid_x*2+0, gid_y*2+2, black_level);
+  vd.s2 = val_from_12(in, gid_x*2+1, gid_y*2+2, black_level);
+  vd.s3 = val_from_12(in, gid_x*2+2, gid_y*2+2, black_level);
 
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   const half k01 = get_k(va.s0, vb.s1, va.s2, vb.s1);
