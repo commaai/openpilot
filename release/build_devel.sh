@@ -55,19 +55,19 @@ fi
 cd $TARGET_DIR
 rm -f panda/board/obj/panda.bin.signed
 
-# append source commit hash and build date to version
-GIT_HASH=$(git --git-dir=$SOURCE_DIR/.git rev-parse --short HEAD)
+# include source commit hash and build date in commit
+GIT_HASH=$(git --git-dir=$SOURCE_DIR/.git rev-parse HEAD)
 DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
 VERSION=$(cat $SOURCE_DIR/selfdrive/common/version.h | awk -F\" '{print $2}')
-#echo "#define COMMA_VERSION \"$VERSION-$GIT_HASH-$DATETIME\"" > $TARGET_DIR/selfdrive/common/version.h
 
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
 git status
 git commit -a -m "openpilot v$VERSION release
 
+date: $DATETIME
 master commit: $GIT_HASH
-date: $DATETIME"
+"
 
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"
