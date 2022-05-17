@@ -20,6 +20,7 @@ cdef extern from "selfdrive/common/params.h":
     int put(string, string) nogil
     int putBool(string, bool) nogil
     bool checkKey(string) nogil
+    string getParamPath(string) nogil
     void clearAll(ParamKeyType)
 
 
@@ -93,6 +94,10 @@ cdef class Params:
     cdef string k = self.check_key(key)
     with nogil:
       self.p.remove(k)
+
+  def get_param_path(self, key=""):
+    cdef string key_bytes = ensure_bytes(key)
+    return self.p.getParamPath(key_bytes).decode("utf-8")
 
 def put_nonblocking(key, val, d=""):
   def f(key, val):
