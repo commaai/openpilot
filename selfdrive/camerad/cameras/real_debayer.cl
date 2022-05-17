@@ -54,7 +54,10 @@ inline half val_from_12(const uchar * source, int gx, int gy) {
   uint major = (uint)source[start + offset] << 4;
   uint minor = (source[start + 2] >> (4 * offset)) & 0xf;
   half pv = ((half)(major + minor));
+  return pv;
+}
 
+inline half4 correct(half4 pv, int gx, int gy) {
   // normalize
   pv = max((half)0.0, pv - 168) / (4096.0 - 168);
 
@@ -110,6 +113,11 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   vd.s1 = val_from_12(in, gid_x2+0, gid_y2p2);
   vd.s2 = val_from_12(in, gid_x2+1, gid_y2p2);
   vd.s3 = val_from_12(in, gid_x2p2, gid_y2p2);
+
+  va = correct(va, gid_x2, gid_y2);
+  vb = correct(vb, gid_x2, gid_y2);
+  vc = correct(vc, gid_x2, gid_y2);
+  vd = correct(vd, gid_x2, gid_y2);
 
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   const half k01 = get_k(va.s0, vb.s1, va.s2, vb.s1);
