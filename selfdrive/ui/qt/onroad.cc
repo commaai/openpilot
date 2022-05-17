@@ -374,7 +374,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
 void NvgWindow::paintGL() {
   UIState *s = uiState();
   CameraViewWidget::draw_frame_id = (*s->sm)["modelV2"].getModelV2().getFrameId();
-  qDebug() << "NvgWindow::paintGL: frame to draw:" << frame_to_draw;
+  qDebug() << "NvgWindow::paintGL: frame to draw:" << draw_frame_id;
   CameraViewWidget::paintGL();
 
   QPainter painter(this);

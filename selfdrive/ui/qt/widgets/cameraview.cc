@@ -164,7 +164,7 @@ void CameraViewWidget::initializeGL() {
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
   frames.clear();
-  frame_ids.clear()
+  frame_ids.clear();
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
@@ -277,8 +277,6 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 }
 
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, int frame_id) {
-  frames.clear();
-  frame_ids.clear();
   frames.push_back(buf);
   frame_ids.push_back(frame_id);
   while (frames.size() > 5) {
