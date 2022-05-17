@@ -103,6 +103,7 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
                                    stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
+  qRegisterMetaType<uint8_t>("uint32_t");
   connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected, Qt::BlockingQueuedConnection);
   connect(this, &CameraViewWidget::vipcThreadFrameReceived, this, &CameraViewWidget::vipcFrameReceived);
 }
@@ -221,12 +222,11 @@ void CameraViewWidget::paintGL() {
   if (frames.size() == 0) return;
 
   VisionBuf *latest_frame;
-  std::deque<int>::iterator it = std::find(frame_ids.begin(), frame_ids.end(), draw_frame_id);
+  std::deque<uint32_t>::iterator it = std::find(frame_ids.begin(), frame_ids.end(), draw_frame_id);
   if (it == frame_ids.end()) {
     latest_frame = frames[frames.size() - 1];
   } else {
-    int frame_id = it - frame_ids.begin();
-    latest_frame = frames[frame_id];
+    latest_frame = frames[it - frame_ids.begin()];
   }
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -277,7 +277,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   updateFrameMat(width(), height());
 }
 
-void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, int frame_id) {
+void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
   frames.push_back(buf);
   frame_ids.push_back(frame_id);
   while (frames.size() > FRAME_BUFFER_LEN) {
