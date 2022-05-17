@@ -1,5 +1,5 @@
 import numpy as np
-from common.realtime import sec_since_boot, DT_MDL
+from common.realtime import sec_since_boot
 from common.numpy_fast import interp
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc, X_DIM
@@ -75,6 +75,7 @@ class LateralPlanner:
 
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
+    self.x0[3] = measured_curvature
     # self.x0[4] = v_ego
     r = self.r if v_ego < 10 else 0.0
     p = np.array([v_ego, r])
@@ -82,15 +83,12 @@ class LateralPlanner:
                      p,
                      y_pts,
                      heading_pts)
-    # init state for next
-    self.x0[3] = interp(DT_MDL, self.t_idxs[:LAT_MPC_N + 1], self.lat_mpc.x_sol[:, 3])
 
     #  Check for infeasible MPC solution
     mpc_nans = np.isnan(self.lat_mpc.x_sol[:, 3]).any()
     t = sec_since_boot()
     if mpc_nans or self.lat_mpc.solution_status != 0:
       self.reset_mpc()
-      self.x0[3] = measured_curvature
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Lateral mpc - nan: True")
