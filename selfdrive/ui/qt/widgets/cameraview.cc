@@ -222,11 +222,8 @@ void CameraViewWidget::paintGL() {
 
   VisionBuf *latest_frame;
   std::deque<quint32>::iterator it = std::find(frame_ids.begin(), frame_ids.end(), draw_frame_id);
-  if (it == frame_ids.end()) {
-    latest_frame = frames[frames.size() - 1];
-  } else {
-    latest_frame = frames[it - frame_ids.begin()];
-  }
+  int frame_idx = (it == frame_ids.end()) ? (frames.size() - 1) : (it - frame_ids.begin());
+  latest_frame = frames[frame_idx];
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
