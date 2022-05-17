@@ -282,6 +282,12 @@ def comm_issue_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaste
   return NoEntryAlert(msg, alert_text_1="Communication Issue Between Processes")
 
 
+def camera_malfunction_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  all_cams = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
+  bad_cams = [s for s in all_cams if s in sm.data.keys() and not sm.all_checks([s, ])]
+  return NormalPermanentAlert("Camera Malfunction", ', '.join(bad_cams))
+
+
 def calibration_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   rpy = sm['liveCalibration'].rpyCalib
   yaw = math.degrees(rpy[2] if len(rpy) == 3 else math.nan)
@@ -551,7 +557,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   # Camera is not outputting frames
   EventName.cameraMalfunction: {
-    ET.PERMANENT: NormalPermanentAlert("Camera Malfunction", "Likely Hardware Issue"),
+    ET.PERMANENT: camera_malfunction_alert,
   },
   # Camera framerate too low
   EventName.cameraFrameRate: {
@@ -882,9 +888,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # are received on the car side this usually means the relay hasn't opened correctly
   # and this alert is thrown.
   EventName.relayMalfunction: {
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Harness Malfunction"),
-    ET.PERMANENT: NormalPermanentAlert("Harness Malfunction", "Check Hardware"),
-    ET.NO_ENTRY: NoEntryAlert("Harness Malfunction"),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Harness Relay Malfunction"),
+    ET.PERMANENT: NormalPermanentAlert("Harness Relay Malfunction", "Check Hardware"),
+    ET.NO_ENTRY: NoEntryAlert("Harness Relay Malfunction"),
   },
 
   EventName.noTarget: {
