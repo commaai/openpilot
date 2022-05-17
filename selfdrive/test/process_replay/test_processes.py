@@ -2,6 +2,7 @@
 import argparse
 import multiprocessing.pool
 import os
+import pytest
 import sys
 from typing import Any, Dict
 
@@ -69,7 +70,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 def run_test_process(data):
-  segment, cfg, args, cur_log_fn, lr = data
+  segment, cfg, args, cur_log_fn, lr, ref_commit = data
   ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
   res, log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
   # save logs so we can upload when updating refs
@@ -104,7 +105,8 @@ def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
     return str(e), log_msgs
 
 
-def format_diff(results, ref_commit):
+def test_format_diff(args):
+  results, ref_commit = args
   diff1, diff2 = "", ""
   diff2 += f"***** tested against commit {ref_commit} *****\n"
 
@@ -134,28 +136,10 @@ def format_diff(results, ref_commit):
   return diff1, diff2, failed
 
 
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
-
-  # whitelist has precedence over blacklist in case both are defined
-  parser.add_argument("--whitelist-procs", type=str, nargs="*", default=[],
-                      help="Whitelist given processes from the test (e.g. controlsd)")
-  parser.add_argument("--whitelist-cars", type=str, nargs="*", default=[],
-                      help="Whitelist given cars from the test (e.g. HONDA)")
-  parser.add_argument("--blacklist-procs", type=str, nargs="*", default=[],
-                      help="Blacklist given processes from the test (e.g. controlsd)")
-  parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[],
-                      help="Blacklist given cars from the test (e.g. HONDA)")
-  parser.add_argument("--ignore-fields", type=str, nargs="*", default=[],
-                      help="Extra fields or msgs to ignore (e.g. carState.events)")
-  parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
-                      help="Msgs to ignore (e.g. carEvents)")
-  parser.add_argument("--update-refs", action="store_true",
-                      help="Updates reference logs using current commit")
-  parser.add_argument("--upload-only", action="store_true",
-                      help="Skips testing processes and uploads logs from previous test run")
-  parser.add_argument("-j", "--jobs", type=int, default=1)
-  args = parser.parse_args()
+@pytest.fixture(scope="session")
+def args(pytestconfig):
+  args = pytestconfig.option
+  print("JJJJJJJJJJJJJjjj", args.update_refs)
 
   full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
   upload = args.update_refs or args.upload_only
@@ -182,7 +166,7 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
-  pool = NestablePool(args.jobs)
+  pool = NestablePool(7)
 
   lreaders: Any = {}
   p1 = pool.map_async(get_logreader, [seg for car, seg in segments])
@@ -201,7 +185,7 @@ if __name__ == "__main__":
          (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
         continue
       cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-      pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment]))
+      pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment], ref_commit))
       if upload:
         print(f'Uploading: {os.path.basename(cur_log_fn)}')
         assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
@@ -217,7 +201,9 @@ if __name__ == "__main__":
   pool.close()
   pool.join()
 
-  diff1, diff2, failed = format_diff(results, ref_commit)
+  #diff1, diff2, failed = format_diff(results, ref_commit)
+  return results, ref_commit
+  '''
   if not args.upload_only:
     with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
       f.write(diff2)
@@ -235,5 +221,6 @@ if __name__ == "__main__":
     with open(REF_COMMIT_FN, "w") as f:
       f.write(cur_commit)
     print(f"\n\nUpdated reference logs for commit: {cur_commit}")
+  '''
 
   sys.exit(int(failed))
