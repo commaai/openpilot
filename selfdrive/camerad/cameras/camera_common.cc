@@ -54,7 +54,6 @@ public:
 
     const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
     const int debayer_local_worksize = 16;
-    CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &black_level));
     const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
   }
@@ -163,7 +162,7 @@ bool CameraBuf::acquire() {
   }
 
   clWaitForEvents(1, &event);
-  //printf("debayer %f\n", (millis_since_boot() - start_time));
+  printf("debayer %f\n", (millis_since_boot() - start_time));
   CL_CHECK(clReleaseEvent(event));
 
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;

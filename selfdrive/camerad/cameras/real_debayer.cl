@@ -17,29 +17,22 @@
 #define RGB_TO_V(r, g, b) ((mul24(r, 56) - mul24(g, 47) - mul24(b, 9) + 0x8080) >> 8)
 #define AVERAGE(x, y, z, w) ((convert_ushort(x) + convert_ushort(y) + convert_ushort(z) + convert_ushort(w) + 1) >> 1)
 
-// post wb CCM
-const __constant half3 color_correction_0 = (half3)(1.82717181, -0.31231438, 0.07307673);
-const __constant half3 color_correction_1 = (half3)(-0.5743977, 1.36858544, -0.53183455);
-const __constant half3 color_correction_2 = (half3)(-0.25277411, -0.05627105, 1.45875782);
+inline half3 color_correct(half3 rgb) {
+  // color correction
+  half3 x = (half)rgb.x * (half3)(1.82717181, -0.31231438, 0.07307673);
+  x += (half)rgb.y * (half3)(-0.5743977, 1.36858544, -0.53183455);
+  x += (half)rgb.z * (half3)(-0.25277411, -0.05627105, 1.45875782);
 
-// tone mapping params
-const half gamma_k = 0.75;
-const half gamma_b = 0.125;
-const half mp = 0.01; // ideally midpoint should be adaptive
-const half rk = 9 - 100*mp;
+  // tone mapping params
+  const half gamma_k = 0.75;
+  const half gamma_b = 0.125;
+  const half mp = 0.01; // ideally midpoint should be adaptive
+  const half rk = 9 - 100*mp;
 
-inline half3 gamma_apply(half3 x) {
   // poly approximation for s curve
   return (x > mp) ?
     ((rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b) :
     ((rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b);
-}
-
-inline half3 color_correct(half3 rgb) {
-  half3 ret = (half)rgb.x * color_correction_0;
-  ret += (half)rgb.y * color_correction_1;
-  ret += (half)rgb.z * color_correction_2;
-  return gamma_apply(ret);
 }
 
 inline half get_vignetting_s(float r) {
@@ -54,17 +47,16 @@ inline half get_vignetting_s(float r) {
   }
 }
 
-inline half val_from_12(const uchar * source, int gx, int gy, half black_level) {
+inline half val_from_12(const uchar * source, int gx, int gy) {
   // parse 12bit
   int start = gy * FRAME_STRIDE + (3 * (gx / 2)) + (FRAME_STRIDE * FRAME_OFFSET);
   int offset = gx % 2;
   uint major = (uint)source[start + offset] << 4;
   uint minor = (source[start + 2] >> (4 * offset)) & 0xf;
-  half pv = ((half)(major + minor)) / 4.0;
+  half pv = ((half)(major + minor));
 
   // normalize
-  pv = max((half)0.0, pv - black_level);
-  pv /= (1024.0 - black_level);
+  pv = max((half)0.0, pv - 168) / (4096.0 - 168);
 
   // correct vignetting
   #if CAM_NUM == 1
@@ -81,10 +73,7 @@ inline half get_k(half a, half b, half c, half d) {
   return 2.0 - (fabs(a - b) + fabs(c - d));
 }
 
-__kernel void debayer10(const __global uchar * in,
-                        __global uchar * out,
-                        float black_level
-                       )
+__kernel void debayer10(const __global uchar * in, __global uchar * out)
 {
   const int gid_x = get_global_id(0);
   const int gid_y = get_global_id(1);
@@ -92,27 +81,28 @@ __kernel void debayer10(const __global uchar * in,
   half3 rgb;
   uchar3 rgb_out[4];
 
+  // this is a 4x4 "conv"
   half4 va, vb, vc, vd;
 
-  va.s0 = val_from_12(in, gid_x*2-1, gid_y*2-1, black_level);
-  va.s1 = val_from_12(in, gid_x*2+0, gid_y*2-1, black_level);
-  va.s2 = val_from_12(in, gid_x*2+1, gid_y*2-1, black_level);
-  va.s3 = val_from_12(in, gid_x*2+2, gid_y*2-1, black_level);
+  va.s0 = val_from_12(in, gid_x*2-1, gid_y*2-1);
+  va.s1 = val_from_12(in, gid_x*2+0, gid_y*2-1);
+  va.s2 = val_from_12(in, gid_x*2+1, gid_y*2-1);
+  va.s3 = val_from_12(in, gid_x*2+2, gid_y*2-1);
 
-  vb.s0 = val_from_12(in, gid_x*2-1, gid_y*2+0, black_level);
-  vb.s1 = val_from_12(in, gid_x*2+0, gid_y*2+0, black_level); // G(R)
-  vb.s2 = val_from_12(in, gid_x*2+1, gid_y*2+0, black_level); // R
-  vb.s3 = val_from_12(in, gid_x*2+2, gid_y*2+0, black_level);
+  vb.s0 = val_from_12(in, gid_x*2-1, gid_y*2+0);
+  vb.s1 = val_from_12(in, gid_x*2+0, gid_y*2+0); // G(R)
+  vb.s2 = val_from_12(in, gid_x*2+1, gid_y*2+0); // R
+  vb.s3 = val_from_12(in, gid_x*2+2, gid_y*2+0);
 
-  vc.s0 = val_from_12(in, gid_x*2-1, gid_y*2+1, black_level);
-  vc.s1 = val_from_12(in, gid_x*2+0, gid_y*2+1, black_level); // B
-  vc.s2 = val_from_12(in, gid_x*2+1, gid_y*2+1, black_level); // G(B)
-  vc.s3 = val_from_12(in, gid_x*2+2, gid_y*2+1, black_level);
+  vc.s0 = val_from_12(in, gid_x*2-1, gid_y*2+1);
+  vc.s1 = val_from_12(in, gid_x*2+0, gid_y*2+1); // B
+  vc.s2 = val_from_12(in, gid_x*2+1, gid_y*2+1); // G(B)
+  vc.s3 = val_from_12(in, gid_x*2+2, gid_y*2+1);
 
-  vd.s0 = val_from_12(in, gid_x*2-1, gid_y*2+2, black_level);
-  vd.s1 = val_from_12(in, gid_x*2+0, gid_y*2+2, black_level);
-  vd.s2 = val_from_12(in, gid_x*2+1, gid_y*2+2, black_level);
-  vd.s3 = val_from_12(in, gid_x*2+2, gid_y*2+2, black_level);
+  vd.s0 = val_from_12(in, gid_x*2-1, gid_y*2+2);
+  vd.s1 = val_from_12(in, gid_x*2+0, gid_y*2+2);
+  vd.s2 = val_from_12(in, gid_x*2+1, gid_y*2+2);
+  vd.s3 = val_from_12(in, gid_x*2+2, gid_y*2+2);
 
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   const half k01 = get_k(va.s0, vb.s1, va.s2, vb.s1);
