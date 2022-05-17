@@ -224,13 +224,13 @@ void CameraViewWidget::paintGL() {
   std::deque<int>::iterator it = std::find(frame_ids.begin(), frame_ids.end(), draw_frame_id);
   if (it == frame_ids.end()) {
     latest_frame = frames[frames.size() - 1];
-    qDebug() << "Drawing latest frame:" << frame_ids[frames.size() - 1];
+//    qDebug() << "Drawing latest frame:" << frame_ids[frames.size() - 1];
   } else {
     int frame_id = it - frame_ids.begin();
     latest_frame = frames[frame_id];
-    qDebug() << "Drawing frame:" << frame_ids[frame_id];
+//    qDebug() << "Drawing frame:" << frame_ids[frame_id];
   }
-  qDebug() << "CameraViewWidget::paintGL: frame to draw:" << draw_frame_id;
+//  qDebug() << "CameraViewWidget::paintGL: frame to draw:" << draw_frame_id;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
