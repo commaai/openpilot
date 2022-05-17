@@ -55,7 +55,7 @@ const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
-const int FRAME_BUFFER_LEN = 5;
+const int FRAME_BUFFER_LEN = 4;
 
 mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 1.333;
@@ -222,7 +222,7 @@ void CameraViewWidget::paintGL() {
 
   VisionBuf *latest_frame;
   std::deque<int>::iterator it = std::find(frame_ids.begin(), frame_ids.end(), draw_frame_id);
-  if (it == frame_ids.end() || frame_ids[frame_ids.size() - 1] < FRAME_BUFFER_LEN) {
+  if (it == frame_ids.end()) {
     latest_frame = frames[frames.size() - 1];
     qDebug() << "Drawing latest frame:" << frame_ids[frames.size() - 1];
   } else {
@@ -300,7 +300,7 @@ void CameraViewWidget::vipcThread() {
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream_type != stream_type) {
       cur_stream_type = stream_type;
-      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream_type, true));
+      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream_type, false));
     }
 
     if (!vipc_client->connected) {
