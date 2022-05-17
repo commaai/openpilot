@@ -7,24 +7,12 @@ from collections import defaultdict
 from cereal import log, messaging
 from laika import AstroDog
 from laika.helpers import ConstellationId
-from laika.raw_gnss import GNSSMeasurement, calc_pos_fix, calc_vel_fix, correct_measurements, process_measurements, read_raw_ublox
+from laika.ephemeris import convert_ublox_ephem
+from laika.raw_gnss import GNSSMeasurement, calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
 import common.transformations.coordinates as coord
-
-
-def correct_and_vel_pos_fix(processed_measurements: List[GNSSMeasurement], dog: AstroDog):
-  # pos fix needs more than 5 processed_measurements
-  pos_fix = calc_pos_fix(processed_measurements)
-
-  if len(pos_fix) == 0:
-    return [], [], []
-  est_pos = pos_fix[0][:3]
-  corrected = correct_measurements(processed_measurements, est_pos, dog)
-  corrected_pos = calc_pos_fix(corrected)
-  corrected_vel = calc_vel_fix(corrected, corrected_pos[0])
-  return corrected_pos, corrected_vel, corrected
 
 
 class Laikad:
@@ -32,46 +20,61 @@ class Laikad:
   def __init__(self):
     self._gnss_kf: GNSSKalman = GNSSKalman(GENERATED_DIR)
 
-  def process_ublox_msg(self, ublox_msg, dog, ublox_mono_time: int):
+  def process_ublox_msg(self, ublox_msg, dog: AstroDog, ublox_mono_time: int, correct=False):
     if ublox_msg.which == 'measurementReport':
       report = ublox_msg.measurementReport
       if len(report.measurements) == 0:
         return None
       new_meas = read_raw_ublox(report)
-      processed_measurements = process_measurements(new_meas, dog)
-
-      pos_fix, _, corrected_measurements = correct_and_vel_pos_fix(processed_measurements, dog)
-      # pos or vel fixes can be an empty list if not enough correct measurements are available
-      correct_meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
-
-      if len(pos_fix) == 0:
+      measurements = process_measurements(new_meas, dog)
+      if len(measurements) == 0:
         return None
-      corrected_pos = pos_fix[0][:3].tolist()
+      # pos fix needs more than 5 processed_measurements
+      # todo temp lowered the calc_pos_fix to 4. Currently only gps is supported for offline ephemeris data
+
+      pos_fix = calc_pos_fix(measurements, min_measurements=4)
+
+      if len(pos_fix) > 0:
+        correct_measurements(measurements, pos_fix[0][:3], dog)
+
+      meas_msgs = [create_measurement_msg(m) for m in measurements]
 
       t = ublox_mono_time * 1e-9
 
       if self._gnss_kf.filter.filter_time is None or (self._gnss_kf.filter.filter_time - t) > 10:
+        if len(pos_fix) == 0:
+          # print("Init gnss kalman filter failed. Not enough corrected measurements")
+          return None
+        corrected_pos = pos_fix[0][:3].tolist()  # todo use corrected measurements
         if self._gnss_kf.filter.filter_time is None:
           print("Init gnss kalman filter")
         else:
           print("Time gap of over 10s detected, gnss kalman reset")
         self.init_gnss_localizer(corrected_pos)
-      kf_add_observations(self._gnss_kf, t, corrected_measurements)
+      kf_add_observations(self._gnss_kf, t, measurements)
 
       ecef_pos = self._gnss_kf.x[GStates.ECEF_POS].tolist()
       ecef_vel = self._gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
       bearing_deg, bearing_std = get_bearing_from_gnss(self._gnss_kf)
-
       dat = messaging.new_message('gnssMeasurements')
+
       dat.gnssMeasurements = {
         "positionECEF": ecef_pos,
         "velocityECEF": ecef_vel,
         "bearingDeg": float(bearing_deg),
         "bearingAccuracyDeg": float(bearing_std),
         "ubloxMonoTime": ublox_mono_time,
-        "correctedMeasurements": correct_meas_msgs
+        "correctedMeasurements": meas_msgs
       }
       return dat
+    elif ublox_msg.which == 'ephemeris':
+      # todo could disable this when having internet access.
+      ephem = convert_ublox_ephem(ublox_msg.ephemeris)
+      dog.add_ephem(ephem, dog.orbits)
+    # elif ublox_msg.which == 'ionoData':
+    # todo add this. Needed to correct messages offline. First fix ublox_msg.cc to sent them.
+    #  This is needed to correct the measurements
+
 
   def init_gnss_localizer(self, est_pos):
     x_initial, p_initial_diag = np.copy(GNSSKalman.x_initial), np.copy(np.diagonal(GNSSKalman.P_initial))
@@ -85,10 +88,15 @@ def create_measurement_msg(meas: GNSSMeasurement):
   c = log.GnssMeasurements.CorrectedMeasurement.new_message()
   c.constellationId = meas.constellation_id.value
   c.svId = int(meas.prn[1:])
+  # todo should be final always. But not yet possible when not correcting
+  if meas.corrected:
+    observables = meas.observables_final
+  else:
+    observables = meas.observables
   c.glonassFrequency = meas.glonass_freq if meas.constellation_id == ConstellationId.GLONASS else 0
-  c.pseudorange = float(meas.observables_final['C1C'])
+  c.pseudorange = float(observables['C1C'])
   c.pseudorangeStd = float(meas.observables_std['C1C'])
-  c.pseudorangeRate = float(meas.observables_final['D1C'])
+  c.pseudorangeRate = float(observables['D1C'])
   c.pseudorangeRateStd = float(meas.observables_std['D1C'])
   c.satPos = meas.sat_pos_final.tolist()
   c.satVel = meas.sat_vel.tolist()
