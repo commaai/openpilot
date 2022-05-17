@@ -37,7 +37,7 @@ protected:
   void vipcThread();
 
   bool zoomed_view;
-  std::deque<VisionBuf*> frames;
+  std::deque<std::unique_ptr<VisionBuf*>> frames;
   std::deque<quint32> frame_ids;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
