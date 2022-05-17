@@ -220,17 +220,17 @@ void CameraViewWidget::paintGL() {
   assert(frames.size() == frame_ids.size());
   if (frames.size() == 0) return;
 
-  VisionBuf *latest_frame;
+  VisionBuf *frame;
   std::deque<quint32>::iterator it = std::find(frame_ids.begin(), frame_ids.end(), draw_frame_id);
   int frame_idx = (it == frame_ids.end()) ? (frames.size() - 1) : (it - frame_ids.begin());
-  latest_frame = frames[frame_idx];
+  frame = frames[frame_idx];
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
 
   glUseProgram(program->programId());
-  uint8_t *address[3] = {latest_frame->y, latest_frame->u, latest_frame->v};
+  uint8_t *address[3] = {frame->y, frame->u, frame->v};
   for (int i = 0; i < 3; ++i) {
     glActiveTexture(GL_TEXTURE0 + i);
     glBindTexture(GL_TEXTURE_2D, textures[i]);
