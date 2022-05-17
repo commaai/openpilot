@@ -350,7 +350,7 @@ def setup_prefix():
 def teardown_prefix():
   if not os.environ.get("OPENPILOT_PREFIX", 0):
     return
-  symlink_path = os.path.join(Params.get_param_path(), os.environ['OPENPILOT_PREFIX'])
+  symlink_path = os.path.join(Params().get_param_path(), os.environ['OPENPILOT_PREFIX'])
   if os.path.exists(symlink_path):
     shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
     os.remove(symlink_path)
