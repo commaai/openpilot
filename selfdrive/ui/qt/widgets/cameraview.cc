@@ -55,6 +55,8 @@ const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
+const int FRAME_BUFFER_LEN = 5;
+
 mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 1.333;
   mat4 transform;
@@ -215,11 +217,12 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
+  assert(frames.size() == frame_ids.size());
   if (frames.size() == 0) return;
 
   VisionBuf *latest_frame;
   std::deque<int>::iterator it = std::find(frame_ids.begin(), frame_ids.end(), draw_frame_id);
-  if (it != frame_ids.end()) {
+  if (it != frame_ids.end() && frame_ids[frame_ids.size() - 1] < FRAME_BUFFER_LEN) {
     latest_frame = frames[it - frame_ids.begin()];
     qDebug() << "Drawing frame:" << frame_ids[it - frame_ids.begin()];
   } else {
@@ -279,10 +282,10 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, int frame_id) {
   frames.push_back(buf);
   frame_ids.push_back(frame_id);
-  while (frames.size() > 5) {
+  while (frames.size() > FRAME_BUFFER_LEN) {
     frames.pop_front();
   }
-  while (frame_ids.size() > 5) {
+  while (frame_ids.size() > FRAME_BUFFER_LEN) {
     frame_ids.pop_front();
   }
   update();
