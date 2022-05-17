@@ -83,36 +83,72 @@ inline half get_k(half a, half b, half c, half d) {
 
 __kernel void debayer10(const __global uchar * in,
                         __global uchar * out,
+                        __local half * cached,
                         float black_level
                        )
 {
   const int gid_x = get_global_id(0);
   const int gid_y = get_global_id(1);
 
+  const int lid_x = get_local_id(0);
+  const int lid_y = get_local_id(1);
+
+  const int localRowLen = mad24(get_local_size(0), 2, 2); // 2 padding
+  const int localColLen = mad24(get_local_size(1), 2, 2);
+
+  const int x_global = mul24(gid_x, 2);
+  const int y_global = mul24(gid_y, 2);
+
+  const int x_local = mad24(lid_x, 2, 1);
+  const int y_local = mad24(lid_y, 2, 1);
+
+  const int x_global_mod = (gid_x == 0 || gid_x == get_global_size(0) - 1) ? -1: 1;
+  const int y_global_mod = (gid_y == 0 || gid_y == get_global_size(1) - 1) ? -1: 1;
+
+  int localColOffset = 0;
+  int globalColOffset;
+
+  cached[mad24(y_local + 0, localRowLen, x_local + 0)] = val_from_10(in, x_global + 0, y_global + 0, black_level);
+  cached[mad24(y_local + 0, localRowLen, x_local + 1)] = val_from_10(in, x_global + 1, y_global + 0, black_level);
+  cached[mad24(y_local + 1, localRowLen, x_local + 0)] = val_from_10(in, x_global + 0, y_global + 1, black_level);
+  cached[mad24(y_local + 1, localRowLen, x_local + 1)] = val_from_10(in, x_global + 1, y_global + 1, black_level);
+
+  if (lid_x == 0) {  // left edge
+    localColOffset = -1;
+    globalColOffset = -x_global_mod;
+    cached[mad24(y_local + 0, localRowLen, x_local - 1)] = val_from_10(in, x_global - x_global_mod, y_global + 0, black_level);
+    cached[mad24(y_local + 1, localRowLen, x_local - 1)] = val_from_10(in, x_global - x_global_mod, y_global + 1, black_level);
+  } else if (lid_x == get_local_size(0) - 1) {  // right edge
+    localColOffset = 2;
+    globalColOffset = x_global_mod + 1;
+    cached[mad24(y_local + 0, localRowLen, x_local + 2)] = val_from_10(in, x_global + x_global_mod + 1, y_global + 0, black_level);
+    cached[mad24(y_local + 1, localRowLen, x_local + 2)] = val_from_10(in, x_global + x_global_mod + 1, y_global + 1, black_level);
+  }
+
+  if (lid_y == 0) {  // top row
+    cached[mad24(y_local - 1, localRowLen, x_local + 0)] = val_from_10(in, x_global + 0, y_global - y_global_mod, black_level);
+    cached[mad24(y_local - 1, localRowLen, x_local + 1)] = val_from_10(in, x_global + 1, y_global - y_global_mod, black_level);
+    if (localColOffset != 0) {  // cache corners
+      cached[mad24(y_local - 1, localRowLen, x_local + localColOffset)] = val_from_10(in, x_global + globalColOffset, y_global - y_global_mod, black_level);
+    }
+  } else if (lid_y == get_local_size(1) - 1) {  // bottom row
+    cached[mad24(y_local + 2, localRowLen, x_local + 0)] = val_from_10(in, x_global + 0, y_global + y_global_mod + 1, black_level);
+    cached[mad24(y_local + 2, localRowLen, x_local + 1)] = val_from_10(in, x_global + 1, y_global + y_global_mod + 1, black_level);
+    if (localColOffset != 0) {  // cache corners
+      cached[mad24(y_local + 2, localRowLen, x_local + localColOffset)] = val_from_10(in, x_global + globalColOffset, y_global + y_global_mod + 1, black_level);
+    }
+  }
+
+  // sync
+  barrier(CLK_LOCAL_MEM_FENCE);
+
   half3 rgb;
   uchar3 rgb_out[4];
 
-  half4 va, vb, vc, vd;
-
-  va.s0 = val_from_10(in, gid_x*2-1, gid_y*2-1, black_level);
-  va.s1 = val_from_10(in, gid_x*2+0, gid_y*2-1, black_level);
-  va.s2 = val_from_10(in, gid_x*2+1, gid_y*2-1, black_level);
-  va.s3 = val_from_10(in, gid_x*2+2, gid_y*2-1, black_level);
-
-  vb.s0 = val_from_10(in, gid_x*2-1, gid_y*2+0, black_level);
-  vb.s1 = val_from_10(in, gid_x*2+0, gid_y*2+0, black_level); // G(R)
-  vb.s2 = val_from_10(in, gid_x*2+1, gid_y*2+0, black_level); // R
-  vb.s3 = val_from_10(in, gid_x*2+2, gid_y*2+0, black_level);
-
-  vc.s0 = val_from_10(in, gid_x*2-1, gid_y*2+1, black_level);
-  vc.s1 = val_from_10(in, gid_x*2+0, gid_y*2+1, black_level); // B
-  vc.s2 = val_from_10(in, gid_x*2+1, gid_y*2+1, black_level); // G(B)
-  vc.s3 = val_from_10(in, gid_x*2+2, gid_y*2+1, black_level);
-
-  vd.s0 = val_from_10(in, gid_x*2-1, gid_y*2+2, black_level);
-  vd.s1 = val_from_10(in, gid_x*2+0, gid_y*2+2, black_level);
-  vd.s2 = val_from_10(in, gid_x*2+1, gid_y*2+2, black_level);
-  vd.s3 = val_from_10(in, gid_x*2+2, gid_y*2+2, black_level);
+  const half4 va = vload4(0, cached + mad24(lid_y * 2 + 0, localRowLen, lid_x * 2));
+  const half4 vb = vload4(0, cached + mad24(lid_y * 2 + 1, localRowLen, lid_x * 2));
+  const half4 vc = vload4(0, cached + mad24(lid_y * 2 + 2, localRowLen, lid_x * 2));
+  const half4 vd = vload4(0, cached + mad24(lid_y * 2 + 3, localRowLen, lid_x * 2));
 
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   const half k01 = get_k(va.s0, vb.s1, va.s2, vb.s1);
