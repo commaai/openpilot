@@ -13,20 +13,6 @@ from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DI
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
-# Hack to allow daemon processes in a Pool. https://stackoverflow.com/a/53180921/10084102
-class NoDaemonProcess(multiprocessing.Process):
-  @property # type: ignore
-  def daemon(self):
-    return False
-  @daemon.setter
-  def daemon(self, value):
-    pass
-class NoDaemonContext(type(multiprocessing.get_context())): # type: ignore
-  Process = NoDaemonProcess
-class NestablePool(multiprocessing.pool.Pool): # pylint: disable=abstract-method
-  def __init__(self, *args, **kwargs):
-    kwargs['context'] = NoDaemonContext()
-    super(NestablePool, self).__init__(*args, **kwargs)
 
 original_segments = [
   ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),        # COMMA.BODY
@@ -69,20 +55,7 @@ excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
-def run_test_process(data):
-  segment, cfg, args, cur_log_fn, lr, ref_commit = data
-  ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-  res, log_msgs = sss_test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
-  # save logs so we can upload when updating refs
-  save_log(cur_log_fn, log_msgs)
-  return (segment, cfg.proc_name, res)
-
-def get_logreader(segment):
-  r, n = segment.rsplit("--", 1)
-  lr = LogReader(get_url(r, n))
-  return (segment, lr)
-
-def sss_test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
+def do_test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
@@ -104,182 +77,31 @@ def sss_test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
   except Exception as e:
     return str(e), log_msgs
 
-
-def format_diff(args):
-  results, ref_commit = args
-  diff1, diff2 = "", ""
-  diff2 += f"***** tested against commit {ref_commit} *****\n"
-
-  failed = False
-  for segment, result in list(results.items()):
-    diff1 += f"***** results for segment {segment} *****\n"
-    diff2 += f"***** differences for segment {segment} *****\n"
-
-    for proc, diff in list(result.items()):
-      diff1 += f"\t{proc}\n"
-      diff2 += f"*** process: {proc} ***\n"
-
-      if isinstance(diff, str):
-        diff1 += f"\t\t{diff}\n"
-        failed = True
-      elif len(diff):
-        cnt: Dict[str, int] = {}
-        for d in diff:
-          diff2 += f"\t{str(d)}\n"
-
-          k = str(d[1])
-          cnt[k] = 1 if k not in cnt else cnt[k] + 1
-
-        for k, v in sorted(cnt.items()):
-          diff1 += f"\t\t{k}: {v}\n"
-        failed = True
-  return diff1, diff2, failed
-
-full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
-upload = args.update_refs or args.upload_only
-os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
-
-if upload:
-  assert full_test, "Need to run full test when updating refs"
-
-try:
-  ref_commit = open(REF_COMMIT_FN).read().strip()
-except FileNotFoundError:
-  print("Couldn't find reference commit")
-  sys.exit(1)
-
+# Build pool args
 cur_commit = get_commit()
-if cur_commit is None:
-  raise Exception("Couldn't get current commit")
-
-print(f"***** testing against commit {ref_commit} *****")
-
-# check to make sure all car brands are tested
-if full_test:
-  tested_cars = {c.lower() for c, _ in segments}
-  untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
-  assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
-
-pool = NestablePool(7)
-
-lreaders: Any = {}
-p1 = pool.map_async(get_logreader, [seg for car, seg in segments])
-for tup in p1.get():
-  if tup[0] not in lreaders:
-    lreaders[tup[0]] = {}
-  lreaders[tup[0]] = tup[1]
-
+ref_commit = open(REF_COMMIT_FN).read().strip()
 pool_args: Any = []
 for car_brand, segment in segments:
   for cfg in CONFIGS:
     cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-    pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment], ref_commit))
-    if upload:
-      print(f'Uploading: {os.path.basename(cur_log_fn)}')
-      assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
-      upload_file(cur_log_fn, os.path.basename(cur_log_fn))
-      os.remove(cur_log_fn)
+    pool_args.append((segment, cfg, cur_log_fn, ref_commit))
 
-
+# Get CMD args
 @pytest.fixture(scope="session")
 def args(pytestconfig):
   args = pytestconfig.option
   return args
 
-
-def run_test_process(data):
-  segment, cfg, cur_log_fn, lr, ref_commit = data
+# Do tests
+@pytest.mark.parametrize("data", pool_args)
+def test_process(data, args):
+  segment, cfg, cur_log_fn, ref_commit = data
+  r, n = segment.rsplit("--", 1)
+  lr = LogReader(get_url(r, n))
   ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-  res, log_msgs = sss_test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
-  # save logs so we can upload when updating refs
-  save_log(cur_log_fn, log_msgs)
-  return (segment, cfg.proc_name, res)
-
-
-
-
-
-
-  '''
-
-  full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
-  upload = args.update_refs or args.upload_only
-  os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
-
-  if upload:
-    assert full_test, "Need to run full test when updating refs"
-
-  try:
-    ref_commit = open(REF_COMMIT_FN).read().strip()
-  except FileNotFoundError:
-    print("Couldn't find reference commit")
-    sys.exit(1)
-
-  cur_commit = get_commit()
-  if cur_commit is None:
-    raise Exception("Couldn't get current commit")
-
-  print(f"***** testing against commit {ref_commit} *****")
-
-  # check to make sure all car brands are tested
-  if full_test:
-    tested_cars = {c.lower() for c, _ in segments}
-    untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
-    assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
-
-  pool = NestablePool(7)
-
-  lreaders: Any = {}
-  p1 = pool.map_async(get_logreader, [seg for car, seg in segments])
-  for tup in p1.get():
-    if tup[0] not in lreaders:
-      lreaders[tup[0]] = {}
-    lreaders[tup[0]] = tup[1]
-
-  pool_args: Any = []
-  for car_brand, segment in segments:
-    if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
-       (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
-      continue
-    for cfg in CONFIGS:
-      if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
-         (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
-        continue
-      cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-      pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment], ref_commit))
-      if upload:
-        print(f'Uploading: {os.path.basename(cur_log_fn)}')
-        assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
-        upload_file(cur_log_fn, os.path.basename(cur_log_fn))
-        os.remove(cur_log_fn)
-
-  results: Any = {}
-  p2 = pool.map_async(run_test_process, pool_args)
-  for tup in p2.get():
-    if tup[0] not in results:
-      results[tup[0]] = {}
-    results[tup[0]][tup[1]] = tup[2]
-  pool.close()
-  pool.join()
-
-  diff1, diff2, failed = format_diff(results, ref_commit)
-  if not args.upload_only:
-    with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
-      f.write(diff2)
-    print(diff1)
-
-    if failed:
-      print("TEST FAILED")
-      if not args.update_refs:
-        print("\n\nTo push the new reference logs for this commit run:")
-        print("./test_processes.py --upload-only")
-    else:
-      print("TEST SUCCEEDED")
-
-  if upload:
-    with open(REF_COMMIT_FN, "w") as f:
-      f.write(cur_commit)
-    print(f"\n\nUpdated reference logs for commit: {cur_commit}")
-  '''
-
-  sys.exit(int(failed))
+  res, log_msgs = do_test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
+  prin
+  if isinstance(res, str) or len(res):
+    print("FAIL", segment, res)
+    assert False
+  assert True
