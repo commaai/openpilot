@@ -21,7 +21,7 @@ def get_log(segs=range(0)):
   logs = []
   for i in segs:
     logs.extend(LogReader(get_url("4cf7a6ad03080c90|2021-09-29--13-46-36", i)))
-  return [m for m in logs if m.which() == 'ubloxGnss' and m.ubloxGnss.which == 'measurementReport' and len(m.ubloxGnss.measurementReport.measurements) > 0]
+  return [m for m in logs if m.which() == 'ubloxGnss']
 
 
 class TestLaikad(unittest.TestCase):
@@ -39,13 +39,13 @@ class TestLaikad(unittest.TestCase):
     lr = get_log(range(1))
 
     # Set to offline forces to use ephemeris messages
-    dog = AstroDog(use_internet=True)
+    dog = AstroDog(use_internet=False)
     laikad = Laikad()
     need_msg = 50
     good_msg = None
     for m in lr:
       if m.which() == 'ubloxGnss':
-        msg = laikad.process_ublox_msg(m.ubloxGnss, dog, m.logMonoTime)
+        msg = laikad.process_ublox_msg(m.ubloxGnss, dog, m.logMonoTime, correct=False)
         if msg is not None and len(msg.gnssMeasurements.correctedMeasurements) > 0:
           good_msg = msg
           need_msg -= 1
