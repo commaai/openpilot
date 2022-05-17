@@ -283,15 +283,14 @@ int V4LEncoder::encode_frame_vipc(VisionBuf* buf, VisionIpcBufExtra *extra) {
 
 int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                   int in_width_, int in_height_, VisionIpcBufExtra *extra) {
-  /*assert(in_width == in_width_);
-  assert(in_height == in_height_);*/
+  assert(in_width == in_width_);
+  assert(in_height == in_height_);
   assert(is_open);
-  assert(false);
 
   // reserve buffer
   int buffer_in = free_buf_in.pop();
 
-  /*uint8_t *in_y_ptr = (uint8_t*)buf_in[buffer_in].addr;
+  uint8_t *in_y_ptr = (uint8_t*)buf_in[buffer_in].addr;
   int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
   int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, in_width);
   uint8_t *in_uv_ptr = in_y_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, in_height));
@@ -304,8 +303,7 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
                    in_y_ptr, in_y_stride,
                    in_uv_ptr, in_uv_stride,
                    in_width, in_height);
-  assert(err == 0);*/
-  memcpy(buf_in[buffer_in].addr, y_ptr, 2048*1216 + 2048*1216/2);  //in_width*in_height + in_width*in_height/2);
+  assert(err == 0);
 
   struct timeval timestamp {
     .tv_sec = (long)(extra->timestamp_eof/1000000000),
