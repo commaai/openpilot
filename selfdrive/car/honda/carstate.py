@@ -85,15 +85,16 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
 
     if not CP.openpilotLongitudinalControl:
       signals += [
-        ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
-        ("CRUISE_SPEED", "ACC_HUD"),
         ("ACCEL_COMMAND", "ACC_CONTROL"),
         ("AEB_STATUS", "ACC_CONTROL"),
       ]
-      checks += [
-        ("ACC_HUD", 10),
-        ("ACC_CONTROL", 50),
-      ]
+      if CP.carFingerprint not in HONDA_BOSCH_RADARLESS:  # ACC_HUD is on camera bus
+        signals += [
+          ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
+          ("CRUISE_SPEED", "ACC_HUD"),
+        ]
+        checks += [("ACC_HUD", 10)]
+      checks.append(("ACC_CONTROL", 50))
   else:  # Nidec signals
     signals += [("CRUISE_SPEED_PCM", "CRUISE"),
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS")]
@@ -248,20 +249,13 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       if not self.CP.openpilotLongitudinalControl:
-        # TODO: clean these checks up, sounds like all radarless cars will use this
-        # also, we never would have reached this before with civic not being in HONDA_BOSCH previously
-        if self.CP.carFingerprint == CAR.CIVIC_2022:
-          ret.cruiseState.nonAdaptive = cp_cam.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"] != 0
-          ret.cruiseState.standstill = cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] == 252.
-        else:
-          ret.cruiseState.nonAdaptive = cp.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"] != 0
-          ret.cruiseState.standstill = cp.vl["ACC_HUD"]["CRUISE_SPEED"] == 252.
+        # ACC_HUD is on camera bus on radarless cars
+        acc_hud = cp_cam.vl["ACC_HUD"] if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS else cp.vl["ACC_HUD"]
+        ret.cruiseState.nonAdaptive = acc_hud["CRUISE_CONTROL_LABEL"] != 0
+        ret.cruiseState.standstill = acc_hud["CRUISE_SPEED"] == 252.
 
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
-        if self.CP.carFingerprint == CAR.CIVIC_2022:
-          ret.cruiseState.speed = self.v_cruise_pcm_prev if cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp_cam.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.MPH_TO_MS
-        else:
-          ret.cruiseState.speed = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.KPH_TO_MS
+        ret.cruiseState.speed = self.v_cruise_pcm_prev if acc_hud["CRUISE_SPEED"] > 160.0 else acc_hud["CRUISE_SPEED"] * CV.KPH_TO_MS
         self.v_cruise_pcm_prev = ret.cruiseState.speed
     else:
       ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * CV.KPH_TO_MS
@@ -321,7 +315,7 @@ class CarState(CarStateBase):
 
   def get_can_parser(self, CP):
     signals, checks = get_can_signals(CP, self.gearbox_msg, self.main_on_sig_msg)
-    bus_pt = 1 if CP.carFingerprint in HONDA_BOSCH else 0
+    bus_pt = 1 if CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) else 0
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus_pt)
 
   @staticmethod
@@ -331,9 +325,7 @@ class CarState(CarStateBase):
       ("STEERING_CONTROL", 100),
     ]
 
-    # TODO: note: looks like on radarless we get acc_hud from the camera
-    # so make sure everything is correct and we don't add any signals we don't need to
-    if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
+    if CP.carFingerprint in HONDA_BOSCH_RADARLESS and not CP.openpilotLongitudinalControl:
       signals += [
         ("CRUISE_SPEED", "ACC_HUD"),
         ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
