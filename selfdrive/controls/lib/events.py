@@ -752,8 +752,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # usually means the model has trouble understanding the scene. This is used
   # as a heuristic to warn the driver.
   EventName.posenetInvalid: {
-    ET.SOFT_DISABLE: soft_disable_alert("Model Output Uncertain"),
-    ET.NO_ENTRY: NoEntryAlert("Model Output Uncertain"),
+    ET.SOFT_DISABLE: soft_disable_alert("Posenet Speed Invalid"),
+    ET.NO_ENTRY: NoEntryAlert("Posenet Speed Invalid"),
   },
 
   # When the localizer detects an acceleration of more than 40 m/s^2 (~4G) we

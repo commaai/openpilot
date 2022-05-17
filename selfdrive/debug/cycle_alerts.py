@@ -36,11 +36,11 @@ def cycle_alerts(duration=200, is_metric=False):
 
   # debug alerts
   alerts = [
-    #(EventName.highCpuUsage, ET.NO_ENTRY),
-    #(EventName.lowMemory, ET.PERMANENT),
-    #(EventName.overheat, ET.PERMANENT),
-    #(EventName.outOfSpace, ET.PERMANENT),
-    #(EventName.modeldLagging, ET.PERMANENT),
+    (EventName.highCpuUsage, ET.NO_ENTRY),
+    (EventName.lowMemory, ET.PERMANENT),
+    (EventName.overheat, ET.PERMANENT),
+    (EventName.outOfSpace, ET.PERMANENT),
+    (EventName.modeldLagging, ET.PERMANENT),
     (EventName.processNotRunning, ET.NO_ENTRY),
     (EventName.commIssue, ET.NO_ENTRY),
     (EventName.calibrationInvalid, ET.PERMANENT),
@@ -74,7 +74,7 @@ def cycle_alerts(duration=200, is_metric=False):
         procs[i].shouldBeRunning = True
       sm['managerState'].processes = procs
 
-      sm['liveCalibration'].rpyCalib = [random.random() for _ in range(random.randint(0, 3))]
+      sm['liveCalibration'].rpyCalib = [-1 * random.random() for _ in range(random.randint(0, 3))]
 
       for s in sm.data.keys():
         sm.alive[s] = random.random() > 0.08
