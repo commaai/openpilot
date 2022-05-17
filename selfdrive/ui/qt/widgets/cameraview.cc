@@ -55,7 +55,7 @@ const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
-const int FRAME_BUFFER_LEN = 4;
+const int FRAME_BUFFER_SIZE = 4;
 
 mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 1.333;
@@ -276,10 +276,10 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, quint32 frame_id) {
   frames.push_back(buf);
   frame_ids.push_back(frame_id);
-  while (frames.size() > FRAME_BUFFER_LEN) {
+  while (frames.size() > FRAME_BUFFER_SIZE) {
     frames.pop_front();
   }
-  while (frame_ids.size() > FRAME_BUFFER_LEN) {
+  while (frame_ids.size() > FRAME_BUFFER_SIZE) {
     frame_ids.pop_front();
   }
   update();
