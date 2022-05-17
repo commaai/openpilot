@@ -72,7 +72,7 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, lr, ref_commit = data
   ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-  res, log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
+  res, log_msgs = sss_test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
   # save logs so we can upload when updating refs
   save_log(cur_log_fn, log_msgs)
   return (segment, cfg.proc_name, res)
@@ -82,7 +82,7 @@ def get_logreader(segment):
   lr = LogReader(get_url(r, n))
   return (segment, lr)
 
-def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
+def sss_test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
@@ -105,7 +105,7 @@ def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
     return str(e), log_msgs
 
 
-def test_format_diff(args):
+def format_diff(args):
   results, ref_commit = args
   diff1, diff2 = "", ""
   diff2 += f"***** tested against commit {ref_commit} *****\n"
@@ -135,11 +135,72 @@ def test_format_diff(args):
         failed = True
   return diff1, diff2, failed
 
+full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
+upload = args.update_refs or args.upload_only
+os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
+
+if upload:
+  assert full_test, "Need to run full test when updating refs"
+
+try:
+  ref_commit = open(REF_COMMIT_FN).read().strip()
+except FileNotFoundError:
+  print("Couldn't find reference commit")
+  sys.exit(1)
+
+cur_commit = get_commit()
+if cur_commit is None:
+  raise Exception("Couldn't get current commit")
+
+print(f"***** testing against commit {ref_commit} *****")
+
+# check to make sure all car brands are tested
+if full_test:
+  tested_cars = {c.lower() for c, _ in segments}
+  untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
+  assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
+
+pool = NestablePool(7)
+
+lreaders: Any = {}
+p1 = pool.map_async(get_logreader, [seg for car, seg in segments])
+for tup in p1.get():
+  if tup[0] not in lreaders:
+    lreaders[tup[0]] = {}
+  lreaders[tup[0]] = tup[1]
+
+pool_args: Any = []
+for car_brand, segment in segments:
+  for cfg in CONFIGS:
+    cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+    pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment], ref_commit))
+    if upload:
+      print(f'Uploading: {os.path.basename(cur_log_fn)}')
+      assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
+      upload_file(cur_log_fn, os.path.basename(cur_log_fn))
+      os.remove(cur_log_fn)
+
 
 @pytest.fixture(scope="session")
 def args(pytestconfig):
   args = pytestconfig.option
-  print("JJJJJJJJJJJJJjjj", args.update_refs)
+  return args
+
+
+def run_test_process(data):
+  segment, cfg, cur_log_fn, lr, ref_commit = data
+  ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+  res, log_msgs = sss_test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
+  # save logs so we can upload when updating refs
+  save_log(cur_log_fn, log_msgs)
+  return (segment, cfg.proc_name, res)
+
+
+
+
+
+
+  '''
 
   full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
   upload = args.update_refs or args.upload_only
@@ -201,9 +262,7 @@ def args(pytestconfig):
   pool.close()
   pool.join()
 
-  #diff1, diff2, failed = format_diff(results, ref_commit)
-  return results, ref_commit
-  '''
+  diff1, diff2, failed = format_diff(results, ref_commit)
   if not args.upload_only:
     with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
       f.write(diff2)
