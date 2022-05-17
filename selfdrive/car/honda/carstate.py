@@ -85,17 +85,17 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ]
 
     if not CP.openpilotLongitudinalControl:
-      signals += [
-        ("ACCEL_COMMAND", "ACC_CONTROL"),
-        ("AEB_STATUS", "ACC_CONTROL"),
-      ]
-      if CP.carFingerprint not in HONDA_BOSCH_RADARLESS:  # ACC_HUD is on camera bus
+      if CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
         signals += [
-          ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
+          ("CRUISE_CONTROL_LABEL", "ACC_HUD"),  # ACC_HUD is on camera bus on radarless
           ("CRUISE_SPEED", "ACC_HUD"),
+          ("ACCEL_COMMAND", "ACC_CONTROL"),  # ACC_CONTROL doesn't exist on radarless
+          ("AEB_STATUS", "ACC_CONTROL"),  # TODO: find signals on ACC_CONTROL_2
         ]
-        checks += [("ACC_HUD", 10)]
-      checks.append(("ACC_CONTROL", 50))
+        checks += [
+          ("ACC_HUD", 10),
+          ("ACC_CONTROL", 50),
+        ]
   else:  # Nidec signals
     signals += [("CRUISE_SPEED_PCM", "CRUISE"),
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS")]
@@ -294,7 +294,8 @@ class CarState(CarStateBase):
       self.is_metric = False
 
     if self.CP.carFingerprint in HONDA_BOSCH:
-      ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
+      if self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
+        ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
     else:
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
 
