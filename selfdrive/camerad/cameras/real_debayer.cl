@@ -87,6 +87,18 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   float4 vc = val4_from_12(dat[2], gain);
   float4 vd = val4_from_12(dat[3], gain);
 
+  if (gid_x == 0) {
+    va.s0 = va.s2;
+    vb.s0 = vb.s2;
+    vc.s0 = vc.s2;
+    vd.s0 = vd.s2;
+  } else if (gid_x == RGB_WIDTH/2 - 1) {
+    va.s3 = va.s1;
+    vb.s3 = vb.s1;
+    vc.s3 = vc.s1;
+    vd.s3 = vd.s1;
+  }
+
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   const float k01 = get_k(va.s0, vb.s1, va.s2, vb.s1);
   const float k02 = get_k(va.s2, vb.s1, vc.s2, vb.s1);
