@@ -83,6 +83,7 @@ inline half get_k(half a, half b, half c, half d) {
 
 __kernel void debayer10(const __global uchar * in,
                         __global uchar * out,
+                        __local half * cached,
                         float black_level
                        )
 {

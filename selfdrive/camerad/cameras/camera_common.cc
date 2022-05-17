@@ -165,6 +165,7 @@ bool CameraBuf::acquire() {
   }
 
   clWaitForEvents(1, &event);
+  printf("debayer %f\n", (millis_since_boot() - start_time));
   CL_CHECK(clReleaseEvent(event));
 
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
