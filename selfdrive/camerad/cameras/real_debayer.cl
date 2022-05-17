@@ -52,14 +52,13 @@ float4 precolor_correct(ushort4 pvs, int gx, int gy) {
   float4 pv = max(0.0, convert_float4(pvs) - 168.0) / (4096.0 - 168.0);
 
   // correct vignetting
-  #if CAM_NUM == 1
+  #if VIGNETTING
     gx = (gx - RGB_WIDTH/2);
     gy = (gy - RGB_HEIGHT/2);
     pv *= get_vignetting_s(gx*gx + gy*gy);
   #endif
 
-  pv = clamp(pv, 0.0, 1.0);
-  return pv;
+  return clamp(pv, 0.0, 1.0);
 }
 
 float get_k(float a, float b, float c, float d) {
