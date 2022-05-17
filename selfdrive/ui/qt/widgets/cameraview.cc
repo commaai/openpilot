@@ -56,6 +56,7 @@ const mat4 device_transform = {{
 }};
 
 const int FRAME_BUFFER_SIZE = 4;
+static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);
 
 mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 1.333;
