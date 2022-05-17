@@ -163,7 +163,8 @@ void CameraViewWidget::initializeGL() {
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  latest_frame = nullptr;
+  frames.clear();
+  frame_ids.clear()
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
@@ -214,7 +215,18 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  if (latest_frame == nullptr) return;
+  if (frames.size() == 0) return;
+
+  VisionBuf *latest_frame;
+  std::deque<int>::iterator it = std::find(frame_ids.begin(), frame_ids.end(), draw_frame_id);
+  if (it != frame_ids.end()) {
+    latest_frame = frames[it - frame_ids.begin()];
+    qDebug() << "Drawing frame:" << frame_ids[it - frame_ids.begin()];
+  } else {
+    latest_frame = frames[frames.size() - 1];
+    qDebug() << "Drawing frame:" << frame_ids[frames.size() - 1];
+  }
+  qDebug() << "CameraViewWidget::paintGL: frame to draw:" << draw_frame_id;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
@@ -244,7 +256,8 @@ void CameraViewWidget::paintGL() {
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   makeCurrent();
-  latest_frame = nullptr;
+  frames.clear();
+  frame_ids.clear();
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
 
@@ -263,14 +276,24 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   updateFrameMat(width(), height());
 }
 
-void CameraViewWidget::vipcFrameReceived(VisionBuf *buf) {
-  latest_frame = buf;
+void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, int frame_id) {
+  frames.clear();
+  frame_ids.clear();
+  frames.push_back(buf);
+  frame_ids.push_back(frame_id);
+  while (frames.size() > 5) {
+    frames.pop_front();
+  }
+  while (frame_ids.size() > 5) {
+    frame_ids.pop_front();
+  }
   update();
 }
 
 void CameraViewWidget::vipcThread() {
   VisionStreamType cur_stream_type = stream_type;
   std::unique_ptr<VisionIpcClient> vipc_client;
+  VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream_type != stream_type) {
@@ -286,8 +309,8 @@ void CameraViewWidget::vipcThread() {
       emit vipcThreadConnected(vipc_client.get());
     }
 
-    if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
-      emit vipcThreadFrameReceived(buf);
+    if (VisionBuf *buf = vipc_client->recv(&meta_main, 1000)) {
+      emit vipcThreadFrameReceived(buf, meta_main.frame_id);
     }
   }
 }
