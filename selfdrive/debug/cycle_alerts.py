@@ -36,18 +36,19 @@ def cycle_alerts(duration=200, is_metric=False):
 
   # debug alerts
   alerts = [
-    (EventName.highCpuUsage, ET.NO_ENTRY),
-    (EventName.lowMemory, ET.PERMANENT),
-    (EventName.overheat, ET.PERMANENT),
-    (EventName.outOfSpace, ET.PERMANENT),
-    (EventName.modeldLagging, ET.PERMANENT),
-    (EventName.processNotRunning, ET.NO_ENTRY),
-    (EventName.commIssue, ET.NO_ENTRY),
-    (EventName.calibrationInvalid, ET.PERMANENT),
+    #(EventName.highCpuUsage, ET.NO_ENTRY),
+    #(EventName.lowMemory, ET.PERMANENT),
+    #(EventName.overheat, ET.PERMANENT),
+    #(EventName.outOfSpace, ET.PERMANENT),
+    #(EventName.modeldLagging, ET.PERMANENT),
+    #(EventName.processNotRunning, ET.NO_ENTRY),
+    #(EventName.commIssue, ET.NO_ENTRY),
+    #(EventName.calibrationInvalid, ET.PERMANENT),
+    (EventName.posenetInvalid, ET.NO_ENTRY),
   ]
 
   CP = CarInterface.get_params("HONDA CIVIC 2016")
-  sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
+  sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration', 'carState',
                             'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman', 'managerState'])
 
   pm = messaging.PubMaster(['controlsState', 'pandaStates', 'deviceState'])
@@ -67,6 +68,9 @@ def cycle_alerts(duration=200, is_metric=False):
       sm['deviceState'].gpuTempC = [randperc() for _ in range(3)]
       sm['deviceState'].cpuUsagePercent = [int(randperc()) for _ in range(8)]
       sm['modelV2'].frameDropPerc = randperc()
+
+      if random.random() > 0.25:
+        sm['modelV2'].velocity.x = [random.random(), ]
 
       procs = [p.get_process_state_msg() for p in managed_processes.values()]
       random.shuffle(procs)

@@ -263,6 +263,13 @@ def out_of_space_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool,
   return NormalPermanentAlert("Out of Storage", f"{full_perc}% full")
 
 
+def posenet_invalid_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  mdl = sm['modelV2'].velocity.x[0] if len(sm['modelV2'].velocity.x) else math.nan
+  err = sm['carState'].vEgo - mdl
+  msg = f"Speed Error: {err:.1f} m/s"
+  return NoEntryAlert(msg, alert_text_1="Posenet Speed Invalid")
+
+
 def process_not_running_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
   msg = ', '.join(not_running)
@@ -753,7 +760,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # as a heuristic to warn the driver.
   EventName.posenetInvalid: {
     ET.SOFT_DISABLE: soft_disable_alert("Posenet Speed Invalid"),
-    ET.NO_ENTRY: NoEntryAlert("Posenet Speed Invalid"),
+    ET.NO_ENTRY: posenet_invalid_alert,
   },
 
   # When the localizer detects an acceleration of more than 40 m/s^2 (~4G) we
