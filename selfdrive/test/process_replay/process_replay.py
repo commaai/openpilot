@@ -345,8 +345,6 @@ def setup_prefix():
     os.mkdir(msg_path)
   except FileExistsError:
     pass
-  except PermissionError:
-    print(f"WARNING: failed to make {msg_path}")
 
 
 def teardown_prefix():
