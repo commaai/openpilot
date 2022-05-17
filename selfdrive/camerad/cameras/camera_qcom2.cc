@@ -31,8 +31,8 @@ const size_t FRAME_WIDTH = 1928;
 const size_t FRAME_HEIGHT = 1208;
 const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
 
-const size_t AR0231_REGISTERS_HEIGHT = 2;
-const size_t AR0231_STATS_HEIGHT = 2;
+// const size_t AR0231_REGISTERS_HEIGHT = 2;
+// const size_t AR0231_STATS_HEIGHT = 2;
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
@@ -41,11 +41,6 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
-    .extra_height = AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT,
-
-    .registers_offset = 0,
-    .frame_offset = AR0231_REGISTERS_HEIGHT,
-    .stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT,
 
     .bayer = true,
     .bayer_flip = 1,
@@ -681,6 +676,18 @@ void CameraState::camera_open() {
   LOG("-- Configuring sensor");
   if (camera_id == CAMERA_ID_AR0231) {
     sensors_i2c(init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
+
+    if (ci.stats_offset != -1 || ci.registers_offset != -1) {
+      uint16_t smia_test = 0x1802;
+      if (ci.stats_offset != -1) smia_test |= (1 << 7);
+      if (ci.registers_offset != -1) smia_test |= (1 << 8);
+
+      struct i2c_random_wr_payload smia_test_reg[] = {
+        {0x3064, smia_test},
+      };
+      sensors_i2c(smia_test_reg, std::size(smia_test_reg), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
+    }
+
   } else if (camera_id == CAMERA_ID_IMX390) {
     sensors_i2c(init_array_imx390, std::size(init_array_imx390), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   } else {
@@ -1203,6 +1210,8 @@ static float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t
 }
 
 static void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed){
+  assert(c->ci.registers_offset != -1);
+
   const uint8_t expected_preamble[] = {0x0a, 0xaa, 0x55, 0x20, 0xa5, 0x55};
   uint8_t *data = (uint8_t*)c->buf.cur_camera_buf->addr + c->ci.registers_offset;
 
@@ -1239,7 +1248,7 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   if (env_send_driver) {
     framed.setImage(get_frame_image(&c->buf));
   }
-  if (c->camera_id == CAMERA_ID_AR0231) {
+  if (c->camera_id == CAMERA_ID_AR0231 && c->ci.registers_offset != -1) {
     ar0231_process_registers(s, c, framed);
   }
   s->pm->send("driverCameraState", msg);
@@ -1262,7 +1271,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
     LOGT(c->buf.cur_frame_data.frame_id, "%s: Transformed", "RoadCamera");
   }
 
-  if (c->camera_id == CAMERA_ID_AR0231) {
+  if (c->camera_id == CAMERA_ID_AR0231 && c->ci.registers_offset != -1) {
     ar0231_process_registers(s, c, framed);
   }
 

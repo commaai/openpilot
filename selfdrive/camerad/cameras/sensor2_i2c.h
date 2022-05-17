@@ -67,7 +67,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x30A6, 0x0001}, // Y_ODD_INC_
   {0x3402, 0x0788}, // X_OUTPUT_CONTROL
   {0x3404, 0x04B8}, // Y_OUTPUT_CONTROL
-  {0x3064, 0x1982}, // SMIA_TEST
+  {0x3064, 0x1802}, // SMIA_TEST
   {0x30BA, 0x11F2}, // DIGITAL_CTRL
 
   // Enable external trigger and disable GPIO outputs
