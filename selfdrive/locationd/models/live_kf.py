@@ -147,7 +147,7 @@ class LiveKalman:
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
     state_dot[States.ECEF_POS, :] = v
     state_dot[States.ECEF_ORIENTATION, :] = q_dot
-    state_dot[States.ECEF_VELOCITY, 0] = quat_rot * acceleration
+    state_dot[States.ECEF_VELOCITY, :] = quat_rot * acceleration
     state_dot[States.CLOCK_BIAS, :] = cd
     state_dot[States.CLOCK_DRIFT, :] = ca
 
