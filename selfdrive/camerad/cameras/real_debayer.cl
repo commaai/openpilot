@@ -57,21 +57,20 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   const int gid_x = get_global_id(0);
   const int gid_y = get_global_id(1);
 
+  const int y_top_mod = (gid_y == 0) ? 2: 0;
+  const int y_bot_mod = (gid_y == (RGB_HEIGHT/2 - 1)) ? 1: 3;
+
   float3 rgb;
   uchar3 rgb_out[4];
 
-  int start = 2 * gid_y * FRAME_STRIDE + (3 * gid_x) + (FRAME_STRIDE * FRAME_OFFSET);
-
-  // deal with x/y offset
-  // TODO: this is wrong at the edges
-  start = max(0, start-FRAME_STRIDE-2);
+  int start = (2 * gid_y - 1) * FRAME_STRIDE + (3 * gid_x - 2) + (FRAME_STRIDE * FRAME_OFFSET);
 
   // read in 8x4 chars
   uchar8 dat[4];
-  dat[0] = vload8(0, in + start + FRAME_STRIDE*0);
+  dat[0] = vload8(0, in + start + FRAME_STRIDE*y_top_mod);
   dat[1] = vload8(0, in + start + FRAME_STRIDE*1);
   dat[2] = vload8(0, in + start + FRAME_STRIDE*2);
-  dat[3] = vload8(0, in + start + FRAME_STRIDE*3);
+  dat[3] = vload8(0, in + start + FRAME_STRIDE*y_bot_mod);
 
   // correct vignetting
   #if VIGNETTING
