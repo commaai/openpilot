@@ -48,7 +48,7 @@ public:
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float gain, float black_level, cl_event *debayer_event) {
+  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *debayer_event) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
 
@@ -147,22 +147,13 @@ bool CameraBuf::acquire() {
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   if (debayer) {
-    float gain = 0.0;
-    float black_level = 42.0;
-#ifndef QCOM2
-    gain = camera_state->digital_gain;
-    if ((int)gain == 0) gain = 1.0;
-#else
-    if (camera_state->camera_id == CAMERA_ID_IMX390) black_level = 64.0;
-#endif
-    debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, gain, black_level, &event);
+    debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
   } else {
     assert(rgb_stride == camera_state->ci.frame_stride);
     rgb2yuv->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl);
   }
 
   clWaitForEvents(1, &event);
-  printf("debayer %f\n", (millis_since_boot() - start_time));
   CL_CHECK(clReleaseEvent(event));
 
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
