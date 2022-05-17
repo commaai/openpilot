@@ -348,9 +348,12 @@ def setup_prefix():
 
 
 def teardown_prefix():
+  if not os.environ.get("OPENPILOT_PREFIX", 0):
+    return
   params_path = '/data/params/' if os.environ.get('TICI', 0) else os.environ['HOME'] + '/.comma/params/'
   symlink_path = params_path + os.environ['OPENPILOT_PREFIX']
   if os.path.exists(symlink_path):
+    shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
     os.remove(symlink_path)
   msg_path = '/dev/shm/' + os.environ['OPENPILOT_PREFIX']
   shutil.rmtree(msg_path, ignore_errors=True)
@@ -358,12 +361,13 @@ def teardown_prefix():
 
 def replay_process(cfg, lr, fingerprint=None):
   setup_prefix()
-  if cfg.fake_pubsubmaster:
-    res = python_replay_process(cfg, lr, fingerprint)
-  else:
-    res = cpp_replay_process(cfg, lr, fingerprint)
-  teardown_prefix()
-  return res
+  try:
+    if cfg.fake_pubsubmaster:
+      return python_replay_process(cfg, lr, fingerprint)
+    else:
+      return cpp_replay_process(cfg, lr, fingerprint)
+  finally:
+    teardown_prefix()
 
 def setup_env(simulation=False):
   params = Params()
