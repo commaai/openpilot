@@ -42,8 +42,8 @@ def cycle_alerts(duration=200, is_metric=False):
     #(EventName.outOfSpace, ET.PERMANENT),
     #(EventName.modeldLagging, ET.PERMANENT),
     #(EventName.processNotRunning, ET.NO_ENTRY),
-    #(EventName.commIssue, ET.NO_ENTRY),
-    #(EventName.calibrationInvalid, ET.PERMANENT),
+    (EventName.commIssue, ET.NO_ENTRY),
+    (EventName.calibrationInvalid, ET.PERMANENT),
     (EventName.posenetInvalid, ET.NO_ENTRY),
   ]
 
@@ -71,6 +71,8 @@ def cycle_alerts(duration=200, is_metric=False):
 
       if random.random() > 0.25:
         sm['modelV2'].velocity.x = [random.random(), ]
+      if random.random() > 0.25:
+        sm['carState'].vEgo = random.random()
 
       procs = [p.get_process_state_msg() for p in managed_processes.values()]
       random.shuffle(procs)
