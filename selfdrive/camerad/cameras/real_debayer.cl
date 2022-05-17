@@ -84,25 +84,32 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   // this is a 4x4 "conv"
   half4 va, vb, vc, vd;
 
-  va.s0 = val_from_12(in, gid_x*2-1, gid_y*2-1);
-  va.s1 = val_from_12(in, gid_x*2+0, gid_y*2-1);
-  va.s2 = val_from_12(in, gid_x*2+1, gid_y*2-1);
-  va.s3 = val_from_12(in, gid_x*2+2, gid_y*2-1);
+  const int gid_x2 = gid_x*2;
+  const int gid_x2m1 = gid_x == 0 ? gid_x2+1 : gid_x2-1;
+  const int gid_x2p2 = gid_x == (RGB_WIDTH-2) ? gid_x2+0 : gid_x2+2;
+  const int gid_y2 = gid_y*2;
+  const int gid_y2m1 = gid_y == 0 ? gid_y2+1 : gid_y2-1;
+  const int gid_y2p2 = gid_y == (RGB_HEIGHT-2) ? gid_y2+0 : gid_y2+2;
 
-  vb.s0 = val_from_12(in, gid_x*2-1, gid_y*2+0);
-  vb.s1 = val_from_12(in, gid_x*2+0, gid_y*2+0); // G(R)
-  vb.s2 = val_from_12(in, gid_x*2+1, gid_y*2+0); // R
-  vb.s3 = val_from_12(in, gid_x*2+2, gid_y*2+0);
+  va.s0 = val_from_12(in, gid_x2m1, gid_y2m1);
+  va.s1 = val_from_12(in, gid_x2+0, gid_y2m1);
+  va.s2 = val_from_12(in, gid_x2+1, gid_y2m1);
+  va.s3 = val_from_12(in, gid_x2p2, gid_y2m1);
 
-  vc.s0 = val_from_12(in, gid_x*2-1, gid_y*2+1);
-  vc.s1 = val_from_12(in, gid_x*2+0, gid_y*2+1); // B
-  vc.s2 = val_from_12(in, gid_x*2+1, gid_y*2+1); // G(B)
-  vc.s3 = val_from_12(in, gid_x*2+2, gid_y*2+1);
+  vb.s0 = val_from_12(in, gid_x2m1, gid_y*2+0);
+  vb.s1 = val_from_12(in, gid_x2+0, gid_y*2+0); // G(R)
+  vb.s2 = val_from_12(in, gid_x2+1, gid_y*2+0); // R
+  vb.s3 = val_from_12(in, gid_x2p2, gid_y*2+0);
 
-  vd.s0 = val_from_12(in, gid_x*2-1, gid_y*2+2);
-  vd.s1 = val_from_12(in, gid_x*2+0, gid_y*2+2);
-  vd.s2 = val_from_12(in, gid_x*2+1, gid_y*2+2);
-  vd.s3 = val_from_12(in, gid_x*2+2, gid_y*2+2);
+  vc.s0 = val_from_12(in, gid_x2m1, gid_y*2+1);
+  vc.s1 = val_from_12(in, gid_x2+0, gid_y*2+1); // B
+  vc.s2 = val_from_12(in, gid_x2+1, gid_y*2+1); // G(B)
+  vc.s3 = val_from_12(in, gid_x2p2, gid_y*2+1);
+
+  vd.s0 = val_from_12(in, gid_x2m1, gid_y2p2);
+  vd.s1 = val_from_12(in, gid_x2+0, gid_y2p2);
+  vd.s2 = val_from_12(in, gid_x2+1, gid_y2p2);
+  vd.s3 = val_from_12(in, gid_x2p2, gid_y2p2);
 
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   const half k01 = get_k(va.s0, vb.s1, va.s2, vb.s1);
