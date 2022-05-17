@@ -286,6 +286,7 @@ int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   /*assert(in_width == in_width_);
   assert(in_height == in_height_);*/
   assert(is_open);
+  assert(false);
 
   // reserve buffer
   int buffer_in = free_buf_in.pop();
