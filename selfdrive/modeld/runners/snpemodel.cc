@@ -125,7 +125,9 @@ SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int 
   }
 
 #ifdef USE_THNEED
-  thneed.reset(new Thneed());
+  if (Runtime == zdl::DlSystem::Runtime_t::GPU) {
+    thneed.reset(new Thneed());
+  }
 #endif
 }
 
