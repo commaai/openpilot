@@ -372,13 +372,15 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
 }
 
 void NvgWindow::paintGL() {
+  UIState *s = uiState();
+  CameraViewWidget::draw_frame_id = (*s->sm)["modelV2"].getModelV2().getFrameId();
+  qDebug() << "NvgWindow::paintGL: frame to draw:" << draw_frame_id;
   CameraViewWidget::paintGL();
 
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
-  UIState *s = uiState();
   if (s->worldObjectsVisible()) {
 
     drawLaneLines(painter, s);
