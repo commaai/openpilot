@@ -6,7 +6,6 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
 #include <QThread>
-#include <QDebug>
 #include "cereal/visionipc/visionipc_client.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
@@ -20,11 +19,7 @@ public:
   ~CameraViewWidget();
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
-  void setFrameId(int frame_id) {
-    frame_offset = frame_id == draw_frame_id ? frame_offset + 1 : 0;
-    if (frame_id > draw_frame_id)
-      draw_frame_id = frame_id;
-  }
+  void setFrameId(int frame_id) { draw_frame_id = frame_id; }
 
 signals:
   void clicked();
@@ -55,8 +50,7 @@ protected:
   QThread *vipc_thread = nullptr;
 
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
-  uint32_t draw_frame_id = 0;
-  uint32_t frame_offset = 0;
+  uint32_t draw_frame_id;
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);

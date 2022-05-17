@@ -55,7 +55,7 @@ const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
-const int FRAME_BUFFER_SIZE = 3;
+const int FRAME_BUFFER_SIZE = 4;
 static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);
 
 mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
@@ -221,14 +221,10 @@ void CameraViewWidget::paintGL() {
   if (frames.size() == 0) return;
 
   auto it = std::find_if(frames.begin(), frames.end(), [this](const std::pair<uint32_t, VisionBuf*>& element) {
-    return element.first == (draw_frame_id + frame_offset);
+    return element.first == draw_frame_id;
   });
   int frame_idx = (it == frames.end()) ? (frames.size() - 1) : (it - frames.begin());
-
   VisionBuf *frame = frames[frame_idx].second;
-  qDebug() << "Latest frame:" << frames[frames.size() - 1].first;
-  qDebug() << "Drawing frame:" << frames[frame_idx].first;
-  qDebug() << "CameraViewWidget::paintGL: frame to draw:" << draw_frame_id;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
