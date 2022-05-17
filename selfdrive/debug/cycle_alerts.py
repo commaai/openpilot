@@ -42,15 +42,19 @@ def cycle_alerts(duration=200, is_metric=False):
     #(EventName.outOfSpace, ET.PERMANENT),
     #(EventName.modeldLagging, ET.PERMANENT),
     #(EventName.processNotRunning, ET.NO_ENTRY),
-    (EventName.commIssue, ET.NO_ENTRY),
-    (EventName.calibrationInvalid, ET.PERMANENT),
-    (EventName.posenetInvalid, ET.NO_ENTRY),
+    #(EventName.commIssue, ET.NO_ENTRY),
+    #(EventName.calibrationInvalid, ET.PERMANENT),
+    (EventName.cameraMalfunction, ET.PERMANENT),
+    (EventName.cameraFrameRate, ET.PERMANENT),
   ]
+
+  cameras = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']
 
   CS = car.CarState.new_message()
   CP = CarInterface.get_params("HONDA CIVIC 2016")
   sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
-                            'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman', 'managerState'])
+                            'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
+                            'managerState'] + cameras)
 
   pm = messaging.PubMaster(['controlsState', 'pandaStates', 'deviceState'])
 
@@ -84,9 +88,10 @@ def cycle_alerts(duration=200, is_metric=False):
       sm['liveCalibration'].rpyCalib = [-1 * random.random() for _ in range(random.randint(0, 3))]
 
       for s in sm.data.keys():
-        sm.alive[s] = random.random() > 0.08
-        sm.valid[s] = random.random() > 0.08
-        sm.freq_ok[s] = random.random() > 0.08
+        prob = 0.3 if s in cameras else 0.08
+        sm.alive[s] = random.random() > prob
+        sm.valid[s] = random.random() > prob
+        sm.freq_ok[s] = random.random() > prob
 
       a = events.create_alerts([et, ], [CP, CS, sm, is_metric, 0])
       AM.add_many(frame, a)
