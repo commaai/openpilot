@@ -77,7 +77,11 @@ bool Route::loadFromLocal() {
 }
 
 void Route::addFileToSegment(int n, const QString &file) {
-  const QString name = QUrl(file).fileName();
+  QString name = QUrl(file).fileName();
+
+  const int pos = name.lastIndexOf("--");
+  name = pos != -1 ? name.mid(pos + 2) : name;
+
   if (name == "rlog.bz2") {
     segments_[n].rlog = file;
   } else if (name == "qlog.bz2") {

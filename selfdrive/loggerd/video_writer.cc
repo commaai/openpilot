@@ -1,5 +1,3 @@
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
 #include <cassert>
 #include <cstdlib>
 
@@ -7,8 +5,9 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, bool h265, bool raw)
-  : remuxing(remuxing), raw(raw) {
+VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec)
+  : remuxing(remuxing) {
+  raw = codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS;
   vid_path = util::string_format("%s/%s", path, filename);
   lock_path = util::string_format("%s/%s.lock", path, filename);
 
@@ -22,27 +21,24 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
     assert(this->ofmt_ctx);
 
     // set codec correctly. needed?
-    av_register_all();
+    assert(codec != cereal::EncodeIndex::Type::FULL_H_E_V_C);
+    const AVCodec *avcodec = avcodec_find_encoder(raw ? AV_CODEC_ID_FFVHUFF : AV_CODEC_ID_H264);
+    assert(avcodec);
 
-    AVCodec *codec = NULL;
-    assert(!h265);
-    codec = avcodec_find_encoder(raw ? AV_CODEC_ID_FFVHUFF : AV_CODEC_ID_H264);
-    assert(codec);
-
-    this->codec_ctx = avcodec_alloc_context3(codec);
+    this->codec_ctx = avcodec_alloc_context3(avcodec);
     assert(this->codec_ctx);
     this->codec_ctx->width = width;
     this->codec_ctx->height = height;
     this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
     this->codec_ctx->time_base = (AVRational){ 1, fps };
 
-    if (raw) {
-      // since the codec is actually used, we open it
-      int err = avcodec_open2(this->codec_ctx, codec, NULL);
+    if (codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS) {
+      // without this, there's just noise
+      int err = avcodec_open2(this->codec_ctx, avcodec, NULL);
       assert(err >= 0);
     }
 
-    this->out_stream = avformat_new_stream(this->ofmt_ctx, raw ? codec : NULL);
+    this->out_stream = avformat_new_stream(this->ofmt_ctx, raw ? avcodec : NULL);
     assert(this->out_stream);
 
     int err = avio_open(&this->ofmt_ctx->pb, this->vid_path.c_str(), AVIO_FLAG_WRITE);
@@ -64,7 +60,7 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
 
   if (remuxing) {
     if (codecconfig) {
-      if (data) {
+      if (len > 0) {
         codec_ctx->extradata = (uint8_t*)av_mallocz(len + AV_INPUT_BUFFER_PADDING_SIZE);
         codec_ctx->extradata_size = len;
         memcpy(codec_ctx->extradata, data, len);
@@ -92,9 +88,9 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
 
       // TODO: can use av_write_frame for non raw?
       int err = av_interleaved_write_frame(ofmt_ctx, &pkt);
-      if (err < 0) { LOGW("ts encoder write issue"); }
+      if (err < 0) { LOGW("ts encoder write issue len: %d ts: %lu", len, timestamp); }
 
-      av_free_packet(&pkt);
+      av_packet_unref(&pkt);
     }
   }
 }

@@ -23,6 +23,7 @@ repos:
         additional_dependencies: ['lxml', 'numpy', 'types-atomicwrites', 'types-pycurl', 'types-requests', 'types-certifi']
         args:
         - --warn-redundant-casts
+        - --warn-return-any
         - --warn-unreachable
         - --warn-unused-ignores
         #- --html-report=/home/batman/openpilot

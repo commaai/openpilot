@@ -143,11 +143,11 @@ class TestCarModel(unittest.TestCase):
     assert RI
 
     error_cnt = 0
-    for msg in self.can_msgs:
-      radar_data = RI.update((msg.as_builder().to_bytes(),))
-      if radar_data is not None:
-        error_cnt += car.RadarData.Error.canError in radar_data.errors
-    self.assertLess(error_cnt, 20)
+    for i, msg in enumerate(self.can_msgs):
+      rr = RI.update((msg.as_builder().to_bytes(),))
+      if rr is not None and i > 50:
+        error_cnt += car.RadarData.Error.canError in rr.errors
+    self.assertEqual(error_cnt, 0)
 
   def test_panda_safety_rx_valid(self):
     if self.CP.dashcamOnly:

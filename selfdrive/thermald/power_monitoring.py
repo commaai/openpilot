@@ -1,7 +1,4 @@
-import random
 import threading
-import time
-from statistics import mean
 from typing import Optional
 
 from cereal import log
@@ -82,52 +79,8 @@ class PowerMonitoring:
           self.car_battery_capacity_uWh += (CAR_CHARGING_RATE_W * 1e6 * integration_time_h)
           self.last_measurement_time = now
       else:
-        # No ignition, we integrate the offroad power used by the device
-        is_uno = peripheralState.pandaType == log.PandaState.PandaType.uno
         # Get current power draw somehow
-        current_power = HARDWARE.get_current_power_draw() # pylint: disable=assignment-from-none
-        if current_power is not None:
-          pass
-        elif (self.next_pulsed_measurement_time is not None) and (self.next_pulsed_measurement_time <= now):
-          # TODO: Figure out why this is off by a factor of 3/4???
-          FUDGE_FACTOR = 1.33
-
-          # Turn off charging for about 10 sec in a thread that does not get killed on SIGINT, and perform measurement here to avoid blocking thermal
-          def perform_pulse_measurement(now):
-            try:
-              HARDWARE.set_battery_charging(False)
-              time.sleep(5)
-
-              # Measure for a few sec to get a good average
-              voltages = []
-              currents = []
-              for _ in range(6):
-                voltages.append(HARDWARE.get_battery_voltage())
-                currents.append(HARDWARE.get_battery_current())
-                time.sleep(1)
-              current_power = ((mean(voltages) / 1000000) * (mean(currents) / 1000000))
-
-              self._perform_integration(now, current_power * FUDGE_FACTOR)
-
-              # Enable charging again
-              HARDWARE.set_battery_charging(True)
-            except Exception:
-              cloudlog.exception("Pulsed power measurement failed")
-
-          # Start pulsed measurement and return
-          threading.Thread(target=perform_pulse_measurement, args=(now,)).start()
-          self.next_pulsed_measurement_time = None
-          return
-
-        elif self.next_pulsed_measurement_time is None and not is_uno:
-          # On a charging EON with black panda, or drawing more than 400mA out of a white/grey one
-          # Only way to get the power draw is to turn off charging for a few sec and check what the discharging rate is
-          # We shouldn't do this very often, so make sure it has been some long-ish random time interval
-          self.next_pulsed_measurement_time = now + random.randint(120, 180)
-          return
-        else:
-          # Do nothing
-          return
+        current_power = HARDWARE.get_current_power_draw()
 
         # Do the integration
         self._perform_integration(now, current_power)
@@ -178,11 +131,9 @@ class PowerMonitoring:
 
     now = sec_since_boot()
     panda_charging = (peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client)
-    BATT_PERC_OFF = 10
 
     should_shutdown = False
     # Wait until we have shut down charging before powering down
     should_shutdown |= (not panda_charging and self.should_disable_charging(ignition, in_car, offroad_timestamp))
-    should_shutdown |= ((HARDWARE.get_battery_capacity() < BATT_PERC_OFF) and (not HARDWARE.get_battery_charging()) and ((now - offroad_timestamp) > 60))
     should_shutdown &= started_seen or (now > MIN_ON_TIME_S)
     return should_shutdown

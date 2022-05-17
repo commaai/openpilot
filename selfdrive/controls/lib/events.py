@@ -135,6 +135,8 @@ class Alert:
     return f"{self.alert_text_1}/{self.alert_text_2} {self.priority} {self.visual_alert} {self.audible_alert}"
 
   def __gt__(self, alert2) -> bool:
+    if not isinstance(alert2, Alert):
+      return False
     return self.priority > alert2.priority
 
 
@@ -262,7 +264,7 @@ def overheat_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, sof
   cpu = max(sm['deviceState'].cpuTempC, default=0.)
   gpu = max(sm['deviceState'].gpuTempC, default=0.)
   temp = max((cpu, gpu, sm['deviceState'].memoryTempC))
-  return NormalPermanentAlert("System Overheated", f"{temp} °C")
+  return NormalPermanentAlert("System Overheated", f"{temp:.0f} °C")
 
 
 def low_memory_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
@@ -275,7 +277,7 @@ def high_cpu_usage_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
 
 
 def modeld_lagging_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  return NormalPermanentAlert("Driving model lagging", f"{sm['modelV2'].frameDropPerc}% frames dropped")
+  return NormalPermanentAlert("Driving model lagging", f"{sm['modelV2'].frameDropPerc:.1f}% frames dropped")
 
 
 def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:

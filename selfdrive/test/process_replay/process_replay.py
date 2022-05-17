@@ -24,6 +24,8 @@ from selfdrive.manager.process_config import managed_processes
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
+PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
+FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config'], defaults=({},))
 
@@ -240,7 +242,7 @@ CONFIGS = [
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
       "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
-      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "managerState": [],
+      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "managerState": [], "testJoystick": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
@@ -348,6 +350,7 @@ def setup_env(simulation=False):
   params.put_bool("Passive", False)
   params.put_bool("DisengageOnAccelerator", True)
   params.put_bool("EnableWideCamera", False)
+  params.put_bool("DisableLogging", False)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
