@@ -142,8 +142,9 @@ class Alert:
 
 
 class NoEntryAlert(Alert):
-  def __init__(self, alert_text_2: str, visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none,
-               alert_text_1: str = "openpilot Unavailable"):
+  def __init__(self, alert_text_2: str,
+               alert_text_1: str = "openpilot Unavailable",
+               visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none):
     super().__init__(alert_text_1, alert_text_2, AlertStatus.normal,
                      AlertSize.mid, Priority.LOW, visual_alert,
                      AudibleAlert.refuse, 3.)
@@ -264,23 +265,24 @@ def out_of_space_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool,
 
 def process_not_running_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
-  return NoEntryAlert("Process Not Running", alert_text_1=', '.join(not_running))
+  msg = ', '.join(not_running)
+  return NoEntryAlert(msg, alert_text_1="Process Not Running")
 
 
 def comm_issue_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   invalid = [s for s, valid in sm.valid.items() if not valid]
   not_alive = [s for s, alive in sm.alive.items() if not alive]
   lagging = [s for s, freq_ok in sm.freq_ok.items() if not freq_ok]
-  # TODO: better text here
-  return NoEntryAlert("Communication Issue Between Processes", alert_text_1=', '.join(set(invalid + not_alive + lagging)))
+  msg = ', '.join(set(invalid + not_alive + lagging))
+  return NoEntryAlert(msg, alert_text_1="Communication Issue Between Processes")
 
 
 def calibration_invalid_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   rpy = sm['liveCalibration'].rpyCalib
   yaw = math.degrees(rpy[2] if len(rpy) == 3 else math.nan)
   pitch = math.degrees(rpy[1] if len(rpy) == 3 else math.nan)
-  angles = f"Pitch: {pitch}°, Yaw: {yaw}°"
-  return NormalPermanentAlert("CalibrationInvalid", angles)
+  angles = f"Pitch: {pitch:.1f}°, Yaw: {yaw:.1f}°"
+  return NormalPermanentAlert("Calibration Invalid", angles)
 
 
 def overheat_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
