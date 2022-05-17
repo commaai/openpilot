@@ -38,18 +38,18 @@ float get_vignetting_s(float r) {
   }
 }
 
-float val_from_12(const uchar * source, int gx, int gy) {
+ushort val_from_12(const uchar * source, int gx, int gy) {
   // parse 12bit
   int start = gy * FRAME_STRIDE + (3 * (gx / 2)) + (FRAME_STRIDE * FRAME_OFFSET);
   int offset = gx % 2;
   uint major = (uint)source[start + offset] << 4;
   uint minor = (source[start + 2] >> (4 * offset)) & 0xf;
-  return (float)(major + minor);
+  return (major + minor);
 }
 
-float4 precolor_correct(float4 pv, int gx, int gy) {
+float4 precolor_correct(ushort4 pvs, int gx, int gy) {
   // normalize
-  pv = max(0.0, pv - 168) / (4096.0 - 168);
+  float4 pv = max(0.0, convert_float4(pvs) - 168.0) / (4096.0 - 168.0);
 
   // correct vignetting
   #if CAM_NUM == 1
@@ -74,8 +74,8 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   float3 rgb;
   uchar3 rgb_out[4];
 
-  // this is a 4x4 "conv"
-  float4 va, vb, vc, vd;
+  // load 4x4 conv data
+  ushort4 vas, vbs, vcs, vds;
 
   const int gid_x2 = gid_x*2;
   const int gid_x2m1 = gid_x == 0 ? gid_x2+1 : gid_x2-1;
@@ -84,30 +84,31 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   const int gid_y2m1 = gid_y == 0 ? gid_y2+1 : gid_y2-1;
   const int gid_y2p2 = gid_y == (RGB_HEIGHT-2) ? gid_y2+0 : gid_y2+2;
 
-  va.s0 = val_from_12(in, gid_x2m1, gid_y2m1);
-  va.s1 = val_from_12(in, gid_x2+0, gid_y2m1);
-  va.s2 = val_from_12(in, gid_x2+1, gid_y2m1);
-  va.s3 = val_from_12(in, gid_x2p2, gid_y2m1);
+  vas.s0 = val_from_12(in, gid_x2m1, gid_y2m1);
+  vas.s1 = val_from_12(in, gid_x2+0, gid_y2m1);
+  vas.s2 = val_from_12(in, gid_x2+1, gid_y2m1);
+  vas.s3 = val_from_12(in, gid_x2p2, gid_y2m1);
 
-  vb.s0 = val_from_12(in, gid_x2m1, gid_y*2+0);
-  vb.s1 = val_from_12(in, gid_x2+0, gid_y*2+0); // G(R)
-  vb.s2 = val_from_12(in, gid_x2+1, gid_y*2+0); // R
-  vb.s3 = val_from_12(in, gid_x2p2, gid_y*2+0);
+  vbs.s0 = val_from_12(in, gid_x2m1, gid_y*2+0);
+  vbs.s1 = val_from_12(in, gid_x2+0, gid_y*2+0); // G(R)
+  vbs.s2 = val_from_12(in, gid_x2+1, gid_y*2+0); // R
+  vbs.s3 = val_from_12(in, gid_x2p2, gid_y*2+0);
 
-  vc.s0 = val_from_12(in, gid_x2m1, gid_y*2+1);
-  vc.s1 = val_from_12(in, gid_x2+0, gid_y*2+1); // B
-  vc.s2 = val_from_12(in, gid_x2+1, gid_y*2+1); // G(B)
-  vc.s3 = val_from_12(in, gid_x2p2, gid_y*2+1);
+  vcs.s0 = val_from_12(in, gid_x2m1, gid_y*2+1);
+  vcs.s1 = val_from_12(in, gid_x2+0, gid_y*2+1); // B
+  vcs.s2 = val_from_12(in, gid_x2+1, gid_y*2+1); // G(B)
+  vcs.s3 = val_from_12(in, gid_x2p2, gid_y*2+1);
 
-  vd.s0 = val_from_12(in, gid_x2m1, gid_y2p2);
-  vd.s1 = val_from_12(in, gid_x2+0, gid_y2p2);
-  vd.s2 = val_from_12(in, gid_x2+1, gid_y2p2);
-  vd.s3 = val_from_12(in, gid_x2p2, gid_y2p2);
+  vds.s0 = val_from_12(in, gid_x2m1, gid_y2p2);
+  vds.s1 = val_from_12(in, gid_x2+0, gid_y2p2);
+  vds.s2 = val_from_12(in, gid_x2+1, gid_y2p2);
+  vds.s3 = val_from_12(in, gid_x2p2, gid_y2p2);
 
-  va = precolor_correct(va, gid_x2, gid_y2);
-  vb = precolor_correct(vb, gid_x2, gid_y2);
-  vc = precolor_correct(vc, gid_x2, gid_y2);
-  vd = precolor_correct(vd, gid_x2, gid_y2);
+  float4 va, vb, vc, vd;
+  va = precolor_correct(vas, gid_x2, gid_y2);
+  vb = precolor_correct(vbs, gid_x2, gid_y2);
+  vc = precolor_correct(vcs, gid_x2, gid_y2);
+  vd = precolor_correct(vds, gid_x2, gid_y2);
 
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   const float k01 = get_k(va.s0, vb.s1, va.s2, vb.s1);
