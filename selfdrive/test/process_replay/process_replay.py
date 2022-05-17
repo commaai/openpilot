@@ -16,6 +16,7 @@ import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
+from common.basedir import PARAMS
 from common.timeout import Timeout
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.car_helpers import get_car, interfaces
@@ -350,12 +351,11 @@ def setup_prefix():
 def teardown_prefix():
   if not os.environ.get("OPENPILOT_PREFIX", 0):
     return
-  params_path = '/data/params/' if os.environ.get('TICI', 0) else os.environ['HOME'] + '/.comma/params/'
-  symlink_path = params_path + os.environ['OPENPILOT_PREFIX']
+  symlink_path = os.path.join(PARAMS, os.environ['OPENPILOT_PREFIX'])
   if os.path.exists(symlink_path):
     shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
     os.remove(symlink_path)
-  msg_path = '/dev/shm/' + os.environ['OPENPILOT_PREFIX']
+  msg_path = os.path.join('/dev/shm', os.environ['OPENPILOT_PREFIX'])
   shutil.rmtree(msg_path, ignore_errors=True)
 
 
