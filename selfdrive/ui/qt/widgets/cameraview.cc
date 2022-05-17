@@ -220,7 +220,7 @@ void CameraViewWidget::paintGL() {
 
   if (frames.size() == 0) return;
 
-  auto it = std::find_if(frames.begin(), frames.end(), [this](const std::pair <uint32_t, VisionBuf*>& element) {
+  auto it = std::find_if(frames.begin(), frames.end(), [this](const std::pair<uint32_t, VisionBuf*>& element) {
     return element.first == draw_frame_id;
   });
   int frame_idx = (it == frames.end()) ? (frames.size() - 1) : (it - frames.begin());
