@@ -69,7 +69,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 def run_test_process(data):
-  segment, cfg, args, cur_log_fn, lr = data
+  segment, cfg, args, cur_log_fn, lr, ref_commit = data
   ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
   res, log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
   # save logs so we can upload when updating refs
@@ -201,7 +201,7 @@ if __name__ == "__main__":
          (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
         continue
       cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-      pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment]))
+      pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment], ref_commit))
       if upload:
         print(f'Uploading: {os.path.basename(cur_log_fn)}')
         assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
