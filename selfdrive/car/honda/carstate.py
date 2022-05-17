@@ -5,8 +5,9 @@ from common.conversions import Conversions as CV
 from common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from selfdrive.car.interfaces import CarStateBase
+from selfdrive.car.honda.hondacan import get_pt_bus
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS
+from selfdrive.car.interfaces import CarStateBase
 
 TransmissionType = car.CarParams.TransmissionType
 
@@ -315,8 +316,7 @@ class CarState(CarStateBase):
 
   def get_can_parser(self, CP):
     signals, checks = get_can_signals(CP, self.gearbox_msg, self.main_on_sig_msg)
-    bus_pt = 1 if CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) else 0
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus_pt)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, get_pt_bus(CP.carFingerprint))
 
   @staticmethod
   def get_cam_can_parser(CP):

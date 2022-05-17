@@ -9,12 +9,7 @@ from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADA
 
 
 def get_pt_bus(car_fingerprint):
-  if car_fingerprint in HONDA_BOSCH_RADARLESS:
-    return 2
-  elif car_fingerprint in HONDA_BOSCH:
-    return 1
-  else:
-    return 0
+  return 1 if car_fingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) else 0
 
 
 def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
