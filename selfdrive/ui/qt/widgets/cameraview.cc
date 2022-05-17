@@ -220,9 +220,10 @@ void CameraViewWidget::paintGL() {
   assert(frames.size() == frame_ids.size());
   if (frames.size() == 0) return;
 
+  VisionBuf *frame;
   std::deque<quint32>::iterator it = std::find(frame_ids.begin(), frame_ids.end(), draw_frame_id);
   int frame_idx = (it == frame_ids.end()) ? (frames.size() - 1) : (it - frame_ids.begin());
-  VisionBuf *frame = *frames[frame_idx];
+  frame = frames[frame_idx];
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
@@ -273,7 +274,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 }
 
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, quint32 frame_id) {
-  frames.push_back(std::make_unique<VisionBuf*>(buf));
+  frames.push_back(buf);
   frame_ids.push_back(frame_id);
   while (frames.size() > FRAME_BUFFER_SIZE) {
     frames.pop_front();
