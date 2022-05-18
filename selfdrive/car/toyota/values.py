@@ -1281,12 +1281,14 @@ FW_VERSIONS = {
   CAR.RAV4_TSS2_2022: {
     (Ecu.esp, 0x7b0, None): [
       b'\x01F15260R350\x00\x00\x00\x00\x00\x00',
+      b'\x01F15260R361\x00\x00\x00\x00\x00\x00'
     ],
     (Ecu.eps, 0x7a1, None): [
       b'\x028965B0R01500\x00\x00\x00\x008965B0R02500\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896634AA1000\x00\x00\x00\x00',
+      b'\x01896634A88000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F0R01100\x00\x00\x00\x00',
