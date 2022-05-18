@@ -20,6 +20,9 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
     ((e->type == WideRoadCam) ? event.initWideRoadEncodeData() :
     (e->in_width == e->out_width ? event.initRoadEncodeData() : event.initQRoadEncodeData()));
   auto edata = edat.initIdx();
+  struct timespec ts;
+  timespec_get(&ts, TIME_UTC);
+  edat.setUnixTimestampNanos((uint64_t)ts.tv_sec*1000000000 + ts.tv_nsec);
   edata.setFrameId(extra.frame_id);
   edata.setTimestampSof(extra.timestamp_sof);
   edata.setTimestampEof(extra.timestamp_eof);
