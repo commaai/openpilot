@@ -166,8 +166,14 @@ void CameraViewWidget::initializeGL() {
   glUniform1i(program->uniformLocation("uTextureV"), 2);
 }
 
+void CameraViewWidget::clearFrames() {
+  for (int i = 0; i < 4; i++) {
+    frames[i] = nullptr;
+  }
+}
+
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  frames.clear();
+  clearFrames();
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
@@ -218,13 +224,9 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  if (frames.size() == 0) return;
-
-  auto it = std::find_if(frames.begin(), frames.end(), [this](const std::pair<uint32_t, VisionBuf*>& element) {
-    return element.first == draw_frame_id;
-  });
-  int frame_idx = (it == frames.end()) ? (frames.size() - 1) : (it - frames.begin());
-  VisionBuf *frame = frames[frame_idx].second;
+  int frame_idx = (draw_frame_id + frame_offset) % 4;
+  if (frames[frame_idx] == nullptr) return;
+  VisionBuf *frame = frames[frame_idx]->frame;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
@@ -254,7 +256,7 @@ void CameraViewWidget::paintGL() {
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   makeCurrent();
-  frames.clear();
+  clearFrames();
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
 
@@ -274,10 +276,10 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 }
 
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
-  frames.push_back(std::make_pair(frame_id, buf));
-  while (frames.size() > FRAME_BUFFER_SIZE) {
-    frames.pop_front();
-  }
+  FramePair *frame_new = new FramePair;
+  frame_new->frame_id = frame_id;
+  frame_new->frame = buf;
+  frames[frame_id % 4] = frame_new;
   update();
 }
 
