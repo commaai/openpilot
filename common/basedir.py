@@ -9,8 +9,3 @@ if PC:
   PERSIST = os.path.join(str(Path.home()), ".comma", "persist")
 else:
   PERSIST = "/persist"
-
-if PC:
-  PARAMS = os.path.join(str(Path.home()), ".comma", "params")
-else:
-  PARAMS = "/data/params"
