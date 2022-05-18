@@ -3,6 +3,7 @@ import argparse
 import concurrent.futures
 import os
 import sys
+from tqdm import tqdm
 from typing import Any, Dict
 
 from selfdrive.car.car_helpers import interface_names
@@ -118,7 +119,6 @@ def format_diff(results, ref_commit):
         failed = True
   return diff1, diff2, failed
 
-
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
 
@@ -171,7 +171,7 @@ if __name__ == "__main__":
 
   lreaders: Any = {}
   p1 = pool.map(get_logreader, [seg for car, seg in segments])
-  for tup in p1:
+  for tup in tqdm(p1, desc="Getting LogReaders", total=len(segments)):
     if tup[0] not in lreaders:
       lreaders[tup[0]] = {}
     lreaders[tup[0]] = tup[1]
@@ -196,7 +196,7 @@ if __name__ == "__main__":
 
   results: Any = {}
   p2 = pool.map(run_test_process, pool_args)
-  for tup in p2:
+  for tup in tqdm(p2, desc="Running tests", total=len(pool_args)):
     if tup[0] not in results:
       results[tup[0]] = {}
     results[tup[0]][tup[1]] = tup[2]
