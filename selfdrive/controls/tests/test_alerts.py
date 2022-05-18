@@ -31,6 +31,7 @@ class TestAlerts(unittest.TestCase):
       cls.offroad_alerts = json.loads(f.read())
 
       # Create fake objects for callback
+      cls.CS = car.CarState.new_message()
       cls.CP = car.CarParams.new_message()
       cfg = [c for c in CONFIGS if c.proc_name == 'controlsd'][0]
       cls.sm = FakeSubMaster(cfg.pub_sub.keys())
@@ -53,7 +54,7 @@ class TestAlerts(unittest.TestCase):
 
     max_text_width = 1920 - 300  # full screen width is useable, minus sidebar
     # TODO: get exact scale factor. found this empirically, works well enough
-    font_scale_factor = 1.85  # factor to scale from nanovg units to PIL
+    font_scale_factor = 1.55  # factor to scale from nanovg units to PIL
 
     draw = ImageDraw.Draw(Image.new('RGB', (0, 0)))
 
@@ -65,7 +66,7 @@ class TestAlerts(unittest.TestCase):
 
     for alert in ALERTS:
       if not isinstance(alert, Alert):
-        alert = alert(self.CP, self.sm, metric=False, soft_disable_time=100)
+        alert = alert(self.CP, self.CS, self.sm, metric=False, soft_disable_time=100)
 
       # for full size alerts, both text fields wrap the text,
       # so it's unlikely that they  would go past the max width
