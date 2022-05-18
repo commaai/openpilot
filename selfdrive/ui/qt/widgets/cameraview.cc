@@ -225,7 +225,7 @@ void CameraViewWidget::paintGL() {
   if ((draw_frame_id != prev_draw_frame_id) && (draw_frame_id - frames[0].first) < FRAME_BUFFER_SIZE) {
     frame_idx = draw_frame_id - frames[0].first;
   }
-  frame_idx = std::max(frame_idx, (int)frames.size() - 1);
+  frame_idx = std::min(frame_idx, (int)frames.size() - 1);
   VisionBuf *frame = frames[frame_idx].second;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
