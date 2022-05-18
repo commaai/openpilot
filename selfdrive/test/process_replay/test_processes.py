@@ -171,7 +171,7 @@ if __name__ == "__main__":
 
   lreaders: Any = {}
   p1 = pool.map(get_logreader, [seg for car, seg in segments])
-  for tup in tqdm(p1, desc="Getting LogReaders", total=len(segments)):
+  for tup in tqdm(p1, desc="Getting Logs", total=len(segments)):
     if tup[0] not in lreaders:
       lreaders[tup[0]] = {}
     lreaders[tup[0]] = tup[1]
