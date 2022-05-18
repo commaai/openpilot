@@ -10,10 +10,8 @@
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
 
-struct FramePair {
-  uint32_t frame_id;
-  VisionBuf* frame;
-};
+const int FRAME_BUFFER_SIZE = 4;
+static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);
 
 class CameraViewWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
@@ -62,7 +60,7 @@ protected:
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
 
-  FramePair *frames[4];
+  VisionBuf *frames[FRAME_BUFFER_SIZE];
   uint32_t draw_frame_id;
   uint32_t frame_offset;
 

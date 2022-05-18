@@ -55,9 +55,6 @@ const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
-const int FRAME_BUFFER_SIZE = 4;
-static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);
-
 mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 1.333;
   mat4 transform;
@@ -167,7 +164,7 @@ void CameraViewWidget::initializeGL() {
 }
 
 void CameraViewWidget::clearFrames() {
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < FRAME_BUFFER_SIZE; i++) {
     frames[i] = nullptr;
   }
 }
@@ -224,9 +221,9 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  int frame_idx = (draw_frame_id + frame_offset) % 4;
+  int frame_idx = (draw_frame_id + frame_offset) % FRAME_BUFFER_SIZE;
   if (frames[frame_idx] == nullptr) return;
-  VisionBuf *frame = frames[frame_idx]->frame;
+  VisionBuf *frame = frames[frame_idx];
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
@@ -276,10 +273,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 }
 
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
-  FramePair *frame_new = new FramePair;
-  frame_new->frame_id = frame_id;
-  frame_new->frame = buf;
-  frames[frame_id % 4] = frame_new;
+  frames[frame_id % FRAME_BUFFER_SIZE] = buf;
   update();
 }
 
