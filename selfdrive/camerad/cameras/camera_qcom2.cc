@@ -19,7 +19,7 @@
 #include "media/cam_sensor.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
-#include "selfdrive/common/swaglog.h"
+#include "common/swaglog.h"
 #include "selfdrive/camerad/cameras/sensor2_i2c.h"
 
 // For debugging:

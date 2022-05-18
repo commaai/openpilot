@@ -11,10 +11,10 @@
 #include <jpeglib.h>
 
 #include "selfdrive/camerad/imgproc/utils.h"
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/clutil.h"
+#include "common/modeldata.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 
 #if QCOM2
