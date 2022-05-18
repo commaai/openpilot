@@ -52,7 +52,6 @@ if __name__ == "__main__":
   parser.add_argument('--addr', default='127.0.0.1')
   parser.add_argument("route", type=str, nargs='*', help="route name + segment number for offline usage")
   args = parser.parse_args()
-  print(args)
 
   logs = None
   if len(args.route):
