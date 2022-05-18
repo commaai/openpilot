@@ -18,7 +18,8 @@ class LateralPlanner:
 
     self.last_cloudlog_t = 0
     self.steer_rate_cost = CP.steerRateCost
-    self.r = 2.0 if use_rot_rad else 0.0
+    self.factor1 = (CP.wheelbase) if use_rot_rad else 0.0
+    self.factor2 = ((2 * CP.centerToFront * CP.mass) / (CP.wheelbase * CP.tireStiffnessRear)) if use_rot_rad else 0.0
     self.solution_invalid_cnt = 0
 
     self.path_xyz = np.zeros((TRAJECTORY_SIZE, 3))
@@ -68,17 +69,15 @@ class LateralPlanner:
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.1])
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, heading_cost, MPC_COST_LAT.LAT_JERK)
 
-    distance_forward = ((self.speed_forward[1:] + self.speed_forward[:-1]) / 2) * (self.t_idxs[1:] - self.t_idxs[:-1])
-    distance_forward = np.cumsum(np.insert(distance_forward, 0, 0))
-    y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], distance_forward, d_path_xyz[:, 1])
-    heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], distance_forward, self.plan_yaw)
+    y_pts = d_path_xyz[:LAT_MPC_N + 1, 1]
+    heading_pts = self.plan_yaw[:LAT_MPC_N + 1]
     self.y_pts = y_pts
 
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
-    # self.x0[4] = v_ego
-    r = self.r if v_ego < 10 else 0.0
-    p = np.array([v_ego, r])
+    # p = np.array([v_ego, self.factor1 - (self.factor2 * v_ego**2)])
+    lateral_factor = np.max(np.column_stack((np.zeros(LAT_MPC_N + 1), self.factor1 - (self.factor2 * self.speed_forward[:LAT_MPC_N + 1]**2))), axis=1)
+    p = np.column_stack((self.speed_forward[:LAT_MPC_N + 1], lateral_factor))
     self.lat_mpc.run(self.x0,
                      p,
                      y_pts,

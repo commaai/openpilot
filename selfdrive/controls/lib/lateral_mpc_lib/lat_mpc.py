@@ -36,8 +36,8 @@ def gen_lat_model():
 
   # parameters
   v_ego = SX.sym('v_ego')
-  rotation_radius = SX.sym('rotation_radius')
-  model.p = vertcat(v_ego, rotation_radius)
+  lateral_factor = SX.sym('lateral_factor')
+  model.p = vertcat(v_ego, lateral_factor)
 
   # controls
   curv_rate = SX.sym('curv_rate')
@@ -52,8 +52,8 @@ def gen_lat_model():
   model.xdot = vertcat(x_ego_dot, y_ego_dot, psi_ego_dot, curv_ego_dot)
 
   # dynamics model
-  f_expl = vertcat(v_ego * cos(psi_ego) - rotation_radius * sin(psi_ego) * (v_ego * curv_ego),
-                   v_ego * sin(psi_ego) + rotation_radius * cos(psi_ego) * (v_ego * curv_ego),
+  f_expl = vertcat(v_ego * cos(psi_ego) - sin(psi_ego) * (v_ego * curv_ego) * lateral_factor,
+                   v_ego * sin(psi_ego) + cos(psi_ego) * (v_ego * curv_ego) * lateral_factor,
                    v_ego * curv_ego,
                    curv_rate)
   model.f_impl_expr = model.xdot - f_expl
@@ -158,13 +158,13 @@ class LateralMpc():
     self.solver.constraints_set(0, "lbx", x0_cp)
     self.solver.constraints_set(0, "ubx", x0_cp)
     self.yref[:, 0] = y_pts
-    v_ego = p_cp[0]
+    v_ego = p_cp[:, 0]
     # rotation_radius = p_cp[1]
     self.yref[:, 1] = heading_pts * (v_ego + 5.0)
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
-      self.solver.set(i, "p", p_cp)
-    self.solver.set(N, "p", p_cp)
+      self.solver.set(i, "p", p_cp[i])
+    self.solver.set(N, "p", p_cp[1])
     self.solver.cost_set(N, "yref", self.yref[N][:COST_DIM - 1])
 
     t = sec_since_boot()
