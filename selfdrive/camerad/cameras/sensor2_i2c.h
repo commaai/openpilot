@@ -49,11 +49,15 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x301A, 0x0018}, // RESET_REGISTER
 
   // CLOCK Settings
+  // input clock is 19.2 / 2 * 0x37 = 528 MHz
+  // pixclk is 528 / 6 = 88 MHz
+  // full roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*FRAME_LENGTH_LINES)) = 39.98 ms
+  // img  roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*Y_OUTPUT_CONTROL))   = 27.1 ms
   {0x302A, 0x0006}, // VT_PIX_CLK_DIV
   {0x302C, 0x0001}, // VT_SYS_CLK_DIV
   {0x302E, 0x0002}, // PRE_PLL_CLK_DIV
-  {0x3030, 0x0032}, // PLL_MULTIPLIER
-  {0x3036, 0x000C}, // OP_WORD_CLK_DIV
+  {0x3030, 0x0037}, // PLL_MULTIPLIER
+  {0x3036, 0x000C}, // OP_PIX_CLK_DIV
   {0x3038, 0x0001}, // OP_SYS_CLK_DIV
 
   // FORMAT
@@ -77,7 +81,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
 
   // Readout timing
   {0x300C, 0x07B9}, // LINE_LENGTH_PCK
-  {0x300A, 0x0652}, // FRAME_LENGTH_LINES
+  {0x300A, 0x06F4}, // FRAME_LENGTH_LINES
   {0x3042, 0x0000}, // EXTRA_DELAY
 
   // Readout Settings
