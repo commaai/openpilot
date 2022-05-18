@@ -340,9 +340,9 @@ CONFIGS = [
 
 def setup_prefix():
   os.environ['OPENPILOT_PREFIX'] = str(uuid.uuid4())
-  msg_path = os.path.join('/dev/shm', os.environ['OPENPILOT_PREFIX'])
+  msgq_path = os.path.join('/dev/shm', os.environ['OPENPILOT_PREFIX'])
   try:
-    os.mkdir(msg_path)
+    os.mkdir(msgq_path)
   except FileExistsError:
     pass
 
