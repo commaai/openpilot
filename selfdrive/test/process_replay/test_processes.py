@@ -168,35 +168,34 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
-  pool = concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs)
+  with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
+    lreaders: Any = {}
+    p1 = pool.map(get_logreader, [seg for car, seg in segments])
+    for (segment, lr) in tqdm(p1, desc="Getting Logs", total=len(segments)):
+      lreaders[segment] = lr
 
-  lreaders: Any = {}
-  p1 = pool.map(get_logreader, [seg for car, seg in segments])
-  for (segment, lr) in tqdm(p1, desc="Getting Logs", total=len(segments)):
-    lreaders[segment] = lr
-
-  pool_args: Any = []
-  for car_brand, segment in segments:
-    if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
-       (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
-      continue
-    for cfg in CONFIGS:
-      if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
-         (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
+    pool_args: Any = []
+    for car_brand, segment in segments:
+      if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
+         (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
         continue
-      cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-      if not args.upload_only:
-        pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment], ref_commit))
-      if upload:
-        print(f'Uploading: {os.path.basename(cur_log_fn)}')
-        assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
-        upload_file(cur_log_fn, os.path.basename(cur_log_fn))
-        os.remove(cur_log_fn)
+      for cfg in CONFIGS:
+        if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
+           (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
+          continue
+        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+        if not args.upload_only:
+          pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment], ref_commit))
+        if upload:
+          print(f'Uploading: {os.path.basename(cur_log_fn)}')
+          assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
+          upload_file(cur_log_fn, os.path.basename(cur_log_fn))
+          os.remove(cur_log_fn)
 
-  results: Any = defaultdict(dict)
-  p2 = pool.map(run_test_process, pool_args)
-  for (segment, proc, result) in tqdm(p2, desc="Running tests", total=len(pool_args)):
-    results[segment][proc] = result
+    results: Any = defaultdict(dict)
+    p2 = pool.map(run_test_process, pool_args)
+    for (segment, proc, result) in tqdm(p2, desc="Running tests", total=len(pool_args)):
+      results[segment][proc] = result
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   if not args.upload_only:
