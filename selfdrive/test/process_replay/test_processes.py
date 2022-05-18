@@ -3,6 +3,7 @@ import argparse
 import concurrent.futures
 import os
 import sys
+from collections import defaultdict
 from tqdm import tqdm
 from typing import Any, Dict
 
@@ -171,10 +172,8 @@ if __name__ == "__main__":
 
   lreaders: Any = {}
   p1 = pool.map(get_logreader, [seg for car, seg in segments])
-  for tup in tqdm(p1, desc="Getting Logs", total=len(segments)):
-    if tup[0] not in lreaders:
-      lreaders[tup[0]] = {}
-    lreaders[tup[0]] = tup[1]
+  for (segment, lr) in tqdm(p1, desc="Getting Logs", total=len(segments)):
+    lreaders[segment] = lr
 
   pool_args: Any = []
   for car_brand, segment in segments:
