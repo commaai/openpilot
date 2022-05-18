@@ -223,7 +223,10 @@ void CameraViewWidget::paintGL() {
   // Draws on latest model frame: update offset from VisionIpc frame id to modelV2 frame id when
   // new frame comes in and we're not skipping out of the length of the buffer
   if ((draw_frame_id != prev_draw_frame_id) && (draw_frame_id - frames[0].first) < FRAME_BUFFER_SIZE) {
-    frame_idx = draw_frame_id - frames[0].first;
+    int prev_frame_idx = frame_idx;
+    frame_idx = (int)(draw_frame_id - frames[0].first);
+    // ensure we don't jump backwards when model lags multiple frames then skips
+    frame_idx = std::max(prev_frame_idx - 1, frame_idx);
   }
   frame_idx = std::min(frame_idx, (int)frames.size() - 1);
   VisionBuf *frame = frames[frame_idx].second;
