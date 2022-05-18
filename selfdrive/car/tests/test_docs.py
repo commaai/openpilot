@@ -19,13 +19,16 @@ class TestCarDocs(unittest.TestCase):
   def test_naming_conventions(self):
     # Asserts market-standard car naming conventions by make
     for car in self.all_cars:
+      tokens = car.model.lower().split(" ")
       if car.car_name == "hyundai":
-        tokens = car.model.lower().split(" ")
         self.assertNotIn("phev", tokens, "Use `Plug-in Hybrid`")
         self.assertNotIn("hev", tokens, "Use `Hybrid`")
         self.assertNotIn("ev", tokens, "Use `Electric`")
         if "plug-in hybrid" in car.model.lower():
           self.assertIn("Plug-in Hybrid", car.model, "Use correct capitalization")
+      elif car.car_name == "toyota":
+        if "rav4" in tokens:
+          self.assertIn("RAV4", car.model, "Use correct capitalization")
 
 
 if __name__ == "__main__":
