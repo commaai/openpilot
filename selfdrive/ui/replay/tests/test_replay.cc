@@ -102,11 +102,10 @@ void read_segment(int n, const SegmentFile &segment_file, uint32_t flags) {
       if (cam == RoadCam || cam == WideRoadCam) {
         REQUIRE(fr->getFrameCount() == 1200);
       }
-      std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(fr->getRGBSize());
       std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(fr->getYUVSize());
       // sequence get 100 frames
       for (int i = 0; i < 100; ++i) {
-        REQUIRE(fr->get(i, rgb_buf.get(), yuv_buf.get()));
+        REQUIRE(fr->get(i, yuv_buf.get()));
       }
     }
 

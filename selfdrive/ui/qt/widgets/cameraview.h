@@ -35,19 +35,10 @@ protected:
   virtual void updateFrameMat(int w, int h);
   void vipcThread();
 
-  struct WaitFence {
-    WaitFence() { sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0); }
-    ~WaitFence() { glDeleteSync(sync); }
-    void wait() { glWaitSync(sync, 0, GL_TIMEOUT_IGNORED); }
-    GLsync sync = 0;
-  };
-
   bool zoomed_view;
-  std::mutex lock;
   VisionBuf *latest_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
-  std::unique_ptr<WaitFence> wait_fence;
   std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
 

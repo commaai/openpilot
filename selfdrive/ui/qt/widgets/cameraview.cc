@@ -13,7 +13,7 @@ namespace {
 
 const char frame_vertex_shader[] =
 #ifdef __APPLE__
-  "#version 150 core\n"
+  "#version 330 core\n"
 #else
   "#version 300 es\n"
 #endif
@@ -28,7 +28,7 @@ const char frame_vertex_shader[] =
 
 const char frame_fragment_shader[] =
 #ifdef __APPLE__
-  "#version 150 core\n"
+  "#version 330 core\n"
 #else
   "#version 300 es\n"
   "precision mediump float;\n"
@@ -214,16 +214,10 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  std::lock_guard lk(lock);
-
   if (latest_frame == nullptr) return;
 
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
-  // sync with the PBO
-  if (wait_fence) {
-    wait_fence->wait();
-  }
-
   glBindVertexArray(frame_vao);
 
   glUseProgram(program->programId());
@@ -233,7 +227,7 @@ void CameraViewWidget::paintGL() {
     glBindTexture(GL_TEXTURE_2D, textures[i]);
     int width = i == 0 ? stream_width : stream_width / 2;
     int height = i == 0 ? stream_height : stream_height / 2;
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE, address[i]);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, address[i]);
     assert(glGetError() == GL_NO_ERROR);
   }
 
@@ -245,6 +239,7 @@ void CameraViewWidget::paintGL() {
   glBindVertexArray(0);
   glBindTexture(GL_TEXTURE_2D, 0);
   glActiveTexture(GL_TEXTURE0);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 }
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
@@ -253,7 +248,6 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
 
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   for (int i = 0; i < 3; ++i) {
     glBindTexture(GL_TEXTURE_2D, textures[i]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -262,7 +256,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     int width = i == 0 ? stream_width : stream_width / 2;
     int height = i == 0 ? stream_height : stream_height / 2;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
     assert(glGetError() == GL_NO_ERROR);
   }
 

@@ -24,7 +24,7 @@ CAMERAS = [
   ("fcamera.hevc", 20, FULL_SIZE, "roadEncodeIdx"),
   ("dcamera.hevc", 20, FULL_SIZE, "driverEncodeIdx"),
   ("ecamera.hevc", 20, FULL_SIZE, "wideRoadEncodeIdx"),
-  ("qcamera.ts", 20, 77066, None),
+  ("qcamera.ts", 20, 130000, None),
 ]
 
 # we check frame count, so we don't have to be too strict on size
@@ -62,6 +62,7 @@ class TestEncoder(unittest.TestCase):
 
     managed_processes['sensord'].start()
     managed_processes['loggerd'].start()
+    managed_processes['encoderd'].start()
 
     time.sleep(1.0)
     managed_processes['camerad'].start()
@@ -97,21 +98,21 @@ class TestEncoder(unittest.TestCase):
           cmd = "LD_LIBRARY_PATH=/usr/local/lib " + cmd
 
         expected_frames = fps * SEGMENT_LENGTH
-        frame_tolerance = 0
         probe = subprocess.check_output(cmd, shell=True, encoding='utf8')
         frame_count = int(probe.split('\n')[0].strip())
         counts.append(frame_count)
 
-        self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
-                        f"segment #{i}: {camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+        self.assertEqual(frame_count, expected_frames,
+                         f"segment #{i}: {camera} failed frame count check: expected {expected_frames}, got {frame_count}")
 
         # sanity check file size
         file_size = os.path.getsize(file_path)
-        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE))
+        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE),
+                        f"{file_path} size {file_size} isn't close to target size {size}")
 
         # Check encodeIdx
         if encode_idx_name is not None:
-          rlog_path = f"{route_prefix_path}--{i}/rlog.bz2"
+          rlog_path = f"{route_prefix_path}--{i}/rlog"
           msgs = [m for m in LogReader(rlog_path) if m.which() == encode_idx_name]
           encode_msgs = [getattr(m, encode_idx_name) for m in msgs]
 
@@ -149,6 +150,7 @@ class TestEncoder(unittest.TestCase):
             time.sleep(0.1)
     finally:
       managed_processes['loggerd'].stop()
+      managed_processes['encoderd'].stop()
       managed_processes['camerad'].stop()
       managed_processes['sensord'].stop()
 

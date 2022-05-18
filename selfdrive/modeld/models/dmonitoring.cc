@@ -39,9 +39,9 @@ void dmonitoring_init(DMonitoringModelState* s) {
   init_yuv_buf(s->resized_buf, MODEL_WIDTH, MODEL_HEIGHT);
 
 #ifdef USE_ONNX_MODEL
-  s->m = new ONNXModel("../../models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
+  s->m = new ONNXModel("models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
 #else
-  s->m = new SNPEModel("../../models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
+  s->m = new SNPEModel("models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
 #endif
 
   s->m->addCalib(s->calib, CALIB_LEN);
