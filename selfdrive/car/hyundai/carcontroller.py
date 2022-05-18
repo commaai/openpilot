@@ -46,6 +46,7 @@ class CarController:
     self.steer_rate_limited = False
     self.last_resume_frame = 0
     self.accel = 0
+    self.enabled_frames = 0
 
   def update(self, CC, CS):
     actuators = CC.actuators
@@ -88,8 +89,16 @@ class CarController:
           self.last_resume_frame = self.frame
 
     if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
-      accel = actuators.accel
+      accel = 0  # actuators.accel
       jerk = 0
+      if CC.longActive:
+        self.enabled_frames += 1
+        if self.enabled_frames < 200:
+          accel = 1.5
+        else:
+          accel = -1.5
+      else:
+        self.enabled_frames = 0
 
       if CC.longActive:
         jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
