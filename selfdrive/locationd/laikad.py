@@ -105,7 +105,7 @@ def create_measurement_msg(meas: GNSSMeasurement):
 def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMeasurement]):
   ekf_data = defaultdict(list)
   for m in measurements:
-    m_arr = m.as_array()
+    m_arr = m.as_array(allow_uncorrected=True)
     if m.constellation_id == ConstellationId.GPS:
       ekf_data[ObservationKind.PSEUDORANGE_GPS].append(m_arr)
       ekf_data[ObservationKind.PSEUDORANGE_RATE_GPS].append(m_arr)
