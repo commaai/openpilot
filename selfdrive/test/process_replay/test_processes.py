@@ -194,12 +194,10 @@ if __name__ == "__main__":
         upload_file(cur_log_fn, os.path.basename(cur_log_fn))
         os.remove(cur_log_fn)
 
-  results: Any = {}
+  results: Any = defaultdict(dict)
   p2 = pool.map(run_test_process, pool_args)
-  for tup in tqdm(p2, desc="Running tests", total=len(pool_args)):
-    if tup[0] not in results:
-      results[tup[0]] = {}
-    results[tup[0]][tup[1]] = tup[2]
+  for (segment, proc, result) in tqdm(p2, desc="Running tests", total=len(pool_args)):
+    results[segment][proc] = result
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   if not args.upload_only:
