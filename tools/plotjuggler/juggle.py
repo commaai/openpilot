@@ -12,7 +12,7 @@ import argparse
 
 from common.basedir import BASEDIR
 from selfdrive.test.process_replay.compare_logs import save_log
-from tools.lib.robust_logreader import RobustLogReader
+from tools.lib.logreader import LogReader
 from tools.lib.route import Route, SegmentName
 from urllib.parse import urlparse, parse_qs
 
@@ -50,7 +50,7 @@ def load_segment(segment_name):
     return []
 
   try:
-    return list(RobustLogReader(segment_name))
+    return list(LogReader(segment_name))
   except ValueError as e:
     print(f"Error parsing {segment_name}: {e}")
     return []
