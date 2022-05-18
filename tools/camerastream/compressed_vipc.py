@@ -47,6 +47,7 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
         print("waiting for iframe")
         continue
       time_q.append(time.monotonic())
+      network_latency = (int(time.time()*1e9) - evta.unixTimestampNanos)/1e6
       frame_latency = ((evta.idx.timestampEof/1e9) - (evta.idx.timestampSof/1e9))*1000
       process_latency = ((evt.logMonoTime/1e9) - (evta.idx.timestampEof/1e9))*1000
 
@@ -73,12 +74,12 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
         assert len(frames) == 1
         img_yuv = frames[0].to_ndarray(format=av.video.format.VideoFormat('yuv420p')).flatten()
 
-      vipc_server.send(vst, img_yuv.data, cnt, cnt*1e9/20, cnt*1e9/20)
+      vipc_server.send(vst, img_yuv.data, cnt, int(time_q[0]*1e9), int(time.monotonic()*1e9))
       cnt += 1
 
       pc_latency = (time.monotonic()-time_q[0])*1000
       time_q = time_q[1:]
-      print("%2d %4d %.3f %.3f latency %6.2f ms + %6.2f ms + %6.2f ms" % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, frame_latency, process_latency, pc_latency), len(evta.data), sock_name)
+      print("%2d %4d %.3f %.3f roll %6.2f ms latency %6.2f ms + %6.2f ms + %6.2f ms = %6.2f ms" % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, frame_latency, process_latency, network_latency, pc_latency, process_latency+network_latency+pc_latency ), len(evta.data), sock_name)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Decode video streams and broacast on VisionIPC')
