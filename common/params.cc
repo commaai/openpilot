@@ -1,4 +1,4 @@
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 
 #include <dirent.h>
 #include <sys/file.h>
@@ -6,8 +6,8 @@
 #include <csignal>
 #include <unordered_map>
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 
 namespace {

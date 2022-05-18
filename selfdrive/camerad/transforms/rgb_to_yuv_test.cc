@@ -31,7 +31,7 @@
 
 #include "libyuv.h"
 #include "selfdrive/camerad/transforms/rgb_to_yuv.h"
-#include "selfdrive/common/clutil.h"
+#include "common/clutil.h"
 
 static inline double millis_since_boot() {
   struct timespec t;

@@ -1,4 +1,4 @@
-#include "selfdrive/common/i2c.h"
+#include "common/i2c.h"
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -8,9 +8,9 @@
 #include <cstdio>
 #include <stdexcept>
 
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/util.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 
 #define UNUSED(x) (void)(x)
 

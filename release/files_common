@@ -125,34 +125,34 @@ selfdrive/clocksd/clocksd.cc
 
 selfdrive/debug/*.py
 
-selfdrive/common/SConscript
-selfdrive/common/version.h
+common/SConscript
+common/version.h
 
-selfdrive/common/swaglog.h
-selfdrive/common/swaglog.cc
-selfdrive/common/statlog.h
-selfdrive/common/statlog.cc
-selfdrive/common/util.cc
-selfdrive/common/util.h
-selfdrive/common/queue.h
-selfdrive/common/clutil.cc
-selfdrive/common/clutil.h
-selfdrive/common/params.h
-selfdrive/common/params.cc
-selfdrive/common/watchdog.cc
-selfdrive/common/watchdog.h
+common/swaglog.h
+common/swaglog.cc
+common/statlog.h
+common/statlog.cc
+common/util.cc
+common/util.h
+common/queue.h
+common/clutil.cc
+common/clutil.h
+common/params.h
+common/params.cc
+common/watchdog.cc
+common/watchdog.h
 
-selfdrive/common/modeldata.h
-selfdrive/common/mat.h
-selfdrive/common/timing.h
+common/modeldata.h
+common/mat.h
+common/timing.h
 
-selfdrive/common/visionimg.cc
-selfdrive/common/visionimg.h
+common/visionimg.cc
+common/visionimg.h
 
-selfdrive/common/gpio.cc
-selfdrive/common/gpio.h
-selfdrive/common/i2c.cc
-selfdrive/common/i2c.h
+common/gpio.cc
+common/gpio.h
+common/i2c.cc
+common/i2c.h
 
 
 selfdrive/controls/__init__.py
