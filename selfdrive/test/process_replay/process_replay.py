@@ -354,8 +354,8 @@ def teardown_prefix():
   if os.path.exists(symlink_path):
     shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
     os.remove(symlink_path)
-  msg_path = os.path.join('/dev/shm', os.environ['OPENPILOT_PREFIX'])
-  shutil.rmtree(msg_path, ignore_errors=True)
+  msgq_path = os.path.join('/dev/shm', os.environ['OPENPILOT_PREFIX'])
+  shutil.rmtree(msgq_path, ignore_errors=True)
 
 
 def replay_process(cfg, lr, fingerprint=None):
