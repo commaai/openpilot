@@ -8,9 +8,9 @@
 
 #include "cereal/messaging/messaging.h"
 #include "panda/board/dlc_to_len.h"
-#include "selfdrive/common/gpio.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/gpio.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 
 static int init_usb_ctx(libusb_context **context) {
   assert(context != nullptr);

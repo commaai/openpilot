@@ -68,7 +68,7 @@ def get_normalized_origin(default: Optional[str] = None) -> Optional[str]:
 
 @cache
 def get_version() -> str:
-  with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")) as _versionf:
+  with open(os.path.join(BASEDIR, "common", "version.h")) as _versionf:
     version = _versionf.read().split('"')[1]
   return version
 

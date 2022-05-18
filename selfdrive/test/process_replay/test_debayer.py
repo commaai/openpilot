@@ -80,8 +80,7 @@ def debayer_frame(ctx, debayer_prg, data, rgb=False):
   yuv_g = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, FRAME_WIDTH * FRAME_HEIGHT + UV_SIZE * 2)
 
   local_worksize = (20, 20) if TICI else (4, 4)
-  local_mem = cl.LocalMemory(3528 if TICI else 400)
-  ev1 = debayer_prg.debayer10(q, (UV_WIDTH, UV_HEIGHT), local_worksize, cam_g, yuv_g, local_mem, np.float32(42))
+  ev1 = debayer_prg.debayer10(q, (UV_WIDTH, UV_HEIGHT), local_worksize, cam_g, yuv_g)
   cl.enqueue_copy(q, yuv_buff, yuv_g, wait_for=[ev1]).wait()
   cl.enqueue_barrier(q)
 
