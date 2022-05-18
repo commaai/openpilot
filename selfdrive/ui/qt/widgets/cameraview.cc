@@ -225,12 +225,8 @@ void CameraViewWidget::paintGL() {
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   int frame_idx = (draw_frame_id + frame_offset) % 4;
-  qDebug() << "Frame offset:" << frame_offset;
   if (frames[frame_idx] == nullptr) return;
-
-//  qDebug() << "CameraViewWidget::paintGL: frame to draw:" << draw_frame_id;
   VisionBuf *frame = frames[frame_idx]->frame;
-  qDebug() << "Drawing frame:" << frames[(draw_frame_id + frame_offset) % 4]->frame_id;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
