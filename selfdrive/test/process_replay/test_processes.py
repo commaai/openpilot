@@ -78,8 +78,18 @@ def do_test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
     return str(e), log_msgs
 
 # Build pool args
+try:
+  ref_commit = open(REF_COMMIT_FN).read().strip()
+except FileNotFoundError:
+  print("Couldn't find reference commit")
+  sys.exit(1)
+
 cur_commit = get_commit()
-ref_commit = open(REF_COMMIT_FN).read().strip()
+if cur_commit is None:
+    raise Exception("Couldn't get current commit")
+
+print(f"***** testing against commit {ref_commit} *****")
+
 pool_args: Any = []
 for car_brand, segment in segments:
   for cfg in CONFIGS:
@@ -90,17 +100,37 @@ for car_brand, segment in segments:
 @pytest.fixture(scope="session")
 def args(pytestconfig):
   args = pytestconfig.option
+
+  full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
+  upload = args.update_refs or args.upload_only
+  os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
+  if upload:
+    assert full_test, "Need to run full test when updating refs"
+  tested_cars = {c.lower() for c, _ in segments}
+  untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
+  assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
+
+  if upload:
+    with open(REF_COMMIT_FN, "w") as f:
+      f.write(cur_commit)
+    print(f"\n\nUpdated reference logs for commit: {cur_commit}")
+
   return args
 
 # Do tests
 @pytest.mark.parametrize("data", pool_args)
 def test_process(data, args):
   segment, cfg, cur_log_fn, ref_commit = data
+  if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
+     (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars) or \
+     (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
+     (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
+    return True
   r, n = segment.rsplit("--", 1)
   lr = LogReader(get_url(r, n))
   ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
   res, log_msgs = do_test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
-  prin
+  save_log(cur_log_fn, log_msgs)
   if isinstance(res, str) or len(res):
     print("FAIL", segment, res)
     assert False
