@@ -16,12 +16,13 @@ from .visionipc cimport VisionBuf as cppVisionBuf
 from .visionipc cimport VisionIpcBufExtra
 
 cpdef enum VisionStreamType:
-  VISION_STREAM_RGB_BACK
-  VISION_STREAM_RGB_FRONT
-  VISION_STREAM_RGB_WIDE
+  VISION_STREAM_RGB_ROAD
+  VISION_STREAM_RGB_DRIVER
+  VISION_STREAM_RGB_WIDE_ROAD
   VISION_STREAM_ROAD
   VISION_STREAM_DRIVER
   VISION_STREAM_WIDE_ROAD
+  VISION_STREAM_RGB_MAP
 
 
 cdef class VisionIpcServer:
@@ -33,12 +34,13 @@ cdef class VisionIpcServer:
   def create_buffers(self,  VisionStreamType tp, size_t num_buffers, bool rgb, size_t width, size_t height):
     self.server.create_buffers(tp, num_buffers, rgb, width, height)
 
-  def send(self, VisionStreamType tp, bytes data, uint32_t frame_id=0, uint64_t timestamp_sof=0, uint64_t timestamp_eof=0):
+  def send(self, VisionStreamType tp, const unsigned char[:] data, uint32_t frame_id=0, uint64_t timestamp_sof=0, uint64_t timestamp_eof=0):
     cdef cppVisionBuf * buf = self.server.get_buffer(tp)
 
     # Populate buffer
     assert buf.len == len(data)
-    memcpy(buf.addr, <char*>data, len(data))
+    memcpy(buf.addr, &data[0], len(data))
+    buf.set_frame_id(frame_id)
 
     cdef VisionIpcBufExtra extra
     extra.frame_id = frame_id

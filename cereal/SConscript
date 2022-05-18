@@ -49,7 +49,7 @@ vipc_sources = [
   'visionipc/visionbuf.cc',
 ]
 
-if arch in ["aarch64", "larch64"]:
+if arch == "larch64":
   vipc_sources += ['visionipc/visionbuf_ion.cc']
 else:
   vipc_sources += ['visionipc/visionbuf_cl.cc']
@@ -58,15 +58,17 @@ vipc_objects = env.SharedObject(vipc_sources)
 vipc = env.Library('visionipc', vipc_objects)
 
 
-libs = envCython["LIBS"]+["OpenCL", "zmq", vipc, messaging_lib, common]
-if arch == "aarch64":
-  libs += ["adreno_utils"]
+vipc_frameworks = []
+vipc_libs = envCython["LIBS"] + [vipc, messaging_lib, common, "zmq"]
 if arch == "Darwin":
-  del libs[libs.index('OpenCL')]
-  envCython['FRAMEWORKS'] += ['OpenCL']
-envCython.Program('visionipc/visionipc_pyx.so', 'visionipc/visionipc_pyx.pyx', LIBS=libs)
-
+  vipc_frameworks.append('OpenCL')
+else:
+  vipc_libs.append('OpenCL')
+envCython.Program('visionipc/visionipc_pyx.so', 'visionipc/visionipc_pyx.pyx',
+                  LIBS=vipc_libs, FRAMEWORKS=vipc_frameworks)
 
 if GetOption('test'):
   env.Program('messaging/test_runner', ['messaging/test_runner.cc', 'messaging/msgq_tests.cc'], LIBS=[messaging_lib, common])
-  env.Program('visionipc/test_runner', ['visionipc/test_runner.cc', 'visionipc/visionipc_tests.cc'], LIBS=[vipc, messaging_lib, 'zmq', 'pthread', 'OpenCL', common])
+
+  env.Program('visionipc/test_runner', ['visionipc/test_runner.cc', 'visionipc/visionipc_tests.cc'],
+              LIBS=['pthread'] + vipc_libs, FRAMEWORKS=vipc_frameworks)

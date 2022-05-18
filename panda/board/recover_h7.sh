@@ -3,7 +3,7 @@ set -e
 
 DFU_UTIL="dfu-util"
 
-scons -u
+scons -u -j$(nproc)
 
 PYTHONPATH=.. python3 -c "from python import Panda; Panda().reset(enter_bootstub=True); Panda().reset(enter_bootloader=True)" || true
 sleep 1

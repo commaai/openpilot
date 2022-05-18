@@ -7,7 +7,10 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/runners/run.h"
 
-#define OUTPUT_SIZE 39
+#define CALIB_LEN 3
+
+#define OUTPUT_SIZE 45
+#define REG_SCALE 0.25f
 
 typedef struct DMonitoringResult {
   float face_orientation[3];
@@ -25,6 +28,8 @@ typedef struct DMonitoringResult {
   float distracted_pose;
   float distracted_eyes;
   float occluded_prob;
+  float ready_prob[4];
+  float not_ready_prob[2];
   float dsp_execution_time;
 } DMonitoringResult;
 
@@ -36,11 +41,12 @@ typedef struct DMonitoringModelState {
   std::vector<uint8_t> cropped_buf;
   std::vector<uint8_t> premirror_cropped_buf;
   std::vector<float> net_input_buf;
+  float calib[CALIB_LEN];
   float tensor[UINT8_MAX + 1];
 } DMonitoringModelState;
 
 void dmonitoring_init(DMonitoringModelState* s);
-DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height);
+DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, float *calib);
 void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time, kj::ArrayPtr<const float> raw_pred);
 void dmonitoring_free(DMonitoringModelState* s);
 

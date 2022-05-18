@@ -15,6 +15,7 @@ from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
 from selfdrive.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
 from selfdrive.car.volkswagen.values import FW_VERSIONS as VW_FW_VERSIONS
 from selfdrive.car.mazda.values import FW_VERSIONS as MAZDA_FW_VERSIONS
+from selfdrive.car.subaru.values import FW_VERSIONS as SUBARU_FW_VERSIONS
 
 
 NO_API = "NO_API" in os.environ
@@ -23,6 +24,8 @@ SUPPORTED_CARS |= set(interface_names['honda'])
 SUPPORTED_CARS |= set(interface_names['hyundai'])
 SUPPORTED_CARS |= set(interface_names['volkswagen'])
 SUPPORTED_CARS |= set(interface_names['mazda'])
+SUPPORTED_CARS |= set(interface_names['subaru'])
+SUPPORTED_CARS |= set(interface_names['nissan'])
 
 try:
   from xx.pipeline.c.CarState import migration
@@ -72,7 +75,8 @@ if __name__ == "__main__":
 
       for msg in lr:
         if msg.which() == "pandaStates":
-          if msg.pandaStates[0].pandaType not in ['uno', 'blackPanda', 'dos']:
+          if msg.pandaStates[0].pandaType not in ('uno', 'blackPanda', 'dos'):
+            print("wrong panda type")
             break
 
         elif msg.which() == "carParams":
@@ -80,6 +84,7 @@ if __name__ == "__main__":
 
           car_fw = msg.carParams.carFw
           if len(car_fw) == 0:
+            print("no fw")
             break
 
           live_fingerprint = msg.carParams.carFingerprint
@@ -89,6 +94,7 @@ if __name__ == "__main__":
             live_fingerprint = args.car
 
           if live_fingerprint not in SUPPORTED_CARS:
+            print("not in supported cars")
             break
 
           fw_versions_dict = build_fw_dict(car_fw)
@@ -120,7 +126,7 @@ if __name__ == "__main__":
 
           print("Mismatches")
           found = False
-          for car_fws in [TOYOTA_FW_VERSIONS, HONDA_FW_VERSIONS, HYUNDAI_FW_VERSIONS, VW_FW_VERSIONS, MAZDA_FW_VERSIONS]:
+          for car_fws in [TOYOTA_FW_VERSIONS, HONDA_FW_VERSIONS, HYUNDAI_FW_VERSIONS, VW_FW_VERSIONS, MAZDA_FW_VERSIONS, SUBARU_FW_VERSIONS]:
             if live_fingerprint in car_fws:
               found = True
               expected = car_fws[live_fingerprint]

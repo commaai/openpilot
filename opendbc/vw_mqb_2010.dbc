@@ -1361,6 +1361,16 @@ BO_ 1624 Licht_vorne_01: 8 XXX
 BO_ 1646 Klima_03: 8 XXX
 
 BO_ 1720 Kombi_03: 8 XXX
+ SG_ KBI_Reifenumfang : 0|12@1+ (1,0) [0|4095] "Unit_MilliMeter"  XXX
+ SG_ KBI_Variante_USA : 12|1@1+ (1.0,0.0) [0.0|1] ""  XXX
+ SG_ KBI_Variante : 13|1@1+ (1.0,0.0) [0.0|1] ""  XXX
+ SG_ KBI_BCmE_aktiv : 16|1@1+ (1.0,0.0) [0.0|1] ""  XXX
+ SG_ KBI_Sparhinweis_quittiert : 17|1@1+ (1.0,0.0) [0.0|1] ""  XXX
+ SG_ KBI_Tankfuellstand_Prozent : 18|7@1+ (1,0) [0|100] "Unit_PerCent"  XXX
+ SG_ KBI_Nachtanken_erkannt : 25|1@1+ (1.0,0.0) [0.0|1] ""  XXX
+ SG_ KBI_Tankinhalt_hochaufl : 26|14@1+ (0.01,0) [0.00|163.81] "Unit_Liter"  XXX
+ SG_ KBI_Max_Tankinhalt : 40|8@1+ (0.5,0) [0.0|126.5] ""  XXX
+ SG_ KBI_Reifenumfang_Sekundaer : 48|12@1+ (1,0) [0|4095] "Unit_MilliMeter"  XXX
 
 BO_ 391 EV_Gearshift: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
@@ -1410,11 +1420,36 @@ CM_ SG_ 780 Abstand "Following distance";
 CM_ SG_ 780 SetSpeed "ACC set speed";
 CM_ SG_ 391 GearPosition "Traditional PRND plus B-mode aggressive regen, B-mode mapped to Drive";
 CM_ SG_ 960 ZAS_Kl_15 "Indicates ignition on";
+CM_ SG_ 1720 KBI_BCmE_aktiv "Anzeige BCmE aktiv (BCmE-Screen oder Einsparhinweis in der Anzeige)";
+CM_ SG_ 1720 KBI_Max_Tankinhalt "Mitteilung des maximalen Tankinhalts an das Reichweitenmodul";
+CM_ SG_ 1720 KBI_Nachtanken_erkannt "Statusinformation Nachtankmodus";
+CM_ SG_ 1720 KBI_Reifenumfang "Mittlerer Radumfang aus der K-Zahl gerechnet in Millimeter.  Byte 2 Bit 5,4 reserviert, Byte 2 Bit 3..0 und Byte 1 Bit 7..0; Wertebereich 0..4096 mm
+";
+CM_ SG_ 1720 KBI_Reifenumfang_Sekundaer "Fahrzeuge mit unterschiedlichen Reifenumfängen Vorderachse / Hinterachse:
+
+Primärachse: KBI_Reifenumfang
+Sekundärachse: KBI_Reifenumfang_Sekundaer
+";
+CM_ SG_ 1720 KBI_Sparhinweis_quittiert "angezeigter Sparhinweis ist quittiert. Signal wird nach zwei Sendebotschaften wieder auf '0' gesetzt.";
+CM_ SG_ 1720 KBI_Tankfuellstand_Prozent "Tankfüllstand in %";
+CM_ SG_ 1720 KBI_Tankinhalt_hochaufl "angezeigter Tankinhalt hochauflösend zur Restreichweitenberechnung";
+CM_ SG_ 1720 KBI_Variante "Zeigt an ob es sich um ein konventionelles Zeiger-Kombiinstrument handelt oder um eine Volldisplay-Kombiinstrument";
+CM_ SG_ 1720 KBI_Variante_USA "In diesem Signal wird die HW-Variante des Kombis ausgegeben, ACC plausibilisiert auf dieses Signal hin seine US-Codierung";
+
+
 VAL_ 159 EPS_HCA_Status 0 "disabled" 1 "initializing" 2 "fault" 3 "ready" 4 "rejected" 5 "active";
-VAL_ 173 GE_Fahrstufe 5 "P" 6 "R" 7 "N" 8 "D" 9 "S" 10 "E" 14 "T";
+VAL_ 173 GE_Fahrstufe 5 "P" 6 "R" 7 "N" 8 "D" 9 "S" 10 "E" 13 "T" 14 "T";
 VAL_ 288 TSK_Status 0 "init" 1 "disabled" 2 "enabled" 3 "regulating" 4 "accel_pedal_override" 5 "brake_only" 6 "temp_fault" 7 "perm_fault";
 VAL_ 302 ACC_Freewheel_Type 0 "freewheel_released" 1 "freewheel_not_permitted" 2 "freewheel_not_released" 3 "freewheel_requested" ;
 VAL_ 302 ACC_Hold_Type 0 "no_request" 1 "hold" 2 "park" 3 "hold_standby" 4 "startup" 5 "loosen_over_ramp" ;
 VAL_ 391 GearPosition 2 "P" 3 "R" 4 "N" 5 "D" 6 "D";
 VAL_ 391 RegenBrakingMode 0 "default" 1 "B1" 2 "B2" 3 "B3";
 VAL_ 870 Fast_Send_Rate_Active 0 "1 Hz" 1 "50 Hz";
+VAL_ 1720 KBI_Variante_USA 0 "keine USA-Variante" 1 "USA-Variante" ;
+VAL_ 1720 KBI_Variante 0 "Zeiger Kombiinstrument" 1 "Volldisplay Kombiinstrument" ;
+VAL_ 1720 KBI_BCmE_aktiv 0 "Anzeige_nicht_aktiv" 1 "Anzeige_aktiv" ;
+VAL_ 1720 KBI_Sparhinweis_quittiert 0 "nicht_quittiert" 1 "quittiert" ;
+VAL_ 1720 KBI_Tankfuellstand_Prozent 126 "Init" 127 "Fehler" ;
+VAL_ 1720 KBI_Nachtanken_erkannt 0 "Geberbetrieb" 1 "Nachtankmodus" ;
+VAL_ 1720 KBI_Tankinhalt_hochaufl 16382 "Init" 16383 "Fehler" ;
+VAL_ 1720 KBI_Max_Tankinhalt 254 "Init" 255 "Fehler" ;

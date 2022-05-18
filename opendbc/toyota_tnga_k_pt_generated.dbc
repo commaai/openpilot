@@ -22,8 +22,8 @@ BO_ 512 GAS_COMMAND: 6 EON
  SG_ CHECKSUM_PEDAL : 47|8@0+ (1,0) [0|255] "" INTERCEPTOR
 
 BO_ 513 GAS_SENSOR: 6 INTERCEPTOR
- SG_ INTERCEPTOR_GAS : 7|16@0+ (0.159375,-75.555) [0|1] "" EON
- SG_ INTERCEPTOR_GAS2 : 23|16@0+ (0.159375,-151.111) [0|1] "" EON
+ SG_ INTERCEPTOR_GAS : 7|16@0+ (1,0) [0|1] "" EON
+ SG_ INTERCEPTOR_GAS2 : 23|16@0+ (1,0) [0|1] "" EON
  SG_ STATE : 39|4@0+ (1,0) [0|15] "" EON
  SG_ COUNTER_PEDAL : 35|4@0+ (1,0) [0|15] "" EON
  SG_ CHECKSUM_PEDAL : 47|8@0+ (1,0) [0|255] "" EON
@@ -145,9 +145,10 @@ BO_ 581 GAS_PEDAL_HYBRID: 8 XXX
 BO_ 608 STEER_TORQUE_SENSOR: 8 XXX
  SG_ STEER_TORQUE_EPS : 47|16@0- (1,0) [-32768|32767] "" XXX
  SG_ STEER_TORQUE_DRIVER : 15|16@0- (1,0) [-32768|32767] "" XXX
+ SG_ STEER_ANGLE : 31|16@0- (0.0573,0) [-500|500] "" XXX
+ SG_ STEER_ANGLE_INITIALIZING : 3|1@0+ (1,0) [0|1] "" XXX
  SG_ STEER_OVERRIDE : 0|1@0+ (1,0) [0|1] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
- SG_ STEER_ANGLE : 31|16@0- (0.0573,0) [-500|500] "" XXX
 
 BO_ 614 STEERING_IPAS: 8 IPAS
  SG_ STATE : 7|4@0+ (1,0) [0|15] "" XXX
@@ -189,19 +190,19 @@ BO_ 742 LEAD_INFO: 8 DSU
 
 BO_ 835 ACC_CONTROL: 8 DSU
  SG_ ACCEL_CMD : 7|16@0- (0.001,0) [-20|20] "m/s^2" HCU
- SG_ ACC_MALFUNCTION : 18|1@0+ (1,0) [0|0] "" XXX
- SG_ ACC_CUT_IN : 25|1@0+ (1,0) [0|1] "" XXX
  SG_ ALLOW_LONG_PRESS : 17|2@0+ (1,0) [0|2] "" XXX
- SG_ ITS_CONNECT_LEAD : 39|8@0+ (1,0) [0|1] "" Vector__XXX
- SG_ ACC_TYPE : 23|2@0+ (1,0) [0|3] "" HCU
+ SG_ ACC_MALFUNCTION : 18|1@0+ (1,0) [0|0] "" XXX
+ SG_ RADAR_DIRTY : 19|1@0+ (1,0) [0|1] "" XXX
  SG_ DISTANCE : 20|1@0+ (1,0) [0|1] "" XXX
  SG_ MINI_CAR : 21|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_TYPE : 23|2@0+ (1,0) [0|3] "" HCU
+ SG_ CANCEL_REQ : 24|1@0+ (1,0) [0|1] "" HCU
+ SG_ ACC_CUT_IN : 25|1@0+ (1,0) [0|1] "" XXX
  SG_ PERMIT_BRAKING : 30|1@0+ (1,0) [0|1] "" HCU
  SG_ RELEASE_STANDSTILL : 31|1@0+ (1,0) [0|1] "" HCU
- SG_ CANCEL_REQ : 24|1@0+ (1,0) [0|1] "" HCU
- SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ ITS_CONNECT_LEAD : 39|8@0+ (1,0) [0|1] "" Vector__XXX
  SG_ ACCEL_CMD_ALT : 47|8@0- (0.05,0) [0|0] "m/s^2" XXX
- SG_ RADAR_DIRTY : 19|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 836 PRE_COLLISION_2: 8 DSU
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|0] "" XXX
@@ -363,6 +364,7 @@ BO_ 1410 VIN_PART_3: 8 CGW
  SG_ VIN_17 : 7|8@0+ (1,0) [0|0] "" XXX
 
 BO_ 1552 BODY_CONTROL_STATE_2: 8 XXX
+ SG_ UI_SPEED : 23|8@0+ (1,0) [0|255] "" XXX
  SG_ METER_SLIDER_BRIGHTNESS_PCT : 30|7@0+ (1,0) [12|100] "%" XXX
  SG_ METER_SLIDER_LOW_BRIGHTNESS : 37|1@0+ (1,0) [0|1] "" XXX
  SG_ METER_SLIDER_DIMMED : 38|1@0+ (1,0) [0|1] "" XXX
@@ -422,12 +424,12 @@ CM_ SG_ 835 ACC_TYPE "if 2, car is likely to have a permanent low speed lockout.
 CM_ SG_ 835 RADAR_DIRTY "Display Clean Radar Sensor message on HUD";
 CM_ SG_ 835 ACC_MALFUNCTION "display ACC fault on dash if set to 1";
 CM_ SG_ 835 ACC_CUT_IN "Display blinking yellow lead if set to 1";
-CM_ SG_ 835 DISTANCE "Display Distance Bars on HUD Permanently";
+CM_ SG_ 835 DISTANCE "Cycle through ACC following distance from long, mid, short when set to 1";
 CM_ SG_ 835 ITS_CONNECT_LEAD "Displayed when lead car is capable of ITS Connect";
 CM_ SG_ 835 ALLOW_LONG_PRESS "Enable Toyota's factory set speed increment behaviour, available on both metrics cars and imperial unit cars";
 CM_ SG_ 835 PERMIT_BRAKING "Original ACC has this going high when a car in front is detected. In openpilot and before the PERMIT_BRAKING name, this was 'SET_ME_1' and is hardcoded to be high. Unsure if only informational or has an effect though existing usage in openpilot is to always set it to 1. Originally 'PMTBRKG' in the leaked toyota_2017_ref_pt.dbc file and name expansion speculated to be PerMiT BRaKinG.";
 CM_ SG_ 835 ACCEL_CMD_ALT "Copy of main ACCEL_CMD, but across 8 bits instead of 16 bits like ACCEL_CMD. Unsure if only informational or has an effect. Likely informational as existing openpilot sets this to 0 and no loss of functionality observed. Originally 'AT_RAW' in leaked toyota_2017_ref_pt.dbc file.";
-CM_ SG_ 921 UI_SET_SPEED "set speed shown in UI with user set unit";
+CM_ SG_ 921 UI_SET_SPEED "set speed shown in the vehicle's UI with the vehicle's unit";
 CM_ SG_ 951 BRAKE_LIGHTS_ACC "brake lights when ACC commands decel";
 CM_ SG_ 1009 SET_SPEED "units seem to be whatever the car is set to";
 CM_ SG_ 1041 PCS_INDICATOR "Pre-Collision System Indicator";
@@ -462,6 +464,7 @@ CM_ SG_ 1163 OVSPVALL "-5 at start then 2 after 2 seconds";
 CM_ SG_ 1163 OVSPVALM "-5 at start then 5 after 2 seconds";
 CM_ SG_ 1163 OVSPVALH "-5 at start then 10 after 2 seconds";
 CM_ SG_ 1163 TSRSPU "always 1";
+CM_ SG_ 1552 UI_SPEED "Vehicle's speedometer's display speed after Toyota's offset was applied, uses vehicle's unit";
 CM_ SG_ 1552 METER_SLIDER_BRIGHTNESS_PCT "Combination display brightness setting, scales from 12 per cent to 100 per cent, reflects combination meter settings only, not linked with headlight state";
 CM_ SG_ 1552 METER_SLIDER_LOW_BRIGHTNESS "Combination display low brightness mode, also controls footwell lighting";
 CM_ SG_ 1552 METER_SLIDER_DIMMED "Combination display slider not at max, reflects combination meter settings only, not linked with headlight state";

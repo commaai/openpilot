@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import base64
+import bz2
 import hashlib
 import io
 import json
@@ -30,7 +31,7 @@ from common.api import Api
 from common.basedir import PERSIST
 from common.file_helpers import CallbackReader
 from common.params import Params
-from common.realtime import sec_since_boot
+from common.realtime import sec_since_boot, set_core_affinity
 from selfdrive.hardware import HARDWARE, PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
@@ -63,6 +64,13 @@ cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress', 'allow_cellular'], defaults=(0, False, 0, False))
 
 cur_upload_items: Dict[int, Any] = {}
+
+
+def strip_bz2_extension(fn):
+  if fn.endswith('.bz2'):
+    return fn[:-4]
+  return fn
+
 
 class AbortTransferException(Exception):
   pass
@@ -179,46 +187,45 @@ def upload_handler(end_event: threading.Event) -> None:
         cloudlog.event("athena.upload_handler.expired", item=cur_upload_items[tid], error=True)
         continue
 
-      # Check if uploading over cell is allowed
+      # Check if uploading over metered connection is allowed
       sm.update(0)
-      cell = sm['deviceState'].networkType not in [NetworkType.wifi, NetworkType.ethernet]
-      if cell and (not cur_upload_items[tid].allow_cellular):
+      metered = sm['deviceState'].networkMetered
+      network_type = sm['deviceState'].networkType.raw
+      if metered and (not cur_upload_items[tid].allow_cellular):
         retry_upload(tid, end_event, False)
         continue
 
       try:
         def cb(sz, cur):
-          # Abort transfer if connection changed to cell after starting upload
+          # Abort transfer if connection changed to metered after starting upload
           sm.update(0)
-          cell = sm['deviceState'].networkType not in [NetworkType.wifi, NetworkType.ethernet]
-          if cell and (not cur_upload_items[tid].allow_cellular):
+          metered = sm['deviceState'].networkMetered
+          if metered and (not cur_upload_items[tid].allow_cellular):
             raise AbortTransferException
 
           cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
-
-        network_type = sm['deviceState'].networkType.raw
         fn = cur_upload_items[tid].path
         try:
           sz = os.path.getsize(fn)
         except OSError:
           sz = -1
 
-        cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type)
+        cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=cur_upload_items[tid].retry_count)
         response = _do_upload(cur_upload_items[tid], cb)
 
-        if response.status_code not in (200, 201, 403, 412):
-          cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type)
+        if response.status_code not in (200, 201, 401, 403, 412):
+          cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
           retry_upload(tid, end_event)
         else:
-          cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type)
+          cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type, metered=metered)
 
         UploadQueueCache.cache(upload_queue)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError):
-        cloudlog.event("athena.upload_handler.timeout", fn=fn, sz=sz, network_type=network_type)
+        cloudlog.event("athena.upload_handler.timeout", fn=fn, sz=sz, network_type=network_type, metered=metered)
         retry_upload(tid, end_event)
       except AbortTransferException:
-        cloudlog.event("athena.upload_handler.abort", fn=fn, sz=sz, network_type=network_type)
+        cloudlog.event("athena.upload_handler.abort", fn=fn, sz=sz, network_type=network_type, metered=metered)
         retry_upload(tid, end_event, False)
 
     except queue.Empty:
@@ -228,14 +235,29 @@ def upload_handler(end_event: threading.Event) -> None:
 
 
 def _do_upload(upload_item, callback=None):
-  with open(upload_item.path, "rb") as f:
-    size = os.fstat(f.fileno()).st_size
+  path = upload_item.path
+  compress = False
+
+  # If file does not exist, but does exist without the .bz2 extension we will compress on the fly
+  if not os.path.exists(path) and os.path.exists(strip_bz2_extension(path)):
+    path = strip_bz2_extension(path)
+    compress = True
+
+  with open(path, "rb") as f:
+    if compress:
+      cloudlog.event("athena.upload_handler.compress", fn=path, fn_orig=upload_item.path)
+      data = bz2.compress(f.read())
+      size = len(data)
+      data = io.BytesIO(data)
+    else:
+      size = os.fstat(f.fileno()).st_size
+      data = f
 
     if callback:
-      f = CallbackReader(f, callback, size)
+      data = CallbackReader(data, callback, size)
 
     return requests.put(upload_item.url,
-                        data=f,
+                        data=data,
                         headers={**upload_item.headers, 'Content-Length': str(size)},
                         timeout=30)
 
@@ -256,12 +278,12 @@ def getMessage(service=None, timeout=1000):
 
 
 @dispatcher.add_method
-def getVersion():
+def getVersion() -> Dict[str, str]:
   return {
     "version": get_version(),
-    "remote": get_origin(),
-    "branch": get_short_branch(),
-    "commit": get_commit(),
+    "remote": get_origin(''),
+    "branch": get_short_branch(''),
+    "commit": get_commit(default=''),
   }
 
 
@@ -336,8 +358,9 @@ def uploadFilesToUrls(files_data):
     if len(fn) == 0 or fn[0] == '/' or '..' in fn or 'url' not in file:
       failed.append(fn)
       continue
+
     path = os.path.join(ROOT, fn)
-    if not os.path.exists(path):
+    if not os.path.exists(path) and not os.path.exists(strip_bz2_extension(path)):
       failed.append(fn)
       continue
 
@@ -416,7 +439,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     local_sock.connect(('127.0.0.1', local_port))
-    local_sock.setblocking(0)
+    local_sock.setblocking(False)
 
     proxy_end_event = threading.Event()
     threads = [
@@ -455,6 +478,12 @@ def getSimInfo():
 @dispatcher.add_method
 def getNetworkType():
   return HARDWARE.get_network_type()
+
+
+@dispatcher.add_method
+def getNetworkMetered():
+  network_type = HARDWARE.get_network_type()
+  return HARDWARE.get_network_metered(network_type)
 
 
 @dispatcher.add_method
@@ -675,6 +704,11 @@ def backoff(retries):
 
 
 def main():
+  try:
+    set_core_affinity([0, 1, 2, 3])
+  except Exception:
+    cloudlog.exception("failed to set core affinity")
+
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf-8')
   UploadQueueCache.initialize(upload_queue)

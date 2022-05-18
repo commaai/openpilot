@@ -42,18 +42,6 @@ medmodel_intrinsics = np.array([
   [0.0,  0.0,                                   1.0]])
 
 
-# CAL model
-CALMODEL_INPUT_SIZE = (512, 256)
-CALMODEL_YUV_SIZE = (CALMODEL_INPUT_SIZE[0], CALMODEL_INPUT_SIZE[1] * 3 // 2)
-CALMODEL_CY = 47.6
-
-calmodel_fl = 606.7
-calmodel_intrinsics = np.array([
-  [calmodel_fl,  0.0,  0.5 * CALMODEL_INPUT_SIZE[0]],
-  [0.0,  calmodel_fl,                   CALMODEL_CY],
-  [0.0,  0.0,                                   1.0]])
-
-
 # BIG model
 BIGMODEL_INPUT_SIZE = (1024, 512)
 BIGMODEL_YUV_SIZE = (BIGMODEL_INPUT_SIZE[0], BIGMODEL_INPUT_SIZE[1] * 3 // 2)

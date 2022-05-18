@@ -17,7 +17,13 @@ bool can_set_speed(uint8_t can_number) {
   FDCAN_GlobalTypeDef *CANx = CANIF_FROM_CAN_NUM(can_number);
   uint8_t bus_number = BUS_NUM_FROM_CAN_NUM(can_number);
 
-  ret &= llcan_set_speed(CANx, bus_config[bus_number].can_speed, bus_config[bus_number].can_data_speed, can_loopback, (unsigned int)(can_silent) & (1U << can_number));
+  ret &= llcan_set_speed(
+    CANx,
+    bus_config[bus_number].can_speed,
+    bus_config[bus_number].can_data_speed,
+    can_loopback,
+    (unsigned int)(can_silent) & (1U << can_number)
+  );
   return ret;
 }
 
@@ -146,6 +152,9 @@ void can_rx(uint8_t can_number) {
       to_push.bus = bus_number;
       to_push.data_len_code = ((fifo->header[1] >> 16) & 0xFU);
 
+      bool canfd_frame = ((fifo->header[1] >> 21) & 0x1U);
+      bool brs_frame = ((fifo->header[1] >> 20) & 0x1U);
+
       uint8_t data_len_w = (dlc_to_len[to_push.data_len_code] / 4U);
       data_len_w += ((dlc_to_len[to_push.data_len_code] % 4U) > 0U) ? 1U : 0U;
       for (unsigned int i = 0; i < data_len_w; i++) {
@@ -172,6 +181,14 @@ void can_rx(uint8_t can_number) {
 
       current_board->set_led(LED_BLUE, true);
       can_send_errs += can_push(&can_rx_q, &to_push) ? 0U : 1U;
+
+      // Enable CAN FD and BRS if CAN FD message was received
+      if (!(bus_config[can_number].canfd_enabled) && (canfd_frame)) {
+        bus_config[can_number].canfd_enabled = true;
+      }
+      if (!(bus_config[can_number].brs_enabled) && (brs_frame)) {
+        bus_config[can_number].brs_enabled = true;
+      }
 
       // update read index
       CANx->RXF0A = rx_fifo_idx;

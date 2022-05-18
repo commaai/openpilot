@@ -30,9 +30,9 @@ void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, unsigned int
   }
 
   CameraInfo ci = {
-      .frame_width = s->frame->width,
-      .frame_height = s->frame->height,
-      .frame_stride = s->frame->width * 3,
+      .frame_width = (uint32_t)s->frame->width,
+      .frame_height = (uint32_t)s->frame->height,
+      .frame_stride = (uint32_t)s->frame->width * 3,
   };
   s->ci = ci;
   s->camera_num = camera_id;
@@ -47,17 +47,16 @@ void camera_close(CameraState *s) {
 void run_camera(CameraState *s) {
   uint32_t stream_frame_id = 0, frame_id = 0;
   size_t buf_idx = 0;
-  std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(s->frame->getRGBSize());
   std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(s->frame->getYUVSize());
   while (!do_exit) {
     if (stream_frame_id == s->frame->getFrameCount()) {
       // loop stream
       stream_frame_id = 0;
     }
-    if (s->frame->get(stream_frame_id++, rgb_buf.get(), yuv_buf.get())) {
+    if (s->frame->get(stream_frame_id++, yuv_buf.get())) {
       s->buf.camera_bufs_metadata[buf_idx] = {.frame_id = frame_id};
       auto &buf = s->buf.camera_bufs[buf_idx];
-      CL_CHECK(clEnqueueWriteBuffer(buf.copy_q, buf.buf_cl, CL_TRUE, 0, s->frame->getRGBSize(), rgb_buf.get(), 0, NULL, NULL));
+      CL_CHECK(clEnqueueWriteBuffer(buf.copy_q, buf.buf_cl, CL_TRUE, 0, s->frame->getYUVSize(), yuv_buf.get(), 0, NULL, NULL));
       s->buf.queue(buf_idx);
       ++frame_id;
       buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
@@ -98,9 +97,9 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_ROAD, get_url(road_camera_route, "fcamera", 0));
+              VISION_STREAM_RGB_ROAD, VISION_STREAM_ROAD, get_url(road_camera_route, "fcamera", 0));
   // camera_init(v, &s->driver_cam, CAMERA_ID_LGC615, 10, device_id, ctx,
-  //             VISION_STREAM_RGB_FRONT, VISION_STREAM_DRIVER, get_url(driver_camera_route, "dcamera", 0));
+  //             VISION_STREAM_RGB_DRIVER, VISION_STREAM_DRIVER, get_url(driver_camera_route, "dcamera", 0));
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 }
 

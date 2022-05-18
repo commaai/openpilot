@@ -12,18 +12,23 @@
 #include "cereal/gen/cpp/log.capnp.h"
 #endif
 
+#define INFO printf
+#define WARN printf
+#define DEBUG(...)
+//#define DEBUG printf
+
 #define MAX_BAD_COUNTER 5
 
-// Helper functions
-unsigned int honda_checksum(unsigned int address, uint64_t d, int l);
-unsigned int toyota_checksum(unsigned int address, uint64_t d, int l);
-unsigned int subaru_checksum(unsigned int address, uint64_t d, int l);
-unsigned int chrysler_checksum(unsigned int address, uint64_t d, int l);
 void init_crc_lookup_tables();
-unsigned int volkswagen_crc(unsigned int address, uint64_t d, int l);
-unsigned int pedal_checksum(uint64_t d, int l);
-uint64_t read_u64_be(const uint8_t* v);
-uint64_t read_u64_le(const uint8_t* v);
+
+// Car specific functions
+unsigned int honda_checksum(uint32_t address, const std::vector<uint8_t> &d);
+unsigned int toyota_checksum(uint32_t address, const std::vector<uint8_t> &d);
+unsigned int subaru_checksum(uint32_t address, const std::vector<uint8_t> &d);
+unsigned int chrysler_checksum(uint32_t address, const std::vector<uint8_t> &d);
+unsigned int volkswagen_crc(uint32_t address, const std::vector<uint8_t> &d);
+unsigned int hkg_can_fd_checksum(uint32_t address, const std::vector<uint8_t> &d);
+unsigned int pedal_checksum(const std::vector<uint8_t> &d);
 
 class MessageState {
 public:
@@ -43,7 +48,7 @@ public:
   bool ignore_checksum = false;
   bool ignore_counter = false;
 
-  bool parse(uint64_t sec, uint8_t * dat);
+  bool parse(uint64_t sec, const std::vector<uint8_t> &dat);
   bool update_counter_generic(int64_t v, int cnt_size);
 };
 
@@ -57,7 +62,11 @@ private:
 
 public:
   bool can_valid = false;
+  bool bus_timeout = false;
+  uint64_t first_sec = 0;
   uint64_t last_sec = 0;
+  uint64_t last_nonempty_sec = 0;
+  uint64_t bus_timeout_threshold = 0;
 
   CANParser(int abus, const std::string& dbc_name,
             const std::vector<MessageParseOptions> &options,
@@ -80,6 +89,6 @@ private:
 
 public:
   CANPacker(const std::string& dbc_name);
-  uint64_t pack(uint32_t address, const std::vector<SignalPackValue> &values, int counter);
+  std::vector<uint8_t> pack(uint32_t address, const std::vector<SignalPackValue> &values, int counter);
   Msg* lookup_message(uint32_t address);
 };

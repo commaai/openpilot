@@ -195,8 +195,8 @@ BO_ 916 TCS13: 8 ESC
  SG_ EBA_ACK : 17|1@1+ (1.0,0.0) [0.0|1.0] ""  Vector__XXX
  SG_ FCA_ACK : 18|1@1+ (1.0,0.0) [0.0|1.0] ""  Vector__XXX
  SG_ DF_BF_STAT : 19|2@1+ (1.0,0.0) [0.0|3.0] ""  BCW
- SG_ SCCReqLim : 21|2@1+ (1.0,0.0) [0.0|3.0] ""  SCC
- SG_ TQI_SCC : 23|9@1+ (0.390625,0.0) [0.0|199.609375] "%"  Vector__XXX
+ SG_ SCCReqLim : 22|2@1+ (1.0,0.0) [0.0|3.0] ""  SCC
+ SG_ TQI_SCC : 24|8@1+ (0.390625,0.0) [0.0|199.609375] "%"  Vector__XXX
  SG_ ACCEL_REF_ACC : 32|11@1+ (0.01,-10.23) [-10.23|10.24] "m/s^2"  EMS,SCC
  SG_ ACCEnable : 43|2@1+ (1.0,0.0) [0.0|3.0] ""  EMS,SCC
  SG_ DriverOverride : 45|2@1+ (1.0,0.0) [0.0|3.0] ""  EMS,SCC

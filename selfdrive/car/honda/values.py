@@ -1,13 +1,17 @@
-from enum import IntFlag
+from dataclasses import dataclass
+from enum import Enum, IntFlag
+from typing import Dict, List, Union
 
 from cereal import car
+from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-class CarControllerParams():
+class CarControllerParams:
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
   # perform the closed loop control, and might need some
   # to apply some more braking if we're on a downhill slope.
@@ -51,6 +55,7 @@ class CruiseButtons:
   CANCEL = 2
   MAIN = 1
 
+
 # See dbc files for info on values
 VISUAL_HUD = {
   VisualAlert.none: 0,
@@ -62,6 +67,7 @@ VISUAL_HUD = {
   VisualAlert.seatbeltUnbuckled: 5,
   VisualAlert.speedTooHigh: 8
 }
+
 
 class CAR:
   ACCORD = "HONDA ACCORD 2018"
@@ -87,6 +93,49 @@ class CAR:
   INSIGHT = "HONDA INSIGHT 2019"
   HONDA_E = "HONDA E 2020"
 
+
+class Footnote(Enum):
+  CIVIC_DIESEL = CarFootnote(
+    "2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph.",
+    Column.FSR_STEERING)
+
+
+@dataclass
+class HondaCarInfo(CarInfo):
+  package: str = "Honda Sensing"
+  min_steer_speed: float = 12. * CV.MPH_TO_MS
+
+
+CAR_INFO: Dict[str, Union[HondaCarInfo, List[HondaCarInfo]]] = {
+  CAR.ACCORD: [
+    HondaCarInfo("Honda Accord 2018-21", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
+    HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
+  ],
+  CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
+  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", harness=Harness.nidec),
+  CAR.CIVIC_BOSCH: [
+    HondaCarInfo("Honda Civic 2019-20", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS, harness=Harness.bosch),
+    HondaCarInfo("Honda Civic Hatchback 2017-21", harness=Harness.bosch),
+  ],
+  CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS, harness=Harness.nidec),
+  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring", harness=Harness.nidec),
+  CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-21", harness=Harness.bosch),
+  # CAR.CRV_EU: HondaCarInfo("Honda CR-V EU", "Touring"),  # Euro version of CRV Touring
+  CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", harness=Harness.bosch),
+  CAR.FIT: HondaCarInfo("Honda Fit 2018-19", harness=Harness.nidec),
+  CAR.FREED: HondaCarInfo("Honda Freed 2020", harness=Harness.nidec),
+  CAR.HRV: HondaCarInfo("Honda HR-V 2019-20", harness=Harness.nidec),
+  CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20", min_steer_speed=0., harness=Harness.nidec),
+  CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", harness=Harness.nidec),
+  CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
+  CAR.PILOT: HondaCarInfo("Honda Pilot 2016-21", harness=Harness.nidec),
+  CAR.PASSPORT: HondaCarInfo("Honda Passport 2019-21", "All", harness=Harness.nidec),
+  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-22", harness=Harness.nidec),
+  CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
+  CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
+}
+
+
 FW_VERSIONS = {
   CAR.ACCORD: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
@@ -102,6 +151,7 @@ FW_VERSIONS = {
       b'37805-6A0-A750\x00\x00',
       b'37805-6A0-A840\x00\x00',
       b'37805-6A0-A850\x00\x00',
+      b'37805-6A0-A930\x00\x00',
       b'37805-6A0-AF30\x00\x00',
       b'37805-6A0-AG30\x00\x00',
       b'37805-6B2-C520\x00\x00',
@@ -193,6 +243,7 @@ FW_VERSIONS = {
       b'78109-TVA-A030\x00\x00',
       b'78109-TVA-A110\x00\x00',
       b'78109-TVA-A120\x00\x00',
+      b'78109-TVA-A130\x00\x00',
       b'78109-TVA-A210\x00\x00',
       b'78109-TVA-A220\x00\x00',
       b'78109-TVA-A230\x00\x00',
@@ -1076,12 +1127,14 @@ FW_VERSIONS = {
   CAR.PASSPORT: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-RLV-B220\x00\x00',
+      b'37805-RLV-B210\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TGS-A230\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TGS-A030\x00\x00',
+      b'36161-TGS-A130\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TG7-A040\x00\x00',
@@ -1097,6 +1150,7 @@ FW_VERSIONS = {
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TGS-AT20\x00\x00',
+      b'78109-TGS-AX20\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TGS-A530\x00\x00',

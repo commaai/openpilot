@@ -4,7 +4,7 @@ set -e
 DFU_UTIL="dfu-util"
 
 cd ..
-PEDAL=1 scons -u
+PEDAL=1 scons -u -j$(nproc)
 cd pedal
 
 $DFU_UTIL -d 0483:df11 -a 0 -s 0x08004000 -D ../obj/pedal.bin.signed
