@@ -20,23 +20,22 @@ class Laikad:
   def __init__(self):
     self._gnss_kf: GNSSKalman = GNSSKalman(GENERATED_DIR)
 
-  def process_ublox_msg(self, ublox_msg, dog: AstroDog, ublox_mono_time: int, correct=False):
+  def process_ublox_msg(self, ublox_msg, dog: AstroDog, ublox_mono_time: int):
     if ublox_msg.which == 'measurementReport':
       report = ublox_msg.measurementReport
       if len(report.measurements) == 0:
         return None
+
       new_meas = read_raw_ublox(report)
       measurements = process_measurements(new_meas, dog)
       if len(measurements) == 0:
         return None
+
       # pos fix needs more than 5 processed_measurements
-      # todo temp lowered the calc_pos_fix to 4. Currently only gps is supported for offline ephemeris data
-
+      # todo temp lowered the calc_pos_fix to 4. Currently, only gps is supported for offline ephemeris data
       pos_fix = calc_pos_fix(measurements, min_measurements=4)
-
       if len(pos_fix) > 0:
         correct_measurements(measurements, pos_fix[0][:3], dog)
-
       meas_msgs = [create_measurement_msg(m) for m in measurements]
 
       t = ublox_mono_time * 1e-9

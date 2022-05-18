@@ -24,6 +24,15 @@ def get_log(segs=range(0)):
   return [m for m in logs if m.which() == 'ubloxGnss']
 
 
+def verify_messages(lr, dog, laikad):
+  good_msgs = []
+  for m in lr:
+    msg = laikad.process_ublox_msg(m.ubloxGnss, dog, m.logMonoTime)
+    if msg is not None and len(msg.gnssMeasurements.correctedMeasurements) > 0:
+      good_msgs.append(msg)
+  return good_msgs
+
+
 class TestLaikad(unittest.TestCase):
 
   def test_create_msg_without_errors(self):
@@ -35,25 +44,25 @@ class TestLaikad(unittest.TestCase):
 
     self.assertEqual(msg.constellationId, 'gps')
 
-  def test_gnss_kalman(self):
+  def test_laika_online(self):
+    lr = get_log(range(1))
+
+    # Set to offline forces to use ephemeris messages
+    dog = AstroDog(use_internet=True)
+    laikad = Laikad()
+    good_msgs = verify_messages(lr, dog, laikad)
+
+    self.assertEqual(560, len(good_msgs))
+
+  def test_laika_offline(self):
     lr = get_log(range(1))
 
     # Set to offline forces to use ephemeris messages
     dog = AstroDog(use_internet=False)
     laikad = Laikad()
-    need_msg = 50
-    good_msg = None
-    for m in lr:
-      if m.which() == 'ubloxGnss':
-        msg = laikad.process_ublox_msg(m.ubloxGnss, dog, m.logMonoTime, correct=False)
-        if msg is not None and len(msg.gnssMeasurements.correctedMeasurements) > 0:
-          good_msg = msg
-          need_msg -= 1
-          if need_msg == 0:
-            break
-          # break
-    self.assertTrue(good_msg is not None)
+    good_msgs = verify_messages(lr, dog, laikad)
 
+    self.assertEqual(256, len(good_msgs))
 
 if __name__ == "__main__":
   unittest.main()
