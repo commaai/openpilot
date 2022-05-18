@@ -74,7 +74,7 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
         assert len(frames) == 1
         img_yuv = frames[0].to_ndarray(format=av.video.format.VideoFormat('yuv420p')).flatten()
 
-      vipc_server.send(vst, img_yuv.data, cnt, cnt*1e9/20, cnt*1e9/20)
+      vipc_server.send(vst, img_yuv.data, cnt, int(time_q[0]*1e9), int(time.monotonic()*1e9))
       cnt += 1
 
       pc_latency = (time.monotonic()-time_q[0])*1000
