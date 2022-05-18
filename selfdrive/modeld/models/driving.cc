@@ -228,24 +228,19 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
 
 void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t,
                      const ModelOutputLaneLines &lanes) {
-
-  const auto &left_far = lanes.get_lane_idx(0);
-  const auto &left_near = lanes.get_lane_idx(1);
-  const auto &right_near = lanes.get_lane_idx(2);
-  const auto &right_far = lanes.get_lane_idx(3);
   std::array<float, TRAJECTORY_SIZE> left_far_y, left_far_z;
   std::array<float, TRAJECTORY_SIZE> left_near_y, left_near_z;
   std::array<float, TRAJECTORY_SIZE> right_near_y, right_near_z;
   std::array<float, TRAJECTORY_SIZE> right_far_y, right_far_z;
   for (int j=0; j<TRAJECTORY_SIZE; j++) {
-    left_far_y[j] = left_far.mean[j].y;
-    left_far_z[j] = left_far.mean[j].z;
-    left_near_y[j] = left_near.mean[j].y;
-    left_near_z[j] = left_near.mean[j].z;
-    right_near_y[j] = right_near.mean[j].y;
-    right_near_z[j] = right_near.mean[j].z;
-    right_far_y[j] = right_far.mean[j].y;
-    right_far_z[j] = right_far.mean[j].z;
+    left_far_y[j] = lanes.mean.left_far[j].y;
+    left_far_z[j] = lanes.mean.left_far[j].z;
+    left_near_y[j] = lanes.mean.left_near[j].y;
+    left_near_z[j] = lanes.mean.left_near[j].z;
+    right_near_y[j] = lanes.mean.right_near[j].y;
+    right_near_z[j] = lanes.mean.right_near[j].z;
+    right_far_y[j] = lanes.mean.right_far[j].y;
+    right_far_z[j] = lanes.mean.right_far[j].z;
   }
 
   auto lane_lines = framed.initLaneLines(4);
@@ -255,10 +250,10 @@ void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<floa
   fill_xyzt(lane_lines[3], plan_t, X_IDXS_FLOAT, right_far_y, right_far_z);
 
   framed.setLaneLineStds({
-    exp(left_far.std[0].y),
-    exp(left_near.std[0].y),
-    exp(right_near.std[0].y),
-    exp(right_far.std[0].y),
+    exp(lanes.std.left_far[0].y),
+    exp(lanes.std.left_near[0].y),
+    exp(lanes.std.right_near[0].y),
+    exp(lanes.std.right_far[0].y),
   });
 
   framed.setLaneLineProbs({
