@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Star
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, Star
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -100,6 +100,7 @@ class Footnote(Enum):
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
   good_torque: bool = True
+  harness: Enum = Harness.toyota
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
@@ -151,7 +152,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
   CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
   CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-21"),
-  CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-21"),
+  CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-22"),
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
   CAR.LEXUS_NX: ToyotaCarInfo("Lexus NX 2018-19", footnotes=[Footnote.DSU]),
   CAR.LEXUS_NXH: ToyotaCarInfo("Lexus NX Hybrid 2018-19", footnotes=[Footnote.DSU]),
@@ -1336,14 +1337,19 @@ FW_VERSIONS = {
     (Ecu.esp, 0x7b0, None): [
       b'\x01F15264283100\x00\x00\x00\x00',
       b'\x01F15264286200\x00\x00\x00\x00',
+      b'\x01F15264286100\x00\x00\x00\x00',
+      b'\x01F15264283200\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'\x028965B0R01500\x00\x00\x00\x008965B0R02500\x00\x00\x00\x00',
       b'8965B42182\x00\x00\x00\x00\x00\x00',
+      b'8965B42172\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896634A62000\x00\x00\x00\x00',
       b'\x01896634A08000\x00\x00\x00\x00',
+      b'\x01896634A61000\x00\x00\x00\x00',
+      b'\x01896634A02001\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F0R01100\x00\x00\x00\x00',
@@ -1445,22 +1451,26 @@ FW_VERSIONS = {
       b'\x028966333T0100\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
       b'\x028966333V4000\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
       b'\x02896633T09000\x00\x00\x00\x00897CF3307001\x00\x00\x00\x00',
+      b'\x01896633T38000\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'F152633423\x00\x00\x00\x00\x00\x00',
       b'F152633680\x00\x00\x00\x00\x00\x00',
       b'F152633681\x00\x00\x00\x00\x00\x00',
+      b'F152633F50\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B33252\x00\x00\x00\x00\x00\x00',
       b'8965B33590\x00\x00\x00\x00\x00\x00',
       b'8965B33690\x00\x00\x00\x00\x00\x00',
+      b'8965B33721\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
       b'\x018821F3301200\x00\x00\x00\x00',
       b'\x018821F3301300\x00\x00\x00\x00',
       b'\x018821F3301400\x00\x00\x00\x00',
+      b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F33030D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
@@ -1469,6 +1479,7 @@ FW_VERSIONS = {
       b'\x028646F3304100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F3304200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F3304300\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
+      b'\x028646F3309100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.LEXUS_ESH: {
@@ -1707,6 +1718,7 @@ FW_VERSIONS = {
       b'\x01896634D12000\x00\x00\x00\x00',
       b'\x01896634D12100\x00\x00\x00\x00',
       b'\x01896634D43000\x00\x00\x00\x00',
+      b'\x01896630ED0100\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'\x01F15260E031\x00\x00\x00\x00\x00\x00',
@@ -1755,6 +1767,7 @@ FW_VERSIONS = {
   CAR.PRIUS_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x028966347B1000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+      b'\x028966347C4000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C6000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x038966347C0000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF4710101\x00\x00\x00\x00',

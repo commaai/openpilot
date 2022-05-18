@@ -108,7 +108,7 @@ class TestLoggerd(unittest.TestCase):
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
 
-    expected_files = {"rlog.bz2", "qlog.bz2", "qcamera.ts", "fcamera.hevc", "dcamera.hevc"}
+    expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc"}
     streams = [(VisionStreamType.VISION_STREAM_ROAD, tici_f_frame_size if TICI else eon_f_frame_size, "roadCameraState"),
               (VisionStreamType.VISION_STREAM_DRIVER, tici_d_frame_size if TICI else eon_d_frame_size, "driverCameraState")]
     if TICI:
@@ -126,6 +126,7 @@ class TestLoggerd(unittest.TestCase):
       length = random.randint(1, 3)
       os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
       managed_processes["loggerd"].start()
+      managed_processes["encoderd"].start()
 
       fps = 20.0
       for n in range(1, int(num_segs*length*fps)+1):
@@ -140,6 +141,7 @@ class TestLoggerd(unittest.TestCase):
         time.sleep(1.0/fps)
 
       managed_processes["loggerd"].stop()
+      managed_processes["encoderd"].stop()
 
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
       for n in range(num_segs):
@@ -208,7 +210,7 @@ class TestLoggerd(unittest.TestCase):
     time.sleep(1)
     managed_processes["loggerd"].stop()
 
-    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog.bz2")
+    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog")
     lr = list(LogReader(qlog_path))
 
     # check initData and sentinel
@@ -254,7 +256,7 @@ class TestLoggerd(unittest.TestCase):
     time.sleep(2)
     managed_processes["loggerd"].stop()
 
-    lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog.bz2")))
+    lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog")))
 
     # check initData and sentinel
     self._check_init_data(lr)

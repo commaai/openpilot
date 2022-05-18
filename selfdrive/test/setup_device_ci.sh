@@ -19,6 +19,7 @@ fi
 
 umount /data/safe_staging/merged/ || true
 sudo umount /data/safe_staging/merged/ || true
+rm -rf /data/safe_staging/* || true
 
 export KEYS_PARAM_PATH="/data/params/d/GithubSshKeys"
 export KEYS_PATH="/usr/comma/setup_keys"
@@ -54,14 +55,16 @@ cd $SOURCE_DIR
 
 rm -f .git/index.lock
 git reset --hard
-git fetch
-find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
 git fetch --verbose origin $GIT_COMMIT
+find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
 git reset --hard $GIT_COMMIT
 git checkout $GIT_COMMIT
 git clean -xdf
 git submodule update --init --recursive
 git submodule foreach --recursive "git reset --hard && git clean -xdf"
+
+git lfs pull
+(ulimit -n 65535 && git lfs prune)
 
 echo "git checkout done, t=$SECONDS"
 

@@ -60,9 +60,9 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
   return true;
 }
 
-std::string ensure_params_path(const std::string &path = {}) {
+std::string ensure_params_path(const std::string &prefix, const std::string &path = {}) {
   std::string params_path = path.empty() ? Path::params() : path;
-  if (!create_params_path(params_path, params_path + "/d")) {
+  if (!create_params_path(params_path, params_path + prefix)) {
     throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
   }
   return params_path;
@@ -94,6 +94,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CompletedTrainingVersion", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"CurrentRoute", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
+    {"DisableLogging", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"DisablePowerDown", PERSISTENT},
     {"DisableRadar_Allow", PERSISTENT},
     {"DisableRadar", PERSISTENT}, // WARNING: THIS DISABLES AEB
@@ -131,7 +132,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LastAthenaPingTime", CLEAR_ON_MANAGER_START},
     {"LastGPSPosition", PERSISTENT},
     {"LastManagerExitReason", CLEAR_ON_MANAGER_START},
-    {"LastPeripheralPandaType", PERSISTENT},
     {"LastPowerDropDetected", CLEAR_ON_MANAGER_START},
     {"LastSystemShutdown", CLEAR_ON_MANAGER_START},
     {"LastUpdateException", CLEAR_ON_MANAGER_START},
@@ -180,9 +180,12 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 } // namespace
 
+
 Params::Params(const std::string &path) {
-  static std::string default_param_path = ensure_params_path();
-  params_path = path.empty() ? default_param_path : ensure_params_path(path);
+  const char* env = std::getenv("OPENPILOT_PREFIX");
+  prefix = env ? "/" + std::string(env) : "/d";
+  std::string default_param_path = ensure_params_path(prefix);
+  params_path = path.empty() ? default_param_path : ensure_params_path(prefix, path);
 }
 
 bool Params::checkKey(const std::string &key) {
