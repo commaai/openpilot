@@ -179,7 +179,7 @@ void msgq_init_subscriber(msgq_queue_t * q) {
 
     // No more slots available. Reset all subscribers to kick out inactive ones
     if (new_num_readers > NUM_READERS){
-      std::cout << "Warning, evicting all subscribers!" << std::endl;
+      //std::cout << "Warning, evicting all subscribers!" << std::endl;
       *q->num_readers = 0;
 
       for (size_t i = 0; i < NUM_READERS; i++){
@@ -307,7 +307,7 @@ int msgq_msg_ready(msgq_queue_t * q){
   assert(id >= 0); // Make sure subscriber is initialized
 
   if (q->read_uid_local != *q->read_uids[id]){
-    std::cout << q->endpoint << ": Reader was evicted, reconnecting" << std::endl;
+    //std::cout << q->endpoint << ": Reader was evicted, reconnecting" << std::endl;
     msgq_init_subscriber(q);
     goto start;
   }
@@ -334,7 +334,7 @@ int msgq_msg_recv(msgq_msg_t * msg, msgq_queue_t * q){
   assert(id >= 0); // Make sure subscriber is initialized
 
   if (q->read_uid_local != *q->read_uids[id]){
-    std::cout << q->endpoint << ": Reader was evicted, reconnecting" << std::endl;
+    //std::cout << q->endpoint << ": Reader was evicted, reconnecting" << std::endl;
     msgq_init_subscriber(q);
     goto start;
   }

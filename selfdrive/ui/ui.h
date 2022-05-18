@@ -24,8 +24,8 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
-const float y_offset = Hardware::EON() ? 0.0 : 150.0;
-const float ZOOM = Hardware::EON() ? 2138.5 : 2912.8;
+const float y_offset = 150.0;
+const float ZOOM = 2912.8;
 
 struct Alert {
   QString text1;
@@ -73,6 +73,7 @@ struct Alert {
 
 typedef enum UIStatus {
   STATUS_DISENGAGED,
+  STATUS_OVERRIDE,
   STATUS_ENGAGED,
   STATUS_WARNING,
   STATUS_ALERT,
@@ -80,6 +81,7 @@ typedef enum UIStatus {
 
 const QColor bg_colors [] = {
   [STATUS_DISENGAGED] =  QColor(0x17, 0x33, 0x49, 0xc8),
+  [STATUS_OVERRIDE] = QColor(0x91, 0x9b, 0x95, 0xf1),
   [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
   [STATUS_WARNING] = QColor(0xDA, 0x6F, 0x25, 0xf1),
   [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),

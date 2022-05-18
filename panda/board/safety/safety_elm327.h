@@ -1,4 +1,5 @@
-static int elm327_tx_hook(CANPacket_t *to_send) {
+static int elm327_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
+  UNUSED(longitudinal_allowed);
 
   int tx = 1;
   int addr = GET_ADDR(to_send);

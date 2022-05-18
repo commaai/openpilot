@@ -1,50 +1,45 @@
 #include "common.h"
 
-unsigned int honda_checksum(unsigned int address, uint64_t d, int l) {
-  d >>= ((8-l)*8); // remove padding
-  d >>= 4; // remove checksum
-
+unsigned int honda_checksum(uint32_t address, const std::vector<uint8_t> &d) {
   int s = 0;
-  bool extended = address > 0x7FF; // extended can
+  bool extended = address > 0x7FF;
   while (address) { s += (address & 0xF); address >>= 4; }
-  while (d) { s += (d & 0xF); d >>= 4; }
+  for (int i = 0; i < d.size(); i++) {
+    uint8_t x = d[i];
+    if (i == d.size()-1) x >>= 4; // remove checksum
+    s += (x & 0xF) + (x >> 4);
+  }
   s = 8-s;
-  if (extended) s += 3;
-  s &= 0xF;
+  if (extended) s += 3;  // extended can
 
-  return s;
+  return s & 0xF;
 }
 
-unsigned int toyota_checksum(unsigned int address, uint64_t d, int l) {
-  d >>= ((8-l)*8); // remove padding
-  d >>= 8; // remove checksum
-
-  unsigned int s = l;
+unsigned int toyota_checksum(uint32_t address, const std::vector<uint8_t> &d) {
+  unsigned int s = d.size();
   while (address) { s += address & 0xFF; address >>= 8; }
-  while (d) { s += d & 0xFF; d >>= 8; }
+  for (int i = 0; i < d.size() - 1; i++) { s += d[i]; }
 
   return s & 0xFF;
 }
 
-unsigned int subaru_checksum(unsigned int address, uint64_t d, int l) {
-  d >>= ((8-l)*8); // remove padding
-
+unsigned int subaru_checksum(uint32_t address, const std::vector<uint8_t> &d) {
   unsigned int s = 0;
   while (address) { s += address & 0xFF; address >>= 8; }
-  l -= 1; // checksum is first byte
-  while (l) { s += d & 0xFF; d >>= 8; l -= 1; }
+
+  // skip checksum in first byte
+  for (int i = 1; i < d.size(); i++) { s += d[i]; };
 
   return s & 0xFF;
 }
 
-unsigned int chrysler_checksum(unsigned int address, uint64_t d, int l) {
-  /* This function does not want the checksum byte in the input data.
-  jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf */
+unsigned int chrysler_checksum(uint32_t address, const std::vector<uint8_t> &d) {
+  /* jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf */
   uint8_t checksum = 0xFF;
-  for (int j = 0; j < (l - 1); j++) {
+  for (int j = 0; j < (d.size() - 1); j++) {
     uint8_t shift = 0x80;
-    uint8_t curr = (d >> 8*j) & 0xFF;
-    for (int i=0; i<8; i++) {
+    uint8_t curr = d[j];
+    for (int i = 0; i < 8; i++) {
       uint8_t bit_sum = curr & shift;
       uint8_t temp_chk = checksum & 0x80U;
       if (bit_sum != 0U) {
@@ -69,10 +64,11 @@ unsigned int chrysler_checksum(unsigned int address, uint64_t d, int l) {
   return ~checksum & 0xFF;
 }
 
-// Static lookup table for fast computation of CRC8 poly 0x2F, aka 8H2F/AUTOSAR
-uint8_t crc8_lut_8h2f[256];
+// Static lookup table for fast computation of CRCs
+uint8_t crc8_lut_8h2f[256]; // CRC8 poly 0x2F, aka 8H2F/AUTOSAR
+uint16_t crc16_lut_xmodem[256]; // CRC16 poly 0x1021, aka XMODEM
 
-void gen_crc_lookup_table(uint8_t poly, uint8_t crc_lut[]) {
+void gen_crc_lookup_table_8(uint8_t poly, uint8_t crc_lut[]) {
   uint8_t crc;
   int i, j;
 
@@ -88,13 +84,30 @@ void gen_crc_lookup_table(uint8_t poly, uint8_t crc_lut[]) {
   }
 }
 
-void init_crc_lookup_tables() {
-  // At init time, set up static lookup tables for fast CRC computation.
+void gen_crc_lookup_table_16(uint16_t poly, uint16_t crc_lut[]) {
+  uint16_t crc;
+  int i, j;
 
-  gen_crc_lookup_table(0x2F, crc8_lut_8h2f);    // CRC-8 8H2F/AUTOSAR for Volkswagen
+   for (i = 0; i < 256; i++) {
+    crc = i << 8;
+    for (j = 0; j < 8; j++) {
+      if ((crc & 0x8000) != 0) {
+        crc = (uint16_t)((crc << 1) ^ poly);
+      } else {
+        crc <<= 1;
+      }
+    }
+    crc_lut[i] = crc;
+  }
 }
 
-unsigned int volkswagen_crc(unsigned int address, uint64_t d, int l) {
+void init_crc_lookup_tables() {
+  // At init time, set up static lookup tables for fast CRC computation.
+  gen_crc_lookup_table_8(0x2F, crc8_lut_8h2f);    // CRC-8 8H2F/AUTOSAR for Volkswagen
+  gen_crc_lookup_table_16(0x1021, crc16_lut_xmodem);    // CRC-16 XMODEM for HKG CAN FD
+}
+
+unsigned int volkswagen_crc(uint32_t address, const std::vector<uint8_t> &d) {
   // Volkswagen uses standard CRC8 8H2F/AUTOSAR, but they compute it with
   // a magic variable padding byte tacked onto the end of the payload.
   // https://www.autosar.org/fileadmin/user_upload/standards/classic/4-3/AUTOSAR_SWS_CRCLibrary.pdf
@@ -102,14 +115,14 @@ unsigned int volkswagen_crc(unsigned int address, uint64_t d, int l) {
   uint8_t crc = 0xFF; // Standard init value for CRC8 8H2F/AUTOSAR
 
   // CRC the payload first, skipping over the first byte where the CRC lives.
-  for (int i = 1; i < l; i++) {
-    crc ^= (d >> (i*8)) & 0xFF;
+  for (int i = 1; i < d.size(); i++) {
+    crc ^= d[i];
     crc = crc8_lut_8h2f[crc];
   }
 
   // Look up and apply the magic final CRC padding byte, which permutes by CAN
   // address, and additionally (for SOME addresses) by the message counter.
-  uint8_t counter = ((d >> 8) & 0xFF) & 0x0F;
+  uint8_t counter = d[1] & 0x0F;
   switch(address) {
     case 0x86:  // LWI_01 Steering Angle
       crc ^= (uint8_t[]){0x86,0x86,0x86,0x86,0x86,0x86,0x86,0x86,0x86,0x86,0x86,0x86,0x86,0x86,0x86,0x86}[counter];
@@ -175,21 +188,17 @@ unsigned int volkswagen_crc(unsigned int address, uint64_t d, int l) {
   return crc ^ 0xFF; // Return after standard final XOR for CRC8 8H2F/AUTOSAR
 }
 
-unsigned int pedal_checksum(uint64_t d, int l) {
+unsigned int pedal_checksum(const std::vector<uint8_t> &d) {
   uint8_t crc = 0xFF;
   uint8_t poly = 0xD5; // standard crc8
 
-  d >>= ((8-l)*8); // remove padding
-  d >>= 8; // remove checksum
-
-  int i, j;
-  for (i = 0; i < l - 1; i++) {
-    crc ^= (d >> (i*8)) & 0xFF;
-    for (j = 0; j < 8; j++) {
+  // skip checksum byte
+  for (int i = d.size()-2; i >= 0; i--) {
+    crc ^= d[i];
+    for (int j = 0; j < 8; j++) {
       if ((crc & 0x80) != 0) {
         crc = (uint8_t)((crc << 1) ^ poly);
-      }
-      else {
+      } else {
         crc <<= 1;
       }
     }
@@ -197,25 +206,27 @@ unsigned int pedal_checksum(uint64_t d, int l) {
   return crc;
 }
 
+unsigned int hkg_can_fd_checksum(uint32_t address, const std::vector<uint8_t> &d) {
 
-uint64_t read_u64_be(const uint8_t* v) {
-  return (((uint64_t)v[0] << 56)
-          | ((uint64_t)v[1] << 48)
-          | ((uint64_t)v[2] << 40)
-          | ((uint64_t)v[3] << 32)
-          | ((uint64_t)v[4] << 24)
-          | ((uint64_t)v[5] << 16)
-          | ((uint64_t)v[6] << 8)
-          | (uint64_t)v[7]);
-}
+  uint16_t crc = 0;
 
-uint64_t read_u64_le(const uint8_t* v) {
-  return ((uint64_t)v[0]
-          | ((uint64_t)v[1] << 8)
-          | ((uint64_t)v[2] << 16)
-          | ((uint64_t)v[3] << 24)
-          | ((uint64_t)v[4] << 32)
-          | ((uint64_t)v[5] << 40)
-          | ((uint64_t)v[6] << 48)
-          | ((uint64_t)v[7] << 56));
+  for (int i = 2; i < d.size(); i++) {
+    crc = (crc << 8) ^ crc16_lut_xmodem[(crc >> 8) ^ d[i]];
+  }
+
+  // Add address to crc
+  crc = (crc << 8) ^ crc16_lut_xmodem[(crc >> 8) ^ ((address >> 0) & 0xFF)];
+  crc = (crc << 8) ^ crc16_lut_xmodem[(crc >> 8) ^ ((address >> 8) & 0xFF)];
+
+  if (d.size() == 8) {
+    crc ^= 0x5f29;
+  } else if (d.size() == 16) {
+    crc ^= 0x041d;
+  } else if (d.size() == 24) {
+    crc ^= 0x819d;
+  } else if (d.size() == 32) {
+    crc ^= 0x9f5b;
+  }
+
+  return crc;
 }

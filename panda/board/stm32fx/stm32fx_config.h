@@ -53,6 +53,7 @@
 #include "libc.h"
 #include "critical.h"
 #include "faults.h"
+#include "utils.h"
 
 #include "drivers/registers.h"
 #include "drivers/interrupts.h"
@@ -67,6 +68,10 @@
 #if !defined(BOOTSTUB) && (defined(PANDA) || defined(PEDAL_USB))
   #include "drivers/uart.h"
   #include "stm32fx/lluart.h"
+#endif
+
+#if !defined(PEDAL_USB) && !defined(PEDAL) && !defined(BOOTSTUB)
+  #include "stm32fx/llexti.h"
 #endif
 
 #ifdef BOOTSTUB

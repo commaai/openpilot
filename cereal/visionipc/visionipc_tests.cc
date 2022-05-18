@@ -40,11 +40,11 @@ TEST_CASE("Check buffers"){
 TEST_CASE("Check yuv/rgb"){
   VisionIpcServer server("camerad");
   server.create_buffers(VISION_STREAM_ROAD, 1, false, 100, 100);
-  server.create_buffers(VISION_STREAM_RGB_BACK, 1, true, 100, 100);
+  server.create_buffers(VISION_STREAM_RGB_ROAD, 1, true, 100, 100);
   server.start_listener();
 
   VisionIpcClient client_yuv = VisionIpcClient("camerad", VISION_STREAM_ROAD, false);
-  VisionIpcClient client_rgb = VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, false);
+  VisionIpcClient client_rgb = VisionIpcClient("camerad", VISION_STREAM_RGB_ROAD, false);
   client_yuv.connect();
   client_rgb.connect();
 

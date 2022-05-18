@@ -332,12 +332,13 @@ BO_ 941 NEW_MSG_3ad: 8 XXX
  SG_ INCREASING_2 : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 500 ACC_2: 8 XXX
- SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
- SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
  SG_ ACC_STATUS_1 : 7|3@0+ (1,0) [0|255] "" XXX
  SG_ BRAKE_MAYBE : 18|11@0+ (1,0) [0|255] "" XXX
  SG_ ACC_STATUS_2 : 21|3@0+ (1,0) [0|255] "" XXX
  SG_ BRAKE_BOOL_1 : 36|1@0+ (1,0) [0|3] "" XXX
+ SG_ ACC_FAULTED : 47|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 625 ACC_1: 8 XXX
  SG_ SPEED : 31|8@0+ (1,0) [0|255] "km/h" XXX
@@ -364,9 +365,6 @@ BO_ 512 NEW_MSG_200: 8 XXX
  SG_ INCREASING : 27|12@0+ (1,0) [0|127] "" XXX
  SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
-
-
-
 
 CM_ SG_ 258 UNKNOWN_STEERING "never goes above 4. see if human-applied torque";
 CM_ SG_ 258 STEER_ANGLE "positive is left (counter-clockwise)";
@@ -424,13 +422,14 @@ CM_ SG_ 848 INCREASING_MSB "upper part of time counter";
 CM_ SG_ 908 INCREASING_MSB "time based";
 CM_ SG_ 500 ACC_STATUS_1 "2 briefly (9 packets) when ACC goes to green, 1 help when ACC coming to a stop and at a stop";
 CM_ SG_ 500 BRAKE_MAYBE "2046 in non-ACC and non-decel. Signal on deceleration. 818 for already stopped break.";
-CM_ SG_ 500 ACC_STATUS_2 "set to 1 in non-ACC, 3 when ACC enabled (white icon), and 7 when ACC in use (green icon)";
+CM_ SG_ 500 ACC_STATUS_2 "set to 1 when ACC not available, 3 when ACC available (white icon), and 7 when ACC active (green icon)";
 CM_ SG_ 500 BRAKE_BOOL_1 "set to 1 when ACC decel. 0 on non-ACC and accel.";
 CM_ SG_ 501 CRUISE_STATE "may just be an icon, but seems to indicate different cruise modes: ACC and Non-ACC and engaged state for both.";
 CM_ SG_ 625 SPEED "zero on non-acc drives";
 CM_ SG_ 625 ACCEL_PERHAPS "set to 7767 on non-ACC drives. ACC drive 40k is constant speed, 42k is accelerating";
 CM_ SG_ 268 BRAKE_PERHAPS "triggers only on ACC braking";
 CM_ SG_ 384 NEW_SIGNAL_1 "set in ACC gas driving. not set in electric human. not sure about gas human driving.";
+
 VAL_ 501 CRUISE_STATE 0 "Off" 1 "CC On" 2 "CC Engaged" 3 "ACC On" 4 "ACC Engaged";
-VAL_ 746 PRNDL 5 "L" 4 "D" 3 "N" 2 "R" 1 "P" ;
-VAL_ 792 TURN_SIGNALS 2 "Right" 1 "Left" ;
+VAL_ 746 PRNDL 5 "L" 4 "D" 3 "N" 2 "R" 1 "P";
+VAL_ 792 TURN_SIGNALS 2 "Right" 1 "Left";

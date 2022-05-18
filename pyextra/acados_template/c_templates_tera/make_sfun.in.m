@@ -46,10 +46,14 @@ SOURCES = { ...
             '{{ model.name }}_model/{{ model.name }}_impl_dae_hess.c',...
             {%- endif %}
         {%- elif solver_options.integrator_type == "GNSF" %}
+            {% if model.gnsf.purely_linear != 1 %}
             '{{ model.name }}_model/{{ model.name }}_gnsf_phi_fun.c',...
             '{{ model.name }}_model/{{ model.name }}_gnsf_phi_fun_jac_y.c',...
             '{{ model.name }}_model/{{ model.name }}_gnsf_phi_jac_y_uhat.c',...
+            {% if model.gnsf.nontrivial_f_LO == 1 %}
             '{{ model.name }}_model/{{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz.c',...
+            {%- endif %}
+            {%- endif %}
             '{{ model.name }}_model/{{ model.name }}_gnsf_get_matrices_fun.c',...
         {%- elif solver_options.integrator_type == "DISCRETE" %}
             '{{ model.name }}_model/{{ model.name }}_dyn_disc_phi_fun.c',...
@@ -257,6 +261,11 @@ i_in = i_in + 1;
 
 {%- if dims.ny_e > 0 and simulink_opts.inputs.cost_W_e %}  {#- cost_W_e #}
 input_note = strcat(input_note, num2str(i_in), ') cost_W_e in column-major format, size [{{ dims.ny_e * dims.ny_e }}]\n ');
+i_in = i_in + 1;
+{%- endif %}
+
+{%- if simulink_opts.inputs.reset_solver %}  {#- reset_solver #}
+input_note = strcat(input_note, num2str(i_in), ') reset_solver determines if iterate is set to all zeros before other initializations (x_init, u_init) are set and before solver is called, size [1]\n ');
 i_in = i_in + 1;
 {%- endif %}
 

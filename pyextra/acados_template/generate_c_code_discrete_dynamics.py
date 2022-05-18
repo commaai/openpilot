@@ -32,12 +32,12 @@
 #
 
 import os
-from casadi import *
+import casadi as ca
 from .utils import ALLOWED_CASADI_VERSIONS, casadi_length, casadi_version_warning
 
 def generate_c_code_discrete_dynamics( model, opts ):
 
-    casadi_version = CasadiMeta.version()
+    casadi_version = ca.CasadiMeta.version()
     casadi_opts = dict(mex=False, casadi_int='int', casadi_real='double')
 
     if casadi_version not in (ALLOWED_CASADI_VERSIONS):
@@ -49,13 +49,12 @@ def generate_c_code_discrete_dynamics( model, opts ):
     p = model.p
     phi = model.disc_dyn_expr
     model_name = model.name
-    nx = x.size()[0]
+    nx = casadi_length(x)
 
-
-    if isinstance(phi, casadi.MX):
-        symbol = MX.sym
-    elif isinstance(phi, casadi.SX):
-        symbol = SX.sym
+    if isinstance(phi, ca.MX):
+        symbol = ca.MX.sym
+    elif isinstance(phi, ca.SX):
+        symbol = ca.SX.sym
     else:
         Exception("generate_c_code_disc_dyn: disc_dyn_expr must be a CasADi expression, you have type: {}".format(type(phi)))
 
@@ -63,12 +62,12 @@ def generate_c_code_discrete_dynamics( model, opts ):
     lam = symbol('lam', nx, 1)
 
     # generate jacobians
-    ux = vertcat(u,x)
-    jac_ux = jacobian(phi, ux)
+    ux = ca.vertcat(u,x)
+    jac_ux = ca.jacobian(phi, ux)
     # generate adjoint
-    adj_ux = jtimes(phi, ux, lam, True)
+    adj_ux = ca.jtimes(phi, ux, lam, True)
     # generate hessian
-    hess_ux = jacobian(adj_ux, ux)
+    hess_ux = ca.jacobian(adj_ux, ux)
     
     ## change directory
     code_export_dir = opts["code_export_directory"]
@@ -85,15 +84,15 @@ def generate_c_code_discrete_dynamics( model, opts ):
 
     # set up & generate Functions
     fun_name = model_name + '_dyn_disc_phi_fun'
-    phi_fun = Function(fun_name, [x, u, p], [phi])
+    phi_fun = ca.Function(fun_name, [x, u, p], [phi])
     phi_fun.generate(fun_name, casadi_opts)
 
     fun_name = model_name + '_dyn_disc_phi_fun_jac'
-    phi_fun_jac_ut_xt = Function(fun_name, [x, u, p], [phi, jac_ux.T])
+    phi_fun_jac_ut_xt = ca.Function(fun_name, [x, u, p], [phi, jac_ux.T])
     phi_fun_jac_ut_xt.generate(fun_name, casadi_opts)
 
     fun_name = model_name + '_dyn_disc_phi_fun_jac_hess'
-    phi_fun_jac_ut_xt_hess = Function(fun_name, [x, u, lam, p], [phi, jac_ux.T, hess_ux])
+    phi_fun_jac_ut_xt_hess = ca.Function(fun_name, [x, u, lam, p], [phi, jac_ux.T, hess_ux])
     phi_fun_jac_ut_xt_hess.generate(fun_name, casadi_opts)
     
     os.chdir(cwd)

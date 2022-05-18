@@ -16,6 +16,7 @@ cdef extern from "visionbuf.h":
     size_t width
     size_t height
     size_t stride
+    void set_frame_id(uint64_t id)
 
 cdef extern from "visionipc.h":
   struct VisionIpcBufExtra:

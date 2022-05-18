@@ -30,6 +30,7 @@ cdef class CANParser:
     dict vl
     dict vl_all
     bool can_valid
+    bool bus_timeout
     string dbc_name
     int can_invalid_cnt
 
@@ -47,9 +48,7 @@ cdef class CANParser:
     self.can_valid = False
     self.can_invalid_cnt = CAN_INVALID_CNT
 
-    cdef int i
-    cdef int num_msgs = self.dbc[0].num_msgs
-    for i in range(num_msgs):
+    for i in range(self.dbc[0].msgs.size()):
       msg = self.dbc[0].msgs[i]
       name = msg.name.decode('utf8')
 
@@ -111,6 +110,7 @@ cdef class CANParser:
     if self.can.can_valid:
       self.can_invalid_cnt = 0
     self.can_valid = self.can_invalid_cnt < CAN_INVALID_CNT
+    self.bus_timeout = self.can.bus_timeout
 
     new_vals = self.can.query_latest()
     for cv in new_vals:
@@ -154,12 +154,9 @@ cdef class CANDefine():
     if not self.dbc:
       raise RuntimeError(f"Can't find DBC: '{dbc_name}'")
 
-    num_vals = self.dbc[0].num_vals
-
     address_to_msg_name = {}
 
-    num_msgs = self.dbc[0].num_msgs
-    for i in range(num_msgs):
+    for i in range(self.dbc[0].msgs.size()):
       msg = self.dbc[0].msgs[i]
       name = msg.name.decode('utf8')
       address = msg.address
@@ -167,7 +164,7 @@ cdef class CANDefine():
 
     dv = defaultdict(dict)
 
-    for i in range(num_vals):
+    for i in range(self.dbc[0].vals.size()):
       val = self.dbc[0].vals[i]
 
       sgname = val.name.decode('utf8')

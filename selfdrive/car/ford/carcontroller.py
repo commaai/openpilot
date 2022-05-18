@@ -1,86 +1,90 @@
-import math
 from cereal import car
-from selfdrive.car import make_can_msg
-from selfdrive.car.ford.fordcan import create_steer_command, create_lkas_ui, spam_cancel_button
+from common.numpy_fast import clip, interp
+from selfdrive.car.ford import fordcan
+from selfdrive.car.ford.values import CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-MAX_STEER_DELTA = 1
-TOGGLE_DEBUG = False
+
+def apply_ford_steer_angle_limits(apply_steer, apply_steer_last, vEgo):
+  # rate limit
+  steer_up = apply_steer * apply_steer_last > 0. and abs(apply_steer) > abs(apply_steer_last)
+  rate_limit = CarControllerParams.STEER_RATE_LIMIT_UP if steer_up else CarControllerParams.STEER_RATE_LIMIT_DOWN
+  max_angle_diff = interp(vEgo, rate_limit.speed_points, rate_limit.max_angle_diff_points)
+  apply_steer = clip(apply_steer, (apply_steer_last - max_angle_diff), (apply_steer_last + max_angle_diff))
+
+  return apply_steer
+
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    self.CP = CP
+    self.VM = VM
     self.packer = CANPacker(dbc_name)
-    self.enabled_last = False
+
+    self.apply_steer_last = 0
+    self.steer_rate_limited = False
     self.main_on_last = False
-    self.vehicle_model = VM
-    self.generic_toggle_last = 0
+    self.lkas_enabled_last = False
     self.steer_alert_last = False
-    self.lkas_action = 0
 
-  def update(self, enabled, CS, frame, actuators, visual_alert, pcm_cancel):
-
+  def update(self, CC, CS, frame):
     can_sends = []
-    steer_alert = visual_alert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
-    apply_steer = actuators.steer
+    actuators = CC.actuators
+    hud_control = CC.hudControl
 
-    if pcm_cancel:
-      #print "CANCELING!!!!"
-      can_sends.append(spam_cancel_button(self.packer))
+    main_on = CS.out.cruiseState.available
+    steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
-    if (frame % 3) == 0:
+    if CC.cruiseControl.cancel:
+      # cancel stock ACC
+      can_sends.append(fordcan.spam_cancel_button(self.packer))
 
-      curvature = self.vehicle_model.calc_curvature(math.radians(actuators.steeringAngleDeg), CS.out.vEgo, 0.0)
+    # apply rate limits
+    new_steer = actuators.steeringAngleDeg
+    apply_steer = apply_ford_steer_angle_limits(new_steer, self.apply_steer_last, CS.out.vEgo)
+    self.steer_rate_limited = new_steer != apply_steer
 
-      # The use of the toggle below is handy for trying out the various LKAS modes
-      if TOGGLE_DEBUG:
-        self.lkas_action += int(CS.out.genericToggle and not self.generic_toggle_last)
-        self.lkas_action &= 0xf
-      else:
-        self.lkas_action = 5   # 4 and 5 seem the best. 8 and 9 seem to aggressive and laggy
+    # send steering commands at 20Hz
+    if (frame % CarControllerParams.LKAS_STEER_STEP) == 0:
+      lca_rq = 1 if CC.latActive else 0
 
-      can_sends.append(create_steer_command(self.packer, apply_steer, enabled,
-                                            CS.lkas_state, CS.out.steeringAngleDeg, curvature, self.lkas_action))
-      self.generic_toggle_last = CS.out.genericToggle
+      # use LatCtlPath_An_Actl to actuate steering for now until curvature control is implemented
+      path_angle = apply_steer
 
-    if (frame % 100) == 0:
+      # convert steer angle to curvature
+      curvature = self.VM.calc_curvature(apply_steer, CS.out.vEgo, 0.0)
 
-      can_sends.append(make_can_msg(973, b'\x00\x00\x00\x00\x00\x00\x00\x00', 0))
-      #can_sends.append(make_can_msg(984, b'\x00\x00\x00\x00\x80\x45\x60\x30', 0))
+      # TODO: get other actuators
+      curvature_rate = 0
+      path_offset = 0
 
-    if (frame % 100) == 0 or (self.enabled_last != enabled) or (self.main_on_last != CS.out.cruiseState.available) or \
-       (self.steer_alert_last != steer_alert):
-      can_sends.append(create_lkas_ui(self.packer, CS.out.cruiseState.available, enabled, steer_alert))
+      ramp_type = 3  # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
+      precision = 0  # 0=Comfortable, 1=Precise
 
-    if (frame % 200) == 0:
-      can_sends.append(make_can_msg(1875, b'\x80\xb0\x55\x55\x78\x90\x00\x00', 1))
+      self.apply_steer_last = apply_steer
+      can_sends.append(fordcan.create_lkas_command(self.packer, apply_steer, curvature))
+      can_sends.append(fordcan.create_tja_command(self.packer, lca_rq, ramp_type, precision,
+                                                  path_offset, path_angle, curvature_rate, curvature))
 
-    if (frame % 10) == 0:
 
-      can_sends.append(make_can_msg(1648, b'\x00\x00\x00\x40\x00\x00\x50\x00', 1))
-      can_sends.append(make_can_msg(1649, b'\x10\x10\xf1\x70\x04\x00\x00\x00', 1))
+    send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
 
-      can_sends.append(make_can_msg(1664, b'\x00\x00\x03\xe8\x00\x01\xa9\xb2', 1))
-      can_sends.append(make_can_msg(1674, b'\x08\x00\x00\xff\x0c\xfb\x6a\x08', 1))
-      can_sends.append(make_can_msg(1675, b'\x00\x00\x3b\x60\x37\x00\x00\x00', 1))
-      can_sends.append(make_can_msg(1690, b'\x70\x00\x00\x55\x86\x1c\xe0\x00', 1))
+    # send lkas ui command at 1Hz or if ui state changes
+    if (frame % CarControllerParams.LKAS_UI_STEP) == 0 or send_ui:
+      can_sends.append(fordcan.create_lkas_ui_command(self.packer, main_on, CC.latActive, steer_alert, CS.lkas_status_stock_values))
 
-      can_sends.append(make_can_msg(1910, b'\x06\x4b\x06\x4b\x42\xd3\x11\x30', 1))
-      can_sends.append(make_can_msg(1911, b'\x48\x53\x37\x54\x48\x53\x37\x54', 1))
-      can_sends.append(make_can_msg(1912, b'\x31\x34\x47\x30\x38\x31\x43\x42', 1))
-      can_sends.append(make_can_msg(1913, b'\x31\x34\x47\x30\x38\x32\x43\x42', 1))
-      can_sends.append(make_can_msg(1969, b'\xf4\x40\x00\x00\x00\x00\x00\x00', 1))
-      can_sends.append(make_can_msg(1971, b'\x0b\xc0\x00\x00\x00\x00\x00\x00', 1))
+    # send acc ui command at 20Hz or if ui state changes
+    if (frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
+      can_sends.append(fordcan.create_acc_ui_command(self.packer, main_on, CC.latActive, CS.acc_tja_status_stock_values))
 
-    static_msgs = range(1653, 1658)
-    for addr in static_msgs:
-      cnt = (frame % 10) + 1
-      can_sends.append(make_can_msg(addr, (cnt << 4).to_bytes(1, 'little') + b'\x00\x00\x00\x00\x00\x00\x00', 1))
-
-    self.enabled_last = enabled
-    self.main_on_last = CS.out.cruiseState.available
+    self.main_on_last = main_on
+    self.lkas_enabled_last = CC.latActive
     self.steer_alert_last = steer_alert
 
-    return actuators, can_sends
+    new_actuators = actuators.copy()
+    new_actuators.steeringAngleDeg = apply_steer
+
+    return new_actuators, can_sends

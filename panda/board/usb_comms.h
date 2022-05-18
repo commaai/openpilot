@@ -4,7 +4,7 @@
 extern int _app_start[0xc000]; // Only first 3 sectors of size 0x4000 are used
 
 // Prototypes
-void set_safety_mode(uint16_t mode, int16_t param);
+void set_safety_mode(uint16_t mode, uint16_t param);
 bool is_car_safety_mode(uint16_t mode);
 
 int get_health_pkt(void *dat) {
@@ -29,13 +29,15 @@ int get_health_pkt(void *dat) {
   health->usb_power_mode_pkt = usb_power_mode;
   health->safety_mode_pkt = (uint8_t)(current_safety_mode);
   health->safety_param_pkt = current_safety_param;
-  health->unsafe_mode_pkt = unsafe_mode;
+  health->alternative_experience_pkt = alternative_experience;
   health->power_save_enabled_pkt = (uint8_t)(power_save_status == POWER_SAVE_STATUS_ENABLED);
   health->heartbeat_lost_pkt = (uint8_t)(heartbeat_lost);
   health->blocked_msg_cnt_pkt = blocked_msg_cnt;
 
   health->fault_status_pkt = fault_status;
   health->faults_pkt = faults;
+
+  health->interrupt_load = interrupt_load;
 
   return sizeof(*health);
 }
@@ -271,7 +273,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
 
     // **** 0xdc: set safety mode
     case 0xdc:
-      set_safety_mode(setup->b.wValue.w, (uint16_t) setup->b.wIndex.w);
+      set_safety_mode(setup->b.wValue.w, (uint16_t)setup->b.wIndex.w);
       break;
     // **** 0xdd: get healthpacket and CANPacket versions
     case 0xdd:
@@ -288,11 +290,11 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
         UNUSED(ret);
       }
       break;
-    // **** 0xdf: set unsafe mode
+    // **** 0xdf: set alternative experience
     case 0xdf:
       // you can only set this if you are in a non car safety mode
       if (!is_car_safety_mode(current_safety_mode)) {
-        unsafe_mode = setup->b.wValue.w;
+        alternative_experience = setup->b.wValue.w;
       }
       break;
     // **** 0xe0: uart read
@@ -440,10 +442,10 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
     // **** 0xde: set CAN FD data bitrate
     case 0xf9:
       if (setup->b.wValue.w < CAN_CNT) {
-        // TODO: add sanity check, ideally check if value is correct(from array of correct values)
+        // TODO: add sanity check, ideally check if value is correct (from array of correct values)
         bus_config[setup->b.wValue.w].can_data_speed = setup->b.wIndex.w;
-        bus_config[setup->b.wValue.w].canfd_enabled = (setup->b.wIndex.w >= bus_config[setup->b.wValue.w].can_speed) ? true : false;
-        bus_config[setup->b.wValue.w].brs_enabled = (setup->b.wIndex.w > bus_config[setup->b.wValue.w].can_speed) ? true : false;
+        bus_config[setup->b.wValue.w].canfd_enabled = (setup->b.wIndex.w >= bus_config[setup->b.wValue.w].can_speed);
+        bus_config[setup->b.wValue.w].brs_enabled = (setup->b.wIndex.w > bus_config[setup->b.wValue.w].can_speed);
         bool ret = can_init(CAN_NUM_FROM_BUS_NUM(setup->b.wValue.w));
         UNUSED(ret);
       }
@@ -455,6 +457,10 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
         resp[1] = bus_config[setup->b.wValue.w].brs_enabled;
         resp_len = 2;
       }
+      break;
+    // **** 0xfb: enter deep sleep(stop) mode
+    case 0xfb:
+      deepsleep_requested = true;
       break;
     default:
       puts("NO HANDLER ");

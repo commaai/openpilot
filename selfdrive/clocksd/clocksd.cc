@@ -21,16 +21,6 @@
 
 ExitHandler do_exit;
 
-#ifdef QCOM
-namespace {
-  int64_t arm_cntpct() {
-    int64_t v;
-    asm volatile("mrs %0, cntpct_el0" : "=r"(v));
-    return v;
-  }
-}
-#endif
-
 int main() {
   setpriority(PRIO_PROCESS, 0, -13);
   PubMaster pm({"clocks"});
@@ -65,10 +55,6 @@ int main() {
     uint64_t monotonic_raw = nanos_monotonic_raw();
     uint64_t wall_time = nanos_since_epoch();
 
-#ifdef QCOM
-    uint64_t modem_uptime_v = arm_cntpct() / 19200ULL; // 19.2 mhz clock
-#endif
-
     MessageBuilder msg;
     auto clocks = msg.initEvent().initClocks();
 
@@ -76,9 +62,6 @@ int main() {
     clocks.setMonotonicNanos(monotonic);
     clocks.setMonotonicRawNanos(monotonic_raw);
     clocks.setWallTimeNanos(wall_time);
-#ifdef QCOM
-    clocks.setModemUptimeMillis(modem_uptime_v);
-#endif
 
     pm.send("clocks", msg);
   }
