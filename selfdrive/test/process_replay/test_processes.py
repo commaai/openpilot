@@ -201,7 +201,8 @@ if __name__ == "__main__":
          (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
         continue
       cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-      pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment], ref_commit))
+      if not args.upload_only:
+        pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment], ref_commit))
       if upload:
         print(f'Uploading: {os.path.basename(cur_log_fn)}')
         assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
