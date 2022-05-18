@@ -35,10 +35,10 @@ public:
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
-             "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
+             "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d"
              "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d%s",
              ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
-             b->rgb_width, b->rgb_height, b->rgb_stride,
+             b->rgb_width, b->rgb_height,
              ci->bayer_flip, ci->hdr, s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
     const char *cl_file = "cameras/real_debayer.cl";
     cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
@@ -65,9 +65,8 @@ private:
   bool hdr_;
 };
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_rgb_type, VisionStreamType init_yuv_type, release_cb init_release_callback) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_yuv_type, release_cb init_release_callback) {
   vipc_server = v;
-  this->rgb_type = init_rgb_type;
   this->yuv_type = init_yuv_type;
   this->release_callback = init_release_callback;
 
@@ -89,17 +88,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
 
-  if (!Hardware::TICI() && ci->bayer) {
-    // debayering does a 2x downscale
-    rgb_width = ci->frame_width / 2;
-    rgb_height = ci->frame_height / 2;
-  }
-
   yuv_transform = get_model_yuv_transform(ci->bayer);
-
-  vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
-  rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
-  LOGD("created %d UI vipc buffers with size %dx%d", UI_BUF_COUNT, rgb_width, rgb_height);
 
   vipc_server->create_buffers(yuv_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, rgb_width, rgb_height);
@@ -107,14 +96,9 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   if (ci->bayer) {
     debayer = new Debayer(device_id, context, this, s);
   }
-  rgb2yuv = std::make_unique<Rgb2Yuv>(context, device_id, rgb_width, rgb_height, rgb_stride);
 
-#ifdef __APPLE__
-  q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
-#else
   const cl_queue_properties props[] = {0};  //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
   q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
-#endif
 }
 
 CameraBuf::~CameraBuf() {
@@ -135,7 +119,6 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
-  cur_rgb_buf = vipc_server->get_buffer(rgb_type);
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
@@ -146,9 +129,6 @@ bool CameraBuf::acquire() {
 
   if (debayer) {
     debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
-  } else {
-    assert(rgb_stride == camera_state->ci.frame_stride);
-    rgb2yuv->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl);
   }
 
   clWaitForEvents(1, &event);
@@ -193,32 +173,6 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
   framed.setProcessingTime(frame_data.processing_time);
-}
-
-kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
-  static const int x_min = util::getenv("XMIN", 0);
-  static const int y_min = util::getenv("YMIN", 0);
-  static const int env_xmax = util::getenv("XMAX", -1);
-  static const int env_ymax = util::getenv("YMAX", -1);
-  static const int scale = util::getenv("SCALE", 1);
-
-  assert(b->cur_rgb_buf);
-
-  const int x_max = env_xmax != -1 ? env_xmax : b->rgb_width - 1;
-  const int y_max = env_ymax != -1 ? env_ymax : b->rgb_height - 1;
-  const int new_width = (x_max - x_min + 1) / scale;
-  const int new_height = (y_max - y_min + 1) / scale;
-  const uint8_t *dat = (const uint8_t *)b->cur_rgb_buf->addr;
-
-  kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(new_width*new_height*3);
-  uint8_t *resized_dat = frame_image.begin();
-  int goff = x_min*3 + y_min*b->rgb_stride;
-  for (int r=0;r<new_height;r++) {
-    for (int c=0;c<new_width;c++) {
-      memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*b->rgb_stride*scale+c*3*scale], 3*sizeof(uint8_t));
-    }
-  }
-  return kj::mv(frame_image);
 }
 
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {

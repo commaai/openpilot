@@ -9,12 +9,10 @@
 #include "cereal/visionipc/visionbuf.h"
 #include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_server.h"
-#include "selfdrive/camerad/transforms/rgb_to_yuv.h"
 #include "common/mat.h"
 #include "common/queue.h"
 #include "common/swaglog.h"
 #include "common/visionimg.h"
-#include "selfdrive/hardware/hw.h"
 
 #define CAMERA_ID_IMX298 0
 #define CAMERA_ID_IMX179 1
@@ -28,7 +26,6 @@
 #define CAMERA_ID_IMX390 9
 #define CAMERA_ID_MAX 10
 
-const int UI_BUF_COUNT = 4;
 const int YUV_BUFFER_COUNT = 40;
 
 enum CameraType {
@@ -36,11 +33,6 @@ enum CameraType {
   DriverCam,
   WideRoadCam
 };
-
-// TODO: remove these once all the internal tools are moved to vipc
-const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
-const bool env_send_road = getenv("SEND_ROAD") != NULL;
-const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
 
 // for debugging
 const bool env_disable_road = getenv("DISABLE_ROAD") != NULL;
@@ -100,9 +92,8 @@ private:
   VisionIpcServer *vipc_server;
   CameraState *camera_state;
   Debayer *debayer = nullptr;
-  std::unique_ptr<Rgb2Yuv> rgb2yuv;
 
-  VisionStreamType rgb_type, yuv_type;
+  VisionStreamType yuv_type;
 
   int cur_buf_idx;
 
@@ -114,18 +105,17 @@ private:
 public:
   cl_command_queue q;
   FrameMetadata cur_frame_data;
-  VisionBuf *cur_rgb_buf;
   VisionBuf *cur_yuv_buf;
   VisionBuf *cur_camera_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
-  int rgb_width, rgb_height, rgb_stride;
+  int rgb_width, rgb_height;
 
   mat3 yuv_transform;
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback=nullptr);
+  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType yuv_type, release_cb release_callback=nullptr);
   bool acquire();
   void release();
   void queue(size_t buf_idx);
