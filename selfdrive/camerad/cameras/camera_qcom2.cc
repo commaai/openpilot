@@ -41,11 +41,13 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
-    .extra_height = env_enable_stats ? (uint32_t)(AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT) : 0,
+    .extra_height = AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT,
 
-    .registers_offset = env_enable_stats ? 0 : -1,
-    .frame_offset = env_enable_stats ? (uint32_t)AR0231_REGISTERS_HEIGHT : 0,
+    .isp_offset = env_enable_stats ? 0 : (uint32_t)AR0231_REGISTERS_HEIGHT, // Add padding if registers are disabled
+    .frame_offset = AR0231_REGISTERS_HEIGHT,
+
     .stats_offset = env_enable_stats ? (int)(AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT) : -1,
+    .registers_offset = env_enable_stats ? 0 : -1,
 
     .bayer = true,
     .bayer_flip = 1,
@@ -517,6 +519,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
 
   if (io_mem_handle != 0) {
     io_cfg[0].mem_handle[0] = io_mem_handle;
+    io_cfg[0].offsets[0] = ci.frame_stride * ci.isp_offset;
 		io_cfg[0].planes[0] = (struct cam_plane_cfg){
 		 .width = ci.frame_width,
 		 .height = ci.frame_height + ci.extra_height,
