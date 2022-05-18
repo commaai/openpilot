@@ -3,7 +3,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 

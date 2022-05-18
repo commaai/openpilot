@@ -5,7 +5,7 @@
 #include <QEventLoop>
 
 #include "catch2/catch.hpp"
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "selfdrive/ui/replay/replay.h"
 #include "selfdrive/ui/replay/util.h"
 

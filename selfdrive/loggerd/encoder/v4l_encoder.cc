@@ -3,8 +3,8 @@
 #include <poll.h>
 
 #include "selfdrive/loggerd/encoder/v4l_encoder.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/timing.h"
+#include "common/util.h"
+#include "common/timing.h"
 
 #include "libyuv.h"
 #include "msm_media_info.h"

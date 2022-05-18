@@ -9,8 +9,8 @@
 #include <map>
 #include <string>
 
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/timing.h"
+#include "common/clutil.h"
+#include "common/timing.h"
 
 Thneed *g_thneed = NULL;
 int g_fd = -1;
