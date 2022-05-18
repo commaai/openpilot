@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-import multiprocessing.pool
+import concurrent.futures
 import os
 import sys
 from typing import Any, Dict
@@ -11,21 +11,6 @@ from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_enabled, replay_process
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
-
-# Hack to allow daemon processes in a Pool. https://stackoverflow.com/a/53180921/10084102
-class NoDaemonProcess(multiprocessing.Process):
-  @property # type: ignore
-  def daemon(self):
-    return False
-  @daemon.setter
-  def daemon(self, value):
-    pass
-class NoDaemonContext(type(multiprocessing.get_context())): # type: ignore
-  Process = NoDaemonProcess
-class NestablePool(multiprocessing.pool.Pool): # pylint: disable=abstract-method
-  def __init__(self, *args, **kwargs):
-    kwargs['context'] = NoDaemonContext()
-    super(NestablePool, self).__init__(*args, **kwargs)
 
 original_segments = [
   ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),        # COMMA.BODY
@@ -182,11 +167,11 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
-  pool = NestablePool(args.jobs)
+  pool = concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs)
 
   lreaders: Any = {}
-  p1 = pool.map_async(get_logreader, [seg for car, seg in segments])
-  for tup in p1.get():
+  p1 = pool.map(get_logreader, [seg for car, seg in segments])
+  for tup in p1:
     if tup[0] not in lreaders:
       lreaders[tup[0]] = {}
     lreaders[tup[0]] = tup[1]
@@ -210,13 +195,11 @@ if __name__ == "__main__":
         os.remove(cur_log_fn)
 
   results: Any = {}
-  p2 = pool.map_async(run_test_process, pool_args)
-  for tup in p2.get():
+  p2 = pool.map(run_test_process, pool_args)
+  for tup in p2:
     if tup[0] not in results:
       results[tup[0]] = {}
     results[tup[0]][tup[1]] = tup[2]
-  pool.close()
-  pool.join()
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   if not args.upload_only:
