@@ -98,6 +98,9 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 
 } // namespace
 
+const int FRAME_BUFFER_SIZE = 5;
+static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);
+
 CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
                                    stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
@@ -163,14 +166,8 @@ void CameraViewWidget::initializeGL() {
   glUniform1i(program->uniformLocation("uTextureV"), 2);
 }
 
-void CameraViewWidget::clearFrames() {
-  for (int i = 0; i < FRAME_BUFFER_SIZE; i++) {
-    frames[i] = nullptr;
-  }
-}
-
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  clearFrames();
+  frames.clear();
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
@@ -221,9 +218,15 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  int frame_idx = (draw_frame_id + frame_offset) % FRAME_BUFFER_SIZE;
-  if (frames[frame_idx] == nullptr) return;
-  VisionBuf *frame = frames[frame_idx];
+  if (frames.size() == 0) return;
+
+  // Draws on latest model frame: update offset from VisionIpc frame id to modelV2 frame id when
+  // new frame comes in and we're not skipping out of the length of the buffer
+  if ((draw_frame_id != prev_draw_frame_id) && (draw_frame_id - frames[0].first) < FRAME_BUFFER_SIZE) {
+    frame_idx = draw_frame_id - frames[0].first;
+  }
+  frame_idx = std::max(frame_idx, (int)frames.size() - 1);
+  VisionBuf *frame = frames[frame_idx].second;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
@@ -253,7 +256,7 @@ void CameraViewWidget::paintGL() {
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   makeCurrent();
-  clearFrames();
+  frames.clear();
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
 
@@ -273,7 +276,10 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 }
 
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
-  frames[frame_id % FRAME_BUFFER_SIZE] = buf;
+  frames.push_back(std::make_pair(frame_id, buf));
+  while (frames.size() > FRAME_BUFFER_SIZE) {
+    frames.pop_front();
+  }
   update();
 }
 
