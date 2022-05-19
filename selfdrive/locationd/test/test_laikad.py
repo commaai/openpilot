@@ -2,10 +2,11 @@
 import unittest
 from datetime import datetime
 
-from laika import AstroDog
-from laika.helpers import ConstellationId
+import numpy as np
 
+from laika import AstroDog
 from laika.gps_time import GPSTime
+from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement
 from selfdrive.locationd.laikad import Laikad, create_measurement_msg
 from selfdrive.test.openpilotci import get_url
@@ -45,10 +46,11 @@ class TestLaikad(unittest.TestCase):
     # Set to offline forces to use ephemeris messages
     dog = AstroDog(use_internet=True)
     laikad = Laikad()
-    good_msgs = verify_messages(lr, dog, laikad)
+    correct_msgs = verify_messages(lr, dog, laikad)
 
-    self.assertEqual(560, len(good_msgs))
-
+    correct_msgs_expected = 560
+    self.assertEqual(correct_msgs_expected, len(correct_msgs))
+    self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if not all(np.isfinite(m.gnssMeasurements.positionECEF))]))
 
 if __name__ == "__main__":
   unittest.main()
