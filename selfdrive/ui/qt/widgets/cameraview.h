@@ -30,7 +30,7 @@ public:
 signals:
   void clicked();
   void vipcThreadConnected(VisionIpcClient *);
-  void vipcThreadFrameReceived(VisionBuf *, uint32_t);
+  void vipcThreadFrameReceived(VisionBuf *, quint32);
 
 protected:
   void paintGL() override;

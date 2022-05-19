@@ -101,7 +101,6 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
                                    stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-  qRegisterMetaType<uint32_t>("uint32_t");
   connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected, Qt::BlockingQueuedConnection);
   connect(this, &CameraViewWidget::vipcThreadFrameReceived, this, &CameraViewWidget::vipcFrameReceived);
 }
