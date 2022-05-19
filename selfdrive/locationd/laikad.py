@@ -12,6 +12,7 @@ from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
 import common.transformations.coordinates as coord
+from selfdrive.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
 
@@ -70,11 +71,11 @@ class Laikad:
         return
       post_est = pos_fix[0][:3].tolist()
       if self.gnss_kf.filter.filter_time is None:
-        print("Init gnss kalman filter")
+        cloudlog.info("Init gnss kalman filter")
       elif (self.gnss_kf.filter.filter_time - t) > MAX_TIME_GAP:
-        print("Time gap of over 10s detected, gnss kalman reset")
+        cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       else:
-        print("Gnss kalman filter state is nan")
+        cloudlog.error("Gnss kalman filter state is nan")
       self.init_gnss_localizer(post_est)
     if len(measurements) > 0:
       kf_add_observations(self.gnss_kf, t, measurements)
