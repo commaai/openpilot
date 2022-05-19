@@ -248,6 +248,14 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]["MOTOR_TORQUE"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
+    # TODO: discover the CAN msg that has the imperial unit bit for all other cars
+    if self.CP.carFingerprint in (CAR.CIVIC, ):
+      self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"]
+    elif self.CP.carFingerprint in HONDA_BOSCH:
+      self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
+    else:
+      self.is_metric = False
+
     if self.CP.carFingerprint in HONDA_BOSCH:
       if not self.CP.openpilotLongitudinalControl:
         # ACC_HUD is on camera bus on radarless cars
@@ -255,8 +263,12 @@ class CarState(CarStateBase):
         ret.cruiseState.nonAdaptive = acc_hud["CRUISE_CONTROL_LABEL"] != 0
         ret.cruiseState.standstill = acc_hud["CRUISE_SPEED"] == 252.
 
+        # on certain cars, CRUISE_SPEED changes to imperial with car speed unit setting
+        conversion_factor = CV.KPH_TO_MS
+        if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS and not self.is_metric:
+          conversion_factor = CV.MPH_TO_MS
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
-        ret.cruiseState.speed = self.v_cruise_pcm_prev if acc_hud["CRUISE_SPEED"] > 160.0 else acc_hud["CRUISE_SPEED"] * CV.KPH_TO_MS
+        ret.cruiseState.speed = self.v_cruise_pcm_prev if acc_hud["CRUISE_SPEED"] > 160.0 else acc_hud["CRUISE_SPEED"] * conversion_factor
         self.v_cruise_pcm_prev = ret.cruiseState.speed
     else:
       ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * CV.KPH_TO_MS
@@ -284,14 +296,6 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE):
       if ret.brake > 0.1:
         ret.brakePressed = True
-
-    # TODO: discover the CAN msg that has the imperial unit bit for all other cars
-    if self.CP.carFingerprint in (CAR.CIVIC, ):
-      self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"]
-    elif self.CP.carFingerprint in HONDA_BOSCH:
-      self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
-    else:
-      self.is_metric = False
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       if self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
