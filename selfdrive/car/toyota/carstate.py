@@ -209,7 +209,7 @@ class CarState(CarStateBase):
       ]
       checks.append(("BSM", 1))
 
-    if CP.carFingerprint in RADAR_ACC_CAR or not CP.enableDsu:
+    if CP.carFingerprint in RADAR_ACC_CAR or (not CP.enableDsu and CP.carFingerprint not in TSS2_CAR):
       signals += [
         ("ACC_TYPE", "ACC_CONTROL"),
         ("FCW", "ACC_HUD"),
