@@ -23,7 +23,7 @@ public:
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setFrameId(int frame_id) {
-    prev_draw_frame_id = draw_frame_id;
+    draw_frame_id_updated = frame_id != draw_frame_id;
     draw_frame_id = frame_id;
   }
 
@@ -57,7 +57,7 @@ protected:
 
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
   uint32_t draw_frame_id = 0;
-  uint32_t prev_draw_frame_id = 0;
+  bool draw_frame_id_updated = false;
   int frame_idx = FRAME_BUFFER_SIZE - 1;
 
 protected slots:
