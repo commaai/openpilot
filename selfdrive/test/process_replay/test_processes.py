@@ -201,7 +201,7 @@ if __name__ == "__main__":
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
-    for (segment, proc, result) in tqdm(p2, desc="Running tests", total=len(pool_args)):
+    for (segment, proc, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
       if isinstance(result, list):
         results[segment][proc] = result
 
