@@ -2,8 +2,6 @@
 import unittest
 from datetime import datetime
 
-from diskcache import Cache
-
 from laika import AstroDog
 from laika.helpers import ConstellationId
 
@@ -13,10 +11,7 @@ from selfdrive.locationd.laikad import Laikad, create_measurement_msg
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 
-cache = Cache("cachedir")
 
-
-@cache.memoize()
 def get_log(segs=range(0)):
   logs = []
   for i in segs:
@@ -53,6 +48,7 @@ class TestLaikad(unittest.TestCase):
     good_msgs = verify_messages(lr, dog, laikad)
 
     self.assertEqual(560, len(good_msgs))
+
 
 if __name__ == "__main__":
   unittest.main()

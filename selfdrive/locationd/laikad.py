@@ -121,7 +121,7 @@ def get_bearing_from_gnss(gnss_kf: GNSSKalman):
 
 
 def main():
-  dog = AstroDog(use_internet=True)
+  dog = AstroDog()
   sm = messaging.SubMaster(['ubloxGnss'])
   pm = messaging.PubMaster(['gnssMeasurements'])
 
