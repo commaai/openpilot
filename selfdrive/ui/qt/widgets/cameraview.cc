@@ -215,7 +215,7 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  if (frames.size() == 0) return;
+  if (frames.empty()) return;
 
   // update frame offset if we're not skipping out of the length of the buffer
   int frame_offset = draw_frame_id - frames[0].first;
