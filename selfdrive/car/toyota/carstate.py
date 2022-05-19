@@ -97,7 +97,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in TSS2_CAR:
       self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_cam.vl["ACC_HUD"]["FCW"])
-    elif self.CP.carFingerprint in RADAR_ACC_CAR or (not self.CP.enableDsu and not self.CP.carFingerprint in TSS2_CAR):
+    elif self.CP.carFingerprint in RADAR_ACC_CAR or (not self.CP.enableDsu and self.CP.carFingerprint not in TSS2_CAR):
       self.acc_type = cp.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp.vl["ACC_HUD"]["FCW"])
 
