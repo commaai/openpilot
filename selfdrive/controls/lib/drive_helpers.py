@@ -19,14 +19,15 @@ CAR_ROTATION_RADIUS = 0.0
 # EU guidelines
 MAX_LATERAL_JERK = 5.0
 
+ButtonEventType = car.CarState.ButtonEvent.Type
 CRUISE_LONG_PRESS = 50
 CRUISE_NEAREST_FUNC = {
-  car.CarState.ButtonEvent.Type.accelCruise: math.ceil,
-  car.CarState.ButtonEvent.Type.decelCruise: math.floor,
+  ButtonEventType.accelCruise: math.ceil,
+  ButtonEventType.decelCruise: math.floor,
 }
 CRUISE_INTERVAL_SIGN = {
-  car.CarState.ButtonEvent.Type.accelCruise: +1,
-  car.CarState.ButtonEvent.Type.decelCruise: -1,
+  ButtonEventType.accelCruise: +1,
+  ButtonEventType.decelCruise: -1,
 }
 
 
@@ -40,7 +41,7 @@ def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
 
 
-def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, v_ego, gas_pressed, enabled, metric):
+def update_v_cruise(v_cruise_kph, v_ego, gas_pressed, buttonEvents, button_timers, enabled, metric):
   # handle button presses. TODO: this should be in state_control, but a decelCruise press
   # would have the effect of both enabling and changing speed is checked after the state transition
   if not enabled:
@@ -65,13 +66,13 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, v_ego, gas_presse
         long_press = True
         break
 
-  # If set is pressed while overriding, reset cruise speed to vEgo
-  if gas_pressed and (v_ego * CV.MS_TO_KPH) > v_cruise_kph and button_type == car.CarState.ButtonEvent.Type.decelCruise:
-    return clip(round(v_ego * CV.MS_TO_KPH), V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)
+  # If set is pressed while overriding, raise cruise speed to vEgo
+  if gas_pressed and (v_ego * CV.MS_TO_KPH) > v_cruise_kph and button_type == ButtonEventType.decelCruise:
+    return clip(math.ceil(v_ego * CV.MS_TO_KPH), V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)
 
   if button_type:
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
-    if long_press and v_cruise_kph % v_cruise_delta != 0: # partial interval
+    if long_press and v_cruise_kph % v_cruise_delta != 0:  # partial interval
       v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](v_cruise_kph / v_cruise_delta) * v_cruise_delta
     else:
       v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
@@ -83,7 +84,7 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, v_ego, gas_presse
 def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
   for b in buttonEvents:
     # 250kph or above probably means we never had a set speed
-    if b.type in (car.CarState.ButtonEvent.Type.accelCruise, car.CarState.ButtonEvent.Type.resumeCruise) and v_cruise_last < 250:
+    if b.type in (ButtonEventType.accelCruise, ButtonEventType.resumeCruise) and v_cruise_last < 250:
       return v_cruise_last
 
   return int(round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
