@@ -8,7 +8,7 @@
 #include <ctime>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "selfdrive/locationd/generated/gps.h"
 #include "selfdrive/locationd/generated/ubx.h"
 

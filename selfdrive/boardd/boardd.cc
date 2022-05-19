@@ -23,10 +23,10 @@
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/timing.h"
+#include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 
 #include "selfdrive/boardd/pigeon.h"
