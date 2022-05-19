@@ -94,13 +94,12 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    if self.CP.carFingerprint in RADAR_ACC_CAR or (not self.CP.enableDsu and self.CP.carFingerprint not in TSS2_CAR):
+    if self.CP.carFingerprint in RADAR_ACC_CAR:
       self.acc_type = cp.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp.vl["ACC_HUD"]["FCW"])
-    elif self.CP.carFingerprint in TSS2_CAR:
+    elif not self.CP.enableDsu:
       self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_cam.vl["ACC_HUD"]["FCW"])
-
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
@@ -210,7 +209,7 @@ class CarState(CarStateBase):
       ]
       checks.append(("BSM", 1))
 
-    if CP.carFingerprint in RADAR_ACC_CAR or (not CP.enableDsu and CP.carFingerprint not in TSS2_CAR):
+    if CP.carFingerprint in RADAR_ACC_CAR:
       signals += [
         ("ACC_TYPE", "ACC_CONTROL"),
         ("FCW", "ACC_HUD"),
@@ -235,7 +234,7 @@ class CarState(CarStateBase):
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
     ]
 
-    if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+    if not CP.enableDsu and CP.carFingerprint not in RADAR_ACC_CAR:
       signals += [
         ("ACC_TYPE", "ACC_CONTROL"),
         ("FCW", "ACC_HUD"),
