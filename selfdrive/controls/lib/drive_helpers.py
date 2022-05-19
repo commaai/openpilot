@@ -77,7 +77,7 @@ def update_v_cruise(v_cruise_kph, v_ego, gas_pressed, buttonEvents, button_timer
       v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
     
     if gas_pressed and button_type == ButtonType.decelCruise:
-      v_cruise_kph = max(math.floor(v_ego * CV.MS_TO_KPH), v_cruise_kph)
+      v_cruise_kph = max(v_ego * CV.MS_TO_KPH, v_cruise_kph)
 
 
       
