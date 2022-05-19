@@ -69,7 +69,7 @@ def update_v_cruise(v_cruise_kph, v_ego, gas_pressed, buttonEvents, button_timer
 
   # If set is pressed while overriding, raise cruise speed to vEgo
   if gas_pressed and (v_ego * CV.MS_TO_KPH) > v_cruise_kph and button_type == ButtonType.decelCruise:
-    return clip(math.ceil(v_ego * CV.MS_TO_KPH), V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)
+    return clip(math.floor(v_ego * CV.MS_TO_KPH), V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)
 
   if button_type:
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
