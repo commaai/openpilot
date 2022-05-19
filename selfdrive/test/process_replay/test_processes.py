@@ -127,6 +127,7 @@ def format_diff(results, ref_commit):
         failed = True
   return diff1, diff2, failed
 
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
 
