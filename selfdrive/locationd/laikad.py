@@ -13,6 +13,8 @@ from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
 import common.transformations.coordinates as coord
 
+MAX_TIME_GAP = 10
+
 
 class Laikad:
 
@@ -34,47 +36,56 @@ class Laikad:
       # pos fix needs more than 5 processed_measurements
       if len(pos_fix) > 0:
         measurements = correct_measurements(measurements, pos_fix[0][:3], dog)
-      if len(measurements) == 0:
-        return None
       meas_msgs = [create_measurement_msg(m) for m in measurements]
 
       t = ublox_mono_time * 1e-9
 
-      localizer_valid = self.update_localizer(pos_fix, t, measurements)
-      if not localizer_valid:
-        return None
+      self.update_localizer(pos_fix, t, measurements)
+      localizer_valid = self.localizer_valid(t)
 
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
       ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
-      bearing_deg, bearing_std = get_bearing_from_gnss(self.gnss_kf)
-      dat = messaging.new_message('gnssMeasurements')
 
+      pos_std = float(np.linalg.norm(self.gnss_kf.P[GStates.ECEF_POS]))
+      vel_std = float(np.linalg.norm(self.gnss_kf.P[GStates.ECEF_VELOCITY]))
+
+      bearing_deg, bearing_std = get_bearing_from_gnss(ecef_pos, ecef_vel, vel_std)
+
+      dat = messaging.new_message("gnssMeasurements")
+      measurement_msg = log.GnssMeasurements.Measurement.new_message
       dat.gnssMeasurements = {
-        "positionECEF": ecef_pos,
-        "velocityECEF": ecef_vel,
-        "bearingDeg": float(bearing_deg),
-        "bearingAccuracyDeg": float(bearing_std),
+        "positionECEF": measurement_msg(value=ecef_pos, std=pos_std, valid=localizer_valid),
+        "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std, valid=localizer_valid),
+        "bearingDeg": measurement_msg(value=[bearing_deg], std=bearing_std, valid=localizer_valid),
         "ubloxMonoTime": ublox_mono_time,
         "correctedMeasurements": meas_msgs
       }
       return dat
 
   def update_localizer(self, pos_fix, t: float, measurements: List[GNSSMeasurement]):
+    # Check time and outputs are valid
     if not self.localizer_valid(t):
       # A position fix is needed when resetting the kalman filter.
       if len(pos_fix) == 0:
-        return False
+        return
       post_est = pos_fix[0][:3].tolist()
       if self.gnss_kf.filter.filter_time is None:
         print("Init gnss kalman filter")
-      else:
+      elif (self.gnss_kf.filter.filter_time - t) > MAX_TIME_GAP:
         print("Time gap of over 10s detected, gnss kalman reset")
+      else:
+        print("Gnss kalman filter state is nan")
       self.init_gnss_localizer(post_est)
-    kf_add_observations(self.gnss_kf, t, measurements)
-    return True
+    if len(measurements) > 0:
+      kf_add_observations(self.gnss_kf, t, measurements)
+    else:
+      # Ensure gnss filter is updated even with no new measurements
+      self.gnss_kf.predict(t)
 
   def localizer_valid(self, t: float):
-    return self.gnss_kf.filter.filter_time is not None and (self.gnss_kf.filter.filter_time - t) < 10
+    filter_time = self.gnss_kf.filter.filter_time
+    return filter_time is not None and (filter_time - t) < MAX_TIME_GAP and \
+           all(np.isfinite(self.gnss_kf.x[GStates.ECEF_POS]))
 
   def init_gnss_localizer(self, est_pos):
     x_initial, p_initial_diag = np.copy(GNSSKalman.x_initial), np.copy(np.diagonal(GNSSKalman.P_initial))
@@ -114,19 +125,14 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
     gnss_kf.predict_and_observe(t, kind, data)
 
 
-def get_bearing_from_gnss(gnss_kf: GNSSKalman):
-  ecef_pos = gnss_kf.x[GStates.ECEF_POS]
-  ecef_vel = gnss_kf.x[GStates.ECEF_VELOCITY]
-  ecef_vel_std = gnss_kf.P[GStates.ECEF_VELOCITY]
-  vel_std = np.linalg.norm(ecef_vel_std)
-
+def get_bearing_from_gnss(ecef_pos, ecef_vel, vel_std):
   # init orientation with direction of velocity
   converter = coord.LocalCoord.from_ecef(ecef_pos)
 
   ned_vel = np.einsum('ij,j ->i', converter.ned_from_ecef_matrix, ecef_vel)
   bearing = np.arctan2(ned_vel[1], ned_vel[0])
   bearing_std = np.arctan2(vel_std, np.linalg.norm(ned_vel))
-  return np.rad2deg(bearing), bearing_std
+  return float(np.rad2deg(bearing)), float(bearing_std)
 
 
 def main():

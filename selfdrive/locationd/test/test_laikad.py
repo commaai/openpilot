@@ -2,8 +2,6 @@
 import unittest
 from datetime import datetime
 
-import numpy as np
-
 from laika import AstroDog
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
@@ -50,7 +48,7 @@ class TestLaikad(unittest.TestCase):
 
     correct_msgs_expected = 560
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
-    self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if all(np.isfinite(m.gnssMeasurements.positionECEF))]))
+    self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
 
 if __name__ == "__main__":
