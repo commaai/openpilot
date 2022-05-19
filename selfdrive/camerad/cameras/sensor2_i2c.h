@@ -52,7 +52,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   // input clock is 19.2 / 2 * 0x37 = 528 MHz
   // pixclk is 528 / 6 = 88 MHz
   // full roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*FRAME_LENGTH_LINES)) = 39.99 ms
-  // img  roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*Y_OUTPUT_CONTROL))   = 22.85 ms
+  // img  roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*Y_OUTPUT_CONTROL))   = 15.18 ms
   {0x302A, 0x0006}, // VT_PIX_CLK_DIV
   {0x302C, 0x0001}, // VT_SYS_CLK_DIV
   {0x302E, 0x0002}, // PRE_PLL_CLK_DIV
@@ -72,7 +72,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3402, 0x0788}, // X_OUTPUT_CONTROL
   {0x3404, 0x04B8}, // Y_OUTPUT_CONTROL
   {0x3064, 0x1982}, // SMIA_TEST
-  {0x30BA, 0x11F2}, // DIGITAL_CTRL
+  {0x30BA, 0x11F1}, // DIGITAL_CTRL
 
   // Enable external trigger and disable GPIO outputs
   {0x30CE, 0x0120}, // SLAVE_SH_SYNC_MODE | FRAME_START_MODE
@@ -80,8 +80,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x340C, 0x802},  // GPIO_HIDRV_EN | GPIO0_ISEL=2
 
   // Readout timing
-  {0x300C, 0x0672}, // LINE_LENGTH_PCK (valid for 3-exposure HDR)
-  {0x300A, 0x0855}, // FRAME_LENGTH_LINES
+  {0x300C, 0x0452}, // LINE_LENGTH_PCK (valid for 2-exposure HDR)
+  {0x300A, 0x0C6F}, // FRAME_LENGTH_LINES
   {0x3042, 0x0000}, // EXTRA_DELAY
 
   // Readout Settings
@@ -121,6 +121,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x100C, 0x0589}, // FINE_INTEGRATION_TIME2_MIN
   {0x100E, 0x07B1}, // FINE_INTEGRATION_TIME3_MIN
   {0x1010, 0x0139}, // FINE_INTEGRATION_TIME4_MIN
+
+  // TODO: do these have to be lower than LINE_LENGTH_PCK?
   {0x3014, 0x08CB}, // FINE_INTEGRATION_TIME_
   {0x321E, 0x0894}, // FINE_INTEGRATION_TIME2
 
