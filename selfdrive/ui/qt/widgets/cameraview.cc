@@ -165,6 +165,7 @@ void CameraViewWidget::initializeGL() {
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
   frames.clear();
+  frame_idx = FRAME_BUFFER_SIZE - 1;
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
@@ -254,6 +255,7 @@ void CameraViewWidget::paintGL() {
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   makeCurrent();
   frames.clear();
+  frame_idx = FRAME_BUFFER_SIZE - 1;
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
 
