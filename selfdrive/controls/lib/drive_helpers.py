@@ -57,7 +57,7 @@ def update_v_cruise(v_cruise_kph, v_ego, gas_pressed, buttonEvents, button_timer
   for b in buttonEvents:
     if b.type.raw in button_timers and not b.pressed:
       if button_timers[b.type.raw] > CRUISE_LONG_PRESS:
-        return v_cruise_kph # end long press
+        return v_cruise_kph  # end long press
       button_type = b.type.raw
       break
   else:
@@ -67,20 +67,17 @@ def update_v_cruise(v_cruise_kph, v_ego, gas_pressed, buttonEvents, button_timer
         long_press = True
         break
 
-  # If set is pressed while overriding, raise cruise speed to vEgo
-  
   if button_type:
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
     if long_press and v_cruise_kph % v_cruise_delta != 0:  # partial interval
       v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](v_cruise_kph / v_cruise_delta) * v_cruise_delta
     else:
       v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
-    
-    if gas_pressed and button_type == ButtonType.decelCruise:
+
+    # If set is pressed while overriding, raise cruise speed to vEgo
+    if gas_pressed and button_type in (ButtonType.decelCruise, ButtonType.setCruise):
       v_cruise_kph = max(v_ego * CV.MS_TO_KPH, v_cruise_kph)
 
-
-      
     v_cruise_kph = clip(round(v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
 
   return v_cruise_kph
