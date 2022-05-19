@@ -175,6 +175,7 @@ if __name__ == "__main__":
       lreaders[segment] = lr
 
     pool_args: Any = []
+    cur_log_fns: Any = []
     for car_brand, segment in segments:
       if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
          (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
@@ -187,15 +188,18 @@ if __name__ == "__main__":
         if not args.upload_only:
           pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment], ref_commit))
         if upload:
-          print(f'Uploading: {os.path.basename(cur_log_fn)}')
-          assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
-          upload_file(cur_log_fn, os.path.basename(cur_log_fn))
-          os.remove(cur_log_fn)
+          cur_log_fns.append(cur_log_fn)
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
     for (segment, proc, result) in tqdm(p2, desc="Running tests", total=len(pool_args)):
       results[segment][proc] = result
+
+  for cur_log_fn in cur_log_fns:
+    print(f'Uploading: {os.path.basename(cur_log_fn)}')
+    assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
+    upload_file(cur_log_fn, os.path.basename(cur_log_fn))
+    os.remove(cur_log_fn)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   if not args.upload_only:
