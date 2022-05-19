@@ -48,8 +48,8 @@ class LateralPlanner:
       self.t_idxs = np.array(md.position.t)
       self.plan_yaw = list(md.orientation.z)
       self.plan_yaw_rate = list(md.orientationRate.z)
-      self.lateral_acc = self.speed_forward * self.plan_yaw_rate
-      self.jerk = np.gradient(self.lateral_acc, self.t_idxs)
+      self.plan_curvature = self.plan_yaw_rate / self.speed_forward
+      self.plan_curvature_rate = np.gradient(self.plan_curvature, self.t_idxs)
     if len(md.position.xStd) == TRAJECTORY_SIZE:
       self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
 
@@ -65,16 +65,18 @@ class LateralPlanner:
     # Calculate final driving path and set MPC costs
     if self.use_lanelines:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.LAT_JERK)
+      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.CURV, MPC_COST_LAT.CURV_RATE)
     else:
       d_path_xyz = self.path_xyz
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, MPC_COST_LAT.HEADING_LL])
-      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, heading_cost, MPC_COST_LAT.LAT_JERK)
+      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, heading_cost, MPC_COST_LAT.CURV, MPC_COST_LAT.CURV_RATE)
 
     y_pts = d_path_xyz[:LAT_MPC_N + 1, 1]
     heading_pts = self.plan_yaw[:LAT_MPC_N + 1]
-    jerk_pts = self.jerk[:LAT_MPC_N + 1]
+    curv_pts = self.plan_curvature[:LAT_MPC_N + 1]
+    curv_rate_pts = self.plan_curvature_rate[:LAT_MPC_N + 1]
     self.y_pts = y_pts
+    self.curv_rate_pts = curv_rate_pts
 
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
@@ -85,7 +87,8 @@ class LateralPlanner:
                      p,
                      y_pts,
                      heading_pts,
-                     jerk_pts)
+                     curv_pts, 
+                     curv_rate_pts)
     # init state for next
     self.x0[3] = interp(DT_MDL, self.t_idxs[:LAT_MPC_N + 1], self.lat_mpc.x_sol[:, 3])
 
@@ -115,7 +118,7 @@ class LateralPlanner:
     lateralPlan.dPathPoints = self.y_pts.tolist()
     lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()
     lateralPlan.curvatures = self.lat_mpc.x_sol[0:CONTROL_N, 3].tolist()
-    lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
+    lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [float(self.curv_rate_pts[CONTROL_N-1])]
     lateralPlan.lProb = float(self.LP.lll_prob)
     lateralPlan.rProb = float(self.LP.rll_prob)
     lateralPlan.dProb = float(self.LP.d_prob)
