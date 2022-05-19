@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fcntl.h>
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
@@ -9,6 +10,7 @@
 #include "cereal/visionipc/visionbuf.h"
 #include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_server.h"
+#include "common/util.h"
 #include "common/mat.h"
 #include "common/queue.h"
 #include "common/swaglog.h"
