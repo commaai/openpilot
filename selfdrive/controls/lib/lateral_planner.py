@@ -47,6 +47,9 @@ class LateralPlanner:
       self.speed_forward = np.linalg.norm(np.column_stack([md.velocity.x, md.velocity.y, md.velocity.z]), axis=1)
       self.t_idxs = np.array(md.position.t)
       self.plan_yaw = list(md.orientation.z)
+      self.plan_yaw_rate = list(md.orientationRate.z)
+      self.lateral_acc = self.speed_forward * self.plan_yaw_rate
+      self.jerk = np.gradient(self.lateral_acc, self.t_idxs)
     if len(md.position.xStd) == TRAJECTORY_SIZE:
       self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
 
@@ -70,6 +73,7 @@ class LateralPlanner:
 
     y_pts = d_path_xyz[:LAT_MPC_N + 1, 1]
     heading_pts = self.plan_yaw[:LAT_MPC_N + 1]
+    jerk_pts = self.jerk[:LAT_MPC_N + 1]
     self.y_pts = y_pts
 
     assert len(y_pts) == LAT_MPC_N + 1
@@ -80,7 +84,8 @@ class LateralPlanner:
     self.lat_mpc.run(self.x0,
                      p,
                      y_pts,
-                     heading_pts)
+                     heading_pts,
+                     jerk_pts)
     # init state for next
     self.x0[3] = interp(DT_MDL, self.t_idxs[:LAT_MPC_N + 1], self.lat_mpc.x_sol[:, 3])
 
