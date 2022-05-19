@@ -169,10 +169,11 @@ if __name__ == "__main__":
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
-    lreaders: Any = {}
-    p1 = pool.map(get_logreader, [seg for car, seg in segments])
-    for (segment, lr) in tqdm(p1, desc="Getting Logs", total=len(segments)):
-      lreaders[segment] = lr
+    if not args.upload_only:
+      lreaders: Any = {}
+      p1 = pool.map(get_logreader, [seg for car, seg in segments])
+      for (segment, lr) in tqdm(p1, desc="Getting Logs", total=len(segments)):
+        lreaders[segment] = lr
 
     pool_args: Any = []
     cur_log_fns: Any = []
