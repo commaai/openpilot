@@ -11,7 +11,6 @@ def get_url(route_name, segment_num, log_type="rlog"):
   ext = "hevc" if log_type.endswith('camera') else "bz2"
   return BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 
-
 def upload_file(path, name):
   from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
 

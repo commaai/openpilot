@@ -57,10 +57,17 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, lr, ref_commit = data
-  ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-  res, log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
-  # save logs so we can upload when updating refs
-  save_log(cur_log_fn, log_msgs)
+  res = None
+  if not args.upload_only:
+    ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+    res, log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
+    # save logs so we can upload when updating refs
+    save_log(cur_log_fn, log_msgs)
+  if args.update_refs or args.upload_only:
+    print(f'Uploading: {os.path.basename(cur_log_fn)}')
+    assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
+    upload_file(cur_log_fn, os.path.basename(cur_log_fn))
+    os.remove(cur_log_fn)
   return (segment, cfg.proc_name, res)
 
 def get_logreader(segment):
@@ -176,7 +183,6 @@ if __name__ == "__main__":
         lreaders[segment] = lr
 
     pool_args: Any = []
-    cur_log_fns: Any = []
     for car_brand, segment in segments:
       if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
          (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
@@ -186,21 +192,14 @@ if __name__ == "__main__":
            (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
           continue
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-        if not args.upload_only:
-          pool_args.append((segment, cfg, args, cur_log_fn, lreaders[segment], ref_commit))
-        if upload:
-          cur_log_fns.append(cur_log_fn)
+        lr = None if args.upload_only else lreaders[segment]
+        pool_args.append((segment, cfg, args, cur_log_fn, lr, ref_commit))
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
     for (segment, proc, result) in tqdm(p2, desc="Running tests", total=len(pool_args)):
-      results[segment][proc] = result
-
-  for cur_log_fn in cur_log_fns:
-    print(f'Uploading: {os.path.basename(cur_log_fn)}')
-    assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
-    upload_file(cur_log_fn, os.path.basename(cur_log_fn))
-    os.remove(cur_log_fn)
+      if isinstance(result, list):
+        results[segment][proc] = result
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   if not args.upload_only:
