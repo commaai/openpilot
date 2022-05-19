@@ -222,7 +222,7 @@ void CameraViewWidget::paintGL() {
   int frame_offset = draw_frame_id - frames[0].first;
   if (draw_frame_id_updated && (frame_offset < FRAME_BUFFER_SIZE)) {
     // ensure we don't jump backwards after draw_frame_id lags multiple frames
-    frame_idx = std::max(frame_idx - 1, frame_offset);
+    frame_idx = std::max(frame_offset, frame_idx - 1);
   }
   VisionBuf *frame = frames[std::clamp(frame_idx, 0, (int)frames.size() - 1)].second;
 
