@@ -71,10 +71,12 @@ def run_test_process(data):
     os.remove(cur_log_fn)
   return (segment, cfg.proc_name, res)
 
+
 def get_logreader(segment):
   r, n = segment.rsplit("--", 1)
   lr = LogReader(get_url(r, n))
   return (segment, lr)
+
 
 def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
