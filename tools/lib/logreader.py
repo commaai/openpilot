@@ -78,18 +78,22 @@ class LogReader:
     self.data_version = None
     self._only_union_types = only_union_types
 
-    _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
-    with FileReader(fn) as f:
-      dat = f.read()
-
-    if ext == "":
-      # old rlogs weren't bz2 compressed
-      ents = capnp_log.Event.read_multiple_bytes(dat)
-    elif ext == ".bz2":
-      dat = bz2.decompress(dat)
-      ents = capnp_log.Event.read_multiple_bytes(dat)
+    if isinstance(fn, bytes):
+      self.dat = fn
     else:
-      raise Exception(f"unknown extension {ext}")
+      _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
+      with FileReader(fn) as f:
+        dat = f.read()
+
+      if ext == "":
+        # old rlogs weren't bz2 compressed
+        self.dat = dat
+      elif ext == ".bz2":
+        self.dat = bz2.decompress(dat)
+      else:
+        raise Exception(f"unknown extension {ext}")
+
+    ents = capnp_log.Event.read_multiple_bytes(self.dat)
 
     _ents = []
     try:

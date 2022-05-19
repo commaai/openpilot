@@ -58,6 +58,11 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, lr, ref_commit = data
+  print(segment, cfg.proc_name)
+
+  if isinstance(lr, bytes):
+    lr = LogReader(lr)
+
   res = None
   if not args.upload_only:
     ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
@@ -196,7 +201,7 @@ if __name__ == "__main__":
            (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
           continue
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-        lr = None if args.upload_only else lreaders[segment]
+        lr = None if args.upload_only else lreaders[segment].dat
         pool_args.append((segment, cfg, args, cur_log_fn, lr, ref_commit))
 
     results: Any = defaultdict(dict)
