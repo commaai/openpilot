@@ -50,7 +50,8 @@ class TestLaikad(unittest.TestCase):
 
     correct_msgs_expected = 560
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
-    self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if not all(np.isfinite(m.gnssMeasurements.positionECEF))]))
+    self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if all(np.isfinite(m.gnssMeasurements.positionECEF))]))
+
 
 if __name__ == "__main__":
   unittest.main()
