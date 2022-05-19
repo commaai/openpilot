@@ -10,6 +10,9 @@
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
 
+const int FRAME_BUFFER_SIZE = 5;
+static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);
+
 class CameraViewWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
 
@@ -55,7 +58,7 @@ protected:
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
   uint32_t draw_frame_id = 0;
   uint32_t prev_draw_frame_id = 0;
-  int frame_idx = 0;
+  int frame_idx = FRAME_BUFFER_SIZE - 1;
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);

@@ -98,9 +98,6 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 
 } // namespace
 
-const int FRAME_BUFFER_SIZE = 5;
-static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);
-
 CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
                                    stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
@@ -220,14 +217,13 @@ void CameraViewWidget::paintGL() {
 
   if (frames.size() == 0) return;
 
-  // update offset frame offset if we're not skipping out of the length of the buffer
+  // update frame offset if we're not skipping out of the length of the buffer
   int frame_offset = draw_frame_id - frames[0].first;
   if ((draw_frame_id != prev_draw_frame_id) && (frame_offset < FRAME_BUFFER_SIZE)) {
     // ensure we don't jump backwards when draw_frame_id lags multiple frames
     frame_idx = std::max(frame_idx - 1, frame_offset);
   }
-  frame_idx = std::clamp(frame_idx, 0, (int)frames.size() - 1);
-  VisionBuf *frame = frames[frame_idx].second;
+  VisionBuf *frame = frames[std::clamp(frame_idx, 0, (int)frames.size() - 1)].second;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
