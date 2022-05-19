@@ -12,6 +12,8 @@ typedef struct CameraState {
   int fps;
   float digital_gain = 0;
 
+  double get_geometric_mean(VisionBuf *camera_buf) {return -1;};
+
   CameraBuf buf;
 } CameraState;
 
