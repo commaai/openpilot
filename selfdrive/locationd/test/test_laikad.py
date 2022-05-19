@@ -43,7 +43,7 @@ class TestLaikad(unittest.TestCase):
     lr = get_log(range(1))
 
     # Set to offline forces to use ephemeris messages
-    dog = AstroDog()
+    dog = AstroDog(use_internet=True)
     laikad = Laikad()
     good_msgs = verify_messages(lr, dog, laikad)
 

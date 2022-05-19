@@ -17,7 +17,7 @@ import common.transformations.coordinates as coord
 class Laikad:
 
   def __init__(self):
-    self._gnss_kf: GNSSKalman = GNSSKalman(GENERATED_DIR)
+    self._gnss_kf = GNSSKalman(GENERATED_DIR)
 
   def process_ublox_msg(self, ublox_msg, dog: AstroDog, ublox_mono_time: int):
     if ublox_msg.which == 'measurementReport':
@@ -30,8 +30,8 @@ class Laikad:
       if len(measurements) == 0:
         return None
 
-      # pos fix needs more than 5 processed_measurements
       pos_fix = calc_pos_fix(measurements)
+      # pos fix needs more than 5 processed_measurements
       if len(pos_fix) > 0:
         measurements = correct_measurements(measurements, pos_fix[0][:3], dog)
       if len(measurements) == 0:
@@ -40,17 +40,9 @@ class Laikad:
 
       t = ublox_mono_time * 1e-9
 
-      if self._gnss_kf.filter.filter_time is None or (self._gnss_kf.filter.filter_time - t) > 10:
-        if len(pos_fix) == 0:
-          # print("Init gnss kalman filter failed. Not enough corrected measurements")
-          return None
-        corrected_pos = pos_fix[0][:3].tolist()  # todo use corrected measurements
-        if self._gnss_kf.filter.filter_time is None:
-          print("Init gnss kalman filter")
-        else:
-          print("Time gap of over 10s detected, gnss kalman reset")
-        self.init_gnss_localizer(corrected_pos)
-      kf_add_observations(self._gnss_kf, t, measurements)
+      localizer_valid = self.update_localizer(pos_fix, t, measurements)
+      if not localizer_valid:
+        return None
 
       ecef_pos = self._gnss_kf.x[GStates.ECEF_POS].tolist()
       ecef_vel = self._gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
@@ -67,6 +59,24 @@ class Laikad:
       }
       return dat
 
+  def update_localizer(self, pos_fix, t, measurements):
+    if not self.localizer_valid(t):
+      # A position fix is needed when resetting the kalman filter.
+      if len(pos_fix) == 0:
+        return False
+      post_est = pos_fix[0][:3].tolist()
+      if self._gnss_kf.filter.filter_time is None:
+        print("Init gnss kalman filter")
+      else:
+        print("Time gap of over 10s detected, gnss kalman reset")
+      self.init_gnss_localizer(post_est)
+    kf_add_observations(self._gnss_kf, t, measurements)
+    return True
+
+  def localizer_valid(self, t):
+    return self._gnss_kf.filter.filter_time is not None and (self._gnss_kf.filter.filter_time - t) < 10
+
+
   def init_gnss_localizer(self, est_pos):
     x_initial, p_initial_diag = np.copy(GNSSKalman.x_initial), np.copy(np.diagonal(GNSSKalman.P_initial))
     x_initial[GStates.ECEF_POS] = est_pos
@@ -78,7 +88,7 @@ class Laikad:
 def create_measurement_msg(meas: GNSSMeasurement):
   c = log.GnssMeasurements.CorrectedMeasurement.new_message()
   c.constellationId = meas.constellation_id.value
-  c.svId = int(meas.prn[1:])
+  c.svId = meas.sv_id
   observables = meas.observables_final
   c.glonassFrequency = meas.glonass_freq if meas.constellation_id == ConstellationId.GLONASS else 0
   c.pseudorange = float(observables['C1C'])
@@ -121,7 +131,7 @@ def get_bearing_from_gnss(gnss_kf: GNSSKalman):
 
 
 def main():
-  dog = AstroDog()
+  dog = AstroDog(use_internet=True)
   sm = messaging.SubMaster(['ubloxGnss'])
   pm = messaging.PubMaster(['gnssMeasurements'])
 
