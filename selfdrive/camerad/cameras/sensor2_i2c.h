@@ -123,8 +123,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x1010, 0x0139}, // FINE_INTEGRATION_TIME4_MIN
 
   // TODO: do these have to be lower than LINE_LENGTH_PCK?
-  {0x3014, 0x08CB}, // FINE_INTEGRATION_TIME_
-  {0x321E, 0x0894}, // FINE_INTEGRATION_TIME2
+  {0x3014, 0x0139}, // FINE_INTEGRATION_TIME_
+  {0x321E, 0x0361}, // FINE_INTEGRATION_TIME2
 
   {0x31D0, 0x0000}, // COMPANDING, no good in 10 bit?
   {0x33DA, 0x0000}, // COMPANDING
