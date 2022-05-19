@@ -10,10 +10,10 @@
 #include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/camerad/transforms/rgb_to_yuv.h"
-#include "selfdrive/common/mat.h"
-#include "selfdrive/common/queue.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/visionimg.h"
+#include "common/mat.h"
+#include "common/queue.h"
+#include "common/swaglog.h"
+#include "common/visionimg.h"
 #include "selfdrive/hardware/hw.h"
 
 #define CAMERA_ID_IMX298 0

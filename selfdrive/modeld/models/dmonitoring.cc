@@ -2,10 +2,10 @@
 
 #include "libyuv.h"
 
-#include "selfdrive/common/mat.h"
-#include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
+#include "common/mat.h"
+#include "common/modeldata.h"
+#include "common/params.h"
+#include "common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
 #include "selfdrive/modeld/models/dmonitoring.h"

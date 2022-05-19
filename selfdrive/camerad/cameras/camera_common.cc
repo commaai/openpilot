@@ -11,19 +11,17 @@
 #include <jpeglib.h>
 
 #include "selfdrive/camerad/imgproc/utils.h"
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/clutil.h"
+#include "common/modeldata.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-#if QCOM2
+#ifdef QCOM2
 #include "CL/cl_ext_qcom.h"
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
-#elif WEBCAM
-#include "selfdrive/camerad/cameras/camera_webcam.h"
 #else
-#include "selfdrive/camerad/cameras/camera_replay.h"
+#include "selfdrive/camerad/test/camera_test.h"
 #endif
 
 ExitHandler do_exit;

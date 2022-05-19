@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "cereal/gen/cpp/log.capnp.h"
-#include "selfdrive/common/i2c.h"
+#include "common/i2c.h"
 #include "selfdrive/sensord/sensors/constants.h"
 #include "selfdrive/sensord/sensors/sensor.h"
 

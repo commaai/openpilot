@@ -11,8 +11,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 
 ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_extra) {
   LOGD("loading model %s", path);
