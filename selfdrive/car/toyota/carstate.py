@@ -234,7 +234,7 @@ class CarState(CarStateBase):
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
     ]
 
-    if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+    if not CP.enableDsu or CP.carFingerprint in RADAR_ACC_CAR:
       signals += [
         ("ACC_TYPE", "ACC_CONTROL"),
         ("FCW", "ACC_HUD"),
