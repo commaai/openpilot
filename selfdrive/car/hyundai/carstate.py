@@ -5,10 +5,55 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_CAR, HYBRID_CAR, Buttons
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, HDA2_CAR, EV_CAR, HYBRID_CAR, Buttons
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 4
+
+
+def get_can_parser_hda2(CP):
+  signals = [
+    ("WHEEL_SPEED_1", "WHEEL_SPEEDS"),
+    ("WHEEL_SPEED_2", "WHEEL_SPEEDS"),
+    ("WHEEL_SPEED_3", "WHEEL_SPEEDS"),
+    ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
+
+    ("ACCELERATOR_PEDAL", "ACCELERATOR"),
+    ("GEAR", "ACCELERATOR"),
+    ("BRAKE_PRESSED", "BRAKE"),
+
+    ("STEERING_RATE", "STEERING_SENSORS"),
+    ("STEERING_ANGLE", "STEERING_SENSORS"),
+    ("STEERING_COL_TORQUE", "MDPS"),
+    ("STEERING_OUT_TORQUE", "MDPS"),
+
+    ("CRUISE_ACTIVE", "SCC1"),
+    ("SET_SPEED", "CRUISE_INFO"),
+    ("CRUISE_STANDSTILL", "CRUISE_INFO"),
+
+    ("DISTANCE_UNIT", "CLUSTER_INFO"),
+
+    ("LEFT_LAMP", "BLINKERS"),
+    ("RIGHT_LAMP", "BLINKERS"),
+
+    ("DRIVER_DOOR_OPEN", "DOORS_SEATBELTS"),
+    ("DRIVER_SEATBELT_LATCHED", "DOORS_SEATBELTS"),
+  ]
+
+  checks = [
+    ("WHEEL_SPEEDS", 100),
+    ("ACCELERATOR", 100),
+    ("BRAKE", 100),
+    ("STEERING_SENSORS", 100),
+    ("MDPS", 100),
+    ("SCC1", 50),
+    ("CRUISE_INFO", 50),
+    ("CLUSTER_INFO", 4),
+    ("BLINKERS", 4),
+    ("DOORS_SEATBELTS", 4),
+  ]
+
+  return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 5)
 
 
 class CarState(CarStateBase):
@@ -19,14 +64,64 @@ class CarState(CarStateBase):
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
-    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
+    if CP.carFingerprint in HDA2_CAR:
+      self.shifter_values = can_define.dv["ACCELERATOR"]["GEAR"]
+    elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
       self.shifter_values = can_define.dv["TCU12"]["CUR_GR"]
     else:  # preferred and elect gear methods use same definition
       self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
 
+    self.brake_error = False
+    self.park_brake = False
+
+  def update_ev6(self, cp, cp_cam):
+    ret = car.CarState.new_message()
+
+    ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
+    ret.gasPressed = ret.gas > 1e-3
+    ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
+
+    ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
+    ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
+
+    gear = cp.vl["ACCELERATOR"]["GEAR"]
+    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
+
+    # TODO: figure out positions
+    ret.wheelSpeeds = self.get_wheel_speeds(
+      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_1"],
+      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_2"],
+      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_3"],
+      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_4"],
+    )
+    ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
+    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    ret.standstill = ret.vEgoRaw < 0.1
+
+    ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEERING_RATE"]
+    ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEERING_ANGLE"] * -1
+    ret.steeringTorque = cp.vl["MDPS"]["STEERING_COL_TORQUE"]
+    ret.steeringTorqueEps = cp.vl["MDPS"]["STEERING_OUT_TORQUE"]
+    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
+
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"]["LEFT_LAMP"],
+                                                                      cp.vl["BLINKERS"]["RIGHT_LAMP"])
+
+    ret.cruiseState.available = True
+    ret.cruiseState.enabled = cp.vl["SCC1"]["CRUISE_ACTIVE"] == 1
+    ret.cruiseState.standstill = cp.vl["CRUISE_INFO"]["CRUISE_STANDSTILL"] == 1
+
+    speed_factor = CV.MPH_TO_MS if cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] == 1 else CV.KPH_TO_MS
+    ret.cruiseState.speed = cp.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
+
+    return ret
+
   def update(self, cp, cp_cam):
+    if self.CP.carFingerprint in HDA2_CAR:
+      return self.update_ev6(cp, cp_cam)
+
     ret = car.CarState.new_message()
 
     ret.doorOpen = any([cp.vl["CGW1"]["CF_Gway_DrvDrSw"], cp.vl["CGW1"]["CF_Gway_AstDrSw"],
@@ -122,6 +217,9 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
+    if CP.carFingerprint in HDA2_CAR:
+      return get_can_parser_hda2(CP)
+
     signals = [
       # sig_name, sig_address
       ("WHL_SPD_FL", "WHL_SPD11"),
@@ -278,5 +376,8 @@ class CarState(CarStateBase):
     checks = [
       ("LKAS11", 100)
     ]
+
+    if CP.carFingerprint in HDA2_CAR:
+      signals, checks = [], []
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
