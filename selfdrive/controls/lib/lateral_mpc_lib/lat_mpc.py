@@ -80,7 +80,7 @@ def gen_lat_ocp():
   ocp.cost.W = QR
   ocp.cost.W_e = Q
 
-  y_ego, psi_ego, curv_ego = ocp.model.x[1], ocp.model.x[2], ocp.model.x[2]
+  y_ego, psi_ego, curv_ego = ocp.model.x[1], ocp.model.x[2], ocp.model.x[3]
   curv_rate = ocp.model.u[0]
   v_ego = ocp.model.p[0]
 
