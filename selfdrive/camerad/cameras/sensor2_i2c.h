@@ -51,8 +51,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   // CLOCK Settings
   // input clock is 19.2 / 2 * 0x37 = 528 MHz
   // pixclk is 528 / 6 = 88 MHz
-  // full roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*FRAME_LENGTH_LINES)) = 39.98 ms
-  // img  roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*Y_OUTPUT_CONTROL))   = 27.1 ms
+  // full roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*FRAME_LENGTH_LINES)) = 39.99 ms
+  // img  roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*Y_OUTPUT_CONTROL))   = 22.85 ms
   {0x302A, 0x0006}, // VT_PIX_CLK_DIV
   {0x302C, 0x0001}, // VT_SYS_CLK_DIV
   {0x302E, 0x0002}, // PRE_PLL_CLK_DIV
@@ -80,8 +80,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x340C, 0x802},  // GPIO_HIDRV_EN | GPIO0_ISEL=2
 
   // Readout timing
-  {0x300C, 0x07B9}, // LINE_LENGTH_PCK
-  {0x300A, 0x06F4}, // FRAME_LENGTH_LINES
+  {0x300C, 0x0672}, // LINE_LENGTH_PCK (valid for 3-exposure HDR)
+  {0x300A, 0x0855}, // FRAME_LENGTH_LINES
   {0x3042, 0x0000}, // EXTRA_DELAY
 
   // Readout Settings
