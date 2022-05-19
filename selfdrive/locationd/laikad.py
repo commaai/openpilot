@@ -17,7 +17,7 @@ import common.transformations.coordinates as coord
 class Laikad:
 
   def __init__(self):
-    self._gnss_kf = GNSSKalman(GENERATED_DIR)
+    self.gnss_kf = GNSSKalman(GENERATED_DIR)
 
   def process_ublox_msg(self, ublox_msg, dog: AstroDog, ublox_mono_time: int):
     if ublox_msg.which == 'measurementReport':
@@ -44,9 +44,9 @@ class Laikad:
       if not localizer_valid:
         return None
 
-      ecef_pos = self._gnss_kf.x[GStates.ECEF_POS].tolist()
-      ecef_vel = self._gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
-      bearing_deg, bearing_std = get_bearing_from_gnss(self._gnss_kf)
+      ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
+      ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
+      bearing_deg, bearing_std = get_bearing_from_gnss(self.gnss_kf)
       dat = messaging.new_message('gnssMeasurements')
 
       dat.gnssMeasurements = {
@@ -59,30 +59,29 @@ class Laikad:
       }
       return dat
 
-  def update_localizer(self, pos_fix, t, measurements):
+  def update_localizer(self, pos_fix, t: float, measurements: List[GNSSMeasurement]):
     if not self.localizer_valid(t):
       # A position fix is needed when resetting the kalman filter.
       if len(pos_fix) == 0:
         return False
       post_est = pos_fix[0][:3].tolist()
-      if self._gnss_kf.filter.filter_time is None:
+      if self.gnss_kf.filter.filter_time is None:
         print("Init gnss kalman filter")
       else:
         print("Time gap of over 10s detected, gnss kalman reset")
       self.init_gnss_localizer(post_est)
-    kf_add_observations(self._gnss_kf, t, measurements)
+    kf_add_observations(self.gnss_kf, t, measurements)
     return True
 
-  def localizer_valid(self, t):
-    return self._gnss_kf.filter.filter_time is not None and (self._gnss_kf.filter.filter_time - t) < 10
-
+  def localizer_valid(self, t: float):
+    return self.gnss_kf.filter.filter_time is not None and (self.gnss_kf.filter.filter_time - t) < 10
 
   def init_gnss_localizer(self, est_pos):
     x_initial, p_initial_diag = np.copy(GNSSKalman.x_initial), np.copy(np.diagonal(GNSSKalman.P_initial))
     x_initial[GStates.ECEF_POS] = est_pos
     p_initial_diag[GStates.ECEF_POS] = 1000 ** 2
 
-    self._gnss_kf.init_state(x_initial, covs_diag=p_initial_diag)
+    self.gnss_kf.init_state(x_initial, covs_diag=p_initial_diag)
 
 
 def create_measurement_msg(meas: GNSSMeasurement):
