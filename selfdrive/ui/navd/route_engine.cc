@@ -94,7 +94,7 @@ static void parse_banner(cereal::NavInstruction::Builder &instruction, const QMa
 }
 
 RouteEngine::RouteEngine() {
-  sm = new SubMaster({"liveLocationKalman", "managerState"}, {"liveLocationKalman", "managerState"});
+  sm = new SubMaster({"liveLocationKalman", "managerState"});
   pm = new PubMaster({"navInstruction", "navRoute"});
 
   // Timers
