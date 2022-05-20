@@ -145,7 +145,7 @@ static void update_state(UIState *s) {
     if (sm.updated("modelV2")) {
       update_model(s, sm["modelV2"].getModelV2());
     }
-    if (sm.updated("radarState") && sm.updated("modelV2")) {
+    if (sm.updated("radarState") && sm.rcv_frame("modelV2") > s->scene.started_frame) {
       update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
     }
   }
@@ -193,7 +193,7 @@ static void update_state(UIState *s) {
 
     scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
   }
-  scene.started = true;  // sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+  scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
 
 void ui_update_params(UIState *s) {

@@ -8,7 +8,6 @@
 
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>
-#include <iostream>
 
 namespace {
 
