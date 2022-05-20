@@ -41,6 +41,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
+  qDebug() << "updateState";
   QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   if (s.sm->updated("controlsState") || !alert.equal({})) {
@@ -59,6 +60,7 @@ void OnroadWindow::updateState(const UIState &s) {
     bg = bgColor;
     update();
   }
+  nvg->update();
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
@@ -382,7 +384,7 @@ void NvgWindow::paintGL() {
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
-  if (s->worldObjectsVisible()) {
+  if (true) {
 
     drawLaneLines(painter, s);
 

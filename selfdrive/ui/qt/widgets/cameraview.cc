@@ -376,7 +376,7 @@ void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
     frames.pop_front();
   }
 //  latest_frame_id = frame_id;
-  update();
+//  update();
 }
 
 void CameraViewWidget::vipcThread() {

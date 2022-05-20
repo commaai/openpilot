@@ -118,10 +118,12 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 }
 
 static void update_sockets(UIState *s) {
-  s->sm->update(0);
+  s->sm->update(1000);
+  qDebug() << "ui.cc frame id:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
 }
 
 static void update_state(UIState *s) {
+  qDebug() << "update_state";
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
 
@@ -141,11 +143,13 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (s->worldObjectsVisible()) {
-    if (sm.updated("modelV2")) {
+//  if (s->worldObjectsVisible()) {
+  if (true) {
+    if (true) {
       update_model(s, sm["modelV2"].getModelV2());
+      qDebug() << "HERE";
     }
-    if (sm.updated("radarState") && sm.rcv_frame("modelV2") > s->scene.started_frame) {
+    if (sm.updated("radarState") && true) {
       update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
     }
   }
@@ -193,7 +197,7 @@ static void update_state(UIState *s) {
 
     scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
   }
-  scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+  scene.started = true;  // sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
 
 void ui_update_params(UIState *s) {
@@ -201,6 +205,7 @@ void ui_update_params(UIState *s) {
 }
 
 void UIState::updateStatus() {
+  qDebug() << "updateStatus";
   if (scene.started && sm->updated("controlsState")) {
     auto controls_state = (*sm)["controlsState"].getControlsState();
     auto alert_status = controls_state.getAlertStatus();
@@ -230,11 +235,13 @@ void UIState::updateStatus() {
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
-  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
-    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
-    "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
-    "wideRoadCameraState", "managerState",
-  });
+  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>, const std::initializer_list<const char *>>(
+    {
+      "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
+      "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
+      "wideRoadCameraState", "managerState",
+    }, {"modelV2",}
+  );
 
   Params params;
   wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
@@ -243,7 +250,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   // update timer
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
-  timer->start(1000 / UI_FREQ);
+  timer->start(0);
 }
 
 void UIState::update() {
