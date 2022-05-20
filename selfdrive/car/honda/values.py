@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
@@ -106,7 +106,7 @@ class HondaCarInfo(CarInfo):
   min_steer_speed: float = 12. * CV.MPH_TO_MS
 
 
-CAR_INFO: Dict[str, Union[HondaCarInfo, List[HondaCarInfo]]] = {
+CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.ACCORD: [
     HondaCarInfo("Honda Accord 2018-21", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
     HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
