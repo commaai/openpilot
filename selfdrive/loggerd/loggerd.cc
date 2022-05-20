@@ -44,6 +44,7 @@ void rotate_if_needed(LoggerdState *s) {
 struct RemoteEncoder {
   std::unique_ptr<VideoWriter> writer;
   int encoderd_segment_offset = -1;
+  int current_segment = -1;
   std::vector<Message *> q;
   int dropped_frames = 0;
   bool recording = false;
@@ -65,16 +66,28 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   auto flags = idx.getFlags();
 
   // encoderd can have started long before loggerd
-  if (re.encoderd_segment_offset == -1) re.encoderd_segment_offset = idx.getSegmentNum();
+  if (re.encoderd_segment_offset == -1) {
+    re.encoderd_segment_offset = idx.getSegmentNum();
+    LOGD("%s: has encoderd offset %d", name.c_str(), re.encoderd_segment_offset);
+  }
   int offset_segment_num = idx.getSegmentNum() - re.encoderd_segment_offset;
 
   if (offset_segment_num == s->rotate_segment) {
-    // we are in this segment, process any queued messages before this one
-    if (!re.q.empty()) {
-      for (auto &qmsg: re.q) {
-        bytes_count += handle_encoder_msg(s, qmsg, name, re);
+    if (re.current_segment != s->rotate_segment) {
+      if (re.recording) {
+        // this can happen if loggerd did the rotation and not the encoders
+        LOGW("%s: somehow we were still recording %d %d", re.current_segment, s->rotate_segment.load());
+        re.writer.reset();
+        re.recording = false;
       }
-      re.q.clear();
+      re.current_segment = s->rotate_segment;
+      // we are in this segment now, process any queued messages before this one
+      if (!re.q.empty()) {
+        for (auto &qmsg: re.q) {
+          bytes_count += handle_encoder_msg(s, qmsg, name, re);
+        }
+        re.q.clear();
+      }
     }
 
     // if we aren't recording yet, try to start
@@ -86,7 +99,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
           LOGW("%s: dropped %d non iframe packets before init", name.c_str(), re.dropped_frames);
           re.dropped_frames = 0;
         }
-        // if we aren't recording, don't create the writer
+        // if we aren't actually recording, don't create the writer
         if (cam_info.record) {
           re.writer.reset(new VideoWriter(s->segment_path,
             cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
@@ -130,12 +143,15 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       re.writer.reset();
       re.recording = false;
       ++s->ready_to_rotate;
-      LOGD("rotate %d -> %d ready %d/%d for %s", s->rotate_segment.load(), offset_segment_num, s->ready_to_rotate.load(), s->max_waiting, name.c_str());
+      LOGD("rotate %d -> %d ready %d/%d for %s",
+        s->rotate_segment.load(), offset_segment_num,
+        s->ready_to_rotate.load(), s->max_waiting, name.c_str());
     }
     // queue up all the new segment messages, they go in after the rotate
     re.q.push_back(msg);
   } else {
-    LOGE("encoderd packet has a older segment!!! idx.getSegmentNum():%d offset_segment_num:%d s->rotate_segment:%d\n", idx.getSegmentNum(), offset_segment_num, s->rotate_segment.load());
+    LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d offset_segment_num:%d s->rotate_segment:%d\n",
+      name.c_str(), idx.getSegmentNum(), offset_segment_num, s->rotate_segment.load());
     delete msg;
   }
 
