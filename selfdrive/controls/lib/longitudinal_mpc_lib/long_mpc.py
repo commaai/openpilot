@@ -192,11 +192,14 @@ def gen_long_ocp():
 class LongitudinalMpc:
   def __init__(self, e2e=False):
     self.e2e = e2e
+    self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset()
     self.source = SOURCES[2]
 
   def reset(self):
-    self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
+    # self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
+    self.solver.reset()
+    # self.solver.options_set('print_level', 2)
     self.v_solution = np.zeros(N+1)
     self.a_solution = np.zeros(N+1)
     self.prev_a = np.array(self.a_solution)
@@ -342,6 +345,11 @@ class LongitudinalMpc:
       self.crash_cnt = 0
 
   def update_with_xva(self, x, v, a):
+    # v, and a are in local frame, but x is wrt the x[0] position
+    # In >90degree turns, x goes to 0 (and may even be -ve)
+    # So, we use integral(v) + x[0] to obtain the forward-distance
+    xforward = ((v[1:] + v[:-1]) / 2) * (T_IDXS[1:] - T_IDXS[:-1])
+    x = np.cumsum(np.insert(xforward, 0, x[0]))
     self.yref[:,1] = x
     self.yref[:,2] = v
     self.yref[:,3] = a
@@ -352,6 +360,8 @@ class LongitudinalMpc:
     self.run()
 
   def run(self):
+    # t0 = sec_since_boot()
+    # reset = 0
     for i in range(N+1):
       self.solver.set(i, 'p', self.params[i])
     self.solver.constraints_set(0, "lbx", self.x0)
@@ -386,6 +396,8 @@ class LongitudinalMpc:
         self.last_cloudlog_t = t
         cloudlog.warning(f"Long mpc reset, solution_status: {self.solution_status}")
       self.reset()
+      # reset = 1
+    # print(f"long_mpc timings: total internal {self.solve_time:.2e}, external: {(sec_since_boot() - t0):.2e} qp {self.time_qp_solution:.2e}, lin {self.time_linearization:.2e} qp_iter {qp_iter}, reset {reset}")
 
 
 if __name__ == "__main__":

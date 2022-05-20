@@ -5,7 +5,7 @@
 #include <QMapboxGL>
 #include <QGeoCoordinate>
 
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
 #include "cereal/messaging/messaging.h"

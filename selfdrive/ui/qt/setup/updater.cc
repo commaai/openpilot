@@ -6,10 +6,7 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/setup/updater.h"
-
-#ifndef QCOM
 #include "selfdrive/ui/qt/offroad/networking.h"
-#endif
 
 Updater::Updater(const QString &updater_path, const QString &manifest_path, QWidget *parent)
   : updater(updater_path), manifest(manifest_path), QStackedWidget(parent) {
@@ -43,11 +40,7 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     QPushButton *connect = new QPushButton("Connect to Wi-Fi");
     connect->setObjectName("navBtn");
     QObject::connect(connect, &QPushButton::clicked, [=]() {
-#ifndef QCOM
       setCurrentWidget(wifi);
-#else
-      HardwareEon::launch_wifi();
-#endif
     });
     hlayout->addWidget(connect);
 
@@ -64,11 +57,9 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     QVBoxLayout *layout = new QVBoxLayout(wifi);
     layout->setContentsMargins(100, 100, 100, 100);
 
-#ifndef QCOM
     Networking *networking = new Networking(this, false);
     networking->setStyleSheet("Networking { background-color: #292929; border-radius: 13px; }");
     layout->addWidget(networking, 1);
-#endif
 
     QPushButton *back = new QPushButton("Back");
     back->setObjectName("navBtn");
@@ -173,20 +164,6 @@ void Updater::updateFinished(int exitCode, QProcess::ExitStatus exitStatus) {
     text->setText("Update failed");
     reboot->show();
   }
-}
-
-bool Updater::eventFilter(QObject *obj, QEvent *event) {
-#ifdef QCOM
-  // filter out touches while in android activity
-  const static QSet<QEvent::Type> filter_events({QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
-  if (HardwareEon::launched_activity && filter_events.contains(event->type())) {
-    HardwareEon::check_activity();
-    if (HardwareEon::launched_activity) {
-      return true;
-    }
-  }
-#endif
-  return false;
 }
 
 int main(int argc, char *argv[]) {

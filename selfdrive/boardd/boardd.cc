@@ -23,10 +23,10 @@
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/timing.h"
+#include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 
 #include "selfdrive/boardd/pigeon.h"
@@ -115,11 +115,15 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     return false;
   }
 
+  // set to ELM327 for fingerprinting
   pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
+  for (int i = 1; i < pandas.size(); i++) {
+    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::SILENT);
+  }
 
   Params p = Params();
 
-  // switch to SILENT when CarVin param is read
+  // wait for VIN to be read
   while (true) {
     if (do_exit || !check_all_connected(pandas) || !ignition) {
       return false;
@@ -135,15 +139,14 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     util::sleep_for(20);
   }
 
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1);
+  // set to ELM327 for ECU knockouts
+  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
 
   std::string params;
   LOGW("waiting for params to set safety model");
   while (true) {
-    for (const auto& panda : pandas) {
-      if (do_exit || !panda->connected || !ignition) {
-        return false;
-      }
+    if (do_exit || !check_all_connected(pandas) || !ignition) {
+      return false;
     }
 
     if (p.getBool("ControlsReady")) {
@@ -158,7 +161,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
   cereal::CarParams::SafetyModel safety_model;
-  int safety_param;
+  uint16_t safety_param;
 
   auto safety_configs = car_params.getSafetyConfigs();
   uint16_t alternative_experience = car_params.getAlternativeExperience();
@@ -171,7 +174,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     } else {
       // If no safety mode is specified, default to silent
       safety_model = cereal::CarParams::SafetyModel::SILENT;
-      safety_param = 0;
+      safety_param = 0U;
     }
 
     LOGW("panda %d: setting safety model: %d, param: %d, alternative experience: %d", i, (int)safety_model, safety_param, alternative_experience);
@@ -229,7 +232,9 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     //Dont send if older than 1 second
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
+        LOGT("sending sendcan to panda: %s", (panda->usb_serial).c_str());
         panda->can_send(event.getSendcan());
+        LOGT("sendcan sent to panda: %s", (panda->usb_serial).c_str());
       }
     }
   }
@@ -364,6 +369,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setHeartbeatLost((bool)(health.heartbeat_lost_pkt));
     ps.setAlternativeExperience(health.alternative_experience_pkt);
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
+    ps.setInterruptLoad(health.interrupt_load);
 
     // Convert faults bitset to capnp list
     std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt);
@@ -644,8 +650,6 @@ void boardd_main_thread(std::vector<std::string> serials) {
     LOGW("connected to board");
     Panda *peripheral_panda = pandas[0];
     std::vector<std::thread> threads;
-
-    Params().put("LastPeripheralPandaType", std::to_string((int) peripheral_panda->get_hw_type()));
 
     threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
     threads.emplace_back(peripheral_control_thread, peripheral_panda);

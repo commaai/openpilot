@@ -40,6 +40,8 @@ class TestCarInterfaces(unittest.TestCase):
         self.assertTrue(len(car_params.lateralTuning.pid.kpV))
       elif tuning == 'lqr':
         self.assertTrue(len(car_params.lateralTuning.lqr.a))
+      elif tuning == 'torque':
+        self.assertTrue(car_params.lateralTuning.torque.kf > 0)
       elif tuning == 'indi':
         self.assertTrue(len(car_params.lateralTuning.indi.outerLoopGainV))
 
@@ -64,7 +66,8 @@ class TestCarInterfaces(unittest.TestCase):
 
     # Run radar interface once
     radar_interface.update([])
-    if not car_params.radarOffCan and hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
+    if not car_params.radarOffCan and radar_interface.rcp is not None and \
+       hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
       radar_interface._update([radar_interface.trigger_msg])
 
 if __name__ == "__main__":
