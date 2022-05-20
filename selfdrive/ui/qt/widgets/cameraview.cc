@@ -265,6 +265,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf) {
   latest_frame = buf;
+  update();
 }
 
 void CameraViewWidget::vipcThread() {
