@@ -50,6 +50,7 @@ public:
 
   void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, uint8_t * lut, cl_event *debayer_event) {
     // TODO: Can this buffer be created in the constructor? I can't find any documentation on how to flush the cache.
+    // Or is it better to create a normal buffer and copy the lut every iteration?
     cl_mem lut_ = CL_CHECK_ERR(clCreateBuffer(ctx_, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, 4096, lut, &err));
 
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
@@ -60,6 +61,7 @@ public:
     const int debayer_local_worksize = 16;
     const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
+    CL_CHECK(clReleaseMemObject(lut_));
   }
 
   ~Debayer() {
