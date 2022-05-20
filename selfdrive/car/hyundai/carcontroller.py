@@ -71,8 +71,14 @@ class CarController:
       can_sends.append(hda2can.create_lkas(self.packer, CC.enabled, self.frame, CC.latActive, apply_steer))
 
       # cruise cancel
-      if CC.cruiseControl.cancel and (self.frame % 10) == 0:
-        can_sends.append(hda2can.create_buttons(self.packer, True, False))
+      if CC.cruiseControl.cancel:
+        if (self.frame % 10) == 0:
+          for _ in range(10):
+            can_sends.append(hda2can.create_buttons(self.packer, True, False))
+
+      # cruise standstill resume
+      elif CC.enabled and CS.out.cruiseState.standstill and (self.frame % 10) == 0:
+        can_sends.append(hda2can.create_buttons(self.packer, False, True))
     else:
 
       # tester present - w/ no response (keeps radar disabled)
