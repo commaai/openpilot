@@ -147,9 +147,8 @@ def main():
     if sm.updated['ubloxGnss']:
       ublox_msg = sm['ubloxGnss']
       msg = laikad.process_ublox_msg(ublox_msg, dog, sm.logMonoTime['ubloxGnss'])
-      if msg is None:
-        msg = messaging.new_message('gnssMeasurements')
-      pm.send('gnssMeasurements', msg)
+      if msg is not None:
+        pm.send('gnssMeasurements', msg)
 
 
 if __name__ == "__main__":
