@@ -29,9 +29,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._FACE_THRESHOLD = 0.5
     self._EYE_THRESHOLD = 0.65
     self._SG_THRESHOLD = 0.925
-    self._BLINK_THRESHOLD = 0.8
-    self._BLINK_THRESHOLD_SLACK = 0.9
-    self._BLINK_THRESHOLD_STRICT = self._BLINK_THRESHOLD
+    self._BLINK_THRESHOLD = 0.6
 
     self._EE_THRESH11 = 0.75
     self._EE_THRESH12 = 3.25
@@ -51,7 +49,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._YAW_MAX_OFFSET = 0.289
     self._YAW_MIN_OFFSET = -0.0246
 
-    self._POSESTD_THRESHOLD = 0.25
+    self._POSESTD_THRESHOLD = 0.3
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
@@ -221,9 +219,9 @@ class DriverStatus():
     bp = model_data.meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
     # TODO: retune adaptive blink
     self.blink.cfactor = interp(ep, [0, 0.5, 1],
-                                           [self.settings._BLINK_THRESHOLD_STRICT,
+                                           [self.settings._BLINK_THRESHOLD,
                                             self.settings._BLINK_THRESHOLD,
-                                            self.settings._BLINK_THRESHOLD_SLACK]) / self.settings._BLINK_THRESHOLD
+                                            self.settings._BLINK_THRESHOLD]) / self.settings._BLINK_THRESHOLD
     k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
     bp_normal = max(min(bp / k1, 0.5),0)
     self.pose.cfactor_pitch = interp(bp_normal, [0, 0.5],
