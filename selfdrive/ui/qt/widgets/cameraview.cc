@@ -165,7 +165,6 @@ void CameraViewWidget::initializeGL() {
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
   frames.clear();
-//  frame_idx = FRAME_BUFFER_SIZE - 1;
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
@@ -219,104 +218,9 @@ void CameraViewWidget::paintGL() {
   if (frames.empty()) return;
 
   int latest_frame_id = frames[frames.size() - 1].first;
-//  int earliest_frame_id = frames[0].first;
-
-  // sometimes in replay, model can be ahead of camera
-//  int frame_offset = std::max((int)latest_frame_id - (int)draw_frame_id, 0);
-
   int new_frame_index = frames.size() - (latest_frame_id - draw_frame_id) - 1;
   new_frame_index = std::clamp((int)new_frame_index, 0, (int)frames.size() - 1);
-//  int new_frame_index = std::clamp(latest_frame_id - (int)draw_frame_id - 1, 0, FRAME_BUFFER_SIZE - 1);
-//  int new_frame_index = std::clamp((int)draw_frame_id - earliest_frame_id, 0, frames.size() - 1);
-//  qDebug() << "new_frame_index:" << new_frame_index;
-//  new_frame_index = std::max(new_frame_index, 0);
-//  qDebug() << "clamped to prev new_frame_index:" << new_frame_index;
-
-//  prev_frame_index = new_frame_index;
-
-  qDebug() << "new_frame_index:" << new_frame_index;
-  qDebug() << "frame from idx:" << frames[new_frame_index].first;
-  qDebug() << "Correct frame:" << (frames[new_frame_index].first == draw_frame_id);
-  qDebug() << "Skipped back:" << (prev_drawn_frame > frames[new_frame_index].first);
-//  int frame_to_draw = std::clamp((int)draw_frame_id, (int)prev_drawn_frame, (int)latest_frame_id);
   VisionBuf *frame = frames[new_frame_index].second;
-  prev_drawn_frame = frames[new_frame_index].first;
-
-//  int lower_bound = frames[0].first;
-//  int frame_idx = std::clamp(FRAME_BUFFER_SIZE - (int)(latest_frame_id - draw_frame_id) - 1, 0, FRAME_BUFFER_SIZE - 1);
-//  qDebug() << "frame_idx:" << frame_idx;
-//  qDebug() << "frame from idx:" << frames[frame_idx].first;
-//  qDebug() << "Correct frame:" << (frames[frame_idx].first == draw_frame_id);
-//  qDebug() << "Skipped back:" << (prev_drawn_frame > frames[frame_idx].first);
-////  int frame_to_draw = std::clamp((int)draw_frame_id, (int)prev_drawn_frame, (int)latest_frame_id);
-//  VisionBuf *frame = frames[frame_idx].second;
-//  prev_drawn_frame = frames[frame_idx].first;
-
-
-//  for (int i = frames.size() - 1; i >= 0; i--) {
-//    if (frames[i].first) {
-//
-//    }
-//  }
-
-
-//  auto it = std::find_if(frames.begin(), frames.end(), [frame_to_draw](const std::pair<uint32_t, VisionBuf*>& element) {
-//    return element.first == frame_to_draw;
-//  });
-//
-//  qDebug() << "WANT TO DRAW:" << frame_to_draw;
-//  qDebug() << "Correct frame:" << (frame_to_draw == draw_frame_id);
-//  qDebug() << "Can draw     :" << (it != frames.end());
-
-
-  std::cout << "[";
-  for (int i = 0; i < FRAME_BUFFER_SIZE; i++) {
-//    if (frame_array[i].initialized) {
-    std::cout << frames[i].first << ",";
-//    }
-  }
-  std::cout << "]\n\n";
-
-//  return;
-
-//  assert(latest_frame_id >= draw_frame_id);
-//  qDebug() << "latest frame_id:" << latest_frame_id;
-//  int draw;
-////  if ((latest_frame_id - draw_frame_id) <= 2) {
-////    draw = draw_frame_id;
-////  } else {
-////    draw = latest_frame_id;
-////  }
-////  qDebug() << "draw:" << draw;
-//
-////  // update frame offset if we're not skipping out of the length of the buffer
-////  int frame_offset = draw_frame_id - frames[0].first;
-////  if (draw_frame_id_updated && (frame_offset < FRAME_BUFFER_SIZE)) {
-////    // ensure we don't jump backwards after draw_frame_id lags multiple frames
-////    frame_idx = std::max(frame_offset, frame_idx - 1);
-////  }
-//  for (int i = 0; i < FRAME_BUFFER_SIZE; i++) {
-//    if (frames[i].first >= draw_frame_id) {
-//      draw = frames[i].first;
-//    }
-//  }
-//  int clip_range = latest_frame_id - draw_frame_id;
-//  qDebug() << "Offset:" << clip_range;
-////  bool in_range = ;
-//  auto it = std::find_if(frames.begin(), frames.end(), [this](const std::pair <uint32_t, VisionBuf*>& element) {
-//    return element.first >= draw_frame_id;
-//  });
-//  qDebug() << "Drawing frame:" << frames[it - frames.begin()].first;
-//  qDebug() << "Correct frame:" << (draw_frame_id == frames[it - frames.begin()].first);
-//  VisionBuf *frame = frames[it - frames.begin()].second;
-//
-//  std::cout << "[";
-//  for (int i = 0; i < FRAME_BUFFER_SIZE; i++) {
-////    if (frame_array[i].initialized) {
-//    std::cout << frames[i].first << ",";
-////    }
-//  }
-//  std::cout << "]\n\n";
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
@@ -347,7 +251,6 @@ void CameraViewWidget::paintGL() {
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   makeCurrent();
   frames.clear();
-//  frame_idx = FRAME_BUFFER_SIZE - 1;
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
 
@@ -367,16 +270,10 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 }
 
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
-//  // replay skipped or camera , need to clear frames so we know what
-//  if (!frames.empty() && std::abs((int)frame_id - int(frames[frames.size() - 1].first)) > 1) {
-//    frames.clear();
-//  }
   frames.push_back(std::make_pair(frame_id, buf));
   while (frames.size() > FRAME_BUFFER_SIZE) {
     frames.pop_front();
   }
-//  latest_frame_id = frame_id;
-//  update();
 }
 
 void CameraViewWidget::vipcThread() {
