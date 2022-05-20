@@ -169,7 +169,7 @@ bool CameraBuf::acquire() {
   max_bin = std::max(max_bin, 64);
 
   // Apply ceiling
-  double thres = 500;
+  double thres = 1000;
   double sum_widths = 0;
   for (int i = min_bin; i <= max_bin; i++) {
     sum_widths += camera_state->histogram_bin_widths[i];
