@@ -3,8 +3,8 @@ from common.realtime import DT_CTRL
 from common.numpy_fast import clip, interp
 from common.conversions import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
-from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfahda_mfc, create_acc_commands, create_acc_opt, create_frt_radar_opt
-from selfdrive.car.hyundai.values import Buttons, CarControllerParams, CAR
+from selfdrive.car.hyundai import hda2can, hyundaican
+from selfdrive.car.hyundai.values import Buttons, CarControllerParams, HDA2_CAR, CAR
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -64,88 +64,69 @@ class CarController:
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
                                                                                       hud_control)
 
+    can_sends = []
 
-    if self.CP.carFingerprint == CAR.KIA_EV6:
-      ret = []
-
+    if self.CP.carFingerprint in HDA2_CAR:
       # steering control
-      values = {
-        "LKA_ICON": 2 if CC.enabled else 1,
-        "TORQUE_REQUEST": apply_steer,
-        "NEW_SIGNAL_1": 6,
-        "STEER_REQ": 1 if CC.latActive else 0,
-        "STEER_REQ_2": 1 if CC.latActive else 0,
-        "STEER_REQ_3": 1 if CC.latActive else 0,
-      }
-      ret.append(self.packer.make_can_msg("LKAS", 4, values, self.frame % 255))
+      can_sends.append(hda2can.create_lkas(self.packer, CC.enabled, self.frame, CC.latActive, apply_steer))
 
       # cruise cancel
       if CC.cruiseControl.cancel and (self.frame % 10) == 0:
-        values = {
-          "PAUSE_RESUME_BTN": 1,
-        }
-        ret.append(self.packer.make_can_msg("CRUISE_BUTTONS", 5, values))
+        can_sends.append(hda2can.create_buttons(self.packer, True, False))
+    else:
 
-      new_actuators = actuators.copy()
-      new_actuators.steer = apply_steer / self.params.STEER_MAX
+      # tester present - w/ no response (keeps radar disabled)
+      if self.CP.openpilotLongitudinalControl:
+        if self.frame % 100 == 0:
+          can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
-      self.frame += 1
-      return new_actuators, ret
+      can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, CC.latActive,
+                                     CS.lkas11, sys_warning, sys_state, CC.enabled,
+                                     hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                     left_lane_warning, right_lane_warning))
 
-    can_sends = []
+      if not self.CP.openpilotLongitudinalControl:
+        if CC.cruiseControl.cancel:
+          can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL))
+        elif CS.out.cruiseState.standstill:
+          # send resume at a max freq of 10Hz
+          if (self.frame - self.last_resume_frame) * DT_CTRL > 0.1:
+            # send 25 messages at a time to increases the likelihood of resume being accepted
+            can_sends.extend([hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.RES_ACCEL)] * 25)
+            self.last_resume_frame = self.frame
 
-    # tester present - w/ no response (keeps radar disabled)
-    if self.CP.openpilotLongitudinalControl:
-      if self.frame % 100 == 0:
-        can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
+      if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
+        accel = actuators.accel
+        jerk = 0
 
-    can_sends.append(create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, CC.latActive,
-                                   CS.lkas11, sys_warning, sys_state, CC.enabled,
-                                   hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                   left_lane_warning, right_lane_warning))
+        if CC.longActive:
+          jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
+          if accel < 0:
+            accel = interp(accel - CS.out.aEgo, [-1.0, -0.5], [2 * accel, accel])
 
-    if not self.CP.openpilotLongitudinalControl:
-      if CC.cruiseControl.cancel:
-        can_sends.append(create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL))
-      elif CS.out.cruiseState.standstill:
-        # send resume at a max freq of 10Hz
-        if (self.frame - self.last_resume_frame) * DT_CTRL > 0.1:
-          # send 25 messages at a time to increases the likelihood of resume being accepted
-          can_sends.extend([create_clu11(self.packer, self.frame, CS.clu11, Buttons.RES_ACCEL)] * 25)
-          self.last_resume_frame = self.frame
+        accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
-    if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
-      accel = actuators.accel
-      jerk = 0
+        lead_visible = False
+        stopping = actuators.longControlState == LongCtrlState.stopping
+        set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
+        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2), lead_visible,
+                                             set_speed_in_units, stopping, CS.out.gasPressed))
+        self.accel = accel
 
-      if CC.longActive:
-        jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
-        if accel < 0:
-          accel = interp(accel - CS.out.aEgo, [-1.0, -0.5], [2 * accel, accel])
+      # 20 Hz LFA MFA message
+      if self.frame % 5 == 0 and self.car_fingerprint in (CAR.SONATA, CAR.PALISADE, CAR.IONIQ, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021,
+                                                          CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.KONA_EV,
+                                                          CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.SANTA_FE_2022,
+                                                          CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.GENESIS_G70_2020, CAR.SANTA_FE_PHEV_2022):
+        can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled))
 
-      accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+      # 5 Hz ACC options
+      if self.frame % 20 == 0 and self.CP.openpilotLongitudinalControl:
+        can_sends.extend(hyundaican.create_acc_opt(self.packer))
 
-      lead_visible = False
-      stopping = actuators.longControlState == LongCtrlState.stopping
-      set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
-      can_sends.extend(create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2), lead_visible,
-                                           set_speed_in_units, stopping, CS.out.gasPressed))
-      self.accel = accel
-
-    # 20 Hz LFA MFA message
-    if self.frame % 5 == 0 and self.car_fingerprint in (CAR.SONATA, CAR.PALISADE, CAR.IONIQ, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021,
-                                                        CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.KONA_EV,
-                                                        CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.SANTA_FE_2022,
-                                                        CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.GENESIS_G70_2020, CAR.SANTA_FE_PHEV_2022):
-      can_sends.append(create_lfahda_mfc(self.packer, CC.enabled))
-
-    # 5 Hz ACC options
-    if self.frame % 20 == 0 and self.CP.openpilotLongitudinalControl:
-      can_sends.extend(create_acc_opt(self.packer))
-
-    # 2 Hz front radar options
-    if self.frame % 50 == 0 and self.CP.openpilotLongitudinalControl:
-      can_sends.append(create_frt_radar_opt(self.packer))
+      # 2 Hz front radar options
+      if self.frame % 50 == 0 and self.CP.openpilotLongitudinalControl:
+        can_sends.append(hyundaican.create_frt_radar_opt(self.packer))
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
