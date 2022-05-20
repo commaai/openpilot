@@ -29,6 +29,10 @@ def verify_messages(lr, dog, laikad):
 
 class TestLaikad(unittest.TestCase):
 
+  @classmethod
+  def setUpClass(cls):
+    cls.logs = get_log(range(1))
+
   def test_create_msg_without_errors(self):
     gpstime = GPSTime.from_datetime(datetime.now())
     meas = GNSSMeasurement(ConstellationId.GPS, 1, gpstime.week, gpstime.tow, {'C1C': 0., 'D1C': 0.}, {'C1C': 0., 'D1C': 0.})
@@ -39,12 +43,10 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(msg.constellationId, 'gps')
 
   def test_laika_online(self):
-    lr = get_log(range(1))
-
     # Set to offline forces to use ephemeris messages
     dog = AstroDog(use_internet=True)
     laikad = Laikad()
-    correct_msgs = verify_messages(lr, dog, laikad)
+    correct_msgs = verify_messages(self.logs, dog, laikad)
 
     correct_msgs_expected = 560
     self.assertEqual(correct_msgs_expected, len(correct_msgs))

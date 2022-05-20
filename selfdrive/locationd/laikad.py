@@ -25,16 +25,13 @@ class Laikad:
   def process_ublox_msg(self, ublox_msg, dog: AstroDog, ublox_mono_time: int):
     if ublox_msg.which == 'measurementReport':
       report = ublox_msg.measurementReport
-      if len(report.measurements) == 0:
-        return None
-
       new_meas = read_raw_ublox(report)
       measurements = process_measurements(new_meas, dog)
-      if len(measurements) == 0:
-        return None
+
 
       pos_fix = calc_pos_fix(measurements)
-      # pos fix needs more than 5 processed_measurements
+      # To get a position fix a minimum of 5 measurements are needed.
+      # Each report can contain less and some measurement can't be processed.
       if len(pos_fix) > 0:
         measurements = correct_measurements(measurements, pos_fix[0][:3], dog)
       meas_msgs = [create_measurement_msg(m) for m in measurements]
@@ -152,7 +149,6 @@ def main():
       msg = laikad.process_ublox_msg(ublox_msg, dog, sm.logMonoTime['ubloxGnss'])
       if msg is None:
         msg = messaging.new_message('gnssMeasurements')
-        msg.valid = False
       pm.send('gnssMeasurements', msg)
 
 
