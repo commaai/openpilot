@@ -57,6 +57,7 @@ class TestLaikad(unittest.TestCase):
     correct_msgs = [m for m in msgs if len(m.gnssMeasurements.correctedMeasurements) > 0]
 
     self.assertEqual(256, len(correct_msgs))
+    self.assertEqual(256, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
   def test_laika_offline_ephem_at_start(self):
     # Test offline but process ephemeris msgs of segment first
@@ -64,8 +65,8 @@ class TestLaikad(unittest.TestCase):
     ephemeris_logs = [m for m in self.logs if m.ubloxGnss.which() == 'ephemeris']
     msgs = process_msgs(ephemeris_logs+self.logs, laikad)
     correct_msgs = [m for m in msgs if len(m.gnssMeasurements.correctedMeasurements) > 0]
-
     self.assertEqual(560, len(correct_msgs))
+    self.assertGreaterEqual(554, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
 
 if __name__ == "__main__":
