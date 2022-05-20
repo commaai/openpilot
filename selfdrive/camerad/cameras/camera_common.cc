@@ -153,7 +153,63 @@ bool CameraBuf::acquire() {
 
   // Parse histogram to find mean/max for tone mapping
   cur_frame_data.histogram_geometric_mean = camera_state->get_geometric_mean(cur_camera_buf);
+  std::vector<int> counts = camera_state->get_histogram(cur_camera_buf);
+  const int num_bins = counts.size();
 
+  // Find highest non zero bin
+  int max_bin = num_bins - 1;
+  for (; max_bin > 0; max_bin--){
+    if (counts[max_bin] > 0) {
+      break;
+    }
+  }
+
+  // Do not compress too much
+  max_bin = std::max(max_bin, 64);
+
+  // Apply ceiling
+  double thres = 500;
+  double sum_widths = 0;
+  for (int i = 0; i <= max_bin; i++) {
+    sum_widths += camera_state->histogram_bin_widths[i];
+  }
+
+  // Does not converge if there are not enough bins available to spread out the excess over
+  for (int it = 0; it < 3; it++) {
+    double total_over = 0;
+    for (int i = 0; i <= max_bin; i++) {
+      double avg_count = (double)counts[i] / camera_state->histogram_bin_widths[i];
+
+      if (avg_count > thres) {
+        total_over += (avg_count - thres) * camera_state->histogram_bin_widths[i];
+        counts[i] = thres * camera_state->histogram_bin_widths[i];
+      }
+    }
+
+    if (total_over < 1) {
+      break;
+    }
+
+    for (int i = 0; i <= max_bin; i++) {
+      counts[i] = int(counts[i] + total_over / sum_widths * camera_state->histogram_bin_widths[i]);
+    }
+  }
+
+  // Build cumulative histogram
+  int total_count = 0;
+  for (int i = 0; i < counts.size(); i++) {
+    total_count += counts[i];
+  }
+
+  std::vector<double> cumulative_counts;
+  int cumulative_count = 0;
+  for (int i = 0; i < counts.size(); i++) {
+    cumulative_count += counts[i];
+    cumulative_counts.push_back((double)cumulative_count / total_count);
+  }
+
+  // Build lookup table
+  int j = 1;
   for (int i = 0; i < 4096; i++){
     // Companding
     float kn_0 = i;
@@ -161,17 +217,15 @@ bool CameraBuf::acquire() {
     float kn_3040 = (kn_0 - 3040) * 1024 + 65536;
     float decompressed = std::max(kn_0, std::max(kn_2048, kn_3040));
 
-    // Black level
-    decompressed -= 168;
+    // Find current bin
+    while (camera_state->histogram_bins[j] < decompressed && j < counts.size()) {
+      j++;
+    }
 
-    // https://www.cl.cam.ac.uk/teaching/1718/AdvGraph/06_HDR_and_tone_mapping.pdf
-    // Sigmoidal tone mapping (slide 30)
-
-    // Optimized case of b = 1
-    float decompressed_times_a = decompressed * 0.3;
-    float pv = decompressed_times_a / (cur_frame_data.histogram_geometric_mean + decompressed_times_a);
-
-    debayer_lut[i] = std::clamp<int>(round(pv * 255), 0, 255);
+    // Linear interpolation
+    double pv = cumulative_counts[j - 1] + (decompressed - camera_state->histogram_bins[j - 1]) *
+      (cumulative_counts[j] - cumulative_counts[j - 1]) / (camera_state->histogram_bins[j] - camera_state->histogram_bins[j - 1]);
+    debayer_lut[i] = std::clamp<int>(pv * 255, 0.0, 255);
   }
 
   double start_time = millis_since_boot();

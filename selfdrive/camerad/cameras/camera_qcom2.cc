@@ -643,7 +643,7 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
   // Initialize histogram bins
   int val = 0;
   for (int i = 0; i < AR0231_NUM_HISTOGRAM_BINS; i++) {
-    ar0231_histogram_bins[i] = val;
+    histogram_bins[i] = val;
     int width;
     if (i <= 15) {
       width = 8;
@@ -661,7 +661,7 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
       width = 16534;
     }
     val += width;
-    ar0231_histogram_bin_widths[i] = width;
+    histogram_bin_widths[i] = width;
   }
 }
 
@@ -1075,7 +1075,7 @@ double CameraState::ar0231_get_geometric_mean(VisionBuf *camera_buf) {
   int total = 0;
   for (int i = 0; i < AR0231_NUM_HISTOGRAM_BINS; i++) {
     total += histogram[i];
-    sum_logs += histogram[i] * log(ar0231_histogram_bins[i] + ar0231_histogram_bin_widths[i] / 2);
+    sum_logs += histogram[i] * log(histogram_bins[i] + histogram_bin_widths[i] / 2);
   }
 
   return exp(sum_logs / total);
@@ -1084,6 +1084,12 @@ double CameraState::ar0231_get_geometric_mean(VisionBuf *camera_buf) {
 double CameraState::get_geometric_mean(VisionBuf *camera_buf) {
   assert(camera_id == CAMERA_ID_AR0231);
   return ar0231_get_geometric_mean(camera_buf);
+}
+
+std::vector<int> CameraState::get_histogram(VisionBuf *camera_buf) {
+  assert(camera_id == CAMERA_ID_AR0231);
+  uint8_t *data = (uint8_t*)camera_buf->addr + ci.stats_offset * ci.frame_stride;
+  return ar0231_parse_histogram(data);
 }
 
 void CameraState::handle_camera_event(void *evdat) {
