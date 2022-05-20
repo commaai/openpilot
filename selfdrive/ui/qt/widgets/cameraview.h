@@ -61,6 +61,7 @@ protected:
 //  uint32_t latest_frame_id = 0;
   bool draw_frame_id_updated = false;
 //  int frame_idx = FRAME_BUFFER_SIZE - 1;
+  int prev_frame_index = 0;
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);

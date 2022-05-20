@@ -216,20 +216,41 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  if (frames.size() < FRAME_BUFFER_SIZE) return;
+  if (frames.empty()) return;
 
   int latest_frame_id = frames[frames.size() - 1].first;
-//  int lower_bound = frames[0].first;
-  int frame_idx = std::clamp(FRAME_BUFFER_SIZE - (int)(latest_frame_id - draw_frame_id) - 1, 0, FRAME_BUFFER_SIZE - 1);
-  qDebug() << "frame_idx:" << frame_idx;
-  qDebug() << "frame from idx:" << frames[frame_idx].first;
-  qDebug() << "Correct frame:" << (frames[frame_idx].first == draw_frame_id);
-  qDebug() << "Skipped back:" << (prev_drawn_frame > frames[frame_idx].first);
+//  int earliest_frame_id = frames[0].first;
+
+  // sometimes in replay, model can be ahead of camera
+//  int frame_offset = std::max((int)latest_frame_id - (int)draw_frame_id, 0);
+
+  int new_frame_index = frames.size() - (latest_frame_id - draw_frame_id) - 1;
+  new_frame_index = std::clamp((int)new_frame_index, 0, (int)frames.size() - 1);
+//  int new_frame_index = std::clamp(latest_frame_id - (int)draw_frame_id - 1, 0, FRAME_BUFFER_SIZE - 1);
+//  int new_frame_index = std::clamp((int)draw_frame_id - earliest_frame_id, 0, frames.size() - 1);
+//  qDebug() << "new_frame_index:" << new_frame_index;
+//  new_frame_index = std::max(new_frame_index, 0);
+//  qDebug() << "clamped to prev new_frame_index:" << new_frame_index;
+
+//  prev_frame_index = new_frame_index;
+
+  qDebug() << "new_frame_index:" << new_frame_index;
+  qDebug() << "frame from idx:" << frames[new_frame_index].first;
+  qDebug() << "Correct frame:" << (frames[new_frame_index].first == draw_frame_id);
+  qDebug() << "Skipped back:" << (prev_drawn_frame > frames[new_frame_index].first);
 //  int frame_to_draw = std::clamp((int)draw_frame_id, (int)prev_drawn_frame, (int)latest_frame_id);
-  VisionBuf *frame = frames[frame_idx].second;
+  VisionBuf *frame = frames[new_frame_index].second;
+  prev_drawn_frame = frames[new_frame_index].first;
 
-
-  prev_drawn_frame = frames[frame_idx].first;
+//  int lower_bound = frames[0].first;
+//  int frame_idx = std::clamp(FRAME_BUFFER_SIZE - (int)(latest_frame_id - draw_frame_id) - 1, 0, FRAME_BUFFER_SIZE - 1);
+//  qDebug() << "frame_idx:" << frame_idx;
+//  qDebug() << "frame from idx:" << frames[frame_idx].first;
+//  qDebug() << "Correct frame:" << (frames[frame_idx].first == draw_frame_id);
+//  qDebug() << "Skipped back:" << (prev_drawn_frame > frames[frame_idx].first);
+////  int frame_to_draw = std::clamp((int)draw_frame_id, (int)prev_drawn_frame, (int)latest_frame_id);
+//  VisionBuf *frame = frames[frame_idx].second;
+//  prev_drawn_frame = frames[frame_idx].first;
 
 
 //  for (int i = frames.size() - 1; i >= 0; i--) {
