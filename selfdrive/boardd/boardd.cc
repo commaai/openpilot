@@ -489,7 +489,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 void peripheral_control_thread(Panda *panda) {
   util::set_thread_name("boardd_peripheral_control");
 
-  SubMaster sm({"deviceState", "driverCameraState"});
+  SubMaster sm({"deviceState", "driverCameraState"}, {"deviceState", "driverCameraState"});
 
   uint64_t last_front_frame_t = 0;
   uint16_t prev_fan_speed = 999;
