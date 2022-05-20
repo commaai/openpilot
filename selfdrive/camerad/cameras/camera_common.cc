@@ -156,10 +156,13 @@ bool CameraBuf::acquire() {
   std::vector<int> counts = camera_state->get_histogram(cur_camera_buf);
   const int num_bins = counts.size();
 
-  // Find highest non zero bin
+  // Find 99th percentile of image
   int max_bin = num_bins - 1;
+  int clipping_pixels = 0;
+
   for (; max_bin > 0; max_bin--){
-    if (counts[max_bin] > 0) {
+    clipping_pixels += counts[max_bin];
+    if (clipping_pixels > 5822) { // 1% of pixels is allowed to clip
       break;
     }
   }
