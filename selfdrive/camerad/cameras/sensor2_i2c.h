@@ -52,7 +52,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   // input clock is 19.2 / 2 * 0x37 = 528 MHz
   // pixclk is 528 / 6 = 88 MHz
   // full roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*FRAME_LENGTH_LINES)) = 39.99 ms
-  // img  roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*Y_OUTPUT_CONTROL))   = 15.18 ms
+  // img  roll time is 1000/(PIXCLK/(LINE_LENGTH_PCK*Y_OUTPUT_CONTROL))   = 18.89 ms
   {0x302A, 0x0006}, // VT_PIX_CLK_DIV
   {0x302C, 0x0001}, // VT_SYS_CLK_DIV
   {0x302E, 0x0002}, // PRE_PLL_CLK_DIV
@@ -80,8 +80,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x340C, 0x802},  // GPIO_HIDRV_EN | GPIO0_ISEL=2
 
   // Readout timing
-  {0x300C, 0x0452}, // LINE_LENGTH_PCK (valid for 2-exposure HDR)
-  {0x300A, 0x0C6F}, // FRAME_LENGTH_LINES
+  {0x300C, 0x0560}, // LINE_LENGTH_PCK (1376 clks is the minimum allowed by the wizard)
+  {0x300A, 0x09FE}, // FRAME_LENGTH_LINES
   {0x3042, 0x0000}, // EXTRA_DELAY
 
   // Readout Settings
@@ -123,8 +123,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x1010, 0x0139}, // FINE_INTEGRATION_TIME4_MIN
 
   // TODO: do these have to be lower than LINE_LENGTH_PCK?
-  {0x3014, 0x0139}, // FINE_INTEGRATION_TIME_
-  {0x321E, 0x0361}, // FINE_INTEGRATION_TIME2
+  {0x3014, 0x0574}, // FINE_INTEGRATION_TIME_
+  {0x321E, 0x0589}, // FINE_INTEGRATION_TIME2
 
   {0x31D0, 0x0000}, // COMPANDING, no good in 10 bit?
   {0x33DA, 0x0000}, // COMPANDING
