@@ -12,8 +12,6 @@ class DriverViewScene : public QWidget {
 
 public:
   explicit DriverViewScene(QWidget *parent);
-
-public slots:
   void frameUpdated();
 
 protected:

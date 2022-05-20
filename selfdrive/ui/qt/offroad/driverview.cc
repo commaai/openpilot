@@ -16,7 +16,10 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
   layout->addWidget(cameraView);
 
   scene = new DriverViewScene(this);
-  connect(cameraView, &CameraViewWidget::vipcThreadFrameReceived, scene, &DriverViewScene::frameUpdated);
+  connect(cameraView, &CameraViewWidget::vipcThreadFrameReceived, scene, [=](){
+    scene->frameUpdated();
+    cameraView->update();
+  });
   layout->addWidget(scene);
   layout->setCurrentWidget(scene);
 }
@@ -42,7 +45,6 @@ void DriverViewScene::hideEvent(QHideEvent* event) {
 void DriverViewScene::frameUpdated() {
   frame_updated = true;
   sm.update(0);
-  update();
 }
 
 void DriverViewScene::paintEvent(QPaintEvent* event) {
