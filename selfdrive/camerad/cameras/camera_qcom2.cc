@@ -645,8 +645,16 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
   for (int i = 0; i < AR0231_NUM_HISTOGRAM_BINS; i++) {
     ar0231_histogram_bins[i] = val;
     int width;
-    if (i <= 63) {
+    if (i <= 15) {
+      width = 8;
+    } else if (i <= 23) {
+      width = 16;
+    } else if (i <= 31) {
+      width = 32;
+    } else if (i <= 39) {
       width = 64;
+    } else if (i <= 63) {
+      width = 128;
     } else if (i <= 183) {
       width = 512;
     } else { // if (i <= 243)

@@ -128,6 +128,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
 
   {0x31D0, 0x0001}, // COMPANDING enabled
   {0x33DA, 0x0001}, // OC_LUT_CONTROL - OC_LEGACY_COMPANDING
+  {0x306E, 0x9090}, // DATAPATH_SELECT - AE_HIST_LOG_BINS_ENABLE
 
   {0x318E, 0x0200}, // PRE_HDR_GAIN_EN
 
