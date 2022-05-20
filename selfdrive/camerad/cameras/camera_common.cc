@@ -29,11 +29,10 @@ ExitHandler do_exit;
 
 class Debayer {
 public:
-  Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s) {
+  Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, uint8_t * lut) {
     char args[4096];
     const CameraInfo *ci = &s->ci;
     hdr_ = ci->hdr;
-    ctx_ = context;
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
@@ -46,12 +45,12 @@ public:
     cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
+
+    lut_ = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, 4096, lut, &err));
   }
 
   void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, uint8_t * lut, cl_event *debayer_event) {
-    // TODO: Can this buffer be created in the constructor? I can't find any documentation on how to flush the cache.
-    // Or is it better to create a normal buffer and copy the lut every iteration?
-    cl_mem lut_ = CL_CHECK_ERR(clCreateBuffer(ctx_, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, 4096, lut, &err));
+    CL_CHECK(clEnqueueWriteBuffer(q, lut_, CL_FALSE, 0, 4096, lut, 0, NULL, NULL));
 
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
@@ -61,16 +60,16 @@ public:
     const int debayer_local_worksize = 16;
     const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
-    CL_CHECK(clReleaseMemObject(lut_));
   }
 
   ~Debayer() {
+    CL_CHECK(clReleaseMemObject(lut_));
     CL_CHECK(clReleaseKernel(krnl_));
   }
 
 private:
   cl_kernel krnl_;
-  cl_context ctx_;
+  cl_mem  lut_;
 
   bool hdr_;
 };
@@ -115,7 +114,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, rgb_width, rgb_height);
 
   if (ci->bayer) {
-    debayer = new Debayer(device_id, context, this, s);
+    debayer = new Debayer(device_id, context, this, s, debayer_lut);
   }
   rgb2yuv = std::make_unique<Rgb2Yuv>(context, device_id, rgb_width, rgb_height, rgb_stride);
 
@@ -155,8 +154,6 @@ bool CameraBuf::acquire() {
   // Parse histogram to find mean/max for tone mapping
   cur_frame_data.histogram_geometric_mean = camera_state->get_geometric_mean(cur_camera_buf);
 
-  double start_time = millis_since_boot();
-
   for (int i = 0; i < 4096; i++){
     // Companding
     float kn_0 = i;
@@ -176,6 +173,8 @@ bool CameraBuf::acquire() {
 
     debayer_lut[i] = std::clamp<int>(round(pv * 255), 0, 255);
   }
+
+  double start_time = millis_since_boot();
 
   if (debayer) {
     debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, debayer_lut, &event);
