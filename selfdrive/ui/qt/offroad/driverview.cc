@@ -45,6 +45,7 @@ void DriverViewScene::hideEvent(QHideEvent* event) {
 void DriverViewScene::frameUpdated() {
   frame_updated = true;
   sm.update(0);
+  update();
 }
 
 void DriverViewScene::paintEvent(QPaintEvent* event) {
