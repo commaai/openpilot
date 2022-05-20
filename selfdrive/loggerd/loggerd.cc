@@ -43,9 +43,8 @@ void rotate_if_needed(LoggerdState *s) {
 
 struct RemoteEncoder {
   std::unique_ptr<VideoWriter> writer;
-  int segment = -1;
+  int encoderd_segment_offset = -1;
   std::vector<Message *> q;
-  int logger_segment = -1;
   int dropped_frames = 0;
   bool recording = false;
 };
@@ -54,17 +53,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   const LogCameraInfo &cam_info = (name == "driverEncodeData") ? cameras_logged[1] :
     ((name == "wideRoadEncodeData") ? cameras_logged[2] :
     ((name == "qRoadEncodeData") ? qcam_info : cameras_logged[0]));
-
-  // rotation happened, process the queue (happens before the current message)
   int bytes_count = 0;
-  if (re.logger_segment != s->rotate_segment && !re.recording) {
-    // logger has rotated to the next segment, and we've seen an encoder packet from the next segment
-    re.logger_segment = s->rotate_segment;
-    for (auto &qmsg: re.q) {
-      bytes_count += handle_encoder_msg(s, qmsg, name, re);
-    }
-    re.q.clear();
-  }
 
   // extract the message
   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize()));
@@ -75,43 +64,46 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   auto idx = edata.getIdx();
   auto flags = idx.getFlags();
 
-  if (!re.recording) {
-    // only create on iframe
-    if (flags & V4L2_BUF_FLAG_KEYFRAME) {
-      if (re.dropped_frames) {
-        // this should only happen for the first segment, maybe
-        LOGD("%s: dropped %d non iframe packets before init", name.c_str(), re.dropped_frames);
-        re.dropped_frames = 0;
-      }
-      // if we aren't recording, don't create the writer
-      if (cam_info.record) {
-        re.writer.reset(new VideoWriter(s->segment_path,
-          cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-          cam_info.frame_width, cam_info.frame_height, cam_info.fps, idx.getType()));
-        // write the header
-        auto header = edata.getHeader();
-        re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
-      }
-      re.segment = idx.getSegmentNum();
-      re.recording = true;
-    } else {
-      ++re.dropped_frames;
-      return bytes_count;
-    }
-  }
+  // encoderd can have started long before loggerd
+  if (re.encoderd_segment_offset == -1) re.encoderd_segment_offset = idx.getSegmentNum();
+  int offset_segment_num = idx.getSegmentNum() - re.encoderd_segment_offset;
 
-  if (re.segment != idx.getSegmentNum()) {
-    // packet has the wrong segment, this means encoderd has rolled over
-    if (re.recording) {
-      // encoder is on the next segment, this segment is over so we close the videowriter
-      re.writer.reset();
-      re.recording = false;
-      ++s->ready_to_rotate;
-      LOGD("rotate %d -> %d ready %d/%d for %s", re.segment, idx.getSegmentNum(), s->ready_to_rotate.load(), s->max_waiting, name.c_str());
+  if (offset_segment_num == s->rotate_segment) {
+    // we are in this segment, process any queued messages before this one
+    if (!re.q.empty()) {
+      for (auto &qmsg: re.q) {
+        bytes_count += handle_encoder_msg(s, qmsg, name, re);
+      }
+      re.q.clear();
     }
-    // queue up all the new segment messages, they go in after the rotate
-    re.q.push_back(msg);
-  } else {
+
+    // if we aren't recording yet, try to start
+    if (!re.recording) {
+      // only create on iframe
+      if (flags & V4L2_BUF_FLAG_KEYFRAME) {
+        if (re.dropped_frames) {
+          // this should only happen for the first segment, maybe
+          LOGW("%s: dropped %d non iframe packets before init", name.c_str(), re.dropped_frames);
+          re.dropped_frames = 0;
+        }
+        // if we aren't recording, don't create the writer
+        if (cam_info.record) {
+          re.writer.reset(new VideoWriter(s->segment_path,
+            cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
+            cam_info.frame_width, cam_info.frame_height, cam_info.fps, idx.getType()));
+          // write the header
+          auto header = edata.getHeader();
+          re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
+        }
+        re.recording = true;
+      } else {
+        delete msg;
+        ++re.dropped_frames;
+        return bytes_count;
+      }
+    }
+
+    // we have to be recording if we are here
     if (re.writer) {
       auto data = edata.getData();
       re.writer->write((uint8_t *)data.begin(), data.size(), idx.getTimestampEof()/1000, false, flags & V4L2_BUF_FLAG_KEYFRAME);
@@ -130,6 +122,20 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     bytes_count += new_msg.size();
 
     // this frees the message
+    delete msg;
+  } else if (offset_segment_num > s->rotate_segment) {
+    // encoderd packet has a newer segment, this means encoderd has rolled over
+    if (re.recording) {
+      // encoder is on the next segment, this segment is over so we close the videowriter
+      re.writer.reset();
+      re.recording = false;
+      ++s->ready_to_rotate;
+      LOGD("rotate %d -> %d ready %d/%d for %s", s->rotate_segment.load(), offset_segment_num, s->ready_to_rotate.load(), s->max_waiting, name.c_str());
+    }
+    // queue up all the new segment messages, they go in after the rotate
+    re.q.push_back(msg);
+  } else {
+    LOGE("encoderd packet has a older segment!!! idx.getSegmentNum():%d offset_segment_num:%d s->rotate_segment:%d\n", idx.getSegmentNum(), offset_segment_num, s->rotate_segment.load());
     delete msg;
   }
 
