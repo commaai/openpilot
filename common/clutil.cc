@@ -1,10 +1,10 @@
-#include "selfdrive/common/clutil.h"
+#include "common/clutil.h"
 
 #include <cassert>
 #include <iostream>
 #include <memory>
 
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 
 namespace {  // helper functions
 

@@ -355,25 +355,6 @@ class Tici(HardwareBase):
       pass
     return ret
 
-  # We don't have a battery, so let's use some sane constants
-  def get_battery_capacity(self):
-    return 100
-
-  def get_battery_status(self):
-    return ""
-
-  def get_battery_current(self):
-    return 0
-
-  def get_battery_voltage(self):
-    return 0
-
-  def get_battery_charging(self):
-    return True
-
-  def set_battery_charging(self, on):
-    pass
-
   def get_usb_present(self):
     # Not sure if relevant on tici, but the file exists
     return self.read_param_file("/sys/class/power_supply/usb/present", lambda x: bool(int(x)), False)
@@ -428,6 +409,7 @@ class Tici(HardwareBase):
     # *** IRQ config ***
     affine_irq(5, 565)   # kgsl-3d0
     affine_irq(4, 740)   # xhci-hcd:usb1 goes on the boardd core
+    affine_irq(4, 1069)  # xhci-hcd:usb3 goes on the boardd core
     for irq in range(237, 246):
       affine_irq(5, irq) # camerad
 

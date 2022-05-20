@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 import argparse
+import concurrent.futures
 import os
 import sys
+from collections import defaultdict
+from tqdm import tqdm
 from typing import Any, Dict
 
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url, upload_file
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
-from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, check_enabled, replay_process
+from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_enabled, replay_process
 from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
-
 
 original_segments = [
   ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),        # COMMA.BODY
@@ -52,6 +54,28 @@ excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
+
+
+def run_test_process(data):
+  segment, cfg, args, cur_log_fn, lr, ref_commit = data
+  res = None
+  if not args.upload_only:
+    ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+    res, log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
+    # save logs so we can upload when updating refs
+    save_log(cur_log_fn, log_msgs)
+  if args.update_refs or args.upload_only:
+    print(f'Uploading: {os.path.basename(cur_log_fn)}')
+    assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
+    upload_file(cur_log_fn, os.path.basename(cur_log_fn))
+    os.remove(cur_log_fn)
+  return (segment, cfg.proc_name, res)
+
+
+def get_logreader(segment):
+  r, n = segment.rsplit("--", 1)
+  lr = LogReader(get_url(r, n))
+  return (segment, lr)
 
 
 def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
@@ -127,10 +151,12 @@ if __name__ == "__main__":
                       help="Updates reference logs using current commit")
   parser.add_argument("--upload-only", action="store_true",
                       help="Skips testing processes and uploads logs from previous test run")
+  parser.add_argument("-j", "--jobs", type=int, default=1)
   args = parser.parse_args()
 
   full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
   upload = args.update_refs or args.upload_only
+  os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
 
   if upload:
     assert full_test, "Need to run full test when updating refs"
@@ -153,50 +179,45 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
-  results: Any = {}
-  for car_brand, segment in segments:
-    if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
-       (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
-      continue
+  with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
+    if not args.upload_only:
+      lreaders: Any = {}
+      p1 = pool.map(get_logreader, [seg for car, seg in segments])
+      for (segment, lr) in tqdm(p1, desc="Getting Logs", total=len(segments)):
+        lreaders[segment] = lr
 
-    print(f"***** testing route segment {segment} *****\n")
-
-    results[segment] = {}
-
-    r, n = segment.rsplit("--", 1)
-    lr = LogReader(get_url(r, n))
-
-    for cfg in CONFIGS:
-      if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
-         (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
+    pool_args: Any = []
+    for car_brand, segment in segments:
+      if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
+         (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
         continue
+      for cfg in CONFIGS:
+        if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
+           (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
+          continue
+        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+        lr = None if args.upload_only else lreaders[segment]
+        pool_args.append((segment, cfg, args, cur_log_fn, lr, ref_commit))
 
-      cur_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
-      if not args.upload_only:
-        ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-        results[segment][cfg.proc_name], log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
-
-        # save logs so we can upload when updating refs
-        save_log(cur_log_fn, log_msgs)
-
-      if upload:
-        print(f'Uploading: {os.path.basename(cur_log_fn)}')
-        assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
-        upload_file(cur_log_fn, os.path.basename(cur_log_fn))
-        os.remove(cur_log_fn)
+    results: Any = defaultdict(dict)
+    p2 = pool.map(run_test_process, pool_args)
+    for (segment, proc, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
+      if isinstance(result, list):
+        results[segment][proc] = result
 
   diff1, diff2, failed = format_diff(results, ref_commit)
-  with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
-    f.write(diff2)
-  print(diff1)
+  if not args.upload_only:
+    with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
+      f.write(diff2)
+    print(diff1)
 
-  if failed:
-    print("TEST FAILED")
-    if not upload:
-      print("\n\nTo push the new reference logs for this commit run:")
-      print("./test_processes.py --upload-only")
-  else:
-    print("TEST SUCCEEDED")
+    if failed:
+      print("TEST FAILED")
+      if not args.update_refs:
+        print("\n\nTo push the new reference logs for this commit run:")
+        print("./test_processes.py --upload-only")
+    else:
+      print("TEST SUCCEEDED")
 
   if upload:
     with open(REF_COMMIT_FN, "w") as f:

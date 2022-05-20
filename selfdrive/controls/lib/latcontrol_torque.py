@@ -25,12 +25,12 @@ JERK_THRESHOLD = 0.2
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    self.CP = CP
     self.pid = PIDController(CP.lateralTuning.torque.kp, CP.lateralTuning.torque.ki,
                              k_f=CP.lateralTuning.torque.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
     self.friction = CP.lateralTuning.torque.friction
+    self.kf = CP.lateralTuning.torque.kf
 
   def reset(self):
     super().reset()
@@ -42,8 +42,6 @@ class LatControlTorque(LatControl):
     if CS.vEgo < MIN_STEER_SPEED or not active:
       output_torque = 0.0
       pid_log.active = False
-      if not active:
-        self.pid.reset()
     else:
       if self.use_steering_angle:
         actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
@@ -61,11 +59,12 @@ class LatControlTorque(LatControl):
       ff = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
       # convert friction into lateral accel units for feedforward
       friction_compensation = interp(desired_lateral_jerk, [-JERK_THRESHOLD, JERK_THRESHOLD], [-self.friction, self.friction])
-      ff += friction_compensation / self.CP.lateralTuning.torque.kf
+      ff += friction_compensation / self.kf
+      freeze_integrator = CS.steeringRateLimited or CS.steeringPressed or CS.vEgo < 5
       output_torque = self.pid.update(error,
-                                      override=CS.steeringPressed, feedforward=ff,
+                                      feedforward=ff,
                                       speed=CS.vEgo,
-                                      freeze_integrator=CS.steeringRateLimited)
+                                      freeze_integrator=freeze_integrator)
 
       pid_log.active = True
       pid_log.p = self.pid.p

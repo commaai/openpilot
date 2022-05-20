@@ -2,10 +2,10 @@
 
 #include "libyuv.h"
 
-#include "selfdrive/common/mat.h"
-#include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
+#include "common/mat.h"
+#include "common/modeldata.h"
+#include "common/params.h"
+#include "common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
 #include "selfdrive/modeld/models/dmonitoring.h"
@@ -23,9 +23,9 @@ void dmonitoring_init(DMonitoringModelState* s) {
   s->is_rhd = Params().getBool("IsRHD");
 
 #ifdef USE_ONNX_MODEL
-  s->m = new ONNXModel("../../models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
+  s->m = new ONNXModel("models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
 #else
-  s->m = new SNPEModel("../../models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
+  s->m = new SNPEModel("models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
 #endif
 
   s->m->addCalib(s->calib, CALIB_LEN);

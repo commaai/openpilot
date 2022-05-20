@@ -1,4 +1,4 @@
-#include "selfdrive/common/visionimg.h"
+#include "common/visionimg.h"
 
 #include <cassert>
 

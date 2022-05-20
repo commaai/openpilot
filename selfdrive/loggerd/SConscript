@@ -5,7 +5,7 @@ libs = [common, cereal, messaging, visionipc,
         'avformat', 'avcodec', 'swscale', 'avutil',
         'yuv', 'OpenCL', 'pthread']
 
-src = ['logger.cc', 'loggerd.cc', 'encoder/video_writer.cc', 'remote_encoder.cc', 'encoder/encoder.cc']
+src = ['logger.cc', 'video_writer.cc', 'encoder/encoder.cc']
 if arch == "larch64":
   src += ['encoder/v4l_encoder.cc']
 else:
@@ -19,9 +19,9 @@ if arch == "Darwin":
 logger_lib = env.Library('logger', src)
 libs.insert(0, logger_lib)
 
-env.Program('loggerd', ['main.cc'], LIBS=libs)
+env.Program('loggerd', ['loggerd.cc'], LIBS=libs)
 env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
 env.Program('bootlog.cc', LIBS=libs)
 
 if GetOption('test'):
-  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_loggerd.cc', 'tests/test_logger.cc'], LIBS=libs + ['curl', 'crypto'])
+  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc'], LIBS=libs + ['curl', 'crypto'])

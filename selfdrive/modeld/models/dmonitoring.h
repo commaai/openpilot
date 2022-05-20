@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/runners/run.h"
 

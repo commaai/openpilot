@@ -5,8 +5,8 @@
 
 #include <capnp/dynamic.h>
 #include "cereal/services.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
+#include "common/params.h"
+#include "common/timing.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/replay/util.h"
 
@@ -289,7 +289,7 @@ void Replay::startStream(const Segment *cur_segment) {
         camera_size[type] = {fr->width, fr->height};
       }
     }
-    camera_server_ = std::make_unique<CameraServer>(camera_size, true);
+    camera_server_ = std::make_unique<CameraServer>(camera_size);
   }
 
   // start stream thread

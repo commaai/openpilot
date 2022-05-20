@@ -5,10 +5,10 @@
 #include <vector>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/i2c.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
+#include "common/i2c.h"
+#include "common/swaglog.h"
+#include "common/timing.h"
+#include "common/util.h"
 #include "selfdrive/sensord/sensors/bmx055_accel.h"
 #include "selfdrive/sensord/sensors/bmx055_gyro.h"
 #include "selfdrive/sensord/sensors/bmx055_magn.h"

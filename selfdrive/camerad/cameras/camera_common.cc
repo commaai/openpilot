@@ -11,19 +11,17 @@
 #include <jpeglib.h>
 
 #include "selfdrive/camerad/imgproc/utils.h"
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/clutil.h"
+#include "common/modeldata.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-#if QCOM2
+#ifdef QCOM2
 #include "CL/cl_ext_qcom.h"
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
-#elif WEBCAM
-#include "selfdrive/camerad/cameras/camera_webcam.h"
 #else
-#include "selfdrive/camerad/cameras/camera_replay.h"
+#include "selfdrive/camerad/test/camera_test.h"
 #endif
 
 ExitHandler do_exit;
@@ -38,26 +36,23 @@ public:
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
-             "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d",
+             "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d%s",
              ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, b->rgb_stride,
-             ci->bayer_flip, ci->hdr, s->camera_num);
+             ci->bayer_flip, ci->hdr, s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
     const char *cl_file = "cameras/real_debayer.cl";
     cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float gain, float black_level, cl_event *debayer_event) {
+  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *debayer_event) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
 
+    const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
     const int debayer_local_worksize = 16;
-    constexpr int localMemSize = (debayer_local_worksize + 2 * (3 / 2)) * (debayer_local_worksize + 2 * (3 / 2)) * sizeof(short int);
-    const size_t globalWorkSize[] = {size_t(width), size_t(height)};
     const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
-    CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
-    CL_CHECK(clSetKernelArg(krnl_, 3, sizeof(float), &black_level));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
   }
 
@@ -141,6 +136,7 @@ bool CameraBuf::acquire() {
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
+  cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
 
@@ -149,25 +145,14 @@ bool CameraBuf::acquire() {
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   if (debayer) {
-    float gain = 0.0;
-    float black_level = 42.0;
-#ifndef QCOM2
-    gain = camera_state->digital_gain;
-    if ((int)gain == 0) gain = 1.0;
-#else
-    if (camera_state->camera_id == CAMERA_ID_IMX390) black_level = 64.0;
-#endif
-    debayer->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain, black_level, &event);
+    debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
   } else {
     assert(rgb_stride == camera_state->ci.frame_stride);
-    CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0, cur_rgb_buf->len, 0, 0, &event));
+    rgb2yuv->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl);
   }
 
   clWaitForEvents(1, &event);
   CL_CHECK(clReleaseEvent(event));
-
-  cur_yuv_buf = vipc_server->get_buffer(yuv_type);
-  rgb2yuv->queue(q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
@@ -176,9 +161,7 @@ bool CameraBuf::acquire() {
                         cur_frame_data.timestamp_sof,
                         cur_frame_data.timestamp_eof,
   };
-  cur_rgb_buf->set_frame_id(cur_frame_data.frame_id);
   cur_yuv_buf->set_frame_id(cur_frame_data.frame_id);
-  vipc_server->send(cur_rgb_buf, &extra);
   vipc_server->send(cur_yuv_buf, &extra);
 
   return true;

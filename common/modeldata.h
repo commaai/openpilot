@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-#include "selfdrive/common/mat.h"
+#include "common/mat.h"
 #include "selfdrive/hardware/hw.h"
 
 const int  TRAJECTORY_SIZE = 33;
