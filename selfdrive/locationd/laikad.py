@@ -6,6 +6,7 @@ from collections import defaultdict
 
 from cereal import log, messaging
 from laika import AstroDog
+from laika.ephemeris import convert_ublox_ephem
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
@@ -19,21 +20,23 @@ MAX_TIME_GAP = 10
 
 class Laikad:
 
-  def __init__(self):
+  def __init__(self, use_internet):
+    self.astro_dog = AstroDog(use_internet=use_internet)
     self.gnss_kf = GNSSKalman(GENERATED_DIR)
 
-  def process_ublox_msg(self, ublox_msg, dog: AstroDog, ublox_mono_time: int):
+  def process_ublox_msg(self, ublox_msg, ublox_mono_time: int):
     if ublox_msg.which == 'measurementReport':
       report = ublox_msg.measurementReport
       new_meas = read_raw_ublox(report)
-      measurements = process_measurements(new_meas, dog)
-
-
-      pos_fix = calc_pos_fix(measurements)
+      measurements = process_measurements(new_meas, self.astro_dog)
+      print(len(measurements))
+      # todo temp lowered the calc_pos_fix to 4. Currently, only gps is supported for offline ephemeris data
+      pos_fix = calc_pos_fix(measurements, min_measurements=6)
       # To get a position fix a minimum of 5 measurements are needed.
       # Each report can contain less and some measurement can't be processed.
       if len(pos_fix) > 0:
-        measurements = correct_measurements(measurements, pos_fix[0][:3], dog)
+        # todo fix ionex readings to correct better
+        correct_measurements(measurements, pos_fix[0][:3], self.astro_dog)
       meas_msgs = [create_measurement_msg(m) for m in measurements]
 
       t = ublox_mono_time * 1e-9
@@ -59,6 +62,13 @@ class Laikad:
         "correctedMeasurements": meas_msgs
       }
       return dat
+    elif ublox_msg.which == 'ephemeris':
+      # todo could disable this when having internet access.
+      ephem = convert_ublox_ephem(ublox_msg.ephemeris)
+      self.astro_dog.add_ephem(ephem, self.astro_dog.orbits)
+    # elif ublox_msg.which == 'ionoData':
+    # todo add this. Needed to correct messages offline. First fix ublox_msg.cc to sent them.
+    #  This is needed to correct the measurements
 
   def update_localizer(self, pos_fix, t: float, measurements: List[GNSSMeasurement]):
     # Check time and outputs are valid
@@ -67,9 +77,10 @@ class Laikad:
       if len(pos_fix) == 0:
         return
       post_est = pos_fix[0][:3].tolist()
-      if self.gnss_kf.filter.filter_time is None:
+      filter_time = self.gnss_kf.filter.filter_time
+      if filter_time is None:
         cloudlog.info("Init gnss kalman filter")
-      elif (self.gnss_kf.filter.filter_time - t) > MAX_TIME_GAP:
+      elif (t - filter_time) > MAX_TIME_GAP:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       else:
         cloudlog.error("Gnss kalman filter state is nan")
@@ -82,7 +93,7 @@ class Laikad:
 
   def localizer_valid(self, t: float):
     filter_time = self.gnss_kf.filter.filter_time
-    return filter_time is not None and (filter_time - t) < MAX_TIME_GAP and \
+    return filter_time is not None and (t - filter_time) < MAX_TIME_GAP and \
            all(np.isfinite(self.gnss_kf.x[GStates.ECEF_POS]))
 
   def init_gnss_localizer(self, est_pos):
@@ -97,7 +108,10 @@ def create_measurement_msg(meas: GNSSMeasurement):
   c = log.GnssMeasurements.CorrectedMeasurement.new_message()
   c.constellationId = meas.constellation_id.value
   c.svId = meas.sv_id
-  observables = meas.observables_final
+  if meas.corrected:
+    observables = meas.observables_final
+  else:
+    observables = meas.observables
   c.glonassFrequency = meas.glonass_freq if meas.constellation_id == ConstellationId.GLONASS else 0
   c.pseudorange = float(observables['C1C'])
   c.pseudorangeStd = float(meas.observables_std['C1C'])
@@ -111,7 +125,7 @@ def create_measurement_msg(meas: GNSSMeasurement):
 def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMeasurement]):
   ekf_data = defaultdict(list)
   for m in measurements:
-    m_arr = m.as_array()
+    m_arr = m.as_array(allow_uncorrected=True)
     if m.constellation_id == ConstellationId.GPS:
       ekf_data[ObservationKind.PSEUDORANGE_GPS].append(m_arr)
       ekf_data[ObservationKind.PSEUDORANGE_RATE_GPS].append(m_arr)
@@ -134,19 +148,17 @@ def get_bearing_from_gnss(ecef_pos, ecef_vel, vel_std):
 
 
 def main():
-  dog = AstroDog(use_internet=True)
   sm = messaging.SubMaster(['ubloxGnss'])
   pm = messaging.PubMaster(['gnssMeasurements'])
 
-  laikad = Laikad()
+  laikad = Laikad(use_internet=False)
 
   while True:
     sm.update()
 
-    # Todo if no internet available use latest ephemeris
     if sm.updated['ubloxGnss']:
       ublox_msg = sm['ubloxGnss']
-      msg = laikad.process_ublox_msg(ublox_msg, dog, sm.logMonoTime['ubloxGnss'])
+      msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'])
       if msg is not None:
         pm.send('gnssMeasurements', msg)
 
