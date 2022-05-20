@@ -165,19 +165,20 @@ bool CameraBuf::acquire() {
   }
 
   // Do not compress too much
+  int min_bin = 18; // Black level
   max_bin = std::max(max_bin, 64);
 
   // Apply ceiling
   double thres = 500;
   double sum_widths = 0;
-  for (int i = 0; i <= max_bin; i++) {
+  for (int i = min_bin; i <= max_bin; i++) {
     sum_widths += camera_state->histogram_bin_widths[i];
   }
 
   // Does not converge if there are not enough bins available to spread out the excess over
   for (int it = 0; it < 3; it++) {
     double total_over = 0;
-    for (int i = 0; i <= max_bin; i++) {
+    for (int i = min_bin; i <= max_bin; i++) {
       double avg_count = (double)counts[i] / camera_state->histogram_bin_widths[i];
 
       if (avg_count > thres) {
@@ -190,7 +191,7 @@ bool CameraBuf::acquire() {
       break;
     }
 
-    for (int i = 0; i <= max_bin; i++) {
+    for (int i = min_bin; i <= max_bin; i++) {
       counts[i] = int(counts[i] + total_over / sum_widths * camera_state->histogram_bin_widths[i]);
     }
   }
