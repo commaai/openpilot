@@ -118,7 +118,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 }
 
 static void update_sockets(UIState *s) {
-  s->sm->update(1000);
+  s->sm->update(50);
   qDebug() << "ui.cc frame id:" << (*s->sm)["modelV2"].getModelV2().getFrameId();
 }
 
@@ -126,6 +126,7 @@ static void update_state(UIState *s) {
   qDebug() << "update_state";
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
+  qDebug() << "update_state";
 
   if (sm.updated("liveCalibration")) {
     auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
@@ -144,12 +145,12 @@ static void update_state(UIState *s) {
     }
   }
 //  if (s->worldObjectsVisible()) {
-  if (true) {
-    if (true) {
+  if (s->worldObjectsVisible()) {
+    if (sm.updated("modelV2")) {
       update_model(s, sm["modelV2"].getModelV2());
       qDebug() << "HERE";
     }
-    if (sm.updated("radarState") && true) {
+    if (sm.updated("radarState") && sm.updated("modelV2")) {
       update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
     }
   }
