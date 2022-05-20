@@ -143,19 +143,17 @@ class TestEncoder(unittest.TestCase):
       shutil.rmtree(f"{route_prefix_path}--{i}")
 
     try:
-      for i in trange(num_segments + 1):
+      for i in trange(num_segments):
         # poll for next segment
         with Timeout(int(SEGMENT_LENGTH*10), error_msg=f"timed out waiting for segment {i}"):
-          while Path(f"{route_prefix_path}--{i}") not in Path(ROOT).iterdir():
+          while Path(f"{route_prefix_path}--{i+1}") not in Path(ROOT).iterdir():
             time.sleep(0.1)
+        check_seg(i)
     finally:
       managed_processes['loggerd'].stop()
       managed_processes['encoderd'].stop()
       managed_processes['camerad'].stop()
       managed_processes['sensord'].stop()
-
-    for i in trange(num_segments):
-      check_seg(i)
 
 
 if __name__ == "__main__":
