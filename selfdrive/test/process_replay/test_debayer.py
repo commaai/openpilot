@@ -104,8 +104,8 @@ def debayer_replay(lr):
       cs = m.roadCameraState
       if cs.image:
         data = np.frombuffer(cs.image, dtype=np.uint8)
-        geometric_mean = 250 # TODO: get from camerState
-        img = debayer_frame(ctx, debayer_prg, data, geometric_mean)
+        lut = np.array([round(i / 4096.0 * 255) for i in range(2**12)], dtype=np.uint8)
+        img = debayer_frame(ctx, debayer_prg, data, lut)
 
         frames.append(img)
 

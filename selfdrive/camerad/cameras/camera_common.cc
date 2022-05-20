@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <chrono>
 #include <thread>
+#include <cmath>
 
 #include "libyuv.h"
 #include <jpeglib.h>
@@ -32,6 +33,7 @@ public:
     char args[4096];
     const CameraInfo *ci = &s->ci;
     hdr_ = ci->hdr;
+    ctx_ = context;
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
@@ -46,10 +48,13 @@ public:
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float geometric_mean, cl_event *debayer_event) {
+  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, uint8_t * lut, cl_event *debayer_event) {
+    // TODO: Can this buffer be created in the constructor? I can't find any documentation on how to flush the cache.
+    cl_mem lut_ = CL_CHECK_ERR(clCreateBuffer(ctx_, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, 4096, lut, &err));
+
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
-    CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &geometric_mean));
+    CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(cl_mem), &lut_));
 
     const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
     const int debayer_local_worksize = 16;
@@ -63,6 +68,8 @@ public:
 
 private:
   cl_kernel krnl_;
+  cl_context ctx_;
+
   bool hdr_;
 };
 
@@ -148,9 +155,28 @@ bool CameraBuf::acquire() {
 
   double start_time = millis_since_boot();
 
+  for (int i = 0; i < 4096; i++){
+    // Companding
+    float kn_0 = i;
+    float kn_2048 = (kn_0 - 2048) * 64 + 2048;
+    float kn_3040 = (kn_0 - 3040) * 1024 + 65536;
+    float decompressed = std::max(kn_0, std::max(kn_2048, kn_3040));
+
+    // Black level
+    decompressed -= 168;
+
+    // https://www.cl.cam.ac.uk/teaching/1718/AdvGraph/06_HDR_and_tone_mapping.pdf
+    // Sigmoidal tone mapping (slide 30)
+
+    // Optimized case of b = 1
+    float decompressed_times_a = decompressed * 0.3;
+    float pv = decompressed_times_a / (cur_frame_data.histogram_geometric_mean + decompressed_times_a);
+
+    debayer_lut[i] = std::clamp<int>(round(pv * 255), 0, 255);
+  }
 
   if (debayer) {
-    debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, cur_frame_data.histogram_geometric_mean, &event);
+    debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, debayer_lut, &event);
   } else {
     assert(rgb_stride == camera_state->ci.frame_stride);
     rgb2yuv->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl);

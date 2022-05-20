@@ -112,6 +112,7 @@ private:
 
   int frame_buf_count;
   release_cb release_callback;
+  uint8_t debayer_lut[4096];
 
 public:
   cl_command_queue q;

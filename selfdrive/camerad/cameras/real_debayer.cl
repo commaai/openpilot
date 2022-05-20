@@ -15,10 +15,11 @@ float3 color_correct(float3 rgb) {
   x += rgb.z * (float3)(-0.25277411, -0.05627105, 1.45875782);
 
   // go all out and add an sRGB gamma curve
-  // const float3 ph = (1.0 + 0.055)*pow(x, 1/2.4) - 0.055;
-  // const float3 pl = x*12.92;
-  // return select(ph, pl, islessequal(x, 0.0031308));
+  const float3 ph = (1.0 + 0.055)*pow(x, 1/2.4) - 0.055;
+  const float3 pl = x*12.92;
+  return select(ph, pl, islessequal(x, 0.0031308));
 
+/*
   // tone mapping params
   const float gamma_k = 0.75;
   const float gamma_b = 0.125;
@@ -29,6 +30,7 @@ float3 color_correct(float3 rgb) {
   return (x > mp) ?
     ((rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b) :
     ((rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b);
+*/
 }
 
 float get_vignetting_s(float r) {
@@ -43,20 +45,20 @@ float get_vignetting_s(float r) {
   }
 }
 
-float4 val4_from_12(uchar8 pvs, float gain, const float * lut) {
+float4 val4_from_12(uchar8 pvs, float gain, const uchar * lut) {
   uint4 parsed = (uint4)(((uint)pvs.s0<<4) + (pvs.s1>>4),  // is from the previous 10 bit
                          ((uint)pvs.s2<<4) + (pvs.s4&0xF),
                          ((uint)pvs.s3<<4) + (pvs.s4>>4),
                          ((uint)pvs.s5<<4) + (pvs.s7&0xF));
-  float4 pv = (lut[parsed.s0], lut[parsed.s1], lut[parsed.s2], lut[parsed.s3]);
-  return clamp(pv*gain, 0.0, 1.0);
+  float4 pv = {lut[parsed.s0], lut[parsed.s1], lut[parsed.s2], lut[parsed.s3]};
+  return clamp(pv * gain * 0.00392156862745098, 0.0, 1.0);
 }
 
 float get_k(float a, float b, float c, float d) {
   return 2.0 - (fabs(a - b) + fabs(c - d));
 }
 
-__kernel void debayer10(const __global uchar * in, __global uchar * out, const __global float * lut)
+__kernel void debayer10(const __global uchar * in, __global uchar * out, const __global uchar * lut)
 {
   const int gid_x = get_global_id(0);
   const int gid_y = get_global_id(1);
