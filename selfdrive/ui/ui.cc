@@ -118,7 +118,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 }
 
 static void update_sockets(UIState *s) {
-  s->sm->update(1000 / UI_FREQ);
+  s->sm->update(0);
 }
 
 static void update_state(UIState *s) {
@@ -243,7 +243,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   // update timer
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
-  timer->start(0);
+  timer->start(50);
 }
 
 void UIState::update() {
