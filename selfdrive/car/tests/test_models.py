@@ -51,9 +51,6 @@ class TestCarModel(unittest.TestCase):
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
-    if "EV6" not in cls.car_model:
-      raise unittest.SkipTest
-
     if cls.test_route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
