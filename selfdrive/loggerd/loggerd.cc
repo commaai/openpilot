@@ -57,7 +57,8 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
 
   // rotation happened, process the queue (happens before the current message)
   int bytes_count = 0;
-  if (re.logger_segment != s->rotate_segment) {
+  if (re.logger_segment != s->rotate_segment && !re.recording) {
+    // logger has rotated to the next segment, and we've seen a packet from the next segment
     re.logger_segment = s->rotate_segment;
     for (auto &qmsg: re.q) {
       bytes_count += handle_encoder_msg(s, qmsg, name, re);
@@ -100,6 +101,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   }
 
   if (re.segment != idx.getSegmentNum()) {
+    // packet has the wrong segment, this means encoderd has rolled over
     if (re.recording) {
       // encoder is on the next segment, this segment is over so we close the videowriter
       re.writer.reset();
