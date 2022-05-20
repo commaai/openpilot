@@ -73,6 +73,9 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   int offset_segment_num = idx.getSegmentNum() - re.encoderd_segment_offset;
 
   if (offset_segment_num == s->rotate_segment) {
+    // loggerd is now on the segment that matches this packet
+
+    // if this is a new segment, we close any possible old segments, move to the new, and process any queued packets
     if (re.current_segment != s->rotate_segment) {
       if (re.recording) {
         // this can happen if loggerd did the rotation and not the encoders
@@ -90,10 +93,10 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       }
     }
 
-    // if we aren't recording yet, try to start
+    // if we aren't recording yet, try to start, since we are in the correct segment
     if (!re.recording) {
-      // only create on iframe
       if (flags & V4L2_BUF_FLAG_KEYFRAME) {
+        // only create on iframe
         if (re.dropped_frames) {
           // this should only happen for the first segment, maybe
           LOGW("%s: dropped %d non iframe packets before init", name.c_str(), re.dropped_frames);
@@ -110,6 +113,8 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         }
         re.recording = true;
       } else {
+        // this is a sad case when we aren't recording, but don't have an iframe
+        // nothing we can do but drop the frame
         delete msg;
         ++re.dropped_frames;
         return bytes_count;
@@ -117,6 +122,9 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     }
 
     // we have to be recording if we are here
+    assert(re.recording);
+
+    // if we are actually writing the video file, do so
     if (re.writer) {
       auto data = edata.getData();
       re.writer->write((uint8_t *)data.begin(), data.size(), idx.getTimestampEof()/1000, false, flags & V4L2_BUF_FLAG_KEYFRAME);
@@ -134,7 +142,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     logger_log(&s->logger, (uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
     bytes_count += new_msg.size();
 
-    // this frees the message
+    // free the message, we used it
     delete msg;
   } else if (offset_segment_num > s->rotate_segment) {
     // encoderd packet has a newer segment, this means encoderd has rolled over
@@ -152,6 +160,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   } else {
     LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d offset_segment_num:%d s->rotate_segment:%d\n",
       name.c_str(), idx.getSegmentNum(), offset_segment_num, s->rotate_segment.load());
+    // free the message, it's useless. this should never happen
     delete msg;
   }
 
