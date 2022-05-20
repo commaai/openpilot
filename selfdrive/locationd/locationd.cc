@@ -494,7 +494,7 @@ int Localizer::locationd_thread() {
   PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {"gpsLocationExternal", "carParams"}, nullptr, {"gpsLocationExternal", "carParams"});
+  SubMaster sm(service_list, {}, nullptr, {"gpsLocationExternal", "carParams"});
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
