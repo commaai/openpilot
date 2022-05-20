@@ -50,7 +50,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     // init encoders
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
-      LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
+      LOGW("encoder %s init %dx%d", cam_info.filename, buf_info.width, buf_info.height);
 
       // main encoder
       encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
@@ -86,11 +86,19 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       }
       lagging = false;
 
-      if (cam_info.trigger_rotate) {
-        if (!sync_encoders(s, cam_info.type, extra.frame_id)) {
-          continue;
+      if (!sync_encoders(s, cam_info.type, extra.frame_id)) {
+        continue;
+      }
+      if (do_exit) break;
+
+      // do rotation if required
+      const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
+      if (cur_seg >= 0 && extra.frame_id >= ((cur_seg + 1) * frames_per_seg) + s->start_frame_id) {
+        for (auto &e : encoders) {
+          e->encoder_close();
+          e->encoder_open(NULL);
         }
-        if (do_exit) break;
+        ++cur_seg;
       }
 
       // encode a frame
@@ -101,15 +109,6 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d", extra.frame_id);
         }
-      }
-
-      const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
-      if (cur_seg >= 0 && extra.frame_id >= ((cur_seg + 1) * frames_per_seg) + s->start_frame_id) {
-        for (auto &e : encoders) {
-          e->encoder_close();
-          e->encoder_open(NULL);
-        }
-        ++cur_seg;
       }
     }
   }
@@ -128,7 +127,7 @@ void encoderd_thread() {
   for (const auto &cam : cameras_logged) {
     if (cam.enable) {
       encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
-      if (cam.trigger_rotate) s.max_waiting++;
+      s.max_waiting++;
     }
   }
   for (auto &t : encoder_threads) t.join();
@@ -139,7 +138,7 @@ int main() {
     int ret;
     ret = util::set_realtime_priority(52);
     assert(ret == 0);
-    ret = util::set_core_affinity({7});
+    ret = util::set_core_affinity({3});
     assert(ret == 0);
   }
   encoderd_thread();

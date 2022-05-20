@@ -13,7 +13,7 @@ namespace {
 
 const char frame_vertex_shader[] =
 #ifdef __APPLE__
-  "#version 150 core\n"
+  "#version 330 core\n"
 #else
   "#version 300 es\n"
 #endif
@@ -28,7 +28,7 @@ const char frame_vertex_shader[] =
 
 const char frame_fragment_shader[] =
 #ifdef __APPLE__
-  "#version 150 core\n"
+  "#version 330 core\n"
 #else
   "#version 300 es\n"
   "precision mediump float;\n"
@@ -227,7 +227,7 @@ void CameraViewWidget::paintGL() {
     glBindTexture(GL_TEXTURE_2D, textures[i]);
     int width = i == 0 ? stream_width : stream_width / 2;
     int height = i == 0 ? stream_height : stream_height / 2;
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE, address[i]);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, address[i]);
     assert(glGetError() == GL_NO_ERROR);
   }
 
@@ -256,7 +256,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     int width = i == 0 ? stream_width : stream_width / 2;
     int height = i == 0 ? stream_height : stream_height / 2;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
     assert(glGetError() == GL_NO_ERROR);
   }
 

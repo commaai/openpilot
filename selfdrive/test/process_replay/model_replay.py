@@ -61,8 +61,8 @@ def model_replay(lr, frs):
 
     log_msgs = []
     last_desire = None
-    recv_cnt = defaultdict(lambda: 0)
-    frame_idxs = defaultdict(lambda: 0)
+    recv_cnt = defaultdict(int)
+    frame_idxs = defaultdict(int)
 
     # init modeld with valid calibration
     cal_msgs = [msg for msg in lr if msg.which() == "liveCalibration"]

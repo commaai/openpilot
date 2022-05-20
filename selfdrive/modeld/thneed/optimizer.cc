@@ -4,8 +4,8 @@
 #include <assert.h>
 #include "thneed.h"
 
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/clutil.h"
+#include "common/util.h"
+#include "common/clutil.h"
 
 extern map<cl_program, string> g_program_source;
 

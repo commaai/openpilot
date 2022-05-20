@@ -29,7 +29,7 @@ non_tested_cars = [
 TestRoute = namedtuple('TestRoute', ['route', 'car_fingerprint', 'segment'], defaults=(None,))
 
 routes = [
-  TestRoute("d6ac8ebdb47bc549|2022-03-31--13-10-06", COMMA.BODY),
+  TestRoute("efdf9af95e71cd84|2022-05-13--19-03-31", COMMA.BODY),
 
   TestRoute("0c94aa1e1296d7c6|2021-05-05--19-48-37", CHRYSLER.JEEP_CHEROKEE),
   TestRoute("91dfedae61d7bd75|2021-05-22--20-07-52", CHRYSLER.JEEP_CHEROKEE_2019),
@@ -127,6 +127,7 @@ routes = [
   TestRoute("b14c5b4742e6fc85|2020-07-28--19-50-11", TOYOTA.RAV4),
   TestRoute("32a7df20486b0f70|2020-02-06--16-06-50", TOYOTA.RAV4H),
   TestRoute("cdf2f7de565d40ae|2019-04-25--03-53-41", TOYOTA.RAV4_TSS2),
+  TestRoute("a5c341bb250ca2f0|2022-05-18--16-05-17", TOYOTA.RAV4_TSS2_2022),
   TestRoute("7e34a988419b5307|2019-12-18--19-13-30", TOYOTA.RAV4H_TSS2),
   TestRoute("2475fb3eb2ffcc2e|2022-04-29--12-46-23", TOYOTA.RAV4H_TSS2_2022),
   TestRoute("e6a24be49a6cd46e|2019-10-29--10-52-42", TOYOTA.LEXUS_ES_TSS2),

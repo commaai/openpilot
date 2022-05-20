@@ -4,9 +4,9 @@
 #include "catch2/catch.hpp"
 
 #include "json11.hpp"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/version.h"
+#include "common/swaglog.h"
+#include "common/util.h"
+#include "common/version.h"
 #include "selfdrive/hardware/hw.h"
 
 const char *SWAGLOG_ADDR = "ipc:///tmp/logmessage";

@@ -19,8 +19,8 @@ extern "C" {
 #include <libavutil/imgutils.h>
 }
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
@@ -47,7 +47,7 @@ FfmpegEncoder::~FfmpegEncoder() {
 }
 
 void FfmpegEncoder::encoder_open(const char* path) {
-  AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
+  const AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
 
   this->codec_ctx = avcodec_alloc_context3(codec);
   assert(this->codec_ctx);

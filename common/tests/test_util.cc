@@ -10,7 +10,7 @@
 
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 
 std::string random_bytes(int size) {
   std::random_device rd;

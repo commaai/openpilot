@@ -1,8 +1,7 @@
 #pragma once
 
-#include "selfdrive/common/queue.h"
+#include "common/queue.h"
 #include "selfdrive/loggerd/encoder/encoder.h"
-#include "selfdrive/loggerd/encoder/video_writer.h"
 
 #define BUF_IN_COUNT 7
 #define BUF_OUT_COUNT 6

@@ -1,11 +1,9 @@
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
 #include <cassert>
 #include <cstdlib>
 
-#include "selfdrive/loggerd/encoder/video_writer.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "selfdrive/loggerd/video_writer.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 
 VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec)
   : remuxing(remuxing) {
@@ -23,11 +21,8 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
     assert(this->ofmt_ctx);
 
     // set codec correctly. needed?
-    av_register_all();
-
-    AVCodec *avcodec = NULL;
     assert(codec != cereal::EncodeIndex::Type::FULL_H_E_V_C);
-    avcodec = avcodec_find_encoder(raw ? AV_CODEC_ID_FFVHUFF : AV_CODEC_ID_H264);
+    const AVCodec *avcodec = avcodec_find_encoder(raw ? AV_CODEC_ID_FFVHUFF : AV_CODEC_ID_H264);
     assert(avcodec);
 
     this->codec_ctx = avcodec_alloc_context3(avcodec);
@@ -93,9 +88,9 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
 
       // TODO: can use av_write_frame for non raw?
       int err = av_interleaved_write_frame(ofmt_ctx, &pkt);
-      if (err < 0) { LOGW("ts encoder write issue"); }
+      if (err < 0) { LOGW("ts encoder write issue len: %d ts: %lu", len, timestamp); }
 
-      av_free_packet(&pkt);
+      av_packet_unref(&pkt);
     }
   }
 }
