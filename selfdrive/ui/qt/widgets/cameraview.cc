@@ -8,6 +8,7 @@
 
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>
+#include <iostream>
 
 namespace {
 
@@ -215,15 +216,47 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  if (frames.empty()) return;
+  if (frames.size() < FRAME_BUFFER_SIZE) return;
 
-  // update frame offset if we're not skipping out of the length of the buffer
-  int frame_offset = draw_frame_id - frames[0].first;
-  if (draw_frame_id_updated && (frame_offset < FRAME_BUFFER_SIZE)) {
-    // ensure we don't jump backwards after draw_frame_id lags multiple frames
-    frame_idx = std::max(frame_offset, frame_idx - 1);
+  int latest_frame_id = frames[frames.size() - 1].first;
+  assert(latest_frame_id >= draw_frame_id);
+  qDebug() << "latest frame_id:" << latest_frame_id;
+  int draw;
+//  if ((latest_frame_id - draw_frame_id) <= 2) {
+//    draw = draw_frame_id;
+//  } else {
+//    draw = latest_frame_id;
+//  }
+//  qDebug() << "draw:" << draw;
+
+//  // update frame offset if we're not skipping out of the length of the buffer
+//  int frame_offset = draw_frame_id - frames[0].first;
+//  if (draw_frame_id_updated && (frame_offset < FRAME_BUFFER_SIZE)) {
+//    // ensure we don't jump backwards after draw_frame_id lags multiple frames
+//    frame_idx = std::max(frame_offset, frame_idx - 1);
+//  }
+  for (int i = 0; i < FRAME_BUFFER_SIZE; i++) {
+    if (frames[i].first >= draw_frame_id) {
+      draw = frames[i].first;
+    }
   }
-  VisionBuf *frame = frames[std::clamp(frame_idx, 0, (int)frames.size() - 1)].second;
+  int clip_range = latest_frame_id - draw_frame_id;
+  qDebug() << "Offset:" << clip_range;
+//  bool in_range = ;
+  auto it = std::find_if(frames.begin(), frames.end(), [this](const std::pair <uint32_t, VisionBuf*>& element) {
+    return element.first >= draw_frame_id;
+  });
+  qDebug() << "Drawing frame:" << frames[it - frames.begin()].first;
+  qDebug() << "Correct frame:" << (draw_frame_id == frames[it - frames.begin()].first);
+  VisionBuf *frame = frames[it - frames.begin()].second;
+
+  std::cout << "[";
+  for (int i = 0; i < FRAME_BUFFER_SIZE; i++) {
+//    if (frame_array[i].initialized) {
+    std::cout << frames[i].first << ",";
+//    }
+  }
+  std::cout << "]\n\n";
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
