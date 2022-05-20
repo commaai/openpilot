@@ -118,7 +118,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 }
 
 static void update_sockets(UIState *s) {
-  s->sm->update(0);
+  s->sm->update(1000 / UI_FREQ);
 }
 
 static void update_state(UIState *s) {
@@ -230,11 +230,11 @@ void UIState::updateStatus() {
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
-  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
+  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
     "wideRoadCameraState", "managerState",
-  });
+  }, {"modelV2"});
 
   Params params;
   wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
@@ -243,7 +243,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   // update timer
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
-  timer->start(1000 / UI_FREQ);
+  timer->start(0);
 }
 
 void UIState::update() {
