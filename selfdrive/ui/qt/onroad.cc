@@ -41,24 +41,18 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
-  QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   if (s.sm->updated("controlsState") || !alert.equal({})) {
     if (alert.type == "controlsUnresponsive") {
-      bgColor = bg_colors[STATUS_ALERT];
+      bg = bg_colors[STATUS_ALERT];
     } else if (alert.type == "controlsUnresponsivePermanent") {
-      bgColor = bg_colors[STATUS_DISENGAGED];
+      bg = bg_colors[STATUS_DISENGAGED];
     }
-    alerts->updateAlert(alert, bgColor);
+    alerts->updateAlert(alert, bg);
   }
 
   nvg->updateState(s);
-
-  if (bg != bgColor) {
-    // repaint border
-    bg = bgColor;
-    update();
-  }
+  nvg->update();
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
