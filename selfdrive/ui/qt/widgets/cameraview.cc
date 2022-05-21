@@ -230,10 +230,10 @@ void CameraViewWidget::paintGL() {
   }
 
   // warm up of 1 second for all asserts
-  assert((draw_frame_id > prev_model_frame_id) || (draw_frame_id < (5 * 20)));  // never should draw duplicate model frames
+  assert((draw_frame_id > prev_model_frame_id) || (cam_frame_id < (5 * 20)));  // never should draw duplicate model frames
   assert((cam_frame_id >= prev_cam_frame_id) || (cam_frame_id < (5 * 20)));  // can draw same camera frames sometimes
   // ok if drawing on same frame or if during startup
-  assert((draw_frame_id == cam_frame_id) || (draw_frame_id < (5 * 20)));
+  assert((draw_frame_id == cam_frame_id) || (cam_frame_id < (5 * 20)));
   // this allows touches, but you don't know if user touched, or we're just randomly drawing wrong frames
   // assert((draw_frame_id == cam_frame_id) || (draw_frame_id < 5) || ((wrong_frame <= 3)));
 
