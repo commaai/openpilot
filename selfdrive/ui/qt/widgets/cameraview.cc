@@ -221,15 +221,6 @@ void CameraViewWidget::paintGL() {
   new_frame_index = std::clamp((int)new_frame_index, 0, (int)frames.size() - 1);
   VisionBuf *frame = frames[new_frame_index].second;
 
-  qDebug() << "Requested frame id:" << draw_frame_id;
-  qDebug() << "Drawing frame id:  " << frames[new_frame_index].first;
-  qDebug() << "Correct:           " << (draw_frame_id == frames[new_frame_index].first)
-  qDebug() << "Model frame id new:" << (prev_model_frame_id != draw_frame_id);
-  qDebug() << "Cam frame id new:  " << (prev_cam_frame_id != frames[new_frame_index].first);
-
-  prev_model_frame_id = draw_frame_id;
-  prev_cam_frame_id = frames[new_frame_index].first;
-
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
