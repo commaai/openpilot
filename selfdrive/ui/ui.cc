@@ -121,7 +121,7 @@ static void update_sockets(UIState *s) {
   // ensures UI stays responsive when modelV2 is not alive
 //  int timeout = s->sm->alive("modelV2") ? 1000 / UI_FREQ : 0;
   double t = millis_since_boot();
-  s->sm->update(50);
+  s->sm->update(10);
   double e = millis_since_boot() - t;
   qDebug() << "sm->update():" << e << "ms";
 }
@@ -261,7 +261,7 @@ void UIState::update() {
   double remaining = next_frame_time - millis_since_boot();
   qDebug() << "Remaining:" << remaining;
 //  QTimer::singleShot(std::clamp((int)remaining, 0, 50), this, &UIState::update);
-  QTimer::singleShot(0, this, &UIState::update);
+  QTimer::singleShot(50, this, &UIState::update);
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
