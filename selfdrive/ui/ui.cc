@@ -119,9 +119,9 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 
 static void update_sockets(UIState *s) {
   // ensures UI stays responsive when modelV2 is not alive
-//  int timeout = s->sm->alive("modelV2") ? 1000 / UI_FREQ : 0;
+  int timeout = s->sm->alive("modelV2") ? 1000 / UI_FREQ : 0;
   double t = millis_since_boot();
-  s->sm->update(10);
+  s->sm->update(timeout);
   double e = millis_since_boot() - t;
   qDebug() << "sm->update():" << e << "ms";
 }
@@ -260,8 +260,7 @@ void UIState::update() {
   emit uiUpdate(*this);
   double remaining = next_frame_time - millis_since_boot();
   qDebug() << "Remaining:" << remaining;
-//  QTimer::singleShot(std::clamp((int)remaining, 0, 50), this, &UIState::update);
-  QTimer::singleShot(50, this, &UIState::update);
+  QTimer::singleShot(std::clamp((int)remaining, 0, 50), this, &UIState::update);
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
