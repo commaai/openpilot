@@ -73,13 +73,8 @@ lenv = {
 
 rpath = lenv["LD_LIBRARY_PATH"].copy()
 
-if arch == "aarch64" or arch == "larch64":
+if arch == "larch64":
   lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
-
-  if arch == "aarch64":
-    # android
-    lenv["ANDROID_DATA"] = os.environ['ANDROID_DATA']
-    lenv["ANDROID_ROOT"] = os.environ['ANDROID_ROOT']
 
   cpppath = [
     "#third_party/opencl/include",
@@ -89,31 +84,20 @@ if arch == "aarch64" or arch == "larch64":
     "/usr/local/lib",
     "/usr/lib",
     "/system/vendor/lib64",
-    "/system/comma/usr/lib",
     f"#third_party/acados/{arch}/lib",
   ]
 
-  if arch == "larch64":
-    libpath += [
-      "#third_party/snpe/larch64",
-      "#third_party/libyuv/larch64/lib",
-      "/usr/lib/aarch64-linux-gnu"
-    ]
-    cpppath += [
-      "#selfdrive/camerad/include",
-    ]
-    cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-    cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-    rpath += ["/usr/local/lib"]
-  else:
-    rpath = []
-    libpath += [
-      "#third_party/snpe/aarch64",
-      "#third_party/libyuv/lib",
-      "/system/vendor/lib64"
-    ]
-    cflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
-    cxxflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
+  libpath += [
+    "#third_party/snpe/larch64",
+    "#third_party/libyuv/larch64/lib",
+    "/usr/lib/aarch64-linux-gnu"
+  ]
+  cpppath += [
+    "#selfdrive/camerad/include",
+  ]
+  cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
+  cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
+  rpath += ["/usr/local/lib"]
 else:
   cflags = []
   cxxflags = []
@@ -146,7 +130,7 @@ else:
       "#third_party/libyuv/x64/lib",
       "#third_party/mapbox-gl-native-qt/x86_64",
       "#cereal",
-      "#selfdrive/common",
+      "#common",
       "/usr/lib",
       "/usr/local/lib",
     ]
@@ -154,7 +138,7 @@ else:
   rpath += [
     Dir("#third_party/snpe/x86_64-linux-clang").abspath,
     Dir("#cereal").abspath,
-    Dir("#selfdrive/common").abspath
+    Dir("#common").abspath
   ]
 
 if GetOption('asan'):
@@ -172,8 +156,8 @@ if arch != "Darwin":
   ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
 # Enable swaglog include in submodules
-cflags += ["-DSWAGLOG"]
-cxxflags += ["-DSWAGLOG"]
+cflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
+cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 
 env = Environment(
   ENV=lenv,
@@ -199,9 +183,7 @@ env = Environment(
     "#third_party/acados/include/blasfeo/include",
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
-    "#third_party/bzip2",
     "#third_party/libyuv/include",
-    "#third_party/openmax/include",
     "#third_party/json11",
     "#third_party/curl/include",
     "#third_party/libgralloc/include",
@@ -230,7 +212,7 @@ env = Environment(
     "#third_party",
     "#opendbc/can",
     "#selfdrive/boardd",
-    "#selfdrive/common",
+    "#common",
   ],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
@@ -260,6 +242,7 @@ if os.environ.get('SCONS_PROGRESS'):
 
 SHARED = False
 
+# TODO: this can probably be removed
 def abspath(x):
   if arch == 'aarch64':
     pth = os.path.join("/data/pythonpath", x[0].path)
@@ -288,9 +271,7 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning"]
-if arch != "aarch64":
-  qt_modules += ["DBus"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -305,15 +286,6 @@ if arch == "Darwin":
   qt_env["LINKFLAGS"] += ["-F" + os.path.join(qt_env['QTDIR'], "lib")]
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
   qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
-elif arch == "aarch64":
-  qt_env['QTDIR'] = "/system/comma/usr"
-  qt_dirs = [
-    f"/system/comma/usr/include/qt",
-  ]
-  qt_dirs += [f"/system/comma/usr/include/qt/Qt{m}" for m in qt_modules]
-
-  qt_libs = [f"Qt5{m}" for m in qt_modules]
-  qt_libs += ['EGL', 'GLESv3', 'c++_shared']
 else:
   qt_env['QTDIR'] = "/usr"
   qt_dirs = [
@@ -358,7 +330,7 @@ if GetOption("clazy"):
 
 Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
 
-SConscript(['selfdrive/common/SConscript'])
+SConscript(['common/SConscript'])
 Import('_common', '_gpucommon', '_gpu_libs')
 
 if SHARED:
@@ -391,7 +363,7 @@ rednose_config = {
   },
 }
 
-if arch not in ["aarch64", "larch64"]:
+if arch != "larch64":
   rednose_config['to_build'].update({
     'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, []),
@@ -412,7 +384,6 @@ SConscript(['opendbc/can/SConscript'])
 
 SConscript(['third_party/SConscript'])
 
-SConscript(['common/SConscript'])
 SConscript(['common/kalman/SConscript'])
 SConscript(['common/transformations/SConscript'])
 

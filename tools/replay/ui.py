@@ -10,8 +10,7 @@ import pygame  # pylint: disable=import-error
 import cereal.messaging as messaging
 from common.numpy_fast import clip
 from common.basedir import BASEDIR
-from selfdrive.config import UIParams as UP
-from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME,
+from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, UP,
                                          _INTRINSICS, BLACK, GREEN,
                                          YELLOW, Calibration,
                                          get_blank_lid_overlay, init_plots,
@@ -100,7 +99,7 @@ def ui_thread(addr):
 
   draw_plots = init_plots(plot_arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles)
 
-  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_RGB_BACK, True)
+  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_RGB_ROAD, True)
   while 1:
     list(pygame.event.get())
 

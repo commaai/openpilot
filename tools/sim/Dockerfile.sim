@@ -36,10 +36,6 @@ ENV QTWEBENGINE_DISABLE_SANDBOX 1
 
 RUN dbus-uuidgen > /etc/machine-id
 
-# Install CARLA python api
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir carla==0.9.12
-
 # get same tmux config used on NEOS for debugging
 RUN cd $HOME && \
     curl -O https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
@@ -54,7 +50,6 @@ COPY ./pyextra $HOME/openpilot/pyextra
 COPY ./site_scons $HOME/openpilot/site_scons
 COPY ./rednose $HOME/openpilot/rednose
 COPY ./common $HOME/openpilot/common
-COPY ./models $HOME/openpilot/models
 COPY ./opendbc $HOME/openpilot/opendbc
 COPY ./cereal $HOME/openpilot/cereal
 COPY ./panda $HOME/openpilot/panda
@@ -63,3 +58,5 @@ COPY ./tools $HOME/openpilot/tools
 
 WORKDIR $HOME/openpilot
 RUN scons -j$(nproc)
+
+RUN python -c "from selfdrive.test.helpers import set_params_enabled; set_params_enabled()"

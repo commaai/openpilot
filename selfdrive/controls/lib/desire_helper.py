@@ -1,6 +1,6 @@
 from cereal import log
+from common.conversions import Conversions as CV
 from common.realtime import DT_MDL
-from selfdrive.config import Conversions as CV
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection

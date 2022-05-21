@@ -21,13 +21,8 @@ from selfdrive.version import get_commit
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
-TICI_TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
-EON_TEST_ROUTE = "303055c0002aefd1|2021-11-22--18-36-32"
+TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
 SEGMENT = 0
-if TICI:
-  TEST_ROUTE = TICI_TEST_ROUTE
-else:
-  TEST_ROUTE = EON_TEST_ROUTE
 
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
@@ -66,8 +61,8 @@ def model_replay(lr, frs):
 
     log_msgs = []
     last_desire = None
-    recv_cnt = defaultdict(lambda: 0)
-    frame_idxs = defaultdict(lambda: 0)
+    recv_cnt = defaultdict(int)
+    frame_idxs = defaultdict(int)
 
     # init modeld with valid calibration
     cal_msgs = [msg for msg in lr if msg.which() == "liveCalibration"]
