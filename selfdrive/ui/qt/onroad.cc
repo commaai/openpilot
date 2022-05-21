@@ -41,17 +41,23 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
+  QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   if (s.sm->updated("controlsState") || !alert.equal({})) {
     if (alert.type == "controlsUnresponsive") {
-      bg = bg_colors[STATUS_ALERT];
+      bgColor = bg_colors[STATUS_ALERT];
     } else if (alert.type == "controlsUnresponsivePermanent") {
-      bg = bg_colors[STATUS_DISENGAGED];
+      bgColor = bg_colors[STATUS_DISENGAGED];
     }
-    alerts->updateAlert(alert, bg);
+    alerts->updateAlert(alert, bgColor);
   }
 
   nvg->updateState(s);
+  if (bg != bgColor) {
+    // repaint border
+    bg = bgColor;
+    update();
+  }
   nvg->update();
 }
 
@@ -158,7 +164,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
 // NvgWindow
 
-NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, parent) {
+NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, true, parent) {
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
 }
