@@ -41,18 +41,23 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
-  bg = bg_colors[s.status];
+  QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   if (s.sm->updated("controlsState") || !alert.equal({})) {
     if (alert.type == "controlsUnresponsive") {
-      bg = bg_colors[STATUS_ALERT];
+      bgColor = bg_colors[STATUS_ALERT];
     } else if (alert.type == "controlsUnresponsivePermanent") {
-      bg = bg_colors[STATUS_DISENGAGED];
+      bgColor = bg_colors[STATUS_DISENGAGED];
     }
-    alerts->updateAlert(alert, bg);
+    alerts->updateAlert(alert, bgColor);
   }
 
   nvg->updateState(s);
+  if (bg != bgColor) {
+    // repaint border
+    bg = bgColor;
+    update();
+  }
   nvg->update();
 }
 
@@ -159,7 +164,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
 // NvgWindow
 
-NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, parent) {
+NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, true, parent) {
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
 }
@@ -396,9 +401,9 @@ void NvgWindow::paintGL() {
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
   double fps = fps_filter.update(1. / dt * 1000);
-  if (fps < 15) {
-    LOGW("slow frame rate: %.2f fps", fps);
-  }
+//  if (fps < 15) {
+  LOGW("frame rate: %.2f fps", fps);
+//  }
   prev_draw_t = cur_draw_t;
 }
 
