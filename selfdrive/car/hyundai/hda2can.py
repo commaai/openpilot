@@ -10,8 +10,9 @@ def create_lkas(packer, enabled, frame, lat_active, apply_steer):
   return packer.make_can_msg("LKAS", 4, values, frame % 255)
 
 
-def create_buttons(packer, cancel, resume):
+def create_buttons(packer, cnt, cancel, resume):
   values = {
+    "_COUNTER": cnt % 0xf,
     "SET_ME_1": 1,
     "DISTANCE_BTN": 1 if resume else 0,
     "PAUSE_RESUME_BTN": 1 if cancel else 0,

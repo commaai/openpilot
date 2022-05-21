@@ -30,6 +30,7 @@ class CarState(CarStateBase):
 
     self.brake_error = False
     self.park_brake = False
+    self.buttons_counter = 0
 
   def update(self, cp, cp_cam):
     if self.CP.carFingerprint in HDA2_CAR:
@@ -167,6 +168,8 @@ class CarState(CarStateBase):
 
     speed_factor = CV.MPH_TO_MS if cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] == 1 else CV.KPH_TO_MS
     ret.cruiseState.speed = cp.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
+
+    self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["_COUNTER"]
 
     return ret
 
@@ -357,6 +360,7 @@ class CarState(CarStateBase):
       ("CRUISE_ACTIVE", "SCC1"),
       ("SET_SPEED", "CRUISE_INFO"),
       ("CRUISE_STANDSTILL", "CRUISE_INFO"),
+      ("_COUNTER", "CRUISE_BUTTONS"),
 
       ("DISTANCE_UNIT", "CLUSTER_INFO"),
 
@@ -375,6 +379,7 @@ class CarState(CarStateBase):
       ("MDPS", 100),
       ("SCC1", 50),
       ("CRUISE_INFO", 50),
+      ("CRUISE_BUTTONS", 50),
       ("CLUSTER_INFO", 4),
       ("BLINKERS", 4),
       ("DOORS_SEATBELTS", 4),

@@ -44,7 +44,7 @@ class CarController:
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.steer_rate_limited = False
-    self.last_resume_frame = 0
+    self.last_button_frame = 0
     self.accel = 0
 
   def update(self, CC, CS):
@@ -71,14 +71,16 @@ class CarController:
       can_sends.append(hda2can.create_lkas(self.packer, CC.enabled, self.frame, CC.latActive, apply_steer))
 
       # cruise cancel
-      if CC.cruiseControl.cancel:
-        if (self.frame % 10) == 0:
-          for _ in range(10):
-            can_sends.append(hda2can.create_buttons(self.packer, True, False))
+      if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
+        if CC.cruiseControl.cancel:
+          for _ in range(20):
+            can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, True, False))
+          self.last_button_frame = self.frame
 
-      # cruise standstill resume
-      elif CC.enabled and CS.out.cruiseState.standstill and (self.frame % 10) == 0:
-        can_sends.append(hda2can.create_buttons(self.packer, False, True))
+        # cruise standstill resume
+        elif CC.enabled and CS.out.cruiseState.standstill:
+          can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, False, True))
+          self.last_button_frame = self.frame
     else:
 
       # tester present - w/ no response (keeps radar disabled)
@@ -96,10 +98,10 @@ class CarController:
           can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL))
         elif CS.out.cruiseState.standstill:
           # send resume at a max freq of 10Hz
-          if (self.frame - self.last_resume_frame) * DT_CTRL > 0.1:
+          if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
             # send 25 messages at a time to increases the likelihood of resume being accepted
             can_sends.extend([hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.RES_ACCEL)] * 25)
-            self.last_resume_frame = self.frame
+            self.last_button_frame = self.frame
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         accel = actuators.accel
