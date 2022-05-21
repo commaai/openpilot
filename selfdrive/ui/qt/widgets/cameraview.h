@@ -56,6 +56,7 @@ protected:
 
   int draw_frame_id = 0;
   int cam_frame_id = 0;
+  int end_drawing_wrong_frames_frame_id = 0;
 
   GLuint textures[3];
 
