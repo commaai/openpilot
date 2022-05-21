@@ -234,7 +234,7 @@ void CameraViewWidget::paintGL() {
     QFile file("/data/ui_poll_data");
     assert(file.open(QIODevice::WriteOnly | QIODevice::Append));
     QString msg;
-    msg.sprintf("Drawing duplicate model frames shouldn't happen! model: %d, camera: %d\n", draw_frame_id, cam_frame_id);
+    msg.sprintf("Drawing duplicate model frames shouldn't happen! model: %d, camera: %d, prev_model: %d, prev_camera: %d\n", draw_frame_id, cam_frame_id, prev_model_frame_id, prev_cam_frame_id);
     file.write(msg.toStdString().c_str(), msg.size());
     file.close();
   }
@@ -242,7 +242,7 @@ void CameraViewWidget::paintGL() {
     QFile file("/data/ui_poll_data");
     assert(file.open(QIODevice::WriteOnly | QIODevice::Append));
     QString msg;
-    msg.sprintf("Drawing previous camera frames shouldn't happen! model: %d, camera: %d\n", draw_frame_id, cam_frame_id);
+    msg.sprintf("Drawing previous camera frames shouldn't happen! model: %d, camera: %d, prev_model: %d, prev_camera: %d\n", draw_frame_id, cam_frame_id, prev_model_frame_id, prev_cam_frame_id);
     file.write(msg.toStdString().c_str(), msg.size());
     file.close();
   }
@@ -250,7 +250,7 @@ void CameraViewWidget::paintGL() {
     QFile file("/data/ui_poll_data");
     assert(file.open(QIODevice::WriteOnly | QIODevice::Append));
     QString msg;
-    msg.sprintf("Model and camera frame ids do not match! model: %d, camera: %d\n", draw_frame_id, cam_frame_id);
+    msg.sprintf("Model and camera frame ids do not match! model: %d, camera: %d, prev_model: %d, prev_camera: %d\n", draw_frame_id, cam_frame_id, prev_model_frame_id, prev_cam_frame_id);
     file.write(msg.toStdString().c_str(), msg.size());
     file.close();
   }
