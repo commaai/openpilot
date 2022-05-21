@@ -38,6 +38,8 @@ protected:
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   virtual void updateFrameMat(int w, int h);
   void vipcThread();
+  uint32_t prev_model_frame_id = 0;
+  uint32_t prev_cam_frame_id = 0;
 
   bool zoomed_view;
   bool manual_update;
