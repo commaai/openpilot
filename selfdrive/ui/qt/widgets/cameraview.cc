@@ -8,6 +8,7 @@
 
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>
+#include <QFile>
 
 namespace {
 
@@ -216,26 +217,51 @@ void CameraViewWidget::paintGL() {
 
   if (latest_frame == nullptr) return;
 
-  qDebug() << "Requested frame id:" << draw_frame_id;
-  qDebug() << "Drawing frame id:  " << cam_frame_id;
+//  qDebug() << "Requested frame id:" << draw_frame_id;
+//  qDebug() << "Drawing frame id:  " << cam_frame_id;
 //  qDebug() << "Correct:           " << (draw_frame_id == cam_frame_id);
 //  qDebug() << "Model frame id new:" << (prev_model_frame_id < draw_frame_id);
 //  qDebug() << "Cam frame id new:  " << (prev_cam_frame_id < cam_frame_id);
 
   if (draw_frame_id != cam_frame_id) {
-    qDebug() << "WRROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOONG FRAME!";
+//    qDebug() << "WRROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOONG FRAME!";
     wrong_frame += 1;
   } else {
     wrong_frame = std::max(wrong_frame - 1, 0);
   }
 
-  // warm up of 1 second for all asserts
-  assert((draw_frame_id > prev_model_frame_id) || (cam_frame_id < (10 * 20)));  // never should draw duplicate model frames
-  assert((cam_frame_id >= prev_cam_frame_id) || (cam_frame_id < (10 * 20)));  // can draw same camera frames sometimes
-  // ok if drawing on same frame or if during startup
-  assert((draw_frame_id == cam_frame_id) || (cam_frame_id < (10 * 20)));
-  // this allows touches, but you don't know if user touched, or we're just randomly drawing wrong frames
-  // assert((draw_frame_id == cam_frame_id) || (draw_frame_id < 5) || ((wrong_frame <= 3)));
+  if (draw_frame_id <= prev_model_frame_id) {
+    QFile file("/data/ui_poll_data");
+    assert(file.open(QIODevice::WriteOnly | QIODevice::Append));
+    QString msg;
+    msg.sprintf("Drawing duplicate model frames shouldn't happen! model: %d, camera: %d\n", draw_frame_id, cam_frame_id);
+    file.write(msg.toStdString().c_str(), msg.size());
+    file.close();
+  }
+  if (cam_frame_id < prev_cam_frame_id) {
+    QFile file("/data/ui_poll_data");
+    assert(file.open(QIODevice::WriteOnly | QIODevice::Append));
+    QString msg;
+    msg.sprintf("Drawing previous camera frames shouldn't happen! model: %d, camera: %d\n", draw_frame_id, cam_frame_id);
+    file.write(msg.toStdString().c_str(), msg.size());
+    file.close();
+  }
+  if (draw_frame_id != cam_frame_id) {
+    QFile file("/data/ui_poll_data");
+    assert(file.open(QIODevice::WriteOnly | QIODevice::Append));
+    QString msg;
+    msg.sprintf("Model and camera frame ids do not match! model: %d, camera: %d\n", draw_frame_id, cam_frame_id);
+    file.write(msg.toStdString().c_str(), msg.size());
+    file.close();
+  }
+
+//  // warm up of 1 second for all asserts
+//  assert((draw_frame_id > prev_model_frame_id) || (cam_frame_id < (10 * 20)));  // never should draw duplicate model frames
+//  assert((cam_frame_id >= prev_cam_frame_id) || (cam_frame_id < (10 * 20)));  // can draw same camera frames sometimes
+//  // ok if drawing on same frame or if during startup
+//  assert((draw_frame_id == cam_frame_id) || (cam_frame_id < (10 * 20)));
+//  // this allows touches, but you don't know if user touched, or we're just randomly drawing wrong frames
+//  // assert((draw_frame_id == cam_frame_id) || (draw_frame_id < 5) || ((wrong_frame <= 3)));
 
   prev_model_frame_id = draw_frame_id;
   prev_cam_frame_id = cam_frame_id;
