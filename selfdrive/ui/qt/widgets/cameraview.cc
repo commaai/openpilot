@@ -224,7 +224,7 @@ void CameraViewWidget::paintGL() {
 
   assert((prev_model_frame_id < draw_frame_id) || (draw_frame_id == 0));
   assert((prev_cam_frame_id < cam_frame_id) || (cam_frame_id == 0));
-  assert((draw_frame_id == (cam_frame_id - 1)) || (cam_frame_id == 0));
+  assert((draw_frame_id - cam_frame_id) <= 1 || (cam_frame_id == 0));
 
   prev_model_frame_id = draw_frame_id;
   prev_cam_frame_id = cam_frame_id;
