@@ -57,12 +57,8 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 
 def run_test_process(data):
-  segment, cfg, args, cur_log_fn, lr, ref_commit = data
-  print(segment, cfg.proc_name)
-
-  if isinstance(lr, bytes):
-    lr = LogReader(lr)
-
+  segment, cfg, args, cur_log_fn, lr_dat, ref_commit = data
+  lr = LogReader.from_bytes(lr_dat)
   res = None
   if not args.upload_only:
     ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")

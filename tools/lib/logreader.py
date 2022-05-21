@@ -74,26 +74,23 @@ class MultiLogIterator:
 
 
 class LogReader:
-  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False):
+  def __init__(self, fn, dat=None, canonicalize=True, only_union_types=False, sort_by_time=False):
     self.data_version = None
     self._only_union_types = only_union_types
 
-    if isinstance(fn, bytes):
-      self.dat = fn
-    else:
+    if not dat:
       _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
       with FileReader(fn) as f:
         dat = f.read()
 
-      if ext == "":
+      if ext == ".bz2":
+        dat = bz2.decompress(dat)
+      elif ext != "":
         # old rlogs weren't bz2 compressed
-        self.dat = dat
-      elif ext == ".bz2":
-        self.dat = bz2.decompress(dat)
-      else:
         raise Exception(f"unknown extension {ext}")
 
-    ents = capnp_log.Event.read_multiple_bytes(self.dat)
+    ents = capnp_log.Event.read_multiple_bytes(dat)
+    self.dat = dat
 
     _ents = []
     try:
@@ -105,6 +102,10 @@ class LogReader:
     self._ents = list(sorted(_ents, key=lambda x: x.logMonoTime) if sort_by_time else _ents)
     self._ts = [x.logMonoTime for x in self._ents]
 
+  @classmethod
+  def from_bytes(cls, dat):
+    return cls("", dat)
+
   def __iter__(self):
     for ent in self._ents:
       if self._only_union_types:
@@ -115,7 +116,6 @@ class LogReader:
           pass
       else:
         yield ent
-
 
 def logreader_from_route_or_segment(r, sort_by_time=False):
   sn = SegmentName(r, allow_route_name=True)
