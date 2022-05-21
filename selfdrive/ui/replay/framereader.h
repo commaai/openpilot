@@ -19,10 +19,10 @@ class FrameReader {
 public:
   FrameReader();
   ~FrameReader();
-  bool load(const std::string &url, bool no_hw_decoder = false, std::atomic<bool> *abort = nullptr, bool local_cache = false, int chunk_size = -1, int retries = 0);
+  bool load(const std::string &url, bool no_hw_decoder = false, std::atomic<bool> *abort = nullptr, bool local_cache = false,
+            int chunk_size = -1, int retries = 0);
   bool load(const std::byte *data, size_t size, bool no_hw_decoder = false, std::atomic<bool> *abort = nullptr);
-  bool get(int idx, uint8_t *rgb, uint8_t *yuv);
-  int getRGBSize() const { return aligned_width * aligned_height * 3; }
+  bool get(int idx, uint8_t *yuv);
   int getYUVSize() const { return width * height * 3 / 2; }
   size_t getFrameCount() const { return packets.size(); }
   bool valid() const { return valid_; }
@@ -32,9 +32,9 @@ public:
 
 private:
   bool initHardwareDecoder(AVHWDeviceType hw_device_type);
-  bool decode(int idx, uint8_t *rgb, uint8_t *yuv);
+  bool decode(int idx, uint8_t *yuv);
   AVFrame * decodeFrame(AVPacket *pkt);
-  bool copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv);
+  bool copyBuffers(AVFrame *f, uint8_t *yuv);
 
   std::vector<AVPacket*> packets;
   std::unique_ptr<AVFrame, AVFrameDeleter>av_frame_, hw_frame;

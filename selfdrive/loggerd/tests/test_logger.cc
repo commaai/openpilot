@@ -7,7 +7,7 @@
 
 #include "catch2/catch.hpp"
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "selfdrive/loggerd/logger.h"
 #include "selfdrive/ui/replay/util.h"
 

@@ -26,10 +26,8 @@ common/ffi_wrapper.py
 common/file_helpers.py
 common/logging_extra.py
 common/numpy_fast.py
-common/markdown.py
 common/params.py
 common/params_pyx.pyx
-common/xattr.py
 common/profiler.py
 common/basedir.py
 common/dict_helpers.py
@@ -57,9 +55,6 @@ common/transformations/transformations.pxd
 common/transformations/transformations.pyx
 
 common/api/__init__.py
-
-models/supercombo.dlc
-models/dmonitoring_model_q.dlc
 
 release/*
 
@@ -130,34 +125,34 @@ selfdrive/clocksd/clocksd.cc
 
 selfdrive/debug/*.py
 
-selfdrive/common/SConscript
-selfdrive/common/version.h
+common/SConscript
+common/version.h
 
-selfdrive/common/swaglog.h
-selfdrive/common/swaglog.cc
-selfdrive/common/statlog.h
-selfdrive/common/statlog.cc
-selfdrive/common/util.cc
-selfdrive/common/util.h
-selfdrive/common/queue.h
-selfdrive/common/clutil.cc
-selfdrive/common/clutil.h
-selfdrive/common/params.h
-selfdrive/common/params.cc
-selfdrive/common/watchdog.cc
-selfdrive/common/watchdog.h
+common/swaglog.h
+common/swaglog.cc
+common/statlog.h
+common/statlog.cc
+common/util.cc
+common/util.h
+common/queue.h
+common/clutil.cc
+common/clutil.h
+common/params.h
+common/params.cc
+common/watchdog.cc
+common/watchdog.h
 
-selfdrive/common/modeldata.h
-selfdrive/common/mat.h
-selfdrive/common/timing.h
+common/modeldata.h
+common/mat.h
+common/timing.h
 
-selfdrive/common/visionimg.cc
-selfdrive/common/visionimg.h
+common/visionimg.cc
+common/visionimg.h
 
-selfdrive/common/gpio.cc
-selfdrive/common/gpio.h
-selfdrive/common/i2c.cc
-selfdrive/common/i2c.h
+common/gpio.cc
+common/gpio.h
+common/i2c.cc
+common/i2c.h
 
 
 selfdrive/controls/__init__.py
@@ -173,6 +168,7 @@ selfdrive/controls/lib/events.py
 selfdrive/controls/lib/lane_planner.py
 selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/latcontrol_indi.py
+selfdrive/controls/lib/latcontrol_lqr.py
 selfdrive/controls/lib/latcontrol_torque.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol.py
@@ -195,8 +191,13 @@ selfdrive/hardware/base.h
 selfdrive/hardware/base.py
 selfdrive/hardware/hw.h
 selfdrive/hardware/tici/__init__.py
+selfdrive/hardware/tici/hardware.h
 selfdrive/hardware/tici/hardware.py
+selfdrive/hardware/tici/pins.py
+selfdrive/hardware/tici/agnos.py
+selfdrive/hardware/tici/agnos.json
 selfdrive/hardware/tici/amplifier.py
+selfdrive/hardware/tici/updater
 selfdrive/hardware/tici/iwlist.py
 selfdrive/hardware/pc/__init__.py
 selfdrive/hardware/pc/hardware.py
@@ -300,9 +301,6 @@ selfdrive/camerad/snapshot/*
 selfdrive/camerad/include/*
 selfdrive/camerad/cameras/camera_common.h
 selfdrive/camerad/cameras/camera_common.cc
-selfdrive/camerad/cameras/camera_replay.cc
-selfdrive/camerad/cameras/camera_replay.h
-selfdrive/camerad/cameras/sensor_i2c.h
 selfdrive/camerad/cameras/sensor2_i2c.h
 
 selfdrive/camerad/transforms/rgb_to_yuv.cc
@@ -337,6 +335,8 @@ selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
 selfdrive/modeld/models/dmonitoring.cc
 selfdrive/modeld/models/dmonitoring.h
+selfdrive/modeld/models/supercombo.dlc
+selfdrive/modeld/models/dmonitoring_model_q.dlc
 
 selfdrive/modeld/transforms/loadyuv.cc
 selfdrive/modeld/transforms/loadyuv.h
