@@ -216,15 +216,15 @@ void CameraViewWidget::paintGL() {
 
   if (latest_frame == nullptr) return;
 
-//  qDebug() << "Requested frame id:" << draw_frame_id;
-//  qDebug() << "Drawing frame id:  " << cam_frame_id;
-//  qDebug() << "Correct:           " << (draw_frame_id == cam_frame_id);
-//  qDebug() << "Model frame id new:" << (prev_model_frame_id < draw_frame_id);
-//  qDebug() << "Cam frame id new:  " << (prev_cam_frame_id < cam_frame_id);
+  qDebug() << "Requested frame id:" << draw_frame_id;
+  qDebug() << "Drawing frame id:  " << cam_frame_id;
+  qDebug() << "Correct:           " << (draw_frame_id == cam_frame_id);
+  qDebug() << "Model frame id new:" << (prev_model_frame_id < draw_frame_id);
+  qDebug() << "Cam frame id new:  " << (prev_cam_frame_id < cam_frame_id);
 
-//  assert((prev_model_frame_id < draw_frame_id) || (draw_frame_id == 0));
-//  assert((prev_cam_frame_id <= cam_frame_id) || (cam_frame_id == 0));
-//  assert((draw_frame_id - cam_frame_id) <= 1 || (cam_frame_id == 0));
+  assert((prev_model_frame_id < draw_frame_id) || (draw_frame_id == 0));
+  assert((prev_cam_frame_id <= cam_frame_id) || (cam_frame_id == 0));
+  assert((draw_frame_id - cam_frame_id) <= 1 || (cam_frame_id == 0));
 
   prev_model_frame_id = draw_frame_id;
   prev_cam_frame_id = cam_frame_id;
