@@ -216,23 +216,22 @@ void CameraViewWidget::paintGL() {
 
   if (latest_frame == nullptr) return;
 
-//  qDebug() << "Requested frame id:" << draw_frame_id;
-//  qDebug() << "Drawing frame id:  " << cam_frame_id;
+  qDebug() << "Requested frame id:" << draw_frame_id;
+  qDebug() << "Drawing frame id:  " << cam_frame_id;
 //  qDebug() << "Correct:           " << (draw_frame_id == cam_frame_id);
 //  qDebug() << "Model frame id new:" << (prev_model_frame_id < draw_frame_id);
 //  qDebug() << "Cam frame id new:  " << (prev_cam_frame_id < cam_frame_id);
 
   if (draw_frame_id != cam_frame_id) {
-    qDebug() << "WRROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOONG FRAME!";
+//    qDebug() << "WRROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOONG FRAME!";
     wrong_frame += 1;
   } else {
-    if (wrong_frame == 1 && )
     wrong_frame = std::max(wrong_frame - 1, 0);
   }
 
   assert((draw_frame_id > prev_model_frame_id) || (draw_frame_id == 0));  // never should draw duplicate model frames
   assert((cam_frame_id >= prev_cam_frame_id) || (cam_frame_id == 0));  // can draw same camera frames sometimes
-  // ok if drawing on same frame or: (if during startup, or we never draw wrong frame greater than 4 times and it's not continually drawing wrong frames (sometimes when touching screen))
+  // ok if drawing on same frame or if during startup
   assert((draw_frame_id == cam_frame_id) || (draw_frame_id < 5));
   // this allows touches, but you don't know if user touched, or we're just randomly drawing wrong frames
   // assert((draw_frame_id == cam_frame_id) || (draw_frame_id < 5) || ((wrong_frame <= 3)));
