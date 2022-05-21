@@ -216,6 +216,19 @@ void CameraViewWidget::paintGL() {
 
   if (latest_frame == nullptr) return;
 
+  qDebug() << "Requested frame id:" << draw_frame_id;
+  qDebug() << "Drawing frame id:  " << cam_frame_id;
+  qDebug() << "Correct:           " << (draw_frame_id == cam_frame_id);
+  qDebug() << "Model frame id new:" << (prev_model_frame_id < draw_frame_id);
+  qDebug() << "Cam frame id new:  " << (prev_cam_frame_id < cam_frame_id);
+
+  assert((prev_model_frame_id < draw_frame_id) || (draw_frame_id == 0));
+  assert((prev_cam_frame_id < cam_frame_id) || (cam_frame_id == 0));
+  assert(draw_frame_id == frames[new_frame_index].first);
+
+  prev_model_frame_id = draw_frame_id;
+  prev_cam_frame_id = cam_frame_id;
+
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
@@ -263,14 +276,16 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   updateFrameMat(width(), height());
 }
 
-void CameraViewWidget::vipcFrameReceived(VisionBuf *buf) {
+void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, int frame_id) {
   latest_frame = buf;
+  cam_frame_id = frame_id;
   if (!manual_update) update();
 }
 
 void CameraViewWidget::vipcThread() {
   VisionStreamType cur_stream_type = stream_type;
   std::unique_ptr<VisionIpcClient> vipc_client;
+  VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream_type != stream_type) {
@@ -286,8 +301,8 @@ void CameraViewWidget::vipcThread() {
       emit vipcThreadConnected(vipc_client.get());
     }
 
-    if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
-      emit vipcThreadFrameReceived(buf);
+    if (VisionBuf *buf = vipc_client->recv(&meta_main, 1000)) {
+      emit vipcThreadFrameReceived(buf, meta_main.frame_id);
     }
   }
 }
