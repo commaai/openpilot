@@ -1,4 +1,4 @@
-from common.numpy_fast import interp
+from common.numpy_fast import clip, interp
 
 def create_steer_command(packer, steer, steer_req, raw_cnt):
   """Creates a CAN message for the Toyota Steer Command."""
@@ -12,22 +12,24 @@ def create_steer_command(packer, steer, steer_req, raw_cnt):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_lta_steer_command(packer, apply_steer, steer_angle, driver_torque, steer_req, raw_cnt):
+def create_lta_steer_command(packer, apply_steer, steer_angle, driver_torque, steer_req, frame):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
   percentage = interp(abs(driver_torque), [50, 100], [100, 0])
   apply_steer = interp(percentage, [-10, 100], [steer_angle, apply_steer])
+  apply_steer = clip(apply_steer, -85, 85)  # you get PCS if you request above LTA max angle
+  steer_req = steer_req and frame % 10 != 0  # cutting torque once in a while seems to allow for higher angle rates (same as torque?)
   values = {
-    "COUNTER": raw_cnt,  # 0 to 62
+    "COUNTER": frame,  # 0 to 62
     "SETME_X1": 1,
-    "SETME_X3": 1,  # usually 1, but sometimes 3 (??)
+    "SETME_X3": 3,  # usually 1, but sometimes 3 (??)
     "PERCENTAGE": 100,  # correlated with driver torque
     "SETME_X64": 0x64,  # ramps to 0 smoothly then back on falling edge of STEER_REQUEST if BIT isn't 1
-    "ANGLE": 0,  # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
+    "ANGLE": apply_steer * 1.5,  # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
     "STEER_ANGLE_CMD": apply_steer,  # seems to just be desired angle cmd
     "STEER_REQUEST": steer_req,  # stock system turns off steering after ~20 frames of override, else torque winds up
     "STEER_REQUEST_2": steer_req,  # duplicate
-    "BIT": 0,  # 1 when STEER_REQUEST changes state (usually)
+    "BIT": 0,  # 1 when STEER_REQUEST changes state (usually), could this help steering earlier?
   }
   return packer.make_can_msg("STEERING_LTA", 0, values)
 
