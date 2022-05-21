@@ -1,7 +1,27 @@
 import numpy as np
 import unittest
 
-from common.numpy_fast import interp
+from common.numpy_fast import clip, interp
+
+
+class ClipTest(unittest.TestCase):
+  def test_clip_too_low(self):
+    hi = 9
+    lo = 5
+    x = 3
+    assert clip(x, lo, hi) == 5
+
+  def test_clip_between(self):
+    hi = 9
+    lo = 5
+    x = 7
+    assert clip(x, lo, hi) == 7
+
+  def test_clip_too_high(self):
+    hi = 9
+    lo = 5
+    x = 11
+    assert clip(x, lo, hi) == 9
 
 
 class InterpTest(unittest.TestCase):
