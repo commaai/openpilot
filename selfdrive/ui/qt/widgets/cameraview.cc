@@ -223,18 +223,11 @@ void CameraViewWidget::paintGL() {
 //  qDebug() << "Cam frame id new:  " << (prev_cam_frame_id < cam_frame_id);
 
   if (draw_frame_id != cam_frame_id) {
-//    if (wrong_frame == 0) {
-//      // ok if last time we stopped drawing wrong frames is longer than 30 minutes ago
-//      assert((draw_frame_id - end_drawing_wrong_frames_frame_id) > (30*60*20));
-//    }
     qDebug() << "WRROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOONG FRAME!";
     wrong_frame += 1;
   } else {
     if (wrong_frame == 1 && )
     wrong_frame = std::max(wrong_frame - 1, 0);
-//    if (wrong_frame == 0) {
-//      end_drawing_wrong_frames_frame_id = draw_frame_id;
-//    }
   }
 
   assert((draw_frame_id > prev_model_frame_id) || (draw_frame_id == 0));  // never should draw duplicate model frames
