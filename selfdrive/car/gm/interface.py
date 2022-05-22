@@ -5,14 +5,18 @@ from math import fabs
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.gm.values import CAR, CruiseButtons, \
-                                     CarControllerParams, NO_ASCM
+                                     CarControllerParams, NO_ASCM, DBC
 from selfdrive.car.interfaces import CarInterfaceBase
+from common.params import Params
+from selfdrive.car import dbc_dict
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 GearShifter = car.CarState.GearShifter
 
 class CarInterface(CarInterfaceBase):
+  using_new_pedal_transform = False
+  
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     params = CarControllerParams()
@@ -58,6 +62,14 @@ class CarInterface(CarInterfaceBase):
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
     
+    # Dynamically replace the DBC used based on the magic toggle value
+    params = Params()
+    new_pedal_transform = params.get_bool("GMNewPedalTransform")
+    if (new_pedal_transform):
+      for c in DBC.keys:
+        v = DBC[c]
+        DBC[c] = dbc_dict('gm_global_a_powertrain_bolt_generated', v["radar"], v["chassis"], v["body"])
+    CarInterface.using_new_pedal_transform = new_pedal_transform
     
     # LKAS only - no radar, no long 
     if candidate in NO_ASCM:
@@ -111,6 +123,21 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
+      
+      if CarInterface.using_new_pedal_transform and ret.enableGasInterceptor:
+        #Note: Low speed, stop and go not tested. Should be fairly smooth on highway
+        ret.longitudinalTuning.kpBP = [0., 35.0]
+        ret.longitudinalTuning.kpV = [0.4, 0.06] 
+        ret.longitudinalTuning.kiBP = [0., 35.0] 
+        ret.longitudinalTuning.kiV = [0.0, 0.04]
+        ret.longitudinalTuning.kf = 0.25
+        ret.stoppingDecelRate = 0.8  # reach stopping target smoothly, brake_travel/s while trying to stop
+        ret.stopAccel = 0. # Required acceleraton to keep vehicle stationary
+        ret.vEgoStopping = 0.5  # Speed at which the car goes into stopping state, when car starts requesting stopping accel
+        ret.vEgoStarting = 0.5  # Speed at which the car goes into starting state, when car starts requesting starting accel,
+        # vEgoStarting needs to be > or == vEgoStopping to avoid state transition oscillation
+        ret.stoppingControl = True
+
 
     elif candidate == CAR.MALIBU or candidate == CAR.MALIBU_NR:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -186,20 +213,38 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]
       ret.lateralTuning.pid.kf = 0.0002
       
-      # TODO: Needs refinement for stop and go, doesn't fully stop
-      # Assumes the Bolt is using L-Mode for regen braking
-      ret.longitudinalTuning.kpBP = [0., 35]
-      ret.longitudinalTuning.kpV = [0.21, 0.46] 
-      ret.longitudinalTuning.kiBP = [0., 35.] 
-      ret.longitudinalTuning.kiV = [0.22, 0.33]
-      ret.stoppingDecelRate = 0.17  # reach stopping target smoothly, brake_travel/s while trying to stop
-      ret.stopAccel = 0. # Required acceleraton to keep vehicle stationary
-      ret.vEgoStopping = 0.6  # Speed at which the car goes into stopping state, when car starts requesting stopping accel
-      ret.vEgoStarting = 0.6  # Speed at which the car goes into starting state, when car starts requesting starting accel,
-      # vEgoStarting needs to be > or == vEgoStopping to avoid state transition oscillation
-      ret.stoppingControl = True
-      ret.longitudinalTuning.deadzoneBP = [0.]
-      ret.longitudinalTuning.deadzoneV = [0.]
+      
+      if CarInterface.using_new_pedal_transform and ret.enableGasInterceptor:
+        #Note: Low speed, stop and go not tested. Should be fairly smooth on highway
+        ret.longitudinalTuning.kpBP = [0., 35.0]
+        ret.longitudinalTuning.kpV = [0.4, 0.06] 
+        ret.longitudinalTuning.kiBP = [0., 35.0] 
+        ret.longitudinalTuning.kiV = [0.0, 0.04]
+        ret.longitudinalTuning.kf = 0.25
+        ret.stoppingDecelRate = 0.8  # reach stopping target smoothly, brake_travel/s while trying to stop
+        ret.stopAccel = 0. # Required acceleraton to keep vehicle stationary
+        ret.vEgoStopping = 0.5  # Speed at which the car goes into stopping state, when car starts requesting stopping accel
+        ret.vEgoStarting = 0.5  # Speed at which the car goes into starting state, when car starts requesting starting accel,
+        # vEgoStarting needs to be > or == vEgoStopping to avoid state transition oscillation
+        ret.stoppingControl = True
+        # ret.longitudinalTuning.deadzoneBP = [0.]
+        # ret.longitudinalTuning.deadzoneV = [0.]
+      else:
+        # darknight11's tuning efforts using old pedal transform
+        # TODO: Needs refinement for stop and go, doesn't fully stop
+        # Assumes the Bolt is using L-Mode for regen braking
+        ret.longitudinalTuning.kpBP = [0., 35]
+        ret.longitudinalTuning.kpV = [0.21, 0.46] 
+        ret.longitudinalTuning.kiBP = [0., 35.] 
+        ret.longitudinalTuning.kiV = [0.22, 0.33]
+        ret.stoppingDecelRate = 0.17  # reach stopping target smoothly, brake_travel/s while trying to stop
+        ret.stopAccel = 0. # Required acceleraton to keep vehicle stationary
+        ret.vEgoStopping = 0.6  # Speed at which the car goes into stopping state, when car starts requesting stopping accel
+        ret.vEgoStarting = 0.6  # Speed at which the car goes into starting state, when car starts requesting starting accel,
+        # vEgoStarting needs to be > or == vEgoStopping to avoid state transition oscillation
+        ret.stoppingControl = True
+        ret.longitudinalTuning.deadzoneBP = [0.]
+        ret.longitudinalTuning.deadzoneV = [0.]
       
       
     elif candidate == CAR.EQUINOX_NR:

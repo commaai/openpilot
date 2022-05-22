@@ -69,6 +69,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "When enabled, pressing the accelerator pedal will disengage openpilot.",
       "../assets/offroad/icon_disengage_on_accelerator.svg",
     },
+    {
+      "GMNewPedalTransform",
+      "Use new transform for GM Pedal Interceptor",
+      "You will need to update your tune if not already done.",
+      "../assets/offroad/icon_warning.svg",
+    },
 #ifdef ENABLE_MAPS
     {
       "NavSettingTime24h",
