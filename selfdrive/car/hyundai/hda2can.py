@@ -1,11 +1,14 @@
 def create_lkas(packer, enabled, frame, lat_active, apply_steer):
   values = {
+    "LKA_MODE": 2,
     "LKA_ICON": 2 if enabled else 1,
     "TORQUE_REQUEST": apply_steer,
-    "NEW_SIGNAL_1": 6,
+    "LKA_ASSIST": 1 if lat_active else 0,
     "STEER_REQ": 1 if lat_active else 0,
-    "STEER_REQ_2": 1 if lat_active else 0,
-    "STEER_REQ_3": 1 if lat_active else 0,
+    "STEER_MODE": 0,
+    "SET_ME_1": 0,
+    "NEW_SIGNAL_1": 0,
+    "NEW_SIGNAL_2": 0,
   }
   return packer.make_can_msg("LKAS", 4, values, frame % 255)
 
