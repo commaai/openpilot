@@ -5,7 +5,7 @@ from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 
 
 class LatControlCurvature(LatControl):
-  def update(self, active, CS, VM, params, last_actuators, lat_plan, desired_curvature, desired_curvature_rate, llk):
+  def update(self, active, CS, VM, params, last_actuators, lat_plan, model_v2, desired_curvature, desired_curvature_rate, llk):
     curvature_log = log.ControlsState.LateralCurvatureState.new_message()
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
