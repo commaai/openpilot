@@ -12,8 +12,8 @@
 #include <mutex>
 #include <numeric>
 
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
+#include "common/timing.h"
+#include "common/util.h"
 
 ReplayMessageHandler message_handler = nullptr;
 DownloadProgressHandler download_progress_handler = nullptr;

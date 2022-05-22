@@ -42,11 +42,16 @@ class CarState(CarStateBase):
       gmGear = "P"
     
     ret.gearShifter = self.parse_gear_shifter(gmGear)
-    ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0
-    ret.brake = 0.
     
+    ret.brakePressed = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] >= 11 # TODO: JJS: PR this increase for trucks
+        # Regen braking is braking
+    if self.car_fingerprint in EV_CAR:
+      ret.brakePressed = ret.brakePressed or pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
+
     if ret.brakePressed:
       ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
+    else: # TODO: JJS: restore zeroing messy brake signals via PR
+      ret.brake = 0.
 
     if self.CP.enableGasInterceptor:
       ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
@@ -92,10 +97,6 @@ class CarState(CarStateBase):
     else:
       ret.accFaulted = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.FAULTED
 
-    # Regen braking is braking
-    if self.car_fingerprint in EV_CAR:
-      ret.brakePressed = ret.brakePressed or pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
-
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
 
@@ -129,7 +130,6 @@ class CarState(CarStateBase):
       ("LKATorqueDeliveredStatus", "PSCMStatus"),
       ("TractionControlOn", "ESPStatus"),
       ("CruiseMainOn", "ECMEngineStatus"),
-      ("Brake_Pressed", "ECMEngineStatus"),
     ]
 
     checks = [

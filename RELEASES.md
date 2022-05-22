@@ -1,5 +1,6 @@
-Version 0.8.14-GM9 (2022-05-07)
+V. 0.8.14-GM-10 (2022-05-22)
 ========================
+ * Warning: webcam support removed by comma; hopefully will be restored
  * Comma removed Comma 2 support from master; C2 will get backported featured in the future
  * Further improved Bolt Tunining thanks to Darknight11
  * Reversed CC main logic with Pedal
@@ -29,20 +30,15 @@ Version 0.8.14-GM9 (2022-05-07)
  * TODO: Pedal low-speed tuning
  * TODO: Auto-detection of L-mode zero-point
 
-Version 0.8.14 (2022-0X-XX)
+Version 0.8.14 (2022-05-30)
 ========================
  * New driving model
    * Bigger model, using both of comma three's road-facing cameras
    * Better at cut-in detection and tight turns
  * New driver monitoring model
-   * Tweaked network structure to improve output resolution for dsp
+   * Tweaked network structure to improve output resolution for DSP
    * Fixed bug in quantization aware training to reduce quantizing errors
    * Resulted in 7x less MSE and no more random biases at runtime
- * New lateral controller based on physical wheel torque model
-   * Much smoother control, consistent across the speed range
-   * Effective feedforward that uses road roll
-   * Simplified tuning, all car-specific parameters can be derived from data
-   * Initially used on TSS2 Corolla and TSS-P RAV4
  * Added toggle to disable disengaging on the accelerator pedal
  * comma body support
  * Audi RS3 support thanks to jyoung8607!
@@ -50,6 +46,7 @@ Version 0.8.14 (2022-0X-XX)
  * Hyundai Tucson Diesel 2019 support thanks to sunnyhaibin!
  * Toyota Alphard Hybrid 2021 support
  * Toyota Avalon Hybrid 2022 support
+ * Toyota RAV4 2022 support
  * Toyota RAV4 Hybrid 2022 support
 
 Version 0.8.13 (2022-02-18)

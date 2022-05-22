@@ -5,7 +5,7 @@
 #include <QDebug>
 
 #include "selfdrive/ui/qt/maps/map_helpers.h"
-#include "selfdrive/common/timing.h"
+#include "common/timing.h"
 
 const float ZOOM = 13.5; // Don't go below 13 or features will start to disappear
 const int WIDTH = 256;

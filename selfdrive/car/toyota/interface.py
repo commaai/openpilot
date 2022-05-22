@@ -115,7 +115,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3505. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_H)
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022):
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022):
       stop_and_go = True
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3

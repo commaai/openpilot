@@ -1,6 +1,6 @@
 #pragma once
 
-#include "selfdrive/common/queue.h"
+#include "common/queue.h"
 #include "selfdrive/loggerd/encoder/encoder.h"
 
 #define BUF_IN_COUNT 7

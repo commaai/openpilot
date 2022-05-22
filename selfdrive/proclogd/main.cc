@@ -1,7 +1,7 @@
 
 #include <sys/resource.h>
 
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "selfdrive/proclogd/proclog.h"
 
 ExitHandler do_exit;
