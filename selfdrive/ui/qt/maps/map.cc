@@ -64,7 +64,7 @@ MapWindow::~MapWindow() {
 }
 
 void MapWindow::initLayers() {
-  if (layers_initialized) return;
+//  if (layers_initialized) return;
 //  if (!gl_initialized) return;
   layers_initialized = true;
   // This doesn't work from initializeGL
@@ -172,7 +172,7 @@ void MapWindow::updateState(const UIState &s) {
 //  qDebug() << "instructions:" << e << "ms";
 //  t = millis_since_boot();
 //
-  if (gl_initialized) {
+//  if (gl_initialized) {
     qDebug() << "About to initialize layers";
     initLayers();
     QVector<QString> layers = m_map->layerIds();
@@ -180,7 +180,7 @@ void MapWindow::updateState(const UIState &s) {
 //    for (auto layer_id : layers) {
 //      qDebug() << layer_id;
 //    }
-  }
+//  }
 //
 //  e = millis_since_boot() - t;
 //  qDebug() << "initLayers:" << e << "ms";
