@@ -331,7 +331,28 @@ class RouteEngine:
     self.nav_destination = None
 
   def should_recompute(self):
-    return False
+    if self.step_idx is None or self.route is None:
+      return True
+
+    # Don't recompute in last segment, assume destination is reached
+    if self.step_idx == len(self.route) - 1:
+      return False
+
+    # Compute closest distance to all line segments in the current path
+    min_d = REROUTE_DISTANCE + 1
+    path = self.route[self.step_idx]['geometry']['coordinates']
+    for i in range(len(path) - 1):
+      a = path[i]
+      b = path[i + 1]
+
+      if a.distance_to(b) < 1.0:
+        continue
+
+      min_d = min(min_d, minimum_distance(a, b, self.last_position))
+
+    return min_d > REROUTE_DISTANCE
+
+    # TODO: Check for going wrong way in segment
 
 
 def main(sm=None, pm=None):
