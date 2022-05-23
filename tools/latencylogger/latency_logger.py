@@ -8,7 +8,7 @@ from collections import defaultdict
 
 from tools.lib.logreader import logreader_from_route_or_segment
 
-DEMO_ROUTE = "9f583b1d93915c31|2022-04-26--18-49-49"
+DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 # Retrive controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored
@@ -51,7 +51,7 @@ def read_logs(lr):
         for key in MONOTIME_KEYS:
           if hasattr(msg_obj, key):
             if getattr(msg_obj, key) == 0:
-              # Filter out controlsd messages which arrive before the camera loop 
+              # Filter out controlsd messages which arrive before the camera loop
               continue_outer = True
             elif getattr(msg_obj, key) in mono_to_frame:
               frame_id = mono_to_frame[getattr(msg_obj, key)]
