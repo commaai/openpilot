@@ -19,9 +19,7 @@ public:
   ~CameraViewWidget();
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
-  void setFrameId(uint32_t frame_id) {
-    draw_frame_id = frame_id;
-  }
+  void setFrameId(uint32_t frame_id) { draw_frame_id = frame_id; }
 
 signals:
   void clicked();
@@ -41,7 +39,7 @@ protected:
   bool zoomed_view;
   bool manual_update;
   uint32_t draw_frame_id = 0;
-  uint32_t camera_frame_id = 0;
+  uint32_t latest_frame_id = 0;
   VisionBuf *latest_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;

@@ -8,7 +8,6 @@
 
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>
-#include <QFile>
 
 namespace {
 
@@ -217,8 +216,8 @@ void CameraViewWidget::paintGL() {
 
   if (latest_frame == nullptr) return;
 
-  if (camera_frame_id != draw_frame_id) {
-    LOGW("camera and draw frame ids do not match: %d != %d", camera_frame_id, draw_frame_id);
+  if (latest_frame_id != draw_frame_id) {
+    LOGW("camera and draw frame ids do not match: %d != %d", latest_frame_id, draw_frame_id);
   }
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -270,7 +269,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
   latest_frame = buf;
-  camera_frame_id = frame_id;
+  latest_frame_id = frame_id;
   if (!manual_update) update();
 }
 
