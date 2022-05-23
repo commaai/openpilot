@@ -138,7 +138,7 @@ class RouteEngine:
     parse_banner_instructions(msg.navInstruction, step['bannerInstructions'], distance_to_maneuver_along_geometry)
 
     # Compute total remaining time and distance
-    remaning = 1.0 - along_geometry / step['distance']
+    remaning = 1.0 - along_geometry / max(step['distance'], 1)
     total_distance = step['distance'] * remaning
     total_time = step['duration'] * remaning
     total_time_typical = step['duration_typical'] * remaning
@@ -162,7 +162,7 @@ class RouteEngine:
         self.recompute_countdown = 0
       else:
         cloudlog.warning("Destination reached")
-        Params().remove("NavDestination")
+        Params().delete("NavDestination")
 
         # Clear route if driving away from destination
         dist = self.nav_destination.distance_to(self.last_position)

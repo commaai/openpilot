@@ -114,6 +114,9 @@ def string_to_direction(direction: str) -> str:
 
 
 def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuver: float = 0.0) -> None:
+  if not len(banners):
+    return
+
   current_banner = banners[0]
 
   # A segment can contain multiple banners, find one that we need to show now
