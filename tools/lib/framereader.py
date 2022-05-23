@@ -3,6 +3,7 @@ import json
 import os
 import pickle
 import struct
+import atexit
 import subprocess
 import tempfile
 import threading
@@ -353,6 +354,10 @@ class VideoStreamDecompressor:
     finally:
       self.proc.stdin.close()
 
+  def close(self):
+    self.proc.kill()
+    self.t.join()
+
   def read(self):
     threads = os.getenv("FFMPEG_THREADS", "0")
     cuda = os.getenv("FFMPEG_CUDA", "0") == "1"
@@ -377,6 +382,7 @@ class VideoStreamDecompressor:
     self.proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     try:
       self.t.start()
+      atexit.register(self.close)
 
       while True:
         dat = self.proc.stdout.read(self.out_size)
@@ -396,8 +402,7 @@ class VideoStreamDecompressor:
       result_code = self.proc.wait()
       assert result_code == 0, result_code
     finally:
-      self.proc.kill()
-      self.t.join()
+      self.close()
 
 class StreamGOPReader(GOPReader):
   def __init__(self, fn, frame_type, index_data):
