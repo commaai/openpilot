@@ -29,21 +29,25 @@ class Laikad:
       report = ublox_msg.measurementReport
       new_meas = read_raw_ublox(report)
       measurements = process_measurements(new_meas, self.astro_dog)
-      print(len(measurements))
-      # todo temp lowered the calc_pos_fix to 4. Currently, only gps is supported for offline ephemeris data
-      pos_fix = calc_pos_fix(measurements, min_measurements=6)
+      pos_fix = calc_pos_fix(measurements, min_measurements=5)
       # To get a position fix a minimum of 5 measurements are needed.
       # Each report can contain less and some measurement can't be processed.
-      if len(pos_fix) > 0:
+      meas_msgs = []
+      # print(np.abs(pos_fix[1]).mean())
+      corrected_measurements = []
+      # Use a very high upper bound on the pos fix to filter out the bad ones
+      # todo could use the pos fix from the kf_filter, if that has low std.
+      if len(pos_fix) > 0 and np.abs(pos_fix[1]).mean() < 1000:
         # todo fix ionex readings to correct better
-        correct_measurements(measurements, pos_fix[0][:3], self.astro_dog)
-      meas_msgs = [create_measurement_msg(m) for m in measurements]
-
+        # print("pos fix", pos_fix[0][:3])
+        # print("pos std", len(pos_fix[1]))
+        # print("measurements", len(measurements))
+        # print("measurements", len(measurements))
+        corrected_measurements = correct_measurements(measurements, pos_fix[0][:3], self.astro_dog)
+        meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
       t = ublox_mono_time * 1e-9
-
-      self.update_localizer(pos_fix, t, measurements)
+      self.update_localizer(pos_fix, t, corrected_measurements)
       localizer_valid = self.localizer_valid(t)
-
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
       ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
 
@@ -108,14 +112,10 @@ def create_measurement_msg(meas: GNSSMeasurement):
   c = log.GnssMeasurements.CorrectedMeasurement.new_message()
   c.constellationId = meas.constellation_id.value
   c.svId = meas.sv_id
-  if meas.corrected:
-    observables = meas.observables_final
-  else:
-    observables = meas.observables
   c.glonassFrequency = meas.glonass_freq if meas.constellation_id == ConstellationId.GLONASS else 0
-  c.pseudorange = float(observables['C1C'])
+  c.pseudorange = float(meas.observables_final['C1C'])
   c.pseudorangeStd = float(meas.observables_std['C1C'])
-  c.pseudorangeRate = float(observables['D1C'])
+  c.pseudorangeRate = float(meas.observables_final['D1C'])
   c.pseudorangeRateStd = float(meas.observables_std['D1C'])
   c.satPos = meas.sat_pos_final.tolist()
   c.satVel = meas.sat_vel.tolist()
@@ -125,7 +125,7 @@ def create_measurement_msg(meas: GNSSMeasurement):
 def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMeasurement]):
   ekf_data = defaultdict(list)
   for m in measurements:
-    m_arr = m.as_array(allow_uncorrected=True)
+    m_arr = m.as_array()
     if m.constellation_id == ConstellationId.GPS:
       ekf_data[ObservationKind.PSEUDORANGE_GPS].append(m_arr)
       ekf_data[ObservationKind.PSEUDORANGE_RATE_GPS].append(m_arr)
