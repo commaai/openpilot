@@ -25,6 +25,55 @@ def coordinate_from_param(param):
   return pos['latitude'], pos['longitude']
 
 
+def string_to_direction(direction):
+  for d in ['left', 'right', 'straight']:
+    if d in direction:
+      return d
+  return 'none'
+
+
+def parse_banner_instructions(instruction, banners, distance_to_maneuver=0):
+  current_banner = banners[0]
+
+  # A segment can contain multiple banners, find one that we need to show now
+  for banner in banners:
+    if distance_to_maneuver < banner['distanceAlongGeometry']:
+      current_banner = banner
+
+  # Only show banner when close enough to maneuver
+  instruction.showFull = distance_to_maneuver < current_banner['distanceAlongGeometry']
+
+  p = current_banner['primary']
+  if 'text' in p:
+    instruction.maneuverPrimaryText = p['text']
+  if 'type' in p:
+    instruction.maneuverType = p['type']
+  if 'modifier' in p:
+    instruction.maneuverModifier = p['modifier']
+
+  if 'secondary' in current_banner:
+    instruction.maneuverSecondaryText = current_banner['secondary']['text']
+
+  # Parse lane lines
+  if 'sub' in current_banner:
+    lanes = []
+    for component in current_banner['sub']['components']:
+      if component['type'] != 'lane':
+        continue
+
+      lane = {
+        'active': component['active'],
+      }
+
+      if 'active_direction' in component:
+        lane['activeDirection'] = string_to_direction(component['active_direction'])
+
+      lane['directions'] = [string_to_direction(d) for d in component['directions']]
+
+      lanes.append(lane)
+    instruction.lanes = lanes
+
+
 class RouteEngine:
   def __init__(self, sm, pm) -> None:
     self.sm = sm
@@ -35,7 +84,7 @@ class RouteEngine:
     self.gps_ok = False
 
     self.nav_destination = None
-    self.segment_idx = None
+    self.step_idx = None
     self.route = None
 
     self.recompute_backoff = 0
@@ -79,7 +128,7 @@ class RouteEngine:
       should_recompute = True
 
     # Don't recompute when GPS drifts in tunnels
-    if not self.gps_ok and self.segment_idx is not None:
+    if not self.gps_ok and self.step_idx is not None:
       return
 
     if self.recompute_countdown == 0 and should_recompute:
@@ -112,8 +161,8 @@ class RouteEngine:
     if resp.status_code == 200:
       r = resp.json()
       if len(r['routes']):
-        self.route = r['routes'][0]
-        self.segment_idx = 0
+        self.route = r['routes'][0]['legs'][0]['steps']
+        self.step_idx = 0
       else:
         cloudlog.warning("Got empty route response")
         self.route = None
@@ -125,10 +174,13 @@ class RouteEngine:
     self.send_route()
 
   def send_instruction(self):
-    if self.segment_idx is None:
+    if self.step_idx is None:
       return
 
+    step = self.route[self.step_idx]
+
     msg = messaging.new_message('navInstruction')
+    parse_banner_instructions(msg.navInstruction, step['bannerInstructions'])
 
     self.pm.send('navInstruction', msg)
 
@@ -136,7 +188,7 @@ class RouteEngine:
     coords = []
 
     if self.route is not None:
-      for step in self.route['legs'][0]['steps']:
+      for step in self.route:
         for c in step['geometry']['coordinates']:
           coords.append({'latitude': c[1], 'longitude': c[0]})
 
@@ -146,7 +198,7 @@ class RouteEngine:
 
   def clear_route(self):
     self.route = None
-    self.segment_idx = None
+    self.step_idx = None
     self.nav_destination = None
 
   def should_recompute(self):
