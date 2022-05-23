@@ -35,7 +35,7 @@ class RouteEngine:
     self.gps_ok = False
 
     self.nav_destination = None
-    self.segment_dx = None
+    self.segment_idx = None
     self.route = None
 
     self.recompute_backoff = 0
@@ -52,6 +52,7 @@ class RouteEngine:
     self.sm.update(0)
     self.update_location()
     self.recompute_route()
+    self.send_instruction()
 
   def update_location(self):
     location = self.sm['liveLocationKalman']
@@ -112,6 +113,7 @@ class RouteEngine:
       r = resp.json()
       if len(r['routes']):
         self.route = r['routes'][0]
+        self.segment_idx = 0
       else:
         cloudlog.warning("Got empty route response")
         self.route = None
@@ -121,6 +123,14 @@ class RouteEngine:
       self.route = None
 
     self.send_route()
+
+  def send_instruction(self):
+    if self.segment_idx is None:
+      return
+
+    msg = messaging.new_message('navInstruction')
+
+    self.pm.send('navInstruction', msg)
 
   def send_route(self):
     coords = []
