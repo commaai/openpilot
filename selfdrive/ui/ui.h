@@ -145,6 +145,7 @@ private slots:
   void update();
 
 private:
+  QTimer *timer;
   bool started_prev = false;
 };
 
