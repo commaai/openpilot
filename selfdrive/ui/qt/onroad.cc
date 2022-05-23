@@ -71,8 +71,9 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 }
 
 void OnroadWindow::offroadTransition(bool offroad) {
+#ifdef ENABLE_MAPS
   if (!offroad) {
-    if (map == nullptr && !MAPBOX_TOKEN.isEmpty()) {
+    if (map == nullptr && (!MAPBOX_TOKEN.isEmpty())) {
       MapWindow * m = new MapWindow(get_mapbox_settings());
       map = m;
 
@@ -85,6 +86,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
       m->offroadTransition(offroad);
     }
   }
+#endif
 
   alerts->updateAlert({}, bg);
 
