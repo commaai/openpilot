@@ -80,9 +80,6 @@ private:
 
   QMapboxGLSettings m_settings;
   QScopedPointer<QMapboxGL> m_map;
-  bool car_layer_initialized = false;
-  bool layers_initialized = false;
-  bool gl_initialized = false;
 
   void initLayers();
 
