@@ -4,6 +4,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import mpld3
 import sys
+from bisect import bisect_left, bisect_right
 from collections import defaultdict
 
 from tools.lib.logreader import logreader_from_route_or_segment
@@ -89,11 +90,22 @@ def read_logs(lr):
     print("Warning, many frame mismatches", len(frame_mismatches))
   return (data, frame_mismatches)
 
+# This is not needed in 3.10 as a "key" parameter is added to bisect
+class KeyifyList(object):
+  def __init__(self, inner, key):
+    self.inner = inner
+    self.key = key
+  def __len__(self):
+    return len(self.inner)
+  def __getitem__(self, k):
+    return self.key(self.inner[k])
+
 def find_frame_id(time, service, start_times, end_times):
-  for frame_id in reversed(start_times):
-    if start_times[frame_id][service] and end_times[frame_id][service]:
-      if start_times[frame_id][service] <= time <= end_times[frame_id][service]:
-        yield frame_id
+  left = bisect_left(KeyifyList(list(start_times.items()),
+                     lambda x: x[1][service] if x[1][service] else -1), time) - 1
+  right = bisect_right(KeyifyList(list(end_times.items()),
+                      lambda x: x[1][service] if x[1][service] else float("inf")), time)
+  return left, right
 
 def find_t0(start_times, frame_id=-1):
   frame_id = frame_id if frame_id > -1 else min(start_times.keys())
@@ -130,13 +142,13 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
           timestamps[latest_controls_frameid][service].append((event, time))
           end_times[latest_controls_frameid][service] = time
         else:
-          frame_id_gen = find_frame_id(time, service, start_times, end_times)
-          frame_id = next(frame_id_gen, False)
+          frame_id = find_frame_id(time, service, start_times, end_times)
           if frame_id:
+            if frame_id[0] != frame_id[1]:
+              event += " (warning: ambiguity)"
+            frame_id = frame_id[0]
             if service == 'controlsd':
               latest_controls_frameid = frame_id
-            if next(frame_id_gen, False):
-              event += " (warning: ambiguity)"
             timestamps[frame_id][service].append((event, time))
           else:
             failed_inserts += 1
