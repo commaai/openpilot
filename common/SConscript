@@ -22,10 +22,11 @@ files = [
   'visionimg.cc',
 ]
 
-if arch == "larch64":
-  _gpu_libs = ["GLESv2"]
-else:
-  _gpu_libs = ["GL"]
+# if arch == "larch64":
+#   _gpu_libs = ["GLESv2"]
+# else:
+#   _gpu_libs = ["GL"]
+_gpu_libs = []
 
 _gpucommon = fxn('gpucommon', files, LIBS=_gpu_libs)
 Export('_common', '_gpucommon', '_gpu_libs')
