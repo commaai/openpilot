@@ -79,6 +79,7 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out, const _
   dat[3] = vload8(0, in + start + FRAME_STRIDE*y_bot_mod);
 
   // correct vignetting
+  /*
   #if VIGNETTING
     int gx = (gid_x*2 - RGB_WIDTH/2);
     int gy = (gid_y*2 - RGB_HEIGHT/2);
@@ -86,6 +87,8 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out, const _
   #else
     const float gain = 1.0;
   #endif
+  */
+  const float gain = 1.0;
 
   // process them to floats
   float4 va = val4_from_12(dat[0], gain, lut);
