@@ -293,6 +293,11 @@ selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/replay/*.cc
 selfdrive/ui/replay/*.h
 
+selfdrive/ui/qt/maps/*.cc
+selfdrive/ui/qt/maps/*.h
+
+selfdrive/ui/navd/*.py
+
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
 
