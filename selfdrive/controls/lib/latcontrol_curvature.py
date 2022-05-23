@@ -24,7 +24,7 @@ class LatControlCurvature(LatControl):
 
       # "road/lane curvature" is different from the immediate manoeuvre/path curvature
       # later curvature values are probably closer to this "road curvature" value
-      curvature = -curvatures[6]
+      curvature = -curvatures[16]
       path_deviation = -path_points[0] if len(path_points) > 0 else 0
 
       # calculate the angle of the path (t = approx 1s)
