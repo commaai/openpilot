@@ -168,8 +168,13 @@ bool CameraBuf::acquire() {
   }
 
   // Do not compress too much
-  int min_bin = 18; // Black level
+  int min_bin = 20; // Black level
   max_bin = std::max(max_bin, 64);
+
+  // Set bins below black level to zero
+  for (int i = 0; i < min_bin; i++) {
+    counts[i] = 0;
+  }
 
   // Apply ceiling
   double thres = 500;
