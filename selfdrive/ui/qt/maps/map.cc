@@ -230,10 +230,8 @@ void MapWindow::initializeGL() {
 }
 
 void MapWindow::paintGL() {
-  double t = millis_since_boot();
   if (!isVisible() || m_map.isNull()) return;
   m_map->render();
-  double e = millis_since_boot() - t;
 }
 
 void MapWindow::clearRoute() {
