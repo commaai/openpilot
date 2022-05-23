@@ -59,7 +59,7 @@ class Coordinate:
 
 def minimum_distance(a, b, p):
   if a.distance_to(b) < 0.01:
-    return a.distanceTo(p)
+    return a.distance_to(p)
 
   ap = p - a
   ab = b - a
