@@ -10,8 +10,12 @@ import cereal.messaging as messaging
 from cereal import log
 from common.api import Api
 from common.params import Params
+from common.numpy_fast import clip
 from selfdrive.swaglog import cloudlog
 
+EARTH_MEAN_RADIUS = 6371007.2
+REROUTE_DISTANCE = 25
+MANEUVER_TRANSITION_THRESHOLD = 10
 
 class Coordinate:
   def __init__(self, latitude, longitude):
@@ -28,14 +32,73 @@ class Coordinate:
   def __str__(self):
     return f"({self.latitude}, {self.longitude})"
 
-  def __eq__(self, o):
-    if not isinstance(o, Coordinate):
+  def __eq__(self, other):
+    if not isinstance(other, Coordinate):
       return False
-    return (self.latitude == o.latitude) and (self.longitude == o.longitude)
+    return (self.latitude == other.latitude) and (self.longitude == other.longitude)
+
+  def __sub__(self, other):
+    return Coordinate(self.latitude - other.latitude, self.longitude - other.longitude)
+
+  def __add__(self, other):
+    return Coordinate(self.latitude + other.latitude, self.longitude + other.longitude)
+
+  def __mul__(self, c):
+    return Coordinate(self.latitude * c, self.longitude * c)
+
+  def dot(self, other):
+    return self.latitude * other.latitude + self.longitude * other.longitude
+
+  def distance_to(self, other):
+    # Haversine formula
+    dlat = math.radians(other.latitude - self.latitude)
+    dlon = math.radians(other.longitude - self.longitude)
+
+    haversine_dlat = math.sin(dlat / 2.0)
+    haversine_dlat *= haversine_dlat
+    haversine_dlon = math.sin(dlon / 2.0)
+    haversine_dlon *= haversine_dlon
+
+    y = haversine_dlat \
+             + math.cos(math.radians(self.latitude)) \
+             * math.cos(math.radians(other.latitude)) \
+             * haversine_dlon
+    x = 2 * math.asin(math.sqrt(y))
+    return x * EARTH_MEAN_RADIUS
 
 
-def distance_along_geometry(path, coordinate):
-  pass
+def minimum_distance(a, b, p):
+  if a.distance_to(b) < 0.01:
+    return a.distanceTo(p)
+
+  ap = p - a
+  ab = b - a
+  t = clip(ap.dot(ab) / ab.dot(ab), 0.0, 1.0)
+  projection = a + ab * t
+  return projection.distance_to(p)
+
+
+def distance_along_geometry(geometry, pos):
+  if len(geometry) <= 2:
+    return geometry[0].distance_to(pos)
+
+  # 1. Find segment that is closest to current position
+  # 2. Total distance is sum of distance to start of closest segment
+  #    + all previous segments
+  total_distance = 0
+  total_distance_closest = 0
+  closest_distance = 1e9
+
+  for i in range(len(geometry) - 1):
+    d = minimum_distance(geometry[i], geometry[i + 1], pos)
+
+    if d < closest_distance:
+      closest_distance = d
+      total_distance_closest = total_distance + geometry[i].distance_to(pos)
+
+    total_distance += geometry[i].distance_to(geometry[i + 1])
+
+  return total_distance_closest
 
 
 def coordinate_from_param(param):
@@ -209,11 +272,46 @@ class RouteEngine:
       return
 
     step = self.route[self.step_idx]
+    along_geometry = distance_along_geometry(step['geometry']['coordinates'], self.last_position)
+    distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
     msg = messaging.new_message('navInstruction')
-    parse_banner_instructions(msg.navInstruction, step['bannerInstructions'])
+
+    # Current instruction
+    msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
+    parse_banner_instructions(msg.navInstruction, step['bannerInstructions'], distance_to_maneuver_along_geometry)
+
+    # Compute total remaining time and distance
+    remaning = 1.0 - along_geometry / step['distance']
+    total_distance = step['distance'] * remaning
+    total_time = step['duration'] * remaning
+    total_time_typical = step['duration_typical'] * remaning
+
+    for i in range(self.step_idx + 1, len(self.route)):
+      total_distance += self.route[i]['distance']
+      total_time += self.route[i]['duration']
+      total_time_typical += self.route[i]['duration_typical']
+
+    msg.navInstruction.distanceRemaining = total_distance
+    msg.navInstruction.timeRemaining = total_time
+    msg.navInstruction.timeRemainingTypical = total_time_typical
 
     self.pm.send('navInstruction', msg)
+
+    # Transition to next route segment
+    if distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD:
+      if self.step_idx + 1 < len(self.route):
+        self.step_idx += 1
+        self.recompute_backoff = 0
+        self.recompute_countdown = 0
+      else:
+        cloudlog.warning("Destination reached")
+        Params().remove("NavDestination")
+
+        # Clear route if driving away from destination
+        dist = self.nav_destination.distance_to(self.last_position)
+        if dist > REROUTE_DISTANCE:
+          self.clear_route()
 
   def send_route(self):
     coords = []
