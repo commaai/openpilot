@@ -21,6 +21,7 @@
 #include "common/params.h"
 #include "common/util.h"
 #include "cereal/messaging/messaging.h"
+#include "selfdrive/ui/ui.h"
 
 class MapInstructions : public QWidget {
   Q_OBJECT
@@ -91,8 +92,7 @@ private:
   void pinchTriggered(QPinchGesture *gesture);
 
   bool m_sourceAdded = false;
-  SubMaster *sm;
-  QTimer* timer;
+//  QTimer* timer;
 
   bool loaded_once = false;
   bool allow_open = true;
@@ -115,7 +115,7 @@ private:
   uint64_t route_rcv_frame = 0;
 
 private slots:
-  void timerUpdate();
+  void updateState(const UIState &s);
 
 public slots:
   void offroadTransition(bool offroad);

@@ -26,14 +26,14 @@ const QString ICON_SUFFIX = ".png";
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) :
   m_settings(settings), velocity_filter(0, 10, 0.05) {
-  sm = new SubMaster({"liveLocationKalman", "navInstruction", "navRoute"});
 
-  // Connect now, so any navRoutes sent while the map is initializing are not dropped
-  sm->update(0);
+//  // Connect now, so any navRoutes sent while the map is initializing are not dropped
+//  sm->update(0);
 
-  timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-  timer->start(50);
+//  timer = new QTimer(this);
+//  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
+//  timer->start(50);
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
   // Instructions
   map_instructions = new MapInstructions(this);
@@ -105,16 +105,23 @@ void MapWindow::initLayers() {
   }
 }
 
-void MapWindow::timerUpdate() {
+void MapWindow::updateState(const UIState &s) {
   if (!uiState()->scene.started) {
     return;
   }
+  double t = millis_since_boot();
+  double e;
 
   update();
+  qDebug() << "updateState()";
+  const SubMaster &sm = *(s.sm);
+  e = millis_since_boot() - t;
+  qDebug() << "update():" << e << "ms";
+  t = millis_since_boot();
 
-  sm->update(0);
-  if (sm->updated("liveLocationKalman")) {
-    auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
+//  sm.update(0);
+  if (sm.updated("liveLocationKalman")) {
+    auto location = sm["liveLocationKalman"].getLiveLocationKalman();
     auto pos = location.getPositionGeodetic();
     auto orientation = location.getCalibratedOrientationNED();
     auto velocity = location.getVelocityCalibrated();
@@ -129,7 +136,11 @@ void MapWindow::timerUpdate() {
     }
   }
 
-  if (sm->updated("navRoute") && (*sm)["navRoute"].getNavRoute().getCoordinates().size()) {
+  e = millis_since_boot() - t;
+  qDebug() << "liveLocationKalman:" << e << "ms";
+  t = millis_since_boot();
+
+  if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
     qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
 
     // Only open the map on setting destination the first time
@@ -138,6 +149,10 @@ void MapWindow::timerUpdate() {
       allow_open = false;
     }
   }
+
+  e = millis_since_boot() - t;
+  qDebug() << "navRoute:" << e << "ms";
+  t = millis_since_boot();
 
   if (m_map.isNull()) {
     return;
@@ -149,7 +164,15 @@ void MapWindow::timerUpdate() {
     return;
   }
 
+  e = millis_since_boot() - t;
+  qDebug() << "instructions:" << e << "ms";
+  t = millis_since_boot();
+
   initLayers();
+
+  e = millis_since_boot() - t;
+  qDebug() << "initLayers:" << e << "ms";
+  t = millis_since_boot();
 
   if (!localizer_valid) {
     map_instructions->showError("Waiting for GPS");
@@ -165,6 +188,10 @@ void MapWindow::timerUpdate() {
     m_map->updateSource("carPosSource", carPosSource);
   }
 
+  e = millis_since_boot() - t;
+  qDebug() << "location marker:" << e << "ms";
+  t = millis_since_boot();
+
   if (pan_counter == 0) {
     if (last_position) m_map->setCoordinate(*last_position);
     if (last_bearing) m_map->setBearing(*last_bearing);
@@ -172,15 +199,23 @@ void MapWindow::timerUpdate() {
     pan_counter--;
   }
 
+  e = millis_since_boot() - t;
+  qDebug() << "pan counter:" << e << "ms";
+  t = millis_since_boot();
+
   if (zoom_counter == 0) {
     m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
   } else {
     zoom_counter--;
   }
 
-  if (sm->updated("navInstruction")) {
-    if (sm->valid("navInstruction")) {
-      auto i = (*sm)["navInstruction"].getNavInstruction();
+  e = millis_since_boot() - t;
+  qDebug() << "zoom counter:" << e << "ms";
+  t = millis_since_boot();
+
+  if (sm.updated("navInstruction")) {
+    if (sm.valid("navInstruction")) {
+      auto i = sm["navInstruction"].getNavInstruction();
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
       if (localizer_valid) {
@@ -194,9 +229,13 @@ void MapWindow::timerUpdate() {
     }
   }
 
-  if (sm->rcv_frame("navRoute") != route_rcv_frame) {
+  e = millis_since_boot() - t;
+  qDebug() << "navInstruction:" << e << "ms";
+  t = millis_since_boot();
+
+  if (sm.rcv_frame("navRoute") != route_rcv_frame) {
     qWarning() << "Updating navLayer with new route";
-    auto route = (*sm)["navRoute"].getNavRoute();
+    auto route = sm["navRoute"].getNavRoute();
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
     QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
     QVariantMap navSource;
@@ -205,8 +244,13 @@ void MapWindow::timerUpdate() {
     m_map->updateSource("navSource", navSource);
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
-    route_rcv_frame = sm->rcv_frame("navRoute");
+    route_rcv_frame = sm.rcv_frame("navRoute");
   }
+
+  e = millis_since_boot() - t;
+  qDebug() << "navRoute:" << e << "ms";
+  t = millis_since_boot();
+  qDebug() << "\n\n";
 }
 
 void MapWindow::resizeGL(int w, int h) {
@@ -236,7 +280,10 @@ void MapWindow::initializeGL() {
 
 void MapWindow::paintGL() {
   if (!isVisible() || m_map.isNull()) return;
+  double t = millis_since_boot();
   m_map->render();
+  double e = millis_since_boot() - t;
+  qDebug() << "MapWindow::paintGL():" << e << "ms";
 }
 
 void MapWindow::clearRoute() {
@@ -259,7 +306,7 @@ void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
   if (last_position) m_map->setCoordinate(*last_position);
   if (last_bearing) m_map->setBearing(*last_bearing);
   m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
-  update();
+//  update();
 
   pan_counter = 0;
   zoom_counter = 0;
@@ -271,7 +318,7 @@ void MapWindow::mouseMoveEvent(QMouseEvent *ev) {
   if (!delta.isNull()) {
     pan_counter = PAN_TIMEOUT;
     m_map->moveBy(delta / MAP_SCALE);
-    update();
+//    update();
   }
 
   m_lastPos = ev->localPos();
@@ -289,7 +336,7 @@ void MapWindow::wheelEvent(QWheelEvent *ev) {
   }
 
   m_map->scaleBy(1 + factor, ev->pos() / MAP_SCALE);
-  update();
+//  update();
 
   zoom_counter = PAN_TIMEOUT;
   ev->accept();
@@ -315,7 +362,7 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
   if (changeFlags & QPinchGesture::ScaleFactorChanged) {
     // TODO: figure out why gesture centerPoint doesn't work
     m_map->scaleBy(gesture->scaleFactor(), {width() / 2.0 / MAP_SCALE, height() / 2.0 / MAP_SCALE});
-    update();
+//    update();
     zoom_counter = PAN_TIMEOUT;
   }
 }
@@ -630,6 +677,7 @@ void MapETA::updateETA(float s, float s_typical, float d) {
 
   show();
   adjustSize();
+  qDebug() << "repaint()";
   repaint();
   adjustSize();
 

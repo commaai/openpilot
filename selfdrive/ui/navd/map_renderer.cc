@@ -39,6 +39,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool enable_vipc) : 
   m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), ZOOM);
   m_map->setStyleUrl("mapbox://styles/commaai/ckvmksrpd4n0a14pfdo5heqzr");
   m_map->createRenderer();
+  qDebug() << "m_map reset()";
 
   m_map->resize(fbo->size());
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
@@ -55,6 +56,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool enable_vipc) : 
 }
 
 void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
+  qDebug() << "updatePosition()";
   if (m_map.isNull()) {
     return;
   }
@@ -69,6 +71,7 @@ bool MapRenderer::loaded() {
 }
 
 void MapRenderer::update() {
+  qDebug() << "MapRenderer::update()";
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   m_map->render();
   gl_functions->glFlush();
