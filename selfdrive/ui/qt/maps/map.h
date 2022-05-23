@@ -13,7 +13,6 @@
 #include <QScopedPointer>
 #include <QString>
 #include <QtGlobal>
-#include <QTimer>
 #include <QWheelEvent>
 #include <QMap>
 #include <QPixmap>
@@ -92,7 +91,6 @@ private:
   void pinchTriggered(QPinchGesture *gesture);
 
   bool m_sourceAdded = false;
-//  QTimer* timer;
 
   bool loaded_once = false;
   bool allow_open = true;

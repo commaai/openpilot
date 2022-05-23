@@ -105,6 +105,7 @@ void MapWindow::updateState(const UIState &s) {
     return;
   }
   const SubMaster &sm = *(s.sm);
+  update();
 
   if (sm.updated("liveLocationKalman")) {
     auto location = sm["liveLocationKalman"].getLiveLocationKalman();
@@ -200,8 +201,6 @@ void MapWindow::updateState(const UIState &s) {
 
     route_rcv_frame = sm.rcv_frame("navRoute");
   }
-
-  update();
 }
 
 void MapWindow::resizeGL(int w, int h) {
