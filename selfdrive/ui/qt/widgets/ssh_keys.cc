@@ -1,6 +1,6 @@
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 

@@ -12,7 +12,7 @@
 #include <CL/cl.h>
 #endif
 
-#include "selfdrive/common/mat.h"
+#include "common/mat.h"
 #include "selfdrive/modeld/transforms/loadyuv.h"
 #include "selfdrive/modeld/transforms/transform.h"
 

@@ -5,8 +5,8 @@
 #include <cstdlib>
 
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 #include "selfdrive/modeld/models/dmonitoring.h"
 
 ExitHandler do_exit;
