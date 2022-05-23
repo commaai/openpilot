@@ -13,6 +13,31 @@ from common.params import Params
 from selfdrive.swaglog import cloudlog
 
 
+class Coordinate:
+  def __init__(self, latitude, longitude):
+    self.latitude = latitude
+    self.longitude = longitude
+
+  @classmethod
+  def from_mapbox_tuple(cls, t):
+    return cls(t[1], t[0])
+
+  def as_dict(self):
+    return {'latitude': self.latitude, 'longitude': self.longitude}
+
+  def __str__(self):
+    return f"({self.latitude}, {self.longitude})"
+
+  def __eq__(self, o):
+    if not isinstance(o, Coordinate):
+      return False
+    return (self.latitude == o.latitude) and (self.longitude == o.longitude)
+
+
+def distance_along_geometry(path, coordinate):
+  pass
+
+
 def coordinate_from_param(param):
   json_str = Params().get(param)
   if json_str is None:
@@ -22,7 +47,7 @@ def coordinate_from_param(param):
   if 'latitude' not in pos or 'longitude' not in pos:
     return None
 
-  return pos['latitude'], pos['longitude']
+  return Coordinate(pos['latitude'], pos['longitude'])
 
 
 def string_to_direction(direction):
@@ -112,7 +137,7 @@ class RouteEngine:
 
     if localizer_valid:
       self.last_bearing = math.degrees(location.calibratedOrientationNED.value[2])
-      self.last_position = location.positionGeodetic.value[0], location.positionGeodetic.value[1]
+      self.last_position = Coordinate(location.positionGeodetic.value[0], location.positionGeodetic.value[1])
 
   def recompute_route(self):
     if self.last_position is None:
@@ -156,13 +181,18 @@ class RouteEngine:
     if self.last_bearing is not None:
       params['bearings'] = f"{(self.last_bearing + 360) % 360:.0f},90;"
 
-    url = self.mapbox_host + f'/directions/v5/mapbox/driving-traffic/{self.last_position[1]},{self.last_position[0]};{destination[1]},{destination[0]}'
+    url = self.mapbox_host + f'/directions/v5/mapbox/driving-traffic/{self.last_position.longitude},{self.last_position.latitude};{destination.longitude},{destination.latitude}'
     resp = requests.get(url, params=params)
 
     if resp.status_code == 200:
       r = resp.json()
       if len(r['routes']):
         self.route = r['routes'][0]['legs'][0]['steps']
+
+        # Convert coordinates
+        for step in self.route:
+          step['geometry']['coordinates'] = [Coordinate.from_mapbox_tuple(c) for c in step['geometry']['coordinates']]
+
         self.step_idx = 0
       else:
         cloudlog.warning("Got empty route response")
@@ -191,7 +221,7 @@ class RouteEngine:
     if self.route is not None:
       for step in self.route:
         for c in step['geometry']['coordinates']:
-          coords.append({'latitude': c[1], 'longitude': c[0]})
+          coords.append(c.as_dict())
 
     msg = messaging.new_message('navRoute')
     msg.navRoute.coordinates = coords
