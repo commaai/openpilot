@@ -29,6 +29,7 @@ if [[ $(command -v brew) == "" ]]; then
 fi
 
 # TODO: remove protobuf,protobuf-c,swig when casadi can be pip installed
+# rust for rebuild of acados on darwin
 brew bundle --file=- <<-EOS
 brew "catch2"
 brew "cmake"
@@ -52,6 +53,7 @@ brew "zeromq"
 brew "protobuf"
 brew "protobuf-c"
 brew "swig"
+brew "rustup-init"
 cask "gcc-arm-embedded"
 EOS
 
