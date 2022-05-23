@@ -19,14 +19,14 @@ public:
   ~CameraViewWidget();
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
-  void setFrameId(int frame_id) {
+  void setFrameId(uint32_t frame_id) {
     draw_frame_id = frame_id;
   }
 
 signals:
   void clicked();
   void vipcThreadConnected(VisionIpcClient *);
-  void vipcThreadFrameReceived(VisionBuf *, int);
+  void vipcThreadFrameReceived(VisionBuf *, quint32);
 
 protected:
   void paintGL() override;
@@ -37,11 +37,11 @@ protected:
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   virtual void updateFrameMat(int w, int h);
   void vipcThread();
-  uint32_t prev_model_frame_id = 0;
-  uint32_t prev_cam_frame_id = 0;
 
   bool zoomed_view;
   bool manual_update;
+  uint32_t draw_frame_id = 0;
+  uint32_t camera_frame_id = 0;
   VisionBuf *latest_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
@@ -54,13 +54,9 @@ protected:
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
 
-  int draw_frame_id = 0;
-  int cam_frame_id = 0;
-  int wrong_frame = 0;
-
   GLuint textures[3];
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
-  void vipcFrameReceived(VisionBuf *vipc_client, int frame_id);
+  void vipcFrameReceived(VisionBuf *vipc_client, uint32_t frame_id);
 };
