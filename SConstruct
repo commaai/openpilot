@@ -331,13 +331,13 @@ if GetOption("clazy"):
 Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
 
 SConscript(['common/SConscript'])
-Import('_common', '_gpucommon', '_gpu_libs')
+Import('_common', '_gpucommon')
 
 if SHARED:
   common, gpucommon = abspath(common), abspath(gpucommon)
 else:
   common = [_common, 'json11']
-  gpucommon = [_gpucommon] + _gpu_libs
+  gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')
 
