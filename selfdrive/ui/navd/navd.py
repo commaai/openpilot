@@ -7,6 +7,7 @@ import time
 import requests
 
 import cereal.messaging as messaging
+from cereal import log
 from common.api import Api
 from common.params import Params
 from selfdrive.swaglog import cloudlog
@@ -34,7 +35,8 @@ class RouteEngine:
     self.gps_ok = False
 
     self.nav_destination = None
-    self.segment = None
+    self.segment_dx = None
+    self.route = None
 
     self.recompute_backoff = 0
     self.recompute_countdown = 0
@@ -55,8 +57,7 @@ class RouteEngine:
     location = self.sm['liveLocationKalman']
     self.gps_ok = location.gpsOK
 
-    # TOOD: use proper enum
-    localizer_valid = (location.status == 'valid') and location.positionGeodetic.valid
+    localizer_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
 
     if localizer_valid:
       self.last_bearing = math.degrees(location.calibratedOrientationNED.value[2])
