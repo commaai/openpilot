@@ -214,11 +214,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-  try:
-    lr = logreader_from_route_or_segment(r, sort_by_time=True)
-  except Exception:
-    print("Route or Segment not found")
-    exit()
+  lr = logreader_from_route_or_segment(r, sort_by_time=True)
 
   data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
