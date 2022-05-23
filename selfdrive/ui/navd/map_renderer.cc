@@ -140,6 +140,7 @@ void MapRenderer::updateRoute(QList<QGeoCoordinate> coordinates) {
 }
 
 void MapRenderer::initLayers() {
+  qDebug() << "SHOULDN'T BE HERE";
   if (!m_map->layerExists("navLayer")) {
     QVariantMap nav;
     nav["id"] = "navLayer";
