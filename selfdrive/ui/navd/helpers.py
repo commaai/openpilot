@@ -1,5 +1,8 @@
-import math
+from __future__ import annotations
+
 import json
+import math
+from typing import Any, Dict, List, Optional, Tuple
 
 from common.numpy_fast import clip
 from common.params import Params
@@ -8,38 +11,38 @@ EARTH_MEAN_RADIUS = 6371007.2
 
 
 class Coordinate:
-  def __init__(self, latitude, longitude):
+  def __init__(self, latitude: float, longitude: float) -> None:
     self.latitude = latitude
     self.longitude = longitude
 
   @classmethod
-  def from_mapbox_tuple(cls, t):
+  def from_mapbox_tuple(cls, t: Tuple[float, float]) -> Coordinate:
     return cls(t[1], t[0])
 
-  def as_dict(self):
+  def as_dict(self) -> Dict[str, float]:
     return {'latitude': self.latitude, 'longitude': self.longitude}
 
-  def __str__(self):
+  def __str__(self) -> str:
     return f"({self.latitude}, {self.longitude})"
 
-  def __eq__(self, other):
+  def __eq__(self, other) -> bool:
     if not isinstance(other, Coordinate):
       return False
     return (self.latitude == other.latitude) and (self.longitude == other.longitude)
 
-  def __sub__(self, other):
+  def __sub__(self, other: Coordinate) -> Coordinate:
     return Coordinate(self.latitude - other.latitude, self.longitude - other.longitude)
 
-  def __add__(self, other):
+  def __add__(self, other: Coordinate) -> Coordinate:
     return Coordinate(self.latitude + other.latitude, self.longitude + other.longitude)
 
-  def __mul__(self, c):
+  def __mul__(self, c: float) -> Coordinate:
     return Coordinate(self.latitude * c, self.longitude * c)
 
-  def dot(self, other):
+  def dot(self, other: Coordinate) -> float:
     return self.latitude * other.latitude + self.longitude * other.longitude
 
-  def distance_to(self, other):
+  def distance_to(self, other: Coordinate) -> float:
     # Haversine formula
     dlat = math.radians(other.latitude - self.latitude)
     dlon = math.radians(other.longitude - self.longitude)
@@ -57,7 +60,7 @@ class Coordinate:
     return x * EARTH_MEAN_RADIUS
 
 
-def minimum_distance(a, b, p):
+def minimum_distance(a: Coordinate, b: Coordinate, p: Coordinate):
   if a.distance_to(b) < 0.01:
     return a.distance_to(p)
 
@@ -68,15 +71,15 @@ def minimum_distance(a, b, p):
   return projection.distance_to(p)
 
 
-def distance_along_geometry(geometry, pos):
+def distance_along_geometry(geometry: List[Coordinate], pos: Coordinate) -> float:
   if len(geometry) <= 2:
     return geometry[0].distance_to(pos)
 
   # 1. Find segment that is closest to current position
   # 2. Total distance is sum of distance to start of closest segment
   #    + all previous segments
-  total_distance = 0
-  total_distance_closest = 0
+  total_distance = 0.0
+  total_distance_closest = 0.0
   closest_distance = 1e9
 
   for i in range(len(geometry) - 1):
@@ -91,7 +94,7 @@ def distance_along_geometry(geometry, pos):
   return total_distance_closest
 
 
-def coordinate_from_param(param):
+def coordinate_from_param(param: str) -> Optional[Coordinate]:
   json_str = Params().get(param)
   if json_str is None:
     return None
@@ -103,14 +106,14 @@ def coordinate_from_param(param):
   return Coordinate(pos['latitude'], pos['longitude'])
 
 
-def string_to_direction(direction):
+def string_to_direction(direction: str) -> str:
   for d in ['left', 'right', 'straight']:
     if d in direction:
       return d
   return 'none'
 
 
-def parse_banner_instructions(instruction, banners, distance_to_maneuver=0):
+def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuver: float = 0.0) -> None:
   current_banner = banners[0]
 
   # A segment can contain multiple banners, find one that we need to show now

@@ -20,7 +20,7 @@ MANEUVER_TRANSITION_THRESHOLD = 10
 
 
 class RouteEngine:
-  def __init__(self, sm, pm) -> None:
+  def __init__(self, sm, pm):
     self.sm = sm
     self.pm = pm
 
