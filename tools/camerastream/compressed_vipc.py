@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
+import av
 import os
-os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
 import sys
 import argparse
 import numpy as np
@@ -16,6 +16,7 @@ V4L2_BUF_FLAG_KEYFRAME = 8
 def decoder(addr, sock_name, vipc_server, vst, nvidia):
   print("start decoder for %s" % sock_name)
   if nvidia:
+    os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
     sys.path += os.environ["LD_LIBRARY_PATH"].split(":")
     import PyNvCodec as nvc # pylint: disable=import-error
 
@@ -25,7 +26,6 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
     nvDwn_yuv = nvc.PySurfaceDownloader(W, H, nvc.PixelFormat.YUV420, 0)
     img_yuv = np.ndarray((H*W//2*3), dtype=np.uint8)
   else:
-    import av # pylint: disable=import-error
     codec = av.CodecContext.create("hevc", "r")
 
   os.environ["ZMQ"] = "1"
@@ -82,9 +82,9 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
       print("%2d %4d %.3f %.3f roll %6.2f ms latency %6.2f ms + %6.2f ms + %6.2f ms = %6.2f ms" % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, frame_latency, process_latency, network_latency, pc_latency, process_latency+network_latency+pc_latency ), len(evta.data), sock_name)
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description='Decode video streams and broacast on VisionIPC')
-  parser.add_argument("addr", help="Address of comma 3")
-  parser.add_argument('--nvidia', action='store_true', help='Use nvidia instead of ffmpeg')
+  parser = argparse.ArgumentParser(description="Decode video streams and broacast on VisionIPC")
+  parser.add_argument("addr", help="Address of comma three")
+  parser.add_argument("--nvidia", action="store_true", help="Use nvidia instead of ffmpeg")
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")
   args = parser.parse_args()
 
