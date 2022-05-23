@@ -43,6 +43,7 @@ def parse_banner_instructions(instruction, banners, distance_to_maneuver=0):
   # Only show banner when close enough to maneuver
   instruction.showFull = distance_to_maneuver < current_banner['distanceAlongGeometry']
 
+  # Primary
   p = current_banner['primary']
   if 'text' in p:
     instruction.maneuverPrimaryText = p['text']
@@ -51,10 +52,11 @@ def parse_banner_instructions(instruction, banners, distance_to_maneuver=0):
   if 'modifier' in p:
     instruction.maneuverModifier = p['modifier']
 
+  # Secondary
   if 'secondary' in current_banner:
     instruction.maneuverSecondaryText = current_banner['secondary']['text']
 
-  # Parse lane lines
+  # Lane lines
   if 'sub' in current_banner:
     lanes = []
     for component in current_banner['sub']['components']:
@@ -63,12 +65,11 @@ def parse_banner_instructions(instruction, banners, distance_to_maneuver=0):
 
       lane = {
         'active': component['active'],
+        'directions': [string_to_direction(d) for d in component['directions']],
       }
 
       if 'active_direction' in component:
         lane['activeDirection'] = string_to_direction(component['active_direction'])
-
-      lane['directions'] = [string_to_direction(d) for d in component['directions']]
 
       lanes.append(lane)
     instruction.lanes = lanes
