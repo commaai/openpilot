@@ -283,5 +283,5 @@ if __name__ == "__main__":
     ci_route = False
     test_cases = [(args.car, TestRoute(args.route, args.car, segment=args.segment))]
     unittest.main(argv=[''])
-  else:
+  else:  # run all tests
     unittest.main()
