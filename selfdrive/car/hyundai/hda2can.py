@@ -3,7 +3,7 @@ def create_lkas(packer, enabled, frame, lat_active, apply_steer):
     "LKA_MODE": 2,
     "LKA_ICON": 2 if enabled else 1,
     "TORQUE_REQUEST": apply_steer,
-    "LKA_ASSIST": 1 if lat_active else 0,
+    "LKA_ASSIST": 0,
     "STEER_REQ": 1 if lat_active else 0,
     "STEER_MODE": 0,
     "SET_ME_1": 0,
