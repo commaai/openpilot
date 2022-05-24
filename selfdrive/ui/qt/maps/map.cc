@@ -253,6 +253,7 @@ void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
   if (last_position) m_map->setCoordinate(*last_position);
   if (last_bearing) m_map->setBearing(*last_bearing);
   m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
+  update();
 
   pan_counter = 0;
   zoom_counter = 0;
@@ -264,6 +265,7 @@ void MapWindow::mouseMoveEvent(QMouseEvent *ev) {
   if (!delta.isNull()) {
     pan_counter = PAN_TIMEOUT;
     m_map->moveBy(delta / MAP_SCALE);
+    update();
   }
 
   m_lastPos = ev->localPos();
@@ -281,6 +283,8 @@ void MapWindow::wheelEvent(QWheelEvent *ev) {
   }
 
   m_map->scaleBy(1 + factor, ev->pos() / MAP_SCALE);
+  update();
+
   zoom_counter = PAN_TIMEOUT;
   ev->accept();
 }
@@ -305,6 +309,8 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
   if (changeFlags & QPinchGesture::ScaleFactorChanged) {
     // TODO: figure out why gesture centerPoint doesn't work
     m_map->scaleBy(gesture->scaleFactor(), {width() / 2.0 / MAP_SCALE, height() / 2.0 / MAP_SCALE});
+    update();
+
     zoom_counter = PAN_TIMEOUT;
   }
 }
