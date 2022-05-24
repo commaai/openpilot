@@ -111,7 +111,7 @@ void Spinner::update(int n) {
 }
 
 int main(int argc, char *argv[]) {
-  initApp();
+  initApp(argc, argv);
   QApplication a(argc, argv);
   Spinner spinner;
   setMainWindow(&spinner);

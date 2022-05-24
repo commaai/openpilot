@@ -14,7 +14,7 @@ struct SignalPackValue {
 
 struct SignalParseOptions {
   uint32_t address;
-  const char* name;
+  std::string name;
 };
 
 struct MessageParseOptions {
@@ -24,7 +24,7 @@ struct MessageParseOptions {
 
 struct SignalValue {
   uint32_t address;
-  const char* name;
+  std::string name;
   double value;  // latest value
   std::vector<double> all_values;  // all values from this cycle
 };
@@ -40,11 +40,13 @@ enum SignalType {
   VOLKSWAGEN_COUNTER,
   SUBARU_CHECKSUM,
   CHRYSLER_CHECKSUM,
+  HKG_CAN_FD_CHECKSUM,
+  HKG_CAN_FD_COUNTER,
 };
 
 struct Signal {
-  const char* name;
-  int b1, b2, bo;
+  std::string name;
+  int start_bit, msb, lsb, size;
   bool is_signed;
   double factor, offset;
   bool is_little_endian;
@@ -52,34 +54,25 @@ struct Signal {
 };
 
 struct Msg {
-  const char* name;
+  std::string name;
   uint32_t address;
   unsigned int size;
-  size_t num_sigs;
-  const Signal *sigs;
+  std::vector<Signal> sigs;
 };
 
 struct Val {
-  const char* name;
+  std::string name;
   uint32_t address;
-  const char* def_val;
-  const Signal *sigs;
+  std::string def_val;
+  std::vector<Signal> sigs;
 };
 
 struct DBC {
-  const char* name;
-  size_t num_msgs;
-  const Msg *msgs;
-  const Val *vals;
-  size_t num_vals;
+  std::string name;
+  std::vector<Msg> msgs;
+  std::vector<Val> vals;
 };
 
-std::vector<const DBC*>& get_dbcs();
+DBC* dbc_parse(const std::string& dbc_name, const std::string& dbc_file_path);
 const DBC* dbc_lookup(const std::string& dbc_name);
-
-void dbc_register(const DBC* dbc);
-
-#define dbc_init(dbc) \
-static void __attribute__((constructor)) do_dbc_init_ ## dbc(void) { \
-  dbc_register(&dbc); \
-}
+std::vector<std::string> get_dbc_names();

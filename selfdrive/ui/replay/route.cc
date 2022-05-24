@@ -7,6 +7,8 @@
 #include <QRegExp>
 #include <QtConcurrent>
 
+#include <array>
+
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/replay.h"
@@ -35,7 +37,11 @@ bool Route::load() {
 bool Route::loadFromServer() {
   QEventLoop loop;
   HttpRequest http(nullptr, !Hardware::PC());
-  QObject::connect(&http, &HttpRequest::requestDone, [&](const QString &json, bool success) {
+  QObject::connect(&http, &HttpRequest::requestDone, [&](const QString &json, bool success, QNetworkReply::NetworkError error) {
+    if (error == QNetworkReply::ContentAccessDenied || error == QNetworkReply::AuthenticationRequiredError) {
+      qWarning() << ">>  Unauthorized. Authenticate with tools/lib/auth.py  <<";
+    }
+
     loop.exit(success ? loadFromJson(json) : 0);
   });
   http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
@@ -71,7 +77,11 @@ bool Route::loadFromLocal() {
 }
 
 void Route::addFileToSegment(int n, const QString &file) {
-  const QString name = QUrl(file).fileName();
+  QString name = QUrl(file).fileName();
+
+  const int pos = name.lastIndexOf("--");
+  name = pos != -1 ? name.mid(pos + 2) : name;
+
   if (name == "rlog.bz2") {
     segments_[n].rlog = file;
   } else if (name == "qlog.bz2") {
@@ -117,7 +127,7 @@ void Segment::loadFile(int id, const std::string file) {
   bool success = false;
   if (id < MAX_CAMERAS) {
     frames[id] = std::make_unique<FrameReader>();
-    success = frames[id]->load(file, flags & REPLAY_FLAG_NO_CUDA, &abort_, local_cache, 20 * 1024 * 1024, 3);
+    success = frames[id]->load(file, flags & REPLAY_FLAG_NO_HW_DECODER, &abort_, local_cache, 20 * 1024 * 1024, 3);
   } else {
     log = std::make_unique<LogReader>();
     success = log->load(file, &abort_, local_cache, 0, 3);

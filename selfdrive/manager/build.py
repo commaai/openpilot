@@ -29,7 +29,7 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
   j_flag = "" if nproc is None else f"-j{nproc - 1}"
 
   for retry in [True, False]:
-    scons = subprocess.Popen(["scons", j_flag, "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    scons: subprocess.Popen = subprocess.Popen(["scons", j_flag, "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
     assert scons.stderr is not None
 
     compile_output = []

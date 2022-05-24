@@ -1,18 +1,21 @@
+// SAE J2284-4 document specifies a bus-line network running at 2 Mbit/s
+// SAE J2284-5 document specifies a point-to-point communication running at 5 Mbit/s
+
+#define CAN_PCLK 80000U // KHz, sourced from PLL1Q
+#define BITRATE_PRESCALER 2U // Valid from 250Kbps to 5Mbps with 80Mhz clock
+#define CAN_SP_NOMINAL 80U // 80% for both SAE J2284-4 and SAE J2284-5
+#define CAN_SP_DATA_2M 80U // 80% for SAE J2284-4
+#define CAN_SP_DATA_5M 75U // 75% for SAE J2284-5
+#define CAN_QUANTA(speed, prescaler) (CAN_PCLK / ((speed) / 10U * (prescaler)))
+#define CAN_SEG1(tq, sp) (((tq) * (sp) / 100U)- 1U)
+#define CAN_SEG2(tq, sp) ((tq) * (100U - (sp)) / 100U)
+
+// FDCAN core settings
 #define FDCAN_MESSAGE_RAM_SIZE 0x2800UL
 #define FDCAN_START_ADDRESS 0x4000AC00UL
 #define FDCAN_OFFSET 3412UL // bytes for each FDCAN module
 #define FDCAN_OFFSET_W 853UL // words for each FDCAN module
 #define FDCAN_END_ADDRESS 0x4000D3FCUL // Message RAM has a width of 4 Bytes
-
-// With this settings we can go up to 5Mbit/s
-#define CAN_SYNC_JW     1U // 1 to 4
-#define CAN_PHASE_SEG1  6U // =(PROP_SEG + PHASE_SEG1) , 1 to 16
-#define CAN_PHASE_SEG2  1U // 1 to 8
-#define CAN_PCLK 80000U // Sourced from PLL1Q
-#define CAN_QUANTA (1U + CAN_PHASE_SEG1 + CAN_PHASE_SEG2)
-// Valid speeds in kbps and their prescalers:
-// 10=1000, 20=500, 50=200, 83.333=120, 100=100, 125=80, 250=40, 500=20, 1000=10, 2000=5, 5000=2
-#define can_speed_to_prescaler(x) (CAN_PCLK / CAN_QUANTA * 10U / (x))
 
 // RX FIFO 0
 #define FDCAN_RX_FIFO_0_EL_CNT 24UL
@@ -77,6 +80,7 @@ bool fdcan_exit_init(FDCAN_GlobalTypeDef *CANx) {
 }
 
 bool llcan_set_speed(FDCAN_GlobalTypeDef *CANx, uint32_t speed, uint32_t data_speed, bool loopback, bool silent) {
+  UNUSED(speed);
   bool ret = fdcan_request_init(CANx);
 
   if (ret) {
@@ -89,10 +93,38 @@ bool llcan_set_speed(FDCAN_GlobalTypeDef *CANx, uint32_t speed, uint32_t data_sp
     CANx->CCCR &= ~(FDCAN_CCCR_MON);
     CANx->CCCR &= ~(FDCAN_CCCR_ASM);
 
-    // Set the nominal bit timing register
-    CANx->NBTP = ((CAN_SYNC_JW-1U)<<FDCAN_NBTP_NSJW_Pos) | ((CAN_PHASE_SEG1-1U)<<FDCAN_NBTP_NTSEG1_Pos) | ((CAN_PHASE_SEG2-1U)<<FDCAN_NBTP_NTSEG2_Pos) | ((can_speed_to_prescaler(speed)-1U)<<FDCAN_NBTP_NBRP_Pos);
-    // Set the data bit timing register
-    CANx->DBTP = ((CAN_SYNC_JW-1U)<<FDCAN_DBTP_DSJW_Pos) | ((CAN_PHASE_SEG1-1U)<<FDCAN_DBTP_DTSEG1_Pos) | ((CAN_PHASE_SEG2-1U)<<FDCAN_DBTP_DTSEG2_Pos) | ((can_speed_to_prescaler(data_speed)-1U)<<FDCAN_DBTP_DBRP_Pos);
+    // TODO: add as a separate safety mode
+    // Enable ASM restricted operation(for debug or automatic bitrate switching)
+    //CANx->CCCR |= FDCAN_CCCR_ASM;
+
+    uint8_t prescaler = BITRATE_PRESCALER;
+    if (speed < 2500U) {
+      // The only way to support speeds lower than 250Kbit/s (down to 10Kbit/s)
+      prescaler = BITRATE_PRESCALER * 16U;
+    }
+
+    // Set the nominal bit timing values
+    uint16_t tq = CAN_QUANTA(speed, prescaler);
+    uint8_t sp = CAN_SP_NOMINAL;
+    uint8_t seg1 = CAN_SEG1(tq, sp);
+    uint8_t seg2 = CAN_SEG2(tq, sp);
+    uint8_t sjw = seg2;
+
+    CANx->NBTP = (((sjw & 0x7FU)-1U)<<FDCAN_NBTP_NSJW_Pos) | (((seg1 & 0xFFU)-1U)<<FDCAN_NBTP_NTSEG1_Pos) | (((seg2 & 0x7FU)-1U)<<FDCAN_NBTP_NTSEG2_Pos) | (((prescaler & 0x1FFU)-1U)<<FDCAN_NBTP_NBRP_Pos);
+
+    // Set the data bit timing values
+    if (data_speed == 50000U) {
+      sp = CAN_SP_DATA_5M;
+    } else {
+      sp = CAN_SP_DATA_2M;
+    }
+    tq = CAN_QUANTA(data_speed, prescaler);
+    seg1 = CAN_SEG1(tq, sp);
+    seg2 = CAN_SEG2(tq, sp);
+    sjw = seg2;
+
+    CANx->DBTP = (((sjw & 0xFU)-1U)<<FDCAN_DBTP_DSJW_Pos) | (((seg1 & 0x1FU)-1U)<<FDCAN_DBTP_DTSEG1_Pos) | (((seg2 & 0xFU)-1U)<<FDCAN_DBTP_DTSEG2_Pos) | (((prescaler & 0x1FU)-1U)<<FDCAN_DBTP_DBRP_Pos);
+
     // Silent loopback is known as internal loopback in the docs
     if (loopback) {
       CANx->CCCR |= FDCAN_CCCR_TEST;
@@ -172,7 +204,7 @@ bool llcan_init(FDCAN_GlobalTypeDef *CANx) {
     // Messages for INT1 (Only TFE works??)
     CANx->ILS |= FDCAN_ILS_TFEL;
     CANx->IE |= FDCAN_IE_TFEE; // Tx FIFO empty
-    
+
     ret = fdcan_exit_init(CANx);
     if(!ret) {
       puts(CAN_NAME_FROM_CANIF(CANx)); puts(" llcan_init timed out (2)!\n");

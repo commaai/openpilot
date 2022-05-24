@@ -62,6 +62,18 @@ const int HYUNDAI_PARAM_EV_GAS = 1;
 const int HYUNDAI_PARAM_HYBRID_GAS = 2;
 const int HYUNDAI_PARAM_LONGITUDINAL = 4;
 
+enum {
+  HYUNDAI_BTN_NONE = 0,
+  HYUNDAI_BTN_RESUME = 1,
+  HYUNDAI_BTN_SET = 2,
+  HYUNDAI_BTN_CANCEL = 4,
+};
+
+// some newer HKG models can re-enable after spamming cancel button,
+// so keep track of user button presses to deny engagement if no interaction
+const uint8_t HYUNDAI_PREV_BUTTON_SAMPLES = 4;  // roughly 80 ms
+uint8_t hyundai_last_button_interaction;  // button messages since the user pressed an enable button
+
 bool hyundai_legacy = false;
 bool hyundai_ev_gas_signal = false;
 bool hyundai_hybrid_gas_signal = false;
@@ -89,7 +101,7 @@ static uint8_t hyundai_get_counter(CANPacket_t *to_push) {
   return cnt;
 }
 
-static uint8_t hyundai_get_checksum(CANPacket_t *to_push) {
+static uint32_t hyundai_get_checksum(CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
 
   uint8_t chksum;
@@ -107,7 +119,7 @@ static uint8_t hyundai_get_checksum(CANPacket_t *to_push) {
   return chksum;
 }
 
-static uint8_t hyundai_compute_checksum(CANPacket_t *to_push) {
+static uint32_t hyundai_compute_checksum(CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
 
   uint8_t chksum = 0;
@@ -158,35 +170,46 @@ static int hyundai_rx_hook(CANPacket_t *to_push) {
       update_sample(&torque_driver, torque_driver_new);
     }
 
-    if (hyundai_longitudinal) {
-      // ACC steering wheel buttons
-      if (addr == 1265) {
-        int button = GET_BYTE(to_push, 0) & 0x7U;
-        switch (button) {
-          case 1:  // resume
-          case 2:  // set
-            controls_allowed = 1;
-            break;
-          case 4:  // cancel
-            controls_allowed = 0;
-            break;
-          default:
-            break;  // any other button is irrelevant
-        }
+    // ACC steering wheel buttons
+    if (addr == 1265) {
+      int cruise_button = GET_BYTE(to_push, 0) & 0x7U;
+      int main_button = GET_BIT(to_push, 3U);
+
+      if ((cruise_button == HYUNDAI_BTN_RESUME) || (cruise_button == HYUNDAI_BTN_SET) || (cruise_button == HYUNDAI_BTN_CANCEL) || (main_button != 0)) {
+        hyundai_last_button_interaction = 0U;
+      } else {
+        hyundai_last_button_interaction = MIN(hyundai_last_button_interaction + 1U, HYUNDAI_PREV_BUTTON_SAMPLES);
       }
-    } else {
-      // enter controls on rising edge of ACC, exit controls on ACC off
-      if (addr == 1057) {
-        // 2 bits: 13-14
-        int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3U;
-        if (cruise_engaged && !cruise_engaged_prev) {
-          controls_allowed = 1;
-        }
-        if (!cruise_engaged) {
+
+      if (hyundai_longitudinal) {
+        // exit controls on cancel press
+        if (cruise_button == HYUNDAI_BTN_CANCEL) {
           controls_allowed = 0;
         }
-        cruise_engaged_prev = cruise_engaged;
+
+        // enter controls on falling edge of resume or set
+        bool set = (cruise_button == HYUNDAI_BTN_NONE) && (cruise_button_prev == HYUNDAI_BTN_SET);
+        bool res = (cruise_button == HYUNDAI_BTN_NONE) && (cruise_button_prev == HYUNDAI_BTN_RESUME);
+        if (set || res) {
+          controls_allowed = 1;
+        }
+
+        cruise_button_prev = cruise_button;
       }
+    }
+
+    // enter controls on rising edge of ACC and user button press, exit controls when ACC off
+    if (!hyundai_longitudinal && (addr == 1057)) {
+      // 2 bits: 13-14
+      int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3U;
+      if (cruise_engaged && !cruise_engaged_prev && (hyundai_last_button_interaction < HYUNDAI_PREV_BUTTON_SAMPLES)) {
+        controls_allowed = 1;
+      }
+
+      if (!cruise_engaged) {
+        controls_allowed = 0;
+      }
+      cruise_engaged_prev = cruise_engaged;
     }
 
     // read gas pressed signal
@@ -207,7 +230,7 @@ static int hyundai_rx_hook(CANPacket_t *to_push) {
     }
 
     if (addr == 916) {
-      brake_pressed = (GET_BYTE(to_push, 6) >> 7) != 0U;
+      brake_pressed = GET_BIT(to_push, 55U) != 0U;
     }
 
     bool stock_ecu_detected = (addr == 832);
@@ -222,7 +245,7 @@ static int hyundai_rx_hook(CANPacket_t *to_push) {
   return valid;
 }
 
-static int hyundai_tx_hook(CANPacket_t *to_send) {
+static int hyundai_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);
@@ -236,8 +259,8 @@ static int hyundai_tx_hook(CANPacket_t *to_send) {
   // FCA11: Block any potential actuation
   if (addr == 909) {
     int CR_VSM_DecCmd = GET_BYTE(to_send, 1);
-    int FCA_CmdAct = (GET_BYTE(to_send, 2) >> 5) & 1U;
-    int CF_VSM_DecCmdAct = (GET_BYTE(to_send, 3) >> 7) & 1U;
+    int FCA_CmdAct = GET_BIT(to_send, 20U);
+    int CF_VSM_DecCmdAct = GET_BIT(to_send, 31U);
 
     if ((CR_VSM_DecCmd != 0) || (FCA_CmdAct != 0) || (CF_VSM_DecCmdAct != 0)) {
       tx = 0;
@@ -250,11 +273,11 @@ static int hyundai_tx_hook(CANPacket_t *to_send) {
     int desired_accel_val = ((GET_BYTE(to_send, 5) << 3) | (GET_BYTE(to_send, 4) >> 5)) - 1023U;
 
     int aeb_decel_cmd = GET_BYTE(to_send, 2);
-    int aeb_req = (GET_BYTE(to_send, 6) >> 6) & 1U;
+    int aeb_req = GET_BIT(to_send, 54U);
 
     bool violation = 0;
 
-    if (!controls_allowed) {
+    if (!longitudinal_allowed) {
       if ((desired_accel_raw != 0) || (desired_accel_val != 0)) {
         violation = 1;
       }
@@ -324,16 +347,17 @@ static int hyundai_tx_hook(CANPacket_t *to_send) {
     }
   }
 
-  // FORCE CANCEL: safety check only relevant when spamming the cancel button.
-  // ensuring that only the cancel button press is sent (VAL 4) when controls are off.
-  // This avoids unintended engagements while still allowing resume spam
-  if ((addr == 1265) && !controls_allowed) {
-    if ((GET_BYTES_04(to_send) & 0x7U) != 4U) {
+  // BUTTONS: used for resume spamming and cruise cancellation
+  if ((addr == 1265) && !hyundai_longitudinal) {
+    int button = GET_BYTE(to_send, 0) & 0x7U;
+
+    bool allowed_resume = (button == 1) && controls_allowed;
+    bool allowed_cancel = (button == 4) && cruise_engaged_prev;
+    if (!(allowed_resume || allowed_cancel)) {
       tx = 0;
     }
   }
 
-  // 1 allows the message through
   return tx;
 }
 
@@ -353,13 +377,11 @@ static int hyundai_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
   return bus_fwd;
 }
 
-static const addr_checks* hyundai_init(int16_t param) {
-  controls_allowed = false;
-  relay_malfunction_reset();
-
+static const addr_checks* hyundai_init(uint16_t param) {
   hyundai_legacy = false;
   hyundai_ev_gas_signal = GET_FLAG(param, HYUNDAI_PARAM_EV_GAS);
   hyundai_hybrid_gas_signal = !hyundai_ev_gas_signal && GET_FLAG(param, HYUNDAI_PARAM_HYBRID_GAS);
+  hyundai_last_button_interaction = HYUNDAI_PREV_BUTTON_SAMPLES;
 
 #ifdef ALLOW_DEBUG
   hyundai_longitudinal = GET_FLAG(param, HYUNDAI_PARAM_LONGITUDINAL);
@@ -373,14 +395,12 @@ static const addr_checks* hyundai_init(int16_t param) {
   return &hyundai_rx_checks;
 }
 
-static const addr_checks* hyundai_legacy_init(int16_t param) {
-  controls_allowed = false;
-  relay_malfunction_reset();
-
+static const addr_checks* hyundai_legacy_init(uint16_t param) {
   hyundai_legacy = true;
   hyundai_longitudinal = false;
   hyundai_ev_gas_signal = GET_FLAG(param, HYUNDAI_PARAM_EV_GAS);
   hyundai_hybrid_gas_signal = !hyundai_ev_gas_signal && GET_FLAG(param, HYUNDAI_PARAM_HYBRID_GAS);
+  hyundai_last_button_interaction = HYUNDAI_PREV_BUTTON_SAMPLES;
   hyundai_rx_checks = (addr_checks){hyundai_legacy_addr_checks, HYUNDAI_LEGACY_ADDR_CHECK_LEN};
   return &hyundai_rx_checks;
 }

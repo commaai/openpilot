@@ -66,7 +66,7 @@ public:
 
 class SubMaster {
 public:
-  SubMaster(const std::vector<const char *> &service_list,
+  SubMaster(const std::vector<const char *> &service_list, const std::vector<const char *> &poll = {},
             const char *address = nullptr, const std::vector<const char *> &ignore_alive = {});
   void update(int timeout = 1000);
   void update_msgs(uint64_t current_time, const std::vector<std::pair<std::string, cereal::Event::Reader>> &messages);

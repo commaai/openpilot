@@ -1,9 +1,12 @@
 from collections import defaultdict
-from enum import IntFlag
+from dataclasses import dataclass
+from enum import Enum, IntFlag
+from typing import Dict, List, Union
 
 from cereal import car
+from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.config import Conversions as CV
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, Star
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -15,9 +18,15 @@ class CarControllerParams:
   ACCEL_MIN = -3.5  # m/s2
 
   STEER_MAX = 1500
-  STEER_DELTA_UP = 10       # 1.5s time to peak torque
-  STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+
+  def __init__(self, CP):
+    if CP.lateralTuning.which == 'torque':
+      self.STEER_DELTA_UP = 15       # 1.0s time to peak torque
+      self.STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
+    else:
+      self.STEER_DELTA_UP = 10       # 1.5s time to peak torque
+      self.STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
 
 
 class ToyotaFlags(IntFlag):
@@ -27,10 +36,12 @@ class ToyotaFlags(IntFlag):
 class CAR:
   # Toyota
   ALPHARD_TSS2 = "TOYOTA ALPHARD 2020"
+  ALPHARDH_TSS2 = "TOYOTA ALPHARD HYBRID 2021"
   AVALON = "TOYOTA AVALON 2016"
   AVALON_2019 = "TOYOTA AVALON 2019"
   AVALONH_2019 = "TOYOTA AVALON HYBRID 2019"
-  AVALON_TSS2 = "TOYOTA AVALON 2022"
+  AVALON_TSS2 = "TOYOTA AVALON 2022"  # TSS 2.5
+  AVALONH_TSS2 = "TOYOTA AVALON HYBRID 2022"
   CAMRY = "TOYOTA CAMRY 2018"
   CAMRYH = "TOYOTA CAMRY HYBRID 2018"
   CAMRY_TSS2 = "TOYOTA CAMRY 2021"  # TSS 2.5
@@ -51,8 +62,10 @@ class CAR:
   RAV4 = "TOYOTA RAV4 2017"
   RAV4H = "TOYOTA RAV4 HYBRID 2017"
   RAV4_TSS2 = "TOYOTA RAV4 2019"
+  RAV4_TSS2_2022 = "TOYOTA RAV4 2022"
   RAV4H_TSS2 = "TOYOTA RAV4 HYBRID 2019"
-  MIRAI = "TOYOTA MIRAI 2021" # TSS 2.5
+  RAV4H_TSS2_2022 = "TOYOTA RAV4 HYBRID 2022"
+  MIRAI = "TOYOTA MIRAI 2021"  # TSS 2.5
   SIENNA = "TOYOTA SIENNA 2018"
 
   # Lexus
@@ -69,6 +82,89 @@ class CAR:
   LEXUS_RXH = "LEXUS RX HYBRID 2017"
   LEXUS_RX_TSS2 = "LEXUS RX 2020"
   LEXUS_RXH_TSS2 = "LEXUS RX HYBRID 2020"
+
+
+class Footnote(Enum):
+  DSU = CarFootnote(
+    "When disconnecting the Driver Support Unit (DSU), openpilot Adaptive Cruise Control (ACC) will replace stock " +
+    "Adaptive Cruise Control (ACC). <b><i> NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
+    Column.LONGITUDINAL, star=Star.HALF)
+  CAMRY = CarFootnote(
+    "28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
+    Column.FSR_LONGITUDINAL)
+  ANGLE_SENSOR = CarFootnote(
+    "An inaccurate steering wheel angle sensor makes precise control difficult.",
+    Column.STEERING_TORQUE, star=Star.HALF)
+
+
+@dataclass
+class ToyotaCarInfo(CarInfo):
+  package: str = "All"
+  good_torque: bool = True
+  harness: Enum = Harness.toyota
+
+
+CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
+  # Toyota
+  CAR.ALPHARD_TSS2: ToyotaCarInfo("Toyota Alphard 2019-20"),
+  CAR.ALPHARDH_TSS2: ToyotaCarInfo("Toyota Alphard Hybrid 2021"),
+  CAR.AVALON: ToyotaCarInfo("Toyota Avalon 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.AVALON_2019: ToyotaCarInfo("Toyota Avalon 2019-21", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.AVALONH_2019: ToyotaCarInfo("Toyota Avalon Hybrid 2019-21", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.AVALON_TSS2: ToyotaCarInfo("Toyota Avalon 2022"),
+  CAR.AVALONH_TSS2: ToyotaCarInfo("Toyota Avalon Hybrid 2022"),
+  CAR.CAMRY: ToyotaCarInfo("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
+  CAR.CAMRYH: ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk", footnotes=[Footnote.CAMRY]),
+  CAR.CAMRY_TSS2: ToyotaCarInfo("Toyota Camry 2021-22", footnotes=[Footnote.CAMRY]),
+  CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-22"),
+  CAR.CHR: ToyotaCarInfo("Toyota C-HR 2017-21"),
+  CAR.CHRH: ToyotaCarInfo("Toyota C-HR Hybrid 2017-19"),
+  CAR.COROLLA: ToyotaCarInfo("Toyota Corolla 2017-19", footnotes=[Footnote.DSU]),
+  CAR.COROLLA_TSS2: [
+    ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
+    ToyotaCarInfo("Toyota Corolla Hatchback 2019-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
+  ],
+  CAR.COROLLAH_TSS2: [
+    ToyotaCarInfo("Toyota Corolla Hybrid 2020-22"),
+    ToyotaCarInfo("Lexus UX Hybrid 2019-21"),
+  ],
+  CAR.HIGHLANDER: ToyotaCarInfo("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo", footnotes=[Footnote.DSU]),
+  CAR.HIGHLANDER_TSS2: ToyotaCarInfo("Toyota Highlander 2020-22"),
+  CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19", footnotes=[Footnote.DSU]),
+  CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-22"),
+  CAR.PRIUS: [
+    ToyotaCarInfo("Toyota Prius 2016-20", "TSS-P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
+    ToyotaCarInfo("Toyota Prius Prime 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
+  ],
+  CAR.PRIUS_V: ToyotaCarInfo("Toyota Prius v 2017", "TSS-P", min_enable_speed=MIN_ACC_SPEED, footnotes=[Footnote.DSU, Footnote.ANGLE_SENSOR]),
+  CAR.PRIUS_TSS2: [
+    ToyotaCarInfo("Toyota Prius 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
+    ToyotaCarInfo("Toyota Prius Prime 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
+  ],
+  CAR.RAV4: ToyotaCarInfo("Toyota RAV4 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.RAV4H: ToyotaCarInfo("Toyota RAV4 Hybrid 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.RAV4_TSS2: ToyotaCarInfo("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
+  CAR.RAV4_TSS2_2022: ToyotaCarInfo("Toyota RAV4 2022"),
+  CAR.RAV4H_TSS2: ToyotaCarInfo("Toyota RAV4 Hybrid 2019-21"),
+  CAR.RAV4H_TSS2_2022: ToyotaCarInfo("Toyota RAV4 Hybrid 2022"),
+  CAR.MIRAI: ToyotaCarInfo("Toyota Mirai 2021"),
+  CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", footnotes=[Footnote.DSU]),
+
+  # Lexus
+  CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-21"),
+  CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-22"),
+  CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
+  CAR.LEXUS_NX: ToyotaCarInfo("Lexus NX 2018-19", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_NXH: ToyotaCarInfo("Lexus NX Hybrid 2018-19", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_NX_TSS2: ToyotaCarInfo("Lexus NX 2020"),
+  CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2020"),
+  CAR.LEXUS_RX: ToyotaCarInfo("Lexus RX 2016-18", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_RXH: ToyotaCarInfo("Lexus RX Hybrid 2016-19", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
+  CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
+}
 
 # (addr, cars, bus, 1/freq*100, vl)
 STATIC_DSU_MSGS = [
@@ -175,6 +271,7 @@ FW_VERSIONS = {
   },
   CAR.AVALON_TSS2: {
     (Ecu.esp, 0x7b0, None): [
+      b'\x01F152607240\x00\x00\x00\x00\x00\x00',
       b'\x01F152607280\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
@@ -185,9 +282,29 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F6201200\x00\x00\x00\x00',
+      b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
+      b'\x028646F4104100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
+    ],
+  },
+  CAR.AVALONH_TSS2: {
+    (Ecu.esp, 0x7b0, None): [
+      b'F152641080\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B41110\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x700, None): [
+      b'\x018966306Q6000\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F6201200\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
+      b'\x028646F4104100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.CAMRY: {
@@ -394,10 +511,12 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x750, 15): [
       b'\x018821F6201200\x00\x00\x00\x00',
+      b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 109): [
       b'\x028646F3305200\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
       b'\x028646F3305300\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
+      b'\x028646F3305300\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.CHR: {
@@ -587,6 +706,7 @@ FW_VERSIONS = {
       b'\x03312N6100\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203302\x00\x00\x00\x00',
       b'\x03312N6100\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
       b'\x02312K4000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02312U5000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'\x018965B12350\x00\x00\x00\x00\x00\x00',
@@ -598,7 +718,8 @@ FW_VERSIONS = {
       b'\x018965B1255000\x00\x00\x00\x00',
       b'8965B12361\x00\x00\x00\x00\x00\x00',
       b'8965B16011\x00\x00\x00\x00\x00\x00',
-      b'\x018965B12510\x00\x00\x00\x00\x00\x00'
+      b'\x018965B12510\x00\x00\x00\x00\x00\x00',
+      b'\x018965B1256000\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'\x01F152602280\x00\x00\x00\x00\x00\x00',
@@ -620,6 +741,7 @@ FW_VERSIONS = {
       b'\x01F152612C00\x00\x00\x00\x00\x00\x00',
       b'F152602191\x00\x00\x00\x00\x00\x00',
       b'\x01F152612862\x00\x00\x00\x00\x00\x00',
+      b'\x01F152612B91\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
@@ -826,6 +948,7 @@ FW_VERSIONS = {
       b'\x01F15264872500\x00\x00\x00\x00',
       b'\x01F15264873500\x00\x00\x00\x00',
       b'\x01F152648C6300\x00\x00\x00\x00',
+      b'\x01F152648J4000\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896630E67000\x00\x00\x00\x00',
@@ -1156,6 +1279,25 @@ FW_VERSIONS = {
       b'\x028646F4203800\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
     ],
   },
+  CAR.RAV4_TSS2_2022: {
+    (Ecu.esp, 0x7b0, None): [
+      b'\x01F15260R350\x00\x00\x00\x00\x00\x00',
+      b'\x01F15260R361\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'\x028965B0R01500\x00\x00\x00\x008965B0R02500\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x700, None): [
+      b'\x01896634AA1000\x00\x00\x00\x00',
+      b'\x01896634A88000\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F0R01100\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F0R02100\x00\x00\x00\x008646G0R01100\x00\x00\x00\x00',
+    ],
+  },
   CAR.RAV4H_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x01896634A15000\x00\x00\x00\x00',
@@ -1211,6 +1353,31 @@ FW_VERSIONS = {
       b'\x028646F4203500\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F4203700\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F4203800\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
+    ],
+  },
+  CAR.RAV4H_TSS2_2022: {
+    (Ecu.esp, 0x7b0, None): [
+      b'\x01F15264283100\x00\x00\x00\x00',
+      b'\x01F15264286200\x00\x00\x00\x00',
+      b'\x01F15264286100\x00\x00\x00\x00',
+      b'\x01F15264283200\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'\x028965B0R01500\x00\x00\x00\x008965B0R02500\x00\x00\x00\x00',
+      b'8965B42182\x00\x00\x00\x00\x00\x00',
+      b'8965B42172\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x700, None): [
+      b'\x01896634A62000\x00\x00\x00\x00',
+      b'\x01896634A08000\x00\x00\x00\x00',
+      b'\x01896634A61000\x00\x00\x00\x00',
+      b'\x01896634A02001\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F0R01100\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F0R02100\x00\x00\x00\x008646G0R01100\x00\x00\x00\x00',
     ],
   },
   CAR.SIENNA: {
@@ -1306,22 +1473,26 @@ FW_VERSIONS = {
       b'\x028966333T0100\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
       b'\x028966333V4000\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
       b'\x02896633T09000\x00\x00\x00\x00897CF3307001\x00\x00\x00\x00',
+      b'\x01896633T38000\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'F152633423\x00\x00\x00\x00\x00\x00',
       b'F152633680\x00\x00\x00\x00\x00\x00',
       b'F152633681\x00\x00\x00\x00\x00\x00',
+      b'F152633F50\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B33252\x00\x00\x00\x00\x00\x00',
       b'8965B33590\x00\x00\x00\x00\x00\x00',
       b'8965B33690\x00\x00\x00\x00\x00\x00',
+      b'8965B33721\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
       b'\x018821F3301200\x00\x00\x00\x00',
       b'\x018821F3301300\x00\x00\x00\x00',
       b'\x018821F3301400\x00\x00\x00\x00',
+      b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F33030D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
@@ -1330,6 +1501,7 @@ FW_VERSIONS = {
       b'\x028646F3304100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F3304200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F3304300\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
+      b'\x028646F3309100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.LEXUS_ESH: {
@@ -1386,6 +1558,7 @@ FW_VERSIONS = {
   CAR.LEXUS_NX_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x018966378B2100\x00\x00\x00\x00',
+      b'\x018966378B3000\x00\x00\x00\x00',
       b'\x018966378G3000\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
@@ -1396,6 +1569,8 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b"\x018821F3301400\x00\x00\x00\x00",
+      b'\x018821F3301200\x00\x00\x00\x00',
+      b'\x018821F3301300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F78030A0\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
@@ -1564,6 +1739,8 @@ FW_VERSIONS = {
       b'\x018966348W9000\x00\x00\x00\x00',
       b'\x01896634D12000\x00\x00\x00\x00',
       b'\x01896634D12100\x00\x00\x00\x00',
+      b'\x01896634D43000\x00\x00\x00\x00',
+      b'\x01896630ED0100\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'\x01F15260E031\x00\x00\x00\x00\x00\x00',
@@ -1584,6 +1761,7 @@ FW_VERSIONS = {
       b'\x028646F4810100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F4810300\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
+      b'\x028646F4810400\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
   CAR.LEXUS_RXH_TSS2: {
@@ -1611,6 +1789,7 @@ FW_VERSIONS = {
   CAR.PRIUS_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x028966347B1000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+      b'\x028966347C4000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C6000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x038966347C0000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF4710101\x00\x00\x00\x00',
@@ -1661,6 +1840,23 @@ FW_VERSIONS = {
       b'\x028646F5803200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
+  CAR.ALPHARDH_TSS2: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\x0235879000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B58040\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.esp, 0x7b0, None): [
+      b'F152658341\x00\x00\x00\x00\x00\x00'
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F3301400\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646FV201000\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
+    ],
+  },
 }
 
 STEER_THRESHOLD = 100
@@ -1690,7 +1886,9 @@ DBC = {
   CAR.AVALON_2019: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.AVALONH_2019: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.AVALON_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  CAR.AVALONH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.RAV4_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  CAR.RAV4_TSS2_2022: dbc_dict('toyota_nodsu_pt_generated', None),
   CAR.COROLLA_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.COROLLAH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.LEXUS_ES_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
@@ -1700,27 +1898,32 @@ DBC = {
   CAR.LEXUS_IS: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_CTH: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
   CAR.RAV4H_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  CAR.RAV4H_TSS2_2022: dbc_dict('toyota_nodsu_pt_generated', None),
   CAR.LEXUS_NXH: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_NX: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_NX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.PRIUS_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.MIRAI: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.ALPHARD_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  CAR.ALPHARDH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
 }
 
 # These cars have non-standard EPS torque scale factors. All others are 73
 EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_IS: 77, CAR.LEXUS_RC: 77, CAR.LEXUS_CTH: 100, CAR.PRIUS_V: 100})
 
 # Toyota/Lexus Safety Sense 2.0 and 2.5
-TSS2_CAR = {CAR.RAV4_TSS2, CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.RAV4H_TSS2,
+TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
             CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2,
-            CAR.MIRAI, CAR.LEXUS_NX_TSS2, CAR.ALPHARD_TSS2, CAR.AVALON_TSS2}
+            CAR.MIRAI, CAR.LEXUS_NX_TSS2, CAR.ALPHARD_TSS2, CAR.AVALON_TSS2, CAR.AVALONH_TSS2, CAR.ALPHARDH_TSS2}
 
 NO_DSU_CAR = TSS2_CAR | {CAR.CHR, CAR.CHRH, CAR.CAMRY, CAR.CAMRYH}
 
-EV_HYBRID_CAR = {CAR.AVALONH_2019, CAR.CAMRYH, CAR.CAMRYH_TSS2, CAR.CHRH, CAR.COROLLAH_TSS2, CAR.HIGHLANDERH, CAR.HIGHLANDERH_TSS2, CAR.PRIUS,
-                 CAR.PRIUS_V, CAR.RAV4H, CAR.RAV4H_TSS2, CAR.LEXUS_CTH, CAR.MIRAI, CAR.LEXUS_ESH, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_NXH, CAR.LEXUS_RXH,
-                 CAR.LEXUS_RXH_TSS2, CAR.PRIUS_TSS2}
+# these cars have a radar which sends ACC messages instead of the camera
+RADAR_ACC_CAR = {CAR.RAV4H_TSS2_2022, CAR.RAV4_TSS2_2022}
+
+EV_HYBRID_CAR = {CAR.AVALONH_2019, CAR.AVALONH_TSS2, CAR.CAMRYH, CAR.CAMRYH_TSS2, CAR.CHRH, CAR.COROLLAH_TSS2, CAR.HIGHLANDERH, CAR.HIGHLANDERH_TSS2, CAR.PRIUS,
+                 CAR.PRIUS_V, CAR.RAV4H, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.LEXUS_CTH, CAR.MIRAI, CAR.LEXUS_ESH, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_NXH, CAR.LEXUS_RXH,
+                 CAR.LEXUS_RXH_TSS2, CAR.PRIUS_TSS2, CAR.ALPHARDH_TSS2}
 
 # no resume button press required
 NO_STOP_TIMER_CAR = TSS2_CAR | {CAR.PRIUS_V, CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_ESH}

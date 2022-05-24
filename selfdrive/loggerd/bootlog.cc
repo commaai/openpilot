@@ -2,7 +2,7 @@
 #include <string>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/swaglog.h"
+#include "common/swaglog.h"
 #include "selfdrive/loggerd/logger.h"
 
 
@@ -11,8 +11,6 @@ static kj::Array<capnp::word> build_boot_log() {
   if (Hardware::TICI()) {
     bootlog_commands.push_back("journalctl");
     bootlog_commands.push_back("sudo nvme smart-log --output-format=json /dev/nvme0");
-  } else if (Hardware::EON()) {
-    bootlog_commands.push_back("logcat -d");
   }
 
   MessageBuilder msg;
@@ -51,16 +49,14 @@ static kj::Array<capnp::word> build_boot_log() {
 }
 
 int main(int argc, char** argv) {
-  clear_locks(LOG_ROOT);
-
-  const std::string path = LOG_ROOT + "/boot/" + logger_get_route_name() + ".bz2";
+  const std::string path = LOG_ROOT + "/boot/" + logger_get_route_name();
   LOGW("bootlog to %s", path.c_str());
 
   // Open bootlog
   bool r = util::create_directories(LOG_ROOT + "/boot/", 0775);
   assert(r);
 
-  BZFile bz_file(path.c_str());
+  RawFile bz_file(path.c_str());
 
   // Write initdata
   bz_file.write(logger_build_init_data().asBytes());

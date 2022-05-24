@@ -6,9 +6,7 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 int main(int argc, char *argv[]) {
-  QSurfaceFormat fmt;
-  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
-  QSurfaceFormat::setDefaultFormat(fmt);
+  initApp(argc, argv);
 
   QApplication a(argc, argv);
   QWidget w;
@@ -21,15 +19,16 @@ int main(int argc, char *argv[]) {
   {
     QHBoxLayout *hlayout = new QHBoxLayout();
     layout->addLayout(hlayout);
-    hlayout->addWidget(new CameraViewWidget("navd", VISION_STREAM_RGB_MAP, false));
-    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_RGB_BACK, false));
+    // TODO: make mapd output YUV
+    // hlayout->addWidget(new CameraViewWidget("navd", VISION_STREAM_MAP, false));
+    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_ROAD, false));
   }
 
   {
     QHBoxLayout *hlayout = new QHBoxLayout();
     layout->addLayout(hlayout);
-    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_RGB_FRONT, false));
-    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_RGB_WIDE, false));
+    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_DRIVER, false));
+    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_WIDE_ROAD, false));
   }
 
   return a.exec();

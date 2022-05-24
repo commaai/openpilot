@@ -270,6 +270,26 @@ _negative_response_codes = {
     0x93: 'voltage too low',
 }
 
+def get_dtc_num_as_str(dtc_num_bytes):
+  # ISO 15031-6
+  designator = {
+    0b00: "P",
+    0b01: "C",
+    0b10: "B",
+    0b11: "U",
+  }
+  d = designator[dtc_num_bytes[0] >> 6]
+  n = bytes([dtc_num_bytes[0] & 0x3F]) + dtc_num_bytes[1:]
+  return d + n.hex()
+
+def get_dtc_status_names(status):
+  result = list()
+  for m in DTC_STATUS_MASK_TYPE:
+    if m == DTC_STATUS_MASK_TYPE.ALL:
+      continue
+    if status & m.value:
+      result.append(m.name)
+  return result
 
 class CanClient():
   def __init__(self, can_send: Callable[[int, bytes, int], None], can_recv: Callable[[], List[Tuple[int, int, bytes, int]]],

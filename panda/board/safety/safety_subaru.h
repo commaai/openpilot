@@ -37,7 +37,7 @@ AddrCheckStruct subaru_l_addr_checks[] = {
 #define SUBARU_L_ADDR_CHECK_LEN (sizeof(subaru_l_addr_checks) / sizeof(subaru_l_addr_checks[0]))
 addr_checks subaru_l_rx_checks = {subaru_l_addr_checks, SUBARU_L_ADDR_CHECK_LEN};
 
-static uint8_t subaru_get_checksum(CANPacket_t *to_push) {
+static uint32_t subaru_get_checksum(CANPacket_t *to_push) {
   return (uint8_t)GET_BYTE(to_push, 0);
 }
 
@@ -45,7 +45,7 @@ static uint8_t subaru_get_counter(CANPacket_t *to_push) {
   return (uint8_t)(GET_BYTE(to_push, 1) & 0xFU);
 }
 
-static uint8_t subaru_compute_checksum(CANPacket_t *to_push) {
+static uint32_t subaru_compute_checksum(CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
   int len = GET_LEN(to_push);
   uint8_t checksum = (uint8_t)(addr) + (uint8_t)((unsigned int)(addr) >> 8U);
@@ -146,7 +146,9 @@ static int subaru_legacy_rx_hook(CANPacket_t *to_push) {
   return valid;
 }
 
-static int subaru_tx_hook(CANPacket_t *to_send) {
+static int subaru_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
+  UNUSED(longitudinal_allowed);
+
   int tx = 1;
   int addr = GET_ADDR(to_send);
 
@@ -206,7 +208,9 @@ static int subaru_tx_hook(CANPacket_t *to_send) {
   return tx;
 }
 
-static int subaru_legacy_tx_hook(CANPacket_t *to_send) {
+static int subaru_legacy_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
+  UNUSED(longitudinal_allowed);
+
   int tx = 1;
   int addr = GET_ADDR(to_send);
 
@@ -309,10 +313,8 @@ static int subaru_legacy_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
   return bus_fwd;
 }
 
-static const addr_checks* subaru_init(int16_t param) {
+static const addr_checks* subaru_init(uint16_t param) {
   UNUSED(param);
-  controls_allowed = false;
-  relay_malfunction_reset();
   return &subaru_rx_checks;
 }
 
@@ -324,10 +326,8 @@ const safety_hooks subaru_hooks = {
   .fwd = subaru_fwd_hook,
 };
 
-static const addr_checks* subaru_legacy_init(int16_t param) {
+static const addr_checks* subaru_legacy_init(uint16_t param) {
   UNUSED(param);
-  controls_allowed = false;
-  relay_malfunction_reset();
   return &subaru_l_rx_checks;
 }
 

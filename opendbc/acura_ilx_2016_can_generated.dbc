@@ -10,8 +10,8 @@ BO_ 512 GAS_COMMAND: 6 EON
  SG_ CHECKSUM_PEDAL : 47|8@0+ (1,0) [0|255] "" INTERCEPTOR
 
 BO_ 513 GAS_SENSOR: 6 INTERCEPTOR
- SG_ INTERCEPTOR_GAS : 7|16@0+ (0.253984064,-83.3) [0|1] "" EON
- SG_ INTERCEPTOR_GAS2 : 23|16@0+ (0.126992032,-83.3) [0|1] "" EON
+ SG_ INTERCEPTOR_GAS : 7|16@0+ (1,0) [0|1] "" EON
+ SG_ INTERCEPTOR_GAS2 : 23|16@0+ (1,0) [0|1] "" EON
  SG_ STATE : 39|4@0+ (1,0) [0|15] "" EON
  SG_ COUNTER_PEDAL : 35|4@0+ (1,0) [0|15] "" EON
  SG_ CHECKSUM_PEDAL : 47|8@0+ (1,0) [0|255] "" EON
@@ -166,7 +166,7 @@ VAL_ 884 DASHBOARD_ALERT 0 "none" 51 "acc_problem" 55 "cmbs_problem" 75 "key_not
 VAL_ 891 WIPERS 4 "High" 2 "Low" 0 "Off";
 
 
-CM_ "Imported file _honda_2017.dbc starts here";
+CM_ "Imported file _nidec_2017.dbc starts here";
 BO_ 145 KINEMATICS: 8 XXX
  SG_ LAT_ACCEL : 7|10@0+ (0.02,-512) [-20|20] "m/s2" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON

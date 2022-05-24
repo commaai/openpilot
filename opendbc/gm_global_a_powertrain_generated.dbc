@@ -174,6 +174,7 @@ BO_ 352 VehicleIgnition: 5 XXX
 
 BO_ 497 VehicleIgnitionAlt: 8 XXX
  SG_ Ignition : 5|1@0+ (1,0) [0|1] "" XXX
+ SG_ ParkBrake : 36|1@0+ (1,0) [0|3] "" XXX
 
 BO_ 501 ECMPRDNL2: 8 K20_ECM
  SG_ TransmissionState : 48|4@1+ (1,0) [0|7] "" NEO

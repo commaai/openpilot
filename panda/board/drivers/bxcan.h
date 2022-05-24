@@ -9,7 +9,12 @@ bool can_set_speed(uint8_t can_number) {
   CAN_TypeDef *CAN = CANIF_FROM_CAN_NUM(can_number);
   uint8_t bus_number = BUS_NUM_FROM_CAN_NUM(can_number);
 
-  ret &= llcan_set_speed(CAN, bus_config[bus_number].can_speed, can_loopback, (unsigned int)(can_silent) & (1U << can_number));
+  ret &= llcan_set_speed(
+    CAN,
+    bus_config[bus_number].can_speed,
+    can_loopback,
+    (unsigned int)(can_silent) & (1U << can_number)
+  );
   return ret;
 }
 

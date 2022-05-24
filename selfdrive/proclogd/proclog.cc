@@ -7,8 +7,8 @@
 #include <iterator>
 #include <sstream>
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 
 namespace Parser {
 

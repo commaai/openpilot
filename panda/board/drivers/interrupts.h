@@ -7,6 +7,7 @@ typedef struct interrupt {
 } interrupt;
 
 void interrupt_timer_init(void);
+uint32_t microsecond_timer_get(void);
 
 void unused_interrupt_handler(void) {
   // Something is wrong if this handler is called!
@@ -25,7 +26,22 @@ interrupt interrupts[NUM_INTERRUPTS];
 
 bool check_interrupt_rate = false;
 
+uint8_t interrupt_depth = 0U;
+uint32_t last_time = 0U;
+uint32_t idle_time = 0U;
+uint32_t busy_time = 0U;
+float interrupt_load = 0.0f;
+
 void handle_interrupt(IRQn_Type irq_type){
+  ENTER_CRITICAL();
+  if (interrupt_depth == 0U) {
+    uint32_t time = microsecond_timer_get();
+    idle_time += get_ts_elapsed(time, last_time);
+    last_time = time;
+  }
+  interrupt_depth += 1U;
+  EXIT_CRITICAL();
+
   interrupts[irq_type].call_counter++;
   interrupts[irq_type].handler();
 
@@ -34,14 +50,32 @@ void handle_interrupt(IRQn_Type irq_type){
     puts("Interrupt 0x"); puth(irq_type); puts(" fired too often (0x"); puth(interrupts[irq_type].call_counter); puts("/s)!\n");
     fault_occurred(interrupts[irq_type].call_rate_fault);
   }
+
+  ENTER_CRITICAL();
+  interrupt_depth -= 1U;
+  if (interrupt_depth == 0U) {
+    uint32_t time = microsecond_timer_get();
+    busy_time += get_ts_elapsed(time, last_time);
+    last_time = time;
+  }
+  EXIT_CRITICAL();
 }
 
-// Reset interrupt counter every second
+// Every second
 void interrupt_timer_handler(void) {
   if (INTERRUPT_TIMER->SR != 0) {
+    // Reset interrupt counters
     for(uint16_t i=0U; i<NUM_INTERRUPTS; i++){
       interrupts[i].call_counter = 0U;
     }
+
+    // Calculate interrupt load
+    // The bootstub does not have the FPU enabled, so can't do float operations.
+#if !defined(PEDAL) && !defined(BOOTSTUB)
+    interrupt_load = ((busy_time + idle_time) > 0U) ? ((float) busy_time) / (busy_time + idle_time) : 0.0f;
+#endif
+    idle_time = 0U;
+    busy_time = 0U;
   }
   INTERRUPT_TIMER->SR = 0;
 }
