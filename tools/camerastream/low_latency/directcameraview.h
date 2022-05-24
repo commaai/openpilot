@@ -38,6 +38,8 @@ protected:
   CUgraphicsResource res[3];
   CUdeviceptr dpSrcFrame;
 
+  QColor bg = QColor("#000000");
+
 protected slots:
   void vipcFrameReceived(unsigned char *dat, int len);
 };

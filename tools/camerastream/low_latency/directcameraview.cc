@@ -113,7 +113,8 @@ void DirectCameraViewWidget::initializeGL() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    int width = i == 0 ? stream_width : stream_width / 2;
+    //int width = i == 0 ? stream_width : stream_width / 2;
+    int width = stream_width;
     int height = i == 0 ? stream_height : stream_height / 2;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
     assert(glGetError() == GL_NO_ERROR);
@@ -124,17 +125,27 @@ void DirectCameraViewWidget::initializeGL() {
   CHECK(cuGraphicsGLRegisterImage(&res[0], textures[0], GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
   CHECK(cuGraphicsGLRegisterImage(&res[1], textures[1], GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
   CHECK(cuGraphicsGLRegisterImage(&res[2], textures[2], GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
+  dpSrcFrame = 0;
 }
 
 void DirectCameraViewWidget::paintGL() {
   makeCurrent();
   printf("paintGL %llu\n", dpSrcFrame);
 
+  glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
+  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glViewport(0, 0, width(), height());
+  glBindVertexArray(frame_vao);
+
   if (dpSrcFrame) {
     CHECK(cuGraphicsMapResources(3, res, NULL));
-    for (int plane = 0; plane < 1; plane++) {
+    for (int i = 0; i < 3; i++) {
+      glActiveTexture(GL_TEXTURE0 + i);
+      glBindTexture(GL_TEXTURE_2D, textures[i]);
       CUarray texture_array;
-      CHECK(cuGraphicsSubResourceGetMappedArray(&texture_array, res[plane], 0, 0));
+      CHECK(cuGraphicsSubResourceGetMappedArray(&texture_array, res[i], 0, 0));
 
       // copy in the data
       CUDA_MEMCPY2D cu2d = {0};
@@ -147,7 +158,7 @@ void DirectCameraViewWidget::paintGL() {
 
       cu2d.WidthInBytes = 2048;
 
-      if (plane == 1) {
+      if (i != 0) {
         cu2d.Height = 1216/2;
         cu2d.srcY = 1216;
       } else {
@@ -159,6 +170,23 @@ void DirectCameraViewWidget::paintGL() {
     CHECK(cuGraphicsUnmapResources(3, res, NULL));
     decoder->free_frame(dpSrcFrame);
   }
+
+
+  glUseProgram(program->programId());
+
+  GLfloat frame_mat[] = {1.0, 0.0, 0.0, 0.0,
+                         0.0, 1.0, 0.0, 0.0,
+                         0.0, 0.0, 1.0, 0.0,
+                         0.0, 0.0, 0.0, 1.0};
+  glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat);
+  assert(glGetError() == GL_NO_ERROR);
+  glEnableVertexAttribArray(0);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
+  glDisableVertexAttribArray(0);
+  glBindVertexArray(0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glActiveTexture(GL_TEXTURE0);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 }
 
 void DirectCameraViewWidget::vipcFrameReceived(unsigned char *dat, int len) {
