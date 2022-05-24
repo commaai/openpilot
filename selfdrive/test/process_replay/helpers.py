@@ -5,7 +5,7 @@ import uuid
 from common.params import Params
 
 class OpenpilotPrefix(object):
-  def __init__(self, prefix=None):
+  def __init__(self, prefix: str = None) -> None:
     self.prefix = prefix if prefix else str(uuid.uuid4())
     self.msgq_path = os.path.join('/dev/shm', self.prefix)
 
@@ -22,4 +22,5 @@ class OpenpilotPrefix(object):
       shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
       os.remove(symlink_path)
     shutil.rmtree(self.msgq_path, ignore_errors=True)
+    del os.environ['OPENPILOT_PREFIX']
     return True
