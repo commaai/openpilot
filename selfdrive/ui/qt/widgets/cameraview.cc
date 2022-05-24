@@ -220,23 +220,6 @@ void CameraViewWidget::paintGL() {
   for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
     if (frames[frame_idx].first == draw_frame_id) break;
   }
-
-  qDebug() << "Frame idx:" << frame_idx << "size:" << frames.size();
-  qDebug() << "Draw frame id:" << draw_frame_id;
-  qDebug() << "Cam frame id:" << frames[frame_idx].first;
-  qDebug() << "Correct:" << (draw_frame_id == frames[frame_idx].first) << "\n";
-
-//  auto it = std::find_if(frames.begin(), frames.end(), [this](const std::pair <uint32_t, VisionBuf*>& element) {
-//    return element.first == draw_frame_id;
-//  });
-//  int frame_idx = (it == frames.end()) ? (frames.size() - 1) : (it - frames.begin());
-//  frame_idx = std::clamp(frame_idx, prev_frame_idx - 1, prev_frame_idx + 1);
-//  prev_frame_idx = frame_idx;
-
-//  const uint32_t latest_frame_id = frames[frames.size() - 1].first;
-//  int idx = frames.size() - (latest_frame_id - draw_frame_id) - 1;
-//  idx = std::clamp(idx, 0, (int)frames.size() - 1);
-
   VisionBuf *frame = frames[frame_idx].second;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
