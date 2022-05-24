@@ -98,8 +98,8 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 
 } // namespace
 
-CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType type, bool zoom, bool manual_update, QWidget* parent) :
-                                   stream_name(stream_name), stream_type(type), zoomed_view(zoom), manual_update(manual_update), QOpenGLWidget(parent) {
+CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
+                                   stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected, Qt::BlockingQueuedConnection);
   connect(this, &CameraViewWidget::vipcThreadFrameReceived, this, &CameraViewWidget::vipcFrameReceived);
@@ -274,7 +274,7 @@ void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
   while (frames.size() > FRAME_BUFFER_SIZE) {
     frames.pop_front();
   }
-  if (!manual_update) update();
+  update();
 }
 
 void CameraViewWidget::vipcThread() {
