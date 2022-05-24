@@ -32,17 +32,8 @@ try:
 except ImportError:
   migration = {}
 
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description='Run FW fingerprint on Qlog of route or list of routes')
-  parser.add_argument('route', help='Route or file with list of routes')
-  parser.add_argument('--car', help='Force comparison fingerprint to known car')
-  args = parser.parse_args()
 
-  if os.path.exists(args.route):
-    routes = list(open(args.route))
-  else:
-    routes = [args.route]
-
+def test_fw_query_on_routes(routes, car):
   mismatches = defaultdict(list)
 
   not_fingerprinted = 0
@@ -90,8 +81,8 @@ if __name__ == "__main__":
           live_fingerprint = msg.carParams.carFingerprint
           live_fingerprint = migration.get(live_fingerprint, live_fingerprint)
 
-          if args.car is not None:
-            live_fingerprint = args.car
+          if car is not None:
+            live_fingerprint = car
 
           if live_fingerprint not in SUPPORTED_CARS:
             print("not in supported cars")
@@ -126,7 +117,8 @@ if __name__ == "__main__":
 
           print("Mismatches")
           found = False
-          for car_fws in [TOYOTA_FW_VERSIONS, HONDA_FW_VERSIONS, HYUNDAI_FW_VERSIONS, VW_FW_VERSIONS, MAZDA_FW_VERSIONS, SUBARU_FW_VERSIONS]:
+          for car_fws in [TOYOTA_FW_VERSIONS, HONDA_FW_VERSIONS, HYUNDAI_FW_VERSIONS, VW_FW_VERSIONS, MAZDA_FW_VERSIONS,
+                          SUBARU_FW_VERSIONS]:
             if live_fingerprint in car_fws:
               found = True
               expected = car_fws[live_fingerprint]
@@ -168,6 +160,22 @@ if __name__ == "__main__":
       traceback.print_exc()
     except KeyboardInterrupt:
       break
+
+  return mismatches, dongles, good_exact, not_fingerprinted, solved_by_fuzzy, good_fuzzy, wrong_fuzzy
+
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description='Run FW fingerprint on Qlog of route or list of routes')
+  parser.add_argument('route', help='Route or file with list of routes')
+  parser.add_argument('--car', help='Force comparison fingerprint to known car')
+  args = parser.parse_args()
+
+  if os.path.exists(args.route):
+    routes = list(open(args.route))
+  else:
+    routes = [args.route]
+
+  mismatches, dongles, good_exact, not_fingerprinted, solved_by_fuzzy, good_fuzzy, wrong_fuzzy = test_fw_query_on_routes(routes, args.car)
 
   print()
   # Print FW versions that need to be added seperated out by car and address
