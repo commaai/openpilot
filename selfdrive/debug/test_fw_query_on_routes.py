@@ -71,8 +71,6 @@ def test_fw_query_on_routes(routes, car):
             break
 
         elif msg.which() == "carParams":
-          bts = msg.carParams.as_builder().to_bytes()
-
           car_fw = msg.carParams.carFw
           if len(car_fw) == 0:
             print("no fw")
@@ -202,4 +200,3 @@ if __name__ == "__main__":
   print(f"Correct fuzzy matches:        {good_fuzzy}")
   print(f"Wrong fuzzy matches:          {wrong_fuzzy}")
   print()
-
