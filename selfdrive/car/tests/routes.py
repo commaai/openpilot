@@ -26,7 +26,7 @@ non_tested_cars = [
   HYUNDAI.KIA_OPTIMA_H,
 ]
 
-TestRoute = namedtuple('TestRoute', ['route', 'car_model', 'segment', 'ci'], defaults=(None, True))
+TestRoute = namedtuple('TestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
 
 routes = [
   # TestRoute("d6ac8ebdb47bc549|2022-03-31--13-10-06", COMMA.BODY),
@@ -165,7 +165,7 @@ routes = [
   # TestRoute("2cef8a0b898f331a|2021-03-25--20-13-57", VOLKSWAGEN.TIGUAN_MK2),
   # TestRoute("a589dcc642fdb10a|2021-06-14--20-54-26", VOLKSWAGEN.TOURAN_MK2),
   TestRoute("a459f4556782eba1|2021-09-19--09-48-00", VOLKSWAGEN.TRANSPORTER_T61),
-  # TestRoute("0cd0b7f7e31a3853|2021-11-18--00-38-32", VOLKSWAGEN.TROC_MK1),
+  TestRoute("0cd0b7f7e31a3853|2021-11-18--00-38-32", VOLKSWAGEN.TROC_MK1),
   # TestRoute("07667b885add75fd|2021-01-23--19-48-42", VOLKSWAGEN.AUDI_A3_MK3),
   # TestRoute("6c6b466346192818|2021-06-06--14-17-47", VOLKSWAGEN.AUDI_Q2_MK1),
   # TestRoute("0cd0b7f7e31a3853|2021-12-03--03-12-05", VOLKSWAGEN.AUDI_Q3_MK2),

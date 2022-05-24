@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=E1101
 import argparse
-import copy
 import os
 import importlib
 import unittest
@@ -56,12 +55,12 @@ class TestCarModel(unittest.TestCase):
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
-    print(cls.car_model, cls.route)
+    # print(cls.car_model, cls.route)
     if cls.route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
-        raise unittest.SkipTest
-      raise Exception(f"missing test route for {cls.car_model}")
+      raise unittest.SkipTest
+      # raise Exception(f"missing test route for {cls.car_model}")
 
     disable_radar = False
     test_segs = (2, 1, 0)
@@ -110,7 +109,6 @@ class TestCarModel(unittest.TestCase):
     set_status = self.safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyConfigs}")
     self.safety.init_tests()
-    print('setUp')
 
   def test_car_params(self):
     if self.CP.dashcamOnly:
@@ -130,7 +128,6 @@ class TestCarModel(unittest.TestCase):
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
       else:
         raise Exception("unkown tuning")
-    print('test car params')
 
   def test_car_interface(self):
     # TODO: also check for checkusm and counter violations from can parser
@@ -146,7 +143,6 @@ class TestCarModel(unittest.TestCase):
         can_invalid_cnt += not CS.canValid
 
     self.assertLess(can_invalid_cnt, 50)
-    print('test car interface')
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
@@ -160,10 +156,8 @@ class TestCarModel(unittest.TestCase):
       if radar_data is not None:
         error_cnt += car.RadarData.Error.canError in radar_data.errors
     self.assertLess(error_cnt, 20)
-    print('test radar interface')
 
   def test_panda_safety_rx_valid(self):
-    print('test_panda_safety_rx_valid')
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
@@ -192,7 +186,6 @@ class TestCarModel(unittest.TestCase):
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_carstate(self):
-    print('test_panda_safety_carstate')
     """
       Assert that panda safety matches openpilot's carState
     """
@@ -262,35 +255,33 @@ class TestCarModel(unittest.TestCase):
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 
-def load_tests(_routes):
-  test_cases = unittest.TestSuite()
-  for car_model, test_route in _test_cases:
-    test = copy.copy(TestCarModel)
-    test.car_model = car_model
-
+def load_tests(_routes, ci=True):
+  test_suite = unittest.TestSuite()
+  for car_model, test_route in _routes:
+    test_case_args = {"car_model": car_model, "ci": ci}
     if test_route is not None:
-      test.route = test_route.route if test_route else None
-      test.segment = test_route.segment if test_route else None
-      test.ci = test_route.ci if test_route else None
+      test_case_args.update({"route": test_route.route, "segment": test_route.segment})
 
-    # discover tests
-    test_cases.addTest(unittest.TestLoader().loadTestsFromTestCase(test))
-  return test_cases
+    # create new test case and discover tests
+    CarModelTestCase = type("NewTest", (TestCarModel,), test_case_args)
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(CarModelTestCase))
+  return test_suite
 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("route", nargs='?', help="Specify route to run tests on")
   parser.add_argument("--segment", type=int, nargs='?', help="Specify segment of route to test")
-  parser.add_argument("--car_model", help="Specify car model for test route")
+  parser.add_argument("--car", help="Specify car model for test route")
   args = parser.parse_args()
 
   # Run on user-specified route
   if args.route is not None:
-    assert args.car_model is not None, "Car model needed for tests"
-    test_route = TestRoute(args.route, args.car_model, segment=args.segment, ci=False)
-    test_cases = load_tests([test_route])
+    assert args.car is not None, "Specify car model with --car"
+    test_route = TestRoute(args.route, args.car, segment=args.segment)
+    test_cases = load_tests([(args.car, test_route)], ci=False)
   else:
-    test_cases = load_tests(routes)
+    print('Running tests on {} routes'.format(len(_test_cases)))
+    test_cases = load_tests(_test_cases)
 
   unittest.TextTestRunner().run(test_cases)
