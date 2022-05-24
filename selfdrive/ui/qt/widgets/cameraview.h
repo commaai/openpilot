@@ -40,7 +40,6 @@ protected:
   bool manual_update;
   uint32_t latest_frame_id = 0;
   VisionBuf *latest_frame = nullptr;
-  bool frame_ready = false;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
   std::unique_ptr<QOpenGLShaderProgram> program;
