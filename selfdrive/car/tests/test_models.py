@@ -38,24 +38,23 @@ routes_by_car = defaultdict(set)
 for r in routes:
   routes_by_car[r.car_model].add(r)
 
-_test_cases: List[Tuple[str, Optional[TestRoute]]] = []
+test_cases: List[Tuple[str, Optional[TestRoute]]] = []
 for i, c in enumerate(sorted(all_known_cars())):
   if i % NUM_JOBS == JOB_ID:
-    _test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
+    test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
 
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
 class TestCarModel(unittest.TestCase):
   car_model = None
-  route = None
-  segment = None
-  ci = None
+  test_route = None
+  ci_route = True
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
-    if cls.route is None:
+    if cls.test_route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
         raise unittest.SkipTest
@@ -63,15 +62,15 @@ class TestCarModel(unittest.TestCase):
 
     disable_radar = False
     test_segs = (2, 1, 0)
-    if cls.segment is not None:
-      test_segs = (cls.segment,)
+    if cls.test_route.segment is not None:
+      test_segs = (cls.test_route.segment,)
 
     for seg in test_segs:
       try:
-        if cls.ci:
-          lr = LogReader(get_url(cls.route, seg))
+        if cls.ci_route:
+          lr = LogReader(get_url(cls.test_route.route, seg))
         else:
-          lr = LogReader(Route(cls.route).log_paths()[seg])
+          lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
       except Exception:
         continue
 
@@ -90,7 +89,7 @@ class TestCarModel(unittest.TestCase):
       if len(can_msgs) > int(50 / DT_CTRL):
         break
     else:
-      raise Exception(f"Route: {repr(cls.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
+      raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
@@ -258,16 +257,16 @@ class TestCarModel(unittest.TestCase):
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 
-def load_tests(_routes, ci=True):
-  test_suite = unittest.TestSuite()
-  for car_model, test_route in _routes:
-    test_case_args = {"car_model": car_model, "ci": ci}
-    if test_route is not None:
-      test_case_args.update({"route": test_route.route, "segment": test_route.segment})
+ci_route = True
 
+
+def load_tests(loader, tests, pattern):
+  test_suite = unittest.TestSuite()
+  for car_model, test_route in test_cases:
     # create new test case and discover tests
+    test_case_args = {"car_model": car_model, "ci_route": ci_route, "test_route": test_route}
     CarModelTestCase = type("CarModelTestCase", (TestCarModel,), test_case_args)
-    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(CarModelTestCase))
+    test_suite.addTest(loader.loadTestsFromTestCase(CarModelTestCase))
   return test_suite
 
 
@@ -278,13 +277,11 @@ if __name__ == "__main__":
   parser.add_argument("--segment", type=int, nargs='?', help="Specify segment of route to test")
   args = parser.parse_args()
 
-  # Run on user-specified route
   if args.route is not None:
     assert args.car is not None, "Specify car model with --car"
-    test_route = TestRoute(args.route, args.car, segment=args.segment)
-    test_cases = load_tests([(args.car, test_route)], ci=False)
+    # Set test_cases to be picked up by load_tests
+    ci_route = False
+    test_cases = [(args.car, TestRoute(args.route, args.car, segment=args.segment))]
+    unittest.main(argv=[''])
   else:
-    print('Running tests on {} routes'.format(len(_test_cases)))
-    test_cases = load_tests(_test_cases)
-
-  unittest.TextTestRunner().run(test_cases)
+    unittest.main()
