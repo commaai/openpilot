@@ -115,8 +115,7 @@ def test_fw_query_on_routes(routes, car):
 
           print("Mismatches")
           found = False
-          for car_fws in [TOYOTA_FW_VERSIONS, HONDA_FW_VERSIONS, HYUNDAI_FW_VERSIONS, VW_FW_VERSIONS, MAZDA_FW_VERSIONS,
-                          SUBARU_FW_VERSIONS]:
+          for car_fws in [TOYOTA_FW_VERSIONS, HONDA_FW_VERSIONS, HYUNDAI_FW_VERSIONS, VW_FW_VERSIONS, MAZDA_FW_VERSIONS, SUBARU_FW_VERSIONS]:
             if live_fingerprint in car_fws:
               found = True
               expected = car_fws[live_fingerprint]
