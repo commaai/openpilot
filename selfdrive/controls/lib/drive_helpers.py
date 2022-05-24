@@ -52,8 +52,7 @@ def update_v_cruise(v_cruise_kph, v_ego, gas_pressed, buttonEvents, button_timer
   long_press = False
   button_type = None
 
-  # should be CV.MPH_TO_KPH, but this causes rounding errors
-  v_cruise_delta = 1. if metric else 1.6
+  v_cruise_delta = 1. if metric else CV.MPH_TO_KPH
 
   for b in buttonEvents:
     if b.type.raw in button_timers and not b.pressed:
