@@ -58,7 +58,6 @@ class TestCarModel(unittest.TestCase):
     if cls.route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
-      raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
     disable_radar = False
