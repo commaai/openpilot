@@ -198,13 +198,16 @@ def graph_timestamps(timestamps, start_times, end_times, relative):
           points['x'].append((event[1]-t0)/1e6)
           points['y'].append(i)
           points['labels'].append(event[0])
-    ax.broken_barh(service_bars, (i-0.45, 0.9), facecolors=(colors), alpha=0.5)
+    offsets = [[0, -3*i] for i in range(len(service_bars))]
+    ax.broken_barh(service_bars, (i-0.4, 0.6), facecolors=(colors), alpha=0.5, offsets=offsets)
 
   scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
 
   mpld3.plugins.connect(fig, tooltip)
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
+  # Set size relative window size is not trivial: https://github.com/mpld3/mpld3/issues/65
+  fig.set_size_inches(18,9)
   return fig
 
 def get_timestamps(lr):
