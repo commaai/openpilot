@@ -53,12 +53,13 @@ void OnroadWindow::updateState(const UIState &s) {
   }
 
   nvg->updateState(s);
+  nvg->update();
+
   if (bg != bgColor) {
     // repaint border
     bg = bgColor;
     update();
   }
-  nvg->update();
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
