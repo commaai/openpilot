@@ -12,9 +12,7 @@ import argparse
 
 from common.basedir import BASEDIR
 from selfdrive.test.process_replay.compare_logs import save_log
-from tools.lib.api import CommaApi
-from tools.lib.auth_config import get_token
-from tools.lib.robust_logreader import RobustLogReader
+from tools.lib.logreader import LogReader
 from tools.lib.route import Route, SegmentName
 from urllib.parse import urlparse, parse_qs
 
@@ -52,7 +50,7 @@ def load_segment(segment_name):
     return []
 
   try:
-    return list(RobustLogReader(segment_name))
+    return list(LogReader(segment_name))
   except ValueError as e:
     print(f"Error parsing {segment_name}: {e}")
     return []
@@ -79,9 +77,9 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
   segment_start = 0
   if 'cabana' in route_or_segment_name:
     query = parse_qs(urlparse(route_or_segment_name).query)
-    api = CommaApi(get_token())
-    logs = api.get(f'v1/route/{query["route"][0]}/log_urls?sig={query["sig"][0]}&exp={query["exp"][0]}')
-  elif route_or_segment_name.startswith("http://") or route_or_segment_name.startswith("https://") or os.path.isfile(route_or_segment_name):
+    route_or_segment_name = query["route"][0]
+
+  if route_or_segment_name.startswith(("http://", "https://")) or os.path.isfile(route_or_segment_name):
     logs = [route_or_segment_name]
   else:
     route_or_segment_name = SegmentName(route_or_segment_name, allow_route_name=True)
@@ -90,7 +88,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
     if route_or_segment_name.segment_num != -1 and segment_count is None:
       segment_count = 1
 
-    r = Route(route_or_segment_name.route_name.canonical_name)
+    r = Route(route_or_segment_name.route_name.canonical_name, route_or_segment_name.data_dir)
     logs = r.qlog_paths() if qlog else r.log_paths()
 
   segment_end = segment_start + segment_count if segment_count else None

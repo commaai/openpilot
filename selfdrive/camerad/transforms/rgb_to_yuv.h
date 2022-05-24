@@ -1,6 +1,6 @@
 #pragma once
 
-#include "selfdrive/common/clutil.h"
+#include "common/clutil.h"
 
 class Rgb2Yuv {
 public:

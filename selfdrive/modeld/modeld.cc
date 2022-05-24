@@ -7,10 +7,10 @@
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/clutil.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/modeld/models/driving.h"
 
@@ -51,10 +51,6 @@ mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera
   return matmul3(yuv_transform, transform);
 }
 
-static uint64_t get_ts(const VisionIpcBufExtra &extra) {
-  return Hardware::TICI() ? extra.timestamp_sof : extra.timestamp_eof;
-}
-
 
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
@@ -80,7 +76,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
   while (!do_exit) {
     // Keep receiving frames until we are at least 1 frame ahead of previous extra frame
-    while (get_ts(meta_main) < get_ts(meta_extra) + 25000000ULL) {
+    while (meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000ULL) {
       buf_main = vipc_client_main.recv(&meta_main);
       if (buf_main == nullptr)  break;
     }
@@ -94,7 +90,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       // Keep receiving extra frames until frame id matches main camera
       do {
         buf_extra = vipc_client_extra.recv(&meta_extra);
-      } while (buf_extra != nullptr && get_ts(meta_main) > get_ts(meta_extra) + 25000000ULL);
+      } while (buf_extra != nullptr && meta_main.timestamp_sof > meta_extra.timestamp_sof + 25000000ULL);
 
       if (buf_extra == nullptr) {
         LOGE("vipc_client_extra no frame");
@@ -124,7 +120,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       }
 
       model_transform_main = update_calibration(extrinsic_matrix_eigen, main_wide_camera, false);
-      model_transform_extra = update_calibration(extrinsic_matrix_eigen, Hardware::TICI(), true);
+      model_transform_extra = update_calibration(extrinsic_matrix_eigen, true, true);
       live_calib_seen = true;
     }
 
@@ -132,11 +128,6 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     if (desire >= 0 && desire < DESIRE_LEN) {
       vec_desire[desire] = 1.0;
     }
-
-    double mt1 = millis_since_boot();
-    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire);
-    double mt2 = millis_since_boot();
-    float model_execution_time = (mt2 - mt1) / 1000.0;
 
     // tracked dropped frames
     uint32_t vipc_dropped_frames = meta_main.frame_id - last_vipc_frame_id - 1;
@@ -148,10 +139,22 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     run_count++;
 
     float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
+    bool prepare_only = vipc_dropped_frames > 0;
 
-    model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
-                  kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
-    posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
+    if (prepare_only) {
+      LOGE("skipping model eval. Dropped %d frames", vipc_dropped_frames);
+    }
+
+    double mt1 = millis_since_boot();
+    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, prepare_only);
+    double mt2 = millis_since_boot();
+    float model_execution_time = (mt2 - mt1) / 1000.0;
+
+    if (model_output != nullptr) {
+      model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
+                    kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
+      posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
+    }
 
     //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
     last = mt1;
@@ -160,16 +163,16 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 }
 
 int main(int argc, char **argv) {
-  if (!Hardware::PC()) {
+  if (Hardware::TICI()) {
     int ret;
     ret = util::set_realtime_priority(54);
     assert(ret == 0);
-    util::set_core_affinity({Hardware::EON() ? 2 : 7});
+    util::set_core_affinity({7});
     assert(ret == 0);
   }
 
-  bool main_wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
-  bool use_extra_client = Hardware::TICI() && !main_wide_camera;
+  bool main_wide_camera = Params().getBool("EnableWideCamera");
+  bool use_extra_client = !main_wide_camera;  // set for single camera mode
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);

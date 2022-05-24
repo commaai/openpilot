@@ -25,6 +25,11 @@ def write(d):
 def run_loop(m):
   ishapes = [[1]+ii.shape[1:] for ii in m.get_inputs()]
   keys = [x.name for x in m.get_inputs()]
+
+  # run once to initialize CUDA provider
+  if "CUDAExecutionProvider" in m.get_providers():
+    m.run(None, dict(zip(keys, [np.zeros(shp, dtype=np.float32) for shp in ishapes])))
+
   print("ready to run onnx model", keys, ishapes, file=sys.stderr)
   while 1:
     inputs = []

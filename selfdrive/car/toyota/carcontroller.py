@@ -7,12 +7,14 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams
 from opendbc.can.packer import CANPacker
+
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
+    self.torque_rate_limits = CarControllerParams(self.CP)
     self.frame = 0
     self.last_steer = 0
     self.alert_active = False
@@ -49,11 +51,10 @@ class CarController:
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
-    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, CarControllerParams)
+    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
     self.steer_rate_limited = new_steer != apply_steer
 
-    # Cut steering while we're in a known fault state (2s)
-    if not CC.latActive or CS.steer_state in (9, 25):
+    if not CC.latActive:
       apply_steer = 0
       apply_steer_req = 0
     else:

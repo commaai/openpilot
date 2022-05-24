@@ -8,6 +8,7 @@ on:
 env:
   BASE_IMAGE: openpilot-base
   DOCKER_REGISTRY: ghcr.io/commaai
+  AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
 
   DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
   BUILD: |
@@ -25,10 +26,11 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     env:
-      STRIPPED_DIR: tmppilot
+      STRIPPED_DIR: /tmp/releasepilot
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
+        fetch-depth: 0
         submodules: true
     - name: Check submodules
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
@@ -45,16 +47,10 @@ jobs:
         restore-keys: |
           scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
           scons-
-    - name: Strip non-release files
+    - name: Build devel
       run: |
-        mkdir $STRIPPED_DIR
-        cp -pR --parents $(cat release/files_common) $STRIPPED_DIR
-        cp -pR --parents $(cat release/files_tici) $STRIPPED_DIR
-        cp -pR --parents $(cat release/files_pc) $STRIPPED_DIR
+        TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
         cp Dockerfile.openpilot_base $STRIPPED_DIR
-
-        # need this to build on x86
-        cp -pR --parents third_party/libyuv third_party/snpe selfdrive/modeld/runners $STRIPPED_DIR
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Build openpilot and run checks
@@ -62,10 +58,34 @@ jobs:
           cd $STRIPPED_DIR
           ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py && \
                           python -m unittest discover selfdrive/car"
+
+  build_all:
+    name: build all
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: ${{ github.ref != 'refs/heads/master' || github.repository != 'commaai/openpilot' }}
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-${{ steps.date.outputs.time }}
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Build openpilot with all flags
+      run: ${{ env.RUN }} "scons -j$(nproc) --extras --test"
     - name: Cleanup scons cache
       run: |
-          cd $STRIPPED_DIR
-          ${{ env.RUN }} "scons -j$(nproc) && \
+          ${{ env.RUN }} "scons -j$(nproc) --extras --test && \
                           rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
 
@@ -74,7 +94,7 @@ jobs:
   #  runs-on: macos-latest
   #  timeout-minutes: 60
   #  steps:
-  #  - uses: actions/checkout@v2
+  #  - uses: actions/checkout@v3
   #    with:
   #      submodules: true
   #  - name: Determine pre-existing Homebrew packages
@@ -133,9 +153,21 @@ jobs:
     env:
       IMAGE_NAME: openpilotwebcamci
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: true
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Build Docker image
       run: |
         eval "$BUILD"
@@ -156,7 +188,7 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Build Docker image
@@ -171,20 +203,20 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Build Docker image
       run: eval "$BUILD"
     - name: pre-commit
-      run: ${{ env.RUN }} "git init && git add -A && pre-commit run --all"
+      run: ${{ env.RUN }} "pre-commit run --all"
 
   valgrind:
     name: valgrind
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Cache dependencies
@@ -227,7 +259,7 @@ jobs:
       run: echo $TIMESTAMP
       env:
         TIMESTAMP: ${{ steps.date.outputs.time }}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Cache scons
@@ -257,10 +289,11 @@ jobs:
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST selfdrive/hardware/tici && \
+                        $UNIT_TEST selfdrive/modeld && \
                         $UNIT_TEST tools/lib/tests && \
+                        ./common/tests/test_util && \
+                        ./common/tests/test_swaglog && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
-                        ./selfdrive/common/tests/test_util && \
-                        ./selfdrive/common/tests/test_swaglog && \
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./selfdrive/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
@@ -274,7 +307,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Cache dependencies
@@ -302,8 +335,6 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc) && \
                         FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
                         coverage xml"
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v2
     - name: Print diff
       if: always()
       run: cat selfdrive/test/process_replay/diff.txt
@@ -313,28 +344,20 @@ jobs:
       with:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
-
-  #model_replay:
-  #  name: model replay
-  #  runs-on: ubuntu-20.04
-  #  timeout-minutes: 50
-  #  steps:
-  #  - uses: actions/checkout@v2
-  #    with:
-  #      submodules: true
-  #  - name: Build Docker image
-  #    run: eval "$BUILD"
-  #  - name: Run replay
-  #    run: |
-  #      ${{ env.RUN }} "scons -j$(nproc) && \
-  #                      selfdrive/test/process_replay/model_replay.py"
+    - name: Upload reference logs
+      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc) && \
+                        CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py --upload-only"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
 
   test_longitudinal:
     name: longitudinal
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Cache scons
@@ -374,9 +397,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        job: [0, 1, 2, 3]
+        job: [0, 1, 2, 3, 4]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Cache dependencies
@@ -406,7 +429,7 @@ jobs:
                         coverage xml && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
-        NUM_JOBS: 4
+        NUM_JOBS: 5
         JOB_ID: ${{ matrix.job }}
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
@@ -416,7 +439,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Build docker container

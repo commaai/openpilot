@@ -44,7 +44,7 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def get_imei(self, slot):
+  def get_imei(self, slot) -> str:
     pass
 
   @abstractmethod
@@ -79,30 +79,6 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def get_battery_capacity(self):
-    pass
-
-  @abstractmethod
-  def get_battery_status(self):
-    pass
-
-  @abstractmethod
-  def get_battery_current(self):
-    pass
-
-  @abstractmethod
-  def get_battery_voltage(self):
-    pass
-
-  @abstractmethod
-  def get_battery_charging(self):
-    pass
-
-  @abstractmethod
-  def set_battery_charging(self, on):
-    pass
-
-  @abstractmethod
   def get_usb_present(self):
     pass
 
@@ -134,9 +110,11 @@ class HardwareBase(ABC):
   def get_gpu_usage_percent(self):
     pass
 
-  @abstractmethod
   def get_modem_version(self):
-    pass
+    return None
+
+  def get_modem_nv(self):
+    return None
 
   @abstractmethod
   def get_modem_temperatures(self):
@@ -150,6 +128,15 @@ class HardwareBase(ABC):
   def initialize_hardware(self):
     pass
 
+  def configure_modem(self):
+    pass
+
   @abstractmethod
   def get_networks(self):
+    pass
+
+  def reset_internal_panda(self):
+    pass
+
+  def recover_internal_panda(self):
     pass

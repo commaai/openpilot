@@ -1,6 +1,6 @@
 // =============================================================================
 //
-// Copyright (c) 2019-2020 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2021 Qualcomm Technologies, Inc.
 // All Rights Reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -54,8 +54,9 @@ struct ZDL_EXPORT OutputAsyncCallbackParam
 {
    size_t dataIndex;
    bool executeStatus;
-   OutputAsyncCallbackParam(size_t _index,bool _status)
-     : dataIndex(_index),executeStatus(_status){};
+   std::string errorMsg;
+   OutputAsyncCallbackParam(size_t _index,bool _status, const std::string& _errorMsg = std::string())
+     : dataIndex(_index),executeStatus(_status), errorMsg(_errorMsg){};
 };
 /**
  * @brief  A structure representing parameters of callback function of Async Input/Output mode
@@ -65,12 +66,13 @@ struct ZDL_EXPORT InputOutputAsyncCallbackParam
    size_t dataIndex;
    const ApplicationBufferMap& outputMap;
    bool executeStatus;
-   InputOutputAsyncCallbackParam(size_t _index, const ApplicationBufferMap& output_map,bool _status)
+   std::string errorMsg;
+   InputOutputAsyncCallbackParam(size_t _index, const ApplicationBufferMap& output_map,bool _status,
+                                 const std::string _ErrorMsg = std::string())
      : dataIndex(_index)
      , outputMap(output_map)
-     ,executeStatus(_status){
-
-     };
+     , executeStatus(_status)
+     , errorMsg(_ErrorMsg){};
 };
 /**
  * @brief  This callback is called when the output data is ready, only use for Output Async mode
@@ -96,6 +98,7 @@ struct ZDL_EXPORT BuildConfig final
    BuildMode buildMode = BuildMode::SERIAL; ///< Specify build in serial mode or parallel mode
    zdl::DlContainer::IDlContainer* container;///< The opened container ptr
    zdl::DlSystem::StringList outputBufferNames;///< Specify the output layer name
+   zdl::DlSystem::StringList outputTensors;///< Specify the output layer name
    RuntimeConfigList runtimeConfigList;///< The runtime config list for PSNPE, @see RuntimeConfig
    size_t inputThreadNumbers = 1;///< Specify the number of threads used in the execution phase to process input data, only used in inputOutputAsync mode
    size_t outputThreadNumbers = 1;///< Specify the number of threads used in the execution phase to process output data, only used in inputOutputAsync and outputAsync mode
@@ -106,6 +109,8 @@ struct ZDL_EXPORT BuildConfig final
    zdl::DlSystem::ProfilingLevel_t profilingLevel = zdl::DlSystem::ProfilingLevel_t::OFF;///< Specify profiling level for Diaglog
    uint64_t encode[2] = {0, 0};
    bool enableInitCache = false;
+   std::string platformOptions;
+   std::string diaglogOutputDir = "./diaglogs/"; ///< Specify a diaglog output directory to save the generated Diaglog files.
 };
 /**
  * @brief .
@@ -170,6 +175,8 @@ class ZDL_EXPORT PSNPE final
     */
    const zdl::DlSystem::TensorShape getInputDimensions() const noexcept;
 
+   const zdl::DlSystem::TensorShape getInputDimensions(const char *name) const noexcept;
+
    /**
     * @brief Returns attributes of buffers.
     *
@@ -180,6 +187,10 @@ class ZDL_EXPORT PSNPE final
    const zdl::DlSystem::TensorShape getBufferAttributesDims(const char *name) const noexcept;
 
    zdl::DlSystem::Optional<zdl::DlSystem::IBufferAttributes*> getInputOutputBufferAttributes(const char *name) const noexcept;
+   bool registerIonBuffers(const zdl::DlSystem::UserMemoryMap& ionBufferMap) const noexcept;
+   bool deregisterIonBuffers(const zdl::DlSystem::StringList& ionBufferNames) const noexcept;
+
+   const char* getLastErrorString();
 
  private:
    PSNPE(const PSNPE&) = delete;

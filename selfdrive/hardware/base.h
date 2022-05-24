@@ -20,6 +20,5 @@ public:
   static void set_ssh_enabled(bool enabled) {}
 
   static bool PC() { return false; }
-  static bool EON() { return false; }
   static bool TICI() { return false; }
 };

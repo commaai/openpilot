@@ -6,7 +6,7 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/api.h"
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 
 const qreal REROUTE_DISTANCE = 25;
 const float MANEUVER_TRANSITION_THRESHOLD = 10;
@@ -221,7 +221,7 @@ void RouteEngine::routeUpdate() {
         if (next_segment.isValid()) {
           segment = next_segment;
 
-          recompute_backoff = std::max(0, recompute_backoff - 1);
+          recompute_backoff = 0;
           recompute_countdown = 0;
         } else {
           qWarning() << "Destination reached";
@@ -294,7 +294,7 @@ void RouteEngine::recomputeRoute() {
 
   if (recompute_countdown == 0 && should_recompute) {
     recompute_countdown = std::pow(2, recompute_backoff);
-    recompute_backoff = std::min(7, recompute_backoff + 1);
+    recompute_backoff = std::min(6, recompute_backoff + 1);
     calculateRoute(*new_destination);
   } else {
     recompute_countdown = std::max(0, recompute_countdown - 1);

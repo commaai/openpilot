@@ -13,16 +13,13 @@ if [ -f /TICI ]; then
   FILES_SRC="release/files_tici"
   RELEASE_BRANCH=release3-staging
   DASHCAM_BRANCH=dashcam3-staging
-elif [ -f /EON ]; then
-  FILES_SRC="release/files_eon"
-  RELEASE_BRANCH=release2-staging
-  DASHCAM_BRANCH=dashcam-staging
 else
   exit 0
 fi
 
 # set git identity
 source $DIR/identity.sh
+export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
 echo "[-] Setting up repo T=$SECONDS"
 rm -rf $BUILD_DIR
@@ -44,8 +41,8 @@ cd $BUILD_DIR
 
 rm -f panda/board/obj/panda.bin.signed
 
-VERSION=$(cat selfdrive/common/version.h | awk -F[\"-]  '{print $2}')
-echo "#define COMMA_VERSION \"$VERSION-release\"" > selfdrive/common/version.h
+VERSION=$(cat common/version.h | awk -F[\"-]  '{print $2}')
+echo "#define COMMA_VERSION \"$VERSION-release\"" > common/version.h
 
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
@@ -79,7 +76,7 @@ find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf panda/board panda/certs panda/crypto
 rm -rf .sconsign.dblite Jenkinsfile release/
-rm models/supercombo.dlc
+rm selfdrive/modeld/models/supercombo.dlc
 
 # Move back signed panda fw
 mkdir -p panda/board/obj
