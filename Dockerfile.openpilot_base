@@ -4,7 +4,7 @@ ENV PYTHONUNBUFFERED 1
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends sudo tzdata locales && \
+    apt-get install -y --no-install-recommends sudo tzdata locales ssh && \
     rm -rf /var/lib/apt/lists/*
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
@@ -29,5 +29,5 @@ RUN cd /tmp && \
     cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
     rm -rf arm/ && \
     rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
-RUN sudo git config --global --add safe.directory /tmp/openpilot
 
+RUN sudo git config --global --add safe.directory /tmp/openpilot

@@ -6,10 +6,10 @@
 #include <QtConcurrent>
 
 #include "common/transformations/orientation.hpp"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/watchdog.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/util.h"
+#include "common/watchdog.h"
 #include "selfdrive/hardware/hw.h"
 
 #define BACKLIGHT_DT 0.05
@@ -233,7 +233,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
-    "wideRoadCameraState",
+    "wideRoadCameraState", "managerState",
   });
 
   Params params;

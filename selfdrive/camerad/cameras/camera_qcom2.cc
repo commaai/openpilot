@@ -19,7 +19,7 @@
 #include "media/cam_sensor.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
-#include "selfdrive/common/swaglog.h"
+#include "common/swaglog.h"
 #include "selfdrive/camerad/cameras/sensor2_i2c.h"
 
 // For debugging:
@@ -31,6 +31,9 @@ const size_t FRAME_WIDTH = 1928;
 const size_t FRAME_HEIGHT = 1208;
 const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
 
+const size_t AR0231_REGISTERS_HEIGHT = 2;
+const size_t AR0231_STATS_HEIGHT = 2;
+
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
@@ -38,17 +41,24 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
+    .extra_height = AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT,
+
+    .registers_offset = 0,
+    .frame_offset = AR0231_REGISTERS_HEIGHT,
+    .stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT,
+
     .bayer = true,
     .bayer_flip = 1,
-    .hdr = false
+    .hdr = false,
   },
   [CAMERA_ID_IMX390] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
+
     .bayer = true,
     .bayer_flip = 1,
-    .hdr = false
+    .hdr = false,
   },
 };
 
@@ -81,8 +91,7 @@ int do_cam_control(int fd, int op_code, void *handle, int size) {
 
   int ret = HANDLE_EINTR(ioctl(fd, VIDIOC_CAM_CONTROL, &camcontrol));
   if (ret == -1) {
-    printf("OP CODE ERR - %d \n", op_code);
-    perror("wat");
+    LOGE("VIDIOC_CAM_CONTROL error: op_code %d - errno %d", op_code, errno);
   }
   return ret;
 }
@@ -509,10 +518,10 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   if (io_mem_handle != 0) {
     io_cfg[0].mem_handle[0] = io_mem_handle;
 		io_cfg[0].planes[0] = (struct cam_plane_cfg){
-		 .width = FRAME_WIDTH,
-		 .height = FRAME_HEIGHT,
-		 .plane_stride = FRAME_STRIDE,
-		 .slice_height = FRAME_HEIGHT,
+		 .width = ci.frame_width,
+		 .height = ci.frame_height + ci.extra_height,
+		 .plane_stride = ci.frame_stride,
+		 .slice_height = ci.frame_height + ci.extra_height,
 		 .meta_stride = 0x0,    // YUV has meta(stride=0x400, size=0x5000)
 		 .meta_size = 0x0,
 		 .meta_offset = 0x0,
@@ -536,7 +545,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   int ret = device_config(multi_cam_state->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
   assert(ret == 0);
   if (ret != 0) {
-    printf("ISP CONFIG FAILED\n");
+    LOGE("isp config failed");
   }
 
   mm.free(buf2);
@@ -553,7 +562,10 @@ void CameraState::enqueue_buffer(int i, bool dp) {
     sync_wait.sync_obj = sync_objs[i];
     sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
     ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
-    // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
+    if (ret != 0) {
+      LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
+      // TODO: handle frame drop cleanly
+    }
 
     buf.camera_bufs_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
     if (dp) buf.queue(i);
@@ -562,14 +574,18 @@ void CameraState::enqueue_buffer(int i, bool dp) {
     struct cam_sync_info sync_destroy = {0};
     sync_destroy.sync_obj = sync_objs[i];
     ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
-    // LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
+    if (ret != 0) {
+      LOGE("failed to destroy sync object: %d %d", ret, sync_destroy.sync_obj);
+    }
   }
 
   // create output fence
   struct cam_sync_info sync_create = {0};
   strcpy(sync_create.name, "NodeOutputPortFence");
   ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
-  // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
+  if (ret != 0) {
+    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj)
+  }
   sync_objs[i] = sync_create.sync_obj;
 
   // schedule request with camera request manager
@@ -578,11 +594,12 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   req_mgr_sched_request.link_hdl = link_handle;
   req_mgr_sched_request.req_id = request_id;
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
-  // LOGD("sched req: %d %d", ret, request_id);
+  if (ret != 0) {
+    LOGE("failed to schedule cam mgr request: %d %d", ret, request_id);
+  }
 
   // poke sensor, must happen after schedule
   sensors_poke(request_id);
-  // LOGD("Poked sensor");
 
   // submit request to the ife
   config_isp(buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
@@ -682,23 +699,23 @@ void CameraState::camera_open() {
       .lane_cfg = 0x3210,
 
       .vc = 0x0,
-      .dt = 0x2C,  // CSI_RAW12
+      .dt = 0x12, // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
       .format = CAM_FORMAT_MIPI_RAW_12,
 
       .test_pattern = 0x2,  // 0x3?
       .usage_type = 0x0,
 
       .left_start = 0,
-      .left_stop = FRAME_WIDTH - 1,
-      .left_width = FRAME_WIDTH,
+      .left_stop = ci.frame_width - 1,
+      .left_width = ci.frame_width,
 
       .right_start = 0,
-      .right_stop = FRAME_WIDTH - 1,
-      .right_width = FRAME_WIDTH,
+      .right_stop = ci.frame_width - 1,
+      .right_width = ci.frame_width,
 
       .line_start = 0,
-      .line_stop = FRAME_HEIGHT - 1,
-      .height = FRAME_HEIGHT,
+      .line_stop = ci.frame_height + ci.extra_height - 1,
+      .height = ci.frame_height + ci.extra_height,
 
       .pixel_clk = 0x0,
       .batch_size = 0x0,
@@ -710,8 +727,8 @@ void CameraState::camera_open() {
       .data[0] = (struct cam_isp_out_port_info){
           .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
           .format = CAM_FORMAT_MIPI_RAW_12,
-          .width = FRAME_WIDTH,
-          .height = FRAME_HEIGHT,
+          .width = ci.frame_width,
+          .height = ci.frame_height + ci.extra_height,
           .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
       },
   };
@@ -863,14 +880,14 @@ void cameras_open(MultiCameraState *s) {
   sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
   sub.id = V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS;
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
-  printf("req mgr subscribe: %d\n", ret);
+  LOGD("req mgr subscribe: %d", ret);
 
   s->driver_cam.camera_open();
-  printf("driver camera opened \n");
+  LOGD("driver camera opened");
   s->road_cam.camera_open();
-  printf("road camera opened \n");
+  LOGD("road camera opened");
   s->wide_road_cam.camera_open();
-  printf("wide road camera opened \n");
+  LOGD("wide road camera opened");
 }
 
 void CameraState::camera_close() {
@@ -933,6 +950,70 @@ void cameras_close(MultiCameraState *s) {
 
   delete s->sm;
   delete s->pm;
+}
+
+std::map<uint16_t, std::pair<int, int>> CameraState::ar0231_build_register_lut(uint8_t *data) {
+  // This function builds a lookup table from register address, to a pair of indices in the
+  // buffer where to read this address. The buffer contains padding bytes,
+  // as well as markers to indicate the type of the next byte.
+  //
+  // 0xAA is used to indicate the MSB of the address, 0xA5 for the LSB of the address.
+  // Every byte of data (MSB and LSB) is preceded by 0x5A. Specifying an address is optional
+  // for contigous ranges. See page 27-29 of the AR0231 Developer guide for more information.
+
+  int max_i[] = {1828 / 2 * 3, 1500 / 2 * 3};
+  auto get_next_idx = [](int cur_idx) {
+    return (cur_idx % 3 == 1) ? cur_idx + 2 : cur_idx + 1; // Every third byte is padding
+  };
+
+  std::map<uint16_t, std::pair<int, int>> registers;
+  for (int register_row = 0; register_row < 2; register_row++) {
+    uint8_t *registers_raw = data + ci.frame_stride * register_row;
+    assert(registers_raw[0] == 0x0a); // Start of line
+
+    int value_tag_count = 0;
+    int first_val_idx = 0;
+    uint16_t cur_addr = 0;
+
+    for (int i = 1; i <= max_i[register_row]; i = get_next_idx(get_next_idx(i))) {
+      int val_idx = get_next_idx(i);
+
+      uint8_t tag = registers_raw[i];
+      uint16_t val = registers_raw[val_idx];
+
+      if (tag == 0xAA) { // Register MSB tag
+        cur_addr = val << 8;
+      } else if (tag == 0xA5) { // Register LSB tag
+        cur_addr |= val;
+        cur_addr -= 2; // Next value tag will increment address again
+      } else if (tag == 0x5A) { // Value tag
+
+        // First tag
+        if (value_tag_count % 2 == 0) {
+          cur_addr += 2;
+          first_val_idx = val_idx;
+        } else {
+          registers[cur_addr] = std::make_pair(first_val_idx + ci.frame_stride * register_row, val_idx + ci.frame_stride * register_row);
+        }
+
+        value_tag_count++;
+      }
+    }
+  }
+  return registers;
+}
+
+std::map<uint16_t, uint16_t> CameraState::ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs) {
+  if (ar0231_register_lut.empty()) {
+    ar0231_register_lut = ar0231_build_register_lut(data);
+  }
+
+  std::map<uint16_t, uint16_t> registers;
+  for (uint16_t addr : addrs) {
+    auto offset = ar0231_register_lut[addr];
+    registers[addr] = ((uint16_t)data[offset.first] << 8) | data[offset.second];
+  }
+  return registers;
 }
 
 void CameraState::handle_camera_event(void *evdat) {
@@ -1114,6 +1195,32 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   s->set_camera_exposure(grey_frac);
 }
 
+static float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_reg) {
+  // See AR0231 Developer Guide - page 36
+  float slope = (125.0 - 55.0) / ((float)calib1 - (float)calib2);
+  float t0 = 55.0 - slope * (float)calib2;
+  return t0 + slope * (float)data_reg;
+}
+
+static void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed){
+  const uint8_t expected_preamble[] = {0x0a, 0xaa, 0x55, 0x20, 0xa5, 0x55};
+  uint8_t *data = (uint8_t*)c->buf.cur_camera_buf->addr + c->ci.registers_offset;
+
+  if (memcmp(data, expected_preamble, std::size(expected_preamble)) != 0){
+    LOGE("unexpected register data found");
+    return;
+  }
+
+  auto registers = c->ar0231_parse_registers(data, {0x2000, 0x2002, 0x20b0, 0x20b2, 0x30c6, 0x30c8, 0x30ca, 0x30cc});
+
+  uint32_t frame_id = ((uint32_t)registers[0x2000] << 16) | registers[0x2002];
+  framed.setFrameIdSensor(frame_id);
+
+  float temp_0 = ar0231_parse_temp_sensor(registers[0x30c6], registers[0x30c8], registers[0x20b0]);
+  float temp_1 = ar0231_parse_temp_sensor(registers[0x30ca], registers[0x30cc], registers[0x20b2]);
+  framed.setTemperaturesC({temp_0, temp_1});
+}
+
 static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
   const CameraBuf *b = &c->buf;
@@ -1132,10 +1239,12 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   if (env_send_driver) {
     framed.setImage(get_frame_image(&c->buf));
   }
+  if (c->camera_id == CAMERA_ID_AR0231) {
+    ar0231_process_registers(s, c, framed);
+  }
   s->pm->send("driverCameraState", msg);
 }
 
-// called by processing_thread
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
@@ -1152,6 +1261,11 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
     framed.setTransform(b->yuv_transform.v);
     LOGT(c->buf.cur_frame_data.frame_id, "%s: Transformed", "RoadCamera");
   }
+
+  if (c->camera_id == CAMERA_ID_AR0231) {
+    ar0231_process_registers(s, c, framed);
+  }
+
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
   const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
@@ -1206,7 +1320,7 @@ void cameras_run(MultiCameraState *s) {
         } else if (event_data->session_hdl == s->driver_cam.session_handle) {
           s->driver_cam.handle_camera_event(event_data);
         } else {
-          printf("Unknown vidioc event source\n");
+          LOGE("Unknown vidioc event source");
           assert(false);
         }
       }
@@ -1221,3 +1335,4 @@ void cameras_run(MultiCameraState *s) {
 
   cameras_close(s);
 }
+

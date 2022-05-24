@@ -21,10 +21,7 @@ with patch("common.realtime.sec_since_boot", new=mock_sec_since_boot):
                                                     CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING
 
 TEST_DURATION_S = 50
-ALL_PANDA_TYPES = [(hw_type,) for hw_type in [log.PandaState.PandaType.whitePanda,
-                                              log.PandaState.PandaType.greyPanda,
-                                              log.PandaState.PandaType.blackPanda,
-                                              log.PandaState.PandaType.uno]]
+ALL_PANDA_TYPES = [(log.PandaState.PandaType.dos,)]
 
 def pm_patch(name, value, constant=False):
   if constant:
@@ -121,12 +118,8 @@ class TestPowerMonitoring(unittest.TestCase):
   # Test to check policy of stopping charging after MAX_TIME_OFFROAD_S
   @parameterized.expand(ALL_PANDA_TYPES)
   def test_max_time_offroad(self, hw_type):
-    BATT_VOLTAGE = 4
-    BATT_CURRENT = 0 # To stop shutting down for other reasons
     MOCKED_MAX_OFFROAD_TIME = 3600
-    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
-    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("MAX_TIME_OFFROAD_S", MOCKED_MAX_OFFROAD_TIME, constant=True), \
-    pm_patch("HARDWARE.get_current_power_draw", None):
+    with pm_patch("MAX_TIME_OFFROAD_S", MOCKED_MAX_OFFROAD_TIME, constant=True), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       start_time = ssb

@@ -126,6 +126,7 @@ class TestLoggerd(unittest.TestCase):
       length = random.randint(1, 3)
       os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
       managed_processes["loggerd"].start()
+      managed_processes["encoderd"].start()
 
       fps = 20.0
       for n in range(1, int(num_segs*length*fps)+1):
@@ -140,6 +141,7 @@ class TestLoggerd(unittest.TestCase):
         time.sleep(1.0/fps)
 
       managed_processes["loggerd"].stop()
+      managed_processes["encoderd"].stop()
 
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
       for n in range(num_segs):

@@ -12,7 +12,7 @@ import argparse
 
 from common.basedir import BASEDIR
 from selfdrive.test.process_replay.compare_logs import save_log
-from tools.lib.robust_logreader import RobustLogReader
+from tools.lib.logreader import LogReader
 from tools.lib.route import Route, SegmentName
 from urllib.parse import urlparse, parse_qs
 
@@ -50,7 +50,7 @@ def load_segment(segment_name):
     return []
 
   try:
-    return list(RobustLogReader(segment_name))
+    return list(LogReader(segment_name))
   except ValueError as e:
     print(f"Error parsing {segment_name}: {e}")
     return []
@@ -88,7 +88,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
     if route_or_segment_name.segment_num != -1 and segment_count is None:
       segment_count = 1
 
-    r = Route(route_or_segment_name.route_name.canonical_name)
+    r = Route(route_or_segment_name.route_name.canonical_name, route_or_segment_name.data_dir)
     logs = r.qlog_paths() if qlog else r.log_paths()
 
   segment_end = segment_start + segment_count if segment_count else None

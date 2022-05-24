@@ -35,6 +35,8 @@ class CAR:
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+  CAR.ESCAPE_MK4: CarInfo("Ford Escape", "NA"),
+  CAR.FOCUS_MK4: CarInfo("Ford Focus", "NA"),
 }
 
 

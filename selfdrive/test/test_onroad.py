@@ -21,9 +21,10 @@ from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 31.0,
-  "./loggerd": 50.0,
-  "./camerad": 26.0,
+  "selfdrive.controls.controlsd": 35.0,
+  "./loggerd": 10.0,
+  "./encoderd": 37.3,
+  "./camerad": 16.5,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 11.7,
   "./_ui": 21.0,
@@ -59,7 +60,7 @@ TIMINGS = {
   "roadCameraState": [2.5, 0.35],
   "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
-  "driverState": [2.5, 0.35],
+  "driverState": [2.5, 0.40],
   "liveLocationKalman": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }
@@ -180,6 +181,20 @@ class TestOnroad(unittest.TestCase):
     self.assertGreater(len(proclogs), service_list['procLog'].frequency * 45, "insufficient samples")
     cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
+
+  def test_camera_processing_time(self):
+    result = "\n"
+    result += "------------------------------------------------\n"
+    result += "-------------- Debayer Timing ------------------\n"
+    result += "------------------------------------------------\n"
+
+    ts = [getattr(getattr(m, m.which()), "processingTime") for m in self.lr if 'CameraState' in m.which()]
+    self.assertLess(min(ts), 0.025, f"high execution time: {min(ts)}")
+    result += f"execution time: min  {min(ts):.5f}s\n"
+    result += f"execution time: max  {max(ts):.5f}s\n"
+    result += f"execution time: mean {np.mean(ts):.5f}s\n"
+    result += "------------------------------------------------\n"
+    print(result)
 
   def test_mpc_execution_timings(self):
     result = "\n"
