@@ -165,7 +165,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
 // NvgWindow
 
-NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), correct_frame_filter(1, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, true, parent) {
+NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), correct_frame_filter(1, 5, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, true, parent) {
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
 }
@@ -377,10 +377,14 @@ void NvgWindow::paintGL() {
   const auto &model = (*s->sm)["modelV2"].getModelV2();
   CameraViewWidget::paintGL();
 
-  correct_frame_filter.update(CameraViewWidget::drawn_frame_id == model.getFrameId());
-  qDebug() << correct_frame_filter.x();
-  if (s->sm->alive("modelV2") && (correct_frame_filter.x() < 0.8)) {
-    LOGW("camera and model frame ids do not match: %d != %d", CameraViewWidget::drawn_frame_id, model.getFrameId());
+  if (!s->sm->alive("modelV2")) {
+    correct_frame_filter.reset(1);
+  } else {
+    correct_frame_filter.update(CameraViewWidget::drawn_frame_id == model.getFrameId());
+    qDebug() << correct_frame_filter.x();
+    if (correct_frame_filter.x() < 0.8) {
+      LOGW("camera and model frame ids do not match: %d != %d", CameraViewWidget::drawn_frame_id, model.getFrameId());
+    }
   }
 
   QPainter painter(this);
