@@ -39,6 +39,8 @@ SDL_Texture* texture;
 uint64_t st;
 bool parsed;
 
+CUgraphicsResource res[2];
+
 int HandleVideoSequence(void *junk, CUVIDEOFORMAT *pVideoFormat) {
   int nDecodeSurface = 20;
   printf("HandleVideoSequence %dx%d %d-%d %d-%d\n",
@@ -82,26 +84,16 @@ int HandlePictureDecode(void *junk, CUVIDPICPARAMS *pPicParams) {
   cuMemcpy((CUdeviceptr)pixels, dpSrcFrame, 2048*1216*3/2);
   SDL_UnlockTexture(texture);
 #else
-  // get opengl texture number
-  SDL_GL_BindTexture(texture, NULL, NULL);
-  GLint whichID;
-  glGetIntegerv(GL_TEXTURE_BINDING_2D, &whichID);
-
-  // link the texture to CUDA
-  CUgraphicsResource res[2];
-  CHECK(cuGraphicsGLRegisterImage(&res[0], whichID,
-    GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
-  CHECK(cuGraphicsGLRegisterImage(&res[1], whichID+1,
-    GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
   CHECK(cuGraphicsMapResources(2, res, NULL));
 
   for (int plane = 0; plane < 2; plane++) {
     CUarray texture_array;
     CHECK(cuGraphicsSubResourceGetMappedArray(&texture_array, res[plane], 0, 0));
-    CUDA_ARRAY_DESCRIPTOR pArrayDescriptor;
+
+    /*CUDA_ARRAY_DESCRIPTOR pArrayDescriptor;
     CHECK(cuArrayGetDescriptor(&pArrayDescriptor, texture_array));
-    printf("dst array(%d) is %p = %ldx%ld %d\n", whichID, texture_array,
-      pArrayDescriptor.Width, pArrayDescriptor.Height, pArrayDescriptor.NumChannels);
+    printf("dst array is %p = %ldx%ld %d\n", texture_array,
+      pArrayDescriptor.Width, pArrayDescriptor.Height, pArrayDescriptor.NumChannels);*/
 
     // copy in the data
     CUDA_MEMCPY2D cu2d = {0};
@@ -112,21 +104,21 @@ int HandlePictureDecode(void *junk, CUVIDPICPARAMS *pPicParams) {
     cu2d.dstMemoryType = CU_MEMORYTYPE_ARRAY;
     cu2d.dstArray = texture_array;
 
+    cu2d.WidthInBytes = 2048;
+
     if (plane == 1) {
+      cu2d.Height = 1216/2;
       cu2d.srcY = 1216;
+    } else {
+      cu2d.Height = 1216;
     }
 
-    cu2d.WidthInBytes = 2048;
-    cu2d.Height = pArrayDescriptor.Height;
     CHECK(cuMemcpy2D(&cu2d));
   }
 
   // unmap
   //CHECK(cuArrayDestroy(texture_array));
   CHECK(cuGraphicsUnmapResources(2, res, NULL));
-
-  // unbind
-  SDL_GL_UnbindTexture(texture);
 #endif
 
   uint64_t ct2 = nanos_since_boot();
@@ -173,6 +165,18 @@ int main() {
   videoParserParameters.pfnDisplayPicture = NULL;
   videoParserParameters.pfnGetOperatingPoint = NULL;
   CHECK(cuvidCreateVideoParser(&m_hParser, &videoParserParameters));
+
+  // get opengl texture number
+  SDL_GL_BindTexture(texture, NULL, NULL);
+  GLint whichID;
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &whichID);
+  SDL_GL_UnbindTexture(texture);
+
+  // link the texture to CUDA
+  CHECK(cuGraphicsGLRegisterImage(&res[0], whichID,
+    GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
+  CHECK(cuGraphicsGLRegisterImage(&res[1], whichID+1,
+    GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
 
   setenv("ZMQ", "1", 1);
   Context * c = Context::create();
