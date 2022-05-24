@@ -220,11 +220,20 @@ bool CameraBuf::acquire() {
   // Build lookup table
   int j = 1;
   for (int i = 0; i < 4096; i++){
-    // Companding
-    float kn_0 = i;
-    float kn_2048 = (kn_0 - 2048) * 64 + 2048;
-    float kn_3040 = (kn_0 - 3040) * 1024 + 65536;
-    float decompressed = std::max(kn_0, std::max(kn_2048, kn_3040));
+    // Logarithmic Companding
+    float decompressed = 0;
+    if (i < 512) decompressed =       (i - 0.0)    / (512.0 / 512.0)    + 0.0;
+    else if (i < 836) decompressed =  (i - 512.0 ) / (324.0 / 512.0)    + 512.0;
+    else if (i < 1161) decompressed = (i - 836.0 ) / (325.0 / 1024.0)   + 1024.0;
+    else if (i < 1486) decompressed = (i - 1161.0) / (325.0 / 2048.0)   + 2048.0;
+    else if (i < 1812) decompressed = (i - 1486.0) / (326.0 / 4096.0)   + 4096.0;
+    else if (i < 2137) decompressed = (i - 1812.0) / (325.0 / 8192.0)   + 8192.0;
+    else if (i < 2462) decompressed = (i - 2137.0) / (325.0 / 16384.0)  + 16384.0;
+    else if (i < 2788) decompressed = (i - 2462.0) / (326.0 / 32768.0)  + 32768.0;
+    else if (i < 3113) decompressed = (i - 2788.0) / (325.0 / 65536.0)  + 65536.0;
+    else if (i < 3439) decompressed = (i - 3113.0) / (326.0 / 131072.0) + 131072.0;
+    else if (i < 3764) decompressed = (i - 3439.0) / (325.0 / 262144.0) + 262144.0;
+    else if (i < 4096) decompressed = (i - 3764.0) / (332.0 / 524288.0) + 524288.0;
 
     // Find current bin
     while (camera_state->histogram_bins[j] < decompressed && j < counts.size()) {
