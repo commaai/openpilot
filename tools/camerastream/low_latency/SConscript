@@ -1,0 +1,12 @@
+Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
+       'cereal', 'transformations')
+
+base_libs = [gpucommon, common, messaging, cereal, visionipc, transformations, 'zmq',
+             'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+
+qt_env['CPPPATH'].append("/usr/local/cuda/include")
+qt_env['CPPPATH'].append("/home/batman/Downloads/Video_Codec_SDK_11.1.5/Interface")
+
+qt_env.Program("low_latency", ["main_qt.cc", "directcameraview.cc", "simple_decoder.cc",
+  "#selfdrive/ui/qt/util.cc", "#selfdrive/ui/qt/qt_window.cc"],
+  LIBS=base_libs+['cuda', 'nvcuvid'])

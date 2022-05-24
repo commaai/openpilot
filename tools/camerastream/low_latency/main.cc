@@ -32,8 +32,7 @@ int main() {
   assert(window != NULL);
   renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
   assert(renderer != NULL);
-  texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_NV12,
-    SDL_TEXTUREACCESS_STREAMING, 2048, 1216);
+  texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_NV12, SDL_TEXTUREACCESS_STREAMING, 2048, 1216);
   assert(texture != NULL);
 
 
@@ -44,10 +43,8 @@ int main() {
   SDL_GL_UnbindTexture(texture);
 
   // link the texture to CUDA
-  CHECK(cuGraphicsGLRegisterImage(&res[0], whichID,
-    GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
-  CHECK(cuGraphicsGLRegisterImage(&res[1], whichID+1,
-    GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
+  CHECK(cuGraphicsGLRegisterImage(&res[0], whichID, GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
+  CHECK(cuGraphicsGLRegisterImage(&res[1], whichID+1, GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
 
   setenv("ZMQ", "1", 1);
   Context * c = Context::create();
@@ -88,6 +85,8 @@ int main() {
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, &screen, NULL);
     SDL_RenderPresent(renderer);
+
+    decoder.free_frame();
 
     uint64_t et = nanos_since_boot()-st;
     printf("pc latency: %.2f ms (copy %.2f ms)\n", et/1e6, (ct2-ct1)/1e6);
