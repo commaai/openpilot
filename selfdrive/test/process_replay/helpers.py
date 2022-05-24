@@ -17,8 +17,6 @@ class OpenpilotPrefix(object):
       pass
 
   def __exit__(self, exc_type, exc_obj, exc_tb):
-    if not os.environ.get("OPENPILOT_PREFIX", 0):
-      return
     symlink_path = Params().get_param_path()
     if os.path.exists(symlink_path):
       shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
