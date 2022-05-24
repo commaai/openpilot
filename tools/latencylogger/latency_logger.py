@@ -175,12 +175,16 @@ def print_timestamps(timestamps, durations, start_times, relative):
       for event, time in durations[frame_id][service]:
         print("    "+'%-53s%-53s' %(event, str(time*1000)))
 
-def graph_timestamps(timestamps, start_times, end_times, relative):
+def graph_timestamps(timestamps, start_times, end_times, relative, title=""):
+  # mpld3 doesn't convert properly to D3 font sizes
+  plt.rcParams.update({'font.size': 18})
+
   t0 = find_t0(start_times)
   fig, ax = plt.subplots()
   ax.set_xlim(0, 150 if relative else 750)
   ax.set_ylim(0, 15)
-  ax.set_xlabel('milliseconds')
+  ax.set_xlabel('Time (milliseconds)')
+  ax.set_ylabel('Frame ID')
   colors = ['blue', 'green', 'red', 'yellow', 'purple']
   assert len(colors) == len(SERVICES), 'Each service needs a color'
 
@@ -202,9 +206,12 @@ def graph_timestamps(timestamps, start_times, end_times, relative):
 
   scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
-
   mpld3.plugins.connect(fig, tooltip)
+
+  plt.title(title)
+  fig.set_size_inches(18, 9)
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
+
   return fig
 
 def get_timestamps(lr):
@@ -232,4 +239,4 @@ if __name__ == "__main__":
   data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
   if args.plot:
-    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative))
+    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative, r))
