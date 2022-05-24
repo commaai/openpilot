@@ -265,7 +265,7 @@ def load_tests(_routes, ci=True):
       test_case_args.update({"route": test_route.route, "segment": test_route.segment})
 
     # create new test case and discover tests
-    CarModelTestCase = type("NewTest", (TestCarModel,), test_case_args)
+    CarModelTestCase = type("CarModelTestCase", (TestCarModel,), test_case_args)
     test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(CarModelTestCase))
   return test_suite
 
