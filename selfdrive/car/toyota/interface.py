@@ -89,20 +89,12 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
-    elif candidate in (CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
+    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
       stop_and_go = True
-      ret.wheelbase = 2.84988  # 112.2 in = 2.84988 m
+      ret.wheelbase = 2.815
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.8
-      ret.mass = 4700. * CV.LB_TO_KG + STD_CARGO_KG  # 4260 + 4-5 people
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_G)
-
-    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH):
-      stop_and_go = True
-      ret.wheelbase = 2.78
-      ret.steerRatio = 16.0
-      tire_stiffness_factor = 0.8
-      ret.mass = 4607. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid limited
+      ret.mass = 4654. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid limited
       set_lat_tune(ret.lateralTuning, LatTunes.PID_G)
 
     elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2, CAR.AVALONH_TSS2):
