@@ -32,7 +32,9 @@ jobs:
     - name: tools/ubuntu_setup.sh
       run: tools/ubuntu_setup.sh
     - name: Build openpilot
-      run: scons -j$(nproc)
+      run: |
+        source ~/.bashrc
+        scons -j$(nproc)
 
   plotjuggler:
     name: plotjuggler
