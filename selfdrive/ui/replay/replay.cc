@@ -275,7 +275,10 @@ void Replay::startStream(const Segment *cur_segment) {
   it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::CAR_PARAMS; });
   if (it != events.end()) {
     car_fingerprint_ = (*it)->event.getCarParams().getCarFingerprint();
-    auto bytes = (*it)->bytes();
+    capnp::MallocMessageBuilder builder;
+    builder.setRoot((*it)->event.getCarParams());
+    auto words = capnp::messageToFlatArray(builder);
+    auto bytes = words.asBytes();
     Params().put("CarParams", (const char *)bytes.begin(), bytes.size());
   } else {
     rWarning("failed to read CarParams from current segment");
