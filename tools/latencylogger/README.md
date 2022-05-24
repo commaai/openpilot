@@ -24,12 +24,11 @@ To timestamp an event, use `LOGT("msg")` in c++ code or `cloudlog.timestamp("msg
 
 ## Examples
 Plotting with relative starts each process at time=0 and gives a nice overview. Timestamps are visualized as diamonds. The opacity and offset allows for visualization of overlapping services.
-![relplot](https://user-images.githubusercontent.com/42323981/170103556-0c79476e-904d-4fab-a004-fb61a9cc33fd.png)
-
+![relplot](https://user-images.githubusercontent.com/42323981/170109389-182ed5a9-7542-48e1-865c-33233f19dccc.png)
 
 
 Plotting without relative provides info about the frames relative time.
-![absplot](https://user-images.githubusercontent.com/42323981/170103529-531bca13-40af-485f-b25e-12097656302d.png)
+![absplot](https://user-images.githubusercontent.com/42323981/170109374-c01a81d5-061c-478b-abcf-2eba8c42352e.png)
 
 
 Printed timestamps of a frame with internal durations.
