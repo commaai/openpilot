@@ -3,6 +3,8 @@ import bz2
 import os
 import time
 import multiprocessing
+import shutil
+import uuid
 from tqdm import tqdm
 import argparse
 # run DM procs
@@ -19,7 +21,7 @@ from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
-from selfdrive.test.update_ci_routes import upload_route
+#from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
@@ -257,8 +259,28 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
 
   return seg_path
 
+def setup_prefix():
+  os.environ['OPENPILOT_PREFIX'] = str(uuid.uuid4())
+  msgq_path = os.path.join('/dev/shm', os.environ['OPENPILOT_PREFIX'])
+  try:
+    os.mkdir(msgq_path)
+  except FileExistsError:
+    pass
+
+
+def teardown_prefix():
+  if not os.environ.get("OPENPILOT_PREFIX", 0):
+    return
+  symlink_path = Params().get_param_path()
+  if os.path.exists(symlink_path):
+    shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
+    os.remove(symlink_path)
+  msgq_path = os.path.join('/dev/shm', os.environ['OPENPILOT_PREFIX'])
+  shutil.rmtree(msgq_path, ignore_errors=True)
 
 def regen_and_save(route, sidx, upload=False, use_route_meta=False):
+  #TODO: helper file
+  setup_prefix()
   if use_route_meta:
     r = Route(args.route)
     lr = LogReader(r.log_paths()[args.seg])
@@ -283,8 +305,9 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
 
   print("\n\n", "*"*30, "\n\n")
   print("New route:", relr, "\n")
-  if upload:
-    upload_route(relr)
+  #if upload:
+    #upload_route(relr)
+  teardown_prefix()
   return relr
 
 

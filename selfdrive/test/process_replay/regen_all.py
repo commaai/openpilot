@@ -8,7 +8,7 @@ from selfdrive.test.process_replay.test_processes import original_segments as se
 def regen_job(segment):
   route = segment[1].rsplit('--', 1)[0]
   sidx = int(segment[1].rsplit('--', 1)[1])
-  msg = "Regen  " + route + "  " + sidx + "\n"
+  msg = "Regen  " + route + "  " + str(sidx) + "\n"
   relr = regen_and_save(route, sidx, upload=True, use_route_meta=False)
   msg += "\n\n  " + "*"*30 + "  \n\n" + "New route:  " + relr
   print(msg)
@@ -16,8 +16,7 @@ def regen_job(segment):
   return f'  ("{segment[0]}", "{relr}"), '
 
 if __name__ == "__main__":
-  #TODO description
-  parser = argparse.ArgumentParser(description="")
+  parser = argparse.ArgumentParser(description="Generate new segments from old ones")
   parser.add_argument("-j", "--jobs", type=int, default=1)
   args = parser.parse_args()
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
