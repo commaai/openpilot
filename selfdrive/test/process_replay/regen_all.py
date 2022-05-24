@@ -11,10 +11,7 @@ def regen_job(segment):
   with OpenpilotPrefix():
     route = segment[1].rsplit('--', 1)[0]
     sidx = int(segment[1].rsplit('--', 1)[1])
-    #msg = "Regen  " + route + "  " + str(sidx) + "\n"
     relr = regen_and_save(route, sidx, upload=True, use_route_meta=False)
-    #msg += "\n\n  " + "*"*30 + "  \n\n" + "New route:  " + relr
-    #print(msg)
     relr = relr.replace('/', '|')
     return f'  ("{segment[0]}", "{relr}"), '
 
@@ -24,5 +21,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     p = pool.map(regen_job, segments)
+    msg = "COPY THIS INTO test_processes.py"
     for seg in tqdm(p, desc="Generating segments", total=len(segments)):
-      print(seg)
+      msg += "\n"+seg
+    print(msg)

@@ -23,12 +23,8 @@ from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
-if "OPENPILOT_PREFIX" in os.environ:
-  def tqdm(x):
-    return x
-else:
-  from tqdm import tqdm # type: ignore
-
+def tqdm(x):
+  return x
 
 def replay_panda_states(s, msgs):
   pm = messaging.PubMaster([s, 'peripheralState'])
@@ -264,6 +260,10 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
 
 
 def regen_and_save(route, sidx, upload=False, use_route_meta=False):
+  if "OPENPILOT_PREFIX" not in os.environ:
+    global tqdm # pylint: disable=W0602
+    from tqdm import tqdm
+
   if use_route_meta:
     r = Route(args.route)
     lr = LogReader(r.log_paths()[args.seg])
