@@ -242,71 +242,72 @@ kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
 }
 
 static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_width, int thumbnail_height) {
-  // make the buffer big enough. jpeg_write_raw_data requires 16-pixels aligned height to be used.
-  std::unique_ptr<uint8[]> buf(new uint8_t[(thumbnail_width * ((thumbnail_height + 15) & ~15) * 3) / 2]);
-  uint8_t *y_plane = buf.get();
-  uint8_t *u_plane = y_plane + thumbnail_width * thumbnail_height;
-  uint8_t *v_plane = u_plane + (thumbnail_width * thumbnail_height) / 4;
-  {
-    int result = libyuv::I420Scale(
-        b->cur_yuv_buf->y, b->rgb_width, b->cur_yuv_buf->u, b->rgb_width / 2, b->cur_yuv_buf->v, b->rgb_width / 2,
-        b->rgb_width, b->rgb_height,
-        y_plane, thumbnail_width, u_plane, thumbnail_width / 2, v_plane, thumbnail_width / 2,
-        thumbnail_width, thumbnail_height, libyuv::kFilterNone);
-    if (result != 0) {
-      LOGE("Generate YUV thumbnail failed.");
-      return {};
-    }
-  }
+  return {};
+  // // make the buffer big enough. jpeg_write_raw_data requires 16-pixels aligned height to be used.
+  // std::unique_ptr<uint8[]> buf(new uint8_t[(thumbnail_width * ((thumbnail_height + 15) & ~15) * 3) / 2]);
+  // uint8_t *y_plane = buf.get();
+  // uint8_t *u_plane = y_plane + thumbnail_width * thumbnail_height;
+  // uint8_t *v_plane = u_plane + (thumbnail_width * thumbnail_height) / 4;
+  // {
+  //   int result = libyuv::I420Scale(
+  //       b->cur_yuv_buf->y, b->rgb_width, b->cur_yuv_buf->u, b->rgb_width / 2, b->cur_yuv_buf->v, b->rgb_width / 2,
+  //       b->rgb_width, b->rgb_height,
+  //       y_plane, thumbnail_width, u_plane, thumbnail_width / 2, v_plane, thumbnail_width / 2,
+  //       thumbnail_width, thumbnail_height, libyuv::kFilterNone);
+  //   if (result != 0) {
+  //     LOGE("Generate YUV thumbnail failed.");
+  //     return {};
+  //   }
+  // }
 
-  struct jpeg_compress_struct cinfo;
-  struct jpeg_error_mgr jerr;
-  cinfo.err = jpeg_std_error(&jerr);
-  jpeg_create_compress(&cinfo);
+  // struct jpeg_compress_struct cinfo;
+  // struct jpeg_error_mgr jerr;
+  // cinfo.err = jpeg_std_error(&jerr);
+  // jpeg_create_compress(&cinfo);
 
-  uint8_t *thumbnail_buffer = nullptr;
-  size_t thumbnail_len = 0;
-  jpeg_mem_dest(&cinfo, &thumbnail_buffer, &thumbnail_len);
+  // uint8_t *thumbnail_buffer = nullptr;
+  // size_t thumbnail_len = 0;
+  // jpeg_mem_dest(&cinfo, &thumbnail_buffer, &thumbnail_len);
 
-  cinfo.image_width = thumbnail_width;
-  cinfo.image_height = thumbnail_height;
-  cinfo.input_components = 3;
+  // cinfo.image_width = thumbnail_width;
+  // cinfo.image_height = thumbnail_height;
+  // cinfo.input_components = 3;
 
-  jpeg_set_defaults(&cinfo);
-  jpeg_set_colorspace(&cinfo, JCS_YCbCr);
-  // configure sampling factors for yuv420.
-  cinfo.comp_info[0].h_samp_factor = 2;  // Y
-  cinfo.comp_info[0].v_samp_factor = 2;
-  cinfo.comp_info[1].h_samp_factor = 1;  // U
-  cinfo.comp_info[1].v_samp_factor = 1;
-  cinfo.comp_info[2].h_samp_factor = 1;  // V
-  cinfo.comp_info[2].v_samp_factor = 1;
-  cinfo.raw_data_in = TRUE;
+  // jpeg_set_defaults(&cinfo);
+  // jpeg_set_colorspace(&cinfo, JCS_YCbCr);
+  // // configure sampling factors for yuv420.
+  // cinfo.comp_info[0].h_samp_factor = 2;  // Y
+  // cinfo.comp_info[0].v_samp_factor = 2;
+  // cinfo.comp_info[1].h_samp_factor = 1;  // U
+  // cinfo.comp_info[1].v_samp_factor = 1;
+  // cinfo.comp_info[2].h_samp_factor = 1;  // V
+  // cinfo.comp_info[2].v_samp_factor = 1;
+  // cinfo.raw_data_in = TRUE;
 
-  jpeg_set_quality(&cinfo, 50, TRUE);
-  jpeg_start_compress(&cinfo, TRUE);
+  // jpeg_set_quality(&cinfo, 50, TRUE);
+  // jpeg_start_compress(&cinfo, TRUE);
 
-  JSAMPROW y[16], u[8], v[8];
-  JSAMPARRAY planes[3]{y, u, v};
+  // JSAMPROW y[16], u[8], v[8];
+  // JSAMPARRAY planes[3]{y, u, v};
 
-  for (int line = 0; line < cinfo.image_height; line += 16) {
-    for (int i = 0; i < 16; ++i) {
-      y[i] = y_plane + (line + i) * cinfo.image_width;
-      if (i % 2 == 0) {
-        int offset = (cinfo.image_width / 2) * ((i + line) / 2);
-        u[i / 2] = u_plane + offset;
-        v[i / 2] = v_plane + offset;
-      }
-    }
-    jpeg_write_raw_data(&cinfo, planes, 16);
-  }
+  // for (int line = 0; line < cinfo.image_height; line += 16) {
+  //   for (int i = 0; i < 16; ++i) {
+  //     y[i] = y_plane + (line + i) * cinfo.image_width;
+  //     if (i % 2 == 0) {
+  //       int offset = (cinfo.image_width / 2) * ((i + line) / 2);
+  //       u[i / 2] = u_plane + offset;
+  //       v[i / 2] = v_plane + offset;
+  //     }
+  //   }
+  //   jpeg_write_raw_data(&cinfo, planes, 16);
+  // }
 
-  jpeg_finish_compress(&cinfo);
-  jpeg_destroy_compress(&cinfo);
+  // jpeg_finish_compress(&cinfo);
+  // jpeg_destroy_compress(&cinfo);
 
-  kj::Array<capnp::byte> dat = kj::heapArray<capnp::byte>(thumbnail_buffer, thumbnail_len);
-  free(thumbnail_buffer);
-  return dat;
+  // kj::Array<capnp::byte> dat = kj::heapArray<capnp::byte>(thumbnail_buffer, thumbnail_len);
+  // free(thumbnail_buffer);
+  // return dat;
 }
 
 static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
