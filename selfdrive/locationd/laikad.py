@@ -4,6 +4,8 @@ from typing import List
 import numpy as np
 from collections import defaultdict
 
+from scipy import linalg
+
 from cereal import log, messaging
 from laika import AstroDog
 from laika.ephemeris import convert_ublox_ephem
@@ -29,22 +31,13 @@ class Laikad:
       report = ublox_msg.measurementReport
       new_meas = read_raw_ublox(report)
       measurements = process_measurements(new_meas, self.astro_dog)
-      pos_fix = calc_pos_fix(measurements, min_measurements=5)
+      pos_fix = calc_pos_fix(measurements)
       # To get a position fix a minimum of 5 measurements are needed.
-      # Each report can contain less and some measurement can't be processed.
-      meas_msgs = []
-      # print(np.abs(pos_fix[1]).mean())
+      # Each report can contain less and some measurements can't be processed.
       corrected_measurements = []
-      # Use a very high upper bound on the pos fix to filter out the bad ones
-      # todo could use the pos fix from the kf_filter, if that has low std.
-      if len(pos_fix) > 0 and np.abs(pos_fix[1]).mean() < 1000:
-        # todo fix ionex readings to correct better
-        # print("pos fix", pos_fix[0][:3])
-        # print("pos std", len(pos_fix[1]))
-        # print("measurements", len(measurements))
-        # print("measurements", len(measurements))
+      if len(pos_fix) > 0 and linalg.norm(pos_fix[1]) < 100:
         corrected_measurements = correct_measurements(measurements, pos_fix[0][:3], self.astro_dog)
-        meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
+
       t = ublox_mono_time * 1e-9
       self.update_localizer(pos_fix, t, corrected_measurements)
       localizer_valid = self.localizer_valid(t)
@@ -55,6 +48,8 @@ class Laikad:
       vel_std = float(np.linalg.norm(self.gnss_kf.P[GStates.ECEF_VELOCITY]))
 
       bearing_deg, bearing_std = get_bearing_from_gnss(ecef_pos, ecef_vel, vel_std)
+
+      meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
 
       dat = messaging.new_message("gnssMeasurements")
       measurement_msg = log.GnssMeasurements.Measurement.new_message
@@ -67,12 +62,10 @@ class Laikad:
       }
       return dat
     elif ublox_msg.which == 'ephemeris':
-      # todo could disable this when having internet access.
       ephem = convert_ublox_ephem(ublox_msg.ephemeris)
       self.astro_dog.add_ephem(ephem, self.astro_dog.orbits)
     # elif ublox_msg.which == 'ionoData':
-    # todo add this. Needed to correct messages offline. First fix ublox_msg.cc to sent them.
-    #  This is needed to correct the measurements
+    # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
 
   def update_localizer(self, pos_fix, t: float, measurements: List[GNSSMeasurement]):
     # Check time and outputs are valid
@@ -151,7 +144,7 @@ def main():
   sm = messaging.SubMaster(['ubloxGnss'])
   pm = messaging.PubMaster(['gnssMeasurements'])
 
-  laikad = Laikad(use_internet=False)
+  laikad = Laikad(use_internet=True)
 
   while True:
     sm.update()
