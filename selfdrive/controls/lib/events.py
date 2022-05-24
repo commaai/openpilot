@@ -558,10 +558,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # Camera is not outputting frames
   EventName.cameraMalfunction: {
     ET.PERMANENT: camera_malfunction_alert,
+    ET.SOFT_DISABLE: soft_disable_alert("Camera Malfunction"),
+    ET.NO_ENTRY: NoEntryAlert("Camera Malfunction: Reboot Your Device"),
   },
   # Camera framerate too low
   EventName.cameraFrameRate: {
     ET.PERMANENT: NormalPermanentAlert("Camera Frame Rate Low", "Reboot your Device"),
+    ET.SOFT_DISABLE: soft_disable_alert("Camera Frame Rate Low"),
+    ET.NO_ENTRY: NoEntryAlert("Camera Frame Rate Low: Reboot Your Device"),
   },
 
   # Unused
@@ -741,6 +745,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # Thrown when manager detects a service exited unexpectedly while driving
   EventName.processNotRunning: {
     ET.NO_ENTRY: process_not_running_alert,
+    ET.SOFT_DISABLE: soft_disable_alert("Process Not Running"),
   },
 
   EventName.radarFault: {

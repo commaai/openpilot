@@ -1,3 +1,4 @@
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #include <cassert>
 #include <cstdlib>
 
