@@ -171,6 +171,10 @@ def replay_cameras(lr, frs):
 
 
 def regen_segment(lr, frs=None, outdir=FAKEDATA):
+  if "OPENPILOT_PREFIX" not in os.environ:
+    global tqdm # pylint: disable=W0602
+    from tqdm import tqdm
+
   lr = list(lr)
   if frs is None:
     frs = dict()
@@ -260,10 +264,6 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
 
 
 def regen_and_save(route, sidx, upload=False, use_route_meta=False):
-  if "OPENPILOT_PREFIX" not in os.environ:
-    global tqdm # pylint: disable=W0602
-    from tqdm import tqdm
-
   if use_route_meta:
     r = Route(args.route)
     lr = LogReader(r.log_paths()[args.seg])
