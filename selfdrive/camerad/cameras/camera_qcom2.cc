@@ -74,7 +74,7 @@ const int ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
-const int EXPOSURE_TIME_MAX = 1618; // with HDR, slowest ss, 40ms
+const int EXPOSURE_TIME_MAX = 0x0855; // with HDR, slowest ss, 40ms
 
 // ************** low level camera helpers ****************
 int do_cam_control(int fd, int op_code, void *handle, int size) {
