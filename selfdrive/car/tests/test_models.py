@@ -69,7 +69,7 @@ class TestCarModel(unittest.TestCase):
         continue
 
       can_msgs = []
-      fingerprint = {i: dict() for i in range(3)}
+      fingerprint = defaultdict(dict)
       for msg in lr:
         if msg.which() == "can":
           for m in msg.can:
@@ -98,8 +98,10 @@ class TestCarModel(unittest.TestCase):
 
     # TODO: check safetyModel is in release panda build
     self.safety = libpandasafety_py.libpandasafety
-    set_status = self.safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
-    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyConfigs}")
+
+    cfg = self.CP.safetyConfigs[-1]
+    set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
+    self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
   def test_car_params(self):
@@ -168,7 +170,7 @@ class TestCarModel(unittest.TestCase):
         if msg.src >= 64:
           continue
 
-        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
+        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src % 4])
         if self.safety.safety_rx_hook(to_send) != 1:
           failed_addrs[hex(msg.address)] += 1
 
