@@ -55,12 +55,11 @@ class TestCarModel(unittest.TestCase):
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
-    # print(cls.car_model, cls.route)
     if cls.route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
       raise unittest.SkipTest
-      # raise Exception(f"missing test route for {cls.car_model}")
+      raise Exception(f"missing test route for {cls.car_model}")
 
     disable_radar = False
     test_segs = (2, 1, 0)
