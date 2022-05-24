@@ -6,7 +6,6 @@
 #include <GLES3/gl3.h>
 #endif
 
-#include <iostream>
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>
 
@@ -221,34 +220,7 @@ void CameraViewWidget::paintGL() {
   int idx = frames.size() - (latest_frame_id - draw_frame_id) - 1;
   idx = std::clamp(idx, 0, (int)frames.size() - 1);
 
-  int new_idx = 0;
-  for (int i = 0; i < frames.size(); i++) {
-    int error = draw_frame_id - frames[i].first;
-    if (error <= 0) break;
-    new_idx++;
-  }
-
-  qDebug() << "Model frame:" << draw_frame_id;
-  qDebug() << "Camera frame:" << frames[idx].first << "new camera frame:" << frames[new_idx].first;
-  qDebug() << "Correct:" << (draw_frame_id == frames[idx].first) << "\n";
-
-  qDebug() << "Good idx:" << idx << "New idx:" << new_idx;
-  qDebug() << "Equal:" << (idx == new_idx);
-
   VisionBuf *frame = frames[idx].second;
-
-  std::cout << "[";
-  for (auto i : frames) {
-    std::cout << i.first << ",";
-  }
-  std::cout << "]\n\n";
-
-  assert(draw_frame_id == frames[idx].first);
-  assert(frames[idx].first >= prev_cam_frame_id);
-
-  prev_model_frame_id = draw_frame_id;
-  prev_cam_frame_id = frames[idx].first;
-
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
