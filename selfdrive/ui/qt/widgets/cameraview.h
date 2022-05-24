@@ -19,10 +19,10 @@ public:
   ~CameraViewWidget();
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
-  void setFrameId(uint32_t frame_id) { draw_frame_id = frame_id; }
 
 signals:
   void clicked();
+  void vipcThreadDisconnected();
   void vipcThreadConnected(VisionIpcClient *);
   void vipcThreadFrameReceived(VisionBuf *, quint32);
 
@@ -38,9 +38,9 @@ protected:
 
   bool zoomed_view;
   bool manual_update;
-  uint32_t draw_frame_id = 0;
   uint32_t latest_frame_id = 0;
   VisionBuf *latest_frame = nullptr;
+  bool frame_ready = false;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
   std::unique_ptr<QOpenGLShaderProgram> program;
@@ -55,6 +55,7 @@ protected:
   GLuint textures[3];
 
 protected slots:
+  void vipcDisconnected();
   void vipcConnected(VisionIpcClient *vipc_client);
   void vipcFrameReceived(VisionBuf *vipc_client, uint32_t frame_id);
 };

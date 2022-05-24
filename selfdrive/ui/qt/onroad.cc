@@ -375,9 +375,11 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
 void NvgWindow::paintGL() {
   UIState *s = uiState();
   const auto &model = (*s->sm)["modelV2"].getModelV2();
-
-  CameraViewWidget::setFrameId(model.getFrameId());
   CameraViewWidget::paintGL();
+
+  if (s->sm->alive("modelV2") && (CameraViewWidget::latest_frame_id != model.getFrameId())) {
+    LOGW("camera and model frame ids do not match: %d != %d", CameraViewWidget::latest_frame_id, model.getFrameId());
+  }
 
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
@@ -388,7 +390,7 @@ void NvgWindow::paintGL() {
     drawLaneLines(painter, s);
 
     if (s->scene.longitudinal_control) {
-      const auto &leads = model.getLeadsV3();
+      auto leads = model.getLeadsV3();
       if (leads[0].getProb() > .5) {
         drawLead(painter, leads[0], s->scene.lead_vertices[0]);
       }
