@@ -69,7 +69,7 @@ class LateralPlanner:
     else:
       d_path_xyz = self.path_xyz
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
-      heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.1])
+      heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, MPC_COST_LAT.HEADING_FAST])
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, heading_cost, MPC_COST_LAT.LAT_JERK)
 
     y_pts = d_path_xyz[:LAT_MPC_N + 1, 1]
