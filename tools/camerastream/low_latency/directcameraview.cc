@@ -105,51 +105,67 @@ void DirectCameraViewWidget::initializeGL() {
   glUniform1i(program->uniformLocation("uTextureU"), 1);
   glUniform1i(program->uniformLocation("uTextureV"), 2);
 
+  int stream_width = 2048;
+  int stream_height = 1216;
+  for (int i = 0; i < 3; ++i) {
+    glBindTexture(GL_TEXTURE_2D, textures[i]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    int width = i == 0 ? stream_width : stream_width / 2;
+    int height = i == 0 ? stream_height : stream_height / 2;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+    assert(glGetError() == GL_NO_ERROR);
+  }
+
   // link textures
   decoder.reset(new SimpleDecoder);
-  /*CHECK(cuGraphicsGLRegisterImage(&res[0], textures[0], GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
+  CHECK(cuGraphicsGLRegisterImage(&res[0], textures[0], GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
   CHECK(cuGraphicsGLRegisterImage(&res[1], textures[1], GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
-  CHECK(cuGraphicsGLRegisterImage(&res[2], textures[2], GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));*/
+  CHECK(cuGraphicsGLRegisterImage(&res[2], textures[2], GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
 }
 
 void DirectCameraViewWidget::paintGL() {
-  printf("paintGL\n");
+  makeCurrent();
+  printf("paintGL %llu\n", dpSrcFrame);
+
+  if (dpSrcFrame) {
+    CHECK(cuGraphicsMapResources(3, res, NULL));
+    for (int plane = 0; plane < 1; plane++) {
+      CUarray texture_array;
+      CHECK(cuGraphicsSubResourceGetMappedArray(&texture_array, res[plane], 0, 0));
+
+      // copy in the data
+      CUDA_MEMCPY2D cu2d = {0};
+      cu2d.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+      cu2d.srcDevice = dpSrcFrame;
+      cu2d.srcPitch = 2048;
+
+      cu2d.dstMemoryType = CU_MEMORYTYPE_ARRAY;
+      cu2d.dstArray = texture_array;
+
+      cu2d.WidthInBytes = 2048;
+
+      if (plane == 1) {
+        cu2d.Height = 1216/2;
+        cu2d.srcY = 1216;
+      } else {
+        cu2d.Height = 1216;
+      }
+
+      CHECK(cuMemcpy2D(&cu2d));
+    }
+    CHECK(cuGraphicsUnmapResources(3, res, NULL));
+    decoder->free_frame(dpSrcFrame);
+  }
 }
 
 void DirectCameraViewWidget::vipcFrameReceived(unsigned char *dat, int len) {
-  printf("frame loaded %d\n", len);
-  CUdeviceptr dpSrcFrame = decoder->decode(dat, len);
-  
-  CHECK(cuGraphicsMapResources(3, res, NULL));
-  for (int plane = 0; plane < 1; plane++) {
-    CUarray texture_array;
-    CHECK(cuGraphicsSubResourceGetMappedArray(&texture_array, res[plane], 0, 0));
-
-    // copy in the data
-    CUDA_MEMCPY2D cu2d = {0};
-    cu2d.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-    cu2d.srcDevice = dpSrcFrame;
-    cu2d.srcPitch = 2048;
-
-    cu2d.dstMemoryType = CU_MEMORYTYPE_ARRAY;
-    cu2d.dstArray = texture_array;
-
-    cu2d.WidthInBytes = 2048;
-
-    if (plane == 1) {
-      cu2d.Height = 1216/2;
-      cu2d.srcY = 1216;
-    } else {
-      cu2d.Height = 1216;
-    }
-
-    CHECK(cuMemcpy2D(&cu2d));
-  }
-  CHECK(cuGraphicsUnmapResources(3, res, NULL));
-  decoder->free_frame();
+  dpSrcFrame = decoder->decode(dat, len);
   free(dat);
+  printf("frame loaded %d %llu\n", len, dpSrcFrame);
   update();
-
 }
 
 void DirectCameraViewWidget::vipcThread() {

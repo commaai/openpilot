@@ -18,7 +18,7 @@ public:
   SimpleDecoder();
 
   CUdeviceptr decode(const unsigned char *dat, int len, bool is_header=false);
-  void free_frame();
+  void free_frame(CUdeviceptr dpSrcFrame_local);
 
 private:
   int HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat);

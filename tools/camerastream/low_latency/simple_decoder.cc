@@ -2,9 +2,8 @@
 #include <cassert>
 #include "simple_decoder.h"
 
-void SimpleDecoder::free_frame() {
-  CHECK(cuvidUnmapVideoFrame(m_hDecoder, dpSrcFrame));
-  dpSrcFrame = 0;
+void SimpleDecoder::free_frame(CUdeviceptr dpSrcFrame_local) {
+  CHECK(cuvidUnmapVideoFrame(m_hDecoder, dpSrcFrame_local));
 }
 
 CUdeviceptr SimpleDecoder::decode(const unsigned char *dat, int len, bool is_header) {
@@ -67,7 +66,6 @@ int SimpleDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat) {
 
 int SimpleDecoder::HandlePictureDecode(CUVIDPICPARAMS *pPicParams) {
   CHECK(cuvidDecodePicture(m_hDecoder, pPicParams));
-  if (dpSrcFrame) free_frame();
 
   unsigned int nSrcPitch = 0;
   CUVIDPROCPARAMS videoProcessingParameters = { 0 };

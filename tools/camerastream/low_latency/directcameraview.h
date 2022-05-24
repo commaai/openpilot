@@ -10,15 +10,6 @@
 #include <nvcuvid.h>
 #include "simple_decoder.h"
 
-#define CHECK(x) {CUresult __ret = x; \
-  if (__ret != CUDA_SUCCESS) { \
-    const char *__str; \
-    cuGetErrorName(__ret, &__str); \
-    printf("error: %s\n", __str); \
-  } \
-  assert(__ret == CUDA_SUCCESS); \
-}
-
 
 class DirectCameraViewWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
@@ -45,6 +36,7 @@ protected:
   GLuint textures[3];
 
   CUgraphicsResource res[3];
+  CUdeviceptr dpSrcFrame;
 
 protected slots:
   void vipcFrameReceived(unsigned char *dat, int len);
