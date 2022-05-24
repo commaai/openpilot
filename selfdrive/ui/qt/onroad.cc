@@ -377,10 +377,10 @@ void NvgWindow::paintGL() {
   const auto &model = (*s->sm)["modelV2"].getModelV2();
   CameraViewWidget::paintGL();
 
-  correct_frame_filter.update(CameraViewWidget::latest_frame_id == model.getFrameId());
+  correct_frame_filter.update(CameraViewWidget::drawn_frame_id == model.getFrameId());
   qDebug() << correct_frame_filter.x();
   if (s->sm->alive("modelV2") && (correct_frame_filter.x() < 0.8)) {
-    LOGW("camera and model frame ids do not match: %d != %d", CameraViewWidget::latest_frame_id, model.getFrameId());
+    LOGW("camera and model frame ids do not match: %d != %d", CameraViewWidget::drawn_frame_id, model.getFrameId());
   }
 
   QPainter painter(this);

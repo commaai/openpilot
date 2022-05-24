@@ -216,6 +216,7 @@ void CameraViewWidget::paintGL() {
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   if (latest_frame == nullptr) return;
+  drawn_frame_id = latest_frame_id;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
