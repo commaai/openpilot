@@ -281,7 +281,6 @@ void MapWindow::wheelEvent(QWheelEvent *ev) {
 
   m_map->scaleBy(1 + factor, ev->pos() / MAP_SCALE);
   update();
-
   zoom_counter = PAN_TIMEOUT;
   ev->accept();
 }
