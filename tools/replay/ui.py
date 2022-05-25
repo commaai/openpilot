@@ -99,7 +99,7 @@ def ui_thread(addr):
 
   draw_plots = init_plots(plot_arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles)
 
-  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_RGB_ROAD, True)
+  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True)
   while 1:
     list(pygame.event.get())
 
@@ -111,21 +111,17 @@ def ui_thread(addr):
     if not vipc_client.is_connected():
       vipc_client.connect(True)
 
-    rgb_img_raw = vipc_client.recv()
+    yuv_img_raw = vipc_client.recv()
 
-    if rgb_img_raw is None or not rgb_img_raw.any():
+    if yuv_img_raw is None or not yuv_img_raw.any():
       continue
 
-    num_px = len(rgb_img_raw) // 3
-    imgff_shape = (vipc_client.height, vipc_client.width, 3)
+    imgff = np.frombuffer(yuv_img_raw, dtype=np.uint8).reshape((vipc_client.height * 3 // 2, vipc_client.width))
+    num_px = vipc_client.width * vipc_client.height
+    bgr = cv2.cvtColor(imgff, cv2.COLOR_YUV2RGB_I420)
 
-    if imgff is None or imgff.shape != imgff_shape:
-      imgff = np.zeros(imgff_shape, dtype=np.uint8)
-
-    imgff = np.frombuffer(rgb_img_raw, dtype=np.uint8).reshape((vipc_client.height, vipc_client.width, 3))
-    imgff = imgff[:, :, ::-1]  # Convert BGR to RGB
     zoom_matrix = _BB_TO_FULL_FRAME[num_px]
-    cv2.warpAffine(imgff, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
+    cv2.warpAffine(bgr, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
 
     intrinsic_matrix = _INTRINSICS[num_px]
 
