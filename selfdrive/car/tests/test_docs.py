@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 
+from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
 
 
@@ -15,6 +16,12 @@ class TestCarDocs(unittest.TestCase):
 
     self.assertEqual(generated_cars_md, current_cars_md,
                      "Run selfdrive/car/docs.py to generate new supported cars documentation")
+
+  def test_missing_car_info(self):
+    all_car_info_platforms = [p for i in get_interface_attr("CAR_INFO").values() for p in i]
+    for platform in sorted(interfaces.keys()):
+      if platform not in all_car_info_platforms:
+        self.fail("Platform: {} doesn't exist in CarInfo".format(platform))
 
   def test_naming_conventions(self):
     # Asserts market-standard car naming conventions by make

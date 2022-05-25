@@ -15,7 +15,7 @@ from selfdrive.version import get_commit
 from tools.lib.logreader import LogReader
 
 original_segments = [
-  ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),        # COMMA.BODY
+  ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
