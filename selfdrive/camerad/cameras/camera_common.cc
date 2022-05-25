@@ -291,8 +291,8 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setIntegLines(frame_data.integ_lines);
   framed.setGain(frame_data.gain);
   framed.setHighConversionGain(frame_data.high_conversion_gain);
-  framed.setMeasuredGreyFraction(frame_data.measured_grey_fraction);
-  framed.setTargetGreyFraction(frame_data.target_grey_fraction);
+  framed.setMeasuredGreyFraction(frame_data.measured_grey);
+  framed.setTargetGreyFraction(frame_data.target_grey);
   framed.setLensPos(frame_data.lens_pos);
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);

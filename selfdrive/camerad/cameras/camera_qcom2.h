@@ -41,8 +41,8 @@ public:
   float cur_ev[3];
   float min_ev, max_ev;
 
-  float measured_grey_fraction;
-  float target_grey_fraction;
+  float measured_grey;
+  float target_grey;
   int gain_idx;
 
   unique_fd sensor_fd;

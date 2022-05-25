@@ -631,7 +631,7 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
 
   min_ev = EXPOSURE_TIME_MIN * sensor_analog_gains[ANALOG_GAIN_MIN_IDX];
   max_ev = EXPOSURE_TIME_MAX * sensor_analog_gains[ANALOG_GAIN_MAX_IDX] * DC_GAIN;
-  target_grey_fraction = 0.3;
+  target_grey = 100.0;
 
   dc_gain_enabled = false;
   gain_idx = ANALOG_GAIN_REC_IDX;
@@ -1078,7 +1078,9 @@ double CameraState::ar0231_get_geometric_mean(VisionBuf *camera_buf) {
     sum_logs += histogram[i] * log(histogram_bins[i] + histogram_bin_widths[i] / 2);
   }
 
-  return exp(sum_logs / total);
+  if (total == 0) return 0.0;
+
+  return std::max(exp(sum_logs / total) - 168.0, 0.0); // Subtract black level
 }
 
 double CameraState::get_geometric_mean(VisionBuf *camera_buf) {
@@ -1133,8 +1135,8 @@ void CameraState::handle_camera_event(void *evdat) {
     meta_data.gain = dc_gain_enabled ? analog_gain_frac * DC_GAIN : analog_gain_frac;
     meta_data.high_conversion_gain = dc_gain_enabled;
     meta_data.integ_lines = exposure_time;
-    meta_data.measured_grey_fraction = measured_grey_fraction;
-    meta_data.target_grey_fraction = target_grey_fraction;
+    meta_data.measured_grey = measured_grey;
+    meta_data.target_grey = target_grey;
     exp_lock.unlock();
 
     // dispatch
@@ -1150,7 +1152,7 @@ void CameraState::handle_camera_event(void *evdat) {
   }
 }
 
-void CameraState::set_camera_exposure(float grey_frac) {
+void CameraState::set_camera_exposure(float measured_grey_) {
   if (!enabled) return;
 
   const float dt = 0.05;
@@ -1164,7 +1166,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
   const float cur_ev_ = cur_ev[buf.cur_frame_data.frame_id % 3];
 
-  float desired_ev = std::clamp(cur_ev_ * target_grey_fraction / grey_frac, min_ev, max_ev);
+  float desired_ev = std::clamp(cur_ev_ * target_grey / measured_grey_, min_ev, max_ev);
   float k = (1.0 - k_ev) / 3.0;
   desired_ev = (k * cur_ev[0]) + (k * cur_ev[1]) + (k * cur_ev[2]) + (k_ev * desired_ev);
 
@@ -1215,7 +1217,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
   exp_lock.lock();
 
-  measured_grey_fraction = grey_frac;
+  measured_grey = measured_grey_;
 
   analog_gain_frac = sensor_analog_gains[new_g];
   gain_idx = new_g;
@@ -1304,7 +1306,7 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   }
   s->pm->send("driverCameraState", msg);
 
-  float measured_grey = c->buf.cur_frame_data.histogram_geometric_mean / 1024.0;
+  float measured_grey = c->buf.cur_frame_data.histogram_geometric_mean;
   camera_autoexposure(c, measured_grey);
 }
 
@@ -1331,7 +1333,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
-  float measured_grey = c->buf.cur_frame_data.histogram_geometric_mean / 1024.0;
+  float measured_grey = c->buf.cur_frame_data.histogram_geometric_mean;
   camera_autoexposure(c, measured_grey);
 }
 

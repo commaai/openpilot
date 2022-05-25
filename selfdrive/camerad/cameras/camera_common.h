@@ -75,8 +75,8 @@ typedef struct FrameMetadata {
   unsigned int integ_lines;
   bool high_conversion_gain;
   float gain;
-  float measured_grey_fraction;
-  float target_grey_fraction;
+  float measured_grey;
+  float target_grey;
 
   float histogram_geometric_mean;
 
