@@ -2,6 +2,7 @@
 import argparse
 import os
 import sys
+import unittest
 
 os.environ['FILEREADER_CACHE'] = '1'
 
@@ -28,99 +29,94 @@ def get_log_reader(route_name):
   return MultiLogIterator(log_paths, sort_by_time=True)
 
 
-def verify_route(route_name):
-  lr = get_log_reader(route_name)
-  # tests = [test_blocked_msgs, test_car_params, test_engagement, test_steering_faults]
-  tests = [test_car_params, test_blocked_msgs, test_steering_faults]
-  for test in tests:
-    test(lr)
-    lr.reset()
+class TestCarPort(unittest.TestCase):
+  @classmethod
+  def setUpClass(cls):
+    route_name = os.getenv("ROUTE_NAME", None)
+    cls.assertIsNotNone(route_name, "Set ROUTE_NAME environment variable")
 
-  print("---\nSUCCESS: All tests passed")
+    route = Route(route_name)
+    log_paths = [log for log in route.log_paths() if log is not None]
+    cls.assertTrue(len(log_paths) > 0, "No uploaded rlogs in this route")
 
+    cls.all_msgs = list(MultiLogIterator(log_paths, sort_by_time=True))
+    cls.CP = None
+    for msg in cls.all_msgs:
+      if msg.which() == "carParams":
+        cls.CP = msg.carParams
+    cls.assertIsNotNone(cls.CP, "No CarParams packets in logs")
 
-def _test_fingerprint(CP):
-  """
-  Runs fingerprinting on fw versions in log to ensure we're not fuzzy fingerprinting
-  """
+  def test_fingerprint(self):
+    """
+    Runs fingerprinting on fw versions in log to ensure we're not fuzzy fingerprinting
+    """
 
-  fw_versions_dict = build_fw_dict(CP.carFw)
-  matches = match_fw_to_car_exact(fw_versions_dict)
-  assert len(matches) == 1, f"got more than one candidate: {matches}"
-  assert list(matches)[0] == CP.carFingerprint  # TODO: support specifying with argparse
-
-  print('SUCCESS: Fingerprinted: {}'.format(CP.carFingerprint))
-
-
-def test_blocked_msgs(lr):
-  for msg in list(lr)[::-1]:
-    if msg.which() == "pandaStates":
-      if msg.pandaStates[0].ignitionCan or msg.pandaStates[0].ignitionLine:
-        pandaStates = msg.pandaStates
-        break
-  else:
-    assert False, "No pandaStates packets"
-
-  assert pandaStates[0].blockedCnt < 10, "Blocked messages {} is not less than 10".format(pandaStates[0].blockedCnt)
-  print('SUCCESS: Blocked messages under threshold: {} < 10'.format(pandaStates[0].blockedCnt))
+    fw_versions_dict = build_fw_dict(self.CP.carFw)
+    matches = match_fw_to_car_exact(fw_versions_dict)
+    self.assertNotEqual(len(matches), 0, "Car failed to exact fingerprint")
+    self.assertEqual(len(matches), 1, f"Got more than one candidate: {matches}")
+    # TODO: support specifying expected fingerprint with argparse
+    self.assertEqual(list(matches)[0], self.CP.carFingerprint,
+                     f"Car mis-fingerprinted as {list(matches[0])}, expecting {self.CP.carFingerprint}")
 
 
-def test_car_params(lr):
-  """
-  Common carParams tests
-  """
+  def test_blocked_msgs(self):
+    for msg in self.all_msgs[::-1]:
+      if msg.which() == "pandaStates":
+        if msg.pandaStates[0].ignitionCan or msg.pandaStates[0].ignitionLine:
+          pandaStates = msg.pandaStates
+          break
+    else:
+      raise Exception("No pandaStates packets")
 
-  for msg in lr:
-    if msg.which() == "carParams":
-      CP = msg.carParams
-      assert not CP.dashcamOnly, "openpilot not active, dashcamOnly is True"
-      _test_fingerprint(CP)
-      return True
+    self.assertLess(pandaStates[0].blockedCnt, 10, "Blocked messages {} is not less than 10".format(pandaStates[0].blockedCnt))
 
-  assert False, "No carParams packets in logs"
+  def test_car_params(self):
+    """
+    Common carParams tests
+    """
 
+    self.assertFalse(self.CP.dashcamOnly, "openpilot not active, dashcamOnly is True")
 
-def test_engagement(lr):
-  carState = None
-  engaged_frames = 0
-  for msg in lr:
-    if msg.which() == "carState":
-      carState = msg.carState
+  def test_engagement(self):
+    carState = None
+    engaged_frames = 0
+    max_engaged_frames = 0
+    for msg in self.all_msgs:
+      if msg.which() == "carState":
+        carState = msg.carState
 
-    elif msg.which() == "controlsState":
-      if carState is None:
-        continue
+      elif msg.which() == "controlsState":
+        if carState is None:
+          continue
 
-      controlsState = msg.controlsState
-      if carState.cruiseState.enabled and controlsState.active and \
-        not (carState.gasPressed or carState.brakePressed or carState.steeringPressed):
-        engaged_frames += 1
-        if engaged_frames >= MIN_ENGAGED_FRAMES:
-          print("SUCCESS: Route was engaged for at least {} seconds".format(round(MIN_ENGAGED_FRAMES * DT_CTRL, 2)))
-          return True
-      else:
-        engaged_frames = 0
+        controlsState = msg.controlsState
+        if carState.cruiseState.enabled and controlsState.active and \
+          not (carState.gasPressed or carState.brakePressed or carState.steeringPressed):
+          engaged_frames += 1
+          max_engaged_frames = max(engaged_frames, max_engaged_frames)
+        else:
+          engaged_frames = 0
 
-  assert False, "Route was not engaged for longer than {} seconds".format(MIN_ENGAGED_FRAMES * DT_CTRL)
+    self.assertGreaterEqual(engaged_frames, MIN_ENGAGED_FRAMES,
+                            "Route was not engaged for longer than {} seconds".format(MIN_ENGAGED_FRAMES * DT_CTRL))
 
+  def test_steering_faults(self):
+    CS = None
+    CC = None
+    steering_faults = 0
+    for msg in self.all_msgs:
+      if msg.which() == "carControl":
+        CC = msg.carControl
 
-def test_steering_faults(lr):
-  CS = None
-  CC = None
-  for msg in lr:
-    if msg.which() == "carControl":
-      CC = msg.carControl
+      elif msg.which() == "carState":
+        if CC is None:
+          continue
 
-    elif msg.which() == "carState":
-      if CC is None:
-        continue
+        CS = msg.carState
+        steering_faults += (CS.steerFaultTemporary or CS.steerFaultPermanent) and CC.latActive
 
-      CS = msg.carState
-      steering_fault = (CS.steerFaultTemporary or CS.steerFaultPermanent) and CC.latActive
-      assert not steering_fault, "Route had at least one steering fault event"
-
-  assert CS is not None, "No carState packets in logs"
-  print("SUCCESS: Route had no steering faults")
+    self.assertLess(steering_faults, 10, f"Route had {steering_faults} steering fault frames")
 
 
 if __name__ == "__main__":
@@ -135,4 +131,6 @@ if __name__ == "__main__":
     sys.exit()
   args = parser.parse_args()
 
-  verify_route(args.route_name)
+  os.environ["ROUTE_NAME"] = args.route_name
+  unittest.main(argv=[''])
+  # verify_route(args.route_name)
