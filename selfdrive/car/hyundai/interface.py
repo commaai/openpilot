@@ -7,6 +7,7 @@ from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
+from selfdrive.controls.lib.latcontrol_torque import set_torque_tune
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -48,7 +49,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiV = [0.0]
     ret.stopAccel = 0.0
 
-    ret.longitudinalActuatorDelayUpperBound = 1.0 # s
+    ret.longitudinalActuatorDelayUpperBound = 1.0  # s
 
     if candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
       ret.lateralTuning.pid.kf = 0.00005
@@ -252,12 +253,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.65
 
       max_lat_accel = 2.
-      ret.lateralTuning.init('torque')
-      ret.lateralTuning.torque.useSteeringAngle = True
-      ret.lateralTuning.torque.kp = 1.0 / max_lat_accel
-      ret.lateralTuning.torque.kf = 1.0 / max_lat_accel
-      ret.lateralTuning.torque.ki = 0.1 / max_lat_accel
-      ret.lateralTuning.torque.friction = 0.01
+      set_torque_tune(ret.lateralTuning, max_lat_accel, 0.01)
 
     # Genesis
     elif candidate == CAR.GENESIS_G70:
