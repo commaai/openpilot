@@ -39,6 +39,14 @@ def replay_panda_states(s, msgs):
   else:
     safety_param = cp.safetyParamDEPRECATED
 
+  # TODO: remove after getting new route for Toyotas
+  migration = {
+      "TOYOTA PRIUS 2017": 578,
+      "TOYOTA RAV4 2017": 329
+  }
+  if cp.carFingerprint in migration:
+    safety_param = migration[cp.carFingerprint]
+
   while True:
     for m in smsgs:
       if m.which() == 'pandaStateDEPRECATED':
@@ -185,11 +193,13 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   migration = {
     "Mazda CX-9 2021": "MAZDA CX-9 2021",
   }
+  # TODO: remove after getting new route for Subaru
+  fingerprint_problems = ["SUBARU IMPREZA LIMITED 2019"]
 
   for msg in lr:
     if msg.which() == 'carParams':
       car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
+      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS) and car_fingerprint not in fingerprint_problems:
         params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
       else:
         os.environ['SKIP_FW_QUERY'] = "1"
