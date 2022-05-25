@@ -93,6 +93,8 @@ class CarState(CarStateBase):
     else:
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
+      if self.CP.carFingerprint in (CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ESH):
+        ret.cruiseState.speed *= self.CP.wheelSpeedFactor
 
     if self.CP.carFingerprint in RADAR_ACC_CAR:
       self.acc_type = cp.vl["ACC_CONTROL"]["ACC_TYPE"]
