@@ -9,8 +9,10 @@
 
 enum PrimeType {
   NONE = 0,
-  MAGENTA,
-  LITE,
+  MAGENTA = 1,
+  LITE = 2,
+  BLUE = 3,
+  MAGENTA_NEW = 4,
 };
 
 // pairing QR code

@@ -1,14 +1,16 @@
+#!/usr/bin/env python3
 import argparse
 import json
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import mpld3
 import sys
+from bisect import bisect_left, bisect_right
 from collections import defaultdict
 
 from tools.lib.logreader import logreader_from_route_or_segment
 
-DEMO_ROUTE = "9f583b1d93915c31|2022-04-26--18-49-49"
+DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 # Retrive controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored
@@ -51,7 +53,7 @@ def read_logs(lr):
         for key in MONOTIME_KEYS:
           if hasattr(msg_obj, key):
             if getattr(msg_obj, key) == 0:
-              # Filter out controlsd messages which arrive before the camera loop 
+              # Filter out controlsd messages which arrive before the camera loop
               continue_outer = True
             elif getattr(msg_obj, key) in mono_to_frame:
               frame_id = mono_to_frame[getattr(msg_obj, key)]
@@ -89,11 +91,22 @@ def read_logs(lr):
     print("Warning, many frame mismatches", len(frame_mismatches))
   return (data, frame_mismatches)
 
+# This is not needed in 3.10 as a "key" parameter is added to bisect
+class KeyifyList(object):
+  def __init__(self, inner, key):
+    self.inner = inner
+    self.key = key
+  def __len__(self):
+    return len(self.inner)
+  def __getitem__(self, k):
+    return self.key(self.inner[k])
+
 def find_frame_id(time, service, start_times, end_times):
-  for frame_id in reversed(start_times):
-    if start_times[frame_id][service] and end_times[frame_id][service]:
-      if start_times[frame_id][service] <= time <= end_times[frame_id][service]:
-        yield frame_id
+  left = bisect_left(KeyifyList(list(start_times.items()),
+                     lambda x: x[1][service] if x[1][service] else -1), time) - 1
+  right = bisect_right(KeyifyList(list(end_times.items()),
+                      lambda x: x[1][service] if x[1][service] else float("inf")), time)
+  return left, right
 
 def find_t0(start_times, frame_id=-1):
   frame_id = frame_id if frame_id > -1 else min(start_times.keys())
@@ -130,13 +143,13 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
           timestamps[latest_controls_frameid][service].append((event, time))
           end_times[latest_controls_frameid][service] = time
         else:
-          frame_id_gen = find_frame_id(time, service, start_times, end_times)
-          frame_id = next(frame_id_gen, False)
+          frame_id = find_frame_id(time, service, start_times, end_times)
           if frame_id:
+            if frame_id[0] != frame_id[1]:
+              event += " (warning: ambiguity)"
+            frame_id = frame_id[0]
             if service == 'controlsd':
               latest_controls_frameid = frame_id
-            if next(frame_id_gen, False):
-              event += " (warning: ambiguity)"
             timestamps[frame_id][service].append((event, time))
           else:
             failed_inserts += 1
@@ -162,12 +175,16 @@ def print_timestamps(timestamps, durations, start_times, relative):
       for event, time in durations[frame_id][service]:
         print("    "+'%-53s%-53s' %(event, str(time*1000)))
 
-def graph_timestamps(timestamps, start_times, end_times, relative):
+def graph_timestamps(timestamps, start_times, end_times, relative, title=""):
+  # mpld3 doesn't convert properly to D3 font sizes
+  plt.rcParams.update({'font.size': 18})
+
   t0 = find_t0(start_times)
   fig, ax = plt.subplots()
   ax.set_xlim(0, 150 if relative else 750)
   ax.set_ylim(0, 15)
-  ax.set_xlabel('milliseconds')
+  ax.set_xlabel('Time (milliseconds)')
+  ax.set_ylabel('Frame ID')
   colors = ['blue', 'green', 'red', 'yellow', 'purple']
   assert len(colors) == len(SERVICES), 'Each service needs a color'
 
@@ -189,9 +206,12 @@ def graph_timestamps(timestamps, start_times, end_times, relative):
 
   scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
-
   mpld3.plugins.connect(fig, tooltip)
+
+  plt.title(title)
+  fig.set_size_inches(18, 9)
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
+
   return fig
 
 def get_timestamps(lr):
@@ -219,4 +239,4 @@ if __name__ == "__main__":
   data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
   if args.plot:
-    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative))
+    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative, r))

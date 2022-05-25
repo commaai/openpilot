@@ -46,7 +46,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.78
       ret.steerRatio = 17.4
       tire_stiffness_factor = 0.5533
-      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 3340. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=1.8, FRICTION=0.06)
 
     elif candidate in (CAR.RAV4, CAR.RAV4H):
@@ -87,7 +87,10 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
+      if candidate in (CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
+        set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=2.4, FRICTION=0.05)
+      else:
+        set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
     elif candidate in (CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
       stop_and_go = True
@@ -115,7 +118,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3505. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_H)
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022):
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022):
       stop_and_go = True
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3

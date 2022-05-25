@@ -8,8 +8,8 @@
 #include "json11.hpp"
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
+#include "common/timing.h"
+#include "common/util.h"
 
 ExitHandler do_exit;
 int main(int argc, char *argv[]) {

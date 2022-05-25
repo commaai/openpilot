@@ -8,10 +8,10 @@ from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProces
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
-  return params.get_bool("IsDriverViewEnabled")
+  return params.get_bool("IsDriverViewEnabled")  # type: ignore
 
 def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
-  return CP.notCar
+  return CP.notCar  # type: ignore
 
 def logging(started, params, CP: car.CarParams) -> bool:
   run = (not CP.notCar) or not params.get_bool("DisableLogging")
@@ -24,6 +24,7 @@ procs = [
   NativeProcess("clocksd", "selfdrive/clocksd", ["./clocksd"]),
   NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], enabled=(not PC or WEBCAM), callback=driverview),
   NativeProcess("logcatd", "selfdrive/logcatd", ["./logcatd"]),
+  NativeProcess("encoderd", "selfdrive/loggerd", ["./encoderd"]),
   NativeProcess("loggerd", "selfdrive/loggerd", ["./loggerd"], onroad=False, callback=logging),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
   NativeProcess("navd", "selfdrive/ui/navd", ["./navd"], offroad=True),

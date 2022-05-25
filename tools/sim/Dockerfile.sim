@@ -50,7 +50,6 @@ COPY ./pyextra $HOME/openpilot/pyextra
 COPY ./site_scons $HOME/openpilot/site_scons
 COPY ./rednose $HOME/openpilot/rednose
 COPY ./common $HOME/openpilot/common
-COPY ./models $HOME/openpilot/models
 COPY ./opendbc $HOME/openpilot/opendbc
 COPY ./cereal $HOME/openpilot/cereal
 COPY ./panda $HOME/openpilot/panda

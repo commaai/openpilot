@@ -170,15 +170,15 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   return true;
 }
 
-bool FrameReader::get(int idx, uint8_t *rgb, uint8_t *yuv) {
-  assert(rgb || yuv);
+bool FrameReader::get(int idx, uint8_t *yuv) {
+  assert(yuv != nullptr);
   if (!valid_ || idx < 0 || idx >= packets.size()) {
     return false;
   }
-  return decode(idx, rgb, yuv);
+  return decode(idx, yuv);
 }
 
-bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
+bool FrameReader::decode(int idx, uint8_t *yuv) {
   int from_idx = idx;
   if (idx != prev_idx + 1 && key_frames_count_ > 1) {
     // seeking to the nearest key frame
@@ -194,7 +194,7 @@ bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
   for (int i = from_idx; i <= idx; ++i) {
     AVFrame *f = decodeFrame(packets[i]);
     if (f && i == idx) {
-      return copyBuffers(f, rgb, yuv);
+      return copyBuffers(f, yuv);
     }
   }
   return false;
@@ -226,29 +226,21 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
   }
 }
 
-bool FrameReader::copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
+bool FrameReader::copyBuffers(AVFrame *f, uint8_t *yuv) {
   if (hw_pix_fmt == HW_PIX_FMT) {
     uint8_t *y = yuv ? yuv : nv12toyuv_buffer.data();
     uint8_t *u = y + width * height;
     uint8_t *v = u + (width / 2) * (height / 2);
     libyuv::NV12ToI420(f->data[0], f->linesize[0], f->data[1], f->linesize[1],
                        y, width, u, width / 2, v, width / 2, width, height);
-    libyuv::I420ToRGB24(y, width, u, width / 2, v, width / 2,
-                        rgb, aligned_width * 3, width, height);
   } else {
-    if (yuv) {
-      uint8_t *u = yuv + width * height;
-      uint8_t *v = u + (width / 2) * (height / 2);
-      libyuv::I420Copy(f->data[0], f->linesize[0],
-                       f->data[1], f->linesize[1],
-                       f->data[2], f->linesize[2],
-                       yuv, width, u, width / 2, v, width / 2,
-                       width, height);
-    }
-    libyuv::I420ToRGB24(f->data[0], f->linesize[0],
-                        f->data[1], f->linesize[1],
-                        f->data[2], f->linesize[2],
-                        rgb, aligned_width * 3, width, height);
+    uint8_t *u = yuv + width * height;
+    uint8_t *v = u + (width / 2) * (height / 2);
+    libyuv::I420Copy(f->data[0], f->linesize[0],
+                     f->data[1], f->linesize[1],
+                     f->data[2], f->linesize[2],
+                     yuv, width, u, width / 2, v, width / 2,
+                     width, height);
   }
   return true;
 }

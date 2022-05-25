@@ -12,8 +12,8 @@
 #include <mutex>
 #include <numeric>
 
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
+#include "common/timing.h"
+#include "common/util.h"
 
 ReplayMessageHandler message_handler = nullptr;
 DownloadProgressHandler download_progress_handler = nullptr;
@@ -305,7 +305,7 @@ void precise_nano_sleep(long sleep_ns) {
   // spin wait
   if (sleep_ns > 0) {
     while ((nanos_since_boot() - start_sleep) <= sleep_ns) {
-      usleep(0);
+      std::this_thread::yield();
     }
   }
 }

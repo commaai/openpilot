@@ -21,18 +21,6 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: hw
-    attributes:
-      label: What hardware does this issue affect?
-      multiple: true
-      options:
-        - comma three
-        - comma two
-        - EON Gold
-    validations:
-      required: true
-
   - type: input
     id: car
     attributes:

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "selfdrive/common/clutil.h"
+#include "common/clutil.h"
 
 #define NUM_SEGMENTS_X 8
 #define NUM_SEGMENTS_Y 6
