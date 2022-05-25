@@ -85,6 +85,7 @@ def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
     ignore_msgs = []
 
   ref_log_msgs = list(LogReader(ref_log_path))
+
   log_msgs = replay_process(cfg, lr)
 
   # check to make sure openpilot is engaged in the route
