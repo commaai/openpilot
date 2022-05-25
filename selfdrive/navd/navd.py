@@ -149,7 +149,6 @@ class RouteEngine:
     along_geometry = distance_along_geometry(step['geometry']['coordinates'], self.last_position)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
-
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
     parse_banner_instructions(msg.navInstruction, step['bannerInstructions'], distance_to_maneuver_along_geometry)
