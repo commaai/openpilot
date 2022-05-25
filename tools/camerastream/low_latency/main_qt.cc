@@ -6,6 +6,8 @@
 
 #include "directcameraview.h"
 
+// __GL_MaxFramesAllowed=1 QT_SINGLE_BUFFER=1 ./low_latency
+
 int main(int argc, char *argv[]) {
   initApp(argc, argv);
 

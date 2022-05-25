@@ -85,6 +85,7 @@ void setQtSurfaceFormat() {
 #else
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 #endif
+  if (getenv("QT_SINGLE_BUFFER")) fmt.setSwapBehavior(QSurfaceFormat::SingleBuffer);
   fmt.setSamples(16);
   QSurfaceFormat::setDefaultFormat(fmt);
 }
