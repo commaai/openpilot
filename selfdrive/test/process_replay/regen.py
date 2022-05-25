@@ -30,9 +30,17 @@ def replay_panda_states(s, msgs):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() in ['pandaStates', 'pandaStateDEPRECATED']]
 
+  # TODO: new safety params from flags, remove after getting new routes for Toyota
+  safety_param_migration = {
+    "TOYOTA PRIUS 2017": 578,
+    "TOYOTA RAV4 2017": 329
+  }
+
   # Migrate safety param base on carState
   cp = [m for m in msgs if m.which() == 'carParams'][0].carParams
-  if len(cp.safetyConfigs):
+  if cp.carFingerprint in safety_param_migration:
+    safety_param = safety_param_migration[cp.carFingerprint]
+  elif len(cp.safetyConfigs):
     safety_param = cp.safetyConfigs[0].safetyParam
     if cp.safetyConfigs[0].safetyParamDEPRECATED != 0:
       safety_param = cp.safetyConfigs[0].safetyParamDEPRECATED
@@ -181,15 +189,17 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
 
-  # TODO: remove after getting new route for mazda
-  migration = {
+  # TODO: remove after getting new route for Mazda
+  fp_migration = {
     "Mazda CX-9 2021": "MAZDA CX-9 2021",
   }
+  # TODO: remove after getting new route for Subaru
+  fingerprint_problem = ["SUBARU IMPREZA LIMITED 2019"]
 
   for msg in lr:
     if msg.which() == 'carParams':
-      car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
+      car_fingerprint = fp_migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
+      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS) and (car_fingerprint not in fingerprint_problem):
         params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
       else:
         os.environ['SKIP_FW_QUERY'] = "1"
