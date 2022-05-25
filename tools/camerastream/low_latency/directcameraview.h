@@ -37,6 +37,8 @@ protected:
 
   CUgraphicsResource res[3];
   CUdeviceptr dpSrcFrame;
+  bool is_new;
+  uint64_t st;
 
   QColor bg = QColor("#000000");
 

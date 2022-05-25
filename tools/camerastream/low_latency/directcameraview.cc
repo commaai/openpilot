@@ -42,8 +42,8 @@ const char frame_fragment_shader[] =
   "out vec4 colorOut;\n"
   "void main() {\n"
   "  float y = texture(uTextureY, vTexCoord).r;\n"
-  "  float u = texture(uTextureU, vTexCoord).r - 0.5;\n"
-  "  float v = texture(uTextureV, vTexCoord).r - 0.5;\n"
+  "  float u = 0.0f;\n" //texture(uTextureU, vTexCoord).r - 0.5;\n"
+  "  float v = 0.0f;\n" //texture(uTextureV, vTexCoord).r - 0.5;\n"
   "  float r = y + 1.402 * v;\n"
   "  float g = y - 0.344 * u - 0.714 * v;\n"
   "  float b = y + 1.772 * u;\n"
@@ -130,7 +130,6 @@ void DirectCameraViewWidget::initializeGL() {
 
 void DirectCameraViewWidget::paintGL() {
   makeCurrent();
-  printf("paintGL %llu\n", dpSrcFrame);
 
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -139,9 +138,9 @@ void DirectCameraViewWidget::paintGL() {
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
 
-  if (dpSrcFrame) {
+  if (dpSrcFrame && is_new) {
     CHECK(cuGraphicsMapResources(3, res, NULL));
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 1; i++) {
       glActiveTexture(GL_TEXTURE0 + i);
       glBindTexture(GL_TEXTURE_2D, textures[i]);
       CUarray texture_array;
@@ -169,6 +168,7 @@ void DirectCameraViewWidget::paintGL() {
     }
     CHECK(cuGraphicsUnmapResources(3, res, NULL));
     decoder->free_frame(dpSrcFrame);
+    is_new = false;
   }
 
 
@@ -187,10 +187,14 @@ void DirectCameraViewWidget::paintGL() {
   glBindTexture(GL_TEXTURE_2D, 0);
   glActiveTexture(GL_TEXTURE0);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+  printf("paintGL %llu %.2f ms\n", dpSrcFrame, (nanos_since_boot()-st*1.0)/1e6);
 }
 
 void DirectCameraViewWidget::vipcFrameReceived(unsigned char *dat, int len) {
+  st = nanos_since_boot();
   dpSrcFrame = decoder->decode(dat, len);
+  is_new = true;
   free(dat);
   printf("frame loaded %d %llu\n", len, dpSrcFrame);
   update();
@@ -207,6 +211,10 @@ void DirectCameraViewWidget::vipcThread() {
     capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize()));
     auto event = cmsg.getRoot<cereal::Event>();
     auto edata = event.getRoadEncodeData();
+
+    auto eof = edata.getIdx().getTimestampEof();
+    auto broadcast = event.getLogMonoTime();
+    printf("frame has device lag %.2f ms\n", (broadcast-eof*1.0)/1e6);
 
     if (!seen_header) {
       auto header = edata.getHeader();
