@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import math
 import os
-import time
 import threading
 
 import requests
@@ -10,6 +9,7 @@ import cereal.messaging as messaging
 from cereal import log
 from common.api import Api
 from common.params import Params
+from common.realtime import Ratekeeper
 from selfdrive.swaglog import cloudlog
 from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry,
@@ -34,6 +34,7 @@ class RouteEngine:
     self.nav_destination = None
     self.step_idx = None
     self.route = None
+    self.route_geometry = None
 
     self.recompute_backoff = 0
     self.recompute_countdown = 0
@@ -121,19 +122,20 @@ class RouteEngine:
       r = resp.json()
       if len(r['routes']):
         self.route = r['routes'][0]['legs'][0]['steps']
+        self.route_geometry = []
 
         # Convert coordinates
         for step in self.route:
-          step['geometry']['coordinates'] = [Coordinate.from_mapbox_tuple(c) for c in step['geometry']['coordinates']]
+          self.route_geometry.append([Coordinate.from_mapbox_tuple(c) for c in step['geometry']['coordinates']])
 
         self.step_idx = 0
       else:
         cloudlog.warning("Got empty route response")
-        self.route = None
+        self.clear_route()
 
     else:
       cloudlog.warning(f"Got error in route reply {resp.status_code}")
-      self.route = None
+      self.clear_route()
 
     self.send_route()
 
@@ -146,7 +148,8 @@ class RouteEngine:
       return
 
     step = self.route[self.step_idx]
-    along_geometry = distance_along_geometry(step['geometry']['coordinates'], self.last_position)
+    geometry = self.route_geometry[self.step_idx]
+    along_geometry = distance_along_geometry(geometry, self.last_position)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
     # Current instruction
@@ -159,6 +162,7 @@ class RouteEngine:
     total_time = step['duration'] * remaning
     total_time_typical = step['duration_typical'] * remaning
 
+    # Add up totals for future steps
     for i in range(self.step_idx + 1, len(self.route)):
       total_distance += self.route[i]['distance']
       total_time += self.route[i]['duration']
@@ -189,9 +193,8 @@ class RouteEngine:
     coords = []
 
     if self.route is not None:
-      for step in self.route:
-        for c in step['geometry']['coordinates']:
-          coords.append(c.as_dict())
+      for path in self.route_geometry:
+        coords += [c.as_dict() for c in path]
 
     msg = messaging.new_message('navRoute')
     msg.navRoute.coordinates = coords
@@ -199,6 +202,7 @@ class RouteEngine:
 
   def clear_route(self):
     self.route = None
+    self.route_geometry = None
     self.step_idx = None
     self.nav_destination = None
 
@@ -212,7 +216,7 @@ class RouteEngine:
 
     # Compute closest distance to all line segments in the current path
     min_d = REROUTE_DISTANCE + 1
-    path = self.route[self.step_idx]['geometry']['coordinates']
+    path = self.route_geometry[self.step_idx]
     for i in range(len(path) - 1):
       a = path[i]
       b = path[i + 1]
@@ -233,12 +237,11 @@ def main(sm=None, pm=None):
   if pm is None:
     pm = messaging.PubMaster(['navInstruction', 'navRoute'])
 
+  rk = Ratekeeper(1.0)
   route_engine = RouteEngine(sm, pm)
   while True:
     route_engine.update()
-
-    # TODO: use ratekeeper
-    time.sleep(1)
+    rk.keep_time()
 
 
 if __name__ == "__main__":
