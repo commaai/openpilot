@@ -37,6 +37,8 @@ class RouteEngine:
     self.recompute_backoff = 0
     self.recompute_countdown = 0
 
+    self.ui_pid = None
+
     if "MAPBOX_TOKEN" in os.environ:
       self.mapbox_token = os.environ["MAPBOX_TOKEN"]
       self.mapbox_host = "https://api.mapbox.com"
@@ -44,9 +46,17 @@ class RouteEngine:
       self.mapbox_token = Api(Params().get("DongleId", encoding='utf8')).get_token()
       self.mapbox_host = "https://maps.comma.ai"
 
-
   def update(self):
     self.sm.update(0)
+
+    if self.sm.updated["managerState"]:
+      ui_pid = [p.pid for p in self.sm["managerState"].processes if p.name == "ui"]
+      if ui_pid:
+        if self.ui_pid and self.ui_pid != ui_pid[0]:
+          cloudlog.warning("UI restarting, sending route")
+          # TODO: Send new route with delay of 5 seconds
+        self.ui_pid = ui_pid[0]
+
     self.update_location()
     self.recompute_route()
     self.send_instruction()
