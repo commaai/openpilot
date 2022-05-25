@@ -163,7 +163,7 @@ void CameraViewWidget::initializeGL() {
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  latest_frame = nullptr;
+  frames.clear();
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
@@ -214,14 +214,20 @@ void CameraViewWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  if (latest_frame == nullptr) return;
+  if (frames.empty()) return;
+
+  int frame_idx;
+  for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
+    if (frames[frame_idx].first == draw_frame_id) break;
+  }
+  VisionBuf *frame = frames[frame_idx].second;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
 
   glUseProgram(program->programId());
-  uint8_t *address[3] = {latest_frame->y, latest_frame->u, latest_frame->v};
+  uint8_t *address[3] = {frame->y, frame->u, frame->v};
   for (int i = 0; i < 3; ++i) {
     glActiveTexture(GL_TEXTURE0 + i);
     glBindTexture(GL_TEXTURE_2D, textures[i]);
@@ -244,7 +250,7 @@ void CameraViewWidget::paintGL() {
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   makeCurrent();
-  latest_frame = nullptr;
+  frames.clear();
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
 
@@ -263,19 +269,23 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   updateFrameMat(width(), height());
 }
 
-void CameraViewWidget::vipcFrameReceived(VisionBuf *buf) {
-  latest_frame = buf;
+void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
+  frames.push_back(std::make_pair(frame_id, buf));
+  while (frames.size() > FRAME_BUFFER_SIZE) {
+    frames.pop_front();
+  }
   update();
 }
 
 void CameraViewWidget::vipcThread() {
   VisionStreamType cur_stream_type = stream_type;
   std::unique_ptr<VisionIpcClient> vipc_client;
+  VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream_type != stream_type) {
       cur_stream_type = stream_type;
-      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream_type, true));
+      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream_type, false));
     }
 
     if (!vipc_client->connected) {
@@ -286,8 +296,8 @@ void CameraViewWidget::vipcThread() {
       emit vipcThreadConnected(vipc_client.get());
     }
 
-    if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
-      emit vipcThreadFrameReceived(buf);
+    if (VisionBuf *buf = vipc_client->recv(&meta_main, 1000)) {
+      emit vipcThreadFrameReceived(buf, meta_main.frame_id);
     }
   }
 }
