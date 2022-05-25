@@ -296,8 +296,6 @@ selfdrive/ui/replay/*.h
 selfdrive/ui/qt/maps/*.cc
 selfdrive/ui/qt/maps/*.h
 
-selfdrive/ui/navd/*.py
-
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
 
@@ -366,6 +364,8 @@ selfdrive/modeld/runners/run.h
 
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
+
+selfdrive/navd/*.py
 
 selfdrive/assets/.gitignore
 selfdrive/assets/assets.qrc

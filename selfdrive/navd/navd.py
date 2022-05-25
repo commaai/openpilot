@@ -10,10 +10,10 @@ from cereal import log
 from common.api import Api
 from common.params import Params
 from selfdrive.swaglog import cloudlog
-from selfdrive.ui.navd.helpers import (Coordinate, coordinate_from_param,
-                                       distance_along_geometry,
-                                       minimum_distance,
-                                       parse_banner_instructions)
+from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
+                                    distance_along_geometry,
+                                    minimum_distance,
+                                    parse_banner_instructions)
 
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
