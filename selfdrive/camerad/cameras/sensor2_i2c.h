@@ -179,5 +179,5 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3022, 0x0000}, // GROUPED_PARAMETER_HOLD_
 
   // Initial Integration Time
-  {0x3012, 0x0100},
+  {0x3012, 0x0005},
 };
