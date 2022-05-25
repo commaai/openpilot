@@ -2,7 +2,6 @@
 import argparse
 import os
 import sys
-import unittest
 
 os.environ['FILEREADER_CACHE'] = '1'
 
