@@ -138,14 +138,17 @@ class RouteEngine:
     self.send_route()
 
   def send_instruction(self):
+    msg = messaging.new_message('navInstruction')
+
     if self.step_idx is None:
+      msg.valid = False
+      self.pm.send('navInstruction', msg)
       return
 
     step = self.route[self.step_idx]
     along_geometry = distance_along_geometry(step['geometry']['coordinates'], self.last_position)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
-    msg = messaging.new_message('navInstruction')
 
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
