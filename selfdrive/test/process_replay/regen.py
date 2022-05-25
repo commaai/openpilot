@@ -4,6 +4,7 @@ import os
 import time
 import multiprocessing
 import argparse
+from tqdm import tqdm
 # run DM procs
 os.environ["USE_WEBCAM"] = "1"
 
@@ -23,8 +24,7 @@ from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
-def tqdm(x):
-  return x
+disable_tqdm = False
 
 def replay_panda_states(s, msgs):
   pm = messaging.PubMaster([s, 'peripheralState'])
@@ -164,7 +164,7 @@ def replay_cameras(lr, frs):
     if fr is not None:
       print(f"Decompressing frames {s}")
       frames = []
-      for i in tqdm(range(fr.frame_count)):
+      for i in tqdm(range(fr.frame_count), disable=disable_tqdm):
         img = fr.get(i, pix_fmt='yuv420p')[0]
         frames.append(img.flatten().tobytes())
 
@@ -179,9 +179,9 @@ def replay_cameras(lr, frs):
 
 
 def regen_segment(lr, frs=None, outdir=FAKEDATA):
-  if "OPENPILOT_PREFIX" not in os.environ:
-    global tqdm # pylint: disable=W0602
-    from tqdm import tqdm
+  if "OPENPILOT_PREFIX" in os.environ:
+    global disable_tqdm
+    disable_tqdm = True
 
   lr = list(lr)
   if frs is None:
@@ -247,7 +247,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
       for p in procs:
         p.start()
 
-    for _ in tqdm(range(60)):
+    for _ in tqdm(range(60), disable=disable_tqdm):
       # ensure all procs are running
       for d, procs in fake_daemons.items():
         for p in procs:
