@@ -5,9 +5,8 @@ import sys
 
 os.environ['FILEREADER_CACHE'] = '1'
 
-from cereal import car
 from common.realtime import DT_CTRL
-from selfdrive.car.car_helpers import get_interface_attr
+from selfdrive.car.fw_versions import build_fw_dict, match_fw_to_car_exact
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route
 
@@ -31,7 +30,8 @@ def get_log_reader(route_name):
 
 def verify_route(route_name):
   lr = get_log_reader(route_name)
-  tests = [test_blocked_msgs, test_car_params, test_engagement, test_steering_faults]
+  # tests = [test_blocked_msgs, test_car_params, test_engagement, test_steering_faults]
+  tests = [test_car_params, test_blocked_msgs, test_steering_faults]
   for test in tests:
     test(lr)
     lr.reset()
@@ -41,21 +41,14 @@ def verify_route(route_name):
 
 def _test_fingerprint(CP):
   """
-  If make has FW_VERSIONS defined, then assert fingerprint source is fw
-  Else, just check it's not fixed
+  Runs fingerprinting on fw versions in log to ensure we're not fuzzy fingerprinting
   """
-  # TODO: run on car params and make sure fp matches logs
 
-  fw_versions = get_interface_attr("FW_VERSIONS")[CP.carName]
-  has_fw_versions = fw_versions is not None and len(fw_versions)
+  fw_versions_dict = build_fw_dict(CP.carFw)
+  matches = match_fw_to_car_exact(fw_versions_dict)
+  assert len(matches) == 1, f"got more than one candidate: {matches}"
+  assert list(matches)[0] == CP.carFingerprint  # TODO: support specifying with argparse
 
-  assert CP.carName != "mock"
-  assert len(CP.carFingerprint) > 0
-  if has_fw_versions:
-    assert CP.fingerprintSource == car.CarParams.FingerprintSource.fw
-  else:
-    assert CP.fingerprintSource != car.CarParams.FingerprintSource.fixed
-  assert not CP.fuzzyFingerprint
   print('SUCCESS: Fingerprinted: {}'.format(CP.carFingerprint))
 
 
