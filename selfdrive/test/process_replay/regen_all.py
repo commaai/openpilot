@@ -12,7 +12,7 @@ def regen_job(segment):
     route = segment[1].rsplit('--', 1)[0]
     sidx = int(segment[1].rsplit('--', 1)[1])
     relr = regen_and_save(route, sidx, upload=True, use_route_meta=False)
-    relr = relr.replace('/', '|')
+    relr = "|".join(relr.split("/")[::2])
     return f'  ("{segment[0]}", "{relr}"), '
 
 if __name__ == "__main__":
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     p = pool.map(regen_job, segments)
     msg = "COPY THIS INTO test_processes.py"
     for seg in tqdm(p, desc="Generating segments", total=len(segments)):
-      msg += "\n"+seg
+      msg += "\n" + str(seg)
     print()
     print()
     print(msg)

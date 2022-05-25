@@ -182,6 +182,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   if "OPENPILOT_PREFIX" in os.environ:
     global disable_tqdm
     disable_tqdm = True
+    outdir = os.path.join(outdir, os.environ['OPENPILOT_PREFIX'])
 
   lr = list(lr)
   if frs is None:
