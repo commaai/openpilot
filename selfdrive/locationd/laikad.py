@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import threading
+import time
+from datetime import datetime, timedelta
 from typing import List
 
 import numpy as np
@@ -9,6 +12,7 @@ from numpy.linalg import linalg
 from cereal import log, messaging
 from laika import AstroDog
 from laika.ephemeris import convert_ublox_ephem
+from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
@@ -23,8 +27,9 @@ MAX_TIME_GAP = 10
 class Laikad:
 
   def __init__(self, use_internet):
-    self.astro_dog = AstroDog(use_internet=use_internet)
+    self.astro_dog = AstroDog(use_internet=use_internet, pull_ephems=['Orbit', 'Nav'])
     self.gnss_kf = GNSSKalman(GENERATED_DIR)
+    self.latest_epoch_fetched = GPSTime(0, 0)
 
   def process_ublox_msg(self, ublox_msg, ublox_mono_time: int):
     if ublox_msg.which == 'measurementReport':
@@ -63,7 +68,7 @@ class Laikad:
       return dat
     elif ublox_msg.which == 'ephemeris':
       ephem = convert_ublox_ephem(ublox_msg.ephemeris)
-      self.astro_dog.add_ephem(ephem, self.astro_dog.orbits)
+      self.astro_dog.add_ephems([ephem], self.astro_dog.nav)
     # elif ublox_msg.which == 'ionoData':
     # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
 
@@ -99,6 +104,19 @@ class Laikad:
     p_initial_diag[GStates.ECEF_POS] = 1000 ** 2
 
     self.gnss_kf.init_state(x_initial, covs_diag=p_initial_diag)
+
+  def orbit_thread(self, end_event: threading.Event):
+    while not end_event.is_set():
+      self.fetch_orbits()
+      time.sleep(30)
+
+  def fetch_orbits(self):
+    dog = self.astro_dog
+    t = GPSTime.from_datetime(datetime.utcnow() + timedelta(minutes=1))
+    if self.latest_epoch_fetched < t:
+      orbit_ephems = dog.download_parse_orbit_data(t)
+      self.latest_epoch_fetched = max(orbit_ephems, key=lambda e: e.epoch).epoch
+      dog.add_ephems(orbit_ephems, dog.orbits)
 
 
 def create_measurement_msg(meas: GNSSMeasurement):
@@ -146,14 +164,20 @@ def main():
 
   laikad = Laikad(use_internet=True)
 
-  while True:
-    sm.update()
+  end_event = threading.Event()
+  threading.Thread(target=laikad.orbit_thread, args=(end_event,)).start()
+  try:
+    while not end_event.is_set():
+      sm.update()
 
-    if sm.updated['ubloxGnss']:
-      ublox_msg = sm['ubloxGnss']
-      msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'])
-      if msg is not None:
-        pm.send('gnssMeasurements', msg)
+      if sm.updated['ubloxGnss']:
+        ublox_msg = sm['ubloxGnss']
+        msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'])
+        if msg is not None:
+          pm.send('gnssMeasurements', msg)
+  except (KeyboardInterrupt, SystemExit):
+    end_event.set()
+    raise
 
 
 if __name__ == "__main__":
