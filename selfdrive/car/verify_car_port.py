@@ -28,15 +28,36 @@ def get_log_reader(route_name):
   return MultiLogIterator(log_paths, sort_by_time=True)
 
 
-def verify_route(route_name):
-  lr = get_log_reader(route_name)
-  # tests = [test_blocked_msgs, test_car_params, test_engagement, test_steering_faults]
-  tests = [test_car_params, test_blocked_msgs, test_steering_faults]
-  for test in tests:
-    test(lr)
-    lr.reset()
+def format_exception(test_name, exception_text):
+  exception = '=' * 70
+  exception += f'\nERROR: {test_name}\n'
+  exception += '-' * 70
+  exception += f'\n{exception_text}\n'
 
-  print("---\nSUCCESS: All tests passed")
+  return exception
+
+
+def verify_route(route_name):
+  all_msgs = list(get_log_reader(route_name))
+  tests = [
+    # test_car_params,
+    # test_blocked_msgs,
+    test_engagement,
+    # test_steering_faults
+  ]
+  exceptions = {}
+  for test in tests:
+    success, text = test(all_msgs)
+    if not success:
+      print("TEST FAILED: {}\n".format(test.__name__))
+      exceptions[test.__name__] = format_exception(test.__name__, text)
+
+  if len(exceptions):
+    for exc in exceptions.values():
+      print(exc)
+    print("---\nFAILED: Some tests failed")
+  else:
+    print("---\nSUCCESS: All tests passed")
 
 
 def _test_fingerprint(CP):
@@ -97,11 +118,11 @@ def test_engagement(lr):
         engaged_frames += 1
         if engaged_frames >= MIN_ENGAGED_FRAMES:
           print("SUCCESS: Route was engaged for at least {} seconds".format(round(MIN_ENGAGED_FRAMES * DT_CTRL, 2)))
-          return True
+          return True, ""
       else:
         engaged_frames = 0
 
-  assert False, "Route was not engaged for longer than {} seconds".format(MIN_ENGAGED_FRAMES * DT_CTRL)
+  return False, "Route was not engaged for longer than {} seconds".format(MIN_ENGAGED_FRAMES * DT_CTRL)
 
 
 def test_steering_faults(lr):
