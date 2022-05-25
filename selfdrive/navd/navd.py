@@ -2,6 +2,7 @@
 import math
 import os
 import time
+import threading
 
 import requests
 
@@ -54,7 +55,7 @@ class RouteEngine:
       if ui_pid:
         if self.ui_pid and self.ui_pid != ui_pid[0]:
           cloudlog.warning("UI restarting, sending route")
-          # TODO: Send new route with delay of 5 seconds
+          threading.Timer(5.0, self.send_route).start()
         self.ui_pid = ui_pid[0]
 
     self.update_location()
