@@ -57,8 +57,7 @@ class TestCarPort(unittest.TestCase):
     self.assertEqual(len(matches), 1, f"Got more than one candidate: {matches}")
     # TODO: support specifying expected fingerprint with argparse
     self.assertEqual(list(matches)[0], self.CP.carFingerprint,
-                     f"Car mis-fingerprinted as {list(matches[0])}, expecting {self.CP.carFingerprint}")
-
+                     f"Car mis-fingerprinted as {list(matches)[0]}, expecting {self.CP.carFingerprint}")
 
   def test_blocked_msgs(self):
     for msg in self.all_msgs[::-1]:
@@ -102,7 +101,6 @@ class TestCarPort(unittest.TestCase):
                             "Route was not engaged for longer than {} seconds".format(MIN_ENGAGED_FRAMES * DT_CTRL))
 
   def test_steering_faults(self):
-    CS = None
     CC = None
     steering_faults = 0
     for msg in self.all_msgs:
@@ -117,6 +115,69 @@ class TestCarPort(unittest.TestCase):
         steering_faults += (CS.steerFaultTemporary or CS.steerFaultPermanent) and CC.latActive
 
     self.assertLess(steering_faults, 10, f"Route had {steering_faults} steering fault frames")
+
+  # def test_cancellation(self):
+  #   """
+  #   Tests that when openpilot wants to cancel, the car cancels relatively quickly
+  #   and doesn't re-engage within a few frames after cancellation
+  #   """
+  #
+  #   controlsState = None
+  #   prev_controlsState = None
+  #   CS = None
+  #   prev_cancel = False
+  #   cancel_t = None
+  #
+  #   for msg in self.all_msgs:
+  #     if msg.which() == 'controlsState':
+  #       prev_controlsState = controlsState
+  #       if msg.controlsState.cancel and not prev_controlsState.cancel:
+  #         cancel_t =
+  #       controlsState = msg.controlsState
+  #
+  #     elif msg.which() == 'carState':
+  #       if controlsState is None or prev_controlsState is None:
+  #         continue
+  #
+  #       CS = msg.carState
+  #       if controlsState.cancel and not prev_controlsState.cancel:
+  #         pass
+  #
+  #       prev_cancel =
+  #
+  #
+  #     elif msg.which() == 'can':
+  #       # Just for easy finding in PJ, can delete
+  #       if start_log_mono_time is None:
+  #         start_log_mono_time = msg.logMonoTime
+  #
+  #       cp.update_string(msg.as_builder().to_bytes())
+  #       if not cp.can_valid or CP is None or controlsState is None:
+  #         continue
+  #
+  #       enabled = cp.vl["SCC12"]["ACCMode"] != 0
+  #       gas_pressed = (cp.vl["E_EMS11"]["CR_Vcu_AccPedDep_Pos"] / 254.) > 0
+  #       cruise_buttons.append(cp.vl["CLU11"]["CF_Clu_CruiseSwState"])
+  #       cruise_main.append(cp.vl["CLU11"]["CF_Clu_CruiseSwMain"] != 0)
+  #
+  #       if prev_enabled is not None:
+  #         if not enabled and prev_enabled:
+  #           cancel_t = msg.logMonoTime
+  #           total_disengagements += 1
+  #           if gas_pressed:
+  #             total_gas_disengagements += 1
+  #         # On enabling rising edge and no buttons pressed recently
+  #         elif enabled and not prev_enabled:
+  #           #             print(cruise_buttons)
+  #           total_engagements += 1
+  #           if not any(cruise_main) and not any(cruise_buttons):
+  #             time_disengaged = (msg.logMonoTime - cancel_t) / 1e7  # converts to frames
+  #             reengage_times.append(time_disengaged)
+  #             if time_disengaged < 20:  # frames (*10 ms)
+  #               print('Possible re-engage: {} at {} s'.format(time_disengaged,
+  #                                                             (msg.logMonoTime - start_log_mono_time) / 1e+9))
+  #               print('Route: {}'.format(route))
+  #       prev_enabled = enabled
 
 
 if __name__ == "__main__":
