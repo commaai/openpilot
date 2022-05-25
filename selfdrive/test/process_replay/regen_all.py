@@ -24,4 +24,6 @@ if __name__ == "__main__":
     msg = "COPY THIS INTO test_processes.py"
     for seg in tqdm(p, desc="Generating segments", total=len(segments)):
       msg += "\n"+seg
+    print()
+    print()
     print(msg)

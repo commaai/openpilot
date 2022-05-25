@@ -18,7 +18,7 @@ from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
-#from selfdrive.test.update_ci_routes import upload_route
+from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
@@ -298,8 +298,8 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
 
   print("\n\n", "*"*30, "\n\n")
   print("New route:", relr, "\n")
-  #if upload:
-    #upload_route(relr)
+  if upload:
+    upload_route(relr)
   return relr
 
 
