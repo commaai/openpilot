@@ -241,7 +241,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   prime_type = std::atoi(params.get("PrimeType").c_str());
 
   // update timer
-  QTimer *timer = new QTimer(this);
+  timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
   timer->start(1000 / UI_FREQ);
 }
