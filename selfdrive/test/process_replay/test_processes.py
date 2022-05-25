@@ -196,6 +196,7 @@ if __name__ == "__main__":
            (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
           continue
 
+        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
         if args.update_refs:
           # reference logs might not exist if routes were just regenerated
           ref_log_path = get_url(*segment.rsplit("--", 1))
@@ -204,7 +205,6 @@ if __name__ == "__main__":
           ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
 
         lr = None if args.upload_only else lreaders[segment]
-        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
         pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, lr, ref_commit))
 
     results: Any = defaultdict(dict)
