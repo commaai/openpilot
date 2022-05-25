@@ -181,7 +181,7 @@ def graph_timestamps(timestamps, start_times, end_times, relative, title=""):
 
   t0 = find_t0(start_times)
   fig, ax = plt.subplots()
-  ax.set_xlim(0, 130 if relative else 550)
+  ax.set_xlim(0, 130 if relative else 750)
   ax.set_ylim(0, 17)
   ax.set_xlabel('Time (milliseconds)')
   colors = ['blue', 'green', 'red', 'yellow', 'purple']
