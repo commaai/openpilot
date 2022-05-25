@@ -25,8 +25,10 @@ class RouteEngine:
     self.sm = sm
     self.pm = pm
 
+    self.params = Params()
+
     # Get last gps position from params
-    self.last_position = coordinate_from_param("LastGPSPosition")
+    self.last_position = coordinate_from_param("LastGPSPosition", self.params)
     self.last_bearing = None
 
     self.gps_ok = False
@@ -45,7 +47,7 @@ class RouteEngine:
       self.mapbox_token = os.environ["MAPBOX_TOKEN"]
       self.mapbox_host = "https://api.mapbox.com"
     else:
-      self.mapbox_token = Api(Params().get("DongleId", encoding='utf8')).get_token()
+      self.mapbox_token = Api(self.params.get("DongleId", encoding='utf8')).get_token(expiry_hours=4 * 7 * 24)
       self.mapbox_host = "https://maps.comma.ai"
 
   def update(self):
@@ -77,7 +79,7 @@ class RouteEngine:
     if self.last_position is None:
       return
 
-    new_destination = coordinate_from_param("NavDestination")
+    new_destination = coordinate_from_param("NavDestination", self.params)
     if new_destination is None:
       self.clear_route()
       return
