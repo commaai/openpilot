@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 from collections import defaultdict
 
-from scipy import linalg
+from numpy.linalg import linalg
 
 from cereal import log, messaging
 from laika import AstroDog
