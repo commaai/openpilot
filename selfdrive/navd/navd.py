@@ -50,7 +50,7 @@ class RouteEngine:
     self.sm.update(0)
 
     if self.sm.updated["managerState"]:
-      ui_pid = [p.pid for p in self.sm["managerState"].processes if p.name == "ui"]
+      ui_pid = [p.pid for p in self.sm["managerState"].processes if p.name == "ui" and p.running]
       if ui_pid:
         if self.ui_pid and self.ui_pid != ui_pid[0]:
           cloudlog.warning("UI restarting, sending route")
