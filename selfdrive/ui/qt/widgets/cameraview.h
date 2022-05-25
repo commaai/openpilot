@@ -42,8 +42,6 @@ protected:
 
   bool zoomed_view;
   bool manual_update;
-  uint32_t latest_frame_id = 0;
-  uint32_t drawn_frame_id = 0;
   VisionBuf *latest_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   GLuint textures[3];

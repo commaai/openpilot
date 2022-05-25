@@ -221,7 +221,6 @@ void CameraViewWidget::paintGL() {
   for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
     if (frames[frame_idx].first == draw_frame_id) break;
   }
-  drawn_frame_id = frames[frame_idx].first;
   VisionBuf *frame = frames[frame_idx].second;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
