@@ -281,6 +281,7 @@ void MapWindow::wheelEvent(QWheelEvent *ev) {
 
   m_map->scaleBy(1 + factor, ev->pos() / MAP_SCALE);
   update();
+
   zoom_counter = PAN_TIMEOUT;
   ev->accept();
 }
@@ -306,7 +307,6 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
     // TODO: figure out why gesture centerPoint doesn't work
     m_map->scaleBy(gesture->scaleFactor(), {width() / 2.0 / MAP_SCALE, height() / 2.0 / MAP_SCALE});
     update();
-
     zoom_counter = PAN_TIMEOUT;
   }
 }
