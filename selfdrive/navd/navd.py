@@ -24,8 +24,10 @@ class RouteEngine:
     self.sm = sm
     self.pm = pm
 
+    # Get last gps position from params
+    self.last_position = coordinate_from_param("LastGPSPosition")
     self.last_bearing = None
-    self.last_position = None
+
     self.gps_ok = False
 
     self.nav_destination = None
@@ -41,6 +43,7 @@ class RouteEngine:
     else:
       self.mapbox_token = Api(Params().get("DongleId", encoding='utf8')).get_token()
       self.mapbox_host = "https://maps.comma.ai"
+
 
   def update(self):
     self.sm.update(0)
