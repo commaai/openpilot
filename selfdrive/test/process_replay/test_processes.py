@@ -58,9 +58,9 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr, ref_commit = data
-  result = None
+  res = None
   if not args.upload_only:
-    result, log_msgs = test_process(cfg, lr, ref_log_path, args.ignore_fields, args.ignore_msgs)
+    res, log_msgs = test_process(cfg, lr, ref_log_path, args.ignore_fields, args.ignore_msgs)
     # save logs so we can upload when updating refs
     save_log(cur_log_fn, log_msgs)
 
@@ -69,13 +69,13 @@ def run_test_process(data):
     assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
     upload_file(cur_log_fn, os.path.basename(cur_log_fn))
     os.remove(cur_log_fn)
-  return segment, cfg.proc_name, result
+  return (segment, cfg.proc_name, res)
 
 
 def get_logreader(segment):
   r, n = segment.rsplit("--", 1)
   lr = LogReader(get_url(r, n))
-  return segment, lr
+  return (segment, lr)
 
 
 def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
