@@ -17,7 +17,7 @@ from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, UP,
                                          maybe_update_radar_points, plot_lead,
                                          plot_model,
                                          pygame_modules_have_loaded)
-from cereal.visionipc.visionipc_pyx import VisionIpcClient, VisionStreamType # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc import VisionIpcClient, VisionStreamType
 
 os.environ['BASEDIR'] = BASEDIR
 

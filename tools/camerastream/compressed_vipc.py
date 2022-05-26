@@ -8,7 +8,7 @@ import multiprocessing
 import time
 
 import cereal.messaging as messaging
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 
 W, H = 1928, 1208
 V4L2_BUF_FLAG_KEYFRAME = 8
