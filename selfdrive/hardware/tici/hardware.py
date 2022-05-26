@@ -457,21 +457,22 @@ class Tici(HardwareBase):
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
+    # configure modem as data-centric
+    cmds = [
+      'AT+QNVW=5280,0,"0102000000000000"',
+      'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+      'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
+    ]
+    modem = self.get_modem()
+    for cmd in cmds:
+      try:
+        modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      except Exception:
+        pass
+
     # blue prime config
     if sim_id.startswith('8901410'):
-      cmds = [
-        'AT+QNVW=5280,0,"0102000000000000"',
-        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
-        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
-      ]
-      modem = self.get_modem()
-      for cmd in cmds:
-        try:
-          modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-        except Exception:
-          pass
       os.system('mmcli -m 0 --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
-
 
   def get_networks(self):
     r = {}
