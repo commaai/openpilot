@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
+import av
 import os
-os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
 import sys
 import argparse
 import numpy as np
@@ -8,7 +8,7 @@ import multiprocessing
 import time
 
 import cereal.messaging as messaging
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 
 W, H = 1928, 1208
 V4L2_BUF_FLAG_KEYFRAME = 8
@@ -16,6 +16,7 @@ V4L2_BUF_FLAG_KEYFRAME = 8
 def decoder(addr, sock_name, vipc_server, vst, nvidia):
   print("start decoder for %s" % sock_name)
   if nvidia:
+    os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
     sys.path += os.environ["LD_LIBRARY_PATH"].split(":")
     import PyNvCodec as nvc # pylint: disable=import-error
 
@@ -25,7 +26,6 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
     nvDwn_yuv = nvc.PySurfaceDownloader(W, H, nvc.PixelFormat.YUV420, 0)
     img_yuv = np.ndarray((H*W//2*3), dtype=np.uint8)
   else:
-    import av # pylint: disable=import-error
     codec = av.CodecContext.create("hevc", "r")
 
   os.environ["ZMQ"] = "1"
@@ -47,7 +47,9 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
         print("waiting for iframe")
         continue
       time_q.append(time.monotonic())
-      latency = ((evt.logMonoTime/1e9) - (evta.idx.timestampEof/1e9))*1000
+      network_latency = (int(time.time()*1e9) - evta.unixTimestampNanos)/1e6
+      frame_latency = ((evta.idx.timestampEof/1e9) - (evta.idx.timestampSof/1e9))*1000
+      process_latency = ((evt.logMonoTime/1e9) - (evta.idx.timestampEof/1e9))*1000
 
       # put in header (first)
       if not seen_iframe:
@@ -70,19 +72,19 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
           print("DROP SURFACE")
           continue
         assert len(frames) == 1
-        img_yuv = frames[0].to_ndarray(format=av.video.format.VideoFormat('yuv420p'))
+        img_yuv = frames[0].to_ndarray(format=av.video.format.VideoFormat('yuv420p')).flatten()
 
-      vipc_server.send(vst, img_yuv.flatten().data, cnt, cnt*1e9/20, cnt*1e9/20)
+      vipc_server.send(vst, img_yuv.data, cnt, int(time_q[0]*1e9), int(time.monotonic()*1e9))
       cnt += 1
 
       pc_latency = (time.monotonic()-time_q[0])*1000
       time_q = time_q[1:]
-      print("%2d %4d %.3f %.3f latency %6.2fms + %6.2f ms" % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, latency, pc_latency), len(evta.data), sock_name)
+      print("%2d %4d %.3f %.3f roll %6.2f ms latency %6.2f ms + %6.2f ms + %6.2f ms = %6.2f ms" % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, frame_latency, process_latency, network_latency, pc_latency, process_latency+network_latency+pc_latency ), len(evta.data), sock_name)
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description='Decode video streams and broacast on VisionIPC')
-  parser.add_argument("addr", help="Address of comma 3")
-  parser.add_argument('--nvidia', action='store_true', help='Use nvidia instead of ffmpeg')
+  parser = argparse.ArgumentParser(description="Decode video streams and broacast on VisionIPC")
+  parser.add_argument("addr", help="Address of comma three")
+  parser.add_argument("--nvidia", action="store_true", help="Use nvidia instead of ffmpeg")
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")
   args = parser.parse_args()
 

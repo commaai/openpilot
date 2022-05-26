@@ -12,8 +12,8 @@
 #include "selfdrive/ui/qt/maps/map_settings.h"
 #endif
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/util.h"
+#include "common/params.h"
+#include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/input.h"

@@ -1,4 +1,5 @@
 #pragma once
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 #include <DlContainer/IDlContainer.hpp>
 #include <DlSystem/DlError.hpp>
@@ -32,7 +33,8 @@ public:
   void execute();
 
 #ifdef USE_THNEED
-  Thneed *thneed = NULL;
+  std::unique_ptr<Thneed> thneed;
+  bool thneed_recorded = false;
 #endif
 
 private:

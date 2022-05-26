@@ -1,4 +1,4 @@
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 
 #include <sys/stat.h>
 #include <dirent.h>

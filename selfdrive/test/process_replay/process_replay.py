@@ -8,7 +8,6 @@ import signal
 from collections import namedtuple
 
 import capnp
-from tqdm import tqdm
 
 import cereal.messaging as messaging
 from cereal import car, log
@@ -17,6 +16,7 @@ from common.params import Params
 from common.timeout import Timeout
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.car_helpers import get_car, interfaces
+from selfdrive.test.process_replay.helpers import OpenpilotPrefix
 from selfdrive.manager.process import PythonProcess
 from selfdrive.manager.process_config import managed_processes
 
@@ -338,10 +338,11 @@ CONFIGS = [
 
 
 def replay_process(cfg, lr, fingerprint=None):
-  if cfg.fake_pubsubmaster:
-    return python_replay_process(cfg, lr, fingerprint)
-  else:
-    return cpp_replay_process(cfg, lr, fingerprint)
+  with OpenpilotPrefix():
+    if cfg.fake_pubsubmaster:
+      return python_replay_process(cfg, lr, fingerprint)
+    else:
+      return cpp_replay_process(cfg, lr, fingerprint)
 
 def setup_env(simulation=False):
   params = Params()
@@ -421,7 +422,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
     fsm.wait_for_update()
 
   log_msgs, msg_queue = [], []
-  for msg in tqdm(pub_msgs, disable=CI):
+  for msg in pub_msgs:
     if cfg.should_recv_callback is not None:
       recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
     else:
@@ -473,7 +474,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
       for s in sub_sockets:
         messaging.recv_one_or_none(sockets[s])
 
-      for i, msg in enumerate(tqdm(pub_msgs, disable=False)):
+      for i, msg in enumerate(pub_msgs):
         pm.send(msg.which(), msg.as_builder())
 
         resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)

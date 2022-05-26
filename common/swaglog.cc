@@ -2,7 +2,7 @@
 #define _GNU_SOURCE
 #endif
 
-#include "selfdrive/common/swaglog.h"
+#include "common/swaglog.h"
 
 #include <cassert>
 #include <cstring>
@@ -13,8 +13,8 @@
 #include <zmq.h>
 #include "json11.hpp"
 
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/version.h"
+#include "common/util.h"
+#include "common/version.h"
 #include "selfdrive/hardware/hw.h"
 
 class SwaglogState : public LogState {

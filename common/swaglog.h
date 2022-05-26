@@ -1,6 +1,6 @@
 #pragma once
 
-#include "selfdrive/common/timing.h"
+#include "common/timing.h"
 
 #define CLOUDLOG_DEBUG 10
 #define CLOUDLOG_INFO 20

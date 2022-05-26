@@ -291,9 +291,9 @@ jobs:
                         $UNIT_TEST selfdrive/hardware/tici && \
                         $UNIT_TEST selfdrive/modeld && \
                         $UNIT_TEST tools/lib/tests && \
+                        ./common/tests/test_util && \
+                        ./common/tests/test_swaglog && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
-                        ./selfdrive/common/tests/test_util && \
-                        ./selfdrive/common/tests/test_swaglog && \
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./selfdrive/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
@@ -333,7 +333,7 @@ jobs:
     - name: Run replay
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py && \
+                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         coverage xml"
     - name: Print diff
       if: always()
@@ -348,7 +348,7 @@ jobs:
       if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py --upload-only"
+                        CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
 

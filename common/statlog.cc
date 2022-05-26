@@ -2,8 +2,8 @@
 #define _GNU_SOURCE
 #endif
 
-#include "selfdrive/common/statlog.h"
-#include "selfdrive/common/util.h"
+#include "common/statlog.h"
+#include "common/util.h"
 
 #include <stdio.h>
 #include <mutex>

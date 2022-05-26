@@ -1,11 +1,11 @@
-#include "selfdrive/common/gpio.h"
+#include "common/gpio.h"
 
 #include <fcntl.h>
 #include <unistd.h>
 
 #include <cstring>
 
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 
 // We assume that all pins have already been exported on boot,
 // and that we have permission to write to them.
