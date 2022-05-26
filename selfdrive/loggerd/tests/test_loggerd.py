@@ -20,7 +20,7 @@ from selfdrive.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.version import get_version
 from tools.lib.logreader import LogReader
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.transformations.camera import eon_f_frame_size, tici_f_frame_size, \
                                           eon_d_frame_size, tici_d_frame_size, tici_e_frame_size
 
