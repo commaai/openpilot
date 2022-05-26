@@ -267,7 +267,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   return seg_path
 
 
-def regen_and_save(route, sidx, upload=False, use_route_meta=False, outdir=FAKEDATA):
+def regen_and_save(route, sidx, upload=False, use_route_meta=False, outdir=FAKEDATA, disable_tqdm=False):
   if use_route_meta:
     r = Route(args.route)
     lr = LogReader(r.log_paths()[args.seg])
@@ -275,7 +275,7 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False, outdir=FAKED
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
-  rpath = regen_segment(lr, {'roadCameraState': fr}, outdir=outdir)
+  rpath = regen_segment(lr, {'roadCameraState': fr}, outdir=outdir, disable_tqdm=disable_tqdm)
 
   # compress raw rlog before uploading
   with open(os.path.join(rpath, "rlog"), "rb") as f:
