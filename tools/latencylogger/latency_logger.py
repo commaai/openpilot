@@ -185,6 +185,8 @@ def graph_timestamps(timestamps, start_times, end_times, relative, offset_servic
   ax.set_ylim(0, 17)
   ax.set_xlabel('Time (milliseconds)')
   colors = ['blue', 'green', 'red', 'yellow', 'purple']
+  offsets = [[0, (-5*j) if offset_services else 0] for j in range(len(SERVICES))]
+  height = 0.3 if offset_services else 0.9
   assert len(colors) == len(SERVICES), 'Each service needs a color'
 
   points = {"x": [], "y": [], "labels": []}
@@ -201,11 +203,7 @@ def graph_timestamps(timestamps, start_times, end_times, relative, offset_servic
           points['x'].append((event[1]-t0)/1e6)
           points['y'].append(i)
           points['labels'].append(event[0])
-    offsets = [[0, -5*j] for j in range(len(service_bars))]
-    if offset_services:
-      ax.broken_barh(service_bars, (i-0.15, 0.3), facecolors=(colors), alpha=0.5, offsets=offsets)
-    else:
-      ax.broken_barh(service_bars, (i-0.45, 0.9), facecolors=(colors), alpha=0.5)
+    ax.broken_barh(service_bars, (i-height/2, height), facecolors=(colors), alpha=0.5, offsets=offsets)
 
   scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
