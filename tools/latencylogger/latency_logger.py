@@ -227,7 +227,7 @@ if __name__ == "__main__":
   parser.add_argument("--relative", action="store_true", help="Make timestamps relative to the start of each frame")
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("--plot", action="store_true", help="If a plot should be generated")
-  parser.add_argument("--offset", action="store_true", help="Offset service to better visualize overlap")
+  parser.add_argument("--offset", action="store_true", help="Vertically offset service to better visualize overlap")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route to print")
 
   if len(sys.argv) == 1:
