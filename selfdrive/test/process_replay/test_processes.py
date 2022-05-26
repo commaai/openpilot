@@ -57,7 +57,7 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 
 def run_test_process(data):
-  segment, cfg, args, cur_log_fn, ref_log_path, lr, ref_commit = data
+  segment, cfg, args, cur_log_fn, ref_log_path, lr = data
   res = None
   if not args.upload_only:
     res, log_msgs = test_process(cfg, lr, ref_log_path, args.ignore_fields, args.ignore_msgs)
@@ -204,7 +204,7 @@ if __name__ == "__main__":
           ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
 
         lr = None if args.upload_only else lreaders[segment]
-        pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, lr, ref_commit))
+        pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, lr))
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
