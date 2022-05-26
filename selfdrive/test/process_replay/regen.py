@@ -24,8 +24,6 @@ from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
-disable_tqdm = False
-
 def replay_panda_states(s, msgs):
   pm = messaging.PubMaster([s, 'peripheralState'])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
@@ -119,7 +117,7 @@ def replay_service(s, msgs):
       rk.keep_time()
 
 
-def replay_cameras(lr, frs):
+def replay_cameras(lr, frs, disable_tqdm=False):
   eon_cameras = [
     ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
     ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
@@ -178,11 +176,7 @@ def replay_cameras(lr, frs):
   return vs, p
 
 
-def regen_segment(lr, frs=None, outdir=FAKEDATA):
-  if "OPENPILOT_PREFIX" in os.environ:
-    global disable_tqdm
-    disable_tqdm = True
-
+def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   lr = list(lr)
   if frs is None:
     frs = dict()
@@ -212,7 +206,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
     elif msg.which() == 'liveCalibration':
       params.put("CalibrationParams", msg.as_builder().to_bytes())
 
-  vs, cam_procs = replay_cameras(lr, frs)
+  vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
 
   fake_daemons = {
     'sensord': [
