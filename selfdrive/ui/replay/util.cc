@@ -257,8 +257,7 @@ std::string decompressBZ2(const std::string &in, std::atomic<bool> *abort) {
 }
 
 std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool> *abort) {
-  if (in_size < 2) return {};
-  if ((char) in[0] != 'B' || (char) in[1] != 'Z') return std::string((const char *) in, in_size);
+  if (in_size == 0) return {};
 
   bz_stream strm = {};
   int bzerror = BZ2_bzDecompressInit(&strm, 0, 0);

@@ -55,7 +55,8 @@ bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool loca
 }
 
 bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abort) {
-  raw_ = decompressBZ2(data, size, abort);
+  bool compressed_data = (size > 1) && (*(short int*)data == 0x425A);
+  raw_ = compressed_data ? decompressBZ2(data, size, abort) : std::string((const char *) data, size);
   if (raw_.empty()) {
     if (!(abort && *abort)) {
       rWarning("failed to decompress log");
