@@ -1,6 +1,6 @@
-V. 0.8.14-GM-10 (2022-05-22)
+Version 0.8.15-GM-0.0.11 (2022-05-26)
 ========================
- * Warning: webcam support removed by comma; hopefully will be restored
+ * Latest from commaai/master as of 4pm (2022-04-26T20:00:00.000Z)
  * Comma removed Comma 2 support from master; C2 will get backported featured in the future
  * Further improved Bolt Tunining thanks to Darknight11
  * Reversed CC main logic with Pedal
@@ -30,7 +30,10 @@ V. 0.8.14-GM-10 (2022-05-22)
  * TODO: Pedal low-speed tuning
  * TODO: Auto-detection of L-mode zero-point
 
-Version 0.8.14 (2022-05-30)
+Version 0.8.15 (20XX-XX-XX)
+========================
+
+Version 0.8.14 (2022-06-01)
 ========================
  * New driving model
    * Bigger model, using both of comma three's road-facing cameras
