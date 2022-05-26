@@ -19,17 +19,18 @@ optional arguments:
   --relative            Make timestamps relative to the start of each frame (default: False)
   --demo                Use the demo route instead of providing one (default: False)
   --plot                If a plot should be generated (default: False)
+  --offset              Offset service to better visualize overlap (default: False)
 ```
 To timestamp an event, use `LOGT("msg")` in c++ code or `cloudlog.timestamp("msg")` in python code. If the print is warning for frameId assignment ambiguity, use `LOGT(frameId ,"msg")`.
 
 ## Examples
-Plotting with relative starts each process at time=0 and gives a nice overview. Timestamps are visualized as diamonds. The opacity and offset allows for visualization of overlapping services.
-![relplot](https://user-images.githubusercontent.com/42323981/170109389-182ed5a9-7542-48e1-865c-33233f19dccc.png)
 
+Timestamps are visualized as diamonds
 
-Plotting without relative provides info about the frames relative time.
-![absplot](https://user-images.githubusercontent.com/42323981/170109374-c01a81d5-061c-478b-abcf-2eba8c42352e.png)
-
+|  | Relative  | Absolute |
+| ------------- | ------------- | ------------- |
+| Inline | ![inrel](https://user-images.githubusercontent.com/42323981/170559939-465df3b1-bf87-46d5-b5ee-5cc87dc49470.png) | ![inabs](https://user-images.githubusercontent.com/42323981/170559985-a82f87e7-82c4-4e48-a348-4221568dd589.png) |
+| Offset | ![offrel](https://user-images.githubusercontent.com/42323981/170559854-93fba90f-acc4-4d08-b317-d3f8fc649ea8.png) | ![offabs](https://user-images.githubusercontent.com/42323981/170559782-06ed5599-d4e3-4701-ad78-5c1eec6cb61e.png) |
 
 Printed timestamps of a frame with internal durations.
 ```
