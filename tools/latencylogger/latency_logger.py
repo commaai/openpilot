@@ -175,17 +175,18 @@ def print_timestamps(timestamps, durations, start_times, relative):
       for event, time in durations[frame_id][service]:
         print("    "+'%-53s%-53s' %(event, str(time*1000)))
 
-def graph_timestamps(timestamps, start_times, end_times, relative, title=""):
+def graph_timestamps(timestamps, start_times, end_times, relative, offset_services=False, title=""):
   # mpld3 doesn't convert properly to D3 font sizes
   plt.rcParams.update({'font.size': 18})
 
   t0 = find_t0(start_times)
   fig, ax = plt.subplots()
-  ax.set_xlim(0, 150 if relative else 750)
-  ax.set_ylim(0, 15)
+  ax.set_xlim(0, 130 if relative else 750)
+  ax.set_ylim(0, 17)
   ax.set_xlabel('Time (milliseconds)')
-  ax.set_ylabel('Frame ID')
   colors = ['blue', 'green', 'red', 'yellow', 'purple']
+  offsets = [[0, -5*j] for j in range(len(SERVICES))] if offset_services else None
+  height = 0.3 if offset_services else 0.9
   assert len(colors) == len(SERVICES), 'Each service needs a color'
 
   points = {"x": [], "y": [], "labels": []}
@@ -202,16 +203,16 @@ def graph_timestamps(timestamps, start_times, end_times, relative, title=""):
           points['x'].append((event[1]-t0)/1e6)
           points['y'].append(i)
           points['labels'].append(event[0])
-    ax.broken_barh(service_bars, (i-0.45, 0.9), facecolors=(colors), alpha=0.5)
+    ax.broken_barh(service_bars, (i-height/2, height), facecolors=(colors), alpha=0.5, offsets=offsets)
 
   scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
   mpld3.plugins.connect(fig, tooltip)
 
   plt.title(title)
+  # Set size relative window size is not trivial: https://github.com/mpld3/mpld3/issues/65
   fig.set_size_inches(18, 9)
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
-
   return fig
 
 def get_timestamps(lr):
@@ -226,6 +227,7 @@ if __name__ == "__main__":
   parser.add_argument("--relative", action="store_true", help="Make timestamps relative to the start of each frame")
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("--plot", action="store_true", help="If a plot should be generated")
+  parser.add_argument("--offset", action="store_true", help="Vertically offset service to better visualize overlap")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route to print")
 
   if len(sys.argv) == 1:
@@ -239,4 +241,4 @@ if __name__ == "__main__":
   data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
   if args.plot:
-    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative, r))
+    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative, offset_services=args.offset, title=r))
