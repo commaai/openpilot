@@ -49,6 +49,7 @@ segments = [
   ("MAZDA", "fakedata|2022-01-20--18-09-32--0"),
 ]
 
+
 # dashcamOnly makes don't need to be tested until a full port is done
 excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
 
@@ -180,9 +181,14 @@ if __name__ == "__main__":
 
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
+      download_segments = segments.copy()
+      for car_brand, segment in segments:
+        if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
+            (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
+          download_segments.remove((car_brand, segment))
       lreaders: Any = {}
-      p1 = pool.map(get_logreader, [seg for car, seg in segments])
-      for (segment, lr) in tqdm(p1, desc="Getting Logs", total=len(segments)):
+      p1 = pool.map(get_logreader, [seg for car, seg in download_segments])
+      for (segment, lr) in tqdm(p1, desc="Getting Logs", total=len(download_segments)):
         lreaders[segment] = lr
 
     pool_args: Any = []
