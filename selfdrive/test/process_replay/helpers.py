@@ -15,6 +15,7 @@ class OpenpilotPrefix(object):
       os.mkdir(self.msgq_path)
     except FileExistsError:
       pass
+    return self.prefix
 
   def __exit__(self, exc_type, exc_obj, exc_tb):
     symlink_path = Params().get_param_path()
