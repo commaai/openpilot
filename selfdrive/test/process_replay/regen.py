@@ -179,6 +179,10 @@ def replay_cameras(lr, frs):
 
 
 def regen_segment(lr, frs=None, outdir=FAKEDATA):
+  if "OPENPILOT_PREFIX" in os.environ:
+    global disable_tqdm
+    disable_tqdm = True
+
   lr = list(lr)
   if frs is None:
     frs = dict()
@@ -269,7 +273,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   return seg_path
 
 
-def regen_and_save(route, sidx, upload=False, use_route_meta=False, car=None):
+def regen_and_save(route, sidx, upload=False, use_route_meta=False, outdir=FAKEDATA):
   if use_route_meta:
     r = Route(args.route)
     lr = LogReader(r.log_paths()[args.seg])
@@ -277,15 +281,7 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False, car=None):
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
-
-  if "OPENPILOT_PREFIX" in os.environ:
-    global disable_tqdm
-    disable_tqdm = True
-    rpath = regen_segment(lr, {'roadCameraState': fr}, os.path.join(FAKEDATA, car))
-  else:
-    rpath = regen_segment(lr, {'roadCameraState': fr})
-
-
+  rpath = regen_segment(lr, {'roadCameraState': fr}, outdir=outdir)
 
   # compress raw rlog before uploading
   with open(os.path.join(rpath, "rlog"), "rb") as f:
