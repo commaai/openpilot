@@ -11,7 +11,7 @@ os.environ["USE_WEBCAM"] = "1"
 import cereal.messaging as messaging
 from cereal import car
 from cereal.services import service_list
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size

@@ -57,13 +57,13 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 
 def run_test_process(data):
-  segment, cfg, args, cur_log_fn, lr, ref_commit = data
+  segment, cfg, args, cur_log_fn, ref_log_path, lr = data
   res = None
   if not args.upload_only:
-    ref_log_fn = os.path.join(PROC_REPLAY_DIR, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
-    res, log_msgs = test_process(cfg, lr, ref_log_fn, args.ignore_fields, args.ignore_msgs)
+    res, log_msgs = test_process(cfg, lr, ref_log_path, args.ignore_fields, args.ignore_msgs)
     # save logs so we can upload when updating refs
     save_log(cur_log_fn, log_msgs)
+
   if args.update_refs or args.upload_only:
     print(f'Uploading: {os.path.basename(cur_log_fn)}')
     assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
@@ -78,13 +78,12 @@ def get_logreader(segment):
   return (segment, lr)
 
 
-def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
+def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
     ignore_msgs = []
 
-  ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
   ref_log_msgs = list(LogReader(ref_log_path))
 
   log_msgs = replay_process(cfg, lr)
@@ -92,7 +91,7 @@ def test_process(cfg, lr, ref_log_fn, ignore_fields=None, ignore_msgs=None):
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
     if not check_enabled(log_msgs):
-      segment = ref_log_fn.split("/")[-1].split("_")[0]
+      segment = os.path.basename(ref_log_path).split("/")[-1].split("_")[0]
       raise Exception(f"Route never enabled: {segment}")
 
   try:
@@ -191,13 +190,21 @@ if __name__ == "__main__":
       if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
          (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
         continue
+
       for cfg in CONFIGS:
         if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
            (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
           continue
+
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+        if args.update_refs:  # reference logs will not exist if routes were just regenerated
+          ref_log_path = get_url(*segment.rsplit("--", 1))
+        else:
+          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+          ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
+
         lr = None if args.upload_only else lreaders[segment]
-        pool_args.append((segment, cfg, args, cur_log_fn, lr, ref_commit))
+        pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, lr))
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
@@ -206,20 +213,19 @@ if __name__ == "__main__":
         results[segment][proc] = result
 
   diff1, diff2, failed = format_diff(results, ref_commit)
-  if not args.upload_only:
+  if not upload:
     with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
       f.write(diff2)
     print(diff1)
 
     if failed:
       print("TEST FAILED")
-      if not args.update_refs:
-        print("\n\nTo push the new reference logs for this commit run:")
-        print("./test_processes.py --upload-only")
+      print("\n\nTo push the new reference logs for this commit run:")
+      print("./test_processes.py --upload-only")
     else:
       print("TEST SUCCEEDED")
 
-  if upload:
+  else:
     with open(REF_COMMIT_FN, "w") as f:
       f.write(cur_commit)
     print(f"\n\nUpdated reference logs for commit: {cur_commit}")
