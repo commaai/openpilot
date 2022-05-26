@@ -91,7 +91,7 @@ def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
     if not check_enabled(log_msgs):
-      segment = ref_log_fn.split("/")[-1].split("_")[0]
+      segment = os.path.basename(ref_log_path).split("/")[-1].split("_")[0]
       raise Exception(f"Route never enabled: {segment}")
 
   try:
