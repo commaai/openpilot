@@ -185,7 +185,7 @@ def graph_timestamps(timestamps, start_times, end_times, relative, offset_servic
   ax.set_ylim(0, 17)
   ax.set_xlabel('Time (milliseconds)')
   colors = ['blue', 'green', 'red', 'yellow', 'purple']
-  offsets = [[0, (-5*j) if offset_services else 0] for j in range(len(SERVICES))]
+  offsets = [[0, -5*j] for j in range(len(SERVICES))] if offset_services else None
   height = 0.3 if offset_services else 0.9
   assert len(colors) == len(SERVICES), 'Each service needs a color'
 
