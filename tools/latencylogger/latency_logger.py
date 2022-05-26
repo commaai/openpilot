@@ -175,7 +175,7 @@ def print_timestamps(timestamps, durations, start_times, relative):
       for event, time in durations[frame_id][service]:
         print("    "+'%-53s%-53s' %(event, str(time*1000)))
 
-def graph_timestamps(timestamps, start_times, end_times, relative, title=""):
+def graph_timestamps(timestamps, start_times, end_times, relative, offset_services=False, title=""):
   # mpld3 doesn't convert properly to D3 font sizes
   plt.rcParams.update({'font.size': 18})
 
@@ -202,7 +202,10 @@ def graph_timestamps(timestamps, start_times, end_times, relative, title=""):
           points['y'].append(i)
           points['labels'].append(event[0])
     offsets = [[0, -5*j] for j in range(len(service_bars))]
-    ax.broken_barh(service_bars, (i-0.15, 0.3), facecolors=(colors), alpha=0.5, offsets=offsets)
+    if offset_services:
+      ax.broken_barh(service_bars, (i-0.15, 0.3), facecolors=(colors), alpha=0.5, offsets=offsets)
+    else:
+      ax.broken_barh(service_bars, (i-0.45, 0.9), facecolors=(colors), alpha=0.5)
 
   scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
@@ -226,6 +229,7 @@ if __name__ == "__main__":
   parser.add_argument("--relative", action="store_true", help="Make timestamps relative to the start of each frame")
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("--plot", action="store_true", help="If a plot should be generated")
+  parser.add_argument("--offset", action="store_true", help="Offset service to better visualize overlap")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route to print")
 
   if len(sys.argv) == 1:
@@ -239,4 +243,4 @@ if __name__ == "__main__":
   data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
   if args.plot:
-    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative, r))
+    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative, offset_services=args.offset, title=r))
