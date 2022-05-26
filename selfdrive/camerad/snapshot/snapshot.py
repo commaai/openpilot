@@ -7,7 +7,7 @@ from PIL import Image
 from typing import List
 
 import cereal.messaging as messaging
-from cereal.visionipc.visionipc_pyx import VisionIpcClient, VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc import VisionIpcClient, VisionStreamType
 from common.params import Params
 from common.realtime import DT_MDL
 from selfdrive.hardware import TICI, PC
