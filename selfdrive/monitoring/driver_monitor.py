@@ -113,7 +113,6 @@ class DriverBlink():
   def __init__(self):
     self.left_blink = 0.
     self.right_blink = 0.
-    self.cfactor = 1.
 
 class DriverStatus():
   def __init__(self, settings=DRIVER_MONITOR_SETTINGS()):
@@ -198,7 +197,7 @@ class DriverStatus():
        yaw_error > self.settings._POSE_YAW_THRESHOLD*self.pose.cfactor_yaw:
       distracted_types.append(DistractedType.DISTRACTED_POSE)
 
-    if (self.blink.left_blink + self.blink.right_blink)*0.5 > self.settings._BLINK_THRESHOLD*self.blink.cfactor:
+    if (self.blink.left_blink + self.blink.right_blink)*0.5 > self.settings._BLINK_THRESHOLD:
       distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
     if self.ee1_calibrated:
@@ -215,13 +214,7 @@ class DriverStatus():
     return distracted_types
 
   def set_policy(self, model_data, car_speed):
-    ep = min(model_data.meta.engagedProb, 0.8) / 0.8 # engaged prob
     bp = model_data.meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
-    # TODO: retune adaptive blink
-    self.blink.cfactor = interp(ep, [0, 0.5, 1],
-                                           [self.settings._BLINK_THRESHOLD,
-                                            self.settings._BLINK_THRESHOLD,
-                                            self.settings._BLINK_THRESHOLD]) / self.settings._BLINK_THRESHOLD
     k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
     bp_normal = max(min(bp / k1, 0.5),0)
     self.pose.cfactor_pitch = interp(bp_normal, [0, 0.5],
