@@ -57,7 +57,6 @@ class TestCarModelBase(unittest.TestCase):
     if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
       raise unittest.SkipTest
 
-    print(cls.test_route, cls.car_model)
     if cls.test_route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
