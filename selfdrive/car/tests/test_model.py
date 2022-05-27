@@ -24,11 +24,11 @@ def create_test_models_tests(routes: List[Tuple[str, TestRoute]], ci=False) -> u
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Test any route against common issues with a new car port. "
+  parser = argparse.ArgumentParser(description="Test any route against common issues with a new car port. " +
                                                "Uses selfdrive/car/tests/test_models.py")
-  parser.add_argument("route", nargs='?', help="Specify route to run tests on")
+  parser.add_argument("route", nargs="?", help="Specify route to run tests on")
   parser.add_argument("--car", help="Specify car model for test route")
-  parser.add_argument("--segment", type=int, nargs='?', help="Specify segment of route to test")
+  parser.add_argument("--segment", type=int, nargs="?", help="Specify segment of route to test")
   args = parser.parse_args()
   if len(sys.argv) == 1:
     parser.print_help()
