@@ -49,7 +49,6 @@ segments = [
   ("MAZDA", "fakedata|2022-01-20--18-09-32--0"),
 ]
 
-
 # dashcamOnly makes don't need to be tested until a full port is done
 excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
 
