@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-import os
 import unittest
 from datetime import datetime
 
+from laika.astro_dog import EphemData
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
-from laika.raw_gnss import GNSSMeasurement
+from laika.raw_gnss import GNSSMeasurement, read_raw_ublox
 from selfdrive.locationd.laikad import Laikad, create_measurement_msg
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
-
-os.environ["FILEREADER_CACHE"] = "1"
 
 
 def get_log(segs=range(0)):
@@ -23,7 +21,7 @@ def get_log(segs=range(0)):
 def verify_messages(lr, laikad):
   good_msgs = []
   for m in lr:
-    msg = laikad.process_ublox_msg(m.ubloxGnss, laikad.astro_dog, m.logMonoTime)
+    msg = laikad.process_ublox_msg(m.ubloxGnss, m.logMonoTime)
     if msg is not None and len(msg.gnssMeasurements.correctedMeasurements) > 0:
       good_msgs.append(msg)
   return good_msgs
@@ -45,17 +43,25 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(msg.constellationId, 'gps')
 
   def test_laika_online(self):
-    # Set to offline forces to use ephemeris messages
-    laikad = Laikad(use_internet=True)
+    laikad = Laikad(auto_update=True, pull_ephems=(EphemData.ORBIT,))
     correct_msgs = verify_messages(self.logs, laikad)
 
     correct_msgs_expected = 560
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
+  def test_laika_online_nav_only(self):
+    laikad = Laikad(auto_update=True, pull_ephems=(EphemData.NAV,))
+    correct_msgs = verify_messages(self.logs, laikad)
+
+    correct_msgs_expected = 560
+    self.assertEqual(correct_msgs_expected, len(correct_msgs))
+    self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
+
+
   def test_laika_offline(self):
     # Set to offline forces to use ephemeris messages
-    laikad = Laikad(use_internet=False)
+    laikad = Laikad(auto_update=False)
     correct_msgs = verify_messages(self.logs, laikad)
 
     self.assertEqual(256, len(correct_msgs))
@@ -63,7 +69,7 @@ class TestLaikad(unittest.TestCase):
 
   def test_laika_offline_ephem_at_start(self):
     # Test offline but process ephemeris msgs of segment first
-    laikad = Laikad(use_internet=False)
+    laikad = Laikad(auto_update=False, pull_ephems=(EphemData.NAV,))
     ephemeris_logs = [m for m in self.logs if m.ubloxGnss.which() == 'ephemeris']
     correct_msgs = verify_messages(ephemeris_logs+self.logs, laikad)
 
@@ -71,14 +77,30 @@ class TestLaikad(unittest.TestCase):
     self.assertGreaterEqual(554, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
   def test_laika_get_orbits(self):
-    os.environ["FILEREADER_CACHE"] = "1"
-    os.environ["NASA_USERNAME"] = "gkoning"
-    os.environ["NASA_PASSWORD"] = "u&+9A3L+RA6K6z8"
-    laikad = Laikad(use_internet=False)
-    laikad.fetch_orbits()
-    print(laikad.astro_dog.orbits.keys())
+    laikad = Laikad(auto_update=False)
+    first_gps_time = None
+    for m in self.logs:
+      if m.ubloxGnss.which == 'measurementReport':
+        new_meas = read_raw_ublox(m.ubloxGnss.measurementReport)
+        if len(new_meas) != 0:
+          first_gps_time = new_meas[0].recv_time
+          break
+    # Pretend thread has loaded the orbits on startup by using the time of the first gps message.
+    laikad.fetch_orbits(first_gps_time)
+
+    self.assertEqual(52, len(laikad.astro_dog.orbits.keys()))
+
+    correct_msgs = verify_messages(self.logs, laikad)
+    correct_msgs_expected = 560
+    self.assertEqual(correct_msgs_expected, len(correct_msgs))
+    self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
+
+  def test_laika_get_orbits2(self):
+    laikad = Laikad(auto_update=False)
+    # Pretend thread has loaded the orbits on startup by using the time of the first gps message.
+    laikad.fetch_orbits(GPSTime.from_datetime(datetime.utcnow()))
     print(laikad.latest_epoch_fetched.as_datetime())
 
-
+    print(min(laikad.astro_dog.orbits[list(laikad.astro_dog.orbits.keys())[0]], key=lambda e: e.epoch).epoch.as_datetime())
 if __name__ == "__main__":
   unittest.main()
