@@ -50,19 +50,9 @@ def set_long_tune(tune, name):
 
 
 ###### LAT ######
-def set_lat_tune(tune, name, MAX_LAT_ACCEL=2.5, FRICTION=.1):
+def set_lat_tune(tune, name, MAX_LAT_ACCEL=2.5, FRICTION=.1, use_steering_angle=True):
   if name == LatTunes.TORQUE:
     set_torque_tune(tune, MAX_LAT_ACCEL, FRICTION)
-  elif name == LatTunes.INDI_PRIUS:
-    tune.init('indi')
-    tune.indi.innerLoopGainBP = [0.]
-    tune.indi.innerLoopGainV = [4.0]
-    tune.indi.outerLoopGainBP = [0.]
-    tune.indi.outerLoopGainV = [3.0]
-    tune.indi.timeConstantBP = [0.]
-    tune.indi.timeConstantV = [1.0]
-    tune.indi.actuatorEffectivenessBP = [0.]
-    tune.indi.actuatorEffectivenessV = [1.0]
   elif 'PID' in str(name):
     tune.init('pid')
     tune.pid.kiBP = [0.0]
