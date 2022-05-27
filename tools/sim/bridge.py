@@ -15,7 +15,7 @@ import pyopencl.array as cl_array
 
 import cereal.messaging as messaging
 from cereal import log
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.basedir import BASEDIR
 from common.numpy_fast import clip
 from common.params import Params
