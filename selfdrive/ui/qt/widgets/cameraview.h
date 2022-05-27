@@ -22,7 +22,39 @@ public:
   ~CameraViewWidget();
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
-  void setFrameId(int frame_id) { draw_frame_id = frame_id; }
+  void setFrameId(int frame_id) {
+    if (!frames.empty()) {
+//      qDebug() << frames[frames.size() - 1].first;
+      if ((frame_id - frames[frames.size() - 1].first) >= 0) {
+//        frame_offset = frames.size() - (frames[frames.size() - 1].first - frame_id) - 1;  // using end
+        frame_offset = frame_id - frames[0].first;  // using start
+        frame_offset = std::clamp((int)frame_offset, 0, (int)frames.size() - 1);
+        draw_frame_id = frame_id - 1;
+        qDebug() << "set frame_offset to" << frame_offset;
+      } else if ((frame_id - frames[frames.size() - 1].first) < 0) {
+        frame_offset = frames.size() - (frames[frames.size() - 1].first - frame_id) - 1;  // using end
+//        frame_offset = frame_id - frames[0].first;  // using start
+        frame_offset = std::clamp((int)frame_offset, 0, (int)frames.size() - 1);
+        qDebug() << "set frame_offset to" << frame_offset;
+      }
+    }
+
+
+
+//    if (frame_id != prev_frame_id) {
+////      frame_offset = frames.empty() ? 0 : std::min((int)prev_frame_id - (int)frames[0].first, (int)frames.size() - 1);
+////      frame_offset = frames[frames.size() - 1].first - frame_id;
+//      if (!frames.empty()) {
+////        frame_offset = frames.size() - (frames[frames.size() - 1].first - frame_id) - 1;  // using end
+//        frame_offset = frame_id - frames[0].first;  // using start
+//        frame_offset = std::clamp((int)frame_offset, 0, (int)frames.size() - 1);
+//      }
+//      draw_frame_id = frame_id - 1;
+//    }
+//    draw_frame_id = frame_id;
+    draw_frame_id += 1;
+    prev_frame_id = frame_id;
+  }
 
 signals:
   void clicked();
@@ -54,6 +86,9 @@ protected:
 
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
   uint32_t draw_frame_id = 0;
+  uint32_t prev_frame_id = 0;
+  uint32_t prev_draw_frame_id = 0;
+  int frame_offset = 0;
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
