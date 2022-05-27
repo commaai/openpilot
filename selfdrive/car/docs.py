@@ -34,7 +34,7 @@ def get_all_car_info() -> List[CarInfo]:
       fingerprint = {0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}}
       CP = interfaces[model][0].get_params(model, fingerprint=fingerprint, disable_radar=True)
 
-      if CP.dashcamOnly:
+      if CP.dashcamOnly or car_info is None:
         continue
 
       # A platform can include multiple car models

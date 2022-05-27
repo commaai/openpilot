@@ -1,18 +1,18 @@
 #!/usr/bin/bash
 
-nmcli connection modify --temporary lte gsm.home-only yes
-nmcli connection modify --temporary lte gsm.auto-config yes
-nmcli connection modify --temporary lte connection.autoconnect-retries 20
+#nmcli connection modify --temporary lte gsm.home-only yes
+#nmcli connection modify --temporary lte gsm.auto-config yes
+#nmcli connection modify --temporary lte connection.autoconnect-retries 20
+sudo nmcli connection reload
 
 sudo systemctl stop ModemManager
-
-# full restart
-#/usr/comma/lte/lte.sh stop_blocking
-#sudo systemctl restart lte
-
-# quick shutdown
-/usr/comma/lte/lte.sh stop
 nmcli con down lte
+nmcli con down magenta-prime
 
+# power cycle modem
+/usr/comma/lte/lte.sh stop_blocking
+/usr/comma/lte/lte.sh start
+
+sudo systemctl restart NetworkManager
 #sudo systemctl restart ModemManager
 sudo ModemManager --debug

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
@@ -31,8 +31,9 @@ class ChryslerCarInfo(CarInfo):
   harness: Enum = Harness.fca
 
 
-CAR_INFO: Dict[str, Union[ChryslerCarInfo, List[ChryslerCarInfo]]] = {
+CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.PACIFICA_2017_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2017-18"),
+  CAR.PACIFICA_2018_HYBRID: None,  # same platforms
   CAR.PACIFICA_2019_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2019-21"),
   CAR.PACIFICA_2018: ChryslerCarInfo("Chrysler Pacifica 2017-18"),
   CAR.PACIFICA_2020: ChryslerCarInfo("Chrysler Pacifica 2020"),
