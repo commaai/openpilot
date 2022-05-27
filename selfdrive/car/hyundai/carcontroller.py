@@ -104,22 +104,18 @@ class CarController:
             self.last_button_frame = self.frame
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
-        accel = actuators.accel
-        jerk = 0
+        self.accel = actuators.accel
 
-        if CC.longActive:
-          jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
-          if accel < 0:
-            accel = interp(accel - CS.out.aEgo, [-1.0, -0.5], [2 * accel, accel])
+        if CC.longActive and self.accel < 0:
+          self.accel = interp(self.accel - CS.out.aEgo, [-1.0, -0.5], [2 * self.accel, self.accel])
 
-        accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+        self.accel = clip(self.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
         lead_visible = False
         stopping = actuators.longControlState == LongCtrlState.stopping
         set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
-        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2), lead_visible,
-                                             set_speed_in_units, stopping, CS.out.gasPressed))
-        self.accel = accel
+        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, self.accel, int(self.frame / 2),
+                                                        lead_visible, set_speed_in_units, stopping, CS.out.gasPressed))
 
       # 20 Hz LFA MFA message
       if self.frame % 5 == 0 and self.car_fingerprint in (CAR.SONATA, CAR.PALISADE, CAR.IONIQ, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021,
