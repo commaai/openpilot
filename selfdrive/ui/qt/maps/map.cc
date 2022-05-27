@@ -3,14 +3,14 @@
 #include <cmath>
 
 #include <QDebug>
-#include <QPainterPath>
 #include <QFileInfo>
+#include <QPainterPath>
 
 #include "common/swaglog.h"
-#include "selfdrive/ui/ui.h"
-#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/request_repeater.h"
+#include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/ui.h"
 
 
 const int PAN_TIMEOUT = 100;

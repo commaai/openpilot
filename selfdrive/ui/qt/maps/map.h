@@ -5,21 +5,21 @@
 #include <QGeoCoordinate>
 #include <QGestureEvent>
 #include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QLabel>
+#include <QMap>
 #include <QMapboxGL>
 #include <QMouseEvent>
 #include <QOpenGLWidget>
+#include <QPixmap>
 #include <QScopedPointer>
 #include <QString>
-#include <QtGlobal>
+#include <QVBoxLayout>
 #include <QWheelEvent>
-#include <QMap>
-#include <QPixmap>
+#include <QtGlobal>
 
+#include "cereal/messaging/messaging.h"
 #include "common/params.h"
 #include "common/util.h"
-#include "cereal/messaging/messaging.h"
 #include "selfdrive/ui/ui.h"
 
 class MapInstructions : public QWidget {
