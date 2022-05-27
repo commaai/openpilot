@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # pylint: disable=E1101
-import argparse
 import os
 import importlib
 import unittest
 from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
+from parameterized import parameterized_class
 
 from cereal import log, car
 from common.realtime import DT_CTRL
@@ -46,14 +46,18 @@ for i, c in enumerate(sorted(all_known_cars())):
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
-class TestCarModel(unittest.TestCase):
+class TestCarModelBase(unittest.TestCase):
   car_model = None
   test_route = None
-  ci_route = True
+  ci = True
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
+    if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
+      raise unittest.SkipTest
+
+    print(cls.test_route, cls.car_model)
     if cls.test_route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
@@ -67,7 +71,7 @@ class TestCarModel(unittest.TestCase):
 
     for seg in test_segs:
       try:
-        if cls.ci_route:
+        if cls.ci:
           lr = LogReader(get_url(cls.test_route.route, seg))
         else:
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
@@ -257,31 +261,10 @@ class TestCarModel(unittest.TestCase):
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 
-ci_route = True
-
-
-def load_tests(loader, tests, pattern):
-  test_suite = unittest.TestSuite()
-  for car_model, test_route in test_cases:
-    # create new test case and discover tests
-    test_case_args = {"car_model": car_model, "ci_route": ci_route, "test_route": test_route}
-    CarModelTestCase = type("CarModelTestCase", (TestCarModel,), test_case_args)
-    test_suite.addTest(loader.loadTestsFromTestCase(CarModelTestCase))
-  return test_suite
+@parameterized_class(('car_model', 'test_route'), test_cases)
+class TestCarModel(TestCarModelBase):
+  pass
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
-  parser.add_argument("route", nargs='?', help="Specify route to run tests on")
-  parser.add_argument("--car", help="Specify car model for test route")
-  parser.add_argument("--segment", type=int, nargs='?', help="Specify segment of route to test")
-  args = parser.parse_args()
-
-  if args.route is not None:
-    assert args.car is not None, "Specify car model with --car"
-    # Set test_cases to be picked up by load_tests
-    ci_route = False
-    test_cases = [(args.car, TestRoute(args.route, args.car, segment=args.segment))]
-    unittest.main(argv=[''])
-  else:  # run all tests
-    unittest.main()
+  unittest.main()
