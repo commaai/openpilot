@@ -25,6 +25,7 @@ const float MAP_SCALE = 2;
 const QString ICON_SUFFIX = ".png";
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
+  qDebug() << "MAPWINDOW SM UPDATE:" << millis_since_boot();
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
   // Instructions

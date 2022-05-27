@@ -119,6 +119,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 
 static void update_sockets(UIState *s) {
   s->sm->update(0);
+  qDebug() << "UI UPDATE_SOCKETS SM UPDATE:" << millis_since_boot();
 }
 
 static void update_state(UIState *s) {
