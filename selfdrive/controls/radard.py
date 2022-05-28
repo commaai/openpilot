@@ -12,6 +12,7 @@ from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroi
 from selfdrive.controls.lib.radar_helpers import Cluster, Track, RADAR_TO_CAMERA
 from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import TICI
+from selfdrive.car.toyota.values import NO_DSU_CAR
 
 
 class KalmanParams():
@@ -91,7 +92,7 @@ def get_lead(v_ego, ready, clusters, lead_msg, low_speed_override=True):
 
 
 class RadarD():
-  def __init__(self, radar_ts, delay=0):
+  def __init__(self, CP, radar_ts, delay=0):
     self.current_time = 0
 
     self.tracks = defaultdict(dict)
@@ -102,6 +103,7 @@ class RadarD():
     self.v_ego_hist = deque([0], maxlen=delay+1)
 
     self.ready = False
+    self.toyota_nodsu = CP.carFingerprint in NO_DSU_CAR and CP.openpilotLongitudinalControl
 
   def update(self, sm, rr, enable_lead):
     self.current_time = 1e-9*max(sm.logMonoTime.values())
@@ -114,7 +116,11 @@ class RadarD():
 
     ar_pts = {}
     for pt in rr.points:
-      ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured]
+      if self.toyota_nodsu:
+        vRel = pt.vRel - self.v_ego_hist[0]
+      else:
+        vRel = pt.vRel
+      ar_pts[pt.trackId] = [pt.dRel, pt.yRel, vRel, pt.measured]
 
     # *** remove missing points from meta data ***
     for ids in list(self.tracks.keys()):
@@ -202,7 +208,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
   RI = RadarInterface(CP)
 
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
-  RD = RadarD(CP.radarTimeStep, RI.delay)
+  RD = RadarD(CP, CP.radarTimeStep, RI.delay)
 
   # TODO: always log leads once we can hide them conditionally
   enable_lead = CP.openpilotLongitudinalControl or not CP.radarOffCan
