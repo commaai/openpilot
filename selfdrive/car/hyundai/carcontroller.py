@@ -109,18 +109,18 @@ class CarController:
 
         if CC.longActive:
           # brake controller seems to respond well to providing a simulated future acceleration
-          # clip to only increase ego accel to prevent oscillations
+          # clip to only increase accel to prevent oscillations
+
           accel_raw = accel + (accel - CS.out.aEgo) / 2
           accel_raw = min(accel_raw, accel) if accel < 0 else max(accel_raw, accel)
 
         accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
         accel_raw = clip(accel_raw, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
-        lead_visible = False
         stopping = actuators.longControlState == LongCtrlState.stopping
         set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
-        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, accel_raw, int(self.frame / 2), lead_visible,
-                                                        set_speed_in_units, stopping, CS.out.gasPressed))
+        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, accel_raw, int(self.frame / 2),
+                                                        hud_control.leadVisible, set_speed_in_units, stopping, CS.out.gasPressed))
         self.accel = accel
 
       # 20 Hz LFA MFA message

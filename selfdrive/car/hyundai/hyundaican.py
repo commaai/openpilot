@@ -86,8 +86,8 @@ def create_acc_commands(packer, enabled, accel, accel_raw, idx, lead_visible, se
     "TauGapSet": 4,
     "VSetDis": set_speed if enabled else 0,
     "AliveCounterACC": idx % 0x10,
-    "ObjValid": 1 if lead_visible else 0,
-    "ACC_ObjStatus": 1 if lead_visible else 0,
+    "ObjValid": 0,  # TODO: these two bits may allow for better longitudinal control
+    "ACC_ObjStatus": 0,
     "ACC_ObjLatPos": 0,
     "ACC_ObjRelSpd": 0,
     "ACC_ObjDist": 0,
