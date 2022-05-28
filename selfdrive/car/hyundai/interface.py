@@ -14,6 +14,18 @@ EventName = car.CarEvent.EventName
 ENABLE_BUTTONS = (Buttons.RES_ACCEL, Buttons.SET_DECEL, Buttons.CANCEL)
 
 
+def get_button_type(but):
+  if but == Buttons.RES_ACCEL:
+    return ButtonType.accelCruise
+  elif but == Buttons.SET_DECEL:
+    return ButtonType.decelCruise
+  elif but == Buttons.GAP_DIST:
+    return ButtonType.gapAdjustCruise
+  elif but == Buttons.CANCEL:
+    return ButtonType.cancel
+  return ButtonType.unknown
+
+
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
@@ -342,22 +354,18 @@ class CarInterface(CarInterfaceBase):
       buttonEvents = []
 
       if self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
+        if self.CS.cruise_buttons[-1] != 0 and self.CS.prev_cruise_buttons != 0:
+          be = car.CarState.ButtonEvent.new_message(pressed=False)
+          be.type = get_button_type(self.CS.prev_cruise_buttons)
+          buttonEvents.append(be)
+
         be = car.CarState.ButtonEvent.new_message()
-        be.type = ButtonType.unknown
         if self.CS.cruise_buttons[-1] != 0:
           be.pressed = True
-          but = self.CS.cruise_buttons[-1]
+          be.type = get_button_type(self.CS.cruise_buttons[-1])
         else:
           be.pressed = False
-          but = self.CS.prev_cruise_buttons
-        if but == Buttons.RES_ACCEL:
-          be.type = ButtonType.accelCruise
-        elif but == Buttons.SET_DECEL:
-          be.type = ButtonType.decelCruise
-        elif but == Buttons.GAP_DIST:
-          be.type = ButtonType.gapAdjustCruise
-        elif but == Buttons.CANCEL:
-          be.type = ButtonType.cancel
+          be.type = get_button_type(self.CS.prev_cruise_buttons)
         buttonEvents.append(be)
 
         ret.buttonEvents = buttonEvents
