@@ -110,7 +110,7 @@ class CarController:
 
         if CC.longActive:
           # brake controller seems to respond well to providing a simulated future acceleration
-          if abs(accel - CS.out.aEgo) > 0.5:
+          if abs(accel - CS.out.aEgo) > 0.2:
             accel_raw = accel + (accel - CS.out.aEgo) / 2
           jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
 
