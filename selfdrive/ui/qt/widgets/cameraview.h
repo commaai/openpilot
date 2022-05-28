@@ -23,11 +23,9 @@ public:
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setFrameId(int frame_id) {
-    if (!frames.empty()) {
-      if (frame_id != prev_frame_id) {
-        frame_offset = std::max(frame_id - (int)frames[0].first, (int)frame_offset - 1);  // ensure we can't skip backwards
-        frame_offset = std::min(frame_offset, FRAME_BUFFER_SIZE);  // clip to maximum range
-      }
+    if (!frames.empty() && (frame_id != prev_frame_id)) {
+      frame_idx = std::max(frame_id - (int)frames[0].first, (int)frame_idx - 1);  // ensure we can't skip backwards
+      frame_idx = std::clamp(frame_idx, 0, (int)frames.size() - 1);  // clip to maximum range
     }
     prev_frame_id = frame_id;
   }
@@ -63,7 +61,7 @@ protected:
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
   uint32_t prev_frame_id = 0;
   uint32_t prev_draw_frame_id = 0;  // temp debugging variable
-  int frame_offset = 0;
+  int frame_idx = 0;
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);

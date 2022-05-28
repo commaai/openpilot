@@ -217,8 +217,6 @@ void CameraViewWidget::paintGL() {
 
   if (frames.empty()) return;
 
-  int frame_idx = std::clamp((int)frame_offset, 0, (int)frames.size() - 1);;
-
   // temp debugging
   qDebug() << "Request frame id:" << prev_frame_id;
   qDebug() << "idx:" << frame_idx;
