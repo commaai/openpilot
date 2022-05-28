@@ -73,6 +73,7 @@ if __name__ == "__main__":
       lr = LogReader(qlog_path)
       dongles.append(dongle_id)
 
+      CP = None
       for msg in lr:
         if msg.which() == "pandaStates":
           if msg.pandaStates[0].pandaType not in ('uno', 'blackPanda', 'dos'):
@@ -80,14 +81,13 @@ if __name__ == "__main__":
             break
 
         elif msg.which() == "carParams":
-          bts = msg.carParams.as_builder().to_bytes()
-
-          car_fw = msg.carParams.carFw
+          CP = msg.carParams
+          car_fw = CP.carFw
           if len(car_fw) == 0:
             print("no fw")
             break
 
-          live_fingerprint = msg.carParams.carFingerprint
+          live_fingerprint = CP.carFingerprint
           live_fingerprint = migration.get(live_fingerprint, live_fingerprint)
 
           if args.car is not None:
@@ -116,7 +116,7 @@ if __name__ == "__main__":
             break
 
           print(f"{dongle_id}|{time}")
-          print("Old style:", live_fingerprint, "Vin", msg.carParams.carVin)
+          print("Old style:", live_fingerprint, "Vin", CP.carVin)
           print("New style (exact):", exact_matches)
           print("New style (fuzzy):", fuzzy_matches)
 
@@ -164,6 +164,9 @@ if __name__ == "__main__":
               print("Fuzzy match wrong! Fuzzy:", fuzzy_matches, "Live:", live_fingerprint)
 
           break
+
+      if CP is None:
+        print("no CarParams in logs")
     except Exception:
       traceback.print_exc()
     except KeyboardInterrupt:
