@@ -354,6 +354,7 @@ class CarInterface(CarInterfaceBase):
       buttonEvents = []
 
       if self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
+        # Handle CF_Clu_CruiseSwState changing buttons mid-press
         if self.CS.cruise_buttons[-1] != 0 and self.CS.prev_cruise_buttons != 0:
           be = car.CarState.ButtonEvent.new_message(pressed=False)
           be.type = get_button_type(self.CS.prev_cruise_buttons)
