@@ -1,6 +1,6 @@
 from cereal import car
 from common.realtime import DT_CTRL
-from common.numpy_fast import clip, interp
+from common.numpy_fast import clip
 from common.conversions import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai import hda2can, hyundaican
