@@ -66,7 +66,7 @@ class CarInterface(CarInterfaceBase):
     params = Params()
     new_pedal_transform = params.get_bool("GMNewPedalTransform")
     if (new_pedal_transform):
-      for c in DBC.keys:
+      for c in DBC.keys():
         v = DBC[c]
         DBC[c] = dbc_dict('gm_global_a_powertrain_bolt_generated', v["radar"], v["chassis"], v["body"])
     CarInterface.using_new_pedal_transform = new_pedal_transform
