@@ -343,7 +343,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.CP.openpilotLongitudinalControl and self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
       ret.buttonEvents = [create_button_event(self.CS.prev_cruise_buttons, self.CS.cruise_buttons[-1], BUTTONS_DICT)]
 
-      events.events += create_button_enable_events(ret.buttonEvents)
+      events.events.extend(create_button_enable_events(ret.buttonEvents))
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
     if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:

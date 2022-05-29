@@ -181,7 +181,7 @@ class CarInterface(CarInterfaceBase):
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 
     # handle button presses
-    events.events += create_button_enable_events(ret.buttonEvents)
+    events.events.extend(create_button_enable_events(ret.buttonEvents))
 
     ret.events = events.to_msg()
 
