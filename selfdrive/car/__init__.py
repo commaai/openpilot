@@ -6,6 +6,20 @@ from typing import Dict
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
 
+ButtonType = car.CarState.ButtonEvent.Type
+
+
+def create_button_event(prev_but, cur_but, button_dict, unpressed=0):
+  be = car.CarState.ButtonEvent.new_message()
+  if cur_but != unpressed:
+    be.pressed = True
+    but = cur_but
+  else:
+    be.pressed = False
+    but = prev_but
+  be.type = button_dict.get(but, button_dict, ButtonType.unknown)
+  return be
+
 
 def gen_empty_fingerprint():
   return {i: {} for i in range(0, 4)}

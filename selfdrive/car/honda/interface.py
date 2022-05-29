@@ -4,7 +4,7 @@ from panda import Panda
 from common.conversions import Conversions as CV
 from common.numpy_fast import interp
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL
-from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config, create_button_event
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
 
@@ -12,6 +12,8 @@ from selfdrive.car.disable_ecu import disable_ecu
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 TransmissionType = car.CarParams.TransmissionType
+BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
+                CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
 
 class CarInterface(CarInterfaceBase):
@@ -334,37 +336,11 @@ class CarInterface(CarInterfaceBase):
     buttonEvents = []
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.unknown
-      if self.CS.cruise_buttons != 0:
-        be.pressed = True
-        but = self.CS.cruise_buttons
-      else:
-        be.pressed = False
-        but = self.CS.prev_cruise_buttons
-      if but == CruiseButtons.RES_ACCEL:
-        be.type = ButtonType.accelCruise
-      elif but == CruiseButtons.DECEL_SET:
-        be.type = ButtonType.decelCruise
-      elif but == CruiseButtons.CANCEL:
-        be.type = ButtonType.cancel
-      elif but == CruiseButtons.MAIN:
-        be.type = ButtonType.altButton3
-      buttonEvents.append(be)
+      buttonEvents.append(create_button_event(self.CS.prev_cruise_buttons, self.CS.cruise_buttons, BUTTONS_DICT))
 
     if self.CS.cruise_setting != self.CS.prev_cruise_setting:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.unknown
-      if self.CS.cruise_setting != 0:
-        be.pressed = True
-        but = self.CS.cruise_setting
-      else:
-        be.pressed = False
-        but = self.CS.prev_cruise_setting
-      if but == 1:
-        be.type = ButtonType.altButton1
-      # TODO: more buttons?
-      buttonEvents.append(be)
+      buttonEvents.append(create_button_event(self.CS.prev_cruise_setting, self.CS.cruise_setting, {1: ButtonType.altButton1}))
+
     ret.buttonEvents = buttonEvents
 
     # events
