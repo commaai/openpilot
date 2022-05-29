@@ -10,12 +10,11 @@ ButtonType = car.CarState.ButtonEvent.Type
 
 
 def create_button_event(prev_but, cur_but, buttons_dict, unpressed=0):
-  be = car.CarState.ButtonEvent.new_message()
   if cur_but != unpressed:
-    be.pressed = True
+    be = car.CarState.ButtonEvent(pressed=True)
     but = cur_but
   else:
-    be.pressed = False
+    be = car.CarState.ButtonEvent(pressed=False)
     but = prev_but
   be.type = buttons_dict.get(but, default=ButtonType.unknown)
   return be
