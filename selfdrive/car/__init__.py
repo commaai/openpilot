@@ -9,7 +9,7 @@ STD_CARGO_KG = 136.
 ButtonType = car.CarState.ButtonEvent.Type
 
 
-def create_button_event(prev_but, cur_but, button_dict, unpressed=0):
+def create_button_event(prev_but, cur_but, buttons_dict, unpressed=0):
   be = car.CarState.ButtonEvent.new_message()
   if cur_but != unpressed:
     be.pressed = True
@@ -17,7 +17,7 @@ def create_button_event(prev_but, cur_but, button_dict, unpressed=0):
   else:
     be.pressed = False
     but = prev_but
-  be.type = button_dict.get(but, button_dict, ButtonType.unknown)
+  be.type = buttons_dict.get(but, default=ButtonType.unknown)
   return be
 
 
