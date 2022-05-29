@@ -367,7 +367,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.manualRestart)
 
     # handle button presses
-    events += create_button_enable_events(ret.buttonEvents)
+    events.events += create_button_enable_events(ret.buttonEvents)
 
     ret.events = events.to_msg()
 
