@@ -4,7 +4,7 @@ from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car.hyundai.values import CAR, DBC, HDA2_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
-from selfdrive.car import STD_CARGO_KG, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
 from selfdrive.controls.lib.latcontrol_torque import set_torque_tune
@@ -343,13 +343,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.CP.openpilotLongitudinalControl and self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
       ret.buttonEvents = [create_button_event(self.CS.prev_cruise_buttons, self.CS.cruise_buttons[-1], BUTTONS_DICT)]
 
-      for b in ret.buttonEvents:
-        # do enable on both accel and decel buttons
-        if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
-          events.add(EventName.buttonEnable)
-        # do disable on button down
-        if b.type == ButtonType.cancel and b.pressed:
-          events.add(EventName.buttonCancel)
+      events += create_button_enable_events(ret.buttonEvents)
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
     if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
