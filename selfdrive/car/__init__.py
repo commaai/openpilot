@@ -6,8 +6,6 @@ from typing import Dict
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
 
-ButtonType = car.CarState.ButtonEvent.Type
-
 
 def create_button_event(prev_but, cur_but, buttons_dict, unpressed=0):
   if cur_but != unpressed:
@@ -16,7 +14,7 @@ def create_button_event(prev_but, cur_but, buttons_dict, unpressed=0):
   else:
     be = car.CarState.ButtonEvent(pressed=False)
     but = prev_but
-  be.type = buttons_dict.get(but, default=ButtonType.unknown)
+  be.type = buttons_dict.get(but, default=car.CarState.ButtonEvent.Type.unknown)
   return be
 
 
