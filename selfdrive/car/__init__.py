@@ -17,7 +17,7 @@ def create_button_event(prev_but, cur_but, buttons_dict, unpressed=0):
   else:
     be = car.CarState.ButtonEvent(pressed=False)
     but = prev_but
-  be.type = buttons_dict.get(but, default=ButtonType.unknown)
+  be.type = buttons_dict.get(but, ButtonType.unknown)
   return be
 
 
@@ -26,10 +26,10 @@ def create_button_enable_events(buttonEvents):
   for b in buttonEvents:
     # do enable on both accel and decel buttons
     if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
-      events.add(EventName.buttonEnable)
+      events.append(EventName.buttonEnable)
     # do disable on button down
     if b.type == ButtonType.cancel and b.pressed:
-      events.add(EventName.buttonCancel)
+      events.append(EventName.buttonCancel)
   return events
 
 
