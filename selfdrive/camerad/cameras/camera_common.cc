@@ -29,7 +29,7 @@ ExitHandler do_exit;
 
 class Debayer {
 public:
-  Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, size_t buf_width, size_t uv_offset) {
+  Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, int buf_width, int uv_offset) {
     char args[4096];
     const CameraInfo *ci = &s->ci;
     hdr_ = ci->hdr;
