@@ -36,6 +36,7 @@ def parse_args(add_args=None):
   parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
   parser.add_argument('--joystick', action='store_true')
   parser.add_argument('--high_quality', action='store_true')
+  parser.add_argument('--dual_camera', action='store_true')
   parser.add_argument('--town', type=str, default='Town04_Opt')
   parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
 
@@ -239,6 +240,7 @@ class CarlaBridge:
     msg.liveCalibration.validBlocks = 20
     msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
     Params().put("CalibrationParams", msg.to_bytes())
+    Params().put_bool("EnableWideCamera", not arguments.dual_camera)
 
     self._args = arguments
     self._carla_objects = []
@@ -333,10 +335,13 @@ class CarlaBridge:
       return camera
 
     self._camerad = Camerad()
-    road_camera = create_camera(fov=40, callback=self._camerad.cam_callback_road)
-    road_wide_camera = create_camera(fov=120, callback=self._camerad.cam_callback_wide_road)  # fov bigger than 120 shows unwanted artifacts
 
-    self._carla_objects.extend([road_camera, road_wide_camera])
+    if self._args.dual_camera:
+      road_camera = create_camera(fov=40, callback=self._camerad.cam_callback_road)
+      self._carla_objects.append(road_camera)
+
+    road_wide_camera = create_camera(fov=120, callback=self._camerad.cam_callback_wide_road)  # fov bigger than 120 shows unwanted artifacts
+    self._carla_objects.append(road_wide_camera)
 
     vehicle_state = VehicleState()
 
