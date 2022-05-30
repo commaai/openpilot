@@ -32,5 +32,6 @@ private:
 
   AVCodecContext *codec_ctx;
   AVFrame *frame = NULL;
+  std::vector<uint8_t> convert_buf;
   std::vector<uint8_t> downscale_buf;
 };
