@@ -108,11 +108,11 @@ class TestLoggerd(unittest.TestCase):
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
 
-    expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc"}
+    expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc"}
     streams = [(VisionStreamType.VISION_STREAM_ROAD, tici_f_frame_size if TICI else eon_f_frame_size, "roadCameraState"),
               (VisionStreamType.VISION_STREAM_DRIVER, tici_d_frame_size if TICI else eon_d_frame_size, "driverCameraState")]
     if TICI:
-      expected_files.add("ecamera.hevc", "dcamera.hevc")
+      expected_files.add("ecamera.hevc")
       streams.append((VisionStreamType.VISION_STREAM_WIDE_ROAD, tici_e_frame_size, "wideRoadCameraState"))
 
     pm = messaging.PubMaster(["roadCameraState", "driverCameraState", "wideRoadCameraState"])
