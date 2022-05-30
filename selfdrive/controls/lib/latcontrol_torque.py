@@ -5,6 +5,7 @@ from common.numpy_fast import interp
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+from common.op_params import opParams, FRICTION
 
 # At higher speeds (25+mph) we can assume:
 # Lateral acceleration achieved by a specific car correlates to
@@ -32,13 +33,16 @@ def set_torque_tune(tune, MAX_LAT_ACCEL=2.5, FRICTION=.1):
 
 
 class LatControlTorque(LatControl):
-  def __init__(self, CP, CI):
+  def __init__(self, CP, CI, OP=None):
+    if OP is None:
+      OP = opParams()
+    self.op_params = OP
     super().__init__(CP, CI)
     self.pid = PIDController(CP.lateralTuning.torque.kp, CP.lateralTuning.torque.ki,
                              k_f=CP.lateralTuning.torque.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
     self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
-    self.friction = CP.lateralTuning.torque.friction
+    self.friction = self.op_params.get(FRICTION)
     self.kf = CP.lateralTuning.torque.kf
 
   def reset(self):
@@ -69,6 +73,7 @@ class LatControlTorque(LatControl):
 
       ff = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
       # convert friction into lateral accel units for feedforward
+      self.friction = self.op_params.get(FRICTION)
       friction_compensation = interp(desired_lateral_jerk, [-JERK_THRESHOLD, JERK_THRESHOLD], [-self.friction, self.friction])
       ff += friction_compensation / self.kf
       freeze_integrator = CS.steeringRateLimited or CS.steeringPressed or CS.vEgo < 5
