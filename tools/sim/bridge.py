@@ -240,7 +240,7 @@ class CarlaBridge:
     msg.liveCalibration.validBlocks = 20
     msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
     Params().put("CalibrationParams", msg.to_bytes())
-    Params().put_bool("EnableWideCamera", not arguments.dual_camera)
+    Params().put_bool("WideCameraOnly", not arguments.dual_camera)
 
     self._args = arguments
     self._carla_objects = []
