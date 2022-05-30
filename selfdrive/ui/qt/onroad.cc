@@ -211,25 +211,36 @@ void NvgWindow::drawHud(QPainter &p) {
   p.fillRect(0, 0, width(), header_h, bg);
 
   // max speed
-  QRect rc(bdr_s * 2, bdr_s * 1.5, 184, 202);
-  p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
-  p.setBrush(QColor(0, 0, 0, 100));
-  p.drawRoundedRect(rc, 20, 20);
-  p.setPen(Qt::NoPen);
+  {
+    QRect rc(bdr_s * 2, bdr_s * 1.5, 184, 202);
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
+    p.setBrush(QColor(0, 0, 0, 100));
+    p.drawRoundedRect(rc, 20, 20);
+    p.setPen(Qt::NoPen);
 
-  configFont(p, "Open Sans", 48, "Regular");
-  drawText(p, rc.center().x(), 118, "MAX", is_cruise_set ? 200 : 100);
-  if (is_cruise_set) {
-    configFont(p, "Open Sans", 88, "Bold");
-    drawText(p, rc.center().x(), 212, maxSpeed, 255);
-  } else {
-    configFont(p, "Open Sans", 80, "SemiBold");
-    drawText(p, rc.center().x(), 212, maxSpeed, 100);
+    configFont(p, "Open Sans", 48, "Regular");
+    drawText(p, rc.center().x(), 118, "MAX", is_cruise_set ? 200 : 100);
+    if (is_cruise_set) {
+      configFont(p, "Open Sans", 88, "Bold");
+      drawText(p, rc.center().x(), 212, maxSpeed, 255);
+    } else {
+      configFont(p, "Open Sans", 80, "SemiBold");
+      drawText(p, rc.center().x(), 212, maxSpeed, 100);
+    }
   }
 
   if (!speedLimit.isEmpty()) {
+    QRect rc(rect().right() - 184 - bdr_s * 2, rect().bottom() - 202 - bdr_s * 2, 184, 202);
+    p.setPen(QPen(QColor(0, 0, 0, 255), 5));
+    p.setBrush(QColor(255, 255, 255, 255));
+    p.drawRoundedRect(rc, 20, 20);
+    p.setPen(Qt::NoPen);
+
+    configFont(p, "Open Sans", 40, "Regular");
+    drawText(p, rc.center().x(), rc.top() + 50, "SPEED", 255, 0, 0, 0);
+    drawText(p, rc.center().x(), rc.top() + 90, "LIMIT", 255, 0, 0, 0);
     configFont(p, "Open Sans", 88, "Bold");
-    drawText(p, rc.center().x(), 212 + 150, speedLimit, 255);
+    drawText(p, rc.center().x(), rc.top() + 175, speedLimit, 255, 0, 0, 0);
   }
 
   // current speed
@@ -252,13 +263,13 @@ void NvgWindow::drawHud(QPainter &p) {
   p.restore();
 }
 
-void NvgWindow::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
+void NvgWindow::drawText(QPainter &p, int x, int y, const QString &text, int alpha, int r, int g, int b) {
   QFontMetrics fm(p.font());
   QRect init_rect = fm.boundingRect(text);
   QRect real_rect = fm.boundingRect(init_rect, 0, text);
   real_rect.moveCenter({x, y - real_rect.height() / 2});
 
-  p.setPen(QColor(0xff, 0xff, 0xff, alpha));
+  p.setPen(QColor(r, g, b, alpha));
   p.drawText(real_rect.x(), real_rect.bottom(), text);
 }
 
