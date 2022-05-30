@@ -196,7 +196,12 @@ class RouteEngine:
     msg.navInstruction.timeRemainingTypical = total_time_typical
 
     # Speed limit
-    closest = min(geometry, key=lambda p: p.distance_to(self.last_position))
+    closest_idx, closest = min(enumerate(geometry), key=lambda p: p[1].distance_to(self.last_position))
+    if closest_idx > 0:
+      # If we are not past the closest point, show previous
+      if along_geometry < distance_along_geometry(geometry, geometry[closest_idx]):
+        closest = geometry[closest_idx - 1]
+
     if 'maxspeed' in closest.annotations:
       msg.navInstruction.speedLimit = closest.annotations['maxspeed']
 
