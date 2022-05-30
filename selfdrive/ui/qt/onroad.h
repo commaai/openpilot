@@ -30,6 +30,7 @@ class NvgWindow : public CameraViewWidget {
   Q_PROPERTY(QString speed MEMBER speed);
   Q_PROPERTY(QString speedUnit MEMBER speedUnit);
   Q_PROPERTY(QString maxSpeed MEMBER maxSpeed);
+  Q_PROPERTY(QString speedLimit MEMBER speedLimit);
   Q_PROPERTY(bool is_cruise_set MEMBER is_cruise_set);
   Q_PROPERTY(bool engageable MEMBER engageable);
   Q_PROPERTY(bool dmActive MEMBER dmActive);
@@ -51,6 +52,7 @@ private:
   QString speed;
   QString speedUnit;
   QString maxSpeed;
+  QString speedLimit;
   bool is_cruise_set = false;
   bool engageable = false;
   bool dmActive = false;

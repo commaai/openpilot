@@ -180,10 +180,15 @@ void NvgWindow::updateState(const UIState &s) {
     maxspeed *= KM_TO_MILE;
   }
   QString maxspeed_str = cruise_set ? QString::number(std::nearbyint(maxspeed)) : "N/A";
+
+  float speed_limit = sm["navInstruction"].getValid() ? sm["navInstruction"].getNavInstruction().getSpeedLimit() : 0.0;
+  speed_limit *= (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
+
   float cur_speed = std::max(0.0, sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
 
   setProperty("is_cruise_set", cruise_set);
   setProperty("speed", QString::number(std::nearbyint(cur_speed)));
+  setProperty("speedLimit", speed_limit > 1 ? QString::number(std::nearbyint(speed_limit)) : "");
   setProperty("maxSpeed", maxspeed_str);
   setProperty("speedUnit", s.scene.is_metric ? "km/h" : "mph");
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
@@ -220,6 +225,11 @@ void NvgWindow::drawHud(QPainter &p) {
   } else {
     configFont(p, "Open Sans", 80, "SemiBold");
     drawText(p, rc.center().x(), 212, maxSpeed, 100);
+  }
+
+  if (!speedLimit.isEmpty()) {
+    configFont(p, "Open Sans", 88, "Bold");
+    drawText(p, rc.center().x(), 212 + 150, speedLimit, 255);
   }
 
   // current speed
