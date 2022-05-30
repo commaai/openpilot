@@ -123,9 +123,6 @@ def string_to_direction(direction: str) -> str:
 
 
 def maxspeed_to_ms(maxspeed: Dict[str, Union[str, float]]) -> float:
-  if 'unknown' in maxspeed:
-    return 0.0
-
   unit = cast(str, maxspeed['unit'])
   speed = cast(float, maxspeed['speed'])
   return SPEED_CONVERSIONS[unit] * speed
