@@ -29,17 +29,17 @@ ExitHandler do_exit;
 
 class Debayer {
 public:
-  Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s) {
+  Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, size_t buf_width, size_t uv_offset) {
     char args[4096];
     const CameraInfo *ci = &s->ci;
     hdr_ = ci->hdr;
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
-             "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
+             "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
              "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d%s",
              ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
-             b->rgb_width, b->rgb_height, b->rgb_stride,
+             b->rgb_width, b->rgb_height, b->rgb_stride, buf_width, uv_offset,
              ci->bayer_flip, ci->hdr, s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
     const char *cl_file = "cameras/real_debayer.cl";
     cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
@@ -114,7 +114,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
 
   if (ci->bayer) {
-    debayer = new Debayer(device_id, context, this, s);
+    debayer = new Debayer(device_id, context, this, s, nv12_width, nv12_uv_offset);
   }
   rgb2yuv = std::make_unique<Rgb2Yuv>(context, device_id, rgb_width, rgb_height, rgb_stride);
 

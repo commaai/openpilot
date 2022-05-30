@@ -1,11 +1,6 @@
 #define UV_WIDTH RGB_WIDTH / 2
 #define UV_HEIGHT RGB_HEIGHT / 2
 
-#define YUV_STRIDE 2048
-#define UV_OFFSET (YUV_STRIDE * 1216)
-//#define U_OFFSET RGB_WIDTH * RGB_HEIGHT
-//#define V_OFFSET RGB_WIDTH * RGB_HEIGHT + UV_WIDTH * UV_HEIGHT
-
 #define RGB_TO_Y(r, g, b) ((((mul24(b, 13) + mul24(g, 65) + mul24(r, 33)) + 64) >> 7) + 16)
 #define RGB_TO_U(r, g, b) ((mul24(b, 56) - mul24(g, 37) - mul24(r, 19) + 0x8080) >> 8)
 #define RGB_TO_V(r, g, b) ((mul24(r, 56) - mul24(g, 47) - mul24(b, 9) + 0x8080) >> 8)
