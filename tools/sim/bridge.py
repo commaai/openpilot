@@ -509,6 +509,7 @@ class CarlaBridge:
   def close(self):
     self.started = False
     self._exit_event.set()
+
     for s in self._carla_objects:
       try:
         s.destroy()
@@ -527,17 +528,23 @@ if __name__ == "__main__":
   q: Any = Queue()
   args = parse_args()
 
-  carla_bridge = CarlaBridge(args)
-  p = carla_bridge.run(q)
+  try:
+    carla_bridge = CarlaBridge(args)
+    p = carla_bridge.run(q)
 
-  if args.joystick:
-    # start input poll for joystick
-    from tools.sim.lib.manual_ctrl import wheel_poll_thread
+    if args.joystick:
+      # start input poll for joystick
+      from tools.sim.lib.manual_ctrl import wheel_poll_thread
 
-    wheel_poll_thread(q)
-  else:
-    # start input poll for keyboard
-    from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
+      wheel_poll_thread(q)
+    else:
+      # start input poll for keyboard
+      from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
 
-    keyboard_poll_thread(q)
-  p.join()
+      keyboard_poll_thread(q)
+    p.join()
+
+  finally:
+    # Try cleaning up the wide camera param
+    # in case users wants to use replay after
+    Params().delete("WideCameraOnly")
