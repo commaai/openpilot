@@ -113,7 +113,7 @@ class Camerad:
 
     dat = messaging.new_message(pub_type)
     msg = {
-      "frameId": image.frame,
+      "frameId": frame_id,
       "transform": [1.0, 0.0, 0.0,
                     0.0, 1.0, 0.0,
                     0.0, 0.0, 1.0]
