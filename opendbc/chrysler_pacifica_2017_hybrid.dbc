@@ -36,133 +36,111 @@ BS_:
 BU_: XXX
 
 
-BO_ 258 STEERING: 8 XXX
+BO_ 258 Steering_Column_Angle_Status: 8 XXX
+ SG_ Steering_Wheel_Angle : 5|14@0+ (0.5,-2048) [-2048|2047] "Degrees" XXX #2019 Ram 1500
+ SG_ Steering_Rate : 21|14@0+ (0.5,-2048) [-2048|2047] "deg/s" XXX #From 2500
  SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
- SG_ UNKNOWN_STEERING : 50|3@0+ (1,0) [0|15] "" XXX
- SG_ STEERING_RATE : 20|13@0+ (0.3187251,-1305.498) [0|8191] "deg/s" XXX
- SG_ STEER_ANGLE : 4|13@0+ (0.3187251,-1307.888) [-360|360] "deg" XXX
-
-BO_ 514 SPEED_1: 8 XXX
- SG_ SPEED_LEFT : 7|12@0+ (0.071028,0) [0|65535] "m/s" XXX
- SG_ SPEED_RIGHT : 23|12@0+ (0.071028,0) [0|1023] "m/s" XXX
-
-BO_ 653 BRAKE_MODULE: 2 XXX
- SG_ BRAKE_PRESSURE : 15|8@0+ (1,0) [0|255] "" XXX
- SG_ BRAKE_PRESSED : 4|1@0+ (1,0) [0|4] "" XXX
-
-BO_ 820 DOORS: 8 XXX
- SG_ DOOR_OPEN_FR : 18|1@0+ (1,0) [0|1] "" XXX
- SG_ DOOR_OPEN_RL : 19|1@0+ (1,0) [0|1] "" XXX
- SG_ DOOR_OPEN_RR : 20|1@0+ (1,0) [0|1] "" XXX
- SG_ DOOR_OPEN_TRUNK : 22|1@0+ (1,0) [0|1] "" XXX
- SG_ DOOR_OPEN_FL : 17|1@0+ (1,0) [0|1] "" XXX
- SG_ TURN_LIGHT_LEFT : 31|1@0+ (1,0) [0|1] "" XXX
- SG_ TURN_LIGHT_RIGHT : 30|1@0+ (1,0) [0|1] "" XXX
- SG_ HIGH_BEAM_DISPLAY : 58|1@0+ (1,0) [0|1] "" XXX
-
-BO_ 746 GEAR: 5 XXX
- SG_ PRNDL : 2|3@0+ (1,0) [0|7] "" XXX
- SG_ GEAR_CHECKSUM : 39|8@0+ (1,0) [0|255] "" XXX
- SG_ COUNTER : 31|4@0+ (1,0) [0|15] "" XXX
-
-BO_ 284 BRAKE_1: 8 XXX
- SG_ SPEED_RELATED_1 : 37|14@0+ (1,0) [0|255] "" XXX
- SG_ BRAKE_RELATED_1_2 : 18|11@0+ (1,0) [0|255] "" XXX
- SG_ BRAKE_RELATED_1_1 : 3|12@0+ (1,0) [0|255] "" XXX
- SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
-
-BO_ 320 BRAKE_2: 8 XXX
- SG_ SPEED_RELATED_2 : 47|8@0+ (1,0) [0|63] "" XXX
- SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
- SG_ BRAKE_PRESSED_2 : 2|3@0+ (1,0) [0|7] "" XXX
- SG_ BRAKE_PRESSED_ACC : 6|1@0+ (1,0) [0|3] "" XXX
-
-BO_ 736 TRIP: 8 XXX
- SG_ COUNTER : 7|16@0+ (1,0) [0|65535] "Meters" XXX
- SG_ COUNTER_2 : 23|16@0+ (1,0) [0|65535] "Meters" XXX
-
-BO_ 344 WHEEL_SPEEDS: 8 XXX
- SG_ WHEEL_SPEED_FL : 3|12@0+ (0.0189408,0) [0|65535] "m/s" XXX
- SG_ WHEEL_SPEED_RR : 51|12@0+ (0.0189408,0) [0|255] "m/s" XXX
- SG_ WHEEL_SPEED_RL : 35|12@0+ (0.0189408,0) [0|3] "m/s" XXX
- SG_ WHEEL_SPEED_FR : 19|12@0+ (0.0189408,0) [0|255] "m/s" XXX
-
-BO_ 792 STEERING_LEVERS: 8 XXX
- SG_ HIGH_BEAM_PUSHED_IN : 2|1@0+ (1,0) [0|3] "" XXX
- SG_ TURN_SIGNALS : 1|2@0+ (1,0) [0|3] "" XXX
- SG_ HIGH_BEAM_FLASH : 3|1@0+ (1,0) [0|3] "" XXX
 
 BO_ 264 ACCEL_PEDAL_MSG: 8 XXX
  SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
  SG_ ACCEL_PEDAL : 35|1@0+ (1,0) [0|1] "" XXX
 
-BO_ 464 SEATBELT_STATUS: 8 XXX
- SG_ SEATBELT_DRIVER_UNLATCHED : 13|1@0+ (1,0) [0|1] "" XXX
-
-BO_ 544 EPS_STATUS: 8 XXX
- SG_ LKAS_STATE : 23|4@0+ (1,0) [0|15] "" XXX
- SG_ TORQUE_DRIVER : 2|11@0+ (1,-1024) [-1024|1023] "" XXX
- SG_ TORQUE_MOTOR_RAW : 19|12@0+ (1,-2048) [-2048|2047] "" XXX
- SG_ TORQUE_MOTOR : 34|11@0+ (1,-1024) [-1024|1023] "" XXX
- SG_ AUTO_PARK_HAS_CONTROL_2 : 51|1@0+ (1,0) [0|1] "" XXX
+BO_ 284 ESP_8: 8 XXX 
+ SG_ BRK_PRESSURE : 3|12@0+ (1,0) [0|1] "" XXX
+ SG_ BRAKE_PEDAL : 19|12@0+ (1,0) [0|1] "" XXX
+ SG_ Vehicle_Speed : 39|16@0+ (0.0078125,0) [0|511.984375] "km/h" XXX
  SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
-BO_ 658 LKAS_COMMAND: 6 XXX
- SG_ COUNTER : 39|4@0+ (1,0) [0|15] "" XXX
- SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" XXX
- SG_ LKAS_STEERING_TORQUE : 2|11@0+ (1,-1024) [0|1] "" XXX
- SG_ LKAS_HIGH_TORQUE : 4|1@0+ (1,0) [0|1] "" XXX
+BO_ 288 ACCEL_RELATED_120: 7 XXX
+ SG_ COUNTER : 47|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ ACCEL : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ GAS_ENGINE_RPM_MAYBE : 31|16@0+ (1,0) [0|65535] "" XXX
 
-BO_ 678 LKAS_HUD: 8 XXX
- SG_ LKAS_ICON_COLOR : 1|2@0+ (1,0) [0|3] "" XXX
- SG_ LKAS_LANE_LINES : 19|4@0+ (1,0) [0|1] "" XXX
- SG_ LKAS_ALERTS : 27|4@0+ (1,0) [0|1] "" XXX
- SG_ CAR_MODEL : 15|8@0+ (1,0) [0|255] "" XXX
-
-BO_ 705 AUTO_PARK_BUTTON: 8 XXX
- SG_ AUTO_PARK_TOGGLE_2 : 8|1@0+ (1,0) [0|1] "" XXX
- SG_ AUTO_PARK_TOGGLE_1 : 11|1@0+ (1,0) [0|1] "" XXX
- SG_ INCREASING_UNKNOWN : 38|7@0+ (1,0) [0|15] "" XXX
-
-BO_ 719 AUTO_PARK_SIGNALS_1: 8 XXX
- SG_ AUTO_PARK_UNKNOWN_1 : 7|16@0+ (1,0) [0|31] "" XXX
-
-BO_ 671 AUTO_PARK_REQUEST: 8 XXX
- SG_ AUTO_PARK_CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
- SG_ AUTO_PARK_STATUS : 7|5@0+ (1,0) [0|15] "" XXX
- SG_ AUTO_PARK_COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ AUTO_PARK_MODE : 22|2@0+ (1,0) [0|3] "" XXX
- SG_ AUTO_PARK_CMD : 2|11@0+ (1,-1024) [0|1] "NM" XXX
-
-BO_ 784 AUTO_PARK_LESS_INTERESTING: 8 XXX
- SG_ INCREASING_UNKNOWN : 55|8@0+ (1,0) [0|7] "" XXX
- SG_ AUTO_PARK_PERPENDICULAR_2 : 61|1@0+ (1,0) [0|255] "" XXX
-
-BO_ 826 AUTO_PARK_SIGNALS_3: 8 XXX
- SG_ AUTO_PARK_HAS_CONTROL_3 : 1|1@0+ (1,0) [0|1] "" XXX
- SG_ HUMAN_HAS_CONTROL : 2|1@0+ (1,0) [0|1] "" XXX
- SG_ AUTO_PARK_GEAR_1 : 27|4@0+ (1,0) [0|255] "" XXX
- SG_ AUTO_PARK_GEAR_2 : 35|4@0+ (1,0) [0|15] "" XXX
- SG_ AUTO_PARK_GEAR_3 : 51|4@0+ (1,0) [0|15] "" XXX
-
-BO_ 332 STEERING_2: 8 XXX
+BO_ 320 ESP_1: 8 XXX 
+ SG_ SPEED_RELATED_2 : 47|8@0+ (1,0) [0|63] "" XXX
+ SG_ Brake_Pedal_State : 2|2@1+ (1,0) [0|0] "" XXX
+ SG_ Vehicle_Speed : 33|10@0+ (0.5,0) [0|511] "km/h" XXX
  SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ ENERGY_RELATED : 39|16@0+ (1,0) [0|65535] "" XXX
- SG_ STEER_ANGLE_2 : 7|13@0+ (0.3187251,-1307.888) [-360|360] "deg" XXX
-
-BO_ 720 BLIND_SPOT_WARNINGS: 6 XXX
- SG_ BLIND_SPOT_RIGHT : 5|1@0+ (1,0) [0|1] "" XXX
- SG_ BLIND_SPOT_LEFT : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ BRAKE_PRESSED_ACC : 6|1@0+ (1,0) [0|3] "" XXX
 
 BO_ 331 BRAKE_3: 8 XXX
  SG_ BRAKE_RELATED_3 : 7|16@0+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 332 ESP_4: 8 XXX
+ SG_ Yaw_Rate : 7|16@0+ (0.01,-327.68) [-327.68|327.66] "deg/s" XXX
+ SG_ Acceleration : 32|8@1+ (0.08,-10.24) [-10.24|10.08] "m/s2" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ ENERGY_RELATED : 39|16@0+ (1,0) [0|65535] "" XXX
+
+BO_ 344 ESP_6: 8 XXX
+ SG_ Wheel_RPM_Front_Left : 5|14@0+ (0.5,0) [0|8191] "rpm" XXX
+ SG_ Wheel_RPM_Front_Right : 21|14@0+ (0.5,0) [0|8191] "rpm" XXX
+ SG_ Wheel_RPM_Rear_Left : 37|14@0+ (0.5,0) [0|8191] "rpm" XXX
+ SG_ Wheel_RPM_Rear_Right : 53|14@0+ (0.5,0) [0|8191] "rpm" XXX
+
+BO_ 368 Transmission_Status: 8 XXX
+ SG_ Gear_State : 2|3@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 464 ORC_1: 8 XXX
+ SG_ Driver_Seatbelt_Status : 16|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 500 DAS_3: 8 XXX
+ SG_ Engine_Torque_Request : 4|13@0+ (0.25,-500) [-500|1547.5] "Nm" XXX
+ SG_ ACC_StandStill : 5|1@1+ (1,0) [0|0] ""  XXX
+ SG_ Engine_Torque_Request_Max : 7|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Enabled : 20|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Engaged : 21|1@1+ (1,0) [0|0] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ BRAKE_MAYBE : 18|11@0+ (1,0) [0|255] "" XXX
+ SG_ BRAKE_BOOL_1 : 36|1@0+ (1,0) [0|3] "" XXX
+
+BO_ 501 DAS_4: 8 XXX
+ SG_ ACC_Set_Speed : 8|8@1+ (1,0) [0|255] "km/h" XXX
+ SG_ ACC_Activation_Status : 36|3@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_SPEED_CONFIG_MPH : 23|8@0+ (1,0) [0|3] "mph" XXX
+ SG_ ACC_DISTANCE_CONFIG_1 : 1|2@0+ (1,0) [0|3] "" XXX
+ SG_ ACC_DISTANCE_CONFIG_2 : 41|2@0+ (1,0) [0|3] "" XXX
+ SG_ SPEED_DIGITAL : 63|8@0+ (1,0) [0|255] "mph" XXX
+
+BO_ 514 SPEED_1: 8 XXX
+ SG_ SPEED_LEFT : 7|12@0+ (0.071028,0) [0|65535] "m/s" XXX
+ SG_ SPEED_RIGHT : 23|12@0+ (0.071028,0) [0|1023] "m/s" XXX
+
+BO_ 544 EPS_2: 8 XXX
+ SG_ Steering_Column_Torque : 2|11@0+ (1,-1024) [-1024|1023] "" XXX
+ SG_ Torque_Overlay_Status : 6|4@0+ (1,0) [0|15] "" XXX
+ SG_ Torque_From_EPS : 19|12@0+ (1,-2048) [-2048|2047] "" XXX
+ SG_ EPS_Motor_Torque : 34|11@0+ (1,-1024) [-1024|1023] "" XXX
+ SG_ AUTO_PARK_HAS_CONTROL_2 : 51|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 559 ECM_5: 8 XXX
+ SG_ Accelerator_Position : 0|8@1+ (0.4,0) [0|100] "%" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 571 Cruise_Control_Buttons: 3 XXX
+ SG_ ACC_Cancel : 0|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Distance_Dec : 1|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Accel : 2|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Decel : 3|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Resume : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ Cruise_OnOff : 6|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_OnOff : 7|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Distance_Inc : 8|1@1+ (1,0) [0|0] "" XXX
+ SG_ COUNTER : 15|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 23|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 608 PARKSENSE_SIGNAL: 8 XXX
  SG_ PARKSENSE_DISABLED : 34|1@0+ (1,0) [0|1] "" XXX
@@ -172,20 +150,90 @@ BO_ 608 PARKSENSE_SIGNAL: 8 XXX
  SG_ AUTO_PARK_HAS_CONTROL_1 : 16|1@0+ (1,0) [0|255] "" XXX
  SG_ HUMAN_HAS_CONTROL : 17|1@0+ (1,0) [0|3] "" XXX
 
+BO_ 653 BRAKE_MODULE: 2 XXX
+ SG_ BRAKE_PRESSURE : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ BRAKE_PRESSED : 4|1@0+ (1,0) [0|4] "" XXX
+
+BO_ 658 LKAS_COMMAND: 6 XXX
+ SG_ COUNTER : 39|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ LKAS_STEERING_TORQUE : 2|11@0+ (1,-1024) [0|1] "" XXX
+ SG_ LKAS_CONTROL_BIT : 4|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 671 AUTO_PARK_REQUEST: 8 XXX
+ SG_ AUTO_PARK_CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ AUTO_PARK_STATUS : 7|5@0+ (1,0) [0|15] "" XXX
+ SG_ AUTO_PARK_COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ AUTO_PARK_MODE : 22|2@0+ (1,0) [0|3] "" XXX
+ SG_ AUTO_PARK_CMD : 2|11@0+ (1,-1024) [0|1] "NM" XXX
+
+BO_ 678 DAS_6: 8 XXX
+ SG_ LKAS_ICON_COLOR : 1|2@0+ (1,0) [0|3] "" XXX
+ SG_ LKAS_LANE_LINES : 19|4@0+ (1,0) [0|1] "" XXX
+ SG_ LKAS_ALERTS : 27|4@0+ (1,0) [0|1] "" XXX
+ SG_ CAR_MODEL : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ LKAS_Disabled : 56|1@1+ (1,0) [0|0] "" XXX //need to confirm
+
+BO_ 705 AUTO_PARK_BUTTON: 8 XXX
+ SG_ AUTO_PARK_TOGGLE_2 : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ AUTO_PARK_TOGGLE_1 : 11|1@0+ (1,0) [0|1] "" XXX
+ SG_ INCREASING_UNKNOWN : 38|7@0+ (1,0) [0|15] "" XXX
+
+BO_ 719 AUTO_PARK_SIGNALS_1: 8 XXX
+ SG_ AUTO_PARK_UNKNOWN_1 : 7|16@0+ (1,0) [0|31] "" XXX
+
+BO_ 720 BSM_1: 6 XXX
+ SG_ Blind_Spot_Monitor_Left : 0|3@1+ (1,0) [0|0] "" XXX
+ SG_ Blind_Spot_Monitor_Right : 3|3@1+ (1,0) [0|0] "" XXX
+
 BO_ 729 LKAS_HEARTBIT: 5 XXX
  SG_ LKAS_STATUS_OK : 31|16@0+ (1,0) [0|65535] "" XXX
+
+BO_ 736 TRIP: 8 XXX
+ SG_ COUNTER : 7|16@0+ (1,0) [0|65535] "Meters" XXX
+ SG_ COUNTER_2 : 23|16@0+ (1,0) [0|65535] "Meters" XXX
+
+BO_ 746 GEAR: 5 XXX
+ SG_ PRNDL : 2|3@0+ (1,0) [0|7] "" XXX
+ SG_ GEAR_CHECKSUM : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 31|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 784 AUTO_PARK_LESS_INTERESTING: 8 XXX
+ SG_ INCREASING_UNKNOWN : 55|8@0+ (1,0) [0|7] "" XXX
+ SG_ AUTO_PARK_PERPENDICULAR_2 : 61|1@0+ (1,0) [0|255] "" XXX
+
+BO_ 792 Steering_Column_Commands: 8 XXX
+ SG_ Turn_Signal_Status : 0|2@1+ (1,0) [0|3] "" XXX
+ SG_ High_Beam_Lever_Status : 2|2@1+ (1,0) [0|0] "" XXX
+ SG_ HIGH_BEAM_FLASH : 3|1@0+ (1,0) [0|3] "" XXX
+
+BO_ 816 Center_Stack_1: 8 XXX
+ SG_ Traction_Button : 19|1@0+ (1,0) [0|3] "" XXX
+ SG_ TOGGLE_PARKSENSE : 52|1@0+ (1,0) [0|3] "" XXX
+ SG_ LKAS_Button : 53|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 820 BCM_1: 8 XXX
+ SG_ Driver_Door_Ajar : 17|1@1+ (1,0) [0|0] "" XXX
+ SG_ Passenger_Door_Ajar : 18|1@1+ (1,0) [0|0] "" XXX
+ SG_ Left_Rear_Door_Ajar : 19|1@1+ (1,0) [0|0] "" XXX
+ SG_ Right_Rear_Door_Ajar : 20|1@1+ (1,0) [0|0] "" XXX
+ SG_ DOOR_OPEN_TRUNK : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ TURN_LIGHT_LEFT : 31|1@0+ (1,0) [0|1] "" XXX
+ SG_ TURN_LIGHT_RIGHT : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ HIGH_BEAM_DISPLAY : 58|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 826 AUTO_PARK_SIGNALS_3: 8 XXX
+ SG_ AUTO_PARK_HAS_CONTROL_3 : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ HUMAN_HAS_CONTROL : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ AUTO_PARK_GEAR_1 : 27|4@0+ (1,0) [0|255] "" XXX
+ SG_ AUTO_PARK_GEAR_2 : 35|4@0+ (1,0) [0|15] "" XXX
+ SG_ AUTO_PARK_GEAR_3 : 51|4@0+ (1,0) [0|15] "" XXX
 
 BO_ 274 NEW_MSG_112: 2 XXX
 
 BO_ 290 NEW_MSG_122: 6 XXX
 
 BO_ 376 NEW_MSG_178: 3 XXX
-
-BO_ 288 ACCEL_RELATED_120: 7 XXX
- SG_ COUNTER : 47|4@0+ (1,0) [0|15] "" XXX
- SG_ CHECKSUM : 55|8@0+ (1,0) [0|255] "" XXX
- SG_ ACCEL : 23|8@0+ (1,0) [0|255] "" XXX
- SG_ GAS_ENGINE_RPM_MAYBE : 31|16@0+ (1,0) [0|65535] "" XXX
 
 BO_ 257 ACCEL_RELATED_101: 5 XXX
  SG_ ENERGY_OR_RPM : 31|8@0+ (1,0) [0|255] "" XXX
@@ -199,16 +247,6 @@ BO_ 456 NEW_MSG_1c8: 4 XXX
 BO_ 560 NEW_MSG_230: 4 XXX
 
 BO_ 564 NEW_MSG_234: 4 XXX
-
-BO_ 571 WHEEL_BUTTONS: 3 XXX
- SG_ CHECKSUM : 23|8@0+ (1,0) [0|255] "" XXX
- SG_ ACC_FOLLOW_DEC : 1|1@0+ (1,0) [0|3] "" XXX
- SG_ ACC_SPEED_INC : 2|1@0+ (1,0) [0|255] "" XXX
- SG_ ACC_SPEED_DEC : 3|1@0+ (1,0) [0|3] "" XXX
- SG_ ACC_FOLLOW_INC : 8|1@0+ (1,0) [0|15] "" XXX
- SG_ ACC_CANCEL : 0|1@0+ (1,0) [0|15] "" XXX
- SG_ COUNTER : 15|4@0+ (1,0) [0|15] "" XXX
- SG_ ACC_RESUME : 4|1@0+ (1,0) [0|15] "" XXX
 
 BO_ 669 NEW_MSG_29d: 3 XXX
  SG_ COUNTER : 15|4@0+ (1,0) [0|15] "" XXX
@@ -267,11 +305,6 @@ BO_ 532 ENERGY_RELATED_214: 8 XXX
  SG_ NOISY_SLOWLY_DECREASING : 16|9@0+ (1,0) [0|255] "" XXX
  SG_ ENERGY_RELATED : 0|9@0+ (1,0) [0|255] "" XXX
 
-BO_ 559 ACCEL_GAS_22F: 8 XXX
- SG_ ACCEL_22F : 3|4@0+ (1,0) [0|255] "" XXX
- SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
-
 BO_ 655 CHARGING_MAYBE_28F: 8 XXX
  SG_ CHARGING : 1|2@0+ (1,0) [0|3] "" XXX
 
@@ -283,24 +316,12 @@ BO_ 660 BRAKE_RELATED_294: 8 XXX
 BO_ 764 ACCEL_RELATED_2FC: 8 XXX
  SG_ ACCEL_2FC : 13|6@0+ (1,0) [0|255] "" XXX
 
-BO_ 816 TRACTION_BUTTON: 8 XXX
- SG_ TRACTION_OFF : 19|1@0+ (1,0) [0|3] "" XXX
- SG_ TOGGLE_PARKSENSE : 52|1@0+ (1,0) [0|3] "" XXX
-
 BO_ 878 ACCEL_RELATED_36E: 8 XXX
  SG_ ACCEL_OR_RPM_2 : 15|8@0+ (1,0) [0|255] "" XXX
  SG_ ACCEL_OR_RPM_1 : 7|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 324 SPEED_2: 8 XXX
  SG_ SPEED_2 : 31|16@0+ (0.01,0) [0|255] "m/s" XXX
-
-BO_ 501 DASHBOARD: 8 XXX
- SG_ ACC_SPEED_CONFIG_KPH : 15|8@0+ (1,0) [0|3] "km/h" XXX
- SG_ ACC_SPEED_CONFIG_MPH : 23|8@0+ (1,0) [0|3] "mph" XXX
- SG_ ACC_DISTANCE_CONFIG_1 : 1|2@0+ (1,0) [0|3] "" XXX
- SG_ ACC_DISTANCE_CONFIG_2 : 41|2@0+ (1,0) [0|3] "" XXX
- SG_ SPEED_DIGITAL : 63|8@0+ (1,0) [0|255] "mph" XXX
- SG_ CRUISE_STATE : 38|3@0+ (1,0) [0|7] "" XXX
 
 BO_ 639 NEW_MSG_27f: 8 XXX
  SG_ INCREASING : 47|8@0+ (1,0) [0|255] "" XXX
@@ -331,15 +352,6 @@ BO_ 941 NEW_MSG_3ad: 8 XXX
  SG_ INCREASING_1 : 36|5@0+ (1,0) [0|31] "" XXX
  SG_ INCREASING_2 : 63|8@0+ (1,0) [0|255] "" XXX
 
-BO_ 500 ACC_2: 8 XXX
- SG_ ACC_STATUS_1 : 7|3@0+ (1,0) [0|255] "" XXX
- SG_ BRAKE_MAYBE : 18|11@0+ (1,0) [0|255] "" XXX
- SG_ ACC_STATUS_2 : 21|3@0+ (1,0) [0|255] "" XXX
- SG_ BRAKE_BOOL_1 : 36|1@0+ (1,0) [0|3] "" XXX
- SG_ ACC_FAULTED : 47|1@0+ (1,0) [0|1] "" XXX
- SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
-
 BO_ 625 ACC_1: 8 XXX
  SG_ SPEED : 31|8@0+ (1,0) [0|255] "km/h" XXX
  SG_ ACCEL_PERHAPS : 39|16@0+ (1,0) [0|255] "" XXX
@@ -366,8 +378,11 @@ BO_ 512 NEW_MSG_200: 8 XXX
  SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
+
+
+
 CM_ SG_ 258 UNKNOWN_STEERING "never goes above 4. see if human-applied torque";
-CM_ SG_ 258 STEER_ANGLE "positive is left (counter-clockwise)";
+CM_ SG_ 258 Steering_Wheel_Angle "positive is left (counter-clockwise)";
 CM_ SG_ 514 SPEED_LEFT "TODO find upper limit";
 CM_ SG_ 653 BRAKE_PRESSURE "max seems to be 148";
 CM_ SG_ 820 TURN_LIGHT_LEFT "oscillates with the light blinking";
@@ -422,14 +437,14 @@ CM_ SG_ 848 INCREASING_MSB "upper part of time counter";
 CM_ SG_ 908 INCREASING_MSB "time based";
 CM_ SG_ 500 ACC_STATUS_1 "2 briefly (9 packets) when ACC goes to green, 1 help when ACC coming to a stop and at a stop";
 CM_ SG_ 500 BRAKE_MAYBE "2046 in non-ACC and non-decel. Signal on deceleration. 818 for already stopped break.";
-CM_ SG_ 500 ACC_STATUS_2 "set to 1 when ACC not available, 3 when ACC available (white icon), and 7 when ACC active (green icon)";
+CM_ SG_ 500 ACC_STATUS_2 "set to 1 in non-ACC, 3 when ACC enabled (white icon), and 7 when ACC in use (green icon)";
 CM_ SG_ 500 BRAKE_BOOL_1 "set to 1 when ACC decel. 0 on non-ACC and accel.";
 CM_ SG_ 501 CRUISE_STATE "may just be an icon, but seems to indicate different cruise modes: ACC and Non-ACC and engaged state for both.";
 CM_ SG_ 625 SPEED "zero on non-acc drives";
 CM_ SG_ 625 ACCEL_PERHAPS "set to 7767 on non-ACC drives. ACC drive 40k is constant speed, 42k is accelerating";
 CM_ SG_ 268 BRAKE_PERHAPS "triggers only on ACC braking";
 CM_ SG_ 384 NEW_SIGNAL_1 "set in ACC gas driving. not set in electric human. not sure about gas human driving.";
-
 VAL_ 501 CRUISE_STATE 0 "Off" 1 "CC On" 2 "CC Engaged" 3 "ACC On" 4 "ACC Engaged";
-VAL_ 746 PRNDL 5 "L" 4 "D" 3 "N" 2 "R" 1 "P";
-VAL_ 792 TURN_SIGNALS 2 "Right" 1 "Left";
+VAL_ 746 PRNDL 5 "L" 4 "D" 3 "N" 2 "R" 1 "P" ;
+VAL_ 792 TURN_SIGNALS 2 "Right" 1 "Left" ;
+VAL_ 368 Gear_State 4 "D" 2 "N" 1 "R" 0 "P" ;

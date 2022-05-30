@@ -1,0 +1,186 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+
+BO_ 35 Steering_Column_Angle_Status: 8 XXX
+ SG_ Steering_Wheel_Angle : 5|14@0+ (0.5,-2048) [-2048|2047] "Degrees" XXX #2019 Ram 1500
+ SG_ Steering_Rate : 21|14@0+ (0.5,-2048) [-2048|2047] "deg/s" XXX #From 2500
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 49 EPS_2: 8 XXX
+ SG_ Steering_Column_Torque : 2|11@0+ (1,-1024) [-1024|1023] "" XXX
+ SG_ Torque_Overlay_Status : 6|4@0+ (1,0) [0|15] "" XXX
+ SG_ Torque_From_EPS : 19|12@0+ (1,-2048) [-2048|2047] "" XXX
+ SG_ EPS_Motor_Torque : 34|11@0+ (1,-1024) [-1024|1023] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 121 ESP_8: 8 XXX 
+ SG_ BRK_PRESSURE : 3|12@0+ (1,0) [0|1] "" XXX
+ SG_ BRAKE_PEDAL : 19|12@0+ (1,0) [0|1] "" XXX
+ SG_ Vehicle_Speed : 39|16@0+ (0.0078125,0) [0|511.984375] "km/h" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 131 ESP_1: 8 XXX 
+ SG_ Brake_Pedal_State : 2|2@1+ (1,0) [0|0] "" XXX
+ SG_ Vehicle_Speed : 33|10@0+ (0.5,0) [0|511] "km/h" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 137 ESP_4: 8 XXX
+ SG_ Yaw_Rate : 7|16@0+ (0.01,-327.68) [-327.68|327.66] "deg/s" XXX
+ SG_ Acceleration : 32|8@1+ (0.08,-10.24) [-10.24|10.08] "m/s2" XXX
+
+BO_ 139 ESP_6: 8 XXX
+ SG_ Wheel_RPM_Front_Left : 5|14@0+ (0.5,0) [0|8191] "rpm" XXX
+ SG_ Wheel_RPM_Front_Right : 21|14@0+ (0.5,0) [0|8191] "rpm" XXX
+ SG_ Wheel_RPM_Rear_Left : 37|14@0+ (0.5,0) [0|8191] "rpm" XXX
+ SG_ Wheel_RPM_Rear_Right : 53|14@0+ (0.5,0) [0|8191] "rpm" XXX
+
+BO_ 147 Transmission_Status: 8 XXX
+ SG_ Gear_State : 2|3@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 153 DAS_3: 8 XXX
+ SG_ Engine_Torque_Request : 4|13@0+ (0.25,-500) [-500|1547.5] "Nm" XXX
+ SG_ ACC_StandStill : 5|1@1+ (1,0) [0|0] ""  XXX
+ SG_ Engine_Torque_Request_Max : 7|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Enabled : 20|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Engaged : 21|1@1+ (1,0) [0|0] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 157 ECM_5: 8 XXX
+ SG_ Accelerator_Position : 0|8@1+ (0.4,0) [0|100] "%" XXX
+
+BO_ 166 LKAS_COMMAND: 8 XXX
+ SG_ LKAS_STEERING_TORQUE : 10|11@0+ (1,-1024) [0|1] "" XXX
+ SG_ LKAS_CONTROL_BIT : 24|3@1+ (1,0) [0|1] "" XXX
+ SG_ DASM_FAULT : 51|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 177 Cruise_Control_Buttons: 3 XXX
+ SG_ ACC_Cancel : 0|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Distance_Dec : 1|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Accel : 2|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Decel : 3|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Resume : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ Cruise_OnOff : 6|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_OnOff : 7|1@1+ (1,0) [0|0] "" XXX
+ SG_ ACC_Distance_Inc : 8|1@1+ (1,0) [0|0] "" XXX
+ SG_ COUNTER : 15|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 23|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 221 Center_Stack_1: 8 XXX
+ SG_ LKAS_Button : 53|1@1+ (1,0) [0|0] "" XXX
+ SG_ Traction_Button : 54|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 232 DAS_4: 8 XXX
+ SG_ ACC_Set_Speed : 8|8@1+ (1,0) [0|255] "km/h" XXX
+ SG_ ACC_Activation_Status : 36|3@1+ (1,0) [0|0] "" XXX
+
+BO_ 250 DAS_6: 8 XXX
+ SG_ Auto_High_Beam : 47|1@1+ (1,0) [0|0] "" XXX
+ SG_ LKAS_LANE_LINES : 11|4@0+ (1,0) [0|15] "" XXX
+ SG_ LKAS_ICON_COLOR : 51|4@0+ (1,0) [0|15] "" XXX
+ SG_ LKAS_Disabled : 56|1@1+ (1,0) [0|0] "" XXX
+ SG_ CAR_MODEL : 19|4@0+ (1,0) [0|255] "" XXX
+ SG_ LKAS_ALERTS : 35|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 464 ORC_1: 8 XXX
+ SG_ Driver_Seatbelt_Status : 16|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 650 Center_Stack_2: 8 XXX
+ SG_ LKAS_Button : 57|1@1+ (1,0) [0|0] "" XXX
+
+BO_ 657 BCM_1: 8 XXX
+ SG_ Driver_Door_Ajar : 17|1@1+ (1,0) [0|0] "" XXX
+ SG_ Passenger_Door_Ajar : 18|1@1+ (1,0) [0|0] "" XXX
+ SG_ Left_Rear_Door_Ajar : 19|1@1+ (1,0) [0|0] "" XXX
+ SG_ Right_Rear_Door_Ajar : 20|1@1+ (1,0) [0|0] "" XXX
+ SG_ Left_Turn_Request : 30|1@1+ (1,0) [0|0] "" XXX
+ SG_ Right_Turn_Request : 31|1@1+ (1,0) [0|0] ""  XXX
+
+BO_ 720 BSM_1: 6 XXX
+ SG_ Blind_Spot_Monitor_Left : 0|3@1+ (1,0) [0|0] "" XXX
+ SG_ Blind_Spot_Monitor_Right : 3|3@1+ (1,0) [0|0] "" XXX
+
+BO_ 792 Steering_Column_Commands: 8 XXX
+ SG_ Turn_Signal_Status : 0|2@1+ (1,0) [0|3] "" XXX
+ SG_ High_Beam_Lever_Status : 2|2@1+ (1,0) [0|0] "" XXX
+
+BO_ 53 PCM_2: 8 XXX
+ SG_ ENG_TORQUE_REQ : 3|12@0+ (1,0) [0|7] "" XXX
+ SG_ ENG_TORQUE_OUT : 19|12@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 37 PCM_1: 8 XXX
+ SG_ ENGINE_RPM : 7|16@0+ (1,0) [0|1] "" XXX
+ SG_ ENGINE_TRQ_REQ : 23|12@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 133 TCM_1: 8 XXX
+ SG_ DESIRED_GEAR : 15|4@0+ (1,0) [0|1] "" XXX
+ SG_ SHIFT_PENDING : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ SPEED_TURBINE : 27|12@0+ (0.04,0) [0|1] "km/h" XXX
+ SG_ ACTUAL_GEAR : 11|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 135 ABS_2: 8 XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|1] "" XXX
+ SG_ DRIVER_BRAKE : 15|8@0+ (1,0) [0|1] "" XXX
+
+
+
+
+
+CM_ SG_ 35 Steering_Wheel_Angle "540 deg total negative values indicate right turn, positive values indicate left turn";
+CM_ SG_ 133 ACTUAL_GEAR "0xd = P, 0x1-8 = D (actual gear), 0xb = R or N?? TODO find R vs N";
+CM_ SG_ 153 ACC_Engaged "SENT BY FORWARD CAMERA 1 = ACTIVE, 3 = ENGAGED, 0 = DISENGAGED/OFF";
+CM_ SG_ 166 LKAS_COMMAND "SENT BY FORWARD CAMERA";
+CM_ SG_ 166 LKAS_CONTROL_BIT "0=IDLE, 1=HAS 2=LKAS 3=ABSD, 4=TJA, 7=SNA";
+CM_ SG_ 250 Auto_High_Beam "1 = HIGH BEAMS OK 0 = HIGH BEAMS OFF ";
+CM_ SG_ 250 LKAS_LANE_LINES "9 = LEFT CAUTION, 11 = VERY LEFT CAUTION 10 = RIGHT CAUTION, 14 = VERY RIGHT, 4 = NO LINES DETECTED, 3 = LINES DETECTED, SYSTEM ACTIVE";
+CM_ SG_ 464 Driver_Seatbelt_Status "1 unbuckled 0 buckled";
+CM_ SG_ 792 High_Beam_Lever_Status "1 is high beam, 0 reg";
+VAL_ 147 Gear_State 4 "D" 2 "N" 1 "R" 0 "P" ;
