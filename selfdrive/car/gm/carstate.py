@@ -19,12 +19,8 @@ class CarState(CarStateBase):
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
 
-    ret.wheelSpeeds = self.get_wheel_speeds(
-      pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"],
-      pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"],
-      pt_cp.vl["EBCMWheelSpdRear"]["RLWheelSpd"],
-      pt_cp.vl["EBCMWheelSpdRear"]["RRWheelSpd"],
-    )
+    ret.wheelSpeeds = self.get_wheel_speeds(pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"], pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"],
+                                            pt_cp.vl["EBCMWheelSpdRear"]["RLWheelSpd"], pt_cp.vl["EBCMWheelSpdRear"]["RRWheelSpd"])
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01

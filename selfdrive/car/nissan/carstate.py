@@ -35,12 +35,8 @@ class CarState(CarStateBase):
     elif self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
       ret.brakePressed = bool(cp.vl["CRUISE_THROTTLE"]["USER_BRAKE_PRESSED"])
 
-    ret.wheelSpeeds = self.get_wheel_speeds(
-      cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FL"],
-      cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FR"],
-      cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RL"],
-      cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RR"],
-    )
+    ret.wheelSpeeds = self.get_wheel_speeds(cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FL"], cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FR"],
+                                            cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RL"], cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RR"])
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
 
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
@@ -91,10 +87,8 @@ class CarState(CarStateBase):
     ret.leftBlinker = bool(cp.vl["LIGHTS"]["LEFT_BLINKER"])
     ret.rightBlinker = bool(cp.vl["LIGHTS"]["RIGHT_BLINKER"])
 
-    ret.doorOpen = any([cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RR"],
-                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RL"],
-                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FR"],
-                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
+    ret.doorOpen = any([cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RR"], cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RL"],
+                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FR"], cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
 
     ret.espDisabled = bool(cp.vl["ESP"]["ESP_DISABLED"])
 

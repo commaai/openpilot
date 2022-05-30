@@ -23,20 +23,16 @@ class CarState(CarStateBase):
     else:
       ret.brakePressed = cp.vl["Brake_Status"]["Brake"] == 1
 
-    ret.wheelSpeeds = self.get_wheel_speeds(
-      cp.vl["Wheel_Speeds"]["FL"],
-      cp.vl["Wheel_Speeds"]["FR"],
-      cp.vl["Wheel_Speeds"]["RL"],
-      cp.vl["Wheel_Speeds"]["RR"],
-    )
+    ret.wheelSpeeds = self.get_wheel_speeds(cp.vl["Wheel_Speeds"]["FL"], cp.vl["Wheel_Speeds"]["FR"],
+                                            cp.vl["Wheel_Speeds"]["RL"], cp.vl["Wheel_Speeds"]["RR"])
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     # Kalman filter, even though Subaru raw wheel speed is heaviliy filtered by default
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
 
     # continuous blinker signals for assisted lane change
-    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(
-      50, cp.vl["Dashlights"]["LEFT_BLINKER"], cp.vl["Dashlights"]["RIGHT_BLINKER"])
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["Dashlights"]["LEFT_BLINKER"],
+                                                                      cp.vl["Dashlights"]["RIGHT_BLINKER"])
 
     if self.CP.enableBsm:
       ret.leftBlindspot = (cp.vl["BSD_RCTA"]["L_ADJACENT"] == 1) or (cp.vl["BSD_RCTA"]["L_APPROACHING"] == 1)
@@ -58,10 +54,8 @@ class CarState(CarStateBase):
       ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     ret.seatbeltUnlatched = cp.vl["Dashlights"]["SEATBELT_FL"] == 1
-    ret.doorOpen = any([cp.vl["BodyInfo"]["DOOR_OPEN_RR"],
-                        cp.vl["BodyInfo"]["DOOR_OPEN_RL"],
-                        cp.vl["BodyInfo"]["DOOR_OPEN_FR"],
-                        cp.vl["BodyInfo"]["DOOR_OPEN_FL"]])
+    ret.doorOpen = any([cp.vl["BodyInfo"]["DOOR_OPEN_RR"], cp.vl["BodyInfo"]["DOOR_OPEN_RL"],
+                        cp.vl["BodyInfo"]["DOOR_OPEN_FR"], cp.vl["BodyInfo"]["DOOR_OPEN_FL"]])
     ret.steerFaultPermanent = cp.vl["Steering_Torque"]["Steer_Error_1"] == 1
 
     if self.car_fingerprint in PREGLOBAL_CARS:
