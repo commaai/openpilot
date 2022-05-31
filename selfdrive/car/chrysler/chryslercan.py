@@ -18,7 +18,7 @@ def create_lkas_hud(packer, gear, lkas_active, hud_alert, hud_count, lkas_car_mo
 
   if hud_count < (1 * 4):  # first 3 seconds, 4Hz
     alerts = 1
-  # CAR.PACIFICA_2018_HYBRID and CAR.PACIFICA_2019_HYBRID and CAR.PACIFICA_2022_HYBRID
+  # CAR.PACIFICA_2018_HYBRID and CAR.PACIFICA_2019_HYBRID
   # had color = 1 and lines = 1 but trying 2017 hybrid style for now.
   if gear in (GearShifter.drive, GearShifter.reverse, GearShifter.low):
     if lkas_active:
