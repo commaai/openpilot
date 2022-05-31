@@ -15,7 +15,7 @@ def regen_job(segment):
     sidx = int(segment[1].rsplit('--', 1)[1])
     fake_dongle_id = ''.join(random.choice('0123456789ABCDEF') for i in range(16))
     relr = regen_and_save(route, sidx, upload=True, use_route_meta=False, outdir=os.path.join(FAKEDATA, fake_dongle_id), disable_tqdm=True)
-    relr = relr.replace('/', '|')
+    relr = '|'.join(relr.split('/')[-2:-1])
     return f'  ("{segment[0]}", "{relr}"), '
 
 if __name__ == "__main__":
