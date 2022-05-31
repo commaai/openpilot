@@ -8,16 +8,11 @@ from selfdrive.car.tests.routes import TestRoute
 from selfdrive.car.tests.test_models import TestCarModel
 
 
-def create_test_models_tests(routes: List[Tuple[str, TestRoute]], ci=False) -> unittest.TestSuite:
-  """
-    Creates a test suite for the TestCarModel class based on routes passed in
-  """
-
+def create_test_models_suite(routes: List[Tuple[str, TestRoute]], ci=False) -> unittest.TestSuite:
   test_suite = unittest.TestSuite()
-  for car_model, _test_route in routes:
-    test_case_args = {"car_model": car_model, "test_route": _test_route, "ci": ci}
-
+  for car_model, test_route in routes:
     # create new test case and discover tests
+    test_case_args = {"car_model": car_model, "test_route": test_route, "ci": ci}
     CarModelTestCase = type("CarModelTestCase", (TestCarModel,), test_case_args)
     test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(CarModelTestCase))
   return test_suite
@@ -37,6 +32,6 @@ if __name__ == "__main__":
   assert args.car is not None, "Specify car fingerprint with --car"
 
   test_route = TestRoute(args.route, args.car, segment=args.segment)
-  test_cases = create_test_models_tests([(args.car, test_route)])
 
-  unittest.TextTestRunner().run(test_cases)
+  test_suite = create_test_models_suite([(args.car, test_route)])
+  unittest.TextTestRunner().run(test_suite)
