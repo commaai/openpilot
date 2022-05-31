@@ -1,5 +1,10 @@
-Version 0.8.15 (20XX-XX-XX)
+Version 0.8.15 (2022-XX-XX)
 ========================
+* New driving model
+* New lateral controller based on physical wheel torque model
+  * Much smoother control, consistent across the speed range
+  * Effective feedforward that uses road roll
+  * Simplified tuning, all car-specific parameters can be derived from data
 
 Version 0.8.14 (2022-06-01)
 ========================
