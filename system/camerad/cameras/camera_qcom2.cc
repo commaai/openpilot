@@ -630,7 +630,29 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
   exposure_time = 5;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (dc_gain_enabled ? DC_GAIN : 1) * sensor_analog_gains[gain_idx] * exposure_time;
 
+<<<<<<< HEAD:system/camerad/cameras/camera_qcom2.cc
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, yuv_type);
+=======
+  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+
+  // Initialize histogram bins
+  int val = 0;
+  for (int i = 0; i < AR0231_NUM_HISTOGRAM_BINS; i++) {
+    histogram_bins[i] = val;
+
+    int width;
+    if (i <= 15) width = 8;
+    else if (i <= 23) width = 16;
+    else if (i <= 31) width = 32;
+    else if (i <= 39) width = 64;
+    else if (i <= 63) width = 128;
+    else if (i <= 183) width = 512;
+    else width = 16534;
+
+    val += width;
+    histogram_bin_widths[i] = width;
+  }
+>>>>>>> 699ced2cf (do AE on sensor histogram):selfdrive/camerad/cameras/camera_qcom2.cc
 }
 
 void CameraState::camera_open() {
@@ -1006,6 +1028,60 @@ std::map<uint16_t, uint16_t> CameraState::ar0231_parse_registers(uint8_t *data, 
   return registers;
 }
 
+std::vector<int> CameraState::ar0231_parse_histogram(uint8_t *data) {
+  std::vector<int> bin_vals;
+  bin_vals.reserve(AR0231_NUM_HISTOGRAM_BINS);
+
+  // Each histogram bin is made up from two 10 bit values.
+  // Two 10 bit values are packed as 3 bytes with some padding:
+  // [      2 bytes      ][             1 byte             ]
+  // [ P1[9:2] | P2[9:2] | P2[1:0] | 0b01 | P1[1:0] | 0b01 ]
+  // So each histogram bin takes up 3 bytes in the original data
+
+  int sum = 0;
+  const int bytes_in_histogram = AR0231_NUM_HISTOGRAM_BINS * 3;
+  for (int i = 15; i < 15 + bytes_in_histogram; i += 3) {
+    uint32_t word_0 = ((uint32_t)data[i + 0] << 2) | ((data[i + 2] >> 2) & 0b11);
+    uint32_t word_1 = ((uint32_t)data[i + 1] << 2) | ((data[i + 2] >> 6) & 0b11);
+    uint32_t val = (word_0 << 10) | word_1;
+
+    sum += val;
+    bin_vals.push_back(val);
+  }
+
+  // Sum of histogram should be the number of green pixels on even rows, i.e. 1/4th of the total pixels
+  // assert(sum == ci.frame_width * ci.frame_height / 4);
+
+  return bin_vals;
+}
+
+double CameraState::ar0231_get_geometric_mean(VisionBuf *camera_buf) {
+  uint8_t *data = (uint8_t*)camera_buf->addr + ci.stats_offset * ci.frame_stride;
+  std::vector<int> histogram = ar0231_parse_histogram(data);
+
+  double sum_logs = 0;
+  int total = 0;
+  for (int i = 0; i < AR0231_NUM_HISTOGRAM_BINS; i++) {
+    total += histogram[i];
+    sum_logs += histogram[i] * log(histogram_bins[i] + histogram_bin_widths[i] / 2);
+  }
+
+  if (total == 0) return 0.0;
+
+  return std::max(exp(sum_logs / total) - 168.0, 0.0); // Subtract black level
+}
+
+double CameraState::get_geometric_mean(VisionBuf *camera_buf) {
+  assert(camera_id == CAMERA_ID_AR0231);
+  return ar0231_get_geometric_mean(camera_buf);
+}
+
+std::vector<int> CameraState::get_histogram(VisionBuf *camera_buf) {
+  assert(camera_id == CAMERA_ID_AR0231);
+  uint8_t *data = (uint8_t*)camera_buf->addr + ci.stats_offset * ci.frame_stride;
+  return ar0231_parse_histogram(data);
+}
+
 void CameraState::handle_camera_event(void *evdat) {
   if (!enabled) return;
   struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)evdat;
@@ -1211,16 +1287,8 @@ static void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal
   framed.setTemperaturesC({temp_0, temp_1});
 }
 
-static void driver_cam_auto_exposure(CameraState *c) {
-  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
-  const CameraBuf *b = &c->buf;
-  static ExpRect rect = {96, 1832, 2, 242, 1148, 4};
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
-}
 
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  driver_cam_auto_exposure(c);
-
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
@@ -1230,6 +1298,9 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
     ar0231_process_registers(s, c, framed);
   }
   s->pm->send("driverCameraState", msg);
+
+  float measured_grey = c->get_geometric_mean(c->buf.cur_camera_buf) / 4096.0;
+  camera_autoexposure(c, measured_grey);
 }
 
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
@@ -1253,9 +1324,8 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
-  const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
-  const int skip = 2;
-  camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip));
+  float measured_grey = c->get_geometric_mean(c->buf.cur_camera_buf) / 4096.0;
+  camera_autoexposure(c, measured_grey);
 }
 
 void cameras_run(MultiCameraState *s) {

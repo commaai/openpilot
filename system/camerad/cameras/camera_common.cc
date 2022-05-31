@@ -277,6 +277,7 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   pm->send("thumbnail", msg);
 }
 
+// TODO: Remove
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
   int lum_med;
   uint32_t lum_binning[256] = {0};
