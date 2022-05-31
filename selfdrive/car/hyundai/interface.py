@@ -66,7 +66,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       tire_stiffness_factor = 0.65
       if candidate == CAR.SONATA:
-        set_torque_tune(3.0, 0.01)
+        set_torque_tune(ret.lateralTuning, 3.0, 0.01)
       else:
         ret.lateralTuning.pid.kf = 0.00005
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
