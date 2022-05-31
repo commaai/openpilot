@@ -3,7 +3,7 @@
 # Requires nvidia docker - https://github.com/NVIDIA/nvidia-docker
 if ! $(apt list --installed | grep -q nvidia-container-toolkit); then
   read -p "Nvidia docker is required. Do you want to install it now? (y/n)";
-  if [ "${REPLY}" == "y" ]; then
+  if [[ "${REPLY}" == "y" || $CI ]]; then
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
     echo $distribution
     curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
