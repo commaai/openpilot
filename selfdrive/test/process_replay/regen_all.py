@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import concurrent.futures
 from tqdm import tqdm
 
@@ -11,7 +12,7 @@ def regen_job(segment):
   with OpenpilotPrefix() as prefix:
     route = segment[1].rsplit('--', 1)[0]
     sidx = int(segment[1].rsplit('--', 1)[1])
-    relr = regen_and_save(route, sidx, upload=True, use_route_meta=False, outdir=FAKEDATA[:-1]+prefix, disable_tqdm=True)
+    relr = regen_and_save(route, sidx, upload=True, use_route_meta=False, outdir=os.path.join(FAKEDATA, prefix), disable_tqdm=True)
     relr = relr.replace('/', '|')
     return f'  ("{segment[0]}", "{relr}"), '
 
