@@ -4,6 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+av = "*"
 azure-storage-blob = "~=2.1"
 control = "*"
 coverage = "*"

@@ -74,7 +74,7 @@ class MultiLogIterator:
 
 
 class LogReader:
-  def __init__(self, fn, dat=None, canonicalize=True, only_union_types=False, sort_by_time=False):
+  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
     self.data_version = None
     self._only_union_types = only_union_types
 

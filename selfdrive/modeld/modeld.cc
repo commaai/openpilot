@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
     assert(ret == 0);
   }
 
-  bool main_wide_camera = Params().getBool("EnableWideCamera");
+  bool main_wide_camera = Params().getBool("WideCameraOnly");
   bool use_extra_client = !main_wide_camera;  // set for single camera mode
 
   // cl init

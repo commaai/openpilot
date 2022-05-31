@@ -50,10 +50,6 @@ soundd
 .. autodoxygenindex::
    :project: selfdrive_ui_soundd
 
-navd
-""""
-.. autodoxygenindex::
-   :project: selfdrive_ui_navd
 
 replay
 """"""
