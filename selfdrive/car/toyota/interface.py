@@ -218,16 +218,16 @@ class CarInterface(CarInterfaceBase):
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
     # Detect smartDSU, which intercepts ACC_CMD from the DSU allowing openpilot to send it
     smartDsu = 0x2FF in fingerprint[0]
-    smartDsu_nodsu = 0x2AA in fingerprint[0]
-    print(f"NODSU: {smartDsu_nodsu}"}
+    smartDsu_radar_dsu = 0x2AA in fingerprint[0]
+    print(f"RADAR DSU: {smartDsu_radar_dsus}"}
     print(f"fingerprint: {fingerprint[0]}")
     # In TSS2 cars the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
-    ret.enableDsu = (len(found_ecus) > 0) and (Ecu.dsu not in found_ecus) and (candidate not in NO_DSU_CAR) and (not smartDsu) and (not smartDsu_nodsu)
+    ret.enableDsu = (len(found_ecus) > 0) and (Ecu.dsu not in found_ecus) and (candidate not in NO_DSU_CAR) and (not smartDsu) and (not smartDsu_radar_dsu)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
     # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
-    ret.openpilotLongitudinalControl = smartDsu or smartDsu_nodsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
-    if smartDsu_nodsu:
+    ret.openpilotLongitudinalControl = smartDsu or smartDsu_radar_dsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+    if smartDsu_radar_dsu:
       ret.radarTimeStep = 1.0 / 15.0
 
     if not ret.openpilotLongitudinalControl:

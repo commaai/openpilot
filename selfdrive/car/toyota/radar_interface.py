@@ -49,12 +49,12 @@ class RadarInterface(RadarInterfaceBase):
     super().__init__(CP)
     self.track_id = 0
     self.radar_ts = CP.radarTimeStep
+    self.radar_dsu = CP.carFingerprint in NO_DSU_CAR and CP.carFingerprint not in TSS2_CAR
 
-    if CP.carFingerprint in NO_DSU_CAR and CP.carFingerprint not in TSS2_CAR:
-      self.RADAR_MSGS = list(range(0x301, 0x318, 2))
+    if self.radar_dsu:
+      self.RADAR_A_MSGS = self.RADAR_B_MSGS = list(range(0x301, 0x318, 2))
       self.valid_cnt = {key: 0 for key in range(0x3f)}
       self.rcp = _create_nodsu_radar_can_parser(CP.carFingerprint)
-      self.trigger_msg = self.RADAR_MSGS[-1]
     else:
       if CP.carFingerprint in TSS2_CAR:
         self.RADAR_A_MSGS = list(range(0x180, 0x190))
@@ -62,18 +62,15 @@ class RadarInterface(RadarInterfaceBase):
       else:
         self.RADAR_A_MSGS = list(range(0x210, 0x220))
         self.RADAR_B_MSGS = list(range(0x220, 0x230))
-      self.valid_cnt = {key: 0 for key in self.RADAR_A_MSGS}
-      self.rcp = _create_radar_can_parser(CP.carFingerprint)
-      self.trigger_msg = self.RADAR_B_MSGS[-1]
 
+      self.rcp = _create_radar_can_parser(CP.carFingerprint)
+      self.valid_cnt = {key: 0 for key in self.RADAR_A_MSGS}
+
+    self.trigger_msg = self.RADAR_B_MSGS[-1]
     self.updated_messages = set()
 
-    # No radar dbc for cars without DSU which are not TSS 2.0
-    # TODO: make a adas dbc file for dsu-less models
-    self.no_radar = ((not CP.openpilotLongitudinalControl) and CP.carFingerprint in NO_DSU_CAR) and CP.carFingerprint not in TSS2_CAR
-
   def update(self, can_strings):
-    if self.no_radar or self.rcp is None:
+    if self.rcp is None:
       return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)
@@ -82,15 +79,15 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    if self.nodsu_long:
-      rr = self._update_nodsu(self.updated_messages)
+    if self.radar_dsu:
+      rr = self._update_radar_dsu(self.updated_messages)
     else:
       rr = self._update(self.updated_messages)
     self.updated_messages.clear()
 
     return rr
 
-  def _update_nodsu(self, updated_messages):
+  def _update_radar_dsu(self, updated_messages):
     ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:

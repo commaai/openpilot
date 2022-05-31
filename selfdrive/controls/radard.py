@@ -12,7 +12,7 @@ from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroi
 from selfdrive.controls.lib.radar_helpers import Cluster, Track, RADAR_TO_CAMERA
 from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import TICI
-from selfdrive.car.toyota.values import NO_DSU_CAR
+from selfdrive.car.toyota.values import NO_DSU_CAR, TSS2_CAR
 
 
 class KalmanParams():
@@ -103,7 +103,7 @@ class RadarD():
     self.v_ego_hist = deque([0], maxlen=delay+1)
 
     self.ready = False
-    self.toyota_nodsu = CP.carFingerprint in NO_DSU_CAR and CP.openpilotLongitudinalControl
+    self.radar_dsu = CP.carFingerprint in NO_DSU_CAR and CP.carFingerprint not in TSS2_CAR
 
   def update(self, sm, rr, enable_lead):
     self.current_time = 1e-9*max(sm.logMonoTime.values())
@@ -116,7 +116,7 @@ class RadarD():
 
     ar_pts = {}
     for pt in rr.points:
-      if self.toyota_nodsu:
+      if self.radar_dsu:
         vRel = pt.vRel - self.v_ego_hist[0]
       else:
         vRel = pt.vRel
