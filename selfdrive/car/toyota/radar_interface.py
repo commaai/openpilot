@@ -115,7 +115,7 @@ class RadarInterface(RadarInterfaceBase):
 
           self.pts[track_id].dRel = cpt['LONG_DIST']  # from front of car
           self.pts[track_id].yRel = cpt['LAT_DIST']  # in car frame's y axis, left is positive
-          self.pts[track_id].vRel = cpt['SPEED'] * CV.KPH_TO_MS # it's absolute speed
+          self.pts[track_id].vRel = cpt['SPEED'] # it's absolute speed
           self.pts[track_id].aRel = float('nan')
           self.pts[track_id].yvRel = cpt['LAT_SPEED']
           self.pts[track_id].measured = True
