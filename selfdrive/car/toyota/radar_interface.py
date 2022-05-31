@@ -49,10 +49,8 @@ class RadarInterface(RadarInterfaceBase):
     super().__init__(CP)
     self.track_id = 0
     self.radar_ts = CP.radarTimeStep
-    self.nodsu_long = CP.carFingerprint in NO_DSU_CAR and CP.openpilotLongitudinalControl
-    print(f"NODSU_LONG: {self.nodsu_long}")
 
-    if self.nodsu_long:
+    if CP.carFingerprint in NO_DSU_CAR:
       self.RADAR_MSGS = list(range(0x301, 0x318, 2))
       self.valid_cnt = {key: 0 for key in range(0x3f)}
       self.rcp = _create_nodsu_radar_can_parser(CP.carFingerprint)
@@ -72,7 +70,9 @@ class RadarInterface(RadarInterfaceBase):
 
     # No radar dbc for cars without DSU which are not TSS 2.0
     # TODO: make a adas dbc file for dsu-less models
-    self.no_radar = ((not self.nodsu_long) and CP.carFingerprint in NO_DSU_CAR) and CP.carFingerprint not in TSS2_CAR
+    nodsu_long = CP.carFingerprint in NO_DSU_CAR and CP.openpilotLongitudinalControl
+    print(f"NODSU_LONG: {nodsu_long}")
+    self.no_radar = ((not nodsu_long) and CP.carFingerprint in NO_DSU_CAR) and CP.carFingerprint not in TSS2_CAR
 
   def update(self, can_strings):
     if self.no_radar or self.rcp is None:
