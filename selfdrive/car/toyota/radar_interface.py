@@ -50,6 +50,7 @@ class RadarInterface(RadarInterfaceBase):
     self.track_id = 0
     self.radar_ts = CP.radarTimeStep
     self.nodsu_long = CP.carFingerprint in NO_DSU_CAR and CP.openpilotLongitudinalControl
+    print(f"NODSU_LONG: {self.nodsu_long}")
 
     if self.nodsu_long:
       self.RADAR_MSGS = list(range(0x301, 0x318, 2))
