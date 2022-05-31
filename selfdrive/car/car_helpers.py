@@ -126,6 +126,15 @@ def fingerprint(logcan, sendcan):
   car_fingerprint = None
   done = False
 
+  d = messaging.drain_sock(logcan, wait_for_one=True)
+  _i = 0
+  for msg in d:
+    for can in msg.can:
+      _i += 1
+      print(('{}: {}, len: {}'.format(can.src, can.address, len(can.dat))))
+  print('{} total CAN frames'.format(len(d)))
+  print('{} total CAN messages'.format(_i))
+
   while not done:
     a = get_one_can(logcan)
 
