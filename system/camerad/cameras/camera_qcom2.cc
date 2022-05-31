@@ -1068,7 +1068,7 @@ double CameraState::ar0231_get_geometric_mean(VisionBuf *camera_buf) {
 
   if (total == 0) return 0.0;
 
-  return std::max(exp(sum_logs / total) - 168.0, 0.0); // Subtract black level
+  return std::max(exp(sum_logs / total) - 168.0 * 256.0, 0.0); // Subtract black level
 }
 
 double CameraState::get_geometric_mean(VisionBuf *camera_buf) {
@@ -1299,7 +1299,7 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   }
   s->pm->send("driverCameraState", msg);
 
-  float measured_grey = c->get_geometric_mean(c->buf.cur_camera_buf) / (4096.0 * 256.0) * 4;
+  float measured_grey = c->get_geometric_mean(c->buf.cur_camera_buf) / (4096.0 * 256.0) * 16;
   camera_autoexposure(c, measured_grey);
 }
 
@@ -1324,7 +1324,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
-  float measured_grey = c->get_geometric_mean(c->buf.cur_camera_buf) / (4096.0 * 256.0) * 4;
+  float measured_grey = c->get_geometric_mean(c->buf.cur_camera_buf) / (4096.0 * 256.0) * 16;
   camera_autoexposure(c, measured_grey);
 }
 
