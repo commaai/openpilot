@@ -104,7 +104,7 @@ class LogReader:
 
   @classmethod
   def from_bytes(cls, dat):
-    return cls("", dat)
+    return cls("", dat=dat)
 
   def __iter__(self):
     for ent in self._ents:
