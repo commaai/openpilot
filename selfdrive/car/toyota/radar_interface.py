@@ -22,7 +22,7 @@ def _create_nodsu_radar_can_parser(car_fingerprint):
         [0] * msg_n))
 
   checks = list(zip(RADAR_MSGS, [15] * msg_n))
-  return CANParser(DBC[carFingerprint]['radar'], signals, checks, 1)
+  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
 
 def _create_radar_can_parser(car_fingerprint):
   if DBC[car_fingerprint]['radar'] is None:
