@@ -5,6 +5,9 @@ from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSS2_CAR
 from selfdrive.car.interfaces import RadarInterfaceBase
 
 def _create_nodsu_radar_can_parser(car_fingerprint):
+  if DBC[car_fingerprint]['radar'] is None:
+    return None
+
   # object 0 to 11
   RADAR_MSGS = list(range(0x301, 0x318, 2))
   msg_n = len(RADAR_MSGS)
@@ -14,12 +17,7 @@ def _create_nodsu_radar_can_parser(car_fingerprint):
         ['LAT_DIST'] * msg_n + \
         ['SPEED'] * msg_n + \
         ['LAT_SPEED'] * msg_n,
-        RADAR_MSGS * 5,
-        [0] * msg_n + \
-        [0] * msg_n + \
-        [0] * msg_n + \
-        [0] * msg_n + \
-        [0] * msg_n))
+        RADAR_MSGS * 5))
 
   checks = list(zip(RADAR_MSGS, [15] * msg_n))
   return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
