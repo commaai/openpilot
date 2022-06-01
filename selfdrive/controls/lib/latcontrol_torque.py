@@ -60,7 +60,7 @@ class LatControlTorque(LatControl):
         actual_curvature = interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_llk])
       desired_lateral_accel = desired_curvature * CS.vEgo ** 2
       
-      # desired rate is the desired rate of change of the setpoint
+      # desired rate is the desired rate of change in the setpoint, not the absolute desired curvature
       desired_lateral_jerk = desired_curvature_rate * CS.vEgo ** 2
       actual_lateral_accel = actual_curvature * CS.vEgo ** 2
 
