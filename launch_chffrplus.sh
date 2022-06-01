@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+export LOG_TIMESTAMPS="1"
+
 if [ -z "$BASEDIR" ]; then
   BASEDIR="/data/openpilot"
 fi
