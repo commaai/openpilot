@@ -47,7 +47,11 @@ class RouteEngine:
       self.mapbox_token = os.environ["MAPBOX_TOKEN"]
       self.mapbox_host = "https://api.mapbox.com"
     else:
-      self.mapbox_token = Api(self.params.get("DongleId", encoding='utf8')).get_token(expiry_hours=4 * 7 * 24)
+      try:
+        self.mapbox_token = Api(self.params.get("DongleId", encoding='utf8')).get_token(expiry_hours=4 * 7 * 24)
+      except FileNotFoundError:
+        cloudlog.exception("Failed to generate mapbox token due to missing private key. Ensure device is registered.")
+        self.mapbox_token = ""
       self.mapbox_host = "https://maps.comma.ai"
 
   def update(self):
@@ -118,9 +122,10 @@ class RouteEngine:
       params['bearings'] = f"{(self.last_bearing + 360) % 360:.0f},90;"
 
     url = self.mapbox_host + f'/directions/v5/mapbox/driving-traffic/{self.last_position.longitude},{self.last_position.latitude};{destination.longitude},{destination.latitude}'
-    resp = requests.get(url, params=params)
+    try:
+      resp = requests.get(url, params=params)
+      resp.raise_for_status()
 
-    if resp.status_code == 200:
       r = resp.json()
       if len(r['routes']):
         self.route = r['routes'][0]['legs'][0]['steps']
@@ -135,8 +140,8 @@ class RouteEngine:
         cloudlog.warning("Got empty route response")
         self.clear_route()
 
-    else:
-      cloudlog.warning(f"Got error in route reply {resp.status_code}")
+    except requests.exceptions.RequestException:
+      cloudlog.exception("failed to get route")
       self.clear_route()
 
     self.send_route()
