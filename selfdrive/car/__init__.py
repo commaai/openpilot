@@ -1,7 +1,9 @@
 # functions common among cars
+import capnp
+
 from cereal import car
 from common.numpy_fast import clip
-from typing import Dict
+from typing import Dict, List
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
@@ -10,7 +12,8 @@ ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
 
-def create_button_event(prev_but, cur_but, buttons_dict, unpressed=0):
+def create_button_event(prev_but: int, cur_but: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
+                        unpressed: int = 0) -> capnp.lib.capnp._DynamicStructBuilder:
   if cur_but != unpressed:
     be = car.CarState.ButtonEvent(pressed=True)
     but = cur_but
@@ -21,7 +24,7 @@ def create_button_event(prev_but, cur_but, buttons_dict, unpressed=0):
   return be
 
 
-def create_button_enable_events(buttonEvents):
+def create_button_enable_events(buttonEvents: capnp.lib.capnp._DynamicListBuilder) -> List[int]:
   events = []
   for b in buttonEvents:
     # do enable on both accel and decel buttons
