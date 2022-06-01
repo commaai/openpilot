@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
+import capnp
 import time
 import traceback
-from typing import Any, Set
+from typing import Set
 
 import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
+from selfdrive.car import make_can_msg
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.swaglog import cloudlog
 
-# TODO: figure out type annotation for CanData
-def is_tester_present_response(msg: Any) -> bool:
+
+def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader) -> bool:
   # ISO-TP messages are always padded to 8 bytes
   # tester present response is always a single frame
-  if len(msg.dat) == 8 and msg.dat[0] >= 1 and msg.dat[0] <= 7:
+  if len(msg.dat) == 8 and 1 <= msg.dat[0] <= 7:
     # success response
     if msg.dat[1] == (SERVICE_TYPE.TESTER_PRESENT + 0x40):
       return True
@@ -21,12 +23,13 @@ def is_tester_present_response(msg: Any) -> bool:
       return True
   return False
 
-def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float=1, debug: bool=True) -> Set[int]:
+
+def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float = 1, debug: bool = True) -> Set[int]:
   ecu_addrs = set()
   try:
     addr_list = [0x700 + i for i in range(256)] + [0x18da00f1 + (i << 8) for i in range(256)]
     tester_present = bytes([0x02, SERVICE_TYPE.TESTER_PRESENT, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0])
-    msgs = [[addr, 0, tester_present, bus] for addr in addr_list]
+    msgs = [make_can_msg(addr, tester_present, bus) for addr in addr_list]
 
     messaging.drain_sock(logcan)
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
@@ -44,6 +47,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus
   except Exception:
     cloudlog.warning(f"ECU addr scan exception: {traceback.format_exc()}")
   return ecu_addrs
+
 
 if __name__ == "__main__":
   import argparse
