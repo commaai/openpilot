@@ -229,18 +229,21 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
 bool FrameReader::copyBuffers(AVFrame *f, uint8_t *yuv) {
   if (hw_pix_fmt == HW_PIX_FMT) {
     uint8_t *y = yuv ? yuv : nv12toyuv_buffer.data();
-    uint8_t *u = y + width * height;
-    uint8_t *v = u + (width / 2) * (height / 2);
-    libyuv::NV12ToI420(f->data[0], f->linesize[0], f->data[1], f->linesize[1],
-                       y, width, u, width / 2, v, width / 2, width, height);
+    uint8_t *uv = y + width * height;
+    for (int i = 0; i < height/2; i++) {
+      memcpy(y + (i*2 + 0)*width, f->data[0] + (i*2 + 0)*f->linesize[0], width);
+      memcpy(y + (i*2 + 1)*width, f->data[0] + (i*2 + 1)*f->linesize[0], width);
+      memcpy(uv + i*width, f->data[1] + i*f->linesize[1], width);
+    }
   } else {
-    uint8_t *u = yuv + width * height;
-    uint8_t *v = u + (width / 2) * (height / 2);
-    libyuv::I420Copy(f->data[0], f->linesize[0],
-                     f->data[1], f->linesize[1],
-                     f->data[2], f->linesize[2],
-                     yuv, width, u, width / 2, v, width / 2,
-                     width, height);
+    uint8_t *y = yuv ? yuv : nv12toyuv_buffer.data();
+    uint8_t *uv = y + width * height;
+    libyuv::I420ToNV12(f->data[0], f->linesize[0],
+                       f->data[1], f->linesize[1],
+                       f->data[2], f->linesize[2],
+                       y, width,
+                       uv, width / 2,
+                       width, height);
   }
   return true;
 }

@@ -163,7 +163,7 @@ def replay_cameras(lr, frs, disable_tqdm=False):
       print(f"Decompressing frames {s}")
       frames = []
       for i in tqdm(range(fr.frame_count), disable=disable_tqdm):
-        img = fr.get(i, pix_fmt='yuv420p')[0]
+        img = fr.get(i, pix_fmt='nv12')[0]
         frames.append(img.flatten().tobytes())
 
     vs.create_buffers(stream, 40, False, size[0], size[1])
