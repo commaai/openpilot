@@ -47,7 +47,11 @@ class RouteEngine:
       self.mapbox_token = os.environ["MAPBOX_TOKEN"]
       self.mapbox_host = "https://api.mapbox.com"
     else:
-      self.mapbox_token = Api(self.params.get("DongleId", encoding='utf8')).get_token(expiry_hours=4 * 7 * 24)
+      try:
+        self.mapbox_token = Api(self.params.get("DongleId", encoding='utf8')).get_token(expiry_hours=4 * 7 * 24)
+      except FileNotFoundError:
+        cloudlog.exception("Failed to generate mapbox token due to missing private key. Ensure device is registered.")
+        self.mapbox_token = ""
       self.mapbox_host = "https://maps.comma.ai"
 
   def update(self):
