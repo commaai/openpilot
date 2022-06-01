@@ -317,9 +317,11 @@ def get_brand_candidates(logcan, sendcan, versions):
   query_addrs = dict(addr for addr_bus in query_addrs_by_brand.values() for addr in addr_bus.items())
   response_addrs = dict(addr for addr_bus in response_addrs_by_brand.values() for addr in addr_bus.items())
   ecu_response_addrs = get_ecu_addrs(logcan, sendcan, query_addrs, response_addrs)
+  cloudlog.event("ecu response addrs", ecu_response_addrs=ecu_response_addrs)
 
   brand_candidates = list()
   for brand, brand_addrs in response_addrs_by_brand.items():
+    cloudlog.event("candidate brand intersection", brand=brand, intersection=set(brand_addrs).intersection(ecu_response_addrs))
     if len(set(brand_addrs).intersection(ecu_response_addrs)) >= 4:
       brand_candidates.append(brand)
   return brand_candidates
