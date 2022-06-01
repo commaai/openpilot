@@ -126,7 +126,10 @@ def fingerprint(logcan, sendcan):
   car_fingerprint = None
   done = False
 
-  d = messaging.drain_sock(logcan, wait_for_one=True)
+  # drain CAN socket so we always get the latest
+  d = messaging.drain_sock_raw(logcan)
+  # TODO: verify this is empty on a Sonata, then remove this
+  # and find how long it takes for radar to start sending messages from ignition on
   _i = 0
   for msg in d:
     for can in msg.can:
