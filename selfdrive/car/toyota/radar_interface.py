@@ -9,7 +9,7 @@ def _create_radar_acc_tss1_can_parser(car_fingerprint):
   if DBC[car_fingerprint]['radar'] is None:
     return None
 
-  if Params().getBool("ToyotaRadarACCTSS1_ObjectMode"):
+  if Params().get_bool("ToyotaRadarACCTSS1_ObjectMode"):
     RADAR_A_MSGS = list(range(0x301, 0x318, 2))
   else:
     RADAR_A_MSGS = list(range(0x680, 0x686))
@@ -52,7 +52,7 @@ class RadarInterface(RadarInterfaceBase):
     self.radar_acc_tss1 = CP.carFingerprint in RADAR_ACC_CAR_TSS1
 
     if self.radar_acc_tss1:
-      if Params().getBool("ToyotaRadarACCTSS1_ObjectMode"):
+      if Params().get_bool("ToyotaRadarACCTSS1_ObjectMode"):
         self.RADAR_A_MSGS = self.RADAR_B_MSGS = list(range(0x301, 0x318, 2))
       else:
         self.RADAR_A_MSGS = self.RADAR_B_MSGS = list(range(0x680, 0x686))

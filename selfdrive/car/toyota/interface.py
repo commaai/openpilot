@@ -227,7 +227,7 @@ class CarInterface(CarInterfaceBase):
     # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
     ret.openpilotLongitudinalControl = smartDsu or smartDsu_radar_acc_tss1 or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
     if smartDsu_radar_acc_tss1:
-      if Params().getBool("ToyotaRadarACCTSS1_ObjectMode"):
+      if Params().get_bool("ToyotaRadarACCTSS1_ObjectMode"):
         ret.radarTimeStep = 1.0 / 15.0
       else:
         ret.radarTimeStep = 1.0 / 10.0
