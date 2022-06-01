@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 import sys
 import sysconfig
@@ -7,6 +6,8 @@ import platform
 import numpy as np
 
 TICI = os.path.isfile('/TICI')
+AGNOS = TICI
+
 Decider('MD5-timestamp')
 
 AddOption('--test',
@@ -56,7 +57,7 @@ real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rst
 if platform.system() == "Darwin":
   arch = "Darwin"
 
-if arch == "aarch64" and TICI:
+if arch == "aarch64" and AGNOS:
   arch = "larch64"
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
@@ -226,7 +227,7 @@ if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
 # Setup cache dir
-cache_dir = '/data/scons_cache' if TICI else '/tmp/scons_cache'
+cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
 

@@ -77,9 +77,7 @@ function launch {
   export PYTHONPATH="$PWD:$PWD/pyextra"
 
   # hardware specific init
-  if [ -f /TICI ]; then
-    tici_init
-  fi
+  tici_init
 
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log

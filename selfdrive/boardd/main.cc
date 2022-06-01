@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     int err;
     err = util::set_realtime_priority(54);
     assert(err == 0);
-    err = util::set_core_affinity({Hardware::TICI() ? 4 : 3});
+    err = util::set_core_affinity({4});
     assert(err == 0);
   }
 

@@ -55,25 +55,15 @@ const mat4 device_transform = {{
 
 mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 1.333;
-  mat4 transform;
-  if (stream_width == TICI_CAM_WIDTH) {
-    const float yscale = stream_height * driver_view_ratio / tici_dm_crop::width;
-    const float xscale = yscale*screen_height/screen_width*stream_width/stream_height;
-    transform = (mat4){{
-      xscale,  0.0, 0.0, xscale*tici_dm_crop::x_offset/stream_width*2,
-      0.0,  yscale, 0.0, yscale*tici_dm_crop::y_offset/stream_height*2,
-      0.0,  0.0, 1.0, 0.0,
-      0.0,  0.0, 0.0, 1.0,
-    }};
-  } else {
-    // frame from 4/3 to 16/9 display
-    transform = (mat4){{
-      driver_view_ratio * screen_height / screen_width,  0.0, 0.0, 0.0,
-      0.0,  1.0, 0.0, 0.0,
-      0.0,  0.0, 1.0, 0.0,
-      0.0,  0.0, 0.0, 1.0,
-    }};
-  }
+  const float yscale = stream_height * driver_view_ratio / tici_dm_crop::width;
+  const float xscale = yscale*screen_height/screen_width*stream_width/stream_height;
+  mat4 transform = (mat4){{
+    xscale,  0.0, 0.0, xscale*tici_dm_crop::x_offset/stream_width*2,
+    0.0,  yscale, 0.0, yscale*tici_dm_crop::y_offset/stream_height*2,
+    0.0,  0.0, 1.0, 0.0,
+    0.0,  0.0, 0.0, 1.0,
+  }};
+
   return transform;
 }
 

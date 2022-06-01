@@ -6,6 +6,7 @@ from selfdrive.hardware.tici.hardware import Tici
 from selfdrive.hardware.pc.hardware import Pc
 
 TICI = os.path.isfile('/TICI')
+AGNOS = TICI
 PC = not TICI
 
 
