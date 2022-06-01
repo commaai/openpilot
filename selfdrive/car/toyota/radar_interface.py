@@ -12,10 +12,7 @@ def _create_radar_acc_tss1_can_parser(car_fingerprint):
   RADAR_A_MSGS = list(range(0x301, 0x318, 2))
   msg_n = len(RADAR_A_MSGS)
   signals = list(zip(
-        ['ID'] * msg_n + \
-        ['LONG_DIST'] * msg_n + \
-        ['LAT_DIST'] * msg_n + \
-        ['SPEED'] * msg_n + \
+        ['ID'] * msg_n + ['LONG_DIST'] * msg_n + ['LAT_DIST'] * msg_n + ['SPEED'] * msg_n +
         ['LAT_SPEED'] * msg_n,
         RADAR_A_MSGS * 5))
 

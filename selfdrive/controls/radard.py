@@ -12,7 +12,7 @@ from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroi
 from selfdrive.controls.lib.radar_helpers import Cluster, Track, RADAR_TO_CAMERA
 from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import TICI
-from selfdrive.car.toyota.values import RADAR_ACC_CAR_TSS1, TSS2_CAR
+from selfdrive.car.toyota.values import RADAR_ACC_CAR_TSS1
 
 
 class KalmanParams():
