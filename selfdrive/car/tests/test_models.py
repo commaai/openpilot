@@ -88,6 +88,8 @@ class TestCarModelBase(unittest.TestCase):
         elif msg.which() == "carParams":
           if msg.carParams.openpilotLongitudinalControl:
             disable_radar = True
+          if cls.car_model is None and not cls.ci:
+            cls.car_model = msg.carParams.carFingerprint
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break

@@ -29,9 +29,7 @@ if __name__ == "__main__":
     parser.print_help()
     sys.exit()
 
-  assert args.car is not None, "Specify car fingerprint with --car"
-
   test_route = TestRoute(args.route, args.car, segment=args.segment)
-
   test_suite = create_test_models_suite([(args.car, test_route)])
+
   unittest.TextTestRunner().run(test_suite)
