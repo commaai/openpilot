@@ -4,7 +4,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_intercept
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
-from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, NO_DSU_CAR, \
+from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR_TSS1, \
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams
 from opendbc.can.packer import CANPacker
 
@@ -25,7 +25,7 @@ class CarController:
     self.packer = CANPacker(dbc_name)
     self.gas = 0
     self.accel = 0
-    self.radar_dsu = CP.carFingerprint in NO_DSU_CAR and CP.carFingerprint not in TSS2_CAR
+    self.radar_acc_tss1 = CP.carFingerprint in RADAR_ACC_CAR_TSS1
 
   def update(self, CC, CS):
     actuators = CC.actuators
@@ -66,12 +66,20 @@ class CarController:
     if not CC.enabled and CS.pcm_acc_status:
       pcm_cancel_cmd = 1
 
-    # on entering standstill, send standstill request
-    if CS.out.standstill and not self.last_standstill and self.CP.carFingerprint not in NO_STOP_TIMER_CAR:
+    # release_standstill always 0 on radar_acc_tss1 cars
+    if self.radar_acc_tss1:
       self.standstill_req = True
-    if CS.pcm_acc_status != 8:
-      # pcm entered standstill or it's disabled
-      self.standstill_req = False
+      # TODO: verify this
+      # Gear state * auto hold state * acc state * lead state
+      #if CS.out.standstill:
+      #  pcm_accel_cmd = -0.5
+    else:
+      # on entering standstill, send standstill request
+      if CS.out.standstill and not self.last_standstill and self.CP.carFingerprint not in NO_STOP_TIMER_CAR:
+        self.standstill_req = True
+      if CS.pcm_acc_status != 8:
+        # pcm entered standstill or it's disabled
+        self.standstill_req = False
 
     self.last_steer = apply_steer
     self.last_standstill = CS.out.standstill
@@ -101,7 +109,7 @@ class CarController:
       if pcm_cancel_cmd and self.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
         can_sends.append(create_acc_cancel_command(self.packer))
       elif self.CP.openpilotLongitudinalControl:
-        msg = 'ACC_CONTROL_SAFE' if self.radar_dsu else 'ACC_CONTROL'
+        msg = 'ACC_CONTROL_SAFE' if self.radar_acc_tss1 else 'ACC_CONTROL'
         can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type, msg))
         self.accel = pcm_accel_cmd
       else:

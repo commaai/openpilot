@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from opendbc.can.parser import CANParser
 from cereal import car
-from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSS2_CAR
+from selfdrive.car.toyota.values import RADAR_ACC_CAR_TSS1, DBC, TSS2_CAR
 from selfdrive.car.interfaces import RadarInterfaceBase
 
 def _create_nodsu_radar_can_parser(car_fingerprint):
@@ -49,9 +49,9 @@ class RadarInterface(RadarInterfaceBase):
     super().__init__(CP)
     self.track_id = 0
     self.radar_ts = CP.radarTimeStep
-    self.radar_dsu = CP.carFingerprint in NO_DSU_CAR and CP.carFingerprint not in TSS2_CAR
+    self.radar_acc_tss1 = CP.carFingerprint in RADAR_ACC_CAR_TSS1
 
-    if self.radar_dsu:
+    if self.radar_acc_tss1:
       self.RADAR_A_MSGS = self.RADAR_B_MSGS = list(range(0x301, 0x318, 2))
       self.valid_cnt = {key: 0 for key in range(0x3f)}
       self.rcp = _create_nodsu_radar_can_parser(CP.carFingerprint)
@@ -79,15 +79,15 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    if self.radar_dsu:
-      rr = self._update_radar_dsu(self.updated_messages)
+    if self.radar_acc_tss1:
+      rr = self._update_radar_acc_tss1(self.updated_messages)
     else:
       rr = self._update(self.updated_messages)
     self.updated_messages.clear()
 
     return rr
 
-  def _update_radar_dsu(self, updated_messages):
+  def _update_radar_acc_tss1(self, updated_messages):
     ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:
