@@ -126,7 +126,7 @@ def fingerprint(logcan, sendcan):
   car_fingerprint = None
   done = False
 
-  # drain CAN socket so we always get the latest packets
+  # drain CAN socket so we always get the latest messages
   messaging.drain_sock_raw(logcan)
 
   while not done:
