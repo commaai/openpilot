@@ -130,13 +130,13 @@ def fingerprint(logcan, sendcan):
   d = messaging.drain_sock_raw(logcan)
   # TODO: verify this is empty on a Sonata, then remove this
   # and find how long it takes for radar to start sending messages from ignition on
-  _i = 0
-  for msg in d:
-    for can in msg.can:
-      _i += 1
-      print(('{}: {}, len: {}'.format(can.src, can.address, len(can.dat))))
-  print('{} total CAN frames'.format(len(d)))
-  print('{} total CAN messages'.format(_i))
+  # _i = 0
+  # for msg in d:
+  #   for can in msg.can:
+  #     _i += 1
+  #     print(('{}: {}, len: {}'.format(can.src, can.address, len(can.dat))))
+  # print('{} total CAN frames'.format(len(d)))
+  # print('{} total CAN messages'.format(_i))
 
   cloudlog.timestamp('CAN fingerprinting started')
   while not done:
