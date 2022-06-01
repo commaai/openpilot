@@ -406,8 +406,8 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
   ps.setPandaType(panda->hw_type);
 
   double read_time = millis_since_boot();
-  ps.setVoltage(std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()));
-  ps.setCurrent(std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()));
+  ps.setVoltage(Hardware::get_voltage());
+  ps.setCurrent(Hardware::get_current());
   read_time = millis_since_boot() - read_time;
   if (read_time > 50) {
     LOGW("reading hwmon took %lfms", read_time);

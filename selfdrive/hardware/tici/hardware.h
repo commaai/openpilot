@@ -18,6 +18,9 @@ public:
   };
   static std::string get_name() { return "tici"; };
   static cereal::InitData::DeviceType get_device_type() {return cereal::InitData::DeviceType::TICI; };
+  static int get_voltage() {return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); };
+  static int get_current() {return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()); };
+
 
   static void reboot() { std::system("sudo reboot"); };
   static void poweroff() { std::system("sudo poweroff"); };
