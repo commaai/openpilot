@@ -139,8 +139,13 @@ def fingerprint(logcan, sendcan):
   # print('{} total CAN messages'.format(_i))
 
   cloudlog.timestamp('CAN fingerprinting started')
+  first_it = True
+  cloudlog.timestamp('CAN fingerprinting started: {}')
   while not done:
     a = get_one_can(logcan)
+    if first_it:
+      cloudlog.event("CAN fingerprinting: first iteration", log_mono_time=a.logMonoTime)
+      first_it = False
 
     for can in a.can:
       # The fingerprint dict is generated for all buses, this way the car interface
