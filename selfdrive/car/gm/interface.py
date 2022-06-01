@@ -163,7 +163,7 @@ class CarInterface(CarInterfaceBase):
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
-      be = create_button_event(self.CS.prev_cruise_buttons, self.CS.cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
+      be = create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
 
       # Suppress resume button if we're resuming from stop so we don't adjust speed.
       if be.type == ButtonType.accelCruise and (ret.cruiseState.enabled and ret.standstill):

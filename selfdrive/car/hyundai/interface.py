@@ -341,7 +341,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.brakeUnavailable)
 
     if self.CS.CP.openpilotLongitudinalControl and self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
-      ret.buttonEvents = [create_button_event(self.CS.prev_cruise_buttons, self.CS.cruise_buttons[-1], BUTTONS_DICT)]
+      ret.buttonEvents = [create_button_event(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)]
 
       events.events.extend(create_button_enable_events(ret.buttonEvents))
 

@@ -12,7 +12,7 @@ ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
 
-def create_button_event(prev_but: int, cur_but: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
+def create_button_event(cur_but: int, prev_but: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
                         unpressed: int = 0) -> capnp.lib.capnp._DynamicStructBuilder:
   if cur_but != unpressed:
     be = car.CarState.ButtonEvent(pressed=True)
