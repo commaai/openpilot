@@ -3,13 +3,16 @@ from opendbc.can.parser import CANParser
 from cereal import car
 from selfdrive.car.toyota.values import RADAR_ACC_CAR_TSS1, DBC, TSS2_CAR
 from selfdrive.car.interfaces import RadarInterfaceBase
+from common.params import Params
 
 def _create_radar_acc_tss1_can_parser(car_fingerprint):
   if DBC[car_fingerprint]['radar'] is None:
     return None
 
-  # object 0 to 11
-  RADAR_A_MSGS = list(range(0x301, 0x318, 2))
+  if params.getBool("ToyotaRadarACCTSS1_ObjectMode"):
+    RADAR_A_MSGS = list(range(0x301, 0x318, 2))
+  else:
+    RADAR_A_MSGS = list(range(0x680, 0x686))
   msg_n = len(RADAR_A_MSGS)
   signals = list(zip(
         ['ID'] * msg_n + ['LONG_DIST'] * msg_n + ['LAT_DIST'] * msg_n + ['SPEED'] * msg_n +
@@ -49,7 +52,10 @@ class RadarInterface(RadarInterfaceBase):
     self.radar_acc_tss1 = CP.carFingerprint in RADAR_ACC_CAR_TSS1
 
     if self.radar_acc_tss1:
-      self.RADAR_A_MSGS = self.RADAR_B_MSGS = list(range(0x301, 0x318, 2))
+      if params.getBool("ToyotaRadarACCTSS1_ObjectMode"):
+        self.RADAR_A_MSGS = self.RADAR_B_MSGS = list(range(0x301, 0x318, 2))
+      else:
+        self.RADAR_A_MSGS = self.RADAR_B_MSGS = list(range(0x680, 0x686))
       self.valid_cnt = {key: 0 for key in range(0x3f)}
       self.rcp = _create_radar_acc_tss1_can_parser(CP.carFingerprint)
     else:
