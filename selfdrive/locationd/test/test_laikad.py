@@ -2,7 +2,7 @@
 import unittest
 from datetime import datetime
 
-from laika.astro_dog import EphemData
+from laika.ephemeris import EphemerisType
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, read_raw_ublox
@@ -43,7 +43,7 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(msg.constellationId, 'gps')
 
   def test_laika_online(self):
-    laikad = Laikad(auto_update=True, pull_ephems=(EphemData.ORBIT,))
+    laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT.orbits())
     correct_msgs = verify_messages(self.logs, laikad)
 
     correct_msgs_expected = 560
@@ -51,16 +51,15 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
   def test_laika_online_nav_only(self):
-    laikad = Laikad(auto_update=True, pull_ephems=(EphemData.NAV,))
+    laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV)
     correct_msgs = verify_messages(self.logs, laikad)
 
-    correct_msgs_expected = 560
+    correct_msgs_expected = 558
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
-
   def test_laika_offline(self):
-    # Set to offline forces to use ephemeris messages
+    # Set auto_update to false forces to use ephemeris messages
     laikad = Laikad(auto_update=False)
     correct_msgs = verify_messages(self.logs, laikad)
 
@@ -69,7 +68,7 @@ class TestLaikad(unittest.TestCase):
 
   def test_laika_offline_ephem_at_start(self):
     # Test offline but process ephemeris msgs of segment first
-    laikad = Laikad(auto_update=False, pull_ephems=(EphemData.NAV,))
+    laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.NAV)
     ephemeris_logs = [m for m in self.logs if m.ubloxGnss.which() == 'ephemeris']
     correct_msgs = verify_messages(ephemeris_logs+self.logs, laikad)
 
@@ -87,20 +86,19 @@ class TestLaikad(unittest.TestCase):
           break
     # Pretend thread has loaded the orbits on startup by using the time of the first gps message.
     laikad.fetch_orbits(first_gps_time)
-
     self.assertEqual(52, len(laikad.astro_dog.orbits.keys()))
-
     correct_msgs = verify_messages(self.logs, laikad)
     correct_msgs_expected = 560
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
-  def test_laika_get_orbits2(self):
+  def test_laika_get_orbits_now(self):
     laikad = Laikad(auto_update=False)
-    # Pretend thread has loaded the orbits on startup by using the time of the first gps message.
     laikad.fetch_orbits(GPSTime.from_datetime(datetime.utcnow()))
     print(laikad.latest_epoch_fetched.as_datetime())
 
     print(min(laikad.astro_dog.orbits[list(laikad.astro_dog.orbits.keys())[0]], key=lambda e: e.epoch).epoch.as_datetime())
+
+
 if __name__ == "__main__":
   unittest.main()

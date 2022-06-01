@@ -11,9 +11,8 @@ from numpy.linalg import linalg
 
 from cereal import log, messaging
 from laika import AstroDog
-from laika.astro_dog import EphemData
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
-from laika.ephemeris import convert_ublox_ephem
+from laika.ephemeris import EphemerisType, convert_ublox_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
@@ -28,8 +27,9 @@ MAX_TIME_GAP = 10
 
 class Laikad:
 
-  def __init__(self, auto_update, pull_ephems=(EphemData.ORBIT, EphemData.NAV)):
-    self.astro_dog = AstroDog(auto_update=auto_update, pull_ephems=pull_ephems)
+  def __init__(self, auto_update, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV)):
+    # Currently GLONASS is not supported for real time orbit or nav data.
+    self.astro_dog = AstroDog(valid_const=["GPS"], use_internet=auto_update, valid_ephem_types=valid_ephem_types)
     self.gnss_kf = GNSSKalman(GENERATED_DIR)
     self.latest_epoch_fetched = GPSTime(0, 0)
 
@@ -98,8 +98,7 @@ class Laikad:
 
   def localizer_valid(self, t: float):
     filter_time = self.gnss_kf.filter.filter_time
-    return filter_time is not None and (t - filter_time) < MAX_TIME_GAP and \
-           all(np.isfinite(self.gnss_kf.x[GStates.ECEF_POS]))
+    return filter_time is not None and (t - filter_time) < MAX_TIME_GAP and all(np.isfinite(self.gnss_kf.x[GStates.ECEF_POS]))
 
   def init_gnss_localizer(self, est_pos):
     x_initial, p_initial_diag = np.copy(GNSSKalman.x_initial), np.copy(np.diagonal(GNSSKalman.P_initial))
@@ -116,10 +115,10 @@ class Laikad:
 
   def fetch_orbits(self, t: GPSTime):
     if self.latest_epoch_fetched < t + SECS_IN_MIN:
-      orbit_ephems = self.astro_dog.download_parse_orbit_data(t, skip_before_epoch=t-SECS_IN_HR)
+      orbit_ephems = self.astro_dog.download_parse_orbit_data(t, skip_before_epoch=t - 2 * SECS_IN_HR)
       if len(orbit_ephems) > 0:
         self.astro_dog.add_ephems(orbit_ephems, self.astro_dog.orbits)
-        latest_orbit = max(orbit_ephems, key=lambda e: e.epoch) # type: ignore
+        latest_orbit = max(orbit_ephems, key=lambda e: e.epoch)  # type: ignore
         self.latest_epoch_fetched = latest_orbit.epoch
 
 
