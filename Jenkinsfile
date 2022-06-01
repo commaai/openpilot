@@ -130,7 +130,7 @@ pipeline {
                 stage('simulator') {
                   steps {
                     dir("tools/sim/test") {
-                      sh "PYTHONPATH=:${WORKSPACE} MAPBOX_TOKEN=1 CI=1 ./test_carla_integration.py"
+                      sh "PYTHONPATH=:${WORKSPACE} CI=1 ./test_carla_integration.py"
                     }
                   }
                 }
