@@ -1,11 +1,9 @@
 [submodule "panda"]
 	path = panda
-	url = https://github.com/Smartype/panda.git
-	branch = toyota_nodsu_long
+	url = ../../commaai/panda.git
 [submodule "opendbc"]
 	path = opendbc
-	url = https://github.com/Smartype/opendbc.git
-	branch = nodsu_long
+	url = ../../commaai/opendbc.git
 [submodule "laika_repo"]
 	path = laika_repo
 	url = ../../commaai/laika.git
