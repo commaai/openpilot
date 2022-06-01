@@ -16,18 +16,6 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
                 Buttons.GAP_DIST: ButtonType.gapAdjustCruise, Buttons.CANCEL: ButtonType.cancel}
 
 
-def get_button_type(but):
-  if but == Buttons.RES_ACCEL:
-    return ButtonType.accelCruise
-  elif but == Buttons.SET_DECEL:
-    return ButtonType.decelCruise
-  elif but == Buttons.GAP_DIST:
-    return ButtonType.gapAdjustCruise
-  elif but == Buttons.CANCEL:
-    return ButtonType.cancel
-  return ButtonType.unknown
-
-
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
