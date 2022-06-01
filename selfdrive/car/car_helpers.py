@@ -138,6 +138,7 @@ def fingerprint(logcan, sendcan):
   print('{} total CAN frames'.format(len(d)))
   print('{} total CAN messages'.format(_i))
 
+  cloudlog.timestamp('CAN fingerprinting started')
   while not done:
     a = get_one_can(logcan)
 
@@ -167,6 +168,7 @@ def fingerprint(logcan, sendcan):
     done = failed or succeeded
 
     frame += 1
+  cloudlog.timestamp('CAN fingerprinting finished')
 
   exact_match = True
   source = car.CarParams.FingerprintSource.can
