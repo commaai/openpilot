@@ -367,9 +367,6 @@ jobs:
     name: model replay onnx
     runs-on: ubuntu-20.04
     timeout-minutes: 50
-    # Sim docker is needed to get the intel OPENCL drivers
-    env:
-      BASE_IMAGE: openpilot-sim
     steps:
     - uses: actions/checkout@v3
       with:
@@ -395,10 +392,11 @@ jobs:
           scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
           scons-
     - name: Build Docker image
-      run: eval "$BUILD"
+      # Sim docker is needed to get the intel OPENCL drivers
+      run: eval "$BUILD_CL"
     - name: Run replay
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
+        ${{ env.RUN_CL }} "scons -j$(nproc) && \
                         ONNXCPU=1 FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/model_replay.py -j$(nproc) && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
