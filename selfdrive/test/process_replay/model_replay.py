@@ -81,6 +81,7 @@ def model_replay(lr, frs):
         break
 
       for msg in cam_msgs:
+        print(cntr)
         if msg is None:
           continue
 
