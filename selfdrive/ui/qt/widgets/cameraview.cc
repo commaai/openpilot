@@ -216,23 +216,8 @@ void CameraViewWidget::paintGL() {
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   if (frames.empty()) return;
-
-  // temp debugging
-  qDebug() << "Request frame id:" << prev_frame_id;
-  qDebug() << "idx:" << frame_idx;
-  qDebug() << "Drawn frame id  :" << frames[frame_idx].first << "idx:" << frame_idx;
-  if (frames[frame_idx].first < prev_draw_frame_id) {
-    qDebug () << "Problem!";
-  }
-  prev_draw_frame_id = frames[frame_idx].first;
-  qDebug() << "Correct:" << (prev_frame_id == frames[frame_idx].first);
+  frame_idx = std::clamp(frame_idx, 0, (int)frames.size() - 1);  // clip to maximum range
   VisionBuf *frame = frames[frame_idx].second;
-
-  std::cout << "[";
-  for (int i = 0; i < frames.size(); i++) {
-    std::cout << frames[i].first << ",";
-  }
-  std::cout << "]\n\n";
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glViewport(0, 0, width(), height());

@@ -24,8 +24,7 @@ public:
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setFrameId(int frame_id) {
     if (!frames.empty() && (frame_id != prev_frame_id)) {
-      frame_idx = std::max(frame_id - (int)frames[0].first, (int)frame_idx - 1);  // ensure we can't skip backwards
-      frame_idx = std::clamp(frame_idx, 0, (int)frames.size() - 1);  // clip to maximum range
+      frame_idx = std::max(frame_id - (int)frames[0].first, frame_idx - 1);  // ensure we can't skip backwards
     }
     prev_frame_id = frame_id;
   }
@@ -60,7 +59,6 @@ protected:
 
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
   uint32_t prev_frame_id = 0;
-  uint32_t prev_draw_frame_id = 0;  // temp debugging variable
   int frame_idx = 0;
 
 protected slots:
