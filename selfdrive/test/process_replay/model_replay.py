@@ -10,8 +10,7 @@ import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.spinner import Spinner
 from common.timeout import Timeout
-from common.transformations.camera import get_view_frame_from_road_frame, eon_f_frame_size, tici_f_frame_size, \
-                                          eon_d_frame_size, tici_d_frame_size
+from common.transformations.camera import get_view_frame_from_road_frame, tici_f_frame_size, tici_d_frame_size
 from selfdrive.hardware import PC, TICI
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
@@ -28,9 +27,9 @@ SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
 VIPC_STREAM = {"roadCameraState": VisionStreamType.VISION_STREAM_ROAD, "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,
                "wideRoadCameraState": VisionStreamType.VISION_STREAM_WIDE_ROAD}
-
-def get_log_fn(ref_commit, test_route, tici=True):
-  return f"{test_route}_{'model_tici' if tici else 'model'}_{ref_commit}.bz2"
+print(TICI)
+def get_log_fn(ref_commit, test_route):
+  return f"{test_route}_model_tici_{ref_commit}.bz2"
 
 
 def replace_calib(msg, calib):
@@ -45,8 +44,8 @@ def model_replay(lr, frs):
   spinner.update("starting model replay")
 
   vipc_server = VisionIpcServer("camerad")
-  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, *(tici_f_frame_size if TICI else eon_f_frame_size))
-  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, *(tici_d_frame_size if TICI else eon_d_frame_size))
+  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, *(tici_f_frame_size))
+  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, *(tici_d_frame_size))
   vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *(tici_f_frame_size))
   vipc_server.start_listener()
 
@@ -76,7 +75,7 @@ def model_replay(lr, frs):
 
     for cam_msgs in zip_longest(msgs['roadCameraState'], msgs['wideRoadCameraState'], msgs['driverCameraState']):
       # need a pair of road/wide msgs
-      if TICI and None in (cam_msgs[0], cam_msgs[1]):
+      if None in (cam_msgs[0], cam_msgs[1]):
         break
 
       for msg in cam_msgs:
@@ -107,7 +106,7 @@ def model_replay(lr, frs):
 
           recv = None
           if msg.which() in ('roadCameraState', 'wideRoadCameraState'):
-            if not TICI or min(frame_idxs['roadCameraState'], frame_idxs['wideRoadCameraState']) > recv_cnt['modelV2']:
+            if min(frame_idxs['roadCameraState'], frame_idxs['wideRoadCameraState']) > recv_cnt['modelV2']:
               recv = "modelV2"
           elif msg.which() == 'driverCameraState':
             recv = "driverState"
@@ -136,6 +135,7 @@ def model_replay(lr, frs):
 if __name__ == "__main__":
 
   update = "--update" in sys.argv
+  print(update)
   replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
@@ -144,9 +144,8 @@ if __name__ == "__main__":
   frs = {
     'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="fcamera")),
     'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="dcamera")),
+    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="ecamera"))
   }
-  if TICI:
-    frs['wideRoadCameraState'] = FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="ecamera"))
 
   # run replay
   log_msgs = model_replay(lr, frs)
@@ -156,7 +155,7 @@ if __name__ == "__main__":
   if not update:
     with open(ref_commit_fn) as f:
       ref_commit = f.read().strip()
-    log_fn = get_log_fn(ref_commit, TEST_ROUTE, tici=TICI)
+    log_fn = get_log_fn(ref_commit, TEST_ROUTE)
     try:
       cmp_log = LogReader(BASE_URL + log_fn)
 
@@ -188,7 +187,7 @@ if __name__ == "__main__":
     print("Uploading new refs")
 
     new_commit = get_commit()
-    log_fn = get_log_fn(new_commit, TEST_ROUTE, tici=TICI)
+    log_fn = get_log_fn(new_commit, TEST_ROUTE)
     save_log(log_fn, log_msgs)
     try:
       upload_file(log_fn, os.path.basename(log_fn))
