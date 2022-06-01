@@ -146,14 +146,10 @@ common/modeldata.h
 common/mat.h
 common/timing.h
 
-common/visionimg.cc
-common/visionimg.h
-
 common/gpio.cc
 common/gpio.h
 common/i2c.cc
 common/i2c.h
-
 
 selfdrive/controls/__init__.py
 selfdrive/controls/controlsd.py
