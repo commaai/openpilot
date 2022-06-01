@@ -219,7 +219,7 @@ class CarInterface(CarInterfaceBase):
     # Detect smartDSU, which intercepts ACC_CMD from the DSU allowing openpilot to send it
     smartDsu = 0x2FF in fingerprint[0]
     smartDsu_radar_acc_tss1 = candidate in RADAR_ACC_CAR_TSS1 and 0x2AA in fingerprint[0]
-    print(f"RADAR DSU: {smartDsu_radar_acc_tss1s}")
+    print(f"RADAR DSU: {smartDsu_radar_acc_tss1}")
     print(f"fingerprint: {fingerprint[0]}")
     # In TSS2 cars the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
