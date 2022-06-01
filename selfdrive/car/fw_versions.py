@@ -107,17 +107,16 @@ class Request:
 
 REQUESTS: List[Request] = [
   # Chrysler / FCA / Stellantis
-   Request(
+  Request(
     "chrysler",
     [CHRYSLER_VERSION_REQUEST],
     [CHRYSLER_VERSION_RESPONSE],
     CHRYSLER_RX_OFFSET,
   ),
-   Request(
+  Request(
     "chrysler",
     [CHRYSLER_VERSION_REQUEST],
     [CHRYSLER_VERSION_RESPONSE],
-    DEFAULT_RX_OFFSET,
   ),
   # Subaru
   Request(
