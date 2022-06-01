@@ -82,13 +82,15 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    if self.radar_acc_tss1:
-      rr = self._update_radar_acc_tss1(self.updated_messages)
-    else:
-      rr = self._update(self.updated_messages)
+    rr = self._update(self.updated_messages)
     self.updated_messages.clear()
-
     return rr
+
+  def _update(self, updated_messages):
+    if self.radar_acc_tss1:
+      rr = self._update_radar_acc_tss1(updated_messages)
+    else:
+      rr = self._update_tss2(updated_messages)
 
   def _update_radar_acc_tss1(self, updated_messages):
     ret = car.RadarData.new_message()
@@ -127,7 +129,7 @@ class RadarInterface(RadarInterfaceBase):
     ret.points = list(self.pts.values())
     return ret
 
-  def _update(self, updated_messages):
+  def _update_tss2(self, updated_messages):
     ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:
