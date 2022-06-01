@@ -19,7 +19,7 @@ from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
-from selfdrive.test.update_ci_routes import upload_route
+#from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
@@ -176,6 +176,114 @@ def replay_cameras(lr, frs):
   vs.start_listener()
   return vs, p
 
+SCHEDULE = [
+    {"name": "camerad", "pub": ["roadCameraState", "wideRoadCameraState"]},
+    {"name": "modeld", "pub": ["modelV2"]},
+    {"name": "locationd", "pub": ["liveLocationKalman"]},
+    {"name": "radard", "pub": ["radarState"]},
+    {"name": "plannerd", "pub": ["lateralPlan", "longitudinalPlan"]},
+    {"name": "controlsd", "pub": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"]},
+]
+
+def deterministic_regen_segment():
+  lr = list(lr)
+  if frs is None:
+    frs = dict()
+
+  setup_env()
+  params = Params()
+
+  os.environ["LOG_ROOT"] = outdir
+  os.environ['SKIP_FW_QUERY'] = ""
+  os.environ['FINGERPRINT'] = ""
+
+  # TODO: remove after getting new route for Mazda
+  fp_migration = {
+    "Mazda CX-9 2021": "MAZDA CX-9 2021",
+  }
+  # TODO: remove after getting new route for Subaru
+  fingerprint_problem = ["SUBARU IMPREZA LIMITED 2019"]
+
+  for msg in lr:
+    if msg.which() == 'carParams':
+      car_fingerprint = fp_migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
+      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS) and (car_fingerprint not in fingerprint_problem):
+        params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
+      else:
+        os.environ['SKIP_FW_QUERY'] = "1"
+        os.environ['FINGERPRINT'] = car_fingerprint
+    elif msg.which() == 'liveCalibration':
+      params.put("CalibrationParams", msg.as_builder().to_bytes())
+
+  vs, cam_procs = replay_cameras(lr, frs)
+
+  fake_daemons = {
+    'sensord': [
+      multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr)),
+    ],
+    'pandad': [
+      multiprocessing.Process(target=replay_service, args=('can', lr)),
+      multiprocessing.Process(target=replay_service, args=('ubloxRaw', lr)),
+      multiprocessing.Process(target=replay_panda_states, args=('pandaStates', lr)),
+    ],
+    'managerState': [
+     multiprocessing.Process(target=replay_manager_state, args=('managerState', lr)),
+    ],
+    'thermald': [
+      multiprocessing.Process(target=replay_device_state, args=('deviceState', lr)),
+    ],
+  }
+
+  try:
+    # TODO: make first run of onnxruntime CUDA provider fast
+    #managed_processes["modeld"].start()
+    #managed_processes["dmonitoringmodeld"].start()
+    #time.sleep(5)
+
+    # start procs up
+    ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader'] + [d["name"] for d in SCHEDULE]
+    ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
+    for procs in fake_daemons.values():
+      for p in procs:
+        p.start()
+
+    for _ in tqdm(range(100)): # 100 frames
+      for name, pub in SCHEDULE:
+        #TODO: cam procs is more than 1
+        proc = *cam_procs if name == "camerad" else managed_processes[name]
+        proc.start()
+        recv = set()
+        while 1:
+          sm.update()
+          recv.update([msg in sm if msg in pub])
+          if recv == set(pub):
+            break
+        proc.signal(signal.SIGKILL)
+        proc.stop()
+        for d, procs in fake_daemons.items():
+          for p in procs:
+            if not p.is_alive():
+              raise Exception(f"{d}'s {p.name} died")
+  finally:
+    # kill everything
+    for p in *cam_procs:
+      p.terminate()
+    for p in managed_processes.values():
+      p.stop()
+    for procs in fake_daemons.values():
+      for p in procs:
+        p.terminate()
+
+  del vs
+
+  segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
+  seg_path = os.path.join(outdir, segment)
+  # check to make sure openpilot is engaged in the route
+  if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
+    raise Exception(f"Route never enabled: {segment}")
+
+  return seg_path
+
 
 def regen_segment(lr, frs=None, outdir=FAKEDATA):
   lr = list(lr)
@@ -293,8 +401,8 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
 
   print("\n\n", "*"*30, "\n\n")
   print("New route:", relr, "\n")
-  if upload:
-    upload_route(relr)
+  #if upload:
+   # upload_route(relr)
   return relr
 
 
