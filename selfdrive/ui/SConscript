@@ -1,8 +1,8 @@
 import os
-Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc',
        'cereal', 'transformations')
 
-base_libs = [gpucommon, common, messaging, cereal, visionipc, transformations, 'zmq',
+base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 maps = arch in ['larch64', 'x86_64']
