@@ -81,7 +81,7 @@ def model_replay(lr, frs):
         break
 
       for msg in cam_msgs:
-        print(cntr)
+        print(f'Received {cntr} modelv2 msgs')
         if msg is None:
           continue
 
@@ -162,7 +162,7 @@ if __name__ == "__main__":
       ref_commit = f.read().strip()
     log_fn = get_log_fn(ref_commit, TEST_ROUTE)
     try:
-      cmp_log = list(LogReader(BASE_URL + log_fn))[:2*TEST_FRAMES]
+      cmp_log = list(LogReader(BASE_URL + log_fn))[:2*TEST_FRAMES -3]
 
       ignore = [
         'logMonoTime',
