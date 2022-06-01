@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
+import argparse
 import bz2
 import os
 import time
 import multiprocessing
+import signal
 from tqdm import tqdm
-import argparse
 # run DM procs
 os.environ["USE_WEBCAM"] = "1"
 
@@ -176,16 +177,28 @@ def replay_cameras(lr, frs):
   vs.start_listener()
   return vs, p
 
+'''
 SCHEDULE = [
-    {"name": "camerad", "pub": ["roadCameraState", "wideRoadCameraState"]},
+    {"name": "roadCam", "pub": ["roadCameraState"]},
+    {"name": "wideCam", "pub": ["wideRoadCameraState"]},
     {"name": "modeld", "pub": ["modelV2"]},
     {"name": "locationd", "pub": ["liveLocationKalman"]},
     {"name": "radard", "pub": ["radarState"]},
     {"name": "plannerd", "pub": ["lateralPlan", "longitudinalPlan"]},
     {"name": "controlsd", "pub": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"]},
 ]
+'''
+SCHEDULE = [
+    ("roadCam", ["roadCameraState"]),
+    ("wideCam", ["wideRoadCameraState"]),
+    ("modeld", ["modelV2"]),
+    ("locationd", ["liveLocationKalman"]),
+    ("radard", ["radarState"]),
+    ("plannerd", ["lateralPlan", "longitudinalPlan"]),
+    ("controlsd", ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"])
+]
 
-def deterministic_regen_segment():
+def deterministic_regen_segment(lr, frs=None, outdir=FAKEDATA):
   lr = list(lr)
   if frs is None:
     frs = dict()
@@ -241,33 +254,48 @@ def deterministic_regen_segment():
     #time.sleep(5)
 
     # start procs up
-    ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader'] + [d["name"] for d in SCHEDULE]
+    ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader', "camerad"] + [name for name, _ in SCHEDULE[2:]]
     ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
     for procs in fake_daemons.values():
       for p in procs:
         p.start()
 
+    #sm = messaging.SubMaster([msg for _, p in SCHEDULE for msg in p])
     for _ in tqdm(range(100)): # 100 frames
       for name, pub in SCHEDULE:
-        #TODO: cam procs is more than 1
-        proc = *cam_procs if name == "camerad" else managed_processes[name]
+        sm = messaging.SubMaster(pub)
+        if name == "roadCam":
+          proc = cam_procs[0]
+        elif name == "wideCam":
+          proc = cam_procs[1]
+        else:
+          proc = managed_processes[name]
+        print("Starting proc:", name, proc)
         proc.start()
         recv = set()
+        print("Waiting for messages:", pub)
         while 1:
           sm.update()
-          recv.update([msg in sm if msg in pub])
+          l = len(recv)
+          for msg in sm.updated:
+            print(msg)
+            recv.add(msg)
+          if l != len(recv):
+            print(recv)
           if recv == set(pub):
             break
-        proc.signal(signal.SIGKILL)
-        proc.stop()
+        print("Stopping proc")
+        if name == "roadCam" or name == "wideCam":
+          proc.terminate()
+        else:
+          proc.signal(signal.SIGKILL)
+          proc.stop()
         for d, procs in fake_daemons.items():
           for p in procs:
             if not p.is_alive():
               raise Exception(f"{d}'s {p.name} died")
   finally:
     # kill everything
-    for p in *cam_procs:
-      p.terminate()
     for p in managed_processes.values():
       p.stop()
     for procs in fake_daemons.values():
@@ -283,98 +311,6 @@ def deterministic_regen_segment():
     raise Exception(f"Route never enabled: {segment}")
 
   return seg_path
-
-
-def regen_segment(lr, frs=None, outdir=FAKEDATA):
-  lr = list(lr)
-  if frs is None:
-    frs = dict()
-
-  setup_env()
-  params = Params()
-
-  os.environ["LOG_ROOT"] = outdir
-  os.environ['SKIP_FW_QUERY'] = ""
-  os.environ['FINGERPRINT'] = ""
-
-  # TODO: remove after getting new route for Mazda
-  fp_migration = {
-    "Mazda CX-9 2021": "MAZDA CX-9 2021",
-  }
-  # TODO: remove after getting new route for Subaru
-  fingerprint_problem = ["SUBARU IMPREZA LIMITED 2019"]
-
-  for msg in lr:
-    if msg.which() == 'carParams':
-      car_fingerprint = fp_migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS) and (car_fingerprint not in fingerprint_problem):
-        params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
-      else:
-        os.environ['SKIP_FW_QUERY'] = "1"
-        os.environ['FINGERPRINT'] = car_fingerprint
-    elif msg.which() == 'liveCalibration':
-      params.put("CalibrationParams", msg.as_builder().to_bytes())
-
-  vs, cam_procs = replay_cameras(lr, frs)
-
-  fake_daemons = {
-    'sensord': [
-      multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr)),
-    ],
-    'pandad': [
-      multiprocessing.Process(target=replay_service, args=('can', lr)),
-      multiprocessing.Process(target=replay_service, args=('ubloxRaw', lr)),
-      multiprocessing.Process(target=replay_panda_states, args=('pandaStates', lr)),
-    ],
-    'managerState': [
-     multiprocessing.Process(target=replay_manager_state, args=('managerState', lr)),
-    ],
-    'thermald': [
-      multiprocessing.Process(target=replay_device_state, args=('deviceState', lr)),
-    ],
-    'camerad': [
-      *cam_procs,
-    ],
-  }
-
-  try:
-    # TODO: make first run of onnxruntime CUDA provider fast
-    managed_processes["modeld"].start()
-    managed_processes["dmonitoringmodeld"].start()
-    time.sleep(5)
-
-    # start procs up
-    ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
-    ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
-    for procs in fake_daemons.values():
-      for p in procs:
-        p.start()
-
-    for _ in tqdm(range(60)):
-      # ensure all procs are running
-      for d, procs in fake_daemons.items():
-        for p in procs:
-          if not p.is_alive():
-            raise Exception(f"{d}'s {p.name} died")
-      time.sleep(1)
-  finally:
-    # kill everything
-    for p in managed_processes.values():
-      p.stop()
-    for procs in fake_daemons.values():
-      for p in procs:
-        p.terminate()
-
-  del vs
-
-  segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
-  seg_path = os.path.join(outdir, segment)
-  # check to make sure openpilot is engaged in the route
-  if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
-    raise Exception(f"Route never enabled: {segment}")
-
-  return seg_path
-
 
 def regen_and_save(route, sidx, upload=False, use_route_meta=False):
   if use_route_meta:
@@ -384,7 +320,7 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
-  rpath = regen_segment(lr, {'roadCameraState': fr})
+  rpath = deterministic_regen_segment(lr, {'roadCameraState': fr})
 
   # compress raw rlog before uploading
   with open(os.path.join(rpath, "rlog"), "rb") as f:
