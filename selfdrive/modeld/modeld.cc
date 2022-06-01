@@ -7,10 +7,10 @@
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/clutil.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/modeld/models/driving.h"
 
@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
     assert(ret == 0);
   }
 
-  bool main_wide_camera = Params().getBool("EnableWideCamera");
+  bool main_wide_camera = Params().getBool("WideCameraOnly");
   bool use_extra_client = !main_wide_camera;  // set for single camera mode
 
   // cl init

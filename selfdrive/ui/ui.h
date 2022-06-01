@@ -11,9 +11,9 @@
 #include <QTransform>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
+#include "common/modeldata.h"
+#include "common/params.h"
+#include "common/timing.h"
 
 const int bdr_s = 30;
 const int header_h = 420;

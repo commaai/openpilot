@@ -21,12 +21,13 @@ from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 31.0,
-  "./loggerd": 50.0,
-  "./camerad": 26.0,
+  "selfdrive.controls.controlsd": 35.0,
+  "./loggerd": 10.0,
+  "./encoderd": 12.5,
+  "./camerad": 16.5,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 11.7,
-  "./_ui": 21.0,
+  "./_ui": 26.4,
   "selfdrive.locationd.paramsd": 9.0,
   "./_sensord": 6.17,
   "selfdrive.controls.radard": 4.5,
@@ -59,7 +60,7 @@ TIMINGS = {
   "roadCameraState": [2.5, 0.35],
   "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
-  "driverState": [2.5, 0.35],
+  "driverState": [2.5, 0.40],
   "liveLocationKalman": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }

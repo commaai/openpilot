@@ -4,7 +4,6 @@
 
 ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra) {
   thneed = new Thneed(true);
-  thneed->record = 0;
   thneed->load(path);
   thneed->clexec();
   thneed->find_inputs_outputs();

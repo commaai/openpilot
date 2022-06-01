@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import bz2
 import os
 import time
 import multiprocessing
@@ -8,23 +9,20 @@ import argparse
 os.environ["USE_WEBCAM"] = "1"
 
 import cereal.messaging as messaging
+from cereal import car
 from cereal.services import service_list
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.process_replay.process_replay import setup_env, check_enabled
+from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
-
-
-process_replay_dir = os.path.dirname(os.path.abspath(__file__))
-FAKEDATA = os.path.join(process_replay_dir, "fakedata/")
 
 
 def replay_panda_states(s, msgs):
@@ -32,9 +30,17 @@ def replay_panda_states(s, msgs):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() in ['pandaStates', 'pandaStateDEPRECATED']]
 
+  # TODO: new safety params from flags, remove after getting new routes for Toyota
+  safety_param_migration = {
+    "TOYOTA PRIUS 2017": 578,
+    "TOYOTA RAV4 2017": 329
+  }
+
   # Migrate safety param base on carState
   cp = [m for m in msgs if m.which() == 'carParams'][0].carParams
-  if len(cp.safetyConfigs):
+  if cp.carFingerprint in safety_param_migration:
+    safety_param = safety_param_migration[cp.carFingerprint]
+  elif len(cp.safetyConfigs):
     safety_param = cp.safetyConfigs[0].safetyParam
     if cp.safetyConfigs[0].safetyParamDEPRECATED != 0:
       safety_param = cp.safetyConfigs[0].safetyParamDEPRECATED
@@ -158,7 +164,7 @@ def replay_cameras(lr, frs):
       print(f"Decompressing frames {s}")
       frames = []
       for i in tqdm(range(fr.frame_count)):
-        img = fr.get(i, pix_fmt='yuv420p')[0]
+        img = fr.get(i, pix_fmt='nv12')[0]
         frames.append(img.flatten().tobytes())
 
     vs.create_buffers(stream, 40, False, size[0], size[1])
@@ -167,8 +173,6 @@ def replay_cameras(lr, frs):
     p.append(multiprocessing.Process(target=replay_camera,
                                      args=(s, stream, dt, vs, frames, size, use_extra_client)))
 
-  # hack to make UI work
-  vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_ROAD, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
   vs.start_listener()
   return vs, p
 
@@ -185,15 +189,17 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
 
-  # TODO: remove after getting new route for mazda
-  migration = {
+  # TODO: remove after getting new route for Mazda
+  fp_migration = {
     "Mazda CX-9 2021": "MAZDA CX-9 2021",
   }
+  # TODO: remove after getting new route for Subaru
+  fingerprint_problem = ["SUBARU IMPREZA LIMITED 2019"]
 
   for msg in lr:
     if msg.which() == 'carParams':
-      car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
+      car_fingerprint = fp_migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
+      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS) and (car_fingerprint not in fingerprint_problem):
         params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
       else:
         os.environ['SKIP_FW_QUERY'] = "1"
@@ -231,7 +237,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
 
     # start procs up
     ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
-    ensure_running(managed_processes.values(), started=True, not_run=ignore)
+    ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
     for procs in fake_daemons.values():
       for p in procs:
         p.start()
@@ -268,11 +274,18 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
     lr = LogReader(r.log_paths()[args.seg])
     fr = FrameReader(r.camera_paths()[args.seg])
   else:
-    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog")
+    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
   rpath = regen_segment(lr, {'roadCameraState': fr})
 
-  lr = LogReader(os.path.join(rpath, 'rlog2'))
+  # compress raw rlog before uploading
+  with open(os.path.join(rpath, "rlog"), "rb") as f:
+    data = bz2.compress(f.read())
+  with open(os.path.join(rpath, "rlog.bz2"), "wb") as f:
+    f.write(data)
+  os.remove(os.path.join(rpath, "rlog"))
+
+  lr = LogReader(os.path.join(rpath, 'rlog.bz2'))
   controls_state_active = [m.controlsState.active for m in lr if m.which() == 'controlsState']
   assert any(controls_state_active), "Segment did not engage"
 

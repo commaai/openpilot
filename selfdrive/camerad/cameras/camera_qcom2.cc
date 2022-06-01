@@ -19,7 +19,7 @@
 #include "media/cam_sensor.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
-#include "selfdrive/common/swaglog.h"
+#include "common/swaglog.h"
 #include "selfdrive/camerad/cameras/sensor2_i2c.h"
 
 // For debugging:
@@ -74,7 +74,7 @@ const int ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
-const int EXPOSURE_TIME_MAX = 1618; // with HDR, slowest ss, 40ms
+const int EXPOSURE_TIME_MAX = 0x0855; // with HDR, slowest ss, 40ms
 
 // ************** low level camera helpers ****************
 int do_cam_control(int fd, int op_code, void *handle, int size) {
@@ -91,8 +91,7 @@ int do_cam_control(int fd, int op_code, void *handle, int size) {
 
   int ret = HANDLE_EINTR(ioctl(fd, VIDIOC_CAM_CONTROL, &camcontrol));
   if (ret == -1) {
-    printf("OP CODE ERR - %d \n", op_code);
-    perror("wat");
+    LOGE("VIDIOC_CAM_CONTROL error: op_code %d - errno %d", op_code, errno);
   }
   return ret;
 }
@@ -546,7 +545,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   int ret = device_config(multi_cam_state->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
   assert(ret == 0);
   if (ret != 0) {
-    printf("ISP CONFIG FAILED\n");
+    LOGE("isp config failed");
   }
 
   mm.free(buf2);
@@ -563,7 +562,10 @@ void CameraState::enqueue_buffer(int i, bool dp) {
     sync_wait.sync_obj = sync_objs[i];
     sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
     ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
-    // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
+    if (ret != 0) {
+      LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
+      // TODO: handle frame drop cleanly
+    }
 
     buf.camera_bufs_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
     if (dp) buf.queue(i);
@@ -572,14 +574,18 @@ void CameraState::enqueue_buffer(int i, bool dp) {
     struct cam_sync_info sync_destroy = {0};
     sync_destroy.sync_obj = sync_objs[i];
     ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
-    // LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
+    if (ret != 0) {
+      LOGE("failed to destroy sync object: %d %d", ret, sync_destroy.sync_obj);
+    }
   }
 
   // create output fence
   struct cam_sync_info sync_create = {0};
   strcpy(sync_create.name, "NodeOutputPortFence");
   ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
-  // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
+  if (ret != 0) {
+    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj)
+  }
   sync_objs[i] = sync_create.sync_obj;
 
   // schedule request with camera request manager
@@ -588,11 +594,12 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   req_mgr_sched_request.link_hdl = link_handle;
   req_mgr_sched_request.req_id = request_id;
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
-  // LOGD("sched req: %d %d", ret, request_id);
+  if (ret != 0) {
+    LOGE("failed to schedule cam mgr request: %d %d", ret, request_id);
+  }
 
   // poke sensor, must happen after schedule
   sensors_poke(request_id);
-  // LOGD("Poked sensor");
 
   // submit request to the ife
   config_isp(buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
@@ -873,14 +880,14 @@ void cameras_open(MultiCameraState *s) {
   sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
   sub.id = V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS;
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
-  printf("req mgr subscribe: %d\n", ret);
+  LOGD("req mgr subscribe: %d", ret);
 
   s->driver_cam.camera_open();
-  printf("driver camera opened \n");
+  LOGD("driver camera opened");
   s->road_cam.camera_open();
-  printf("road camera opened \n");
+  LOGD("road camera opened");
   s->wide_road_cam.camera_open();
-  printf("wide road camera opened \n");
+  LOGD("wide road camera opened");
 }
 
 void CameraState::camera_close() {
@@ -1196,7 +1203,14 @@ static float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t
 }
 
 static void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed){
+  const uint8_t expected_preamble[] = {0x0a, 0xaa, 0x55, 0x20, 0xa5, 0x55};
   uint8_t *data = (uint8_t*)c->buf.cur_camera_buf->addr + c->ci.registers_offset;
+
+  if (memcmp(data, expected_preamble, std::size(expected_preamble)) != 0){
+    LOGE("unexpected register data found");
+    return;
+  }
+
   auto registers = c->ar0231_parse_registers(data, {0x2000, 0x2002, 0x20b0, 0x20b2, 0x30c6, 0x30c8, 0x30ca, 0x30cc});
 
   uint32_t frame_id = ((uint32_t)registers[0x2000] << 16) | registers[0x2002];
@@ -1306,7 +1320,7 @@ void cameras_run(MultiCameraState *s) {
         } else if (event_data->session_hdl == s->driver_cam.session_handle) {
           s->driver_cam.handle_camera_event(event_data);
         } else {
-          printf("Unknown vidioc event source\n");
+          LOGE("Unknown vidioc event source");
           assert(false);
         }
       }

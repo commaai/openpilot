@@ -355,25 +355,6 @@ class Tici(HardwareBase):
       pass
     return ret
 
-  # We don't have a battery, so let's use some sane constants
-  def get_battery_capacity(self):
-    return 100
-
-  def get_battery_status(self):
-    return ""
-
-  def get_battery_current(self):
-    return 0
-
-  def get_battery_voltage(self):
-    return 0
-
-  def get_battery_charging(self):
-    return True
-
-  def set_battery_charging(self, on):
-    pass
-
   def get_usb_present(self):
     # Not sure if relevant on tici, but the file exists
     return self.read_param_file("/sys/class/power_supply/usb/present", lambda x: bool(int(x)), False)
@@ -428,6 +409,7 @@ class Tici(HardwareBase):
     # *** IRQ config ***
     affine_irq(5, 565)   # kgsl-3d0
     affine_irq(4, 740)   # xhci-hcd:usb1 goes on the boardd core
+    affine_irq(4, 1069)  # xhci-hcd:usb3 goes on the boardd core
     for irq in range(237, 246):
       affine_irq(5, irq) # camerad
 
@@ -475,21 +457,22 @@ class Tici(HardwareBase):
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
+    # configure modem as data-centric
+    cmds = [
+      'AT+QNVW=5280,0,"0102000000000000"',
+      'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+      'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
+    ]
+    modem = self.get_modem()
+    for cmd in cmds:
+      try:
+        modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      except Exception:
+        pass
+
     # blue prime config
     if sim_id.startswith('8901410'):
-      cmds = [
-        'AT+QNVW=5280,0,"0102000000000000"',
-        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
-        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
-      ]
-      modem = self.get_modem()
-      for cmd in cmds:
-        try:
-          modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-        except Exception:
-          pass
       os.system('mmcli -m 0 --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
-
 
   def get_networks(self):
     r = {}

@@ -50,16 +50,18 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     // init encoders
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
-      LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
+      LOGW("encoder %s init %dx%d", cam_info.filename, buf_info.width, buf_info.height);
 
       // main encoder
       encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
-                                     cam_info.fps, cam_info.bitrate, cam_info.is_h265,
+                                     cam_info.fps, cam_info.bitrate,
+                                     cam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
                                      buf_info.width, buf_info.height, false));
       // qcamera encoder
       if (cam_info.has_qcamera) {
         encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, buf_info.width, buf_info.height,
-                                       qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265,
+                                       qcam_info.fps, qcam_info.bitrate,
+                                       qcam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
                                        qcam_info.frame_width, qcam_info.frame_height, false));
       }
     }
@@ -84,23 +86,12 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       }
       lagging = false;
 
-      if (cam_info.trigger_rotate) {
-        if (!sync_encoders(s, cam_info.type, extra.frame_id)) {
-          continue;
-        }
-        if (do_exit) break;
+      if (!sync_encoders(s, cam_info.type, extra.frame_id)) {
+        continue;
       }
+      if (do_exit) break;
 
-      // encode a frame
-      for (int i = 0; i < encoders.size(); ++i) {
-        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
-                                               buf->width, buf->height, &extra);
-
-        if (out_id == -1) {
-          LOGE("Failed to encode frame. frame_id: %d", extra.frame_id);
-        }
-      }
-
+      // do rotation if required
       const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
       if (cur_seg >= 0 && extra.frame_id >= ((cur_seg + 1) * frames_per_seg) + s->start_frame_id) {
         for (auto &e : encoders) {
@@ -108,6 +99,15 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
           e->encoder_open(NULL);
         }
         ++cur_seg;
+      }
+
+      // encode a frame
+      for (int i = 0; i < encoders.size(); ++i) {
+        int out_id = encoders[i]->encode_frame(buf, &extra);
+
+        if (out_id == -1) {
+          LOGE("Failed to encode frame. frame_id: %d", extra.frame_id);
+        }
       }
     }
   }
@@ -126,7 +126,7 @@ void encoderd_thread() {
   for (const auto &cam : cameras_logged) {
     if (cam.enable) {
       encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
-      if (cam.trigger_rotate) s.max_waiting++;
+      s.max_waiting++;
     }
   }
   for (auto &t : encoder_threads) t.join();
@@ -137,7 +137,7 @@ int main() {
     int ret;
     ret = util::set_realtime_priority(52);
     assert(ret == 0);
-    ret = util::set_core_affinity({7});
+    ret = util::set_core_affinity({3});
     assert(ret == 0);
   }
   encoderd_thread();

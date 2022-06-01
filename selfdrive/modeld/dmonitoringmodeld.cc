@@ -5,8 +5,8 @@
 #include <cstdlib>
 
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 #include "selfdrive/modeld/models/dmonitoring.h"
 
 ExitHandler do_exit;
@@ -31,7 +31,7 @@ void run_model(DMonitoringModelState &model, VisionIpcClient &vipc_client) {
     }
 
     double t1 = millis_since_boot();
-    DMonitoringResult res = dmonitoring_eval_frame(&model, buf->addr, buf->width, buf->height, calib);
+    DMonitoringResult res = dmonitoring_eval_frame(&model, buf->addr, buf->width, buf->height, buf->stride, buf->uv_offset, calib);
     double t2 = millis_since_boot();
 
     // send dm packet

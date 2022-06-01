@@ -50,10 +50,6 @@ soundd
 .. autodoxygenindex::
    :project: selfdrive_ui_soundd
 
-navd
-""""
-.. autodoxygenindex::
-   :project: selfdrive_ui_navd
 
 replay
 """"""
@@ -86,7 +82,7 @@ modeld
 common
 ^^^^^^
 .. autodoxygenindex::
-   :project: selfdrive_common
+   :project: common
 
 sensorsd
 ^^^^^^^^

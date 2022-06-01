@@ -20,7 +20,6 @@ from common.realtime import set_realtime_priority
 from common.transformations.model import model_height
 from common.transformations.camera import get_view_frame_from_road_frame
 from common.transformations.orientation import rot_from_euler, euler_from_rot
-from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
 
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
@@ -48,7 +47,7 @@ class Calibration:
 
 
 def is_calibration_valid(rpy: np.ndarray) -> bool:
-  return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
+  return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])  # type: ignore
 
 
 def sanity_clip(rpy: np.ndarray) -> np.ndarray:
@@ -68,7 +67,7 @@ class Calibrator:
     # Read saved calibration
     params = Params()
     calibration_params = params.get("CalibrationParams")
-    self.wide_camera = TICI and params.get_bool('EnableWideCamera')
+    self.wide_camera = params.get_bool('WideCameraOnly')
     rpy_init = RPY_INIT
     valid_blocks = 0
 

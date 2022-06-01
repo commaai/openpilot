@@ -88,7 +88,7 @@ if __name__ == "__main__":
             pass
 
         print("Top CPU usage:")
-        for k, v in sorted(procs.items(), key=lambda item: item[1], reverse=True)[:10]:
+        for k, v in sorted(procs.items(), key=lambda item: item[1], reverse=True)[:10]:  # type: ignore
           print(f"{k.rjust(70)}   {v:.2f} %")
         print()
 

@@ -1,14 +1,16 @@
+#!/usr/bin/env python3
 import argparse
 import json
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import mpld3
 import sys
+from bisect import bisect_left, bisect_right
 from collections import defaultdict
 
 from tools.lib.logreader import logreader_from_route_or_segment
 
-DEMO_ROUTE = "9f583b1d93915c31|2022-04-26--18-49-49"
+DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
 # Retrive controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored
@@ -51,7 +53,7 @@ def read_logs(lr):
         for key in MONOTIME_KEYS:
           if hasattr(msg_obj, key):
             if getattr(msg_obj, key) == 0:
-              # Filter out controlsd messages which arrive before the camera loop 
+              # Filter out controlsd messages which arrive before the camera loop
               continue_outer = True
             elif getattr(msg_obj, key) in mono_to_frame:
               frame_id = mono_to_frame[getattr(msg_obj, key)]
@@ -89,11 +91,22 @@ def read_logs(lr):
     print("Warning, many frame mismatches", len(frame_mismatches))
   return (data, frame_mismatches)
 
+# This is not needed in 3.10 as a "key" parameter is added to bisect
+class KeyifyList(object):
+  def __init__(self, inner, key):
+    self.inner = inner
+    self.key = key
+  def __len__(self):
+    return len(self.inner)
+  def __getitem__(self, k):
+    return self.key(self.inner[k])
+
 def find_frame_id(time, service, start_times, end_times):
-  for frame_id in reversed(start_times):
-    if start_times[frame_id][service] and end_times[frame_id][service]:
-      if start_times[frame_id][service] <= time <= end_times[frame_id][service]:
-        yield frame_id
+  left = bisect_left(KeyifyList(list(start_times.items()),
+                     lambda x: x[1][service] if x[1][service] else -1), time) - 1
+  right = bisect_right(KeyifyList(list(end_times.items()),
+                      lambda x: x[1][service] if x[1][service] else float("inf")), time)
+  return left, right
 
 def find_t0(start_times, frame_id=-1):
   frame_id = frame_id if frame_id > -1 else min(start_times.keys())
@@ -130,13 +143,13 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
           timestamps[latest_controls_frameid][service].append((event, time))
           end_times[latest_controls_frameid][service] = time
         else:
-          frame_id_gen = find_frame_id(time, service, start_times, end_times)
-          frame_id = next(frame_id_gen, False)
+          frame_id = find_frame_id(time, service, start_times, end_times)
           if frame_id:
+            if frame_id[0] != frame_id[1]:
+              event += " (warning: ambiguity)"
+            frame_id = frame_id[0]
             if service == 'controlsd':
               latest_controls_frameid = frame_id
-            if next(frame_id_gen, False):
-              event += " (warning: ambiguity)"
             timestamps[frame_id][service].append((event, time))
           else:
             failed_inserts += 1
@@ -162,13 +175,18 @@ def print_timestamps(timestamps, durations, start_times, relative):
       for event, time in durations[frame_id][service]:
         print("    "+'%-53s%-53s' %(event, str(time*1000)))
 
-def graph_timestamps(timestamps, start_times, end_times, relative):
+def graph_timestamps(timestamps, start_times, end_times, relative, offset_services=False, title=""):
+  # mpld3 doesn't convert properly to D3 font sizes
+  plt.rcParams.update({'font.size': 18})
+
   t0 = find_t0(start_times)
   fig, ax = plt.subplots()
-  ax.set_xlim(0, 150 if relative else 750)
-  ax.set_ylim(0, 15)
-  ax.set_xlabel('milliseconds')
+  ax.set_xlim(0, 130 if relative else 750)
+  ax.set_ylim(0, 17)
+  ax.set_xlabel('Time (milliseconds)')
   colors = ['blue', 'green', 'red', 'yellow', 'purple']
+  offsets = [[0, -5*j] for j in range(len(SERVICES))] if offset_services else None
+  height = 0.3 if offset_services else 0.9
   assert len(colors) == len(SERVICES), 'Each service needs a color'
 
   points = {"x": [], "y": [], "labels": []}
@@ -185,12 +203,15 @@ def graph_timestamps(timestamps, start_times, end_times, relative):
           points['x'].append((event[1]-t0)/1e6)
           points['y'].append(i)
           points['labels'].append(event[0])
-    ax.broken_barh(service_bars, (i-0.45, 0.9), facecolors=(colors), alpha=0.5)
+    ax.broken_barh(service_bars, (i-height/2, height), facecolors=(colors), alpha=0.5, offsets=offsets)
 
   scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
   tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
-
   mpld3.plugins.connect(fig, tooltip)
+
+  plt.title(title)
+  # Set size relative window size is not trivial: https://github.com/mpld3/mpld3/issues/65
+  fig.set_size_inches(18, 9)
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
   return fig
 
@@ -206,6 +227,7 @@ if __name__ == "__main__":
   parser.add_argument("--relative", action="store_true", help="Make timestamps relative to the start of each frame")
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("--plot", action="store_true", help="If a plot should be generated")
+  parser.add_argument("--offset", action="store_true", help="Vertically offset service to better visualize overlap")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route to print")
 
   if len(sys.argv) == 1:
@@ -219,4 +241,4 @@ if __name__ == "__main__":
   data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
   if args.plot:
-    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative))
+    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative, offset_services=args.offset, title=r))
