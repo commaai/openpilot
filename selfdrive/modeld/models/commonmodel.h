@@ -25,7 +25,7 @@ class ModelFrame {
 public:
   ModelFrame(cl_device_id device_id, cl_context context);
   ~ModelFrame();
-  float* prepare(cl_mem yuv_cl, int width, int height, const mat3& transform, cl_mem *output);
+  float* prepare(cl_mem yuv_cl, int width, int height, int frame_stride, int frame_uv_offset, const mat3& transform, cl_mem *output);
 
   const int MODEL_WIDTH = 512;
   const int MODEL_HEIGHT = 256;
