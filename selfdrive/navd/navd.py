@@ -118,9 +118,10 @@ class RouteEngine:
       params['bearings'] = f"{(self.last_bearing + 360) % 360:.0f},90;"
 
     url = self.mapbox_host + f'/directions/v5/mapbox/driving-traffic/{self.last_position.longitude},{self.last_position.latitude};{destination.longitude},{destination.latitude}'
-    resp = requests.get(url, params=params)
+    try:
+      resp = requests.get(url, params=params)
+      resp.raise_for_status()
 
-    if resp.status_code == 200:
       r = resp.json()
       if len(r['routes']):
         self.route = r['routes'][0]['legs'][0]['steps']
@@ -135,8 +136,8 @@ class RouteEngine:
         cloudlog.warning("Got empty route response")
         self.clear_route()
 
-    else:
-      cloudlog.warning(f"Got error in route reply {resp.status_code}")
+    except requests.exceptions.RequestException:
+      cloudlog.exception("failed to get route")
       self.clear_route()
 
     self.send_route()
