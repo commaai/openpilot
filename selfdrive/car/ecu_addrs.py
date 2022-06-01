@@ -2,7 +2,7 @@
 import capnp
 import time
 import traceback
-from typing import Dict, Optional, Set
+from typing import Dict, Set
 
 import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
@@ -36,7 +36,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
     tester_present = bytes([0x02, SERVICE_TYPE.TESTER_PRESENT, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0])
     msgs = [make_can_msg(addr, tester_present, bus) for addr, bus in query_addrs.items()]
 
-    messaging.drain_sock(logcan)
+    messaging.drain_sock_raw(logcan)
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
     start_time = time.monotonic()
     while time.monotonic() - start_time < timeout:
