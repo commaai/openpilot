@@ -29,7 +29,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, add
 
   ecu_addrs = set()
   try:
-    if addr_bus_dict is None:
+    if bus is not None:
       addr_bus_dict = {0x700 + i: bus for i in range(256)}
       addr_bus_dict.update({0x18da00f1 + (i << 8): bus for i in range(256)})
 
