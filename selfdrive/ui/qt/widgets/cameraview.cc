@@ -46,7 +46,7 @@ const char frame_fragment_shader[] =
   "void main() {\n"
   "  float y = texture(uTexture, vTexCoord).r;\n"
   "  float u = texture(uTexture, vTexCoord).g - 0.5;\n"
-  "  float v = texture(uTexture, vTexCoord).g - 0.5;\n"
+  "  float v = texture(uTexture, vTexCoord).b - 0.5;\n"
   "  float r = y + 1.402 * v;\n"
   "  float g = y - 0.344 * u - 0.714 * v;\n"
   "  float b = y + 1.772 * u;\n"
@@ -226,7 +226,7 @@ void CameraViewWidget::paintGL() {
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
-  glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, latest_frame->egl_image);
+  glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, frame->egl_image);
   assert(glGetError() == GL_NO_ERROR);
 
   glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
