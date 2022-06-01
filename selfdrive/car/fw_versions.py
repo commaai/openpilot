@@ -301,25 +301,26 @@ def get_brand_candidates(logcan, sendcan, versions):
     # TODO: some brands have multiple response offsets
     response_offset_bus_by_brand[r.brand] = (r.rx_offset, r.bus)
 
-  # maps all addresses in versions to their request's bus
-  addrs_by_brand = defaultdict(dict)
-  response_addrs_by_brand = defaultdict(set)
+  # maps query and response addresses to their request's bus
+  query_addrs_by_brand = defaultdict(dict)
+  response_addrs_by_brand = defaultdict(dict)
   for brand, brand_versions in versions.items():
     if brand not in response_offset_bus_by_brand:
       continue
 
     for c in brand_versions.values():
       for _, addr, _ in c.keys():
-        response_addr = addr + response_offset_bus_by_brand[brand][0]
-        response_addrs_by_brand[brand].add(response_addr)
-        addrs_by_brand[brand][addr] = response_offset_bus_by_brand[brand][0]
+        response_offset, bus = response_offset_bus_by_brand[brand]
+        response_addrs_by_brand[brand][addr + response_offset] = bus
+        query_addrs_by_brand[brand][addr] = bus
 
-  addr_bus_dict = dict(addr for addr_bus in addrs_by_brand.values() for addr in addr_bus.items())
-  ecu_response_addrs = get_ecu_addrs(logcan, sendcan, addr_bus_dict)
+  query_addrs = dict(addr for addr_bus in query_addrs_by_brand.values() for addr in addr_bus.items())
+  response_addrs = dict(addr for addr_bus in response_addrs_by_brand.values() for addr in addr_bus.items())
+  ecu_response_addrs = get_ecu_addrs(logcan, sendcan, query_addrs, response_addrs)
 
   brand_candidates = list()
   for brand, brand_addrs in response_addrs_by_brand.items():
-    if len(brand_addrs.intersection(ecu_response_addrs)) >= 4:
+    if len(set(brand_addrs).intersection(ecu_response_addrs)) >= 4:
       brand_candidates.append(brand)
   return brand_candidates
 

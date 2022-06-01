@@ -24,17 +24,17 @@ def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader) -> boo
   return False
 
 
-def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, addr_bus_dict: Optional[Dict[int, int]] = None, bus: Optional[int] = None, timeout: float = 1, debug: bool = True) -> Set[int]:
-  assert not (addr_bus_dict is None and bus is None), "Need to specify either bus or address and bus dictionary"
+def get_all_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float = 1, debug: bool = True) -> Set[int]:
+  addr_list = [0x700 + i for i in range(256)] + [0x18da00f1 + (i << 8) for i in range(256)]
+  query_addrs = response_addrs = {addr: bus for addr in addr_list}
+  return get_ecu_addrs(logcan, sendcan, query_addrs, response_addrs, timeout=timeout, debug=debug)
 
+
+def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, query_addrs: Dict[int, int], response_addrs: Dict[int, int], timeout: float = 1, debug: bool = True) -> Set[int]:
   ecu_addrs = set()
   try:
-    if bus is not None:
-      addr_bus_dict = {0x700 + i: bus for i in range(256)}
-      addr_bus_dict.update({0x18da00f1 + (i << 8): bus for i in range(256)})
-
     tester_present = bytes([0x02, SERVICE_TYPE.TESTER_PRESENT, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0])
-    msgs = [make_can_msg(addr, tester_present, bus) for addr, bus in addr_bus_dict.items()]
+    msgs = [make_can_msg(addr, tester_present, bus) for addr, bus in query_addrs.items()]
 
     messaging.drain_sock(logcan)
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
@@ -43,7 +43,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, add
       can_packets = messaging.drain_sock(logcan, wait_for_one=True)
       for packet in can_packets:
         for msg in packet.can:
-          if msg.address in addr_bus_dict and msg.src == addr_bus_dict[msg.address] and is_tester_present_response(msg):
+          if msg.address in response_addrs and msg.src == response_addrs[msg.address] and is_tester_present_response(msg):
             if debug:
               print(f"CAN-RX: {hex(msg.address)} - 0x{bytes.hex(msg.dat)}")
               if msg.address in ecu_addrs:
@@ -67,7 +67,7 @@ if __name__ == "__main__":
   time.sleep(1.0)
 
   print("Getting ECU addresses ...")
-  ecu_addrs = get_ecu_addrs(logcan, sendcan, bus=1, debug=args.debug)
+  ecu_addrs = get_all_ecu_addrs(logcan, sendcan, 1, debug=args.debug)
 
   print()
   print("Found ECUs on addresses:")
