@@ -124,7 +124,6 @@ def model_replay(lr, frs):
             spinner.update("replaying models:  road %d/%d,  driver %d/%d" % (frame_idxs['roadCameraState'],
                            frs['roadCameraState'].frame_count, frame_idxs['driverCameraState'], frs['driverCameraState'].frame_count))
 
-      print(cntr)
       if any(frame_idxs[c] >= frs[c].frame_count for c in frame_idxs.keys()) or cntr == TEST_FRAMES:
         break
 
@@ -141,7 +140,6 @@ def model_replay(lr, frs):
 if __name__ == "__main__":
 
   update = "--update" in sys.argv
-  print(update)
   replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
