@@ -295,27 +295,30 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
 
   return exact_match, matches
 
-def get_brand_candidates(logcan, sendcan, bus, versions):
-  response_offset_by_brand = dict()
-  for brand, _, _, response_offset in REQUESTS:
-    response_offset_by_brand[brand] = response_offset
+def get_brand_candidates(logcan, sendcan, versions):
+  response_offset_bus_by_brand = dict()
+  for r in REQUESTS:
+    # TODO: some brands have multiple response offsets
+    response_offset_bus_by_brand[r.brand] = (r.rx_offset, r.bus)
 
   response_addrs_by_brand = dict()
   for brand, brand_versions in versions.items():
-    if brand not in response_offset_by_brand:
+    if brand not in response_offset_bus_by_brand:
       continue
 
-    response_addrs_by_brand[brand] = set()
+    response_addrs_by_brand[brand] = {}
     for c in brand_versions.values():
       for _, addr, _ in c.keys():
-        response_addr = addr + response_offset_by_brand[brand]
-        response_addrs_by_brand[brand].add(response_addr)
+        response_addr = addr + response_offset_bus_by_brand[brand][0]
+        response_addrs_by_brand[brand][response_addr] = response_offset_bus_by_brand[brand][1]
 
-  ecu_response_addrs = get_ecu_addrs(logcan, sendcan, bus)
+  # maps all addresses in versions to their request's bus
+  all_response_addrs = dict(addr for addr_bus in response_addrs_by_brand.values() for addr in addr_bus.items())
+  ecu_response_addrs = get_ecu_addrs(logcan, sendcan, all_response_addrs)
 
   brand_candidates = list()
   for brand, brand_addrs in response_addrs_by_brand.items():
-    if len(brand_addrs.intersection(ecu_response_addrs)) >= 4:
+    if len(set(brand_addrs).intersection(ecu_response_addrs)) >= 4:
       brand_candidates.append(brand)
   return brand_candidates
 
@@ -331,7 +334,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   if extra is not None:
     versions.update(extra)
 
-  brand_candidates = get_brand_candidates(logcan, sendcan, bus, versions)
+  brand_candidates = get_brand_candidates(logcan, sendcan, versions)
   for brand, brand_versions in versions.items():
     if brand_candidates and brand not in brand_candidates:
       continue
