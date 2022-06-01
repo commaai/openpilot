@@ -247,10 +247,7 @@ void V4LEncoder::encoder_init() {
     queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
   }
   // queue up input buffers
-  // 4804608
   for (unsigned int i = 0; i < BUF_IN_COUNT; i++) {
-    //buf_in[i].allocate(fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage);
-    //buf_in[i].allocate(3735552);
     free_buf_in.push(i);
   }
 
