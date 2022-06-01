@@ -74,6 +74,17 @@ pipeline {
         }
       }
 
+      stage('simulator') {
+        agent { docker { image 'ghcr.io/commaai/openpilot-base'; args '--user=root' } }
+        steps {
+          sh 'git config --global --add safe.directory ${WORKSPACE}'
+            sh 'git submodule --quiet foreach --recursive \'git config --global --add safe.directory ${WORKSPACE}/$name\''
+            sh 'git submodule update --init --recursive --force --depth 1'
+            sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_carla.sh &"
+            sh "cd ${WORKSPACE}/tools/sim && MOUNT_OPENPILOT=1 CI=1 ./start_openpilot_docker.sh"
+        }
+      }
+
       stages {
         stage('On-device Tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }

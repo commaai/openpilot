@@ -2,6 +2,7 @@
 import subprocess
 import time
 import unittest
+import os
 from multiprocessing import Queue
 
 from cereal import messaging
@@ -19,10 +20,12 @@ class TestCarlaIntegration(unittest.TestCase):
 
   def setUp(self):
     self.processes = []
-    # We want to make sure that carla_sim docker isn't still running.
-    subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
 
-    self.carla_process = subprocess.Popen(".././start_carla.sh")
+    if "CI" not in os.environ:
+      # We want to make sure that carla_sim docker isn't still running.
+      subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
+      self.carla_process = subprocess.Popen(".././start_carla.sh")
+
     # Too many lagging messages in bridge.py can cause a crash. This prevents it.
     unblock_stdout()
     # Wait 10 seconds to startup carla

@@ -15,6 +15,12 @@ then
   EXTRA_ARGS="-v $OPENPILOT_DIR:$OPENPILOT_DIR -e PYTHONPATH=$OPENPILOT_DIR:$PYTHONPATH"
 fi
 
+CMD="./tmux_script.sh $*"
+if [[ "$CI" ]]
+then
+  CMD="cd $OPENPILOT_DIR && scons -j$(nproc) && cd ${OPENPILOT_DIR}/tools/sim/test && CI=1 ./test_carla_integration.py $*"
+fi
+
 docker run --net=host\
   --name openpilot_client \
   --rm \
@@ -29,4 +35,4 @@ docker run --net=host\
   -w "$OPENPILOT_DIR/tools/sim" \
   $EXTRA_ARGS \
   ghcr.io/commaai/openpilot-sim:latest \
-  /bin/bash -c "./tmux_script.sh $*"
+  /bin/bash -c "$CMD"
