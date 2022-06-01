@@ -371,6 +371,8 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - name: Pull LFS
+      run: git lfs pull
     - name: Cache dependencies
       id: dependency-cache
       uses: actions/cache@v2
