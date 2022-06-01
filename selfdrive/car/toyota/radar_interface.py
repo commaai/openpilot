@@ -4,22 +4,22 @@ from cereal import car
 from selfdrive.car.toyota.values import RADAR_ACC_CAR_TSS1, DBC, TSS2_CAR
 from selfdrive.car.interfaces import RadarInterfaceBase
 
-def _create_nodsu_radar_can_parser(car_fingerprint):
+def _create_radar_acc_tss1_can_parser(car_fingerprint):
   if DBC[car_fingerprint]['radar'] is None:
     return None
 
   # object 0 to 11
-  RADAR_MSGS = list(range(0x301, 0x318, 2))
-  msg_n = len(RADAR_MSGS)
+  RADAR_A_MSGS = list(range(0x301, 0x318, 2))
+  msg_n = len(RADAR_A_MSGS)
   signals = list(zip(
         ['ID'] * msg_n + \
         ['LONG_DIST'] * msg_n + \
         ['LAT_DIST'] * msg_n + \
         ['SPEED'] * msg_n + \
         ['LAT_SPEED'] * msg_n,
-        RADAR_MSGS * 5))
+        RADAR_A_MSGS * 5))
 
-  checks = list(zip(RADAR_MSGS, [15] * msg_n))
+  checks = list(zip(RADAR_A_MSGS, [15] * msg_n))
   return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
 
 def _create_radar_can_parser(car_fingerprint):
@@ -54,7 +54,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.radar_acc_tss1:
       self.RADAR_A_MSGS = self.RADAR_B_MSGS = list(range(0x301, 0x318, 2))
       self.valid_cnt = {key: 0 for key in range(0x3f)}
-      self.rcp = _create_nodsu_radar_can_parser(CP.carFingerprint)
+      self.rcp = _create_radar_acc_tss1_can_parser(CP.carFingerprint)
     else:
       if CP.carFingerprint in TSS2_CAR:
         self.RADAR_A_MSGS = list(range(0x180, 0x190))
@@ -96,7 +96,7 @@ class RadarInterface(RadarInterfaceBase):
 
     updated_ids = set()
     for ii in sorted(updated_messages):
-      if ii in self.RADAR_MSGS:
+      if ii in self.RADAR_A_MSGS:
         cpt = self.rcp.vl[ii]
         track_id = int(cpt['ID'])
         if track_id != 0x3f and cpt['LONG_DIST'] > 0:
