@@ -44,10 +44,10 @@ def yuv_to_rgb(y, u, v):
   return rgb.astype(np.uint8)
 
 
-def extract_image(buf, w, h):
-  y = np.array(buf[:w*h], dtype=np.uint8).reshape((h, w))
-  u = np.array(buf[w*h: w*h+(w//2)*(h//2)], dtype=np.uint8).reshape((h//2, w//2))
-  v = np.array(buf[w*h+(w//2)*(h//2):], dtype=np.uint8).reshape((h//2, w//2))
+def extract_image(buf, w, h, stride, uv_offset):
+  y = np.array(buf[:uv_offset], dtype=np.uint8).reshape((-1, stride))[:h, :w]
+  u = np.array(buf[uv_offset::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
+  v = np.array(buf[uv_offset+1::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
 
   return yuv_to_rgb(y, u, v)
 
@@ -79,10 +79,10 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   rear, front = None, None
   if frame is not None:
     c = vipc_clients[frame]
-    rear = extract_image(c.recv(), c.width, c.height)
+    rear = extract_image(c.recv(), c.width, c.height, c.stride, c.uv_offset)
   if front_frame is not None:
     c = vipc_clients[front_frame]
-    front = extract_image(c.recv(), c.width, c.height)
+    front = extract_image(c.recv(), c.width, c.height, c.stride, c.uv_offset)
   return rear, front
 
 
