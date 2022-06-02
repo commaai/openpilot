@@ -68,7 +68,7 @@ class TestFwFingerprint(unittest.TestCase):
 
       # each ecu in fw versions needs to be whitelisted at least once
       brand_ecu_types = set()
-      for fw_versions in versions['volkswagen'].values():
+      for fw_versions in versions[brand].values():
         for (ecu_type, _, _) in fw_versions.keys():
           brand_ecu_types.add(ecu_type)
 
