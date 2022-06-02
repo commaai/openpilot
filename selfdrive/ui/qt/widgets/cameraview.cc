@@ -130,7 +130,6 @@ void CameraViewWidget::initializeGL() {
   program = std::make_unique<QOpenGLShaderProgram>(context());
   bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
   assert(ret);
-
   ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
   assert(ret);
 
@@ -233,7 +232,6 @@ void CameraViewWidget::paintGL() {
   for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
     if (frames[frame_idx].first == draw_frame_id) break;
   }
-  VisionBuf *frame = frames[frame_idx].second;
 
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
@@ -243,16 +241,21 @@ void CameraViewWidget::paintGL() {
 #ifdef QCOM2
   glActiveTexture(GL_TEXTURE0);
   glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame_idx]);
+  assert(glGetError() == GL_NO_ERROR);
 #else
+  VisionBuf *frame = frames[frame_idx].second;
+
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame->y);
+  assert(glGetError() == GL_NO_ERROR);
 
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride/2);
   glActiveTexture(GL_TEXTURE0 + 1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
+  assert(glGetError() == GL_NO_ERROR);
 #endif
 
   glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
@@ -264,8 +267,6 @@ void CameraViewWidget::paintGL() {
   glActiveTexture(GL_TEXTURE0);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
   glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-
-  assert(glGetError() == GL_NO_ERROR);
 }
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
