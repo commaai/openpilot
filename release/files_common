@@ -220,8 +220,8 @@ selfdrive/locationd/models/live_kf.cc
 
 selfdrive/locationd/calibrationd.py
 
-selfdrive/logcatd/SConscript
-selfdrive/logcatd/logcatd_systemd.cc
+system/logcatd/SConscript
+system/logcatd/logcatd_systemd.cc
 
 system/proclogd/SConscript
 system/proclogd/main.cc

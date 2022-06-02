@@ -380,6 +380,8 @@ SConscript(['rednose/SConscript'])
 # Build system services
 
 SConscript(['system/proclogd/SConscript'])
+if arch != "Darwin":
+  SConscript(['system/logcatd/SConscript'])
 
 # Build openpilot
 
@@ -407,9 +409,6 @@ SConscript(['selfdrive/loggerd/SConscript'])
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
-
-if arch != "Darwin":
-  SConscript(['selfdrive/logcatd/SConscript'])
 
 if GetOption('test'):
   SConscript('panda/tests/safety/SConscript')
