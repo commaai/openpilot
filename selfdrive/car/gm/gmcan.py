@@ -1,5 +1,20 @@
 from selfdrive.car import make_can_msg
 
+# BO_ 384 ASCMLKASteeringCmd: 4 NEO
+#  SG_ LKASteeringCmd : 2|11@0- (1,0) [0|0] ""  NEO
+#  SG_ LKASteeringCmdActive : 3|1@0+ (1,0) [0|0] ""  NEO
+#  SG_ RollingCounter : 5|2@0+ (1,0) [0|0] ""  NEO
+#  SG_ LKASteeringCmdChecksum : 19|12@0+ (1,0) [0|0] ""  NEO
+
+
+
+#0   07  06 [05  04][03][02  01  00
+#1   15  14  13  12  11  10  09  08]
+#2   23  22  21  20 [19  18  17  16
+#3   31  30  29  28  27  26  25  24]
+
+# 
+
 def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
 
   values = {
@@ -33,6 +48,53 @@ def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_st
                                ((0x100 - dat[3] - idx) & 0xff)
 
   return packer.make_can_msg("ASCMGasRegenCmd", bus, values)
+
+
+
+
+# BO_ 800 AEBCmd: 6 K124_ASCM
+#  SG_ BrakingForce : 2|11@0+ (1,0) [0|672] "" NEO
+#  SG_ BrakeCmdActive : 3|1@0+ (1,0) [0|1] "" NEO
+#  SG_ RollingCounter : 5|2@0+ (1,0) [0|3] "" NEO
+#  SG_ BrakePhase : 23|8@0+ (1,0) [0|10] "" NEO
+#  SG_ Checksum : 27|20@0+ (1,0) [0|0] "" NEO
+
+#0   07  06 [05  04][03][02  01  00
+#1   15  14  13  12  11  10  09  08]
+#2  [23  22  21  20  19  18  17  16]
+#3   31  30  29  28 [27  26  25  24
+#4   39  38  37  36  35  34  33  32
+#5   47  46  45  44  43  42  41  40]
+
+# def create_AEB_command(packer, bus, apply_brake: int, idx: int, aeb_active: int):
+
+#   brake = (0x1000 - apply_brake) & 0xfff
+#   checksum = (0x10000 - (aeb_active << 12) - brake - idx) & 0xffff
+
+#   values = {
+#     "RollingCounter" : idx,
+#     "BrakeCmdActive": aeb_active,
+#     "BrakingForce" : apply_brake,
+#     "Checksum": 0x1000 - (aeb_active << 11) - (apply_brake & 0x7ff) - idx
+#   }
+  
+#   return packer.make_can_msg("AEBCmd", bus, values)
+
+
+
+
+# BO_ 789 EBCMFrictionBrakeCmd: 5 K124_ASCM
+#  SG_ RollingCounter : 33|2@0+ (1,0) [0|0] ""  NEO
+#  SG_ FrictionBrakeMode : 7|4@0+ (1,0) [0|0] ""  NEO
+#  SG_ FrictionBrakeChecksum : 23|16@0+ (1,0) [0|0] ""  NEO
+#  SG_ FrictionBrakeCmd : 3|12@0- (1,0) [0|0] ""  NEO
+
+#0  [07  06  05  04][03  02  01  00
+#1   15  14  13  12  11  10  09  08]
+#2  [23  22  21  20  19  18  17  16
+#3   31  30  29  28  27  26  25  24]
+#4   39  38  37  36  35  34 [33  32]
+
 
 def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_full_stop):
   mode = 0x1

@@ -1,1 +1,1 @@
-#define COMMA_VERSION "0.8.15-GM11"
+#define COMMA_VERSION "0.8.15-GM12"
