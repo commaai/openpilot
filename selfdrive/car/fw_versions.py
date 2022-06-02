@@ -331,7 +331,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
     for addr_chunk in chunks(addr):
       for r in REQUESTS:
         try:
-          addrs = [(b, a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
+          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
                    (len(r.whitelist_ecus) == 0 or ecu_types[(a, s)] in r.whitelist_ecus)]
 
           if addrs:
