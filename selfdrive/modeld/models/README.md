@@ -23,7 +23,7 @@ To view the architecture of the ONNX networks, you can use [netron](https://netr
   * The recurrent state vector that is fed back into the GRU for temporal context : 512
 
 
-### Supercombo output format (Full size: 6472 x float32)
+### Supercombo output format (Full size: XXX x float32)
 Read [here](https://github.com/commaai/openpilot/blob/90af436a121164a51da9fa48d093c29f738adf6a/selfdrive/modeld/models/driving.h#L236) for more.
 
 
