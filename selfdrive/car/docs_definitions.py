@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Union, no_type_check
 
-GOOD_TORQUE_THRESHOLD = 2.0  # m/s^2
+STEERING_TORQUE_THRESHOLD = 2.0  # m/s^2
 
 
 class Tier(Enum):
@@ -77,7 +77,7 @@ class CarInfo:
       Column.LONGITUDINAL: CP.openpilotLongitudinalControl and not CP.radarOffCan,
       Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
       Column.FSR_STEERING: min_steer_speed <= 0.,
-      Column.STEERING_TORQUE: CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD,
+      Column.STEERING_TORQUE: CP.maxLateralAccel >= STEERING_TORQUE_THRESHOLD,
       Column.MAINTAINED: CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none,
     }
 
