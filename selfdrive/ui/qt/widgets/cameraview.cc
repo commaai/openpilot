@@ -132,7 +132,7 @@ void CameraViewWidget::initializeGL() {
   assert(ret);
 
   ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment,
-    Hardware::TICI() ? frame_fragment_shader_tici : frame_fragment_shader_pc);
+    Hardware::PC() ? frame_fragment_shader_pc : frame_fragment_shader_tici);
   assert(ret);
 
   program->link();
@@ -167,12 +167,12 @@ void CameraViewWidget::initializeGL() {
 
   glUseProgram(program->programId());
 
-  if (Hardware::TICI()) {
-    glUniform1i(program->uniformLocation("uTexture"), 0);
-  } else {
+  if (Hardware::PC()) {
     glGenTextures(2, textures);
     glUniform1i(program->uniformLocation("uTextureY"), 0);
     glUniform1i(program->uniformLocation("uTextureUV"), 1);
+  } else {
+    glUniform1i(program->uniformLocation("uTexture"), 0);
   }
 }
 
@@ -241,10 +241,7 @@ void CameraViewWidget::paintGL() {
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  if (Hardware::TICI()) {
-    glActiveTexture(GL_TEXTURE0);
-    glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, frame->egl_image);
-  } else {
+  if (Hardware::PC()) {
     glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textures[0]);
@@ -254,6 +251,9 @@ void CameraViewWidget::paintGL() {
     glActiveTexture(GL_TEXTURE0 + 1);
     glBindTexture(GL_TEXTURE_2D, textures[1]);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
+  } else {
+    glActiveTexture(GL_TEXTURE0);
+    glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, frame->egl_image);
   }
 
   glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
@@ -276,12 +276,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   stream_height = vipc_client->buffers[0].height;
   stream_stride = vipc_client->buffers[0].stride;
 
-  if (Hardware::TICI()) {
-    // import into OpenGL
-    for (int i = 0; i < vipc_client->num_buffers; i++) {
-      vipc_client->buffers[i].init_gl();
-    }
-  } else {
+  if (Hardware::PC()) {
     glBindTexture(GL_TEXTURE_2D, textures[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -297,6 +292,10 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, stream_width/2, stream_height/2, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
     assert(glGetError() == GL_NO_ERROR);
+  } else {
+    for (int i = 0; i < vipc_client->num_buffers; i++) {  // import buffers into OpenGL
+      vipc_client->buffers[i].init_gl();
+    }
   }
 
   updateFrameMat(width(), height());
