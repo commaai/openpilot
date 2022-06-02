@@ -1,8 +1,8 @@
-Version 0.8.15-GM-0.0.11 (2022-05-26)
+Version 0.8.15-GM-0.0.11 (2022-06-01)
 ========================
- * Latest from commaai/master as of 4pm (2022-04-26T20:00:00.000Z)
+ * Latest from commaai/master as of 10pm
  * Comma removed Comma 2 support from master; C2 will get backported featured in the future
- * Further improved Bolt Tunining thanks to Darknight11
+ * Further improved Bolt Tuning thanks to Darknight11
  * Reversed CC main logic with Pedal
  * CarState.gearShifter now more detailed, includes L mode!
    Supports following GearShifter enum vals from cereal
@@ -30,8 +30,13 @@ Version 0.8.15-GM-0.0.11 (2022-05-26)
  * TODO: Pedal low-speed tuning
  * TODO: Auto-detection of L-mode zero-point
 
-Version 0.8.15 (20XX-XX-XX)
+Version 0.8.15 (2022-XX-XX)
 ========================
+* New driving model
+* New lateral controller based on physical wheel torque model
+  * Much smoother control, consistent across the speed range
+  * Effective feedforward that uses road roll
+  * Simplified tuning, all car-specific parameters can be derived from data
 
 Version 0.8.14 (2022-06-01)
 ========================

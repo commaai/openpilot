@@ -91,7 +91,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
   alerts->updateAlert({}, bg);
 
   // update stream type
-  bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
+  bool wide_cam = Params().getBool("WideCameraOnly");
   nvg->setStreamType(wide_cam ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 }
 
