@@ -397,10 +397,9 @@ jobs:
     - name: Run replay
       run: |
         ${{ env.RUN_CL }} "scons -j$(nproc) && \
-                        ONNXCPU=1 FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/model_replay.py -j$(nproc) && \
-                        coverage xml"
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v2
+                            ONNXCPU=1 FILEREADER_CACHE=1 CI=1 coverage run \
+                            selfdrive/test/process_replay/model_replay.py -j$(nproc) && \
+                            coverage xml"
 
   test_longitudinal:
     name: longitudinal
