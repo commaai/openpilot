@@ -17,9 +17,10 @@ fi
 
 docker pull carlasim/carla:0.9.12
 
-if [[ -z "$CI" ]]
+EXTRA_ARGS="-it"
+if [[ "$CI" ]]
 then
-  EXTRA_ARGS="-it"
+  EXTRA_ARGS="-d"
 fi
 
 docker run \
