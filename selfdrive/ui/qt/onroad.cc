@@ -211,36 +211,76 @@ void NvgWindow::drawHud(QPainter &p) {
   p.fillRect(0, 0, width(), header_h, bg);
 
   // max speed
-  {
-    QRect rc(bdr_s * 2, bdr_s * 1.5, 184, 202);
-    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
-    p.setBrush(QColor(0, 0, 0, 100));
-    p.drawRoundedRect(rc, 20, 20);
-    p.setPen(Qt::NoPen);
+  QRect max_speed_rect(bdr_s * 2, bdr_s * 1.5, 184, 202);
+  p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
+  p.setBrush(QColor(0, 0, 0, 100));
+  p.drawRoundedRect(max_speed_rect, 20, 20);
+  p.setPen(Qt::NoPen);
 
-    configFont(p, "Open Sans", 48, "Regular");
-    drawText(p, rc.center().x(), 118, "MAX", is_cruise_set ? 200 : 100);
-    if (is_cruise_set) {
-      configFont(p, "Open Sans", 88, "Bold");
-      drawText(p, rc.center().x(), 212, maxSpeed, 255);
-    } else {
-      configFont(p, "Open Sans", 80, "SemiBold");
-      drawText(p, rc.center().x(), 212, maxSpeed, 100);
-    }
+  configFont(p, "Open Sans", 48, "Regular");
+  drawText(p, max_speed_rect.center().x(), 118, "MAX", is_cruise_set ? 200 : 100);
+  if (is_cruise_set) {
+    configFont(p, "Open Sans", 88, "Bold");
+    drawText(p, max_speed_rect.center().x(), 212, maxSpeed, 255);
+  } else {
+    configFont(p, "Open Sans", 80, "SemiBold");
+    drawText(p, max_speed_rect.center().x(), 212, maxSpeed, 100);
   }
 
   if (!speedLimit.isEmpty()) {
-    QRect rc(rect().right() - 184 - bdr_s * 2, rect().bottom() - 202 - bdr_s * 2, 184, 202);
-    p.setPen(QPen(QColor(0, 0, 0, 255), 5));
-    p.setBrush(QColor(255, 255, 255, 255));
-    p.drawRoundedRect(rc, 20, 20);
-    p.setPen(Qt::NoPen);
+    const int spacing_text = 8; // Spacing between "SPEED" and "LIMIT"
+    const int spacing_number = 12; // Spacing between "SPEED LIMIT" and number
+    const int border_width = 6;
+    const int outer_radius = 20;
+    const int inner_radius = 16;
 
-    configFont(p, "Open Sans", 40, "Regular");
-    drawText(p, rc.center().x(), rc.top() + 50, "SPEED", 255, 0, 0, 0);
-    drawText(p, rc.center().x(), rc.top() + 90, "LIMIT", 255, 0, 0, 0);
-    configFont(p, "Open Sans", 88, "Bold");
-    drawText(p, rc.center().x(), rc.top() + 175, speedLimit, 255, 0, 0, 0);
+    const int padding_top = 16 - border_width / 2; // padding was defined from the top of the border
+    const int padding_bottom = 16 - border_width / 2;
+    const int padding_left = 20;
+    const int padding_right = 20;
+    const QMargins box_margins(5, 5, 5, 5); // tightBoundRect is slightly too small, add some margins to prevent clipping
+
+    // Compute text sizes
+    configFont(p, "Open Sans", 28, "SemiBold");
+    QFontMetrics fm1(p.font());
+    QRect text_rect_1 = fm1.tightBoundingRect("SPEED");
+    QRect text_rect_2 = fm1.tightBoundingRect("LIMIT");
+
+    configFont(p, "Open Sans", 68, "Bold");
+    QFontMetrics fm2(p.font());
+    QRect number_rect = fm2.tightBoundingRect(speedLimit);
+
+    // Compute sign size
+    const int width = padding_left + text_rect_1.width() + padding_right;
+    const int height = padding_top + text_rect_1.height() + spacing_text + text_rect_2.height() + spacing_number + 50 + padding_bottom;
+
+    QRect speed_limit_rect(max_speed_rect.center().x() - width / 2, max_speed_rect.bottom() + 30, width, height);
+    QRect speed_limit_rect_outer(speed_limit_rect.left() - border_width * 1.5, speed_limit_rect.top() - border_width * 1.5, width + border_width * 3, height + border_width * 3);
+
+    // Draw sign
+    p.setPen(Qt::NoPen);
+    p.setBrush(QColor(255, 255, 255, 255));
+    p.drawRoundedRect(speed_limit_rect_outer, outer_radius, outer_radius);
+
+    p.setPen(QPen(QColor(0, 0, 0, 255), border_width));
+    p.setBrush(QColor(255, 255, 255, 255));
+    p.drawRoundedRect(speed_limit_rect, inner_radius, inner_radius);
+
+    // Draw text
+    configFont(p, "Open Sans", 28, "SemiBold");
+    p.setPen(QColor(0, 0, 0, 255));
+    text_rect_1.moveCenter(speed_limit_rect.center());
+    text_rect_1.moveTop(speed_limit_rect.top() + padding_top);
+    p.drawText(text_rect_1.marginsAdded(box_margins), Qt::AlignCenter, "SPEED");
+
+    text_rect_2.moveCenter(speed_limit_rect.center());
+    text_rect_2.moveTop(text_rect_1.bottom() + spacing_text);
+    p.drawText(text_rect_2.marginsAdded(box_margins), Qt::AlignCenter, "LIMIT");
+
+    configFont(p, "Open Sans", 68, "Bold");
+    number_rect.moveCenter(speed_limit_rect.center());
+    number_rect.moveTop(text_rect_2.bottom() + spacing_number);
+    p.drawText(number_rect.marginsAdded(box_margins), Qt::AlignCenter, speedLimit);
   }
 
   // current speed
