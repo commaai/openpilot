@@ -16,7 +16,7 @@ EventName = car.CarEvent.EventName
 # ******************************************************************************************
 
 class DRIVER_MONITOR_SETTINGS():
-  def __init__(self, DT_DMON=DT_DMON):
+  def __init__(self):
     self._DT_DMON = DT_DMON
     # ref (page15-16): https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:42018X1947&rid=2
     self._AWARENESS_TIME = 30. # passive wheeltouch total timeout
@@ -29,7 +29,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._FACE_THRESHOLD = 0.5
     self._EYE_THRESHOLD = 0.65
     self._SG_THRESHOLD = 0.925
-    self._BLINK_THRESHOLD = 0.6
+    self._BLINK_THRESHOLD = 0.8
 
     self._EE_THRESH11 = 0.75
     self._EE_THRESH12 = 3.25

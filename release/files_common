@@ -146,14 +146,10 @@ common/modeldata.h
 common/mat.h
 common/timing.h
 
-common/visionimg.cc
-common/visionimg.h
-
 common/gpio.cc
 common/gpio.h
 common/i2c.cc
 common/i2c.h
-
 
 selfdrive/controls/__init__.py
 selfdrive/controls/controlsd.py
@@ -293,6 +289,9 @@ selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/replay/*.cc
 selfdrive/ui/replay/*.h
 
+selfdrive/ui/qt/maps/*.cc
+selfdrive/ui/qt/maps/*.h
+
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
 
@@ -361,6 +360,8 @@ selfdrive/modeld/runners/run.h
 
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
+
+selfdrive/navd/*.py
 
 selfdrive/assets/.gitignore
 selfdrive/assets/assets.qrc

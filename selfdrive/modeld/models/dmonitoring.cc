@@ -71,26 +71,21 @@ void fill_driver_data(cereal::DriverState::DriverData::Builder ddata, const Driv
   ddata.setNotReadyProb(ds_res.not_ready_prob);
 }
 
-DMonitoringModelResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, float *calib) {
+DMonitoringModelResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, int stride, int uv_offset, float *calib) {
   int v_off = height - MODEL_HEIGHT;
   int h_off = (width - MODEL_WIDTH) / 2;
-  int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v, frame2tensor done in dsp
+  int yuv_buf_len = MODEL_WIDTH * MODEL_HEIGHT;
 
   uint8_t *raw_buf = (uint8_t *) stream_buf;
   // vertical crop free
   uint8_t *raw_y_start = raw_buf + width * v_off;
-  uint8_t *raw_u_start = raw_buf + width * height + (width / 2) * (v_off / 2);
-  uint8_t *raw_v_start = raw_u_start + (width / 2) * (height / 2);
 
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
 
   // snpe UserBufferEncodingUnsigned8Bit doesn't work
   // fast float conversion instead, also does h crop and scales to 0-1
-  for (int r = 0; r < MODEL_HEIGHT / 2; ++r) {
-    libyuv::ByteToFloat(raw_y_start + (2*r) * width + h_off, net_input_buf + (2*r) * MODEL_WIDTH, 0.003921569f, MODEL_WIDTH);
-    libyuv::ByteToFloat(raw_y_start + (2*r+1) * width + h_off, net_input_buf + (2*r+1) * MODEL_WIDTH, 0.003921569f, MODEL_WIDTH);
-    libyuv::ByteToFloat(raw_u_start + r * (width / 2) + (h_off / 2), net_input_buf + MODEL_WIDTH * MODEL_HEIGHT + r * MODEL_WIDTH / 2, 0.003921569f, MODEL_WIDTH / 2);
-    libyuv::ByteToFloat(raw_v_start + r * (width / 2) + (h_off / 2), net_input_buf + MODEL_WIDTH * MODEL_HEIGHT * 5 / 4 + r * MODEL_WIDTH / 2, 0.003921569f, MODEL_WIDTH / 2);
+  for (int r = 0; r < MODEL_HEIGHT; ++r) {
+    libyuv::ByteToFloat(raw_y_start + r * width + h_off, net_input_buf + r * MODEL_WIDTH, 0.003921569f, MODEL_WIDTH);
   }
 
   // printf("preprocess completed. %d \n", yuv_buf_len);

@@ -12,9 +12,15 @@ public:
   static constexpr float MAX_VOLUME = 0.9;
   static constexpr float MIN_VOLUME = 0.2;
   static bool TICI() { return true; }
+  static bool AGNOS() { return true; }
   static std::string get_os_version() {
     return "AGNOS " + util::read_file("/VERSION");
   };
+  static std::string get_name() { return "tici"; };
+  static cereal::InitData::DeviceType get_device_type() { return cereal::InitData::DeviceType::TICI; };
+  static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); };
+  static int get_current() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()); };
+
 
   static void reboot() { std::system("sudo reboot"); };
   static void poweroff() { std::system("sudo poweroff"); };

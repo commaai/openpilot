@@ -24,8 +24,5 @@ QMapbox::CoordinatesCollections model_to_collection(
 QMapbox::CoordinatesCollections coordinate_to_collection(QMapbox::Coordinate c);
 QMapbox::CoordinatesCollections capnp_coordinate_list_to_collection(const capnp::List<cereal::NavRoute::Coordinate>::Reader &coordinate_list);
 QMapbox::CoordinatesCollections coordinate_list_to_collection(QList<QGeoCoordinate> coordinate_list);
-QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString);
 
-float minimum_distance(QGeoCoordinate a, QGeoCoordinate b, QGeoCoordinate p);
 std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param);
-float distance_along_geometry(QList<QGeoCoordinate> geometry, QGeoCoordinate pos);
