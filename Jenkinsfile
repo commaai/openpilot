@@ -94,9 +94,10 @@ pipeline {
             sh 'pip install --no-cache-dir pipenv==2021.5.29 pip==21.3.1'
             sh 'pipenv install --system --deploy --dev --clear'
             sh 'pip uninstall -y pipenv'
+            sh 'scons -j12'
             sh '${WORKSPACE}/tools/sim/build_container.sh'
             sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_carla.sh &"
-            sh "cd ${WORKSPACE}/tools/sim CI=1 ./start_openpilot_docker.sh"
+            sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_openpilot_docker.sh"
             sh "sleep infinity"
             sh "docker kill carla_sim"
           }

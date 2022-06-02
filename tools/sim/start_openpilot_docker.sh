@@ -19,12 +19,12 @@ then
 else
   docker pull ghcr.io/commaai/openpilot-sim:latest
   CMD="./tmux_script.sh $*"
+  EXTRA_ARGS="${EXTRA_ARGS} -it"
 fi
 
 docker run --net=host\
   --name openpilot_client \
   --rm \
-  -it \
   --gpus all \
   --device=/dev/dri:/dev/dri \
   --device=/dev/input:/dev/input \
