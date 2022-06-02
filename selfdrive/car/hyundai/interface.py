@@ -341,8 +341,12 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.brakeUnavailable)
 
     if self.CS.CP.openpilotLongitudinalControl and self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
-      ret.buttonEvents = [create_button_event(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)]
+      buttonEvents = [create_button_event(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)]
+      # Handle CF_Clu_CruiseSwState changing buttons mid-press
+      if self.CS.cruise_buttons[-1] != 0 and self.CS.prev_cruise_buttons != 0:
+        buttonEvents.append(create_button_event(0, self.CS.prev_cruise_buttons, BUTTONS_DICT))
 
+      ret.buttonEvents = buttonEvents
       events.events.extend(create_button_enable_events(ret.buttonEvents))
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
