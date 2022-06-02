@@ -1,5 +1,7 @@
 #include "common/util.h"
 
+#include <algorithm>
+#include <ostream>
 #include <sys/stat.h>
 #include <dirent.h>
 
@@ -10,6 +12,7 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <iostream>
 
 #ifdef __linux__
 #include <sys/prctl.h>

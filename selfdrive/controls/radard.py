@@ -180,10 +180,13 @@ class RadarD():
 
 # fuses camera and radar data for best lead detection
 def radard_thread(sm=None, pm=None, can_sock=None):
+
   config_realtime_process(5 if TICI else 2, Priority.CTRL_LOW)
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
+  # TODO: (regen determ) we stop here, carParams do not exist
+  a = Params().get("CarParams", block=True)
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
   cloudlog.info("radard got CarParams")
 

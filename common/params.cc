@@ -1,6 +1,7 @@
 #include "common/params.h"
 
 #include <dirent.h>
+#include <iostream>
 #include <sys/file.h>
 
 #include <csignal>
@@ -255,7 +256,7 @@ std::string Params::get(const std::string &key, bool block) {
       if (value = util::read_file(getParamPath(key)); !value.empty()) {
         break;
       }
-      util::sleep_for(100);  // 0.1 s
+      util::sleep_for(500);  // 0.1 s
     }
 
     std::signal(SIGINT, prev_handler_sigint);
