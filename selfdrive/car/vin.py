@@ -23,6 +23,11 @@ def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
       try:
         query = IsoTpParallelQuery(sendcan, logcan, bus, FUNCTIONAL_ADDRS, [request, ], [response, ], functional_addr=True, debug=debug)
         for addr, vin in query.get_data(timeout).items():
+
+          # Honda Bosch response starts with a length, trim to correct length
+          if vin.startswith(b'\x11'):
+            vin = vin[1:18]
+
           return addr[0], vin.decode()
         print(f"vin query retry ({i+1}) ...")
       except Exception:
