@@ -79,10 +79,26 @@ pipeline {
           agent { docker { image 'ghcr.io/commaai/openpilot-base'; args '--user=root' } }
           steps {
             sh 'git config --global --add safe.directory ${WORKSPACE}'
-              sh 'git submodule --quiet foreach --recursive \'git config --global --add safe.directory ${WORKSPACE}/$name\''
-              sh 'git submodule update --init --recursive --force --depth 1'
-              sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_carla.sh &"
-              sh "cd ${WORKSPACE}/tools/sim && MOUNT_OPENPILOT=1 CI=1 ./start_openpilot_docker.sh"
+            sh 'git submodule --quiet foreach --recursive \'git config --global --add safe.directory ${WORKSPACE}/$name\''
+            sh 'git config --global --add safe.directory ${WORKSPACE}/cereal'
+            sh 'git config --global --add safe.directory ${WORKSPACE}/laika_repo'
+            sh 'git config --global --add safe.directory ${WORKSPACE}/opendbc'
+            sh 'git config --global --add safe.directory ${WORKSPACE}/panda'
+            sh 'git config --global --add safe.directory ${WORKSPACE}/rednose_repo'
+            sh 'git submodule update --init --recursive --force --depth 1'
+            sh 'git lfs pull'
+            sh 'sudo apt update'
+            sh 'sudo apt-get update'
+            sh 'sudo apt-get install -y gnupg'
+            sh 'curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh'
+            sh 'pip install --no-cache-dir pipenv==2021.5.29 pip==21.3.1'
+            sh 'pipenv install --system --deploy --dev --clear'
+            sh 'pip uninstall -y pipenv'
+            sh '${WORKSPACE}/tools/sim/build_container.sh'
+            sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_carla.sh &"
+            sh "cd ${WORKSPACE}/tools/sim CI=1 ./start_openpilot_docker.sh"
+            sh "sleep infinity"
+            sh "docker kill carla_sim"
           }
         }
 

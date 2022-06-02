@@ -6,8 +6,6 @@ cd $DIR
 # expose X to the container
 xhost +local:root
 
-docker pull ghcr.io/commaai/openpilot-sim:latest
-
 OPENPILOT_DIR="/openpilot"
 if ! [[ -z "$MOUNT_OPENPILOT" ]]
 then
@@ -15,10 +13,12 @@ then
   EXTRA_ARGS="-v $OPENPILOT_DIR:$OPENPILOT_DIR -e PYTHONPATH=$OPENPILOT_DIR:$PYTHONPATH"
 fi
 
-CMD="./tmux_script.sh $*"
 if [[ "$CI" ]]
 then
-  CMD="cd $OPENPILOT_DIR && scons -j$(nproc) && cd ${OPENPILOT_DIR}/tools/sim/test && CI=1 ./test_carla_integration.py $*"
+  CMD="cd ${OPENPILOT_DIR}/tools/sim/test && CI=1 ./test_carla_integration.py $*"
+else
+  docker pull ghcr.io/commaai/openpilot-sim:latest
+  CMD="./tmux_script.sh $*"
 fi
 
 docker run --net=host\
