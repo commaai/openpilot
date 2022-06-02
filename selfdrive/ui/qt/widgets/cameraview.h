@@ -6,6 +6,15 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
 #include <QThread>
+
+#ifdef QCOM2
+#define EGL_EGLEXT_PROTOTYPES
+#define EGL_NO_X11
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <drm/drm_fourcc.h>
+#endif
+
 #include "cereal/visionipc/visionipc_client.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
@@ -45,6 +54,11 @@ protected:
   mat4 frame_mat;
   std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
+
+#ifdef QCOM2
+  EGLImageKHR * egl_images;
+  int egl_images_count;
+#endif
 
   std::string stream_name;
   int stream_width = 0;

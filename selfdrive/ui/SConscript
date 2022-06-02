@@ -13,6 +13,7 @@ if maps and arch == 'x86_64':
 
 if arch == "Darwin":
   del base_libs[base_libs.index('OpenCL')]
+  del base_libs[base_libs.index('EGL')]
   qt_env['FRAMEWORKS'] += ['OpenCL']
 
 widgets_src = ["ui.cc", "qt/util.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
