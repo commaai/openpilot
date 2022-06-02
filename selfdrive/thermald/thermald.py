@@ -199,7 +199,7 @@ def thermald_thread(end_event, hw_queue):
   fan_controller = None
 
   while not end_event.is_set():
-    sm.update(PANDA_STATES_TIMEOUT)
+    sm.update(int(1000 * 1.5 * DT_TRML))
 
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
@@ -219,6 +219,11 @@ def thermald_thread(end_event, hw_queue):
       if fan_controller is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
         if TICI:
           fan_controller = TiciFanController()
+
+    elif (sec_since_boot() - sm.rcv_time['pandaStates']/1e9) > DISCONNECT_TIMEOUT:
+      if onroad_conditions["ignition"]:
+        onroad_conditions["ignition"] = False
+        cloudlog.error("panda timed out onroad")
 
     try:
       last_hw_state = hw_queue.get_nowait()
