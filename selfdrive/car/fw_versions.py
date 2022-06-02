@@ -16,6 +16,7 @@ from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
+ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 
 
 def p16(val):
@@ -258,7 +259,6 @@ def match_fw_to_car_exact(fw_versions_dict):
       ecu_type = ecu[0]
       addr = ecu[1:]
       found_version = fw_versions_dict.get(addr, None)
-      ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
       if ecu_type == Ecu.esp and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and found_version is None:
         continue
 
@@ -309,10 +309,14 @@ def get_brand_candidates(logcan, sendcan, versions):
       continue
 
     for c in brand_versions.values():
-      for _, addr, _ in c.keys():
+      for ecu, addr, _ in c.keys():
+        # reduce matches with ecus not critical to fingerprinting
+        if ecu not in ESSENTIAL_ECUS:
+          continue
+
         response_offset, bus = response_offset_bus_by_brand[brand]
-        response_addrs_by_brand[brand][addr + response_offset] = bus
         query_addrs_by_brand[brand][addr] = bus
+        response_addrs_by_brand[brand][addr + response_offset] = bus
 
   query_addrs = dict(addr for addr_bus in query_addrs_by_brand.values() for addr in addr_bus.items())
   response_addrs = dict(addr for addr_bus in response_addrs_by_brand.values() for addr in addr_bus.items())
@@ -330,7 +334,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   ecu_types = {}
 
   # Extract ECU addresses to query from fingerprints
-  # ECUs using a subadress need be queried one by one, the rest can be done in parallel
+  # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
 

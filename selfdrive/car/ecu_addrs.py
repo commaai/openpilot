@@ -10,6 +10,8 @@ from selfdrive.car import make_can_msg
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.swaglog import cloudlog
 
+TESTER_PRESENT_DAT = bytes([0x02, SERVICE_TYPE.TESTER_PRESENT, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0])
+
 
 def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader) -> bool:
   # ISO-TP messages are always padded to 8 bytes
@@ -33,8 +35,7 @@ def get_all_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket,
 def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, query_addrs: Dict[int, int], response_addrs: Dict[int, int], timeout: float = 1, debug: bool = True) -> Set[int]:
   ecu_addrs = set()
   try:
-    tester_present = bytes([0x02, SERVICE_TYPE.TESTER_PRESENT, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0])
-    msgs = [make_can_msg(addr, tester_present, bus) for addr, bus in query_addrs.items()]
+    msgs = [make_can_msg(addr, TESTER_PRESENT_DAT, bus) for addr, bus in query_addrs.items()]
 
     messaging.drain_sock_raw(logcan)
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
