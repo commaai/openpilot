@@ -114,7 +114,6 @@ class Footnote(Enum):
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Driver Assistance"
-  good_torque: bool = True
   harness: Enum = Harness.vw
 
 

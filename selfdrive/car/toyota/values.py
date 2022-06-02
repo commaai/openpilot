@@ -100,7 +100,6 @@ class Footnote(Enum):
 @dataclass
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
-  good_torque: bool = True
   harness: Enum = Harness.toyota
 
 

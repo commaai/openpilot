@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Union, no_type_check
 
-
 GOOD_TORQUE_THRESHOLD = 2.0  # m/s^2
+
 
 class Tier(Enum):
   GOLD = "The best openpilot experience. Great highway driving and beyond."
@@ -51,7 +51,6 @@ class CarInfo:
   footnotes: Optional[List[Enum]] = None
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
-  good_torque: bool = False
   harness: Optional[Enum] = None
 
   def init(self, CP: car.CarParams, non_tested_cars: List[str], all_footnotes: Dict[Enum, int]):
