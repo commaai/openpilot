@@ -3,12 +3,15 @@ from cereal import car
 from math import fabs
 
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
+                CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
+
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
@@ -159,29 +162,14 @@ class CarInterface(CarInterfaceBase):
 
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
-    buttonEvents = []
-
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.unknown
-      if self.CS.cruise_buttons != CruiseButtons.UNPRESS:
-        be.pressed = True
-        but = self.CS.cruise_buttons
-      else:
-        be.pressed = False
-        but = self.CS.prev_cruise_buttons
-      if but == CruiseButtons.RES_ACCEL:
-        if not (ret.cruiseState.enabled and ret.standstill):
-          be.type = ButtonType.accelCruise  # Suppress resume button if we're resuming from stop so we don't adjust speed.
-      elif but == CruiseButtons.DECEL_SET:
-        be.type = ButtonType.decelCruise
-      elif but == CruiseButtons.CANCEL:
-        be.type = ButtonType.cancel
-      elif but == CruiseButtons.MAIN:
-        be.type = ButtonType.altButton3
-      buttonEvents.append(be)
+      be = create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
 
-    ret.buttonEvents = buttonEvents
+      # Suppress resume button if we're resuming from stop so we don't adjust speed.
+      if be.type == ButtonType.accelCruise and (ret.cruiseState.enabled and ret.standstill):
+        be.type = ButtonType.unknown
+
+      ret.buttonEvents = [be]
 
     events = self.create_common_events(ret, pcm_enable=False)
 
@@ -193,13 +181,7 @@ class CarInterface(CarInterfaceBase):
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 
     # handle button presses
-    for b in ret.buttonEvents:
-      # do enable on both accel and decel buttons
-      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
-        events.add(EventName.buttonEnable)
-      # do disable on button down
-      if b.type == ButtonType.cancel and b.pressed:
-        events.add(EventName.buttonCancel)
+    events.events.extend(create_button_enable_events(ret.buttonEvents))
 
     ret.events = events.to_msg()
 

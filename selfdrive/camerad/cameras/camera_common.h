@@ -13,7 +13,6 @@
 #include "common/mat.h"
 #include "common/queue.h"
 #include "common/swaglog.h"
-#include "common/visionimg.h"
 #include "selfdrive/hardware/hw.h"
 
 #define CAMERA_ID_IMX298 0
