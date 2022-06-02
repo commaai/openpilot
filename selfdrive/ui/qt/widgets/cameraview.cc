@@ -34,17 +34,15 @@ const char frame_fragment_shader[] =
   "precision mediump float;\n"
 #endif
   "uniform sampler2D uTextureY;\n"
-  "uniform sampler2D uTextureU;\n"
-  "uniform sampler2D uTextureV;\n"
+  "uniform sampler2D uTextureUV;\n"
   "in vec2 vTexCoord;\n"
   "out vec4 colorOut;\n"
   "void main() {\n"
   "  float y = texture(uTextureY, vTexCoord).r;\n"
-  "  float u = texture(uTextureU, vTexCoord).r - 0.5;\n"
-  "  float v = texture(uTextureV, vTexCoord).r - 0.5;\n"
-  "  float r = y + 1.402 * v;\n"
-  "  float g = y - 0.344 * u - 0.714 * v;\n"
-  "  float b = y + 1.772 * u;\n"
+  "  vec2 uv = texture(uTextureUV, vTexCoord).rg - 0.5;\n"
+  "  float r = y + 1.402 * uv.y;\n"
+  "  float g = y - 0.344 * uv.x - 0.714 * uv.y;\n"
+  "  float b = y + 1.772 * uv.x;\n"
   "  colorOut = vec4(r, g, b, 1.0);\n"
   "}\n";
 
@@ -57,25 +55,15 @@ const mat4 device_transform = {{
 
 mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 1.333;
-  mat4 transform;
-  if (stream_width == TICI_CAM_WIDTH) {
-    const float yscale = stream_height * driver_view_ratio / tici_dm_crop::width;
-    const float xscale = yscale*screen_height/screen_width*stream_width/stream_height;
-    transform = (mat4){{
-      xscale,  0.0, 0.0, xscale*tici_dm_crop::x_offset/stream_width*2,
-      0.0,  yscale, 0.0, yscale*tici_dm_crop::y_offset/stream_height*2,
-      0.0,  0.0, 1.0, 0.0,
-      0.0,  0.0, 0.0, 1.0,
-    }};
-  } else {
-    // frame from 4/3 to 16/9 display
-    transform = (mat4){{
-      driver_view_ratio * screen_height / screen_width,  0.0, 0.0, 0.0,
-      0.0,  1.0, 0.0, 0.0,
-      0.0,  0.0, 1.0, 0.0,
-      0.0,  0.0, 0.0, 1.0,
-    }};
-  }
+  const float yscale = stream_height * driver_view_ratio / tici_dm_crop::width;
+  const float xscale = yscale*screen_height/screen_width*stream_width/stream_height;
+  mat4 transform = (mat4){{
+    xscale,  0.0, 0.0, xscale*tici_dm_crop::x_offset/stream_width*2,
+    0.0,  yscale, 0.0, yscale*tici_dm_crop::y_offset/stream_height*2,
+    0.0,  0.0, 1.0, 0.0,
+    0.0,  0.0, 0.0, 1.0,
+  }};
+
   return transform;
 }
 
@@ -158,8 +146,7 @@ void CameraViewWidget::initializeGL() {
   glGenTextures(3, textures);
   glUseProgram(program->programId());
   glUniform1i(program->uniformLocation("uTextureY"), 0);
-  glUniform1i(program->uniformLocation("uTextureU"), 1);
-  glUniform1i(program->uniformLocation("uTextureV"), 2);
+  glUniform1i(program->uniformLocation("uTextureUV"), 1);
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
@@ -223,19 +210,23 @@ void CameraViewWidget::paintGL() {
   VisionBuf *frame = frames[frame_idx].second;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
 
   glUseProgram(program->programId());
-  uint8_t *address[3] = {frame->y, frame->u, frame->v};
-  for (int i = 0; i < 3; ++i) {
-    glActiveTexture(GL_TEXTURE0 + i);
-    glBindTexture(GL_TEXTURE_2D, textures[i]);
-    int width = i == 0 ? stream_width : stream_width / 2;
-    int height = i == 0 ? stream_height : stream_height / 2;
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, address[i]);
-    assert(glGetError() == GL_NO_ERROR);
-  }
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame->y);
+  assert(glGetError() == GL_NO_ERROR);
+
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride/2);
+
+  glActiveTexture(GL_TEXTURE0 + 1);
+  glBindTexture(GL_TEXTURE_2D, textures[1]);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
+  assert(glGetError() == GL_NO_ERROR);
 
   glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
   assert(glGetError() == GL_NO_ERROR);
@@ -246,6 +237,7 @@ void CameraViewWidget::paintGL() {
   glBindTexture(GL_TEXTURE_2D, 0);
   glActiveTexture(GL_TEXTURE0);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 }
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
@@ -253,18 +245,23 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   frames.clear();
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
+  stream_stride = vipc_client->buffers[0].stride;
 
-  for (int i = 0; i < 3; ++i) {
-    glBindTexture(GL_TEXTURE_2D, textures[i]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    int width = i == 0 ? stream_width : stream_width / 2;
-    int height = i == 0 ? stream_height : stream_height / 2;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
-    assert(glGetError() == GL_NO_ERROR);
-  }
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, stream_width, stream_height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+  assert(glGetError() == GL_NO_ERROR);
+
+  glBindTexture(GL_TEXTURE_2D, textures[1]);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, stream_width/2, stream_height/2, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
+  assert(glGetError() == GL_NO_ERROR);
 
   updateFrameMat(width(), height());
 }

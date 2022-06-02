@@ -242,14 +242,17 @@ CONFIGS = [
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
       "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
-      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "managerState": [], "testJoystick": [],
+      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "wideRoadCameraState": [], "managerState": [], "testJoystick": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
-    submaster_config={'ignore_avg_freq': ['radarState', 'longitudinalPlan']}
+    submaster_config={
+      'ignore_avg_freq': ['radarState', 'longitudinalPlan', 'driverCameraState', 'driverMonitoringState'],  # dcam is expected at 20 Hz
+      'ignore_alive': ['wideRoadCameraState'],  # TODO: Add to regen
+    }
   ),
   ProcessConfig(
     proc_name="radard",
@@ -350,7 +353,7 @@ def setup_env(simulation=False):
   params.put_bool("OpenpilotEnabledToggle", True)
   params.put_bool("Passive", False)
   params.put_bool("DisengageOnAccelerator", True)
-  params.put_bool("EnableWideCamera", False)
+  params.put_bool("WideCameraOnly", False)
   params.put_bool("DisableLogging", False)
 
   os.environ["NO_RADAR_SLEEP"] = "1"

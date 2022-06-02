@@ -1,8 +1,8 @@
 import os
-Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc',
        'cereal', 'transformations')
 
-base_libs = [gpucommon, common, messaging, cereal, visionipc, transformations, 'zmq',
+base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 maps = arch in ['larch64', 'x86_64']
@@ -118,11 +118,3 @@ if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
 
   if GetOption('test'):
     qt_env.Program('replay/tests/test_replay', ['replay/tests/test_runner.cc', 'replay/tests/test_replay.cc'], LIBS=[replay_libs])
-
-# navd
-if maps:
-  navd_src = ["navd/main.cc", "navd/route_engine.cc", "navd/map_renderer.cc"]
-  qt_env.Program("navd/_navd", navd_src, LIBS=qt_libs + ['common', 'json11'])
-
-  if GetOption('extras'):
-    qt_env.SharedLibrary("navd/map_renderer", ["navd/map_renderer.cc"], LIBS=qt_libs + ['common', 'messaging'])

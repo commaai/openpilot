@@ -37,7 +37,7 @@ from markdown_it import MarkdownIt
 
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.hardware import TICI, HARDWARE
+from selfdrive.hardware import AGNOS, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.version import is_tested_branch
@@ -328,7 +328,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
       ]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
-      if TICI:
+      if AGNOS:
         handle_agnos_update(wait_helper)
 
     # Create the finalized, ready-to-swap update
