@@ -31,7 +31,7 @@ NetworkStrength = log.DeviceState.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
 TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
-PANDA_STATES_TIMEOUT = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
+PANDA_STATES_TIMEOUT = int(1000 * 1.5 * DT_TRML)  # 1.5x the expected pandaState frequency
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_metered', 'network_strength', 'network_info', 'nvme_temps', 'modem_temps'])
@@ -219,6 +219,11 @@ def thermald_thread(end_event, hw_queue):
       if fan_controller is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
         if TICI:
           fan_controller = TiciFanController()
+
+    elif (sec_since_boot() - sm.rcv_time['pandaStates']/1e9) > DISCONNECT_TIMEOUT:
+      if onroad_conditions["ignition"]:
+        onroad_conditions["ignition"] = False
+        cloudlog.error("panda timed out onroad")
 
     try:
       last_hw_state = hw_queue.get_nowait()
