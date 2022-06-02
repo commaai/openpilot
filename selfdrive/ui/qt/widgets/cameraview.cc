@@ -4,7 +4,6 @@
 #include <OpenGL/gl3.h>
 #else
 #include <GLES3/gl3.h>
-#include <GLES2/gl2ext.h>
 #endif
 
 #include <QOpenGLBuffer>

@@ -13,6 +13,7 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <drm/drm_fourcc.h>
+#include <GLES2/gl2ext.h>
 #endif
 
 #include "cereal/visionipc/visionipc_client.h"
