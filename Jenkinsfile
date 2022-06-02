@@ -96,8 +96,7 @@ pipeline {
             sh 'pip uninstall -y pipenv'
             sh 'scons -j12'
             sh '${WORKSPACE}/tools/sim/build_container.sh'
-            sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_carla.sh &"
-            sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_openpilot_docker.sh"
+            sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_carla.sh & cd ${WORKSPACE}/tools/sim && CI=1 ./start_openpilot_docker.sh"
             sh "sleep infinity"
             sh "docker kill carla_sim"
           }
@@ -154,15 +153,6 @@ pipeline {
                     ])
                   }
                 }
-
-                stage('simulator') {
-                  steps {
-                    dir("tools/sim/test") {
-                      sh "PYTHONPATH=:${WORKSPACE} CI=1 ./test_carla_integration.py"
-                    }
-                  }
-                }
-
               }
             }
           }
