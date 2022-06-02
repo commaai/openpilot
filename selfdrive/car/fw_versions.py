@@ -90,7 +90,6 @@ SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
 SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
 
-
 @dataclass
 class Request:
   brand: str
@@ -314,7 +313,6 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   for brand, brand_versions in versions.items():
     for c in brand_versions.values():
       for ecu_type, addr, sub_addr in c.keys():
-        # print(brand, ecu_type, addr, sub_addr)
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
           ecu_types[(addr, sub_addr)] = ecu_type
@@ -330,7 +328,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
 
   fw_versions = {}
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
-    for addr_chunk in chunks(addr, 100000):
+    for addr_chunk in chunks(addr):
       for r in REQUESTS:
         try:
           addrs = [(b, a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
