@@ -4,6 +4,7 @@
 #include <OpenGL/gl3.h>
 #else
 #include <GLES3/gl3.h>
+#include <GLES2/gl2ext.h>
 #endif
 
 #include <QOpenGLBuffer>
@@ -47,24 +48,14 @@ const char frame_fragment_shader_pc[] =
   "}\n";
 
 const char frame_fragment_shader_tici[] =
-#ifdef __APPLE__
-  "#version 330 core\n"
-#else
   "#version 300 es\n"
   "#extension GL_OES_EGL_image_external_essl3 : enable\n"
   "precision mediump float;\n"
-#endif
-  "uniform sampler2D uTexture;\n"
+  "uniform samplerExternalOES uTexture;\n"
   "in vec2 vTexCoord;\n"
   "out vec4 colorOut;\n"
   "void main() {\n"
-  "  float y = texture(uTexture, vTexCoord).r;\n"
-  "  float u = texture(uTexture, vTexCoord).g - 0.5;\n"
-  "  float v = texture(uTexture, vTexCoord).b - 0.5;\n"
-  "  float r = y + 1.402 * v;\n"
-  "  float g = y - 0.344 * u - 0.714 * v;\n"
-  "  float b = y + 1.772 * u;\n"
-  "  colorOut = vec4(r, g, b, 1.0);\n"
+  "  colorOut = texture(uTexture, vTexCoord);\n"
   "}\n";
 
 const mat4 device_transform = {{
@@ -253,7 +244,7 @@ void CameraViewWidget::paintGL() {
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
   } else {
     glActiveTexture(GL_TEXTURE0);
-    glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, frame->egl_image);
+    glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, frame->egl_image);
   }
 
   glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
