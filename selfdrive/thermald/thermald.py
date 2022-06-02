@@ -286,7 +286,7 @@ def thermald_thread(end_event, hw_queue):
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not onroad_conditions["device_temp_good"]))
 
     # TODO: this should move to TICI.initialize_hardware, but we currently can't import params there
-    if AGNOS:
+    if TICI:
       if not os.path.isfile("/persist/comma/living-in-the-moment"):
         if not Path("/data/media").is_mount():
           set_offroad_alert_if_changed("Offroad_StorageMissing", True)
