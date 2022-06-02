@@ -78,7 +78,7 @@ class CarInfo:
       Column.LONGITUDINAL: CP.openpilotLongitudinalControl and not CP.radarOffCan,
       Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
       Column.FSR_STEERING: min_steer_speed <= 0.,
-      Column.STEERING_TORQUE: self.good_torque or CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD,
+      Column.STEERING_TORQUE: CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD,
       Column.MAINTAINED: CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none,
     }
 
