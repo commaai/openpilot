@@ -26,20 +26,34 @@ const char frame_vertex_shader[] =
   "  vTexCoord = aTexCoord;\n"
   "}\n";
 
-const char frame_fragment_shader[] =
+const char frame_fragment_shader_pc[] =
+#ifdef __APPLE__
+  "#version 330 core\n"
+#else
+  "#version 300 es\n"
+  "precision mediump float;\n"
+#endif
+  "uniform sampler2D uTextureY;\n"
+  "uniform sampler2D uTextureUV;\n"
+  "in vec2 vTexCoord;\n"
+  "out vec4 colorOut;\n"
+  "void main() {\n"
+  "  float y = texture(uTextureY, vTexCoord).r;\n"
+  "  vec2 uv = texture(uTextureUV, vTexCoord).rg - 0.5;\n"
+  "  float r = y + 1.402 * uv.y;\n"
+  "  float g = y - 0.344 * uv.x - 0.714 * uv.y;\n"
+  "  float b = y + 1.772 * uv.x;\n"
+  "  colorOut = vec4(r, g, b, 1.0);\n"
+  "}\n";
+
+const char frame_fragment_shader_tici[] =
 #ifdef __APPLE__
   "#version 330 core\n"
 #else
   "#version 300 es\n"
   "#extension GL_OES_EGL_image_external_essl3 : enable\n"
-  //"#extension GL_ARB_fragment_coord_conventions\n"
   "precision mediump float;\n"
 #endif
-
-  /*"uniform sampler2D uTextureY;\n"
-  "uniform sampler2D uTextureU;\n"
-  "uniform sampler2D uTextureV;\n"*/
-  //"uniform samplerExternalOES uTexture;\n"
   "uniform sampler2D uTexture;\n"
   "in vec2 vTexCoord;\n"
   "out vec4 colorOut;\n"
@@ -105,7 +119,7 @@ CameraViewWidget::~CameraViewWidget() {
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteBuffers(1, &frame_vbo);
     glDeleteBuffers(1, &frame_ibo);
-    glDeleteBuffers(3, textures);
+    glDeleteBuffers(2, textures);
   }
   doneCurrent();
 }
@@ -116,7 +130,9 @@ void CameraViewWidget::initializeGL() {
   program = std::make_unique<QOpenGLShaderProgram>(context());
   bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
   assert(ret);
-  ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
+
+  ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment,
+    Hardware::TICI() ? frame_fragment_shader_tici : frame_fragment_shader_pc);
   assert(ret);
 
   program->link();
@@ -149,10 +165,15 @@ void CameraViewWidget::initializeGL() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
-  glGenTextures(3, textures);
   glUseProgram(program->programId());
-  glUniform1i(program->uniformLocation("uTextureY"), 0);
-  glUniform1i(program->uniformLocation("uTextureUV"), 1);
+
+  if (Hardware::TICI()) {
+    glUniform1i(program->uniformLocation("uTexture"), 0);
+  } else {
+    glGenTextures(2, textures);
+    glUniform1i(program->uniformLocation("uTextureY"), 0);
+    glUniform1i(program->uniformLocation("uTextureUV"), 1);
+  }
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
@@ -173,8 +194,6 @@ void CameraViewWidget::hideEvent(QHideEvent *event) {
     vipc_thread = nullptr;
   }
 }
-
-#include <EGL/egl.h>
 
 void CameraViewWidget::updateFrameMat(int w, int h) {
   if (zoomed_view) {
@@ -217,20 +236,27 @@ void CameraViewWidget::paintGL() {
   }
   VisionBuf *frame = frames[frame_idx].second;
 
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
-
   glUseProgram(program->programId());
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, textures[0]);
-  glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, frame->egl_image);
-  assert(glGetError() == GL_NO_ERROR);
+  if (Hardware::TICI()) {
+    glActiveTexture(GL_TEXTURE0);
+    glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, frame->egl_image);
+  } else {
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame->y);
+
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride/2);
+    glActiveTexture(GL_TEXTURE0 + 1);
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
+  }
 
   glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
-  assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
   glDisableVertexAttribArray(0);
@@ -239,6 +265,8 @@ void CameraViewWidget::paintGL() {
   glActiveTexture(GL_TEXTURE0);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
   glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
+  assert(glGetError() == GL_NO_ERROR);
 }
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
@@ -248,25 +276,27 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   stream_height = vipc_client->buffers[0].height;
   stream_stride = vipc_client->buffers[0].stride;
 
-  glBindTexture(GL_TEXTURE_2D, textures[0]);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, stream_width, stream_height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
-  assert(glGetError() == GL_NO_ERROR);
+  if (Hardware::TICI()) {
+    // import into OpenGL
+    for (int i = 0; i < vipc_client->num_buffers; i++) {
+      vipc_client->buffers[i].init_gl();
+    }
+  } else {
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, stream_width, stream_height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+    assert(glGetError() == GL_NO_ERROR);
 
-  glBindTexture(GL_TEXTURE_2D, textures[1]);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, stream_width/2, stream_height/2, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
-  assert(glGetError() == GL_NO_ERROR);
-
-  // import into OpenGL
-  for (int i = 0; i < vipc_client->num_buffers; i++) {
-    vipc_client->buffers[i].init_gl();
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, stream_width/2, stream_height/2, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
+    assert(glGetError() == GL_NO_ERROR);
   }
 
   updateFrameMat(width(), height());
