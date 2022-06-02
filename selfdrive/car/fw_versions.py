@@ -326,7 +326,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
 
   addrs.insert(0, parallel_addrs)
 
-  fw_versions = {}
+  fw_versions = defaultdict(dict)
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
       for r in REQUESTS:
@@ -337,23 +337,25 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             t = 2 * timeout if i == 0 else timeout
-            fw_versions.update(query.get_data(t))
+            fw_versions[r.rx_offset].update(query.get_data(t))
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
   # Build capnp list to put into CarParams
   car_fw = []
-  for addr, version in fw_versions.items():
-    f = car.CarParams.CarFw.new_message()
+  for rx_offset in fw_versions:
+    for addr, version in fw_versions[rx_offset].items():
+      f = car.CarParams.CarFw.new_message()
 
-    f.ecu = ecu_types[addr]
-    f.fwVersion = version
-    f.address = addr[0]
+      f.ecu = ecu_types[addr]
+      f.fwVersion = version
+      f.address = addr[0]
+      f.responseAddress = addr[0] + rx_offset
 
-    if addr[1] is not None:
-      f.subAddress = addr[1]
+      if addr[1] is not None:
+        f.subAddress = addr[1]
 
-    car_fw.append(f)
+      car_fw.append(f)
 
   return car_fw
 
