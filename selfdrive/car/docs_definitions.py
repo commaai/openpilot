@@ -69,8 +69,7 @@ class CarInfo:
       min_enable_speed = self.min_enable_speed
 
     good_torque = self.good_torque
-    if CP.lateralTuning.which() == 'torque':
-      good_torque = good_torque or CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD
+    good_torque = good_torque or CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD
 
     self.car_name = CP.carName
     self.make, self.model = self.name.split(' ', 1)
