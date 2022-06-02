@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-import os
 from typing import Optional
 
-TICI = os.path.isfile('/TICI')
 RESERVED_PORT = 8022  # sshd
 STARTING_PORT = 8001
 
@@ -19,7 +17,6 @@ class Service:
     self.frequency = frequency
     self.decimation = decimation
 
-DCAM_FREQ = 10. if not TICI else 20.
 
 services = {
   # service: (should_log, frequency, qlog decimation (optional))
@@ -57,10 +54,10 @@ services = {
   "carEvents": (True, 1., 1),
   "carParams": (True, 0.02, 1),
   "roadCameraState": (True, 20., 20),
-  "driverCameraState": (True, DCAM_FREQ, DCAM_FREQ),
-  "driverEncodeIdx": (False, DCAM_FREQ, 1),
-  "driverState": (True, DCAM_FREQ, DCAM_FREQ / 2),
-  "driverMonitoringState": (True, DCAM_FREQ, DCAM_FREQ / 2),
+  "driverCameraState": (True, 20., 20),
+  "driverEncodeIdx": (False, 20., 1),
+  "driverState": (True, 20., 10),
+  "driverMonitoringState": (True, 20., 10),
   "wideRoadEncodeIdx": (False, 20., 1),
   "wideRoadCameraState": (True, 20., 20),
   "modelV2": (True, 20., 40),
@@ -74,7 +71,7 @@ services = {
   # debug
   "testJoystick": (True, 0.),
   "roadEncodeData": (False, 20.),
-  "driverEncodeData": (False, DCAM_FREQ),
+  "driverEncodeData": (False, 20.),
   "wideRoadEncodeData": (False, 20.),
   "qRoadEncodeData": (False, 20.),
 }

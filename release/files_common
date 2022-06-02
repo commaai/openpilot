@@ -146,14 +146,10 @@ common/modeldata.h
 common/mat.h
 common/timing.h
 
-common/visionimg.cc
-common/visionimg.h
-
 common/gpio.cc
 common/gpio.h
 common/i2c.cc
 common/i2c.h
-
 
 selfdrive/controls/__init__.py
 selfdrive/controls/controlsd.py
@@ -168,7 +164,6 @@ selfdrive/controls/lib/events.py
 selfdrive/controls/lib/lane_planner.py
 selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/latcontrol_indi.py
-selfdrive/controls/lib/latcontrol_lqr.py
 selfdrive/controls/lib/latcontrol_torque.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol.py
@@ -294,6 +289,9 @@ selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/replay/*.cc
 selfdrive/ui/replay/*.h
 
+selfdrive/ui/qt/maps/*.cc
+selfdrive/ui/qt/maps/*.h
+
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
 
@@ -362,6 +360,8 @@ selfdrive/modeld/runners/run.h
 
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
+
+selfdrive/navd/*.py
 
 selfdrive/assets/.gitignore
 selfdrive/assets/assets.qrc
@@ -491,6 +491,7 @@ opendbc/honda_odyssey_extreme_edition_2018_china_can_generated.dbc
 opendbc/honda_insight_ex_2019_can_generated.dbc
 opendbc/acura_ilx_2016_nidec.dbc
 
+opendbc/kia_ev6.dbc
 opendbc/hyundai_kia_generic.dbc
 opendbc/hyundai_kia_mando_front_radar.dbc
 

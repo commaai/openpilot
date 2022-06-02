@@ -22,13 +22,13 @@ class Api():
   def request(self, method, endpoint, timeout=None, access_token=None, **params):
     return api_get(endpoint, method=method, timeout=timeout, access_token=access_token, **params)
 
-  def get_token(self):
+  def get_token(self, expiry_hours=1):
     now = datetime.utcnow()
     payload = {
       'identity': self.dongle_id,
       'nbf': now,
       'iat': now,
-      'exp': now + timedelta(hours=1)
+      'exp': now + timedelta(hours=expiry_hours)
     }
     token = jwt.encode(payload, self.private_key, algorithm='RS256')
     if isinstance(token, bytes):

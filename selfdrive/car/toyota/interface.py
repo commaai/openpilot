@@ -38,8 +38,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.74   # unknown end-to-end spec
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.INDI_PRIUS)
-      ret.steerActuatorDelay = 0.3
+      set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=1.7, FRICTION=0.06)
 
     elif candidate == CAR.PRIUS_V:
       stop_and_go = True
@@ -47,7 +46,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.4
       tire_stiffness_factor = 0.5533
       ret.mass = 3340. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.LQR_RAV4)
+      set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=1.8, FRICTION=0.06)
 
     elif candidate in (CAR.RAV4, CAR.RAV4H):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
@@ -55,14 +54,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.88   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
       ret.mass = 3650. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      set_lat_tune(ret.lateralTuning, LatTunes.LQR_RAV4)
+      set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=1.8, FRICTION=0.06)
 
     elif candidate == CAR.COROLLA:
       ret.wheelbase = 2.70
       ret.steerRatio = 18.27
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_A)
+      set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=2.8, FRICTION=0.024)
 
     elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2):
       stop_and_go = True
@@ -87,7 +86,10 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
+      if candidate in (CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
+        set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=2.4, FRICTION=0.05)
+      else:
+        set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
     elif candidate in (CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
       stop_and_go = True
@@ -136,7 +138,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
+      set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=2.0, FRICTION=0.07)
 
     elif candidate in (CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ESH):
       stop_and_go = True

@@ -1781,6 +1781,8 @@ struct NavInstruction {
   lanes @8 :List(Lane);
   showFull @9 :Bool;
 
+  speedLimit @10 :Float32; # m/s
+
   struct Lane {
     directions @0 :List(Direction);
     active @1 :Bool;

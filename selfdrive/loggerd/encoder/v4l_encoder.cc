@@ -248,7 +248,6 @@ void V4LEncoder::encoder_init() {
   }
   // queue up input buffers
   for (unsigned int i = 0; i < BUF_IN_COUNT; i++) {
-    buf_in[i].allocate(fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage);
     free_buf_in.push(i);
   }
 
@@ -262,41 +261,19 @@ void V4LEncoder::encoder_open(const char* path) {
   this->counter = 0;
 }
 
-int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                  int in_width_, int in_height_, VisionIpcBufExtra *extra) {
-  assert(in_width == in_width_);
-  assert(in_height == in_height_);
-  assert(is_open);
-
-  // reserve buffer
-  int buffer_in = free_buf_in.pop();
-
-  uint8_t *in_y_ptr = (uint8_t*)buf_in[buffer_in].addr;
-  int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
-  int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, in_width);
-  uint8_t *in_uv_ptr = in_y_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, in_height));
-
-
-  // GRRR COPY
-  int err = libyuv::I420ToNV12(y_ptr, in_width,
-                   u_ptr, in_width/2,
-                   v_ptr, in_width/2,
-                   in_y_ptr, in_y_stride,
-                   in_uv_ptr, in_uv_stride,
-                   in_width, in_height);
-  assert(err == 0);
-
+int V4LEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
   struct timeval timestamp {
     .tv_sec = (long)(extra->timestamp_eof/1000000000),
     .tv_usec = (long)((extra->timestamp_eof/1000) % 1000000),
   };
 
+  // reserve buffer
+  int buffer_in = free_buf_in.pop();
+
   // push buffer
   extras.push(*extra);
-  buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
-  int bytesused = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width) * VENUS_Y_SCANLINES(COLOR_FMT_NV12, in_height) +
-    VENUS_UV_STRIDE(COLOR_FMT_NV12, in_width) * VENUS_UV_SCANLINES(COLOR_FMT_NV12, in_height);
-  queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], timestamp, bytesused);
+  //buf->sync(VISIONBUF_SYNC_TO_DEVICE);
+  queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, buf, timestamp);
 
   return this->counter++;
 }

@@ -11,7 +11,6 @@ from common.realtime import Ratekeeper, Priority, config_realtime_process
 from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
 from selfdrive.controls.lib.radar_helpers import Cluster, Track, RADAR_TO_CAMERA
 from selfdrive.swaglog import cloudlog
-from selfdrive.hardware import TICI
 
 
 class KalmanParams():
@@ -180,7 +179,7 @@ class RadarD():
 
 # fuses camera and radar data for best lead detection
 def radard_thread(sm=None, pm=None, can_sock=None):
-  config_realtime_process(5 if TICI else 2, Priority.CTRL_LOW)
+  config_realtime_process(5, Priority.CTRL_LOW)
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")

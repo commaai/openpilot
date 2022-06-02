@@ -5,7 +5,7 @@ import time
 import unittest
 
 import selfdrive.manager.manager as manager
-from selfdrive.hardware import TICI, HARDWARE
+from selfdrive.hardware import AGNOS, HARDWARE
 from selfdrive.manager.process import DaemonProcess
 from selfdrive.manager.process_config import managed_processes
 
@@ -50,7 +50,7 @@ class TestManager(unittest.TestCase):
       self.assertTrue(state.running, f"{p} not running")
 
       exit_code = managed_processes[p].stop(retry=False)
-      if (TICI and p in ['ui', 'navd']):
+      if (AGNOS and p in ['ui',]):
         # TODO: make Qt UI exit gracefully
         continue
 
