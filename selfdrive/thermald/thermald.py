@@ -17,7 +17,7 @@ from common.filter_simple import FirstOrderFilter
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import HARDWARE, TICI
+from selfdrive.hardware import HARDWARE, TICI, AGNOS
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.statsd import statlog
 from selfdrive.swaglog import cloudlog
@@ -113,7 +113,7 @@ def hw_state_thread(end_event, hw_queue):
           modem_temps = prev_hw_state.modem_temps
 
         # Log modem version once
-        if TICI and ((modem_version is None) or (modem_nv is None)):
+        if AGNOS and ((modem_version is None) or (modem_nv is None)):
           modem_version = HARDWARE.get_modem_version()  # pylint: disable=assignment-from-none
           modem_nv = HARDWARE.get_modem_nv()  # pylint: disable=assignment-from-none
 
@@ -134,7 +134,7 @@ def hw_state_thread(end_event, hw_queue):
         except queue.Full:
           pass
 
-        if TICI and (hw_state.network_info is not None) and (hw_state.network_info.get('state', None) == "REGISTERED"):
+        if AGNOS and (hw_state.network_info is not None) and (hw_state.network_info.get('state', None) == "REGISTERED"):
           registered_count += 1
         else:
           registered_count = 0

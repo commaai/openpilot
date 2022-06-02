@@ -15,14 +15,12 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.hardware import TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.version import get_version
 from tools.lib.logreader import LogReader
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from common.transformations.camera import eon_f_frame_size, tici_f_frame_size, \
-                                          eon_d_frame_size, tici_d_frame_size, tici_e_frame_size
+from common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
 
 SentinelType = log.Sentinel.SentinelType
 
@@ -108,20 +106,15 @@ class TestLoggerd(unittest.TestCase):
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
 
-    expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc"}
-    streams = [(VisionStreamType.VISION_STREAM_ROAD, (*tici_f_frame_size, 2048*2346, 2048, 2048*1216) if TICI else eon_f_frame_size, "roadCameraState"),
-               (VisionStreamType.VISION_STREAM_DRIVER, (*tici_d_frame_size, 2048*2346, 2048, 2048*1216) if TICI else eon_d_frame_size, "driverCameraState")]
-    if TICI:
-      expected_files.add("ecamera.hevc")
-      streams.append((VisionStreamType.VISION_STREAM_WIDE_ROAD, (*tici_e_frame_size, 2048*2346, 2048, 2048*1216), "wideRoadCameraState"))
+    expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
+    streams = [(VisionStreamType.VISION_STREAM_ROAD, (*tici_f_frame_size, 2048*2346, 2048, 2048*1216), "roadCameraState"),
+               (VisionStreamType.VISION_STREAM_DRIVER, (*tici_d_frame_size, 2048*2346, 2048, 2048*1216), "driverCameraState"),
+               (VisionStreamType.VISION_STREAM_WIDE_ROAD, (*tici_e_frame_size, 2048*2346, 2048, 2048*1216), "wideRoadCameraState")]
 
     pm = messaging.PubMaster(["roadCameraState", "driverCameraState", "wideRoadCameraState"])
     vipc_server = VisionIpcServer("camerad")
     for stream_type, frame_spec, _ in streams:
-      if TICI:
-        vipc_server.create_buffers_with_sizes(stream_type, 40, False, *(frame_spec))
-      else:
-        vipc_server.create_buffers(stream_type, 40, False, *(frame_spec))
+      vipc_server.create_buffers_with_sizes(stream_type, 40, False, *(frame_spec))
     vipc_server.start_listener()
 
     for _ in range(5):
@@ -134,10 +127,7 @@ class TestLoggerd(unittest.TestCase):
       fps = 20.0
       for n in range(1, int(num_segs*length*fps)+1):
         for stream_type, frame_spec, state in streams:
-          if TICI:
-            dat = np.empty(frame_spec[2], dtype=np.uint8)
-          else:
-            dat = np.empty(int(frame_spec[0]*frame_spec[1]*3/2), dtype=np.uint8)
+          dat = np.empty(frame_spec[2], dtype=np.uint8)
           vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n/fps, n/fps)
 
           camera_state = messaging.new_message(state)
