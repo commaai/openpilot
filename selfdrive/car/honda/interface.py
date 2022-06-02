@@ -367,7 +367,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.manualRestart)
 
     # handle button presses
-    events.events.extend(create_button_enable_events(ret.buttonEvents))
+    events.events.extend(create_button_enable_events(ret.buttonEvents, self.CP.pcmCruise))
 
     ret.events = events.to_msg()
 
