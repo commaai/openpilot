@@ -244,7 +244,7 @@ def thermald_thread(end_event, hw_queue):
     current_filter.update(msg.deviceState.batteryCurrent / 1e6)
 
     max_comp_temp = temp_filter.update(
-      max(max(msg.deviceState.cpuTempC), msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC))
+      max(max(msg.deviceState.cpuTempC), msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC), max(msg.deviceState.pmicTempC))
     )
 
     if fan_controller is not None:
