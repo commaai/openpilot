@@ -131,12 +131,13 @@ def format_diff(results, ref_commit):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
+  all_cars = {car for car, _ in segments}
+  all_procs = {cfg.proc_name for cfg in CONFIGS}
 
-  # whitelist has precedence over blacklist in case both are defined
-  parser.add_argument("--whitelist-procs", type=str, nargs="*", default=[],
+  parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
+  parser.add_argument("--whitelist-procs", type=str, nargs="*", default=all_procs,
                       help="Whitelist given processes from the test (e.g. controlsd)")
-  parser.add_argument("--whitelist-cars", type=str, nargs="*", default=[],
+  parser.add_argument("--whitelist-cars", type=str, nargs="*", default=all_cars,
                       help="Whitelist given cars from the test (e.g. HONDA)")
   parser.add_argument("--blacklist-procs", type=str, nargs="*", default=[],
                       help="Blacklist given processes from the test (e.g. controlsd)")
@@ -152,6 +153,10 @@ if __name__ == "__main__":
                       help="Skips testing processes and uploads logs from previous test run")
   parser.add_argument("-j", "--jobs", type=int, default=1)
   args = parser.parse_args()
+
+  tested_procs = set(args.whitelist_procs) - set(args.blacklist_procs)
+  tested_cars = set(args.whitelist_cars) - set(args.blacklist_cars)
+  tested_cars = {c.upper() for c in tested_cars}
 
   full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
   upload = args.update_refs or args.upload_only
@@ -180,20 +185,19 @@ if __name__ == "__main__":
 
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
-      lreaders: Any = {}
-      p1 = pool.map(get_logreader, [seg for car, seg in segments])
-      for (segment, lr) in tqdm(p1, desc="Getting Logs", total=len(segments)):
+      download_segments = [seg for car, seg in segments if car in tested_cars]
+      lreaders: Dict[str, LogReader] = {}
+      p1 = pool.map(get_logreader, download_segments)
+      for segment, lr in tqdm(p1, desc="Getting Logs", total=len(download_segments)):
         lreaders[segment] = lr
 
     pool_args: Any = []
     for car_brand, segment in segments:
-      if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
-         (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
+      if car_brand not in tested_cars:
         continue
 
       for cfg in CONFIGS:
-        if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
-           (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
+        if cfg.proc_name not in tested_procs:
           continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
