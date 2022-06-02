@@ -54,6 +54,7 @@ COPY ./opendbc $HOME/openpilot/opendbc
 COPY ./cereal $HOME/openpilot/cereal
 COPY ./panda $HOME/openpilot/panda
 COPY ./selfdrive $HOME/openpilot/selfdrive
+COPY ./system $HOME/openpilot/system
 COPY ./tools $HOME/openpilot/tools
 
 WORKDIR $HOME/openpilot
