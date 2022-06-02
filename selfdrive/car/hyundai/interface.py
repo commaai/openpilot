@@ -131,7 +131,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.42  # Spec
       tire_stiffness_factor = 0.385
       if candidate == CAR.KONA_HEV:
-        set_torque_tune(ret.lateralTuning, 3.6, 0.01)
+        set_torque_tune(ret.lateralTuning, 4.0, 0.01)
       else:
         ret.lateralTuning.pid.kf = 0.00005
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
