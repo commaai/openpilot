@@ -571,7 +571,7 @@ void pigeon_thread(Panda *panda) {
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
 
-  std::unique_ptr<Pigeon> pigeon(Pigeon::connect("/dev/ttyHS0"));
+  std::unique_ptr<Pigeon> pigeon(Hardware::TICI() ? Pigeon::connect("/dev/ttyHS0") : Pigeon::connect(panda));
 
   while (!do_exit && panda->connected) {
     bool need_reset = false;
