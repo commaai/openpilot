@@ -10,6 +10,7 @@ from selfdrive.manager.helpers import unblock_stdout
 from tools.sim import bridge
 from tools.sim.bridge import CarlaBridge
 
+CI = "CI" in os.environ
 
 class TestCarlaIntegration(unittest.TestCase):
   """
@@ -21,7 +22,7 @@ class TestCarlaIntegration(unittest.TestCase):
   def setUp(self):
     self.processes = []
 
-    if "CI" not in os.environ:
+    if not CI:
       # We want to make sure that carla_sim docker isn't still running.
       subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
       self.carla_process = subprocess.Popen(".././start_carla.sh")
@@ -39,7 +40,7 @@ class TestCarlaIntegration(unittest.TestCase):
     sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
     q = Queue()
     carla_bridge = CarlaBridge(bridge.parse_args([]))
-    p_bridge = carla_bridge.run(q, retries=3)
+    p_bridge = carla_bridge.run(q, retries=10 if CI else 3)
     self.processes.append(p_bridge)
 
     max_time_per_step = 20
