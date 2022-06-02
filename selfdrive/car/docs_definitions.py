@@ -68,9 +68,6 @@ class CarInfo:
     if self.min_enable_speed is not None:
       min_enable_speed = self.min_enable_speed
 
-    good_torque = self.good_torque
-    good_torque = good_torque or CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD
-
     self.car_name = CP.carName
     self.make, self.model = self.name.split(' ', 1)
     self.row = {
@@ -81,7 +78,7 @@ class CarInfo:
       Column.LONGITUDINAL: CP.openpilotLongitudinalControl and not CP.radarOffCan,
       Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
       Column.FSR_STEERING: min_steer_speed <= 0.,
-      Column.STEERING_TORQUE: good_torque,
+      Column.STEERING_TORQUE: self.good_torque or CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD,
       Column.MAINTAINED: CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none,
     }
 
