@@ -57,7 +57,7 @@ class TestFwFingerprint(unittest.TestCase):
 
     self.assertTrue(passed, "Blacklisted FW versions found")
 
-  def test_fw_request_whitelist(self):
+  def test_fw_request_ecu_whitelist(self):
     passed = True
     brands = set(r.brand for r in REQUESTS)
     versions = get_interface_attr('FW_VERSIONS')
@@ -78,7 +78,7 @@ class TestFwFingerprint(unittest.TestCase):
         print(f'{brand.title()} FW request does not whitelist ecus: {ecu_strings}')
         passed = False
 
-    self.assertTrue(passed, "Not all ecus in FW versions found in whitelists")
+    self.assertTrue(passed, "Not all ecus in FW versions found in request whitelists")
 
 
 if __name__ == "__main__":
