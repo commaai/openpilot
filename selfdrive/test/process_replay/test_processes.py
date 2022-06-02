@@ -181,8 +181,7 @@ if __name__ == "__main__":
 
   # check to make sure all car brands are tested
   if full_test:
-    tested_cars = {c.lower() for c, _ in segments}
-    untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
+    untested = (set(interface_names) - set(excluded_interfaces)) - {c.lower() for c in tested_cars}
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
