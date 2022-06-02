@@ -22,13 +22,15 @@ LOW_SPEED_FACTOR = 200
 JERK_THRESHOLD = 0.2
 
 
-def set_torque_tune(tune, MAX_LAT_ACCEL=2.5, FRICTION=.1):
+def set_torque_tune(CP, MAX_LAT_ACCEL=2.5, FRICTION=.1):
+  tune = CP.lateralTuning
   tune.init('torque')
   tune.torque.useSteeringAngle = True
   tune.torque.kp = 1.0 / MAX_LAT_ACCEL
   tune.torque.kf = 1.0 / MAX_LAT_ACCEL
   tune.torque.ki = 0.1 / MAX_LAT_ACCEL
   tune.torque.friction = FRICTION
+  CP.maxLateralAccel = MAX_LAT_ACCEL
 
 
 class LatControlTorque(LatControl):
