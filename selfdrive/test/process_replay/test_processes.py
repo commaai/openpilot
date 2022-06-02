@@ -12,6 +12,7 @@ from selfdrive.test.openpilotci import get_url, upload_file
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_enabled, replay_process
 from selfdrive.version import get_commit
+from tools.lib.filereader import FileReader
 from tools.lib.logreader import LogReader
 
 original_segments = [
@@ -57,7 +58,8 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 
 def run_test_process(data):
-  segment, cfg, args, cur_log_fn, ref_log_path, lr = data
+  segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
+  lr = LogReader.from_bytes(lr_dat)
   res = None
   if not args.upload_only:
     res, log_msgs = test_process(cfg, lr, ref_log_path, args.ignore_fields, args.ignore_msgs)
@@ -72,10 +74,10 @@ def run_test_process(data):
   return (segment, cfg.proc_name, res)
 
 
-def get_logreader(segment):
+def get_log_data(segment):
   r, n = segment.rsplit("--", 1)
-  lr = LogReader(get_url(r, n))
-  return (segment, lr)
+  with FileReader(get_url(r, n)) as f:
+    return (segment, f.read())
 
 
 def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
@@ -186,10 +188,10 @@ if __name__ == "__main__":
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
       download_segments = [seg for car, seg in segments if car in tested_cars]
-      lreaders: Dict[str, LogReader] = {}
-      p1 = pool.map(get_logreader, download_segments)
+      log_data: Dict[str, LogReader] = {}
+      p1 = pool.map(get_log_data, download_segments)
       for segment, lr in tqdm(p1, desc="Getting Logs", total=len(download_segments)):
-        lreaders[segment] = lr
+        log_data[segment] = lr
 
     pool_args: Any = []
     for car_brand, segment in segments:
@@ -207,8 +209,8 @@ if __name__ == "__main__":
           ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
           ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
 
-        lr = None if args.upload_only else lreaders[segment]
-        pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, lr))
+        dat = None if args.upload_only else log_data[segment]
+        pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, dat))
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
