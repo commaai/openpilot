@@ -96,7 +96,7 @@ class Request:
   brand: str
   request: List[bytes]
   response: List[bytes]
-  request_ecus: List[int] = field(default_factory=list)
+  whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = DEFAULT_RX_OFFSET
   bus: int = 1
 
@@ -171,14 +171,12 @@ REQUESTS: List[Request] = [
     "nissan",
     [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
     [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
-    [Ecu.fwdCamera, Ecu.eps, Ecu.esp, Ecu.combinationMeter],  # TODO: Ecu.engine 0x7e0 unknown, Ecu.gateway 0x18dad0f1 unknown
     rx_offset=NISSAN_RX_OFFSET,
   ),
   Request(
     "nissan",
     [NISSAN_VERSION_REQUEST_STANDARD],
     [NISSAN_VERSION_RESPONSE_STANDARD],
-    [Ecu.fwdCamera, Ecu.eps, Ecu.esp, Ecu.combinationMeter],  # TODO: Ecu.engine 0x7e0 unknown, Ecu.gateway 0x18dad0f1 unknown
     rx_offset=NISSAN_RX_OFFSET,
   ),
   # Body
@@ -331,26 +329,20 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   addrs.insert(0, parallel_addrs)
 
   fw_versions = {}
-  total_queries = 0
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
-    for addr_chunk in chunks(addr):
+    for addr_chunk in chunks(addr, 100000):
       for r in REQUESTS:
         try:
-          print(addr_chunk)
-          addrs = [(b, a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and (len(r.request_ecus) and ecu_types[(a, s)] in r.request_ecus)]
-          total_queries += len(addrs)
-          print(addrs)
-          print()
+          addrs = [(b, a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
+                   (len(r.whitelist_ecus) == 0 or ecu_types[(a, s)] in r.whitelist_ecus)]
 
-          # if addrs:
-          #   query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-          #   t = 2 * timeout if i == 0 else timeout
-          #   fw_versions.update(query.get_data(t))
+          if addrs:
+            query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
+            t = 2 * timeout if i == 0 else timeout
+            fw_versions.update(query.get_data(t))
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
-  print(f'{total_queries=}')
-  return
   # Build capnp list to put into CarParams
   car_fw = []
   for addr, version in fw_versions.items():
