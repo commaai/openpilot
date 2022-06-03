@@ -303,4 +303,4 @@ if __name__ == "__main__":
   parser.add_argument("route", type=str, help="The source route")
   parser.add_argument("seg", type=int, help="Segment in source route")
   args = parser.parse_args()
-  regen_and_save(args.route, args.seg, args.upload, outdir=os.path.join(FAKEDATA, "default_dongleid"))
+  regen_and_save(args.route, args.seg, args.upload)
