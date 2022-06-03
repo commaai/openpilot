@@ -7,9 +7,17 @@ from tools.lib.logreader import logreader_from_route_or_segment
 DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 
 def read_logs(lr):
+  count = 0
   for msg in lr:
-    if msg.which() == 'sendcan':
-      pass
+    if msg.which() == 'lateralPlan':
+      print(msg)
+      print()
+      print()
+      print()
+      print()
+      print()
+      count += 1
+      if count > 50: break
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A tool for graphing openpilot's message dependencies",
