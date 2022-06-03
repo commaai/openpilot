@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
+import argparse
+import sys
+
+from tools.lib.logreader import logreader_from_route_or_segment
 
 DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 
 def read_logs(lr):
   for msg in lr:
     if msg.which() == 'sendcan':
+      pass
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A tool for graphing openpilot's message dependencies",
