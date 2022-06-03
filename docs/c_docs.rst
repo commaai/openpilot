@@ -66,7 +66,7 @@ qt
 proclogd
 ^^^^^^^^
 .. autodoxygenindex::
-   :project: selfdrive_proclogd
+   :project: system_proclogd
 
 modeld
 ^^^^^^
