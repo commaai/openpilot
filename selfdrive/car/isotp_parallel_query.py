@@ -124,6 +124,7 @@ class IsoTpParallelQuery:
 
         if response_valid:
           last_response_time = time.monotonic()
+          cloudlog.warning(f"iso-tp got query response: {tx_addr}, {time.monotonic()}")
           if counter + 1 < len(self.request):
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
@@ -131,8 +132,11 @@ class IsoTpParallelQuery:
             results[tx_addr] = dat[len(expected_response):]
             request_done[tx_addr] = True
         else:
+          error_code = dat[2] if len(dat) > 2 else -1
+          if error_code == 0x78:
+            cloudlog.warning(f"iso-tp query response pending: {tx_addr}, {time.monotonic()}")
           request_done[tx_addr] = True
-          cloudlog.warning(f"iso-tp query bad response: 0x{dat.hex()}")
+          cloudlog.warning(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
 
       cur_time = time.monotonic()
       if cur_time - last_response_time > timeout:
