@@ -100,6 +100,7 @@ class Request:
   rx_offset: int = DEFAULT_RX_OFFSET
   bus: int = 1
 
+
 REQUESTS: List[Request] = [
   # Subaru
   Request(
