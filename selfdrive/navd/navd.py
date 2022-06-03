@@ -10,11 +10,11 @@ from cereal import log
 from common.api import Api
 from common.params import Params
 from common.realtime import Ratekeeper
-from selfdrive.swaglog import cloudlog
 from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
-                                    distance_along_geometry,
+                                    distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
                                     parse_banner_instructions)
+from selfdrive.swaglog import cloudlog
 
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
@@ -110,7 +110,7 @@ class RouteEngine:
 
     params = {
       'access_token': self.mapbox_token,
-      # 'annotations': 'maxspeed',
+      'annotations': 'maxspeed',
       'geometries': 'geojson',
       'overview': 'full',
       'steps': 'true',
@@ -131,9 +131,25 @@ class RouteEngine:
         self.route = r['routes'][0]['legs'][0]['steps']
         self.route_geometry = []
 
+        maxspeed_idx = 0
+        maxspeeds = r['routes'][0]['legs'][0]['annotation']['maxspeed']
+
         # Convert coordinates
         for step in self.route:
-          self.route_geometry.append([Coordinate.from_mapbox_tuple(c) for c in step['geometry']['coordinates']])
+          coords = []
+
+          for c in step['geometry']['coordinates']:
+            coord = Coordinate.from_mapbox_tuple(c)
+
+            # Last step does not have maxspeed
+            if (maxspeed_idx < len(maxspeeds)) and ('unknown' not in maxspeeds[maxspeed_idx]):
+              coord.annotations['maxspeed'] = maxspeed_to_ms(maxspeeds[maxspeed_idx])
+
+            coords.append(coord)
+            maxspeed_idx += 1
+
+          self.route_geometry.append(coords)
+          maxspeed_idx -= 1  # Every segment ends with the same coordinate as the start of the next
 
         self.step_idx = 0
       else:
@@ -178,6 +194,23 @@ class RouteEngine:
     msg.navInstruction.distanceRemaining = total_distance
     msg.navInstruction.timeRemaining = total_time
     msg.navInstruction.timeRemainingTypical = total_time_typical
+
+    # Speed limit
+    closest_idx, closest = min(enumerate(geometry), key=lambda p: p[1].distance_to(self.last_position))
+    if closest_idx > 0:
+      # If we are not past the closest point, show previous
+      if along_geometry < distance_along_geometry(geometry, geometry[closest_idx]):
+        closest = geometry[closest_idx - 1]
+
+    if 'maxspeed' in closest.annotations:
+      msg.navInstruction.speedLimit = closest.annotations['maxspeed']
+
+    # Speed limit sign type
+    if 'speedLimitSign' in step:
+      if step['speedLimitSign'] == 'mutcd':
+        msg.navInstruction.speedLimitSign = log.NavInstruction.SpeedLimitSign.mutcd
+      elif step['speedLimitSign'] == 'vienna':
+        msg.navInstruction.speedLimitSign = log.NavInstruction.SpeedLimitSign.vienna
 
     self.pm.send('navInstruction', msg)
 
