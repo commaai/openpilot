@@ -84,8 +84,8 @@ pipeline {
             sh "git lfs pull"
             sh "curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh"
             sh "${WORKSPACE}/tools/sim/build_container.sh"
-            sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_carla.sh"
-            sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_openpilot_docker.sh"
+            sh "CI=1 ${WORKSPACE}/tools/sim/start_carla.sh"
+            sh "CI=1 ${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
           }
 
           post {
