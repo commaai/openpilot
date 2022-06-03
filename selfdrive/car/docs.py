@@ -15,7 +15,7 @@ from selfdrive.car.tests.routes import non_tested_cars
 
 def get_all_footnotes() -> Dict[Enum, int]:
   all_footnotes = []
-  for _, footnotes in get_interface_attr("Footnote", ignore_none=True).items():
+  for footnotes in get_interface_attr("Footnote", ignore_none=True).values():
     all_footnotes += footnotes
   return {fn: idx + 1 for idx, fn in enumerate(all_footnotes)}
 
