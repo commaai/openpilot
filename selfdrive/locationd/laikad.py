@@ -63,7 +63,7 @@ class Laikad:
       return dat
     elif ublox_msg.which == 'ephemeris':
       ephem = convert_ublox_ephem(ublox_msg.ephemeris)
-      self.astro_dog.add_ephems([ephem], self.astro_dog.orbits)
+      self.astro_dog.add_ephem(ephem, self.astro_dog.orbits)
     # elif ublox_msg.which == 'ionoData':
     # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
 
@@ -77,7 +77,7 @@ class Laikad:
       filter_time = self.gnss_kf.filter.filter_time
       if filter_time is None:
         cloudlog.info("Init gnss kalman filter")
-      elif (t - filter_time) > MAX_TIME_GAP:
+      elif abs(t - filter_time) > MAX_TIME_GAP:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       else:
         cloudlog.error("Gnss kalman filter state is nan")
