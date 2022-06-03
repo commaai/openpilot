@@ -35,6 +35,3 @@ ENV QTWEBENGINE_DISABLE_SANDBOX 1
 
 RUN dbus-uuidgen > /etc/machine-id
 
-# get same tmux config used on NEOS for debugging
-RUN cd $HOME && \
-    curl -O https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
