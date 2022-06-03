@@ -77,11 +77,11 @@ def get_T_FOLLOW(personality=Personality.NORMAL):
 def get_stopped_equivalence_factor(v_lead):
   return (v_lead**2) / (2 * COMFORT_BRAKE)
 
-def get_safe_obstacle_distance(v_ego, t_follow=T_FOLLOW):
-  return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
+def get_safe_obstacle_distance(v_ego, T_FOLLOW):
+  return (v_ego**2) / (2 * COMFORT_BRAKE) + T_FOLLOW * v_ego + STOP_DISTANCE
 
-def desired_follow_distance(v_ego, v_lead):
-  return get_safe_obstacle_distance(v_ego) - get_stopped_equivalence_factor(v_lead)
+def desired_follow_distance(v_ego, v_lead, T_FOLLOW=get_T_FOLLOW()):
+  return get_safe_obstacle_distance(v_ego, T_FOLLOW) - get_stopped_equivalence_factor(v_lead)
 
 
 def gen_long_model():
@@ -177,7 +177,11 @@ def gen_long_ocp():
 
   x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
+<<<<<<< HEAD
   ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0, T_FOLLOW, LEAD_DANGER_FACTOR])
+=======
+  ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0, 1.45])
+>>>>>>> Adjustable follow parameter
 
   # We put all constraint cost weights to 0 and only set them at runtime
   cost_weights = np.zeros(CONSTR_DIM)
@@ -323,7 +327,8 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  def update(self, radarstate, v_cruise, x, v, a, j):
+  def update(self, radarstate, v_cruise, x, v, a, j, personality=Personality.NORMAL):
+    T_FOLLOW = get_T_FOLLOW(personality)
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
@@ -370,6 +375,7 @@ class LongitudinalMpc:
       x = np.min(x_and_cruise, axis=1)
 
       self.source = 'e2e' if x_and_cruise[1,0] < x_and_cruise[1,1] else 'cruise'
+
 
     else:
       raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner update')
