@@ -57,7 +57,7 @@ jobs:
     - name: Build base cl image
       run: eval "$BUILD_CL"
     - name: Pull latest simulator image
-      run: eval "$BUILD_CL"docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
+      run: docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
     - name: Build simulator image
       run: docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
     - name: Push to container registry
