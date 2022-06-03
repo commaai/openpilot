@@ -112,13 +112,6 @@ CameraViewWidget::~CameraViewWidget() {
     glDeleteBuffers(1, &frame_vbo);
     glDeleteBuffers(1, &frame_ibo);
     glDeleteBuffers(2, textures);
-
-#ifdef QCOM2
-    EGLDisplay display = eglGetCurrentDisplay();
-    for (auto &pair : egl_images) {
-      eglDestroyImageKHR(display, pair.second);
-    }
-#endif
   }
   doneCurrent();
 }
@@ -277,12 +270,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 
 #ifdef QCOM2
   EGLDisplay display = eglGetCurrentDisplay();
-
-  for (auto &pair : egl_images) {
-    eglDestroyImageKHR(display, pair.second);
-  }
   egl_images.clear();
-
   for (int i = 0; i < vipc_client->num_buffers; i++) {  // import buffers into OpenGL
     int fd = vipc_client->buffers[i].fd;
     EGLint img_attrs[] = {
