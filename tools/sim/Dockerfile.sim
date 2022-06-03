@@ -1,24 +1,9 @@
 FROM ghcr.io/commaai/openpilot-base-cl:latest
 
 RUN apt-get update && apt-get install -y --no-install-recommends\
-    apt-utils \
-    unzip \
-    tar \
-    curl \
-    xz-utils \
-    dbus \
-    gcc-arm-none-eabi \
     tmux \
     vim \
-    lsb-core \
-    libx11-6 \
   && rm -rf /var/lib/apt/lists/*
-
-ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
-ENV QTWEBENGINE_DISABLE_SANDBOX 1
-
-RUN dbus-uuidgen > /etc/machine-id
 
 # get same tmux config used on NEOS for debugging
 RUN cd $HOME && \

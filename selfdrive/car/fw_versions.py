@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 import struct
 import traceback
-from typing import Any, List
 from collections import defaultdict
 from dataclasses import dataclass
-
+from typing import Any, List
 from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
-from selfdrive.car.fingerprints import FW_VERSIONS, get_attr_from_cars
+from selfdrive.car.interfaces import get_interface_attr
+from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.swaglog import cloudlog
@@ -303,7 +303,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   addrs = []
   parallel_addrs = []
 
-  versions = get_attr_from_cars('FW_VERSIONS', combine_brands=False)
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
   if extra is not None:
     versions.update(extra)
 
