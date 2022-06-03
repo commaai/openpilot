@@ -78,14 +78,14 @@ DMonitoringModelResult dmonitoring_eval_frame(DMonitoringModelState* s, void* st
 
   uint8_t *raw_buf = (uint8_t *) stream_buf;
   // vertical crop free
-  uint8_t *raw_y_start = raw_buf + width * v_off;
+  uint8_t *raw_y_start = raw_buf + stride * v_off;
 
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
 
   // snpe UserBufferEncodingUnsigned8Bit doesn't work
   // fast float conversion instead, also does h crop and scales to 0-1
   for (int r = 0; r < MODEL_HEIGHT; ++r) {
-    libyuv::ByteToFloat(raw_y_start + r * width + h_off, net_input_buf + r * MODEL_WIDTH, 0.003921569f, MODEL_WIDTH);
+    libyuv::ByteToFloat(raw_y_start + r * stride + h_off, net_input_buf + r * MODEL_WIDTH, 0.003921569f, MODEL_WIDTH);
   }
 
   // printf("preprocess completed. %d \n", yuv_buf_len);
