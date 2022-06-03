@@ -1,9 +1,11 @@
 import os
-from typing import Any, Dict, List
+from typing import Dict, List
 
+from cereal import car
 from common.params import Params
 from common.basedir import BASEDIR
 from selfdrive.version import is_comma_remote, is_tested_branch
+from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
 from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
@@ -11,7 +13,6 @@ from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
 
-from cereal import car
 EventName = car.CarEvent.EventName
 
 
@@ -57,19 +58,6 @@ def load_interfaces(brand_names):
     for model_name in brand_names[brand_name]:
       ret[model_name] = (CarInterface, CarController, CarState)
   return ret
-
-
-def get_interface_attr(attr: str) -> Dict[str, Any]:
-  # returns given attribute from each interface
-  brand_names = {}
-  for car_folder in sorted([x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]):
-    try:
-      brand_name = car_folder.split('/')[-1]
-      attr_data = getattr(__import__(f'selfdrive.car.{brand_name}.values', fromlist=[attr]), attr, None)
-      brand_names[brand_name] = attr_data
-    except (ImportError, OSError):
-      pass
-  return brand_names
 
 
 def _get_interface_names() -> Dict[str, List[str]]:
