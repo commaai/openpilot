@@ -44,19 +44,19 @@ class Laikad:
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
       ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
 
-      pos_std = float(np.linalg.norm(self.gnss_kf.P[GStates.ECEF_POS]))
-      vel_std = float(np.linalg.norm(self.gnss_kf.P[GStates.ECEF_VELOCITY]))
+      pos_std = self.gnss_kf.P[GStates.ECEF_POS].flatten().tolist()
+      vel_std = self.gnss_kf.P[GStates.ECEF_VELOCITY].flatten().tolist()
 
       bearing_deg, bearing_std = get_bearing_from_gnss(ecef_pos, ecef_vel, vel_std)
 
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
 
       dat = messaging.new_message("gnssMeasurements")
-      measurement_msg = log.GnssMeasurements.Measurement.new_message
+      measurement_msg = log.LiveLocationKalman.Measurement.new_message
       dat.gnssMeasurements = {
         "positionECEF": measurement_msg(value=ecef_pos, std=pos_std, valid=localizer_valid),
         "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std, valid=localizer_valid),
-        "bearingDeg": measurement_msg(value=[bearing_deg], std=bearing_std, valid=localizer_valid),
+        "bearingDeg": measurement_msg(value=[bearing_deg], std=[bearing_std], valid=localizer_valid),
         "ubloxMonoTime": ublox_mono_time,
         "correctedMeasurements": meas_msgs
       }
@@ -77,7 +77,7 @@ class Laikad:
       filter_time = self.gnss_kf.filter.filter_time
       if filter_time is None:
         cloudlog.info("Init gnss kalman filter")
-      elif (t - filter_time) > MAX_TIME_GAP:
+      elif abs(t - filter_time) > MAX_TIME_GAP:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       else:
         cloudlog.error("Gnss kalman filter state is nan")
@@ -136,7 +136,7 @@ def get_bearing_from_gnss(ecef_pos, ecef_vel, vel_std):
 
   ned_vel = np.einsum('ij,j ->i', converter.ned_from_ecef_matrix, ecef_vel)
   bearing = np.arctan2(ned_vel[1], ned_vel[0])
-  bearing_std = np.arctan2(vel_std, np.linalg.norm(ned_vel))
+  bearing_std = np.arctan2(np.linalg.norm(vel_std), np.linalg.norm(ned_vel))
   return float(np.rad2deg(bearing)), float(bearing_std)
 
 

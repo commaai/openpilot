@@ -69,22 +69,13 @@ void crop_nv12_to_yuv(uint8_t *raw, int stride, int uv_offset, uint8_t *y, uint8
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, int stride, int uv_offset, float *calib) {
-  Rect crop_rect;
-  if (width == TICI_CAM_WIDTH) {
-    const int cropped_height = tici_dm_crop::width / 1.33;
-    crop_rect = {width / 2 - tici_dm_crop::width / 2 + tici_dm_crop::x_offset,
-                 height / 2 - cropped_height / 2 + tici_dm_crop::y_offset,
-                 cropped_height / 2,
-                 cropped_height};
-    if (!s->is_rhd) {
-      crop_rect.x += tici_dm_crop::width - crop_rect.w;
-    }
-  } else {
-    const int adapt_width = 372;
-    crop_rect = {0, 0, adapt_width, height};
-    if (!s->is_rhd) {
-      crop_rect.x += width - crop_rect.w;
-    }
+  const int cropped_height = tici_dm_crop::width / 1.33;
+  Rect crop_rect = {width / 2 - tici_dm_crop::width / 2 + tici_dm_crop::x_offset,
+                height / 2 - cropped_height / 2 + tici_dm_crop::y_offset,
+                cropped_height / 2,
+                cropped_height};
+  if (!s->is_rhd) {
+    crop_rect.x += tici_dm_crop::width - crop_rect.w;
   }
 
   int resized_width = MODEL_WIDTH;
@@ -108,31 +99,16 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   auto [resized_buf, resized_u, resized_v] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
   uint8_t *resized_y = resized_buf;
   libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterBilinear;
-  if (Hardware::TICI()) {
-    libyuv::I420Scale(cropped_y, crop_rect.w,
-                    cropped_u, crop_rect.w / 2,
-                    cropped_v, crop_rect.w / 2,
-                    crop_rect.w, crop_rect.h,
-                    resized_y, resized_width,
-                    resized_u, resized_width / 2,
-                    resized_v, resized_width / 2,
-                    resized_width, resized_height,
-                    mode);
-  } else {
-    const int source_height = 0.7*resized_height;
-    const int extra_height = (resized_height - source_height) / 2;
-    const int extra_width = (resized_width - source_height / 2) / 2;
-    const int source_width = source_height / 2 + extra_width;
-    libyuv::I420Scale(cropped_y, crop_rect.w,
-                    cropped_u, crop_rect.w / 2,
-                    cropped_v, crop_rect.w / 2,
-                    crop_rect.w, crop_rect.h,
-                    resized_y + extra_height * resized_width, resized_width,
-                    resized_u + extra_height / 2 * resized_width / 2, resized_width / 2,
-                    resized_v + extra_height / 2 * resized_width / 2, resized_width / 2,
-                    source_width, source_height,
-                    mode);
-  }
+  libyuv::I420Scale(cropped_y, crop_rect.w,
+                  cropped_u, crop_rect.w / 2,
+                  cropped_v, crop_rect.w / 2,
+                  crop_rect.w, crop_rect.h,
+                  resized_y, resized_width,
+                  resized_u, resized_width / 2,
+                  resized_v, resized_width / 2,
+                  resized_width, resized_height,
+                  mode);
+
 
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);

@@ -50,11 +50,7 @@ class SwaglogState : public LogState {
     ctx_j["dirty"] = !getenv("CLEAN");
 
     // device type
-    if (Hardware::TICI()) {
-      ctx_j["device"] =  "tici";
-    } else {
-      ctx_j["device"] =  "pc";
-    }
+    ctx_j["device"] = Hardware::get_name();
     LogState::initialize();
   }
 };

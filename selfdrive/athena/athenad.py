@@ -32,7 +32,7 @@ from common.basedir import PERSIST
 from common.file_helpers import CallbackReader
 from common.params import Params
 from common.realtime import sec_since_boot, set_core_affinity
-from selfdrive.hardware import HARDWARE, PC, TICI
+from selfdrive.hardware import HARDWARE, PC, AGNOS
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.statsd import STATS_DIR
@@ -413,8 +413,8 @@ def primeActivated(activated):
 
 @dispatcher.add_method
 def setBandwithLimit(upload_speed_kbps, download_speed_kbps):
-  if not TICI:
-    return {"success": 0, "error": "only supported on comma three"}
+  if not AGNOS:
+    return {"success": 0, "error": "only supported on AGNOS"}
 
   try:
     HARDWARE.set_bandwidth_limit(upload_speed_kbps, download_speed_kbps)
