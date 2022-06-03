@@ -86,11 +86,11 @@ pipeline {
             sh "${WORKSPACE}/tools/sim/build_container.sh"
             sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_carla.sh"
             sh "cd ${WORKSPACE}/tools/sim && CI=1 ./start_openpilot_docker.sh"
-            sh "docker kill carla_sim || true"
           }
 
           post {
             always {
+              sh "docker kill carla_sim || true"
               sh "rm -rf ${WORKSPACE}/* && rm -rf .* || true"
             }
           }
@@ -147,6 +147,7 @@ pipeline {
                     ])
                   }
                 }
+
               }
             }
           }

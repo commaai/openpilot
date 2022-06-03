@@ -43,7 +43,7 @@ class TestCarlaIntegration(unittest.TestCase):
     p_bridge = carla_bridge.run(q, retries=10 if CI else 3)
     self.processes.append(p_bridge)
 
-    max_time_per_step = 20
+    max_time_per_step = 60 if CI else 20
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()
