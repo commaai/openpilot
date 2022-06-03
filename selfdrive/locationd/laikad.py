@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import threading
 import time
-from datetime import datetime
 from typing import List
 
 import numpy as np
@@ -27,16 +26,18 @@ MAX_TIME_GAP = 10
 
 class Laikad:
 
-  def __init__(self, auto_update, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV)):
-    # Currently GLONASS is not supported for real time orbit or nav data.
-    self.astro_dog = AstroDog(valid_const=["GPS"], use_internet=auto_update, valid_ephem_types=valid_ephem_types)
+  def __init__(self, valid_const=("GPS",), auto_update=False, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV)):
+    self.astro_dog = AstroDog(valid_const=valid_const, use_internet=auto_update, valid_ephem_types=valid_ephem_types)
     self.gnss_kf = GNSSKalman(GENERATED_DIR)
     self.latest_epoch_fetched = GPSTime(0, 0)
+    self.latest_time_msg = None
 
   def process_ublox_msg(self, ublox_msg, ublox_mono_time: int):
     if ublox_msg.which == 'measurementReport':
       report = ublox_msg.measurementReport
       new_meas = read_raw_ublox(report)
+      if report.gpsWeek > 0:
+        self.latest_time_msg = GPSTime(report.gpsWeek, report.rcvTow)
       measurements = process_measurements(new_meas, self.astro_dog)
       pos_fix = calc_pos_fix(measurements, min_measurements=4)
       # To get a position fix a minimum of 5 measurements are needed.
@@ -58,7 +59,6 @@ class Laikad:
       bearing_deg, bearing_std = get_bearing_from_gnss(ecef_pos, ecef_vel, vel_std)
 
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
-
       dat = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
       dat.gnssMeasurements = {
@@ -109,14 +109,16 @@ class Laikad:
 
   def orbit_thread(self, end_event: threading.Event):
     while not end_event.is_set():
-      t = GPSTime.from_datetime(datetime.utcnow())
-      self.fetch_orbits(t)
-      time.sleep(SECS_IN_MIN)
+      if self.latest_time_msg:
+        self.fetch_orbits(self.latest_time_msg)
+        time.sleep(0.1)
 
   def fetch_orbits(self, t: GPSTime):
     if self.latest_epoch_fetched < t + SECS_IN_MIN:
+      cloudlog.info("Start to download/parse orbits")
       orbit_ephems = self.astro_dog.download_parse_orbit_data(t, skip_before_epoch=t - 2 * SECS_IN_HR)
       if len(orbit_ephems) > 0:
+        cloudlog.info(f"downloaded and parsed correctly new orbits {len(orbit_ephems)}, Constellations:{set([e.prn[0] for e in orbit_ephems])}")
         self.astro_dog.add_ephems(orbit_ephems, self.astro_dog.orbits)
         latest_orbit = max(orbit_ephems, key=lambda e: e.epoch)  # type: ignore
         self.latest_epoch_fetched = latest_orbit.epoch
@@ -165,7 +167,7 @@ def main():
   sm = messaging.SubMaster(['ubloxGnss'])
   pm = messaging.PubMaster(['gnssMeasurements'])
 
-  laikad = Laikad(auto_update=False)
+  laikad = Laikad()
 
   end_event = threading.Event()
   threading.Thread(target=laikad.orbit_thread, args=(end_event,)).start()
