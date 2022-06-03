@@ -182,7 +182,7 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (Hardware::TICI() && sm.updated("wideRoadCameraState")) {
+  if (sm.updated("wideRoadCameraState")) {
     auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
 
     float max_lines = 1618;

@@ -24,8 +24,6 @@ constexpr auto T_IDXS_FLOAT = build_idxs<float, TRAJECTORY_SIZE>(10.0);
 constexpr auto X_IDXS = build_idxs<double, TRAJECTORY_SIZE>(192.0);
 constexpr auto X_IDXS_FLOAT = build_idxs<float, TRAJECTORY_SIZE>(192.0);
 
-const int TICI_CAM_WIDTH = 1928;
-
 namespace tici_dm_crop {
   const int x_offset = -72;
   const int y_offset = -144;
