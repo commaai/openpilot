@@ -54,7 +54,7 @@ class TestLaikad(unittest.TestCase):
     laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV)
     correct_msgs = verify_messages(self.logs, laikad)
 
-    correct_msgs_expected = 558
+    correct_msgs_expected = 560
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
