@@ -72,10 +72,7 @@ class IsoTpParallelQuery:
     messaging.drain_sock(self.logcan)
     self.msg_buffer = defaultdict(list)
 
-  def get_data(self, timeout, total_timeout=None):
-    if total_timeout is None:
-      total_timeout = 10 * timeout
-
+  def get_data(self, timeout):
     self._drain_rx()
 
     # Create message objects
@@ -100,9 +97,8 @@ class IsoTpParallelQuery:
       request_done[tx_addr] = False
 
     results = {}
-    pending_responses = {}  # keeps track of response pending times for proper timeouts
     start_time = time.monotonic()
-    last_response_time = start_time
+    response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs.items()}
     while True:
       self.rx()
 
@@ -125,8 +121,7 @@ class IsoTpParallelQuery:
         response_valid = dat[:len(expected_response)] == expected_response
 
         if response_valid:
-          pending_responses.pop(tx_addr, None)
-          last_response_time = time.monotonic()
+          response_timeouts[tx_addr] = time.monotonic() + timeout
           if counter + 1 < len(self.request):
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
@@ -136,7 +131,7 @@ class IsoTpParallelQuery:
         else:
           error_code = dat[2] if len(dat) > 2 else -1
           if error_code == 0x78:
-            pending_responses[tx_addr] = time.monotonic()
+            response_timeouts[tx_addr] = time.monotonic() + self.response_pending_timeout
             if self.debug:
               cloudlog.warning(f"iso-tp query response pending: {hex(tx_addr)}")
           else:
@@ -144,16 +139,11 @@ class IsoTpParallelQuery:
             cloudlog.warning(f"iso-tp query bad response: 0x{dat.hex()}")
 
       cur_time = time.monotonic()
-      if (not len(pending_responses) and (cur_time - last_response_time > timeout)) or \
-        (len(pending_responses) and (cur_time - max(pending_responses.values()) > self.response_pending_timeout)):
+      if cur_time - max(response_timeouts.values()) > 0:
         for tx_addr in msgs:
-          if (request_counter[tx_addr] > 0 or pending_responses[tx_addr] != -1) and (not request_done[tx_addr]):
+          pending_response = (cur_time - response_timeouts[tx_addr]) > timeout * 2
+          if (request_counter[tx_addr] > 0 or pending_response) and (not request_done[tx_addr]):
             cloudlog.warning(f"iso-tp query timeout after receiving response: {tx_addr}")
-        break
-
-      total_timeout = self.response_pending_timeout if len(pending_responses) else total_timeout
-      if cur_time - start_time > total_timeout:
-        cloudlog.warning("iso-tp query timeout while receiving data")
         break
 
     return results
