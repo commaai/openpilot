@@ -59,9 +59,9 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
-  lr = LogReader.from_bytes(lr_dat)
   res = None
   if not args.upload_only:
+    lr = LogReader.from_bytes(lr_dat)
     res, log_msgs = test_process(cfg, lr, ref_log_path, args.ignore_fields, args.ignore_msgs)
     # save logs so we can upload when updating refs
     save_log(cur_log_fn, log_msgs)

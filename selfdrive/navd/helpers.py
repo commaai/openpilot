@@ -2,18 +2,24 @@ from __future__ import annotations
 
 import json
 import math
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+from common.conversions import Conversions
 from common.numpy_fast import clip
 from common.params import Params
 
 EARTH_MEAN_RADIUS = 6371007.2
+SPEED_CONVERSIONS = {
+    'km/h': Conversions.KPH_TO_MS,
+    'mph': Conversions.MPH_TO_MS,
+  }
 
 
 class Coordinate:
   def __init__(self, latitude: float, longitude: float) -> None:
     self.latitude = latitude
     self.longitude = longitude
+    self.annotations: Dict[str, float] = {}
 
   @classmethod
   def from_mapbox_tuple(cls, t: Tuple[float, float]) -> Coordinate:
@@ -114,6 +120,12 @@ def string_to_direction(direction: str) -> str:
     if d in direction:
       return d
   return 'none'
+
+
+def maxspeed_to_ms(maxspeed: Dict[str, Union[str, float]]) -> float:
+  unit = cast(str, maxspeed['unit'])
+  speed = cast(float, maxspeed['speed'])
+  return SPEED_CONVERSIONS[unit] * speed
 
 
 def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuver: float = 0.0) -> None:

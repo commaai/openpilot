@@ -220,13 +220,13 @@ selfdrive/locationd/models/live_kf.cc
 
 selfdrive/locationd/calibrationd.py
 
-selfdrive/logcatd/SConscript
-selfdrive/logcatd/logcatd_systemd.cc
+system/logcatd/SConscript
+system/logcatd/logcatd_systemd.cc
 
-selfdrive/proclogd/SConscript
-selfdrive/proclogd/main.cc
-selfdrive/proclogd/proclog.cc
-selfdrive/proclogd/proclog.h
+system/proclogd/SConscript
+system/proclogd/main.cc
+system/proclogd/proclog.cc
+system/proclogd/proclog.h
 
 selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder/encoder.cc
