@@ -98,7 +98,7 @@ class IsoTpParallelQuery:
 
     results = {}
     start_time = time.monotonic()
-    response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs.items()}
+    response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs}
     while True:
       self.rx()
 
