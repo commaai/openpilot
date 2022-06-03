@@ -333,13 +333,13 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             t = 2 * timeout if i == 0 else timeout
-            fw_versions.update({addr: (version, r.rx_offset, r.request) for addr, version in query.get_data(t).items()})
+            fw_versions.update({addr: (version, r.request, r.rx_offset) for addr, version in query.get_data(t).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
   # Build capnp list to put into CarParams
   car_fw = []
-  for addr, (version, rx_offset, request) in fw_versions.items():
+  for addr, (version, request, rx_offset) in fw_versions.items():
     f = car.CarParams.CarFw.new_message()
 
     f.ecu = ecu_types[addr]
