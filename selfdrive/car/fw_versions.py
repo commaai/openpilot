@@ -112,13 +112,13 @@ REQUESTS: List[Request] = [
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_LONG],
     [HYUNDAI_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.fwdRadar, Ecu.esp, Ecu.engine, Ecu.eps],
+    whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.engine],  # TODO: figure out which request engine responds to
   ),
   Request(
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_MULTI],
     [HYUNDAI_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.fwdCamera, Ecu.transmission],
+    whitelist_ecus=[Ecu.esp, Ecu.transmission, Ecu.engine],
   ),
   # Honda
   Request(
