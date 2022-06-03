@@ -89,9 +89,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
     bool locked = params.getBool((param + "Lock").toStdString());
     toggle->setEnabled(!locked);
-    if (!locked) {
-      connect(uiState(), &UIState::offroadTransition, toggle, &ParamControl::setEnabled);
-    }
     addItem(toggle);
   }
 }
