@@ -205,6 +205,13 @@ class RouteEngine:
     if 'maxspeed' in closest.annotations:
       msg.navInstruction.speedLimit = closest.annotations['maxspeed']
 
+    # Speed limit sign type
+    if 'speedLimitSign' in step:
+      if step['speedLimitSign'] == 'mutcd':
+        msg.navInstruction.speedLimitSign = log.NavInstruction.SpeedLimitSign.mutcd
+      elif step['speedLimitSign'] == 'vienna':
+        msg.navInstruction.speedLimitSign = log.NavInstruction.SpeedLimitSign.vienna
+
     self.pm.send('navInstruction', msg)
 
     # Transition to next route segment
