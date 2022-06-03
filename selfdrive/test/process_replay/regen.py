@@ -293,7 +293,7 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False, outdir=FAKED
   print("\n\n", "*"*30, "\n\n")
   print("New route:", relr, "\n")
   if upload:
-    upload_route(relr)
+    upload_route(relr, exclude_patterns=['*.hevc', ])
   return relr
 
 

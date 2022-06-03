@@ -23,8 +23,8 @@ if __name__ == "__main__":
   parser.add_argument("-j", "--jobs", type=int, default=1)
   args = parser.parse_args()
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
-    p = pool.map(regen_job, segments[:2])
-    msg = "COPY THIS INTO test_processes.py"
+    p = pool.map(regen_job, segments)
+    msg = "Copy these new segments into test_processes.py:"
     for seg in tqdm(p, desc="Generating segments", total=len(segments)):
       msg += "\n" + str(seg)
     print()
