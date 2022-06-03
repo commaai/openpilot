@@ -3,7 +3,6 @@ import argparse
 import bz2
 import os
 import time
-import traceback
 import multiprocessing
 import signal
 from tqdm import tqdm
@@ -21,7 +20,7 @@ from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled, CONFIGS
-#from selfdrive.test.update_ci_routes import upload_route
+from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
@@ -173,26 +172,6 @@ def replay_cameras(lr, frs):
   vs.start_listener()
   return vs, p
 
-'''
-SCHEDULE = [
-    {"name": "roadCam", "pub": ["roadCameraState"]},
-    {"name": "wideCam", "pub": ["wideRoadCameraState"]},
-    {"name": "modeld", "pub": ["modelV2"]},
-    {"name": "locationd", "pub": ["liveLocationKalman"]},
-    {"name": "radard", "pub": ["radarState"]},
-    {"name": "plannerd", "pub": ["lateralPlan", "longitudinalPlan"]},
-    {"name": "controlsd", "pub": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"]},
-]
-'''
-SCHEDULE = [
-    ("roadCam", [], ["roadCameraState"]),
-    ("modeld", [], ["modelV2"]),
-    ("locationd", [], ["liveLocationKalman"]),
-    ("radard", [], ["radarState"]),
-    ("plannerd", [], ["lateralPlan", "longitudinalPlan"]),
-    ("controlsd", [], ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"]),
-]
-
 def deterministic_regen_segment(lr, frs=None, outdir=FAKEDATA):
   lr = list(lr)
   if frs is None:
@@ -252,92 +231,38 @@ def deterministic_regen_segment(lr, frs=None, outdir=FAKEDATA):
     #managed_processes["dmonitoringmodeld"].start()
     #time.sleep(5)
 
-    # start procs up
+    # start all other procs in parallel
     ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader', "camerad"] + [cfg.proc_name for cfg in CONFIGS]
     ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
     for procs in fake_daemons.values():
       for p in procs:
         p.start()
 
-    li = []
-    # do camera seperately
-    proc = cam_procs[0]
-    proc.start()
-    print("Waiting for messages:", "roadCameraState")
-    resp = messaging.recv_one(messaging.sub_sock("roadCameraState", timeout=15000))
-    print("RESPONSE:", "camera", resp)
-    if resp == None:
-      li.append("camera")
-    else:
-      msg_dict[resp.which()] = resp
-    print("Stopping proc")
-    proc.terminate()
-
-    for cfg in CONFIGS:
-      proc = managed_processes[cfg.proc_name]
-      print("Starting proc:", cfg.proc_name, proc)
-      proc.prepare()
+    for _ in tqdm(range(20*60)):
+      # do camera seperately
+      proc = cam_procs[0]
+      print("Starting proc:", "camera", proc)
       proc.start()
-      for s in cfg.pub_sub.keys():
-        pm.send(msg_dict[s].which(), msg_dict[s].as_builder())
-
-      print("Waiting for messages:", pub)
-      for s in [s for l in cfg.pub_sub.values() for s in l]:
-        resp = messaging.recv_one(messaging.sub_sock(s, timeout=15000))
-        print("RESPONSE:", s, resp)
-        if resp == None:
-          li.append(s)
-        else:
-          msg_dict[resp.which()] = resp
+      resp = messaging.recv_one(messaging.sub_sock("roadCameraState", timeout=15000))
+      msg_dict[resp.which()] = resp
       print("Stopping proc")
-      proc.signal(signal.SIGKILL)
-      proc.stop()
-    print("UUUUUUUUUUUUUUUUUUUUUUUUUUU",li)
+      proc.terminate()
 
-    '''
-    li = []
-    f = open("fakedata/test.txt", "w")
-    resp = None
-    #for _ in tqdm(range(20*60)):
-    for _ in tqdm(range(1)):
-      for d, procs in fake_daemons.items():
-        for p in procs:
-          if not p.is_alive():
-            raise Exception(f"{d}'s {p.name} died")
-      for name, pub in SCHEDULE:
-        proc = cam_procs[0] if name == "roadCam" else managed_processes[name]
-        print("Starting proc:", name, proc)
-        try:
-          proc.prepare()
-        except:
-          pass
+      for cfg in CONFIGS:
+        proc = managed_processes[cfg.proc_name]
+        print("Starting proc:", cfg.proc_name, proc)
+        proc.prepare()
         proc.start()
-        try:
-          pm = messaging.PubMaster(CONFIGS[name].pub_sub.keys())
-          pm.send(resp.as_builder().which(), msg.as_builder())
-        except:
-          pass
+        for s in cfg.pub_sub.keys():
+          pm.send(msg_dict[s].which(), msg_dict[s].as_builder())
 
-        print("Waiting for messages:", pub)
-        for s in pub:
+        for s in [s for l in cfg.pub_sub.values() for s in l]:
           resp = messaging.recv_one(messaging.sub_sock(s, timeout=15000))
-          try:
-            print("RESPONSE:", s, resp)
-            f.write(str(resp))
-          except:
-            pass
-          if resp == None: li.append(s)
+          msg_dict[resp.which()] = resp
         print("Stopping proc")
-        if name == "roadCam" or name == "wideCam":
-          proc.terminate()
-        else:
-          proc.signal(signal.SIGKILL)
-          proc.stop()
-    print("UUUUUUUUUUUUUUUUUUUUUUUUUUU",li)
-    '''
-  except Exception as e:
-    print("4444444444444444444", e)
-    traceback.print_exc()
+        proc.signal(signal.SIGKILL)
+        proc.stop()
+
   finally:
     # kill everything
     for p in managed_processes.values():
@@ -351,8 +276,8 @@ def deterministic_regen_segment(lr, frs=None, outdir=FAKEDATA):
   segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
   seg_path = os.path.join(outdir, segment)
   # check to make sure openpilot is engaged in the route
-  #if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
-    #raise Exception(f"Route never enabled: {segment}")
+  if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
+    raise Exception(f"Route never enabled: {segment}")
 
   return seg_path
 
@@ -375,14 +300,14 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
 
   lr = LogReader(os.path.join(rpath, 'rlog.bz2'))
   controls_state_active = [m.controlsState.active for m in lr if m.which() == 'controlsState']
-  #assert any(controls_state_active), "Segment did not engage"
+  assert any(controls_state_active), "Segment did not engage"
 
   relr = os.path.relpath(rpath)
 
   print("\n\n", "*"*30, "\n\n")
   print("New route:", relr, "\n")
-  #if upload:
-   # upload_route(relr)
+  if upload:
+    upload_route(relr)
   return relr
 
 
