@@ -10,10 +10,10 @@
 #ifdef QCOM2
 #define EGL_EGLEXT_PROTOTYPES
 #define EGL_NO_X11
+#define GL_TEXTURE_EXTERNAL_OES 0x8D65
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <drm/drm_fourcc.h>
-#include <GLES2/gl2ext.h>
 #endif
 
 #include "cereal/visionipc/visionipc_client.h"
@@ -57,7 +57,7 @@ protected:
   QColor bg = QColor("#000000");
 
 #ifdef QCOM2
-  EGLImageKHR * egl_images;
+  EGLImageKHR *egl_images;
   int egl_images_count;
 #endif
 

@@ -118,6 +118,7 @@ CameraViewWidget::~CameraViewWidget() {
       EGLDisplay display = eglGetCurrentDisplay();
       eglDestroyImageKHR(display, egl_images[i]);
     }
+    free(egl_images);
 #endif
   }
   doneCurrent();
@@ -277,6 +278,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 
 #ifdef QCOM2
   egl_images_count = vipc_client->num_buffers;
+  egl_images = new EGLImageKHR[egl_images_count];
   for (int i = 0; i < vipc_client->num_buffers; i++) {  // import buffers into OpenGL
     EGLDisplay display = eglGetCurrentDisplay();
 
@@ -311,7 +313,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, stream_width/2, stream_height/2, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
   assert(glGetError() == GL_NO_ERROR);
-#endif // QCOM2
+#endif
 
   updateFrameMat(width(), height());
 }
