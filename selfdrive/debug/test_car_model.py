@@ -24,12 +24,13 @@ if __name__ == "__main__":
   parser.add_argument("route", help="Specify route to run tests on")
   parser.add_argument("--car", help="Specify car model for test route")
   parser.add_argument("--segment", type=int, nargs="?", help="Specify segment of route to test")
+  parser.add_argument("--ci", action="store_true", help="Attempt to get logs using openpilotci, need to specify car")
   args = parser.parse_args()
   if len(sys.argv) == 1:
     parser.print_help()
     sys.exit()
 
   test_route = TestRoute(args.route, args.car, segment=args.segment)
-  test_suite = create_test_models_suite([(args.car, test_route)])
+  test_suite = create_test_models_suite([(args.car, test_route)], ci=args.ci)
 
   unittest.TextTestRunner().run(test_suite)
