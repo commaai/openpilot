@@ -72,7 +72,7 @@ class IsoTpParallelQuery:
     messaging.drain_sock(self.logcan)
     self.msg_buffer = defaultdict(list)
 
-  def get_data(self, timeout):
+  def get_data(self, timeout, total_timeout=60.):
     self._drain_rx()
 
     # Create message objects
@@ -144,6 +144,10 @@ class IsoTpParallelQuery:
           pending_response = (cur_time - response_timeouts[tx_addr]) > timeout * 2
           if (request_counter[tx_addr] > 0 or pending_response) and (not request_done[tx_addr]):
             cloudlog.warning(f"iso-tp query timeout after receiving response: {tx_addr}")
+        break
+
+      if cur_time - start_time > total_timeout:
+        cloudlog.warning("iso-tp query timeout while receiving data")
         break
 
     return results
