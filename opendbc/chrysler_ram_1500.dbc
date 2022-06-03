@@ -90,6 +90,14 @@ BO_ 153 DAS_3: 8 XXX
 BO_ 157 ECM_5: 8 XXX
  SG_ Accelerator_Position : 0|8@1+ (0.4,0) [0|100] "%" XXX
 
+BO_ 164 EPS_3: 8 XXX
+ SG_ DASM_FAULT : 34|1@0+ (1,0) [0|1] "" XXX
+ SG_ Activation_Status : 48|3@1+ (1,0) [0|1] "" XXX
+ SG_ Driver_Override : 35|1@0+ (1,0) [0|1] "" XXX
+ SG_ Hands_on_Wheel : 51|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
 BO_ 166 LKAS_COMMAND: 8 XXX
  SG_ LKAS_STEERING_TORQUE : 10|11@0+ (1,-1024) [0|1] "" XXX
  SG_ LKAS_CONTROL_BIT : 24|3@1+ (1,0) [0|1] "" XXX

@@ -116,7 +116,7 @@ class CarState(CarStateBase):
       self.autoHighBeamBit = cp_cam.vl["DAS_6"]['Auto_High_Beam'] #Auto High Beam isn't Located in this message on chrysler or jeep currently located in 729 message
       #ret.cruiseState.speedOffset = ret.cruiseState.speed - ret.vEgo
       self.dashboard = cp_cam.vl["DAS_4"]
-      ret.steerFaultTemporary  = False #cp.vl["EPS_3"]["DASM_FAULT"]==1
+      ret.steerFaultTemporary  = cp.vl["EPS_3"]["DASM_FAULT"]==1
 
 
   # blindspot sensors
@@ -164,8 +164,7 @@ class CarState(CarStateBase):
       ("Left_Rear_Door_Ajar", "BCM_1"),#Driver Rear Door
       ("Right_Rear_Door_Ajar", "BCM_1"),#Passenger Rear Door
       ("Driver_Seatbelt_Status", "ORC_1"), #Driver Sear Belt
-      ("COUNTER", "EPS_2"),#EPS Counter  
-      #("DASM_FAULT", "EPS_3"),#EPS Fault  
+      ("COUNTER", "EPS_2"),#EPS Counter   
     ]
 
     checks = [
@@ -178,7 +177,6 @@ class CarState(CarStateBase):
       ("ECM_5", 50),
       ("Steering_Column_Angle_Status", 100),
       ("EPS_2", 100),
-      #("EPS_3", 100),
       ("Center_Stack_1", 1),
       ("Steering_Column_Commands", 10),
       ("Cruise_Control_Buttons", 50),
@@ -208,10 +206,12 @@ class CarState(CarStateBase):
     if CP.carFingerprint in (CAR.RAM_1500, CAR.RAM_2500):
       signals += [
         ("LKAS_Button", "Center_Stack_2"),#LKAS Button
+        ("DASM_FAULT", "EPS_3"),#EPS Fault 
       ]
 
       checks += [
         ("Center_Stack_2", 1),
+        ("EPS_3", 50),
         ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
