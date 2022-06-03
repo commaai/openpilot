@@ -54,9 +54,25 @@ FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
 MAX_ACCEL = 2.0
-T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
+
+
+class Personality:
+  CHILL = 0
+  NORMAL = 1
+  AGGRESSIVE = 2
+
+
+def get_T_FOLLOW(personality=Personality.NORMAL):
+  if personality==Personality.CHILL:
+    return 1.8
+  elif personality==Personality.NORMAL:
+    return 1.45
+  elif personality==Personality.AGGRESSIVE:
+    return 1.2
+  else:
+    raise NotImplementedError("Longitudinal personality not supported")
 
 def get_stopped_equivalence_factor(v_lead):
   return (v_lead**2) / (2 * COMFORT_BRAKE)
