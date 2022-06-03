@@ -306,14 +306,15 @@ def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: boo
     try:
       brand_name = car_folder.split('/')[-1]
       brand_values = __import__(f'selfdrive.car.{brand_name}.values', fromlist=[attr])
-      if hasattr(brand_values, attr) or (not ignore_none and not combine_brands):
+      if hasattr(brand_values, attr) or not ignore_none:
         attr_data = getattr(brand_values, attr, None)
       else:
         continue
 
       if combine_brands:
-        for f, v in attr_data.items():
-          result[f] = v
+        if isinstance(attr_data, dict):
+          for f, v in attr_data.items():
+            result[f] = v
       else:
         result[brand_name] = attr_data
     except (ImportError, OSError):
