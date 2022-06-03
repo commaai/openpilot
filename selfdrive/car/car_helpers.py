@@ -116,6 +116,9 @@ def fingerprint(logcan, sendcan):
     vin = VIN_UNKNOWN
     exact_fw_match, fw_candidates, car_fw = True, set(), []
 
+  if len(vin) != 17:
+    cloudlog.event("Malformed VIN", vin=vin, error=True)
+    vin = VIN_UNKNOWN
   cloudlog.warning("VIN %s", vin)
   Params().put("CarVin", vin)
 
