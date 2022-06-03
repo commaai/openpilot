@@ -226,7 +226,7 @@ void NvgWindow::drawHud(QPainter &p) {
 
   int rect_height = 188;
   if (has_us_speed_limit) rect_height = 386;
-  else if (has_eu_speed_limit) rect_width = 384;
+  else if (has_eu_speed_limit) rect_height = 384;
 
   QRect max_speed_rect(60 + 163/2 - rect_width / 2, 40, rect_width, rect_height);
   p.setPen(Qt::NoPen);
