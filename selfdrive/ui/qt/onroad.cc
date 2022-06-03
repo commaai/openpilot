@@ -281,6 +281,23 @@ void NvgWindow::drawHud(QPainter &p) {
     p.drawText(speed_limit_rect, Qt::AlignCenter, speedLimit);
   }
 
+  if (has_eu_speed_limit) {
+    QPoint center(speed_rect.center().x(), speed_rect.top() + 270);
+    p.setPen(Qt::NoPen);
+    p.setBrush(QColor(255, 255, 255, 255));
+    p.drawEllipse(center, 92, 92);
+    p.setBrush(QColor(255, 0, 0, 255));
+    p.drawEllipse(center, 86, 86);
+    p.setBrush(QColor(255, 255, 255, 255));
+    p.drawEllipse(center, 66, 66);
+
+    configFont(p, "Open Sans", 64, "Bold");
+    QRect speed_limit_rect = getRect(p, Qt::AlignCenter, speedLimit);
+    speed_limit_rect.moveCenter(center);
+    p.setPen(QColor(0, 0, 0, 255));
+    p.drawText(speed_limit_rect, Qt::AlignCenter, speedLimit);
+  }
+
   // current speed
   configFont(p, "Open Sans", 176, "Bold");
   drawText(p, rect().center().x(), 210, speed);
