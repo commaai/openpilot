@@ -46,11 +46,11 @@ class LatControlTorque(LatControl):
     self.pid.reset()
 
   def update(self, active, CS, VM, params, last_actuators, desired_curvature, desired_curvature_rate, llk):
-    pid_log = log.ControlsState.LateralTorqueState.new_message()
+    torque_log = log.ControlsState.LateralTorqueState.new_message()
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
       output_torque = 0.0
-      pid_log.active = False
+      torque_log.active = False
     else:
       if self.use_steering_angle:
         actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
@@ -65,7 +65,7 @@ class LatControlTorque(LatControl):
       setpoint = desired_lateral_accel + LOW_SPEED_FACTOR * desired_curvature
       measurement = actual_lateral_accel + LOW_SPEED_FACTOR * actual_curvature
       error = setpoint - measurement
-      pid_log.error = error
+      torque_log.error = error
 
       ff = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
       # convert friction into lateral accel units for feedforward
@@ -77,15 +77,15 @@ class LatControlTorque(LatControl):
                                       speed=CS.vEgo,
                                       freeze_integrator=freeze_integrator)
 
-      pid_log.active = True
-      pid_log.p = self.pid.p
-      pid_log.i = self.pid.i
-      pid_log.d = self.pid.d
-      pid_log.f = self.pid.f
-      pid_log.output = -output_torque
-      pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS)
-      pid_log.actualLateralAccel = actual_lateral_accel
-      pid_log.desiredLateralAccel = desired_lateral_accel
+      torque_log.active = True
+      torque_log.p = self.pid.p
+      torque_log.i = self.pid.i
+      torque_log.d = self.pid.d
+      torque_log.f = self.pid.f
+      torque_log.output = -output_torque
+      torque_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS)
+      torque_log.actualLateralAccel = actual_lateral_accel - (params.roll * 9.81)
+      torque_log.desiredLateralAccel = desired_lateral_accel - (params.roll * 9.81)
 
     # TODO left is positive in this convention
-    return -output_torque, 0.0, pid_log
+    return -output_torque, 0.0, torque_log
