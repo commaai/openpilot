@@ -218,7 +218,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
       multiprocessing.Process(target=replay_panda_states, args=('pandaStates', lr)),
     ],
     'managerState': [
-     multiprocessing.Process(target=replay_manager_state, args=('managerState', lr)),
+      multiprocessing.Process(target=replay_manager_state, args=('managerState', lr)),
     ],
     'thermald': [
       multiprocessing.Process(target=replay_device_state, args=('deviceState', lr)),
@@ -235,7 +235,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
     time.sleep(5)
 
     # start procs up
-    ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
+    ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader', 'soundd']
     ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
     for procs in fake_daemons.values():
       for p in procs:
