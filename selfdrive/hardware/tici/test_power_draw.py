@@ -20,7 +20,7 @@ class Proc:
 
 PROCS = [
   Proc('camerad', 2.15),
-  Proc('modeld', 0.95),
+  Proc('modeld', 1.0),
   Proc('dmonitoringmodeld', 0.25),
   Proc('encoderd', 0.23),
 ]
