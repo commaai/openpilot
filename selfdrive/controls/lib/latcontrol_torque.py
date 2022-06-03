@@ -84,8 +84,8 @@ class LatControlTorque(LatControl):
       torque_log.f = self.pid.f
       torque_log.output = -output_torque
       torque_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS)
-      torque_log.actualLateralAccel = actual_lateral_accel - (params.roll * 9.81)
-      torque_log.desiredLateralAccel = desired_lateral_accel - (params.roll * 9.81)
+      torque_log.actualLateralAccel = actual_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
+      torque_log.desiredLateralAccel = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
 
     # TODO left is positive in this convention
     return -output_torque, 0.0, torque_log
