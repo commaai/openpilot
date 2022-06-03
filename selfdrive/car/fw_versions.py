@@ -3,7 +3,7 @@ import struct
 import traceback
 from typing import Any, List
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from tqdm import tqdm
 
@@ -96,6 +96,7 @@ class Request:
   brand: str
   request: List[bytes]
   response: List[bytes]
+  whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = DEFAULT_RX_OFFSET
   bus: int = 1
 
@@ -111,11 +112,13 @@ REQUESTS: List[Request] = [
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_LONG],
     [HYUNDAI_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.fwdRadar, Ecu.esp, Ecu.engine, Ecu.eps],
   ),
   Request(
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_MULTI],
     [HYUNDAI_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.fwdCamera, Ecu.transmission],
   ),
   # Honda
   Request(
@@ -328,11 +331,13 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
     for addr_chunk in chunks(addr):
       for r in REQUESTS:
         try:
-          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any')]
+          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
+                   (len(r.whitelist_ecus) == 0 or ecu_types[(a, s)] in r.whitelist_ecus)]
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             t = 2 * timeout if i == 0 else timeout
+            t = time.monotonic()
             fw_versions.update(query.get_data(t))
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
