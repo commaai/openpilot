@@ -1,10 +1,11 @@
-Version 0.8.15-GM-0.0.12 (2022-06-02)
+Version 0.8.15-GM-0.0.13 (2022-06-03)
 ========================
+ * !!Upstream changes to button / state handling may break cars using stock ACC!!
  * L-mode handling added for EVs, retuned with a prelim tune
  * Tightnend up dbc config for interceptor (on Bolt*)
  * WIP - updating dbc messages involving AEB
  * Now using self-built PlutJuggler, meaning we can use it with our customized dbc files prior to upstream
- * Latest from commaai/master as of 10pm
+ * Latest from commaai/master as of 5pm
  * Comma removed Comma 2 support from master; C2 will get backported featured in the future
  * Further improved Bolt Tuning thanks to Darknight11
  * Reversed CC main logic with Pedal
