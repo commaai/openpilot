@@ -1,4 +1,4 @@
-#include "selfdrive/proclogd/proclog.h"
+#include "system/proclogd/proclog.h"
 
 #include <dirent.h>
 
