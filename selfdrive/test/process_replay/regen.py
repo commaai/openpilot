@@ -27,8 +27,7 @@ from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
 
-def replay_panda_states(s, msgs):
-  pm = messaging.PubMaster([s, 'peripheralState'])
+def replay_panda_states(s, msgs, pm):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() in ['pandaStates', 'pandaStateDEPRECATED']]
 
@@ -67,8 +66,7 @@ def replay_panda_states(s, msgs):
       rk.keep_time()
 
 
-def replay_manager_state(s, msgs):
-  pm = messaging.PubMaster([s, ])
+def replay_manager_state(s, msgs, pm):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
 
   while True:
@@ -78,8 +76,7 @@ def replay_manager_state(s, msgs):
     rk.keep_time()
 
 
-def replay_device_state(s, msgs):
-  pm = messaging.PubMaster([s, ])
+def replay_device_state(s, msgs, pm):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() == s]
   while True:
@@ -92,8 +89,7 @@ def replay_device_state(s, msgs):
       rk.keep_time()
 
 
-def replay_sensor_events(s, msgs):
-  pm = messaging.PubMaster([s, ])
+def replay_sensor_events(s, msgs, pm):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() == s]
   while True:
@@ -108,8 +104,7 @@ def replay_sensor_events(s, msgs):
       rk.keep_time()
 
 
-def replay_service(s, msgs):
-  pm = messaging.PubMaster([s, ])
+def replay_service(s, msgs, pm):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() == s]
   while True:
@@ -231,23 +226,23 @@ def deterministic_regen_segment(lr, frs=None, outdir=FAKEDATA):
     elif msg.which() == 'liveCalibration':
       params.put("CalibrationParams", msg.as_builder().to_bytes())
 
-  #vs, cam_procs = replay_cameras(lr, frs)
-  print("dddddd", [s for l in CONFIGS[0].pub_sub.values() for s in l])
+  vs, cam_procs = replay_cameras(lr, frs)
 
+  pm = messaging.PubMaster([s for cfg in CONFIGS for s in cfg.pub_sub.keys()])
   fake_daemons = {
     'sensord': [
-      multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr)),
+      multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr, pm)),
     ],
     'pandad': [
-      multiprocessing.Process(target=replay_service, args=('can', lr)),
-      multiprocessing.Process(target=replay_service, args=('ubloxRaw', lr)),
-      multiprocessing.Process(target=replay_panda_states, args=('pandaStates', lr)),
+      multiprocessing.Process(target=replay_service, args=('can', lr, pm)),
+      multiprocessing.Process(target=replay_service, args=('ubloxRaw', lr, pm)),
+      multiprocessing.Process(target=replay_panda_states, args=('pandaStates', lr, pm)),
     ],
     'managerState': [
-     multiprocessing.Process(target=replay_manager_state, args=('managerState', lr)),
+     multiprocessing.Process(target=replay_manager_state, args=('managerState', lr, pm)),
     ],
     'thermald': [
-      multiprocessing.Process(target=replay_device_state, args=('deviceState', lr)),
+      multiprocessing.Process(target=replay_device_state, args=('deviceState', lr, pm)),
     ],
   }
 
@@ -278,14 +273,13 @@ def deterministic_regen_segment(lr, frs=None, outdir=FAKEDATA):
     print("Stopping proc")
     proc.terminate()
 
-    pm = messaging.PubMaster([s for cfg in CONFIGS for s in cfg.pub_sub.keys()])
     for cfg in CONFIGS:
       proc = managed_processes[cfg.proc_name]
       print("Starting proc:", cfg.proc_name, proc)
       proc.prepare()
       proc.start()
       for s in cfg.pub_sub.keys():
-        pm.send(msg_dict[s].which(), msg_dict[s])
+        pm.send(msg_dict[s].which(), msg_dict[s].as_builder())
 
       print("Waiting for messages:", pub)
       for s in [s for l in cfg.pub_sub.values() for s in l]:
