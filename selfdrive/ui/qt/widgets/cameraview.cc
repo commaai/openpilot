@@ -114,11 +114,10 @@ CameraViewWidget::~CameraViewWidget() {
     glDeleteBuffers(2, textures);
 
 #ifdef QCOM2
-    for (int i = 0; i < egl_images_count; i++) {
-      EGLDisplay display = eglGetCurrentDisplay();
-      eglDestroyImageKHR(display, egl_images[i]);
+    EGLDisplay display = eglGetCurrentDisplay();
+    for (auto &pair : egl_images) {
+      eglDestroyImageKHR(display, pair.second);
     }
-    free(egl_images);
 #endif
   }
   doneCurrent();
@@ -238,13 +237,13 @@ void CameraViewWidget::paintGL() {
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-#ifdef QCOM2
-  glActiveTexture(GL_TEXTURE0);
-  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame_idx]);
-  assert(glGetError() == GL_NO_ERROR);
-#else
   VisionBuf *frame = frames[frame_idx].second;
 
+#ifdef QCOM2
+  glActiveTexture(GL_TEXTURE0);
+  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->fd]);
+  assert(glGetError() == GL_NO_ERROR);
+#else
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
@@ -277,24 +276,28 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   stream_stride = vipc_client->buffers[0].stride;
 
 #ifdef QCOM2
-  egl_images_count = vipc_client->num_buffers;
-  egl_images = new EGLImageKHR[egl_images_count];
-  for (int i = 0; i < vipc_client->num_buffers; i++) {  // import buffers into OpenGL
-    EGLDisplay display = eglGetCurrentDisplay();
+  EGLDisplay display = eglGetCurrentDisplay();
 
+  for (auto &pair : egl_images) {
+    eglDestroyImageKHR(display, pair.second);
+  }
+  egl_images.clear();
+
+  for (int i = 0; i < vipc_client->num_buffers; i++) {  // import buffers into OpenGL
+    int fd = vipc_client->buffers[i].fd;
     EGLint img_attrs[] = {
       EGL_WIDTH, (int)vipc_client->buffers[i].width,
       EGL_HEIGHT, (int)vipc_client->buffers[i].height,
       EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_NV12,
-      EGL_DMA_BUF_PLANE0_FD_EXT, vipc_client->buffers[i].fd,
+      EGL_DMA_BUF_PLANE0_FD_EXT, fd,
       EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
       EGL_DMA_BUF_PLANE0_PITCH_EXT, (int)vipc_client->buffers[i].stride,
-      EGL_DMA_BUF_PLANE1_FD_EXT, vipc_client->buffers[i].fd,
+      EGL_DMA_BUF_PLANE1_FD_EXT, fd,
       EGL_DMA_BUF_PLANE1_OFFSET_EXT, (int)vipc_client->buffers[i].uv_offset,
       EGL_DMA_BUF_PLANE1_PITCH_EXT, (int)vipc_client->buffers[i].stride,
       EGL_NONE
     };
-    egl_images[i] = eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs);
+    egl_images[fd] = eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs);
     assert(eglGetError() == EGL_SUCCESS);
   }
 #else

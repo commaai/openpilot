@@ -57,8 +57,7 @@ protected:
   QColor bg = QColor("#000000");
 
 #ifdef QCOM2
-  EGLImageKHR *egl_images;
-  int egl_images_count;
+  std::map<int, EGLImageKHR> egl_images;
 #endif
 
   std::string stream_name;
