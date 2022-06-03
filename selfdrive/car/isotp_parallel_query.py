@@ -10,8 +10,7 @@ from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_a
 
 
 class IsoTpParallelQuery:
-  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addr=False, debug=False,
-               response_pending_timeout=10):
+  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addr=False, debug=False, response_pending_timeout=10):
     self.sendcan = sendcan
     self.logcan = logcan
     self.bus = bus
@@ -103,6 +102,7 @@ class IsoTpParallelQuery:
     results = {}
     pending_responses = {}  # keeps track of response pending times for proper timeouts
     start_time = time.monotonic()
+    last_response_time = start_time
     while True:
       self.rx()
 
