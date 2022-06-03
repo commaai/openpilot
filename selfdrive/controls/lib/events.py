@@ -875,10 +875,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   # On cars that use stock ACC the car can decide to cancel ACC for various reasons.
-  # When this happens we can no longer control the car so the user needs to be warned immediately.
+  # When this happens we can no long control the car so the user needs to be warned immediately.
   EventName.cruiseDisabled: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Is Off"),
-    ET.NO_ENTRY: NoEntryAlert("Cruise Is Off"),
   },
 
   # For planning the trajectory Model Predictive Control (MPC) is used. This is
