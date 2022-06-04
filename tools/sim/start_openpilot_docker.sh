@@ -16,6 +16,7 @@ fi
 if [[ "$CI" ]]
 then
   CMD="cd ${OPENPILOT_DIR}/tools/sim/test && CI=1 ./test_carla_integration.py $*"
+  EXTRA_ARGS="${EXTRA_ARGS} -e QT_QPA_PLATFORM=offscreen"
 else
   docker pull ghcr.io/commaai/openpilot-sim:latest
   CMD="./tmux_script.sh $*"
