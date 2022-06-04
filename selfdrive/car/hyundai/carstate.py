@@ -155,7 +155,7 @@ class CarState(CarStateBase):
 
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEERING_RATE"]
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEERING_ANGLE"] * -1
-    ret.steeringTorque = cp.vl["MDPS"]["STEERING_COL_TORQUE"]
+    ret.steeringTorque = cp.vl["MDPS"]["STEERING_COL_TORQUE"] / 4.0
     ret.steeringTorqueEps = cp.vl["MDPS"]["STEERING_OUT_TORQUE"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
 
