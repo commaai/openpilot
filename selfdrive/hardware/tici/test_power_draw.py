@@ -16,13 +16,13 @@ class Proc:
   power: float
   rtol: float = 0.05
   atol: float = 0.1
-  warmup: float = 3.
+  warmup: float = 6.
 
 PROCS = [
-  Proc('camerad', 2.02),
-  Proc('modeld', 0.95),
+  Proc('camerad', 2.15),
+  Proc('modeld', 1.0),
   Proc('dmonitoringmodeld', 0.25),
-  Proc('encoderd', 0.42),
+  Proc('encoderd', 0.23),
 ]
 
 

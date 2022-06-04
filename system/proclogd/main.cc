@@ -2,7 +2,7 @@
 #include <sys/resource.h>
 
 #include "common/util.h"
-#include "selfdrive/proclogd/proclog.h"
+#include "system/proclogd/proclog.h"
 
 ExitHandler do_exit;
 

@@ -33,8 +33,8 @@
 #endif
 
 constexpr int MAIN_FPS = 20;
-const int MAIN_BITRATE = Hardware::TICI() ? 10000000 : 5000000;
-const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
+const int MAIN_BITRATE = 10000000;
+const int DCAM_BITRATE = MAIN_BITRATE;
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
@@ -89,8 +89,8 @@ const LogCameraInfo cameras_logged[] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .has_qcamera = false,
-    .enable = Hardware::TICI(),
-    .record = Hardware::TICI(),
+    .enable = true,
+    .record = true,
     .frame_width = 1928,
     .frame_height = 1208,
   },
@@ -102,6 +102,6 @@ const LogCameraInfo qcam_info = {
   .is_h265 = false,
   .enable = true,
   .record = true,
-  .frame_width = Hardware::TICI() ? 526 : 480,
-  .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
+  .frame_width = 526,
+  .frame_height = 330,
 };

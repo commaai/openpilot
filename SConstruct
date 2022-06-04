@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 import sys
 import sysconfig
@@ -7,6 +6,8 @@ import platform
 import numpy as np
 
 TICI = os.path.isfile('/TICI')
+AGNOS = TICI
+
 Decider('MD5-timestamp')
 
 AddOption('--test',
@@ -56,7 +57,7 @@ real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rst
 if platform.system() == "Darwin":
   arch = "Darwin"
 
-if arch == "aarch64" and TICI:
+if arch == "aarch64" and AGNOS:
   arch = "larch64"
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
@@ -226,7 +227,7 @@ if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
 # Setup cache dir
-cache_dir = '/data/scons_cache' if TICI else '/tmp/scons_cache'
+cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
 
@@ -331,13 +332,13 @@ if GetOption("clazy"):
 Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
 
 SConscript(['common/SConscript'])
-Import('_common', '_gpucommon', '_gpu_libs')
+Import('_common', '_gpucommon')
 
 if SHARED:
   common, gpucommon = abspath(common), abspath(gpucommon)
 else:
   common = [_common, 'json11']
-  gpucommon = [_gpucommon] + _gpu_libs
+  gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')
 
@@ -376,6 +377,12 @@ if arch != "larch64":
 Export('rednose_config')
 SConscript(['rednose/SConscript'])
 
+# Build system services
+
+SConscript(['system/proclogd/SConscript'])
+if arch != "Darwin":
+  SConscript(['system/logcatd/SConscript'])
+
 # Build openpilot
 
 SConscript(['cereal/SConscript'])
@@ -395,7 +402,6 @@ SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
-SConscript(['selfdrive/proclogd/SConscript'])
 SConscript(['selfdrive/clocksd/SConscript'])
 
 SConscript(['selfdrive/loggerd/SConscript'])
@@ -403,9 +409,6 @@ SConscript(['selfdrive/loggerd/SConscript'])
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
-
-if arch != "Darwin":
-  SConscript(['selfdrive/logcatd/SConscript'])
 
 if GetOption('test'):
   SConscript('panda/tests/safety/SConscript')

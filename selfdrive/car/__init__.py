@@ -1,10 +1,40 @@
 # functions common among cars
+import capnp
+
 from cereal import car
 from common.numpy_fast import clip
-from typing import Dict
+from typing import Dict, List
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
+
+ButtonType = car.CarState.ButtonEvent.Type
+EventName = car.CarEvent.EventName
+
+
+def create_button_event(cur_but: int, prev_but: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
+                        unpressed: int = 0) -> capnp.lib.capnp._DynamicStructBuilder:
+  if cur_but != unpressed:
+    be = car.CarState.ButtonEvent(pressed=True)
+    but = cur_but
+  else:
+    be = car.CarState.ButtonEvent(pressed=False)
+    but = prev_but
+  be.type = buttons_dict.get(but, ButtonType.unknown)
+  return be
+
+
+def create_button_enable_events(buttonEvents: capnp.lib.capnp._DynamicListBuilder, pcm_cruise: bool = False) -> List[int]:
+  events = []
+  for b in buttonEvents:
+    # do enable on both accel and decel buttons
+    if not pcm_cruise:
+      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
+        events.append(EventName.buttonEnable)
+    # do disable on button down
+    if b.type == ButtonType.cancel and b.pressed:
+      events.append(EventName.buttonCancel)
+  return events
 
 
 def gen_empty_fingerprint():

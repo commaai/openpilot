@@ -4,13 +4,12 @@ import time
 
 import numpy as np
 from PIL import Image
-from typing import List
 
 import cereal.messaging as messaging
-from cereal.visionipc.visionipc_pyx import VisionIpcClient, VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc import VisionIpcClient, VisionStreamType
 from common.params import Params
 from common.realtime import DT_MDL
-from selfdrive.hardware import TICI, PC
+from selfdrive.hardware import PC
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.manager.process_config import managed_processes
 
@@ -44,19 +43,15 @@ def yuv_to_rgb(y, u, v):
   return rgb.astype(np.uint8)
 
 
-def extract_image(buf, w, h):
-  y = np.array(buf[:w*h], dtype=np.uint8).reshape((h, w))
-  u = np.array(buf[w*h: w*h+(w//2)*(h//2)], dtype=np.uint8).reshape((h//2, w//2))
-  v = np.array(buf[w*h+(w//2)*(h//2):], dtype=np.uint8).reshape((h//2, w//2))
+def extract_image(buf, w, h, stride, uv_offset):
+  y = np.array(buf[:uv_offset], dtype=np.uint8).reshape((-1, stride))[:h, :w]
+  u = np.array(buf[uv_offset::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
+  v = np.array(buf[uv_offset+1::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
 
   return yuv_to_rgb(y, u, v)
 
 
-def rois_in_focus(lapres: List[float]) -> float:
-  return sum(1. / len(lapres) for sharpness in lapres if sharpness >= LM_THRESH)
-
-
-def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focus_perc_threshold=0.):
+def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
   sockets = [s for s in (frame, front_frame) if s is not None]
   sm = messaging.SubMaster(sockets)
   vipc_clients = {s: VisionIpcClient("camerad", VISION_STREAMS[s], True) for s in sockets}
@@ -68,21 +63,14 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   for client in vipc_clients.values():
     client.connect(True)
 
-  # wait for focus
-  start_t = time.monotonic()
-  while time.monotonic() - start_t < 10:
-    sm.update(100)
-    if min(sm.rcv_frame.values()) > 1 and rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
-      break
-
   # grab images
   rear, front = None, None
   if frame is not None:
     c = vipc_clients[frame]
-    rear = extract_image(c.recv(), c.width, c.height)
+    rear = extract_image(c.recv(), c.width, c.height, c.stride, c.uv_offset)
   if front_frame is not None:
     c = vipc_clients[front_frame]
-    front = extract_image(c.recv(), c.width, c.height)
+    front = extract_image(c.recv(), c.width, c.height, c.stride, c.uv_offset)
   return rear, front
 
 
@@ -113,11 +101,9 @@ def snapshot():
     if not PC:
       managed_processes['camerad'].start()
 
-    frame = "wideRoadCameraState" if TICI else "roadCameraState"
+    frame = "wideRoadCameraState"
     front_frame = "driverCameraState" if front_camera_allowed else None
-    focus_perc_threshold = 0. if TICI else 10 / 12.
-
-    rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
+    rear, front = get_snapshots(frame, front_frame)
   finally:
     managed_processes['camerad'].stop()
     params.put_bool("IsTakingSnapshot", False)
