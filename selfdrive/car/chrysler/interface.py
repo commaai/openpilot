@@ -23,6 +23,14 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 0.7
     ret.steerLimitTimer = 0.4
 
+    # set max lateral acceleration
+    if candidate in (CAR.PACIFICA_2018, CAR.PACIFICA_2019_HYBRID, CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
+      ret.maxLateralAccel = 1.6
+    if candidate in (CAR.PACIFICA_2018_HYBRID,):
+      ret.maxLateralAccel = 1.4
+    if candidate in (CAR.PACIFICA_2017_HYBRID,):
+      ret.maxLateralAccel = 1.2
+
     if candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
       ret.wheelbase = 2.91  # in meters
       ret.steerRatio = 12.7
