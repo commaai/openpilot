@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include "cereal/messaging/messaging.h"
 
 // no-op base hw class
 class HardwareNone {
@@ -10,6 +11,10 @@ public:
   static constexpr float MIN_VOLUME = 0.2;
 
   static std::string get_os_version() { return ""; }
+  static std::string get_name() { return ""; };
+  static cereal::InitData::DeviceType get_device_type() { return cereal::InitData::DeviceType::UNKNOWN; };
+  static int get_voltage() { return 0; };
+  static int get_current() { return 0; };
 
   static void reboot() {}
   static void poweroff() {}
@@ -21,4 +26,5 @@ public:
 
   static bool PC() { return false; }
   static bool TICI() { return false; }
+  static bool AGNOS() { return false; }
 };

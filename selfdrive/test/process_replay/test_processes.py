@@ -12,6 +12,7 @@ from selfdrive.test.openpilotci import get_url, upload_file
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_enabled, replay_process
 from selfdrive.version import get_commit
+from tools.lib.filereader import FileReader
 from tools.lib.logreader import LogReader
 
 original_segments = [
@@ -57,9 +58,10 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 
 def run_test_process(data):
-  segment, cfg, args, cur_log_fn, ref_log_path, lr = data
+  segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
   res = None
   if not args.upload_only:
+    lr = LogReader.from_bytes(lr_dat)
     res, log_msgs = test_process(cfg, lr, ref_log_path, args.ignore_fields, args.ignore_msgs)
     # save logs so we can upload when updating refs
     save_log(cur_log_fn, log_msgs)
@@ -72,10 +74,10 @@ def run_test_process(data):
   return (segment, cfg.proc_name, res)
 
 
-def get_logreader(segment):
+def get_log_data(segment):
   r, n = segment.rsplit("--", 1)
-  lr = LogReader(get_url(r, n))
-  return (segment, lr)
+  with FileReader(get_url(r, n)) as f:
+    return (segment, f.read())
 
 
 def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
@@ -131,12 +133,13 @@ def format_diff(results, ref_commit):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
+  all_cars = {car for car, _ in segments}
+  all_procs = {cfg.proc_name for cfg in CONFIGS}
 
-  # whitelist has precedence over blacklist in case both are defined
-  parser.add_argument("--whitelist-procs", type=str, nargs="*", default=[],
+  parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
+  parser.add_argument("--whitelist-procs", type=str, nargs="*", default=all_procs,
                       help="Whitelist given processes from the test (e.g. controlsd)")
-  parser.add_argument("--whitelist-cars", type=str, nargs="*", default=[],
+  parser.add_argument("--whitelist-cars", type=str, nargs="*", default=all_cars,
                       help="Whitelist given cars from the test (e.g. HONDA)")
   parser.add_argument("--blacklist-procs", type=str, nargs="*", default=[],
                       help="Blacklist given processes from the test (e.g. controlsd)")
@@ -153,7 +156,11 @@ if __name__ == "__main__":
   parser.add_argument("-j", "--jobs", type=int, default=1)
   args = parser.parse_args()
 
-  full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
+  tested_procs = set(args.whitelist_procs) - set(args.blacklist_procs)
+  tested_cars = set(args.whitelist_cars) - set(args.blacklist_cars)
+  tested_cars = {c.upper() for c in tested_cars}
+
+  full_test = (tested_procs == all_procs) and (tested_cars == all_cars) and all(len(x) == 0 for x in (args.ignore_fields, args.ignore_msgs))
   upload = args.update_refs or args.upload_only
   os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
 
@@ -174,26 +181,24 @@ if __name__ == "__main__":
 
   # check to make sure all car brands are tested
   if full_test:
-    tested_cars = {c.lower() for c, _ in segments}
-    untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
+    untested = (set(interface_names) - set(excluded_interfaces)) - {c.lower() for c in tested_cars}
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
-      lreaders: Any = {}
-      p1 = pool.map(get_logreader, [seg for car, seg in segments])
-      for (segment, lr) in tqdm(p1, desc="Getting Logs", total=len(segments)):
-        lreaders[segment] = lr
+      download_segments = [seg for car, seg in segments if car in tested_cars]
+      log_data: Dict[str, LogReader] = {}
+      p1 = pool.map(get_log_data, download_segments)
+      for segment, lr in tqdm(p1, desc="Getting Logs", total=len(download_segments)):
+        log_data[segment] = lr
 
     pool_args: Any = []
     for car_brand, segment in segments:
-      if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
-         (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
+      if car_brand not in tested_cars:
         continue
 
       for cfg in CONFIGS:
-        if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
-           (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
+        if cfg.proc_name not in tested_procs:
           continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
@@ -203,8 +208,8 @@ if __name__ == "__main__":
           ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
           ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
 
-        lr = None if args.upload_only else lreaders[segment]
-        pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, lr))
+        dat = None if args.upload_only else log_data[segment]
+        pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, dat))
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)

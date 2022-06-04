@@ -56,10 +56,7 @@ void recv_log(int thread_cnt, int thread_msg_cnt) {
 
     REQUIRE(ctx["version"].string_value() == COMMA_VERSION);
 
-    std::string device = "pc";
-    if (Hardware::TICI()) {
-      device = "tici";
-    }
+    std::string device = Hardware::get_name();
     REQUIRE(ctx["device"].string_value() == device);
 
     int thread_id = atoi(msg["msg"].string_value().c_str());
