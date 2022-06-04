@@ -18,7 +18,7 @@ class CAR:
   BODY = "COMMA BODY"
 
 CAR_INFO: Dict[str, CarInfo] = {
-  CAR.BODY: CarInfo("comma body", package="All", good_torque=True, harness=Harness.none),
+  CAR.BODY: CarInfo("comma body", package="All", harness=Harness.none),
 }
 
 FW_VERSIONS = {

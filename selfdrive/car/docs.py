@@ -15,9 +15,8 @@ from selfdrive.car.tests.routes import non_tested_cars
 
 def get_all_footnotes() -> Dict[Enum, int]:
   all_footnotes = []
-  for _, footnotes in get_interface_attr("Footnote").items():
-    if footnotes is not None:
-      all_footnotes += footnotes
+  for footnotes in get_interface_attr("Footnote", ignore_none=True).values():
+    all_footnotes += footnotes
   return {fn: idx + 1 for idx, fn in enumerate(all_footnotes)}
 
 
@@ -28,21 +27,20 @@ CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 def get_all_car_info() -> List[CarInfo]:
   all_car_info: List[CarInfo] = []
-  for models in get_interface_attr("CAR_INFO").values():
-    for model, car_info in models.items():
-      # Hyundai exception: those with radar have openpilot longitudinal
-      fingerprint = {0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}}
-      CP = interfaces[model][0].get_params(model, fingerprint=fingerprint, disable_radar=True)
+  for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
+    # Hyundai exception: those with radar have openpilot longitudinal
+    fingerprint = {0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}}
+    CP = interfaces[model][0].get_params(model, fingerprint=fingerprint, disable_radar=True)
 
-      if CP.dashcamOnly or car_info is None:
-        continue
+    if CP.dashcamOnly or car_info is None:
+      continue
 
-      # A platform can include multiple car models
-      if not isinstance(car_info, list):
-        car_info = (car_info,)
+    # A platform can include multiple car models
+    if not isinstance(car_info, list):
+      car_info = (car_info,)
 
-      for _car_info in car_info:
-        all_car_info.append(_car_info.init(CP, non_tested_cars, ALL_FOOTNOTES))
+    for _car_info in car_info:
+      all_car_info.append(_car_info.init(CP, non_tested_cars, ALL_FOOTNOTES))
 
   # Sort cars by make and model + year
   sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: (car.make + car.model).lower())

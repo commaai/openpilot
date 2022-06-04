@@ -18,7 +18,7 @@ class TestCarDocs(unittest.TestCase):
                      "Run selfdrive/car/docs.py to generate new supported cars documentation")
 
   def test_missing_car_info(self):
-    all_car_info_platforms = [p for i in get_interface_attr("CAR_INFO").values() for p in i]
+    all_car_info_platforms = get_interface_attr("CAR_INFO", combine_brands=True).keys()
     for platform in sorted(interfaces.keys()):
       if platform not in all_car_info_platforms:
         self.fail("Platform: {} doesn't exist in CarInfo".format(platform))
