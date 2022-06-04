@@ -69,7 +69,7 @@ class TestFwFingerprint(unittest.TestCase):
       ecus_not_whitelisted = set(brand_ecus) - set(whitelisted_ecus)
       if len(whitelisted_ecus) and len(ecus_not_whitelisted):
         ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_whitelisted])
-        print(f'{brand.title()}: FW query does not whitelist ecus: {ecu_strings}')
+        print(f'{brand.title()}: FW query whitelist missing ecus: {ecu_strings}')
         passed = False
 
     self.assertTrue(passed, "Not all ecus in FW versions found in query whitelists")
