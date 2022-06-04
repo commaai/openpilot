@@ -362,6 +362,44 @@ jobs:
                         CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
+  
+  model_replay_onnx:
+    name: model replay onnx
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - name: Pull LFS
+      run: git lfs pull
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: /tmp/comma_download_cache
+        key: ${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/model_replay.py') }}
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: true
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
+    - name: Build Docker image
+      # Sim docker is needed to get the intel OPENCL drivers
+      run: eval "$BUILD_CL"
+    - name: Run replay
+      run: |
+        ${{ env.RUN_CL }} "scons -j$(nproc) && \
+                            ONNXCPU=1 FILEREADER_CACHE=1 CI=1 coverage run \
+                            selfdrive/test/process_replay/model_replay.py -j$(nproc) && \
+                            coverage xml"
 
   test_longitudinal:
     name: longitudinal
