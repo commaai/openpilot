@@ -5,7 +5,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, List
 from tqdm import tqdm
-import time
 
 import panda.python.uds as uds
 from cereal import car
@@ -327,7 +326,6 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   addrs.insert(0, parallel_addrs)
 
   fw_versions = {}
-  start_t = time.monotonic()
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
       for r in REQUESTS:
@@ -336,13 +334,11 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
                    (len(r.whitelist_ecus) == 0 or ecu_types[(a, s)] in r.whitelist_ecus)]
 
           if addrs:
-            query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug, response_pending_timeout=0)
+            query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             t = 2 * timeout if i == 0 else timeout
             fw_versions.update({addr: (version, r.request, r.rx_offset) for addr, version in query.get_data(t).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
-
-  cloudlog.warning(f"Took {time.monotonic() - start_t} seconds to get FW versions")
 
   # Build capnp list to put into CarParams
   car_fw = []
