@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 import struct
 import traceback
-from typing import Any, List
 from collections import defaultdict
-from dataclasses import dataclass
-
+from dataclasses import dataclass, field
+from typing import Any, List
 from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
-from selfdrive.car.fingerprints import FW_VERSIONS, get_attr_from_cars
+from selfdrive.car.interfaces import get_interface_attr
+from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.swaglog import cloudlog
@@ -96,8 +96,10 @@ class Request:
   brand: str
   request: List[bytes]
   response: List[bytes]
+  whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = DEFAULT_RX_OFFSET
   bus: int = 1
+
 
 REQUESTS: List[Request] = [
   # Subaru
@@ -303,7 +305,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   addrs = []
   parallel_addrs = []
 
-  versions = get_attr_from_cars('FW_VERSIONS', combine_brands=False)
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
   if extra is not None:
     versions.update(extra)
 
@@ -328,23 +330,26 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
     for addr_chunk in chunks(addr):
       for r in REQUESTS:
         try:
-          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any')]
+          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
+                   (len(r.whitelist_ecus) == 0 or ecu_types[(a, s)] in r.whitelist_ecus)]
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             t = 2 * timeout if i == 0 else timeout
-            fw_versions.update(query.get_data(t))
+            fw_versions.update({addr: (version, r.request, r.rx_offset) for addr, version in query.get_data(t).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
   # Build capnp list to put into CarParams
   car_fw = []
-  for addr, version in fw_versions.items():
+  for addr, (version, request, rx_offset) in fw_versions.items():
     f = car.CarParams.CarFw.new_message()
 
     f.ecu = ecu_types[addr]
     f.fwVersion = version
     f.address = addr[0]
+    f.responseAddress = addr[0] + rx_offset
+    f.request = request
 
     if addr[1] is not None:
       f.subAddress = addr[1]
