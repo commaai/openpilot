@@ -5,13 +5,12 @@ export NOBOARD="1"
 export SIMULATION="1"
 export FINGERPRINT="HONDA CIVIC 2016"
 
-PROC="camerad,loggerd,encoderd"
 if [[ "$CI" ]]
 then
-  PROC="${PROC},navd,ui"
+  export QT_QPA_PLATFORM=offscreen
 fi
 
-export BLOCK=$PROC
+export BLOCK="camerad,loggerd,encoderd"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd ../../selfdrive/manager && exec ./manager.py
