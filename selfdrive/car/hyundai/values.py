@@ -17,6 +17,8 @@ class CarControllerParams:
     # If the max stock LKAS request is <384, add your car to this list.
     if CP.carFingerprint in HDA2_CAR:
       self.STEER_MAX = 150
+      self.STEER_DRIVER_ALLOWANCE = 200
+      self.STEER_DRIVER_MULTIPLIER = 8
     elif CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.ELANTRA_GT_I30, CAR.IONIQ,
                              CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_HEV,
                              CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO, CAR.KIA_STINGER):
@@ -1259,3 +1261,4 @@ DBC = {
 }
 
 STEER_THRESHOLD = 150
+STEER_THRESHOLD_HDA2 = 300
