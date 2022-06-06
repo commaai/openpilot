@@ -86,7 +86,7 @@ class TestLaikad(unittest.TestCase):
           break
     # Pretend thread has loaded the orbits on startup by using the time of the first gps message.
     laikad.fetch_orbits(first_gps_time)
-    self.assertEqual(31, len(laikad.astro_dog.orbits.keys()))
+    self.assertEqual(29, len(laikad.astro_dog.orbits.keys()))
     correct_msgs = verify_messages(self.logs, laikad)
     correct_msgs_expected = 560
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
