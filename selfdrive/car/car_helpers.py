@@ -170,7 +170,7 @@ def fingerprint(logcan, sendcan):
   if not car_fingerprint:
     # use last successful fingerprint for VIN if no match was found
     try:
-      last_vin_fingerprint = json.loads(Params().get("LastVinFingerprint"))
+      last_vin_fingerprint = json.loads(Params().get("LastVinFingerprint") or b"")
     except json.decoder.JSONDecodeError:
       last_vin_fingerprint = dict()
     if vin in last_vin_fingerprint:
