@@ -75,6 +75,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.45 # Volt Gen 1, TODO corner weigh
+      ret.maxLateralAccel = 1.6
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.17]
@@ -108,6 +109,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4  # end to end is 13.46
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
+      ret.maxLateralAccel = 1.4
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
 
     elif candidate == CAR.BUICK_REGAL:

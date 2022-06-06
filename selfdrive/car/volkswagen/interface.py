@@ -64,14 +64,17 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.ATLAS_MK1:
       ret.mass = 2011 + STD_CARGO_KG
       ret.wheelbase = 2.98
+      ret.maxLateralAccel = 1.4
 
     elif candidate == CAR.GOLF_MK7:
       ret.mass = 1397 + STD_CARGO_KG
       ret.wheelbase = 2.62
+      ret.maxLateralAccel = 1.5
 
     elif candidate == CAR.JETTA_MK7:
       ret.mass = 1328 + STD_CARGO_KG
       ret.wheelbase = 2.71
+      ret.maxLateralAccel = 1.2
 
     elif candidate == CAR.PASSAT_MK8:
       ret.mass = 1551 + STD_CARGO_KG
@@ -92,6 +95,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.TIGUAN_MK2:
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
+      ret.maxLateralAccel = 1.1
 
     elif candidate == CAR.TOURAN_MK2:
       ret.mass = 1516 + STD_CARGO_KG
@@ -109,6 +113,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.AUDI_A3_MK3:
       ret.mass = 1335 + STD_CARGO_KG
       ret.wheelbase = 2.61
+      ret.maxLateralAccel = 1.7
 
     elif candidate == CAR.AUDI_Q2_MK1:
       ret.mass = 1205 + STD_CARGO_KG
@@ -117,6 +122,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.AUDI_Q3_MK2:
       ret.mass = 1623 + STD_CARGO_KG
       ret.wheelbase = 2.68
+      ret.maxLateralAccel = 1.6
 
     elif candidate == CAR.SEAT_ATECA_MK1:
       ret.mass = 1900 + STD_CARGO_KG
