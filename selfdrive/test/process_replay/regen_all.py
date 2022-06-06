@@ -14,9 +14,12 @@ def regen_job(segment):
     route = segment[1].rsplit('--', 1)[0]
     sidx = int(segment[1].rsplit('--', 1)[1])
     fake_dongle_id = 'regen' + ''.join(random.choice('0123456789ABCDEF') for i in range(11))
-    relr = regen_and_save(route, sidx, upload=True, use_route_meta=False, outdir=os.path.join(FAKEDATA, fake_dongle_id), disable_tqdm=True)
-    relr = '|'.join(relr.split('/')[-2:])
-    return f'  ("{segment[0]}", "{relr}"), '
+    try:
+      relr = regen_and_save(route, sidx, upload=True, use_route_meta=False, outdir=os.path.join(FAKEDATA, fake_dongle_id), disable_tqdm=True)
+      relr = '|'.join(relr.split('/')[-2:])
+      return f'  ("{segment[0]}", "{relr}"), '
+    except Exception as e:
+      return f"  {segment} failed: {str(e)}"
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Generate new segments from old ones")
