@@ -300,7 +300,7 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
 
 def get_brand_candidates(logcan, sendcan, versions):
   queries: Set[Tuple[int, Optional[int], int]] = set()  # set((addr, subaddr, bus),)
-  response_to_brand: Dict[Tuple[int, Optional[int], int], str] = dict()  # {(response_addr, subaddr, bus): brand,}
+  response_to_brand: Dict[Tuple[int, Optional[int], int], Set[str]] = defaultdict(set)  # {(response_addr, subaddr, bus): set(brand,),}
   for r in REQUESTS:
     if r.brand not in versions:
       continue
@@ -314,15 +314,17 @@ def get_brand_candidates(logcan, sendcan, versions):
 
           # Store map from response to brand
           response_addr = addr + r.rx_offset
-          response_to_brand[(response_addr, subaddr, r.bus)] = r.brand
+          response_to_brand[(response_addr, subaddr, r.bus)].add(r.brand)
 
+  print(response_to_brand)
   ecu_responses = get_ecu_addrs(logcan, sendcan, queries, set(response_to_brand.keys()))
   cloudlog.event("ecu responses", ecu_response_addrs=ecu_responses)
 
   brand_candidates = defaultdict(set)
   for response in ecu_responses:
     if response in response_to_brand:
-      brand_candidates[response_to_brand[response]].add(response)  # address, subaddr, bus
+      for brand in response_to_brand[response]:
+        brand_candidates[brand].add(response)  # address, subaddr, bus
 
   for brand, responses in brand_candidates.items():
     cloudlog.event(f"{brand} responses: {responses}")
