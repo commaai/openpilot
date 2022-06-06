@@ -2,7 +2,7 @@
 import capnp
 import time
 import traceback
-from typing import Dict, Set
+from typing import Optional, Set, Tuple
 
 import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
@@ -10,32 +10,47 @@ from selfdrive.car import make_can_msg
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.swaglog import cloudlog
 
-TESTER_PRESENT_DAT = bytes([0x02, SERVICE_TYPE.TESTER_PRESENT, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0])
+
+def make_tester_present_msg(addr, bus, subaddr=None):
+  dat = [0x02, SERVICE_TYPE.TESTER_PRESENT, 0x0]
+  if subaddr is not None:
+    dat.insert(0, subaddr)
+
+  dat += [0x0] * (8 - len(dat))
+  return make_can_msg(addr, dat, bus)
 
 
-def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader) -> bool:
+def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subaddr: Optional[int] = None) -> bool:
   # ISO-TP messages are always padded to 8 bytes
   # tester present response is always a single frame
-  if len(msg.dat) == 8 and 1 <= msg.dat[0] <= 7:
+  dat_offset = 1 if subaddr is not None else 0
+  if len(msg.dat) == 8 and 1 <= msg.dat[dat_offset] <= 7:
     # success response
-    if msg.dat[1] == (SERVICE_TYPE.TESTER_PRESENT + 0x40):
+    if msg.dat[1 + dat_offset] == (SERVICE_TYPE.TESTER_PRESENT + 0x40):
       return True
     # error response
-    if msg.dat[1] == 0x7F and msg.dat[2] == SERVICE_TYPE.TESTER_PRESENT:
+    if msg.dat[1 + dat_offset] == 0x7F and msg.dat[2 + dat_offset] == SERVICE_TYPE.TESTER_PRESENT:
       return True
   return False
 
 
-def get_all_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float = 1, debug: bool = True) -> Set[int]:
+def get_msg_subaddr(msg: capnp.lib.capnp._DynamicStructReader) -> Optional[int]:
+  if 1 <= msg.dat[1] <= 7:
+    return msg.dat[0]
+  return None
+
+
+def get_all_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float = 1, debug: bool = True) -> Set[Tuple[int, Optional[int], int]]:
   addr_list = [0x700 + i for i in range(256)] + [0x18da00f1 + (i << 8) for i in range(256)]
-  query_addrs = response_addrs = {addr: bus for addr in addr_list}
-  return get_ecu_addrs(logcan, sendcan, query_addrs, response_addrs, timeout=timeout, debug=debug)
+  queries = responses = {(addr, None, bus) for addr in addr_list}
+  return get_ecu_addrs(logcan, sendcan, queries, responses, timeout=timeout, debug=debug)
 
 
-def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, query_addrs: Dict[int, int], response_addrs: Dict[int, int], timeout: float = 1, debug: bool = True) -> Set[int]:
-  ecu_addrs = set()
+def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, queries: Set[Tuple[int, Optional[int], int]],
+                  responses: Set[Tuple[int, Optional[int], int]], timeout: float = 1, debug: bool = True) -> Set[Tuple[int, Optional[int], int]]:
+  ecu_responses: Set[Tuple[int, Optional[int], int]] = set()  # set((addr, subaddr, bus),)
   try:
-    msgs = [make_can_msg(addr, TESTER_PRESENT_DAT, bus) for addr, bus in query_addrs.items()]
+    msgs = [make_tester_present_msg(addr, bus, subaddr) for addr, subaddr, bus in queries]
 
     messaging.drain_sock_raw(logcan)
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
@@ -44,15 +59,16 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
       can_packets = messaging.drain_sock(logcan, wait_for_one=True)
       for packet in can_packets:
         for msg in packet.can:
-          if msg.address in response_addrs and msg.src == response_addrs[msg.address] and is_tester_present_response(msg):
+          subaddr = get_msg_subaddr(msg)
+          if (msg.address, subaddr, msg.bus) in responses and is_tester_present_response(msg, subaddr):
             if debug:
               print(f"CAN-RX: {hex(msg.address)} - 0x{bytes.hex(msg.dat)}")
-              if msg.address in ecu_addrs:
+              if (msg.address, subaddr, msg.bus) in ecu_responses:
                 print(f"Duplicate ECU address: {hex(msg.address)}")
-            ecu_addrs.add(msg.address)
+            ecu_responses.add((msg.address, subaddr, msg.bus))
   except Exception:
     cloudlog.warning(f"ECU addr scan exception: {traceback.format_exc()}")
-  return ecu_addrs
+  return ecu_responses
 
 
 if __name__ == "__main__":
@@ -72,5 +88,8 @@ if __name__ == "__main__":
 
   print()
   print("Found ECUs on addresses:")
-  for addr in ecu_addrs:
-    print(f"  {hex(addr)}")
+  for addr, subaddr, bus in ecu_addrs:
+    msg = f"  0x{hex(addr)}"
+    if subaddr is not None:
+      msg += f" (sub-address: 0x{hex(subaddr)})"
+    print(msg)

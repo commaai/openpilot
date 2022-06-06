@@ -3,7 +3,7 @@ import struct
 import traceback
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, Dict, List, Optional, Set, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
@@ -297,40 +297,38 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
 
   return exact_match, matches
 
-def get_brand_candidates(logcan, sendcan, versions):
-  response_offset_bus_by_brand = dict()
-  for r in REQUESTS:
-    # TODO: some brands have multiple response offsets
-    response_offset_bus_by_brand[r.brand] = (r.rx_offset, r.bus)
 
-  # maps query and response addresses to their request's bus
-  query_addrs_by_brand = defaultdict(dict)
-  response_addrs_by_brand = defaultdict(dict)
-  for brand, brand_versions in versions.items():
-    if brand not in response_offset_bus_by_brand:
+def get_brand_candidates(logcan, sendcan, versions):
+  queries: Set[Tuple[int, Optional[int], int]] = set()  # set((addr, subaddr, bus),)
+  response_to_brand: Dict[Tuple[int, Optional[int], int], str] = dict()  # {(response_addr, subaddr, bus): brand,}
+  for r in REQUESTS:
+    if r.brand not in versions:
       continue
 
-    for c in brand_versions.values():
-      for ecu, addr, _ in c.keys():
-        # reduce matches with ecus not critical to fingerprinting
-        if ecu not in ESSENTIAL_ECUS:
-          continue
+    for brand_versions in versions[r.brand].values():
+      for ecu_type, addr, subaddr in brand_versions:
+        # Only query ecus in whitelist if whitelist is not empty
+        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
+          # Build set of queries
+          queries.add((addr, subaddr, r.bus))
 
-        response_offset, bus = response_offset_bus_by_brand[brand]
-        query_addrs_by_brand[brand][addr] = bus
-        response_addrs_by_brand[brand][addr + response_offset] = bus
+          # Store map from response to brand
+          response_addr = addr + r.rx_offset
+          response_to_brand[(response_addr, subaddr, r.bus)] = r.brand
 
-  query_addrs = dict(addr for addr_bus in query_addrs_by_brand.values() for addr in addr_bus.items())
-  response_addrs = dict(addr for addr_bus in response_addrs_by_brand.values() for addr in addr_bus.items())
-  ecu_response_addrs = get_ecu_addrs(logcan, sendcan, query_addrs, response_addrs)
-  cloudlog.event("ecu response addrs", ecu_response_addrs=ecu_response_addrs)
+  ecu_responses = get_ecu_addrs(logcan, sendcan, queries, set(response_to_brand.keys()))
+  cloudlog.event("ecu responses", ecu_response_addrs=ecu_responses)
 
-  brand_candidates = list()
-  for brand, brand_addrs in response_addrs_by_brand.items():
-    cloudlog.event("candidate brand intersection", brand=brand, intersection=set(brand_addrs).intersection(ecu_response_addrs))
-    if len(set(brand_addrs).intersection(ecu_response_addrs)) >= 4:
-      brand_candidates.append(brand)
-  return brand_candidates
+  brand_candidates = defaultdict(set)
+  for response in ecu_responses:
+    if response in response_to_brand:
+      brand_candidates[response_to_brand[response]].add(response)  # address, subaddr, bus
+
+  for brand, responses in brand_candidates.items():
+    cloudlog.event(f"{brand} responses: {responses}")
+
+  return [brand for brand, responses in brand_candidates.items() if len(responses) >= 3]
+
 
 def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
