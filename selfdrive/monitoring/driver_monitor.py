@@ -77,7 +77,7 @@ class DistractedType:
   DISTRACTED_BLINK = 2
   DISTRACTED_E2E = 4
 
-def face_orientation_from_net(angles_desc, pos_desc, rpy_calib, is_rhd):
+def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   # the output of these angles are in device frame
   # so from driver's perspective, pitch is up and yaw is right
 
@@ -92,7 +92,7 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib, is_rhd):
 
   # no calib for roll
   pitch -= rpy_calib[1]
-  yaw -= rpy_calib[2] * (1 - 2 * int(is_rhd))
+  yaw -= rpy_calib[2]
   return roll_net, pitch, yaw
 
 class DriverPose():
@@ -232,14 +232,14 @@ class DriverStatus():
     #   self.wheel_on_right = self.wheelpos_learner.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     # else:
     #   self.wheel_on_right = rhd_pred > self.settings._WHEELPOS_THRESHOLD
-    driver_data = driver_state.driverDataLH
+    driver_data = driver_state.driverDataRH if self.wheel_on_right else driver_state.driverDataLH
     if not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,
                                     driver_data.faceOrientationStd, driver_data.facePositionStd,
                                     driver_data.readyProb, driver_data.notReadyProb)):
       return
 
     self.face_detected = driver_data.faceProb > self.settings._FACE_THRESHOLD
-    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy, self.wheel_on_right)
+    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
     self.pose.pitch_std = driver_data.faceOrientationStd[0]
     self.pose.yaw_std = driver_data.faceOrientationStd[1]
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
