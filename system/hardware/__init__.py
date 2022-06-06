@@ -1,9 +1,9 @@
 import os
 from typing import cast
 
-from selfdrive.hardware.base import HardwareBase
-from selfdrive.hardware.tici.hardware import Tici
-from selfdrive.hardware.pc.hardware import Pc
+from system.hardware.base import HardwareBase
+from system.hardware.tici.hardware import Tici
+from system.hardware.pc.hardware import Pc
 
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI

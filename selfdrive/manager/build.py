@@ -10,7 +10,7 @@ from pathlib import Path
 from common.basedir import BASEDIR
 from common.spinner import Spinner
 from common.text_window import TextWindow
-from selfdrive.hardware import AGNOS
+from system.hardware import AGNOS
 from selfdrive.swaglog import cloudlog, add_file_handler
 from selfdrive.version import is_dirty
 

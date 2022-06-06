@@ -13,7 +13,7 @@ from common.basedir import BASEDIR
 from common.params import Params, ParamKeyType
 from common.text_window import TextWindow
 from selfdrive.boardd.set_time import set_time
-from selfdrive.hardware import HARDWARE, PC
+from system.hardware import HARDWARE, PC
 from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes

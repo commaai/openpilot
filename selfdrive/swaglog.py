@@ -7,7 +7,7 @@ from logging.handlers import BaseRotatingHandler
 import zmq
 
 from common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
-from selfdrive.hardware import PC
+from system.hardware import PC
 
 if PC:
   SWAGLOG_DIR = os.path.join(str(Path.home()), ".comma", "log")

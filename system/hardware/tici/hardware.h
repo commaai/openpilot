@@ -5,7 +5,7 @@
 
 #include "common/params.h"
 #include "common/util.h"
-#include "selfdrive/hardware/base.h"
+#include "system/hardware/base.h"
 
 class HardwareTici : public HardwareNone {
 public:

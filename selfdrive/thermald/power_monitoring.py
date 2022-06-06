@@ -4,7 +4,7 @@ from typing import Optional
 from cereal import log
 from common.params import Params, put_nonblocking
 from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE
+from system.hardware import HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.statsd import statlog
 
