@@ -1,4 +1,5 @@
 import os
+import json
 from typing import Dict, List
 
 from cereal import car
@@ -78,9 +79,9 @@ interfaces = load_interfaces(interface_names)
 # **** for use live only ****
 def fingerprint(logcan, sendcan):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
-  skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
+  skip_fw_query = bool(os.environ.get('SKIP_FW_QUERY', fixed_fingerprint))
 
-  if not fixed_fingerprint and not skip_fw_query:
+  if not skip_fw_query:
     # Vin query only reliably works thorugh OBDII
     bus = 1
 
@@ -94,6 +95,7 @@ def fingerprint(logcan, sendcan):
       cloudlog.warning("Using cached CarParams")
       vin = cached_params.carVin
       car_fw = list(cached_params.carFw)
+      skip_fw_query = True
     else:
       cloudlog.warning("Getting VIN & FW versions")
       _, vin = get_vin(logcan, sendcan, bus)
@@ -158,10 +160,24 @@ def fingerprint(logcan, sendcan):
     car_fingerprint = list(fw_candidates)[0]
     source = car.CarParams.FingerprintSource.fw
     exact_match = exact_fw_match
+    if vin != VIN_UNKNOWN and not skip_fw_query:
+      Params().put("LastVinFingerprint", json.dumps({vin: car_fingerprint}))
 
   if fixed_fingerprint:
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
+
+  if not car_fingerprint:
+    # use last successful fingerprint for VIN if no match was found
+    try:
+      last_vin_fingerprint = json.loads(Params().get("LastVinFingerprint"))
+    except json.decoder.JSONDecodeError:
+      last_vin_fingerprint = dict()
+    if vin in last_vin_fingerprint:
+      # TODO: how to log the fact that we used the last fingerprint for the VIN?
+      car_fingerprint = last_vin_fingerprint[vin]
+      source = car.CarParams.FingerprintSource.fw
+      exact_match = False
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint,
                  source=source, fuzzy=not exact_match, fw_count=len(car_fw))

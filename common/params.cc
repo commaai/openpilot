@@ -134,6 +134,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LastSystemShutdown", CLEAR_ON_MANAGER_START},
     {"LastUpdateException", CLEAR_ON_MANAGER_START},
     {"LastUpdateTime", PERSISTENT},
+    {"LastVinFingerprint", PERSISTENT},
     {"LiveParameters", PERSISTENT},
     {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"NavSettingTime24h", PERSISTENT},
