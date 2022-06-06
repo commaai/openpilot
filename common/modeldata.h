@@ -28,7 +28,7 @@ const int TICI_CAM_WIDTH = 1928;
 
 namespace tici_dm_crop {
   const int x_offset = -32;
-  const int y_offset = -244;
+  const int y_offset = -144;
   const int width = 954;
 };
 
