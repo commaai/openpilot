@@ -99,7 +99,6 @@ class IsoTpParallelQuery:
     results = {}
     start_time = time.monotonic()
     response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs}
-    pending_responses = set()
     while True:
       self.rx()
 
@@ -123,7 +122,6 @@ class IsoTpParallelQuery:
 
         if response_valid:
           response_timeouts[tx_addr] = time.monotonic() + timeout
-          pending_responses.discard(tx_addr)
           if counter + 1 < len(self.request):
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
@@ -134,7 +132,6 @@ class IsoTpParallelQuery:
           error_code = dat[2] if len(dat) > 2 else -1
           if error_code == 0x78:
             response_timeouts[tx_addr] = time.monotonic() + self.response_pending_timeout
-            pending_responses.add(tx_addr)
             if self.debug:
               cloudlog.warning(f"iso-tp query response pending: {tx_addr}")
           else:
@@ -144,7 +141,7 @@ class IsoTpParallelQuery:
       cur_time = time.monotonic()
       if cur_time - max(response_timeouts.values()) > 0:
         for tx_addr in msgs:
-          if (request_counter[tx_addr] > 0 and not request_done[tx_addr]) or tx_addr in pending_responses:
+          if request_counter[tx_addr] > 0 and not request_done[tx_addr]:
             cloudlog.warning(f"iso-tp query timeout after receiving response: {tx_addr}")
         break
 
