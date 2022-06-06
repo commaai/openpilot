@@ -5,7 +5,13 @@ export NOBOARD="1"
 export SIMULATION="1"
 export FINGERPRINT="HONDA CIVIC 2016"
 
-export BLOCK="camerad,loggerd,encoderd"
+PROC="camerad,loggerd,encoderd"
+if [[ "$CI" ]]
+then
+  PROC="${PROC},ui"
+fi
+
+export BLOCK=$PROC
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd ../../selfdrive/manager && exec ./manager.py
