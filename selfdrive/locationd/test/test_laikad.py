@@ -92,11 +92,10 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
-  # @unittest.skip("Use to debug live data")
+  @unittest.skip("Use to debug live data")
   def test_laika_get_orbits_now(self):
     laikad = Laikad(auto_update=False)
     laikad.fetch_orbits(GPSTime.from_datetime(datetime.utcnow()))
-    # print(laikad.astro_dog.orbit_fetched_times.as_datetime())
     prn = "G01"
     self.assertLess(0, len(laikad.astro_dog.orbits[prn]))
     prn = "R01"
