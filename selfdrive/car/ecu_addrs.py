@@ -35,7 +35,7 @@ def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subadd
 
 
 def get_msg_subaddr(msg: capnp.lib.capnp._DynamicStructReader) -> Optional[int]:
-  if len(msg.dat) == 8 and 1 <= msg.dat[1] <= 7:
+  if len(msg.dat) == 8 and 1 <= msg.dat[1] <= 6:
     return msg.dat[0]
   return None
 
