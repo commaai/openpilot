@@ -17,7 +17,7 @@ def make_tester_present_msg(addr, bus, subaddr=None):
     dat.insert(0, subaddr)
 
   dat += [0x0] * (8 - len(dat))
-  return make_can_msg(addr, dat, bus)
+  return make_can_msg(addr, bytes(dat), bus)
 
 
 def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subaddr: Optional[int] = None) -> bool:
@@ -35,7 +35,7 @@ def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subadd
 
 
 def get_msg_subaddr(msg: capnp.lib.capnp._DynamicStructReader) -> Optional[int]:
-  if 1 <= msg.dat[1] <= 7:
+  if len(msg.dat) == 8 and 1 <= msg.dat[1] <= 7:
     return msg.dat[0]
   return None
 
@@ -60,12 +60,12 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
       for packet in can_packets:
         for msg in packet.can:
           subaddr = get_msg_subaddr(msg)
-          if (msg.address, subaddr, msg.bus) in responses and is_tester_present_response(msg, subaddr):
+          if (msg.address, subaddr, msg.src) in responses and is_tester_present_response(msg, subaddr):
             if debug:
               print(f"CAN-RX: {hex(msg.address)} - 0x{bytes.hex(msg.dat)}")
-              if (msg.address, subaddr, msg.bus) in ecu_responses:
+              if (msg.address, subaddr, msg.src) in ecu_responses:
                 print(f"Duplicate ECU address: {hex(msg.address)}")
-            ecu_responses.add((msg.address, subaddr, msg.bus))
+            ecu_responses.add((msg.address, subaddr, msg.src))
   except Exception:
     cloudlog.warning(f"ECU addr scan exception: {traceback.format_exc()}")
   return ecu_responses
