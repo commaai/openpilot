@@ -199,6 +199,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
   std::array<float, TRAJECTORY_SIZE> pos_x, pos_y, pos_z;
   std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std, pos_z_std;
   std::array<float, TRAJECTORY_SIZE> vel_x, vel_y, vel_z;
+  std::array<float, TRAJECTORY_SIZE> accel_x, accel_y, accel_z;
   std::array<float, TRAJECTORY_SIZE> rot_x, rot_y, rot_z;
   std::array<float, TRAJECTORY_SIZE> rot_rate_x, rot_rate_y, rot_rate_z;
 
@@ -212,6 +213,9 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
     vel_x[i] = plan.mean[i].velocity.x;
     vel_y[i] = plan.mean[i].velocity.y;
     vel_z[i] = plan.mean[i].velocity.z;
+    accel_x[i] = plan.mean[i].acceleration.x;
+    accel_y[i] = plan.mean[i].acceleration.y;
+    accel_z[i] = plan.mean[i].acceleration.z;
     rot_x[i] = plan.mean[i].rotation.x;
     rot_y[i] = plan.mean[i].rotation.y;
     rot_z[i] = plan.mean[i].rotation.z;
@@ -222,6 +226,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
 
   fill_xyzt(framed.initPosition(), T_IDXS_FLOAT, pos_x, pos_y, pos_z, pos_x_std, pos_y_std, pos_z_std);
   fill_xyzt(framed.initVelocity(), T_IDXS_FLOAT, vel_x, vel_y, vel_z);
+  fill_xyzt(framed.initAcceleration(), T_IDXS_FLOAT, accel_x, accel_y, accel_z);
   fill_xyzt(framed.initOrientation(), T_IDXS_FLOAT, rot_x, rot_y, rot_z);
   fill_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rot_rate_x, rot_rate_y, rot_rate_z);
 }
