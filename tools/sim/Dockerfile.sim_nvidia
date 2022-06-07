@@ -1,17 +1,4 @@
-FROM ubuntu:20.04
-
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo \
-    curl \
-    ssh \
-    locales \
-    tzdata
-
-RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+FROM ghcr.io/commaai/openpilot-base:latest
 
 RUN curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh && \
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID) && \
