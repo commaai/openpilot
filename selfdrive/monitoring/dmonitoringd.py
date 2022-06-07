@@ -18,7 +18,7 @@ def dmonitoringd_thread(sm=None, pm=None):
     pm = messaging.PubMaster(['driverMonitoringState'])
 
   if sm is None:
-    sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'controlsState', 'modelV2'], poll=['driverState'])
+    sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'controlsState', 'modelV2'], poll=['driverStateV2'])
 
   driver_status = DriverStatus(rhd=Params().get_bool("IsRHD"))
 
@@ -34,7 +34,7 @@ def dmonitoringd_thread(sm=None, pm=None):
   while True:
     sm.update()
 
-    if not sm.updated['driverState']:
+    if not sm.updated['driverStateV2']:
       continue
 
     # Get interaction
@@ -51,7 +51,7 @@ def dmonitoringd_thread(sm=None, pm=None):
 
     # Get data from dmonitoringmodeld
     events = Events()
-    driver_status.update_states(sm['driverState'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['controlsState'].enabled)
+    driver_status.update_states(sm['driverStateV2'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['controlsState'].enabled)
 
     # Block engaging after max number of distrations
     if driver_status.terminal_alert_cnt >= driver_status.settings._MAX_TERMINAL_ALERTS or \

@@ -31,8 +31,8 @@ typedef struct DriverStateResult {
 typedef struct DMonitoringModelResult {
   DriverStateResult driver_state_lhd;
   DriverStateResult driver_state_rhd;
-  float poor_vision;
-  float wheel_on_right;
+  float poor_vision_prob;
+  float wheel_on_right_prob;
   float dsp_execution_time;
 } DMonitoringModelResult;
 

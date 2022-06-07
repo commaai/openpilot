@@ -12,7 +12,7 @@
 ExitHandler do_exit;
 
 void run_model(DMonitoringModelState &model, VisionIpcClient &vipc_client) {
-  PubMaster pm({"driverState"});
+  PubMaster pm({"driverStateV2"});
   SubMaster sm({"liveCalibration"});
   float calib[CALIB_LEN] = {0};
   double last = 0;

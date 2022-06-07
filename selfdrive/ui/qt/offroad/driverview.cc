@@ -25,7 +25,7 @@ void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
   emit done();
 }
 
-DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverState"}), QWidget(parent) {
+DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverStateV2"}), QWidget(parent) {
   face_img = loadPixmap("../assets/img_driver_face.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
 }
 
@@ -56,11 +56,11 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     return;
   }
 
-  cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState();
-  cereal::DriverState::DriverData::Reader driver_data;
+  cereal::DriverStateV2::Reader driver_state = sm["driverStateV2"].getDriverStateV2();
+  cereal::DriverStateV2::DriverData::Reader driver_data;
 
-  is_rhd = driver_state.getWheelOnRight() > 0.5;
-  driver_data = is_rhd ? driver_state.getDriverDataRH() : driver_state.getDriverDataLH();
+  is_rhd = driver_state.getWheelOnRightProb() > 0.5;
+  driver_data = is_rhd ? driver_state.getRightDriverData() : driver_state.getLeftDriverData();
 
   bool face_detected = driver_data.getFaceProb() > 0.5;
   if (face_detected) {

@@ -50,7 +50,7 @@ def model_replay(lr, frs):
   vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *(tici_f_frame_size))
   vipc_server.start_listener()
 
-  sm = messaging.SubMaster(['modelV2', 'driverState'])
+  sm = messaging.SubMaster(['modelV2', 'driverStateV2'])
   pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
 
   try:
@@ -110,7 +110,7 @@ def model_replay(lr, frs):
             if not TICI or min(frame_idxs['roadCameraState'], frame_idxs['wideRoadCameraState']) > recv_cnt['modelV2']:
               recv = "modelV2"
           elif msg.which() == 'driverCameraState':
-            recv = "driverState"
+            recv = "driverStateV2"
 
           # wait for a response
           with Timeout(15, f"timed out waiting for {recv}"):
@@ -164,8 +164,8 @@ if __name__ == "__main__":
         'logMonoTime',
         'modelV2.frameDropPerc',
         'modelV2.modelExecutionTime',
-        'driverState.modelExecutionTime',
-        'driverState.dspExecutionTime'
+        'driverStateV2.modelExecutionTime',
+        'driverStateV2.dspExecutionTime'
       ]
       tolerance = None if not PC else 1e-3
       results: Any = {TEST_ROUTE: {}}

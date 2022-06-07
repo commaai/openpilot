@@ -225,14 +225,14 @@ class DriverStatus():
                                             self.settings._POSE_YAW_THRESHOLD_STRICT]) / self.settings._POSE_YAW_THRESHOLD
 
   def update_states(self, driver_state, cal_rpy, car_speed, op_engaged):
-    # rhd_pred = driver_state.wheelOnRight
+    # rhd_pred = driver_state.wheelOnRightProb
     # if car_speed > 0.01:
     #   self.wheelpos_learner.push_and_update(rhd_pred)
     # if self.wheelpos_learner.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT:
     #   self.wheel_on_right = self.wheelpos_learner.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     # else:
     #   self.wheel_on_right = rhd_pred > self.settings._WHEELPOS_THRESHOLD
-    driver_data = driver_state.driverDataRH if self.wheel_on_right else driver_state.driverDataLH
+    driver_data = driver_state.rightDriverData if self.wheel_on_right else driver_state.leftDriverData
     if not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,
                                     driver_data.faceOrientationStd, driver_data.facePositionStd,
                                     driver_data.readyProb, driver_data.notReadyProb)):

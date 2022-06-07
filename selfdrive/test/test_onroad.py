@@ -60,7 +60,7 @@ TIMINGS = {
   "roadCameraState": [2.5, 0.35],
   "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
-  "driverState": [2.5, 0.40],
+  "driverStateV2": [2.5, 0.40],
   "liveLocationKalman": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }
@@ -221,7 +221,7 @@ class TestOnroad(unittest.TestCase):
     # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [
       ("modelV2", 0.050, 0.036),
-      ("driverState", 0.050, 0.026),
+      ("driverStateV2", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]

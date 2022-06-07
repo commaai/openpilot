@@ -55,7 +55,7 @@ void parse_driver_data(DriverStateResult &ds_res, const DMonitoringModelState* s
   ds_res.occluded_prob = sigmoid(s->output[out_idx_offset+34]);
 }
 
-void fill_driver_data(cereal::DriverState::DriverData::Builder ddata, const DriverStateResult &ds_res) {
+void fill_driver_data(cereal::DriverStateV2::DriverData::Builder ddata, const DriverStateResult &ds_res) {
   ddata.setFaceOrientation(ds_res.face_orientation);
   ddata.setFaceOrientationStd(ds_res.face_orientation_std);
   ddata.setFacePosition(ds_res.face_position);
@@ -110,8 +110,8 @@ DMonitoringModelResult dmonitoring_eval_frame(DMonitoringModelState* s, void* st
   DMonitoringModelResult model_res = {0};
   parse_driver_data(model_res.driver_state_lhd, s, 0);
   parse_driver_data(model_res.driver_state_rhd, s, 41);
-  model_res.poor_vision = sigmoid(s->output[82]);
-  model_res.wheel_on_right = sigmoid(s->output[83]);
+  model_res.poor_vision_prob = sigmoid(s->output[82]);
+  model_res.wheel_on_right_prob = sigmoid(s->output[83]);
   model_res.dsp_execution_time = (t2 - t1) / 1000.;
 
   return model_res;
@@ -120,21 +120,21 @@ DMonitoringModelResult dmonitoring_eval_frame(DMonitoringModelState* s, void* st
 void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringModelResult &model_res, float execution_time, kj::ArrayPtr<const float> raw_pred) {
   // make msg
   MessageBuilder msg;
-  auto framed = msg.initEvent().initDriverState();
+  auto framed = msg.initEvent().initDriverStateV2();
   framed.setFrameId(frame_id);
   framed.setModelExecutionTime(execution_time);
   framed.setDspExecutionTime(model_res.dsp_execution_time);
 
-  framed.setPoorVision(model_res.poor_vision);
-  framed.setWheelOnRight(model_res.wheel_on_right);
-  fill_driver_data(framed.initDriverDataLH(), model_res.driver_state_lhd);
-  fill_driver_data(framed.initDriverDataRH(), model_res.driver_state_rhd);
+  framed.setPoorVisionProb(model_res.poor_vision_prob);
+  framed.setWheelOnRightProb(model_res.wheel_on_right_prob);
+  fill_driver_data(framed.initLeftDriverData(), model_res.driver_state_lhd);
+  fill_driver_data(framed.initRightDriverData(), model_res.driver_state_rhd);
 
   if (send_raw_pred) {
     framed.setRawPredictions(raw_pred.asBytes());
   }
 
-  pm.send("driverState", msg);
+  pm.send("driverStateV2", msg);
 }
 
 void dmonitoring_free(DMonitoringModelState* s) {
