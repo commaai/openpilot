@@ -28,6 +28,7 @@ class CAR:
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
   IMPREZA_2020 = "SUBARU IMPREZA SPORT 2020"
   FORESTER = "SUBARU FORESTER 2019"
+  FORESTER_2020H = "SUBARU FORESTER 2020 HYBRID"
   FORESTER_PREGLOBAL = "SUBARU FORESTER 2017 - 2018"
   LEGACY_PREGLOBAL = "SUBARU LEGACY 2015 - 2018"
   OUTBACK_PREGLOBAL = "SUBARU OUTBACK 2015 - 2017"
@@ -237,6 +238,23 @@ FW_VERSIONS = {
       b'\x1a\xf6b0\x00',
     ],
   },
+  CAR.FORESTER_2020H: {
+    (Ecu.esp, 0x7b0, None): [
+      b'\xa3 \x19T\x00',
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'\x8d\xc2\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\x00\x00eY\x1f@ !',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xd2\xa1`r\x07',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+       b'\x1b\xa7@a\x00',
+    ],
+  },
   CAR.FORESTER_PREGLOBAL: {
     (Ecu.esp, 0x7b0, None): [
       b'\x7d\x97\x14\x40',
@@ -400,6 +418,7 @@ STEER_THRESHOLD = {
   CAR.IMPREZA: 80,
   CAR.IMPREZA_2020: 80,
   CAR.FORESTER: 80,
+  CAR.FORESTER_2020H: 80,
   CAR.FORESTER_PREGLOBAL: 75,
   CAR.LEGACY_PREGLOBAL: 75,
   CAR.OUTBACK_PREGLOBAL: 75,
@@ -411,6 +430,7 @@ DBC = {
   CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA_2020: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
+  CAR.FORESTER_2020H: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
   CAR.LEGACY_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
   CAR.OUTBACK_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),

@@ -49,8 +49,12 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD[self.car_fingerprint]
 
-    ret.cruiseState.enabled = cp.vl["CruiseControl"]["Cruise_Activated"] != 0
-    ret.cruiseState.available = cp.vl["CruiseControl"]["Cruise_On"] != 0
+    if self.car_fingerprint == CAR.FORESTER_2020H:
+       ret.cruiseState.enabled = cp_cam.vl["ES_DashStatus"]['Cruise_Activated'] != 0
+       ret.cruiseState.available = cp_cam.vl["ES_DashStatus"]['Cruise_On'] != 0
+    else:
+      ret.cruiseState.enabled = cp.vl["CruiseControl"]["Cruise_Activated"] != 0
+      ret.cruiseState.available = cp.vl["CruiseControl"]["Cruise_On"] != 0
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
     if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
