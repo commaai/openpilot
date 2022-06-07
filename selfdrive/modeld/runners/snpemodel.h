@@ -23,7 +23,7 @@
 
 class SNPEModel : public RunModel {
 public:
-  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false);
+  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false, bool use_tf8 = false);
   void addRecurrent(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
   void addCalib(float *state, int state_size);
