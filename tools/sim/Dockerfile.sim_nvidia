@@ -1,4 +1,9 @@
-FROM ghcr.io/commaai/openpilot-base:latest
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends apt-utils sudo ssh curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh && \
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID) && \
