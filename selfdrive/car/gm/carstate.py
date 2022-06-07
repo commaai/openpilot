@@ -12,7 +12,6 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.lka_steering_cmd_counter = 0
-    self.parkingBrake = 0
 
   def update(self, pt_cp, loopback_cp, body_cp):
     ret = car.CarState.new_message()
@@ -75,11 +74,8 @@ class CarState(CarStateBase):
     ret.seatbeltUnlatched = pt_cp.vl["BCMDoorBeltStatus"]["LeftSeatBelt"] == 0
     ret.leftBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 1
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
-    #TODO: JJS: Add hasEPB to cereal and use detection rather than hard coding...
-    #if self.CP.hasEPB:
-    if self.CP.carFingerprint != CAR.SUBURBAN and self.CP.carFingerprint != CAR.TAHOE_NR:
-      self.parkingBrake = pt_cp.vl["EPBStatus"]["EPBClosed"] == 1
 
+    ret.parkingBrake = pt_cp.vl["VehicleIgnitionAlt"]["ParkBrake"] == 1
     ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
     if self.CP.enableGasInterceptor: # Flip CC main logic when pedal is being used for long
       ret.cruiseState.available = (not ret.cruiseState.available)
@@ -122,6 +118,7 @@ class CarState(CarStateBase):
       ("LKATorqueDelivered", "PSCMStatus"),
       ("LKATorqueDeliveredStatus", "PSCMStatus"),
       ("TractionControlOn", "ESPStatus"),
+      ("ParkBrake", "VehicleIgnitionAlt"),
       ("CruiseMainOn", "ECMEngineStatus"),
     ]
 
@@ -131,6 +128,7 @@ class CarState(CarStateBase):
       ("PSCMStatus", 10),
       ("ESPStatus", 10),
       ("BCMDoorBeltStatus", 10),
+      ("VehicleIgnitionAlt", 10),
       ("EBCMWheelSpdFront", 20),
       ("EBCMWheelSpdRear", 20),
       ("AcceleratorPedal2", 33),
@@ -139,13 +137,6 @@ class CarState(CarStateBase):
       ("PSCMSteeringAngle", 100),
       ("EBCMBrakePedalPosition", 100),
     ]
-
-    # TODO: Might be wise to find the non-electronic parking brake signal
-    # TODO: JJS Add hasEPB to cereal
-    if CP.carFingerprint != CAR.SUBURBAN and CP.carFingerprint != CAR.TAHOE_NR:
-      signals.append(("EPBClosed", "EPBStatus", 0))
-      checks.append(("EPBStatus", 20))
-    
 
     if CP.enableGasInterceptor:
       signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR"))
