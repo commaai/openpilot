@@ -28,29 +28,22 @@ class CarState(CarStateBase):
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
-    gmGear = self.shifter_values.get(pt_cp.vl["ECMPRDNL2"]["PRNDL2"], None)
-    manualMode = bool(pt_cp.vl["ECMPRDNL2"]["ManualMode"])
-    
-    # In manumatic, the value of PRNDL2 represents the max gear
-    # parse_gear_shifter expects "T" for manumatic
-    # TODO: JJS Add manumatic max gear to cereal and parse (validate value in Acadia)
-    if manualMode:
-      gmGear = "T"
-    
-    # TODO: JJS: Should We just have 0 map to P in the dbc?
-    if gmGear == "Shifting":
-      gmGear = "P"
-    
-    ret.gearShifter = self.parse_gear_shifter(gmGear)
-    
-    ret.brakePressed = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] >= 11 # TODO: JJS: PR this increase for trucks
-        # Regen braking is braking
+    if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
+      ret.gearShifter = self.parse_gear_shifter("T")
+      ret.manumaticGear = pt_cp.vl["ECMPRDNL2"]["PRNDL2"]
+    else:
+      ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL2"]["PRNDL2"], None))
+
+    # Brake pedal's potentiometer returns near-zero reading even when pedal is not pressed.
+    ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
+    ret.brakePressed = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] >= 10
+
+    # Regen braking is braking
     if self.car_fingerprint in EV_CAR:
       ret.brakePressed = ret.brakePressed or pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
 
-    if ret.brakePressed:
-      ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
-    else: # TODO: JJS: restore zeroing messy brake signals via PR
+    if not ret.brakePressed:
+      # TODO: JJS: restore zeroing messy brake signals via PR
       ret.brake = 0.
 
     if self.CP.enableGasInterceptor:

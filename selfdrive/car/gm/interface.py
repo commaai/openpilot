@@ -383,9 +383,6 @@ class CarInterface(CarInterfaceBase):
 
       ret.buttonEvents = [be]
 
-    events = self.create_common_events(ret, extra_gears = [GearShifter.sport, GearShifter.low, GearShifter.eco, GearShifter.manumatic], pcm_enable=self.CP.pcmCruise)
-
-
     # # From Honda
     # if self.CP.pcmCruise:
     #   # we engage when pcm is active (rising edge)
@@ -408,6 +405,8 @@ class CarInterface(CarInterfaceBase):
     # TODO: create_common_events and create_button_enable_events appear to now handle this
     # TODO: Honda has the above extra code - this may explain scott's strange alerts!
     # Note: this update changes behavior - have steve / scott / uncle tone test / Bolt EUV test
+    events = self.create_common_events(ret, extra_gears = [GearShifter.sport, GearShifter.low,
+                                                           GearShifter.eco, GearShifter.manumatic], pcm_enable=self.CP.pcmCruise)
 
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
