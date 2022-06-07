@@ -3,7 +3,7 @@ from common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, CAR, EV_CAR, NO_ASCM, AccState, CanBus, STEER_THRESHOLD
+from selfdrive.car.gm.values import DBC, EV_CAR, NO_ASCM, AccState, CanBus, STEER_THRESHOLD
 
 
 class CarState(CarStateBase):
