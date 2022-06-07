@@ -42,6 +42,7 @@ def phone_steps(String device_type, steps) {
 pipeline {
   agent none
   environment {
+    CI = "1"
     TEST_DIR = "/data/openpilot"
     SOURCE_DIR = "/data/openpilot_source/"
   }
@@ -74,21 +75,22 @@ pipeline {
         }
       }
 
-      stages {
+      parallel {
+
         stage('simulator') {
           agent {
             dockerfile {
               filename 'Dockerfile.sim_nvidia'
-                dir 'tools/sim'
-                args "--user=root"
+              dir 'tools/sim'
+              args '--user=root'
             }
           }
           steps {
             sh "git config --global --add safe.directory ${WORKSPACE}"
             sh "git lfs pull"
             sh "${WORKSPACE}/tools/sim/build_container.sh"
-            sh "CI=1 ${WORKSPACE}/tools/sim/start_carla.sh"
-            sh "CI=1 ${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
+            sh "${WORKSPACE}/tools/sim/start_carla.sh"
+            sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
           }
 
           post {
@@ -99,70 +101,59 @@ pipeline {
           }
         }
 
-        stage('On-device Tests') {
+        stage('build') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          stages {
-            stage('parallel tests') {
-              parallel {
-                stage('build') {
-                  environment {
-                    R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
-                  }
-                  steps {
-                    phone_steps("tici", [
-                      ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
-                      ["build openpilot", "cd selfdrive/manager && ./build.py"],
-                      ["test manager", "python selfdrive/manager/test/test_manager.py"],
-                      ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-                      ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
-                    ])
-                  }
-                }
-
-                stage('HW + Unit Tests') {
-                  steps {
-                    phone_steps("tici2", [
-                      ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test power draw", "python selfdrive/hardware/tici/test_power_draw.py"],
-                      ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
-                      ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
-                      ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
-                      ["test sensord", "python selfdrive/sensord/test/test_sensord.py"],
-                    ])
-                  }
-                }
-
-                stage('camerad') {
-                  steps {
-                    phone_steps("tici-party", [
-                      ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
-                      ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
-                    ])
-                  }
-                }
-
-                stage('replay') {
-                  steps {
-                    phone_steps("tici3", [
-                      ["build", "cd selfdrive/manager && ./build.py"],
-                      ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
-                    ])
-                  }
-                }
-
-              }
-            }
+          environment {
+            R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
           }
-
-          post {
-            always {
-              cleanWs()
-            }
+          steps {
+            phone_steps("tici", [
+              ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
+              ["build openpilot", "cd selfdrive/manager && ./build.py"],
+              ["test manager", "python selfdrive/manager/test/test_manager.py"],
+              ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+              ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
+            ])
           }
-
         }
 
+        stage('HW + Unit Tests') {
+          steps {
+            phone_steps("tici2", [
+              ["build", "cd selfdrive/manager && ./build.py"],
+              ["test power draw", "python selfdrive/hardware/tici/test_power_draw.py"],
+              ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
+              ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
+              ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
+              ["test sensord", "python selfdrive/sensord/test/test_sensord.py"],
+            ])
+          }
+        }
+
+        stage('camerad') {
+          steps {
+            phone_steps("tici-party", [
+              ["build", "cd selfdrive/manager && ./build.py"],
+              ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
+              ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+            ])
+          }
+        }
+
+        stage('replay') {
+          steps {
+            phone_steps("tici3", [
+              ["build", "cd selfdrive/manager && ./build.py"],
+              ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
+            ])
+          }
+        }
+      }
+
+      post {
+        always {
+          cleanWs()
+        }
       }
     }
   }
