@@ -79,7 +79,7 @@ SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int 
     const auto &inputDims_opt = snpe->getInputDimensions(input_tensor_name);
     const zdl::DlSystem::TensorShape& bufferShape = *inputDims_opt;
     std::vector<size_t> strides(bufferShape.rank());
-    strides[strides.size() - 1] = size_of_input
+    strides[strides.size() - 1] = size_of_input;
     size_t product = 1;
     for (size_t i = 0; i < bufferShape.rank(); i++) product *= bufferShape[i];
     size_t stride = strides[strides.size() - 1];
@@ -89,9 +89,9 @@ SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int 
     }
     printf("input product is %lu\n", product);
     inputBuffer = ubFactory.createUserBuffer(NULL,
-                                                                      product*size_of_input,
-                                                                      strides,
-                                                                      use_tf8 ? &userBufferEncodingTf8 : &userBufferEncodingFloat);
+                                             product*size_of_input,
+                                             strides,
+                                             use_tf8 ? (zdl::DlSystem::UserBufferEncoding*)&userBufferEncodingTf8 : (zdl::DlSystem::UserBufferEncoding*)&userBufferEncodingFloat);
 
     inputMap.add(input_tensor_name, inputBuffer.get());
   }
