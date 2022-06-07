@@ -299,7 +299,8 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
 
 
 def get_brand_candidates(logcan, sendcan, versions):
-  queries: Set[Tuple[int, Optional[int], int]] = set()  # set((addr, subaddr, bus),)
+  queries = list()  # set((addr, subaddr, bus),)
+  parallel_queries = list()  # set((addr, subaddr, bus),)
   response_to_brand: Dict[Tuple[int, Optional[int], int], Set[str]] = defaultdict(set)  # {(response_addr, subaddr, bus): set(brand,),}
   for r in REQUESTS:
     if r.brand not in versions:
@@ -309,16 +310,27 @@ def get_brand_candidates(logcan, sendcan, versions):
       for ecu_type, addr, subaddr in brand_versions:
         # Only query ecus in whitelist if whitelist is not empty
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
+          a = (addr, subaddr, r.bus)
           # Build set of queries
-          queries.add((addr, subaddr, r.bus))
+          if subaddr is None:
+            if a not in parallel_queries:
+              parallel_queries.append(a)
+          else:
+            if [a] not in queries:
+              queries.append([a])
 
           # Store map from response to brand
           response_addr = addr + r.rx_offset
           response_to_brand[(response_addr, subaddr, r.bus)].add(r.brand)
 
-  print(response_to_brand)
-  ecu_responses = get_ecu_addrs(logcan, sendcan, queries, set(response_to_brand.keys()))
+  queries.insert(0, parallel_queries)
+
+  ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
+  for query in queries:
+    ecu_responses.update(get_ecu_addrs(logcan, sendcan, {query}, set(response_to_brand.keys())))
+
   cloudlog.event("ecu responses", ecu_response_addrs=ecu_responses)
+  print("ecu responses", ecu_responses)
 
   brand_candidates = defaultdict(set)
   for response in ecu_responses:
@@ -328,6 +340,7 @@ def get_brand_candidates(logcan, sendcan, versions):
 
   for brand, responses in brand_candidates.items():
     cloudlog.event(f"{brand} responses: {responses}")
+    print(f"{brand} responses: {responses}")
 
   return [brand for brand, responses in brand_candidates.items() if len(responses) >= 3]
 
