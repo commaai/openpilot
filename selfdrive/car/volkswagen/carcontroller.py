@@ -1,7 +1,7 @@
 from cereal import car
 from selfdrive.car import apply_std_steer_torque_limits
-from selfdrive.car.volkswagen import volkswagencan
-from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams as P
+from selfdrive.car.volkswagen import volkswagencan, pqcan
+from selfdrive.car.volkswagen.values import PQ_CARS, DBC_FILES, CANBUS, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams as P
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -11,7 +11,12 @@ class CarController():
     self.apply_steer_last = 0
     self.CP = CP
 
-    self.packer_pt = CANPacker(DBC_FILES.mqb)
+    if CP.carFingerprint in PQ_CARS:
+      self.packer_pt = CANPacker(DBC_FILES.pq)
+      self.ldw_step = P.PQ_LDW_STEP
+    else:
+      self.packer_pt = CANPacker(DBC_FILES.mqb)
+      self.ldw_step = P.MQB_LDW_STEP
 
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
@@ -67,21 +72,30 @@ class CarController():
 
       self.apply_steer_last = apply_steer
       idx = (frame / P.HCA_STEP) % 16
-      can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, CANBUS.pt, apply_steer,
-                                                                 idx, hcaEnabled))
+      if self.CP.carFingerprint in PQ_CARS:
+        can_sends.append(pqcan.create_pq_steering_control(self.packer_pt, CANBUS.pt, apply_steer, idx, hcaEnabled))
+      else:
+        can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, CANBUS.pt, apply_steer, idx, hcaEnabled))
 
     # **** HUD Controls ***************************************************** #
 
-    if frame % P.LDW_STEP == 0:
+    if frame % self.ldw_step == 0:
+      # FIXME: Need MQB vs PQ handling of displayed messages here
       if visual_alert in (VisualAlert.steerRequired, VisualAlert.ldw):
         hud_alert = MQB_LDW_MESSAGES["laneAssistTakeOverSilent"]
       else:
         hud_alert = MQB_LDW_MESSAGES["none"]
 
-      can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, c.enabled,
-                                                            CS.out.steeringPressed, hud_alert, left_lane_visible,
-                                                            right_lane_visible, CS.ldw_stock_values,
-                                                            left_lane_depart, right_lane_depart))
+      if self.CP.carFingerprint in PQ_CARS:
+        can_sends.append(pqcan.create_pq_hud_control(self.packer_pt, CANBUS.pt, c.enabled,
+                                                              CS.out.steeringPressed, hud_alert, left_lane_visible,
+                                                              right_lane_visible, CS.ldw_stock_values,
+                                                              left_lane_depart, right_lane_depart))
+      else:
+        can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, c.enabled,
+                                                              CS.out.steeringPressed, hud_alert, left_lane_visible,
+                                                              right_lane_visible, CS.ldw_stock_values,
+                                                              left_lane_depart, right_lane_depart))
 
     # **** ACC Button Controls ********************************************** #
 
@@ -105,7 +119,10 @@ class CarController():
           if self.graMsgSentCount == 0:
             self.graMsgStartFramePrev = frame
           idx = (CS.graMsgBusCounter + 1) % 16
-          can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, ext_bus, self.graButtonStatesToSend, CS, idx))
+          if self.CP.carFingerprint in PQ_CARS:
+            can_sends.append(pqcan.create_pq_acc_buttons_control(self.packer_pt, ext_bus, self.graButtonStatesToSend, CS, idx))
+          else:
+            can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, ext_bus, self.graButtonStatesToSend, CS, idx))
           self.graMsgSentCount += 1
           if self.graMsgSentCount >= P.GRA_VBP_COUNT:
             self.graButtonStatesToSend = None

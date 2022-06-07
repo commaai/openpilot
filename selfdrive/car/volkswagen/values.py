@@ -14,9 +14,10 @@ GearShifter = car.CarState.GearShifter
 
 
 class CarControllerParams:
-  HCA_STEP = 2                   # HCA_01 message frequency 50Hz
-  LDW_STEP = 10                  # LDW_02 message frequency 10Hz
-  GRA_ACC_STEP = 3               # GRA_ACC_01 message frequency 33Hz
+  HCA_STEP = 2                   # HCA_01/HCA_1 message frequency 50Hz
+  MQB_LDW_STEP = 10              # LDW_02 message frequency 10Hz on MQB
+  PQ_LDW_STEP = 5                # LDW_1 message frequency 20Hz on PQ35/PQ46/NMS
+  GRA_ACC_STEP = 3               # GRA_ACC_01/GRA_Neu message frequency 33Hz
 
   GRA_VBP_STEP = 100             # Send ACC virtual button presses once a second
   GRA_VBP_COUNT = 16             # Send VBP messages for ~0.5s (GRA_ACC_STEP * 16)
@@ -36,11 +37,11 @@ class CANBUS:
   pt = 0
   cam = 2
 
-
 class DBC_FILES:
   mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
+  pq = "vw_golf_mk4"  # Used for all cars with PQ-style (legacy) CAN messaging
 
-
+# FIXME: PlotJuggler will assume wrong DBC for PQ, redo this and replace current handling of CANPacker/CANDefine
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))
 
 BUTTON_STATES = {
@@ -76,6 +77,7 @@ class CAR:
   GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"              # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
   JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"            # Chassis BU, Mk7 VW Jetta
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"          # Chassis 3G, Mk8 VW Passat and variants
+  PASSAT_NMS = "VOLKSWAGEN PASSAT NMS"              # Chassis A3, North America/China/Mideast NMS Passat, incl. facelift
   POLO_MK6 = "VOLKSWAGEN POLO 6TH GEN"              # Chassis AW, Mk6 VW Polo
   TAOS_MK1 = "VOLKSWAGEN TAOS 1ST GEN"              # Chassis B2, Mk1 VW Taos and Tharu
   TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"         # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
@@ -95,13 +97,17 @@ class CAR:
   SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"         # Chassis 3V/NP, Mk3 Skoda Superb and variants
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
 
+PQ_CARS = {CAR.PASSAT_NMS}
 
 class Footnote(Enum):
   KAMIQ = CarFootnote(
     "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
     Column.MODEL)
   PASSAT = CarFootnote(
-    "Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform.",
+    "European B8 Passat on MQB platform, not including USA/China/Mideast.",
+    Column.MODEL)
+  PASSAT_NMS = CarFootnote(
+    "USA/China/Mideast NMS Passat made on the PQ46 platform, not including Europe.",
     Column.MODEL)
   VW_HARNESS = CarFootnote(
     "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
@@ -136,6 +142,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Jetta GLI 2021"),
   ],
   CAR.PASSAT_MK8: VWCarInfo("Volkswagen Passat 2015-18", footnotes=[Footnote.PASSAT]),
+  CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat 2017, 2021", footnotes=[Footnote.PASSAT_NMS]),
   CAR.POLO_MK6: VWCarInfo("Volkswagen Polo 2020"),
   CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
@@ -470,6 +477,24 @@ FW_VERSIONS = {
       b'\xf1\x873Q0907572B \xf1\x890192',
       b'\xf1\x873Q0907572C \xf1\x890195',
       b'\xf1\x875Q0907572R \xf1\x890771',
+    ],
+  },
+  CAR.PASSAT_NMS: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8706K906016G \xf1\x891124',
+      b'\xf1\x8706K906071BJ\xf1\x894891',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x8709G927158BD\xf1\x893121',
+      b'\xf1\x8709G927158FQ\xf1\x893745',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x87561959655  \xf1\x890210\xf1\x82\02212121111113000102011--121012--101312',
+      b'\xf1\x87561959655C \xf1\x890508\xf1\x82\02215141111121100314919--153015--304831',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x87561907567A \xf1\x890132',
+      b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\00152',
     ],
   },
   CAR.POLO_MK6: {
