@@ -53,7 +53,6 @@ class TestLaikad(unittest.TestCase):
   def test_laika_online_nav_only(self):
     laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV)
     correct_msgs = verify_messages(self.logs, laikad)
-
     correct_msgs_expected = 560
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
@@ -86,7 +85,7 @@ class TestLaikad(unittest.TestCase):
           break
     # Pretend thread has loaded the orbits on startup by using the time of the first gps message.
     laikad.fetch_orbits(first_gps_time)
-    self.assertEqual(31, len(laikad.astro_dog.orbits.keys()))
+    self.assertEqual(29, len(laikad.astro_dog.orbits.keys()))
     correct_msgs = verify_messages(self.logs, laikad)
     correct_msgs_expected = 560
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
@@ -96,10 +95,11 @@ class TestLaikad(unittest.TestCase):
   def test_laika_get_orbits_now(self):
     laikad = Laikad(auto_update=False)
     laikad.fetch_orbits(GPSTime.from_datetime(datetime.utcnow()))
-    print(laikad.latest_epoch_fetched.as_datetime())
-
-    print(min(laikad.astro_dog.orbits[list(laikad.astro_dog.orbits.keys())[0]], key=lambda e: e.epoch).epoch.as_datetime())
-
+    prn = "G01"
+    self.assertLess(0, len(laikad.astro_dog.orbits[prn]))
+    prn = "R01"
+    self.assertLess(0, len(laikad.astro_dog.orbits[prn]))
+    print(min(laikad.astro_dog.orbits[prn], key=lambda e: e.epoch).epoch.as_datetime())
 
 if __name__ == "__main__":
   unittest.main()
