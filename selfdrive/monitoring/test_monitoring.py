@@ -17,19 +17,19 @@ INVISIBLE_SECONDS_TO_ORANGE = dm_settings._AWARENESS_TIME - dm_settings._AWARENE
 INVISIBLE_SECONDS_TO_RED = dm_settings._AWARENESS_TIME + 1
 
 def make_msg(face_detected, distracted=False, model_uncertain=False):
-  ds = log.DriverState.new_message()
-  ds.driverDataLH.faceOrientation = [0., 0., 0.]
-  ds.driverDataLH.facePosition = [0., 0.]
-  ds.driverDataLH.faceProb = 1. * face_detected
-  ds.driverDataLH.leftEyeProb = 1.
-  ds.driverDataLH.rightEyeProb = 1.
-  ds.driverDataLH.leftBlinkProb = 1. * distracted
-  ds.driverDataLH.rightBlinkProb = 1. * distracted
-  ds.driverDataLH.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
-  ds.driverDataLH.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
+  ds = log.DriverStateV2.new_message()
+  ds.leftDriverData.faceOrientation = [0., 0., 0.]
+  ds.leftDriverData.facePosition = [0., 0.]
+  ds.leftDriverData.faceProb = 1. * face_detected
+  ds.leftDriverData.leftEyeProb = 1.
+  ds.leftDriverData.rightEyeProb = 1.
+  ds.leftDriverData.leftBlinkProb = 1. * distracted
+  ds.leftDriverData.rightBlinkProb = 1. * distracted
+  ds.leftDriverData.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
+  ds.leftDriverData.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
   # TODO: test both separately when e2e is used
-  ds.driverDataLH.readyProb = [0., 0., 0., 0.]
-  ds.driverDataLH.notReadyProb = [0., 0.]
+  ds.leftDriverData.readyProb = [0., 0., 0., 0.]
+  ds.leftDriverData.notReadyProb = [0., 0.]
   return ds
 
 
