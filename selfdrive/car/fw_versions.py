@@ -299,50 +299,51 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
 
 
 def get_brand_candidates(logcan, sendcan, versions):
-  queries = list()  # set((addr, subaddr, bus),)
-  parallel_queries = list()  # set((addr, subaddr, bus),)
-  response_to_brand: Dict[Tuple[int, Optional[int], int], Set[str]] = defaultdict(set)  # {(response_addr, subaddr, bus): set(brand,),}
+  queries = list()
+  parallel_queries = list()
+  responses = set()
   for r in REQUESTS:
     if r.brand not in versions:
       continue
 
     for brand_versions in versions[r.brand].values():
-      for ecu_type, addr, subaddr in brand_versions:
+      for ecu_type, addr, sub_addr in brand_versions:
         # Only query ecus in whitelist if whitelist is not empty
-        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
-          a = (addr, subaddr, r.bus)
+        if (len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus) and ecu_type in ESSENTIAL_ECUS:
+          a = (addr, sub_addr, r.bus)
           # Build set of queries
-          if subaddr is None:
+          if sub_addr is None:
             if a not in parallel_queries:
               parallel_queries.append(a)
           else:
             if [a] not in queries:
               queries.append([a])
 
-          # Store map from response to brand
+          # Build set of expected responses to filter
           response_addr = addr + r.rx_offset
-          response_to_brand[(response_addr, subaddr, r.bus)].add(r.brand)
+          responses.add((response_addr, sub_addr, r.bus))
 
   queries.insert(0, parallel_queries)
 
   ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
   for query in queries:
-    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), set(response_to_brand.keys())))
+    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses))
 
   cloudlog.event("ecu responses", ecu_response_addrs=ecu_responses)
   print("ecu responses", ecu_responses)
 
-  brand_candidates = defaultdict(set)
-  for response in ecu_responses:
-    if response in response_to_brand:
-      for brand in response_to_brand[response]:
-        brand_candidates[brand].add(response)  # address, subaddr, bus
+  brand_candidates = set()
+  for r in REQUESTS:
+    ecu_addrs = {(addr - r.rx_offset, sub_addr) for addr, sub_addr, _ in ecu_responses}
+    for candidate, candidate_fw in versions[r.brand].items():
+      # brand is a candidate if any of its platforms is a complete subset of the response ecus
+      candidate_addrs = {(addr, sub_addr) for ecu_type, addr, sub_addr in candidate_fw.keys() if ecu_type in ESSENTIAL_ECUS}
+      if len(ecu_addrs.intersection(candidate_addrs)) == len(candidate_addrs):
+        # print('Candidate: {}'.format(candidate))
+        brand_candidates.add(r.brand)
 
-  for brand, responses in brand_candidates.items():
-    cloudlog.event(f"{brand} responses: {responses}")
-    print(f"{brand} responses: {responses}")
-
-  return [brand for brand, responses in brand_candidates.items() if len(responses) >= 3]
+  print('Brand candidates:', brand_candidates)
+  return brand_candidates
 
 
 def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progress=False):
