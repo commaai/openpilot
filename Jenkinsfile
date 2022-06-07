@@ -76,13 +76,16 @@ pipeline {
 
       stages {
         stage('simulator') {
-          agent { docker { image 'ghcr.io/commaai/openpilot-base'; args '--user=root' } }
+          agent {
+            dockerfile {
+              filename 'Dockerfile.sim_nvidia'
+                dir 'tools/sim'
+                args "--user=root"
+            }
+          }
           steps {
             sh "git config --global --add safe.directory ${WORKSPACE}"
-            sh "git submodule | awk '{system(\"git config --global --add safe.directory ${WORKSPACE}/\"\$2)}'"
-            sh "git submodule update --init --recursive --force --depth 1"
             sh "git lfs pull"
-            sh "curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh"
             sh "${WORKSPACE}/tools/sim/build_container.sh"
             sh "CI=1 ${WORKSPACE}/tools/sim/start_carla.sh"
             sh "CI=1 ${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
@@ -90,7 +93,6 @@ pipeline {
 
           post {
             always {
-              sh "docker kill carla_sim || true"
               sh "rm -rf ${WORKSPACE}/* && rm -rf .* || true"
             }
           }
