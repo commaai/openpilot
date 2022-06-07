@@ -118,6 +118,7 @@ pipeline {
         }
 
         stage('HW + Unit Tests') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici2", [
               ["build", "cd selfdrive/manager && ./build.py"],
@@ -131,6 +132,7 @@ pipeline {
         }
 
         stage('camerad') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-party", [
               ["build", "cd selfdrive/manager && ./build.py"],
@@ -141,6 +143,7 @@ pipeline {
         }
 
         stage('replay') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici3", [
               ["build", "cd selfdrive/manager && ./build.py"],
