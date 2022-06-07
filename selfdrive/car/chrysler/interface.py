@@ -48,7 +48,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.785  # in meters
       ret.steerRatio = 15.61  # just a guess
       ret.mass = 3405. + STD_CARGO_KG  # kg curb weight 2021 Ram 2500
-      MAX_LAT_ACCEL = 1.0
+      MAX_LAT_ACCEL = 1.2
       FRICTION = .05
       ret.steerActuatorDelay = 0.1
       ret.steerRateCost = 1.0  # may need tuning
