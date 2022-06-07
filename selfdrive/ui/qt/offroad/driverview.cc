@@ -31,6 +31,7 @@ DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverStateV2"}), QWidg
 
 void DriverViewScene::showEvent(QShowEvent* event) {
   frame_updated = false;
+  is_rhd = params.getBool("IsRHD");
   params.putBool("IsDriverViewEnabled", true);
 }
 
@@ -59,7 +60,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
   cereal::DriverStateV2::Reader driver_state = sm["driverStateV2"].getDriverStateV2();
   cereal::DriverStateV2::DriverData::Reader driver_data;
 
-  is_rhd = driver_state.getWheelOnRightProb() > 0.5;
+  // is_rhd = driver_state.getWheelOnRightProb() > 0.5;
   driver_data = is_rhd ? driver_state.getRightDriverData() : driver_state.getLeftDriverData();
 
   bool face_detected = driver_data.getFaceProb() > 0.5;
