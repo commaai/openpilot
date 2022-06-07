@@ -327,7 +327,7 @@ def get_brand_candidates(logcan, sendcan, versions):
 
   ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
   for query in queries:
-    ecu_responses.update(get_ecu_addrs(logcan, sendcan, {query}, set(response_to_brand.keys())))
+    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), set(response_to_brand.keys())))
 
   cloudlog.event("ecu responses", ecu_response_addrs=ecu_responses)
   print("ecu responses", ecu_responses)
