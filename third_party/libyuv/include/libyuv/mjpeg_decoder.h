@@ -26,24 +26,25 @@ namespace libyuv {
 extern "C" {
 #endif
 
-LIBYUV_BOOL ValidateJpeg(const uint8_t* sample, size_t sample_size);
+LIBYUV_BOOL ValidateJpeg(const uint8* sample, size_t sample_size);
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-static const uint32_t kUnknownDataSize = 0xFFFFFFFF;
+static const uint32 kUnknownDataSize = 0xFFFFFFFF;
 
 enum JpegSubsamplingType {
   kJpegYuv420,
   kJpegYuv422,
+  kJpegYuv411,
   kJpegYuv444,
   kJpegYuv400,
   kJpegUnknown
 };
 
 struct Buffer {
-  const uint8_t* data;
+  const uint8* data;
   int len;
 };
 
@@ -65,7 +66,7 @@ struct SetJmpErrorMgr;
 class LIBYUV_API MJpegDecoder {
  public:
   typedef void (*CallbackFunction)(void* opaque,
-                                   const uint8_t* const* data,
+                                   const uint8* const* data,
                                    const int* strides,
                                    int rows);
 
@@ -85,7 +86,7 @@ class LIBYUV_API MJpegDecoder {
   // If return value is LIBYUV_TRUE, then the values for all the following
   // getters are populated.
   // src_len is the size of the compressed mjpeg frame in bytes.
-  LIBYUV_BOOL LoadFrame(const uint8_t* src, size_t src_len);
+  LIBYUV_BOOL LoadFrame(const uint8* src, size_t src_len);
 
   // Returns width of the last loaded frame in pixels.
   int GetWidth();
@@ -138,22 +139,18 @@ class LIBYUV_API MJpegDecoder {
   // at least GetComponentSize(i). The pointers in planes are incremented
   // to point to after the end of the written data.
   // TODO(fbarchard): Add dst_x, dst_y to allow specific rect to be decoded.
-  LIBYUV_BOOL DecodeToBuffers(uint8_t** planes, int dst_width, int dst_height);
+  LIBYUV_BOOL DecodeToBuffers(uint8** planes, int dst_width, int dst_height);
 
   // Decodes the entire image and passes the data via repeated calls to a
   // callback function. Each call will get the data for a whole number of
   // image scanlines.
   // TODO(fbarchard): Add dst_x, dst_y to allow specific rect to be decoded.
-  LIBYUV_BOOL DecodeToCallback(CallbackFunction fn,
-                               void* opaque,
-                               int dst_width,
-                               int dst_height);
+  LIBYUV_BOOL DecodeToCallback(CallbackFunction fn, void* opaque,
+                        int dst_width, int dst_height);
 
   // The helper function which recognizes the jpeg sub-sampling type.
   static JpegSubsamplingType JpegSubsamplingTypeHelper(
-      int* subsample_x,
-      int* subsample_y,
-      int number_of_components);
+     int* subsample_x, int* subsample_y, int number_of_components);
 
  private:
   void AllocOutputBuffers(int num_outbufs);
@@ -162,7 +159,7 @@ class LIBYUV_API MJpegDecoder {
   LIBYUV_BOOL StartDecode();
   LIBYUV_BOOL FinishDecode();
 
-  void SetScanlinePointers(uint8_t** data);
+  void SetScanlinePointers(uint8** data);
   LIBYUV_BOOL DecodeImcuRow();
 
   int GetComponentScanlinePadding(int component);
@@ -181,11 +178,11 @@ class LIBYUV_API MJpegDecoder {
 
   // Temporaries used to point to scanline outputs.
   int num_outbufs_;  // Outermost size of all arrays below.
-  uint8_t*** scanlines_;
+  uint8*** scanlines_;
   int* scanlines_sizes_;
   // Temporary buffer used for decoding when we can't decode directly to the
   // output buffers. Large enough for just one iMCU row.
-  uint8_t** databuf_;
+  uint8** databuf_;
   int* databuf_strides_;
 };
 

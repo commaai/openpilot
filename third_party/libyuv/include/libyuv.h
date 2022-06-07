@@ -26,7 +26,6 @@
 #include "libyuv/scale.h"
 #include "libyuv/scale_argb.h"
 #include "libyuv/scale_row.h"
-#include "libyuv/scale_uv.h"
 #include "libyuv/version.h"
 #include "libyuv/video_common.h"
 
