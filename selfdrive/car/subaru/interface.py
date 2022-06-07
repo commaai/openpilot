@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
+from panda import Panda
 from selfdrive.car.subaru.values import CAR, PREGLOBAL_CARS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -12,15 +13,15 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "subaru"
     ret.radarOffCan = True
-    ret.enableBsm = 0x228 in fingerprint[0]
 
     if candidate in PREGLOBAL_CARS:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaruLegacy)]
       ret.enableBsm = 0x25c in fingerprint[0]
-    elif candidate == CAR.FORESTER_2020H:
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaruForesterH)]
     else:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaru)]
+      ret.enableBsm = 0x228 in fingerprint[0]
+      if candidate == CAR.FORESTER_2020H:
+        ret.safetyConfigs[0].safetyParam = Panda.FLAG_SUBARU_FORESTER_HYBRID
 
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
 
