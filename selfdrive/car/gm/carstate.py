@@ -30,7 +30,6 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.01
     if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
       ret.gearShifter = self.parse_gear_shifter("T")
-      ret.manumaticGear = pt_cp.vl["ECMPRDNL2"]["PRNDL2"]
     else:
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL2"]["PRNDL2"], None))
 
