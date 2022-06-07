@@ -6,8 +6,6 @@ from typing import List
 import numpy as np
 from collections import defaultdict
 
-from numpy.linalg import linalg
-
 from cereal import log, messaging
 from laika import AstroDog
 from laika.constants import SECS_IN_MIN
@@ -42,7 +40,7 @@ class Laikad:
       # To get a position fix a minimum of 5 measurements are needed.
       # Each report can contain less and some measurements can't be processed.
       corrected_measurements = []
-      if len(pos_fix) > 0 and linalg.norm(pos_fix[1]) < 100:
+      if len(pos_fix) > 0 and abs(np.array(pos_fix[1])).mean() < 1000:
         corrected_measurements = correct_measurements(measurements, pos_fix[0][:3], self.astro_dog)
 
       t = ublox_mono_time * 1e-9
