@@ -83,18 +83,14 @@ class TestLaikad(unittest.TestCase):
         if len(new_meas) != 0:
           first_gps_time = new_meas[0].recv_time
           break
-    # Pretend thread has loaded the orbits on startup by using the time of the first gps message.
-    laikad.fetch_orbits(first_gps_time)
+    # Pretend process has loaded the orbits on startup by using the time of the first gps message.
+    laikad.fetch_orbits(first_gps_time, block=True)
     self.assertEqual(29, len(laikad.astro_dog.orbits.keys()))
-    correct_msgs = verify_messages(self.logs, laikad)
-    correct_msgs_expected = 560
-    self.assertEqual(correct_msgs_expected, len(correct_msgs))
-    self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
   @unittest.skip("Use to debug live data")
   def test_laika_get_orbits_now(self):
     laikad = Laikad(auto_update=False)
-    laikad.fetch_orbits(GPSTime.from_datetime(datetime.utcnow()))
+    laikad.fetch_orbits(GPSTime.from_datetime(datetime.utcnow()), block=True)
     prn = "G01"
     self.assertLess(0, len(laikad.astro_dog.orbits[prn]))
     prn = "R01"
