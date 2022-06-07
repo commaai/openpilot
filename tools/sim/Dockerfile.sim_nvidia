@@ -1,4 +1,4 @@
-FROM ghcr.io/commaai/openpilot-base-cl:latest
+FROM ubuntu:20.04
 
 RUN apt-get update && \
     curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh && \
