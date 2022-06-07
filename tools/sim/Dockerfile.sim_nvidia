@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
     curl \
     ssh \
+    locales \
     tzdata \
     && curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh && \
     distribution=$(. /etc/os-release;echo $ID$VERSION_ID) && \
