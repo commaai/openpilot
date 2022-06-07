@@ -7,6 +7,7 @@ on:
 
 env:
   BASE_IMAGE: openpilot-base
+  CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_REGISTRY: ghcr.io/commaai
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
 
@@ -17,6 +18,13 @@ env:
       docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
   RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
+
+  BUILD_CL: |
+      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base_cl) || true
+      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+      docker build --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
+  RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache $CL_BASE_IMAGE /bin/sh -c
+
   UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
@@ -193,10 +201,13 @@ jobs:
         submodules: true
     - name: Build Docker image
       run: eval "$BUILD"
+    - name: Build CL Docker image
+      run: eval "$BUILD_CL"
     - name: Push to container registry
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
+        docker push $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest
 
   static_analysis:
     name: static analysis
@@ -295,7 +306,7 @@ jobs:
                         ./common/tests/test_swaglog && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
                         ./selfdrive/loggerd/tests/test_logger &&\
-                        ./selfdrive/proclogd/tests/test_proclog && \
+                        ./system/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
                         ./selfdrive/camerad/test/ae_gray_test && \
                         coverage xml"
@@ -351,6 +362,44 @@ jobs:
                         CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
+  
+  model_replay_onnx:
+    name: model replay onnx
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - name: Pull LFS
+      run: git lfs pull
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: /tmp/comma_download_cache
+        key: ${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/model_replay.py') }}
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: true
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
+    - name: Build Docker image
+      # Sim docker is needed to get the intel OPENCL drivers
+      run: eval "$BUILD_CL"
+    - name: Run replay
+      run: |
+        ${{ env.RUN_CL }} "scons -j$(nproc) && \
+                            ONNXCPU=1 FILEREADER_CACHE=1 CI=1 coverage run \
+                            selfdrive/test/process_replay/model_replay.py -j$(nproc) && \
+                            coverage xml"
 
   test_longitudinal:
     name: longitudinal

@@ -5,20 +5,19 @@ from common.realtime import Priority, config_realtime_process
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.longitudinal_planner import Planner
 from selfdrive.controls.lib.lateral_planner import LateralPlanner
-from selfdrive.hardware import TICI
 import cereal.messaging as messaging
 
 
 def plannerd_thread(sm=None, pm=None):
-  config_realtime_process(5 if TICI else 2, Priority.CTRL_LOW)
+  config_realtime_process(5, Priority.CTRL_LOW)
 
   cloudlog.info("plannerd is waiting for CarParams")
   params = Params()
   CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
 
-  use_lanelines = not params.get_bool('EndToEndToggle')
-  wide_camera = params.get_bool('EnableWideCamera') if TICI else False
+  use_lanelines = False
+  wide_camera = params.get_bool('WideCameraOnly')
 
   cloudlog.event("e2e mode", on=use_lanelines)
 
