@@ -25,7 +25,7 @@ void dmonitoring_init(DMonitoringModelState* s) {
 #ifdef USE_ONNX_MODEL
   s->m = new ONNXModel("models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
 #else
-  s->m = new SNPEModel("models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
+  s->m = new SNPEModel("models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
 #endif
 
   s->m->addCalib(s->calib, CALIB_LEN);
@@ -80,27 +80,20 @@ DMonitoringModelResult dmonitoring_eval_frame(DMonitoringModelState* s, void* st
   // vertical crop free
   uint8_t *raw_y_start = raw_buf + stride * v_off;
 
-  float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
+  uint8_t *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
 
-  // snpe UserBufferEncodingUnsigned8Bit doesn't work
-  // fast float conversion instead, also does h crop and scales to 0-1
+  // here makes a uint8 copy
   for (int r = 0; r < MODEL_HEIGHT; ++r) {
-    libyuv::ByteToFloat(raw_y_start + r * stride + h_off, net_input_buf + r * MODEL_WIDTH, 0.003921569f, MODEL_WIDTH);
+    memcpy(net_input_buf + r * MODEL_WIDTH, raw_y_start + r * stride + h_off, MODEL_WIDTH);
   }
 
   // printf("preprocess completed. %d \n", yuv_buf_len);
   // FILE *dump_yuv_file = fopen("/tmp/rawdump.yuv", "wb");
-  // fwrite(net_input_buf, yuv_buf_len, sizeof(float), dump_yuv_file);
+  // fwrite(net_input_buf, yuv_buf_len, sizeof(uint8_t), dump_yuv_file);
   // fclose(dump_yuv_file);
 
-  // # testing:
-  // dat = np.fromfile('/tmp/rawdump.yuv', dtype=np.float32)
-  // dat = dat.reshape(1,6,320,512) * 128. + 128.
-  // frame = tensor_to_frames(dat)[0]
-  // frame = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)
-
   double t1 = millis_since_boot();
-  s->m->addImage(net_input_buf, yuv_buf_len);
+  s->m->addImage((float*)net_input_buf, yuv_buf_len);
   for (int i = 0; i < CALIB_LEN; i++) {
     s->calib[i] = calib[i];
   }

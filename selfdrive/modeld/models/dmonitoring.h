@@ -40,8 +40,7 @@ typedef struct DMonitoringModelState {
   RunModel *m;
   bool is_rhd;
   float output[OUTPUT_SIZE];
-  std::vector<uint8_t> cropped_buf;
-  std::vector<float> net_input_buf;
+  std::vector<uint8_t> net_input_buf;
   float calib[CALIB_LEN];
 } DMonitoringModelState;
 
