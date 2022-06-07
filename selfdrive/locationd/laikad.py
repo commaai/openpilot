@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import threading
 import time
 from multiprocessing import Process, Queue
 from typing import List, Optional
@@ -176,20 +175,14 @@ def main():
   pm = messaging.PubMaster(['gnssMeasurements'])
 
   laikad = Laikad()
+  while True:
+    sm.update()
 
-  end_event = threading.Event()
-  try:
-    while not end_event.is_set():
-      sm.update()
-
-      if sm.updated['ubloxGnss']:
-        ublox_msg = sm['ubloxGnss']
-        msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'])
-        if msg is not None:
-          pm.send('gnssMeasurements', msg)
-  except (KeyboardInterrupt, SystemExit):
-    end_event.set()
-    raise
+    if sm.updated['ubloxGnss']:
+      ublox_msg = sm['ubloxGnss']
+      msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'])
+      if msg is not None:
+        pm.send('gnssMeasurements', msg)
 
 
 if __name__ == "__main__":
