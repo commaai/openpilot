@@ -74,7 +74,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
 
-    # supports stop and go, but initial engage must be above 18mph (which include conservatism)
+    # supports stop and go, but initial engage must (conservatively) be above 18mph
     ret.minEnableSpeed = 18 * CV.MPH_TO_MS
 
     if candidate == CAR.VOLT:
