@@ -234,7 +234,7 @@ void CameraViewWidget::paintGL() {
 
 #ifdef QCOM2
   glActiveTexture(GL_TEXTURE0);
-  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->fd]);
+  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
   assert(glGetError() == GL_NO_ERROR);
 #else
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
@@ -269,10 +269,15 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   stream_stride = vipc_client->buffers[0].stride;
 
 #ifdef QCOM2
-  EGLDisplay display = eglGetCurrentDisplay();
+  egl_display = eglGetCurrentDisplay();
+
+  for (auto &pair : egl_images) {
+    eglDestroyImageKHR(egl_display, pair.second);
+  }
   egl_images.clear();
+
   for (int i = 0; i < vipc_client->num_buffers; i++) {  // import buffers into OpenGL
-    int fd = vipc_client->buffers[i].fd;
+    int fd = dup(vipc_client->buffers[i].fd);  // eglDestroyImageKHR will close, so duplicate
     EGLint img_attrs[] = {
       EGL_WIDTH, (int)vipc_client->buffers[i].width,
       EGL_HEIGHT, (int)vipc_client->buffers[i].height,
@@ -285,7 +290,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
       EGL_DMA_BUF_PLANE1_PITCH_EXT, (int)vipc_client->buffers[i].stride,
       EGL_NONE
     };
-    egl_images[fd] = eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs);
+    egl_images[i] = eglCreateImageKHR(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs);
     assert(eglGetError() == EGL_SUCCESS);
   }
 #else
@@ -340,4 +345,11 @@ void CameraViewWidget::vipcThread() {
       emit vipcThreadFrameReceived(buf, meta_main.frame_id);
     }
   }
+
+#ifdef QCOM2
+  for (auto &pair : egl_images) {
+    eglDestroyImageKHR(egl_display, pair.second);
+  }
+  egl_images.clear();
+#endif
 }
