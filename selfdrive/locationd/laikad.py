@@ -28,16 +28,16 @@ class Laikad:
   def __init__(self, valid_const=("GPS", "GLONASS"), auto_update=False, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV)):
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types)
     self.gnss_kf = GNSSKalman(GENERATED_DIR)
-    self.p: Optional[Process] = None
+    self.orbit_p: Optional[Process] = None
     self.orbit_q = Queue()
 
   def process_ublox_msg(self, ublox_msg, ublox_mono_time: int):
     if ublox_msg.which == 'measurementReport':
       report = ublox_msg.measurementReport
-      new_meas = read_raw_ublox(report)
       if report.gpsWeek > 0:
         latest_msg_t = GPSTime(report.gpsWeek, report.rcvTow)
         self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block=False)
+      new_meas = read_raw_ublox(report)
 
       measurements = process_measurements(new_meas, self.astro_dog)
       pos_fix = calc_pos_fix(measurements, min_measurements=4)
@@ -117,9 +117,9 @@ class Laikad:
 
   def fetch_orbits(self, t: GPSTime, block):
     if t not in self.astro_dog.orbit_fetched_times:
-      if self.p is None:
-        self.p = Process(target=self.get_orbit_data, args=(t, self.orbit_q))
-        self.p.start()
+      if self.orbit_p is None:
+        self.orbit_p = Process(target=self.get_orbit_data, args=(t, self.orbit_q))
+        self.orbit_p.start()
       ret = None
       if block:
         ret = self.orbit_q.get(block=True)
@@ -128,8 +128,8 @@ class Laikad:
 
       if ret:
         self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
-        self.p.join()
-        self.p = None
+        self.orbit_p.join()
+        self.orbit_p = None
 
 
 def create_measurement_msg(meas: GNSSMeasurement):
