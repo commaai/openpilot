@@ -54,6 +54,7 @@ class TestLaikad(unittest.TestCase):
 
   def test_laika_online_nav_only(self):
     laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV)
+    # Disable fetch_orbits to test NAV only
     laikad.fetch_orbits = Mock()
     correct_msgs = verify_messages(self.logs, laikad)
     correct_msgs_expected = 560
