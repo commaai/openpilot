@@ -192,6 +192,7 @@ class CarState(CarStateBase):
         ("Cruise_Set_Speed", "ES_DashStatus"),
         ("Conventional_Cruise", "ES_DashStatus"),
         ("Cruise_Activated", "ES_DashStatus"),
+        ("Cruise_On", "ES_DashStatus"),
 
         ("Counter", "ES_Distance"),
         ("Signal1", "ES_Distance"),
