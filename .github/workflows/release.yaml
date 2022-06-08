@@ -17,6 +17,7 @@ jobs:
         ref: master
         wait-interval: 30
         running-workflow-name: 'build master-ci'
+        check-regexp: ^((?!.*(build prebuilt).*).)*$
     - uses: actions/checkout@v3
       with:
         submodules: true
