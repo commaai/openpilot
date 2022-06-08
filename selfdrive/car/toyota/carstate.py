@@ -233,18 +233,12 @@ class CarState(CarStateBase):
     signals = [
       ("FORCE", "PRE_COLLISION"),
       ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
-      ("LANE_SWAY_TOGGLE", "LKAS_HUD"),
-      ("LANE_SWAY_SENSITIVITY", "LKAS_HUD"),
-      ("LANE_SWAY_BUZZER", "LKAS_HUD"),
-      ("LANE_SWAY_FLD", "LKAS_HUD"),
-      ("LANE_SWAY_WARNING", "LKAS_HUD"),
     ]
 
     # use steering message to check if panda is connected to frc
     checks = [
       ("STEERING_LKA", 42),
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
-      ("LKAS_HUD", 1),
     ]
 
     if CP.carFingerprint != CAR.PRIUS_V:
