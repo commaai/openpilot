@@ -30,12 +30,12 @@ class Laikad:
     self.orbit_p: Optional[Process] = None
     self.orbit_q = Queue()
 
-  def process_ublox_msg(self, ublox_msg, ublox_mono_time: int):
+  def process_ublox_msg(self, ublox_msg, ublox_mono_time: int, block=False):
     if ublox_msg.which == 'measurementReport':
       report = ublox_msg.measurementReport
       if report.gpsWeek > 0:
         latest_msg_t = GPSTime(report.gpsWeek, report.rcvTow)
-        self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block=False)
+        self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
       new_meas = read_raw_ublox(report)
 
       measurements = process_measurements(new_meas, self.astro_dog)
@@ -110,25 +110,29 @@ class Laikad:
   def get_orbit_data(self, t: GPSTime, queue):
     cloudlog.info(f"Start to download/parse orbits for time {t.as_datetime()}")
     start_time = time.monotonic()
-    self.astro_dog.get_orbit_data(t, only_predictions=True)
+    try:
+      self.astro_dog.get_orbit_data(t, only_predictions=True)
+    except RuntimeError as e:
+      cloudlog.info(f"No orbit data found. {e}")
+      return
     cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.2f}s")
-    queue.put((self.astro_dog.orbits, self.astro_dog.orbit_fetched_times))
+    if queue is not None:
+      queue.put((self.astro_dog.orbits, self.astro_dog.orbit_fetched_times))
 
   def fetch_orbits(self, t: GPSTime, block):
     if t not in self.astro_dog.orbit_fetched_times:
+      if block:
+        self.get_orbit_data(t, None)
+        return
       if self.orbit_p is None:
         self.orbit_p = Process(target=self.get_orbit_data, args=(t, self.orbit_q))
         self.orbit_p.start()
-      ret = None
-      if block:
-        ret = self.orbit_q.get(block=True)
-      elif not self.orbit_q.empty():
+      if not self.orbit_q.empty():
         ret = self.orbit_q.get()
-
-      if ret:
-        self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
-        self.orbit_p.join()
-        self.orbit_p = None
+        if ret:
+          self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
+          self.orbit_p.join()
+          self.orbit_p = None
 
   def __del__(self):
     if self.orbit_p is not None:
