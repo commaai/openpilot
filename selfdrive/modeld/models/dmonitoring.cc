@@ -23,7 +23,7 @@ void dmonitoring_init(DMonitoringModelState* s) {
   s->is_rhd = Params().getBool("IsRHD");
 
 #ifdef USE_ONNX_MODEL
-  s->m = new ONNXModel("models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
+  s->m = new ONNXModel("models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
 #else
   s->m = new SNPEModel("models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
 #endif
@@ -93,7 +93,7 @@ DMonitoringModelResult dmonitoring_eval_frame(DMonitoringModelState* s, void* st
   // fclose(dump_yuv_file);
 
   double t1 = millis_since_boot();
-  s->m->addImage((float*)net_input_buf, yuv_buf_len);
+  s->m->addImage((float*)net_input_buf, yuv_buf_len / 4);
   for (int i = 0; i < CALIB_LEN; i++) {
     s->calib[i] = calib[i];
   }

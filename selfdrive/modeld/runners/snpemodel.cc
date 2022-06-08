@@ -14,10 +14,11 @@ void PrintErrorStringAndExit() {
   std::exit(EXIT_FAILURE);
 }
 
-SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra, bool use_tf8) {
+SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra, bool luse_tf8) {
   output = loutput;
   output_size = loutput_size;
   use_extra = luse_extra;
+  use_tf8 = luse_tf8;
 #ifdef QCOM2
   if (runtime==USE_GPU_RUNTIME) {
     Runtime = zdl::DlSystem::Runtime_t::GPU;

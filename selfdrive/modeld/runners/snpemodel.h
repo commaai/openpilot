@@ -52,6 +52,7 @@ private:
   std::unique_ptr<zdl::DlSystem::IUserBuffer> inputBuffer;
   float *input;
   size_t input_size;
+  bool use_tf8;
 
   // snpe output stuff
   zdl::DlSystem::UserBufferMap outputMap;
