@@ -130,6 +130,10 @@ class Laikad:
         self.orbit_p.join()
         self.orbit_p = None
 
+  def __del__(self):
+    if self.orbit_p is not None:
+      self.orbit_p.kill()
+
 
 def create_measurement_msg(meas: GNSSMeasurement):
   c = log.GnssMeasurements.CorrectedMeasurement.new_message()
