@@ -176,14 +176,16 @@ if __name__ == "__main__":
       # TODO this tolerence is absurdly large
       tolerance = 5e-1 if PC else None
       results: Any = {TEST_ROUTE: {}}
-      results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
-      diff1, diff2, failed = format_diff(results, ref_commit)
+      # results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
+      diff1, diff2 = ['','']
+      failed = True
+    #   diff1, diff2, failed = format_diff(results, ref_commit)
 
-      print(diff2)
-      print('-------------\n'*5)
-      print(diff1)
-      with open("model_diff.txt", "w") as f:
-        f.write(diff2)
+    #   print(diff2)
+    #   print('-------------\n'*5)
+    #   print(diff1)
+    #   with open("model_diff.txt", "w") as f:
+    #     f.write(diff2)
     except Exception as e:
       print(str(e))
       failed = True
