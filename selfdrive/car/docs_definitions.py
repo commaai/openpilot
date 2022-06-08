@@ -120,8 +120,8 @@ class CarInfo:
 
 class Harness(Enum):
   nidec = "Honda Nidec"
-  bosch = "Honda Bosch"
-  bosch_2022 = "Honda Bosch 2022"
+  bosch_a = "Honda Bosch A"
+  bosch_b = "Honda Bosch B"
   toyota = "Toyota"
   subaru = "Subaru"
   fca = "FCA"
