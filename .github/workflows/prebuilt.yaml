@@ -25,7 +25,7 @@ jobs:
       IMAGE_NAME: openpilot-prebuilt
     steps:
     - name: Wait for green check mark
-      uses: WyriHaximus/github-action-wait-for-status@v2
+      uses: WyriHaximus/github-action-wait-for-status@48d0e9a05c19abe82126a3bdd63dbc5308b7f03f
       with:
         ignoreActions: "build master-ci"
         checkInterval: 30
