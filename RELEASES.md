@@ -1,7 +1,6 @@
-Version 0.8.15-GM-0.0.13 (2022-06-03)
+Version 0.8.15-GM-0.0.14 (2022-06-08)
 ========================
- * !!Upstream now forces laneless!
- * !!Upstream changes to button / state handling may break cars using stock ACC!!
+ * Restored laneless toggle
  * L-mode handling added for EVs, retuned with a prelim tune
  * Tightnend up dbc config for interceptor (on Bolt*)
  * WIP - updating dbc messages involving AEB
