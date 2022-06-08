@@ -25,12 +25,10 @@ jobs:
       IMAGE_NAME: openpilot-prebuilt
     steps:
     - name: Wait for green check mark
-      uses: lewagon/wait-on-check-action@0179dfc359f90a703c41240506f998ee1603f9ea
+      uses: WyriHaximus/github-action-wait-for-status@v2
       with:
-        ref: master
-        wait-interval: 30
-        running-workflow-name: 'build prebuilt'
-        check-regexp: ^((?!.*(build master-ci).*).)*$
+        ignoreActions: "build master-ci"
+        checkInterval: 30
     - uses: actions/checkout@v3
       with:
         submodules: true
