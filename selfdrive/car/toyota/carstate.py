@@ -128,12 +128,11 @@ class CarState(CarStateBase):
       ret.leftBlindspot = (cp.vl["BSM"]["L_ADJACENT"] == 1) or (cp.vl["BSM"]["L_APPROACHING"] == 1)
       ret.rightBlindspot = (cp.vl["BSM"]["R_ADJACENT"] == 1) or (cp.vl["BSM"]["R_APPROACHING"] == 1)
 
-    if self.CP.carFingerprint != CAR.PRIUS_V:
-      self.sws_toggle = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_TOGGLE"])
-      self.sws_sensitivity = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_SENSITIVITY"])
-      self.sws_buzzer = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_BUZZER"])
-      self.sws_fld = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_FLD"])
-      self.sws_warning = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_WARNING"])
+    self.sws_toggle = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_TOGGLE"])
+    self.sws_sensitivity = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_SENSITIVITY"])
+    self.sws_buzzer = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_BUZZER"])
+    self.sws_fld = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_FLD"])
+    self.sws_warning = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_WARNING"])
 
     return ret
 
@@ -246,18 +245,6 @@ class CarState(CarStateBase):
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
       ("LKAS_HUD", 1),
     ]
-
-    if CP.carFingerprint != CAR.PRIUS_V:
-      signals = [
-        ("LANE_SWAY_TOGGLE", "LKAS_HUD"),
-        ("LANE_SWAY_SENSITIVITY", "LKAS_HUD"),
-        ("LANE_SWAY_BUZZER", "LKAS_HUD"),
-        ("LANE_SWAY_FLD", "LKAS_HUD"),
-        ("LANE_SWAY_WARNING", "LKAS_HUD"),
-      ]
-      checks = [
-        ("LKAS_HUD", 1),
-      ]
 
     if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       signals += [
