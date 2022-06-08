@@ -5,6 +5,7 @@ Version 0.8.15 (2022-XX-XX)
   * Much smoother control, consistent across the speed range
   * Effective feedforward that uses road roll
   * Simplified tuning, all car-specific parameters can be derived from data
+* AGNOS 5
 
 Version 0.8.14 (2022-06-01)
 ========================

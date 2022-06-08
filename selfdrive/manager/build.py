@@ -17,7 +17,7 @@ from selfdrive.version import is_dirty
 MAX_CACHE_SIZE = 4e9 if "CI" in os.environ else 2e9
 CACHE_DIR = Path("/data/scons_cache" if AGNOS else "/tmp/scons_cache")
 
-TOTAL_SCONS_NODES = 2405
+TOTAL_SCONS_NODES = 2035
 MAX_BUILD_PROGRESS = 100
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 

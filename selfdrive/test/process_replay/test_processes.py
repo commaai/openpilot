@@ -59,9 +59,9 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
-  lr = LogReader.from_bytes(lr_dat)
   res = None
   if not args.upload_only:
+    lr = LogReader.from_bytes(lr_dat)
     res, log_msgs = test_process(cfg, lr, ref_log_path, args.ignore_fields, args.ignore_msgs)
     # save logs so we can upload when updating refs
     save_log(cur_log_fn, log_msgs)
@@ -160,7 +160,7 @@ if __name__ == "__main__":
   tested_cars = set(args.whitelist_cars) - set(args.blacklist_cars)
   tested_cars = {c.upper() for c in tested_cars}
 
-  full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
+  full_test = (tested_procs == all_procs) and (tested_cars == all_cars) and all(len(x) == 0 for x in (args.ignore_fields, args.ignore_msgs))
   upload = args.update_refs or args.upload_only
   os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
 
@@ -181,8 +181,7 @@ if __name__ == "__main__":
 
   # check to make sure all car brands are tested
   if full_test:
-    tested_cars = {c.lower() for c, _ in segments}
-    untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
+    untested = (set(interface_names) - set(excluded_interfaces)) - {c.lower() for c in tested_cars}
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
