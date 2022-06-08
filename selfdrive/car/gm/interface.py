@@ -58,7 +58,7 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = True
     tire_stiffness_factor = 0.444  # not optimized yet
 
-    # Start with a baseline lateral tuning for all GM vehicles. Override tuning as needed in each model section below.
+    # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.minSteerSpeed = 7 * CV.MPH_TO_MS
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
@@ -66,14 +66,22 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 1.0
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
 
+    ret.longitudinalTuning.kpBP = [5., 35.]
+    ret.longitudinalTuning.kpV = [2.4, 1.5]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [0.36]
+
+    ret.steerLimitTimer = 0.4
+    ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
+
+    # supports stop and go, but initial engage must (conservatively) be above 18mph
+    ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+
     if candidate == CAR.VOLT:
-      # supports stop and go, but initial engage must be above 18mph (which include conservatism)
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
       tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
-      ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.45 # Volt Gen 1, TODO corner weigh
       ret.maxLateralAccel = 1.6
 
@@ -85,12 +93,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.MALIBU:
-      # supports stop and go, but initial engage must be above 18mph (which include conservatism)
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1496. + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.steerRatio = 15.8
-      ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4  # wild guess
 
     elif candidate == CAR.HOLDEN_ASTRA:
@@ -98,34 +103,27 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.662
       # Remaining parameters copied from Volt for now
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.steerRatio = 15.7
-      ret.steerRatioRear = 0.
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.86
       ret.steerRatio = 14.4  # end to end is 13.46
-      ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
       ret.maxLateralAccel = 1.4
-      ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
+      ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_acadia()
 
     elif candidate == CAR.BUICK_REGAL:
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
       ret.wheelbase = 2.83  # 111.4 inches in meters
       ret.steerRatio = 14.4  # guess for tourx
-      ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4  # guess for tourx
 
     elif candidate == CAR.CADILLAC_ATS:
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1601. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 15.3
-      ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.49
 
     elif candidate == CAR.ESCALADE_ESV:
@@ -147,14 +145,6 @@ class CarInterface(CarInterfaceBase):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-
-    ret.longitudinalTuning.kpBP = [5., 35.]
-    ret.longitudinalTuning.kpV = [2.4, 1.5]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.36]
-
-    ret.steerLimitTimer = 0.4
-    ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
 
     return ret
 
