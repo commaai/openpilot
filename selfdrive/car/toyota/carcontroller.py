@@ -128,8 +128,8 @@ class CarController:
 
     if self.frame % 100 == 0 or send_ui:
       can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
-                                         hud_control.rightLaneVisible, hud_control.leftLaneDepart,
-                                         hud_control.rightLaneDepart, CC.enabled))
+                                         hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart,
+                                         CS.sws_toggle, CS.sws_sensitivity, CS.sws_buzzer, CS.sws_fld, CS.sws_warning, CC.enabled))
 
     if self.frame % 100 == 0 and self.CP.enableDsu:
       can_sends.append(create_fcw_command(self.packer, fcw_alert))
