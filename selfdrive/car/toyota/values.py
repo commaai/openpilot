@@ -1825,7 +1825,10 @@ FW_VERSIONS = {
   },
   CAR.MIRAI: {
     (Ecu.esp, 0x7D1, None): [b'\x01898A36203000\x00\x00\x00\x00',],
-    (Ecu.esp, 0x7B0, None): [b'\x01F15266203200\x00\x00\x00\x00',], # a second ESP ECU
+    (Ecu.esp, 0x7B0, None): [  # a second ESP ECU
+      b'\x01F15266203200\x00\x00\x00\x00',
+      b'\x01F15266203500\x00\x00\x00\x00',
+    ],
     (Ecu.eps, 0x7A1, None): [b'\x028965B6204100\x00\x00\x00\x008965B6203100\x00\x00\x00\x00',],
     (Ecu.fwdRadar, 0x750, 0xf): [b'\x018821F6201200\x00\x00\x00\x00',],
     (Ecu.fwdCamera, 0x750, 0x6d): [b'\x028646F6201400\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',],
