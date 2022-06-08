@@ -242,14 +242,14 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint != CAR.PRIUS_V:
-      signals = [
+      signals += [
         ("LANE_SWAY_TOGGLE", "LKAS_HUD"),
         ("LANE_SWAY_SENSITIVITY", "LKAS_HUD"),
         ("LANE_SWAY_BUZZER", "LKAS_HUD"),
         ("LANE_SWAY_FLD", "LKAS_HUD"),
         ("LANE_SWAY_WARNING", "LKAS_HUD"),
       ]
-      checks = [
+      checks += [
         ("LKAS_HUD", 1),
       ]
 
