@@ -134,6 +134,12 @@ class CarState(CarStateBase):
       self.sws_buzzer = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_BUZZER"])
       self.sws_fld = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_FLD"])
       self.sws_warning = (cp_cam.vl["LKAS_HUD"]["LANE_SWAY_WARNING"])
+    else:
+      self.sws_toggle = 1
+      self.sws_sensitivity = 2
+      self.sws_buzzer = 0
+      self.sws_fld = 7
+      self.sws_warning = 0
 
     return ret
 
