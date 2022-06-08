@@ -116,12 +116,13 @@ class Laikad:
       cloudlog.info(f"No orbit data found. {e}")
       return
     cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.2f}s")
-    queue.put((self.astro_dog.orbits, self.astro_dog.orbit_fetched_times))
+    if queue is not None:
+      queue.put((self.astro_dog.orbits, self.astro_dog.orbit_fetched_times))
 
   def fetch_orbits(self, t: GPSTime, block):
     if t not in self.astro_dog.orbit_fetched_times:
       if block:
-        self.get_orbit_data(t, self.orbit_q)
+        self.get_orbit_data(t, None)
         return
       if self.orbit_p is None:
         self.orbit_p = Process(target=self.get_orbit_data, args=(t, self.orbit_q))
