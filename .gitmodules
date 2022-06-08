@@ -12,7 +12,7 @@
 [submodule "cereal"]
 	path = cereal
 	url = ../../opgm/cereal.git
-	branch = dev
+	branch = develop
 [submodule "rednose_repo"]
 	path = rednose_repo
 	url = ../../commaai/rednose.git
