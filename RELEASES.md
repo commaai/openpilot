@@ -6,6 +6,7 @@ Version 0.8.15 (2022-XX-XX)
   * Effective feedforward that uses road roll
   * Simplified tuning, all car-specific parameters can be derived from data
 * AGNOS 5
+* Hyundai Tucson 2021 support thanks to bluesforte!
 
 Version 0.8.14 (2022-06-01)
 ========================
