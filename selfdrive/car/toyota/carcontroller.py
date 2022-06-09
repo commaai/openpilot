@@ -117,7 +117,7 @@ class CarController:
     fcw_alert = hud_control.visualAlert == VisualAlert.fcw
     steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
-    if self.frame % 25 == 0:
+    if self.frame % 25 == 0 or pcm_cancel_cmd:
       can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
                                          hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart,
                                          CS.sws_toggle, CS.sws_sensitivity, CS.sws_buzzer, CS.sws_fld, CS.sws_warning, CC.enabled))
