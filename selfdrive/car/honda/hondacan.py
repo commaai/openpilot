@@ -98,7 +98,7 @@ def create_bosch_supplemental_1(packer, car_fingerprint, idx):
   return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values, idx)
 
 
-def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
+def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stock_hud):
   commands = []
   bus_pt = get_pt_bus(CP.carFingerprint)
   radar_disabled = CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl
@@ -109,13 +109,13 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
       acc_hud_values = {
         'CRUISE_SPEED': hud.v_cruise,
         'ENABLE_MINI_CAR': 1,
-        'SET_TO_1': 1,
-        'HUD_LEAD': hud.car,
+        'HUD_LEAD': 2 if enabled and hud.lead_visible else 1 if enabled else 0,
         'HUD_DISTANCE': 3,
-        'ACC_ON': hud.car != 0,
-        'SET_TO_X1': 1,
+        'ACC_ON': int(enabled),
+        'SET_TO_X01_2': 1,
         'IMPERIAL_UNIT': int(not is_metric),
         'FCM_OFF': 1,
+        'FCM_OFF_2': 1,
       }
     else:
       acc_hud_values = {
