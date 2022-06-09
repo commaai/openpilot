@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Union, no_type_check
 
-STEERING_TORQUE_THRESHOLD = 2.0  # m/s^2
+STEERING_TORQUE_THRESHOLD = 1.5  # m/s^2
 
 
 class Tier(Enum):
