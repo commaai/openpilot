@@ -4,17 +4,18 @@ import sys
 import subprocess
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
-
 TOKEN_PATH = "/data/azure_token"
 
+
 def get_url(route_name, segment_num, log_type="rlog"):
-  ext = "hevc" if log_type in ["fcamera", "dcamera"] else "bz2"
+  ext = "hevc" if log_type.endswith('camera') else "bz2"
   return BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
+
 
 def upload_file(path, name):
   from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
 
-  sas_token = None
+  sas_token = os.environ.get("AZURE_TOKEN", None)
   if os.path.isfile(TOKEN_PATH):
     sas_token = open(TOKEN_PATH).read().strip()
 
@@ -24,6 +25,7 @@ def upload_file(path, name):
   service = BlockBlobService(account_name="commadataci", sas_token=sas_token)
   service.create_blob_from_path("openpilotci", name, path)
   return "https://commadataci.blob.core.windows.net/openpilotci/" + name
+
 
 if __name__ == "__main__":
   for f in sys.argv[1:]:

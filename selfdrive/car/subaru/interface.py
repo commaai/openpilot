@@ -7,7 +7,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 class CarInterface(CarInterfaceBase):
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "subaru"
@@ -51,6 +51,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 17           # learned, 14 stock
       ret.steerActuatorDelay = 0.1
+      ret.maxLateralAccel = 1.3
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.045, 0.042, 0.20], [0.04, 0.035, 0.045]]
@@ -61,6 +62,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 17           # learned, 14 stock
       ret.steerActuatorDelay = 0.1
+      ret.maxLateralAccel = 3.2
       ret.lateralTuning.pid.kf = 0.000038
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.065, 0.2], [0.001, 0.015, 0.025]]
@@ -107,23 +109,19 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def update(self, c, can_strings):
-    self.cp.update_strings(can_strings)
-    self.cp_cam.update_strings(can_strings)
+  def _update(self, c):
 
     ret = self.CS.update(self.cp, self.cp_cam)
 
-    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     ret.events = self.create_common_events(ret).to_msg()
 
-    self.CS.out = ret.as_reader()
-    return self.CS.out
+    return ret
 
   def apply(self, c):
     hud_control = c.hudControl
-    ret = self.CC.update(c, c.enabled, self.CS, self.frame, c.actuators,
+    ret = self.CC.update(c, self.CS, self.frame, c.actuators,
                          c.cruiseControl.cancel, hud_control.visualAlert,
                          hud_control.leftLaneVisible, hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart)
     self.frame += 1

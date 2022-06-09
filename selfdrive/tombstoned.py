@@ -10,15 +10,12 @@ import glob
 from typing import NoReturn
 
 from common.file_helpers import mkdirs_exists_ok
-from selfdrive.hardware import TICI
 from selfdrive.loggerd.config import ROOT
 import selfdrive.sentry as sentry
 from selfdrive.swaglog import cloudlog
 from selfdrive.version import get_commit
 
-MAX_SIZE = 100000 * 10  # mal size is 40-100k, allow up to 1M
-if TICI:
-  MAX_SIZE = MAX_SIZE * 100  # Allow larger size for tici since files contain coredump
+MAX_SIZE = 1_000_000 * 100  # allow up to 100M
 MAX_TOMBSTONE_FN_LEN = 62  # 85 - 23 ("<dongle id>/crash/")
 
 TOMBSTONE_DIR = "/data/tombstones/"
@@ -153,9 +150,9 @@ def report_tombstone_apport(fn):
     # Try to find first entry in openpilot, fall back to first line
     for line in stacktrace_s:
       if "at selfdrive/" in line:
-          crash_function = line
-          found = True
-          break
+        crash_function = line
+        found = True
+        break
 
     if not found:
       crash_function = stacktrace_s[1]

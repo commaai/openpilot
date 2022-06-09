@@ -1,40 +1,48 @@
 #!/usr/bin/env python3
+import bz2
 import os
 import time
 import multiprocessing
-from tqdm import tqdm
 import argparse
+from tqdm import tqdm
 # run DM procs
 os.environ["USE_WEBCAM"] = "1"
 
 import cereal.messaging as messaging
+from cereal import car
 from cereal.services import service_list
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
+from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
-
-
-process_replay_dir = os.path.dirname(os.path.abspath(__file__))
-FAKEDATA = os.path.join(process_replay_dir, "fakedata/")
-
 
 def replay_panda_states(s, msgs):
   pm = messaging.PubMaster([s, 'peripheralState'])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() in ['pandaStates', 'pandaStateDEPRECATED']]
 
+  # TODO: new safety params from flags, remove after getting new routes for Toyota
+  safety_param_migration = {
+    "TOYOTA PRIUS 2017": 578,
+    "TOYOTA RAV4 2017": 329
+  }
+
   # Migrate safety param base on carState
   cp = [m for m in msgs if m.which() == 'carParams'][0].carParams
-  if len(cp.safetyConfigs):
+  if cp.carFingerprint in safety_param_migration:
+    safety_param = safety_param_migration[cp.carFingerprint]
+  elif len(cp.safetyConfigs):
     safety_param = cp.safetyConfigs[0].safetyParam
+    if cp.safetyConfigs[0].safetyParamDEPRECATED != 0:
+      safety_param = cp.safetyConfigs[0].safetyParamDEPRECATED
   else:
     safety_param = cp.safetyParamDEPRECATED
 
@@ -61,10 +69,10 @@ def replay_manager_state(s, msgs):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
 
   while True:
-      new_m = messaging.new_message('managerState')
-      new_m.managerState.processes = [{'name': name, 'running': True} for name in managed_processes]
-      pm.send(s, new_m)
-      rk.keep_time()
+    new_m = messaging.new_message('managerState')
+    new_m.managerState.processes = [{'name': name, 'running': True} for name in managed_processes]
+    pm.send(s, new_m)
+    rk.keep_time()
 
 
 def replay_device_state(s, msgs):
@@ -109,21 +117,21 @@ def replay_service(s, msgs):
       rk.keep_time()
 
 
-def replay_cameras(lr, frs):
+def replay_cameras(lr, frs, disable_tqdm=False):
   eon_cameras = [
-    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
-    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
+    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
+    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
   ]
   tici_cameras = [
-    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
-    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
+    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
+    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
   ]
 
-  def replay_camera(s, stream, dt, vipc_server, frames, size):
+  def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
     pm = messaging.PubMaster([s, ])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
 
-    img = b"\x00" * int(size[0]*size[1]*3/2)
+    img = b"\x00" * int(size[0] * size[1] * 3 / 2)
     while True:
       if frames is not None:
         img = frames[rk.frame % len(frames)]
@@ -133,9 +141,13 @@ def replay_cameras(lr, frs):
       m = messaging.new_message(s)
       msg = getattr(m, s)
       msg.frameId = rk.frame
+      msg.timestampSof = m.logMonoTime
+      msg.timestampEof = m.logMonoTime
       pm.send(s, m)
 
       vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+      if use_extra_client:
+        vipc_server.send(VisionStreamType.VISION_STREAM_WIDE_ROAD, img, msg.frameId, msg.timestampSof, msg.timestampEof)
 
   init_data = [m for m in lr if m.which() == 'initData'][0]
   cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
@@ -143,53 +155,50 @@ def replay_cameras(lr, frs):
   # init vipc server and cameras
   p = []
   vs = VisionIpcServer("camerad")
-  for (s, dt, size, stream) in cameras:
+  for (s, dt, size, stream, use_extra_client) in cameras:
     fr = frs.get(s, None)
 
     frames = None
     if fr is not None:
-      print(f"Decomressing frames {s}")
+      print(f"Decompressing frames {s}")
       frames = []
-      for i in tqdm(range(fr.frame_count)):
-        img = fr.get(i, pix_fmt='yuv420p')[0]
+      for i in tqdm(range(fr.frame_count), disable=disable_tqdm):
+        img = fr.get(i, pix_fmt='nv12')[0]
         frames.append(img.flatten().tobytes())
 
     vs.create_buffers(stream, 40, False, size[0], size[1])
+    if use_extra_client:
+      vs.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, size[0], size[1])
     p.append(multiprocessing.Process(target=replay_camera,
-                                     args=(s, stream, dt, vs, frames, size)))
+                                     args=(s, stream, dt, vs, frames, size, use_extra_client)))
 
-  # hack to make UI work
-  vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
   vs.start_listener()
   return vs, p
 
 
-def regen_segment(lr, frs=None, outdir=FAKEDATA):
+def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   lr = list(lr)
   if frs is None:
     frs = dict()
 
-  # setup env
+  setup_env()
   params = Params()
-  params.clear_all()
-  params.put_bool("Passive", False)
-  params.put_bool("OpenpilotEnabledToggle", True)
 
   os.environ["LOG_ROOT"] = outdir
-  os.environ["REPLAY"] = "1"
-
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
 
-  # TODO: remove after getting new route for mazda
-  migration = {
+  # TODO: remove after getting new route for Mazda
+  fp_migration = {
     "Mazda CX-9 2021": "MAZDA CX-9 2021",
   }
+  # TODO: remove after getting new route for Subaru
+  fingerprint_problem = ["SUBARU IMPREZA LIMITED 2019"]
 
   for msg in lr:
     if msg.which() == 'carParams':
-      car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
+      car_fingerprint = fp_migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
+      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS) and (car_fingerprint not in fingerprint_problem):
         params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
       else:
         os.environ['SKIP_FW_QUERY'] = "1"
@@ -197,7 +206,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
     elif msg.which() == 'liveCalibration':
       params.put("CalibrationParams", msg.as_builder().to_bytes())
 
-  vs, cam_procs = replay_cameras(lr, frs)
+  vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
 
   fake_daemons = {
     'sensord': [
@@ -209,7 +218,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
       multiprocessing.Process(target=replay_panda_states, args=('pandaStates', lr)),
     ],
     'managerState': [
-     multiprocessing.Process(target=replay_manager_state, args=('managerState', lr)),
+      multiprocessing.Process(target=replay_manager_state, args=('managerState', lr)),
     ],
     'thermald': [
       multiprocessing.Process(target=replay_device_state, args=('deviceState', lr)),
@@ -220,14 +229,19 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   }
 
   try:
+    # TODO: make first run of onnxruntime CUDA provider fast
+    managed_processes["modeld"].start()
+    managed_processes["dmonitoringmodeld"].start()
+    time.sleep(5)
+
     # start procs up
-    ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
-    ensure_running(managed_processes.values(), started=True, not_run=ignore)
+    ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader', 'soundd']
+    ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
     for procs in fake_daemons.values():
       for p in procs:
         p.start()
 
-    for _ in tqdm(range(60)):
+    for _ in tqdm(range(60), disable=disable_tqdm):
       # ensure all procs are running
       for d, procs in fake_daemons.items():
         for p in procs:
@@ -244,11 +258,16 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
 
   del vs
 
-  r = params.get("CurrentRoute", encoding='utf-8')
-  return os.path.join(outdir, r + "--0")
+  segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
+  seg_path = os.path.join(outdir, segment)
+  # check to make sure openpilot is engaged in the route
+  if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
+    raise Exception(f"Route never enabled: {segment}")
+
+  return seg_path
 
 
-def regen_and_save(route, sidx, upload=False, use_route_meta=False):
+def regen_and_save(route, sidx, upload=False, use_route_meta=False, outdir=FAKEDATA, disable_tqdm=False):
   if use_route_meta:
     r = Route(args.route)
     lr = LogReader(r.log_paths()[args.seg])
@@ -256,7 +275,14 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
-  rpath = regen_segment(lr, {'roadCameraState': fr})
+  rpath = regen_segment(lr, {'roadCameraState': fr}, outdir=outdir, disable_tqdm=disable_tqdm)
+
+  # compress raw rlog before uploading
+  with open(os.path.join(rpath, "rlog"), "rb") as f:
+    data = bz2.compress(f.read())
+  with open(os.path.join(rpath, "rlog.bz2"), "wb") as f:
+    f.write(data)
+  os.remove(os.path.join(rpath, "rlog"))
 
   lr = LogReader(os.path.join(rpath, 'rlog.bz2'))
   controls_state_active = [m.controlsState.active for m in lr if m.which() == 'controlsState']
@@ -267,7 +293,7 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False):
   print("\n\n", "*"*30, "\n\n")
   print("New route:", relr, "\n")
   if upload:
-    upload_route(relr)
+    upload_route(relr, exclude_patterns=['*.hevc', ])
   return relr
 
 

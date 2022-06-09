@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 
-from common.realtime import DT_CTRL
 from common.numpy_fast import clip
+from common.realtime import DT_CTRL
 
 MIN_STEER_SPEED = 0.3
 
@@ -12,8 +12,11 @@ class LatControl(ABC):
     self.sat_limit = CP.steerLimitTimer
     self.sat_count = 0.
 
+    # we define the steer torque scale as [-1.0...1.0]
+    self.steer_max = 1.0
+
   @abstractmethod
-  def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate):
+  def update(self, active, CS, VM, params, last_actuators, desired_curvature, desired_curvature_rate, llk):
     pass
 
   def reset(self):

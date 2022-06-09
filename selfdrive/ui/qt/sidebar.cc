@@ -57,7 +57,7 @@ void Sidebar::updateState(const UIState &s) {
   ItemStatus connectStatus;
   auto last_ping = deviceState.getLastAthenaPingTime();
   if (last_ping == 0) {
-    connectStatus = params.getBool("PrimeRedirected") ? ItemStatus{"NO\nPRIME", danger_color} : ItemStatus{"CONNECT\nOFFLINE", warning_color};
+    connectStatus = ItemStatus{"CONNECT\nOFFLINE", warning_color};
   } else {
     connectStatus = nanos_since_boot() - last_ping < 80e9 ? ItemStatus{"CONNECT\nONLINE", good_color} : ItemStatus{"CONNECT\nERROR", danger_color};
   }
@@ -76,7 +76,7 @@ void Sidebar::updateState(const UIState &s) {
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     pandaStatus = {"NO\nPANDA", danger_color};
   } else if (s.scene.started && !sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK()) {
-    pandaStatus = {"GPS\nSEARCHING", warning_color};
+    pandaStatus = {"GPS\nSEARCH", warning_color};
   }
   setProperty("pandaStatus", QVariant::fromValue(pandaStatus));
 }

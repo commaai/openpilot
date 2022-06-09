@@ -5,6 +5,7 @@ on:
 
 env:
   BASE_IMAGE: openpilot-base
+  CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_REGISTRY: ghcr.io/commaai
   DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
 
@@ -12,6 +13,10 @@ env:
       docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
       docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
       docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+  BUILD_CL: |
+      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base_cl) || true
+      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+      docker build --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
   RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e \
        GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
 
@@ -21,7 +26,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Build Docker image
@@ -42,28 +47,19 @@ jobs:
       IMAGE_NAME: openpilot-sim
     if: github.repository == 'commaai/openpilot'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
-
-    # HACK: cache LFS objects since they count against our quota
-    # https://github.com/actions/checkout/issues/165#issuecomment-657673315
-    - name: Create LFS file list
-      run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
-    - name: Restore LFS cache
-      uses: actions/cache@v2
-      id: lfs-cache
-      with:
-        path: .git/lfs
-        key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}
-    - name: Git LFS Pull
+    - name: Pull LFS
       run: git lfs pull
-
-    - name: Build Docker image
-      run: |
-        eval "$BUILD"
-        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
-        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
+    - name: Build base image
+      run: eval "$BUILD"
+    - name: Build base cl image
+      run: eval "$BUILD_CL"
+    - name: Pull latest simulator image
+      run: docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
+    - name: Build simulator image
+      run: docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
     - name: Push to container registry
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |

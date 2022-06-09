@@ -1,5 +1,5 @@
+from common.conversions import Conversions as CV
 from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, CAR, CarControllerParams
-from selfdrive.config import Conversions as CV
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -137,7 +137,6 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
 
   lkas_hud_values = {
     'SET_ME_X41': 0x41,
-    'SET_ME_X48': 0x48,
     'STEERING_REQUIRED': hud.steer_required,
     'SOLID_LANES': hud.lanes,
     'BEEP': 0,

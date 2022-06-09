@@ -1,20 +1,20 @@
 #pragma once
 
 #include "selfdrive/hardware/base.h"
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 
-#ifdef QCOM
-#include "selfdrive/hardware/eon/hardware.h"
-#define Hardware HardwareEon
-#elif QCOM2
+#if QCOM2
 #include "selfdrive/hardware/tici/hardware.h"
 #define Hardware HardwareTici
 #else
 class HardwarePC : public HardwareNone {
 public:
   static std::string get_os_version() { return "openpilot for PC"; }
+  static std::string get_name() { return "pc"; };
+  static cereal::InitData::DeviceType get_device_type() { return cereal::InitData::DeviceType::PC; };
   static bool PC() { return true; }
   static bool TICI() { return util::getenv("TICI", 0) == 1; }
+  static bool AGNOS() { return util::getenv("TICI", 0) == 1; }
 };
 #define Hardware HardwarePC
 #endif

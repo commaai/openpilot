@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
+from common.conversions import Conversions as CV
 from common.numpy_fast import interp
-from common.params import Params
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL
-from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, CivicParams, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
-from selfdrive.config import Conversions as CV
 
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 TransmissionType = car.CarParams.TransmissionType
+BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
+                CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
 
 class CarInterface(CarInterfaceBase):
@@ -28,7 +29,7 @@ class CarInterface(CarInterfaceBase):
       return CarControllerParams.NIDEC_ACCEL_MIN, interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
 
@@ -38,7 +39,7 @@ class CarInterface(CarInterfaceBase):
 
       # Disable the radar and let openpilot control longitudinal
       # WARNING: THIS DISABLES AEB!
-      ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
+      ret.openpilotLongitudinalControl = disable_radar
 
       ret.pcmCruise = not ret.openpilotLongitudinalControl
     else:
@@ -99,6 +100,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 8000], [0, 2560, 3840]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.1]]
       else:
+        ret.maxLateralAccel = 1.7
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560], [0, 2560]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[1.1], [0.33]]
       tire_stiffness_factor = 1.
@@ -111,6 +113,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 1.
+      ret.maxLateralAccel = 1.6
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
     elif candidate in (CAR.ACCORD, CAR.ACCORDH):
@@ -125,6 +128,7 @@ class CarInterface(CarInterfaceBase):
       if eps_modified:
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.09]]
       else:
+        ret.maxLateralAccel = 1.6
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
 
     elif candidate == CAR.ACURA_ILX:
@@ -161,6 +165,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 10000], [0, 2560, 3840]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.21], [0.07]]
       else:
+        ret.maxLateralAccel = 1.7
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.64], [0.192]]
       tire_stiffness_factor = 0.677
@@ -185,6 +190,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.06
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.75
+      ret.maxLateralAccel = 1.7
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
 
     elif candidate == CAR.FREED:
@@ -215,8 +221,9 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.68
       ret.centerToFront = ret.wheelbase * 0.38
       ret.steerRatio = 15.0  # as spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
+      ret.maxLateralAccel = 0.9
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]]  # TODO: determine if there is a dead zone at the top end
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
     elif candidate == CAR.ACURA_RDX_3G:
@@ -225,6 +232,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.75
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 11.95  # as spec
+      ret.maxLateralAccel = 1.2
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.06]]
       tire_stiffness_factor = 0.677
@@ -237,6 +245,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.35  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
+      ret.maxLateralAccel = 1.5
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.28], [0.08]]
 
     elif candidate == CAR.ODYSSEY_CHN:
@@ -257,6 +266,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.25  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
+      ret.maxLateralAccel = 1.5
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
 
     elif candidate == CAR.RIDGELINE:
@@ -267,6 +277,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.59  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
+      ret.maxLateralAccel = 1.3
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
 
     elif candidate == CAR.INSIGHT:
@@ -277,6 +288,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.0  # 12.58 is spec end-to-end
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
+      ret.maxLateralAccel = 1.4
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
 
     elif candidate == CAR.HONDA_E:
@@ -329,59 +341,23 @@ class CarInterface(CarInterfaceBase):
       disable_ecu(logcan, sendcan, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')
 
   # returns a car.CarState
-  def update(self, c, can_strings):
-    # ******************* do can recv *******************
-    self.cp.update_strings(can_strings)
-    self.cp_cam.update_strings(can_strings)
-    if self.cp_body:
-      self.cp_body.update_strings(can_strings)
-
+  def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
-
-    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid and (self.cp_body is None or self.cp_body.can_valid)
 
     buttonEvents = []
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.unknown
-      if self.CS.cruise_buttons != 0:
-        be.pressed = True
-        but = self.CS.cruise_buttons
-      else:
-        be.pressed = False
-        but = self.CS.prev_cruise_buttons
-      if but == CruiseButtons.RES_ACCEL:
-        be.type = ButtonType.accelCruise
-      elif but == CruiseButtons.DECEL_SET:
-        be.type = ButtonType.decelCruise
-      elif but == CruiseButtons.CANCEL:
-        be.type = ButtonType.cancel
-      elif but == CruiseButtons.MAIN:
-        be.type = ButtonType.altButton3
-      buttonEvents.append(be)
+      buttonEvents.append(create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT))
 
     if self.CS.cruise_setting != self.CS.prev_cruise_setting:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.unknown
-      if self.CS.cruise_setting != 0:
-        be.pressed = True
-        but = self.CS.cruise_setting
-      else:
-        be.pressed = False
-        but = self.CS.prev_cruise_setting
-      if but == 1:
-        be.type = ButtonType.altButton1
-      # TODO: more buttons?
-      buttonEvents.append(be)
+      buttonEvents.append(create_button_event(self.CS.cruise_setting, self.CS.prev_cruise_setting, {1: ButtonType.altButton1}))
+
     ret.buttonEvents = buttonEvents
 
     # events
     events = self.create_common_events(ret, pcm_enable=False)
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
-    if self.CS.park_brake:
-      events.add(EventName.parkBrake)
 
     if self.CP.pcmCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
@@ -402,38 +378,13 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.manualRestart)
 
     # handle button presses
-    for b in ret.buttonEvents:
-
-      # do enable on both accel and decel buttons
-      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
-        if not self.CP.pcmCruise:
-          events.add(EventName.buttonEnable)
-
-      # do disable on button down
-      if b.type == ButtonType.cancel and b.pressed:
-        events.add(EventName.buttonCancel)
+    events.events.extend(create_button_enable_events(ret.buttonEvents, self.CP.pcmCruise))
 
     ret.events = events.to_msg()
 
-    self.CS.out = ret.as_reader()
-    return self.CS.out
+    return ret
 
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-    hud_control = c.hudControl
-    if hud_control.speedVisible:
-      hud_v_cruise = hud_control.setSpeed * CV.MS_TO_KPH
-    else:
-      hud_v_cruise = 255
-
-    ret = self.CC.update(c.enabled, c.active, self.CS, self.frame,
-                         c.actuators,
-                         c.cruiseControl.cancel,
-                         hud_v_cruise,
-                         hud_control.lanesVisible,
-                         hud_show_car=hud_control.leadVisible,
-                         hud_alert=hud_control.visualAlert)
-
-    self.frame += 1
-    return ret
+    return self.CC.update(c, self.CS)
