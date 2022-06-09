@@ -28,7 +28,7 @@ jobs:
       uses: lewagon/wait-on-check-action@0179dfc359f90a703c41240506f998ee1603f9ea
       with:
         ref: master
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        repo-token: ""
         wait-interval: 30
         running-workflow-name: 'build prebuilt'
         check-regexp: ^((?!.*(build master-ci).*).)*$
