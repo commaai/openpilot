@@ -25,7 +25,7 @@ jobs:
       IMAGE_NAME: openpilot-prebuilt
     steps:
     - name: Wait for green check mark
-      uses: sshane/wait-on-check-action@cba19f49c940963c7bd2fb59c629c3c2bd056eda
+      uses: sshane/wait-on-check-action@8c77e11c4095fc58ce29752d3e8f47d4d6b31908
       with:
         ref: master
         wait-interval: 30
