@@ -28,7 +28,6 @@ jobs:
       uses: sshane/wait-on-check-action@cba19f49c940963c7bd2fb59c629c3c2bd056eda
       with:
         ref: master
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
         wait-interval: 30
         running-workflow-name: 'build prebuilt'
         check-regexp: ^((?!.*(build master-ci).*).)*$
