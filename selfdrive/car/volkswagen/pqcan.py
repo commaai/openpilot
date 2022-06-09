@@ -1,14 +1,12 @@
 def create_pq_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
   values = {
-    "HCA_Zaehler": idx,
+    "COUNTER": idx,
     "LM_Offset": abs(apply_steer),
     "LM_OffSign": 1 if apply_steer < 0 else 0,
     "HCA_Status": 5 if (lkas_enabled and apply_steer != 0) else 3,
     "Vib_Freq": 16,
   }
 
-  dat = packer.make_can_msg("HCA_1", bus, values)[2]
-  values["HCA_Checksumme"] = dat[1] ^ dat[2] ^ dat[3] ^ dat[4]
   return packer.make_can_msg("HCA_1", bus, values)
 
 def create_pq_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert, left_lane_visible, right_lane_visible,
@@ -31,12 +29,10 @@ def create_pq_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert,
 
 def create_pq_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
   values = {
-    "GRA_Neu_Zaehler": idx,
+    "COUNTER": idx,
     "GRA_Sender": CS.graSenderCoding,
     "GRA_Abbrechen": 1 if (buttonStatesToSend["cancel"] or CS.buttonStates["cancel"]) else 0,
     "GRA_Hauptschalt": CS.graHauptschalter,
   }
 
-  dat = packer.make_can_msg("GRA_Neu", bus, values)[2]
-  values["GRA_Checksum"] = dat[1] ^ dat[2] ^ dat[3]
   return packer.make_can_msg("GRA_Neu", bus, values)
