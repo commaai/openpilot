@@ -14,6 +14,7 @@ TransmissionType = car.CarParams.TransmissionType
 def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
   signals = [
     ("XMISSION_SPEED", "ENGINE_DATA"),
+    ("IMPERIAL_UNIT", "CAR_SPEED"),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS"),
     ("WHEEL_SPEED_FR", "WHEEL_SPEEDS"),
     ("WHEEL_SPEED_RL", "WHEEL_SPEEDS"),
@@ -39,11 +40,11 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("CRUISE_SETTING", "SCM_BUTTONS"),
     ("ACC_STATUS", "POWERTRAIN_DATA"),
     ("MAIN_ON", main_on_sig_msg),
-    ("IMPERIAL_UNIT", "CAR_SPEED"),
   ]
 
   checks = [
     ("ENGINE_DATA", 100),
+    ("CAR_SPEED", 10),
     ("WHEEL_SPEEDS", 50),
     ("STEERING_SENSORS", 100),
     ("SEATBELT_STATUS", 10),
@@ -51,7 +52,6 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("POWERTRAIN_DATA", 100),
     ("VSA_STATUS", 50),
     ("STEER_STATUS", 100),
-    ("CAR_SPEED", 10),
     ("STEER_MOTOR_TORQUE", 0),  # TODO: not on every car
   ]
 
