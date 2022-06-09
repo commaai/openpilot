@@ -39,6 +39,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("CRUISE_SETTING", "SCM_BUTTONS"),
     ("ACC_STATUS", "POWERTRAIN_DATA"),
     ("MAIN_ON", main_on_sig_msg),
+    ("IMPERIAL_UNIT", "CAR_SPEED"),
   ]
 
   checks = [
@@ -50,7 +51,8 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("POWERTRAIN_DATA", 100),
     ("VSA_STATUS", 50),
     ("STEER_STATUS", 100),
-    ("STEER_MOTOR_TORQUE", 0), # TODO: not on every car
+    ("CAR_SPEED", 10),
+    ("STEER_MOTOR_TORQUE", 0),  # TODO: not on every car
   ]
 
   if CP.carFingerprint == CAR.ODYSSEY_CHN:
@@ -74,14 +76,8 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     checks.append(("BRAKE_MODULE", 50))
 
   if CP.carFingerprint in HONDA_BOSCH:
-    signals += [
-      ("EPB_STATE", "EPB_STATUS"),
-      ("IMPERIAL_UNIT", "CAR_SPEED"),
-    ]
-    checks += [
-      ("EPB_STATUS", 50),
-      ("CAR_SPEED", 10),
-    ]
+    signals.append(("EPB_STATE", "EPB_STATUS"))
+    checks.append(("EPB_STATUS", 50))
 
     if not CP.openpilotLongitudinalControl:
       signals += [
@@ -122,12 +118,8 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ]
 
   if CP.carFingerprint == CAR.CIVIC:
-    signals += [("IMPERIAL_UNIT", "HUD_SETTING"),
-                ("EPB_STATE", "EPB_STATUS")]
-    checks += [
-      ("HUD_SETTING", 50),
-      ("EPB_STATUS", 50),
-    ]
+    signals += [("EPB_STATE", "EPB_STATUS")]
+    checks += [("EPB_STATUS", 50)]
   elif CP.carFingerprint in (CAR.ODYSSEY, CAR.ODYSSEY_CHN):
     signals.append(("EPB_STATE", "EPB_STATUS"))
     checks.append(("EPB_STATUS", 50))
@@ -281,13 +273,7 @@ class CarState(CarStateBase):
       if ret.brake > 0.1:
         ret.brakePressed = True
 
-    # TODO: discover the CAN msg that has the imperial unit bit for all other cars
-    if self.CP.carFingerprint in (CAR.CIVIC, ):
-      self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"]
-    elif self.CP.carFingerprint in HONDA_BOSCH:
-      self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
-    else:
-      self.is_metric = False
+    self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
