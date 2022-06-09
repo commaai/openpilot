@@ -1,4 +1,5 @@
 venv/
+.env
 .clang-format
 .DS_Store
 .tags
@@ -40,9 +41,8 @@ board/obj/
 selfdrive/boardd/boardd
 selfdrive/logcatd/logcatd
 selfdrive/mapd/default_speeds_by_region.json
-selfdrive/proclogd/proclogd
+system/proclogd/proclogd
 selfdrive/ui/_ui
-selfdrive/ui/_soundd
 selfdrive/test/longitudinal_maneuvers/out
 selfdrive/visiond/visiond
 selfdrive/loggerd/loggerd
@@ -56,9 +56,11 @@ selfdrive/modeld/_dmonitoringmodeld
 /src/
 
 one
+/body/
 openpilot
 notebooks
 xx
+yy
 hyperthneed
 panda_jungle
 provisioning
@@ -75,7 +77,7 @@ cppcheck_report.txt
 comma*.sh
 
 selfdrive/modeld/thneed/compile
-models/*.thneed
+selfdrive/modeld/models/*.thneed
 
 *.bz2
 

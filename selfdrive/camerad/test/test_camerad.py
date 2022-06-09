@@ -4,10 +4,8 @@ import time
 import unittest
 
 import cereal.messaging as messaging
+from selfdrive.hardware import TICI
 from selfdrive.test.helpers import with_processes
-
-# only tests for EON and TICI
-from selfdrive.hardware import EON, TICI
 
 TEST_TIMESPAN = 30 # random.randint(60, 180) # seconds
 SKIP_FRAME_TOLERANCE = 0
@@ -26,7 +24,7 @@ if TICI:
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not (EON or TICI):
+    if not TICI:
       raise unittest.SkipTest
 
   @with_processes(['camerad'])
@@ -54,7 +52,7 @@ class TestCamerad(unittest.TestCase):
           self.assertTrue(abs(dfid - 1) <= SKIP_FRAME_TOLERANCE, "%s frame id diff is %d" % (camera, dfid))
 
           dts = ct - last_ts[camera]
-          self.assertTrue(abs(dts - (1000/CAMERAS[camera])) < LAG_FRAME_TOLERANCE, "%s frame t(ms) diff is %f" % (camera, dts))
+          self.assertTrue(abs(dts - (1000/CAMERAS[camera])) < LAG_FRAME_TOLERANCE, f"{camera} frame t(ms) diff is {dts:f}")
 
           last_frame_id[camera] = sm[camera].frameId
           last_ts[camera] = ct

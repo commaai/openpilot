@@ -66,10 +66,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     const mxArray *C_ocp = prhs[2];
     // capsule
     ptr = (long long *) mxGetData( mxGetField( C_ocp, 0, "capsule" ) );
-    nlp_solver_capsule *capsule = (nlp_solver_capsule *) ptr[0];
+    {{ model.name }}_solver_capsule *capsule = ({{ model.name }}_solver_capsule *) ptr[0];
     // plan
     ptr = (long long *) mxGetData( mxGetField( C_ocp, 0, "plan" ) );
-    ocp_nlp_plan *plan = (ocp_nlp_plan *) ptr[0];
+    ocp_nlp_plan_t *plan = (ocp_nlp_plan_t *) ptr[0];
     // config
     ptr = (long long *) mxGetData( mxGetField( C_ocp, 0, "config" ) );
     ocp_nlp_config *config = (ocp_nlp_config *) ptr[0];
@@ -404,7 +404,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
     else if (!strcmp(field, "init_z"))
     {
-        sim_solver_plan sim_plan = plan->sim_solver_plan[0];
+        sim_solver_plan_t sim_plan = plan->sim_solver_plan[0];
         sim_solver_t type = sim_plan.sim_solver;
         if (type == IRK)
         {
@@ -426,7 +426,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
     else if (!strcmp(field, "init_xdot"))
     {
-        sim_solver_plan sim_plan = plan->sim_solver_plan[0];
+        sim_solver_plan_t sim_plan = plan->sim_solver_plan[0];
         sim_solver_t type = sim_plan.sim_solver;
         if (type == IRK)
         {
@@ -448,7 +448,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
     else if (!strcmp(field, "init_gnsf_phi"))
     {
-        sim_solver_plan sim_plan = plan->sim_solver_plan[0];
+        sim_solver_plan_t sim_plan = plan->sim_solver_plan[0];
         sim_solver_t type = sim_plan.sim_solver;
         if (type == GNSF)
         {

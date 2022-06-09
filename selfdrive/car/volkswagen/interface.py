@@ -10,7 +10,6 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
 
-    self.displayMetricUnitsPrev = None
     self.buttonStatesPrev = BUTTON_STATES.copy()
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
@@ -21,7 +20,7 @@ class CarInterface(CarInterfaceBase):
       self.cp_ext = self.cp_cam
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "volkswagen"
     ret.radarOffCan = True
@@ -38,14 +37,14 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.transmissionType = TransmissionType.manual
 
-      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2, 0xFD]):  # Airbag_01, LWI_01, ESP_19, ESP_21
+      if any(msg in fingerprint[1] for msg in (0x40, 0x86, 0xB2, 0xFD)):  # Airbag_01, LWI_01, ESP_19, ESP_21
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
-    # Global tuning defaults, can be overridden per-vehicle
+    # Global lateral tuning defaults, can be overridden per-vehicle
 
-    ret.steerActuatorDelay = 0.05
+    ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.6  # Let the params learner figure this out
@@ -65,18 +64,25 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.ATLAS_MK1:
       ret.mass = 2011 + STD_CARGO_KG
       ret.wheelbase = 2.98
+      ret.maxLateralAccel = 1.4
 
     elif candidate == CAR.GOLF_MK7:
       ret.mass = 1397 + STD_CARGO_KG
       ret.wheelbase = 2.62
+      ret.maxLateralAccel = 1.5
 
     elif candidate == CAR.JETTA_MK7:
       ret.mass = 1328 + STD_CARGO_KG
       ret.wheelbase = 2.71
+      ret.maxLateralAccel = 1.2
 
     elif candidate == CAR.PASSAT_MK8:
       ret.mass = 1551 + STD_CARGO_KG
       ret.wheelbase = 2.79
+
+    elif candidate == CAR.POLO_MK6:
+      ret.mass = 1230 + STD_CARGO_KG
+      ret.wheelbase = 2.55
 
     elif candidate == CAR.TAOS_MK1:
       ret.mass = 1498 + STD_CARGO_KG
@@ -89,6 +95,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.TIGUAN_MK2:
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
+      ret.maxLateralAccel = 1.1
 
     elif candidate == CAR.TOURAN_MK2:
       ret.mass = 1516 + STD_CARGO_KG
@@ -99,13 +106,23 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.00  # SWB, LWB is 3.40, TBD how to detect difference
       ret.minSteerSpeed = 14.0
 
+    elif candidate == CAR.TROC_MK1:
+      ret.mass = 1413 + STD_CARGO_KG
+      ret.wheelbase = 2.63
+
     elif candidate == CAR.AUDI_A3_MK3:
       ret.mass = 1335 + STD_CARGO_KG
       ret.wheelbase = 2.61
+      ret.maxLateralAccel = 1.7
 
     elif candidate == CAR.AUDI_Q2_MK1:
       ret.mass = 1205 + STD_CARGO_KG
       ret.wheelbase = 2.61
+
+    elif candidate == CAR.AUDI_Q3_MK2:
+      ret.mass = 1623 + STD_CARGO_KG
+      ret.wheelbase = 2.68
+      ret.maxLateralAccel = 1.6
 
     elif candidate == CAR.SEAT_ATECA_MK1:
       ret.mass = 1900 + STD_CARGO_KG
@@ -140,7 +157,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.84
 
     else:
-      raise ValueError("unsupported car %s" % candidate)
+      raise ValueError(f"unsupported car {candidate}")
 
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.45
@@ -149,24 +166,11 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def update(self, c, can_strings):
+  def _update(self, c):
     buttonEvents = []
 
-    # Process the most recent CAN message traffic, and check for validity
-    # The camera CAN has no signals we use at this time, but we process it
-    # anyway so we can test connectivity with can_valid
-    self.cp.update_strings(can_strings)
-    self.cp_cam.update_strings(can_strings)
-
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
-    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-
-    # TODO: add a field for this to carState, car interface code shouldn't write params
-    # Update the device metric configuration to match the car at first startup,
-    # or if there's been a change.
-    #if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
-    #  put_nonblocking("IsMetric", "1" if self.CS.displayMetricUnits else "0")
 
     # Check for and process state-change events (button press or release) from
     # the turn stalk switch or ACC steering wheel/control stalk buttons.
@@ -178,10 +182,6 @@ class CarInterface(CarInterfaceBase):
         buttonEvents.append(be)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic])
-
-    # Vehicle health and operation safety checks
-    if self.CS.parkingBrakeSet:
-      events.add(EventName.parkBrake)
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
@@ -195,18 +195,17 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = buttonEvents
 
     # update previous car states
-    self.displayMetricUnitsPrev = self.CS.displayMetricUnits
     self.buttonStatesPrev = self.CS.buttonStates.copy()
 
-    self.CS.out = ret.as_reader()
-    return self.CS.out
+    return ret
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
-                   c.hudControl.visualAlert,
-                   c.hudControl.leftLaneVisible,
-                   c.hudControl.rightLaneVisible,
-                   c.hudControl.leftLaneDepart,
-                   c.hudControl.rightLaneDepart)
+    hud_control = c.hudControl
+    ret = self.CC.update(c, self.CS, self.frame, self.ext_bus, c.actuators,
+                         hud_control.visualAlert,
+                         hud_control.leftLaneVisible,
+                         hud_control.rightLaneVisible,
+                         hud_control.leftLaneDepart,
+                         hud_control.rightLaneDepart)
     self.frame += 1
-    return can_sends
+    return ret

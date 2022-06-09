@@ -1,37 +1,45 @@
 # PlotJuggler
 
-We've extended [PlotJuggler](https://github.com/facontidavide/PlotJuggler) to plot all of your openpilot logs. Check out our plugins: https://github.com/commaai/PlotJuggler.
+[PlotJuggler](https://github.com/facontidavide/PlotJuggler) is a tool to quickly visualize time series data, and we've written plugins to parse openpilot logs. Check out our plugins: https://github.com/commaai/PlotJuggler.
 
 ## Installation
 
-Once you've cloned and are in openpilot, download PlotJuggler and install our plugins with this command:
+Once you've cloned and are in openpilot, this command will download PlotJuggler and install our plugins:
 
-`cd tools/plotjuggler && ./install.sh`
+`cd tools/plotjuggler && ./juggle.py --install`
 
 ## Usage
 
 ```
 $ ./juggle.py -h
-usage: juggle.py [-h] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [route_name] [segment_number] [segment_count]
+usage: juggle.py [-h] [--demo] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [--install] [--dbc DBC] [route_or_segment_name] [segment_count]
 
-PlotJuggler plugin for reading openpilot logs
+A helper to run PlotJuggler on openpilot routes
 
 positional arguments:
-  route_name         The route name to plot (cabana share URL accepted) (default: None)
-  segment_number     The index of the segment to plot (default: None)
-  segment_count      The number of segments to plot (default: 1)
+  route_or_segment_name
+                        The route or segment name to plot (cabana share URL accepted) (default: None)
+  segment_count         The number of segments to plot (default: None)
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --qlog             Use qlogs (default: False)
-  --can              Parse CAN data (default: False)
-  --stream           Start PlotJuggler without a route to stream data using Cereal (default: False)
-  --layout [LAYOUT]  Run PlotJuggler with a pre-defined layout (default: None)
+  -h, --help            show this help message and exit
+  --demo                Use the demo route instead of providing one (default: False)
+  --qlog                Use qlogs (default: False)
+  --can                 Parse CAN data (default: False)
+  --stream              Start PlotJuggler in streaming mode (default: False)
+  --layout [LAYOUT]     Run PlotJuggler with a pre-defined layout (default: None)
+  --install             Install or update PlotJuggler + plugins (default: False)
+  --dbc DBC             Set the DBC name to load for parsing CAN data. If not set, the DBC will be
+                        automatically inferred from the logs. (default: None)
 ```
 
-Example:
+Examples using route name:
 
 `./juggle.py "4cf7a6ad03080c90|2021-09-29--13-46-36"`
+
+Examples using segment name:
+
+`./juggle.py "4cf7a6ad03080c90|2021-09-29--13-46-36--1"`
 
 ## Streaming
 
@@ -47,7 +55,17 @@ If streaming to PlotJuggler from a replay on your PC, simply run: `./juggle.py -
 
 For a quick demo, go through the installation step and run this command:
 
-`./juggle.py "https://commadataci.blob.core.windows.net/openpilotci/d83f36766f8012a5/2020-02-05--18-42-21/0/rlog.bz2" --layout=demo_layout.xml`
+`./juggle.py --demo --qlog --layout=layouts/demo.xml`
+
+## Layouts
+
+If you create a layout that's useful for others, consider upstreaming it.
+
+### Tuning
+
+Use this layout to improve your car's tuning and generate plots for tuning PRs. Also see the [tuning wiki](https://github.com/commaai/openpilot/wiki/Tuning) and tuning PR template.
+
+`--layout layouts/tuning.xml`
 
 
 ![screenshot](https://i.imgur.com/cizHCH3.png)

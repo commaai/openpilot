@@ -10,6 +10,7 @@ def average(avg, sample):
 
 
 if __name__ == '__main__':
+  start_time = datetime.now()
   try:
     if len(sys.argv) > 1 and sys.argv[1] == "--charge":
       print("not disabling charging")
@@ -22,7 +23,6 @@ if __name__ == '__main__':
     power_average = (0., 0)
     capacity_average = (0., 0)
     bat_temp_average = (0., 0)
-    start_time = datetime.now()
     while 1:
       with open("/sys/class/power_supply/bms/voltage_now") as f:
         voltage = int(f.read()) / 1e6   # volts
@@ -45,7 +45,7 @@ if __name__ == '__main__':
       capacity_average = average(capacity_average, capacity)
       bat_temp_average = average(bat_temp_average, bat_temp)
 
-      print("%.2f volts %12.2f ma %12.2f mW %8.2f%% battery %8.1f degC" % (voltage, current, power, capacity, bat_temp))
+      print(f"{voltage:.2f} volts {current:12.2f} ma {power:12.2f} mW {capacity:8.2f}% battery {bat_temp:8.1f} degC")
       time.sleep(0.1)
   finally:
     stop_time = datetime.now()
@@ -55,8 +55,8 @@ if __name__ == '__main__':
     power = power_average[0]
     capacity = capacity_average[0]
     bat_temp = bat_temp_average[0]
-    print("%.2f volts %12.2f ma %12.2f mW %8.2f%% battery %8.1f degC" % (voltage, current, power, capacity, bat_temp))
-    print("  {:.2f} Seconds     {} samples".format((stop_time-start_time).total_seconds(), voltage_average[1]))
+    print(f"{voltage:.2f} volts {current:12.2f} ma {power:12.2f} mW {capacity:8.2f}% battery {bat_temp:8.1f} degC")
+    print(f"  {(stop_time - start_time).total_seconds():.2f} Seconds     {voltage_average[1]} samples")
     print("----------------------------------------------------------------")
 
     # reenable charging

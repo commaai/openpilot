@@ -6,10 +6,10 @@ import struct
 import subprocess
 import tempfile
 import threading
+from enum import IntEnum
 from functools import wraps
 
 import numpy as np
-from aenum import Enum
 from lru import LRU
 
 import _io
@@ -17,10 +17,7 @@ from tools.lib.cache import cache_path_for_file_path
 from tools.lib.exceptions import DataUnreadableError
 from common.file_helpers import atomic_write_in_dir
 
-try:
-  from xx.chffr.lib.filereader import FileReader
-except ImportError:
-  from tools.lib.filereader import FileReader
+from tools.lib.filereader import FileReader
 
 HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
@@ -41,7 +38,7 @@ class DoNothingContextManager:
     pass
 
 
-class FrameType(Enum):
+class FrameType(IntEnum):
   raw = 1
   h265_stream = 2
 
@@ -50,7 +47,7 @@ def fingerprint_video(fn):
   with FileReader(fn) as f:
     header = f.read(4)
   if len(header) == 0:
-    raise DataUnreadableError("%s is empty" % fn)
+    raise DataUnreadableError(f"{fn} is empty")
   elif header == b"\x00\xc0\x12\x00":
     return FrameType.raw
   elif header == b"\x00\x00\x00\x01":
@@ -90,7 +87,7 @@ def vidindex(fn, typ):
     try:
       subprocess.check_call([vidindex, typ, fn, prefix_f.name, index_f.name])
     except subprocess.CalledProcessError:
-      raise DataUnreadableError("vidindex failed on file %s" % fn)
+      raise DataUnreadableError(f"vidindex failed on file {fn}")
     with open(index_f.name, "rb") as f:
       index = f.read()
     with open(prefix_f.name, "rb") as f:
@@ -188,25 +185,47 @@ def read_file_check_size(f, sz, cookie):
   return buff
 
 
-def rgb24toyuv420(rgb):
+def rgb24toyuv(rgb):
   yuv_from_rgb = np.array([[ 0.299     ,  0.587     ,  0.114      ],
                            [-0.14714119, -0.28886916,  0.43601035 ],
                            [ 0.61497538, -0.51496512, -0.10001026 ]])
   img = np.dot(rgb.reshape(-1, 3), yuv_from_rgb.T).reshape(rgb.shape)
 
-  y_len = img.shape[0] * img.shape[1]
-  uv_len = y_len // 4
+
 
   ys = img[:, :, 0]
   us = (img[::2, ::2, 1] + img[1::2, ::2, 1] + img[::2, 1::2, 1] + img[1::2, 1::2, 1]) / 4 + 128
   vs = (img[::2, ::2, 2] + img[1::2, ::2, 2] + img[::2, 1::2, 2] + img[1::2, 1::2, 2]) / 4 + 128
 
-  yuv420 = np.empty(y_len + 2 * uv_len, dtype=img.dtype)
+  return ys, us, vs
+
+
+def rgb24toyuv420(rgb):
+  ys, us, vs = rgb24toyuv(rgb)
+
+  y_len = rgb.shape[0] * rgb.shape[1]
+  uv_len = y_len // 4
+
+  yuv420 = np.empty(y_len + 2 * uv_len, dtype=rgb.dtype)
   yuv420[:y_len] = ys.reshape(-1)
   yuv420[y_len:y_len + uv_len] = us.reshape(-1)
   yuv420[y_len + uv_len:y_len + 2 * uv_len] = vs.reshape(-1)
 
   return yuv420.clip(0, 255).astype('uint8')
+
+
+def rgb24tonv12(rgb):
+  ys, us, vs = rgb24toyuv(rgb)
+
+  y_len = rgb.shape[0] * rgb.shape[1]
+  uv_len = y_len // 4
+
+  nv12 = np.empty(y_len + 2 * uv_len, dtype=rgb.dtype)
+  nv12[:y_len] = ys.reshape(-1)
+  nv12[y_len::2] = us.reshape(-1)
+  nv12[y_len+1::2] = vs.reshape(-1)
+
+  return nv12.clip(0, 255).astype('uint8')
 
 
 def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):
@@ -240,6 +259,8 @@ def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):
 
   if pix_fmt == "rgb24":
     ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, h, w, 3)
+  elif pix_fmt == "nv12":
+    ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, (h*w*3//2))
   elif pix_fmt == "yuv420p":
     ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, (h*w*3//2))
   elif pix_fmt == "yuv444p":
@@ -307,8 +328,8 @@ class RawFrameReader(BaseFrameReader):
     assert self.frame_count is not None
     assert num+count <= self.frame_count
 
-    if pix_fmt not in ("yuv420p", "rgb24"):
-      raise ValueError("Unsupported pixel format %r" % pix_fmt)
+    if pix_fmt not in ("nv12", "yuv420p", "rgb24"):
+      raise ValueError(f"Unsupported pixel format {pix_fmt!r}")
 
     app = []
     for i in range(num, num+count):
@@ -316,6 +337,8 @@ class RawFrameReader(BaseFrameReader):
       rgb_dat = self.load_and_debayer(dat)
       if pix_fmt == "rgb24":
         app.append(rgb_dat)
+      elif pix_fmt == "nv12":
+        app.append(rgb24tonv12(rgb_dat))
       elif pix_fmt == "yuv420p":
         app.append(rgb24toyuv420(rgb_dat))
       else:
@@ -332,7 +355,7 @@ class VideoStreamDecompressor:
     self.h = h
     self.pix_fmt = pix_fmt
 
-    if pix_fmt == "yuv420p":
+    if pix_fmt in ("nv12", "yuv420p"):
       self.out_size = w*h*3//2  # yuv420p
     elif pix_fmt in ("rgb24", "yuv444p"):
       self.out_size = w*h*3
@@ -351,6 +374,8 @@ class VideoStreamDecompressor:
           if len(r) == 0:
             break
           self.proc.stdin.write(r)
+    except BrokenPipeError:
+      pass
     finally:
       self.proc.stdin.close()
 
@@ -387,6 +412,8 @@ class VideoStreamDecompressor:
         if self.pix_fmt == "rgb24":
           ret = np.frombuffer(dat, dtype=np.uint8).reshape((self.h, self.w, 3))
         elif self.pix_fmt == "yuv420p":
+          ret = np.frombuffer(dat, dtype=np.uint8)
+        elif self.pix_fmt == "nv12":
           ret = np.frombuffer(dat, dtype=np.uint8)
         elif self.pix_fmt == "yuv444p":
           ret = np.frombuffer(dat, dtype=np.uint8).reshape((3, self.h, self.w))
@@ -548,10 +575,10 @@ class GOPFrameReader(BaseFrameReader):
     assert self.frame_count is not None
 
     if num + count > self.frame_count:
-      raise ValueError("{} > {}".format(num + count, self.frame_count))
+      raise ValueError(f"{num + count} > {self.frame_count}")
 
-    if pix_fmt not in ("yuv420p", "rgb24", "yuv444p"):
-      raise ValueError("Unsupported pixel format %r" % pix_fmt)
+    if pix_fmt not in ("nv12", "yuv420p", "rgb24", "yuv444p"):
+      raise ValueError(f"Unsupported pixel format {pix_fmt!r}")
 
     ret = [self._get_one(num + i, pix_fmt) for i in range(count)]
 
@@ -572,15 +599,13 @@ class StreamFrameReader(StreamGOPReader, GOPFrameReader):
 
 def GOPFrameIterator(gop_reader, pix_fmt):
   dec = VideoStreamDecompressor(gop_reader.fn, gop_reader.vid_fmt, gop_reader.w, gop_reader.h, pix_fmt)
-  for frame in dec.read():
-    yield frame
+  yield from dec.read()
 
 
 def FrameIterator(fn, pix_fmt, **kwargs):
   fr = FrameReader(fn, **kwargs)
   if isinstance(fr, GOPReader):
-    for v in GOPFrameIterator(fr, pix_fmt):
-      yield v
+    yield from GOPFrameIterator(fr, pix_fmt)
   else:
     for i in range(fr.frame_count):
       yield fr.get(i, pix_fmt=pix_fmt)[0]

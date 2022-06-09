@@ -99,14 +99,12 @@ void Networking::wrongPassword(const QString &ssid) {
   }
 }
 
-void Networking::showEvent(QShowEvent* event) {
-  // Wait to refresh to avoid delay when showing Networking widget
-  QTimer::singleShot(300, this, [=]() {
-    if (this->isVisible()) {
-      wifi->refreshNetworks();
-      refresh();
-    }
-  });
+void Networking::showEvent(QShowEvent *event) {
+  wifi->start();
+}
+
+void Networking::hideEvent(QHideEvent *event) {
+  wifi->stop();
 }
 
 // AdvancedNetworking functions
@@ -158,7 +156,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(roamingToggle);
 
   // APN settings
-  ButtonControl *editApnButton = new ButtonControl("APN settings", "EDIT");
+  ButtonControl *editApnButton = new ButtonControl("APN Setting", "EDIT");
   connect(editApnButton, &ButtonControl::clicked, [=]() {
     const bool roamingEnabled = params.getBool("GsmRoaming");
     const QString cur_apn = QString::fromStdString(params.get("GsmApn"));

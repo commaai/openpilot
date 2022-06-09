@@ -17,7 +17,8 @@ def main() -> NoReturn:
   sock.bind("ipc:///tmp/logmessage")
 
   # and we publish them
-  pub_sock = messaging.pub_sock('logMessage')
+  log_message_sock = messaging.pub_sock('logMessage')
+  error_log_message_sock = messaging.pub_sock('errorLogMessage')
 
   while True:
     dat = b''.join(sock.recv_multipart())
@@ -29,7 +30,12 @@ def main() -> NoReturn:
     # then we publish them
     msg = messaging.new_message()
     msg.logMessage = record
-    pub_sock.send(msg.to_bytes())
+    log_message_sock.send(msg.to_bytes())
+
+    if level >= 40:  # logging.ERROR
+      msg = messaging.new_message()
+      msg.errorLogMessage = record
+      error_log_message_sock.send(msg.to_bytes())
 
 
 if __name__ == "__main__":

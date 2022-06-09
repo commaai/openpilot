@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 import time
-import cereal.messaging as messaging
+
+from cereal import car, log, messaging
+from common.params import Params
 from selfdrive.manager.process_config import managed_processes
 
 if __name__ == "__main__":
-  procs = ['camerad', 'ui', 'modeld', 'calibrationd']
+  CP = car.CarParams(notCar=True)
+  Params().put("CarParams", CP.to_bytes())
 
+  procs = ['camerad', 'ui', 'modeld', 'calibrationd']
   for p in procs:
     managed_processes[p].start()
 
@@ -17,6 +21,7 @@ if __name__ == "__main__":
 
   msgs['pandaStates'] = messaging.new_message('pandaStates', 1)
   msgs['pandaStates'].pandaStates[0].ignitionLine = True
+  msgs['pandaStates'].pandaStates[0].pandaType = log.PandaState.PandaType.uno
 
   try:
     while True:

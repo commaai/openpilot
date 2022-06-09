@@ -6,7 +6,7 @@
 #include <QPainter>
 #include <QPushButton>
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
@@ -101,7 +101,7 @@ public:
     QObject::connect(&toggle, &Toggle::stateChanged, this, &ToggleControl::toggleFlipped);
   }
 
-  void setEnabled(bool enabled) { toggle.setEnabled(enabled); }
+  void setEnabled(bool enabled) { toggle.setEnabled(enabled); toggle.update(); }
 
 signals:
   void toggleFlipped(bool state);
@@ -160,4 +160,28 @@ private:
   }
   QVBoxLayout outer_layout;
   QVBoxLayout inner_layout;
+};
+
+// convenience class for wrapping layouts
+class LayoutWidget : public QWidget {
+  Q_OBJECT
+
+public:
+  LayoutWidget(QLayout *l, QWidget *parent = nullptr) : QWidget(parent) {
+    setLayout(l);
+  };
+};
+
+class ClickableWidget : public QWidget {
+  Q_OBJECT
+
+public:
+  ClickableWidget(QWidget *parent = nullptr);
+
+protected:
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  void paintEvent(QPaintEvent *) override;
+
+signals:
+  void clicked();
 };

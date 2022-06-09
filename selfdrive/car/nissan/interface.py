@@ -5,28 +5,25 @@ from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness,
 from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-    self.cp_adas = self.CS.get_adas_can_parser(CP)
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
 
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "nissan"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.nissan)]
 
-    ret.steerLimitAlert = False
+    ret.steerLimitTimer = 1.0
     ret.steerRateCost = 0.5
 
     ret.steerActuatorDelay = 0.1
 
-    if candidate in [CAR.ROGUE, CAR.XTRAIL]:
+    if candidate in (CAR.ROGUE, CAR.XTRAIL):
       ret.mass = 1610 + STD_CARGO_KG
       ret.wheelbase = 2.705
       ret.centerToFront = ret.wheelbase * 0.44
       ret.steerRatio = 17
-    elif candidate in [CAR.LEAF, CAR.LEAF_IC]:
+    elif candidate in (CAR.LEAF, CAR.LEAF_IC):
       ret.mass = 1610 + STD_CARGO_KG
       ret.wheelbase = 2.705
       ret.centerToFront = ret.wheelbase * 0.44
@@ -53,14 +50,8 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def update(self, c, can_strings):
-    self.cp.update_strings(can_strings)
-    self.cp_cam.update_strings(can_strings)
-    self.cp_adas.update_strings(can_strings)
-
+  def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_adas, self.cp_cam)
-
-    ret.canValid = self.cp.can_valid and self.cp_adas.can_valid and self.cp_cam.can_valid
 
     buttonEvents = []
     be = car.CarState.ButtonEvent.new_message()
@@ -74,13 +65,13 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    self.CS.out = ret.as_reader()
-    return self.CS.out
+    return ret
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                               c.cruiseControl.cancel, c.hudControl.visualAlert,
-                               c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible,
-                               c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
+    hud_control = c.hudControl
+    ret = self.CC.update(c, self.CS, self.frame, c.actuators,
+                         c.cruiseControl.cancel, hud_control.visualAlert,
+                         hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                         hud_control.leftLaneDepart, hud_control.rightLaneDepart)
     self.frame += 1
-    return can_sends
+    return ret

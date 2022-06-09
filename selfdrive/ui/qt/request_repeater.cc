@@ -5,7 +5,7 @@ RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, con
   timer = new QTimer(this);
   timer->setTimerType(Qt::VeryCoarseTimer);
   QObject::connect(timer, &QTimer::timeout, [=]() {
-    if ((!QUIState::ui_state.scene.started || while_onroad) && QUIState::ui_state.awake && !active()) {
+    if ((!uiState()->scene.started || while_onroad) && uiState()->awake && !active()) {
       sendRequest(requestURL);
     }
   });
@@ -15,10 +15,10 @@ RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, con
   if (!cacheKey.isEmpty()) {
     prevResp = QString::fromStdString(params.get(cacheKey.toStdString()));
     if (!prevResp.isEmpty()) {
-      QTimer::singleShot(500, [=]() { emit receivedResponse(prevResp); });
+      QTimer::singleShot(500, [=]() { emit requestDone(prevResp, true, QNetworkReply::NoError); });
     }
-    QObject::connect(this, &HttpRequest::receivedResponse, [=](const QString &resp) {
-      if (resp != prevResp) {
+    QObject::connect(this, &HttpRequest::requestDone, [=](const QString &resp, bool success) {
+      if (success && resp != prevResp) {
         params.put(cacheKey.toStdString(), resp.toStdString());
         prevResp = resp;
       }

@@ -7,7 +7,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "chrysler"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
@@ -22,6 +22,14 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.7
     ret.steerLimitTimer = 0.4
+
+    # set max lateral acceleration
+    if candidate in (CAR.PACIFICA_2018, CAR.PACIFICA_2019_HYBRID, CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
+      ret.maxLateralAccel = 1.6
+    if candidate in (CAR.PACIFICA_2018_HYBRID,):
+      ret.maxLateralAccel = 1.4
+    if candidate in (CAR.PACIFICA_2017_HYBRID,):
+      ret.maxLateralAccel = 1.2
 
     if candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
       ret.wheelbase = 2.91  # in meters
@@ -47,39 +55,22 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def update(self, c, can_strings):
-    # ******************* do can recv *******************
-    self.cp.update_strings(can_strings)
-    self.cp_cam.update_strings(can_strings)
-
+  def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
-    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
-
-    # speeds
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # events
-    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low],
-                                       gas_resume_speed=2.)
+    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
 
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
 
-    # copy back carState packet to CS
-    self.CS.out = ret.as_reader()
-
-    return self.CS.out
+    return ret
 
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-
-    if (self.CS.frame == -1):
-      return []  # if we haven't seen a frame 220, then do not update.
-
-    can_sends = self.CC.update(c.enabled, self.CS, c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert)
-
-    return can_sends
+    return self.CC.update(c, self.CS)

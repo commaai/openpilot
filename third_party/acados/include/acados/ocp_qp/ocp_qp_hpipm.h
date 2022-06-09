@@ -63,6 +63,7 @@ typedef struct ocp_qp_hpipm_memory_
     struct d_ocp_qp_ipm_ws *hpipm_workspace;
     double time_qp_solver_call;
     int iter;
+    int status;
 
 } ocp_qp_hpipm_memory;
 
@@ -86,6 +87,8 @@ void *ocp_qp_hpipm_memory_assign(void *config, void *dims, void *opts_, void *ra
 acados_size_t ocp_qp_hpipm_workspace_calculate_size(void *config, void *dims, void *opts_);
 //
 int ocp_qp_hpipm(void *config, void *qp_in, void *qp_out, void *opts_, void *mem_, void *work_);
+//
+void ocp_qp_hpipm_memory_reset(void *config_, void *qp_in_, void *qp_out_, void *opts_, void *mem_, void *work_);
 //
 void ocp_qp_hpipm_eval_sens(void *config, void *qp_in, void *qp_out, void *opts_, void *mem_, void *work_);
 //

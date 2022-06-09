@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 #
 # Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
 # Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
@@ -45,26 +46,36 @@ def get_acados_path():
     ACADOS_PATH = os.environ.get('ACADOS_SOURCE_DIR')
     if not ACADOS_PATH:
         acados_template_path = os.path.dirname(os.path.abspath(__file__))
-        acados_path = os.path.join(acados_template_path, '../../../')
+        acados_path = os.path.join(acados_template_path, '..','..','..')
         ACADOS_PATH = os.path.realpath(acados_path)
         msg = 'Warning: Did not find environment variable ACADOS_SOURCE_DIR, '
         msg += 'guessed ACADOS_PATH to be {}.\n'.format(ACADOS_PATH)
-        msg += 'Please export ACADOS_SOURCE_DIR to not avoid this warning.'
+        msg += 'Please export ACADOS_SOURCE_DIR to avoid this warning.'
         print(msg)
     return ACADOS_PATH
+
+
+def get_python_interface_path():
+    ACADOS_PYTHON_INTERFACE_PATH = os.environ.get('ACADOS_PYTHON_INTERFACE_PATH')
+    if not ACADOS_PYTHON_INTERFACE_PATH:
+        acados_path = get_acados_path()
+        ACADOS_PYTHON_INTERFACE_PATH = os.path.join(acados_path, 'interfaces', 'acados_template', 'acados_template')
+    return ACADOS_PYTHON_INTERFACE_PATH
 
 
 def get_tera_exec_path():
     TERA_PATH = os.environ.get('TERA_PATH')
     if not TERA_PATH:
-        TERA_PATH = os.path.join(get_acados_path(), 'bin/t_renderer')
+        TERA_PATH = os.path.join(get_acados_path(), 'bin', 't_renderer')
+        if os.name == 'nt':
+            TERA_PATH += '.exe'
     return TERA_PATH
 
 
 platform2tera = {
     "linux": "linux",
     "darwin": "osx",
-    "win32": "window.exe"
+    "win32": "windows"
 }
 
 
@@ -199,21 +210,17 @@ def render_template(in_file, out_file, template_dir, json_path):
 
     # setting up loader and environment
     acados_path = os.path.dirname(os.path.abspath(__file__))
-
-    template_glob = acados_path + '/c_templates_tera/*'
-    acados_template_path = acados_path + '/c_templates_tera'
+    template_glob = os.path.join(acados_path, 'c_templates_tera', '*')
 
     # call tera as system cmd
-    os_cmd = "{tera_path} '{template_glob}' '{in_file}' '{json_path}' '{out_file}'".format(
-        tera_path=tera_path,
-        template_glob=template_glob,
-        json_path=json_path,
-        in_file=in_file,
-        out_file=out_file
-    )
+    os_cmd = f"{tera_path} '{template_glob}' '{in_file}' '{json_path}' '{out_file}'"
+    # Windows cmd.exe can not cope with '...', so use "..." instead:
+    if os.name == 'nt':
+        os_cmd = os_cmd.replace('\'', '\"')
+
     status = os.system(os_cmd)
     if (status != 0):
-        raise Exception('Rendering of {} failed! Exiting.\n'.format(in_file))
+        raise Exception(f'Rendering of {in_file} failed!\n\nAttempted to execute OS command:\n{os_cmd}\n\nExiting.\n')
 
     os.chdir(cwd)
 
@@ -227,9 +234,7 @@ def np_array_to_list(np_array):
     elif isinstance(np_array, (DM)):
         return np_array.full()
     else:
-        raise(Exception(
-            "Cannot convert to list type {}".format(type(np_array))
-        ))
+        raise(Exception(f"Cannot convert to list type {type(np_array)}"))
 
 
 def format_class_dict(d):
@@ -246,20 +251,12 @@ def format_class_dict(d):
     return out
 
 
-def acados_class2dict(class_instance):
-    """
-    removes the __ artifact from class to dict conversion
-    """
-
-    d = dict(class_instance.__dict__)
-    out = {}
-    for k, v in d.items():
-        if isinstance(v, dict):
-            v = format_class_dict(v)
-
-        out_key = k.split('__', 1)[-1]
-        out[k.replace(k, out_key)] = v
-    return out
+def get_ocp_nlp_layout():
+    python_interface_path = get_python_interface_path()
+    abs_path = os.path.join(python_interface_path, 'acados_layout.json')
+    with open(abs_path, 'r') as f:
+        ocp_nlp_layout = json.load(f)
+    return ocp_nlp_layout
 
 
 def ocp_check_against_layout(ocp_nlp, ocp_dims):
@@ -273,11 +270,7 @@ def ocp_check_against_layout(ocp_nlp, ocp_dims):
     ocp_dims : instance of AcadosOcpDims
     """
 
-    # load JSON layout
-    current_module = sys.modules[__name__]
-    acados_path = os.path.dirname(current_module.__file__)
-    with open(acados_path + '/acados_layout.json', 'r') as f:
-        ocp_nlp_layout = json.load(f)
+    ocp_nlp_layout = get_ocp_nlp_layout()
 
     ocp_check_against_layout_recursion(ocp_nlp, ocp_dims, ocp_nlp_layout)
     return
@@ -420,6 +413,13 @@ def set_up_imported_gnsf_model(acados_formulation):
     acados_formulation.model.phi_fun_jac_y = phi_fun_jac_y
     acados_formulation.model.phi_jac_y_uhat = phi_jac_y_uhat
     acados_formulation.model.get_matrices_fun = get_matrices_fun
+
+    # get_matrices_fun = Function([model_name,'_gnsf_get_matrices_fun'], {dummy},...
+    #  {A, B, C, E, L_x, L_xdot, L_z, L_u, A_LO, c, E_LO, B_LO,...
+    #   nontrivial_f_LO, purely_linear, ipiv_x, ipiv_z, c_LO});
+    get_matrices_out = get_matrices_fun(0)
+    acados_formulation.model.gnsf['nontrivial_f_LO'] = int(get_matrices_out[12])
+    acados_formulation.model.gnsf['purely_linear'] = int(get_matrices_out[13])
 
     if "f_lo_fun_jac_x1k1uz" in gnsf:
         f_lo_fun_jac_x1k1uz = Function.deserialize(gnsf['f_lo_fun_jac_x1k1uz'])

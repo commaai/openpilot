@@ -58,6 +58,7 @@ def generate_c_code_external_cost(model, stage_type, opts):
         suffix_name_jac = "_cost_ext_cost_e_fun_jac"
         u = symbol("u", 0, 0)
         ext_cost = model.cost_expr_ext_cost_e
+        custom_hess = model.cost_expr_ext_cost_custom_hess_e
 
     elif stage_type == 'path':
         suffix_name = "_cost_ext_cost_fun"
@@ -65,6 +66,7 @@ def generate_c_code_external_cost(model, stage_type, opts):
         suffix_name_jac = "_cost_ext_cost_fun_jac"
         u = model.u
         ext_cost = model.cost_expr_ext_cost
+        custom_hess = model.cost_expr_ext_cost_custom_hess
 
     elif stage_type == 'initial':
         suffix_name = "_cost_ext_cost_0_fun"
@@ -72,6 +74,7 @@ def generate_c_code_external_cost(model, stage_type, opts):
         suffix_name_jac = "_cost_ext_cost_0_fun_jac"
         u = model.u
         ext_cost = model.cost_expr_ext_cost_0
+        custom_hess = model.cost_expr_ext_cost_custom_hess_0
 
     # set up functions to be exported
     fun_name = model.name + suffix_name
@@ -80,6 +83,9 @@ def generate_c_code_external_cost(model, stage_type, opts):
 
     # generate expression for full gradient and Hessian
     full_hess, grad = hessian(ext_cost, vertcat(u, x))
+
+    if custom_hess is not None:
+        full_hess = custom_hess
 
     ext_cost_fun = Function(fun_name, [x, u, p], [ext_cost])
     ext_cost_fun_jac_hess = Function(

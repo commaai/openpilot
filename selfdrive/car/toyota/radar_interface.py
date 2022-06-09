@@ -4,7 +4,11 @@ from cereal import car
 from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSS2_CAR
 from selfdrive.car.interfaces import RadarInterfaceBase
 
+
 def _create_radar_can_parser(car_fingerprint):
+  if DBC[car_fingerprint]['radar'] is None:
+    return None
+
   if car_fingerprint in TSS2_CAR:
     RADAR_A_MSGS = list(range(0x180, 0x190))
     RADAR_B_MSGS = list(range(0x190, 0x1a0))
@@ -16,11 +20,10 @@ def _create_radar_can_parser(car_fingerprint):
   msg_b_n = len(RADAR_B_MSGS)
 
   signals = list(zip(['LONG_DIST'] * msg_a_n + ['NEW_TRACK'] * msg_a_n + ['LAT_DIST'] * msg_a_n +
-                ['REL_SPEED'] * msg_a_n + ['VALID'] * msg_a_n + ['SCORE'] * msg_b_n,
-                RADAR_A_MSGS * 5 + RADAR_B_MSGS,
-                [255] * msg_a_n + [1] * msg_a_n + [0] * msg_a_n + [0] * msg_a_n + [0] * msg_a_n + [0] * msg_b_n))
+                     ['REL_SPEED'] * msg_a_n + ['VALID'] * msg_a_n + ['SCORE'] * msg_b_n,
+                     RADAR_A_MSGS * 5 + RADAR_B_MSGS))
 
-  checks = list(zip(RADAR_A_MSGS + RADAR_B_MSGS, [20]*(msg_a_n + msg_b_n)))
+  checks = list(zip(RADAR_A_MSGS + RADAR_B_MSGS, [20] * (msg_a_n + msg_b_n)))
 
   return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
 
@@ -48,7 +51,7 @@ class RadarInterface(RadarInterfaceBase):
     self.no_radar = CP.carFingerprint in NO_DSU_CAR and CP.carFingerprint not in TSS2_CAR
 
   def update(self, can_strings):
-    if self.no_radar:
+    if self.no_radar or self.rcp is None:
       return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)

@@ -1,11 +1,16 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from collections import namedtuple
+from typing import Dict
 
-ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient'])
+from cereal import log
 
-class HardwareBase:
+ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient', 'pmic'])
+NetworkType = log.DeviceState.NetworkType
+
+
+class HardwareBase(ABC):
   @staticmethod
-  def get_cmdline():
+  def get_cmdline() -> Dict[str, str]:
     with open('/proc/cmdline') as f:
       cmdline = f.read()
     return {kv[0]: kv[1] for kv in [s.split('=') for s in cmdline.split(' ')] if len(kv) == 2}
@@ -39,7 +44,7 @@ class HardwareBase:
     pass
 
   @abstractmethod
-  def get_imei(self, slot):
+  def get_imei(self, slot) -> str:
     pass
 
   @abstractmethod
@@ -66,28 +71,11 @@ class HardwareBase:
   def get_network_strength(self, network_type):
     pass
 
-  @abstractmethod
-  def get_battery_capacity(self):
-    pass
+  def get_network_metered(self, network_type) -> bool:
+    return network_type not in (NetworkType.none, NetworkType.wifi, NetworkType.ethernet)
 
-  @abstractmethod
-  def get_battery_status(self):
-    pass
-
-  @abstractmethod
-  def get_battery_current(self):
-    pass
-
-  @abstractmethod
-  def get_battery_voltage(self):
-    pass
-
-  @abstractmethod
-  def get_battery_charging(self):
-    pass
-
-  @abstractmethod
-  def set_battery_charging(self, on):
+  @staticmethod
+  def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
     pass
 
   @abstractmethod
@@ -122,9 +110,11 @@ class HardwareBase:
   def get_gpu_usage_percent(self):
     pass
 
-  @abstractmethod
   def get_modem_version(self):
-    pass
+    return None
+
+  def get_modem_nv(self):
+    return None
 
   @abstractmethod
   def get_modem_temperatures(self):
@@ -138,6 +128,15 @@ class HardwareBase:
   def initialize_hardware(self):
     pass
 
+  def configure_modem(self):
+    pass
+
   @abstractmethod
   def get_networks(self):
+    pass
+
+  def reset_internal_panda(self):
+    pass
+
+  def recover_internal_panda(self):
     pass

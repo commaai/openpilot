@@ -6,9 +6,7 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 int main(int argc, char *argv[]) {
-  QSurfaceFormat fmt;
-  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
-  QSurfaceFormat::setDefaultFormat(fmt);
+  initApp(argc, argv);
 
   QApplication a(argc, argv);
   QWidget w;
@@ -17,12 +15,19 @@ int main(int argc, char *argv[]) {
   QVBoxLayout *layout = new QVBoxLayout(&w);
   layout->setMargin(0);
   layout->setSpacing(0);
-  layout->addWidget(new CameraViewWidget(VISION_STREAM_RGB_BACK, false));
 
-  QHBoxLayout *hlayout = new QHBoxLayout();
-  layout->addLayout(hlayout);
-  hlayout->addWidget(new CameraViewWidget(VISION_STREAM_RGB_FRONT, false));
-  hlayout->addWidget(new CameraViewWidget(VISION_STREAM_RGB_WIDE, false));
+  {
+    QHBoxLayout *hlayout = new QHBoxLayout();
+    layout->addLayout(hlayout);
+    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_ROAD, false));
+  }
+
+  {
+    QHBoxLayout *hlayout = new QHBoxLayout();
+    layout->addLayout(hlayout);
+    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_DRIVER, false));
+    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_WIDE_ROAD, false));
+  }
 
   return a.exec();
 }

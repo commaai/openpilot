@@ -5,14 +5,14 @@
 
 class FileReader {
 public:
-  FileReader(bool cache_to_local, int chunk_size = -1, int max_retries = 3)
-      : cache_to_local_(cache_to_local), chunk_size_(chunk_size), max_retries_(max_retries) {}
+  FileReader(bool cache_to_local, size_t chunk_size = 0, int retries = 3)
+      : cache_to_local_(cache_to_local), chunk_size_(chunk_size), max_retries_(retries) {}
   virtual ~FileReader() {}
   std::string read(const std::string &file, std::atomic<bool> *abort = nullptr);
 
 private:
   std::string download(const std::string &url, std::atomic<bool> *abort);
-  int chunk_size_;
+  size_t chunk_size_;
   int max_retries_;
   bool cache_to_local_;
 };

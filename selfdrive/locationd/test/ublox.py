@@ -338,7 +338,7 @@ class UBloxDescriptor:
           ret += '%s, ' % v[a]
         ret = ret[:-2] + '], '
       elif isinstance(v, str):
-        ret += '%s="%s", ' % (f, v.rstrip(' \0'))
+        ret += '{}="{}", '.format(f, v.rstrip(' \0'))
       else:
         ret += '%s=%s, ' % (f, v)
     for r in msg._recs:
@@ -774,10 +774,9 @@ class UBlox:
   def read(self, n):
     '''read some bytes'''
     if self.use_sendrecv:
-      import socket
       try:
         return self.dev.recv(n)
-      except socket.error:
+      except OSError:
         return ''
     return self.dev.read(n)
 

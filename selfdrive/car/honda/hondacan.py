@@ -1,5 +1,5 @@
-from selfdrive.car.honda.values import HONDA_BOSCH, CAR, CarControllerParams
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
+from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, CAR, CarControllerParams
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -43,7 +43,7 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
   return packer.make_can_msg("BRAKE_COMMAND", bus, values, idx)
 
 
-def create_acc_commands(packer, enabled, active, accel, gas, idx, stopping, starting, car_fingerprint):
+def create_acc_commands(packer, enabled, active, accel, gas, idx, stopping, car_fingerprint):
   commands = []
   bus = get_pt_bus(car_fingerprint)
   min_gas_accel = CarControllerParams.BOSCH_GAS_LOOKUP_BP[0]
@@ -53,7 +53,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, idx, stopping, star
   accel_command = accel if active else 0
   braking = 1 if active and accel < min_gas_accel else 0
   standstill = 1 if active and stopping else 0
-  standstill_release = 1 if active and starting else 0
+  standstill_release = 1 if active and not stopping else 0
 
   acc_control_values = {
     # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
@@ -98,14 +98,14 @@ def create_bosch_supplemental_1(packer, car_fingerprint, idx):
   return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values, idx)
 
 
-def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, openpilot_longitudinal_control, stock_hud):
+def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
   commands = []
-  bus_pt = get_pt_bus(car_fingerprint)
-  radar_disabled = car_fingerprint in HONDA_BOSCH and openpilot_longitudinal_control
-  bus_lkas = get_lkas_cmd_bus(car_fingerprint, radar_disabled)
+  bus_pt = get_pt_bus(CP.carFingerprint)
+  radar_disabled = CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl
+  bus_lkas = get_lkas_cmd_bus(CP.carFingerprint, radar_disabled)
 
-  if openpilot_longitudinal_control:
-    if car_fingerprint in HONDA_BOSCH:
+  if CP.openpilotLongitudinalControl:
+    if CP.carFingerprint in HONDA_BOSCH:
       acc_hud_values = {
         'CRUISE_SPEED': hud.v_cruise,
         'ENABLE_MINI_CAR': 1,
@@ -137,21 +137,28 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
 
   lkas_hud_values = {
     'SET_ME_X41': 0x41,
-    'SET_ME_X48': 0x48,
     'STEERING_REQUIRED': hud.steer_required,
     'SOLID_LANES': hud.lanes,
     'BEEP': 0,
   }
-  commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values, idx))
 
-  if radar_disabled and car_fingerprint in HONDA_BOSCH:
+  if not (CP.flags & HondaFlags.BOSCH_EXT_HUD):
+    lkas_hud_values['SET_ME_X48'] = 0x48
+
+  if CP.flags & HondaFlags.BOSCH_EXT_HUD and not CP.openpilotLongitudinalControl:
+    commands.append(packer.make_can_msg('LKAS_HUD_A', bus_lkas, lkas_hud_values, idx))
+    commands.append(packer.make_can_msg('LKAS_HUD_B', bus_lkas, lkas_hud_values, idx))
+  else:
+    commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values, idx))
+
+  if radar_disabled and CP.carFingerprint in HONDA_BOSCH:
     radar_hud_values = {
       'CMBS_OFF': 0x01,
       'SET_TO_1': 0x01,
     }
     commands.append(packer.make_can_msg('RADAR_HUD', bus_pt, radar_hud_values, idx))
 
-    if car_fingerprint == CAR.CIVIC_BOSCH:
+    if CP.carFingerprint == CAR.CIVIC_BOSCH:
       commands.append(packer.make_can_msg("LEGACY_BRAKE_COMMAND", bus_pt, {}, idx))
 
   return commands

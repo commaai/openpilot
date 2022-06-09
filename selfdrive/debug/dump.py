@@ -13,7 +13,7 @@ from cereal.services import service_list
 
 if __name__ == "__main__":
 
-  parser = argparse.ArgumentParser(description='Dump communcation sockets. See cereal/services.py for a complete list of available sockets.')
+  parser = argparse.ArgumentParser(description='Dump communication sockets. See cereal/services.py for a complete list of available sockets.')
   parser.add_argument('--pipe', action='store_true')
   parser.add_argument('--raw', action='store_true')
   parser.add_argument('--json', action='store_true')
@@ -54,13 +54,13 @@ if __name__ == "__main__":
         elif args.dump_json:
           print(json.dumps(evt.to_dict()))
         elif values:
-          print("logMonotime = {}".format(evt.logMonoTime))
+          print(f"logMonotime = {evt.logMonoTime}")
           for value in values:
             if hasattr(evt, value[0]):
               item = evt
               for key in value:
                 item = getattr(item, key)
-              print("{} = {}".format(".".join(value), item))
+              print(f"{'.'.join(value)} = {item}")
           print("")
         else:
           try:

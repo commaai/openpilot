@@ -4,16 +4,25 @@
 #include <QLayoutItem>
 #include <QStyleOption>
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
+#include "common/params.h"
+#include "common/swaglog.h"
 #include "selfdrive/hardware/hw.h"
+
+QString getVersion() {
+  static QString version =  QString::fromStdString(Params().get("Version"));
+  return version;
+}
 
 QString getBrand() {
   return Params().getBool("Passive") ? "dashcam" : "openpilot";
 }
 
 QString getBrandVersion() {
-  return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(14).trimmed();
+  return getBrand() + " v" + getVersion().left(14).trimmed();
+}
+
+QString getUserAgent() {
+  return "openpilot-" + getVersion();
 }
 
 std::optional<QString> getDongleId() {
@@ -76,32 +85,24 @@ void setQtSurfaceFormat() {
 #else
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 #endif
+  fmt.setSamples(16);
   QSurfaceFormat::setDefaultFormat(fmt);
 }
 
-void initApp() {
+void initApp(int argc, char *argv[]) {
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);
-  setQtSurfaceFormat();
-  if (Hardware::EON()) {
-    QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+
+#ifdef __APPLE__
+  {
+    // Get the devicePixelRatio, and scale accordingly to maintain 1:1 rendering
+    QApplication tmp(argc, argv);
+    qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio() ).toLocal8Bit());
   }
+#endif
+
+  setQtSurfaceFormat();
 }
-
-ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }
-
-void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
-  emit clicked();
-}
-
-// Fix stylesheets
-void ClickableWidget::paintEvent(QPaintEvent *) {
-  QStyleOption opt;
-  opt.init(this);
-  QPainter p(this);
-  style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
-}
-
 
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   static std::map<QtMsgType, int> levels = {
@@ -119,4 +120,18 @@ void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, co
 
   auto bts = msg.toUtf8();
   cloudlog_e(levels[type], file.c_str(), context.line, function.c_str(), "%s", bts.constData());
+}
+
+
+QWidget* topWidget (QWidget* widget) {
+  while (widget->parentWidget() != nullptr) widget=widget->parentWidget();
+  return widget;
+}
+
+QPixmap loadPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMode aspectRatioMode) {
+  if (size.isEmpty()) {
+    return QPixmap(fileName);
+  } else {
+    return QPixmap(fileName).scaled(size, aspectRatioMode, Qt::SmoothTransformation);
+  }
 }

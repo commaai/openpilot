@@ -28,7 +28,7 @@ def ffi_wrap(name, c_code, c_header, tmpdir="/tmp/ccache", cflags="", libraries=
     try:
       mod = __import__(cache)
     except Exception:
-      print("cache miss {0}".format(cache))
+      print(f"cache miss {cache}")
       compile_code(cache, c_code, c_header, tmpdir, cflags, libraries)
       mod = __import__(cache)
   finally:

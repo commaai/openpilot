@@ -2,7 +2,7 @@
 
 #include <QDebug>
 
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
@@ -115,10 +115,11 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   stack->addWidget(main_widget);
   stack->addWidget(no_prime_widget);
-  stack->setCurrentIndex(1);
+  stack->setCurrentIndex(uiState()->prime_type ? 0 : 1);
 
   QVBoxLayout *wrapper = new QVBoxLayout(this);
   wrapper->addWidget(stack);
+
 
   clear();
 
@@ -127,8 +128,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     {
       QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/locations";
       RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_NavDestinations", 30, true);
-      QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
-      QObject::connect(repeater, &RequestRepeater::failedResponse, this, &MapPanel::failedResponse);
+      QObject::connect(repeater, &RequestRepeater::requestDone, this, &MapPanel::parseResponse);
     }
 
     // Destination set while offline
@@ -137,8 +137,8 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
       RequestRepeater* repeater = new RequestRepeater(this, url, "", 10, true);
       HttpRequest* deleter = new HttpRequest(this);
 
-      QObject::connect(repeater, &RequestRepeater::receivedResponse, [=](QString resp) {
-        if (resp != "null") {
+      QObject::connect(repeater, &RequestRepeater::requestDone, [=](const QString &resp, bool success) {
+        if (success && resp != "null") {
           if (params.get("NavDestination").empty()) {
             qWarning() << "Setting NavDestination from /next" << resp;
             params.put("NavDestination", resp.toStdString());
@@ -183,7 +183,13 @@ void MapPanel::updateCurrentRoute() {
   current_widget->setVisible(dest.size() && !doc.isNull());
 }
 
-void MapPanel::parseResponse(const QString &response) {
+void MapPanel::parseResponse(const QString &response, bool success) {
+  stack->setCurrentIndex((uiState()->prime_type || success) ? 0 : 1);
+
+  if (!success) {
+    return;
+  }
+
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on navigation locations";
@@ -279,12 +285,7 @@ void MapPanel::parseResponse(const QString &response) {
   }
 
   recent_layout->addStretch();
-  stack->setCurrentIndex(0);
   repaint();
-}
-
-void MapPanel::failedResponse(const QString &response) {
-  stack->setCurrentIndex(1);
 }
 
 void MapPanel::navigateTo(const QJsonObject &place) {

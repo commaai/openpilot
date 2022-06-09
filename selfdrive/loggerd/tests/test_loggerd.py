@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import numpy as np
 import os
 import random
 import string
@@ -14,12 +15,12 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.hardware import PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.helpers import with_processes
-from selfdrive.version import version as VERSION
+from selfdrive.version import get_version
 from tools.lib.logreader import LogReader
+from cereal.visionipc import VisionIpcServer, VisionStreamType
+from common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
 
 SentinelType = log.Sentinel.SentinelType
 
@@ -28,12 +29,6 @@ CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in service_list
 
 
 class TestLoggerd(unittest.TestCase):
-  # TODO: all tests should work on PC
-  @classmethod
-  def setUpClass(cls):
-    if PC:
-      raise unittest.SkipTest
-
   def _get_latest_log_dir(self):
     log_dirs = sorted(Path(ROOT).iterdir(), key=lambda f: f.stat().st_mtime)
     return log_dirs[-1]
@@ -95,7 +90,7 @@ class TestLoggerd(unittest.TestCase):
     initData = lr[0].initData
 
     self.assertTrue(initData.dirty != bool(os.environ["CLEAN"]))
-    self.assertEqual(initData.version, VERSION)
+    self.assertEqual(initData.version, get_version())
 
     if os.path.isfile("/proc/cmdline"):
       with open("/proc/cmdline") as f:
@@ -107,37 +102,53 @@ class TestLoggerd(unittest.TestCase):
     for _, k, v in fake_params:
       self.assertEqual(getattr(initData, k), v)
 
-  # TODO: this shouldn't need camerad
-  @with_processes(['camerad'])
   def test_rotation(self):
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
-    expected_files = {"rlog.bz2", "qlog.bz2", "qcamera.ts", "fcamera.hevc", "dcamera.hevc"}
-    if TICI:
-      expected_files.add("ecamera.hevc")
 
-    # give camerad time to start
-    time.sleep(5)
+    expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
+    streams = [(VisionStreamType.VISION_STREAM_ROAD, (*tici_f_frame_size, 2048*2346, 2048, 2048*1216), "roadCameraState"),
+               (VisionStreamType.VISION_STREAM_DRIVER, (*tici_d_frame_size, 2048*2346, 2048, 2048*1216), "driverCameraState"),
+               (VisionStreamType.VISION_STREAM_WIDE_ROAD, (*tici_e_frame_size, 2048*2346, 2048, 2048*1216), "wideRoadCameraState")]
+
+    pm = messaging.PubMaster(["roadCameraState", "driverCameraState", "wideRoadCameraState"])
+    vipc_server = VisionIpcServer("camerad")
+    for stream_type, frame_spec, _ in streams:
+      vipc_server.create_buffers_with_sizes(stream_type, 40, False, *(frame_spec))
+    vipc_server.start_listener()
 
     for _ in range(5):
-      num_segs = random.randint(1, 10)
-      length = random.randint(2, 5)
+      num_segs = random.randint(2, 5)
+      length = random.randint(1, 3)
       os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
-
       managed_processes["loggerd"].start()
-      time.sleep((num_segs + 1) * length)
+      managed_processes["encoderd"].start()
+
+      fps = 20.0
+      for n in range(1, int(num_segs*length*fps)+1):
+        for stream_type, frame_spec, state in streams:
+          dat = np.empty(frame_spec[2], dtype=np.uint8)
+          vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n/fps, n/fps)
+
+          camera_state = messaging.new_message(state)
+          frame = getattr(camera_state, state)
+          frame.frameId = n
+          pm.send(state, camera_state)
+        time.sleep(1.0/fps)
+
       managed_processes["loggerd"].stop()
+      managed_processes["encoderd"].stop()
 
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
       for n in range(num_segs):
         p = Path(f"{route_path}--{n}")
-        logged = set([f.name for f in p.iterdir() if f.is_file()])
+        logged = {f.name for f in p.iterdir() if f.is_file()}
         diff = logged ^ expected_files
-        self.assertEqual(len(diff), 0, f"{_=} {route_path=} {n=}, {logged=} {expected_files=}")
+        self.assertEqual(len(diff), 0, f"didn't get all expected files. run={_} seg={n} {route_path=}, {diff=}\n{logged=} {expected_files=}")
 
   def test_bootlog(self):
     # generate bootlog with fake launch log
-    launch_log = ''.join([str(random.choice(string.printable)) for _ in range(100)])
+    launch_log = ''.join(str(random.choice(string.printable)) for _ in range(100))
     with open("/tmp/launch_log", "w") as f:
       f.write(launch_log)
 
@@ -177,7 +188,9 @@ class TestLoggerd(unittest.TestCase):
     # sleep enough for the first poll to time out
     # TOOD: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
-    time.sleep(2)
+    for s in services:
+      while not pm.all_readers_updated(s):
+        time.sleep(0.1)
 
     sent_msgs = defaultdict(list)
     for _ in range(random.randint(2, 10) * 100):
@@ -193,7 +206,7 @@ class TestLoggerd(unittest.TestCase):
     time.sleep(1)
     managed_processes["loggerd"].stop()
 
-    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog.bz2")
+    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog")
     lr = list(LogReader(qlog_path))
 
     # check initData and sentinel
@@ -220,9 +233,11 @@ class TestLoggerd(unittest.TestCase):
     pm = messaging.PubMaster(services)
 
     # sleep enough for the first poll to time out
-    # TOOD: fix loggerd bug dropping the msgs from the first poll
+    # TODO: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
-    time.sleep(2)
+    for s in services:
+      while not pm.all_readers_updated(s):
+        time.sleep(0.1)
 
     sent_msgs = defaultdict(list)
     for _ in range(random.randint(2, 10) * 100):
@@ -233,12 +248,11 @@ class TestLoggerd(unittest.TestCase):
           m = messaging.new_message(s, random.randint(2, 10))
         pm.send(s, m)
         sent_msgs[s].append(m)
-      time.sleep(0.01)
 
-    time.sleep(1)
+    time.sleep(2)
     managed_processes["loggerd"].stop()
 
-    lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog.bz2")))
+    lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog")))
 
     # check initData and sentinel
     self._check_init_data(lr)

@@ -19,7 +19,7 @@ def create_lta_steer_command(packer, steer, steer_req, raw_cnt):
     "SETME_X3": 3,
     "PERCENTAGE": 100,
     "SETME_X64": 0x64,
-    "ANGLE": 0,  # Rate limit? Lower values seeem to work better, but needs more testing
+    "ANGLE": 0,
     "STEER_ANGLE_CMD": steer,
     "STEER_REQUEST": steer_req,
     "STEER_REQUEST_2": steer_req,
@@ -35,10 +35,10 @@ def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead, acc_ty
     "ACC_TYPE": acc_type,
     "DISTANCE": 0,
     "MINI_CAR": lead,
-    "ALLOW_LONG_PRESS": 3,
     "PERMIT_BRAKING": 1,
     "RELEASE_STANDSTILL": not standstill_req,
     "CANCEL_REQ": pcm_cancel,
+    "ALLOW_LONG_PRESS": 1,
   }
   return packer.make_can_msg("ACC_CONTROL", 0, values)
 
@@ -67,19 +67,34 @@ def create_fcw_command(packer, fcw):
   return packer.make_can_msg("ACC_HUD", 0, values)
 
 
-def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_depart, right_lane_depart):
+def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_depart, right_lane_depart, enabled):
   values = {
-    "RIGHT_LINE": 3 if right_lane_depart else 1 if right_line else 2,
-    "LEFT_LINE": 3 if left_lane_depart else 1 if left_line else 2,
-    "BARRIERS" : 3 if left_lane_depart else 2 if right_lane_depart else 0,
-    "SET_ME_X0C": 0x0c,
-    "SET_ME_X2C": 0x2c,
-    "SET_ME_X38": 0x38,
-    "SET_ME_X02": 0x02,
-    "SET_ME_X01": 1,
-    "SET_ME_X01_2": 1,
-    "REPEATED_BEEPS": 0,
     "TWO_BEEPS": chime,
     "LDA_ALERT": steer,
+    "RIGHT_LINE": 3 if right_lane_depart else 1 if right_line else 2,
+    "LEFT_LINE": 3 if left_lane_depart else 1 if left_line else 2,
+    "BARRIERS" : 1 if enabled else 0,
+
+    # static signals
+    "SET_ME_X02": 2,
+    "SET_ME_X01": 1,
+    "LKAS_STATUS": 1,
+    "REPEATED_BEEPS": 0,
+    "LANE_SWAY_FLD": 7,
+    "LANE_SWAY_BUZZER": 0,
+    "LANE_SWAY_WARNING": 0,
+    "LDA_FRONT_CAMERA_BLOCKED": 0,
+    "TAKE_CONTROL": 0,
+    "LANE_SWAY_SENSITIVITY": 2,
+    "LANE_SWAY_TOGGLE": 1,
+    "LDA_ON_MESSAGE": 0,
+    "LDA_SPEED_TOO_LOW": 0,
+    "LDA_SA_TOGGLE": 1,
+    "LDA_SENSITIVITY": 2,
+    "LDA_UNAVAILABLE": 0,
+    "LDA_MALFUNCTION": 0,
+    "LDA_UNAVAILABLE_QUIET": 0,
+    "ADJUSTING_CAMERA": 0,
+    "LDW_EXIST": 1,
   }
   return packer.make_can_msg("LKAS_HUD", 0, values)

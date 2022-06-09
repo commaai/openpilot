@@ -6,8 +6,8 @@
 #include <QQuickWidget>
 #include <QVBoxLayout>
 
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/params.h"
+#include "common/util.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
@@ -16,9 +16,14 @@ TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
 }
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
+  if (click_timer.elapsed() < 250) {
+    return;
+  }
+  click_timer.restart();
+
   if (boundingRect[currentIndex].contains(e->x(), e->y())) {
     if (currentIndex == 9) {
-      const QRect yes = QRect(692, 842, 492, 148);
+      const QRect yes = QRect(707, 804, 531, 164);
       Params().putBool("RecordFront", yes.contains(e->x(), e->y()));
     }
     currentIndex += 1;
@@ -40,6 +45,7 @@ void TrainingGuide::showEvent(QShowEvent *event) {
 
   currentIndex = 0;
   image.load(img_path + "step0.png");
+  click_timer.start();
 }
 
 void TrainingGuide::paintEvent(QPaintEvent *event) {
@@ -145,7 +151,7 @@ void DeclinePage::showEvent(QShowEvent *event) {
 
   QObject::connect(back_btn, &QPushButton::clicked, this, &DeclinePage::getBack);
 
-  QPushButton *uninstall_btn = new QPushButton("Decline, uninstall " + getBrand());
+  QPushButton *uninstall_btn = new QPushButton(QString("Decline, uninstall %1").arg(getBrand()));
   uninstall_btn->setStyleSheet("background-color: #B73D3D");
   buttons->addWidget(uninstall_btn);
   QObject::connect(uninstall_btn, &QPushButton::clicked, [=]() {

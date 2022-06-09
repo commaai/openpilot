@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
-import os
 import subprocess
 import time
 
 import numpy as np
 from PIL import Image
-from typing import List
 
 import cereal.messaging as messaging
+from cereal.visionipc import VisionIpcClient, VisionStreamType
 from common.params import Params
 from common.realtime import DT_MDL
-from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size
-from selfdrive.hardware import TICI
+from selfdrive.hardware import PC
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.manager.process_config import managed_processes
 
 LM_THRESH = 120  # defined in selfdrive/camerad/imgproc/utils.h
+
+VISION_STREAMS = {
+  "roadCameraState": VisionStreamType.VISION_STREAM_ROAD,
+  "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,
+  "wideRoadCameraState": VisionStreamType.VISION_STREAM_WIDE_ROAD,
+}
 
 
 def jpeg_write(fn, dat):
@@ -23,55 +27,61 @@ def jpeg_write(fn, dat):
   img.save(fn, "JPEG")
 
 
-def extract_image(dat, frame_sizes):
-  img = np.frombuffer(dat, dtype=np.uint8)
-  w, h = frame_sizes[len(img) // 3]
-  b = img[::3].reshape(h, w)
-  g = img[1::3].reshape(h, w)
-  r = img[2::3].reshape(h, w)
-  return np.dstack([r, g, b])
+def yuv_to_rgb(y, u, v):
+  ul = np.repeat(np.repeat(u, 2).reshape(u.shape[0], y.shape[1]), 2, axis=0).reshape(y.shape)
+  vl = np.repeat(np.repeat(v, 2).reshape(v.shape[0], y.shape[1]), 2, axis=0).reshape(y.shape)
+
+  yuv = np.dstack((y, ul, vl)).astype(np.int16)
+  yuv[:, :, 1:] -= 128
+
+  m = np.array([
+    [1.00000,  1.00000, 1.00000],
+    [0.00000, -0.39465, 2.03211],
+    [1.13983, -0.58060, 0.00000],
+  ])
+  rgb = np.dot(yuv, m)
+  return rgb.astype(np.uint8)
 
 
-def rois_in_focus(lapres: List[float]) -> float:
-  sz = len(lapres)
-  return sum([1. / sz for sharpness in
-              lapres if sharpness >= LM_THRESH])
+def extract_image(buf, w, h, stride, uv_offset):
+  y = np.array(buf[:uv_offset], dtype=np.uint8).reshape((-1, stride))[:h, :w]
+  u = np.array(buf[uv_offset::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
+  v = np.array(buf[uv_offset+1::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
+
+  return yuv_to_rgb(y, u, v)
 
 
-def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focus_perc_threshold=0.):
-  frame_sizes = [eon_f_frame_size, eon_d_frame_size, tici_f_frame_size]
-  frame_sizes = {w * h: (w, h) for (w, h) in frame_sizes}
-
-  sockets = []
-  if frame is not None:
-    sockets.append(frame)
-  if front_frame is not None:
-    sockets.append(front_frame)
+def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
+  sockets = [s for s in (frame, front_frame) if s is not None]
+  sm = messaging.SubMaster(sockets)
+  vipc_clients = {s: VisionIpcClient("camerad", VISION_STREAMS[s], True) for s in sockets}
 
   # wait 4 sec from camerad startup for focus and exposure
-  sm = messaging.SubMaster(sockets)
   while sm[sockets[0]].frameId < int(4. / DT_MDL):
     sm.update()
 
-  start_t = time.monotonic()
-  while time.monotonic() - start_t < 10:
-    sm.update()
-    if min(sm.rcv_frame.values()) > 1 and rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
-      break
+  for client in vipc_clients.values():
+    client.connect(True)
 
-  rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
-  front = extract_image(sm[front_frame].image, frame_sizes) if front_frame is not None else None
+  # grab images
+  rear, front = None, None
+  if frame is not None:
+    c = vipc_clients[frame]
+    rear = extract_image(c.recv(), c.width, c.height, c.stride, c.uv_offset)
+  if front_frame is not None:
+    c = vipc_clients[front_frame]
+    front = extract_image(c.recv(), c.width, c.height, c.stride, c.uv_offset)
   return rear, front
 
 
 def snapshot():
   params = Params()
-  front_camera_allowed = params.get_bool("RecordFront")
 
   if (not params.get_bool("IsOffroad")) or params.get_bool("IsTakingSnapshot"):
     print("Already taking snapshot")
     return None, None
 
+  front_camera_allowed = params.get_bool("RecordFront")
   params.put_bool("IsTakingSnapshot", True)
   set_offroad_alert("Offroad_IsTakingSnapshot", True)
   time.sleep(2.0)  # Give thermald time to read the param, or if just started give camerad time to start
@@ -86,18 +96,14 @@ def snapshot():
   except subprocess.CalledProcessError:
     pass
 
-  os.environ["SEND_ROAD"] = "1"
-  os.environ["SEND_WIDE_ROAD"] = "1"
-  if front_camera_allowed:
-    os.environ["SEND_DRIVER"] = "1"
-
   try:
-    managed_processes['camerad'].start()
-    frame = "wideRoadCameraState" if TICI else "roadCameraState"
-    front_frame = "driverCameraState" if front_camera_allowed else None
-    focus_perc_threshold = 0. if TICI else 10 / 12.
+    # Allow testing on replay on PC
+    if not PC:
+      managed_processes['camerad'].start()
 
-    rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
+    frame = "wideRoadCameraState"
+    front_frame = "driverCameraState" if front_camera_allowed else None
+    rear, front = get_snapshots(frame, front_frame)
   finally:
     managed_processes['camerad'].stop()
     params.put_bool("IsTakingSnapshot", False)

@@ -27,11 +27,14 @@ def deleter_thread(exit_event):
           continue
 
         try:
-          cloudlog.info("deleting %s" % delete_path)
-          shutil.rmtree(delete_path)
+          cloudlog.info(f"deleting {delete_path}")
+          if os.path.isfile(delete_path):
+            os.remove(delete_path)
+          else:
+            shutil.rmtree(delete_path)
           break
         except OSError:
-          cloudlog.exception("issue deleting %s" % delete_path)
+          cloudlog.exception(f"issue deleting {delete_path}")
       exit_event.wait(.1)
     else:
       exit_event.wait(30)

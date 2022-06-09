@@ -141,12 +141,13 @@ typedef struct
     bool output_z;        // 1 -- if zn should be computed
     bool sens_algebraic;  // 1 -- if S_algebraic should be computed
     bool exact_z_output;  // 1 -- if z, S_algebraic should be computed exactly, extra Newton iterations
+    sim_collocation_type collocation_type;
 
     // for explicit integrators: newton_iter == 0 && scheme == NULL
     // && jac_reuse=false
     int newton_iter;
     bool jac_reuse;
-    Newton_scheme *scheme;
+    // Newton_scheme *scheme;
 
     // workspace
     void *work;

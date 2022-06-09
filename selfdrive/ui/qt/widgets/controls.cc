@@ -19,7 +19,7 @@ QFrame *horizontal_line(QWidget *parent) {
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-  
+
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
 
@@ -120,4 +120,18 @@ void ElidedLabel::paintEvent(QPaintEvent *event) {
   QStyleOption opt;
   opt.initFrom(this);
   style()->drawItemText(&painter, contentsRect(), alignment(), opt.palette, isEnabled(), elidedText_, foregroundRole());
+}
+
+ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }
+
+void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
+  emit clicked();
+}
+
+// Fix stylesheets
+void ClickableWidget::paintEvent(QPaintEvent *) {
+  QStyleOption opt;
+  opt.init(this);
+  QPainter p(this);
+  style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
