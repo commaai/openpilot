@@ -60,11 +60,19 @@ MQB_LDW_MESSAGES = {
   "laneAssistTakeOverUrgent": 4,        # "Lane Assist: Please Take Over Steering" with urgent beep
   "emergencyAssistUrgent": 6,           # "Emergency Assist: Please Take Over Steering" with urgent beep
   "laneAssistTakeOverChime": 7,         # "Lane Assist: Please Take Over Steering" with chime
-  "laneAssistTakeOverSilent": 8,        # "Lane Assist: Please Take Over Steering" silent
+  "laneAssistTakeOver": 8,              # "Lane Assist: Please Take Over Steering" silent
   "emergencyAssistChangingLanes": 9,    # "Emergency Assist: Changing lanes..." with urgent beep
   "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
 }
 
+PQ_LDW_MESSAGES = {
+  "none": 0,                            # Nothing to display
+  "laneAssistUnavail": 1,               # "Lane Assist currently not available."
+  "laneAssistUnavailSysError": 2,       # "Lane Assist system error"
+  "laneAssistUnavailNoSensorView": 3,   # "Lane Assist not available. No sensor view."
+  "laneAssistTakeOver": 4,              # "Lane Assist: Please Take Over Steering"
+  "laneAssistDeactivTrailer": 5,        # "Lane Assist: no function with trailer"
+}
 
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
 # chassis code is already listed below, don't add a new CAR, just add to the

@@ -1,7 +1,7 @@
 from cereal import car
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan, pqcan
-from selfdrive.car.volkswagen.values import PQ_CARS, DBC_FILES, CANBUS, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams as P
+from selfdrive.car.volkswagen.values import PQ_CARS, DBC_FILES, CANBUS, MQB_LDW_MESSAGES, PQ_LDW_MESSAGES, BUTTON_STATES, CarControllerParams as P
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -80,11 +80,9 @@ class CarController():
     # **** HUD Controls ***************************************************** #
 
     if frame % self.ldw_step == 0:
-      # FIXME: Need MQB vs PQ handling of displayed messages here
+      hud_alert = 0
       if visual_alert in (VisualAlert.steerRequired, VisualAlert.ldw):
-        hud_alert = MQB_LDW_MESSAGES["laneAssistTakeOverSilent"]
-      else:
-        hud_alert = MQB_LDW_MESSAGES["none"]
+        hud_alert = PQ_LDW_MESSAGES["laneAssistTakeOver"] if self.CP.carFingerprint in PQ_CARS else MQB_LDW_MESSAGES["laneAssistTakeOver"]
 
       if self.CP.carFingerprint in PQ_CARS:
         can_sends.append(pqcan.create_pq_hud_control(self.packer_pt, CANBUS.pt, c.enabled,

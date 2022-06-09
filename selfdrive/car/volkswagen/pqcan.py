@@ -24,6 +24,7 @@ def create_pq_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert,
     "SET_ME_X1": 1,
     "Kombi_Lamp_Orange": 1 if hca_enabled and steering_pressed else 0,
     "Kombi_Lamp_Green": 1 if hca_enabled and not steering_pressed else 0,
+    "LDW_Textbits": hud_alert,
   }
   return packer.make_can_msg("LDW_1", bus, values)
 
