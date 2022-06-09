@@ -6,6 +6,7 @@ Version 0.8.15 (2022-XX-XX)
   * Effective feedforward that uses road roll
   * Simplified tuning, all car-specific parameters can be derived from data
 * AGNOS 5
+* Lexus NX Hybrid 2020 support thanks to AlexandreSato!
 
 Version 0.8.14 (2022-06-01)
 ========================
