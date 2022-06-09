@@ -160,8 +160,8 @@ class CarState(CarStateBase):
       pt_cp.vl["Bremse_3"]["Radgeschw__HR_4_1"],
     )
 
-    # FIXME: Match current Panda/support NSF by getting vEgoRaw from ego speed signal
-    ret.vEgoRaw = float(np.mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr]))
+    # vEgo obtained from Bremse_1 vehicle speed rather than Bremse_3 wheel speeds because Bremse_3 isn't present on NSF
+    ret.vEgoRaw = pt_cp.vl["Bremse_1"]["Geschwindigkeit_neu__Bremse_1_"] * CV.KPH_TO_MS
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgo < 0.1
 
@@ -406,6 +406,7 @@ class CarState(CarStateBase):
       ("LH2_Sta_HCA", "Lenkhilfe_2"),            # Steering rack HCA status
       ("Lenkradwinkel_Geschwindigkeit", "Lenkwinkel_1"),  # Absolute steering rate
       ("Lenkradwinkel_Geschwindigkeit_S", "Lenkwinkel_1"),  # Steering rate sign
+      ("Geschwindigkeit_neu__Bremse_1_", "Bremse_1"),  # Vehicle speed from ABS
       ("Radgeschw__VL_4_1", "Bremse_3"),         # ABS wheel speed, front left
       ("Radgeschw__VR_4_1", "Bremse_3"),         # ABS wheel speed, front right
       ("Radgeschw__HL_4_1", "Bremse_3"),         # ABS wheel speed, rear left
