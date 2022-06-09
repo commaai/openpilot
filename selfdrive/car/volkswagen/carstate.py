@@ -270,7 +270,7 @@ class CarState(CarStateBase):
 
     # Pick up the GRA_ACC_01 CAN message counter so we can sync to it for
     # later cruise-control button spamming.
-    self.graMsgBusCounter = pt_cp.vl["GRA_Neu"]["GRA_Neu_Zaehler"]
+    self.graMsgBusCounter = pt_cp.vl["GRA_Neu"]["COUNTER"]
 
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = bool(pt_cp.vl["Bremse_1"]["ESP_Passiv_getastet"])
@@ -435,7 +435,7 @@ class CarState(CarStateBase):
       ("GRA_Down_kurz", "GRA_Neu"),              # ACC button, decrease or decel, short press
       ("GRA_Recall", "GRA_Neu"),                 # ACC button, resume
       ("GRA_Zeitluecke", "GRA_Neu"),             # ACC button, time gap adj
-      ("GRA_Neu_Zaehler", "GRA_Neu"),            # ACC button, time gap adj
+      ("COUNTER", "GRA_Neu"),                    # ACC button, message counter
       ("GRA_Sender", "GRA_Neu"),                 # GRA Sender Coding
     ]
 
