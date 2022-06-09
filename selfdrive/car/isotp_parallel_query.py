@@ -10,7 +10,7 @@ from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_a
 
 
 class IsoTpParallelQuery:
-  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addr=False, debug=False):
+  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addr=False, debug=False, response_pending_timeout=10):
     self.sendcan = sendcan
     self.logcan = logcan
     self.bus = bus
@@ -18,6 +18,7 @@ class IsoTpParallelQuery:
     self.response = response
     self.debug = debug
     self.functional_addr = functional_addr
+    self.response_pending_timeout = response_pending_timeout
 
     self.real_addrs = []
     for a in addrs:
@@ -71,10 +72,7 @@ class IsoTpParallelQuery:
     messaging.drain_sock(self.logcan)
     self.msg_buffer = defaultdict(list)
 
-  def get_data(self, timeout, total_timeout=None):
-    if total_timeout is None:
-      total_timeout = 10 * timeout
-
+  def get_data(self, timeout, total_timeout=60.):
     self._drain_rx()
 
     # Create message objects
@@ -100,7 +98,7 @@ class IsoTpParallelQuery:
 
     results = {}
     start_time = time.monotonic()
-    last_response_time = start_time
+    response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs}
     while True:
       self.rx()
 
@@ -123,7 +121,7 @@ class IsoTpParallelQuery:
         response_valid = dat[:len(expected_response)] == expected_response
 
         if response_valid:
-          last_response_time = time.monotonic()
+          response_timeouts[tx_addr] = time.monotonic() + timeout
           if counter + 1 < len(self.request):
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
@@ -131,13 +129,19 @@ class IsoTpParallelQuery:
             results[tx_addr] = dat[len(expected_response):]
             request_done[tx_addr] = True
         else:
-          request_done[tx_addr] = True
-          cloudlog.warning(f"iso-tp query bad response: 0x{dat.hex()}")
+          error_code = dat[2] if len(dat) > 2 else -1
+          if error_code == 0x78:
+            response_timeouts[tx_addr] = time.monotonic() + self.response_pending_timeout
+            if self.debug:
+              cloudlog.warning(f"iso-tp query response pending: {tx_addr}")
+          else:
+            request_done[tx_addr] = True
+            cloudlog.warning(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
 
       cur_time = time.monotonic()
-      if cur_time - last_response_time > timeout:
+      if cur_time - max(response_timeouts.values()) > 0:
         for tx_addr in msgs:
-          if (request_counter[tx_addr] > 0) and (not request_done[tx_addr]):
+          if request_counter[tx_addr] > 0 and not request_done[tx_addr]:
             cloudlog.warning(f"iso-tp query timeout after receiving response: {tx_addr}")
         break
 
