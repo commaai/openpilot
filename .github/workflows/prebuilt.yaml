@@ -25,7 +25,7 @@ jobs:
       IMAGE_NAME: openpilot-prebuilt
     steps:
     - name: Wait for green check mark
-      uses: sshane/wait-on-check-action@634ce300f4ab0dcf82839e6af4a2cd4491e190db
+      uses: sshane/wait-on-check-action@cba19f49c940963c7bd2fb59c629c3c2bd056eda
       with:
         ref: master
         repo-token: ${{ secrets.GITHUB_TOKEN }}
