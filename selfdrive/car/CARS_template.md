@@ -38,7 +38,7 @@ How We Rate The Cars
 **All supported cars can move between the tiers as support changes.**
 
 {% for tier, cars in tiers.items() %}
-## {{tier.name.title()}} Cars
+## {{tier.name.title()}} ({{cars | length}} cars)
 
 |{{Column | map(attribute='value') | join('|')}}|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
