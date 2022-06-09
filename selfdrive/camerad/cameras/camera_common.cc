@@ -239,7 +239,7 @@ static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_w
   int in_stride = b->cur_yuv_buf->stride;
 
   // make the buffer big enough. jpeg_write_raw_data requires 16-pixels aligned height to be used.
-  std::unique_ptr<uint8[]> buf(new uint8_t[(thumbnail_width * ((thumbnail_height + 15) & ~15) * 3) / 2]);
+  std::unique_ptr<uint8_t[]> buf(new uint8_t[(thumbnail_width * ((thumbnail_height + 15) & ~15) * 3) / 2]);
   uint8_t *y_plane = buf.get();
   uint8_t *u_plane = y_plane + thumbnail_width * thumbnail_height;
   uint8_t *v_plane = u_plane + (thumbnail_width * thumbnail_height) / 4;
