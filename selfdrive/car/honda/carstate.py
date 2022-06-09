@@ -84,18 +84,18 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       ("CAR_SPEED", 10),
     ]
 
-    if not CP.openpilotLongitudinalControl:
-      if CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
-        signals += [
-          ("CRUISE_CONTROL_LABEL", "ACC_HUD"),  # ACC_HUD is on camera bus on radarless
-          ("CRUISE_SPEED", "ACC_HUD"),
-          ("ACCEL_COMMAND", "ACC_CONTROL"),  # ACC_CONTROL doesn't exist on radarless
-          ("AEB_STATUS", "ACC_CONTROL"),  # TODO: find signals on ACC_CONTROL_2
-        ]
-        checks += [
-          ("ACC_HUD", 10),
-          ("ACC_CONTROL", 50),
-        ]
+    # these messages are on camera bus on radarless
+    if not CP.openpilotLongitudinalControl and CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
+      signals += [
+        ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
+        ("CRUISE_SPEED", "ACC_HUD"),
+        ("ACCEL_COMMAND", "ACC_CONTROL"),
+        ("AEB_STATUS", "ACC_CONTROL"),
+      ]
+      checks += [
+        ("ACC_HUD", 10),
+        ("ACC_CONTROL", 50),
+      ]
   else:  # Nidec signals
     signals += [("CRUISE_SPEED_PCM", "CRUISE"),
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS")]
