@@ -81,14 +81,12 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.PALISADE:
-      ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1999. + STD_CARGO_KG
       ret.wheelbase = 2.90
       ret.steerRatio = 15.6 * 1.15
       tire_stiffness_factor = 0.63
       ret.maxLateralAccel = 2.5
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
+      set_torque_tune(ret.lateralTuning, 2.5, 0.13)
     elif candidate in (CAR.ELANTRA, CAR.ELANTRA_GT_I30):
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1275. + STD_CARGO_KG
