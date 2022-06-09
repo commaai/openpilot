@@ -75,10 +75,11 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     signals.append(("BRAKE_PRESSED", "BRAKE_MODULE"))
     checks.append(("BRAKE_MODULE", 50))
 
-  if CP.carFingerprint in HONDA_BOSCH:
+  if CP.carFingerprint in (HONDA_BOSCH + {CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN}):
     signals.append(("EPB_STATE", "EPB_STATUS"))
     checks.append(("EPB_STATUS", 50))
 
+  if CP.carFingerprint in HONDA_BOSCH:
     if not CP.openpilotLongitudinalControl:
       signals += [
         ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
@@ -116,13 +117,6 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       ("DOORS_STATUS", 3),
       ("STANDSTILL", 50),
     ]
-
-  if CP.carFingerprint == CAR.CIVIC:
-    signals += [("EPB_STATE", "EPB_STATUS")]
-    checks += [("EPB_STATUS", 50)]
-  elif CP.carFingerprint in (CAR.ODYSSEY, CAR.ODYSSEY_CHN):
-    signals.append(("EPB_STATE", "EPB_STATUS"))
-    checks.append(("EPB_STATUS", 50))
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
@@ -219,8 +213,7 @@ class CarState(CarStateBase):
     ret.brakeHoldActive = cp.vl["VSA_STATUS"]["BRAKE_HOLD_ACTIVE"] == 1
 
     # TODO: set for all cars
-    if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH,
-                                  CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
+    if self.CP.carFingerprint in (HONDA_BOSCH + {CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN}):
       ret.parkingBrake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
 
     gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
