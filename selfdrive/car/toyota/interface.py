@@ -94,7 +94,7 @@ class CarInterface(CarInterfaceBase):
         ret.maxLateralAccel = 2.4
         set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=ret.maxLateralAccel, FRICTION=0.05)
       else:
-        ret.maxLateralAccel = 2.0
+        set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
     elif candidate in (CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
       stop_and_go = True
