@@ -18,7 +18,7 @@ How We Rate The Cars
 {% for name, stars in descriptions.items() %}
 ### {{name}}
 {% for star, description in stars %}
-- {{star_icon.format(star.value)}} - {{description}}
+- {{star_icon.format(star)}} - {{description}}
 {% endfor %}
 
 {% endfor %}
