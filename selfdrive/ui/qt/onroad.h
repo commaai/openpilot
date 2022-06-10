@@ -32,6 +32,8 @@ class NvgWindow : public CameraViewWidget {
   Q_PROPERTY(QString maxSpeed MEMBER maxSpeed);
   Q_PROPERTY(bool is_cruise_set MEMBER is_cruise_set);
   Q_PROPERTY(bool engageable MEMBER engageable);
+  Q_PROPERTY(bool dmActive MEMBER dmActive);
+  Q_PROPERTY(bool hideDM MEMBER hideDM);
   Q_PROPERTY(int status MEMBER status);
 
 public:
@@ -43,6 +45,7 @@ private:
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
   QPixmap engage_img;
+  QPixmap dm_img;
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
   QString speed;
@@ -50,6 +53,8 @@ private:
   QString maxSpeed;
   bool is_cruise_set = false;
   bool engageable = false;
+  bool dmActive = false;
+  bool hideDM = false;
   int status = STATUS_DISENGAGED;
 
 protected:
