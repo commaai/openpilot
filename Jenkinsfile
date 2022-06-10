@@ -110,16 +110,6 @@ pipeline {
                   }
                 }
 
-               stage('C2: camerad') {
-                  steps {
-                    phone_steps("eon-party", [
-                      ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
-                      ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
-                    ])
-                  }
-                }
-
               }
             }
 
