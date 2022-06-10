@@ -166,6 +166,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
 NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, parent) {
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
+  dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
 }
 
 void NvgWindow::updateState(const UIState &s) {
@@ -185,11 +186,13 @@ void NvgWindow::updateState(const UIState &s) {
   setProperty("speed", QString::number(std::nearbyint(cur_speed)));
   setProperty("maxSpeed", maxspeed_str);
   setProperty("speedUnit", s.scene.is_metric ? "km/h" : "mph");
+  setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
   setProperty("status", s.status);
 
-  // update engageability at 2Hz
+  // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
     setProperty("engageable", cs.getEngageable() || cs.getEnabled());
+    setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
   }
 }
 
@@ -231,6 +234,11 @@ void NvgWindow::drawHud(QPainter &p) {
              engage_img, bg_colors[status], 1.0);
   }
 
+  // dm icon
+  if (!hideDM) {
+    drawIcon(p, radius / 2 + (bdr_s * 2), rect().bottom() - footer_h / 2,
+             dm_img, QColor(0, 0, 0, 70), dmActive ? 1.0 : 0.2);
+  }
   p.restore();
 }
 
