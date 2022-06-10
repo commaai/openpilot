@@ -14,12 +14,14 @@ Cars are organized into three tiers:
 How We Rate The Cars
 ---
 
-{% for name, stars in star_descriptions.items() %}
+{% for descriptions in star_descriptions.values() %}
+{% for name, stars in descriptions.items() %}
 ### {{name}}
 {% for star, description in stars %}
 - {{star_icon.format(star.value)}} - {{description}}
 {% endfor %}
 
+{% endfor %}
 {% endfor %}
 **All supported cars can move between the tiers as support changes.**
 
