@@ -34,7 +34,6 @@ class CarInterface(CarInterfaceBase):
 
     # Set torque tune for all cars, then overwrite if needed
     torque_params = CarInterfaceBase.get_torque_params(candidate)
-    ret.maxLateralAccel = torque_params['MAX_LAT_ACCEL_MEASURED']
     set_lat_tune(ret.lateralTuning, LatTunes.TORQUE,
                  MAX_LAT_ACCEL=torque_params['LAT_ACCEL_FACTOR'], FRICTION=torque_params['FRICTION'])
 
@@ -52,7 +51,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.5533
       ret.mass = 3340. * CV.LB_TO_KG + STD_CARGO_KG
       torque_params = CarInterfaceBase.get_torque_params(CAR.PRIUS)
-      ret.maxLateralAccel = torque_params['MAX_LAT_ACCEL_MEASURED']
       set_lat_tune(ret.lateralTuning, LatTunes.TORQUE,
                    MAX_LAT_ACCEL=torque_params['LAT_ACCEL_FACTOR'], FRICTION=torque_params['FRICTION'])
 
