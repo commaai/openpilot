@@ -32,11 +32,6 @@ class CarInterface(CarInterfaceBase):
 
     stop_and_go = False
 
-    # Set torque tune for all cars, then overwrite if needed
-    torque_params = CarInterfaceBase.get_torque_params(candidate)
-    # set_lat_tune(ret.lateralTuning, LatTunes.TORQUE,
-    #              MAX_LAT_ACCEL=torque_params['LAT_ACCEL_FACTOR'], FRICTION=torque_params['FRICTION'])
-
     if candidate == CAR.PRIUS:
       stop_and_go = True
       ret.wheelbase = 2.70
