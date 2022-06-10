@@ -32,7 +32,6 @@ class CarInterface(CarInterfaceBase):
 
     stop_and_go = False
 
-
     # Set torque tune for all cars, then overwrite if needed
     torque_params = CarInterfaceBase.get_torque_params(candidate)
     ret.maxLateralAccel = torque_params['MAX_LAT_ACCEL_MEASURED']
@@ -55,7 +54,7 @@ class CarInterface(CarInterfaceBase):
       torque_params = CarInterfaceBase.get_torque_params(CAR.PRIUS)
       ret.maxLateralAccel = torque_params['MAX_LAT_ACCEL_MEASURED']
       set_lat_tune(ret.lateralTuning, LatTunes.TORQUE,
-                 MAX_LAT_ACCEL=torque_params['LAT_ACCEL_FACTOR'], FRICTION=torque_params['FRICTION'])
+                   MAX_LAT_ACCEL=torque_params['LAT_ACCEL_FACTOR'], FRICTION=torque_params['FRICTION'])
 
     elif candidate in (CAR.RAV4, CAR.RAV4H):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
