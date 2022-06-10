@@ -112,6 +112,7 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stoc
       'IMPERIAL_UNIT': int(not is_metric),
       'HUD_LEAD': 2 if enabled and hud.lead_visible else 1 if enabled else 0,
     }
+
     if CP.carFingerprint in HONDA_BOSCH:
       acc_hud_values['SET_TO_1'] = 1
       acc_hud_values['ACC_ON'] = hud.car != 0
