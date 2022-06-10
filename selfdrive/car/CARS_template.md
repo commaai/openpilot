@@ -28,7 +28,8 @@ How We Rate The Cars
 - {{star_icon.format(Star.EMPTY.value)}} - No steering control below certain speeds.
 
 ### Steering Torque
-- {{star_icon.format(Star.FULL.value)}} - Car has enough steering torque for comfortable highway driving.
+- {{star_icon.format(Star.FULL.value)}} - Car has enough steering torque to take tighter turns.
+- {{star_icon.format(Star.HALF.value)}} - Car has enough steering torque for comfortable highway driving.
 - {{star_icon.format(Star.EMPTY.value)}} - Limited ability to make turns.
 
 ### Actively Maintained

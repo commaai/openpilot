@@ -25,7 +25,8 @@ How We Rate The Cars
 - <a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - No steering control below certain speeds.
 
 ### Steering Torque
-- <a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Car has enough steering torque for comfortable highway driving.
+- <a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Car has enough steering torque to take tighter turns.
+- <a href="##"><img valign="top" src="assets/icon-star-half.svg" width="22" /></a> - Car has enough steering torque for comfortable highway driving.
 - <a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - Limited ability to make turns.
 
 ### Actively Maintained
