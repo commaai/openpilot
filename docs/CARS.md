@@ -34,7 +34,7 @@ How We Rate The Cars
 
 **All supported cars can move between the tiers as support changes.**
 
-# Gold (29 cars)
+# Gold - 29 cars
 
 |Make|Model|Supported Package|openpilot ACC|Stop and Go|Steer to 0|Steering Torque|Actively Maintained|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
@@ -68,7 +68,7 @@ How We Rate The Cars
 |Toyota|RAV4 2019-21|All|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
 |Toyota|RAV4 Hybrid 2019-21|All|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
 
-# Silver (78 cars)
+# Silver - 78 cars
 
 |Make|Model|Supported Package|openpilot ACC|Stop and Go|Steer to 0|Steering Torque|Actively Maintained|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
@@ -151,7 +151,7 @@ How We Rate The Cars
 |Volkswagen|Taos 2022[<sup>7</sup>](#footnotes)|Driver Assistance|<a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
 |Volkswagen|Touran 2017|Driver Assistance|<a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|<a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a>|
 
-# Bronze (65 cars)
+# Bronze - 65 cars
 
 |Make|Model|Supported Package|openpilot ACC|Stop and Go|Steer to 0|Steering Torque|Actively Maintained|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
