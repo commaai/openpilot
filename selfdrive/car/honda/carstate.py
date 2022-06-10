@@ -168,7 +168,7 @@ class CarState(CarStateBase):
     self.cruise_setting = cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"]
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]["CRUISE_BUTTONS"]
 
-    # used in car hud message
+    # used for car hud message
     self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
 
     # ******************* parse out can *******************
