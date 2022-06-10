@@ -1,18 +1,15 @@
 [submodule "panda"]
 	path = panda
 	url = ../../opgm/panda.git
-	branch = dev
 [submodule "opendbc"]
 	path = opendbc
 	url = ../../opgm/opendbc.git
-	branch = dev
 [submodule "laika_repo"]
 	path = laika_repo
 	url = ../../commaai/laika.git
 [submodule "cereal"]
 	path = cereal
 	url = ../../opgm/cereal.git
-	branch = develop
 [submodule "rednose_repo"]
 	path = rednose_repo
 	url = ../../commaai/rednose.git
