@@ -95,8 +95,8 @@ def process_hud_alert(hud_alert):
 
 
 HUDData = namedtuple("HUDData",
-                     ["pcm_accel", "v_cruise", "car",
-                      "lanes", "fcw", "acc_alert", "steer_required"])
+                     ["pcm_accel", "v_cruise", "lead_visible",
+                      "lanes_visible", "fcw", "acc_alert", "steer_required"])
 
 
 class CarController:
@@ -138,19 +138,6 @@ class CarController:
     self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., DT_CTRL)
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
-    if hud_control.lanesVisible:
-      hud_lanes = 1
-    else:
-      hud_lanes = 0
-
-    if CC.enabled:
-      if hud_control.leadVisible:
-        hud_car = 2
-      else:
-        hud_car = 1
-    else:
-      hud_car = 0
-
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_control.visualAlert)
 
     # **** process the car messages ****
@@ -252,9 +239,9 @@ class CarController:
     # Send dashboard UI commands.
     if self.frame % 10 == 0:
       idx = (self.frame // 10) % 4
-      hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
-                    hud_lanes, fcw_display, acc_alert, steer_required)
-      can_sends.extend(hondacan.create_ui_commands(self.packer, self.CP, pcm_speed, hud, CS.is_metric, idx, CS.stock_hud))
+      hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_control.leadVisible,
+                    hud_control.lanesVisible, fcw_display, acc_alert, steer_required)
+      can_sends.extend(hondacan.create_ui_commands(self.packer, self.CP, CC.enabled, pcm_speed, hud, CS.is_metric, idx, CS.stock_hud))
 
       if self.CP.openpilotLongitudinalControl and self.CP.carFingerprint not in HONDA_BOSCH:
         self.speed = pcm_speed
