@@ -6,7 +6,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Union, no_type_check
 
-STEERING_TORQUE_THRESHOLD = 2.0  # m/s^2
+TACO_TORQUE_THRESHOLD = 2.5  # m/s^2
+GREAT_TORQUE_THRESHOLD = 1.5  # m/s^2
+GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 
 
 class Tier(Enum):
@@ -70,11 +72,6 @@ class CarInfo:
     if self.min_enable_speed is not None:
       min_enable_speed = self.min_enable_speed
 
-    # TODO: remove hardcoded good torque and just use maxLateralAccel
-    good_torque = self.good_torque
-    if not math.isnan(CP.maxLateralAccel):
-      good_torque = CP.maxLateralAccel >= STEERING_TORQUE_THRESHOLD
-
     self.car_name = CP.carName
     self.make, self.model = self.name.split(' ', 1)
     self.row = {
@@ -82,21 +79,27 @@ class CarInfo:
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
       # StarColumns
-      Column.LONGITUDINAL: CP.openpilotLongitudinalControl and not CP.radarOffCan,
-      Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
-      Column.FSR_STEERING: min_steer_speed <= 0.,
-      Column.STEERING_TORQUE: good_torque,
-      Column.MAINTAINED: CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none,
+      Column.LONGITUDINAL: Star.FULL if CP.openpilotLongitudinalControl and not CP.radarOffCan else Star.EMPTY,
+      Column.FSR_LONGITUDINAL: Star.FULL if min_enable_speed <= 0. else Star.EMPTY,
+      Column.FSR_STEERING: Star.FULL if min_steer_speed <= 0. else Star.EMPTY,
+      Column.STEERING_TORQUE: Star.FULL if self.good_torque else Star.EMPTY,  # TODO: remove hardcoding and use maxLateralAccel
+      Column.MAINTAINED: Star.FULL if CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none else Star.EMPTY,
     }
+
+    if not math.isnan(CP.maxLateralAccel):
+      if CP.maxLateralAccel >= GREAT_TORQUE_THRESHOLD:
+        self.row[Column.STEERING_TORQUE] = Star.FULL
+      elif CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
+        self.row[Column.STEERING_TORQUE] = Star.HALF
+      else:
+        self.row[Column.STEERING_TORQUE] = Star.EMPTY
 
     if CP.notCar:
       for col in StarColumns:
-        self.row[col] = True
+        self.row[col] = Star.FULL
 
     self.all_footnotes = all_footnotes
     for column in StarColumns:
-      self.row[column] = Star.FULL if self.row[column] else Star.EMPTY
-
       # Demote if footnote specifies a star
       footnote = get_footnote(self.footnotes, column)
       if footnote is not None and footnote.value.star is not None:
