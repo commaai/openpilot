@@ -257,6 +257,7 @@ class CarInterface(CarInterfaceBase):
                            get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
       tire_stiffness_factor = 0.65
 
+      ret.maxLateralAccel = 2.
       set_torque_tune(ret.lateralTuning, ret.maxLateralAccel, 0.01)
 
     # Genesis
