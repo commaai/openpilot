@@ -24,7 +24,7 @@ jobs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
     - id: skip_check
-      uses: fkirc/skip-duplicate-actions@master
+      uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd
 
   build_prebuilt:
     name: build prebuilt
