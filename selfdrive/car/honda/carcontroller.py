@@ -159,8 +159,6 @@ class CarController:
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, CC.latActive, self.CP.carFingerprint,
                                                       idx, CS.CP.openpilotLongitudinalControl))
 
-    stopping = actuators.longControlState == LongCtrlState.stopping
-
     # wind brake from air resistance decel at high speed
     wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
     # all of this is only relevant for HONDA NIDEC
@@ -209,6 +207,8 @@ class CarController:
         if self.CP.carFingerprint in HONDA_BOSCH:
           self.accel = clip(accel, self.params.BOSCH_ACCEL_MIN, self.params.BOSCH_ACCEL_MAX)
           self.gas = interp(accel, self.params.BOSCH_GAS_LOOKUP_BP, self.params.BOSCH_GAS_LOOKUP_V)
+
+          stopping = actuators.longControlState == LongCtrlState.stopping
           can_sends.extend(hondacan.create_acc_commands(self.packer, CC.enabled, CC.longActive, self.accel, self.gas,
                                                         idx, stopping, self.CP.carFingerprint))
         else:
