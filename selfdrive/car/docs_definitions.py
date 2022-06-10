@@ -150,3 +150,29 @@ class Harness(Enum):
   nissan_b = "Nissan B"
   mazda = "Mazda"
   none = "None"
+
+
+STAR_DESCRIPTIONS = {
+  "openpilot Adaptive Cruise Control (ACC)": [
+    (Star.FULL, "openpilot is able to control the gas and brakes."),
+    (Star.HALF, "openpilot is able to control the gas and brakes with some restrictions."),
+    (Star.EMPTY, "The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system."),
+  ],
+  "Stop and Go": [
+    (Star.FULL, "Adaptive Cruise Control (ACC) operates down to 0 mph."),
+    (Star.EMPTY, "Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed."),
+  ],
+  "Steer to 0": [
+    (Star.FULL, "openpilot can control the steering wheel down to 0 mph."),
+    (Star.EMPTY, "No steering control below certain speeds."),
+  ],
+  "Steering Torque": [
+    (Star.FULL, "Car has enough steering torque to take tighter turns."),
+    (Star.HALF, "Car has enough steering torque for comfortable highway driving."),
+    (Star.EMPTY, "Limited ability to make turns."),
+  ],
+  "Actively Maintained": [
+    (Star.FULL, "Mainline software support, harness hardware sold by comma, lots of users, primary development target."),
+    (Star.EMPTY, "Low user count, community maintained, harness hardware not sold by comma."),
+  ],
+}
