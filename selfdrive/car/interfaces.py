@@ -1,5 +1,5 @@
-import os
 import json
+import os
 import time
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Tuple, List
@@ -20,6 +20,7 @@ EventName = car.CarEvent.EventName
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
+TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data.json')
 
 
 # generic car and radar interfaces
@@ -107,12 +108,10 @@ class CarInterfaceBase(ABC):
     return ret
 
   @staticmethod
-  def get_torque_params(candidate):
-    with open(os.path.join(BASEDIR, 'selfdrive/car/torque_data.json')) as f:
+  def get_torque_params(candidate, default=float('nan')):
+    with open(TORQUE_PARAMS_PATH) as f:
       data = json.load(f)
-    return {key:data[key][candidate] for key in data}
-
-
+    return {key: data[key].get(candidate, default) for key in data}
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:

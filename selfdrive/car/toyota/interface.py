@@ -34,6 +34,7 @@ class CarInterface(CarInterfaceBase):
 
     torque_params = CarInterfaceBase.get_torque_params(candidate)
     ret.maxLateralAccel = torque_params['MAX_LAT_ACCEL_MEASURED']
+
     if candidate == CAR.PRIUS:
       stop_and_go = True
       ret.wheelbase = 2.70
