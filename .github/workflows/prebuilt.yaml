@@ -16,14 +16,27 @@ env:
       docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
 jobs:
+  skip_duplicate:
+    name: build prebuilt
+    runs-on: ubuntu-20.04
+    if: github.repository == 'commaai/openpilot'
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+    - id: skip_check
+      uses: fkirc/skip-duplicate-actions@master
+
   build_prebuilt:
     name: build prebuilt
     runs-on: ubuntu-20.04
+    needs: skip_duplicate
     timeout-minutes: 60
-    if: github.repository == 'commaai/openpilot'
+    if: github.repository == 'commaai/openpilot' && ${{ needs.pre_job.outputs.should_skip != 'true' }}
     env:
       IMAGE_NAME: openpilot-prebuilt
     steps:
+    - name: Skip duplicate build prebuilt
+      uses: fkirc/skip-duplicate-actions@v4.0.0
     - name: Wait for green check mark
       uses: commaai/wait-on-check-action@f16fc3bb6cd4886520b4e9328db1d42104d5cadc
       with:
