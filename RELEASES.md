@@ -12,6 +12,7 @@ Version 0.8.15 (2022-XX-XX)
   * automatically determines which side the driver is on (soon)
 * Reduced power usage: device runs cooler and fan spins less
 * AGNOS 5
+* Hyundai Tucson 2021 support thanks to bluesforte!
 * Lexus NX Hybrid 2020 support thanks to AlexandreSato!
 
 Version 0.8.14 (2022-06-01)
