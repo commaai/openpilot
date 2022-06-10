@@ -153,32 +153,32 @@ class Harness(Enum):
 
 
 STAR_DESCRIPTIONS = {
-  "longitudinal": {
-    "openpilot Adaptive Cruise Control (ACC)": [
-      (Star.FULL.value, "openpilot is able to control the gas and brakes."),
-      (Star.HALF.value, "openpilot is able to control the gas and brakes with some restrictions."),
-      (Star.EMPTY.value, "The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system."),
+  "Gas & Brakes": {  # icon and row name
+    "openpilot Adaptive Cruise Control (ACC)": [  # star column
+      [Star.FULL.value, "openpilot is able to control the gas and brakes."],
+      [Star.HALF.value, "openpilot is able to control the gas and brakes with some restrictions."],
+      [Star.EMPTY.value, "The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system."],
     ],
-    "Stop and Go": [
-      (Star.FULL.value, "Adaptive Cruise Control (ACC) operates down to 0 mph."),
-      (Star.EMPTY.value, "Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed."),
-    ],
-  },
-  "steering": {
-    "Steer to 0": [
-      (Star.FULL.value, "openpilot can control the steering wheel down to 0 mph."),
-      (Star.EMPTY.value, "No steering control below certain speeds."),
-    ],
-    "Steering Torque": [
-      (Star.FULL.value, "Car has enough steering torque to take tighter turns."),
-      (Star.HALF.value, "Car has enough steering torque for comfortable highway driving."),
-      (Star.EMPTY.value, "Limited ability to make turns."),
+    Column.FSR_LONGITUDINAL.value: [
+      [Star.FULL.value, "Adaptive Cruise Control (ACC) operates down to 0 mph."],
+      [Star.EMPTY.value, "Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed."],
     ],
   },
-  "support": {
-    "Actively Maintained": [
-      (Star.FULL.value, "Mainline software support, harness hardware sold by comma, lots of users, primary development target."),
-      (Star.EMPTY.value, "Low user count, community maintained, harness hardware not sold by comma."),
+  "Steering": {
+    Column.FSR_STEERING.value: [
+      [Star.FULL.value, "openpilot can control the steering wheel down to 0 mph."],
+      [Star.EMPTY.value, "No steering control below certain speeds."],
+    ],
+    Column.STEERING_TORQUE.value: [
+      [Star.FULL.value, "Car has enough steering torque to take tighter turns."],
+      [Star.HALF.value, "Car has enough steering torque for comfortable highway driving."],
+      [Star.EMPTY.value, "Limited ability to make turns."],
+    ],
+  },
+  "Support": {
+    Column.MAINTAINED.value: [
+      [Star.FULL.value, "Mainline software support, harness hardware sold by comma, lots of users, primary development target."],
+      [Star.EMPTY.value, "Low user count, community maintained, harness hardware not sold by comma."],
     ],
   },
 }
