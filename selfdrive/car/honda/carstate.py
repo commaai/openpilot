@@ -14,7 +14,6 @@ TransmissionType = car.CarParams.TransmissionType
 def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
   signals = [
     ("XMISSION_SPEED", "ENGINE_DATA"),
-    ("IMPERIAL_UNIT", "CAR_SPEED"),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS"),
     ("WHEEL_SPEED_FR", "WHEEL_SPEEDS"),
     ("WHEEL_SPEED_RL", "WHEEL_SPEEDS"),
@@ -23,9 +22,9 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("STEER_ANGLE_RATE", "STEERING_SENSORS"),
     ("MOTOR_TORQUE", "STEER_MOTOR_TORQUE"),
     ("STEER_TORQUE_SENSOR", "STEER_STATUS"),
+    ("IMPERIAL_UNIT", "CAR_SPEED"),
     ("LEFT_BLINKER", "SCM_FEEDBACK"),
     ("RIGHT_BLINKER", "SCM_FEEDBACK"),
-    ("GEAR", gearbox_msg),
     ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS"),
     ("SEATBELT_DRIVER_LATCHED", "SEATBELT_STATUS"),
     ("BRAKE_PRESSED", "POWERTRAIN_DATA"),
@@ -36,6 +35,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("BRAKE_HOLD_ACTIVE", "VSA_STATUS"),
     ("STEER_STATUS", "STEER_STATUS"),
     ("GEAR_SHIFTER", gearbox_msg),
+    ("GEAR", gearbox_msg),
     ("PEDAL_GAS", "POWERTRAIN_DATA"),
     ("CRUISE_SETTING", "SCM_BUTTONS"),
     ("ACC_STATUS", "POWERTRAIN_DATA"),
@@ -44,12 +44,12 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
 
   checks = [
     ("ENGINE_DATA", 100),
-    ("CAR_SPEED", 10),
     ("WHEEL_SPEEDS", 50),
     ("STEERING_SENSORS", 100),
     ("SEATBELT_STATUS", 10),
     ("CRUISE", 10),
     ("POWERTRAIN_DATA", 100),
+    ("CAR_SPEED", 10),
     ("VSA_STATUS", 50),
     ("STEER_STATUS", 100),
     ("STEER_MOTOR_TORQUE", 0),  # TODO: not on every car
@@ -165,6 +165,11 @@ class CarState(CarStateBase):
     # update prevs, update must run once per loop
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_cruise_setting = self.cruise_setting
+    self.cruise_setting = cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"]
+    self.cruise_buttons = cp.vl["SCM_BUTTONS"]["CRUISE_BUTTONS"]
+
+    # used in car hud message
+    self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
 
     # ******************* parse out can *******************
     # STANDSTILL->WHEELS_MOVING bit can be noisy around zero, so use XMISSION_SPEED
@@ -204,9 +209,6 @@ class CarState(CarStateBase):
 
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE"]
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE_RATE"]
-
-    self.cruise_setting = cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"]
-    self.cruise_buttons = cp.vl["SCM_BUTTONS"]["CRUISE_BUTTONS"]
 
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(
       250, cp.vl["SCM_FEEDBACK"]["LEFT_BLINKER"], cp.vl["SCM_FEEDBACK"]["RIGHT_BLINKER"])
@@ -265,8 +267,6 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE):
       if ret.brake > 0.1:
         ret.brakePressed = True
-
-    self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
