@@ -1563,7 +1563,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEXUS_NX_TSS2: {
-    (Ecu.engine, 0x700, None): [
+    (Ecu.engine, 0x7e0, None): [
       b'\x018966378B2100\x00\x00\x00\x00',
       b'\x018966378B3000\x00\x00\x00\x00',
       b'\x018966378G3000\x00\x00\x00\x00',
