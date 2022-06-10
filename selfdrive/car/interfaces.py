@@ -1,4 +1,5 @@
 import os
+import json
 import time
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Tuple, List
@@ -104,6 +105,14 @@ class CarInterfaceBase(ABC):
     ret.longitudinalActuatorDelayUpperBound = 0.15
     ret.steerLimitTimer = 1.0
     return ret
+
+  @staticmethod
+  def get_torque_params(candidate):
+    with open(os.path.join(BASEDIR, 'selfdrive/car/torque_data.json')) as f:
+      data = json.load(f)
+    return {key:data[key][candidate] for key in data}
+
+
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
