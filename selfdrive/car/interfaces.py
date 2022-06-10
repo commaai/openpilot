@@ -111,7 +111,13 @@ class CarInterfaceBase(ABC):
   def get_torque_params(candidate, default=float('nan')):
     with open(TORQUE_PARAMS_PATH) as f:
       data = json.load(f)
-    return {key: data[key].get(candidate, default) for key in data}
+    torque_params = {}
+    for key in data:
+      if candidate in data[key]:
+        torque_params[key] = data[key][candidate]
+      else:
+        torque_params[key] = float('NaN')
+    return torque_params
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
