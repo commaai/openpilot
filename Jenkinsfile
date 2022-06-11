@@ -96,7 +96,8 @@ pipeline {
           post {
             always {
               sh "docker kill carla_sim || true"
-              sh "rm -rf ${WORKSPACE}/* && rm -rf .* || true"
+              sh "rm -rf ${WORKSPACE}/* || true"
+              sh "rm -rf .* || true"
             }
           }
         }
