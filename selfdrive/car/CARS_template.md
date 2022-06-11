@@ -14,11 +14,11 @@ Cars are organized into three tiers:
 How We Rate The Cars
 ---
 
-{% for star_row in star_descriptions.values() %}
-{% for name, star_descriptions in star_row.items() %}
+{% for descriptions in star_descriptions.values() %}
+{% for name, stars in descriptions.items() %}
 ### {{name}}
-{% for star, star_description in star_descriptions %}
-- {{star_icon.format(star)}} - {{star_description}}
+{% for star, description in stars %}
+- {{star_icon.format(star)}} - {{description}}
 {% endfor %}
 
 {% endfor %}
