@@ -40,7 +40,7 @@ def phone_steps(String device_type, steps) {
 }
 
 pipeline {
-  agent none
+  agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
   environment {
     CI = "1"
     TEST_DIR = "/data/openpilot"
@@ -52,7 +52,6 @@ pipeline {
 
   stages {
     stage('build release3') {
-      agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
       when {
         branch 'devel-staging'
       }
@@ -102,7 +101,6 @@ pipeline {
         }
 
         stage('build') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           environment {
             R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
           }
@@ -118,7 +116,6 @@ pipeline {
         }
 
         stage('HW + Unit Tests') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici2", [
               ["build", "cd selfdrive/manager && ./build.py"],
@@ -132,7 +129,6 @@ pipeline {
         }
 
         stage('camerad') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-party", [
               ["build", "cd selfdrive/manager && ./build.py"],
@@ -143,7 +139,6 @@ pipeline {
         }
 
         stage('replay') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici3", [
               ["build", "cd selfdrive/manager && ./build.py"],
