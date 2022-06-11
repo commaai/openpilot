@@ -5,7 +5,7 @@ import time
 import unittest
 
 import selfdrive.manager.manager as manager
-from selfdrive.hardware import AGNOS, HARDWARE
+from system.hardware import AGNOS, HARDWARE
 from selfdrive.manager.process import DaemonProcess
 from selfdrive.manager.process_config import managed_processes
 

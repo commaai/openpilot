@@ -10,7 +10,7 @@
 #include <QString>
 #include <QTransform>
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 

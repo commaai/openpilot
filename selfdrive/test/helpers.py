@@ -2,7 +2,7 @@ import os
 import time
 from functools import wraps
 
-from selfdrive.hardware import PC
+from system.hardware import PC
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.version import training_version, terms_version
 
