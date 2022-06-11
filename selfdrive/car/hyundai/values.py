@@ -1035,46 +1035,44 @@ FW_VERSIONS = {
   },
   CAR.KIA_OPTIMA: {
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4110         ',  # shows up nowhere
-      b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4100         ',  # from a 2017 - keep
+      b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4110         ',
     ],
     (Ecu.esp, 0x7d1, None): [
-      b'\xf1\x00JF ESC \v 11 \x18\x030 58920-D5180',  # shows up nowhere
-      b'\xf1\x00JF ESC \x03 17 \x16\x06# 58920-D4180',  # from a 2017 - keep
+      b'\xf1\x00JF ESC \v 11 \x18\x030 58920-D5180',
+      b'\xf1\x00JF ESC \x03 17 \x16\x06# 58920-D4180',
     ],
     (Ecu.engine, 0x7e0, None): [
-      b'\x01TJFAJNU06F201H03',  # shows up nowhere
-      b'\xf1\x89F1JF600AISEIU702\xf1\x82F1JF600AISEIU702',  # from a 2017 - keep
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',  # shows up no where, likely 2019 - move
-    ],
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00JFWGN LKAS AT EUR RHD 1.00 1.02 95895-D4100 G21',  # from one 2017, keep
-      b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5001 h32',  # from two 2019's - move
-      b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.02 95895-D5000 h31',  # shows up nowhere
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW',  # from a 2019 - move
-      b'\xf1\x816U2U0051\x00\x00\xf1\x006U2U0_C2\x00\x006U2U0051\x00\x00DJF0D17US7\x8f\xe6*~',  # from a 2017 - keep
-    ],
-  },
-  CAR.KIA_OPTIMA_2019: {
-    (Ecu.esp, 0x7d1, None): [
-      b'\xf1\x00JF ESC \x0b 11 \x18\x030 58920-D5180',  # from two 2019's
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',  # from two 2019's FIXME: engine does not look quite right
+      b'\x01TJFAJNU06F201H03',
+      b'\xf1\x89F1JF600AISEIU702\xf1\x82F1JF600AISEIU702',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5001 h32',  # from two 2019's
+      b'\xf1\x00JFWGN LKAS AT EUR RHD 1.00 1.02 95895-D4100 G21',
+      b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.02 95895-D5000 h31',
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x816U2VA051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VA051\x00\x00DJF0T16NL1\xca3\xeb.',  # from one 2019
-      b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW',  # from one 2019
+      b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW',
+      b'\xf1\x816U2U0051\x00\x00\xf1\x006U2U0_C2\x00\x006U2U0051\x00\x00DJF0D17US7\x8f\xe6*~',
+    ],
+  },
+  CAR.KIA_OPTIMA_2019: {
+    (Ecu.esp, 0x7d1, None): [
+      b'\xf1\x00JF ESC \x0b 11 \x18\x030 58920-D5180',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',  # FIXME: engine does not look quite right
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5001 h32',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x816U2VA051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VA051\x00\x00DJF0T16NL1\xca3\xeb.',
+      b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW',
     ],
   },
   CAR.ELANTRA_2021: {
