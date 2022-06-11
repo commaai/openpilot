@@ -90,10 +90,6 @@ class Laikad:
     # Check time and outputs are valid
     valid = self.kf_valid(t)
     if not all(valid):
-      # A position fix is needed when resetting the kalman filter.
-      if len(pos_fix) == 0:
-        return
-      post_est = pos_fix[0][:3].tolist()
       if not valid[0]:
         cloudlog.info("Init gnss kalman filter")
       elif not valid[1]:
@@ -102,6 +98,11 @@ class Laikad:
         cloudlog.error("Gnss kalman filter state is nan")
       else:
         cloudlog.error("Gnss kalman std too far")
+
+      if len(pos_fix) == 0:
+        cloudlog.error("Position fix not available when resetting kalman filter")
+        return
+      post_est = pos_fix[0][:3].tolist()
       self.init_gnss_localizer(post_est)
     if len(measurements) > 0:
       kf_add_observations(self.gnss_kf, t, measurements)
