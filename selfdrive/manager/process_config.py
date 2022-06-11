@@ -21,6 +21,7 @@ procs = [
   NativeProcess("clocksd", "system/clocksd", ["./clocksd"]),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"]),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"]),
+  PythonProcess("logmessaged", "system.logmessaged", offroad=True),
   PythonProcess("timezoned", "system.timezoned", enabled=not PC, offroad=True),
 
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
@@ -40,7 +41,6 @@ procs = [
   PythonProcess("controlsd", "selfdrive.controls.controlsd"),
   PythonProcess("deleter", "selfdrive.loggerd.deleter", offroad=True),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enabled=(not PC or WEBCAM), callback=driverview),
-  PythonProcess("logmessaged", "selfdrive.logmessaged", offroad=True),
   PythonProcess("navd", "selfdrive.navd.navd"),
   PythonProcess("pandad", "selfdrive.boardd.pandad", offroad=True),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd"),

@@ -65,12 +65,12 @@ selfdrive/version.py
 
 selfdrive/__init__.py
 selfdrive/sentry.py
-selfdrive/logmessaged.py
 selfdrive/tombstoned.py
 selfdrive/updated.py
 selfdrive/rtshield.py
 selfdrive/statsd.py
 
+system/logmessaged.py
 system/swaglog.py
 
 selfdrive/athena/__init__.py
