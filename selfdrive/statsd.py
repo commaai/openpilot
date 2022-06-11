@@ -12,7 +12,7 @@ from cereal.messaging import SubMaster
 from system.swaglog import cloudlog
 from system.hardware import HARDWARE
 from common.file_helpers import atomic_write_in_dir
-from selfdrive.version import get_normalized_origin, get_short_branch, get_short_version, is_dirty
+from system.version import get_normalized_origin, get_short_branch, get_short_version, is_dirty
 from selfdrive.loggerd.config import STATS_DIR, STATS_DIR_FILE_LIMIT, STATS_SOCKET, STATS_FLUSH_TIME_S
 
 

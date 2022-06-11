@@ -13,7 +13,7 @@ from common.file_helpers import mkdirs_exists_ok
 from selfdrive.loggerd.config import ROOT
 import selfdrive.sentry as sentry
 from system.swaglog import cloudlog
-from selfdrive.version import get_commit
+from system.version import get_commit
 
 MAX_SIZE = 1_000_000 * 100  # allow up to 100M
 MAX_TOMBSTONE_FN_LEN = 62  # 85 - 23 ("<dongle id>/crash/")
