@@ -2,7 +2,7 @@ third_party/snpe/larch64**
 third_party/snpe/aarch64-ubuntu-gcc7.5/*
 third_party/mapbox-gl-native-qt/include/*
 
-selfdrive/timezoned.py
+system/timezoned.py
 
 selfdrive/assets/navigation/*
 selfdrive/assets/training_wide/*

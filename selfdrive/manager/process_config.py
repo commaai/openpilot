@@ -18,16 +18,18 @@ def logging(started, params, CP: car.CarParams) -> bool:
   return started and run
 
 procs = [
+  NativeProcess("clocksd", "system/clocksd", ["./clocksd"]),
+  NativeProcess("logcatd", "system/logcatd", ["./logcatd"]),
+  NativeProcess("proclogd", "system/proclogd", ["./proclogd"]),
+  PythonProcess("timezoned", "system.timezoned", enabled=not PC, offroad=True),
+
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
   # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
   NativeProcess("camerad", "selfdrive/camerad", ["./camerad"], unkillable=True, callback=driverview),
-  NativeProcess("clocksd", "system/clocksd", ["./clocksd"]),
   NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], enabled=(not PC or WEBCAM), callback=driverview),
-  NativeProcess("logcatd", "system/logcatd", ["./logcatd"]),
   NativeProcess("encoderd", "selfdrive/loggerd", ["./encoderd"]),
   NativeProcess("loggerd", "selfdrive/loggerd", ["./loggerd"], onroad=False, callback=logging),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
-  NativeProcess("proclogd", "system/proclogd", ["./proclogd"]),
   NativeProcess("sensord", "selfdrive/sensord", ["./sensord"], enabled=not PC),
   NativeProcess("ubloxd", "selfdrive/locationd", ["./ubloxd"], enabled=(not PC or WEBCAM)),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], offroad=True, watchdog_max_dt=(5 if not PC else None)),
@@ -45,7 +47,6 @@ procs = [
   PythonProcess("plannerd", "selfdrive.controls.plannerd"),
   PythonProcess("radard", "selfdrive.controls.radard"),
   PythonProcess("thermald", "selfdrive.thermald.thermald", offroad=True),
-  PythonProcess("timezoned", "selfdrive.timezoned", enabled=not PC, offroad=True),
   PythonProcess("tombstoned", "selfdrive.tombstoned", enabled=not PC, offroad=True),
   PythonProcess("updated", "selfdrive.updated", enabled=not PC, onroad=False, offroad=True),
   PythonProcess("uploader", "selfdrive.loggerd.uploader", offroad=True),
