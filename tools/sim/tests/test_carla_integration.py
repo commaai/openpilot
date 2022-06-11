@@ -40,10 +40,10 @@ class TestCarlaIntegration(unittest.TestCase):
     sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
     q = Queue()
     carla_bridge = CarlaBridge(bridge.parse_args([]))
-    p_bridge = carla_bridge.run(q, retries=10 if CI else 3)
+    p_bridge = carla_bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
-    max_time_per_step = 60 if CI else 20
+    max_time_per_step = 60
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()

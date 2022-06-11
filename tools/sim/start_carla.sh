@@ -18,8 +18,7 @@ fi
 docker pull carlasim/carla:0.9.12
 
 EXTRA_ARGS="-it"
-if [[ "$CI" ]]
-then
+if [[ "$DETACH" ]]; then
   EXTRA_ARGS="-d"
 fi
 

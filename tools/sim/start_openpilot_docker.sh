@@ -7,15 +7,13 @@ cd $DIR
 xhost +local:root
 
 OPENPILOT_DIR="/openpilot"
-if ! [[ -z "$MOUNT_OPENPILOT" ]]
-then
+if ! [[ -z "$MOUNT_OPENPILOT" ]]; then
   OPENPILOT_DIR="$(dirname $(dirname $DIR))"
   EXTRA_ARGS="-v $OPENPILOT_DIR:$OPENPILOT_DIR -e PYTHONPATH=$OPENPILOT_DIR:$PYTHONPATH"
 fi
 
-if [[ "$CI" ]]
-then
-  CMD="cd ${OPENPILOT_DIR}/tools/sim/test && CI=1 ./test_carla_integration.py $*"
+if [[ "$CI" ]]; then
+  CMD="CI=1 ${OPENPILOT_DIR}/tools/sim/test/test_carla_integration.py"
 else
   docker pull ghcr.io/commaai/openpilot-sim:latest
   CMD="./tmux_script.sh $*"
