@@ -111,17 +111,16 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stoc
       'HUD_DISTANCE': 3,  # max distance setting on display
       'IMPERIAL_UNIT': int(not is_metric),
       'HUD_LEAD': 2 if enabled and hud.lead_visible else 1 if enabled else 0,
+      'SET_ME_X01_2': 1,
     }
 
     if CP.carFingerprint in HONDA_BOSCH:
-      acc_hud_values['SET_TO_1'] = 1
       acc_hud_values['ACC_ON'] = hud.car != 0
-      acc_hud_values['SET_TO_X1'] = 1
       acc_hud_values['FCM_OFF'] = 1
+      acc_hud_values['FCM_OFF_2'] = 1
     else:
       acc_hud_values['PCM_SPEED'] = pcm_speed * CV.MS_TO_KPH
       acc_hud_values['PCM_GAS'] = hud.pcm_accel
-      acc_hud_values['SET_ME_X01_2'] = 1
       acc_hud_values['SET_ME_X01'] = 1
       acc_hud_values['FCM_OFF'] = stock_hud['FCM_OFF']
       acc_hud_values['FCM_OFF_2'] = stock_hud['FCM_OFF_2']
