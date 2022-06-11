@@ -9,7 +9,7 @@ from typing import NoReturn, Union, List, Dict
 
 from common.params import Params
 from cereal.messaging import SubMaster
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 from system.hardware import HARDWARE
 from common.file_helpers import atomic_write_in_dir
 from selfdrive.version import get_normalized_origin, get_short_branch, get_short_version, is_dirty

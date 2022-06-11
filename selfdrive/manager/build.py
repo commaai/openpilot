@@ -11,7 +11,7 @@ from common.basedir import BASEDIR
 from common.spinner import Spinner
 from common.text_window import TextWindow
 from system.hardware import AGNOS
-from selfdrive.swaglog import cloudlog, add_file_handler
+from system.swaglog import cloudlog, add_file_handler
 from selfdrive.version import is_dirty
 
 MAX_CACHE_SIZE = 4e9 if "CI" in os.environ else 2e9

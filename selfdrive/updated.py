@@ -38,7 +38,7 @@ from markdown_it import MarkdownIt
 from common.basedir import BASEDIR
 from common.params import Params
 from system.hardware import AGNOS, HARDWARE
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.version import is_tested_branch
 
