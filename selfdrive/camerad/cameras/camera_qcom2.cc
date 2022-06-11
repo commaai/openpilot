@@ -837,7 +837,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_RGB_ROAD, VISION_STREAM_ROAD, !env_disable_road);
   s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_RGB_WIDE_ROAD, VISION_STREAM_WIDE_ROAD, !env_disable_wide_road);
 
-  s->sm = new SubMaster({"driverStateV2"});
+  s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
 

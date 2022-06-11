@@ -50,9 +50,9 @@ def set_long_tune(tune, name):
 
 
 ###### LAT ######
-def set_lat_tune(tune, name, MAX_LAT_ACCEL=2.5, FRICTION=0.01, use_steering_angle=True):
+def set_lat_tune(tune, name, MAX_LAT_ACCEL=2.5, FRICTION=0.01, steering_angle_deadzone_deg=0.0, use_steering_angle=True):
   if name == LatTunes.TORQUE:
-    set_torque_tune(tune, MAX_LAT_ACCEL, FRICTION)
+    set_torque_tune(tune, MAX_LAT_ACCEL, FRICTION, steering_angle_deadzone_deg)
   elif 'PID' in str(name):
     tune.init('pid')
     tune.pid.kiBP = [0.0]
