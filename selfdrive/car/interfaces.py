@@ -1,4 +1,3 @@
-import json
 import os
 import time
 from abc import abstractmethod, ABC
@@ -20,7 +19,6 @@ EventName = car.CarEvent.EventName
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
-TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data.json')
 
 
 # generic car and radar interfaces
@@ -83,7 +81,7 @@ class CarInterfaceBase(ABC):
     ret.steerControlType = car.CarParams.SteerControlType.torque
     ret.minSteerSpeed = 0.
     ret.wheelSpeedFactor = 1.0
-    ret.maxLateralAccel = CarInterfaceBase.get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
+    ret.maxLateralAccel = float('nan')
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
@@ -106,12 +104,6 @@ class CarInterfaceBase(ABC):
     ret.longitudinalActuatorDelayUpperBound = 0.15
     ret.steerLimitTimer = 1.0
     return ret
-
-  @staticmethod
-  def get_torque_params(candidate, default=float('NaN')):
-    with open(TORQUE_PARAMS_PATH) as f:
-      data = json.load(f)
-    return {key: data[key].get(candidate, default) for key in data}
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import math
 import unittest
 import importlib
 from parameterized import parameterized
@@ -40,9 +39,7 @@ class TestCarInterfaces(unittest.TestCase):
       if tuning == 'pid':
         self.assertTrue(len(car_params.lateralTuning.pid.kpV))
       elif tuning == 'torque':
-        kf = car_params.lateralTuning.torque.kf
-        self.assertTrue(not math.isnan(kf) and kf > 0)
-        self.assertTrue(not math.isnan(car_params.lateralTuning.torque.friction))
+        self.assertTrue(car_params.lateralTuning.torque.kf > 0)
       elif tuning == 'indi':
         self.assertTrue(len(car_params.lateralTuning.indi.outerLoopGainV))
 
