@@ -33,7 +33,7 @@ PROCS = {
   "selfdrive.controls.radard": 4.5,
   "./_modeld": 4.48,
   "./boardd": 3.63,
-  "./_dmonitoringmodeld": 5.0,
+  "./_dmonitoringmodeld": 10.0,
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "./_soundd": 1.0,
@@ -60,7 +60,7 @@ TIMINGS = {
   "roadCameraState": [2.5, 0.35],
   "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
-  "driverStateV2": [2.5, 0.40],
+  "driverState": [2.5, 0.40],
   "liveLocationKalman": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }
@@ -221,7 +221,7 @@ class TestOnroad(unittest.TestCase):
     # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [
       ("modelV2", 0.050, 0.036),
-      ("driverStateV2", 0.050, 0.026),
+      ("driverState", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
