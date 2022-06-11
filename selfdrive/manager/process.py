@@ -17,7 +17,7 @@ from common.basedir import BASEDIR
 from common.params import Params
 from common.realtime import sec_since_boot
 from selfdrive.swaglog import cloudlog
-from selfdrive.hardware import HARDWARE
+from system.hardware import HARDWARE
 from cereal import log
 
 WATCHDOG_FN = "/dev/shm/wd_"

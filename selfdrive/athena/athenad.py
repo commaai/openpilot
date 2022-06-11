@@ -32,7 +32,7 @@ from common.basedir import PERSIST
 from common.file_helpers import CallbackReader
 from common.params import Params
 from common.realtime import sec_since_boot, set_core_affinity
-from selfdrive.hardware import HARDWARE, PC, AGNOS
+from system.hardware import HARDWARE, PC, AGNOS
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.statsd import STATS_DIR
