@@ -99,7 +99,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-21", harness=Harness.hyundai_h),
   CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020", harness=Harness.hyundai_b),
   CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-21", harness=Harness.hyundai_g),
-  CAR.KONA_EV_2022: HyundaiCarInfo("Hyundai Kona Electric 2022", harness=Harness.hyundai_o),
+  CAR.KONA_EV_2022: HyundaiCarInfo("Hyundai Kona Electric 2022", harness=Harness.hyundai_o),  # TODO: either o or n, same connectors just different notches
   CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", harness=Harness.hyundai_i),
   CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All", harness=Harness.hyundai_d),
   CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-22", "All", harness=Harness.hyundai_l),
@@ -1236,7 +1236,6 @@ FEATURES = {
 }
 
 HDA2_CAR = {CAR.KIA_EV6, }
-
 CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
 
 HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019}  # these cars use a different gas signal

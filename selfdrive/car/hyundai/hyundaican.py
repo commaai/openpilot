@@ -77,7 +77,7 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
     "HDA_Icon_State": 2 if hda_set_speed else 0,
     "HDA_VSetReq": hda_set_speed,
   }
-  return packer.make_can_msg("LFAHDA_MFC", 0, values)
+  return packer.make_can_msg("LFAHDA_MFC", 0, values)  # TODO: this is on bus 2, okay to send on bus 0?
 
 def create_acc_commands(packer, enabled, accel, jerk, idx, lead_visible, set_speed, stopping, gas_pressed):
   commands = []
