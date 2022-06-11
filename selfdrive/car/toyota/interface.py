@@ -31,6 +31,7 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
     stop_and_go = False
+    torque_params = CarInterfaceBase.get_torque_params(candidate)
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
