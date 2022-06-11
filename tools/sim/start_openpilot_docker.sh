@@ -3,9 +3,6 @@
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 cd $DIR
 
-# expose X to the container
-xhost +local:root
-
 OPENPILOT_DIR="/openpilot"
 if ! [[ -z "$MOUNT_OPENPILOT" ]]; then
   OPENPILOT_DIR="$(dirname $(dirname $DIR))"
@@ -15,6 +12,9 @@ fi
 if [[ "$CI" ]]; then
   CMD="CI=1 ${OPENPILOT_DIR}/tools/sim/test/test_carla_integration.py"
 else
+  # expose X to the container
+  xhost +local:root
+
   docker pull ghcr.io/commaai/openpilot-sim:latest
   CMD="./tmux_script.sh $*"
   EXTRA_ARGS="${EXTRA_ARGS} -it"
