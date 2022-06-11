@@ -120,6 +120,13 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertTrue(resp, 'list empty!')
     self.assertCountEqual(resp, expected)
 
+  def test_strip_bz2_extension(self):
+    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
+    Path(fn).touch()
+    if fn.endswith('.bz2'):
+      self.assertEqual(athenad.strip_bz2_extension(fn), fn[:-4]) 
+
+
   @with_http_server
   def test_do_upload(self, host):
     fn = os.path.join(athenad.ROOT, 'qlog.bz2')
