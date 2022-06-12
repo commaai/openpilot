@@ -30,7 +30,6 @@ class Laikad:
     self.gnss_kf = GNSSKalman(GENERATED_DIR)
     self.orbit_p: Optional[Process] = None
     self.orbit_q = Queue()
-    self.params = Params()
     self.load_cache()
     self.last_save_t = None
     self.last_fetch_orbits_t = None
