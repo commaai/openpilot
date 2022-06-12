@@ -7,7 +7,7 @@
 #include <QOpenGLWidget>
 #include <QThread>
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
 
 const int FRAME_BUFFER_SIZE = 5;

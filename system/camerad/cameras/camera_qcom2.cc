@@ -1,4 +1,4 @@
-#include "selfdrive/camerad/cameras/camera_qcom2.h"
+#include "system/camerad/cameras/camera_qcom2.h"
 
 #include <fcntl.h>
 #include <poll.h>
@@ -20,7 +20,7 @@
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 #include "common/swaglog.h"
-#include "selfdrive/camerad/cameras/sensor2_i2c.h"
+#include "system/camerad/cameras/sensor2_i2c.h"
 
 // For debugging:
 // echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
