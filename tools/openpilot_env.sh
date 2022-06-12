@@ -1,5 +1,3 @@
-# NOTE: none of this is needed any longer except the mac specific setup
-#       but we can't clean up this file without breaking old installations
 if [ -z "$OPENPILOT_ENV" ]; then
   export PATH="$HOME/.pyenv/bin:$PATH"
 
