@@ -2,13 +2,13 @@
 #include <string>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/swaglog.h"
+#include "common/swaglog.h"
 #include "selfdrive/loggerd/logger.h"
 
 
 static kj::Array<capnp::word> build_boot_log() {
   std::vector<std::string> bootlog_commands;
-  if (Hardware::TICI()) {
+  if (Hardware::AGNOS()) {
     bootlog_commands.push_back("journalctl");
     bootlog_commands.push_back("sudo nvme smart-log --output-format=json /dev/nvme0");
   }

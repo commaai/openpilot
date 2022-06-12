@@ -3,7 +3,6 @@ from math import atan2
 from cereal import car
 from common.numpy_fast import interp
 from common.realtime import DT_DMON
-from selfdrive.hardware import TICI
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
 
@@ -16,7 +15,7 @@ EventName = car.CarEvent.EventName
 # ******************************************************************************************
 
 class DRIVER_MONITOR_SETTINGS():
-  def __init__(self, TICI=TICI, DT_DMON=DT_DMON):
+  def __init__(self):
     self._DT_DMON = DT_DMON
     # ref (page15-16): https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:42018X1947&rid=2
     self._AWARENESS_TIME = 30. # passive wheeltouch total timeout
@@ -27,15 +26,15 @@ class DRIVER_MONITOR_SETTINGS():
     self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
     self._FACE_THRESHOLD = 0.5
-    self._PARTIAL_FACE_THRESHOLD = 0.8 if TICI else 0.45
-    self._EYE_THRESHOLD = 0.65 if TICI else 0.6
-    self._SG_THRESHOLD = 0.925 if TICI else 0.91
-    self._BLINK_THRESHOLD = 0.8 if TICI else 0.55
-    self._BLINK_THRESHOLD_SLACK = 0.9 if TICI else 0.7
+    self._PARTIAL_FACE_THRESHOLD = 0.8
+    self._EYE_THRESHOLD = 0.65
+    self._SG_THRESHOLD = 0.925
+    self._BLINK_THRESHOLD = 0.8
+    self._BLINK_THRESHOLD_SLACK = 0.9
     self._BLINK_THRESHOLD_STRICT = self._BLINK_THRESHOLD
 
-    self._EE_THRESH11 = 0.75 if TICI else 0.4
-    self._EE_THRESH12 = 3.25 if TICI else 2.45
+    self._EE_THRESH11 = 0.75
+    self._EE_THRESH12 = 3.25
     self._EE_THRESH21 = 0.01
     self._EE_THRESH22 = 0.35
 

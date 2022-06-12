@@ -15,16 +15,16 @@ import cereal.messaging as messaging
 from common.api import Api
 from common.params import Params
 from common.realtime import set_core_affinity
-from selfdrive.hardware import TICI
+from system.hardware import TICI
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
-UPLOAD_QLOG_QCAM_MAX_SIZE = 1e7  # 10 MB
+UPLOAD_QLOG_QCAM_MAX_SIZE = 100 * 1e6  # MB
 
 allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
 force_wifi = os.getenv("FORCEWIFI") is not None

@@ -11,8 +11,8 @@ from common.params import Params
 from common.spinner import Spinner
 from common.basedir import PERSIST
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import HARDWARE, PC
-from selfdrive.swaglog import cloudlog
+from system.hardware import HARDWARE, PC
+from system.swaglog import cloudlog
 
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"

@@ -58,7 +58,7 @@ rm -f panda/board/obj/panda.bin.signed
 # include source commit hash and build date in commit
 GIT_HASH=$(git --git-dir=$SOURCE_DIR/.git rev-parse HEAD)
 DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
-VERSION=$(cat $SOURCE_DIR/selfdrive/common/version.h | awk -F\" '{print $2}')
+VERSION=$(cat $SOURCE_DIR/common/version.h | awk -F\" '{print $2}')
 
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
