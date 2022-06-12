@@ -38,14 +38,14 @@ jobs:
           ~/.local/share/virtualenvs/
         key: ubuntu-latest-python-${{ hashFiles('tools/ubuntu_setup.sh') }}-
     - name: Cache scons
-      id: scons-cache
+      id: ubuntu-latest-scons
       uses: actions/cache@v3
       with:
         path: /tmp/scons_cache
-        key: scons-ubuntu-latest-${{ hashFiles('.github/workflows/tools_test.yaml') }}-
+        key: ubuntu-latest-scons-${{ hashFiles('.github/workflows/tools_test.yaml') }}-
         restore-keys: |
-          scons-ubuntu-latest-${{ hashFiles('.github/workflows/tools_test.yaml') }}-
-          scons-ubuntu-latest-
+          ubuntu-latest-scons-${{ hashFiles('.github/workflows/tools_test.yaml') }}-
+          ubuntu-latest-scons-
 
     - name: tools/ubuntu_setup.sh
       run: tools/ubuntu_setup.sh
