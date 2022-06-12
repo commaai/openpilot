@@ -29,7 +29,6 @@ if [[ $(command -v brew) == "" ]]; then
 fi
 
 # TODO: remove protobuf,protobuf-c,swig when casadi can be pip installed
-# rust for rebuild of acados on darwin
 brew bundle --file=- <<-EOS
 brew "catch2"
 brew "cmake"
@@ -53,7 +52,6 @@ brew "zeromq"
 brew "protobuf"
 brew "protobuf-c"
 brew "swig"
-brew "rustup-init"
 EOS
 
 # Install gcc-arm-embedded 10.3-2021.10. 11.x is broken on M1 Macs with Xcode 13.3~
