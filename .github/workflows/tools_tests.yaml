@@ -48,7 +48,9 @@ jobs:
           ubuntu-latest-scons-
 
     - name: tools/ubuntu_setup.sh
-      run: tools/ubuntu_setup.sh
+      run: |
+        source tools/openpilot_env.sh
+        tools/ubuntu_setup.sh
     - name: Build openpilot
       run: |
         source tools/openpilot_env.sh
