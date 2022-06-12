@@ -29,9 +29,17 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - name: Cache pyenv
+      id: ubuntu-latest-pyenv
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.pyenv
+          ~/.local/share/virtualenvs/
+        key: ubuntu-latest-python-${{ hashFiles('tools/ubuntu_setup.sh') }}-
     - name: Cache scons
       id: scons-cache
-      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      uses: actions/cache@v3
       with:
         path: /tmp/scons_cache
         key: scons-ubuntu-latest-${{ hashFiles('.github/workflows/tools_test.yaml') }}-
