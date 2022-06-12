@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
 import bz2
-import os
 import sys
 import math
 import numbers
 import dictdiffer
 from collections import Counter
-
-if "CI" in os.environ:
-  def tqdm(x):
-    return x
-else:
-  from tqdm import tqdm  # type: ignore
 
 from tools.lib.logreader import LogReader
 
@@ -19,13 +12,13 @@ EPSILON = sys.float_info.epsilon
 
 
 def save_log(dest, log_msgs, compress=True):
-  dat = b"".join(msg.as_builder().to_bytes() for msg in tqdm(log_msgs))
+  dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)
 
   if compress:
     dat = bz2.compress(dat)
 
   with open(dest, "wb") as f:
-   f.write(dat)
+    f.write(dat)
 
 
 def remove_ignored_fields(msg, ignore):
@@ -67,7 +60,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     raise Exception(f"logs are not same length: {len(log1)} VS {len(log2)}\n\t\t{cnt1}\n\t\t{cnt2}")
 
   diff = []
-  for msg1, msg2 in tqdm(zip(log1, log2)):
+  for msg1, msg2 in zip(log1, log2):
     if msg1.which() != msg2.which():
       print(msg1, msg2)
       raise Exception("msgs not aligned between logs")
@@ -85,11 +78,14 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       # Dictdiffer only supports relative tolerance, we also want to check for absolute
       # TODO: add this to dictdiffer
       def outside_tolerance(diff):
-        if diff[0] == "change":
-          a, b = diff[2]
-          finite = math.isfinite(a) and math.isfinite(b)
-          if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
-            return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
+        try:
+          if diff[0] == "change":
+            a, b = diff[2]
+            finite = math.isfinite(a) and math.isfinite(b)
+            if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
+              return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
+        except TypeError:
+          pass
         return True
 
       dd = list(filter(outside_tolerance, dd))

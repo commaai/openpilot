@@ -2,9 +2,9 @@ import os
 import time
 from functools import wraps
 
-from selfdrive.hardware import PC
+from system.hardware import PC
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.version import training_version, terms_version
+from system.version import training_version, terms_version
 
 
 def set_params_enabled():
@@ -13,7 +13,6 @@ def set_params_enabled():
   params.put("HasAcceptedTerms", terms_version)
   params.put("CompletedTrainingVersion", training_version)
   params.put_bool("OpenpilotEnabledToggle", True)
-  params.put_bool("CommunityFeaturesToggle", True)
   params.put_bool("Passive", False)
 
 

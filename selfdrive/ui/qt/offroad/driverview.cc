@@ -12,7 +12,7 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
   layout = new QStackedLayout(this);
   layout->setStackingMode(QStackedLayout::StackAll);
 
-  cameraView = new CameraViewWidget("camerad", VISION_STREAM_RGB_FRONT, true, this);
+  cameraView = new CameraViewWidget("camerad", VISION_STREAM_DRIVER, true, this);
   layout->addWidget(cameraView);
 
   scene = new DriverViewScene(this);
@@ -63,12 +63,10 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
 
   // blackout
   const QColor bg(0, 0, 0, 140);
-  const QRect& blackout_rect = Hardware::TICI() ? rect() : rect2;
+  const QRect& blackout_rect = rect();
   p.fillRect(blackout_rect.adjusted(0, 0, valid_rect.left() - blackout_rect.right(), 0), bg);
   p.fillRect(blackout_rect.adjusted(valid_rect.right() - blackout_rect.left(), 0, 0, 0), bg);
-  if (Hardware::TICI()) {
-    p.fillRect(blackout_rect.adjusted(valid_rect.left()-blackout_rect.left()+1, 0, valid_rect.right()-blackout_rect.right()-1, -valid_rect.height()*7/10), bg); // top dz
-  }
+  p.fillRect(blackout_rect.adjusted(valid_rect.left()-blackout_rect.left()+1, 0, valid_rect.right()-blackout_rect.right()-1, -valid_rect.height()*7/10), bg); // top dz
 
   // face bounding box
   cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState();

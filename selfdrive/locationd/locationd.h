@@ -8,10 +8,10 @@
 #include "cereal/messaging/messaging.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/timing.h"
+#include "common/util.h"
 
 #include "selfdrive/sensord/sensors/constants.h"
 #define VISION_DECIMATION 2
@@ -35,8 +35,8 @@ public:
   bool isGpsOK();
   void determine_gps_mode(double current_time);
 
-  kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
-    bool inputsOK, bool sensorsOK, bool gpsOK);
+  kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder,
+    bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid);
   void build_live_location(cereal::LiveLocationKalman::Builder& fix);
 
   Eigen::VectorXd get_position_geodetic();

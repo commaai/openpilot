@@ -198,7 +198,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
   main_layout->addWidget(features, 0, Qt::AlignBottom);
   main_layout->addSpacing(30);
 
-  QVector<QString> bullets = {"Remote access", "14 days of storage", "Developer perks"};
+  QVector<QString> bullets = {"Remote access", "1 year of storage", "Developer perks"};
   for (auto &b: bullets) {
     const QString check = "<b><font color='#465BEA'>✓</font></b> ";
     QLabel *l = new QLabel(check + b);
@@ -307,19 +307,19 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
   }
 
   QJsonObject json = doc.object();
+  int prime_type = json["prime_type"].toInt();
+
+  if (uiState()->prime_type != prime_type) {
+    uiState()->prime_type = prime_type;
+    Params().put("PrimeType", std::to_string(prime_type));
+  }
+
   if (!json["is_paired"].toBool()) {
     mainLayout->setCurrentIndex(0);
   } else {
     popup->reject();
 
-    bool prime = json["prime"].toBool();
-
-    if (uiState()->has_prime != prime) {
-      uiState()->has_prime = prime;
-      Params().putBool("HasPrime", prime);
-    }
-
-    if (prime) {
+    if (prime_type) {
       mainLayout->setCurrentWidget(primeUser);
     } else {
       mainLayout->setCurrentWidget(primeAd);

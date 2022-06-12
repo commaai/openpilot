@@ -6,11 +6,11 @@
 #include <QtConcurrent>
 
 #include "common/transformations/orientation.hpp"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/watchdog.h"
-#include "selfdrive/hardware/hw.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/util.h"
+#include "common/watchdog.h"
+#include "system/hardware/hw.h"
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
@@ -55,17 +55,33 @@ static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_sta
 }
 
 static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off, float z_off, line_vertices_data *pvd, int max_idx) {
+                             float y_off, float z_off, line_vertices_data *pvd, int max_idx, bool allow_invert=true) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-  QPointF *v = &pvd->v[0];
+
+  std::vector<QPointF> left_points, right_points;
   for (int i = 0; i <= max_idx; i++) {
-    v += calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, v);
+    QPointF left, right;
+    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
+    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
+    if (l && r) {
+      // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
+      if (!allow_invert && left_points.size() && left.y() > left_points.back().y()) {
+        continue;
+      }
+      left_points.push_back(left);
+      right_points.push_back(right);
+    }
   }
-  for (int i = max_idx; i >= 0; i--) {
-    v += calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, v);
-  }
-  pvd->cnt = v - pvd->v;
+
+  pvd->cnt = 2 * left_points.size();
+  assert(left_points.size() == right_points.size());
   assert(pvd->cnt <= std::size(pvd->v));
+
+  for (int left_idx = 0; left_idx < left_points.size(); left_idx++){
+    int right_idx = 2 * left_points.size() - left_idx - 1;
+    pvd->v[left_idx] = left_points[left_idx];
+    pvd->v[right_idx] = right_points[left_idx];
+  }
 }
 
 static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
@@ -98,7 +114,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
-  update_line_data(s, model_position, 0.5, 1.22, &scene.track_vertices, max_idx);
+  update_line_data(s, model_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
 }
 
 static void update_sockets(UIState *s) {
@@ -129,7 +145,7 @@ static void update_state(UIState *s) {
     if (sm.updated("modelV2")) {
       update_model(s, sm["modelV2"].getModelV2());
     }
-    if (sm.updated("radarState") && sm.rcv_frame("modelV2") >= s->scene.started_frame) {
+    if (sm.updated("radarState") && sm.rcv_frame("modelV2") > s->scene.started_frame) {
       update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
     }
   }
@@ -166,16 +182,12 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (sm.updated("roadCameraState")) {
-    auto camera_state = sm["roadCameraState"].getRoadCameraState();
+  if (sm.updated("wideRoadCameraState")) {
+    auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
 
-    float max_lines = Hardware::EON() ? 5408 : 1904;
-    float max_gain = Hardware::EON() ? 1.0: 10.0;
-    float max_ev = max_lines * max_gain;
-
-    if (Hardware::TICI()) {
-      max_ev /= 6;
-    }
+    float max_lines = 1618;
+    float max_gain = 10.0;
+    float max_ev = max_lines * max_gain / 6;
 
     float ev = camera_state.getGain() * float(camera_state.getIntegLines());
 
@@ -192,26 +204,26 @@ void UIState::updateStatus() {
   if (scene.started && sm->updated("controlsState")) {
     auto controls_state = (*sm)["controlsState"].getControlsState();
     auto alert_status = controls_state.getAlertStatus();
+    auto state = controls_state.getState();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       status = STATUS_WARNING;
     } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
       status = STATUS_ALERT;
+    } else if (state == cereal::ControlsState::OpenpilotState::PRE_ENABLED || state == cereal::ControlsState::OpenpilotState::OVERRIDING) {
+      status = STATUS_OVERRIDE;
     } else {
       status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
   }
 
   // Handle onroad/offroad transition
-  if (scene.started != started_prev) {
+  if (scene.started != started_prev || sm->frame == 1) {
     if (scene.started) {
       status = STATUS_DISENGAGED;
       scene.started_frame = sm->frame;
-      scene.end_to_end = Params().getBool("EndToEndToggle");
-      wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+      wide_camera = Params().getBool("WideCameraOnly");
     }
     started_prev = scene.started;
-    emit offroadTransition(!scene.started);
-  } else if (sm->frame == 1) {
     emit offroadTransition(!scene.started);
   }
 }
@@ -220,11 +232,12 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
+    "wideRoadCameraState", "managerState", "navInstruction", "navRoute",
   });
 
   Params params;
-  wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
-  has_prime = params.getBool("HasPrime");
+  wide_camera = params.getBool("WideCameraOnly");
+  prime_type = std::atoi(params.get("PrimeType").c_str());
 
   // update timer
   timer = new QTimer(this);

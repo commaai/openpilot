@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget parent="main_window" name="Main Window">
+  <Tab containers="1" tab_name="tab1">
+   <Container>
+    <DockSplitter orientation="-" sizes="0.249729;0.250814;0.249729;0.249729" count="4">
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range bottom="-0.025000" left="0.000000" right="119.992934" top="1.025000"/>
+       <limitY/>
+       <curve name="/controlsState/enabled" color="#1f77b4"/>
+       <curve name="/pandaStates/0/controlsAllowed" color="#d62728"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range bottom="-8.840137" left="0.000000" right="119.992934" top="12.881991"/>
+       <limitY/>
+       <curve name="/controlsState/cumLagMs" color="#9467bd"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range bottom="-0.100000" left="0.000000" right="119.992934" top="0.100000"/>
+       <limitY/>
+       <curve name="/pandaStates/0/blockedCnt" color="#d62728"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range bottom="-0.025000" left="0.000000" right="119.992934" top="1.025000"/>
+       <limitY/>
+       <curve name="/carState/gasPressed" color="#1ac938"/>
+       <curve name="/carState/brakePressed" color="#ff7f0e"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="Cereal Subscriber"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

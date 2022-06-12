@@ -47,6 +47,7 @@ from .acados_ocp import AcadosOcp
 from .acados_model import acados_model_strip_casadi_symbolics
 from .utils import is_column, render_template, format_class_dict, np_array_to_list,\
      make_model_consistent, set_up_imported_gnsf_model, get_python_interface_path
+from .builders import CMakeBuilder
 
 
 def make_sim_dims_consistent(acados_sim):
@@ -111,7 +112,17 @@ def sim_formulation_json_dump(acados_sim, json_file='acados_sim.json'):
         json.dump(sim_json, f, default=np_array_to_list, indent=4, sort_keys=True)
 
 
-def sim_render_templates(json_file, model_name, code_export_dir):
+def sim_get_default_cmake_builder() -> CMakeBuilder:
+    """
+    If :py:class:`~acados_template.acados_sim_solver.AcadosSimSolver` is used with `CMake` this function returns a good first setting.
+    :return: default :py:class:`~acados_template.builders.CMakeBuilder`
+    """
+    cmake_builder = CMakeBuilder()
+    cmake_builder.options_on = ['BUILD_ACADOS_SIM_SOLVER_LIB']
+    return cmake_builder
+
+
+def sim_render_templates(json_file, model_name, code_export_dir, cmake_options: CMakeBuilder = None):
     # setting up loader and environment
     json_path = os.path.join(os.getcwd(), json_file)
 
@@ -129,9 +140,15 @@ def sim_render_templates(json_file, model_name, code_export_dir):
     out_file = f'acados_sim_solver_{model_name}.h'
     render_template(in_file, out_file, template_dir, json_path)
 
-    in_file = 'Makefile.in'
-    out_file = f'Makefile'
-    render_template(in_file, out_file, template_dir, json_path)
+    # Builder
+    if cmake_options is not None:
+        in_file = 'CMakeLists.in.txt'
+        out_file = 'CMakeLists.txt'
+        render_template(in_file, out_file, template_dir, json_path)
+    else:
+        in_file = 'Makefile.in'
+        out_file = 'Makefile'
+        render_template(in_file, out_file, template_dir, json_path)
 
     in_file = 'main_sim.in.c'
     out_file = f'main_sim_{model_name}.c'
@@ -161,15 +178,19 @@ def sim_generate_casadi_functions(acados_sim):
     elif integrator_type == 'GNSF':
         generate_c_code_gnsf(model, opts)
 
+
 class AcadosSimSolver:
     """
     Class to interact with the acados integrator C object.
 
-    :param acados_sim: type :py:class:`acados_template.acados_ocp.AcadosOcp` (takes values to generate an instance :py:class:`acados_template.acados_sim.AcadosSim`) or :py:class:`acados_template.acados_sim.AcadosSim`
-    :param json_file: Default: 'acados_sim.json'
-    :param build: Default: True
+        :param acados_sim: type :py:class:`~acados_template.acados_ocp.AcadosOcp` (takes values to generate an instance :py:class:`~acados_template.acados_sim.AcadosSim`) or :py:class:`~acados_template.acados_sim.AcadosSim`
+        :param json_file: Default: 'acados_sim.json'
+        :param build: Default: True
+        :param cmake_builder: type :py:class:`~acados_template.utils.CMakeBuilder` generate a `CMakeLists.txt` and use
+            the `CMake` pipeline instead of a `Makefile` (`CMake` seems to be the better option in conjunction with
+            `MS Visual Studio`); default: `None`
     """
-    def __init__(self, acados_sim_, json_file='acados_sim.json', build=True):
+    def __init__(self, acados_sim_, json_file='acados_sim.json', build=True, cmake_builder: CMakeBuilder = None):
 
         self.solver_created = False
 
@@ -203,21 +224,50 @@ class AcadosSimSolver:
         code_export_dir = acados_sim.code_export_directory
         if build:
             # render templates
-            sim_render_templates(json_file, model_name, code_export_dir)
+            sim_render_templates(json_file, model_name, code_export_dir, cmake_builder)
 
-            ## Compile solver
+            # Compile solver
             cwd = os.getcwd()
+            code_export_dir = os.path.abspath(code_export_dir)
             os.chdir(code_export_dir)
-            os.system('make sim_shared_lib')
+            if cmake_builder is not None:
+                cmake_builder.exec(code_export_dir)
+            else:
+                os.system('make sim_shared_lib')
             os.chdir(cwd)
 
         self.sim_struct = acados_sim
         model_name = self.sim_struct.model.name
         self.model_name = model_name
 
+        # Load acados library to avoid unloading the library.
+        # This is necessary if acados was compiled with OpenMP, since the OpenMP threads can't be destroyed.
+        # Unloading a library which uses OpenMP results in a segfault (on any platform?).
+        # see [https://stackoverflow.com/questions/34439956/vc-crash-when-freeing-a-dll-built-with-openmp]
+        # or [https://python.hotexamples.com/examples/_ctypes/-/dlclose/python-dlclose-function-examples.html]
+        libacados_name = 'libacados.so'
+        libacados_filepath = os.path.join(acados_sim.acados_lib_path, libacados_name)
+        self.__acados_lib = CDLL(libacados_filepath)
+        # find out if acados was compiled with OpenMP
+        try:
+            self.__acados_lib_uses_omp = getattr(self.__acados_lib, 'omp_get_thread_num') is not None
+        except AttributeError as e:
+            self.__acados_lib_uses_omp = False
+        if self.__acados_lib_uses_omp:
+            print('acados was compiled with OpenMP.')
+        else:
+            print('acados was compiled without OpenMP.')
+
         # Ctypes
-        shared_lib = f'{code_export_dir}/libacados_sim_solver_{model_name}.so'
-        self.shared_lib = CDLL(shared_lib)
+        lib_prefix = 'lib'
+        lib_ext = '.so'
+        if os.name == 'nt':
+            lib_prefix = ''
+            lib_ext = ''
+        self.shared_lib_name = os.path.join(code_export_dir, f'{lib_prefix}acados_sim_solver_{model_name}{lib_ext}')
+        print(f'self.shared_lib_name = "{self.shared_lib_name}"')
+        
+        self.shared_lib = CDLL(self.shared_lib_name)
 
 
         # create capsule

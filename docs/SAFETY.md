@@ -22,7 +22,7 @@ Following Hazard and Risk Analysis and FMEA, at a very high level, we have desig
 ensuring two main safety requirements.
 
 1. The driver must always be capable to immediately retake manual control of the vehicle,
-   by stepping on either pedal or by pressing the cancel button.
+   by stepping on the brake pedal or by pressing the cancel button.
 2. The vehicle must not alter its trajectory too quickly for the driver to safely
    react. This means that while the system is engaged, the actuators are constrained
    to operate within reasonable limits.

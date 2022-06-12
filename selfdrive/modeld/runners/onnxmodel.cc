@@ -11,14 +11,15 @@
 #include <stdexcept>
 #include <string>
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 
-ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime) {
+ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_extra) {
   LOGD("loading model %s", path);
 
   output = _output;
   output_size = _output_size;
+  use_extra = _use_extra;
 
   int err = pipe(pipein);
   assert(err == 0);
@@ -99,14 +100,37 @@ void ONNXModel::addTrafficConvention(float *state, int state_size) {
   traffic_convention_size = state_size;
 }
 
-void ONNXModel::execute(float *net_input_buf, int buf_size) {
+void ONNXModel::addCalib(float *state, int state_size) {
+  calib_input_buf = state;
+  calib_size = state_size;
+}
+
+void ONNXModel::addImage(float *image_buf, int buf_size) {
+  image_input_buf = image_buf;
+  image_buf_size = buf_size;
+}
+
+void ONNXModel::addExtra(float *image_buf, int buf_size) {
+  extra_input_buf = image_buf;
+  extra_buf_size = buf_size;
+}
+
+void ONNXModel::execute() {
   // order must be this
-  pwrite(net_input_buf, buf_size);
+  if (image_input_buf != NULL) {
+    pwrite(image_input_buf, image_buf_size);
+  }
+  if (extra_input_buf != NULL) {
+    pwrite(extra_input_buf, extra_buf_size);
+  }
   if (desire_input_buf != NULL) {
     pwrite(desire_input_buf, desire_state_size);
   }
   if (traffic_convention_input_buf != NULL) {
     pwrite(traffic_convention_input_buf, traffic_convention_size);
+  }
+  if (calib_input_buf != NULL) {
+    pwrite(calib_input_buf, calib_size);
   }
   if (rnn_input_buf != NULL) {
     pwrite(rnn_input_buf, rnn_state_size);

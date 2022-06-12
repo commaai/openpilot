@@ -51,7 +51,7 @@ def dmonitoringd_thread(sm=None, pm=None):
 
     # Get data from dmonitoringmodeld
     events = Events()
-    driver_status.get_pose(sm['driverState'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['controlsState'].enabled)
+    driver_status.update_states(sm['driverState'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['controlsState'].enabled)
 
     # Block engaging after max number of distrations
     if driver_status.terminal_alert_cnt >= driver_status.settings._MAX_TERMINAL_ALERTS or \
@@ -59,7 +59,7 @@ def dmonitoringd_thread(sm=None, pm=None):
       events.add(car.CarEvent.EventName.tooDistracted)
 
     # Update events from driver state
-    driver_status.update(events, driver_engaged, sm['controlsState'].enabled, sm['carState'].standstill)
+    driver_status.update_events(events, driver_engaged, sm['controlsState'].enabled, sm['carState'].standstill)
 
     # build driverMonitoringState packet
     dat = messaging.new_message('driverMonitoringState')
@@ -67,6 +67,7 @@ def dmonitoringd_thread(sm=None, pm=None):
       "events": events.to_msg(),
       "faceDetected": driver_status.face_detected,
       "isDistracted": driver_status.driver_distracted,
+      "distractedType": sum(driver_status.distracted_types),
       "awarenessStatus": driver_status.awareness,
       "posePitchOffset": driver_status.pose.pitch_offseter.filtered_stat.mean(),
       "posePitchValidCount": driver_status.pose.pitch_offseter.filtered_stat.n,

@@ -2,7 +2,7 @@
 import os
 import shutil
 import threading
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 from selfdrive.loggerd.config import ROOT, get_available_bytes, get_available_percent
 from selfdrive.loggerd.uploader import listdir_by_creation
 
@@ -28,7 +28,10 @@ def deleter_thread(exit_event):
 
         try:
           cloudlog.info(f"deleting {delete_path}")
-          shutil.rmtree(delete_path)
+          if os.path.isfile(delete_path):
+            os.remove(delete_path)
+          else:
+            shutil.rmtree(delete_path)
           break
         except OSError:
           cloudlog.exception(f"issue deleting {delete_path}")

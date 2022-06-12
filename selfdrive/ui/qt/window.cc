@@ -2,7 +2,7 @@
 
 #include <QFontDatabase>
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
@@ -85,15 +85,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
   if (evts.contains(event->type())) {
     device.resetInteractiveTimout();
-#ifdef QCOM
-    // filter out touches while in android activity
-    if (HardwareEon::launched_activity) {
-      HardwareEon::check_activity();
-      if (HardwareEon::launched_activity) {
-        return true;
-      }
-    }
-#endif
   }
   return false;
 }

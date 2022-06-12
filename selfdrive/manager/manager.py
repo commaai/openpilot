@@ -13,13 +13,13 @@ from common.basedir import BASEDIR
 from common.params import Params, ParamKeyType
 from common.text_window import TextWindow
 from selfdrive.boardd.set_time import set_time
-from selfdrive.hardware import HARDWARE, PC
+from system.hardware import HARDWARE, PC
 from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
-from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
+from system.swaglog import cloudlog, add_file_handler
+from system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
                               terms_version, training_version
 
 
@@ -38,6 +38,7 @@ def manager_init() -> None:
 
   default_params: List[Tuple[str, Union[str, bytes]]] = [
     ("CompletedTrainingVersion", "0"),
+    ("DisengageOnAccelerator", "1"),
     ("HasAcceptedTerms", "0"),
     ("OpenpilotEnabledToggle", "1"),
   ]
@@ -121,32 +122,22 @@ def manager_thread() -> None:
   params = Params()
 
   ignore: List[str] = []
-  if params.get("DongleId", encoding='utf8') == UNREGISTERED_DONGLE_ID:
+  if params.get("DongleId", encoding='utf8') in (None, UNREGISTERED_DONGLE_ID):
     ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
   ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
-  ensure_running(managed_processes.values(), started=False, not_run=ignore)
-
-  started_prev = False
-  sm = messaging.SubMaster(['deviceState'])
+  sm = messaging.SubMaster(['deviceState', 'carParams'], poll=['deviceState'])
   pm = messaging.PubMaster(['managerState'])
+
+  ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
 
   while True:
     sm.update()
-    not_run = ignore[:]
 
     started = sm['deviceState'].started
-    driverview = params.get_bool("IsDriverViewEnabled")
-    ensure_running(managed_processes.values(), started, driverview, not_run)
-
-    # trigger an update after going offroad
-    if started_prev and not started and 'updated' in managed_processes:
-      os.sync()
-      managed_processes['updated'].signal(signal.SIGHUP)
-
-    started_prev = started
+    ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
     running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
                        for p in managed_processes.values() if p.proc)
@@ -215,6 +206,11 @@ if __name__ == "__main__":
   except Exception:
     add_file_handler(cloudlog)
     cloudlog.exception("Manager failed to start")
+
+    try:
+      managed_processes['ui'].stop()
+    except Exception:
+      pass
 
     # Show last 3 lines of traceback
     error = traceback.format_exc(-3)

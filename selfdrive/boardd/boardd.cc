@@ -23,11 +23,11 @@
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/timing.h"
+#include "common/util.h"
+#include "system/hardware/hw.h"
 
 #include "selfdrive/boardd/pigeon.h"
 
@@ -115,11 +115,15 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     return false;
   }
 
+  // set to ELM327 for fingerprinting
   pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
+  for (int i = 1; i < pandas.size(); i++) {
+    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::SILENT);
+  }
 
   Params p = Params();
 
-  // switch to SILENT when CarVin param is read
+  // wait for VIN to be read
   while (true) {
     if (do_exit || !check_all_connected(pandas) || !ignition) {
       return false;
@@ -135,15 +139,14 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     util::sleep_for(20);
   }
 
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1);
+  // set to ELM327 for ECU knockouts
+  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
 
   std::string params;
   LOGW("waiting for params to set safety model");
   while (true) {
-    for (const auto& panda : pandas) {
-      if (do_exit || !panda->connected || !ignition) {
-        return false;
-      }
+    if (do_exit || !check_all_connected(pandas) || !ignition) {
+      return false;
     }
 
     if (p.getBool("ControlsReady")) {
@@ -158,10 +161,11 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
   cereal::CarParams::SafetyModel safety_model;
-  int safety_param;
+  uint16_t safety_param;
 
   auto safety_configs = car_params.getSafetyConfigs();
-  for (uint32_t i=0; i<pandas.size(); i++) {
+  uint16_t alternative_experience = car_params.getAlternativeExperience();
+  for (uint32_t i = 0; i < pandas.size(); i++) {
     auto panda = pandas[i];
 
     if (safety_configs.size() > i) {
@@ -170,12 +174,11 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     } else {
       // If no safety mode is specified, default to silent
       safety_model = cereal::CarParams::SafetyModel::SILENT;
-      safety_param = 0;
+      safety_param = 0U;
     }
 
-    LOGW("panda %d: setting safety model: %d with param %d", i, (int)safety_model, safety_param);
-
-    panda->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
+    LOGW("panda %d: setting safety model: %d, param: %d, alternative experience: %d", i, (int)safety_model, safety_param, alternative_experience);
+    panda->set_alternative_experience(alternative_experience);
     panda->set_safety_model(safety_model, safety_param);
   }
 
@@ -229,7 +232,9 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     //Dont send if older than 1 second
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
+        LOGT("sending sendcan to panda: %s", (panda->usb_serial).c_str());
         panda->can_send(event.getSendcan());
+        LOGT("sendcan sent to panda: %s", (panda->usb_serial).c_str());
       }
     }
   }
@@ -294,7 +299,7 @@ void send_empty_panda_state(PubMaster *pm) {
   pm->send("pandaStates", msg);
 }
 
-bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool spoofing_started) {
+std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool spoofing_started) {
   bool ignition_local = false;
 
   // build msg
@@ -304,34 +309,39 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
 
   std::vector<health_t> pandaStates;
   for (const auto& panda : pandas){
-    health_t pandaState = panda->get_state();
-
-    if (spoofing_started) {
-      pandaState.ignition_line = 1;
+    auto health_opt = panda->get_state();
+    if (!health_opt) {
+      return std::nullopt;
     }
 
-    ignition_local |= ((pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
+    health_t health = *health_opt;
 
-    pandaStates.push_back(pandaState);
+    if (spoofing_started) {
+      health.ignition_line_pkt = 1;
+    }
+
+    ignition_local |= ((health.ignition_line_pkt != 0) || (health.ignition_can_pkt != 0));
+
+    pandaStates.push_back(health);
   }
 
-  for (uint32_t i=0; i<pandas.size(); i++) {
+  for (uint32_t i = 0; i < pandas.size(); i++) {
     auto panda = pandas[i];
-    const auto &pandaState = pandaStates[i];
+    const auto &health = pandaStates[i];
 
     // Make sure CAN buses are live: safety_setter_thread does not work if Panda CAN are silent and there is only one other CAN node
-    if (pandaState.safety_model == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
+    if (health.safety_mode_pkt == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
     }
 
   #ifndef __x86_64__
     bool power_save_desired = !ignition_local && !pigeon_active;
-    if (pandaState.power_save_enabled != power_save_desired) {
+    if (health.power_save_enabled_pkt != power_save_desired) {
       panda->set_power_saving(power_save_desired);
     }
 
     // set safety mode to NO_OUTPUT when car is off. ELM327 is an alternative if we want to leverage athenad/connect
-    if (!ignition_local && (pandaState.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
+    if (!ignition_local && (health.safety_mode_pkt != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
     }
   #endif
@@ -341,30 +351,33 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
     }
 
     auto ps = pss[i];
-    ps.setUptime(pandaState.uptime);
-    ps.setIgnitionLine(pandaState.ignition_line);
-    ps.setIgnitionCan(pandaState.ignition_can);
-    ps.setControlsAllowed(pandaState.controls_allowed);
-    ps.setGasInterceptorDetected(pandaState.gas_interceptor_detected);
-    ps.setCanRxErrs(pandaState.can_rx_errs);
-    ps.setCanSendErrs(pandaState.can_send_errs);
-    ps.setCanFwdErrs(pandaState.can_fwd_errs);
-    ps.setGmlanSendErrs(pandaState.gmlan_send_errs);
+    ps.setUptime(health.uptime_pkt);
+    ps.setBlockedCnt(health.blocked_msg_cnt_pkt);
+    ps.setIgnitionLine(health.ignition_line_pkt);
+    ps.setIgnitionCan(health.ignition_can_pkt);
+    ps.setControlsAllowed(health.controls_allowed_pkt);
+    ps.setGasInterceptorDetected(health.gas_interceptor_detected_pkt);
+    ps.setCanRxErrs(health.can_rx_errs_pkt);
+    ps.setCanSendErrs(health.can_send_errs_pkt);
+    ps.setCanFwdErrs(health.can_fwd_errs_pkt);
+    ps.setGmlanSendErrs(health.gmlan_send_errs_pkt);
     ps.setPandaType(panda->hw_type);
-    ps.setSafetyModel(cereal::CarParams::SafetyModel(pandaState.safety_model));
-    ps.setSafetyParam(pandaState.safety_param);
-    ps.setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
-    ps.setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
-    ps.setHeartbeatLost((bool)(pandaState.heartbeat_lost));
-    ps.setHarnessStatus(cereal::PandaState::HarnessStatus(pandaState.car_harness_status));
+    ps.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_mode_pkt));
+    ps.setSafetyParam(health.safety_param_pkt);
+    ps.setFaultStatus(cereal::PandaState::FaultStatus(health.fault_status_pkt));
+    ps.setPowerSaveEnabled((bool)(health.power_save_enabled_pkt));
+    ps.setHeartbeatLost((bool)(health.heartbeat_lost_pkt));
+    ps.setAlternativeExperience(health.alternative_experience_pkt);
+    ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
+    ps.setInterruptLoad(health.interrupt_load);
 
     // Convert faults bitset to capnp list
-    std::bitset<sizeof(pandaState.faults) * 8> fault_bits(pandaState.faults);
+    std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt);
     auto faults = ps.initFaults(fault_bits.count());
 
     size_t j = 0;
     for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
-        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_TICK); f++) {
+        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_EXTI); f++) {
       if (fault_bits.test(f)) {
         faults.set(j, cereal::PandaState::FaultType(f));
         j++;
@@ -377,7 +390,12 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
 }
 
 void send_peripheral_state(PubMaster *pm, Panda *panda) {
-  health_t pandaState = panda->get_state();
+  auto pandaState_opt = panda->get_state();
+  if (!pandaState_opt) {
+    return;
+  }
+
+  health_t pandaState = *pandaState_opt;
 
   // build msg
   MessageBuilder msg;
@@ -387,21 +405,16 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
   auto ps = evt.initPeripheralState();
   ps.setPandaType(panda->hw_type);
 
-  if (Hardware::TICI()) {
-    double read_time = millis_since_boot();
-    ps.setVoltage(std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()));
-    ps.setCurrent(std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()));
-    read_time = millis_since_boot() - read_time;
-    if (read_time > 50) {
-      LOGW("reading hwmon took %lfms", read_time);
-    }
-  } else {
-    ps.setVoltage(pandaState.voltage);
-    ps.setCurrent(pandaState.current);
+  double read_time = millis_since_boot();
+  ps.setVoltage(Hardware::get_voltage());
+  ps.setCurrent(Hardware::get_current());
+  read_time = millis_since_boot() - read_time;
+  if (read_time > 50) {
+    LOGW("reading hwmon took %lfms", read_time);
   }
 
   uint16_t fan_speed_rpm = panda->get_fan_speed();
-  ps.setUsbPowerMode(cereal::PeripheralState::UsbPowerMode(pandaState.usb_power_mode));
+  ps.setUsbPowerMode(cereal::PeripheralState::UsbPowerMode(pandaState.usb_power_mode_pkt));
   ps.setFanSpeedRpm(fan_speed_rpm);
 
   pm->send("peripheralState", msg);
@@ -425,7 +438,13 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
     // send out peripheralState
     send_peripheral_state(pm, peripheral_panda);
-    ignition = send_panda_states(pm, pandas, spoofing_started);
+    auto ignition_opt = send_panda_states(pm, pandas, spoofing_started);
+
+    if (!ignition_opt) {
+      continue;
+    }
+
+    ignition = *ignition_opt;
 
     // TODO: make this check fast, currently takes 16ms
     // check if we have new pandas and are offroad
@@ -510,9 +529,7 @@ void peripheral_control_thread(Panda *panda) {
       int cur_integ_lines = event.getDriverCameraState().getIntegLines();
       float cur_gain = event.getDriverCameraState().getGain();
 
-      if (Hardware::TICI()) {
-        cur_integ_lines = integ_lines_filter.update(cur_integ_lines * cur_gain);
-      }
+      cur_integ_lines = integ_lines_filter.update(cur_integ_lines * cur_gain);
       last_front_frame_t = event.getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {
@@ -592,10 +609,19 @@ void pigeon_thread(Panda *panda) {
 }
 
 void boardd_main_thread(std::vector<std::string> serials) {
-  if (serials.size() == 0) serials.push_back("");
-
   PubMaster pm({"pandaStates", "peripheralState"});
   LOGW("attempting to connect");
+
+  if (serials.size() == 0) {
+    // connect to all
+    serials = Panda::list();
+
+    // exit if no pandas are connected
+    if (serials.size() == 0) {
+      LOGW("no pandas found, exiting");
+      return;
+    }
+  }
 
   // connect to all provided serials
   std::vector<Panda *> pandas;
@@ -617,8 +643,6 @@ void boardd_main_thread(std::vector<std::string> serials) {
     LOGW("connected to board");
     Panda *peripheral_panda = pandas[0];
     std::vector<std::thread> threads;
-
-    Params().put("LastPeripheralPandaType", std::to_string((int) peripheral_panda->get_hw_type()));
 
     threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
     threads.emplace_back(peripheral_control_thread, peripheral_panda);

@@ -42,31 +42,27 @@ class TestStartup(unittest.TestCase):
     # TODO: test EventName.startup for release branches
 
     # officially supported car
-    (EventName.startupMaster, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS),
-    (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS),
-
-    # DSU unplugged
-    (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_NO_DSU),
-    (EventName.communityFeatureDisallowed, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_NO_DSU),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS),
 
     # dashcamOnly car
-    (EventName.startupNoControl, MAZDA.CX5, True, CX5_FW_VERSIONS),
-    (EventName.startupNoControl, MAZDA.CX5, False, CX5_FW_VERSIONS),
+    (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS),
+    (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS),
 
     # unrecognized car with no fw
-    (EventName.startupNoFw, None, True, None),
-    (EventName.startupNoFw, None, False, None),
+    (EventName.startupNoFw, None, None),
+    (EventName.startupNoFw, None, None),
 
     # unrecognized car
-    (EventName.startupNoCar, None, True, COROLLA_FW_VERSIONS[:1]),
-    (EventName.startupNoCar, None, False, COROLLA_FW_VERSIONS[:1]),
+    (EventName.startupNoCar, None, COROLLA_FW_VERSIONS[:1]),
+    (EventName.startupNoCar, None, COROLLA_FW_VERSIONS[:1]),
 
     # fuzzy match
-    (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_FUZZY),
-    (EventName.startupMaster, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY),
   ])
   @with_processes(['controlsd'])
-  def test_startup_alert(self, expected_event, car_model, toggle_enabled, fw_versions):
+  def test_startup_alert(self, expected_event, car_model, fw_versions):
 
     # TODO: this should be done without any real sockets
     controls_sock = messaging.sub_sock("controlsState")
@@ -76,7 +72,6 @@ class TestStartup(unittest.TestCase):
     params.clear_all()
     params.put_bool("Passive", False)
     params.put_bool("OpenpilotEnabledToggle", True)
-    params.put_bool("CommunityFeaturesToggle", toggle_enabled)
 
     # Build capnn version of FW array
     if fw_versions is not None:

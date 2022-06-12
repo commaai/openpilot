@@ -1,6 +1,5 @@
 from common.numpy_fast import mean
 from common.kalman.simple_kalman import KF1D
-from selfdrive.config import RADAR_TO_CAMERA
 
 
 # the longer lead decels, the more likely it will keep decelerating
@@ -13,6 +12,8 @@ SPEED, ACCEL = 0, 1   # Kalman filter states enum
 # stationary qualification parameters
 v_ego_stationary = 4.   # no stationary object flag below this speed
 
+RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
+RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
 class Track():
   def __init__(self, v_lead, kalman_params):

@@ -25,6 +25,11 @@ def write(d):
 def run_loop(m):
   ishapes = [[1]+ii.shape[1:] for ii in m.get_inputs()]
   keys = [x.name for x in m.get_inputs()]
+
+  # run once to initialize CUDA provider
+  if "CUDAExecutionProvider" in m.get_providers():
+    m.run(None, dict(zip(keys, [np.zeros(shp, dtype=np.float32) for shp in ishapes])))
+
   print("ready to run onnx model", keys, ishapes, file=sys.stderr)
   while 1:
     inputs = []
@@ -54,7 +59,10 @@ if __name__ == "__main__":
     options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     provider = 'CPUExecutionProvider'
 
-  print("Onnx selected provider: ", [provider], file=sys.stderr)
-  ort_session = ort.InferenceSession(sys.argv[1], options, providers=[provider])
-  print("Onnx using ", ort_session.get_providers(), file=sys.stderr)
-  run_loop(ort_session)
+  try:
+    print("Onnx selected provider: ", [provider], file=sys.stderr)
+    ort_session = ort.InferenceSession(sys.argv[1], options, providers=[provider])
+    print("Onnx using ", ort_session.get_providers(), file=sys.stderr)
+    run_loop(ort_session)
+  except KeyboardInterrupt:
+    pass

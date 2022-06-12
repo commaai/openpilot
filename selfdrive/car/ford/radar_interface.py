@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 from cereal import car
+from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
-from selfdrive.car.ford.values import DBC
-from selfdrive.config import Conversions as CV
+from selfdrive.car.ford.values import CANBUS, DBC
 from selfdrive.car.interfaces import RadarInterfaceBase
 
 RADAR_MSGS = list(range(0x500, 0x540))
 
+
 def _create_radar_can_parser(car_fingerprint):
+  if DBC[car_fingerprint]['radar'] is None:
+    return None
+
   msg_n = len(RADAR_MSGS)
   signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
-                     RADAR_MSGS * 3,
-                     [0] * msg_n + [0] * msg_n + [0] * msg_n))
-  checks = list(zip(RADAR_MSGS, [20]*msg_n))
+                     RADAR_MSGS * 3))
+  checks = list(zip(RADAR_MSGS, [20] * msg_n))
 
-  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
+  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, CANBUS.radar)
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
@@ -27,6 +30,9 @@ class RadarInterface(RadarInterfaceBase):
     self.updated_messages = set()
 
   def update(self, can_strings):
+    if self.rcp is None:
+      return super().update(None)
+
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
