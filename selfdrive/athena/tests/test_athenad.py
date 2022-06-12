@@ -16,7 +16,7 @@ from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
-from selfdrive import swaglog
+from system import swaglog
 from selfdrive.athena import athenad
 from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
