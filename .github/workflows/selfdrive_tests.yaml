@@ -94,7 +94,7 @@ jobs:
       run: |
           ${{ env.RUN }} "scons -j$(nproc) --extras --test && \
                           rm -rf /tmp/scons_cache/* && \
-                          scons -j$(nproc) --cache-populate"
+                          scons -j$(nproc) --extras --test --cache-populate"
 
   #build_mac:
   #  name: build macos

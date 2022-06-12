@@ -29,12 +29,27 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - name: Cache scons
+      id: scons-cache
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      with:
+        path: /tmp/scons_cache
+        key: scons-ubuntu-latest-${{ hashFiles('.github/workflows/tools_test.yaml') }}-
+        restore-keys: |
+          scons-ubuntu-latest-${{ hashFiles('.github/workflows/tools_test.yaml') }}-
+          scons-ubuntu-latest-
+
     - name: tools/ubuntu_setup.sh
       run: tools/ubuntu_setup.sh
     - name: Build openpilot
       run: |
         source tools/openpilot_env.sh
-        pipenv run scons -j$(nproc)
+        pipenv run scons -j$(nproc) --extras --test
+    - name: Cleanup scons cache
+      run: |
+        source tools/openpilot_env.sh
+        rm -rf /tmp/scons_cache/*
+        pipenv run scons -j$(nproc) --extras --test --cache-populate
 
   plotjuggler:
     name: plotjuggler
