@@ -6,7 +6,7 @@ from system.hardware.tici.hardware import Tici
 from system.hardware.pc.hardware import Pc
 
 TICI = os.path.isfile('/TICI')
-AGNOS = TICI
+AGNOS = os.path.isfile('/AGNOS')
 PC = not TICI
 
 
