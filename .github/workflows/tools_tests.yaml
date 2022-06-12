@@ -23,7 +23,7 @@ env:
 jobs:
   build_latest_ubuntu:
     name: build latest ubuntu
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v3
@@ -33,8 +33,8 @@ jobs:
       run: tools/ubuntu_setup.sh
     - name: Build openpilot
       run: |
-        source ~/.bashrc
-        scons -j$(nproc)
+        source tools/openpilot_env.sh
+        pipenv run scons -j$(nproc)
 
   plotjuggler:
     name: plotjuggler
