@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "4dbfaf9d7a532e0e9a126f828512a5383a817722a1580ef64b99e2427f366a72"
+            "sha256": "eb1eeeaabf1266fab353532d10e4d9ae36306a7577f248513909c2d6096ab1c9"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -1155,11 +1155,11 @@
         },
         "setuptools": {
             "hashes": [
-                "sha256:d1746e7fd520e83bbe210d02fff1aa1a425ad671c7a9da7d246ec2401a087198",
-                "sha256:e7d11f3db616cda0751372244c2ba798e8e56a28e096ec4529010b803485f3fe"
+                "sha256:1f5d3a1502812025cdb2e5609b6af2d207332e3f50febe6db10ed3a59b2f155f",
+                "sha256:30b6b0fbacc459c90d27a63e6173facfc8b8c99a48fb24b5044f459ba63cd6cf"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==62.3.3"
+            "version": "==62.3.4"
         },
         "six": {
             "hashes": [
@@ -1452,17 +1452,17 @@
         },
         "carla": {
             "hashes": [
-                "sha256:1ed11b56c781cd15cbd540cacfb59ad348e0a021d898cfd0ff89a585f144da0b",
-                "sha256:20c1e1b72034175824d89b2d86b09ae72b4aca09ea25874dc6251f239297251d",
-                "sha256:6d1122c24af4f6375dc6858fbb0309b61c219b101d8c5a540def4c36c4563fe1",
-                "sha256:9c19ebf6cbbc535bde4baf9e18c72ab349657b34c4202b9751541e4c0d20b3cc",
-                "sha256:a69f6d84b59e2f805b2a417de98f977fe9efe0cfa733da8d75e20d28892da915",
-                "sha256:c3ae0dce3f1354b6311fee21a365947b0ff169249993a913904f676046d2d69f",
-                "sha256:dd392a267e14b785a8f65dafef86e05a92201253e9fb4a01e1e262834f20bed2"
+                "sha256:1210cce213e968a644effd4e2e48458a072481459d073424b05725056ba3d77d",
+                "sha256:339fcb1e392f3ade1be82b7258de19c533e2efae111e954a6eb174efb296903d",
+                "sha256:5f065825ce812343bf27a80a19d647b3200b31b44a9e80cea0340e3bd20cdf81",
+                "sha256:954ca34d5bdd4516ceca353db907fee8cec6630d6b31a732b17dd1554e0f0f94",
+                "sha256:a64ee78fe91137fa7d4828c7fc06d5824bd7312e29e4ea4f31a5d74dd28bff40",
+                "sha256:a95d2d4218ea388c863c66b7c2ab3fe49ffefe53999305cfcb6a8107042f79af",
+                "sha256:d2bfaea2d6824a2d758cbe813856c69420494f5c97d2a2dfb45653ccf976f1ce"
             ],
             "index": "pypi",
             "markers": "platform_system != 'Darwin'",
-            "version": "==0.9.12"
+            "version": "==0.9.13"
         },
         "certifi": {
             "hashes": [
