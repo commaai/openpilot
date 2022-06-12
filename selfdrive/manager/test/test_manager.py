@@ -5,14 +5,13 @@ import time
 import unittest
 
 import selfdrive.manager.manager as manager
-from system.hardware import AGNOS, HARDWARE
 from selfdrive.manager.process import DaemonProcess
 from selfdrive.manager.process_config import managed_processes
+from system.hardware import AGNOS, HARDWARE
 
 os.environ['FAKEUPLOAD'] = "1"
 
-# TODO: make eon fast
-MAX_STARTUP_TIME = 15
+MAX_STARTUP_TIME = 3
 ALL_PROCESSES = [p.name for p in managed_processes.values() if (type(p) is not DaemonProcess) and p.enabled and (p.name not in ['updated', 'pandad'])]
 
 
