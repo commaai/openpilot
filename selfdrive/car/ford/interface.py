@@ -18,9 +18,8 @@ class CarInterface(CarInterfaceBase):
     #ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
     ret.dashcamOnly = True
 
-    # Angle-based steering
-    # TODO: use curvature control when ready
-    ret.steerControlType = car.CarParams.SteerControlType.angle
+    # curvature steering
+    ret.steerControlType = car.CarParams.SteerControlType.curvature
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 1.0
 
