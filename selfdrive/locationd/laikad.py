@@ -53,8 +53,7 @@ class Laikad:
       report = ublox_msg.measurementReport
       if report.gpsWeek > 0:
         latest_msg_t = GPSTime(report.gpsWeek, report.rcvTow)
-        if self.last_fetch_orbits_t is None or latest_msg_t - self.last_fetch_orbits_t> SECS_IN_HR:
-          self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
+        self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
       new_meas = read_raw_ublox(report)
 
       measurements = process_measurements(new_meas, self.astro_dog)
@@ -141,9 +140,9 @@ class Laikad:
       queue.put(queue_data)
 
   def fetch_orbits(self, t: GPSTime, block):
-    if t not in self.astro_dog.orbit_fetched_times:
+    if t not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or t - self.last_fetch_orbits_t > SECS_IN_HR):
       if block:
-        # For testing purposes
+        # Blocking used for testing purposes
         self.get_orbit_data(t, None)
         return
       if self.orbit_p is None:
