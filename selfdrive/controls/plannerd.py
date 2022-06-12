@@ -2,7 +2,7 @@
 from cereal import car
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 from selfdrive.controls.lib.longitudinal_planner import Planner
 from selfdrive.controls.lib.lateral_planner import LateralPlanner
 import cereal.messaging as messaging

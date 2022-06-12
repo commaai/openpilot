@@ -36,8 +36,8 @@ from system.hardware import HARDWARE, PC, AGNOS
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.statsd import STATS_DIR
-from selfdrive.swaglog import SWAGLOG_DIR, cloudlog
-from selfdrive.version import get_commit, get_origin, get_short_branch, get_version
+from system.swaglog import SWAGLOG_DIR, cloudlog
+from system.version import get_commit, get_origin, get_short_branch, get_version
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))

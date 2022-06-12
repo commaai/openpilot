@@ -20,10 +20,10 @@ from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.hardware import HARDWARE, TICI, AGNOS
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.statsd import statlog
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.thermald.fan_controller import TiciFanController
-from selfdrive.version import terms_version, training_version
+from system.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType

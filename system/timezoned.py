@@ -10,7 +10,7 @@ from timezonefinder import TimezoneFinder
 
 from common.params import Params
 from system.hardware import AGNOS
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 
 def set_timezone(valid_timezones, timezone):

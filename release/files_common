@@ -61,16 +61,16 @@ release/*
 tools/lib/*
 tools/joystick/*
 
-selfdrive/version.py
-
 selfdrive/__init__.py
 selfdrive/sentry.py
-selfdrive/swaglog.py
-selfdrive/logmessaged.py
 selfdrive/tombstoned.py
 selfdrive/updated.py
 selfdrive/rtshield.py
 selfdrive/statsd.py
+
+system/logmessaged.py
+system/swaglog.py
+system/version.py
 
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
