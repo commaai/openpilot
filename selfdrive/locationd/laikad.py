@@ -17,7 +17,7 @@ from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
 import common.transformations.coordinates as coord
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
 
