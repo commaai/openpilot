@@ -7,8 +7,9 @@ import numpy as np
 from collections import defaultdict
 
 from cereal import log, messaging
+from common.params import Params, put_nonblocking
 from laika import AstroDog
-from laika.constants import SECS_IN_MIN
+from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.ephemeris import EphemerisType, convert_ublox_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
@@ -20,22 +21,40 @@ import common.transformations.coordinates as coord
 from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
+EPHEMERIS_CACHE = 'LaikadEphemeris'
 
 
 class Laikad:
-
   def __init__(self, valid_const=("GPS", "GLONASS"), auto_update=False, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV)):
-    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types)
+    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True)
     self.gnss_kf = GNSSKalman(GENERATED_DIR)
     self.orbit_p: Optional[Process] = None
     self.orbit_q = Queue()
+    self.params = Params()
+    self.load_cache()
+    self.last_save_t = None
+    self.last_fetch_orbits_t = None
+
+  def load_cache(self):
+    params = Params()
+    if params.check_key(EPHEMERIS_CACHE) and False: # todo fix get params
+      ephemeris = params.get('LaikadEphemeris', block=True)
+
+      self.astro_dog.add_orbits(ephemeris['orbits'])
+      self.astro_dog.add_navs(ephemeris['nav'])
+
+  def cache_ephemeris(self, t):
+    if self.last_save_t is None or t - self.last_save_t > 30*SECS_IN_MIN:
+      put_nonblocking('LaikadEphemeris', {'orbits': self.astro_dog.orbits, 'nav': self.astro_dog.nav})
+      self.last_save_t = t
 
   def process_ublox_msg(self, ublox_msg, ublox_mono_time: int, block=False):
     if ublox_msg.which == 'measurementReport':
       report = ublox_msg.measurementReport
       if report.gpsWeek > 0:
         latest_msg_t = GPSTime(report.gpsWeek, report.rcvTow)
-        self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
+        if self.last_fetch_orbits_t is None or latest_msg_t - self.last_fetch_orbits_t> SECS_IN_HR:
+          self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
       new_meas = read_raw_ublox(report)
 
       measurements = process_measurements(new_meas, self.astro_dog)
@@ -71,7 +90,8 @@ class Laikad:
       return dat
     elif ublox_msg.which == 'ephemeris':
       ephem = convert_ublox_ephem(ublox_msg.ephemeris)
-      self.astro_dog.add_ephems([ephem], self.astro_dog.nav)
+      self.astro_dog.add_navs([ephem])
+      self.cache_ephemeris(ephem.epoch)
     # elif ublox_msg.which == 'ionoData':
     # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
 
@@ -110,18 +130,20 @@ class Laikad:
   def get_orbit_data(self, t: GPSTime, queue):
     cloudlog.info(f"Start to download/parse orbits for time {t.as_datetime()}")
     start_time = time.monotonic()
+    queue_data = None
     try:
       self.astro_dog.get_orbit_data(t, only_predictions=True)
+      queue_data = (self.astro_dog.orbits, self.astro_dog.orbit_fetched_times)
     except RuntimeError as e:
       cloudlog.info(f"No orbit data found. {e}")
-      return
     cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.2f}s")
     if queue is not None:
-      queue.put((self.astro_dog.orbits, self.astro_dog.orbit_fetched_times))
+      queue.put(queue_data)
 
   def fetch_orbits(self, t: GPSTime, block):
     if t not in self.astro_dog.orbit_fetched_times:
       if block:
+        # For testing purposes
         self.get_orbit_data(t, None)
         return
       if self.orbit_p is None:
@@ -131,8 +153,11 @@ class Laikad:
         ret = self.orbit_q.get()
         if ret:
           self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
-          self.orbit_p.join()
-          self.orbit_p = None
+          self.cache_ephemeris(t)
+
+        self.orbit_p.join()
+        self.orbit_p = None
+        self.last_fetch_orbits_t = t
 
   def __del__(self):
     if self.orbit_p is not None:
