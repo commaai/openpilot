@@ -1,43 +1,11 @@
-import os
-from common.basedir import BASEDIR
+from selfdrive.car.interfaces import get_interface_attr
 
 
-def get_attr_from_cars(attr, result=dict, combine_brands=True):
-  # read all the folders in selfdrive/car and return a dict where:
-  # - keys are all the car models
-  # - values are attr values from all car folders
-  result = result()
-
-  for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
-    try:
-      car_name = car_folder.split('/')[-1]
-      values = __import__(f'selfdrive.car.{car_name}.values', fromlist=[attr])
-      if hasattr(values, attr):
-        attr_values = getattr(values, attr)
-      else:
-        continue
-
-      if isinstance(attr_values, dict):
-        for f, v in attr_values.items():
-          if combine_brands:
-            result[f] = v
-          else:
-            if car_name not in result:
-              result[car_name] = {}
-            result[car_name][f] = v
-      elif isinstance(attr_values, list):
-        result += attr_values
-
-    except (ImportError, OSError):
-      pass
-
-  return result
-
-
-FW_VERSIONS = get_attr_from_cars('FW_VERSIONS')
-_FINGERPRINTS = get_attr_from_cars('FINGERPRINTS')
+FW_VERSIONS = get_interface_attr('FW_VERSIONS', combine_brands=True, ignore_none=True)
+_FINGERPRINTS = get_interface_attr('FINGERPRINTS', combine_brands=True, ignore_none=True)
 
 _DEBUG_ADDRESS = {1880: 8}   # reserved for debug purposes
+
 
 def is_valid_for_fingerprint(msg, car_fingerprint):
   adr = msg.address

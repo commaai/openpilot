@@ -1,3 +1,20 @@
+Version 0.8.15 (2022-XX-XX)
+========================
+* New driving model
+* New lateral controller based on physical wheel torque model
+  * Much smoother control, consistent across the speed range
+  * Effective feedforward that uses road roll
+  * Simplified tuning, all car-specific parameters can be derived from data
+  * Significantly improved control on TSS-P Prius
+* New driver monitoring model
+  * takes a larger input frame
+  * outputs a driver state for both driver and passenger
+  * automatically determines which side the driver is on (soon)
+* Reduced power usage: device runs cooler and fan spins less
+* AGNOS 5
+* Hyundai Tucson 2021 support thanks to bluesforte!
+* Lexus NX Hybrid 2020 support thanks to AlexandreSato!
+
 Version 0.8.14 (2022-06-01)
 ========================
  * New driving model

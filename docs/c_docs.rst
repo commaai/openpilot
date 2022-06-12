@@ -50,10 +50,6 @@ soundd
 .. autodoxygenindex::
    :project: selfdrive_ui_soundd
 
-navd
-""""
-.. autodoxygenindex::
-   :project: selfdrive_ui_navd
 
 replay
 """"""
@@ -70,7 +66,7 @@ qt
 proclogd
 ^^^^^^^^
 .. autodoxygenindex::
-   :project: selfdrive_proclogd
+   :project: system_proclogd
 
 modeld
 ^^^^^^

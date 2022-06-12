@@ -18,6 +18,7 @@ from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.tests.routes import non_tested_cars, routes, TestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
+from tools.lib.route import Route
 
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
@@ -35,7 +36,7 @@ ignore_addr_checks_valid = [
 # build list of test cases
 routes_by_car = defaultdict(set)
 for r in routes:
-  routes_by_car[r.car_fingerprint].add(r)
+  routes_by_car[r.car_model].add(r)
 
 test_cases: List[Tuple[str, Optional[TestRoute]]] = []
 for i, c in enumerate(sorted(all_known_cars())):
@@ -45,12 +46,17 @@ for i, c in enumerate(sorted(all_known_cars())):
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
-@parameterized_class(('car_model', 'test_route'), test_cases)
-class TestCarModel(unittest.TestCase):
+class TestCarModelBase(unittest.TestCase):
+  car_model = None
+  test_route = None
+  ci = True
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
+    if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
+      raise unittest.SkipTest
+
     if cls.test_route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
@@ -64,12 +70,15 @@ class TestCarModel(unittest.TestCase):
 
     for seg in test_segs:
       try:
-        lr = LogReader(get_url(cls.test_route.route, seg))
+        if cls.ci:
+          lr = LogReader(get_url(cls.test_route.route, seg))
+        else:
+          lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
       except Exception:
         continue
 
       can_msgs = []
-      fingerprint = {i: dict() for i in range(3)}
+      fingerprint = defaultdict(dict)
       for msg in lr:
         if msg.which() == "can":
           for m in msg.can:
@@ -79,6 +88,8 @@ class TestCarModel(unittest.TestCase):
         elif msg.which() == "carParams":
           if msg.carParams.openpilotLongitudinalControl:
             disable_radar = True
+          if cls.car_model is None and not cls.ci:
+            cls.car_model = msg.carParams.carFingerprint
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break
@@ -98,8 +109,10 @@ class TestCarModel(unittest.TestCase):
 
     # TODO: check safetyModel is in release panda build
     self.safety = libpandasafety_py.libpandasafety
-    set_status = self.safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
-    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyConfigs}")
+
+    cfg = self.CP.safetyConfigs[-1]
+    set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
+    self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
   def test_car_params(self):
@@ -116,8 +129,6 @@ class TestCarModel(unittest.TestCase):
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
       elif tuning == 'torque':
         self.assertTrue(self.CP.lateralTuning.torque.kf > 0)
-      elif tuning == 'lqr':
-        self.assertTrue(len(self.CP.lateralTuning.lqr.a))
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
       else:
@@ -168,7 +179,7 @@ class TestCarModel(unittest.TestCase):
         if msg.src >= 64:
           continue
 
-        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
+        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src % 4])
         if self.safety.safety_rx_hook(to_send) != 1:
           failed_addrs[hex(msg.address)] += 1
 
@@ -247,6 +258,11 @@ class TestCarModel(unittest.TestCase):
 
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
+
+
+@parameterized_class(('car_model', 'test_route'), test_cases)
+class TestCarModel(TestCarModelBase):
+  pass
 
 
 if __name__ == "__main__":

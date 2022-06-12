@@ -91,7 +91,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
   alerts->updateAlert({}, bg);
 
   // update stream type
-  bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
+  bool wide_cam = Params().getBool("WideCameraOnly");
   nvg->setStreamType(wide_cam ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 }
 
@@ -311,24 +311,19 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
 
   // paint path
   QLinearGradient bg(0, height(), 0, height() / 4);
-  if (scene.end_to_end) {
-    const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
-    float orientation_future = 0;
-    if (orientation.getZ().size() > 16) {
-      orientation_future = std::abs(orientation.getZ()[16]);  // 2.5 seconds
-    }
-    // straight: 112, in turns: 70
-    float curve_hue = fmax(70, 112 - (orientation_future * 420));
-    // FIXME: painter.drawPolygon can be slow if hue is not rounded
-    curve_hue = int(curve_hue * 100 + 0.5) / 100;
-
-    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
-    bg.setColorAt(0.75 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.0));
-  } else {
-    bg.setColorAt(0, whiteColor());
-    bg.setColorAt(1, whiteColor(0));
+  const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
+  float orientation_future = 0;
+  if (orientation.getZ().size() > 16) {
+    orientation_future = std::abs(orientation.getZ()[16]);  // 2.5 seconds
   }
+  // straight: 112, in turns: 70
+  float curve_hue = fmax(70, 112 - (orientation_future * 420));
+  // FIXME: painter.drawPolygon can be slow if hue is not rounded
+  curve_hue = int(curve_hue * 100 + 0.5) / 100;
+
+  bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
+  bg.setColorAt(0.75 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.35));
+  bg.setColorAt(1.0, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.0));
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices.v, scene.track_vertices.cnt);
 
@@ -372,19 +367,21 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
 }
 
 void NvgWindow::paintGL() {
+  UIState *s = uiState();
+  const cereal::ModelDataV2::Reader &model = (*s->sm)["modelV2"].getModelV2();
+  CameraViewWidget::setFrameId(model.getFrameId());
   CameraViewWidget::paintGL();
 
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
-  UIState *s = uiState();
   if (s->worldObjectsVisible()) {
 
     drawLaneLines(painter, s);
 
     if (s->scene.longitudinal_control) {
-      auto leads = (*s->sm)["modelV2"].getModelV2().getLeadsV3();
+      const auto leads = model.getLeadsV3();
       if (leads[0].getProb() > .5) {
         drawLead(painter, leads[0], s->scene.lead_vertices[0]);
       }

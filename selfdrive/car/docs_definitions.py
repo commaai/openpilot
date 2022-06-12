@@ -1,8 +1,14 @@
+import math
+
 from cereal import car
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Union, no_type_check
+
+TACO_TORQUE_THRESHOLD = 2.5  # m/s^2
+GREAT_TORQUE_THRESHOLD = 1.4  # m/s^2
+GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 
 
 class Tier(Enum):
@@ -73,21 +79,27 @@ class CarInfo:
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
       # StarColumns
-      Column.LONGITUDINAL: CP.openpilotLongitudinalControl and not CP.radarOffCan,
-      Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
-      Column.FSR_STEERING: min_steer_speed <= 0.,
-      Column.STEERING_TORQUE: self.good_torque,
-      Column.MAINTAINED: CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none,
+      Column.LONGITUDINAL: Star.FULL if CP.openpilotLongitudinalControl and not CP.radarOffCan else Star.EMPTY,
+      Column.FSR_LONGITUDINAL: Star.FULL if min_enable_speed <= 0. else Star.EMPTY,
+      Column.FSR_STEERING: Star.FULL if min_steer_speed <= 0. else Star.EMPTY,
+      Column.STEERING_TORQUE: Star.FULL if self.good_torque else Star.EMPTY,  # TODO: remove hardcoding and use maxLateralAccel
+      Column.MAINTAINED: Star.FULL if CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none else Star.EMPTY,
     }
+
+    if not math.isnan(CP.maxLateralAccel):
+      if CP.maxLateralAccel >= GREAT_TORQUE_THRESHOLD:
+        self.row[Column.STEERING_TORQUE] = Star.FULL
+      elif CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
+        self.row[Column.STEERING_TORQUE] = Star.HALF
+      else:
+        self.row[Column.STEERING_TORQUE] = Star.EMPTY
 
     if CP.notCar:
       for col in StarColumns:
-        self.row[col] = True
+        self.row[col] = Star.FULL
 
     self.all_footnotes = all_footnotes
     for column in StarColumns:
-      self.row[column] = Star.FULL if self.row[column] else Star.EMPTY
-
       # Demote if footnote specifies a star
       footnote = get_footnote(self.footnotes, column)
       if footnote is not None and footnote.value.star is not None:
@@ -111,7 +123,7 @@ class CarInfo:
 
 class Harness(Enum):
   nidec = "Honda Nidec"
-  bosch = "Honda Bosch"
+  bosch = "Honda Bosch A"
   toyota = "Toyota"
   subaru = "Subaru"
   fca = "FCA"
@@ -138,3 +150,35 @@ class Harness(Enum):
   nissan_b = "Nissan B"
   mazda = "Mazda"
   none = "None"
+
+
+STAR_DESCRIPTIONS = {
+  "Gas & Brakes": {  # icon and row name
+    "openpilot Adaptive Cruise Control (ACC)": [  # star column
+      [Star.FULL.value, "openpilot is able to control the gas and brakes."],
+      [Star.HALF.value, "openpilot is able to control the gas and brakes with some restrictions."],
+      [Star.EMPTY.value, "The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system."],
+    ],
+    Column.FSR_LONGITUDINAL.value: [
+      [Star.FULL.value, "Adaptive Cruise Control (ACC) operates down to 0 mph."],
+      [Star.EMPTY.value, "Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed."],
+    ],
+  },
+  "Steering": {
+    Column.FSR_STEERING.value: [
+      [Star.FULL.value, "openpilot can control the steering wheel down to 0 mph."],
+      [Star.EMPTY.value, "No steering control below certain speeds."],
+    ],
+    Column.STEERING_TORQUE.value: [
+      [Star.FULL.value, "Car has enough steering torque to take tighter turns."],
+      [Star.HALF.value, "Car has enough steering torque for comfortable highway driving."],
+      [Star.EMPTY.value, "Limited ability to make turns."],
+    ],
+  },
+  "Support": {
+    Column.MAINTAINED.value: [
+      [Star.FULL.value, "Mainline software support, harness hardware sold by comma, lots of users, primary development target."],
+      [Star.EMPTY.value, "Low user count, community maintained, harness hardware not sold by comma."],
+    ],
+  },
+}

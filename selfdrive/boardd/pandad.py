@@ -10,8 +10,8 @@ from functools import cmp_to_key
 from panda import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.hardware import HARDWARE
-from selfdrive.swaglog import cloudlog
+from system.hardware import HARDWARE
+from system.swaglog import cloudlog
 
 
 def get_expected_signature(panda: Panda) -> bytes:

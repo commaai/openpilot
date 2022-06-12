@@ -26,7 +26,7 @@ non_tested_cars = [
   HYUNDAI.KIA_OPTIMA_H,
 ]
 
-TestRoute = namedtuple('TestRoute', ['route', 'car_fingerprint', 'segment'], defaults=(None,))
+TestRoute = namedtuple('TestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
 
 routes = [
   TestRoute("efdf9af95e71cd84|2022-05-13--19-03-31", COMMA.BODY),
@@ -84,7 +84,7 @@ routes = [
   TestRoute("c75a59efa0ecd502|2021-03-11--20-52-55", HYUNDAI.KIA_SELTOS),
   TestRoute("5b7c365c50084530|2020-04-15--16-13-24", HYUNDAI.SONATA),
   TestRoute("b2a38c712dcf90bd|2020-05-18--18-12-48", HYUNDAI.SONATA_LF),
-  TestRoute("fb3fd42f0baaa2f8|2022-03-30--15-25-05", HYUNDAI.TUCSON_DIESEL_2019),
+  TestRoute("fb3fd42f0baaa2f8|2022-03-30--15-25-05", HYUNDAI.TUCSON),
   TestRoute("5875672fc1d4bf57|2020-07-23--21-33-28", HYUNDAI.KIA_SORENTO),
   TestRoute("9c917ba0d42ffe78|2020-04-17--12-43-19", HYUNDAI.PALISADE),
   TestRoute("3f29334d6134fcd4|2022-03-30--22-00-50", HYUNDAI.IONIQ_PHEV_2019),
@@ -98,6 +98,7 @@ routes = [
   TestRoute("49f3c13141b6bc87|2021-07-28--08-05-13", HYUNDAI.KONA_HEV),
   TestRoute("5dddcbca6eb66c62|2020-07-26--13-24-19", HYUNDAI.KIA_STINGER),
   TestRoute("d624b3d19adce635|2020-08-01--14-59-12", HYUNDAI.VELOSTER),
+  TestRoute("d824e27e8c60172c|2022-05-19--16-15-28", HYUNDAI.KIA_EV6),
   TestRoute("007d5e4ad9f86d13|2021-09-30--15-09-23", HYUNDAI.KIA_K5_2021),
   TestRoute("50c6c9b85fd1ff03|2020-10-26--17-56-06", HYUNDAI.KIA_NIRO_EV),
   TestRoute("173219cf50acdd7b|2021-07-05--10-27-41", HYUNDAI.KIA_NIRO_HEV),
@@ -143,6 +144,7 @@ routes = [
   TestRoute("ec429c0f37564e3c|2020-02-01--17-28-12", TOYOTA.LEXUS_NXH),
   TestRoute("964c09eb11ca8089|2020-11-03--22-04-00", TOYOTA.LEXUS_NX),
   TestRoute("3fd5305f8b6ca765|2021-04-28--19-26-49", TOYOTA.LEXUS_NX_TSS2),
+  TestRoute("09ae96064ed85a14|2022-06-09--12-22-31", TOYOTA.LEXUS_NXH_TSS2),
   TestRoute("0a302ffddbb3e3d3|2020-02-08--16-19-08", TOYOTA.HIGHLANDER_TSS2),
   TestRoute("437e4d2402abf524|2021-05-25--07-58-50", TOYOTA.HIGHLANDERH_TSS2),
   TestRoute("3183cd9b021e89ce|2021-05-25--10-34-44", TOYOTA.HIGHLANDER),
