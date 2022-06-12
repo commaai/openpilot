@@ -47,7 +47,7 @@ class RadarInterface(RadarInterfaceBase):
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
-    if self.trigger_msg not in self.updated_messages:
+    if self.trigger_msg not in self.updated_messages and self.rcp.can_valid:
       return None
 
     rr = self._update(self.updated_messages)

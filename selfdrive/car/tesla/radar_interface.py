@@ -63,7 +63,7 @@ class RadarInterface(RadarInterfaceBase):
     values = self.rcp.update_strings(can_strings)
     self.updated_messages.update(values)
 
-    if self.trigger_msg not in self.updated_messages:
+    if self.trigger_msg not in self.updated_messages and self.rcp.can_valid:
       return None
 
     ret = car.RadarData.new_message()
