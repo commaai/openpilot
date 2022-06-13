@@ -197,10 +197,11 @@ FW_VERSIONS = {
       #b'68538041AB',
       #b'68475153AD',
     #],
-    (Ecu.gateway, 0x18DACBF1, None): [
-      b'68488419AB',
-      b'68535476AB',
-    ],
+    # (Ecu.gateway, 0x18DACBF1, None): [
+    #   b'68488419AB',
+    #   b'68535476AB',
+    #   b'68535476AC',
+    # ],
   },
 }
 
