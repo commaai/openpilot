@@ -70,6 +70,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.84
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       tire_stiffness_factor = 0.65
+      set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
     elif candidate == CAR.SONATA_LF:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 4497. * CV.LB_TO_KG
@@ -207,6 +208,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
+      torque_params = CarInterfaceBase.get_torque_params(CAR.KIA_OPTIMA)
       set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
     elif candidate == CAR.KIA_STINGER:
       ret.lateralTuning.pid.kf = 0.00005
