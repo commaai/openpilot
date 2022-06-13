@@ -28,9 +28,9 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   vlayout->setContentsMargins(20, 20, 20, 20);
   if (show_advanced) {
     QPushButton* advancedSettings = new QPushButton("Advanced");
-    advancedSettings->setObjectName("advancedBtn");
+    advancedSettings->setObjectName("advanced_btn");
     advancedSettings->setStyleSheet("margin-right: 30px;");
-    advancedSettings->setFixedSize(350, 100);
+    advancedSettings->setFixedSize(400, 100);
     connect(advancedSettings, &QPushButton::clicked, [=]() { main_layout->setCurrentWidget(an); });
     vlayout->addSpacing(10);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
@@ -57,7 +57,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
 
   // TODO: revisit pressed colors
   setStyleSheet(R"(
-    #wifiWidget > QPushButton, #back_btn, #advancedBtn {
+    #wifiWidget > QPushButton, #back_btn, #advanced_btn {
       font-size: 50px;
       margin: 0px;
       padding: 15px;
@@ -65,6 +65,9 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
       border-radius: 30px;
       color: #dddddd;
       background-color: #444444;
+    }
+    #back_btn:pressed, #advanced_btn:pressed {
+      background-color: #3B3B3B;
     }
   )");
   main_layout->setCurrentWidget(wifiScreen);
@@ -118,7 +121,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   // Back button
   QPushButton* back = new QPushButton("Back");
   back->setObjectName("back_btn");
-  back->setFixedSize(500, 100);
+  back->setFixedSize(400, 100);
   connect(back, &QPushButton::clicked, [=]() { emit backPress(); });
   main_layout->addWidget(back, 0, Qt::AlignLeft);
 
