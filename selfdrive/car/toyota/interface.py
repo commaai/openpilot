@@ -42,8 +42,10 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
       ret.maxLateralAccel = 1.7
-      #TODO only override for bad angle sensor prius
-      steering_angle_deadzone_deg = 0.0
+      # Only give steer angle deadzone to for bad angle sensor prius
+      for fw in car_fw:
+        if fw.ecu == "eps" and not fw.fwVersion == b'8965B47060\x00\x00\x00\x00\x00\x00':
+          steering_angle_deadzone_deg = 1.0
 
     elif candidate == CAR.PRIUS_V:
       stop_and_go = True
