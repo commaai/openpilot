@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import time
-from multiprocessing import Process, Queue
+from concurrent.futures import Future, ProcessPoolExecutor
 from typing import List, Optional
 
 import numpy as np
 from collections import defaultdict
+
+from numpy.linalg import linalg
 
 from cereal import log, messaging
 from common.params import Params, put_nonblocking
@@ -28,22 +30,22 @@ class Laikad:
   def __init__(self, valid_const=("GPS", "GLONASS"), auto_update=False, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV)):
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True)
     self.gnss_kf = GNSSKalman(GENERATED_DIR)
-    self.orbit_p: Optional[Process] = None
-    self.orbit_q = Queue()
+    self.orbit_fetch_executor = ProcessPoolExecutor()
+    self.orbit_fetch_future: Optional[Future] = None
+    self.last_fetch_orbits_t = None
     self.load_cache()
     self.last_save_t = None
-    self.last_fetch_orbits_t = None
 
   def load_cache(self):
     params = Params()
-    if params.check_key(EPHEMERIS_CACHE) and False: # todo fix get params
+    if params.check_key(EPHEMERIS_CACHE) and False:  # todo fix get params
       ephemeris = params.get('LaikadEphemeris', block=True)
 
       self.astro_dog.add_orbits(ephemeris['orbits'])
       self.astro_dog.add_navs(ephemeris['nav'])
 
   def cache_ephemeris(self, t):
-    if self.last_save_t is None or t - self.last_save_t > 30*SECS_IN_MIN:
+    if self.last_save_t is None or t - self.last_save_t > 30 * SECS_IN_MIN:
       put_nonblocking('LaikadEphemeris', {'orbits': self.astro_dog.orbits, 'nav': self.astro_dog.nav})
       self.last_save_t = t
 
@@ -54,24 +56,33 @@ class Laikad:
         latest_msg_t = GPSTime(report.gpsWeek, report.rcvTow)
         self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
       new_meas = read_raw_ublox(report)
-
-      measurements = process_measurements(new_meas, self.astro_dog)
-      pos_fix = calc_pos_fix(measurements, min_measurements=4)
-      # To get a position fix a minimum of 5 measurements are needed.
-      # Each report can contain less and some measurements can't be processed.
-      corrected_measurements = []
-      if len(pos_fix) > 0 and abs(np.array(pos_fix[1])).mean() < 1000:
-        corrected_measurements = correct_measurements(measurements, pos_fix[0][:3], self.astro_dog)
+      processed_measurements = process_measurements(new_meas, self.astro_dog)
+      pos_fix = calc_pos_fix(processed_measurements, min_measurements=4)
 
       t = ublox_mono_time * 1e-9
+      kf_pos_std = None
+      if all(self.kf_valid(t)):
+        self.gnss_kf.predict(t)
+        kf_pos_std = np.sqrt(abs(self.gnss_kf.P[GStates.ECEF_POS].diagonal()))
+      # If localizer is valid use its position to correct measurements
+      if kf_pos_std is not None and linalg.norm(kf_pos_std) < 100:
+        est_pos = self.gnss_kf.x[GStates.ECEF_POS]
+      elif len(pos_fix) > 0 and abs(np.array(pos_fix[1])).mean() < 1000:
+        est_pos = pos_fix[0][:3]
+      else:
+        est_pos = None
+      corrected_measurements = []
+      if est_pos is not None:
+        corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog)
+
       self.update_localizer(pos_fix, t, corrected_measurements)
-      localizer_valid = self.localizer_valid(t)
+      kf_valid = all(self.kf_valid(t))
 
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
       ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
 
-      pos_std = self.gnss_kf.P[GStates.ECEF_POS].flatten().tolist()
-      vel_std = self.gnss_kf.P[GStates.ECEF_VELOCITY].flatten().tolist()
+      pos_std = np.sqrt(abs(self.gnss_kf.P[GStates.ECEF_POS].diagonal())).tolist()
+      vel_std = np.sqrt(abs(self.gnss_kf.P[GStates.ECEF_VELOCITY].diagonal())).tolist()
 
       bearing_deg, bearing_std = get_bearing_from_gnss(ecef_pos, ecef_vel, vel_std)
 
@@ -79,9 +90,9 @@ class Laikad:
       dat = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
       dat.gnssMeasurements = {
-        "positionECEF": measurement_msg(value=ecef_pos, std=pos_std, valid=localizer_valid),
-        "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std, valid=localizer_valid),
-        "bearingDeg": measurement_msg(value=[bearing_deg], std=[bearing_std], valid=localizer_valid),
+        "positionECEF": measurement_msg(value=ecef_pos, std=pos_std, valid=kf_valid),
+        "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std, valid=kf_valid),
+        "bearingDeg": measurement_msg(value=[bearing_deg], std=[bearing_std], valid=kf_valid),
         "ubloxMonoTime": ublox_mono_time,
         "correctedMeasurements": meas_msgs
       }
@@ -95,18 +106,21 @@ class Laikad:
 
   def update_localizer(self, pos_fix, t: float, measurements: List[GNSSMeasurement]):
     # Check time and outputs are valid
-    if not self.localizer_valid(t):
-      # A position fix is needed when resetting the kalman filter.
+    valid = self.kf_valid(t)
+    if not all(valid):
+      if not valid[0]:
+        cloudlog.info("Init gnss kalman filter")
+      elif not valid[1]:
+        cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
+      elif not valid[2]:
+        cloudlog.error("Gnss kalman filter state is nan")
+      else:
+        cloudlog.error("Gnss kalman std too far")
+
       if len(pos_fix) == 0:
+        cloudlog.warning("Position fix not available when resetting kalman filter")
         return
       post_est = pos_fix[0][:3].tolist()
-      filter_time = self.gnss_kf.filter.filter_time
-      if filter_time is None:
-        cloudlog.info("Init gnss kalman filter")
-      elif abs(t - filter_time) > MAX_TIME_GAP:
-        cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
-      else:
-        cloudlog.error("Gnss kalman filter state is nan")
       self.init_gnss_localizer(post_est)
     if len(measurements) > 0:
       kf_add_observations(self.gnss_kf, t, measurements)
@@ -114,9 +128,12 @@ class Laikad:
       # Ensure gnss filter is updated even with no new measurements
       self.gnss_kf.predict(t)
 
-  def localizer_valid(self, t: float):
+  def kf_valid(self, t: float):
     filter_time = self.gnss_kf.filter.filter_time
-    return filter_time is not None and (t - filter_time) < MAX_TIME_GAP and all(np.isfinite(self.gnss_kf.x[GStates.ECEF_POS]))
+    return [filter_time is not None,
+            filter_time is not None and abs(t - filter_time) < MAX_TIME_GAP,
+            all(np.isfinite(self.gnss_kf.x[GStates.ECEF_POS])),
+            linalg.norm(self.gnss_kf.P[GStates.ECEF_POS]) < 1e5]
 
   def init_gnss_localizer(self, est_pos):
     x_initial, p_initial_diag = np.copy(GNSSKalman.x_initial), np.copy(np.diagonal(GNSSKalman.P_initial))
@@ -125,41 +142,34 @@ class Laikad:
 
     self.gnss_kf.init_state(x_initial, covs_diag=p_initial_diag)
 
-  def get_orbit_data(self, t: GPSTime, queue):
-    cloudlog.info(f"Start to download/parse orbits for time {t.as_datetime()}")
-    start_time = time.monotonic()
-    queue_data = None
-    try:
-      self.astro_dog.get_orbit_data(t, only_predictions=True)
-      queue_data = (self.astro_dog.orbits, self.astro_dog.orbit_fetched_times)
-    except RuntimeError as e:
-      cloudlog.info(f"No orbit data found. {e}")
-    cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.2f}s")
-    if queue is not None:
-      queue.put(queue_data)
-
   def fetch_orbits(self, t: GPSTime, block):
     if t not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or t - self.last_fetch_orbits_t > SECS_IN_HR):
-      if block:
-        # Blocking used for testing purposes
-        self.get_orbit_data(t, None)
-        return
-      if self.orbit_p is None:
-        self.orbit_p = Process(target=self.get_orbit_data, args=(t, self.orbit_q))
-        self.orbit_p.start()
-      if not self.orbit_q.empty():
-        ret = self.orbit_q.get()
+      astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types
+      if self.orbit_fetch_future is None:
+        self.orbit_fetch_future = self.orbit_fetch_executor.submit(get_orbit_data, t, *astro_dog_vars)
+        if block:
+          self.orbit_fetch_future.result()
+      if self.orbit_fetch_future.done():
+        ret = self.orbit_fetch_future.result()
         if ret:
           self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
           self.cache_ephemeris(t)
-
-        self.orbit_p.join()
-        self.orbit_p = None
+        self.orbit_fetch_future = None
         self.last_fetch_orbits_t = t
 
-  def __del__(self):
-    if self.orbit_p is not None:
-      self.orbit_p.kill()
+
+def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
+  astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types)
+  cloudlog.info(f"Start to download/parse orbits for time {t.as_datetime()}")
+  start_time = time.monotonic()
+  data = None
+  try:
+    astro_dog.get_orbit_data(t, only_predictions=True)
+    data = (astro_dog.orbits, astro_dog.orbit_fetched_times)
+  except RuntimeError as e:
+    cloudlog.info(f"No orbit data found. {e}")
+  cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
+  return data
 
 
 def create_measurement_msg(meas: GNSSMeasurement):

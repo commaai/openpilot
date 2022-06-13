@@ -69,28 +69,45 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(256, len(correct_msgs))
     self.assertEqual(256, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
-  def test_laika_get_orbits(self):
-    laikad = Laikad(auto_update=False)
-    first_gps_time = None
+  def get_first_gps_time(self):
     for m in self.logs:
       if m.ubloxGnss.which == 'measurementReport':
         new_meas = read_raw_ublox(m.ubloxGnss.measurementReport)
         if len(new_meas) != 0:
-          first_gps_time = new_meas[0].recv_time
-          break
+          return new_meas[0].recv_time
+
+  def test_laika_get_orbits(self):
+    laikad = Laikad(auto_update=False)
+    first_gps_time = self.get_first_gps_time()
     # Pretend process has loaded the orbits on startup by using the time of the first gps message.
     laikad.fetch_orbits(first_gps_time, block=True)
-    self.assertEqual(29, len(laikad.astro_dog.orbits.keys()))
+    self.assertEqual(29, len(laikad.astro_dog.orbits.values()))
+    self.assertGreater(min([len(v) for v in laikad.astro_dog.orbits.values()]), 0)
 
   @unittest.skip("Use to debug live data")
   def test_laika_get_orbits_now(self):
     laikad = Laikad(auto_update=False)
     laikad.fetch_orbits(GPSTime.from_datetime(datetime.utcnow()), block=True)
     prn = "G01"
-    self.assertLess(0, len(laikad.astro_dog.orbits[prn]))
+    self.assertGreater(len(laikad.astro_dog.orbits[prn]), 0)
     prn = "R01"
-    self.assertLess(0, len(laikad.astro_dog.orbits[prn]))
+    self.assertGreater(len(laikad.astro_dog.orbits[prn]), 0)
     print(min(laikad.astro_dog.orbits[prn], key=lambda e: e.epoch).epoch.as_datetime())
+
+  def test_get_orbits_in_process(self):
+    laikad = Laikad(auto_update=False)
+    has_orbits = False
+    for m in self.logs:
+      laikad.process_ublox_msg(m.ubloxGnss, m.logMonoTime, block=False)
+      if laikad.orbit_fetch_future is not None:
+        laikad.orbit_fetch_future.result()
+      vals = laikad.astro_dog.orbits.values()
+      has_orbits = len(vals) > 0 and max([len(v) for v in vals]) > 0
+      if has_orbits:
+        break
+    self.assertTrue(has_orbits)
+    self.assertGreater(len(laikad.astro_dog.orbit_fetched_times._ranges), 0)
+    self.assertEqual(None, laikad.orbit_fetch_future)
 
 
 if __name__ == "__main__":
