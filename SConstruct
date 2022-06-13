@@ -6,7 +6,7 @@ import platform
 import numpy as np
 
 TICI = os.path.isfile('/TICI')
-AGNOS = os.path.isfile('/AGNOS')
+AGNOS = TICI
 
 Decider('MD5-timestamp')
 
