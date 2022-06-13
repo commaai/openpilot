@@ -31,6 +31,7 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
     stop_and_go = False
+    torque_params = CarInterfaceBase.get_torque_params(candidate)
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
@@ -91,8 +92,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       if candidate in (CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
-        ret.maxLateralAccel = 2.4
-        set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, MAX_LAT_ACCEL=ret.maxLateralAccel, FRICTION=0.05)
+        set_lat_tune(ret.lateralTuning, LatTunes.TORQUE, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
       else:
         set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
