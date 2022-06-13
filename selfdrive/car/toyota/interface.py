@@ -34,6 +34,7 @@ class CarInterface(CarInterfaceBase):
     stop_and_go = False
     torque_params = CarInterfaceBase.get_torque_params(candidate)
     steering_angle_deadzone_deg = 0.0
+    set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'], steering_angle_deadzone_deg)
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
@@ -45,6 +46,7 @@ class CarInterface(CarInterfaceBase):
       for fw in car_fw:
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B47060\x00\x00\x00\x00\x00\x00':
           steering_angle_deadzone_deg = 1.0
+          set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'], steering_angle_deadzone_deg)
 
     elif candidate == CAR.PRIUS_V:
       stop_and_go = True
@@ -54,6 +56,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3340. * CV.LB_TO_KG + STD_CARGO_KG
       # TODO override until there is enough data
       torque_params = CarInterfaceBase.get_torque_params(CAR.PRIUS)
+      set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'], steering_angle_deadzone_deg)
 
     elif candidate in (CAR.RAV4, CAR.RAV4H):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
@@ -205,7 +208,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4305. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_J)
 
-    set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'], steering_angle_deadzone_deg)
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
