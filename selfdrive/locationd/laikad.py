@@ -150,7 +150,7 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
     data = (astro_dog.orbits, astro_dog.orbit_fetched_times)
   except RuntimeError as e:
     cloudlog.info(f"No orbit data found. {e}")
-  cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.2f}s")
+  cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
   return data
 
 
