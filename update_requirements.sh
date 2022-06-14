@@ -46,7 +46,7 @@ pip install poetry
 if [ -d "./xx" ]; then
   echo "WARNING: using xx Pipfile ******"
   export PIPENV_SYSTEM=1
-  export PIPENV_PIPFILE=./xx/Pipfile
+  export PIPENV_PIPFILE=./xx/pyproj.toml
 fi
 
 if [ -z "$PIPENV_SYSTEM" ]; then

@@ -8,7 +8,7 @@ ENV PYTHONPATH ${OPENPILOT_PATH}:${PYTHONPATH}
 RUN mkdir -p ${OPENPILOT_PATH}
 WORKDIR ${OPENPILOT_PATH}
 
-COPY Pipfile Pipfile.lock $OPENPILOT_PATH
+COPY pyproject.toml poetry.lock $OPENPILOT_PATH
 RUN pip install --no-cache-dir poetry pip==21.3.1 && \
     poetry config settings.virtualenvs.create false && \\
     poetry install && \

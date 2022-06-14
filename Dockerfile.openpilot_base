@@ -17,7 +17,7 @@ ENV PYENV_VERSION=3.8.10
 ENV PYENV_ROOT="/root/.pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
-COPY Pipfile Pipfile.lock .python-version update_requirements.sh /tmp/
+COPY pyproject.toml poetry.lock .python-version update_requirements.sh /tmp/
 COPY tools/ubuntu_setup.sh /tmp/tools/
 RUN cd /tmp && \
     tools/ubuntu_setup.sh && \
