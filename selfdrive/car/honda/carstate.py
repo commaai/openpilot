@@ -236,9 +236,7 @@ class CarState(CarStateBase):
         ret.cruiseState.standstill = acc_hud["CRUISE_SPEED"] == 252.
 
         # on certain cars, CRUISE_SPEED changes to imperial with car speed unit setting
-        conversion_factor = CV.KPH_TO_MS
-        if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS and not self.is_metric:
-          conversion_factor = CV.MPH_TO_MS
+        conversion_factor = CV.MPH_TO_MS if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS and not self.is_metric else CV.KPH_TO_MS
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
         ret.cruiseState.speed = self.v_cruise_pcm_prev if acc_hud["CRUISE_SPEED"] > 160.0 else acc_hud["CRUISE_SPEED"] * conversion_factor
         self.v_cruise_pcm_prev = ret.cruiseState.speed
@@ -308,9 +306,7 @@ class CarState(CarStateBase):
         ("CRUISE_SPEED", "ACC_HUD"),
         ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
       ]
-      checks += [
-        ("ACC_HUD", 10),
-      ]
+      checks.append(("ACC_HUD", 10))
 
     elif CP.carFingerprint not in HONDA_BOSCH:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND"),
