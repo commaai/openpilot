@@ -312,7 +312,7 @@ void NvgWindow::drawHud(QPainter &p) {
     p.drawRoundedRect(sign_rect, 16, 16);
 
     // "SPEED"
-    configFont(p, "Open Sans", 28, "Bold");
+    configFont(p, "Open Sans", 28, "SemiBold");
     QRect text_speed_rect = getRect(p, Qt::AlignCenter, "SPEED");
     text_speed_rect.moveCenter({sign_rect.center().x(), 0});
     text_speed_rect.moveTop(sign_rect_outer.top() + 20);
