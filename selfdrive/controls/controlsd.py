@@ -104,6 +104,9 @@ class Controls:
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
+    if self.CP.dashcamOnly and params.get_bool("DashcamOverride"):
+      self.CP.dashcamOnly = False
+
     # read params
     self.is_metric = params.get_bool("IsMetric")
     self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
@@ -115,9 +118,8 @@ class Controls:
 
     car_recognized = self.CP.carName != 'mock'
 
-    dashcam_only = self.CP.dashcamOnly and not params.get_bool("DashcamOverride")
-    controller_available = self.CI.CC is not None and not passive and not dashcam_only
-    self.read_only = not car_recognized or not controller_available
+    controller_available = self.CI.CC is not None and not passive and not self.CP.dashcamOnly
+    self.read_only = not car_recognized or not controller_available or self.CP.dashcamOnly
     if self.read_only:
       safety_config = car.CarParams.SafetyConfig.new_message()
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
