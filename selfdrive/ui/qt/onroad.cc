@@ -179,7 +179,7 @@ void NvgWindow::updateState(const UIState &s) {
   if (cruise_set && !s.scene.is_metric) {
     maxspeed *= KM_TO_MILE;
   }
-  QString maxspeed_str = cruise_set ? QString::number(std::nearbyint(maxspeed)) : "N/A";
+  QString maxspeed_str = cruise_set ? QString::number(std::nearbyint(maxspeed)) : "–";
   float cur_speed = std::max(0.0, sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
 
   auto speed_limit_sign = sm["navInstruction"].getNavInstruction().getSpeedLimitSign();
@@ -251,82 +251,106 @@ void NvgWindow::drawHud(QPainter &p) {
   bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
   p.fillRect(0, 0, width(), header_h, bg);
 
-  // max speed
-  int rect_width = 163;
-  if (has_us_speed_limit) rect_width = 173;
-  else if (has_eu_speed_limit) rect_width = 208;
+  // Draw outer box + border to contain set speed and speed limit
+  int default_rect_width = 172;
+  int rect_width = default_rect_width;
+  if (has_us_speed_limit && speedLimit.size() >= 3) rect_width = 223;
+  else if (has_eu_speed_limit) rect_width = 200;
 
-  int rect_height = 188;
-  if (has_us_speed_limit) rect_height = 386;
-  else if (has_eu_speed_limit) rect_height = 384;
+  int rect_height = 204;
+  if (has_us_speed_limit) rect_height = 402;
+  else if (has_eu_speed_limit) rect_height = 392;
 
   int top_radius = 32;
-  int bottom_radius = has_eu_speed_limit ? 102 : 32;
+  int bottom_radius = has_eu_speed_limit ? 100 : 32;
 
-  QRect max_speed_rect(60 + 163/2 - rect_width / 2, 45, rect_width, rect_height);
+  QRect max_speed_rect(60 + default_rect_width / 2 - rect_width / 2, 45, rect_width, rect_height);
   p.setPen(QPen(QColor(255, 255, 255, 50), 3));
   p.setBrush(QColor(0, 0, 0, 166));
   drawRoundedRect(p, max_speed_rect, top_radius, top_radius, bottom_radius, bottom_radius);
 
-  p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
-
-  configFont(p, "Open Sans", 80, "Bold");
+  // Draw set speed
+  if (is_cruise_set) {
+    p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
+  } else {
+    p.setPen(QColor(0x72, 0x72, 0x72, 0xff));
+  }
+  configFont(p, "Open Sans", 90, "Bold");
   QRect speed_rect = getRect(p, Qt::AlignCenter, maxSpeed);
   speed_rect.moveCenter({max_speed_rect.center().x(), 0});
-  speed_rect.moveTop(max_speed_rect.top() + 10);
+  speed_rect.moveTop(max_speed_rect.top() + 8);
   p.drawText(speed_rect, Qt::AlignCenter, maxSpeed);
 
-  configFont(p, "Open Sans", 32, "Bold");
+  // Draw MAX
+  if (is_cruise_set) {
+    p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
+  } else {
+    p.setPen(QColor(0xa6, 0xa6, 0xa6, 0xff));
+  }
+  configFont(p, "Open Sans", 40, "SemiBold");
   QRect max_rect = getRect(p, Qt::AlignCenter, "MAX");
   max_rect.moveCenter({max_speed_rect.center().x(), 0});
-  max_rect.moveTop(max_speed_rect.top() + 110);
+  max_rect.moveTop(max_speed_rect.top() + 115);
   p.drawText(max_rect, Qt::AlignCenter, "MAX");
 
+  // US/Canada (MUTCD style) sign
   if (has_us_speed_limit) {
     const int border_width = 6;
-    const int sign_width = 149;
+    const int sign_width = (speedLimit.size() >= 3) ? 199 : 148;
     const int sign_height = 186;
 
+    // White outer square
     QRect sign_rect_outer(max_speed_rect.left() + 12, max_speed_rect.bottom() - 12 - sign_height, sign_width, sign_height);
-    QRect sign_rect(sign_rect_outer.left() + 1.5 * border_width, sign_rect_outer.top() + 1.5 * border_width, sign_width - 3 * border_width, sign_height - 3 * border_width);
-
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(255, 255, 255, 255));
     p.drawRoundedRect(sign_rect_outer, 24, 24);
 
+    // Smaller white square with black border
+    QRect sign_rect(sign_rect_outer.left() + 1.5 * border_width, sign_rect_outer.top() + 1.5 * border_width, sign_width - 3 * border_width, sign_height - 3 * border_width);
     p.setPen(QPen(QColor(0, 0, 0, 255), border_width));
     p.setBrush(QColor(255, 255, 255, 255));
     p.drawRoundedRect(sign_rect, 16, 16);
 
+    // "SPEED"
     configFont(p, "Open Sans", 28, "Bold");
     QRect text_speed_rect = getRect(p, Qt::AlignCenter, "SPEED");
     text_speed_rect.moveCenter({sign_rect.center().x(), 0});
-    text_speed_rect.moveTop(sign_rect.top() + 10);
+    text_speed_rect.moveTop(sign_rect_outer.top() + 20);
     p.drawText(text_speed_rect, Qt::AlignCenter, "SPEED");
 
+    // "LIMIT"
     QRect text_limit_rect = getRect(p, Qt::AlignCenter, "LIMIT");
     text_limit_rect.moveCenter({sign_rect.center().x(), 0});
-    text_limit_rect.moveTop(sign_rect.top() + 40);
+    text_limit_rect.moveTop(sign_rect_outer.top() + 48);
     p.drawText(text_limit_rect, Qt::AlignCenter, "LIMIT");
 
-    configFont(p, "Open Sans", 68, "Bold");
+    // Speed limit value
+    configFont(p, "Open Sans", 70, "Bold");
     QRect speed_limit_rect = getRect(p, Qt::AlignCenter, speedLimit);
     speed_limit_rect.moveCenter({sign_rect.center().x(), 0});
     speed_limit_rect.moveTop(sign_rect.top() + 70);
     p.drawText(speed_limit_rect, Qt::AlignCenter, speedLimit);
   }
 
+  // EU (Vienna style) sign
   if (has_eu_speed_limit) {
-    QPoint center(speed_rect.center().x() + 1, speed_rect.top() + 270);
+    int outer_radius = 176 / 2;
+    int inner_radius_1 = outer_radius - 6; // White outer border
+    int inner_radius_2 = inner_radius_1 - 20; // Red circle
+
+    // Draw white circle with red border
+    QPoint center(max_speed_rect.center().x() + 1, max_speed_rect.top() + 204 + outer_radius);
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(255, 255, 255, 255));
-    p.drawEllipse(center, 92, 92);
+    p.drawEllipse(center, outer_radius, outer_radius);
     p.setBrush(QColor(255, 0, 0, 255));
-    p.drawEllipse(center, 86, 86);
+    p.drawEllipse(center, inner_radius_1, inner_radius_1);
     p.setBrush(QColor(255, 255, 255, 255));
-    p.drawEllipse(center, 66, 66);
+    p.drawEllipse(center, inner_radius_2, inner_radius_2);
 
-    configFont(p, "Open Sans", 64, "Bold");
+    // Speed limit value
+    int font_size = (speedLimit.size() >= 3) ? 62 : 70;
+    configFont(p, "Open Sans", font_size, "Bold");
     QRect speed_limit_rect = getRect(p, Qt::AlignCenter, speedLimit);
     speed_limit_rect.moveCenter(center);
     p.setPen(QColor(0, 0, 0, 255));
