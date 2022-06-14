@@ -298,7 +298,7 @@ void NvgWindow::drawHud(QPainter &p) {
 
   // Draw set speed
   if (is_cruise_set) {
-    if (speedLimit > 0) {
+    if (speedLimit > 0 && status != STATUS_DISENGAGED) {
       p.setPen(interp_color(
         setSpeed,
         {speedLimit, speedLimit + 10, speedLimit + 20},
