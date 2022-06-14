@@ -6,7 +6,7 @@
 
 #include "common/params.h"
 #include "common/swaglog.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 QString getVersion() {
   static QString version =  QString::fromStdString(Params().get("Version"));

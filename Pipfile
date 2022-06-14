@@ -11,7 +11,7 @@ coverage = "*"
 dictdiffer = "*"
 fastcluster = "*"
 hexdump = "*"
-hypothesis = "*"
+hypothesis = "==6.46.7"
 inputs = "*"
 lru-dict = "*"
 markdown-it-py = "*"
@@ -39,7 +39,7 @@ breathe = "*"
 subprocess32 = "*"
 tenacity = "*"
 mpld3 = "*"
-carla = {version = "==0.9.12", markers="platform_system != 'Darwin'"}
+carla = {version = "==0.9.13", markers="platform_system != 'Darwin'"}
 
 [packages]
 atomicwrites = "*"
@@ -58,6 +58,7 @@ json-rpc = "*"
 libusb1 = "*"
 nose = "*"
 numpy = "*"
+protobuf = "==3.20.1"
 onnx = "*"
 onnxruntime-gpu = {version = "*", markers="platform_system != 'Darwin'"}
 pillow = "*"

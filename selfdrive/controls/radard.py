@@ -10,7 +10,7 @@ from common.params import Params
 from common.realtime import Ratekeeper, Priority, config_realtime_process
 from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
 from selfdrive.controls.lib.radar_helpers import Cluster, Track, RADAR_TO_CAMERA
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 
 class KalmanParams():
