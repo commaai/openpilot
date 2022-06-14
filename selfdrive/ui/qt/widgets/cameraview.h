@@ -6,6 +6,16 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
 #include <QThread>
+
+#ifdef QCOM2
+#define EGL_EGLEXT_PROTOTYPES
+#define EGL_NO_X11
+#define GL_TEXTURE_EXTERNAL_OES 0x8D65
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <drm/drm_fourcc.h>
+#endif
+
 #include "cereal/visionipc/visionipc_client.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
@@ -41,10 +51,15 @@ protected:
 
   bool zoomed_view;
   GLuint frame_vao, frame_vbo, frame_ibo;
-  GLuint textures[3];
+  GLuint textures[2];
   mat4 frame_mat;
   std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
+
+#ifdef QCOM2
+  EGLDisplay egl_display;
+  std::map<int, EGLImageKHR> egl_images;
+#endif
 
   std::string stream_name;
   int stream_width = 0;
