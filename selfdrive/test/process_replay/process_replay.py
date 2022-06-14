@@ -15,7 +15,7 @@ from cereal.services import service_list
 from common.params import Params
 from common.timeout import Timeout
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.car_helpers import get_car, interfaces
+from selfdrive.car.car_helpers import get_car
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
 from selfdrive.manager.process import PythonProcess
 from selfdrive.manager.process_config import managed_processes
@@ -153,7 +153,7 @@ class FakePubMaster(messaging.PubMaster):
     return dat
 
 
-def fingerprint(msgs, fsm, can_sock, fingerprint):
+def fingerprint(msgs, fsm, can_sock):
   print("start fingerprinting")
   fsm.wait_on_getitem = True
 
@@ -176,18 +176,14 @@ def fingerprint(msgs, fsm, can_sock, fingerprint):
   fsm.update_ready.set()
 
 
-def get_car_params(msgs, fsm, can_sock, fingerprint):
-  if fingerprint:
-    CarInterface, _, _ = interfaces[fingerprint]
-    CP = CarInterface.get_params(fingerprint)
-  else:
-    can = FakeSocket(wait=False)
-    sendcan = FakeSocket(wait=False)
+def get_car_params(msgs, fsm, can_sock):
+  can = FakeSocket(wait=False)
+  sendcan = FakeSocket(wait=False)
 
-    canmsgs = [msg for msg in msgs if msg.which() == 'can']
-    for m in canmsgs[:300]:
-      can.send(m.as_builder().to_bytes())
-    _, CP = get_car(can, sendcan)
+  canmsgs = [msg for msg in msgs if msg.which() == 'can']
+  for m in canmsgs[:300]:
+    can.send(m.as_builder().to_bytes())
+  _, CP = get_car(can, sendcan)
   Params().put("CarParams", CP.to_bytes())
 
 def controlsd_rcv_callback(msg, CP, cfg, fsm):
@@ -340,14 +336,14 @@ CONFIGS = [
 ]
 
 
-def replay_process(cfg, lr, fingerprint=None):
+def replay_process(cfg, lr):
   with OpenpilotPrefix():
     if cfg.fake_pubsubmaster:
-      return python_replay_process(cfg, lr, fingerprint)
+      return python_replay_process(cfg, lr)
     else:
-      return cpp_replay_process(cfg, lr, fingerprint)
+      return cpp_replay_process(cfg, lr)
 
-def setup_env(simulation=False):
+def setup_env(simulation=False, CP=None):
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
@@ -358,13 +354,23 @@ def setup_env(simulation=False):
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
+  os.environ['SKIP_FW_QUERY'] = ""
+  os.environ['FINGERPRINT'] = ""
 
   if simulation:
     os.environ["SIMULATION"] = "1"
   elif "SIMULATION" in os.environ:
     del os.environ["SIMULATION"]
 
-def python_replay_process(cfg, lr, fingerprint=None):
+  # Regen or python process
+  if CP is not None:
+    if CP.fingerprintSource == "fw" and CP.carFingerprint in FW_VERSIONS:
+      params.put("CarParamsCache", CP.as_builder().to_bytes())
+    else:
+      os.environ['SKIP_FW_QUERY'] = "1"
+      os.environ['FINGERPRINT'] = CP.carFingerprint
+
+def python_replay_process(cfg, lr):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']
 
@@ -378,30 +384,8 @@ def python_replay_process(cfg, lr, fingerprint=None):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  setup_env()
-
-  # TODO: remove after getting new route for civic & accord
-  migration = {
-    "HONDA CIVIC 2016 TOURING": "HONDA CIVIC 2016",
-    "HONDA ACCORD 2018 SPORT 2T": "HONDA ACCORD 2018",
-    "HONDA ACCORD 2T 2018": "HONDA ACCORD 2018",
-    "Mazda CX-9 2021": "MAZDA CX-9 2021",
-  }
-
-  if fingerprint is not None:
-    os.environ['SKIP_FW_QUERY'] = "1"
-    os.environ['FINGERPRINT'] = fingerprint
-  else:
-    os.environ['SKIP_FW_QUERY'] = ""
-    os.environ['FINGERPRINT'] = ""
-    for msg in lr:
-      if msg.which() == 'carParams':
-        car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-        if msg.carParams.fingerprintSource == "fw" and (car_fingerprint in FW_VERSIONS):
-          Params().put("CarParamsCache", msg.carParams.as_builder().to_bytes())
-        else:
-          os.environ['SKIP_FW_QUERY'] = "1"
-          os.environ['FINGERPRINT'] = car_fingerprint
+  CP = [m for m in lr if m.which() == 'carParams'][0].carParams
+  setup_env(CP=CP)
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
@@ -414,7 +398,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
   if cfg.init_callback is not None:
     if 'can' not in list(cfg.pub_sub.keys()):
       can_sock = None
-    cfg.init_callback(all_msgs, fsm, can_sock, fingerprint)
+    cfg.init_callback(all_msgs, fsm, can_sock)
 
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
@@ -453,7 +437,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
   return log_msgs
 
 
-def cpp_replay_process(cfg, lr, fingerprint=None):
+def cpp_replay_process(cfg, lr):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(cfg.pub_sub.keys())
 
