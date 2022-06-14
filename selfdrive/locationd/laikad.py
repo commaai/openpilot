@@ -41,7 +41,7 @@ class Laikad:
     self.load_cache()
 
   def load_cache(self):
-    cache = Params().get('LaikadEphemeris')
+    cache = Params().get(EPHEMERIS_CACHE)
     if not cache:
       return
     try:
@@ -54,7 +54,7 @@ class Laikad:
 
   def cache_ephemeris(self, t: GPSTime):
     if self.save_ephemeris and (self.last_cached_t is None or t - self.last_cached_t > SECS_IN_MIN):
-      put_nonblocking('LaikadEphemeris', json.dumps(
+      put_nonblocking(EPHEMERIS_CACHE, json.dumps(
         {'version': CACHE_VERSION, 'last_fetch_orbits_t': self.last_fetch_orbits_t, 'orbits': self.astro_dog.orbits, 'nav': self.astro_dog.nav},
         cls=CacheSerializer))
       self.last_cached_t = t
@@ -161,11 +161,11 @@ class Laikad:
           self.orbit_fetch_future.result()
       if self.orbit_fetch_future.done():
         ret = self.orbit_fetch_future.result()
+        self.last_fetch_orbits_t = t
         if ret:
           self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
           self.cache_ephemeris(t=t)
         self.orbit_fetch_future = None
-        self.last_fetch_orbits_t = t
 
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
@@ -234,7 +234,7 @@ class CacheSerializer(json.JSONEncoder):
 
 
 def deserialize_hook(dct):
-  if 'eph_type' in dct:
+  if 'ephemeris' in dct:
     return Ephemeris.from_json(dct)
   if 'week' in dct:
     return GPSTime(dct['week'], dct['tow'])

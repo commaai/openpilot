@@ -145,7 +145,7 @@ class TestLaikad(unittest.TestCase):
     self.assertIsNotNone(msg)
 
     with patch('selfdrive.locationd.laikad.get_orbit_data', return_value=None) as mock_method:
-      # Verify no try to download orbit data since the cache has recently been saved
+      # Verify no orbit downloads even if orbit fetch times is reset since the cache has recently been saved and we don't want to download high frequently
       laikad.astro_dog.orbit_fetched_times = TimeRangeHolder()
       laikad.fetch_orbits(first_gps_time, block=False)
       mock_method.assert_not_called()
