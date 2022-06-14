@@ -44,12 +44,11 @@ pip install pip==21.3.1
 pip install poetry
 
 if [ -d "./xx" ]; then
-  echo "WARNING: using xx Pipfile ******"
-  export PIPENV_SYSTEM=1
-  export PIPENV_PIPFILE=./xx/pyproj.toml
+  poetry config virtualenvs.create false && \
+  export POETRY_SYSTEM=1
 fi
 
-if [ -z "$PIPENV_SYSTEM" ]; then
+if [ -z "$POETRY_SYSTEM" ]; then
   echo "PYTHONPATH=${PWD}" > .env
   RUN="poetry run"
 else
