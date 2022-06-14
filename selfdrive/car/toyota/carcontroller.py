@@ -32,7 +32,7 @@ class CarController:
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
     # gas and brake
-    if self.CP.enableGasInterceptor and CC.longActive:
+    if self.CP.enableGasInterceptor and CC.longActive and self.CP.openpilotLongitudinalControl:
       MAX_INTERCEPTOR_GAS = 0.5
       # RAV4 has very sensitive gas pedal
       if self.CP.carFingerprint in (CAR.RAV4, CAR.RAV4H, CAR.HIGHLANDER, CAR.HIGHLANDERH):
@@ -45,6 +45,9 @@ class CarController:
       pedal_offset = interp(CS.out.vEgo, [0.0, 2.3, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
       pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
+    elif self.CP.enableGasInterceptor and not self.CP.openpilotLongitudinalControl:
+      if self.stock_resume_ready:
+        interceptor_gas_cmd = 0.16
     else:
       interceptor_gas_cmd = 0.
     pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
@@ -105,7 +108,7 @@ class CarController:
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type))
 
-    if self.frame % 2 == 0 and self.CP.enableGasInterceptor and self.CP.openpilotLongitudinalControl:
+    if self.frame % 2 == 0 and self.CP.enableGasInterceptor:
       # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
       # This prevents unexpected pedal range rescaling
       can_sends.append(create_gas_interceptor_command(self.packer, interceptor_gas_cmd, self.frame // 2))

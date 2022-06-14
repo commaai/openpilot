@@ -128,6 +128,9 @@ class CarState(CarStateBase):
       ret.leftBlindspot = (cp.vl["BSM"]["L_ADJACENT"] == 1) or (cp.vl["BSM"]["L_APPROACHING"] == 1)
       ret.rightBlindspot = (cp.vl["BSM"]["R_ADJACENT"] == 1) or (cp.vl["BSM"]["R_APPROACHING"] == 1)
 
+    if not self.CP.openpilotLongitudinalControl:
+      self.stock_resume_ready = (cp.vl["ACC_CONTROL"]["RELEASE_STANDSTILL"] == 1 and self.pcm_acc_status == 7)
+
     return ret
 
   @staticmethod
@@ -208,6 +211,10 @@ class CarState(CarStateBase):
         ("R_APPROACHING", "BSM"),
       ]
       checks.append(("BSM", 1))
+
+    if not CP.openpilotLongitudinalControl:
+      signals.append(("RELEASE_STANDSTILL", "ACC_CONTROL")),
+      checks.append(("ACC_CONTROL", 33)),
 
     if CP.carFingerprint in RADAR_ACC_CAR:
       signals += [
