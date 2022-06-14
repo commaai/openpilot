@@ -9,9 +9,9 @@ RUN mkdir -p ${OPENPILOT_PATH}
 WORKDIR ${OPENPILOT_PATH}
 
 COPY Pipfile Pipfile.lock $OPENPILOT_PATH
-RUN pip install --no-cache-dir pipenv==2021.5.29 pip==21.3.1 && \
-    pipenv install --system --deploy --dev --clear && \
-    pip uninstall -y pipenv
+RUN pip install --no-cache-dir poetry pip==21.3.1 && \
+    poetry install && \
+    pip uninstall -y poetry
 
 
 COPY SConstruct ${OPENPILOT_PATH}

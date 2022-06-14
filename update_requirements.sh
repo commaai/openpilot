@@ -41,7 +41,7 @@ eval "$(pyenv init --path)"
 
 echo "update pip"
 pip install pip==21.3.1
-pip install pipenv==2021.11.23
+pip install poetry==2021.11.23
 
 if [ -d "./xx" ]; then
   echo "WARNING: using xx Pipfile ******"
@@ -51,14 +51,13 @@ fi
 
 if [ -z "$PIPENV_SYSTEM" ]; then
   echo "PYTHONPATH=${PWD}" > .env
-  RUN="pipenv run"
+  RUN="poetry run"
 else
   RUN=""
 fi
 
 echo "pip packages install..."
-pipenv sync --dev
-pipenv --clear
+poetry install
 pyenv rehash
 
 echo "pre-commit hooks install..."

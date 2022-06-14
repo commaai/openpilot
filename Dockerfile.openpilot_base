@@ -24,7 +24,7 @@ RUN cd /tmp && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* && \
     rm -rf /root/.cache && \
-    pip uninstall -y pipenv && \
+    pip uninstall -y poetry && \
     # remove unused architectures from gcc for panda
     cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
     rm -rf arm/ && \
