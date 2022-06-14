@@ -37,8 +37,10 @@ class TestLaikad(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    Params().delete('LaikadEphemeris')
     cls.logs = get_log(range(1))
+
+  def setUp(self):
+    Params().delete('LaikadEphemeris')
 
   def test_create_msg_without_errors(self):
     gpstime = GPSTime.from_datetime(datetime.now())
