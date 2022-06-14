@@ -14,6 +14,7 @@ from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
 from common.timeout import Timeout
+from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
@@ -394,8 +395,14 @@ def python_replay_process(cfg, lr, fingerprint=None):
   else:
     os.environ['SKIP_FW_QUERY'] = ""
     os.environ['FINGERPRINT'] = ""
+    params = Params()
     for msg in lr:
       if msg.which() == 'carParams':
+        if msg.carParams.openpilotLongitudinalControl:
+          params.put_bool("DisableRadar", True)
+        if msg.carParams.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
+          params.put_bool("DisengageOnAccelerator", False)
+
         car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
         if msg.carParams.fingerprintSource == "fw" and (car_fingerprint in FW_VERSIONS):
           Params().put("CarParamsCache", msg.carParams.as_builder().to_bytes())

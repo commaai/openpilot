@@ -15,6 +15,7 @@ from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
+from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
@@ -128,7 +129,8 @@ def replay_cameras(lr, frs, disable_tqdm=False):
   ]
 
   def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
-    pm = messaging.PubMaster([s, ])
+    services = [(s, stream)] + ([("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD)] if use_extra_client else [])
+    pm = messaging.PubMaster([_s[0] for _s in services])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
 
     img = b"\x00" * int(size[0] * size[1] * 3 / 2)
@@ -138,16 +140,18 @@ def replay_cameras(lr, frs, disable_tqdm=False):
 
       rk.keep_time()
 
-      m = messaging.new_message(s)
-      msg = getattr(m, s)
-      msg.frameId = rk.frame
-      msg.timestampSof = m.logMonoTime
-      msg.timestampEof = m.logMonoTime
-      pm.send(s, m)
+      # TODO: use another process for wide cam, need to fix frame timestamps being off by more than 10 ms
+      log_mono_time = int(sec_since_boot() * 1e9)
+      for _s, _stream in services:
+        m = messaging.new_message(_s)
+        m.logMonoTime = log_mono_time
+        msg = getattr(m, _s)
+        msg.frameId = rk.frame
+        msg.timestampSof = m.logMonoTime
+        msg.timestampEof = m.logMonoTime
+        pm.send(_s, m)
 
-      vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
-      if use_extra_client:
-        vipc_server.send(VisionStreamType.VISION_STREAM_WIDE_ROAD, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+        vipc_server.send(_stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
 
   init_data = [m for m in lr if m.which() == 'initData'][0]
   cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
@@ -162,7 +166,7 @@ def replay_cameras(lr, frs, disable_tqdm=False):
     if fr is not None:
       print(f"Decompressing frames {s}")
       frames = []
-      for i in tqdm(range(fr.frame_count), disable=disable_tqdm):
+      for i in tqdm(range(5*20), disable=disable_tqdm):
         img = fr.get(i, pix_fmt='nv12')[0]
         frames.append(img.flatten().tobytes())
 
@@ -197,6 +201,12 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
 
   for msg in lr:
     if msg.which() == 'carParams':
+      # Set parameters for procs from route's carParams
+      if msg.carParams.openpilotLongitudinalControl:
+        params.put_bool("DisableRadar", True)
+      if msg.carParams.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
+        params.put_bool("DisengageOnAccelerator", False)
+
       car_fingerprint = fp_migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
       if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS) and (car_fingerprint not in fingerprint_problem):
         params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
