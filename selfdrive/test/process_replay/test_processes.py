@@ -11,7 +11,7 @@ from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url, upload_file
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_enabled, replay_process
-from selfdrive.version import get_commit
+from system.version import get_commit
 from tools.lib.filereader import FileReader
 from tools.lib.logreader import LogReader
 

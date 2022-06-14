@@ -27,7 +27,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 #include "selfdrive/boardd/pigeon.h"
 

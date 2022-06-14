@@ -22,12 +22,12 @@ function agnos_init {
 
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
-    AGNOS_PY="$DIR/selfdrive/hardware/tici/agnos.py"
-    MANIFEST="$DIR/selfdrive/hardware/tici/agnos.json"
+    AGNOS_PY="$DIR/system/hardware/tici/agnos.py"
+    MANIFEST="$DIR/system/hardware/tici/agnos.json"
     if $AGNOS_PY --verify $MANIFEST; then
       sudo reboot
     fi
-    $DIR/selfdrive/hardware/tici/updater $AGNOS_PY $MANIFEST
+    $DIR/system/hardware/tici/updater $AGNOS_PY $MANIFEST
   fi
 }
 

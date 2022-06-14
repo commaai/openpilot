@@ -13,7 +13,7 @@ from tqdm import trange
 
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.hardware import TICI
+from system.hardware import TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
 from tools.lib.logreader import LogReader
