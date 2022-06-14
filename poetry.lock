@@ -111,7 +111,7 @@ typecheck = ["mypy"]
 
 [[package]]
 name = "breathe"
-version = "4.15.0"
+version = "4.33.1"
 description = "Sphinx Doxygen renderer"
 category = "dev"
 optional = false
@@ -119,22 +119,13 @@ python-versions = "*"
 
 [package.dependencies]
 docutils = ">=0.12"
-six = ">=1.9"
-Sphinx = ">=3.0"
+Sphinx = ">=3.0,<5"
 
 [[package]]
 name = "carla"
 version = "0.9.13"
 description = "Python API for communicating with the CARLA server."
 category = "dev"
-optional = false
-python-versions = "*"
-
-[[package]]
-name = "casadi"
-version = "3.5.5.post2"
-description = "CasADi -- framework for algorithmic differentiation and numeric optimization"
-category = "main"
 optional = false
 python-versions = "*"
 
@@ -1474,7 +1465,7 @@ python-versions = "*"
 
 [[package]]
 name = "sphinx"
-version = "5.0.1"
+version = "4.5.0"
 description = "Python documentation generator"
 category = "dev"
 optional = false
@@ -1484,7 +1475,7 @@ python-versions = ">=3.6"
 alabaster = ">=0.7,<0.8"
 babel = ">=1.3"
 colorama = {version = ">=0.3.5", markers = "sys_platform == \"win32\""}
-docutils = ">=0.14,<0.19"
+docutils = ">=0.14,<0.18"
 imagesize = "*"
 importlib-metadata = {version = ">=4.4", markers = "python_version < \"3.10\""}
 Jinja2 = ">=2.3"
@@ -1501,8 +1492,8 @@ sphinxcontrib-serializinghtml = ">=1.1.5"
 
 [package.extras]
 docs = ["sphinxcontrib-websupport"]
-lint = ["flake8 (>=3.5.0)", "isort", "mypy (>=0.950)", "docutils-stubs", "types-typed-ast", "types-requests"]
-test = ["pytest (>=4.6)", "html5lib", "cython", "typed-ast"]
+lint = ["flake8 (>=3.5.0)", "isort", "mypy (>=0.931)", "docutils-stubs", "types-typed-ast", "types-requests"]
+test = ["pytest", "pytest-cov", "html5lib", "cython", "typed-ast"]
 
 [[package]]
 name = "sphinx-rtd-theme"
@@ -1782,7 +1773,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "299843b56a376e5604b60e3ae56211004cee78d6a610a3ebaa3d01368c9c5b44"
+content-hash = "6f73c7cda6f5f761afb9b9332c11deb152c91dc280591f15a511f763644ea41b"
 
 [metadata.files]
 alabaster = [
@@ -1871,8 +1862,8 @@ bcrypt = [
     {file = "bcrypt-3.2.2.tar.gz", hash = "sha256:433c410c2177057705da2a9f2cd01dd157493b2a7ac14c8593a16b3dab6b6bfb"},
 ]
 breathe = [
-    {file = "breathe-4.15.0-py3-none-any.whl", hash = "sha256:e8d3a13a516fd45656529e60c5bbf6e925ec6ab9ba3bac46e3c0c47a3703c6f3"},
-    {file = "breathe-4.15.0.tar.gz", hash = "sha256:6686f4d0e966ed3dd6dd65c79a533796bca4cf9c3d338c75bdb0b75da50fb38e"},
+    {file = "breathe-4.33.1-py3-none-any.whl", hash = "sha256:553aeffb00efc2cf96c4c9ed388d6ee8036ecd6d1bd9bd0c656fc25ca271bd3c"},
+    {file = "breathe-4.33.1.tar.gz", hash = "sha256:c4b9ff4d5298fd91518d336ede28b6a2d8cacc685d0eae17eb20e760e06bb904"},
 ]
 carla = [
     {file = "carla-0.9.13-cp27-cp27mu-manylinux_2_27_x86_64.whl", hash = "sha256:339fcb1e392f3ade1be82b7258de19c533e2efae111e954a6eb174efb296903d"},
@@ -1882,9 +1873,6 @@ carla = [
     {file = "carla-0.9.13-cp37-cp37m-win_amd64.whl", hash = "sha256:954ca34d5bdd4516ceca353db907fee8cec6630d6b31a732b17dd1554e0f0f94"},
     {file = "carla-0.9.13-cp38-cp38-manylinux_2_27_x86_64.whl", hash = "sha256:d2bfaea2d6824a2d758cbe813856c69420494f5c97d2a2dfb45653ccf976f1ce"},
     {file = "carla-0.9.13-cp38-cp38-win_amd64.whl", hash = "sha256:a64ee78fe91137fa7d4828c7fc06d5824bd7312e29e4ea4f31a5d74dd28bff40"},
-]
-casadi = [
-    {file = "casadi-3.5.5.post2-cp39-none-macosx_10_13_x86_64.macosx_10_13_intel.whl", hash = "sha256:69d99f07a1516ac38b6a8fa9fae9521b77343aa78b6427c5d9a1773cb5a2122a"},
 ]
 certifi = [
     {file = "certifi-2022.5.18.1-py3-none-any.whl", hash = "sha256:f1d53542ee8cbedbe2118b5686372fb33c297fcd6379b050cca0ef13a597382a"},
@@ -3210,8 +3198,8 @@ sortedcontainers = [
     {file = "sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"},
 ]
 sphinx = [
-    {file = "Sphinx-5.0.1-py3-none-any.whl", hash = "sha256:36aa2a3c2f6d5230be94585bc5d74badd5f9ed8f3388b8eedc1726fe45b1ad30"},
-    {file = "Sphinx-5.0.1.tar.gz", hash = "sha256:f4da1187785a5bc7312cc271b0e867a93946c319d106363e102936a3d9857306"},
+    {file = "Sphinx-4.5.0-py3-none-any.whl", hash = "sha256:ebf612653238bcc8f4359627a9b7ce44ede6fdd75d9d30f68255c7383d3a6226"},
+    {file = "Sphinx-4.5.0.tar.gz", hash = "sha256:7bf8ca9637a4ee15af412d1a1d9689fec70523a68ca9bb9127c2f3eeb344e2e6"},
 ]
 sphinx-rtd-theme = [
     {file = "sphinx_rtd_theme-1.0.0-py2.py3-none-any.whl", hash = "sha256:4d35a56f4508cfee4c4fb604373ede6feae2a306731d533f409ef5c3496fdbd8"},

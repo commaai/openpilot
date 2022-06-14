@@ -7,7 +7,6 @@ authors = ["Your Name <you@example.com>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 atomicwrites = "*"
-casadi = {version = "*", markers = "platform_system != 'Darwin'"}
 cffi = "*"
 crcmod = "*"
 cryptography = "*"
