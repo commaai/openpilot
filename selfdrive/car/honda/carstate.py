@@ -81,8 +81,8 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     checks.append(("EPB_STATUS", 50))
 
   if CP.carFingerprint in HONDA_BOSCH:
-    # these messages are on camera bus on radarless
     if not CP.openpilotLongitudinalControl and CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
+      # these messages are on camera bus on radarless
       signals += [
         ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
         ("CRUISE_SPEED", "ACC_HUD"),
@@ -104,21 +104,14 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
 
   if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022):
     signals.append(("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK"))
-  elif CP.carFingerprint == CAR.ODYSSEY_CHN:
+  elif CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
     signals.append(("DRIVERS_DOOR_OPEN", "SCM_BUTTONS"))
-  elif CP.carFingerprint in (CAR.FREED, CAR.HRV):
-    signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS"),
-                ("WHEELS_MOVING", "STANDSTILL")]
   else:
     signals += [("DOOR_OPEN_FL", "DOORS_STATUS"),
                 ("DOOR_OPEN_FR", "DOORS_STATUS"),
                 ("DOOR_OPEN_RL", "DOORS_STATUS"),
-                ("DOOR_OPEN_RR", "DOORS_STATUS"),
-                ("WHEELS_MOVING", "STANDSTILL")]
-    checks += [
-      ("DOORS_STATUS", 3),
-      ("STANDSTILL", 50),
-    ]
+                ("DOOR_OPEN_RR", "DOORS_STATUS")]
+    checks.append(("DOORS_STATUS", 3))
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
@@ -277,6 +270,7 @@ class CarState(CarStateBase):
         ret.brakePressed = True
 
     if self.CP.carFingerprint in HONDA_BOSCH:
+      # TODO: find the radarless AEB_STATUS bit and make sure ACCEL_COMMAND is correct to enable AEB alerts
       if self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
         ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
     else:
