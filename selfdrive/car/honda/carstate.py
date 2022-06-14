@@ -235,14 +235,6 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]["MOTOR_TORQUE"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
-    # TODO: discover the CAN msg that has the imperial unit bit for all other cars
-    if self.CP.carFingerprint in (CAR.CIVIC, ):
-      self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"]
-    elif self.CP.carFingerprint in HONDA_BOSCH:
-      self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
-    else:
-      self.is_metric = False
-
     if self.CP.carFingerprint in HONDA_BOSCH:
       if not self.CP.openpilotLongitudinalControl:
         # ACC_HUD is on camera bus on radarless cars
