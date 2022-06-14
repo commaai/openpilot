@@ -1585,7 +1585,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEXUS_NXH_TSS2: {
-    (Ecu.engine, 0x700, None): [
+    (Ecu.engine, 0x7e0, None): [
       b'\x0237887000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [

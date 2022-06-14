@@ -2,13 +2,18 @@
 import subprocess
 import time
 import unittest
+import os
 from multiprocessing import Queue
 
 from cereal import messaging
+from common.basedir import BASEDIR
 from selfdrive.manager.helpers import unblock_stdout
 from tools.sim import bridge
 from tools.sim.bridge import CarlaBridge
 
+CI = "CI" in os.environ
+
+SIM_DIR = os.path.join(BASEDIR, "tools/sim")
 
 class TestCarlaIntegration(unittest.TestCase):
   """
@@ -19,10 +24,12 @@ class TestCarlaIntegration(unittest.TestCase):
 
   def setUp(self):
     self.processes = []
-    # We want to make sure that carla_sim docker isn't still running.
-    subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
 
-    self.carla_process = subprocess.Popen(".././start_carla.sh")
+    if not CI:
+      # We want to make sure that carla_sim docker isn't still running.
+      subprocess.run("docker rm -f carla_sim", shell=True, stderr=subprocess.PIPE, check=False)
+      self.carla_process = subprocess.Popen("./start_carla.sh", cwd=SIM_DIR)
+
     # Too many lagging messages in bridge.py can cause a crash. This prevents it.
     unblock_stdout()
     # Wait 10 seconds to startup carla
@@ -30,16 +37,16 @@ class TestCarlaIntegration(unittest.TestCase):
 
   def test_engage(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
-    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd='../')
+    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
     self.processes.append(p_manager)
 
     sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
     q = Queue()
     carla_bridge = CarlaBridge(bridge.parse_args([]))
-    p_bridge = carla_bridge.run(q, retries=3)
+    p_bridge = carla_bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
-    max_time_per_step = 20
+    max_time_per_step = 60
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()

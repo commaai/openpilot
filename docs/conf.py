@@ -14,10 +14,12 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-from os.path import exists
 import sys
-from selfdrive.version import get_version
+from os.path import exists
+
 from common.basedir import BASEDIR
+from system.version import get_version
+
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 

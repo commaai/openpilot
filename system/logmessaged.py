@@ -4,7 +4,7 @@ from typing import NoReturn
 
 import cereal.messaging as messaging
 from common.logging_extra import SwagLogFileFormatter
-from selfdrive.swaglog import get_file_handler
+from system.swaglog import get_file_handler
 
 
 def main() -> NoReturn:
