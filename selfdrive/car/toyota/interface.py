@@ -132,6 +132,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3585. * CV.LB_TO_KG + STD_CARGO_KG  # Average between ICE and Hybrid
       set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
 
+      # TODO: remove once there's data
+      if candidate == CAR.RAV4_TSS2_2022:
+        ret.maxLateralAccel = CarInterfaceBase.get_torque_params(CAR.RAV4H_TSS2_2022)['MAX_LAT_ACCEL_MEASURED']
+
       # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
       # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
       for fw in car_fw:
