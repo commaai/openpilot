@@ -32,6 +32,7 @@ class RouteEngine:
     self.last_bearing = None
 
     self.gps_ok = False
+    self.localizer_valid = False
 
     self.nav_destination = None
     self.step_idx = None
@@ -73,9 +74,9 @@ class RouteEngine:
     location = self.sm['liveLocationKalman']
     self.gps_ok = location.gpsOK
 
-    localizer_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
+    self.localizer_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
 
-    if localizer_valid:
+    if self.localizer_valid:
       self.last_bearing = math.degrees(location.calibratedOrientationNED.value[2])
       self.last_position = Coordinate(location.positionGeodetic.value[0], location.positionGeodetic.value[1])
 
@@ -202,7 +203,7 @@ class RouteEngine:
       if along_geometry < distance_along_geometry(geometry, geometry[closest_idx]):
         closest = geometry[closest_idx - 1]
 
-    if 'maxspeed' in closest.annotations:
+    if ('maxspeed' in closest.annotations) and self.localizer_valid:
       msg.navInstruction.speedLimit = closest.annotations['maxspeed']
 
     # Speed limit sign type
