@@ -46,7 +46,7 @@ class CarController:
       pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
     elif self.CP.enableGasInterceptor and not self.CP.openpilotLongitudinalControl:
-      if self.stock_resume_ready:
+      if CS.stock_resume_ready:
         interceptor_gas_cmd = 0.16
     else:
       interceptor_gas_cmd = 0.
