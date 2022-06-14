@@ -10,7 +10,7 @@ WORKDIR ${OPENPILOT_PATH}
 
 COPY pyproject.toml poetry.lock $OPENPILOT_PATH
 RUN pip install --no-cache-dir poetry pip==21.3.1 && \
-    poetry config settings.virtualenvs.create false && \\
+    poetry config settings.virtualenvs.create false && \
     poetry install && \
     pip uninstall -y poetry
 
