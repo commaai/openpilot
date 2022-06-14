@@ -115,8 +115,9 @@ class Controls:
 
     car_recognized = self.CP.carName != 'mock'
 
-    controller_available = self.CI.CC is not None and not passive and not self.CP.dashcamOnly
-    self.read_only = not car_recognized or not controller_available or self.CP.dashcamOnly
+    dashcam_only = self.CP.dashcamOnly and not params.get_bool("DashcamOverride")
+    controller_available = self.CI.CC is not None and not passive and not dashcam_only
+    self.read_only = not car_recognized or not controller_available
     if self.read_only:
       safety_config = car.CarParams.SafetyConfig.new_message()
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
