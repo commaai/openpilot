@@ -10,7 +10,7 @@ from laika.ephemeris import EphemerisType
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId, TimeRangeHolder
 from laika.raw_gnss import GNSSMeasurement, read_raw_ublox
-from selfdrive.locationd.laikad import Laikad, create_measurement_msg
+from selfdrive.locationd.laikad import EPHEMERIS_CACHE, Laikad, create_measurement_msg
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 
@@ -40,7 +40,7 @@ class TestLaikad(unittest.TestCase):
     cls.logs = get_log(range(1))
 
   def setUp(self):
-    Params().delete('LaikadEphemeris')
+    Params().delete(EPHEMERIS_CACHE)
 
   def test_create_msg_without_errors(self):
     gpstime = GPSTime.from_datetime(datetime.now())
@@ -121,7 +121,7 @@ class TestLaikad(unittest.TestCase):
 
     def wait_for_cache():
       max_time = 2
-      while Params().get('LaikadEphemeris') is None:
+      while Params().get(EPHEMERIS_CACHE) is None:
         time.sleep(0.1)
         max_time -= 0.1
         if max_time == 0:
@@ -129,7 +129,7 @@ class TestLaikad(unittest.TestCase):
     # Test cache with no ephemeris
     laikad.cache_ephemeris(t=GPSTime(0, 0))
     wait_for_cache()
-    Params().delete('LaikadEphemeris')
+    Params().delete(EPHEMERIS_CACHE)
 
     laikad.astro_dog.get_navs(first_gps_time)
     laikad.fetch_orbits(first_gps_time, block=True)
