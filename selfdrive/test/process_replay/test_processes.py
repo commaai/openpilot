@@ -93,8 +93,7 @@ def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
     if not check_enabled(log_msgs):
-      segment = os.path.basename(ref_log_path).split("/")[-1].split("_")[0]
-      raise Exception(f"Route never enabled: {segment}")
+      raise Exception(f"Route never enabled: {ref_log_path}")
 
   try:
     return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
