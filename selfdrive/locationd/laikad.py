@@ -20,7 +20,6 @@ from laika.raw_gnss import GNSSMeasurement, calc_pos_fix, correct_measurements, 
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
-import common.transformations.coordinates as coord
 from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
@@ -94,15 +93,12 @@ class Laikad:
       pos_std = np.sqrt(abs(self.gnss_kf.P[GStates.ECEF_POS].diagonal())).tolist()
       vel_std = np.sqrt(abs(self.gnss_kf.P[GStates.ECEF_VELOCITY].diagonal())).tolist()
 
-      bearing_deg, bearing_std = get_bearing_from_gnss(ecef_pos, ecef_vel, vel_std)
-
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
       dat = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
       dat.gnssMeasurements = {
         "positionECEF": measurement_msg(value=ecef_pos, std=pos_std, valid=kf_valid),
         "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std, valid=kf_valid),
-        "bearingDeg": measurement_msg(value=[bearing_deg], std=[bearing_std], valid=kf_valid),
         "ubloxMonoTime": ublox_mono_time,
         "correctedMeasurements": meas_msgs
       }
@@ -209,16 +205,6 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
 
   for kind, data in ekf_data.items():
     gnss_kf.predict_and_observe(t, kind, data)
-
-
-def get_bearing_from_gnss(ecef_pos, ecef_vel, vel_std):
-  # init orientation with direction of velocity
-  converter = coord.LocalCoord.from_ecef(ecef_pos)
-
-  ned_vel = np.einsum('ij,j ->i', converter.ned_from_ecef_matrix, ecef_vel)
-  bearing = np.arctan2(ned_vel[1], ned_vel[0])
-  bearing_std = np.arctan2(np.linalg.norm(vel_std), np.linalg.norm(ned_vel))
-  return float(np.rad2deg(bearing)), float(bearing_std)
 
 
 class CacheSerializer(json.JSONEncoder):
