@@ -128,8 +128,7 @@ def replay_cameras(lr, frs, disable_tqdm=False):
   ]
 
   def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
-    services = [(s, stream)] + ([("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD)] if use_extra_client else [])
-    pm = messaging.PubMaster([_s[0] for _s in services])
+    pm = messaging.PubMaster([s, ])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
 
     img = b"\x00" * int(size[0] * size[1] * 3 / 2)
@@ -139,18 +138,16 @@ def replay_cameras(lr, frs, disable_tqdm=False):
 
       rk.keep_time()
 
-      # TODO: use another process for wide cam, need to fix frame timestamps being off by more than 10 ms
-      log_mono_time = int(sec_since_boot() * 1e9)
-      for _s, _stream in services:
-        m = messaging.new_message(_s)
-        m.logMonoTime = log_mono_time
-        msg = getattr(m, _s)
-        msg.frameId = rk.frame
-        msg.timestampSof = m.logMonoTime
-        msg.timestampEof = m.logMonoTime
-        pm.send(_s, m)
+      m = messaging.new_message(s)
+      msg = getattr(m, s)
+      msg.frameId = rk.frame
+      msg.timestampSof = m.logMonoTime
+      msg.timestampEof = m.logMonoTime
+      pm.send(s, m)
 
-        vipc_server.send(_stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+      vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+      if use_extra_client:
+        vipc_server.send(VisionStreamType.VISION_STREAM_WIDE_ROAD, img, msg.frameId, msg.timestampSof, msg.timestampEof)
 
   init_data = [m for m in lr if m.which() == 'initData'][0]
   cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
@@ -165,7 +162,7 @@ def replay_cameras(lr, frs, disable_tqdm=False):
     if fr is not None:
       print(f"Decompressing frames {s}")
       frames = []
-      for i in tqdm(range(5*20), disable=disable_tqdm):
+      for i in tqdm(range(fr.frame_count), disable=disable_tqdm):
         img = fr.get(i, pix_fmt='nv12')[0]
         frames.append(img.flatten().tobytes())
 
