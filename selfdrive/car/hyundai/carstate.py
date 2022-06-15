@@ -5,7 +5,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, STEER_THRESHOLD_HDA2, FEATURES, HDA2_CAR, EV_CAR, HYBRID_CAR, Buttons
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, HDA2_CAR, EV_CAR, HYBRID_CAR, Buttons
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 4
@@ -157,7 +157,7 @@ class CarState(CarStateBase):
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEERING_ANGLE"] * -1
     ret.steeringTorque = cp.vl["MDPS"]["STEERING_COL_TORQUE"]
     ret.steeringTorqueEps = cp.vl["MDPS"]["STEERING_OUT_TORQUE"]
-    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD_HDA2
+    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
 
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"]["LEFT_LAMP"],
                                                                       cp.vl["BLINKERS"]["RIGHT_LAMP"])
