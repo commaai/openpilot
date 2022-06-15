@@ -239,7 +239,7 @@ void NvgWindow::drawHud(QPainter &p) {
     if (speedLimit > 0 && status != STATUS_DISENGAGED) {
       p.setPen(interpColor(
         setSpeed,
-        {speedLimit, speedLimit + 10, speedLimit + 20},
+        {speedLimit + 5, speedLimit + 15, speedLimit + 25},
         {QColor(0xff, 0xff, 0xff, 0xff), QColor(0xff, 0x95, 0x00, 0xff), QColor(0xff, 0x00, 0x00, 0xff)}
       ));
     } else {
@@ -261,7 +261,7 @@ void NvgWindow::drawHud(QPainter &p) {
     } else if (speedLimit > 0) {
       p.setPen(interpColor(
         setSpeed,
-        {speedLimit, speedLimit + 10, speedLimit + 20},
+        {speedLimit + 5, speedLimit + 15, speedLimit + 25},
         {QColor(0x80, 0xd8, 0xa6, 0xff), QColor(0xff, 0xe4, 0xbf, 0xff), QColor(0xff, 0xbf, 0xbf, 0xff)}
       ));
     } else {
