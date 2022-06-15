@@ -68,7 +68,13 @@ class Laikad:
         self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
       new_meas = read_raw_ublox(report)
       processed_measurements = process_measurements(new_meas, self.astro_dog)
-      pos_fix = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=4)
+
+      min_measurements = 4
+      for p in processed_measurements:
+        if p.constellation_id == ConstellationId.GLONASS > 0:
+          min_measurements += 1
+          break
+      pos_fix = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
 
       t = ublox_mono_time * 1e-9
       kf_pos_std = None
@@ -232,6 +238,8 @@ def deserialize_hook(dct):
 def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C1C', min_measurements=6):
   '''
   Calculates gps fix using gauss newton method
+  To solve the problem a minimal of 4 measurements are required.
+    If Glonass is included 5 are required to solve for the additional free variable.
   returns:
   0 -> list with positions
   '''
