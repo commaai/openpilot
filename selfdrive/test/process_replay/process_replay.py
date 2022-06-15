@@ -369,8 +369,6 @@ def setup_env(simulation=False, CP=None):
 
   # Regen or python process
   if CP is not None:
-    if CP.openpilotLongitudinalControl:
-      params.put_bool("DisableRadar", True)
     if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
       params.put_bool("DisengageOnAccelerator", False)
 
