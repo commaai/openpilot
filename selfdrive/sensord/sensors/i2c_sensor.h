@@ -10,7 +10,6 @@
 
 #include "selfdrive/sensord/sensors/constants.h"
 #include "selfdrive/sensord/sensors/sensor.h"
-#include "selfdrive/common/gpio.h"
 
 int16_t read_12_bit(uint8_t lsb, uint8_t msb);
 int16_t read_16_bit(uint8_t lsb, uint8_t msb);
