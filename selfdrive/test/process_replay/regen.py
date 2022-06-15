@@ -16,7 +16,6 @@ from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
 from panda.python import ALTERNATIVE_EXPERIENCE
-from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
@@ -185,34 +184,12 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   if frs is None:
     frs = dict()
 
-  setup_env()
   params = Params()
-
   os.environ["LOG_ROOT"] = outdir
-  os.environ['SKIP_FW_QUERY'] = ""
-  os.environ['FINGERPRINT'] = ""
-
-  # TODO: remove after getting new route for Mazda
-  fp_migration = {
-    "Mazda CX-9 2021": "MAZDA CX-9 2021",
-  }
-  # TODO: remove after getting new route for Subaru
-  fingerprint_problem = ["SUBARU IMPREZA LIMITED 2019"]
 
   for msg in lr:
     if msg.which() == 'carParams':
-      # Set parameters for procs from route's carParams
-      if msg.carParams.openpilotLongitudinalControl:
-        params.put_bool("DisableRadar", True)
-      if msg.carParams.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
-        params.put_bool("DisengageOnAccelerator", False)
-
-      car_fingerprint = fp_migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS) and (car_fingerprint not in fingerprint_problem):
-        params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
-      else:
-        os.environ['SKIP_FW_QUERY'] = "1"
-        os.environ['FINGERPRINT'] = car_fingerprint
+      setup_env(CP=msg.carParams)
     elif msg.which() == 'liveCalibration':
       params.put("CalibrationParams", msg.as_builder().to_bytes())
 
