@@ -230,13 +230,13 @@ void NvgWindow::drawHud(QPainter &p) {
   int bottom_radius = has_eu_speed_limit ? 100 : 32;
 
   QRect set_speed_rect(60 + default_rect_width / 2 - rect_width / 2, 45, rect_width, rect_height);
-  p.setPen(QPen(QColor(255, 255, 255, 50), 3));
+  p.setPen(QPen(QColor(255, 255, 255, 75), 6));
   p.setBrush(QColor(0, 0, 0, 166));
   drawRoundedRect(p, set_speed_rect, top_radius, top_radius, bottom_radius, bottom_radius);
 
   // Draw set speed
   if (is_cruise_set) {
-    if (speedLimit > 0 && status != STATUS_DISENGAGED) {
+    if (speedLimit > 0 && status != STATUS_DISENGAGED && status != STATUS_OVERRIDE) {
       p.setPen(interpColor(
         setSpeed,
         {speedLimit + 5, speedLimit + 15, speedLimit + 25},
@@ -258,6 +258,8 @@ void NvgWindow::drawHud(QPainter &p) {
   if (is_cruise_set) {
     if (status == STATUS_DISENGAGED) {
       p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
+    } else if (status == STATUS_OVERRIDE) {
+      p.setPen(QColor(0x91, 0x9b, 0x95, 0xff));
     } else if (speedLimit > 0) {
       p.setPen(interpColor(
         setSpeed,
