@@ -285,7 +285,7 @@ void NvgWindow::drawHud(QPainter &p) {
     const int sign_height = 186;
 
     // White outer square
-    QRect sign_rect_outer(set_speed_rect.left() + 12, set_speed_rect.bottom() - 12 - sign_height, sign_width, sign_height);
+    QRect sign_rect_outer(set_speed_rect.left() + 12, set_speed_rect.bottom() - 11 - sign_height, sign_width, sign_height);
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(255, 255, 255, 255));
     p.drawRoundedRect(sign_rect_outer, 24, 24);
