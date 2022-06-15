@@ -146,7 +146,14 @@ class Harness(Enum):
   hyundai_o = "Hyundai O"
   custom = "Developer"
   obd_ii = "OBD-II"
-  gm_cam = "GM Camera"
+  gm_cam = "GM Camera" 
+  # TODO: Submit PR for gm cam harness schematic(s), diagrams and board layout(s) to https://github.com/commaai/neo/tree/master/car_harness
+  # Note: GM cam harness _without low-speed GMLAN support_ is simple and similar to the others
+  #       JJS - I anticipate comma to be able to take over production easily
+  #       It also doesn't make sense for customers to get the Developer harness - they typically don't need the wires
+  # Note 2: JJS - I anticipate designing a camera harness with a low-speed GMLAN gateway (design borrowed from OBD2 harness),
+  #         unless comma plans to do so
+  # Note 3: JJS - I anticipate an eventual 
   nissan_a = "Nissan A"
   nissan_b = "Nissan B"
   mazda = "Mazda"

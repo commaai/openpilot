@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from math import fabs
+from panda import Panda
 
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
@@ -10,10 +11,12 @@ from selfdrive.car.interfaces import CarInterfaceBase
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 GearShifter = car.CarState.GearShifter
+TransmissionType = car.CarParams.TransmissionType
+NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
-
+GM_PARAM_HW_CAM = 1
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
@@ -48,6 +51,8 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.pcmCruise = False  # For ASCM, stock cruise control is kept off (but not ACC)
     ret.radarOffCan = False  # For ASCM, radar is expected
+    ret.transmissionType = TransmissionType.automatic # or direct for EV
+    ret.networkLocation = NetworkLocation.gateway # or fwdCamera
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
@@ -81,6 +86,7 @@ class CarInterface(CarInterfaceBase):
     ret.minEnableSpeed = 18 * CV.MPH_TO_MS
 
     if candidate == CAR.VOLT:
+      ret.transmissionType = TransmissionType.direct
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
@@ -93,7 +99,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
-
+      
     elif candidate == CAR.MALIBU:
       ret.mass = 1496. + STD_CARGO_KG
       ret.wheelbase = 2.83
@@ -133,10 +139,54 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.302
       ret.steerRatio = 17.3
       ret.centerToFront = ret.wheelbase * 0.49
+      
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
+
+    elif candidate == CAR.SILVERADO:
+      ret.minEnableSpeed = -1.
+      ret.minSteerSpeed = -1 * CV.MPH_TO_MS
+      ret.mass = 2400. + STD_CARGO_KG
+      ret.wheelbase = 3.745
+      ret.steerRatio = 16.3
+      ret.centerToFront = ret.wheelbase * .49
+      ret.steerRateCost = .4
+      ret.steerActuatorDelay = 0.11
+      ret.networkLocation = NetworkLocation.fwdCamera # Uses Cam Harness
+      ret.radarOffCan = True # No Radar
+      ret.openpilotLongitudinalControl = False # Stock ACC
+      ret.pcmCruise = True # CC is on
+
+      ######################   Get tune
+
+    elif candidate == CAR.BOLT_EUV:
+      ret.transmissionType = TransmissionType.direct
+      ret.minEnableSpeed = -1
+      ret.minSteerSpeed = 5 * CV.MPH_TO_MS
+      ret.mass = 1616. + STD_CARGO_KG
+      ret.wheelbase = 2.60096
+      ret.steerRatio = 16.8
+      ret.steerRatioRear = 0.
+      ret.centerToFront = 2.0828 #ret.wheelbase * 0.4 # wild guess
+      tire_stiffness_factor = 1.0
+      
+      ret.networkLocation = NetworkLocation.fwdCamera # Uses Cam Harness
+      ret.radarOffCan = True # No Radar
+      ret.openpilotLongitudinalControl = False # Stock ACC
+      ret.pcmCruise = True # CC is on
+      
+      ret.steerRateCost = 0.5
+      ret.steerActuatorDelay = 0.
+      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]
+      ret.lateralTuning.pid.kf = 0.0002
+
+    # Set Panda to camera forwarding mode
+    if ret.networkLocation == NetworkLocation.fwdCamera:
+      # TODO: Depends on Panda PR #962 (Cam Harness forwarding, stock ACC)
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -154,7 +204,7 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_loopback)
 
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-
+    # TODO: Depends on OP PR #24764 (Switch to ECMPRDNL2)
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       be = create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
 
@@ -163,8 +213,10 @@ class CarInterface(CarInterfaceBase):
         be.type = ButtonType.unknown
 
       ret.buttonEvents = [be]
-
-    events = self.create_common_events(ret, pcm_enable=False)
+    # TODO: Depends on 
+    events = self.create_common_events(ret, extra_gears = [GearShifter.sport, GearShifter.low,
+                                                           GearShifter.eco, GearShifter.manumatic],
+                                       pcm_enable=self.CP.pcmCruise)
 
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
@@ -174,7 +226,7 @@ class CarInterface(CarInterfaceBase):
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 
     # handle button presses
-    events.events.extend(create_button_enable_events(ret.buttonEvents))
+    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise))
 
     ret.events = events.to_msg()
 

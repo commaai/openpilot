@@ -9,8 +9,13 @@ Ecu = car.CarParams.Ecu
 
 
 class CarControllerParams:
-  STEER_MAX = 300  # Safety limit, not LKA max. Trucks use 600.
-  STEER_STEP = 2  # control frames per command
+  # TODO: Different cars have different min steer speed, usually around 3-5 mph
+  # TODO: Delta up and down limits may require adjustment based on excessive rate limiting
+  # TODO: Min steer speed seems to be about 3 MPH; may differ per car
+  # TODO: Unsure of driver values
+  # TODO: MAX_GAS, ZERO_GAS and MAX_BRAKE, MAX_ACC_REGEN are based on a specific volt year...
+  STEER_MAX = 300  # GM LKAS max (input) torque is 3 Nm
+  STEER_STEP = 2  # control frames per command (50 Hz or every 20ms)
   STEER_DELTA_UP = 7
   STEER_DELTA_DOWN = 17
   MIN_STEER_SPEED = 3.  # m/s
@@ -67,9 +72,8 @@ class Footnote(Enum):
     "Currently Requires a [harness box](https://comma.ai/shop/products/harness-box) and [community built GM camera harness]" +
     "(https://github.com/commaai/openpilot/wiki/GMCamHarness)",
     Column.MODEL)
-  # STOCK_ACC = CarFootnote(
-  #   "Supported configuration uses stock ACC",
-  #   Column.MODEL)
+
+# TODO: Submit PR for gm cam harness schematic(s), diagrams and board layout(s) to https://github.com/commaai/neo/tree/master/car_harness
 
 
 @dataclass
@@ -90,10 +94,6 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.BOLT_EUV: GMCarInfo("Chevrolet Bolt EUV Premier 2022", "Chevy Safety Assist", footnotes=[Footnote.CAM_HARNESS], harness=Harness.gm_cam),
 }
 
-# Use CarParams Transmission Type Direct
-#EV_CAR = {CAR.VOLT, CAR.BOLT_EUV}
-# Use CarParams connect location
-#CAM_CAR = {CAR.SILVERADO, CAR.BOLT_EUV}
 
 class CruiseButtons:
   INIT = 0
