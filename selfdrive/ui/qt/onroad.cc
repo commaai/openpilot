@@ -230,8 +230,8 @@ void NvgWindow::drawHud(QPainter &p) {
   int bottom_radius = has_eu_speed_limit ? 100 : 32;
 
   QRect set_speed_rect(60 + default_rect_width / 2 - rect_width / 2, 45, rect_width, rect_height);
-  p.setPen(QPen(QColor(255, 255, 255, 75), 6));
-  p.setBrush(QColor(0, 0, 0, 166));
+  p.setPen(QPen(whiteColor(75), 6));
+  p.setBrush(blackColor(166));
   drawRoundedRect(p, set_speed_rect, top_radius, top_radius, bottom_radius, bottom_radius);
 
   // Draw set speed
@@ -240,10 +240,10 @@ void NvgWindow::drawHud(QPainter &p) {
       p.setPen(interpColor(
         setSpeed,
         {speedLimit + 5, speedLimit + 15, speedLimit + 25},
-        {QColor(0xff, 0xff, 0xff, 0xff), QColor(0xff, 0x95, 0x00, 0xff), QColor(0xff, 0x00, 0x00, 0xff)}
+        {whiteColor(), QColor(0xff, 0x95, 0x00, 0xff), QColor(0xff, 0x00, 0x00, 0xff)}
       ));
     } else {
-      p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
+      p.setPen(whiteColor());
     }
   } else {
     p.setPen(QColor(0x72, 0x72, 0x72, 0xff));
@@ -257,7 +257,7 @@ void NvgWindow::drawHud(QPainter &p) {
   // Draw MAX
   if (is_cruise_set) {
     if (status == STATUS_DISENGAGED) {
-      p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
+      p.setPen(whiteColor());
     } else if (status == STATUS_OVERRIDE) {
       p.setPen(QColor(0x91, 0x9b, 0x95, 0xff));
     } else if (speedLimit > 0) {
@@ -287,13 +287,13 @@ void NvgWindow::drawHud(QPainter &p) {
     // White outer square
     QRect sign_rect_outer(set_speed_rect.left() + 12, set_speed_rect.bottom() - 11 - sign_height, sign_width, sign_height);
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor(255, 255, 255, 255));
+    p.setBrush(whiteColor());
     p.drawRoundedRect(sign_rect_outer, 24, 24);
 
     // Smaller white square with black border
     QRect sign_rect(sign_rect_outer.left() + 1.5 * border_width, sign_rect_outer.top() + 1.5 * border_width, sign_width - 3 * border_width, sign_height - 3 * border_width);
-    p.setPen(QPen(QColor(0, 0, 0, 255), border_width));
-    p.setBrush(QColor(255, 255, 255, 255));
+    p.setPen(QPen(blackColor(), border_width));
+    p.setBrush(whiteColor());
     p.drawRoundedRect(sign_rect, 16, 16);
 
     // "SPEED"
@@ -326,11 +326,11 @@ void NvgWindow::drawHud(QPainter &p) {
     // Draw white circle with red border
     QPoint center(set_speed_rect.center().x() + 1, set_speed_rect.top() + 204 + outer_radius);
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor(255, 255, 255, 255));
+    p.setBrush(whiteColor());
     p.drawEllipse(center, outer_radius, outer_radius);
     p.setBrush(QColor(255, 0, 0, 255));
     p.drawEllipse(center, inner_radius_1, inner_radius_1);
-    p.setBrush(QColor(255, 255, 255, 255));
+    p.setBrush(whiteColor());
     p.drawEllipse(center, inner_radius_2, inner_radius_2);
 
     // Speed limit value
@@ -338,7 +338,7 @@ void NvgWindow::drawHud(QPainter &p) {
     configFont(p, "Open Sans", font_size, "Bold");
     QRect speed_limit_rect = getTextRect(p, Qt::AlignCenter, speedLimitStr);
     speed_limit_rect.moveCenter(center);
-    p.setPen(QColor(0, 0, 0, 255));
+    p.setPen(blackColor());
     p.drawText(speed_limit_rect, Qt::AlignCenter, speedLimitStr);
   }
 
@@ -357,7 +357,7 @@ void NvgWindow::drawHud(QPainter &p) {
   // dm icon
   if (!hideDM) {
     drawIcon(p, radius / 2 + (bdr_s * 2), rect().bottom() - footer_h / 2,
-             dm_img, QColor(0, 0, 0, 70), dmActive ? 1.0 : 0.2);
+             dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
   }
   p.restore();
 }
