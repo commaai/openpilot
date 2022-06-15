@@ -218,7 +218,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
     # start procs up
     ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader', 'soundd']
     ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
-    for name, procs in fake_daemons.items():
+    for procs in fake_daemons.values():
       for p in procs:
         p.start()
 
