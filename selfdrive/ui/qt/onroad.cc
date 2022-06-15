@@ -273,7 +273,7 @@ void NvgWindow::drawHud(QPainter &p) {
   configFont(p, "Open Sans", 40, "SemiBold");
   QRect max_rect = getTextRect(p, Qt::AlignCenter, "MAX");
   max_rect.moveCenter({set_speed_rect.center().x(), 0});
-  max_rect.moveTop(set_speed_rect.top() + 115);
+  max_rect.moveTop(set_speed_rect.top() + 123);
   p.drawText(max_rect, Qt::AlignCenter, "MAX");
 
   // US/Canada (MUTCD style) sign
