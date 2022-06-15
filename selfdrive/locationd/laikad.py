@@ -70,6 +70,7 @@ class Laikad:
       processed_measurements = process_measurements(new_meas, self.astro_dog)
 
       min_measurements = 4
+      # If glonass is one of the measurements we need 5 measurements for calculating the pos fix
       for p in processed_measurements:
         if p.constellation_id == ConstellationId.GLONASS > 0:
           min_measurements += 1
@@ -84,15 +85,15 @@ class Laikad:
       # If localizer is valid use its position to correct measurements
       if kf_pos_std is not None and linalg.norm(kf_pos_std) < 100:
         est_pos = self.gnss_kf.x[GStates.ECEF_POS]
-      elif len(pos_fix) > 0 and abs(np.array(pos_fix[1])).mean() < 1000:
-        est_pos = pos_fix[0][:3]
+      elif pos_fix is not None:
+        est_pos = pos_fix[:3]
       else:
         est_pos = None
       corrected_measurements = []
       if est_pos is not None:
         corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog)
 
-      self.update_localizer(pos_fix, t, corrected_measurements)
+      self.update_localizer(est_pos, t, corrected_measurements)
       kf_valid = all(self.kf_valid(t))
 
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
@@ -118,7 +119,7 @@ class Laikad:
     # elif ublox_msg.which == 'ionoData':
     # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
 
-  def update_localizer(self, pos_fix, t: float, measurements: List[GNSSMeasurement]):
+  def update_localizer(self, est_pos, t: float, measurements: List[GNSSMeasurement]):
     # Check time and outputs are valid
     valid = self.kf_valid(t)
     if not all(valid):
@@ -131,10 +132,10 @@ class Laikad:
       else:
         cloudlog.error("Gnss kalman std too far")
 
-      if len(pos_fix) == 0:
+      if est_pos is None:
         cloudlog.info("Position fix not available when resetting kalman filter")
         return
-      post_est = pos_fix[0][:3].tolist()
+      post_est = est_pos.tolist()
       self.init_gnss_localizer(post_est)
     if len(measurements) > 0:
       kf_add_observations(self.gnss_kf, t, measurements)
@@ -247,7 +248,7 @@ def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C
     x0 = [0, 0, 0, 0, 0]
   n = len(measurements)
   if n < min_measurements:
-    return []
+    return None
 
   Fx_pos = pr_residual(measurements, posfix_functions, signal=signal)
   return gauss_newton(Fx_pos, x0)
