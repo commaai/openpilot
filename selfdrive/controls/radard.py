@@ -102,7 +102,7 @@ class RadarD():
 
     self.ready = False
 
-  def update(self, sm, rr, enable_lead):
+  def update(self, sm, rr):
     self.current_time = 1e-9*max(sm.logMonoTime.values())
 
     if sm.updated['carState']:
@@ -169,11 +169,10 @@ class RadarD():
     radarState.radarErrors = list(rr.errors)
     radarState.carStateMonoTime = sm.logMonoTime['carState']
 
-    if enable_lead:
-      leads_v3 = sm['modelV2'].leadsV3
-      if len(leads_v3) > 1:
-        radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, leads_v3[0], low_speed_override=True)
-        radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, leads_v3[1], low_speed_override=False)
+    leads_v3 = sm['modelV2'].leadsV3
+    if len(leads_v3) > 1:
+      radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, leads_v3[0], low_speed_override=True)
+      radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, leads_v3[1], low_speed_override=False)
     return dat
 
 
@@ -203,9 +202,6 @@ def radard_thread(sm=None, pm=None, can_sock=None):
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
   RD = RadarD(CP.radarTimeStep, RI.delay)
 
-  # TODO: always log leads once we can hide them conditionally
-  enable_lead = CP.openpilotLongitudinalControl or not CP.radarOffCan
-
   while 1:
     can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
     rr = RI.update(can_strings)
@@ -215,7 +211,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
     sm.update(0)
 
-    dat = RD.update(sm, rr, enable_lead)
+    dat = RD.update(sm, rr)
     dat.radarState.cumLagMs = -rk.remaining*1000.
 
     pm.send('radarState', dat)
