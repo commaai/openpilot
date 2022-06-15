@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import time
 from concurrent.futures import Future, ProcessPoolExecutor
 from typing import List, Optional
@@ -9,9 +10,10 @@ from collections import defaultdict
 from numpy.linalg import linalg
 
 from cereal import log, messaging
+from common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
-from laika.ephemeris import EphemerisType, convert_ublox_ephem
+from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
@@ -22,16 +24,40 @@ import common.transformations.coordinates as coord
 from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
+EPHEMERIS_CACHE = 'LaikadEphemeris'
+CACHE_VERSION = 0.1
 
 
 class Laikad:
-
-  def __init__(self, valid_const=("GPS", "GLONASS"), auto_update=False, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV)):
-    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types)
+  def __init__(self, valid_const=("GPS", "GLONASS"), auto_update=False, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV),
+               save_ephemeris=False):
+    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True)
     self.gnss_kf = GNSSKalman(GENERATED_DIR)
     self.orbit_fetch_executor = ProcessPoolExecutor()
     self.orbit_fetch_future: Optional[Future] = None
     self.last_fetch_orbits_t = None
+    self.last_cached_t = None
+    self.save_ephemeris = save_ephemeris
+    self.load_cache()
+
+  def load_cache(self):
+    cache = Params().get(EPHEMERIS_CACHE)
+    if not cache:
+      return
+    try:
+      cache = json.loads(cache, object_hook=deserialize_hook)
+      self.astro_dog.add_orbits(cache['orbits'])
+      self.astro_dog.add_navs(cache['nav'])
+      self.last_fetch_orbits_t = cache['last_fetch_orbits_t']
+    except json.decoder.JSONDecodeError:
+      cloudlog.exception("Error parsing cache")
+
+  def cache_ephemeris(self, t: GPSTime):
+    if self.save_ephemeris and (self.last_cached_t is None or t - self.last_cached_t > SECS_IN_MIN):
+      put_nonblocking(EPHEMERIS_CACHE, json.dumps(
+        {'version': CACHE_VERSION, 'last_fetch_orbits_t': self.last_fetch_orbits_t, 'orbits': self.astro_dog.orbits, 'nav': self.astro_dog.nav},
+        cls=CacheSerializer))
+      self.last_cached_t = t
 
   def process_ublox_msg(self, ublox_msg, ublox_mono_time: int, block=False):
     if ublox_msg.which == 'measurementReport':
@@ -83,7 +109,8 @@ class Laikad:
       return dat
     elif ublox_msg.which == 'ephemeris':
       ephem = convert_ublox_ephem(ublox_msg.ephemeris)
-      self.astro_dog.add_navs([ephem])
+      self.astro_dog.add_navs({ephem.prn: [ephem]})
+      self.cache_ephemeris(t=ephem.epoch)
     # elif ublox_msg.which == 'ionoData':
     # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
 
@@ -101,7 +128,7 @@ class Laikad:
         cloudlog.error("Gnss kalman std too far")
 
       if len(pos_fix) == 0:
-        cloudlog.warning("Position fix not available when resetting kalman filter")
+        cloudlog.info("Position fix not available when resetting kalman filter")
         return
       post_est = pos_fix[0][:3].tolist()
       self.init_gnss_localizer(post_est)
@@ -134,10 +161,11 @@ class Laikad:
           self.orbit_fetch_future.result()
       if self.orbit_fetch_future.done():
         ret = self.orbit_fetch_future.result()
+        self.last_fetch_orbits_t = t
         if ret:
           self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
+          self.cache_ephemeris(t=t)
         self.orbit_fetch_future = None
-        self.last_fetch_orbits_t = t
 
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
@@ -193,11 +221,31 @@ def get_bearing_from_gnss(ecef_pos, ecef_vel, vel_std):
   return float(np.rad2deg(bearing)), float(bearing_std)
 
 
+class CacheSerializer(json.JSONEncoder):
+
+  def default(self, o):
+    if isinstance(o, Ephemeris):
+      return o.to_json()
+    if isinstance(o, GPSTime):
+      return o.__dict__
+    if isinstance(o, np.ndarray):
+      return o.tolist()
+    return json.JSONEncoder.default(self, o)
+
+
+def deserialize_hook(dct):
+  if 'ephemeris' in dct:
+    return Ephemeris.from_json(dct)
+  if 'week' in dct:
+    return GPSTime(dct['week'], dct['tow'])
+  return dct
+
+
 def main():
   sm = messaging.SubMaster(['ubloxGnss'])
   pm = messaging.PubMaster(['gnssMeasurements'])
 
-  laikad = Laikad()
+  laikad = Laikad(save_ephemeris=True)
   while True:
     sm.update()
 
