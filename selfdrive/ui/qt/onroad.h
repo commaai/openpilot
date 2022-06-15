@@ -27,10 +27,14 @@ private:
 // container window for the NVG UI
 class NvgWindow : public CameraViewWidget {
   Q_OBJECT
-  Q_PROPERTY(QString speed MEMBER speed);
+  Q_PROPERTY(float speed MEMBER speed);
   Q_PROPERTY(QString speedUnit MEMBER speedUnit);
-  Q_PROPERTY(QString maxSpeed MEMBER maxSpeed);
+  Q_PROPERTY(float setSpeed MEMBER setSpeed);
+  Q_PROPERTY(float speedLimit MEMBER speedLimit);
   Q_PROPERTY(bool is_cruise_set MEMBER is_cruise_set);
+  Q_PROPERTY(bool has_eu_speed_limit MEMBER has_eu_speed_limit);
+  Q_PROPERTY(bool has_us_speed_limit MEMBER has_us_speed_limit);
+
   Q_PROPERTY(bool engageable MEMBER engageable);
   Q_PROPERTY(bool dmActive MEMBER dmActive);
   Q_PROPERTY(bool hideDM MEMBER hideDM);
@@ -48,13 +52,16 @@ private:
   QPixmap dm_img;
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
-  QString speed;
+  float speed;
   QString speedUnit;
-  QString maxSpeed;
+  float setSpeed;
+  float speedLimit;
   bool is_cruise_set = false;
   bool engageable = false;
   bool dmActive = false;
   bool hideDM = false;
+  bool has_us_speed_limit = false;
+  bool has_eu_speed_limit = false;
   int status = STATUS_DISENGAGED;
 
 protected:
