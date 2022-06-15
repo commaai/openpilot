@@ -22,9 +22,9 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("STEER_ANGLE_RATE", "STEERING_SENSORS"),
     ("MOTOR_TORQUE", "STEER_MOTOR_TORQUE"),
     ("STEER_TORQUE_SENSOR", "STEER_STATUS"),
+    ("IMPERIAL_UNIT", "CAR_SPEED"),
     ("LEFT_BLINKER", "SCM_FEEDBACK"),
     ("RIGHT_BLINKER", "SCM_FEEDBACK"),
-    ("GEAR", gearbox_msg),
     ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS"),
     ("SEATBELT_DRIVER_LATCHED", "SEATBELT_STATUS"),
     ("BRAKE_PRESSED", "POWERTRAIN_DATA"),
@@ -35,6 +35,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("BRAKE_HOLD_ACTIVE", "VSA_STATUS"),
     ("STEER_STATUS", "STEER_STATUS"),
     ("GEAR_SHIFTER", gearbox_msg),
+    ("GEAR", gearbox_msg),
     ("PEDAL_GAS", "POWERTRAIN_DATA"),
     ("CRUISE_SETTING", "SCM_BUTTONS"),
     ("ACC_STATUS", "POWERTRAIN_DATA"),
@@ -48,9 +49,10 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("SEATBELT_STATUS", 10),
     ("CRUISE", 10),
     ("POWERTRAIN_DATA", 100),
+    ("CAR_SPEED", 10),
     ("VSA_STATUS", 50),
     ("STEER_STATUS", 100),
-    ("STEER_MOTOR_TORQUE", 0), # TODO: not on every car
+    ("STEER_MOTOR_TORQUE", 0),  # TODO: not on every car
   ]
 
   if CP.carFingerprint == CAR.ODYSSEY_CHN:
@@ -73,16 +75,11 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     signals.append(("BRAKE_PRESSED", "BRAKE_MODULE"))
     checks.append(("BRAKE_MODULE", 50))
 
-  if CP.carFingerprint in HONDA_BOSCH:
-    signals += [
-      ("EPB_STATE", "EPB_STATUS"),
-      ("IMPERIAL_UNIT", "CAR_SPEED"),
-    ]
-    checks += [
-      ("EPB_STATUS", 50),
-      ("CAR_SPEED", 10),
-    ]
+  if CP.carFingerprint in (HONDA_BOSCH | {CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN}):
+    signals.append(("EPB_STATE", "EPB_STATUS"))
+    checks.append(("EPB_STATUS", 50))
 
+  if CP.carFingerprint in HONDA_BOSCH:
     if not CP.openpilotLongitudinalControl:
       signals += [
         ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
@@ -120,17 +117,6 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       ("DOORS_STATUS", 3),
       ("STANDSTILL", 50),
     ]
-
-  if CP.carFingerprint == CAR.CIVIC:
-    signals += [("IMPERIAL_UNIT", "HUD_SETTING"),
-                ("EPB_STATE", "EPB_STATUS")]
-    checks += [
-      ("HUD_SETTING", 50),
-      ("EPB_STATUS", 50),
-    ]
-  elif CP.carFingerprint in (CAR.ODYSSEY, CAR.ODYSSEY_CHN):
-    signals.append(("EPB_STATE", "EPB_STATUS"))
-    checks.append(("EPB_STATUS", 50))
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
@@ -179,6 +165,11 @@ class CarState(CarStateBase):
     # update prevs, update must run once per loop
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_cruise_setting = self.cruise_setting
+    self.cruise_setting = cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"]
+    self.cruise_buttons = cp.vl["SCM_BUTTONS"]["CRUISE_BUTTONS"]
+
+    # used for car hud message
+    self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
 
     # ******************* parse out can *******************
     # STANDSTILL->WHEELS_MOVING bit can be noisy around zero, so use XMISSION_SPEED
@@ -219,16 +210,12 @@ class CarState(CarStateBase):
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE"]
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE_RATE"]
 
-    self.cruise_setting = cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"]
-    self.cruise_buttons = cp.vl["SCM_BUTTONS"]["CRUISE_BUTTONS"]
-
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(
       250, cp.vl["SCM_FEEDBACK"]["LEFT_BLINKER"], cp.vl["SCM_FEEDBACK"]["RIGHT_BLINKER"])
     ret.brakeHoldActive = cp.vl["VSA_STATUS"]["BRAKE_HOLD_ACTIVE"] == 1
 
     # TODO: set for all cars
-    if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH,
-                                  CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
+    if self.CP.carFingerprint in (HONDA_BOSCH | {CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN}):
       ret.parkingBrake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
 
     gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
@@ -280,14 +267,6 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE):
       if ret.brake > 0.1:
         ret.brakePressed = True
-
-    # TODO: discover the CAN msg that has the imperial unit bit for all other cars
-    if self.CP.carFingerprint in (CAR.CIVIC, ):
-      self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"]
-    elif self.CP.carFingerprint in HONDA_BOSCH:
-      self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
-    else:
-      self.is_metric = False
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)

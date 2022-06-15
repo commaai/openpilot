@@ -20,7 +20,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 #include "selfdrive/loggerd/encoder/encoder.h"
 #include "selfdrive/loggerd/logger.h"

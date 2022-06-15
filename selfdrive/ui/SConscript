@@ -5,6 +5,9 @@ Import('qt_env', 'arch', 'common', 'messaging', 'visionipc',
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
+if arch == 'larch64':
+  base_libs.append('EGL')
+
 maps = arch in ['larch64', 'x86_64']
 
 if maps and arch == 'x86_64':

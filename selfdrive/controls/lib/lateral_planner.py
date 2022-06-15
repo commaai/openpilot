@@ -1,7 +1,7 @@
 import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N, CAR_ROTATION_RADIUS
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
@@ -79,6 +79,9 @@ class LateralPlanner:
                      y_pts,
                      heading_pts)
     # init state for next
+    # mpc.u_sol is the desired curvature rate given x0 curv state. 
+    # with x0[3] = measured_curvature, this would be the actual desired rate.
+    # instead, interpolate x_sol so that x0[3] is the desired curvature for lat_control.
     self.x0[3] = interp(DT_MDL, self.t_idxs[:LAT_MPC_N + 1], self.lat_mpc.x_sol[:, 3])
 
     #  Check for infeasible MPC solution

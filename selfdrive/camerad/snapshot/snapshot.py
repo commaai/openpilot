@@ -9,7 +9,7 @@ import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from common.params import Params
 from common.realtime import DT_MDL
-from selfdrive.hardware import PC
+from system.hardware import PC
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.manager.process_config import managed_processes
 

@@ -23,4 +23,4 @@ class OpenpilotPrefix(object):
       os.remove(symlink_path)
     shutil.rmtree(self.msgq_path, ignore_errors=True)
     del os.environ['OPENPILOT_PREFIX']
-    return True
+    return False

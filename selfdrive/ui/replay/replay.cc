@@ -7,7 +7,7 @@
 #include "cereal/services.h"
 #include "common/params.h"
 #include "common/timing.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/replay/util.h"
 
 Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, uint32_t flags, QString data_dir, QObject *parent)

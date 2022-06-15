@@ -9,10 +9,10 @@ from pathlib import Path
 
 from cereal import log
 from common.gpio import gpio_set, gpio_init
-from selfdrive.hardware.base import HardwareBase, ThermalConfig
-from selfdrive.hardware.tici import iwlist
-from selfdrive.hardware.tici.pins import GPIO
-from selfdrive.hardware.tici.amplifier import Amplifier
+from system.hardware.base import HardwareBase, ThermalConfig
+from system.hardware.tici import iwlist
+from system.hardware.tici.pins import GPIO
+from system.hardware.tici.amplifier import Amplifier
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
