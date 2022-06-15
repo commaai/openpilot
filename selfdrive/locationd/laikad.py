@@ -75,7 +75,7 @@ class Laikad:
         if p.constellation_id == ConstellationId.GLONASS > 0:
           min_measurements += 1
           break
-      pos_fix = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
+      pos_fix, _ = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
 
       t = ublox_mono_time * 1e-9
       kf_pos_std = None
@@ -251,20 +251,22 @@ def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C
     return None
 
   Fx_pos = pr_residual(measurements, posfix_functions, signal=signal)
-  return gauss_newton(Fx_pos, x0)
+  x = gauss_newton(Fx_pos, x0)
+  residual = Fx_pos(x, weight=1.0)
+  return x, residual
 
 
 def pr_residual(measurements, posfix_functions, signal='C1C'):
-  def Fx_pos(inp):
+  def Fx_pos(inp, weight=None):
     vals, gradients = [], []
 
     for meas in measurements:
       pr = meas.observables[signal]
       pr += meas.sat_clock_err * SPEED_OF_LIGHT
 
-      weight = (1 / meas.observables_std[signal])
+      w = (1 / meas.observables_std[signal]) if weight is None else weight
 
-      val, *gradient = posfix_functions[meas.constellation_id](*inp, pr, *meas.sat_pos, weight)
+      val, *gradient = posfix_functions[meas.constellation_id](*inp, pr, *meas.sat_pos, w)
       vals.append(val)
       gradients.append(gradient)
     return np.asarray(vals), np.asarray(gradients)
