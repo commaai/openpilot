@@ -55,7 +55,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   setAutoFillBackground(true);
   setPalette(pal);
 
-  // TODO: revisit pressed colors
   setStyleSheet(R"(
     #wifiWidget > QPushButton, #back_btn, #advanced_btn {
       font-size: 50px;
