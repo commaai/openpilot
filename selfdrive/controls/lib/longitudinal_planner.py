@@ -83,6 +83,18 @@ class Planner:
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
 
     accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
+    if len(sm['liveLocationKalman'].calibratedOrientationNED.value) and \
+       len(np.array(sm['modelV2'].orientationRate.z)) >= 16 and \
+       np.isfinite(self.CP.maxLateralAccel):
+      while True:
+        requested_lat_accel = v_cruise * np.array(sm['modelV2'].orientationRate.z)[:16] \
+                            - np.array(9.81*sm['liveLocationKalman'].calibratedOrientationNED.value[0])
+        overrequest = abs(requested_lat_accel) - self.CP.maxLateralAccel
+        if max(overrequest) < 0 or v_cruise < 10.0:
+          break
+        else:
+          v_cruise = max(v_cruise - 0.5, .0)
+
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if force_slow_decel:
       # if required so, force a smooth deceleration
