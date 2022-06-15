@@ -9,6 +9,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+GearShifter = car.CarState.GearShifter
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
@@ -45,7 +46,8 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
-    ret.pcmCruise = False  # stock cruise control is kept off
+    ret.pcmCruise = False  # For ASCM, stock cruise control is kept off (but not ACC)
+    ret.radarOffCan = False  # For ASCM, radar is expected
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
@@ -55,7 +57,8 @@ class CarInterface(CarInterfaceBase):
     # Presence of a camera on the object bus is ok.
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
-    ret.openpilotLongitudinalControl = True
+    ret.openpilotLongitudinalControl = True # For ASCM, OP performs long
+    
     tire_stiffness_factor = 0.444  # not optimized yet
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
