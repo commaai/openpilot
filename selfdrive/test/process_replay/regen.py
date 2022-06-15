@@ -14,7 +14,7 @@ from cereal.services import service_list
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
-from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
+from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_e_frame_size, tici_d_frame_size
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
@@ -118,15 +118,17 @@ def replay_service(s, msgs):
 
 def replay_cameras(lr, frs, disable_tqdm=False):
   eon_cameras = [
-    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
-    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
+    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
+    ("wideRoadCameraState", DT_DMON, eon_f_frame_size, VisionStreamType.VISION_STREAM_WIDE_ROAD),
+    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
   ]
   tici_cameras = [
-    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
-    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
+    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
+    ("wideRoadCameraState", DT_MDL, tici_e_frame_size, VisionStreamType.VISION_STREAM_WIDE_ROAD),
+    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
   ]
 
-  def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
+  def replay_camera(s, stream, dt, vipc_server, frames, size):
     pm = messaging.PubMaster([s, ])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
 
@@ -145,8 +147,6 @@ def replay_cameras(lr, frs, disable_tqdm=False):
       pm.send(s, m)
 
       vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
-      if use_extra_client:
-        vipc_server.send(VisionStreamType.VISION_STREAM_WIDE_ROAD, img, msg.frameId, msg.timestampSof, msg.timestampEof)
 
   init_data = [m for m in lr if m.which() == 'initData'][0]
   cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
@@ -154,7 +154,7 @@ def replay_cameras(lr, frs, disable_tqdm=False):
   # init vipc server and cameras
   p = []
   vs = VisionIpcServer("camerad")
-  for (s, dt, size, stream, use_extra_client) in cameras:
+  for s, dt, size, stream in cameras:
     fr = frs.get(s, None)
 
     frames = None
@@ -166,10 +166,8 @@ def replay_cameras(lr, frs, disable_tqdm=False):
         frames.append(img.flatten().tobytes())
 
     vs.create_buffers(stream, 40, False, size[0], size[1])
-    if use_extra_client:
-      vs.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, size[0], size[1])
     p.append(multiprocessing.Process(target=replay_camera,
-                                     args=(s, stream, dt, vs, frames, size, use_extra_client)))
+                                     args=(s, stream, dt, vs, frames, size)))
 
   vs.start_listener()
   return vs, p
@@ -220,7 +218,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
     # start procs up
     ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader', 'soundd']
     ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
-    for procs in fake_daemons.values():
+    for name, procs in fake_daemons.items():
       for p in procs:
         p.start()
 
