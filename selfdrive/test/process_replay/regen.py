@@ -156,7 +156,7 @@ def replay_cameras(lr, frs, disable_tqdm=False):
   # init vipc server and cameras
   p = []
   vs = VisionIpcServer("camerad")
-  for s, dt, size, stream, use_extra_client in cameras:
+  for (s, dt, size, stream, use_extra_client) in cameras:
     fr = frs.get(s, None)
 
     frames = None
