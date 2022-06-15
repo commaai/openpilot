@@ -245,43 +245,7 @@ def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C
   return gauss_newton(Fx_pos, x0)
 
 
-def get_posfix_sympy_fun(constellation):
-  # Unknowns
-  x = sympy.Symbol('x')
-  y = sympy.Symbol('y')
-  z = sympy.Symbol('z')
-  bc = sympy.Symbol('bc')
-  bg = sympy.Symbol('bg')
-  var = [x, y, z, bc, bg]
-
-  # Knowns
-  pr = sympy.Symbol('pr')
-  sat_x = sympy.Symbol('sat_x')
-  sat_y = sympy.Symbol('sat_y')
-  sat_z = sympy.Symbol('sat_z')
-  weight = sympy.Symbol('weight')
-
-  theta = EARTH_ROTATION_RATE * (pr - bc) / SPEED_OF_LIGHT
-  val = sympy.sqrt(
-    (sat_x * sympy.cos(theta) + sat_y * sympy.sin(theta) - x) ** 2 +
-    (sat_y * sympy.cos(theta) - sat_x * sympy.sin(theta) - y) ** 2 +
-    (sat_z - z) ** 2
-  )
-
-  if constellation == ConstellationId.GLONASS:
-    res = weight * (val - (pr - bc - bg))
-  elif constellation == ConstellationId.GPS:
-    res = weight * (val - (pr - bc))
-  else:
-    raise NotImplementedError(f"Constellation {constellation} not supported")
-
-  res = [res] + [sympy.diff(res, v) for v in var]
-
-  return sympy.lambdify([x, y, z, bc, bg, pr, sat_x, sat_y, sat_z, weight], res)
-
-
 def pr_residual(measurements, posfix_functions, signal='C1C'):
-
   def Fx_pos(inp):
     vals, gradients = [], []
 
@@ -312,6 +276,37 @@ def gauss_newton(fun, b, xtol=1e-8, max_n=25):
     if np.linalg.norm(delta) < xtol:
       break
   return b
+
+
+def get_posfix_sympy_fun(constellation):
+  # Unknowns
+  x, y, z = sympy.Symbol('x'), sympy.Symbol('y'), sympy.Symbol('z')
+  bc = sympy.Symbol('bc')
+  bg = sympy.Symbol('bg')
+  var = [x, y, z, bc, bg]
+
+  # Knowns
+  pr = sympy.Symbol('pr')
+  sat_x, sat_y, sat_z = sympy.Symbol('sat_x'), sympy.Symbol('sat_y'), sympy.Symbol('sat_z')
+  weight = sympy.Symbol('weight')
+
+  theta = EARTH_ROTATION_RATE * (pr - bc) / SPEED_OF_LIGHT
+  val = sympy.sqrt(
+    (sat_x * sympy.cos(theta) + sat_y * sympy.sin(theta) - x) ** 2 +
+    (sat_y * sympy.cos(theta) - sat_x * sympy.sin(theta) - y) ** 2 +
+    (sat_z - z) ** 2
+  )
+
+  if constellation == ConstellationId.GLONASS:
+    res = weight * (val - (pr - bc - bg))
+  elif constellation == ConstellationId.GPS:
+    res = weight * (val - (pr - bc))
+  else:
+    raise NotImplementedError(f"Constellation {constellation} not supported")
+
+  res = [res] + [sympy.diff(res, v) for v in var]
+
+  return sympy.lambdify([x, y, z, bc, bg, pr, sat_x, sat_y, sat_z, weight], res)
 
 
 def main():
