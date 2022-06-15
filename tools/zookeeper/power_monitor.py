@@ -15,7 +15,7 @@ if __name__ == "__main__":
   if len(sys.argv) > 1:
     duration = int(sys.argv[1])
 
-  rate = 7
+  rate = 123
   rk = Ratekeeper(rate, print_delay_threshold=None)
   fltr = FirstOrderFilter(0, 5, 1. / rate, initialized=False)
 
