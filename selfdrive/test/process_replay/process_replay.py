@@ -372,7 +372,7 @@ def setup_env(simulation=False, CP=None):
     if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
       params.put_bool("DisengageOnAccelerator", False)
 
-    if CP.fingerprintSource == "fw" and CP.carFingerprint in FW_VERSIONS:
+    if CP.fingerprintSource == "fw":
       params.put("CarParamsCache", CP.as_builder().to_bytes())
     else:
       os.environ['SKIP_FW_QUERY'] = "1"
