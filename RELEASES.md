@@ -10,6 +10,7 @@ Version 0.8.15 (2022-XX-XX)
   * takes a larger input frame
   * outputs a driver state for both driver and passenger
   * automatically determines which side the driver is on (soon)
+* Display speed limit while navigating
 * Reduced power usage: device runs cooler and fan spins less
 * AGNOS 5
 * Hyundai Tucson 2021 support thanks to bluesforte!
