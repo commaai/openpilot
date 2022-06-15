@@ -69,13 +69,8 @@ class Laikad:
       new_meas = read_raw_ublox(report)
       processed_measurements = process_measurements(new_meas, self.astro_dog)
 
-      min_measurements = 4
-      # If glonass is one of the measurements we need 5 measurements for calculating the pos fix
-      for p in processed_measurements:
-        if p.constellation_id == ConstellationId.GLONASS > 0:
-          min_measurements += 1
-          break
-      pos_fix, _ = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
+      min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 4
+      pos_fix = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
 
       t = ublox_mono_time * 1e-9
       kf_pos_std = None
@@ -85,8 +80,8 @@ class Laikad:
       # If localizer is valid use its position to correct measurements
       if kf_pos_std is not None and linalg.norm(kf_pos_std) < 100:
         est_pos = self.gnss_kf.x[GStates.ECEF_POS]
-      elif pos_fix is not None:
-        est_pos = pos_fix[:3]
+      elif len(pos_fix) > 0 and abs(np.array(pos_fix[1])).mean() < 1000:
+        est_pos = pos_fix[0][:3]
       else:
         est_pos = None
       corrected_measurements = []
@@ -135,8 +130,7 @@ class Laikad:
       if est_pos is None:
         cloudlog.info("Position fix not available when resetting kalman filter")
         return
-      post_est = est_pos.tolist()
-      self.init_gnss_localizer(post_est)
+      self.init_gnss_localizer(est_pos.tolist())
     if len(measurements) > 0:
       kf_add_observations(self.gnss_kf, t, measurements)
     else:
@@ -248,12 +242,13 @@ def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C
     x0 = [0, 0, 0, 0, 0]
   n = len(measurements)
   if n < min_measurements:
-    return None
+    return []
 
   Fx_pos = pr_residual(measurements, posfix_functions, signal=signal)
   x = gauss_newton(Fx_pos, x0)
   residual = Fx_pos(x, weight=1.0)
-  return x, residual
+  print(residual[0])
+  return x, residual[0]
 
 
 def pr_residual(measurements, posfix_functions, signal='C1C'):
