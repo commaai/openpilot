@@ -247,8 +247,7 @@ def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C
   Fx_pos = pr_residual(measurements, posfix_functions, signal=signal)
   x = gauss_newton(Fx_pos, x0)
   residual, _ = Fx_pos(x, weight=1.0)
-  print(residual[0])
-  return x, residual[0]
+  return x, residual
 
 
 def pr_residual(measurements, posfix_functions, signal='C1C'):
