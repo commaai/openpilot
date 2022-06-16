@@ -15,7 +15,6 @@ from cereal.services import service_list
 from common.params import Params
 from common.timeout import Timeout
 from panda.python import ALTERNATIVE_EXPERIENCE
-from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
 from selfdrive.manager.process import PythonProcess
