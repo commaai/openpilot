@@ -1,10 +1,10 @@
 import math
-
-from cereal import car
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Union, no_type_check
+
+from cereal import car
 from selfdrive.controls.lib.latcontrol import MIN_STEER_SPEED
 
 TACO_TORQUE_THRESHOLD = 2.5  # m/s^2
