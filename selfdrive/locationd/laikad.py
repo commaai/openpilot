@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
 import json
 import time
+from collections import defaultdict
 from concurrent.futures import Future, ProcessPoolExecutor
 from enum import IntEnum
 from typing import List, Optional
 
 import numpy as np
-from collections import defaultdict
-
-import sympy
 
 from cereal import log, messaging
 from common.params import Params, put_nonblocking
 from laika import AstroDog
-from laika.constants import EARTH_ROTATION_RATE, SECS_IN_HR, SECS_IN_MIN, SPEED_OF_LIGHT
+from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox
+from selfdrive.locationd.laikad_helpers import calc_pos_fix_gauss_newton, get_posfix_sympy_fun
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
@@ -91,6 +90,8 @@ class Laikad:
       dat = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
       dat.gnssMeasurements = {
+        "gpsWeek": report.gpsWeek,
+        "gpsTimeOfWeek": report.rcvTow,
         "positionECEF": measurement_msg(value=ecef_pos, std=pos_std, valid=kf_valid),
         "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std, valid=kf_valid),
         "positionFixECEF": measurement_msg(value=pos_fix, std=pos_fix_residual, valid=len(pos_fix) > 0),
@@ -115,7 +116,12 @@ class Laikad:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       elif not valid[2]:
         cloudlog.error("Gnss kalman filter state is nan")
-      self.init_gnss_localizer(est_pos)
+      if est_pos is not None:
+        cloudlog.info(f"Reset kalman filter with {est_pos}")
+        self.init_gnss_localizer(est_pos)
+      else:
+        cloudlog.info("Could not reset kalman filter")
+        return
     if len(measurements) > 0:
       kf_add_observations(self.gnss_kf, t, measurements)
     else:
@@ -130,8 +136,7 @@ class Laikad:
 
   def init_gnss_localizer(self, est_pos):
     x_initial, p_initial_diag = np.copy(GNSSKalman.x_initial), np.copy(np.diagonal(GNSSKalman.P_initial))
-    if est_pos is not None:
-      x_initial[GStates.ECEF_POS] = est_pos
+    x_initial[GStates.ECEF_POS] = est_pos
     p_initial_diag[GStates.ECEF_POS] = 1000 ** 2
     self.gnss_kf.init_state(x_initial, covs_diag=p_initial_diag)
 
@@ -233,90 +238,6 @@ def deserialize_hook(dct):
   if 'week' in dct:
     return GPSTime(dct['week'], dct['tow'])
   return dct
-
-
-def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C1C', min_measurements=6):
-  '''
-  Calculates gps fix using gauss newton method
-  To solve the problem a minimal of 4 measurements are required.
-    If Glonass is included 5 are required to solve for the additional free variable.
-  returns:
-  0 -> list with positions
-  '''
-  if x0 is None:
-    x0 = [0, 0, 0, 0, 0]
-  n = len(measurements)
-  if n < min_measurements:
-    return [], []
-
-  Fx_pos = pr_residual(measurements, posfix_functions, signal=signal)
-  x = gauss_newton(Fx_pos, x0)
-  residual, _ = Fx_pos(x, weight=1.0)
-  return x.tolist(), residual.tolist()
-
-
-def pr_residual(measurements, posfix_functions, signal='C1C'):
-  def Fx_pos(inp, weight=None):
-    vals, gradients = [], []
-
-    for meas in measurements:
-      pr = meas.observables[signal]
-      pr += meas.sat_clock_err * SPEED_OF_LIGHT
-
-      w = (1 / meas.observables_std[signal]) if weight is None else weight
-
-      val, *gradient = posfix_functions[meas.constellation_id](*inp, pr, *meas.sat_pos, w)
-      vals.append(val)
-      gradients.append(gradient)
-    return np.asarray(vals), np.asarray(gradients)
-
-  return Fx_pos
-
-
-def gauss_newton(fun, b, xtol=1e-8, max_n=25):
-  for _ in range(max_n):
-    # Compute function and jacobian on current estimate
-    r, J = fun(b)
-
-    # Update estimate
-    delta = np.linalg.pinv(J) @ r
-    b -= delta
-
-    # Check step size for stopping condition
-    if np.linalg.norm(delta) < xtol:
-      break
-  return b
-
-
-def get_posfix_sympy_fun(constellation):
-  # Unknowns
-  x, y, z = sympy.Symbol('x'), sympy.Symbol('y'), sympy.Symbol('z')
-  bc = sympy.Symbol('bc')
-  bg = sympy.Symbol('bg')
-  var = [x, y, z, bc, bg]
-
-  # Knowns
-  pr = sympy.Symbol('pr')
-  sat_x, sat_y, sat_z = sympy.Symbol('sat_x'), sympy.Symbol('sat_y'), sympy.Symbol('sat_z')
-  weight = sympy.Symbol('weight')
-
-  theta = EARTH_ROTATION_RATE * (pr - bc) / SPEED_OF_LIGHT
-  val = sympy.sqrt(
-    (sat_x * sympy.cos(theta) + sat_y * sympy.sin(theta) - x) ** 2 +
-    (sat_y * sympy.cos(theta) - sat_x * sympy.sin(theta) - y) ** 2 +
-    (sat_z - z) ** 2
-  )
-
-  if constellation == ConstellationId.GLONASS:
-    res = weight * (val - (pr - bc - bg))
-  elif constellation == ConstellationId.GPS:
-    res = weight * (val - (pr - bc))
-  else:
-    raise NotImplementedError(f"Constellation {constellation} not supported")
-
-  res = [res] + [sympy.diff(res, v) for v in var]
-
-  return sympy.lambdify([x, y, z, bc, bg, pr, sat_x, sat_y, sat_z, weight], res)
 
 
 class EphemerisSourceType(IntEnum):
