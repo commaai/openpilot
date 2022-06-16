@@ -4,7 +4,7 @@ import time
 import unittest
 
 import cereal.messaging as messaging
-from selfdrive.hardware import TICI
+from system.hardware import TICI
 from selfdrive.test.helpers import with_processes
 
 TEST_TIMESPAN = 30 # random.randint(60, 180) # seconds

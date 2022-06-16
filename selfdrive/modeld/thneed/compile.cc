@@ -3,9 +3,9 @@
 
 #include "selfdrive/modeld/runners/snpemodel.h"
 #include "selfdrive/modeld/thneed/thneed.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
-#define TEMPORAL_SIZE 512
+#define TEMPORAL_SIZE 512+256
 #define DESIRE_LEN 8
 #define TRAFFIC_CONVENTION_LEN 2
 

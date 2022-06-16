@@ -9,8 +9,8 @@ import requests
 from timezonefinder import TimezoneFinder
 
 from common.params import Params
-from selfdrive.hardware import AGNOS
-from selfdrive.swaglog import cloudlog
+from system.hardware import AGNOS
+from system.swaglog import cloudlog
 
 
 def set_timezone(valid_timezones, timezone):
