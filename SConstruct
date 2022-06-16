@@ -359,6 +359,7 @@ Export('cereal', 'messaging', 'visionipc')
 rednose_config = {
   'generated_folder': '#selfdrive/locationd/models/generated',
   'to_build': {
+    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
     'live': ('#selfdrive/locationd/models/live_kf.py', True, ['live_kf_constants.h']),
     'car': ('#selfdrive/locationd/models/car_kf.py', True, []),
   },
@@ -366,7 +367,6 @@ rednose_config = {
 
 if arch != "larch64":
   rednose_config['to_build'].update({
-    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, []),
     'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, []),
     'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, []),
@@ -378,8 +378,10 @@ Export('rednose_config')
 SConscript(['rednose/SConscript'])
 
 # Build system services
-
-SConscript(['system/proclogd/SConscript'])
+SConscript([
+  'system/clocksd/SConscript',
+  'system/proclogd/SConscript',
+])
 if arch != "Darwin":
   SConscript(['system/logcatd/SConscript'])
 
@@ -402,7 +404,6 @@ SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
-SConscript(['selfdrive/clocksd/SConscript'])
 
 SConscript(['selfdrive/loggerd/SConscript'])
 

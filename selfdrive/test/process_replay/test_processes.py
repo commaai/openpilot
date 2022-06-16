@@ -11,7 +11,7 @@ from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url, upload_file
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_enabled, replay_process
-from selfdrive.version import get_commit
+from system.version import get_commit
 from tools.lib.filereader import FileReader
 from tools.lib.logreader import LogReader
 
@@ -93,8 +93,7 @@ def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
     if not check_enabled(log_msgs):
-      segment = os.path.basename(ref_log_path).split("/")[-1].split("_")[0]
-      raise Exception(f"Route never enabled: {segment}")
+      raise Exception(f"Route never enabled: {ref_log_path}")
 
   try:
     return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs

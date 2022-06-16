@@ -4,7 +4,7 @@
 #include <QJsonObject>
 
 #include "common/params.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 
 QString get_mapbox_token() {

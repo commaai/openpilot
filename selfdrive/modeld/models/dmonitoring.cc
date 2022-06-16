@@ -6,7 +6,7 @@
 #include "common/modeldata.h"
 #include "common/params.h"
 #include "common/timing.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 #include "selfdrive/modeld/models/dmonitoring.h"
 
