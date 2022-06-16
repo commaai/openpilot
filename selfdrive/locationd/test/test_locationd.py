@@ -108,7 +108,7 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
 
 class TestLocationdProc(unittest.TestCase):
   MAX_WAITS = 1000
-  LLD_MSGS = {'gpsLocationExternal', 'cameraOdometry', 'carState', 'sensorEvents', 'liveCalibration'}
+  LLD_MSGS = ['gpsLocationExternal', 'cameraOdometry', 'carState', 'sensorEvents', 'liveCalibration']
 
   def setUp(self):
     random.seed(123489234)

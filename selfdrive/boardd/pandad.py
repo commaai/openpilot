@@ -4,14 +4,14 @@ import os
 import usb1
 import time
 import subprocess
-from typing import NoReturn
+from typing import List, NoReturn
 from functools import cmp_to_key
 
 from panda import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.hardware import HARDWARE
-from selfdrive.swaglog import cloudlog
+from system.hardware import HARDWARE
+from system.swaglog import cloudlog
 
 
 def get_expected_signature(panda: Panda) -> bytes:
@@ -102,7 +102,7 @@ def main() -> NoReturn:
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
 
       # Flash pandas
-      pandas = []
+      pandas: List[Panda] = []
       for serial in panda_serials:
         pandas.append(flash_panda(serial))
 
@@ -119,7 +119,7 @@ def main() -> NoReturn:
 
       # sort pandas to have deterministic order
       pandas.sort(key=cmp_to_key(panda_sort_cmp))
-      panda_serials = list(map(lambda p: p.get_usb_serial(), pandas))
+      panda_serials = list(map(lambda p: p.get_usb_serial(), pandas))  # type: ignore
 
       # log panda fw versions
       params.put("PandaSignatures", b','.join(p.get_signature() for p in pandas))

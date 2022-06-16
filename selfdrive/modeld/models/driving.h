@@ -10,9 +10,9 @@
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/common/mat.h"
-#include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/util.h"
+#include "common/mat.h"
+#include "common/modeldata.h"
+#include "common/util.h"
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/runners/run.h"
 
@@ -245,7 +245,7 @@ struct ModelOutput {
 
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 #ifdef TEMPORAL
-  constexpr int TEMPORAL_SIZE = 512;
+  constexpr int TEMPORAL_SIZE = 512+256;
 #else
   constexpr int TEMPORAL_SIZE = 0;
 #endif

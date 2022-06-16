@@ -1,15 +1,23 @@
-from typing import Dict, Tuple
+import os
+import errno
+from typing import Dict, Tuple, Optional
 
-from common.xattr import getxattr as getattr1
-from common.xattr import setxattr as setattr1
+_cached_attributes: Dict[Tuple, Optional[bytes]] = {}
 
-cached_attributes: Dict[Tuple, bytes] = {}
-def getxattr(path: str, attr_name: bytes) -> bytes:
-  if (path, attr_name) not in cached_attributes:
-    response = getattr1(path, attr_name)
-    cached_attributes[(path, attr_name)] = response
-  return cached_attributes[(path, attr_name)]
+def getxattr(path: str, attr_name: str) -> Optional[bytes]:
+  key = (path, attr_name)
+  if key not in _cached_attributes:
+    try:
+      response = os.getxattr(path, attr_name)
+    except OSError as e:
+      # ENODATA means attribute hasn't been set
+      if e.errno == errno.ENODATA:
+        response = None
+      else:
+        raise
+    _cached_attributes[key] = response
+  return _cached_attributes[key]
 
 def setxattr(path: str, attr_name: str, attr_value: bytes) -> None:
-  cached_attributes.pop((path, attr_name), None)
-  return setattr1(path, attr_name, attr_value)
+  _cached_attributes.pop((path, attr_name), None)
+  return os.setxattr(path, attr_name, attr_value)

@@ -9,6 +9,9 @@ RADAR_MSGS = list(range(0x500, 0x540))
 
 
 def _create_radar_can_parser(car_fingerprint):
+  if DBC[car_fingerprint]['radar'] is None:
+    return None
+
   msg_n = len(RADAR_MSGS)
   signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
                      RADAR_MSGS * 3))
@@ -27,6 +30,9 @@ class RadarInterface(RadarInterfaceBase):
     self.updated_messages = set()
 
   def update(self, can_strings):
+    if self.rcp is None:
+      return super().update(None)
+
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 

@@ -6,7 +6,7 @@ import numpy as np
 from selfdrive.test.helpers import with_processes
 from selfdrive.camerad.snapshot.snapshot import get_snapshots
 
-from selfdrive.hardware import TICI
+from system.hardware import TICI
 
 TEST_TIME = 45
 REPEAT = 5

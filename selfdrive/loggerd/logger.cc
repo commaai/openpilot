@@ -15,9 +15,9 @@
 #include <iostream>
 #include <streambuf>
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/version.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/version.h"
 
 // ***** logging helpers *****
 
@@ -33,12 +33,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (Hardware::TICI()) {
-    init.setDeviceType(cereal::InitData::DeviceType::TICI);
-  } else {
-    init.setDeviceType(cereal::InitData::DeviceType::PC);
-  }
-
+  init.setDeviceType(Hardware::get_device_type());
   init.setVersion(COMMA_VERSION);
 
   std::ifstream cmdline_stream("/proc/cmdline");
@@ -109,13 +104,12 @@ static void lh_log_sentinel(LoggerHandle *h, SentinelType type) {
 
 // ***** logging functions *****
 
-void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
+void logger_init(LoggerState *s, bool has_qlog) {
   pthread_mutex_init(&s->lock, NULL);
 
   s->part = -1;
   s->has_qlog = has_qlog;
   s->route_name = logger_get_route_name();
-  snprintf(s->log_name, sizeof(s->log_name), "%s", log_name);
   s->init_data = logger_build_init_data();
 }
 
@@ -132,8 +126,8 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   snprintf(h->segment_path, sizeof(h->segment_path),
           "%s/%s--%d", root_path, s->route_name.c_str(), s->part);
 
-  snprintf(h->log_path, sizeof(h->log_path), "%s/%s.bz2", h->segment_path, s->log_name);
-  snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
+  snprintf(h->log_path, sizeof(h->log_path), "%s/rlog", h->segment_path);
+  snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog", h->segment_path);
   snprintf(h->lock_path, sizeof(h->lock_path), "%s.lock", h->log_path);
   h->end_sentinel_type = SentinelType::END_OF_SEGMENT;
   h->exit_signal = 0;
@@ -144,9 +138,9 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   if (lock_file == NULL) return NULL;
   fclose(lock_file);
 
-  h->log = std::make_unique<BZFile>(h->log_path);
+  h->log = std::make_unique<RawFile>(h->log_path);
   if (s->has_qlog) {
-    h->q_log = std::make_unique<BZFile>(h->qlog_path);
+    h->q_log = std::make_unique<RawFile>(h->qlog_path);
   }
 
   pthread_mutex_init(&h->lock, NULL);

@@ -1,12 +1,12 @@
+#!/usr/bin/env python3
 import os
 import time
 import threading
 import unittest
 from collections import namedtuple
 
-import selfdrive.loggerd.deleter as deleter
 from common.timeout import Timeout, TimeoutException
-
+import selfdrive.loggerd.deleter as deleter
 from selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])

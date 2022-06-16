@@ -23,11 +23,11 @@
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/timing.h"
+#include "common/util.h"
+#include "system/hardware/hw.h"
 
 #include "selfdrive/boardd/pigeon.h"
 
@@ -115,11 +115,15 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     return false;
   }
 
+  // set to ELM327 for fingerprinting
   pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
+  for (int i = 1; i < pandas.size(); i++) {
+    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::SILENT);
+  }
 
   Params p = Params();
 
-  // switch to SILENT when CarVin param is read
+  // wait for VIN to be read
   while (true) {
     if (do_exit || !check_all_connected(pandas) || !ignition) {
       return false;
@@ -135,7 +139,8 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     util::sleep_for(20);
   }
 
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1);
+  // set to ELM327 for ECU knockouts
+  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
 
   std::string params;
   LOGW("waiting for params to set safety model");
@@ -156,7 +161,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
   cereal::CarParams::SafetyModel safety_model;
-  uint32_t safety_param;
+  uint16_t safety_param;
 
   auto safety_configs = car_params.getSafetyConfigs();
   uint16_t alternative_experience = car_params.getAlternativeExperience();
@@ -400,17 +405,12 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
   auto ps = evt.initPeripheralState();
   ps.setPandaType(panda->hw_type);
 
-  if (Hardware::TICI()) {
-    double read_time = millis_since_boot();
-    ps.setVoltage(std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()));
-    ps.setCurrent(std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()));
-    read_time = millis_since_boot() - read_time;
-    if (read_time > 50) {
-      LOGW("reading hwmon took %lfms", read_time);
-    }
-  } else {
-    ps.setVoltage(pandaState.voltage_pkt);
-    ps.setCurrent(pandaState.current_pkt);
+  double read_time = millis_since_boot();
+  ps.setVoltage(Hardware::get_voltage());
+  ps.setCurrent(Hardware::get_current());
+  read_time = millis_since_boot() - read_time;
+  if (read_time > 50) {
+    LOGW("reading hwmon took %lfms", read_time);
   }
 
   uint16_t fan_speed_rpm = panda->get_fan_speed();
@@ -529,9 +529,7 @@ void peripheral_control_thread(Panda *panda) {
       int cur_integ_lines = event.getDriverCameraState().getIntegLines();
       float cur_gain = event.getDriverCameraState().getGain();
 
-      if (Hardware::TICI()) {
-        cur_integ_lines = integ_lines_filter.update(cur_integ_lines * cur_gain);
-      }
+      cur_integ_lines = integ_lines_filter.update(cur_integ_lines * cur_gain);
       last_front_frame_t = event.getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {
@@ -645,8 +643,6 @@ void boardd_main_thread(std::vector<std::string> serials) {
     LOGW("connected to board");
     Panda *peripheral_panda = pandas[0];
     std::vector<std::thread> threads;
-
-    Params().put("LastPeripheralPandaType", std::to_string((int) peripheral_panda->get_hw_type()));
 
     threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
     threads.emplace_back(peripheral_control_thread, peripheral_panda);

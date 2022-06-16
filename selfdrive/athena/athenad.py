@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import base64
+import bz2
 import hashlib
 import io
 import json
@@ -30,13 +31,13 @@ from common.api import Api
 from common.basedir import PERSIST
 from common.file_helpers import CallbackReader
 from common.params import Params
-from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE, PC, TICI
+from common.realtime import sec_since_boot, set_core_affinity
+from system.hardware import HARDWARE, PC, AGNOS
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.statsd import STATS_DIR
-from selfdrive.swaglog import SWAGLOG_DIR, cloudlog
-from selfdrive.version import get_commit, get_origin, get_short_branch, get_version
+from system.swaglog import SWAGLOG_DIR, cloudlog
+from system.version import get_commit, get_origin, get_short_branch, get_version
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -63,6 +64,13 @@ cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress', 'allow_cellular'], defaults=(0, False, 0, False))
 
 cur_upload_items: Dict[int, Any] = {}
+
+
+def strip_bz2_extension(fn):
+  if fn.endswith('.bz2'):
+    return fn[:-4]
+  return fn
+
 
 class AbortTransferException(Exception):
   pass
@@ -227,14 +235,29 @@ def upload_handler(end_event: threading.Event) -> None:
 
 
 def _do_upload(upload_item, callback=None):
-  with open(upload_item.path, "rb") as f:
-    size = os.fstat(f.fileno()).st_size
+  path = upload_item.path
+  compress = False
+
+  # If file does not exist, but does exist without the .bz2 extension we will compress on the fly
+  if not os.path.exists(path) and os.path.exists(strip_bz2_extension(path)):
+    path = strip_bz2_extension(path)
+    compress = True
+
+  with open(path, "rb") as f:
+    if compress:
+      cloudlog.event("athena.upload_handler.compress", fn=path, fn_orig=upload_item.path)
+      data = bz2.compress(f.read())
+      size = len(data)
+      data = io.BytesIO(data)
+    else:
+      size = os.fstat(f.fileno()).st_size
+      data = f
 
     if callback:
-      f = CallbackReader(f, callback, size)
+      data = CallbackReader(data, callback, size)
 
     return requests.put(upload_item.url,
-                        data=f,
+                        data=data,
                         headers={**upload_item.headers, 'Content-Length': str(size)},
                         timeout=30)
 
@@ -335,8 +358,9 @@ def uploadFilesToUrls(files_data):
     if len(fn) == 0 or fn[0] == '/' or '..' in fn or 'url' not in file:
       failed.append(fn)
       continue
+
     path = os.path.join(ROOT, fn)
-    if not os.path.exists(path):
+    if not os.path.exists(path) and not os.path.exists(strip_bz2_extension(path)):
       failed.append(fn)
       continue
 
@@ -389,8 +413,8 @@ def primeActivated(activated):
 
 @dispatcher.add_method
 def setBandwithLimit(upload_speed_kbps, download_speed_kbps):
-  if not TICI:
-    return {"success": 0, "error": "only supported on comma three"}
+  if not AGNOS:
+    return {"success": 0, "error": "only supported on AGNOS"}
 
   try:
     HARDWARE.set_bandwidth_limit(upload_speed_kbps, download_speed_kbps)
@@ -415,7 +439,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     local_sock.connect(('127.0.0.1', local_port))
-    local_sock.setblocking(0)
+    local_sock.setblocking(False)
 
     proxy_end_event = threading.Event()
     threads = [
@@ -680,6 +704,11 @@ def backoff(retries):
 
 
 def main():
+  try:
+    set_core_affinity([0, 1, 2, 3])
+  except Exception:
+    cloudlog.exception("failed to set core affinity")
+
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf-8')
   UploadQueueCache.initialize(upload_queue)
@@ -696,7 +725,6 @@ def main():
                              enable_multithread=True,
                              timeout=30.0)
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
-      params.delete("PrimeRedirected")
 
       conn_retries = 0
       cur_upload_items.clear()
@@ -706,22 +734,13 @@ def main():
       break
     except (ConnectionError, TimeoutError, WebSocketException):
       conn_retries += 1
-      params.delete("PrimeRedirected")
       params.delete("LastAthenaPingTime")
     except socket.timeout:
-      try:
-        r = requests.get("http://api.commadotai.com/v1/me", allow_redirects=False,
-                         headers={"User-Agent": f"openpilot-{get_version()}"}, timeout=15.0)
-        if r.status_code == 302 and r.headers['Location'].startswith("http://u.web2go.com"):
-          params.put_bool("PrimeRedirected", True)
-      except Exception:
-        cloudlog.exception("athenad.socket_timeout.exception")
       params.delete("LastAthenaPingTime")
     except Exception:
       cloudlog.exception("athenad.main.exception")
 
       conn_retries += 1
-      params.delete("PrimeRedirected")
       params.delete("LastAthenaPingTime")
 
     time.sleep(backoff(conn_retries))

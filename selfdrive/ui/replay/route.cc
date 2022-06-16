@@ -9,7 +9,7 @@
 
 #include <array>
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/replay.h"
 #include "selfdrive/ui/replay/util.h"
@@ -77,7 +77,11 @@ bool Route::loadFromLocal() {
 }
 
 void Route::addFileToSegment(int n, const QString &file) {
-  const QString name = QUrl(file).fileName();
+  QString name = QUrl(file).fileName();
+
+  const int pos = name.lastIndexOf("--");
+  name = pos != -1 ? name.mid(pos + 2) : name;
+
   if (name == "rlog.bz2") {
     segments_[n].rlog = file;
   } else if (name == "qlog.bz2") {

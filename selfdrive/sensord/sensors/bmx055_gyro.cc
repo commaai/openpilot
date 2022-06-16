@@ -3,7 +3,7 @@
 #include <cassert>
 #include <cmath>
 
-#include "selfdrive/common/swaglog.h"
+#include "common/swaglog.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 

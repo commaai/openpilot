@@ -22,23 +22,11 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: hw
-    attributes:
-      label: What hardware does this issue affect?
-      multiple: true
-      options:
-        - comma three
-        - comma two
-        - EON Gold
-    validations:
-      required: true
-
   - type: input
     id: route
     attributes:
       label: Provide a route where the issue occurs
-      description: Ensure the route is fully uploaded at https://useradmin.comma.ai
+      description: Ensure the route is fully uploaded at https://useradmin.comma.ai. We cannot look into issues without routes, or at least a Dongle ID.
       placeholder: 77611a1fac303767|2020-05-11--16-37-07
     validations:
       required: true
