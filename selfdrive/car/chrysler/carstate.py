@@ -164,7 +164,6 @@ class CarState(CarStateBase):
       ("Right_Rear_Door_Ajar", "BCM_1"),  # Passenger Rear Door
       ("Driver_Seatbelt_Status", "ORC_1"),  # Driver Sear Belt
       ("COUNTER", "EPS_2"),  # EPS Counter
-      ("DASM_FAULT", "EPS_3"),  # EPS Fault
     ]
 
     checks = [
@@ -177,7 +176,6 @@ class CarState(CarStateBase):
       ("ECM_5", 50),
       ("Steering_Column_Angle_Status", 100),
       ("EPS_2", 100),
-      ("EPS_3", 100),
       ("Center_Stack_1", 1),
       ("Steering_Column_Commands", 10),
       ("Cruise_Control_Buttons", 50),
@@ -195,9 +193,11 @@ class CarState(CarStateBase):
     if CP.carFingerprint in (CAR.RAM_1500, ):
       signals += [
         ("LKAS_Button", "Center_Stack_2"),  # LKAS Button
+        ("DASM_FAULT", "EPS_3"),  # EPS Fault
       ]
       checks += [
         ("Center_Stack_2", 1),
+        ("EPS_3", 50),
       ]
     else:
       signals += [
