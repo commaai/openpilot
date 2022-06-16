@@ -201,7 +201,7 @@ def create_measurement_msg(meas: GNSSMeasurement):
 
   c.ephemerisSource.type = source_type.value
   c.ephemerisSource.gpsWeek = week
-  c.ephemerisSource.gpsTimeOfWeek = time_of_week
+  c.ephemerisSource.gpsTimeOfWeek = int(time_of_week)
   return c
 
 
