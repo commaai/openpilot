@@ -156,7 +156,7 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = True # CC is on
       # Tune
       ret.steerActuatorDelay = 0.11
-      ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
+      ret.lateralTuning.pid.kpBP = [10., 41.0]
       ret.lateralTuning.pid.kpV = [0.13, 0.23]
 
     elif candidate == CAR.BOLT_EUV:
