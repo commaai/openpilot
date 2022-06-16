@@ -329,8 +329,7 @@ def get_brand_candidates(logcan, sendcan, versions):
   for query in queries:
     ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses))
 
-  cloudlog.event("ecu responses", ecu_response_addrs=ecu_responses)
-  print("ecu responses", ecu_responses)
+  cloudlog.event("ecu responses", ecu_responses=ecu_responses)
 
   brand_candidates = set()
   for r in REQUESTS:
@@ -339,10 +338,8 @@ def get_brand_candidates(logcan, sendcan, versions):
       # brand is a candidate if any of its platforms is a complete subset of the response ecus
       candidate_addrs = {(addr, sub_addr) for ecu_type, addr, sub_addr in candidate_fw.keys() if ecu_type in ESSENTIAL_ECUS}
       if len(ecu_addrs.intersection(candidate_addrs)) == len(candidate_addrs):
-        # print('Candidate: {}'.format(candidate))
         brand_candidates.add(r.brand)
 
-  print('Brand candidates:', brand_candidates)
   return brand_candidates
 
 
@@ -358,10 +355,11 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   if extra is not None:
     versions.update(extra)
 
+  # log brand candidates
   brand_candidates = get_brand_candidates(logcan, sendcan, versions)
+  cloudlog.event("brand candidates", ecu_response_addrs=brand_candidates)
+
   for brand, brand_versions in versions.items():
-    if brand_candidates and brand not in brand_candidates:
-      continue
     for c in brand_versions.values():
       for ecu_type, addr, sub_addr in c.keys():
         a = (brand, addr, sub_addr)
