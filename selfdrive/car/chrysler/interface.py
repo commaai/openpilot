@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car.chrysler.values import CAR
+from panda import Panda
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car.chrysler.values import CAR, RAM_CARS
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.controls.lib.latcontrol_torque import set_torque_tune
 
@@ -11,7 +12,9 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "chrysler"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
+
+    param = Panda.FLAG_CHRYSLER_RAM if candidate in RAM_CARS else None
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler, param)]
 
     # Speed conversion:              20, 45 mph
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
