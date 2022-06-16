@@ -116,7 +116,12 @@ class Laikad:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       elif not valid[2]:
         cloudlog.error("Gnss kalman filter state is nan")
-      self.init_gnss_localizer(est_pos)
+      if est_pos is not None:
+        cloudlog.info(f"Reset kalman filter with {est_pos}")
+        self.init_gnss_localizer(est_pos)
+      else:
+        cloudlog.info("Could not reset kalman filter")
+        return
     if len(measurements) > 0:
       kf_add_observations(self.gnss_kf, t, measurements)
     else:
@@ -131,8 +136,7 @@ class Laikad:
 
   def init_gnss_localizer(self, est_pos):
     x_initial, p_initial_diag = np.copy(GNSSKalman.x_initial), np.copy(np.diagonal(GNSSKalman.P_initial))
-    if est_pos is not None:
-      x_initial[GStates.ECEF_POS] = est_pos
+    x_initial[GStates.ECEF_POS] = est_pos
     p_initial_diag[GStates.ECEF_POS] = 1000 ** 2
     self.gnss_kf.init_state(x_initial, covs_diag=p_initial_diag)
 
