@@ -647,7 +647,7 @@ class Controls:
     if self.joystick_mode and self.sm.rcv_frame['testJoystick'] > 0 and self.sm['testJoystick'].buttons[0]:
       CC.cruiseControl.cancel = True
     if len(speeds := self.sm['longitudinalPlan'].speeds) > 1:
-      CC.cruiseControl.override = CS.cruiseState.standstill and speeds[-1] > self.CP.vEgoStarting
+      CC.cruiseControl.override = self.enabled and CS.cruiseState.standstill and speeds[-1] > self.CP.vEgoStarting
 
     hudControl = CC.hudControl
     hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
