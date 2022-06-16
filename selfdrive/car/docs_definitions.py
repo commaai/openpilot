@@ -81,7 +81,7 @@ class CarInfo:
       # StarColumns
       Column.LONGITUDINAL: Star.FULL if CP.openpilotLongitudinalControl and not CP.radarOffCan else Star.EMPTY,
       Column.FSR_LONGITUDINAL: Star.FULL if min_enable_speed <= 0. else Star.EMPTY,
-      Column.FSR_STEERING: Star.FULL if min_steer_speed <= 0 else Star.EMPTY,
+      Column.FSR_STEERING: Star.FULL if min_steer_speed <= 0. else Star.EMPTY,
       Column.STEERING_TORQUE: Star.FULL if self.good_torque else Star.EMPTY,  # TODO: remove hardcoding and use maxLateralAccel
       Column.MAINTAINED: Star.FULL if CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none else Star.EMPTY,
     }
