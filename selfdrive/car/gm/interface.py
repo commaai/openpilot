@@ -155,7 +155,6 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = False # Stock ACC
       ret.pcmCruise = True # CC is on
       # Tune
-      ret.steerRateCost = .4
       ret.steerActuatorDelay = 0.11
       ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV = [0.13, 0.23]
@@ -172,7 +171,6 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = False # Stock ACC
       ret.pcmCruise = True # CC is on
       # Tune
-      ret.steerRateCost = 0.5
       ret.steerActuatorDelay = 0.
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]
