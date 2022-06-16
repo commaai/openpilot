@@ -30,8 +30,7 @@ class CarController():
     if c.enabled:
       if c.cruiseControl.override:
         # Mazda Stop and Go requires a RES button (or gas) press if the car stops more than 3 seconds
-        # Send Resume button at 20hz if we're engaged at standstill to support full stop and go!
-        # TODO: improve the resume trigger logic by looking at actual radar data
+        # Send Resume button at when planner wants car to move
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP.carFingerprint, CS.crz_btns_counter, Buttons.RESUME))
 
     if c.cruiseControl.cancel:
