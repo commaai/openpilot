@@ -6,10 +6,10 @@ import numpy as np
 
 import pyopencl as cl  # install with `PYOPENCL_CL_PRETEND_VERSION=2.0 pip install pyopencl`
 
-from selfdrive.hardware import PC, TICI
+from system.hardware import PC, TICI
 from common.basedir import BASEDIR
 from selfdrive.test.openpilotci import BASE_URL, get_url
-from selfdrive.version import get_commit
+from system.version import get_commit
 from selfdrive.camerad.snapshot.snapshot import yuv_to_rgb
 from tools.lib.logreader import LogReader
 from tools.lib.filereader import FileReader
