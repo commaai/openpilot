@@ -1,7 +1,8 @@
+from cereal import car
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, create_wheel_buttons
-from selfdrive.car.chrysler.values import CAR, CarControllerParams
+from selfdrive.car.chrysler.values import CAR, RAM_CARS, CarControllerParams
 
 
 class CarController:
@@ -23,9 +24,7 @@ class CarController:
   def update(self, CC, CS):
     # this seems needed to avoid steering faults and to force the sync with the EPS counter
     if self.prev_lkas_frame == CS.lkas_counter:
-      new_actuators = CC.actuators.copy()
-      new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
-      return new_actuators, []
+      return car.CarControl.Actuators.new_message(), []
 
     actuators = CC.actuators
 
@@ -37,14 +36,14 @@ class CarController:
 
     #moving_fast = CS.out.vEgo > self.CP.minSteerSpeed  # for status message
 
-    if self.CP.carFingerprint not in (CAR.RAM_1500, ):
+    if self.CP.carFingerprint not in RAM_CARS:
       if CS.out.vEgo > (self.CP.minSteerSpeed - 0.5):  # for command high bit
         self.gone_fast_yet = 1 #2 means LKAS enabled
       elif self.CP.carFingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
         if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
           self.gone_fast_yet = 0  # < 14.5m/s stock turns off this bit, but fine down to 13.5
 
-    elif self.CP.carFingerprint in (CAR.RAM_1500, ):
+    elif self.CP.carFingerprint in RAM_CARS:
       if CS.out.vEgo > (self.CP.minSteerSpeed):  # for command high bit
         self.gone_fast_yet = 2 #2 means LKAS enabled
       elif CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
@@ -76,11 +75,9 @@ class CarController:
     # *** control msgs ***
 
     if CC.cruiseControl.cancel:
-      can_sends.append(create_wheel_buttons(self.packer, CS.button_counter + 1, self.CP.carFingerprint, cancel=True, acc_resume = False))
-    elif CS.out.cruiseState.standstill:
-      can_sends.append(create_wheel_buttons(self.packer, CS.button_counter + 1, self.CP.carFingerprint, cancel=False, acc_resume = True))
+      can_sends.append(create_wheel_buttons(self.packer, CS.button_counter + 1, self.params.BUTTONS_BUS, cancel=True))
 
-    # LKAS_HEARTBIT is forwarded by Panda so no need to send it here.
+    # LKAS_HEARTBIT is forwarded by panda so no need to send it here.
     # frame is 50Hz (0.02s period) #Becuase we skip every other frame
     if self.frame % 12 == 0:  # 0.25s period #must be 12 to acheive .25s instead of 25 because we skip every other frame
       if CS.lkas_car_model != -1:
