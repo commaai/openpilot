@@ -2,8 +2,8 @@
 import os
 import time
 import numpy as np
-from selfdrive.hardware.tici.hardware import Tici
-from selfdrive.hardware.tici.pins import GPIO
+from system.hardware.tici.hardware import Tici
+from system.hardware.tici.pins import GPIO
 from common.gpio import gpio_init, gpio_set
 
 def read_power():
