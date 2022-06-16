@@ -93,7 +93,7 @@ class CarController():
           # Cancel ACC if it's engaged with OP disengaged.
           self.graButtonStatesToSend = BUTTON_STATES.copy()
           self.graButtonStatesToSend["cancel"] = True
-        elif c.cruiseControl.override:
+        elif c.cruiseControl.resume:
           # Send Resume button when planner wants car to move
           self.graButtonStatesToSend = BUTTON_STATES.copy()
           self.graButtonStatesToSend["resumeCruise"] = True

@@ -78,7 +78,7 @@ class CarController:
           self.last_button_frame = self.frame
 
         # cruise standstill resume
-        elif CC.cruiseControl.override:
+        elif CC.cruiseControl.resume:
           can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, False, True))
           self.last_button_frame = self.frame
     else:

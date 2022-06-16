@@ -28,7 +28,7 @@ class CarController():
       self.steer_rate_limited = new_steer != apply_steer
 
     if c.enabled:
-      if c.cruiseControl.override:
+      if c.cruiseControl.resume:
         # Mazda Stop and Go requires a RES button (or gas) press if the car stops more than 3 seconds
         # Send Resume button at when planner wants car to move
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP.carFingerprint, CS.crz_btns_counter, Buttons.RESUME))
