@@ -90,6 +90,8 @@ class Laikad:
       dat = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
       dat.gnssMeasurements = {
+        "gpsWeek": report.gpsWeek,
+        "gpsTimeOfWeek": report.rcvTow,
         "positionECEF": measurement_msg(value=ecef_pos, std=pos_std, valid=kf_valid),
         "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std, valid=kf_valid),
         "positionFixECEF": measurement_msg(value=pos_fix, std=pos_fix_residual, valid=len(pos_fix) > 0),
