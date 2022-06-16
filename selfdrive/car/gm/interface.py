@@ -84,9 +84,11 @@ class CarInterface(CarInterfaceBase):
 
     # supports stop and go, but initial engage must (conservatively) be above 18mph
     ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+    # TODO: Should this be changed to -1?
+    #       Newer cars (that are still ASCM-based) use -1 for minEnableSpeed with the comment "engage speed is decided by pcm"
 
     if candidate == CAR.VOLT:
-      ret.transmissionType = TransmissionType.direct
+      ret.transmissionType = TransmissionType.direct # EV (or hybrid)
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
@@ -147,41 +149,38 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.SILVERADO:
       ret.minEnableSpeed = -1.
-      ret.minSteerSpeed = -1 * CV.MPH_TO_MS
       ret.mass = 2400. + STD_CARGO_KG
       ret.wheelbase = 3.745
       ret.steerRatio = 16.3
       ret.centerToFront = ret.wheelbase * .49
+      ret.networkLocation = NetworkLocation.fwdCamera # Uses Cam Harness
+      ret.radarOffCan = True # No Radar
+      ret.openpilotLongitudinalControl = False # Stock ACC
+      ret.pcmCruise = True # CC is on
+      # Tune
       ret.steerRateCost = .4
       ret.steerActuatorDelay = 0.11
-      ret.networkLocation = NetworkLocation.fwdCamera # Uses Cam Harness
-      ret.radarOffCan = True # No Radar
-      ret.openpilotLongitudinalControl = False # Stock ACC
-      ret.pcmCruise = True # CC is on
-
-      ######################   Get tune
+      ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
+      ret.lateralTuning.pid.kpV = [0.13, 0.23]
 
     elif candidate == CAR.BOLT_EUV:
-      ret.transmissionType = TransmissionType.direct
+      ret.transmissionType = TransmissionType.direct # EV (or hybrid)
       ret.minEnableSpeed = -1
-      ret.minSteerSpeed = 5 * CV.MPH_TO_MS
-      ret.mass = 1616. + STD_CARGO_KG
-      ret.wheelbase = 2.60096
-      ret.steerRatio = 16.8
-      ret.steerRatioRear = 0.
-      ret.centerToFront = 2.0828 #ret.wheelbase * 0.4 # wild guess
-      tire_stiffness_factor = 1.0
-      
+      ret.mass = 1669. + STD_CARGO_KG
+      ret.wheelbase = 2.675
+      ret.steerRatio = 16.8 # Not measured
+      ret.centerToFront = ret.wheelbase * 0.4
       ret.networkLocation = NetworkLocation.fwdCamera # Uses Cam Harness
       ret.radarOffCan = True # No Radar
       ret.openpilotLongitudinalControl = False # Stock ACC
       ret.pcmCruise = True # CC is on
-      
+      # Tune
       ret.steerRateCost = 0.5
       ret.steerActuatorDelay = 0.
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]
       ret.lateralTuning.pid.kf = 0.0002
+      tire_stiffness_factor = 1.0
 
     # Set Panda to camera forwarding mode
     if ret.networkLocation == NetworkLocation.fwdCamera:
