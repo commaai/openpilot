@@ -43,13 +43,12 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.88  # 2021 Ram 1500
       ret.steerRatio = 16.3  # Overall Ratio from https://s3.amazonaws.com/chryslermedia.iconicweb.com/mediasite/specs/2019_Ram_1500_SP160igecpp6jn85geq3o0r4cs90.pdf
       ret.mass = 2493. + STD_CARGO_KG  # kg curb weight 2021 Ram 1500
-      MAX_LAT_ACCEL = 2.6
-      FRICTION = .05
+      ret.maxLateralAccel = 2.4
       ret.steerActuatorDelay = 0.1
       ret.steerRateCost = 1.0
       ret.centerToFront = ret.wheelbase * 0.4 # just a guess
       ret.minSteerSpeed = 14.5
-      set_torque_tune(ret.lateralTuning, MAX_LAT_ACCEL, FRICTION)
+      set_torque_tune(ret.lateralTuning, ret.maxLateralAccel, 0.05)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
