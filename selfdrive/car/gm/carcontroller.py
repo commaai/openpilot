@@ -12,6 +12,7 @@ GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
 
+
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.start_time = 0.

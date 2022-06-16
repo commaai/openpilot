@@ -16,6 +16,7 @@ NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
+
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
@@ -62,7 +63,6 @@ class CarInterface(CarInterfaceBase):
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
     ret.openpilotLongitudinalControl = True # For ASCM, OP performs long
-    
     tire_stiffness_factor = 0.444  # not optimized yet
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
@@ -100,7 +100,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
-      
+
     elif candidate == CAR.MALIBU:
       ret.mass = 1496. + STD_CARGO_KG
       ret.wheelbase = 2.83
@@ -140,7 +140,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.302
       ret.steerRatio = 17.3
       ret.centerToFront = ret.wheelbase * 0.49
-      
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
@@ -202,7 +201,7 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_loopback)
 
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-    # TODO: Depends on OP PR #24764 (Switch to ECMPRDNL2)
+
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       be = create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
 
@@ -211,7 +210,8 @@ class CarInterface(CarInterfaceBase):
         be.type = ButtonType.unknown
 
       ret.buttonEvents = [be]
-    # TODO: Depends on 
+
+    # TODO: Depends on OP PR #24764 (Switch to ECMPRDNL2)
     events = self.create_common_events(ret, extra_gears = [GearShifter.sport, GearShifter.low,
                                                            GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise)

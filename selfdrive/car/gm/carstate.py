@@ -6,7 +6,8 @@ from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
 
 TransmissionType = car.CarParams.TransmissionType
-# TODO: Switch from hardcoded car to CarParams trans
+
+
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
