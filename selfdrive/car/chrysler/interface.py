@@ -25,14 +25,21 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     ret.minSteerSpeed = 3.8  # m/s
 
-    if candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
+    ret.centerToFront = ret.wheelbase * 0.44
+
+    # Chrysler
+    if candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
+      # TODO allow 2019 cars to steer down to 13 m/s if already engaged.
+      ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
+
+    # Jeep
+    elif candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
       ret.wheelbase = 2.91  # in meters
       ret.steerRatio = 16.7 #  2020 17.9:1 (V-6 4x2); 16.5:1 on SRT and Trackhawk; 16.7:1 (all other vehicles)  https://s3.amazonaws.com/chryslermedia.iconicweb.com/mediasite/specs/2020_JP_Grand_Cherokee_SPmar9cqpguibpb9l0c26hemi38d.pdf
       ret.steerActuatorDelay = 0.2  # in seconds
 
-    ret.centerToFront = ret.wheelbase * 0.44
-
-    if candidate in (CAR.RAM_1500):
+    # Ram
+    elif candidate == CAR.RAM_1500:
       ret.wheelbase = 3.88  # 2021 Ram 1500
       ret.steerRatio = 16.3  # Overall Ratio from https://s3.amazonaws.com/chryslermedia.iconicweb.com/mediasite/specs/2019_Ram_1500_SP160igecpp6jn85geq3o0r4cs90.pdf
       ret.mass = 2493. + STD_CARGO_KG  # kg curb weight 2021 Ram 1500
@@ -47,28 +54,6 @@ class CarInterface(CarInterfaceBase):
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
-
-    if candidate in (CAR.RAM_2500):
-      front_stiffness = 0.36 # want to change these so that front / rear stiffness ratio is learned at ~1.0
-      rear_stiffness = 0.36
-      ret.wheelbase = 3.785  # in meters
-      ret.steerRatio = 15.61  # just a guess
-      ret.mass = 3405. + STD_CARGO_KG  # kg curb weight 2021 Ram 2500
-      MAX_LAT_ACCEL = 1.0
-      FRICTION = .05
-      ret.steerActuatorDelay = 0.1
-      ret.steerRateCost = 1.0  # may need tuning
-      ret.centerToFront = ret.wheelbase * 0.38 # calculated from 100% - (front axle weight/total weight)
-      ret.minSteerSpeed = 16.0
-      set_torque_tune(ret.lateralTuning, MAX_LAT_ACCEL, FRICTION)
-
-
-      ret.tireStiffnessFront, ret.tireStiffnessRear = ret.tireStiffnessFront*front_stiffness, ret.tireStiffnessRear*rear_stiffness
-
-
-    if candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
-      # TODO allow 2019 cars to steer down to 13 m/s if already engaged.
-      ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
 
     # starting with reasonable value for civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)

@@ -2,7 +2,7 @@
 from opendbc.can.parser import CANParser
 from cereal import car
 from selfdrive.car.interfaces import RadarInterfaceBase
-from selfdrive.car.chrysler.values import DBC, CAR
+from selfdrive.car.chrysler.values import DBC
 
 RADAR_MSGS_C = list(range(0x2c2, 0x2d4+2, 2))  # c_ messages 706,...,724
 RADAR_MSGS_D = list(range(0x2a2, 0x2b4+2, 2))  # d_ messages
@@ -10,6 +10,10 @@ LAST_MSG = max(RADAR_MSGS_C + RADAR_MSGS_D)
 NUMBER_MSGS = len(RADAR_MSGS_C) + len(RADAR_MSGS_D)
 
 def _create_radar_can_parser(car_fingerprint):
+  dbc = DBC[car_fingerprint]['radar']
+  if dbc is None:
+    return None
+
   msg_n = len(RADAR_MSGS_C)
   # list of [(signal name, message name or number), (...)]
   # [('RADAR_STATE', 1024),
@@ -23,7 +27,7 @@ def _create_radar_can_parser(car_fingerprint):
                      ['REL_SPEED'] * msg_n,
                      RADAR_MSGS_C * 2 +  # LONG_DIST, LAT_DIST
                      RADAR_MSGS_D))  # REL_SPEED
-                     
+
   checks = list(zip(RADAR_MSGS_C +
                     RADAR_MSGS_D,
                     [20] * msg_n +  # 20Hz (0.05s)
@@ -41,16 +45,12 @@ def _address_to_track(address):
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
+    self.rcp = _create_radar_can_parser(CP.carFingerprint)
     self.updated_messages = set()
     self.trigger_msg = LAST_MSG
-    self.no_radar = CP.carFingerprint in (CAR.RAM_1500, CAR.RAM_2500)
-    if self.no_radar:
-      self.rcp = None
-    else:
-      self.rcp = _create_radar_can_parser(CP.carFingerprint)
 
   def update(self, can_strings):
-    if self.no_radar:
+    if self.rcp is None:
       return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)

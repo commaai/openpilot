@@ -1,7 +1,5 @@
 from cereal import car
-from selfdrive.car import make_can_msg
 from selfdrive.car.chrysler.values import CAR
-
 
 GearShifter = car.CarState.GearShifter
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -10,12 +8,12 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
   # LKAS_HUD 0x2a6 (678) Controls what lane-keeping icon is displayed.
 
   #if hud_alert in (VisualAlert.steerRequired):
-  #  if fingerprint in (CAR.RAM_1500, CAR.RAM_2500):
+  #  if fingerprint in (CAR.RAM_1500, ):
   #    msg = b'\x00\x00\x0F\x00\x00\x00\x00\x00'
   #  else:
   #    msg = b'\x00\x00\x00\x03\x00\x00\x00\x00'
   #  return make_can_msg(0x2a6, msg, 0)
-    
+
   lkasdisabled = CS.lkasdisabled
   color = 1  # default values are for park or neutral in 2017 are 0 0, but trying 1 1 for 2019
   lines = 1
@@ -32,7 +30,7 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
   # 09 left lane close
   # 0A right lane close
   # 0B Left Lane very close
-  # 0C Right Lane very close 
+  # 0C Right Lane very close
   # 0D left cross cross
   # 0E right lane cross
 
@@ -54,18 +52,18 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
     lines = 0
     alerts = 0
 
-  if hud_alert in [VisualAlert.ldw]: #possible use this instead
+  if hud_alert in [VisualAlert.ldw]: # possible use this instead
     color = 4
     lines = 0
     alerts = 6
 
-  if hud_alert in [VisualAlert.steerRequired]: 
+  if hud_alert in [VisualAlert.steerRequired]:
     color = 0
     lines = 0
     alerts = 0
     carmodel = 0xf
 
-  if fingerprint in (CAR.RAM_1500, CAR.RAM_2500):
+  if fingerprint in (CAR.RAM_1500, ):
     values = {
       "Auto_High_Beam": CS.autoHighBeamBit,
       "LKAS_ICON_COLOR": color,  # byte 0, last 2 bits
@@ -74,17 +72,14 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
       "LKAS_ALERTS": alerts,  # byte 3, last 4 bits
       "LKAS_Disabled":lkasdisabled,
     }
-
   else:
     values = {
       "LKAS_ICON_COLOR": color,  # byte 0, last 2 bits
       "CAR_MODEL": CS.lkas_car_model,  # byte 1
       "LKAS_LANE_LINES": lines,  # byte 2, last 4 bits
-      "LKAS_ALERTS": alerts,  # byte 3, last 4 bits 
+      "LKAS_ALERTS": alerts,  # byte 3, last 4 bits
       "LKAS_Disabled":lkasdisabled,
-      }
-
-  
+    }
 
   return packer.make_can_msg("DAS_6", 0, values)
 
@@ -106,9 +101,9 @@ def create_wheel_buttons(packer, frame, fingerprint, cancel = False, acc_resume 
     "COUNTER": frame % 0x10,
     "ACC_Resume": acc_resume,
   }
-  if fingerprint in (CAR.RAM_1500, CAR.RAM_2500):
+  if fingerprint in (CAR.RAM_1500, ):
     bus = 2
   else:
-    bus = 0 
+    bus = 0
 
   return packer.make_can_msg("Cruise_Control_Buttons", bus, values)
