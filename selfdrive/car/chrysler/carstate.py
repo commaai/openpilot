@@ -3,7 +3,7 @@ from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, CAR
+from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
 
 
 class CarState(CarStateBase):
@@ -26,8 +26,8 @@ class CarState(CarStateBase):
     ret.seatbeltUnlatched = cp.vl["ORC_1"]['Driver_Seatbelt_Status'] == 1  # 1 is unbuckled
 
     # brake pedal
-    ret.brakePressed = cp.vl["ESP_1"]['Brake_Pedal_State'] == 1  # Physical brake pedal switch
     ret.brake = 0
+    ret.brakePressed = cp.vl["ESP_1"]['Brake_Pedal_State'] == 1  # Physical brake pedal switch
 
     # gas pedal
     ret.gas = cp.vl["ECM_5"]["Accelerator_Position"]
@@ -48,8 +48,8 @@ class CarState(CarStateBase):
     # ret.yawRate = cp.vl["ESP_4"]["Yaw_Rate"] #deg/s
 
     # button presses
-    ret.leftBlinker = (cp.vl["Steering_Column_Commands"]["Turn_Signal_Status"] == 1)
-    ret.rightBlinker = (cp.vl["Steering_Column_Commands"]["Turn_Signal_Status"] == 2)
+    ret.leftBlinker = cp.vl["Steering_Column_Commands"]["Turn_Signal_Status"] == 1
+    ret.rightBlinker = cp.vl["Steering_Column_Commands"]["Turn_Signal_Status"] == 2
     ret.genericToggle = bool(cp.vl["Steering_Column_Commands"]["High_Beam_Lever_Status"])
 
     # steering wheel
@@ -68,22 +68,10 @@ class CarState(CarStateBase):
 
     # cruise state
     self.lkas_counter = cp_cam.vl["DAS_3"]["COUNTER"]
-    self.lanelines = cp_cam.vl["DAS_6"]["LKAS_LANE_LINES"]
-    self.iconcolor = cp_cam.vl["DAS_6"]["LKAS_ICON_COLOR"]
     self.lkas_car_model = cp_cam.vl["DAS_6"]["CAR_MODEL"]
-    self.lkasalerts = cp_cam.vl["DAS_6"]["LKAS_ALERTS"]
-    self.accaccel = cp.vl["Cruise_Control_Buttons"]["ACC_Accel"]
-    self.accdecel = cp.vl["Cruise_Control_Buttons"]["ACC_Decel"]
-    self.acccancel = cp.vl["Cruise_Control_Buttons"]["ACC_Cancel"]
-    self.accdistancedec = cp.vl["Cruise_Control_Buttons"]["ACC_Distance_Dec"]
-    self.accdistanceinc = cp.vl["Cruise_Control_Buttons"]["ACC_Distance_Inc"]
-    self.accresume = cp.vl["Cruise_Control_Buttons"]["ACC_Resume"]
-    self.cruiseonoff = cp.vl["Cruise_Control_Buttons"]["Cruise_OnOff"]
-    self.acconoff = cp.vl["Cruise_Control_Buttons"]["ACC_OnOff"]
     self.button_counter = cp.vl["Cruise_Control_Buttons"]["COUNTER"]
-    self.cruise = cp.vl["Cruise_Control_Buttons"]
 
-    if self.CP.carFingerprint in (CAR.RAM_1500, ):
+    if self.CP.carFingerprint in RAM_CARS:
       self.lkasbutton = (cp.vl["Center_Stack_2"]["LKAS_Button"] == 1) or (cp.vl["Center_Stack_1"]["LKAS_Button"] == 1)
       if self.lkasbutton == 1 and self.lkasdisabled == 0 and self.lkasbuttonprev == 0:
         self.lkasdisabled = 1
@@ -190,7 +178,7 @@ class CarState(CarStateBase):
       ]
       checks += [("BSM_1", 2)]
 
-    if CP.carFingerprint in (CAR.RAM_1500, ):
+    if CP.carFingerprint in RAM_CARS:
       signals += [
         ("LKAS_Button", "Center_Stack_2"),  # LKAS Button
         ("DASM_FAULT", "EPS_3"),  # EPS Fault
@@ -227,7 +215,7 @@ class CarState(CarStateBase):
       ("DAS_6", 15),
     ]
 
-    if CP.carFingerprint in (CAR.RAM_1500, ):
+    if CP.carFingerprint in RAM_CARS:
       signals += [
         ("ACC_Engaged", "DAS_3"),  # ACC Engaged
         ("ACC_StandStill", "DAS_3"),  # ACC Engaged

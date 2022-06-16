@@ -27,13 +27,13 @@ class CAR:
 class CarControllerParams:
   def __init__(self, CP):
     if CP.carFingerprint in RAM_CARS:
-      self.STEER_MAX = 0
+      self.STEER_MAX = 363         # higher than this faults the EPS
       self.STEER_DELTA_UP = 12
       self.STEER_DELTA_DOWN = 12
       self.STEER_ERROR_MAX = 250
     else:
       # Jeep + Chrysler
-      self.STEER_MAX = 261         # 262 faults in Chrysler 360 faults in ram
+      self.STEER_MAX = 261         # higher than this faults the EPS
       self.STEER_DELTA_UP = 3      # 3 is stock. 100 is fine. 200 is too much it seems
       self.STEER_DELTA_DOWN = 3    # no faults on the way down it seems
       self.STEER_ERROR_MAX = 250
