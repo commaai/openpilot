@@ -78,6 +78,7 @@ class CarController:
       near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
       # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
       can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
+      # Vehicles with factory camera-based ACC expect friction brake on PT
       can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
 
     # Send dashboard UI commands (ACC status), 25hz
@@ -112,7 +113,7 @@ class CarController:
     lka_active = CS.lkas_status == 1
     lka_critical = lka_active and abs(actuators.steer) > 0.9
     lka_icon_status = (lka_active, lka_critical)
-    # SW_GMLAN is not yet available on Cam Harness
+    # SW_GMLAN not yet on cam harness
     if CS.CP.networkLocation != NetworkLocation.fwdCamera and self.frame % self.params.CAMERA_KEEPALIVE_STEP == 0 or lka_icon_status != self.lka_icon_status_last:
       steer_alert = hud_alert in (VisualAlert.steerRequired, VisualAlert.ldw)
       can_sends.append(gmcan.create_lka_icon_command(CanBus.SW_GMLAN, lka_active, lka_critical, steer_alert))
