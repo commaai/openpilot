@@ -40,10 +40,8 @@ class CarControllerParams:
       self.STEER_ERROR_MAX = 250
       self.BUTTONS_BUS = 0
 
+
 RAM_CARS = {CAR.RAM_1500, }
-
-STEER_THRESHOLD = 120
-
 
 @dataclass
 class ChryslerCarInfo(CarInfo):

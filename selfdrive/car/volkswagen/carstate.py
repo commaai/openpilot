@@ -50,7 +50,6 @@ class CarState(CarStateBase):
     ret.brake = pt_cp.vl["ESP_05"]["ESP_Bremsdruck"] / 250.0  # FIXME: this is pressure in Bar, not sure what OP expects
     ret.brakePressed = bool(pt_cp.vl["ESP_05"]["ESP_Fahrer_bremst"])
     ret.parkingBrake = bool(pt_cp.vl["Kombi_01"]["KBI_Handbremse"])  # FIXME: need to include an EPB check as well
-    self.esp_hold_confirmation = pt_cp.vl["ESP_21"]["ESP_Haltebestaetigung"]
 
     # Update gear and/or clutch position data.
     if trans_type == TransmissionType.automatic:
@@ -105,6 +104,7 @@ class CarState(CarStateBase):
       # ACC okay but disabled (1), or a radar visibility or other fault/disruption (6 or 7)
       ret.cruiseState.available = False
       ret.cruiseState.enabled = False
+    ret.cruiseState.standstill = bool(pt_cp.vl["ESP_21"]["ESP_Haltebestaetigung"])
     ret.accFaulted = pt_cp.vl["TSK_06"]["TSK_Status"] in (6, 7)
 
     # Update ACC setpoint. When the setpoint is zero or there's an error, the
