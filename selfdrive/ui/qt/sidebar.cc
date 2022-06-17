@@ -20,7 +20,7 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, QColor c, int y) {
   p.drawRoundedRect(rect, 20, 20);
 
   p.setPen(QColor(0xff, 0xff, 0xff));
-  configFont(p, "Open Sans", 35, "Bold");
+  configFont(p, "Inter", 35, "Bold");
   const QRect r = QRect(rect.x() + 30, rect.y(), rect.width() - 40, rect.height());
   p.drawText(r, Qt::AlignCenter, label);
 }
@@ -103,7 +103,7 @@ void Sidebar::paintEvent(QPaintEvent *event) {
     x += 37;
   }
 
-  configFont(p, "Open Sans", 35, "Regular");
+  configFont(p, "Inter", 35, "Regular");
   p.setPen(QColor(0xff, 0xff, 0xff));
   const QRect r = QRect(50, 247, 100, 50);
   p.drawText(r, Qt::AlignCenter, net_type);
