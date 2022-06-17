@@ -24,9 +24,12 @@ class CarState(CarStateBase):
                         cp.vl["DOORS"]["DOOR_OPEN_RR"]])
     ret.seatbeltUnlatched = cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_UNLATCHED"] == 1
 
-    ret.brakePressed = cp.vl["BRAKE_2"]["BRAKE_PRESSED_2"] == 5  # human-only
+    # brake pedal
     ret.brake = 0
-    ret.gas = cp.vl["ACCEL_GAS_134"]["ACCEL_134"]
+    ret.brakePressed = cp.vl["ESP_1"]['Brake_Pedal_State'] == 1  # Physical brake pedal switch
+
+    # gas pedal
+    ret.gas = cp.vl["ECM_5"]["Accelerator_Position"]
     ret.gasPressed = ret.gas > 1e-5
 
     ret.espDisabled = (cp.vl["TRACTION_BUTTON"]["TRACTION_OFF"] == 1)
@@ -83,8 +86,8 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_FR", "DOORS"),
       ("DOOR_OPEN_RL", "DOORS"),
       ("DOOR_OPEN_RR", "DOORS"),
-      ("BRAKE_PRESSED_2", "BRAKE_2"),
-      ("ACCEL_134", "ACCEL_GAS_134"),
+      ("Brake_Pedal_State", "ESP_1"),
+      ("Accelerator_Position", "ECM_5"),
       ("SPEED_LEFT", "SPEED_1"),
       ("SPEED_RIGHT", "SPEED_1"),
       ("WHEEL_SPEED_FL", "WHEEL_SPEEDS"),
@@ -110,14 +113,14 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
-      ("BRAKE_2", 50),
+      ("ESP_1", 50),
       ("EPS_STATUS", 100),
       ("SPEED_1", 100),
       ("WHEEL_SPEEDS", 50),
       ("STEERING", 100),
       ("ACC_2", 50),
       ("GEAR", 50),
-      ("ACCEL_GAS_134", 50),
+      ("ECM_5", 50),
       ("WHEEL_BUTTONS", 50),
       ("DASHBOARD", 15),
       ("STEERING_LEVERS", 10),
