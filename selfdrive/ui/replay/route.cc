@@ -9,7 +9,7 @@
 
 #include <array>
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/replay.h"
 #include "selfdrive/ui/replay/util.h"

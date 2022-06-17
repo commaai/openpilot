@@ -74,7 +74,7 @@ const int ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
-const int EXPOSURE_TIME_MAX = 1618; // with HDR, slowest ss, 40ms
+const int EXPOSURE_TIME_MAX = 0x0855; // with HDR, slowest ss, 40ms
 
 // ************** low level camera helpers ****************
 int do_cam_control(int fd, int op_code, void *handle, int size) {
@@ -837,7 +837,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_RGB_ROAD, VISION_STREAM_ROAD, !env_disable_road);
   s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_RGB_WIDE_ROAD, VISION_STREAM_WIDE_ROAD, !env_disable_wide_road);
 
-  s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
 
@@ -948,7 +947,6 @@ void cameras_close(MultiCameraState *s) {
   s->road_cam.camera_close();
   s->wide_road_cam.camera_close();
 
-  delete s->sm;
   delete s->pm;
 }
 
@@ -1221,7 +1219,7 @@ static void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal
   framed.setTemperaturesC({temp_0, temp_1});
 }
 
-static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
+static void driver_cam_auto_exposure(CameraState *c) {
   struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
   const CameraBuf *b = &c->buf;
   static ExpRect rect = {96, 1832, 2, 242, 1148, 4};
@@ -1229,8 +1227,7 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 }
 
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  s->sm->update(0);
-  driver_cam_auto_exposure(c, *(s->sm));
+  driver_cam_auto_exposure(c);
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
