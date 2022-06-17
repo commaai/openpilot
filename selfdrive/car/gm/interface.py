@@ -154,10 +154,12 @@ class CarInterface(CarInterfaceBase):
       ret.radarOffCan = True # No Radar
       ret.openpilotLongitudinalControl = False # Stock ACC
       ret.pcmCruise = True # CC is on
-      # Tune
+      # Tune (Thanks Skip)
       ret.steerActuatorDelay = 0.11
-      ret.lateralTuning.pid.kpBP = [10., 41.0]
-      ret.lateralTuning.pid.kpV = [0.13, 0.23]
+      ret.lateralTuning.pid.kpBP = [11.0, 15.5, 22.0, 31.0]
+      ret.lateralTuning.pid.kpV = [0.11, 0.14, 0.18, 0.23]
+      # Default ki is 0.0
+      # Default kf for reference: ret.lateralTuning.pid.kf = 0.00004
 
     elif candidate == CAR.BOLT_EUV:
       ret.transmissionType = TransmissionType.direct # EV (or hybrid)
