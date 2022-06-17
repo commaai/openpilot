@@ -39,7 +39,7 @@ class Laikad:
     self.save_ephemeris = save_ephemeris
     self.load_cache()
     self.posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
-    self.last_pos_fix = last_known_position if not None else []
+    self.last_pos_fix = last_known_position if last_known_position is not None else []
     self.last_pos_residual = []
     self.last_pos_fix_t = None
 
@@ -65,14 +65,14 @@ class Laikad:
   def process_ublox_msg(self, ublox_msg, ublox_mono_time: int, block=False):
     if ublox_msg.which == 'measurementReport':
       t = ublox_mono_time * 1e-9
-      report = ublox_msg.measurementReport      
+      report = ublox_msg.measurementReport
       if report.gpsWeek > 0:
         latest_msg_t = GPSTime(report.gpsWeek, report.rcvTow)
         self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
 
       new_meas = read_raw_ublox(report)
       processed_measurements = process_measurements(new_meas, self.astro_dog)
-      
+
       if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
         min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 4
         pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
