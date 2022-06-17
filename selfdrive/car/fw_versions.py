@@ -12,7 +12,7 @@ from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 
@@ -146,12 +146,14 @@ REQUESTS: List[Request] = [
     "volkswagen",
     [VOLKSWAGEN_VERSION_REQUEST_MULTI],
     [VOLKSWAGEN_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar],
     rx_offset=VOLKSWAGEN_RX_OFFSET,
   ),
   Request(
     "volkswagen",
     [VOLKSWAGEN_VERSION_REQUEST_MULTI],
     [VOLKSWAGEN_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.engine, Ecu.transmission],
   ),
   # Mazda
   Request(

@@ -13,7 +13,7 @@
 #include "common/mat.h"
 #include "common/queue.h"
 #include "common/swaglog.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 #define CAMERA_ID_IMX298 0
 #define CAMERA_ID_IMX179 1

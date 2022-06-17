@@ -121,7 +121,6 @@ class TestCarModelBase(unittest.TestCase):
 
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
-    self.assertGreater(self.CP.steerRateCost, 1e-3)
 
     if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
       tuning = self.CP.lateralTuning.which()

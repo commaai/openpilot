@@ -4,8 +4,8 @@ import time
 import math
 from dataclasses import dataclass
 
-from selfdrive.hardware import HARDWARE, TICI
-from selfdrive.hardware.tici.power_monitor import get_power
+from system.hardware import HARDWARE, TICI
+from system.hardware.tici.power_monitor import get_power
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.manager.manager import manager_cleanup
 
@@ -20,8 +20,8 @@ class Proc:
 
 PROCS = [
   Proc('camerad', 2.15),
-  Proc('modeld', 1.0),
-  Proc('dmonitoringmodeld', 0.35),
+  Proc('modeld', 1.0, atol=0.15),
+  Proc('dmonitoringmodeld', 0.25),
   Proc('encoderd', 0.23),
 ]
 

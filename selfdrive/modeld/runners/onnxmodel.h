@@ -6,7 +6,7 @@
 
 class ONNXModel : public RunModel {
 public:
-  ONNXModel(const char *path, float *output, size_t output_size, int runtime, bool use_extra = false, bool _use_tf8 = false);
+  ONNXModel(const char *path, float *output, size_t output_size, int runtime, bool use_extra = false);
 	~ONNXModel();
   void addRecurrent(float *state, int state_size);
   void addDesire(float *state, int state_size);
@@ -31,7 +31,6 @@ private:
   int calib_size;
   float *image_input_buf = NULL;
   int image_buf_size;
-  bool use_tf8;
   float *extra_input_buf = NULL;
   int extra_buf_size;
   bool use_extra;
