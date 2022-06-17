@@ -1,7 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
-from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
+from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.modeld.constants import T_IDXS
 
@@ -100,13 +100,11 @@ class LongControl:
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not self.CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7 and v_target_future < self.v_pid
-      deadzone = interp(CS.vEgo, self.CP.longitudinalTuning.deadzoneBP, self.CP.longitudinalTuning.deadzoneV)
       freeze_integrator = prevent_overshoot
       no_proportional = accelerating and CS.vEgo < 1.5
 
       error = self.v_pid - CS.vEgo
-      error_deadzone = apply_deadzone(error, deadzone)
-      output_accel = self.pid.update(error_deadzone, speed=CS.vEgo, feedforward=a_target, freeze_integrator=freeze_integrator, no_proportional=no_proportional)
+      output_accel = self.pid.update(error, speed=CS.vEgo, feedforward=a_target, freeze_integrator=freeze_integrator, no_proportional=no_proportional)
 
       if prevent_overshoot:
         output_accel = min(output_accel, 0.0)
