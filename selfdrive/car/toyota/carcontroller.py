@@ -21,6 +21,7 @@ class CarController:
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_limited = False
+    self.prev_pcm_accel_cmd = 0.
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -49,11 +50,16 @@ class CarController:
     else:
       interceptor_gas_cmd = 0.
       pcm_accel_cmd = actuators.accel
+
+      if pcm_accel_cmd > 1 and pcm_accel_cmd < self.prev_pcm_accel_cmd and CS.out.vEgo < 2 and CS.out.aEgo < (pcm_accel_cmd - 0.2):
+        pcm_accel_cmd = max(pcm_accel_cmd, self.prev_pcm_accel_cmd)
+
       if CS.out.standstill and pcm_accel_cmd > 0.0:
         # TODO: find minimum acceleration all Toyotas start moving at
         pcm_accel_cmd = 1.0
 
     pcm_accel_cmd = clip(pcm_accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    self.prev_pcm_accel_cmd = pcm_accel_cmd
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
