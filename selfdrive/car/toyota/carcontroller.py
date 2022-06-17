@@ -48,16 +48,19 @@ class CarController:
       pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
       pcm_accel_cmd = actuators.accel
+      pcm_accel_cmd_boost = 0
     else:
-      interceptor_gas_cmd = 0.
       pcm_accel_cmd = actuators.accel
+      interceptor_gas_cmd = 0.
+      start_boost = interp(CS.out.vEgo, [0.0, CREEP_SPEED], [0.3, 0.0])
+      is_accelerating = interp(actuators.accel, [0.0, 0.1], [0.0, 1.0])
+      pcm_accel_cmd_boost = start_boost * is_accelerating
 
-      max_new_accel = 1.5 * pcm_accel_cmd
-      if CS.out.aEgo < pcm_accel_cmd and CS.out.vEgo < CREEP_SPEED:
-        pcm_accel_cmd += (pcm_accel_cmd - CS.aEgo) / 2
-      pcm_accel_cmd = min(pcm_accel_cmd, max_new_accel)
+      # if CS.out.standstill and pcm_accel_cmd > 0.0:
+      #   # TODO: find minimum acceleration all Toyotas start moving at
+      #   pcm_accel_cmd = 1.0
 
-    pcm_accel_cmd = clip(pcm_accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    pcm_accel_cmd = clip(pcm_accel_cmd + pcm_accel_cmd_boost, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
