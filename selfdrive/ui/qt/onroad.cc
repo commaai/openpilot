@@ -212,7 +212,7 @@ void NvgWindow::drawHud(QPainter &p) {
   bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
   p.fillRect(0, 0, width(), header_h, bg);
 
-  QString speedLimitStr = (speedLimit > 1) ? QString::number(std::nearbyint(speedLimit)) : "-";
+  QString speedLimitStr = (speedLimit > 1) ? QString::number(std::nearbyint(speedLimit)) : "–";
   QString speedStr = QString::number(std::nearbyint(speed));
   QString setSpeedStr = is_cruise_set ? QString::number(std::nearbyint(setSpeed)) : "–";
 
