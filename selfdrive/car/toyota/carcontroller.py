@@ -50,11 +50,12 @@ class CarController:
       pcm_accel_cmd = actuators.accel
     else:
       interceptor_gas_cmd = 0.
-      pcm_accel_cmd_boost = interp(actuators.accel, [0., 0.3], [actuators.accel, actuators.accel * 2])
-      pcm_accel_cmd = interp(CS.out.vEgo, [CREEP_SPEED, CREEP_SPEED * 2], [pcm_accel_cmd_boost, actuators.accel])
-      # if CS.out.standstill and pcm_accel_cmd > 0.0:
-      #   # TODO: find minimum acceleration all Toyotas start moving at
-      #   pcm_accel_cmd = 1.0
+      pcm_accel_cmd = actuators.accel
+
+      max_new_accel = 1.5 * pcm_accel_cmd
+      if CS.out.aEgo < pcm_accel_cmd and CS.out.vEgo < CREEP_SPEED:
+        pcm_accel_cmd += (pcm_accel_cmd - CS.aEgo) / 2
+      pcm_accel_cmd = min(pcm_accel_cmd, max_new_accel)
 
     pcm_accel_cmd = clip(pcm_accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 

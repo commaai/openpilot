@@ -101,7 +101,7 @@ class LongControl:
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not self.CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7 and v_target_future < self.v_pid
       freeze_integrator = prevent_overshoot
-      no_proportional = accelerating and CS.vEgo < 1.5
+      no_proportional = accelerating and CS.vEgo < 2.3
 
       error = self.v_pid - CS.vEgo
       output_accel = self.pid.update(error, speed=CS.vEgo, feedforward=a_target, freeze_integrator=freeze_integrator, no_proportional=no_proportional)
