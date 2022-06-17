@@ -143,8 +143,10 @@ class RouteEngine:
             coord = Coordinate.from_mapbox_tuple(c)
 
             # Last step does not have maxspeed
-            if (maxspeed_idx < len(maxspeeds)) and ('unknown' not in maxspeeds[maxspeed_idx]):
-              coord.annotations['maxspeed'] = maxspeed_to_ms(maxspeeds[maxspeed_idx])
+            if (maxspeed_idx < len(maxspeeds)):
+              maxspeed = maxspeeds[maxspeed_idx]
+              if ('unknown' not in maxspeed) and ('none' not in maxspeed):
+                coord.annotations['maxspeed'] = maxspeed_to_ms(maxspeed)
 
             coords.append(coord)
             maxspeed_idx += 1
