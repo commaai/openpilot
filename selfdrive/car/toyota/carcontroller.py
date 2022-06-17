@@ -49,9 +49,9 @@ class CarController:
     else:
       interceptor_gas_cmd = 0.
       pcm_accel_cmd = actuators.accel
-      if CS.out.standstill and pcm_accel_cmd > 0.0:
-        # TODO: find minimum acceleration all Toyotas start moving at
-        pcm_accel_cmd = 1.0
+      # if CS.out.standstill and pcm_accel_cmd > 0.0:
+      #   # TODO: find minimum acceleration all Toyotas start moving at
+      #   pcm_accel_cmd = 1.0
 
     pcm_accel_cmd = clip(pcm_accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
