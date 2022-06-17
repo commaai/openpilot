@@ -10,6 +10,8 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+CREEP_SPEED = 2.3
+
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -42,13 +44,14 @@ class CarController:
       else:
         PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.4, 0.5, 0.0])
       # offset for creep and windbrake
-      pedal_offset = interp(CS.out.vEgo, [0.0, 2.3, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
+      pedal_offset = interp(CS.out.vEgo, [0.0, CREEP_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
       pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
       pcm_accel_cmd = actuators.accel
     else:
       interceptor_gas_cmd = 0.
-      pcm_accel_cmd = actuators.accel
+      pcm_accel_cmd_boost = interp(actuators.accel, [0., 0.3], [actuators.accel, actuators.accel * 2])
+      pcm_accel_cmd = interp(CS.out.vEgo, [CREEP_SPEED, CREEP_SPEED * 2], [pcm_accel_cmd_boost, actuators.accel])
       # if CS.out.standstill and pcm_accel_cmd > 0.0:
       #   # TODO: find minimum acceleration all Toyotas start moving at
       #   pcm_accel_cmd = 1.0
