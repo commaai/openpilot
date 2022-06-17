@@ -413,6 +413,7 @@ pyextra/.gitignore
 pyextra/acados_template/**
 
 rednose/**
+laika/**
 
 cereal/.gitignore
 cereal/__init__.py
