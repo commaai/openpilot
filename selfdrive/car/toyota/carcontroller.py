@@ -45,9 +45,8 @@ class CarController:
       pedal_offset = interp(CS.out.vEgo, [0.0, 2.3, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
       pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
-    elif self.CP.enableGasInterceptor and not self.CP.openpilotLongitudinalControl and self.CP.carFingerprint not in TSS2_CAR and not self.CP.enableDsu:
-      if CS.stock_resume_ready:
-        interceptor_gas_cmd = 0.16
+    elif self.CP.enableGasInterceptor and not self.CP.openpilotLongitudinalControl and self.CP.carFingerprint not in TSS2_CAR and not self.CP.enableDsu and CS.stock_resume_ready:
+      interceptor_gas_cmd = 0.16
     else:
       interceptor_gas_cmd = 0.
     pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
