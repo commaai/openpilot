@@ -47,8 +47,8 @@ class CarState(CarStateBase):
 
     ret.leftBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 1
     ret.rightBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 2
-    ret.steeringAngleDeg = cp.vl["STEERING"]["STEER_ANGLE"]
-    ret.steeringRateDeg = cp.vl["STEERING"]["STEERING_RATE"]
+    ret.steeringAngleDeg = cp.vl["Steering_Column_Angle_Status"]["Steering_Wheel_Angle"]
+    ret.steeringRateDeg = cp.vl["Steering_Column_Angle_Status"]["Steering_Rate"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["GEAR"]["PRNDL"], None))
 
     ret.cruiseState.available = cp.vl["DAS_3"]["ACC_Engaged"] == 1  # ACC is white
@@ -94,8 +94,8 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_RR", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_RL", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_FR", "WHEEL_SPEEDS"),
-      ("STEER_ANGLE", "STEERING"),
-      ("STEERING_RATE", "STEERING"),
+      ("Steering_Wheel_Angle", "Steering_Column_Angle_Status"),
+      ("Steering_Rate", "Steering_Column_Angle_Status"),
       ("TURN_SIGNALS", "STEERING_LEVERS"),
       ("ACC_STATUS_2", "DAS_3"),
       ("ACC_FAULTED", "DAS_3"),
@@ -117,7 +117,7 @@ class CarState(CarStateBase):
       ("EPS_STATUS", 100),
       ("SPEED_1", 100),
       ("WHEEL_SPEEDS", 50),
-      ("STEERING", 100),
+      ("Steering_Column_Angle_Status", 100),
       ("DAS_3", 50),
       ("GEAR", 50),
       ("ECM_5", 50),
