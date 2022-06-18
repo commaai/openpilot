@@ -130,6 +130,8 @@ class CarState(CarStateBase):
 
     if not self.CP.openpilotLongitudinalControl and self.CP.carFingerprint not in TSS2_CAR and not self.CP.enableDsu:
       self.stock_resume_ready = (cp.vl["ACC_CONTROL"]["RELEASE_STANDSTILL"] == 1 and self.pcm_acc_status == 7)
+    else:
+      self.stock_resume_ready = False
 
     return ret
 
@@ -213,8 +215,8 @@ class CarState(CarStateBase):
       checks.append(("BSM", 1))
 
     if not CP.openpilotLongitudinalControl and CP.carFingerprint not in TSS2_CAR and not CP.enableDsu:
-      signals.append(("RELEASE_STANDSTILL", "ACC_CONTROL")),
-      checks.append(("ACC_CONTROL", 33)),
+      signals.append(("RELEASE_STANDSTILL", "ACC_CONTROL"))
+      checks.append(("ACC_CONTROL", 33))
 
     if CP.carFingerprint in RADAR_ACC_CAR:
       signals += [
