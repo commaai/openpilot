@@ -186,8 +186,8 @@ void NvgWindow::updateState(const UIState &s) {
   speed_limit *= (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
 
   setProperty("speedLimit", speed_limit);
-  setProperty("has_us_speed_limit", speed_limit > 1 && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD);
-  setProperty("has_eu_speed_limit", speed_limit > 1 && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
+  setProperty("has_us_speed_limit", sm["navInstruction"].getValid() && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD);
+  setProperty("has_eu_speed_limit", sm["navInstruction"].getValid() && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
 
   setProperty("is_cruise_set", cruise_set);
   setProperty("speed", cur_speed);
@@ -212,7 +212,7 @@ void NvgWindow::drawHud(QPainter &p) {
   bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
   p.fillRect(0, 0, width(), header_h, bg);
 
-  QString speedLimitStr = QString::number(std::nearbyint(speedLimit));
+  QString speedLimitStr = (speedLimit > 1) ? QString::number(std::nearbyint(speedLimit)) : "–";
   QString speedStr = QString::number(std::nearbyint(speed));
   QString setSpeedStr = is_cruise_set ? QString::number(std::nearbyint(setSpeed)) : "–";
 
@@ -334,6 +334,8 @@ void NvgWindow::drawHud(QPainter &p) {
     p.drawEllipse(center, inner_radius_2, inner_radius_2);
 
     // Speed limit value
+    if (speedLimit < 1 ) center -= {0, 2}; // Make sure dash is centered if no speed limit available
+
     int font_size = (speedLimitStr.size() >= 3) ? 62 : 70;
     configFont(p, "Open Sans", font_size, "Bold");
     QRect speed_limit_rect = getTextRect(p, Qt::AlignCenter, speedLimitStr);
