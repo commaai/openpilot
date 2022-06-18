@@ -85,7 +85,6 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
-    ret.steerRateCost = 0.5
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
     # # Check for Electronic Parking Brake
@@ -201,9 +200,8 @@ class CarInterface(CarInterfaceBase):
       # TODO: Improve stability in turns 
       # still working on improving lateral
       
-      # TODO: Should steerRateCost and ActuatorDelay be converted to BPV arrays?
+      # TODO: Should ActuatorDelay be converted to BPV arrays?
       # TODO: Check if the actuator delay changes based on vehicle speed
-      ret.steerRateCost = 0.5
       ret.steerActuatorDelay = 0.
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]
@@ -277,7 +275,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.3
       ret.pcmCruise = True # TODO: see if this resolves cruiseMismatch
       ret.centerToFront = ret.wheelbase * .49
-      ret.steerRateCost = .4
       ret.steerActuatorDelay = 0.11
       # ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [15., 80.]]
       # ret.lateralTuning.pid.kpV = [0.13, 0.23]
@@ -337,7 +334,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
       # TODO: Improve stability in turns 
       # still working on improving lateral
-      ret.steerRateCost = 0.5
       ret.steerActuatorDelay = 0.
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]

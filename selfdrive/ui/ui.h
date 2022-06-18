@@ -54,7 +54,7 @@ struct Alert {
         return {"openpilot Unavailable", "Waiting for controls to start",
                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
                 AudibleAlert::NONE};
-      } else if (controls_missing > CONTROLS_TIMEOUT) {
+      } else if (controls_missing > CONTROLS_TIMEOUT && !Hardware::PC()) {
         // car is started, but controls is lagging or died
         if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
           return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
