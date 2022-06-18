@@ -23,6 +23,14 @@ class CarInterface(CarInterfaceBase):
     params = CarControllerParams()
     return params.ACCEL_MIN, params.ACCEL_MAX
 
+  @staticmethod
+  def get_steer_feedforward_sigmoid(desired_angle: float, v_ego: float, ANGLE: float, ANGLE_OFFSET: float,
+                                    SIGMOID_SPEED: float, SIGMOID: float, SPEED: float) -> float:
+    # Apply sigmoid feedforward function on desired_angle & v_ego using supplied factors
+    x = ANGLE * (desired_angle + ANGLE_OFFSET)
+    sigmoid = x / (1 + fabs(x))
+    return (SIGMOID_SPEED * sigmoid * v_ego) + (SIGMOID * sigmoid) + (SPEED * v_ego)
+
   # Determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
   def get_steer_feedforward_volt(desired_angle, v_ego):
@@ -36,11 +44,22 @@ class CarInterface(CarInterfaceBase):
     sigmoid = desired_angle / (1 + fabs(desired_angle))
     return 0.04689655 * sigmoid * (v_ego + 10.028217)
 
+  @staticmethod
+  def get_steer_feedforward_silverado(desired_angle, v_ego):
+    ANGLE = 0.06539361463056717
+    ANGLE_OFFSET = -0.#8390269362439537
+    SIGMOID_SPEED = 0.023681877712247515
+    SIGMOID = 0.5709779025308087
+    SPEED = -0.0016656455765509301
+    return CarInterface.get_steer_feedforward_sigmoid(desired_angle, v_ego, ANGLE, ANGLE_OFFSET, SIGMOID_SPEED, SIGMOID, SPEED)
+
   def get_steer_feedforward_function(self):
     if self.CP.carFingerprint == CAR.VOLT:
       return self.get_steer_feedforward_volt
     elif self.CP.carFingerprint == CAR.ACADIA:
       return self.get_steer_feedforward_acadia
+    elif self.CP.carFingerprint == CAR.SILVERADO:
+      return self.get_steer_feedforward_silverado
     else:
       return CarInterfaceBase.get_steer_feedforward_default
 
@@ -157,9 +176,14 @@ class CarInterface(CarInterfaceBase):
       # Tune (Thanks Skip)
       ret.steerActuatorDelay = 0.11
       ret.lateralTuning.pid.kpBP = [11.0, 15.5, 22.0, 31.0]
-      ret.lateralTuning.pid.kpV = [0.11, 0.14, 0.18, 0.23]
-      # Default ki is 0.0
-      # Default kf for reference: ret.lateralTuning.pid.kf = 0.00004
+      ret.lateralTuning.pid.kpV = [0.12, 0.14, 0.20, 0.25]
+      # kf value is based on the use of custom feedforward function
+      ret.lateralTuning.pid.kf = (0.55 + 0.4) / 2. # Averaging the right and left kf for now
+      # GM Trucks have weak right turning
+      #  Allowing for kf to be swapped depending on the curvature direction
+      #  seems to be improve the issue
+      # ret.lateralTuning.pid.kf = 0.55
+      # ret.lateralTuning.pid.kfLeft = 0.4
 
     elif candidate == CAR.BOLT_EUV:
       ret.transmissionType = TransmissionType.direct # EV (or hybrid)
