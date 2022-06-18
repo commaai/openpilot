@@ -1,12 +1,11 @@
-Version 0.8.15-GM-0.0.14 (2022-06-08)
+Version 0.8.15-GM-0.0.15 (2022-06-18)
 ========================
  * Restored laneless toggle
  * L-mode handling added for EVs, retuned with a prelim tune
  * Tightnend up dbc config for interceptor (on Bolt*)
  * WIP - updating dbc messages involving AEB
  * Now using self-built PlutJuggler, meaning we can use it with our customized dbc files prior to upstream
- * Latest from commaai/master as of 5pm
- * Comma removed Comma 2 support from master; C2 will get backported featured in the future
+ * Latest from commaai/master as of 7:48 pm
  * Further improved Bolt Tuning thanks to Darknight11
  * Reversed CC main logic with Pedal
  * CarState.gearShifter now more detailed, includes L mode!
@@ -22,14 +21,11 @@ Version 0.8.15-GM-0.0.14 (2022-06-08)
  * Chevy Bolt EV Support (And several others)
  * Non-ASCM (aka non-radar) GM support
  * GM longitudinal support using Pedal Interceptor (no braking on non-EV)
- * ~~Grey & White Panda Support restored~~
  * WARNING: Pedal firmware is GM specific
  * Silverado with Cam ACC passthrough
  * Suburban & Tahoe with self-contained ACC
  * Robust and efficient camera detection for forwarding on Panda
  * DBC groundwork for friction braking and AEB on PT
- * ~~Reworked GM values.py with capability for conditional limits~~
- * ~~Panda now supports multiple limit profiles through safety_param~~
  * Cleaned up radar settings
  * TODO: Pedal transform values configurable, store in flash
  * TODO: Pedal low-speed tuning
