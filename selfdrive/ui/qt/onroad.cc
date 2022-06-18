@@ -240,13 +240,13 @@ void NvgWindow::drawHud(QPainter &p) {
       p.setPen(interpColor(
         setSpeed,
         {speedLimit + 5, speedLimit + 15, speedLimit + 25},
-        {whiteColor(), QColor(0xff, 0x95, 0x00, 0xff), QColor(0xff, 0x00, 0x00, 0xff)}
+        {whiteColor(), orangeColor(), redsignColor()}
       ));
     } else {
       p.setPen(whiteColor());
     }
   } else {
-    p.setPen(QColor(0x72, 0x72, 0x72, 0xff));
+    p.setPen(darkgrayColor());
   }
   configFont(p, "Open Sans", 90, "Bold");
   QRect speed_rect = getTextRect(p, Qt::AlignCenter, setSpeedStr);
@@ -259,18 +259,18 @@ void NvgWindow::drawHud(QPainter &p) {
     if (status == STATUS_DISENGAGED) {
       p.setPen(whiteColor());
     } else if (status == STATUS_OVERRIDE) {
-      p.setPen(QColor(0x91, 0x9b, 0x95, 0xff));
+      p.setPen(overrideColor());
     } else if (speedLimit > 0) {
       p.setPen(interpColor(
         setSpeed,
         {speedLimit + 5, speedLimit + 15, speedLimit + 25},
-        {QColor(0x80, 0xd8, 0xa6, 0xff), QColor(0xff, 0xe4, 0xbf, 0xff), QColor(0xff, 0xbf, 0xbf, 0xff)}
+        {greenColor(), lightorangeColor(), pinkColor()}
       ));
     } else {
-      p.setPen(QColor(0x80, 0xd8, 0xa6, 0xff));
+      p.setPen(greenColor());
     }
   } else {
-    p.setPen(QColor(0xa6, 0xa6, 0xa6, 0xff));
+    p.setPen(grayColor());
   }
   configFont(p, "Open Sans", 40, "SemiBold");
   QRect max_rect = getTextRect(p, Qt::AlignCenter, "MAX");
@@ -328,7 +328,7 @@ void NvgWindow::drawHud(QPainter &p) {
     p.setPen(Qt::NoPen);
     p.setBrush(whiteColor());
     p.drawEllipse(center, outer_radius, outer_radius);
-    p.setBrush(QColor(255, 0, 0, 255));
+    p.setBrush(redsignColor());
     p.drawEllipse(center, inner_radius_1, inner_radius_1);
     p.setBrush(whiteColor());
     p.drawEllipse(center, inner_radius_2, inner_radius_2);
@@ -367,7 +367,6 @@ void NvgWindow::drawHud(QPainter &p) {
 void NvgWindow::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
   QRect real_rect = getTextRect(p, 0, text);
   real_rect.moveCenter({x, y - real_rect.height() / 2});
-
   p.setPen(QColor(0xff, 0xff, 0xff, alpha));
   p.drawText(real_rect.x(), real_rect.bottom(), text);
 }
@@ -475,7 +474,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
   float g_yo = sz / 10;
 
   QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo}};
-  painter.setBrush(QColor(218, 202, 37, 255));
+  painter.setBrush(visionColor());
   painter.drawPolygon(glow, std::size(glow));
 
   // chevron

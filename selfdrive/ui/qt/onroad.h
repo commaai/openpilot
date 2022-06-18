@@ -75,6 +75,15 @@ protected:
   inline QColor redColor(int alpha = 255) { return QColor(201, 34, 49, alpha); }
   inline QColor whiteColor(int alpha = 255) { return QColor(255, 255, 255, alpha); }
   inline QColor blackColor(int alpha = 255) { return QColor(0, 0, 0, alpha); }
+  inline QColor redsignColor(int alpha = 255) { return QColor(255, 0, 0, alpha); }
+  inline QColor orangeColor(int alpha = 255) { return QColor(255, 149, 0, alpha); }
+  inline QColor darkgrayColor(int alpha = 255) { return QColor(114, 114, 114, alpha); }
+  inline QColor overrideColor(int alpha = 255) { return QColor(145, 155, 149, alpha); }
+  inline QColor greenColor(int alpha = 255) { return QColor(128, 216, 166, alpha); }
+  inline QColor lightorangeColor(int alpha = 255) { return QColor(255, 228, 191, alpha); }
+  inline QColor pinkColor(int alpha = 255) { return QColor(255, 191, 191, alpha); }
+  inline QColor grayColor(int alpha = 255) { return QColor(166, 166, 166, alpha); }
+  inline QColor visionColor(int alpha = 255) { return QColor(218, 202, 37, alpha); }
 
   double prev_draw_t = 0;
   FirstOrderFilter fps_filter;
