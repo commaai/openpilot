@@ -1,0 +1,19 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _bosch_2018.dbc";
+CM_ "IMPORT _bosch_adas_2018.dbc";
+CM_ "IMPORT _steering_sensors_a.dbc";
+
+BO_ 419 GEARBOX: 8 PCM
+ SG_ GEAR : 7|8@0+ (1,0) [0|255] "" EON
+ SG_ GEAR_SHIFTER : 29|6@0+ (1,0) [0|63] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+
+BO_ 432 STANDSTILL: 7 VSA
+ SG_ BRAKE_ERROR_1 : 13|1@0+ (1,0) [0|1] "" EON
+ SG_ BRAKE_ERROR_2 : 12|1@0+ (1,0) [0|1] "" EON
+ SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 51|4@0+ (1,0) [0|15] "" EON
+
+VAL_ 419 GEAR  10 "R" 1 "D" 0 "P";
+VAL_ 419 GEAR_SHIFTER  32 "D" 16 "N" 8 "R" 4 "P";

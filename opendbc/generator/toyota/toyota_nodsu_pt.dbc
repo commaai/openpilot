@@ -1,0 +1,56 @@
+CM_ "IMPORT _comma.dbc";
+CM_ "IMPORT _toyota_2017.dbc";
+
+BO_ 401 STEERING_LTA: 8 XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ SETME_X3 : 29|2@0+ (1,0) [0|3] "" XXX
+ SG_ PERCENTAGE : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ SETME_X64 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ ANGLE : 55|8@0- (0.5,0) [0|255] "" XXX
+ SG_ STEER_ANGLE_CMD : 15|16@0- (0.0573,0) [-540|540] "" XXX
+ SG_ STEER_REQUEST : 25|1@0+ (1,0) [0|1] "" XXX
+ SG_ BIT : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 6|6@0+ (1,0) [0|255] "" XXX
+ SG_ STEER_REQUEST_2 : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ SETME_X1 : 7|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 550 BRAKE_MODULE: 8 XXX
+ SG_ BRAKE_PRESSURE : 0|9@0+ (1,0) [0|511] "" XXX
+ SG_ BRAKE_POSITION : 16|9@0+ (1,0) [0|511] "" XXX
+ SG_ BRAKE_PRESSED : 37|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 610 EPS_STATUS: 8 EPS
+ SG_ IPAS_STATE : 3|4@0+ (1,0) [0|15] "" XXX
+ SG_ LKA_STATE : 31|7@0+ (1,0) [0|127] "" XXX
+ SG_ LTA_STATE : 15|5@0+ (1,0) [0|31] "" XXX
+ SG_ TYPE : 24|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 1014 BSM: 8 XXX
+ SG_ L_ADJACENT : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ L_APPROACHING : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ R_ADJACENT : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ R_APPROACHING : 10|1@0+ (1,0) [0|1] "" XXX
+ SG_ ADJACENT_ENABLED : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ APPROACHING_ENABLED : 15|1@0+ (1,0) [0|1] "" XXX
+
+CM_ SG_ 401 PERCENTAGE "driver override percentage (0-100), very close to steeringPressed in OP";
+CM_ SG_ 401 SETME_X64 "ramps to 0 smoothly then back on falling edge of STEER_REQUEST if BIT isn't 1";
+CM_ SG_ 401 ANGLE "angle of car relative to lane center on LTA camera";
+CM_ SG_ 401 STEER_ANGLE_CMD "desired angle, OEM steers up to 95 degrees, no angle limit but torque will bottom out";
+CM_ SG_ 401 STEER_REQUEST "enable bit for steering, 1 to steer, 0 to not";
+CM_ SG_ 401 BIT "has correlation to STEER_REQUEST";
+CM_ SG_ 401 STEER_REQUEST_2 "enable bit for steering, 1 to steer, 0 to not";
+CM_ SG_ 550 BRAKE_PRESSURE "seems prop to pedal force";
+CM_ SG_ 550 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
+CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
+CM_ SG_ 1014 L_ADJACENT "vehicle adjacent left side of car. enabled above 10mph, regardless of ADJACENT_ENABLED or APPROACHING_ENABLED";
+CM_ SG_ 1014 L_APPROACHING "vehicle approaching from left side of car. enabled above 10mph, regardless of ADJACENT_ENABLED or APPROACHING_ENABLED";
+CM_ SG_ 1014 R_ADJACENT "vehicle adjacent right side of car. enabled above 10mph, regardless of ADJACENT_ENABLED or APPROACHING_ENABLED";
+CM_ SG_ 1014 R_APPROACHING "vehicle approaching from right side of car. enabled above 10mph, regardless of ADJACENT_ENABLED or APPROACHING_ENABLED";
+CM_ SG_ 1014 ADJACENT_ENABLED "when BSM is enabled in settings, this is on along with APPROACHING_ENABLED. this controls bsm alert visibility";
+CM_ SG_ 1014 APPROACHING_ENABLED "when BSM is enabled in settings, this is on along with ADJACENT_ENABLED. this controls bsm alert visibility";
+
+VAL_ 610 IPAS_STATE 5 "override" 3 "enabled" 1 "disabled";
+VAL_ 610 LKA_STATE 25 "temporary_fault" 17 "permanent_fault" 9 "temporary_fault2" 5 "active" 1 "standby";
+VAL_ 610 LTA_STATE 25 "temporary_fault" 9 "temporary_fault2" 5 "active" 1 "standby";

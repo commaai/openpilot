@@ -1,0 +1,86 @@
+name: tests
+
+on: [push, pull_request]
+
+env:
+  RUN: docker run --shm-size 1G --name cereal cereal /bin/sh -c
+  CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm cerealci /bin/bash -c
+  BUILD: |
+      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile) || true
+      docker pull docker.io/commaai/cereal:latest || true
+      docker build --cache-from docker.io/commaai/cereal:latest -t cereal -f Dockerfile .
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Push to dockerhub
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/cereal'
+      run: |
+        docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
+        docker tag cereal docker.io/commaai/cereal:latest
+        docker push docker.io/commaai/cereal:latest
+
+  unit_tests:
+    name: unit tests
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Unit Tests
+      run: |
+        $RUN "scons --test --asan -j$(nproc) && messaging/test_runner && visionipc/test_runner"
+
+  unit_tests_zmq:
+    name: unit tests zmq
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Unit Tests
+      run: |
+        $RUN "scons --test --asan -j$(nproc) && ZMQ=1 messaging/test_runner && ZMQ=1 visionipc/test_runner"
+
+  test_zmq:
+    name: zmq
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Test ZMQ
+      run: $RUN "ZMQ=1 coverage run -m unittest discover ."
+    - name: Upload coverage
+      run: |
+        docker commit cereal cerealci
+        $CI_RUN "cd /project/cereal && bash <(curl -s https://codecov.io/bash) -v -F unit_tests_zmq"
+
+  test_msgq:
+    name: msgq
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Test MSGQ
+      run: $RUN "MSGQ=1 coverage run -m unittest discover ."
+    - name: Upload coverage
+      run: |
+        docker commit cereal cerealci
+        $CI_RUN "cd /project/cereal && bash <(curl -s https://codecov.io/bash) -v -F unit_tests_msgq"
+
+  static_analysis:
+    name: static analysis
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Static analysis
+      run: $RUN "git init && git add -A && pre-commit run --all"

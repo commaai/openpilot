@@ -1,0 +1,16 @@
+CM_ "This DBC is used for the CAN parser and packer tests.";
+
+BO_ 228 STEERING_CONTROL: 5 EON
+ SG_ STEER_TORQUE_REQUEST : 23|1@0+ (1,0) [0|1] "" EPS
+ SG_ SET_ME_X00 : 22|7@0+ (1,0) [0|127] "" EPS
+ SG_ SET_ME_X00_2 : 31|8@0+ (1,0) [0|0] "" EPS
+ SG_ STEER_TORQUE : 7|16@0- (1,0) [-4096|4096] "" EPS
+ SG_ STEER_DOWN_TO_ZERO : 38|1@0+ (1,0) [0|1] "" EPS
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" EPS
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" EPS
+
+BO_ 245 CAN_FD_MESSAGE: 32 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|1] "" XXX
+ SG_ SIGNED : 22|16@0- (1,0) [0|1] "" XXX
+ SG_ 64_BIT_LE : 159|64@1+ (1,0) [0|1] "" XXX
+ SG_ 64_BIT_BE : 80|64@0+ (1,0) [0|1] "" XXX

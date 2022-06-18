@@ -1,0 +1,197 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+
+BO_ 35 EPS_1: 8 XXX
+ SG_ TORQUE_MOTOR : 23|16@0+ (1,-4096) [0|65535] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ STEER_ANGLE : 5|14@0+ (0.5,-2048) [-1024|1024] "degs" XXX
+
+BO_ 37 PCM_1: 8 XXX
+ SG_ ENGINE_RPM : 7|16@0+ (1,0) [0|1] "" XXX
+ SG_ ENGINE_TRQ_REQ : 23|12@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 49 EPS_2: 8 XXX
+ SG_ EPS_STATUS : 39|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ XXX_OTHER_TORQUE_DRIVER : 35|12@0+ (1,0) [-1024|1024] "" XXX
+ SG_ TORQUE_EPS_TOTAL : 19|12@0+ (1,-2000) [0|1] "" XXX
+ SG_ TORQUE_DRIVER : 3|12@0- (1,1024) [-1024|1024] "" XXX
+
+BO_ 53 PCM_2: 8 XXX
+ SG_ ENG_TORQUE_REQ : 3|12@0+ (1,0) [0|7] "" XXX
+ SG_ ENG_TORQUE_OUT : 19|12@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 121 ABS_1: 8 XXX
+ SG_ BRK_PRESSURE : 3|12@0+ (1,0) [0|1] "" XXX
+ SG_ BRAKE_PEDAL : 19|12@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 129 TPS_1: 8 XXX
+ SG_ THROTTLE_POSITION : 47|8@0+ (0.5,0) [0|255] "%" XXX
+
+BO_ 133 TCM_1: 8 XXX
+ SG_ DESIRED_GEAR : 15|4@0+ (1,0) [0|1] "" XXX
+ SG_ SHIFT_PENDING : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ SPEED_TURBINE : 27|12@0+ (0.04,0) [0|1] "km/h" XXX
+ SG_ ACTUAL_GEAR : 11|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 139 ABS_4: 8 XXX
+ SG_ WHEEL_SPEED_RL : 3|12@0+ (0.02,0) [0|4095] "" XXX
+ SG_ WHEEL_SPEED_RR : 19|12@0+ (0.02,0) [0|4095] "" XXX
+ SG_ WHEEL_SPEED_FL : 35|12@0+ (0.02,0) [0|4095] "" XXX
+ SG_ WHEEL_SPEED_FR : 51|12@0+ (0.02,0) [0|4095] "" XXX
+
+BO_ 153 DASM_ACC_CMD_1: 8 XXX
+ SG_ ACC_ENG_TRQ_REQ : 3|8@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_GAS_CONTROL : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_STATUS : 21|2@0+ (1,0) [0|3] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_1 : 24|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_2 : 16|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 163 DASM_ACC_CMD_2: 8 XXX
+ SG_ MAYBE_ACC_TARGET_SPEED : 31|8@0+ (1,0) [0|255] "kph" XXX
+
+BO_ 166 DASM_LKAS_CMD: 8 XXX
+ SG_ LKAS_COMMAND : 15|16@0+ (1,-1024) [0|4095] "" XXX
+ SG_ LKAS_CONTROL_BIT : 25|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 173 SHIFTER_ASSM: 5 XXX
+ SG_ SHIFTER_POSITION : 3|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 31|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 39|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 177 CSWC: 3 XXX
+ SG_ CANCEL : 0|1@0+ (1,0) [0|3] "" XXX
+ SG_ SET_PLUS : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_MINUS : 3|1@0+ (1,0) [0|3] "" XXX
+ SG_ RESUME : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ CRUISE_CONTROL : 6|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 15|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 23|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 221 ICS: 8 XXX
+ SG_ TRAC_OFF : 54|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 250 DASM_LKAS_HUD: 8 XXX
+ SG_ HIGH_BEAM_CONTROL : 47|1@0+ (1,0) [0|1] "" XXX
+ SG_ LKAS_HUD_2 : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ UNKNOWN : 32|4@1+ (1,0) [0|15] "" XXX
+ SG_ LKAS_HUD_1 : 11|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 464 ORM: 8 XXX
+ SG_ DRIVER_SEATBELT_STATUS : 16|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 657 BCM: 8 XXX
+ SG_ DOOR_OPEN_FL : 17|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_FR : 18|1@1+ (1,0) [0|3] "" XXX
+ SG_ DOOR_OPEN_RL : 19|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_RR : 20|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 792 SCCM: 8 XXX
+ SG_ BLINKER_LEFT : 0|1@0+ (1,0) [0|3] "" XXX
+ SG_ BLINKER_RIGHT : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ HIGH_BEAM_FLASH : 3|1@0+ (1,0) [0|3] "" XXX
+ SG_ AUTO_HIGH_BEAM : 2|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 232 DASM_ACC_HUD: 8 XXX
+ SG_ ACC_SET_SPEED_KPH : 15|8@0+ (1,0) [0|255] "kph" XXX
+ SG_ ACC_SET_SPEED_MPH : 23|8@0+ (1,0) [0|255] "mph" XXX
+
+BO_ 39 UNKNOWN_MSG_1: 8 XXX
+ SG_ UNKNOWN_1 : 3|12@0+ (1,0) [0|1] "" XXX
+ SG_ UNKNOWN_2 : 19|12@0+ (2,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "X" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 41 UNKNOWN_MSG_2: 8 XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 43 ABS_2: 8 XXX
+ SG_ ACCEL_LONGITUDINAL : 19|12@0+ (1,-2048) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ YAW_RATE : 3|12@0+ (1,-2048) [0|1] "" XXX
+ SG_ ACCEL_LATERAL : 35|12@0+ (1,-2048) [0|1] "" XXX
+
+BO_ 47 ABS_3: 8 XXX
+ SG_ UNKNOWN_SPEED_2 : 23|16@0+ (1,0) [0|1] "" XXX
+ SG_ UNKNOWN_SPEED_1 : 7|16@0+ (1,0) [0|1] "" XXX
+ SG_ UNKNOWN_LOAD : 47|8@0+ (1,0) [0|1] "" XXX
+ SG_ UNKNOWN_BRAKE : 55|8@0+ (1,0) [0|1] "" XXX
+
+
+
+
+CM_ SG_ 35 STEER_ANGLE "540 deg total negative values indicate right turn, positive values indicate left turn";
+CM_ SG_ 49 XXX_OTHER_TORQUE_DRIVER "Appears to max out at relatively low torque";
+CM_ SG_ 49 TORQUE_EPS_TOTAL "";
+CM_ SG_ 49 TORQUE_DRIVER "";
+CM_ SG_ 129 THROTTLE_POSITION "gas pressed when values > 0 ";
+CM_ SG_ 133 ACTUAL_GEAR "0xd = P, 0x1-8 = D (actual gear), 0xb = R or N?? TODO find R vs N";
+CM_ SG_ 153 ACC_GAS_CONTROL "1 = ACC is doing gas, 0 = human";
+CM_ SG_ 153 ACC_STATUS "SENT BY FORWARD CAMERA 1 = ACTIVE, 3 = ENGAGED, 0 = DISENGAGED/OFF";
+CM_ SG_ 163 MAYBE_ACC_TARGET_SPEED "ACC set speed in kph, but with some noise?";
+CM_ SG_ 166 LKAS_COMMAND "SENT BY FORWARD CAMERA";
+CM_ SG_ 166 LKAS_CONTROL_BIT "appears to be the lkas takeover indicator";
+CM_ SG_ 173 SHIFTER_POSITION "1 = P, 4 = D, 2 = R, 3 = N";
+CM_ SG_ 250 LKAS_HUD_2 "various states while driving with lane lines, to be documented";
+CM_ SG_ 250 UNKNOWN "always 7";
+CM_ SG_ 250 LKAS_HUD_1 "9 = LEFT CAUTION, 11 = VERY LEFT CAUTION 10 = RIGHT CAUTION, 14 = VERY RIGHT, 4 = NO LINES DETECTED, 3 = LINES DETECTED, SYSTEM ACTIVE";
+CM_ SG_ 464 DRIVER_SEATBELT_STATUS "1 unbuckled 0 buckled";
+CM_ SG_ 792 TURN_SIGNALS "RIGHT IS 2 LEFT IS 1";
+CM_ SG_ 792 HIGH_BEAM_FLASH "4 IS HIGH BEAMS ON 8 IS FLASH";
+CM_ SG_ 232 ACC_SET_SPEED_MPH "";
+CM_ SG_ 43 YAW_RATE "verify this isn't crossed up with lateral accel";
+CM_ SG_ 43 ACCEL_LATERAL "verify this isn't crossed up with yaw rate";
+CM_ SG_ 47 UNKNOWN_SPEED_1 "scaling TBD";
+CM_ SG_ 47 UNKNOWN_LOAD "maybe brake manifold vacuum";
+CM_ SG_ 47 UNKNOWN_BRAKE "maybe brake pressure/torque?";
+VAL_ 173 SHIFTER_POSITION 4 "D" 3 "N" 2 "R" 1 "P" ;

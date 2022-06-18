@@ -1,0 +1,19 @@
+CM_ "IMPORT _comma.dbc";
+CM_ "IMPORT _toyota_2017.dbc";
+
+BO_ 548 BRAKE_MODULE: 8 XXX
+ SG_ BRAKE_PRESSURE : 43|12@0+ (1,0) [0|4047] "" XXX
+ SG_ BRAKE_PRESSED : 5|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 610 EPS_STATUS: 5 EPS
+ SG_ IPAS_STATE : 3|4@0+ (1,0) [0|15] "" XXX
+ SG_ LKA_STATE : 31|7@0+ (1,0) [0|127] "" XXX
+ SG_ TYPE : 24|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 39|8@0+ (1,0) [0|255] "" XXX
+
+CM_ SG_ 548 BRAKE_PRESSURE "seems prop to pedal force";
+CM_ SG_ 548 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
+CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
+
+VAL_ 610 IPAS_STATE 5 "override" 3 "enabled" 1 "disabled";
+VAL_ 610 LKA_STATE 25 "temporary_fault" 9 "temporary_fault2" 5 "active" 1 "standby";

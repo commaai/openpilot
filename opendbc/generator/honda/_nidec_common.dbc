@@ -1,0 +1,93 @@
+BO_ 145 KINEMATICS: 8 XXX
+ SG_ LAT_ACCEL : 7|10@0+ (0.02,-512) [-20|20] "m/s2" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+
+BO_ 148 KINEMATICS_ALT: 8 XXX
+ SG_ LAT_ACCEL : 7|10@0+ (0.02,-512) [-20|20] "m/s2" EON
+ SG_ LONG_ACCEL : 24|9@0- (-0.02,0) [-20|20] "m/s2" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+
+BO_ 432 STANDSTILL: 7 VSA
+ SG_ CONTROLLED_STANDSTILL : 0|1@0+ (1,0) [0|1] "" EON
+ SG_ WHEELS_MOVING : 12|1@0+ (1,0) [0|1] "" EON
+ SG_ BRAKE_ERROR_1 : 11|1@0+ (1,0) [0|1] "" EON
+ SG_ BRAKE_ERROR_2 : 9|1@0+ (1,0) [0|1] "" EON
+ SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 51|4@0+ (1,0) [0|3] "" EON
+
+BO_ 487 BRAKE_PRESSURE: 4 VSA
+ SG_ BRAKE_PRESSURE1 : 7|10@0+ (0.015625,-103) [0|1000] "" EON
+ SG_ BRAKE_PRESSURE2 : 9|10@0+ (0.015625,-103) [0|1000] "" EON
+ SG_ CHECKSUM : 27|4@0+ (1,0) [0|15] "" EON
+ SG_ COUNTER : 29|2@0+ (1,0) [0|3] "" EON
+
+BO_ 506 BRAKE_COMMAND: 8 ADAS
+ SG_ COMPUTER_BRAKE : 7|10@0+ (1,0) [0|1] "" EBCM
+ SG_ BRAKE_PUMP_REQUEST : 8|1@0+ (1,0) [0|1] "" EBCM
+ SG_ BRAKE_PUMP_REQUEST_ALT : 11|1@0+ (1,0) [0|1] "" EBCM
+ SG_ SET_ME_X00 : 23|3@0+ (1,0) [0|1] "" EBCM
+ SG_ CRUISE_OVERRIDE : 20|1@0+ (1,0) [0|1] "" EBCM
+ SG_ SET_ME_X00_2 : 19|1@0+ (1,0) [0|1] "" EBCM
+ SG_ CRUISE_FAULT_CMD : 18|1@0+ (1,0) [0|1] "" EBCM
+ SG_ CRUISE_CANCEL_CMD : 17|1@0+ (1,0) [0|1] "" EBCM
+ SG_ COMPUTER_BRAKE_REQUEST : 16|1@0+ (1,0) [0|1] "" EBCM
+ SG_ SET_ME_1 : 31|1@0+ (1,0) [0|1] "" EBCM
+ SG_ AEB_REQ_1 : 29|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_REQ_2 : 26|3@0+ (1,0) [0|7] "" XXX
+ SG_ BRAKE_LIGHTS : 39|1@0+ (1,0) [0|1] "" EBCM
+ SG_ CRUISE_STATES : 38|7@0+ (1,0) [0|1] "" EBCM
+ SG_ CHIME : 47|3@0+ (1,0) [0|7] "" EBCM
+ SG_ SET_ME_X00_3 : 44|1@0+ (1,0) [0|1] "" EBCM
+ SG_ FCW : 43|2@0+ (1,0) [0|3] "" EBCM
+ SG_ AEB_STATUS : 41|2@0+ (1,0) [0|3] "" XXX
+ SG_ COMPUTER_BRAKE_ALT : 55|10@0+ (1,0) [0|0] "" EBCM
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EBCM
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EBCM
+
+BO_ 597 ROUGH_WHEEL_SPEED: 8 VSA
+ SG_ WHEEL_SPEED_FL : 7|8@0+ (1,0) [0|255] "mph" EON
+ SG_ WHEEL_SPEED_FR : 15|8@0+ (1,0) [0|255] "mph" EON
+ SG_ WHEEL_SPEED_RL : 23|8@0+ (1,0) [0|255] "mph" EON
+ SG_ WHEEL_SPEED_RR : 31|8@0+ (1,0) [0|255] "mph" EON
+ SG_ SET_TO_X55 : 39|8@0+ (1,0) [0|255] "" EON
+ SG_ SET_TO_X55_2 : 47|8@0+ (1,0) [0|255] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+BO_ 829 LKAS_HUD: 5 ADAS
+ SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
+ SG_ SET_ME_X41 : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ BOH : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
+ SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_PROBLEM : 12|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_OFF : 11|1@0+ (1,0) [0|1] "" BDY
+ SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
+ SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
+ SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
+ SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_OFF : 27|1@0+ (1,0) [0|1] "" BDY
+ SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
+ SG_ SET_ME_X48 : 31|8@0+ (1,0) [0|255] "" BDY
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" BDY
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" BDY
+
+BO_ 892 CRUISE_PARAMS: 8 PCM
+ SG_ CRUISE_SPEED_OFFSET : 31|8@0- (0.1,0) [-128|127] "kph" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+
+CM_ SG_ 506 AEB_REQ_1 "set for duration of suspected AEB event";
+CM_ SG_ 506 COMPUTER_BRAKE_ALT "Used by dual-can Nidec";
+CM_ SG_ 506 BRAKE_PUMP_REQUEST_ALT "Used by dual-can Nidec";
+CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnngs etc...";
+
+VAL_ 506 FCW 3 "fcw" 2 "fcw" 1 "fcw" 0 "no_fcw";
+VAL_ 506 CHIME 4 "double_chime" 3 "single_chime" 2 "continuous_chime" 1 "repeating_chime" 0 "no_chime";
+VAL_ 506 AEB_STATUS 3 "aeb_prepare" 2 "aeb_ready" 1 "aeb_braking" 0 "no_aeb";
+VAL_ 829 BEEP 3 "single_beep" 2 "triple_beep" 1 "repeated_beep" 0 "no_beep";

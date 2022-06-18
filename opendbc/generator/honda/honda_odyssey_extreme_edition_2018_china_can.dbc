@@ -1,0 +1,75 @@
+CM_ "IMPORT _comma.dbc";
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
+
+BO_ 342 STEERING_SENSORS: 6 EPS
+ SG_ STEER_ANGLE_RATE : 23|16@0- (1,0) [-3000|3000] "deg/s" EON
+ SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] "" EON
+ SG_ STEER_ANGLE : 7|16@0- (-0.1,0) [-500|500] "deg" EON
+
+BO_ 399 STEER_STATUS: 7 EPS
+ SG_ STEER_TORQUE_SENSOR : 7|16@0- (-1,0) [-2985|2985] "tbd" EON
+ SG_ STEER_ANGLE_RATE : 23|16@0- (-0.1,0) [-31000|31000] "deg/s" EON
+ SG_ STEER_STATUS : 43|4@0+ (1,0) [0|15] "" EON
+ SG_ STEER_CONTROL_ACTIVE : 35|1@0+ (1,0) [0|1] "" EON
+ SG_ STEER_CONFIG_INDEX : 43|4@0+ (1,0) [0|15] "" EON
+ SG_ CHECKSUM : 51|4@0+ (1,0) [0|15] "" EON
+ SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
+
+BO_ 401 GEARBOX: 8 PCM
+ SG_ GEAR_SHIFTER : 5|6@0+ (1,0) [0|63] "" EON
+ SG_ GEAR : 35|4@0+ (1,0) [0|15] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+BO_ 404 STEERING_CONTROL: 4 EON
+ SG_ SET_ME_X00 : 22|7@0+ (1,0) [0|127] "" EPS
+ SG_ STEER_TORQUE_REQUEST : 23|1@0+ (1,0) [0|1] "" EPS
+ SG_ COUNTER : 29|2@0+ (1,0) [0|15] "" EPS
+ SG_ CHECKSUM : 27|4@0+ (1,0) [0|3] "" EPS
+ SG_ STEER_TORQUE : 7|16@0- (-1,0) [-32767|32767] "" EPS
+
+BO_ 422 SCM_BUTTONS: 8 SCM
+ SG_ CRUISE_BUTTONS : 7|3@0+ (1,0) [0|7] "" EON
+ SG_ LIGHTS_SETTING : 1|2@0+ (1,0) [0|3] "" EON
+ SG_ MAIN_ON : 47|1@0+ (1,0) [0|1] "" EON
+ SG_ CRUISE_SETTING : 43|2@0+ (1,0) [0|3] "" EON
+ SG_ DRIVERS_DOOR_OPEN : 63|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+BO_ 450 EPB_STATUS: 8 XXX
+ SG_ EPB_BRAKE_AND_PULL : 6|1@0+ (1,0) [0|1] "" XXX
+ SG_ EPB_ACTIVE : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ EPB_STATE : 29|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 660 SCM_FEEDBACK: 8 SCM
+ SG_ RIGHT_BLINKER : 6|1@0+ (1,0) [0|1] "" EON
+ SG_ LEFT_BLINKER : 5|1@0+ (1,0) [0|1] "" EON
+ SG_ WIPERS_SPEED : 4|2@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+BO_ 862 HIGHBEAM_CONTROL: 8 ADAS
+ SG_ ZEROS_BOH : 7|50@0+ (1,0) [0|127] "" BDY
+ SG_ ZEROS_BOH_2 : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ HIGHBEAMS_ON : 52|1@0+ (1,0) [0|1] "" XXX
+ SG_ AUTO_HIGHBEAMS_ACTIVE : 53|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 1302 ODOMETER: 8 XXX
+ SG_ ODOMETER : 7|24@0+ (1,0) [0|16777215] "km" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+
+CM_ SG_ 401 GEAR "10 = reverse, 11 = transition";
+VAL_ 399 STEER_STATUS 5 "fault" 4 "no_torque_alert_2" 2 "no_torque_alert_1" 0 "normal" ;
+VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P" ;
+VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
+VAL_ 422 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
+VAL_ 422 LIGHTS_SETTING 3 "high_beam" 2 "low_beam" 1 "position" 0 "no_lights" ;
+VAL_ 422 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;

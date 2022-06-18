@@ -1,0 +1,54 @@
+BO_ 479 ACC_CONTROL: 8 EON
+ SG_ SET_TO_0 : 20|5@0+ (1,0) [0|1] "" XXX
+ SG_ CONTROL_ON : 23|3@0+ (1,0) [0|5] "" XXX
+ SG_ GAS_COMMAND : 7|16@0- (1,0) [0|0] "" XXX
+ SG_ ACCEL_COMMAND : 31|11@0- (0.01,0) [0|0] "m/s2" XXX
+ SG_ BRAKE_LIGHTS : 62|1@0+ (1,0) [0|1] "" XXX
+ SG_ BRAKE_REQUEST : 34|1@0+ (1,0) [0|1] "" XXX
+ SG_ STANDSTILL : 35|1@0+ (1,0) [0|1] "" XXX
+ SG_ STANDSTILL_RELEASE : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_STATUS : 33|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_BRAKING : 47|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_PREPARE : 43|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 495 ACC_CONTROL_ON: 8 XXX
+ SG_ SET_TO_75 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_TO_30 : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ ZEROS_BOH : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ ZEROS_BOH2 : 47|16@0+ (1,0) [0|255] "" XXX
+ SG_ SET_TO_FF : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_TO_3 : 6|7@0+ (1,0) [0|4095] "" XXX
+ SG_ CONTROL_ON : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 829 LKAS_HUD: 5 ADAS
+ SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
+ SG_ SET_ME_X41 : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ BOH : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
+ SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_PROBLEM : 12|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_OFF : 11|1@0+ (1,0) [0|1] "" BDY
+ SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
+ SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
+ SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
+ SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_OFF : 27|1@0+ (1,0) [0|1] "" BDY
+ SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
+ SG_ SET_ME_X48 : 31|8@0+ (1,0) [0|255] "" BDY
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" BDY
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" BDY
+
+CM_ SG_ 479 CONTROL_ON "Set to 5 when car is being controlled";
+CM_ SG_ 479 AEB_STATUS "set for the duration of AEB event";
+CM_ SG_ 479 AEB_BRAKING "set when braking is commanded during AEB event";
+CM_ SG_ 479 AEB_PREPARE "set 1s before AEB";
+CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnngs etc...";
+
+VAL_ 829 BEEP 3 "single_beep" 2 "triple_beep" 1 "repeated_beep" 0 "no_beep";

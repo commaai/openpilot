@@ -1,0 +1,52 @@
+CM_ "IMPORT _comma.dbc";
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
+
+BO_ 342 STEERING_SENSORS: 6 EPS
+ SG_ STEER_ANGLE : 7|16@0- (-0.1,0) [-500|500] "deg" EON
+ SG_ STEER_ANGLE_RATE : 23|16@0- (1,0) [-3000|3000] "deg/s" EON
+ SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] "" EON
+
+BO_ 399 STEER_STATUS: 6 EPS
+ SG_ STEER_TORQUE_SENSOR : 7|12@0- (-1,0) [-2047.5|2047.5] "tbd"  EON
+ SG_ STEER_TORQUE_MOTOR : 23|16@0- (-1,0) [-31000|31000] "tbd"  EON
+ SG_ STEER_CONTROL_ACTIVE : 36|1@0+ (1,0) [0|1] ""  EON
+ SG_ STEER_STATUS : 35|4@0+ (1,0) [0|15] ""  EON
+ SG_ COUNTER : 45|2@0+ (1,0) [0|3] ""  EON
+ SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] ""  EON
+
+BO_ 419 GEARBOX: 8 PCM
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ GEAR_SHIFTER : 29|6@0+ (1,0) [0|63] "" EON
+ SG_ GEAR : 7|8@0+ (1,0) [0|255] "" EON
+
+BO_ 404 STEERING_CONTROL: 4 EON
+ SG_ STEER_TORQUE : 7|12@0- (1,0) [-768|768] "" EPS
+ SG_ SET_ME_X00 : 11|4@0+ (1,0) [0|15] "" EPS
+ SG_ STEER_TORQUE_REQUEST : 23|1@0+ (1,0) [0|1] "" EPS
+ SG_ SET_ME_X00 : 22|7@0+ (1,0) [0|127] "" EPS
+ SG_ COUNTER : 29|2@0+ (1,0) [0|15] "" EPS
+ SG_ CHECKSUM : 27|4@0+ (1,0) [0|3] "" EPS
+
+BO_ 422 SCM_BUTTONS: 8 SCM
+ SG_ CRUISE_BUTTONS : 7|3@0+ (1,0) [0|7] "" EON
+ SG_ LIGHTS_SETTING : 1|2@0+ (1,0) [0|3] "" EON
+ SG_ MAIN_ON : 47|1@0+ (1,0) [0|1] "" EON
+ SG_ CRUISE_SETTING : 43|2@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+BO_ 660 SCM_FEEDBACK: 8 SCM
+ SG_ RIGHT_BLINKER : 6|1@0+ (1,0) [0|1] "" EON
+ SG_ LEFT_BLINKER : 5|1@0+ (1,0) [0|1] "" EON
+ SG_ WIPERS_SPEED : 4|2@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
+VAL_ 419 GEAR_SHIFTER  32 "D" 8 "R" 4 "P" ;
+VAL_ 422 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
+VAL_ 422 LIGHTS_SETTING 3 "high_beam" 2 "low_beam" 1 "position" 0 "no_lights" ;
+VAL_ 422 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;

@@ -1,0 +1,97 @@
+CM_ "IMPORT _comma.dbc";
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
+CM_ "IMPORT _steering_sensors_a.dbc";
+
+BO_ 228 STEERING_CONTROL: 5 ADAS
+ SG_ STEER_TORQUE : 7|16@0- (1,0) [-3840|3840] "" EPS
+ SG_ STEER_TORQUE_REQUEST : 23|1@0+ (1,0) [0|1] "" EPS
+ SG_ SET_ME_X00 : 22|7@0+ (1,0) [0|127] "" EPS
+ SG_ SET_ME_X00_2 : 31|8@0+ (1,0) [0|0] "" EPS
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" EPS
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" EPS
+
+BO_ 399 STEER_STATUS: 7 EPS
+ SG_ STEER_TORQUE_SENSOR : 7|16@0- (-1,0) [-31000|31000] "tbd" EON
+ SG_ STEER_ANGLE_RATE : 23|16@0- (-0.1,0) [-31000|31000] "deg/s" EON
+ SG_ STEER_STATUS : 39|4@0+ (1,0) [0|15] "" EON
+ SG_ STEER_CONTROL_ACTIVE : 35|1@0+ (1,0) [0|1] "" EON
+ SG_ STEER_CONFIG_INDEX : 43|4@0+ (1,0) [0|15] "" EON
+ SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 51|4@0+ (1,0) [0|3] "" EON
+
+BO_ 401 GEARBOX: 8 PCM
+ SG_ GEAR_SHIFTER : 5|6@0+ (1,0) [0|63] "" EON
+ SG_ GEAR : 43|4@0+ (1,0) [0|15] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+
+BO_ 450 EPB_STATUS: 8 EPB
+ SG_ EPB_ACTIVE : 3|1@0+ (1,0) [0|1] "" EON
+ SG_ EPB_STATE : 29|2@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+
+BO_ 493 HUD_SETTING: 5 XXX
+ SG_ IMPERIAL_UNIT : 5|1@0+ (1,0) [0|1] "" EON
+
+BO_ 545 ECON_STATUS: 6 XXX
+ SG_ ECON_ON_2 : 37|2@0+ (1,0) [0|3] "" EON
+ SG_ ECON_ON : 23|1@0+ (1,0) [0|1] "" EON
+ SG_ CHECKSUM : 43|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" EON
+
+BO_ 662 SCM_BUTTONS: 4 SCM
+ SG_ CRUISE_BUTTONS : 7|3@0+ (1,0) [0|7] "" EON
+ SG_ CRUISE_SETTING : 3|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 27|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 29|2@0+ (1,0) [0|3] "" EON
+
+BO_ 806 SCM_FEEDBACK: 8 SCM
+ SG_ CMBS_BUTTON : 22|2@0+ (1,0) [0|3] "" EON
+ SG_ MAIN_ON : 28|1@0+ (1,0) [0|1] "" EON
+ SG_ RIGHT_BLINKER : 27|1@0+ (1,0) [0|1] "" EON
+ SG_ LEFT_BLINKER : 26|1@0+ (1,0) [0|1] "" EON
+ SG_ REVERSE_LIGHT : 18|1@0+ (1,0) [0|1] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+
+BO_ 862 HIGHBEAM_CONTROL: 8 ADAS
+ SG_ ZEROS_BOH : 7|50@0+ (1,0) [0|127] "" BDY
+ SG_ ZEROS_BOH_2 : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ HIGHBEAMS_ON : 52|1@0+ (1,0) [0|1] "" XXX
+ SG_ AUTO_HIGHBEAMS_ACTIVE : 53|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 927 RADAR_HUD: 8 ADAS
+ SG_ ZEROS_BOH : 7|17@0+ (1,0) [0|127] "" BDY
+ SG_ APPLY_BRAKES_FOR_CANC : 23|1@0+ (1,0) [0|15] "" BDY
+ SG_ ZEROS_BOH2 : 31|8@0+ (1,0) [0|127] "" BDY
+ SG_ RESUME_INSTRUCTION : 21|1@0+ (1,0) [0|15] "" BDY
+ SG_ ACC_ALERTS : 20|5@0+ (1,0) [0|15] "" BDY
+ SG_ LEAD_SPEED : 39|9@0+ (1,0) [0|127] "" BDY
+ SG_ LEAD_STATE : 46|3@0+ (1,0) [0|127] "" BDY
+ SG_ LEAD_DISTANCE : 43|5@0+ (1,0) [0|31] "" BDY
+ SG_ ZEROS_BOH3 : 54|7@0+ (1,0) [0|127] "" BDY
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" BDY
+
+BO_ 1302 ODOMETER: 8 XXX
+ SG_ ODOMETER : 7|24@0+ (1,0) [0|16777215] "km" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+
+CM_ SG_ 401 GEAR "10 = reverse, 11 = transition";
+CM_ SG_ 450 EPB_STATE "3 \"engaged\" 2 \"disengaging\" 1 \"engaging\" 0 \"disengaged\"";
+CM_ SG_ 806 REVERSE_LIGHT "Might be reverse gear selected and not the lights";
+
+VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
+VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P" ;
+VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
+VAL_ 450 EPB_STATE 3 "engaged" 2 "disengaging" 1 "engaging" 0 "disengaged" ;
+VAL_ 545 ECON_ON_2 0 "off" 3 "on" ;
+VAL_ 662 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
+VAL_ 662 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;
+VAL_ 806 CMBS_BUTTON 3 "pressed" 0 "released" ;
+VAL_ 927 ACC_ALERTS 29 "esp_active_acc_canceled" 10 "b_pedal_applied" 9 "speed_too_low" 8 "speed_too_high" 7 "p_brake_applied" 6 "gear_no_d" 5 "seatbelt" 4 "too_steep_downhill" 3 "too_steep_uphill" 2 "too_close" 1 "no_vehicle_ahead" ;

@@ -1,0 +1,23 @@
+name: drivers
+on: [push, pull_request]
+
+jobs:
+  build_socketcan:
+    name: socketcan build
+    runs-on: ubuntu-20.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y dkms gcc linux-headers-$(uname -r) make
+      - name: Build socketcan driver
+        run: |
+          cd drivers/linux
+          make link
+          make build
+          make install
+      - name: Print make log
+        if: always()
+        continue-on-error: true
+        run: cat /var/lib/dkms/panda/*/build/make.log
