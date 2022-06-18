@@ -31,8 +31,11 @@ cdef class VisionIpcServer:
   def __init__(self, string name):
     self.server = new cppVisionIpcServer(name, NULL, NULL)
 
-  def create_buffers(self,  VisionStreamType tp, size_t num_buffers, bool rgb, size_t width, size_t height):
+  def create_buffers(self, VisionStreamType tp, size_t num_buffers, bool rgb, size_t width, size_t height):
     self.server.create_buffers(tp, num_buffers, rgb, width, height)
+
+  def create_buffers_with_sizes(self, VisionStreamType tp, size_t num_buffers, bool rgb, size_t width, size_t height, size_t size, size_t stride, size_t uv_offset):
+    self.server.create_buffers_with_sizes(tp, num_buffers, rgb, width, height, size, stride, uv_offset)
 
   def send(self, VisionStreamType tp, const unsigned char[:] data, uint32_t frame_id=0, uint64_t timestamp_sof=0, uint64_t timestamp_eof=0):
     cdef cppVisionBuf * buf = self.server.get_buffer(tp)
@@ -78,6 +81,10 @@ cdef class VisionIpcClient:
   @property
   def stride(self):
     return None if not self.buf else self.buf.stride
+
+  @property
+  def uv_offset(self):
+    return None if not self.buf else self.buf.uv_offset
 
   def recv(self, int timeout_ms=100):
     self.buf = self.client.recv(NULL, timeout_ms)

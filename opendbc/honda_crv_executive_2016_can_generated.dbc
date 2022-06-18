@@ -94,6 +94,43 @@ BO_ 773 SEATBELT_STATUS: 7 BDY
  SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 51|4@0+ (1,0) [0|3] "" EON
 
+BO_ 777 CAR_SPEED: 8 PCM
+ SG_ ROUGH_CAR_SPEED : 23|8@0+ (1,0) [0|255] "mph" XXX
+ SG_ CAR_SPEED : 7|16@0+ (0.01,0) [0|65535] "kph" XXX
+ SG_ ROUGH_CAR_SPEED_3 : 39|16@0+ (0.01,0) [0|65535] "kph" XXX
+ SG_ ROUGH_CAR_SPEED_2 : 31|8@0+ (1,0) [0|255] "mph" XXX
+ SG_ LOCK_STATUS : 55|2@0+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ IMPERIAL_UNIT : 63|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 780 ACC_HUD: 8 ADAS
+ SG_ PCM_SPEED : 7|16@0+ (0.01,0) [0|250] "kph" BDY
+ SG_ PCM_GAS : 23|8@0+ (1,0) [0|127] "" BDY
+ SG_ CRUISE_SPEED : 31|8@0+ (1,0) [0|255] "kph" BDY
+ SG_ DTC_MODE : 39|1@0+ (1,0) [0|1] "" BDY
+ SG_ BOH : 38|1@0+ (1,0) [0|1] "" BDY
+ SG_ ACC_PROBLEM : 37|1@0+ (1,0) [0|1] "" BDY
+ SG_ FCM_OFF : 35|1@0+ (1,0) [0|1] "" BDY
+ SG_ FCM_OFF_2 : 36|1@0+ (1,0) [0|1] "" BDY
+ SG_ FCM_PROBLEM : 34|1@0+ (1,0) [0|1] "" BDY
+ SG_ RADAR_OBSTRUCTED : 33|1@0+ (1,0) [0|1] "" BDY
+ SG_ ENABLE_MINI_CAR : 32|1@0+ (1,0) [0|1] "" BDY
+ SG_ HUD_DISTANCE : 47|2@0+ (1,0) [0|3] "" BDY
+ SG_ HUD_LEAD : 45|2@0+ (1,0) [0|3] "" BDY
+ SG_ BOH_3 : 43|1@0+ (1,0) [0|3] "" BDY
+ SG_ BOH_4 : 42|1@0+ (1,0) [0|3] "" BDY
+ SG_ BOH_5 : 41|1@0+ (1,0) [0|3] "" BDY
+ SG_ CRUISE_CONTROL_LABEL : 40|1@0+ (1,0) [0|3] "" BDY
+ SG_ SET_ME_X01_2 : 55|1@0+ (1,0) [0|1] "" BDY
+ SG_ IMPERIAL_UNIT : 54|1@0+ (1,0) [0|1] "" BDY
+ SG_ ACC_ON : 52|1@0+ (1,0) [0|1] "" BDY
+ SG_ CHIME : 51|3@0+ (1,0) [0|1] "" BDY
+ SG_ SET_ME_X01 : 48|1@0+ (1,0) [0|1] "" BDY
+ SG_ ICONS : 63|2@0+ (1,0) [0|1] "" BDY
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" BDY
+
 BO_ 804 CRUISE: 8 PCM
  SG_ HUD_SPEED_KPH : 7|8@0+ (1,0) [0|255] "kph" EON
  SG_ HUD_SPEED_MPH : 15|8@0+ (1,0) [0|255] "mph" EON
@@ -103,27 +140,6 @@ BO_ 804 CRUISE: 8 PCM
  SG_ BOH3 : 55|8@0+ (1,0) [0|255] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
-
-BO_ 829 LKAS_HUD: 5 ADAS
- SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
- SG_ SET_ME_X41 : 6|7@0+ (1,0) [0|127] "" BDY
- SG_ BOH : 6|7@0+ (1,0) [0|127] "" BDY
- SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
- SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY
- SG_ LKAS_PROBLEM : 12|1@0+ (1,0) [0|1] "" BDY
- SG_ LKAS_OFF : 11|1@0+ (1,0) [0|1] "" BDY
- SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
- SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
- SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
- SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
- SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
- SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
- SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
- SG_ LDW_OFF : 27|1@0+ (1,0) [0|1] "" BDY
- SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
- SG_ SET_ME_X48 : 31|8@0+ (1,0) [0|255] "" BDY
- SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" BDY
- SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" BDY
 
 BO_ 884 STALK_STATUS: 8 XXX
  SG_ DASHBOARD_ALERT : 39|8@0+ (1,0) [0|255] "" EON
@@ -158,15 +174,18 @@ CM_ SG_ 420 BRAKE_HOLD_RELATED "On when Brake Hold engaged";
 CM_ SG_ 490 LONG_ACCEL "wheel speed derivative, noisy and zero snapping";
 CM_ SG_ 773 PASS_AIRBAG_ON "Might just be indicator light";
 CM_ SG_ 773 PASS_AIRBAG_OFF "Might just be indicator light";
+CM_ SG_ 780 CRUISE_SPEED "255 = no speed";
+CM_ SG_ 780 PCM_SPEED "Used by Nidec";
+CM_ SG_ 780 PCM_GAS "Used by Nidec";
 CM_ SG_ 804 CRUISE_SPEED_PCM "255 = no speed";
-CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnngs etc...";
 
-VAL_ 829 BEEP 3 "single_beep" 2 "triple_beep" 1 "repeated_beep" 0 "no_beep";
+VAL_ 780 CRUISE_SPEED 255 "no_speed" 252 "stopped";
+VAL_ 780 HUD_LEAD 3 "acc_off" 2 "solid_car" 1 "dashed_car" 0 "no_car";
 VAL_ 884 DASHBOARD_ALERT 0 "none" 51 "acc_problem" 55 "cmbs_problem" 75 "key_not_detected" 79 "fasten_seatbelt" 111 "lkas_problem" 131 "brake_system_problem" 132 "brake_hold_problem" 139 "tbd" 161 "door_open";
 VAL_ 891 WIPERS 4 "High" 2 "Low" 0 "Off";
 
 
-CM_ "Imported file _nidec_2017.dbc starts here";
+CM_ "Imported file _nidec_common.dbc starts here";
 BO_ 145 KINEMATICS: 8 XXX
  SG_ LAT_ACCEL : 7|10@0+ (0.02,-512) [-20|20] "m/s2" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
@@ -194,11 +213,11 @@ BO_ 487 BRAKE_PRESSURE: 4 VSA
 
 BO_ 506 BRAKE_COMMAND: 8 ADAS
  SG_ COMPUTER_BRAKE : 7|10@0+ (1,0) [0|1] "" EBCM
- SG_ SET_ME_X00 : 13|5@0+ (1,0) [0|1] "" EBCM
  SG_ BRAKE_PUMP_REQUEST : 8|1@0+ (1,0) [0|1] "" EBCM
- SG_ SET_ME_X00_2 : 23|3@0+ (1,0) [0|1] "" EBCM
+ SG_ BRAKE_PUMP_REQUEST_ALT : 11|1@0+ (1,0) [0|1] "" EBCM
+ SG_ SET_ME_X00 : 23|3@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_OVERRIDE : 20|1@0+ (1,0) [0|1] "" EBCM
- SG_ SET_ME_X00_3 : 19|1@0+ (1,0) [0|1] "" EBCM
+ SG_ SET_ME_X00_2 : 19|1@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_FAULT_CMD : 18|1@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_CANCEL_CMD : 17|1@0+ (1,0) [0|1] "" EBCM
  SG_ COMPUTER_BRAKE_REQUEST : 16|1@0+ (1,0) [0|1] "" EBCM
@@ -208,10 +227,10 @@ BO_ 506 BRAKE_COMMAND: 8 ADAS
  SG_ BRAKE_LIGHTS : 39|1@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_STATES : 38|7@0+ (1,0) [0|1] "" EBCM
  SG_ CHIME : 47|3@0+ (1,0) [0|7] "" EBCM
- SG_ SET_ME_X00_4 : 44|1@0+ (1,0) [0|1] "" EBCM
+ SG_ SET_ME_X00_3 : 44|1@0+ (1,0) [0|1] "" EBCM
  SG_ FCW : 43|2@0+ (1,0) [0|3] "" EBCM
  SG_ AEB_STATUS : 41|2@0+ (1,0) [0|3] "" XXX
- SG_ SET_ME_X00_5 : 55|8@0+ (1,0) [0|0] "" EBCM
+ SG_ COMPUTER_BRAKE_ALT : 55|10@0+ (1,0) [0|0] "" EBCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EBCM
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EBCM
 
@@ -225,38 +244,26 @@ BO_ 597 ROUGH_WHEEL_SPEED: 8 VSA
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
 
-BO_ 777 LOCK_STATUS: 8 XXX
- SG_ DOORS_UNLOCKED : 54|1@0+ (1,0) [0|1] "" EON
- SG_ DOORS_LOCKED : 55|1@0+ (1,0) [0|1] "" EON
- SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
-
-BO_ 780 ACC_HUD: 8 ADAS
- SG_ PCM_SPEED : 7|16@0+ (0.01,0) [0|250] "kph" BDY
- SG_ PCM_GAS : 23|8@0+ (1,0) [0|127] "" BDY
- SG_ CRUISE_SPEED : 31|8@0+ (1,0) [0|255] "" BDY
- SG_ DTC_MODE : 39|1@0+ (1,0) [0|1] "" BDY
- SG_ BOH : 38|1@0+ (1,0) [0|1] "" BDY
- SG_ ACC_PROBLEM : 37|1@0+ (1,0) [0|1] "" BDY
- SG_ FCM_OFF : 36|1@0+ (1,0) [0|1] "" BDY
- SG_ FCM_OFF_2 : 35|1@0+ (1,0) [0|1] "" BDY
- SG_ FCM_PROBLEM : 34|1@0+ (1,0) [0|1] "" BDY
- SG_ RADAR_OBSTRUCTED : 33|1@0+ (1,0) [0|1] "" BDY
- SG_ ENABLE_MINI_CAR : 32|1@0+ (1,0) [0|1] "" BDY
- SG_ HUD_DISTANCE : 47|2@0+ (1,0) [0|3] "" BDY
- SG_ HUD_LEAD : 45|2@0+ (1,0) [0|3] "" BDY
- SG_ BOH_3 : 43|1@0+ (1,0) [0|3] "" BDY
- SG_ BOH_4 : 42|1@0+ (1,0) [0|3] "" BDY
- SG_ BOH_5 : 41|1@0+ (1,0) [0|3] "" BDY
- SG_ CRUISE_CONTROL_LABEL : 40|1@0+ (1,0) [0|3] "" BDY
- SG_ SET_ME_X01_2 : 55|1@0+ (1,0) [0|1] "" BDY
- SG_ IMPERIAL_UNIT : 54|1@0+ (1,0) [0|1] "" BDY
- SG_ HUD_DISTANCE_3 : 52|1@0+ (1,0) [0|1] "" BDY
- SG_ CHIME : 51|3@0+ (1,0) [0|1] "" BDY
- SG_ SET_ME_X01 : 48|1@0+ (1,0) [0|1] "" BDY
- SG_ ICONS : 63|2@0+ (1,0) [0|1] "" BDY
- SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" BDY
+BO_ 829 LKAS_HUD: 5 ADAS
+ SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
+ SG_ SET_ME_X41 : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ BOH : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
+ SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_PROBLEM : 12|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_OFF : 11|1@0+ (1,0) [0|1] "" BDY
+ SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
+ SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
+ SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
+ SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_OFF : 27|1@0+ (1,0) [0|1] "" BDY
+ SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
+ SG_ SET_ME_X48 : 31|8@0+ (1,0) [0|255] "" BDY
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" BDY
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" BDY
 
 BO_ 892 CRUISE_PARAMS: 8 PCM
  SG_ CRUISE_SPEED_OFFSET : 31|8@0- (0.1,0) [-128|127] "kph" EON
@@ -264,13 +271,14 @@ BO_ 892 CRUISE_PARAMS: 8 PCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
 
 CM_ SG_ 506 AEB_REQ_1 "set for duration of suspected AEB event";
-CM_ SG_ 780 CRUISE_SPEED "255 = no speed";
+CM_ SG_ 506 COMPUTER_BRAKE_ALT "Used by dual-can Nidec";
+CM_ SG_ 506 BRAKE_PUMP_REQUEST_ALT "Used by dual-can Nidec";
+CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnngs etc...";
 
 VAL_ 506 FCW 3 "fcw" 2 "fcw" 1 "fcw" 0 "no_fcw";
 VAL_ 506 CHIME 4 "double_chime" 3 "single_chime" 2 "continuous_chime" 1 "repeating_chime" 0 "no_chime";
 VAL_ 506 AEB_STATUS 3 "aeb_prepare" 2 "aeb_ready" 1 "aeb_braking" 0 "no_aeb";
-VAL_ 780 CRUISE_SPEED 255 "no_speed" 252 "stopped";
-VAL_ 780 HUD_LEAD 3 "acc_off" 2 "solid_car" 1 "dashed_car" 0 "no_car";
+VAL_ 829 BEEP 3 "single_beep" 2 "triple_beep" 1 "repeated_beep" 0 "no_beep";
 
 CM_ "honda_crv_executive_2016_can.dbc starts here";
 

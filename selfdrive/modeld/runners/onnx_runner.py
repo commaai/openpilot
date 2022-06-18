@@ -59,7 +59,10 @@ if __name__ == "__main__":
     options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     provider = 'CPUExecutionProvider'
 
-  print("Onnx selected provider: ", [provider], file=sys.stderr)
-  ort_session = ort.InferenceSession(sys.argv[1], options, providers=[provider])
-  print("Onnx using ", ort_session.get_providers(), file=sys.stderr)
-  run_loop(ort_session)
+  try:
+    print("Onnx selected provider: ", [provider], file=sys.stderr)
+    ort_session = ort.InferenceSession(sys.argv[1], options, providers=[provider])
+    print("Onnx using ", ort_session.get_providers(), file=sys.stderr)
+    run_loop(ort_session)
+  except KeyboardInterrupt:
+    pass

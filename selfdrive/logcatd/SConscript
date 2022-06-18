@@ -1,3 +1,0 @@
-Import('env', 'cereal', 'messaging', 'common')
-
-env.Program('logcatd', 'logcatd_systemd.cc', LIBS=[cereal, messaging, common, 'zmq', 'capnp', 'kj', 'systemd', 'json11'])
