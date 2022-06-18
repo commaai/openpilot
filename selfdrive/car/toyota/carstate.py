@@ -128,7 +128,7 @@ class CarState(CarStateBase):
       ret.leftBlindspot = (cp.vl["BSM"]["L_ADJACENT"] == 1) or (cp.vl["BSM"]["L_APPROACHING"] == 1)
       ret.rightBlindspot = (cp.vl["BSM"]["R_ADJACENT"] == 1) or (cp.vl["BSM"]["R_APPROACHING"] == 1)
 
-    if not self.CP.openpilotLongitudinalControl and self.CP.carFingerprint not in (TSS2_CAR, CAR.LEXUS_IS, CAR.LEXUS_RC):
+    if not self.CP.openpilotLongitudinalControl and self.CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR, CAR.LEXUS_IS, CAR.LEXUS_RC):
       self.stock_resume_ready = (cp.vl["ACC_CONTROL"]["RELEASE_STANDSTILL"] == 1 and self.pcm_acc_status == 7)
     else:
       self.stock_resume_ready = False
@@ -214,13 +214,14 @@ class CarState(CarStateBase):
       ]
       checks.append(("BSM", 1))
 
-    if not CP.openpilotLongitudinalControl and CP.carFingerprint not in (TSS2_CAR, CAR.LEXUS_IS, CAR.LEXUS_RC):
+    if not CP.openpilotLongitudinalControl and CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR, CAR.LEXUS_IS, CAR.LEXUS_RC):
       signals.append(("RELEASE_STANDSTILL", "ACC_CONTROL"))
       checks.append(("ACC_CONTROL", 33))
 
     if CP.carFingerprint in RADAR_ACC_CAR:
       signals += [
         ("ACC_TYPE", "ACC_CONTROL"),
+        ("RELEASE_STANDSTILL", "ACC_CONTROL"),
         ("FCW", "ACC_HUD"),
       ]
       checks += [

@@ -4,7 +4,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_intercept
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
-from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
+from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR, \
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams
 from opendbc.can.packer import CANPacker
 
@@ -45,7 +45,7 @@ class CarController:
       pedal_offset = interp(CS.out.vEgo, [0.0, 2.3, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
       pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
-    elif self.CP.enableGasInterceptor and not self.CP.openpilotLongitudinalControl and self.CP.carFingerprint not in (TSS2_CAR, CAR.LEXUS_IS, CAR.LEXUS_RC) and CS.stock_resume_ready:
+    elif self.CP.enableGasInterceptor and not self.CP.openpilotLongitudinalControl and self.CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR, CAR.LEXUS_IS, CAR.LEXUS_RC) and CS.stock_resume_ready:
       interceptor_gas_cmd = 0.16
     else:
       interceptor_gas_cmd = 0.
