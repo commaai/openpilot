@@ -14,7 +14,7 @@ from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.car.fingerprints import FW_VERSIONS
+from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
 from selfdrive.manager.process import PythonProcess
@@ -368,7 +368,10 @@ def setup_env(simulation=False, CP=None):
 
   # Regen or python process
   if CP is not None:
-    if CP.fingerprintSource == "fw" and CP.carFingerprint in FW_VERSIONS:
+    if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
+      params.put_bool("DisengageOnAccelerator", False)
+
+    if CP.fingerprintSource == "fw":
       params.put("CarParamsCache", CP.as_builder().to_bytes())
     else:
       os.environ['SKIP_FW_QUERY'] = "1"

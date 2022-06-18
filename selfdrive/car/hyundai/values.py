@@ -80,6 +80,8 @@ class CAR:
 
 @dataclass
 class HyundaiCarInfo(CarInfo):
+  # TODO: we can probably remove LKAS. LKAS is standard on many
+  # HKG and for others, it's likely packaged together with SCC
   package: str = "SCC + LKAS"
   good_torque: bool = True
 
@@ -121,7 +123,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Forte 2018", harness=Harness.hyundai_b),
     HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
   ],
-  CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "SCC + LFA", harness=Harness.hyundai_a),
+  CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "SCC", harness=Harness.hyundai_a),
   CAR.KIA_NIRO_EV: [
     HyundaiCarInfo("Kia Niro Electric 2019-20", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_f),
     HyundaiCarInfo("Kia Niro Electric 2021", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_c),
@@ -144,7 +146,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
-  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "All", harness=Harness.none),
+  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "All", harness=Harness.hyundai_p),
 
   # Genesis
   CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018", "All", harness=Harness.hyundai_f),
