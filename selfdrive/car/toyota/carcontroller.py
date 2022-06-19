@@ -52,8 +52,8 @@ class CarController:
     else:
       pcm_accel_cmd = actuators.accel
       interceptor_gas_cmd = 0.
-      start_boost = interp(CS.out.vEgo, [0.0, CREEP_SPEED], [0.3, 0.0])
-      is_accelerating = interp(actuators.accel, [0.0, 0.1], [0.0, 1.0])
+      start_boost = interp(CS.out.vEgo, [CREEP_SPEED, CREEP_SPEED * 2], [0.6, 0.0])
+      is_accelerating = interp(actuators.accel, [0.0, 0.4], [0.0, 1.0])
       pcm_accel_cmd_boost = start_boost * is_accelerating
 
       # if CS.out.standstill and pcm_accel_cmd > 0.0:
