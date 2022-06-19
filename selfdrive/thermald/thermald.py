@@ -220,7 +220,7 @@ def thermald_thread(end_event, hw_queue):
         if TICI:
           fan_controller = TiciFanController()
 
-    elif (sec_since_boot() - sm.rcv_time['pandaStates']/1e9) > DISCONNECT_TIMEOUT:
+    elif (sec_since_boot() - sm.rcv_time['pandaStates']) > DISCONNECT_TIMEOUT:
       if onroad_conditions["ignition"]:
         onroad_conditions["ignition"] = False
         cloudlog.error("panda timed out onroad")
@@ -249,7 +249,7 @@ def thermald_thread(end_event, hw_queue):
     current_filter.update(msg.deviceState.batteryCurrent / 1e6)
 
     max_comp_temp = temp_filter.update(
-      max(max(msg.deviceState.cpuTempC), msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC), max(msg.deviceState.pmicTempC))
+      max(max(msg.deviceState.cpuTempC), msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC))
     )
 
     if fan_controller is not None:

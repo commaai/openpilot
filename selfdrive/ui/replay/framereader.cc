@@ -242,7 +242,7 @@ bool FrameReader::copyBuffers(AVFrame *f, uint8_t *yuv) {
                        f->data[1], f->linesize[1],
                        f->data[2], f->linesize[2],
                        y, width,
-                       uv, width / 2,
+                       uv, width,
                        width, height);
   }
   return true;

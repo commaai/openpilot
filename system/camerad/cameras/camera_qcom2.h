@@ -106,6 +106,5 @@ typedef struct MultiCameraState {
   CameraState wide_road_cam;
   CameraState driver_cam;
 
-  SubMaster *sm;
   PubMaster *pm;
 } MultiCameraState;

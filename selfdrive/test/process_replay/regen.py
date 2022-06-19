@@ -15,7 +15,6 @@ from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
-from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
@@ -128,7 +127,10 @@ def replay_cameras(lr, frs, disable_tqdm=False):
   ]
 
   def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
-    pm = messaging.PubMaster([s, ])
+    services = [(s, stream)]
+    if use_extra_client:
+      services.append(("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD))
+    pm = messaging.PubMaster([s for s, _ in services])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
 
     img = b"\x00" * int(size[0] * size[1] * 3 / 2)
@@ -138,16 +140,15 @@ def replay_cameras(lr, frs, disable_tqdm=False):
 
       rk.keep_time()
 
-      m = messaging.new_message(s)
-      msg = getattr(m, s)
-      msg.frameId = rk.frame
-      msg.timestampSof = m.logMonoTime
-      msg.timestampEof = m.logMonoTime
-      pm.send(s, m)
+      for s, stream in services:
+        m = messaging.new_message(s)
+        msg = getattr(m, s)
+        msg.frameId = rk.frame
+        msg.timestampSof = m.logMonoTime
+        msg.timestampEof = m.logMonoTime
+        pm.send(s, m)
 
-      vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
-      if use_extra_client:
-        vipc_server.send(VisionStreamType.VISION_STREAM_WIDE_ROAD, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+        vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
 
   init_data = [m for m in lr if m.which() == 'initData'][0]
   cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
@@ -181,28 +182,12 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   if frs is None:
     frs = dict()
 
-  setup_env()
   params = Params()
-
   os.environ["LOG_ROOT"] = outdir
-  os.environ['SKIP_FW_QUERY'] = ""
-  os.environ['FINGERPRINT'] = ""
-
-  # TODO: remove after getting new route for Mazda
-  fp_migration = {
-    "Mazda CX-9 2021": "MAZDA CX-9 2021",
-  }
-  # TODO: remove after getting new route for Subaru
-  fingerprint_problem = ["SUBARU IMPREZA LIMITED 2019"]
 
   for msg in lr:
     if msg.which() == 'carParams':
-      car_fingerprint = fp_migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS) and (car_fingerprint not in fingerprint_problem):
-        params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
-      else:
-        os.environ['SKIP_FW_QUERY'] = "1"
-        os.environ['FINGERPRINT'] = car_fingerprint
+      setup_env(CP=msg.carParams)
     elif msg.which() == 'liveCalibration':
       params.put("CalibrationParams", msg.as_builder().to_bytes())
 

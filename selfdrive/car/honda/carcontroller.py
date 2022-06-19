@@ -7,7 +7,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import create_gas_interceptor_command
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
+from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from selfdrive.controls.lib.drive_helpers import rate_limit
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -189,7 +189,7 @@ class CarController:
       pcm_accel = int(clip((accel / 1.44) / max_accel, 0.0, 1.0) * 0xc6)
 
     if not self.CP.openpilotLongitudinalControl:
-      if self.frame % 2 == 0:
+      if self.frame % 2 == 0 and self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:  # radarless cars don't have supplemental message
         idx = self.frame // 2
         can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, self.CP.carFingerprint, idx))
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
@@ -241,7 +241,7 @@ class CarController:
       idx = (self.frame // 10) % 4
       hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_control.leadVisible,
                     hud_control.lanesVisible, fcw_display, acc_alert, steer_required)
-      can_sends.extend(hondacan.create_ui_commands(self.packer, self.CP, CC.enabled, pcm_speed, hud, CS.is_metric, idx, CS.stock_hud))
+      can_sends.extend(hondacan.create_ui_commands(self.packer, self.CP, CC.enabled, pcm_speed, hud, CS.is_metric, idx, CS.stock_hud, self.frame))
 
       if self.CP.openpilotLongitudinalControl and self.CP.carFingerprint not in HONDA_BOSCH:
         self.speed = pcm_speed
