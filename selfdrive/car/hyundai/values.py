@@ -1128,9 +1128,11 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x816U3J9051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00HOS0G16DS1\x16\xc7\xb0\xd9',
+      b'\xf1\x896U3J9051\x00\x00\xf1\x82HOS0G16DS1',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H6F6051\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x82OSDAJ6HPXF61\x00\x00\x00\x00',
     ]
   },
   CAR.SONATA_HYBRID: {
