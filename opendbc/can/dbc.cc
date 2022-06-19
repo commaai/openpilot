@@ -76,11 +76,11 @@ ChecksumState* get_checksum(const std::string& dbc_name) {
   return s;
 }
 
-void set_signal_type(Signal& s, uint32_t address, ChecksumState* chk, const std::string& dbc_name, int line_num) {
+void set_signal_type(Signal& s, ChecksumState* chk, const std::string& dbc_name, int line_num) {
   if (chk) {
     if (s.name == "CHECKSUM") {
-      DBC_ASSERT(s.size == chk->checksum_size, "CHECKSUM is not " << chk->checksum_size << " bits long");
-      DBC_ASSERT((s.start_bit % 8) == chk->checksum_start_bit, " CHECKSUM starts at wrong bit");
+      DBC_ASSERT(chk->checksum_size == -1 || s.size == chk->checksum_size, "CHECKSUM is not " << chk->checksum_size << " bits long");
+      DBC_ASSERT(chk->checksum_start_bit == -1 || (s.start_bit % 8) == chk->checksum_start_bit, " CHECKSUM starts at wrong bit");
       DBC_ASSERT(s.is_little_endian == chk->little_endian, "CHECKSUM has wrong endianness");
       s.type = chk->checksum_type;
     } else if (s.name == "COUNTER") {
@@ -90,15 +90,12 @@ void set_signal_type(Signal& s, uint32_t address, ChecksumState* chk, const std:
       s.type = chk->counter_type;
     }
   }
-  // TODO: replace hardcoded addresses with signal names. prefix with COMMA_PEDAL_?
-  if (address == 0x200 || address == 0x201) {
-    if (s.name == "CHECKSUM_PEDAL") {
-      DBC_ASSERT(s.size == 8, "PEDAL CHECKSUM is not 8 bits long");
-      s.type = PEDAL_CHECKSUM;
-    } else if (s.name == "COUNTER_PEDAL") {
-      DBC_ASSERT(s.size == 4, "PEDAL COUNTER is not 4 bits long");
-      s.type = PEDAL_COUNTER;
-    }
+  if (s.name == "CHECKSUM_PEDAL") {
+    DBC_ASSERT(s.size == 8, "INTERCEPTOR CHECKSUM is not 8 bits long");
+    s.type = PEDAL_CHECKSUM;
+  } else if (s.name == "COUNTER_PEDAL") {
+    DBC_ASSERT(s.size == 4, "INTERCEPTOR COUNTER is not 4 bits long");
+    s.type = PEDAL_COUNTER;
   }
 }
 
@@ -161,7 +158,7 @@ DBC* dbc_parse(const std::string& dbc_name, const std::string& dbc_file_path) {
       sig.is_signed = match[offset + 5].str() == "-";
       sig.factor = std::stod(match[offset + 6].str());
       sig.offset = std::stod(match[offset + 7].str());
-      set_signal_type(sig, address, checksum.get(), dbc_name, line_num);
+      set_signal_type(sig, checksum.get(), dbc_name, line_num);
       if (sig.is_little_endian) {
         sig.lsb = sig.start_bit;
         sig.msb = sig.start_bit + sig.size - 1;

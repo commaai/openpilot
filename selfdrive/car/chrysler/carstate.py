@@ -18,15 +18,18 @@ class CarState(CarStateBase):
 
     self.frame = int(cp.vl["EPS_STATUS"]["COUNTER"])
 
-    ret.doorOpen = any([cp.vl["DOORS"]["DOOR_OPEN_FL"],
-                        cp.vl["DOORS"]["DOOR_OPEN_FR"],
-                        cp.vl["DOORS"]["DOOR_OPEN_RL"],
-                        cp.vl["DOORS"]["DOOR_OPEN_RR"]])
+    ret.doorOpen = any([cp.vl["BCM_1"]["Driver_Door_Ajar"],
+                        cp.vl["BCM_1"]["Passenger_Door_Ajar"],
+                        cp.vl["BCM_1"]["Left_Rear_Door_Ajar"],
+                        cp.vl["BCM_1"]["Right_Rear_Door_Ajar"]])
     ret.seatbeltUnlatched = cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_UNLATCHED"] == 1
 
-    ret.brakePressed = cp.vl["BRAKE_2"]["BRAKE_PRESSED_2"] == 5  # human-only
+    # brake pedal
     ret.brake = 0
-    ret.gas = cp.vl["ACCEL_GAS_134"]["ACCEL_134"]
+    ret.brakePressed = cp.vl["ESP_1"]['Brake_Pedal_State'] == 1  # Physical brake pedal switch
+
+    # gas pedal
+    ret.gas = cp.vl["ECM_5"]["Accelerator_Position"]
     ret.gasPressed = ret.gas > 1e-5
 
     ret.espDisabled = (cp.vl["TRACTION_BUTTON"]["TRACTION_OFF"] == 1)
@@ -48,12 +51,12 @@ class CarState(CarStateBase):
     ret.steeringRateDeg = cp.vl["STEERING"]["STEERING_RATE"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["GEAR"]["PRNDL"], None))
 
-    ret.cruiseState.enabled = cp.vl["ACC_2"]["ACC_STATUS_2"] == 7  # ACC is green.
-    ret.cruiseState.available = ret.cruiseState.enabled  # FIXME: for now same as enabled
+    ret.cruiseState.available = cp.vl["DAS_3"]["ACC_Engaged"] == 1  # ACC is white
+    ret.cruiseState.enabled = cp.vl["DAS_3"]["ACC_Enabled"] == 1  # ACC is green
     ret.cruiseState.speed = cp.vl["DASHBOARD"]["ACC_SPEED_CONFIG_KPH"] * CV.KPH_TO_MS
     # CRUISE_STATE is a three bit msg, 0 is off, 1 and 2 are Non-ACC mode, 3 and 4 are ACC mode, find if there are other states too
     ret.cruiseState.nonAdaptive = cp.vl["DASHBOARD"]["CRUISE_STATE"] in (1, 2)
-    ret.accFaulted = cp.vl["ACC_2"]["ACC_FAULTED"] != 0
+    ret.accFaulted = cp.vl["DAS_3"]["ACC_Faulted"] != 0
 
     ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
@@ -79,12 +82,12 @@ class CarState(CarStateBase):
     signals = [
       # sig_name, sig_address
       ("PRNDL", "GEAR"),
-      ("DOOR_OPEN_FL", "DOORS"),
-      ("DOOR_OPEN_FR", "DOORS"),
-      ("DOOR_OPEN_RL", "DOORS"),
-      ("DOOR_OPEN_RR", "DOORS"),
-      ("BRAKE_PRESSED_2", "BRAKE_2"),
-      ("ACCEL_134", "ACCEL_GAS_134"),
+      ("Driver_Door_Ajar", "BCM_1"),
+      ("Passenger_Door_Ajar", "BCM_1"),
+      ("Left_Rear_Door_Ajar", "BCM_1"),
+      ("Right_Rear_Door_Ajar", "BCM_1"),
+      ("Brake_Pedal_State", "ESP_1"),
+      ("Accelerator_Position", "ECM_5"),
       ("SPEED_LEFT", "SPEED_1"),
       ("SPEED_RIGHT", "SPEED_1"),
       ("WHEEL_SPEED_FL", "WHEEL_SPEEDS"),
@@ -94,8 +97,9 @@ class CarState(CarStateBase):
       ("STEER_ANGLE", "STEERING"),
       ("STEERING_RATE", "STEERING"),
       ("TURN_SIGNALS", "STEERING_LEVERS"),
-      ("ACC_STATUS_2", "ACC_2"),
-      ("ACC_FAULTED", "ACC_2"),
+      ("ACC_Enabled", "DAS_3"),
+      ("ACC_Engaged", "DAS_3"),
+      ("ACC_Faulted", "DAS_3"),
       ("HIGH_BEAM_FLASH", "STEERING_LEVERS"),
       ("ACC_SPEED_CONFIG_KPH", "DASHBOARD"),
       ("CRUISE_STATE", "DASHBOARD"),
@@ -110,19 +114,19 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
-      ("BRAKE_2", 50),
+      ("ESP_1", 50),
       ("EPS_STATUS", 100),
       ("SPEED_1", 100),
       ("WHEEL_SPEEDS", 50),
       ("STEERING", 100),
-      ("ACC_2", 50),
+      ("DAS_3", 50),
       ("GEAR", 50),
-      ("ACCEL_GAS_134", 50),
+      ("ECM_5", 50),
       ("WHEEL_BUTTONS", 50),
       ("DASHBOARD", 15),
       ("STEERING_LEVERS", 10),
       ("SEATBELT_STATUS", 2),
-      ("DOORS", 1),
+      ("BCM_1", 1),
       ("TRACTION_BUTTON", 1),
     ]
 

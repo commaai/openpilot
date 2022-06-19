@@ -1078,13 +1078,15 @@ struct ProcLog {
 
 struct GnssMeasurements {
   ubloxMonoTime @0 :UInt64;
-  correctedMeasurements @1 :List(CorrectedMeasurement);
+  gpsWeek @1 :Int16;
+  gpsTimeOfWeek @2 :Float64;
 
-  positionECEF @2 :Measurement;
-  velocityECEF @3 :Measurement;
-  # todo add accuracy of position?
-  # Represents heading in degrees.
-  bearingDeg @4 :Measurement;
+  correctedMeasurements @3 :List(CorrectedMeasurement);
+
+  positionECEF @4 :LiveLocationKalman.Measurement;
+  velocityECEF @5 :LiveLocationKalman.Measurement;
+  # Used for debugging:
+  positionFixECEF @6 :LiveLocationKalman.Measurement;
   # Todo sync this with timing pulse of ublox
 
   struct CorrectedMeasurement {
@@ -1099,6 +1101,14 @@ struct GnssMeasurements {
     # Satellite position and velocity [x,y,z]
     satPos @7 :List(Float64);
     satVel @8 :List(Float64);
+    ephemerisSource @9 :EphemerisSource;
+  }
+
+  struct EphemerisSource {
+    type @0 :EphemerisSourceType;
+    # first epoch in file:
+    gpsWeek @1 :Int16; # -1 if Nav
+    gpsTimeOfWeek @2 :Int32; # -1 if Nav. Integer for seconds is good enough for logs.
   }
 
   enum ConstellationId {
@@ -1112,10 +1122,11 @@ struct GnssMeasurements {
       glonass @6;
   }
 
-  struct Measurement {
-    value @0 : List(Float64);
-    std @1 : Float64;
-    valid @2 : Bool;
+  enum EphemerisSourceType {
+    nav @0;
+    # Different ultra-rapid files:
+    nasaUltraRapid @1;
+    glonassIacUltraRapid @2;
   }
 }
 
@@ -1781,6 +1792,9 @@ struct NavInstruction {
   lanes @8 :List(Lane);
   showFull @9 :Bool;
 
+  speedLimit @10 :Float32; # m/s
+  speedLimitSign @11 :SpeedLimitSign;
+
   struct Lane {
     directions @0 :List(Direction);
     active @1 :Bool;
@@ -1794,6 +1808,10 @@ struct NavInstruction {
     straight @3;
   }
 
+  enum SpeedLimitSign {
+    mutcd @0; # US Style
+    vienna @1; # EU Style
+    }
 }
 
 struct NavRoute {
