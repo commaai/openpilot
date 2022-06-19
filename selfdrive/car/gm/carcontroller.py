@@ -21,6 +21,9 @@ class CarController:
     self.apply_brake = 0
     self.frame = 0
 
+    self.lka_last_rc_val = -1
+    self.lka_same_rc_cnt = 0
+    
     self.lka_steering_cmd_counter_last = -1
     self.lka_icon_status_last = (False, False)
     self.steer_rate_limited = False
@@ -48,7 +51,19 @@ class CarController:
     if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
       self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
     elif (self.frame % self.params.STEER_STEP) == 0:
-      lkas_enabled = CC.latActive and CS.out.vEgo > self.params.MIN_STEER_SPEED
+      # GM EPS faults on any gap in received message counters. To handle transient OP/Panda safety sync issues at the
+      # moment of disengaging, increment the counter based on the last message known to pass Panda safety checks.
+      idx = (CS.lka_steering_cmd_counter + 1) % 4
+      # Start counting number of resubmits - this should only happen when the panda drops an LKA frame
+      # If we reach 3 attempts to send the same frame, it's time to switch to inactive
+      # 
+      if idx == self.lka_last_rc_val:
+        self.lka_same_rc_cnt += 1
+      else:
+        self.lka_same_rc_cnt = 0
+      self.lka_last_rc_val = idx
+      
+      lkas_enabled = CC.latActive and CS.out.vEgo > self.params.MIN_STEER_SPEED and self.lka_same_rc_cnt < 3
       if lkas_enabled:
         new_steer = int(round(actuators.steer * self.params.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
@@ -57,10 +72,6 @@ class CarController:
         apply_steer = 0
 
       self.apply_steer_last = apply_steer
-      # GM EPS faults on any gap in received message counters. To handle transient OP/Panda safety sync issues at the
-      # moment of disengaging, increment the counter based on the last message known to pass Panda safety checks.
-      idx = (CS.lka_steering_cmd_counter + 1) % 4
-
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 
     # Gas/regen and brakes - all at 25Hz

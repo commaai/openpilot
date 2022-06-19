@@ -139,9 +139,7 @@ class CarState(CarStateBase):
     ]
 
     checks = [
-      ("ASCMLKASteeringCmd", 1), # When the panda drops packets, this throws CAN errors
-      # TODO: When timing issue is fully resolved (no more dropping packets - sending inactive frames instead)
-      #       This can be changed back to 50hz
+      ("ASCMLKASteeringCmd", 0), # Prevent startup CAN Errors and dropped packet errors
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK)
