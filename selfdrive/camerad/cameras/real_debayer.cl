@@ -1,7 +1,5 @@
 #define UV_WIDTH RGB_WIDTH / 2
 #define UV_HEIGHT RGB_HEIGHT / 2
-#define U_OFFSET RGB_WIDTH * RGB_HEIGHT
-#define V_OFFSET RGB_WIDTH * RGB_HEIGHT + UV_WIDTH * UV_HEIGHT
 
 #define RGB_TO_Y(r, g, b) ((((mul24(b, 13) + mul24(g, 65) + mul24(r, 33)) + 64) >> 7) + 16)
 #define RGB_TO_U(r, g, b) ((mul24(b, 56) - mul24(g, 37) - mul24(r, 19) + 0x8080) >> 8)
@@ -141,17 +139,20 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
     RGB_TO_Y(rgb_out[0].s0, rgb_out[0].s1, rgb_out[0].s2),
     RGB_TO_Y(rgb_out[1].s0, rgb_out[1].s1, rgb_out[1].s2)
   );
-  vstore2(yy, 0, out + mad24(gid_y * 2, RGB_WIDTH, gid_x * 2));
+  vstore2(yy, 0, out + mad24(gid_y * 2, YUV_STRIDE, gid_x * 2));
   yy = (uchar2)(
     RGB_TO_Y(rgb_out[2].s0, rgb_out[2].s1, rgb_out[2].s2),
     RGB_TO_Y(rgb_out[3].s0, rgb_out[3].s1, rgb_out[3].s2)
   );
-  vstore2(yy, 0, out + mad24(gid_y * 2 + 1, RGB_WIDTH, gid_x * 2));
+  vstore2(yy, 0, out + mad24(gid_y * 2 + 1, YUV_STRIDE, gid_x * 2));
 
   // write uvs
   const short ar = AVERAGE(rgb_out[0].s0, rgb_out[1].s0, rgb_out[2].s0, rgb_out[3].s0);
   const short ag = AVERAGE(rgb_out[0].s1, rgb_out[1].s1, rgb_out[2].s1, rgb_out[3].s1);
   const short ab = AVERAGE(rgb_out[0].s2, rgb_out[1].s2, rgb_out[2].s2, rgb_out[3].s2);
-  out[U_OFFSET + mad24(gid_y, UV_WIDTH, gid_x)] = RGB_TO_U(ar, ag, ab);
-  out[V_OFFSET + mad24(gid_y, UV_WIDTH, gid_x)] = RGB_TO_V(ar, ag, ab);
+  uchar2 uv = (uchar2)(
+    RGB_TO_U(ar, ag, ab),
+    RGB_TO_V(ar, ag, ab)
+  );
+  vstore2(uv, 0, out + UV_OFFSET + mad24(gid_y, YUV_STRIDE, gid_x * 2));
 }

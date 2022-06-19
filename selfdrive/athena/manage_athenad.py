@@ -5,8 +5,8 @@ from multiprocessing import Process
 
 from common.params import Params
 from selfdrive.manager.process import launcher
-from selfdrive.swaglog import cloudlog
-from selfdrive.version import get_version, is_dirty
+from system.swaglog import cloudlog
+from system.version import get_version, is_dirty
 
 ATHENA_MGR_PID_PARAM = "AthenadPid"
 

@@ -34,6 +34,8 @@ void FfmpegEncoder::encoder_init() {
   frame->linesize[1] = out_width/2;
   frame->linesize[2] = out_width/2;
 
+  convert_buf.resize(in_width * in_height * 3 / 2);
+
   if (in_width != out_width || in_height != out_height) {
     downscale_buf.resize(out_width * out_height * 3 / 2);
   }
@@ -70,18 +72,27 @@ void FfmpegEncoder::encoder_close() {
   is_open = false;
 }
 
-int FfmpegEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                                int in_width_, int in_height_, VisionIpcBufExtra *extra) {
-  assert(in_width_ == this->in_width);
-  assert(in_height_ == this->in_height);
+int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
+  assert(buf->width == this->in_width);
+  assert(buf->height == this->in_height);
+
+  uint8_t *cy = convert_buf.data();
+  uint8_t *cu = cy + in_width * in_height;
+  uint8_t *cv = cu + (in_width / 2) * (in_height / 2);
+  libyuv::NV12ToI420(buf->y, buf->stride,
+                     buf->uv, buf->stride,
+                     cy, in_width,
+                     cu, in_width/2,
+                     cv, in_width/2,
+                     in_width, in_height);
 
   if (downscale_buf.size() > 0) {
     uint8_t *out_y = downscale_buf.data();
     uint8_t *out_u = out_y + frame->width * frame->height;
     uint8_t *out_v = out_u + (frame->width / 2) * (frame->height / 2);
-    libyuv::I420Scale(y_ptr, in_width,
-                      u_ptr, in_width/2,
-                      v_ptr, in_width/2,
+    libyuv::I420Scale(cy, in_width,
+                      cu, in_width/2,
+                      cv, in_width/2,
                       in_width, in_height,
                       out_y, frame->width,
                       out_u, frame->width/2,
@@ -92,9 +103,9 @@ int FfmpegEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, cons
     frame->data[1] = out_u;
     frame->data[2] = out_v;
   } else {
-    frame->data[0] = (uint8_t*)y_ptr;
-    frame->data[1] = (uint8_t*)u_ptr;
-    frame->data[2] = (uint8_t*)v_ptr;
+    frame->data[0] = cy;
+    frame->data[1] = cu;
+    frame->data[2] = cv;
   }
   frame->pts = counter*50*1000; // 50ms per frame
 

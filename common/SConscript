@@ -19,7 +19,6 @@ _common = fxn('common', common_libs, LIBS="json11")
 
 files = [
   'clutil.cc',
-  'visionimg.cc',
 ]
 
 _gpucommon = fxn('gpucommon', files)

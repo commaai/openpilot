@@ -2,7 +2,7 @@
 
 #include <QPushButton>
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 // SSH enable toggle

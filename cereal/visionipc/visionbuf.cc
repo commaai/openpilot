@@ -14,14 +14,15 @@ void VisionBuf::init_rgb(size_t init_width, size_t init_height, size_t init_stri
   this->stride = init_stride;
 }
 
-void VisionBuf::init_yuv(size_t init_width, size_t init_height){
+void VisionBuf::init_yuv(size_t init_width, size_t init_height, size_t init_stride, size_t init_uv_offset){
   this->rgb = false;
   this->width = init_width;
   this->height = init_height;
+  this->stride = init_stride;
+  this->uv_offset = init_uv_offset;
 
   this->y = (uint8_t *)this->addr;
-  this->u = this->y + (this->width * this->height);
-  this->v = this->u + (this->width / 2 * this->height / 2);
+  this->uv = this->y + this->uv_offset;
 }
 
 

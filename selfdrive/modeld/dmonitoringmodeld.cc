@@ -31,7 +31,7 @@ void run_model(DMonitoringModelState &model, VisionIpcClient &vipc_client) {
     }
 
     double t1 = millis_since_boot();
-    DMonitoringResult res = dmonitoring_eval_frame(&model, buf->addr, buf->width, buf->height, calib);
+    DMonitoringResult res = dmonitoring_eval_frame(&model, buf->addr, buf->width, buf->height, buf->stride, buf->uv_offset, calib);
     double t2 = millis_since_boot();
 
     // send dm packet
