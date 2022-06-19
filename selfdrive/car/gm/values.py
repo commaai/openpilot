@@ -147,12 +147,9 @@ FINGERPRINTS = {
   }],
 }
 
-DBC = {
-  CAR.HOLDEN_ASTRA: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.VOLT: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.MALIBU: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.ACADIA: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.CADILLAC_ATS: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.BUICK_REGAL: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.ESCALADE_ESV: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
+CUSTOM_DBC: Dict[str,Dict[str,str]] = {
+  #e.g.: CAR.EXAMPLE: dbc_dict('custom_powertrain', 'custom_object', chassis_dbc='custom_chassis'),
 }
+DEFAULT_DBC_VAL = dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis')
+DBC = {str(getattr(CAR,car)): DEFAULT_DBC_VAL for car in dir(CAR) if not car.startswith("_") and car not in CUSTOM_DBC}
+DBC.update(CUSTOM_DBC)
