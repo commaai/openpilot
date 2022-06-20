@@ -1,4 +1,4 @@
-#include "selfdrive/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_common.h"
 
 #include <unistd.h>
 
@@ -10,7 +10,7 @@
 #include "libyuv.h"
 #include <jpeglib.h>
 
-#include "selfdrive/camerad/imgproc/utils.h"
+#include "system/camerad/imgproc/utils.h"
 #include "common/clutil.h"
 #include "common/modeldata.h"
 #include "common/swaglog.h"
@@ -20,9 +20,9 @@
 
 #ifdef QCOM2
 #include "CL/cl_ext_qcom.h"
-#include "selfdrive/camerad/cameras/camera_qcom2.h"
+#include "system/camerad/cameras/camera_qcom2.h"
 #else
-#include "selfdrive/camerad/test/camera_test.h"
+#include "system/camerad/test/camera_test.h"
 #endif
 
 ExitHandler do_exit;
