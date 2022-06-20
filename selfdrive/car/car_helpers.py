@@ -12,6 +12,7 @@ from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car, get_pres
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
+from common.realtime import sec_since_boot
 
 EventName = car.CarEvent.EventName
 
@@ -98,7 +99,9 @@ def fingerprint(logcan, sendcan):
     else:
       cloudlog.warning("Getting VIN & FW versions")
       _, vin = get_vin(logcan, sendcan, bus)
+      ecu_t = sec_since_boot()
       ecu_responses = get_present_ecus(logcan, sendcan, get_interface_attr('FW_VERSIONS', ignore_none=True))
+      ecu_t = sec_since_boot() - ecu_t
       car_fw = get_fw_versions(logcan, sendcan)
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
@@ -166,7 +169,7 @@ def fingerprint(logcan, sendcan):
     source = car.CarParams.FingerprintSource.fixed
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint,
-                 source=source, fuzzy=not exact_match, fw_count=len(car_fw), ecu_responses=ecu_responses)
+                 source=source, fuzzy=not exact_match, fw_count=len(car_fw), ecu_responses=ecu_responses, ecu_t=ecu_t)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
