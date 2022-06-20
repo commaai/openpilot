@@ -79,6 +79,7 @@ interfaces = load_interfaces(interface_names)
 def fingerprint(logcan, sendcan):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
+  ecu_responses = set()
 
   if not fixed_fingerprint and not skip_fw_query:
     # Vin query only reliably works thorugh OBDII
@@ -93,7 +94,6 @@ def fingerprint(logcan, sendcan):
     if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
       cloudlog.warning("Using cached CarParams")
       vin = cached_params.carVin
-      ecu_responses = set()
       car_fw = list(cached_params.carFw)
     else:
       cloudlog.warning("Getting VIN & FW versions")
@@ -104,7 +104,7 @@ def fingerprint(logcan, sendcan):
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
     vin = VIN_UNKNOWN
-    exact_fw_match, fw_candidates, car_fw, ecu_responses = True, set(), [], set()
+    exact_fw_match, fw_candidates, car_fw = True, set(), []
 
   if len(vin) != 17:
     cloudlog.event("Malformed VIN", vin=vin, error=True)
