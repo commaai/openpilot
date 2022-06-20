@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from math import fabs
+from panda import Panda
 
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
@@ -133,6 +134,11 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
+
+    # Set Panda to camera forwarding mode
+    if ret.networkLocation == car.NetworkLocation.fwdCamera:
+      # TODO: Depends on Panda PR #962 (Cam Harness forwarding, stock ACC)
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
