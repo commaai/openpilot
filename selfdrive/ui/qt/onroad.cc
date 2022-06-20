@@ -172,22 +172,28 @@ NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FRE
 void NvgWindow::updateState(const UIState &s) {
   const int SET_SPEED_NA = 255;
   const SubMaster &sm = *(s.sm);
+
+  const bool cs_alive = sm.alive("controlsState");
+  const bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
+
   const auto cs = sm["controlsState"].getControlsState();
 
-  float set_speed = cs.getVCruise();
+  float set_speed = cs_alive ? cs.getVCruise() : SET_SPEED_NA;
   bool cruise_set = set_speed > 0 && (int)set_speed != SET_SPEED_NA;
   if (cruise_set && !s.scene.is_metric) {
     set_speed *= KM_TO_MILE;
   }
-  float cur_speed = std::max(0.0, sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
+
+  float cur_speed = cs_alive ? std::max<float>(0.0, sm["carState"].getCarState().getVEgo()) : 0.0;
+  cur_speed  *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
   auto speed_limit_sign = sm["navInstruction"].getNavInstruction().getSpeedLimitSign();
-  float speed_limit = sm["navInstruction"].getValid() ? sm["navInstruction"].getNavInstruction().getSpeedLimit() : 0.0;
+  float speed_limit = nav_alive ? sm["navInstruction"].getNavInstruction().getSpeedLimit() : 0.0;
   speed_limit *= (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
 
   setProperty("speedLimit", speed_limit);
-  setProperty("has_us_speed_limit", sm["navInstruction"].getValid() && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD);
-  setProperty("has_eu_speed_limit", sm["navInstruction"].getValid() && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
+  setProperty("has_us_speed_limit", nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD);
+  setProperty("has_eu_speed_limit", nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
 
   setProperty("is_cruise_set", cruise_set);
   setProperty("speed", cur_speed);
