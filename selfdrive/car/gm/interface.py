@@ -161,7 +161,7 @@ class CarInterface(CarInterfaceBase):
 
       ret.buttonEvents = [be]
 
-    events = self.create_common_events(ret, pcm_enable=False)
+    events = self.create_common_events(ret, pcm_enable=self.CP.pcmCruise)
 
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
@@ -171,7 +171,7 @@ class CarInterface(CarInterfaceBase):
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 
     # handle button presses
-    events.events.extend(create_button_enable_events(ret.buttonEvents))
+    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise))
 
     ret.events = events.to_msg()
 
