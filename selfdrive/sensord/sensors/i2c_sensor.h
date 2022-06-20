@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <unistd.h>
 
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -19,10 +20,16 @@ class I2CSensor : public Sensor {
 private:
   I2CBus *bus;
   int gpio_nr;
+  bool shared_gpio;
   virtual uint8_t get_device_address() = 0;
 
 public:
-  I2CSensor(I2CBus *bus, int gpio_nr = 0);
+  I2CSensor(I2CBus *bus, int gpio_nr = 0, bool shared_gpio = false);
+  ~I2CSensor() {
+    if (gpio_fd != -1) {
+      close(gpio_fd);
+    }
+  }
   int read_register(uint register_address, uint8_t *buffer, uint8_t len);
   int set_register(uint register_address, uint8_t data);
   int init_gpio();

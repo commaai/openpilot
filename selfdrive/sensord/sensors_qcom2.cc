@@ -4,6 +4,7 @@
 #include <thread>
 #include <vector>
 #include <poll.h>
+#include <linux/gpio.h>
 
 #include "cereal/messaging/messaging.h"
 #include "common/i2c.h"
@@ -27,20 +28,13 @@
 ExitHandler do_exit;
 std::mutex pm_mutex;
 
-void interrupt_loop(std::vector<Sensor *>& gpio_sensors, PubMaster& pm) {
-
-  int cnt_sensors = gpio_sensors.size();
-  std::unique_ptr<struct pollfd[]> fd_list(new struct pollfd[cnt_sensors]);
-
-  for (int i = 0; i < cnt_sensors; ++i) {
-    fd_list[i].fd = gpio_sensors[i]->gpio_fd;
-    fd_list[i].events = POLLPRI;
-  }
+void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
+  struct pollfd fd_list[1] = {0};
+  fd_list[0].fd = fd;
+  fd_list[0].events = POLLIN | POLLPRI;
 
   while (!do_exit) {
-
-    // TODO: check here also for epoll? might have a nicer interface
-    int err = poll(fd_list.get(), cnt_sensors, 100);
+    int err = poll(fd_list, 1, 100);
     if (err == -1) {
       if (errno == EINTR) {
         continue;
@@ -51,23 +45,33 @@ void interrupt_loop(std::vector<Sensor *>& gpio_sensors, PubMaster& pm) {
       continue;
     }
 
+    if ((fd_list[0].revents & (POLLIN | POLLPRI)) == 0) {
+      LOGE("no poll events set");
+      continue;
+    }
+
+    // Read all events
+    struct gpioevent_data evdata[16];
+    err = read(fd, evdata, sizeof(evdata));
+    if (err < 0 || err % sizeof(*evdata) != 0) {
+      LOGE("error reading event data %d", err);
+      continue;
+    }
+
+    int num_events = err / sizeof(*evdata);
+    uint64_t offset = nanos_since_epoch() - nanos_since_boot();
+    uint64_t ts = evdata[num_events - 1].timestamp - offset;
+    
     MessageBuilder msg;
     auto orphanage = msg.getOrphanage();
     std::vector<capnp::Orphan<cereal::SensorEventData>> collected_events;
-    collected_events.reserve(cnt_sensors);
+    collected_events.reserve(sensors.size());
 
-    for (int i = 0; i < cnt_sensors; ++i) {
-      if ((fd_list[i].revents & POLLPRI) == 0) {
-        continue;
-      }
-
-      char buf[64];
-      lseek(fd_list[i].fd, 0, SEEK_SET);
-      read(fd_list[i].fd, &buf, std::size(buf));
-
+    for (Sensor *sensor : sensors) {
       auto orphan = orphanage.newOrphan<cereal::SensorEventData>();
       auto event = orphan.get();
-      if (gpio_sensors[i]->get_event(event)) {
+      if (sensor->get_event(event)) {
+        event.setTimestamp(ts);
         collected_events.push_back(kj::mv(orphan));
       }
     }
@@ -98,14 +102,13 @@ int sensor_loop() {
     return -1;
   }
 
-  // bmx interrupts are triggering faster than the filter bandwidth
   BMX055_Accel bmx055_accel(i2c_bus_imu);
   BMX055_Gyro bmx055_gyro(i2c_bus_imu);
   BMX055_Magn bmx055_magn(i2c_bus_imu);
   BMX055_Temp bmx055_temp(i2c_bus_imu);
 
   LSM6DS3_Accel lsm6ds3_accel(i2c_bus_imu, GPIO_LSM_INT);
-  LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu, GPIO_LSM_INT);
+  LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu, GPIO_LSM_INT, true); // GPIO shared with accel
   LSM6DS3_Temp lsm6ds3_temp(i2c_bus_imu);
 
   MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu);
@@ -131,7 +134,6 @@ int sensor_loop() {
 
   // Initialize sensors
   std::vector<Sensor *> sensors;
-  std::vector<Sensor *> interrupt_sensors;
   for (auto &sensor : sensors_init) {
     int err = sensor.first->init();
     if (err < 0) {
@@ -146,11 +148,7 @@ int sensor_loop() {
         has_magnetometer = true;
       }
 
-      // split between interrupt read sensors and non interrupt read
-      if (sensor.first->has_interrupt_enabled()) {
-        interrupt_sensors.push_back(sensor.first);
-      }
-      else {
+      if (!sensor.first->has_interrupt_enabled()) {
         sensors.push_back(sensor.first);
       }
     }
@@ -165,7 +163,8 @@ int sensor_loop() {
   PubMaster pm({"sensorEvents"});
 
   // thread for reading events via interrupts
-  std::thread interrupt_thread(&interrupt_loop, std::ref(interrupt_sensors), std::ref(pm));
+  std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
+  std::thread lsm_interrupt_thread(&interrupt_loop, lsm6ds3_accel.gpio_fd, std::ref(lsm_interrupt_sensors), std::ref(pm));
 
   // polling loop for non interrupt handled sensors
   while (!do_exit) {
@@ -189,7 +188,7 @@ int sensor_loop() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
   }
 
-  interrupt_thread.join();
+  lsm_interrupt_thread.join();
   delete i2c_bus_imu;
   return 0;
 }

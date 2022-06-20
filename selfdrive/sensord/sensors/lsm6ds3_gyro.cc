@@ -8,7 +8,7 @@
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
-LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr) : I2CSensor(bus, gpio_nr) {}
+LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr, bool shared_gpio) : I2CSensor(bus, gpio_nr, shared_gpio) {}
 
 int LSM6DS3_Gyro::init() {
   int ret = 0;

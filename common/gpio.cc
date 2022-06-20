@@ -4,11 +4,16 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <linux/gpio.h>
+#include <sys/ioctl.h>
 
 #include "common/util.h"
+#include "common/swaglog.h"
 
 // We assume that all pins have already been exported on boot,
 // and that we have permission to write to them.
+
+const std::string gpiochip_path = "/dev/gpiochip0";
 
 int gpio_init(int pin_nr, bool output) {
   char pin_dir_path[50];
@@ -43,9 +48,6 @@ int gpio_set_edge(int pin_nr, EdgeType etype) {
   switch(etype) {
       case Rising  : value = "rising"; break;
       case Falling : value = "falling"; break;
-      case Both    : value = "both";  break;
-      case None    : return 0;
-      default      : return -1;
   }
 
   return util::write_file(pin_dir_path, (void*)value.c_str(), value.size());
@@ -61,4 +63,37 @@ int gpio_get_ro_value_fd(int pin_nr) {
   }
 
   return open(pin_dir_path, O_RDONLY);
+}
+
+
+/*
+sudo chmod 777 /dev/gpiochip0
+echo 84 | sudo tee /sys/class/gpio/unexport
+*/
+
+int gpiochip_get_ro_value_fd(int pin_nr, EdgeType etype) {
+  int fd = open(gpiochip_path.c_str(), O_RDONLY);
+  if (fd < 0) {
+    LOGE("Error opening gpiochip fd")
+    return -1;
+  }
+
+  // Setup event
+  struct gpioevent_request rq;
+  rq.lineoffset = pin_nr;
+  rq.handleflags = GPIOHANDLE_REQUEST_INPUT;
+  
+  // Why does it not work with rising only?
+  // rq.eventflags = (etype == EdgeType::Rising) ? GPIOEVENT_EVENT_RISING_EDGE : GPIOEVENT_EVENT_FALLING_EDGE;
+  rq.eventflags = GPIOEVENT_REQUEST_BOTH_EDGES;
+  strncpy(rq.consumer_label, "sensord", std::size(rq.consumer_label) - 1);
+  int ret = ioctl(fd, GPIO_GET_LINEEVENT_IOCTL, &rq);
+  if (ret == -1) {
+      LOGE("Unable to get line event from ioctl : %s", strerror(errno));
+      close(fd);
+      return -1;
+  }
+
+  close(fd);
+  return rq.fd;
 }
