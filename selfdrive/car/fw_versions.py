@@ -300,7 +300,7 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   return exact_match, matches
 
 
-def get_brand_candidates(logcan, sendcan, versions):
+def get_present_ecus(logcan, sendcan, versions):
   queries = list()
   parallel_queries = list()
   responses = set()
@@ -311,38 +311,25 @@ def get_brand_candidates(logcan, sendcan, versions):
     for brand_versions in versions[r.brand].values():
       for ecu_type, addr, sub_addr in brand_versions:
         # Only query ecus in whitelist if whitelist is not empty
-        if (len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus) and ecu_type in ESSENTIAL_ECUS:
+        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
           a = (addr, sub_addr, r.bus)
           # Build set of queries
           if sub_addr is None:
             if a not in parallel_queries:
               parallel_queries.append(a)
-          else:
+          else:  # subaddresses must be queried one by one
             if [a] not in queries:
               queries.append([a])
 
           # Build set of expected responses to filter
-          response_addr = addr + r.rx_offset
-          responses.add((response_addr, sub_addr, r.bus))
+          responses.add((addr + r.rx_offset, sub_addr, r.bus))
 
   queries.insert(0, parallel_queries)
 
   ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
   for query in queries:
-    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses))
-
-  cloudlog.event("ecu responses", ecu_responses=ecu_responses)
-
-  brand_candidates = set()
-  for r in REQUESTS:
-    ecu_addrs = {(addr - r.rx_offset, sub_addr) for addr, sub_addr, _ in ecu_responses}
-    for candidate, candidate_fw in versions[r.brand].items():
-      # brand is a candidate if any of its platforms is a complete subset of the response ecus
-      candidate_addrs = {(addr, sub_addr) for ecu_type, addr, sub_addr in candidate_fw.keys() if ecu_type in ESSENTIAL_ECUS}
-      if len(ecu_addrs.intersection(candidate_addrs)) == len(candidate_addrs):
-        brand_candidates.add(r.brand)
-
-  return brand_candidates
+    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.2))
+  return ecu_responses
 
 
 def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progress=False):
@@ -356,10 +343,6 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
   if extra is not None:
     versions.update(extra)
-
-  # log brand candidates
-  brand_candidates = get_brand_candidates(logcan, sendcan, versions)
-  cloudlog.event("brand candidates", ecu_response_addrs=brand_candidates)
 
   for brand, brand_versions in versions.items():
     for c in brand_versions.values():
