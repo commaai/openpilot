@@ -6,7 +6,7 @@
 #include "common/timing.h"
 #include "common/util.h"
 
-BMX055_Accel::BMX055_Accel(I2CBus *bus, int gpio_nr) : I2CSensor(bus, gpio_nr) {}
+BMX055_Accel::BMX055_Accel(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Accel::init() {
   int ret = 0;
@@ -47,22 +47,7 @@ int BMX055_Accel::init() {
     goto fail;
   }
 
-  ret = set_register(BMX055_ACCEL_I2C_REG_INT_MAP_1, BMX055_ACCEL_DATA_TO_INT1);
-  if (ret < 0) {
-    goto fail;
-  }
-
-  ret = set_register(BMX055_ACCEL_I2C_REG_INT_SRC, BMX055_ACCEL_INT_SRC_FILTERED);
-  if (ret < 0) {
-    goto fail;
-  }
-
-  ret = set_register(BMX055_ACCEL_I2C_REG_INT_EN_1, BMX055_ACCEL_DATA_EN);
-  if (ret < 0) {
-    goto fail;
-  }
-
-  fail:
+fail:
   return ret;
 }
 

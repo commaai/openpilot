@@ -63,7 +63,7 @@ static int16_t compensate_z(trim_data_t trim_data, int16_t mag_data_z, uint16_t 
   return (int16_t)retval;
 }
 
-BMX055_Magn::BMX055_Magn(I2CBus *bus, int gpio_nr) : I2CSensor(bus, gpio_nr) {}
+BMX055_Magn::BMX055_Magn(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Magn::init() {
   int ret;
@@ -148,11 +148,6 @@ int BMX055_Magn::init() {
     goto fail;
   }
 
-  // enabled new data / DRDY ready interrupt
-  ret = set_register(BMX055_MAGN_I2C_REG_INT_EN, BMX055_MAGN_DATA_EN);
-  if (ret < 0) {
-    goto fail;
-  }
 
   return 0;
 

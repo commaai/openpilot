@@ -83,7 +83,7 @@ int gpiochip_get_ro_value_fd(int pin_nr, EdgeType etype) {
   struct gpioevent_request rq;
   rq.lineoffset = pin_nr;
   rq.handleflags = GPIOHANDLE_REQUEST_INPUT;
-  
+
   // Why does it not work with rising only?
   // rq.eventflags = (etype == EdgeType::Rising) ? GPIOEVENT_EVENT_RISING_EDGE : GPIOEVENT_EVENT_FALLING_EDGE;
   rq.eventflags = GPIOEVENT_REQUEST_BOTH_EDGES;
