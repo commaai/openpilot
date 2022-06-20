@@ -36,12 +36,13 @@ def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subadd
 
 def get_all_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float = 1, debug: bool = True) -> Set[Tuple[int, Optional[int], int]]:
   addr_list = [0x700 + i for i in range(256)] + [0x18da00f1 + (i << 8) for i in range(256)]
-  queries = responses = {(addr, None, bus) for addr in addr_list}
+  queries: Set[Tuple[int, Optional[int], int]] = {(addr, None, bus) for addr in addr_list}
+  responses = queries
   return get_ecu_addrs(logcan, sendcan, queries, responses, timeout=timeout, debug=debug)
 
 
 def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, queries: Set[Tuple[int, Optional[int], int]],
-                  responses: Set[Tuple[int, Optional[int], int]], timeout: float = 1, debug: bool = True) -> Set[Tuple[int, Optional[int], int]]:
+                  responses: Set[Tuple[int, Optional[int], int]], timeout: float = 1, debug: bool = False) -> Set[Tuple[int, Optional[int], int]]:
   ecu_responses: Set[Tuple[int, Optional[int], int]] = set()  # set((addr, subaddr, bus),)
   try:
     msgs = [make_tester_present_msg(addr, bus, subaddr) for addr, subaddr, bus in queries]

@@ -3,7 +3,7 @@ import struct
 import traceback
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, List, Optional, Set, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
