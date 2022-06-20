@@ -48,6 +48,7 @@
     "casync_store": "http://192.168.200.51:8000/default.castr",
     "casync_seed_caibx": "http://192.168.200.51:8000/system-9b0b534ed0c35c25850dbb73d3f052611f2e2c9db32410edc25d75fbcfc6c15e.img.raw.caibx",
     "size": 10737418240,
+    "sparse": true,
     "full_check": false,
     "has_ab": true
   }
