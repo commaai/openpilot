@@ -39,7 +39,9 @@ class Laikad:
     self.save_ephemeris = save_ephemeris
     self.load_cache()
     self.posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
-    self.last_pos_fix = last_known_position
+    self.last_pos_fix = last_known_position if last_known_position is not None else []
+    self.last_pos_residual = []
+    self.last_pos_fix_t = None
 
   def load_cache(self):
     cache = Params().get(EPHEMERIS_CACHE)
@@ -62,23 +64,26 @@ class Laikad:
 
   def process_ublox_msg(self, ublox_msg, ublox_mono_time: int, block=False):
     if ublox_msg.which == 'measurementReport':
+      t = ublox_mono_time * 1e-9
       report = ublox_msg.measurementReport
       if report.gpsWeek > 0:
         latest_msg_t = GPSTime(report.gpsWeek, report.rcvTow)
         self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
+
       new_meas = read_raw_ublox(report)
       processed_measurements = process_measurements(new_meas, self.astro_dog)
 
-      min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 4
-      pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
-      if len(pos_fix) > 0:
-        self.last_pos_fix = pos_fix[:3]
-      est_pos = self.last_pos_fix
+      if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
+        min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 4
+        pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
+        if len(pos_fix) > 0:
+          self.last_pos_fix = pos_fix[:3]
+          self.last_pos_residual = pos_fix_residual
+          self.last_pos_fix_t = t
 
-      corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog) if est_pos is not None else []
+      corrected_measurements = correct_measurements(processed_measurements, self.last_pos_fix, self.astro_dog) if self.last_pos_fix_t is not None else []
 
-      t = ublox_mono_time * 1e-9
-      self.update_localizer(est_pos, t, corrected_measurements)
+      self.update_localizer(self.last_pos_fix, t, corrected_measurements)
       kf_valid = all(self.kf_valid(t))
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
       ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
@@ -94,7 +99,7 @@ class Laikad:
         "gpsTimeOfWeek": report.rcvTow,
         "positionECEF": measurement_msg(value=ecef_pos, std=pos_std, valid=kf_valid),
         "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std, valid=kf_valid),
-        "positionFixECEF": measurement_msg(value=pos_fix, std=pos_fix_residual, valid=len(pos_fix) > 0),
+        "positionFixECEF": measurement_msg(value=self.last_pos_fix, std=self.last_pos_residual, valid=self.last_pos_fix_t == t),
         "ubloxMonoTime": ublox_mono_time,
         "correctedMeasurements": meas_msgs
       }
@@ -116,7 +121,7 @@ class Laikad:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       elif not valid[2]:
         cloudlog.error("Gnss kalman filter state is nan")
-      if est_pos is not None:
+      if len(est_pos) > 0:
         cloudlog.info(f"Reset kalman filter with {est_pos}")
         self.init_gnss_localizer(est_pos)
       else:
@@ -211,13 +216,13 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
     m_arr = m.as_array()
     if m.constellation_id == ConstellationId.GPS:
       ekf_data[ObservationKind.PSEUDORANGE_GPS].append(m_arr)
-      ekf_data[ObservationKind.PSEUDORANGE_RATE_GPS].append(m_arr)
     elif m.constellation_id == ConstellationId.GLONASS:
       ekf_data[ObservationKind.PSEUDORANGE_GLONASS].append(m_arr)
-      ekf_data[ObservationKind.PSEUDORANGE_RATE_GLONASS].append(m_arr)
-
+  ekf_data[ObservationKind.PSEUDORANGE_RATE_GPS] = ekf_data[ObservationKind.PSEUDORANGE_GPS]
+  ekf_data[ObservationKind.PSEUDORANGE_RATE_GLONASS] = ekf_data[ObservationKind.PSEUDORANGE_GLONASS]
   for kind, data in ekf_data.items():
-    gnss_kf.predict_and_observe(t, kind, data)
+    if len(data) >0:
+      gnss_kf.predict_and_observe(t, kind, data)
 
 
 class CacheSerializer(json.JSONEncoder):
