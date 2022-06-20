@@ -53,8 +53,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
       can_packets = messaging.drain_sock(logcan, wait_for_one=True)
       for packet in can_packets:
         for msg in packet.can:
-          has_subaddr = any([r[0] == msg.address and r[1] is not None and r[2] == msg.src for r in responses])
-          subaddr = msg.dat[0] if has_subaddr else None
+          subaddr = None if (msg.address, None, msg.src) in responses else msg.dat[0]
           if (msg.address, subaddr, msg.src) in responses and is_tester_present_response(msg, subaddr):
             if debug:
               print(f"CAN-RX: {hex(msg.address)} - 0x{bytes.hex(msg.dat)}")
