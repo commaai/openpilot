@@ -236,106 +236,124 @@ def ublox_rcv_callback(msg):
     return []
 
 
+def laika_rcv_callback(msg, CP, cfg, fsm):
+  if msg.ubloxGnss.which() == "measurementReport":
+    return ["gnssMeasurements"], True
+  else:
+    return [], False
+
+
 CONFIGS = [
+  # ProcessConfig(
+  #   proc_name="controlsd",
+  #   pub_sub={
+  #     "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
+  #     "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
+  #     "modelV2": [], "driverCameraState": [], "roadCameraState": [], "wideRoadCameraState": [], "managerState": [], "testJoystick": [],
+  #   },
+  #   ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
+  #   init_callback=fingerprint,
+  #   should_recv_callback=controlsd_rcv_callback,
+  #   tolerance=NUMPY_TOLERANCE,
+  #   fake_pubsubmaster=True,
+  #   submaster_config={
+  #     'ignore_avg_freq': ['radarState', 'longitudinalPlan', 'driverCameraState', 'driverMonitoringState'],  # dcam is expected at 20 Hz
+  #     'ignore_alive': ['wideRoadCameraState'],  # TODO: Add to regen
+  #   }
+  # ),
+  # ProcessConfig(
+  #   proc_name="radard",
+  #   pub_sub={
+  #     "can": ["radarState", "liveTracks"],
+  #     "liveParameters": [], "carState": [], "modelV2": [],
+  #   },
+  #   ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
+  #   init_callback=get_car_params,
+  #   should_recv_callback=radar_rcv_callback,
+  #   tolerance=None,
+  #   fake_pubsubmaster=True,
+  # ),
+  # ProcessConfig(
+  #   proc_name="plannerd",
+  #   pub_sub={
+  #     "modelV2": ["lateralPlan", "longitudinalPlan"],
+  #     "carState": [], "controlsState": [], "radarState": [],
+  #   },
+  #   ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
+  #   init_callback=get_car_params,
+  #   should_recv_callback=None,
+  #   tolerance=NUMPY_TOLERANCE,
+  #   fake_pubsubmaster=True,
+  # ),
+  # ProcessConfig(
+  #   proc_name="calibrationd",
+  #   pub_sub={
+  #     "carState": ["liveCalibration"],
+  #     "cameraOdometry": []
+  #   },
+  #   ignore=["logMonoTime", "valid"],
+  #   init_callback=get_car_params,
+  #   should_recv_callback=calibration_rcv_callback,
+  #   tolerance=None,
+  #   fake_pubsubmaster=True,
+  # ),
+  # ProcessConfig(
+  #   proc_name="dmonitoringd",
+  #   pub_sub={
+  #     "driverState": ["driverMonitoringState"],
+  #     "liveCalibration": [], "carState": [], "modelV2": [], "controlsState": [],
+  #   },
+  #   ignore=["logMonoTime", "valid"],
+  #   init_callback=get_car_params,
+  #   should_recv_callback=None,
+  #   tolerance=NUMPY_TOLERANCE,
+  #   fake_pubsubmaster=True,
+  # ),
+  # ProcessConfig(
+  #   proc_name="locationd",
+  #   pub_sub={
+  #     "cameraOdometry": ["liveLocationKalman"],
+  #     "sensorEvents": [], "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
+  #   },
+  #   ignore=["logMonoTime", "valid"],
+  #   init_callback=get_car_params,
+  #   should_recv_callback=None,
+  #   tolerance=NUMPY_TOLERANCE,
+  #   fake_pubsubmaster=False,
+  # ),
+  # ProcessConfig(
+  #   proc_name="paramsd",
+  #   pub_sub={
+  #     "liveLocationKalman": ["liveParameters"],
+  #     "carState": []
+  #   },
+  #   ignore=["logMonoTime", "valid"],
+  #   init_callback=get_car_params,
+  #   should_recv_callback=None,
+  #   tolerance=NUMPY_TOLERANCE,
+  #   fake_pubsubmaster=True,
+  # ),
+  # ProcessConfig(
+  #   proc_name="ubloxd",
+  #   pub_sub={
+  #     "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
+  #   },
+  #   ignore=["logMonoTime"],
+  #   init_callback=None,
+  #   should_recv_callback=ublox_rcv_callback,
+  #   tolerance=None,
+  #   fake_pubsubmaster=False,
+  # ),
   ProcessConfig(
-    proc_name="controlsd",
+    proc_name="laikad",
     pub_sub={
-      "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
-      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "wideRoadCameraState": [], "managerState": [], "testJoystick": [],
-    },
-    ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
-    init_callback=fingerprint,
-    should_recv_callback=controlsd_rcv_callback,
-    tolerance=NUMPY_TOLERANCE,
-    fake_pubsubmaster=True,
-    submaster_config={
-      'ignore_avg_freq': ['radarState', 'longitudinalPlan', 'driverCameraState', 'driverMonitoringState'],  # dcam is expected at 20 Hz
-      'ignore_alive': ['wideRoadCameraState'],  # TODO: Add to regen
-    }
-  ),
-  ProcessConfig(
-    proc_name="radard",
-    pub_sub={
-      "can": ["radarState", "liveTracks"],
-      "liveParameters": [], "carState": [], "modelV2": [],
-    },
-    ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
-    init_callback=get_car_params,
-    should_recv_callback=radar_rcv_callback,
-    tolerance=None,
-    fake_pubsubmaster=True,
-  ),
-  ProcessConfig(
-    proc_name="plannerd",
-    pub_sub={
-      "modelV2": ["lateralPlan", "longitudinalPlan"],
-      "carState": [], "controlsState": [], "radarState": [],
-    },
-    ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
-    init_callback=get_car_params,
-    should_recv_callback=None,
-    tolerance=NUMPY_TOLERANCE,
-    fake_pubsubmaster=True,
-  ),
-  ProcessConfig(
-    proc_name="calibrationd",
-    pub_sub={
-      "carState": ["liveCalibration"],
-      "cameraOdometry": []
-    },
-    ignore=["logMonoTime", "valid"],
-    init_callback=get_car_params,
-    should_recv_callback=calibration_rcv_callback,
-    tolerance=None,
-    fake_pubsubmaster=True,
-  ),
-  ProcessConfig(
-    proc_name="dmonitoringd",
-    pub_sub={
-      "driverState": ["driverMonitoringState"],
-      "liveCalibration": [], "carState": [], "modelV2": [], "controlsState": [],
-    },
-    ignore=["logMonoTime", "valid"],
-    init_callback=get_car_params,
-    should_recv_callback=None,
-    tolerance=NUMPY_TOLERANCE,
-    fake_pubsubmaster=True,
-  ),
-  ProcessConfig(
-    proc_name="locationd",
-    pub_sub={
-      "cameraOdometry": ["liveLocationKalman"],
-      "sensorEvents": [], "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
-    },
-    ignore=["logMonoTime", "valid"],
-    init_callback=get_car_params,
-    should_recv_callback=None,
-    tolerance=NUMPY_TOLERANCE,
-    fake_pubsubmaster=False,
-  ),
-  ProcessConfig(
-    proc_name="paramsd",
-    pub_sub={
-      "liveLocationKalman": ["liveParameters"],
-      "carState": []
-    },
-    ignore=["logMonoTime", "valid"],
-    init_callback=get_car_params,
-    should_recv_callback=None,
-    tolerance=NUMPY_TOLERANCE,
-    fake_pubsubmaster=True,
-  ),
-  ProcessConfig(
-    proc_name="ubloxd",
-    pub_sub={
-      "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
+      "ubloxGnss": ["gnssMeasurements"],
     },
     ignore=["logMonoTime"],
-    init_callback=None,
-    should_recv_callback=ublox_rcv_callback,
-    tolerance=None,
-    fake_pubsubmaster=False,
+    init_callback=get_car_params,
+    should_recv_callback=laika_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=True,
   ),
 ]
 

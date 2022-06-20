@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import os
 import time
 from collections import defaultdict
 from concurrent.futures import Future, ProcessPoolExecutor
@@ -44,9 +45,13 @@ class Laikad:
     self.last_pos_fix_t = None
 
   def load_cache(self):
+    if not self.save_ephemeris:
+      return
+
     cache = Params().get(EPHEMERIS_CACHE)
     if not cache:
       return
+
     try:
       cache = json.loads(cache, object_hook=deserialize_hook)
       self.astro_dog.add_orbits(cache['orbits'])
@@ -251,17 +256,22 @@ class EphemerisSourceType(IntEnum):
   glonassIacUltraRapid = 2
 
 
-def main():
-  sm = messaging.SubMaster(['ubloxGnss'])
-  pm = messaging.PubMaster(['gnssMeasurements'])
+def main(sm=None, pm=None):
+  if sm is None:
+    sm = messaging.SubMaster(['ubloxGnss'])
+  if pm is None:
+    pm = messaging.PubMaster(['gnssMeasurements'])
+
+  replay = "REPLAY" in os.environ
+
   # todo get last_known_position
-  laikad = Laikad(save_ephemeris=True)
+  laikad = Laikad(save_ephemeris=not replay)
   while True:
     sm.update()
 
     if sm.updated['ubloxGnss']:
       ublox_msg = sm['ubloxGnss']
-      msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'])
+      msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'], block=replay)
       if msg is not None:
         pm.send('gnssMeasurements', msg)
 

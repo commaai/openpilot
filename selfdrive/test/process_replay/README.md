@@ -5,7 +5,7 @@ Process replay is a regression test designed to identify any changes in the outp
 If the test fails, make sure that you didn't unintentionally change anything. If there are intentional changes, the reference logs will be updated.
 
 Use `test_processes.py` to run the test locally.
-Use `FILEREADER_CACHE='1' test_processes.py` to cache log files. 
+Use `FILEREADER_CACHE='1' test_processes.py` to cache log files.
 
 Currently the following processes are tested:
 
@@ -15,6 +15,7 @@ Currently the following processes are tested:
 * calibrationd
 * dmonitoringd
 * locationd
+* laikad
 * paramsd
 * ubloxd
 
