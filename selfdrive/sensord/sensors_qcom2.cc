@@ -46,6 +46,9 @@ void interrupt_loop(std::vector<Sensor *>& gpio_sensors, PubMaster& pm) {
         continue;
       }
       return;
+    } else if (err == 0) {
+      LOGE("poll timed out");
+      continue;
     }
 
     MessageBuilder msg;
