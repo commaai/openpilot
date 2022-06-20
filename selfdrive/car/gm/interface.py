@@ -136,7 +136,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
 
     # Set Panda to camera forwarding mode
-    if ret.networkLocation == car.NetworkLocation.fwdCamera:
+    if ret.networkLocation is not None and ret.networkLocation == car.NetworkLocation.fwdCamera:
       # TODO: Depends on Panda PR #962 (Cam Harness forwarding, stock ACC)
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
 
