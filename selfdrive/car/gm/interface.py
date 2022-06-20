@@ -49,7 +49,11 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.pcmCruise = False  # For ASCM, stock cruise control is kept off (but not ACC)
     ret.radarOffCan = False  # For ASCM, radar is expected
+    # TransmissionType.automatic = Traditional Gas / Automatic Transmission
+    # TransmissionType.direct    = EV / Hybrid
     ret.transmissionType = TransmissionType.automatic
+    # NetworkLocation.gateway = OBD-II harness (Typically ASCM)
+    # NetworkLocation.fwdCamera = Camera Harness (Non-ASCM)
     ret.networkLocation = NetworkLocation.gateway
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
