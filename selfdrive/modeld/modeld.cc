@@ -11,7 +11,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/modeld/models/driving.h"
 
 ExitHandler do_exit;

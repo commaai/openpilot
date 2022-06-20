@@ -6,7 +6,7 @@
 #endif
 
 #include "cereal/gen/cpp/log.capnp.h"
-#include "selfdrive/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/replay/filereader.h"
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};

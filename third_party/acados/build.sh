@@ -1,4 +1,5 @@
-#!/usr/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
@@ -7,6 +8,13 @@ BLAS_TARGET="X64_AUTOMATIC"
 if [ -f /TICI ]; then
   ARCHNAME="larch64"
   BLAS_TARGET="ARMV8A_ARM_CORTEX_A57"
+fi
+
+ACADOS_FLAGS="-DACADOS_WITH_QPOASES=ON -UBLASFEO_TARGET -DBLASFEO_TARGET=$BLAS_TARGET"
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  ACADOS_FLAGS="$ACADOS_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+  ARCHNAME="Darwin"
 fi
 
 if [ ! -d acados_repo/ ]; then
@@ -21,7 +29,7 @@ git submodule update --recursive --init
 # build
 mkdir -p build
 cd build
-cmake -DACADOS_WITH_QPOASES=ON -UBLASFEO_TARGET -DBLASFEO_TARGET=$BLAS_TARGET ..
+cmake $ACADOS_FLAGS ..
 make -j20 install
 
 INSTALL_DIR="$DIR/$ARCHNAME"

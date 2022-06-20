@@ -8,7 +8,7 @@
 
 #include "common/swaglog.h"
 #include "common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 namespace {
 
@@ -94,6 +94,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CompletedTrainingVersion", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"CurrentRoute", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
+    {"DashcamOverride", PERSISTENT},
     {"DisableLogging", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"DisablePowerDown", PERSISTENT},
     {"DisableRadar_Allow", PERSISTENT},
@@ -126,6 +127,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"IsUpdateAvailable", CLEAR_ON_MANAGER_START},
     {"JoystickDebugMode", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
+    {"LaikadEphemeris", PERSISTENT},
     {"LastAthenaPingTime", CLEAR_ON_MANAGER_START},
     {"LastGPSPosition", PERSISTENT},
     {"LastManagerExitReason", CLEAR_ON_MANAGER_START},
