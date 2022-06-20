@@ -30,8 +30,6 @@
 enum EdgeType {
   Rising,
   Falling,
-  Both,
-  None
 };
 
 int gpio_init(int pin_nr, bool output);

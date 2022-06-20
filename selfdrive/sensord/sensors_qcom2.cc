@@ -123,7 +123,6 @@ int sensor_loop() {
     return -1;
   }
 
-  // bmx interrupts are triggering faster than the filter bandwidth
   BMX055_Accel bmx055_accel(i2c_bus_imu);
   BMX055_Gyro bmx055_gyro(i2c_bus_imu);
   BMX055_Magn bmx055_magn(i2c_bus_imu);
@@ -156,7 +155,6 @@ int sensor_loop() {
 
   // Initialize sensors
   std::vector<Sensor *> sensors;
-  std::vector<Sensor *> interrupt_sensors;
   for (auto &sensor : sensors_init) {
     int err = sensor.first->init();
     if (err < 0) {
