@@ -41,6 +41,5 @@ bool BMX055_Temp::get_event(cereal::SensorEventData::Builder &event) {
   event.setType(SENSOR_TYPE_AMBIENT_TEMPERATURE);
   event.setTimestamp(start_time);
   event.setTemperature(temp);
-
   return true;
 }

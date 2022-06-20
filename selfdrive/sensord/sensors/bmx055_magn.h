@@ -32,13 +32,9 @@
 #define BMX055_MAGN_I2C_REG_DIG_XY2      0x70
 #define BMX055_MAGN_I2C_REG_DIG_XY1      0x71
 
-#define BMX055_MAGN_I2C_REG_INT_EN       0x4E
-
 // Constants
 #define BMX055_MAGN_CHIP_ID     0x32
 #define BMX055_MAGN_FORCED      (0b01 << 1)
-
-#define BMX055_MAGN_DATA_EN     (1 << 7)
 
 struct trim_data_t {
     int8_t dig_x1;
@@ -61,7 +57,7 @@ class BMX055_Magn : public I2CSensor{
   bool perform_self_test();
   bool parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *z);
 public:
-  BMX055_Magn(I2CBus *bus, int gpio_nr = 0);
+  BMX055_Magn(I2CBus *bus);
   int init();
   bool get_event(cereal::SensorEventData::Builder &event);
 };

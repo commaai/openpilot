@@ -36,36 +36,6 @@ int gpio_set(int pin_nr, bool high) {
   return util::write_file(pin_val_path, (void*)(high ? "1" : "0"), 1);
 }
 
-int gpio_set_edge(int pin_nr, EdgeType etype) {
-  char pin_dir_path[50];
-  int pin_dir_path_len = snprintf(pin_dir_path, sizeof(pin_dir_path),
-                           "/sys/class/gpio/gpio%d/edge", pin_nr);
-  if(pin_dir_path_len <= 0) {
-    return -1;
-  }
-
-  std::string value;
-  switch(etype) {
-      case Rising  : value = "rising"; break;
-      case Falling : value = "falling"; break;
-  }
-
-  return util::write_file(pin_dir_path, (void*)value.c_str(), value.size());
-}
-
-int gpio_get_ro_value_fd(int pin_nr) {
-  char pin_dir_path[50];
-
-  int pin_dir_path_len = snprintf(pin_dir_path, sizeof(pin_dir_path),
-                          "/sys/class/gpio/gpio%d/value", pin_nr);
-  if(pin_dir_path_len <= 0) {
-    return -1;
-  }
-
-  return open(pin_dir_path, O_RDONLY);
-}
-
-
 /*
 sudo chmod 777 /dev/gpiochip0
 echo 84 | sudo tee /sys/class/gpio/unexport
@@ -82,7 +52,7 @@ int gpiochip_get_ro_value_fd(int pin_nr, EdgeType etype) {
   struct gpioevent_request rq;
   rq.lineoffset = pin_nr;
   rq.handleflags = GPIOHANDLE_REQUEST_INPUT;
-  
+
   // Why does it not work with rising only?
   // rq.eventflags = (etype == EdgeType::Rising) ? GPIOEVENT_EVENT_RISING_EDGE : GPIOEVENT_EVENT_FALLING_EDGE;
   rq.eventflags = GPIOEVENT_REQUEST_BOTH_EDGES;

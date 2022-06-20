@@ -7,7 +7,8 @@
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
-BMX055_Gyro::BMX055_Gyro(I2CBus *bus, int gpio_nr) : I2CSensor(bus, gpio_nr) {}
+
+BMX055_Gyro::BMX055_Gyro(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Gyro::init() {
   int ret = 0;
@@ -21,11 +22,6 @@ int BMX055_Gyro::init() {
 
   if(buffer[0] != BMX055_GYRO_CHIP_ID) {
     LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], BMX055_GYRO_CHIP_ID);
-    ret = -1;
-    goto fail;
-  }
-
-  if (init_gpio() == -1) {
     ret = -1;
     goto fail;
   }
@@ -50,16 +46,6 @@ int BMX055_Gyro::init() {
 
   // +- 125 deg/s range
   ret = set_register(BMX055_GYRO_I2C_REG_RANGE, BMX055_GYRO_RANGE_125);
-  if (ret < 0) {
-    goto fail;
-  }
-
-  ret = set_register(BMX055_GYRO_I2C_REG_INT_MAP_1, BMX055_GYRO_DATA_TO_INT3);
-  if (ret < 0) {
-    goto fail;
-  }
-
-  ret = set_register(BMX055_GYRO_I2C_REG_INT_EN_0, BMX055_GYRO_DATA_EN);
   if (ret < 0) {
     goto fail;
   }
@@ -90,6 +76,5 @@ bool BMX055_Gyro::get_event(cereal::SensorEventData::Builder &event) {
   auto svec = event.initGyroUncalibrated();
   svec.setV(xyz);
   svec.setStatus(true);
-
   return true;
 }
