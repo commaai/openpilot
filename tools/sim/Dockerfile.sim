@@ -18,6 +18,7 @@ COPY ./third_party $HOME/openpilot/third_party
 COPY ./pyextra $HOME/openpilot/pyextra
 COPY ./site_scons $HOME/openpilot/site_scons
 COPY ./rednose $HOME/openpilot/rednose
+COPY ./laika $HOME/openpilot/laika
 COPY ./common $HOME/openpilot/common
 COPY ./opendbc $HOME/openpilot/opendbc
 COPY ./cereal $HOME/openpilot/cereal
