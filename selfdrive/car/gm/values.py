@@ -67,16 +67,16 @@ class Footnote(Enum):
 @dataclass
 class GMCarInfo(CarInfo):
   package: str = "Adaptive Cruise"
-  harness: Enum = Harness.none
+  harness: Enum = Harness.obd_ii
 
 
 CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
-  CAR.HOLDEN_ASTRA: GMCarInfo("Holden Astra 2017", harness=Harness.custom),
-  CAR.VOLT: GMCarInfo("Chevrolet Volt 2017-18", footnotes=[Footnote.OBD_II], min_enable_speed=0, harness=Harness.custom),
-  CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018"),
-  CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017", harness=Harness.custom),
+  CAR.HOLDEN_ASTRA: GMCarInfo("Holden Astra 2017", footnotes=[Footnote.OBD_II]),
+  CAR.VOLT: GMCarInfo("Chevrolet Volt 2017-18", footnotes=[Footnote.OBD_II], min_enable_speed=0),
+  CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018", footnotes=[Footnote.OBD_II]),
+  CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017", footnotes=[Footnote.OBD_II]),
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo", footnotes=[Footnote.OBD_II]),
-  CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
+  CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018", footnotes=[Footnote.OBD_II]),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS", footnotes=[Footnote.OBD_II]),
 }
 
