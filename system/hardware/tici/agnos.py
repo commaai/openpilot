@@ -13,7 +13,6 @@ import requests
 import selfdrive.hardware.tici.casync as casync
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
-CASYNC_TMP_DIR = "/data/neoupdate"
 
 
 class StreamingDecompressor:
