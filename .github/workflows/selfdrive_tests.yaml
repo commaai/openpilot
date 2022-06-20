@@ -310,7 +310,7 @@ jobs:
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./system/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
-                        ./selfdrive/camerad/test/ae_gray_test && \
+                        ./system/camerad/test/ae_gray_test && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2

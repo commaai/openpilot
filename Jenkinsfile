@@ -88,8 +88,8 @@ pipeline {
           steps {
             sh "git config --global --add safe.directory ${WORKSPACE}"
             sh "git lfs pull"
-            sh "${WORKSPACE}/tools/sim/build_container.sh"
             lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
+              sh "${WORKSPACE}/tools/sim/build_container.sh"
               sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
               sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
             }
@@ -139,8 +139,8 @@ pipeline {
           steps {
             phone_steps("tici-party", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
-              ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+              ["test camerad", "python system/camerad/test/test_camerad.py"],
+              ["test exposure", "python system/camerad/test/test_exposure.py"],
             ])
           }
         }
