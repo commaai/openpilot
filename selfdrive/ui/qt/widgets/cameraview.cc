@@ -67,16 +67,15 @@ const mat4 device_transform = {{
 }};
 
 mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
-  const float driver_view_ratio = 1.333;
-  const float yscale = stream_height * driver_view_ratio / tici_dm_crop::width;
+  const float driver_view_ratio = 2.0;
+  const float yscale = stream_height * driver_view_ratio / stream_width;
   const float xscale = yscale*screen_height/screen_width*stream_width/stream_height;
   mat4 transform = (mat4){{
-    xscale,  0.0, 0.0, xscale*tici_dm_crop::x_offset/stream_width*2,
-    0.0,  yscale, 0.0, yscale*tici_dm_crop::y_offset/stream_height*2,
+    xscale,  0.0, 0.0, 0.0,
+    0.0,  yscale, 0.0, 0.0,
     0.0,  0.0, 1.0, 0.0,
     0.0,  0.0, 0.0, 1.0,
   }};
-
   return transform;
 }
 
