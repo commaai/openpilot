@@ -15,6 +15,7 @@ from selfdrive.car import gen_empty_fingerprint
 from common.realtime import sec_since_boot
 
 EventName = car.CarEvent.EventName
+VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
 
 def get_startup_event(car_recognized, controller_available, fw_seen):
@@ -100,7 +101,7 @@ def fingerprint(logcan, sendcan):
       cloudlog.warning("Getting VIN & FW versions")
       _, vin = get_vin(logcan, sendcan, bus)
       ecu_t = sec_since_boot()
-      ecu_responses = get_present_ecus(logcan, sendcan, get_interface_attr('FW_VERSIONS', ignore_none=True))
+      ecu_responses = get_present_ecus(logcan, sendcan, VERSIONS)
       ecu_t = sec_since_boot() - ecu_t
       car_fw = get_fw_versions(logcan, sendcan)
 
