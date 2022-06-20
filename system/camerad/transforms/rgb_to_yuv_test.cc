@@ -30,7 +30,7 @@
 #include <CL/cl.h>
 
 #include "libyuv.h"
-#include "selfdrive/camerad/transforms/rgb_to_yuv.h"
+#include "system/camerad/transforms/rgb_to_yuv.h"
 #include "common/clutil.h"
 
 static inline double millis_since_boot() {

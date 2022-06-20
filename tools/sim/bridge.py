@@ -81,7 +81,7 @@ class Camerad:
     cl_arg = f" -DHEIGHT={H} -DWIDTH={W} -DRGB_STRIDE={W * 3} -DUV_WIDTH={W // 2} -DUV_HEIGHT={H // 2} -DRGB_SIZE={W * H} -DCL_DEBUG "
 
     # TODO: move rgb_to_yuv.cl to local dir once the frame stream camera is removed
-    kernel_fn = os.path.join(BASEDIR, "selfdrive", "camerad", "transforms", "rgb_to_yuv.cl")
+    kernel_fn = os.path.join(BASEDIR, "system", "camerad", "transforms", "rgb_to_yuv.cl")
     with open(kernel_fn) as f:
       prg = cl.Program(self.ctx, f.read()).build(cl_arg)
       self.krnl = prg.rgb_to_yuv

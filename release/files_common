@@ -182,6 +182,7 @@ selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
 selfdrive/controls/lib/lateral_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
+selfdrive/hardware
 system/hardware/__init__.py
 system/hardware/base.h
 system/hardware/base.py
@@ -298,24 +299,24 @@ selfdrive/ui/replay/*.h
 selfdrive/ui/qt/maps/*.cc
 selfdrive/ui/qt/maps/*.h
 
-selfdrive/camerad/SConscript
-selfdrive/camerad/main.cc
+system/camerad/SConscript
+system/camerad/main.cc
 
-selfdrive/camerad/snapshot/*
-selfdrive/camerad/include/*
-selfdrive/camerad/cameras/camera_common.h
-selfdrive/camerad/cameras/camera_common.cc
-selfdrive/camerad/cameras/sensor2_i2c.h
+system/camerad/snapshot/*
+system/camerad/include/*
+system/camerad/cameras/camera_common.h
+system/camerad/cameras/camera_common.cc
+system/camerad/cameras/sensor2_i2c.h
 
-selfdrive/camerad/transforms/rgb_to_yuv.cc
-selfdrive/camerad/transforms/rgb_to_yuv.h
-selfdrive/camerad/transforms/rgb_to_yuv.cl
-selfdrive/camerad/transforms/rgb_to_yuv_test.cc
+system/camerad/transforms/rgb_to_yuv.cc
+system/camerad/transforms/rgb_to_yuv.h
+system/camerad/transforms/rgb_to_yuv.cl
+system/camerad/transforms/rgb_to_yuv_test.cc
 
-selfdrive/camerad/imgproc/conv.cl
-selfdrive/camerad/imgproc/pool.cl
-selfdrive/camerad/imgproc/utils.cc
-selfdrive/camerad/imgproc/utils.h
+system/camerad/imgproc/conv.cl
+system/camerad/imgproc/pool.cl
+system/camerad/imgproc/utils.cc
+system/camerad/imgproc/utils.h
 
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py
@@ -413,6 +414,7 @@ pyextra/.gitignore
 pyextra/acados_template/**
 
 rednose/**
+laika/**
 
 cereal/.gitignore
 cereal/__init__.py
@@ -495,6 +497,7 @@ opendbc/honda_odyssey_exl_2018_generated.dbc
 opendbc/honda_odyssey_extreme_edition_2018_china_can_generated.dbc
 opendbc/honda_insight_ex_2019_can_generated.dbc
 opendbc/acura_ilx_2016_nidec.dbc
+opendbc/honda_civic_ex_2022_can_generated.dbc
 
 opendbc/kia_ev6.dbc
 opendbc/hyundai_kia_generic.dbc
