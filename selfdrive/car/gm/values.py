@@ -1,6 +1,7 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Type
 
 from cereal import car
 from selfdrive.car import dbc_dict
@@ -152,9 +153,6 @@ FINGERPRINTS = {
   }],
 }
 
-CUSTOM_DBC: Dict[str,Dict[str,str]] = {
-  #e.g.: CAR.EXAMPLE: dbc_dict('custom_powertrain', 'custom_object', chassis_dbc='custom_chassis'),
-}
-DEFAULT_DBC_VAL = dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis')
-DBC = {str(getattr(CAR,car)): DEFAULT_DBC_VAL for car in dir(CAR) if not car.startswith("_") and car not in CUSTOM_DBC}
-DBC.update(CUSTOM_DBC)
+DBC: Type[Dict[str,Dict[str,str]]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
+# To add non-default DBC:
+# DBC[CAR.BUICK_REGAL] = dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis')
