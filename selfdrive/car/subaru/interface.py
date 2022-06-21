@@ -22,7 +22,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
 
-    ret.steerRateCost = 0.7
     ret.steerLimitTimer = 0.4
 
     if candidate == CAR.ASCENT:

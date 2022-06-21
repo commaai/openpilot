@@ -3,8 +3,8 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
+#include "common/params.h"
+#include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
 
 bool compare_by_strength(const Network &a, const Network &b) {

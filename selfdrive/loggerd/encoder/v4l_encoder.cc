@@ -3,8 +3,8 @@
 #include <poll.h>
 
 #include "selfdrive/loggerd/encoder/v4l_encoder.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/timing.h"
+#include "common/util.h"
+#include "common/timing.h"
 
 #include "libyuv.h"
 #include "msm_media_info.h"
@@ -37,10 +37,11 @@ static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=N
   assert(v4l_buf.m.planes[0].data_offset == 0);
 }
 
-static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={0}) {
+static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={0}, unsigned int bytesused=0) {
   v4l2_plane plane = {
     .length = (unsigned int)buf->len,
     .m = { .userptr = (unsigned long)buf->addr, },
+    .bytesused = bytesused,
     .reserved = {(unsigned int)buf->fd}
   };
 
@@ -115,8 +116,8 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       }
 
       if (env_debug_encoder) {
-        printf("%20s got(%d) %6d bytes flags %8x idx %4d id %8d ts %ld lat %.2f ms (%lu frames free)\n",
-          e->filename, index, bytesused, flags, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
+        printf("%20s got(%d) %6d bytes flags %8x idx %3d/%4d id %8d ts %ld lat %.2f ms (%lu frames free)\n",
+          e->filename, index, bytesused, flags, e->segment_num, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
       }
 
       // requeue the buffer
@@ -247,7 +248,6 @@ void V4LEncoder::encoder_init() {
   }
   // queue up input buffers
   for (unsigned int i = 0; i < BUF_IN_COUNT; i++) {
-    buf_in[i].allocate(fmt_in.fmt.pix_mp.plane_fmt[0].sizeimage);
     free_buf_in.push(i);
   }
 
@@ -261,38 +261,19 @@ void V4LEncoder::encoder_open(const char* path) {
   this->counter = 0;
 }
 
-int V4LEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                  int in_width_, int in_height_, VisionIpcBufExtra *extra) {
-  assert(in_width == in_width_);
-  assert(in_height == in_height_);
-  assert(is_open);
-
-  // reserve buffer
-  int buffer_in = free_buf_in.pop();
-
-  uint8_t *in_y_ptr = (uint8_t*)buf_in[buffer_in].addr;
-  int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, in_width);
-  int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, in_width);
-  uint8_t *in_uv_ptr = in_y_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, in_height));
-
-  // GRRR COPY
-  int err = libyuv::I420ToNV12(y_ptr, in_width,
-                   u_ptr, in_width/2,
-                   v_ptr, in_width/2,
-                   in_y_ptr, in_y_stride,
-                   in_uv_ptr, in_uv_stride,
-                   in_width, in_height);
-  assert(err == 0);
-
+int V4LEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
   struct timeval timestamp {
     .tv_sec = (long)(extra->timestamp_eof/1000000000),
     .tv_usec = (long)((extra->timestamp_eof/1000) % 1000000),
   };
 
+  // reserve buffer
+  int buffer_in = free_buf_in.pop();
+
   // push buffer
   extras.push(*extra);
-  buf_in[buffer_in].sync(VISIONBUF_SYNC_TO_DEVICE);
-  queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, &buf_in[buffer_in], timestamp);
+  //buf->sync(VISIONBUF_SYNC_TO_DEVICE);
+  queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, buf, timestamp);
 
   return this->counter++;
 }

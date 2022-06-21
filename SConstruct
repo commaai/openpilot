@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 import sys
 import sysconfig
@@ -7,6 +6,8 @@ import platform
 import numpy as np
 
 TICI = os.path.isfile('/TICI')
+AGNOS = TICI
+
 Decider('MD5-timestamp')
 
 AddOption('--test',
@@ -56,7 +57,7 @@ real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rst
 if platform.system() == "Darwin":
   arch = "Darwin"
 
-if arch == "aarch64" and TICI:
+if arch == "aarch64" and AGNOS:
   arch = "larch64"
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
@@ -93,7 +94,7 @@ if arch == "larch64":
     "/usr/lib/aarch64-linux-gnu"
   ]
   cpppath += [
-    "#selfdrive/camerad/include",
+    "#system/camerad/include",
   ]
   cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
@@ -130,7 +131,7 @@ else:
       "#third_party/libyuv/x64/lib",
       "#third_party/mapbox-gl-native-qt/x86_64",
       "#cereal",
-      "#selfdrive/common",
+      "#common",
       "/usr/lib",
       "/usr/local/lib",
     ]
@@ -138,7 +139,7 @@ else:
   rpath += [
     Dir("#third_party/snpe/x86_64-linux-clang").abspath,
     Dir("#cereal").abspath,
-    Dir("#selfdrive/common").abspath
+    Dir("#common").abspath
   ]
 
 if GetOption('asan'):
@@ -156,8 +157,8 @@ if arch != "Darwin":
   ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
 # Enable swaglog include in submodules
-cflags += ['-DSWAGLOG="\\"selfdrive/common/swaglog.h\\""']
-cxxflags += ['-DSWAGLOG="\\"selfdrive/common/swaglog.h\\""']
+cflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
+cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 
 env = Environment(
   ENV=lenv,
@@ -212,7 +213,7 @@ env = Environment(
     "#third_party",
     "#opendbc/can",
     "#selfdrive/boardd",
-    "#selfdrive/common",
+    "#common",
   ],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
@@ -226,7 +227,7 @@ if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
 # Setup cache dir
-cache_dir = '/data/scons_cache' if TICI else '/tmp/scons_cache'
+cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
 
@@ -330,14 +331,14 @@ if GetOption("clazy"):
 
 Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
 
-SConscript(['selfdrive/common/SConscript'])
-Import('_common', '_gpucommon', '_gpu_libs')
+SConscript(['common/SConscript'])
+Import('_common', '_gpucommon')
 
 if SHARED:
   common, gpucommon = abspath(common), abspath(gpucommon)
 else:
   common = [_common, 'json11']
-  gpucommon = [_gpucommon] + _gpu_libs
+  gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')
 
@@ -358,6 +359,7 @@ Export('cereal', 'messaging', 'visionipc')
 rednose_config = {
   'generated_folder': '#selfdrive/locationd/models/generated',
   'to_build': {
+    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
     'live': ('#selfdrive/locationd/models/live_kf.py', True, ['live_kf_constants.h']),
     'car': ('#selfdrive/locationd/models/car_kf.py', True, []),
   },
@@ -365,7 +367,6 @@ rednose_config = {
 
 if arch != "larch64":
   rednose_config['to_build'].update({
-    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, []),
     'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, []),
     'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, []),
@@ -376,6 +377,15 @@ if arch != "larch64":
 Export('rednose_config')
 SConscript(['rednose/SConscript'])
 
+# Build system services
+SConscript([
+  'system/camerad/SConscript',
+  'system/clocksd/SConscript',
+  'system/proclogd/SConscript',
+])
+if arch != "Darwin":
+  SConscript(['system/logcatd/SConscript'])
+
 # Build openpilot
 
 SConscript(['cereal/SConscript'])
@@ -384,11 +394,9 @@ SConscript(['opendbc/can/SConscript'])
 
 SConscript(['third_party/SConscript'])
 
-SConscript(['common/SConscript'])
 SConscript(['common/kalman/SConscript'])
 SConscript(['common/transformations/SConscript'])
 
-SConscript(['selfdrive/camerad/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
@@ -396,17 +404,12 @@ SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
-SConscript(['selfdrive/proclogd/SConscript'])
-SConscript(['selfdrive/clocksd/SConscript'])
 
 SConscript(['selfdrive/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
-
-if arch != "Darwin":
-  SConscript(['selfdrive/logcatd/SConscript'])
 
 if GetOption('test'):
   SConscript('panda/tests/safety/SConscript')

@@ -4,7 +4,7 @@
 #include <QLabel>
 #include <QPushButton>
 
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "selfdrive/ui/ui.h"
 
 class RecordButton : public QPushButton {

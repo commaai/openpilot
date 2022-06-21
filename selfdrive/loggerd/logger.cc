@@ -15,9 +15,9 @@
 #include <iostream>
 #include <streambuf>
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/version.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/version.h"
 
 // ***** logging helpers *****
 
@@ -33,12 +33,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (Hardware::TICI()) {
-    init.setDeviceType(cereal::InitData::DeviceType::TICI);
-  } else {
-    init.setDeviceType(cereal::InitData::DeviceType::PC);
-  }
-
+  init.setDeviceType(Hardware::get_device_type());
   init.setVersion(COMMA_VERSION);
 
   std::ifstream cmdline_stream("/proc/cmdline");

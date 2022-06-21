@@ -6,9 +6,9 @@
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc.h"
-#include "selfdrive/common/queue.h"
-#include "selfdrive/loggerd/encoder/video_writer.h"
-#include "selfdrive/camerad/cameras/camera_common.h"
+#include "common/queue.h"
+#include "selfdrive/loggerd/video_writer.h"
+#include "system/camerad/cameras/camera_common.h"
 
 #define V4L2_BUF_FLAG_KEYFRAME 8
 
@@ -19,8 +19,7 @@ public:
   : filename(filename), type(type), in_width(in_width), in_height(in_height), fps(fps),
     bitrate(bitrate), codec(codec), out_width(out_width), out_height(out_height), write(write) { }
   virtual ~VideoEncoder();
-  virtual int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                           int in_width, int in_height, VisionIpcBufExtra *extra) = 0;
+  virtual int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) = 0;
   virtual void encoder_open(const char* path) = 0;
   virtual void encoder_close() = 0;
 
@@ -49,6 +48,9 @@ protected:
   CameraType type;
 
 private:
+  // total frames encoded
+  int cnt = 0;
+
   // publishing
   std::unique_ptr<PubMaster> pm;
   const char *service_name;

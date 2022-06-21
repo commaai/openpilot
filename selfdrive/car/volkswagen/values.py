@@ -5,12 +5,13 @@ from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
+
 
 class CarControllerParams:
   HCA_STEP = 2                   # HCA_01 message frequency 50Hz
@@ -30,14 +31,17 @@ class CarControllerParams:
   STEER_DRIVER_MULTIPLIER = 3    # weight driver torque heavily
   STEER_DRIVER_FACTOR = 1        # from dbc
 
+
 class CANBUS:
   pt = 0
   cam = 2
 
+
 class DBC_FILES:
   mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
 
-DBC = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))  # type: Dict[str, Dict[str, str]]
+
+DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))
 
 BUTTON_STATES = {
   "accelCruise": False,
@@ -59,6 +63,7 @@ MQB_LDW_MESSAGES = {
   "emergencyAssistChangingLanes": 9,    # "Emergency Assist: Changing lanes..." with urgent beep
   "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
 }
+
 
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
 # chassis code is already listed below, don't add a new CAR, just add to the
@@ -110,11 +115,12 @@ class Footnote(Enum):
 class VWCarInfo(CarInfo):
   package: str = "Driver Assistance"
   good_torque: bool = True
+  harness: Enum = Harness.vw
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
-  CAR.ARTEON_MK1: VWCarInfo("Volkswagen Arteon 2018, 2021", footnotes=[Footnote.VW_HARNESS]),
-  CAR.ATLAS_MK1: VWCarInfo("Volkswagen Atlas 2018-19, 2022", footnotes=[Footnote.VW_HARNESS]),
+  CAR.ARTEON_MK1: VWCarInfo("Volkswagen Arteon 2018, 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.ATLAS_MK1: VWCarInfo("Volkswagen Atlas 2018-19, 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.GOLF_MK7: [
     VWCarInfo("Volkswagen e-Golf 2014, 2018-20"),
     VWCarInfo("Volkswagen Golf 2015-20"),
@@ -129,17 +135,17 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Jetta 2018-21"),
     VWCarInfo("Volkswagen Jetta GLI 2021"),
   ],
-  CAR.PASSAT_MK8: VWCarInfo("Volkswagen Passat 2016-18", footnotes=[Footnote.PASSAT]),
+  CAR.PASSAT_MK8: VWCarInfo("Volkswagen Passat 2015-19", footnotes=[Footnote.PASSAT]),
   CAR.POLO_MK6: VWCarInfo("Volkswagen Polo 2020"),
-  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS]),
-  CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS]),
-  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.TOURAN_MK2: VWCarInfo("Volkswagen Touran 2017"),
   CAR.TRANSPORTER_T61: [
-    VWCarInfo("Volkswagen Caravelle 2020", footnotes=[Footnote.VW_HARNESS]),
-    VWCarInfo("Volkswagen California 2021", footnotes=[Footnote.VW_HARNESS]),
+    VWCarInfo("Volkswagen Caravelle 2020", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen California 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   ],
-  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS]),
+  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.AUDI_A3_MK3: [
     VWCarInfo("Audi A3 2014-19", "ACC + Lane Assist"),
     VWCarInfo("Audi A3 Sportback e-tron 2017-18", "ACC + Lane Assist"),
@@ -433,46 +439,55 @@ FW_VERSIONS = {
   CAR.PASSAT_MK8: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906023AH\xf1\x893379',
+      b'\xf1\x8704L906026ET\xf1\x891990',
       b'\xf1\x8704L906026GA\xf1\x892013',
       b'\xf1\x8704L906026KD\xf1\x894798',
       b'\xf1\x873G0906264  \xf1\x890004',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300043H \xf1\x891601',
       b'\xf1\x870CW300048R \xf1\x890610',
       b'\xf1\x870D9300014L \xf1\x895002',
+      b'\xf1\x870D9300041A \xf1\x894801',
       b'\xf1\x870DD300045T \xf1\x891601',
       b'\xf1\x870GC300042H \xf1\x891404',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655AE\xf1\x890195\xf1\x82\r56140056130012416612124111',
       b'\xf1\x873Q0959655AN\xf1\x890306\xf1\x82\r58160058140013036914110311',
       b'\xf1\x873Q0959655BB\xf1\x890195\xf1\x82\r56140056130012026612120211',
       b'\xf1\x873Q0959655BK\xf1\x890703\xf1\x82\0165915005914001344701311442900',
+      b'\xf1\x873Q0959655CN\xf1\x890720\xf1\x82\x0e5915005914001305701311052900',
       b'\xf1\x875Q0959655S \xf1\x890870\xf1\x82\02315120011111200631145171716121691132111',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522B0060803',
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522B0080803',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521B00606A1',
       b'\xf1\x875Q0909144S \xf1\x891063\xf1\x82\00516B00501A1',
       b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\00521B00703A1',
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567B0020600',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x873Q0907572A \xf1\x890130',
       b'\xf1\x873Q0907572B \xf1\x890192',
       b'\xf1\x873Q0907572C \xf1\x890195',
+      b'\xf1\x873Q0907572C \xf1\x890196',
       b'\xf1\x875Q0907572R \xf1\x890771',
     ],
   },
   CAR.POLO_MK6: {
     (Ecu.engine, 0x7e0, None): [
-        b'\xf1\x8704C906025H \xf1\x895177',
+      b'\xf1\x8704C906025H \xf1\x895177',
     ],
     (Ecu.transmission, 0x7e1, None): [
-        b'\xf1\x870CW300050D \xf1\x891908',
+      b'\xf1\x870CW300050D \xf1\x891908',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x872Q0959655AJ\xf1\x890250\xf1\x82\x1248130411110416--04040404784811152H14',
     ],
     (Ecu.eps, 0x712, None): [
-        b'\xf1\x872Q1909144M \xf1\x896041',
+      b'\xf1\x872Q1909144M \xf1\x896041',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572R \xf1\x890372',
@@ -480,19 +495,23 @@ FW_VERSIONS = {
   },
   CAR.TAOS_MK1: {
     (Ecu.engine, 0x7e0, None): [
-        b'\xf1\x8705E906013E \xf1\x891624',
+      b'\xf1\x8704E906027NJ\xf1\x891445',
+      b'\xf1\x8705E906013E \xf1\x891624',
     ],
     (Ecu.transmission, 0x7e1, None): [
-        b'\xf1\x8709S927158BL\xf1\x893791',
-    ],
-    (Ecu.fwdRadar, 0x757, None): [
-        b'\xf1\x872Q0907572T \xf1\x890383',
-    ],
-    (Ecu.eps, 0x712, None): [
-        b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\x0521060605A1',
+      b'\xf1\x8709S927158BL\xf1\x893791',
+      b'\xf1\x8709S927158FF\xf1\x893876',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875Q0959655CB\xf1\x890421\xf1\x82\x1311111111333500314646021450149333613100',
+      b'\xf1\x875Q0959655CE\xf1\x890421\xf1\x82\x1311110011333300314240021350139333613100',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\x0521060405A1',
+      b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\x0521060605A1',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },
   CAR.TCROSS_MK1: {
@@ -514,6 +533,7 @@ FW_VERSIONS = {
   },
   CAR.TIGUAN_MK2: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704E906027NB\xf1\x899504',
       b'\xf1\x8704L906026EJ\xf1\x893661',
       b'\xf1\x8704L906027G \xf1\x899893',
       b'\xf1\x875N0906259  \xf1\x890002',
@@ -525,6 +545,7 @@ FW_VERSIONS = {
       b'\xf1\x8709G927158DT\xf1\x893698',
       b'\xf1\x8709G927158GC\xf1\x893821',
       b'\xf1\x8709G927158GD\xf1\x893820',
+      b'\xf1\x870D9300043  \xf1\x895202',
       b'\xf1\x870DL300011N \xf1\x892001',
       b'\xf1\x870DL300011N \xf1\x892012',
       b'\xf1\x870DL300013A \xf1\x893005',
@@ -536,11 +557,14 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655BM\xf1\x890403\xf1\x82\02316143231313500314641011750179333423100',
       b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\02312110031333300314240583752379333423100',
       b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\02331310031333336313140013950399333423100',
+      b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\x1331310031333334313140013750379333423100',
       b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\x1331310031333334313140573752379333423100',
       b'\xf1\x875Q0959655CB\xf1\x890421\xf1\x82\x1316143231313500314647021750179333613100',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820529A6060603',
+      b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\x0521A60604A1',
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567A6000600',
       b'\xf1\x875QF909144B \xf1\x895582\xf1\x82\00571A60634A1',
       b'\xf1\x875QM909144B \xf1\x891081\xf1\x82\x0521A60604A1',
       b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\x0521A60604A1',

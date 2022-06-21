@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 import struct
 import traceback
-from typing import Any, List
 from collections import defaultdict
-from dataclasses import dataclass
-
+from dataclasses import dataclass, field
+from typing import Any, List, Optional, Set, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
-from selfdrive.car.fingerprints import FW_VERSIONS, get_attr_from_cars
+from selfdrive.car.ecu_addrs import get_ecu_addrs
+from selfdrive.car.interfaces import get_interface_attr
+from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
+ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 
 
 def p16(val):
@@ -96,8 +98,10 @@ class Request:
   brand: str
   request: List[bytes]
   response: List[bytes]
+  whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = DEFAULT_RX_OFFSET
   bus: int = 1
+
 
 REQUESTS: List[Request] = [
   # Subaru
@@ -257,7 +261,6 @@ def match_fw_to_car_exact(fw_versions_dict):
       ecu_type = ecu[0]
       addr = ecu[1:]
       found_version = fw_versions_dict.get(addr, None)
-      ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
       if ecu_type == Ecu.esp and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and found_version is None:
         continue
 
@@ -295,15 +298,50 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   return exact_match, matches
 
 
+def get_present_ecus(logcan, sendcan):
+  queries = list()
+  parallel_queries = list()
+  responses = set()
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+
+  for r in REQUESTS:
+    if r.brand not in versions:
+      continue
+
+    for brand_versions in versions[r.brand].values():
+      for ecu_type, addr, sub_addr in brand_versions:
+        # Only query ecus in whitelist if whitelist is not empty
+        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
+          a = (addr, sub_addr, r.bus)
+          # Build set of queries
+          if sub_addr is None:
+            if a not in parallel_queries:
+              parallel_queries.append(a)
+          else:  # subaddresses must be queried one by one
+            if [a] not in queries:
+              queries.append([a])
+
+          # Build set of expected responses to filter
+          response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
+          responses.add((response_addr, sub_addr, r.bus))
+
+  queries.insert(0, parallel_queries)
+
+  ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
+  for query in queries:
+    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
+  return ecu_responses
+
+
 def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
 
   # Extract ECU addresses to query from fingerprints
-  # ECUs using a subadress need be queried one by one, the rest can be done in parallel
+  # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
 
-  versions = get_attr_from_cars('FW_VERSIONS', combine_brands=False)
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
   if extra is not None:
     versions.update(extra)
 
@@ -328,23 +366,26 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
     for addr_chunk in chunks(addr):
       for r in REQUESTS:
         try:
-          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any')]
+          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
+                   (len(r.whitelist_ecus) == 0 or ecu_types[(a, s)] in r.whitelist_ecus)]
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             t = 2 * timeout if i == 0 else timeout
-            fw_versions.update(query.get_data(t))
+            fw_versions.update({addr: (version, r.request, r.rx_offset) for addr, version in query.get_data(t).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
   # Build capnp list to put into CarParams
   car_fw = []
-  for addr, version in fw_versions.items():
+  for addr, (version, request, rx_offset) in fw_versions.items():
     f = car.CarParams.CarFw.new_message()
 
     f.ecu = ecu_types[addr]
     f.fwVersion = version
     f.address = addr[0]
+    f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], rx_offset)
+    f.request = request
 
     if addr[1] is not None:
       f.subAddress = addr[1]

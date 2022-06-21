@@ -8,7 +8,7 @@ import cereal.messaging as messaging
 from selfdrive.test.helpers import phone_only, with_processes
 # TODO: rewrite for unittest
 from common.realtime import DT_CTRL
-from selfdrive.hardware import HARDWARE
+from system.hardware import HARDWARE
 
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 

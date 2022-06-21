@@ -1,17 +1,31 @@
-Version 0.8.14 (2022-0X-XX)
+Version 0.8.15 (2022-XX-XX)
+========================
+* New driving model
+* New lateral controller based on physical wheel torque model
+  * Much smoother control, consistent across the speed range
+  * Effective feedforward that uses road roll
+  * Simplified tuning, all car-specific parameters can be derived from data
+  * Significantly improved control on TSS-P Prius
+* New driver monitoring model
+  * takes a larger input frame
+  * outputs a driver state for both driver and passenger
+  * automatically determines which side the driver is on (soon)
+* Display speed limit while navigating
+* Reduced power usage: device runs cooler and fan spins less
+* AGNOS 5
+* Honda Civic 2022 support
+* Hyundai Tucson 2021 support thanks to bluesforte!
+* Lexus NX Hybrid 2020 support thanks to AlexandreSato!
+
+Version 0.8.14 (2022-06-01)
 ========================
  * New driving model
    * Bigger model, using both of comma three's road-facing cameras
    * Better at cut-in detection and tight turns
  * New driver monitoring model
-   * Tweaked network structure to improve output resolution for dsp
+   * Tweaked network structure to improve output resolution for DSP
    * Fixed bug in quantization aware training to reduce quantizing errors
    * Resulted in 7x less MSE and no more random biases at runtime
- * New lateral controller based on physical wheel torque model
-   * Much smoother control, consistent across the speed range
-   * Effective feedforward that uses road roll
-   * Simplified tuning, all car-specific parameters can be derived from data
-   * Initially used on TSS2 Corolla and TSS-P RAV4
  * Added toggle to disable disengaging on the accelerator pedal
  * comma body support
  * Audi RS3 support thanks to jyoung8607!
@@ -19,6 +33,7 @@ Version 0.8.14 (2022-0X-XX)
  * Hyundai Tucson Diesel 2019 support thanks to sunnyhaibin!
  * Toyota Alphard Hybrid 2021 support
  * Toyota Avalon Hybrid 2022 support
+ * Toyota RAV4 2022 support
  * Toyota RAV4 Hybrid 2022 support
 
 Version 0.8.13 (2022-02-18)
