@@ -4,7 +4,7 @@
 
 #include "selfdrive/ui/qt/util.h"
 
-void Sidebar::drawMetric(QPainter &p, const QString &label, QColor c, int y) {
+void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QColor c, int y) {
   const QRect rect = {30, y, 240, 126};
 
   p.setPen(Qt::NoPen);
@@ -20,9 +20,17 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, QColor c, int y) {
   p.drawRoundedRect(rect, 20, 20);
 
   p.setPen(QColor(0xff, 0xff, 0xff));
-  configFont(p, "Inter", 35, "Bold");
-  const QRect r = QRect(rect.x() + 30, rect.y(), rect.width() - 40, rect.height());
-  p.drawText(r, Qt::AlignCenter, label);
+  configFont(p, "Inter", 35, "SemiBold");
+
+  QRect label_top_rect = getTextRect(p, Qt::AlignCenter, label.first);
+  label_top_rect.moveCenter({rect.center().x() + 11, 0});
+  label_top_rect.moveTop(rect.top() + 19);
+  p.drawText(label_top_rect, Qt::AlignCenter, label.first);
+
+  QRect label_bottom_rect = getTextRect(p, Qt::AlignCenter, label.second);
+  label_bottom_rect.moveCenter({rect.center().x() + 11, 0});
+  label_bottom_rect.moveTop(rect.top() + 65);
+  p.drawText(label_bottom_rect, Qt::AlignCenter, label.second);
 }
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
@@ -57,26 +65,26 @@ void Sidebar::updateState(const UIState &s) {
   ItemStatus connectStatus;
   auto last_ping = deviceState.getLastAthenaPingTime();
   if (last_ping == 0) {
-    connectStatus = ItemStatus{"CONNECT\nOFFLINE", warning_color};
+    connectStatus = ItemStatus{{"CONNECT", "OFFLINE"}, warning_color};
   } else {
-    connectStatus = nanos_since_boot() - last_ping < 80e9 ? ItemStatus{"CONNECT\nONLINE", good_color} : ItemStatus{"CONNECT\nERROR", danger_color};
+    connectStatus = nanos_since_boot() - last_ping < 80e9 ? ItemStatus{{"CONNECT", "ONLINE"}, good_color} : ItemStatus{{"CONNECT", "ERROR"}, danger_color};
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
 
-  ItemStatus tempStatus = {"TEMP\nHIGH", danger_color};
+  ItemStatus tempStatus = {{"TEMP", "HIGH"}, danger_color};
   auto ts = deviceState.getThermalStatus();
   if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
-    tempStatus = {"TEMP\nGOOD", good_color};
+    tempStatus = {{"TEMP", "GOOD"}, good_color};
   } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
-    tempStatus = {"TEMP\nOK", warning_color};
+    tempStatus = {{"TEMP", "OK"}, warning_color};
   }
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
 
-  ItemStatus pandaStatus = {"VEHICLE\nONLINE", good_color};
+  ItemStatus pandaStatus = {{"VEHICLE", "ONLINE"}, good_color};
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
-    pandaStatus = {"NO\nPANDA", danger_color};
+    pandaStatus = {{"NO", "PANDA"}, danger_color};
   } else if (s.scene.started && !sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK()) {
-    pandaStatus = {"GPS\nSEARCH", warning_color};
+    pandaStatus = {{"GPS", "SEARCH"}, warning_color};
   }
   setProperty("pandaStatus", QVariant::fromValue(pandaStatus));
 }
