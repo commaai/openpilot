@@ -1,16 +1,14 @@
 import numpy as np
+from laika.raw_gnss import GNSSMeasurement
 
 def parse_prr(m):
-  from laika.raw_gnss import GNSSMeasurement
   sat_pos_vel_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
                                   m[GNSSMeasurement.SAT_VEL]))
   R_i = np.atleast_2d(m[GNSSMeasurement.PRR_STD]**2)
   z_i = m[GNSSMeasurement.PRR]
   return z_i, R_i, sat_pos_vel_i
 
-
 def parse_pr(m):
-  from laika.raw_gnss import GNSSMeasurement
   pseudorange = m[GNSSMeasurement.PR]
   pseudorange_stdev = m[GNSSMeasurement.PR_STD]
   sat_pos_freq_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
