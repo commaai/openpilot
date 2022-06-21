@@ -35,6 +35,8 @@ class NvgWindow : public CameraViewWidget {
   Q_PROPERTY(bool has_eu_speed_limit MEMBER has_eu_speed_limit);
   Q_PROPERTY(bool has_us_speed_limit MEMBER has_us_speed_limit);
   Q_PROPERTY(bool is_metric MEMBER is_metric);
+  Q_PROPERTY(bool left_blindspot MEMBER left_blindspot);
+  Q_PROPERTY(bool right_blindspot MEMBER right_blindspot);
 
   Q_PROPERTY(bool engageable MEMBER engageable);
   Q_PROPERTY(bool dmActive MEMBER dmActive);
@@ -64,6 +66,8 @@ private:
   bool hideDM = false;
   bool has_us_speed_limit = false;
   bool has_eu_speed_limit = false;
+  bool left_blindspot = false;
+  bool right_blindspot = false;
   int status = STATUS_DISENGAGED;
 
 protected:
