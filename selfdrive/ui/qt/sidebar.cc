@@ -5,12 +5,12 @@
 #include "selfdrive/ui/qt/util.h"
 
 void Sidebar::drawMetric(QPainter &p, const QString &label, QColor c, int y) {
-  const QRect rect = {30, y, 240, label.contains("\n") ? 124 : 100};
+  const QRect rect = {30, y, 240, 126};
 
   p.setPen(Qt::NoPen);
   p.setBrush(QBrush(c));
-  p.setClipRect(rect.x() + 6, rect.y(), 18, rect.height(), Qt::ClipOperation::ReplaceClip);
-  p.drawRoundedRect(QRect(rect.x() + 6, rect.y() + 6, 100, rect.height() - 12), 10, 10);
+  p.setClipRect(rect.x() + 4, rect.y(), 18, rect.height(), Qt::ClipOperation::ReplaceClip);
+  p.drawRoundedRect(QRect(rect.x() + 4, rect.y() + 4, 100, 118), 18, 18);
   p.setClipping(false);
 
   QPen pen = QPen(QColor(0xff, 0xff, 0xff, 0x55));
