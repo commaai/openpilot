@@ -196,6 +196,7 @@ void NvgWindow::updateState(const UIState &s) {
   setProperty("has_eu_speed_limit", nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
 
   setProperty("is_cruise_set", cruise_set);
+  setProperty("is_metric", s.scene.is_metric);
   setProperty("speed", cur_speed);
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? "km/h" : "mph");
@@ -225,8 +226,8 @@ void NvgWindow::drawHud(QPainter &p) {
   // Draw outer box + border to contain set speed and speed limit
   int default_rect_width = 172;
   int rect_width = default_rect_width;
+  if (is_metric || has_eu_speed_limit) rect_width = 200;
   if (has_us_speed_limit && speedLimitStr.size() >= 3) rect_width = 223;
-  else if (has_eu_speed_limit) rect_width = 200;
 
   int rect_height = 204;
   if (has_us_speed_limit) rect_height = 402;
