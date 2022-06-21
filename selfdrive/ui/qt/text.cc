@@ -5,13 +5,13 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 int main(int argc, char *argv[]) {
-  initApp();
+  initApp(argc, argv);
   QApplication a(argc, argv);
   QWidget window;
   setMainWindow(&window);
@@ -34,12 +34,12 @@ int main(int argc, char *argv[]) {
   QPushButton *btn = new QPushButton();
 #ifdef __aarch64__
   btn->setText("Reboot");
-  QObject::connect(btn, &QPushButton::released, [=]() {
+  QObject::connect(btn, &QPushButton::clicked, [=]() {
     Hardware::reboot();
   });
 #else
   btn->setText("Exit");
-  QObject::connect(btn, &QPushButton::released, &a, &QApplication::quit);
+  QObject::connect(btn, &QPushButton::clicked, &a, &QApplication::quit);
 #endif
   main_layout->addWidget(btn, 0, 0, Qt::AlignRight | Qt::AlignBottom);
 

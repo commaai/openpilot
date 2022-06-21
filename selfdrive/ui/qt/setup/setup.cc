@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
 
 #include <QApplication>
 #include <QLabel>
@@ -9,16 +10,15 @@
 
 #include <curl/curl.h>
 
-#include "selfdrive/hardware/hw.h"
+#include "common/util.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
-const char*  USER_AGENT = "AGNOSSetup-0.1";
+const std::string USER_AGENT = "AGNOSSetup-";
 const QString DASHCAM_URL = "https://dashcam.comma.ai";
-
-const QString TEST_URL = "https://api.commadotai.com/v1/me";
 
 void Setup::download(QString url) {
   CURL *curl = curl_easy_init();
@@ -26,6 +26,8 @@ void Setup::download(QString url) {
     emit finished(false);
     return;
   }
+
+  auto version = util::read_file("/VERSION");
 
   char tmpfile[] = "/tmp/installer_XXXXXX";
   FILE *fp = fdopen(mkstemp(tmpfile), "w");
@@ -35,18 +37,71 @@ void Setup::download(QString url) {
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
+  curl_easy_setopt(curl, CURLOPT_USERAGENT, (USER_AGENT + version).c_str());
 
   int ret = curl_easy_perform(curl);
-  if (ret != CURLE_OK) {
+
+  long res_status = 0;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_status);
+  if (ret == CURLE_OK && res_status == 200) {
+    rename(tmpfile, "/tmp/installer");
+    emit finished(true);
+  } else {
     emit finished(false);
-    return;
   }
+
   curl_easy_cleanup(curl);
   fclose(fp);
+}
 
-  rename(tmpfile, "/tmp/installer");
-  emit finished(true);
+QWidget * Setup::low_voltage() {
+  QWidget *widget = new QWidget();
+  QVBoxLayout *main_layout = new QVBoxLayout(widget);
+  main_layout->setContentsMargins(55, 0, 55, 55);
+  main_layout->setSpacing(0);
+
+  // inner text layout: warning icon, title, and body
+  QVBoxLayout *inner_layout = new QVBoxLayout();
+  inner_layout->setContentsMargins(110, 144, 365, 0);
+  main_layout->addLayout(inner_layout);
+
+  QLabel *triangle = new QLabel();
+  triangle->setPixmap(QPixmap(ASSET_PATH + "offroad/icon_warning.png"));
+  inner_layout->addWidget(triangle, 0, Qt::AlignTop | Qt::AlignLeft);
+  inner_layout->addSpacing(80);
+
+  QLabel *title = new QLabel("WARNING: Low Voltage");
+  title->setStyleSheet("font-size: 90px; font-weight: 500; color: #FF594F;");
+  inner_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  inner_layout->addSpacing(25);
+
+  QLabel *body = new QLabel("Power your device in a car with a harness or proceed at your own risk.");
+  body->setWordWrap(true);
+  body->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  body->setStyleSheet("font-size: 80px; font-weight: 300;");
+  inner_layout->addWidget(body);
+
+  inner_layout->addStretch();
+
+  // power off + continue buttons
+  QHBoxLayout *blayout = new QHBoxLayout();
+  blayout->setSpacing(50);
+  main_layout->addLayout(blayout, 0);
+
+  QPushButton *poweroff = new QPushButton("Power off");
+  poweroff->setObjectName("navBtn");
+  blayout->addWidget(poweroff);
+  QObject::connect(poweroff, &QPushButton::clicked, this, [=]() {
+    Hardware::poweroff();
+  });
+
+  QPushButton *cont = new QPushButton("Continue");
+  cont->setObjectName("navBtn");
+  blayout->addWidget(cont);
+  QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
+
+  return widget;
 }
 
 QWidget * Setup::getting_started() {
@@ -72,7 +127,7 @@ QWidget * Setup::getting_started() {
   vlayout->addStretch();
 
   QPushButton *btn = new QPushButton();
-  btn->setIcon(QIcon("../../../assets/img_continue_triangle.svg"));
+  btn->setIcon(QIcon(":/img_continue_triangle.svg"));
   btn->setIconSize(QSize(54, 106));
   btn->setFixedSize(310, 1080);
   btn->setProperty("primary", true);
@@ -89,13 +144,18 @@ QWidget * Setup::network_setup() {
   main_layout->setContentsMargins(55, 50, 55, 50);
 
   // title
-  QLabel *title = new QLabel("Connect to WiFi");
+  QLabel *title = new QLabel("Connect to Wi-Fi");
   title->setStyleSheet("font-size: 90px; font-weight: 500;");
   main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
+  main_layout->addSpacing(25);
+
   // wifi widget
-  Networking *wifi = new Networking(this, false);
-  main_layout->addWidget(wifi, 1);
+  Networking *networking = new Networking(this, false);
+  networking->setStyleSheet("Networking {background-color: #292929; border-radius: 13px;}");
+  main_layout->addWidget(networking, 1);
+
+  main_layout->addSpacing(35);
 
   // back + continue buttons
   QHBoxLayout *blayout = new QHBoxLayout;
@@ -109,20 +169,27 @@ QWidget * Setup::network_setup() {
 
   QPushButton *cont = new QPushButton();
   cont->setObjectName("navBtn");
+  cont->setProperty("primary", true);
   QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
   blayout->addWidget(cont);
 
   // setup timer for testing internet connection
-  HttpRequest *request = new HttpRequest(this, TEST_URL, false, 2500);
-  QObject::connect(request, &HttpRequest::requestDone, [=](bool success) {
+  HttpRequest *request = new HttpRequest(this, false, 2500);
+  QObject::connect(request, &HttpRequest::requestDone, [=](const QString &, bool success) {
     cont->setEnabled(success);
-    cont->setText(success ? "Continue" : "Waiting for internet");
+    if (success) {
+      const bool cell = networking->wifi->currentNetworkType() == NetworkType::CELL;
+      cont->setText(cell ? "Continue without Wi-Fi" : "Continue");
+    } else {
+      cont->setText("Waiting for internet");
+    }
     repaint();
   });
+  request->sendRequest(DASHCAM_URL);
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=]() {
     if (!request->active() && cont->isVisible()) {
-      request->sendRequest(TEST_URL);
+      request->sendRequest(DASHCAM_URL);
     }
   });
   timer->start(1000);
@@ -151,7 +218,7 @@ QWidget * radio_button(QString title, QButtonGroup *group) {
   )");
 
   // checkmark icon
-  QPixmap pix("../../../assets/img_circled_check.svg");
+  QPixmap pix(":/img_circled_check.svg");
   btn->setIcon(pix);
   btn->setIconSize(QSize(0, 0));
   btn->setLayoutDirection(Qt::RightToLeft);
@@ -201,18 +268,24 @@ QWidget * Setup::software_selection() {
   QPushButton *cont = new QPushButton("Continue");
   cont->setObjectName("navBtn");
   cont->setEnabled(false);
+  cont->setProperty("primary", true);
   blayout->addWidget(cont);
 
   QObject::connect(cont, &QPushButton::clicked, [=]() {
+    auto w = currentWidget();
+    QTimer::singleShot(0, [=]() {
+      setCurrentWidget(downloading_widget);
+    });
     QString url = DASHCAM_URL;
     if (group->checkedButton() != dashcam) {
-      url = InputDialog::getText("Enter URL", this);
+      url = InputDialog::getText("Enter URL", this, "for Custom Software");
     }
     if (!url.isEmpty()) {
-      setCurrentWidget(downloading_widget);
-      QTimer::singleShot(100, this, [=]() {
+      QTimer::singleShot(1000, this, [=]() {
         download(url);
       });
+    } else {
+      setCurrentWidget(w);
     }
   });
 
@@ -261,7 +334,7 @@ QWidget * Setup::download_failed() {
   QPushButton *reboot = new QPushButton("Reboot device");
   reboot->setObjectName("navBtn");
   blayout->addWidget(reboot);
-  QObject::connect(reboot, &QPushButton::released, this, [=]() {
+  QObject::connect(reboot, &QPushButton::clicked, this, [=]() {
     Hardware::reboot();
   });
 
@@ -269,8 +342,8 @@ QWidget * Setup::download_failed() {
   restart->setObjectName("navBtn");
   restart->setProperty("primary", true);
   blayout->addWidget(restart);
-  QObject::connect(restart, &QPushButton::released, this, [=]() {
-    setCurrentIndex(0);
+  QObject::connect(restart, &QPushButton::clicked, this, [=]() {
+    setCurrentIndex(2);
   });
 
   widget->setStyleSheet(R"(
@@ -290,6 +363,13 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
+  std::stringstream buffer;
+  buffer << std::ifstream("/sys/class/hwmon/hwmon1/in1_input").rdbuf();
+  float voltage = (float)std::atoi(buffer.str().c_str()) / 1000.;
+  if (voltage < 7) {
+    addWidget(low_voltage());
+  }
+
   addWidget(getting_started());
   addWidget(network_setup());
   addWidget(software_selection());
@@ -303,8 +383,11 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   QObject::connect(this, &Setup::finished, [=](bool success) {
     // hide setup on success
     qDebug() << "finished" << success;
-    setVisible(!success);
-    setCurrentWidget(failed_widget);
+    if (success) {
+      QTimer::singleShot(3000, this, &QWidget::hide);
+    } else {
+      setCurrentWidget(failed_widget);
+    }
   });
 
   // TODO: revisit pressed bg color
@@ -323,8 +406,9 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
       border-radius: 10px;
       background-color: #333333;
     }
-    QPushButton#navBtn:disabled {
+    QPushButton#navBtn:disabled, QPushButton[primary='true']:disabled {
       color: #808080;
+      background-color: #333333;
     }
     QPushButton#navBtn:pressed {
       background-color: #444444;

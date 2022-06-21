@@ -33,5 +33,6 @@ const QString NM_DBUS_SERVICE                        = "org.freedesktop.NetworkM
 const int NM_DEVICE_STATE_ACTIVATED = 100;
 const int NM_DEVICE_STATE_NEED_AUTH = 60;
 const int NM_DEVICE_TYPE_WIFI = 2;
+const int NM_DEVICE_TYPE_MODEM = 8;
 const int NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8;
 const int DBUS_TIMEOUT = 100;

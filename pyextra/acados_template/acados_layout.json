@@ -5,6 +5,9 @@
     "acados_include_path": [
         "str"
     ],
+    "cython_include_dirs": [
+        "str"
+    ],
     "model": {
          "name" : [
             "str"
@@ -23,7 +26,15 @@
         ],
         "dyn_disc_fun" : [
             "str"
-        ]
+        ],
+        "gnsf" : {
+            "nontrivial_f_LO": [
+                "int"
+            ],
+            "purely_linear": [
+                "int"
+            ]
+        }
     },
     "parameter_values": [
         "ndarray",
@@ -657,6 +668,9 @@
         "hessian_approx": [
             "str"
         ],
+        "hpipm_mode": [
+            "str"
+        ],
         "regularize_method": [
             "str"
         ],
@@ -664,6 +678,9 @@
             "str"
         ],
         "nlp_solver_type": [
+            "str"
+        ],
+        "collocation_type": [
             "str"
         ],
         "globalization": [
@@ -690,6 +707,18 @@
         "alpha_reduction": [
             "float"
         ],
+        "line_search_use_sufficient_descent": [
+            "int"
+        ],
+        "globalization_use_SOC": [
+            "int"
+        ],
+        "full_step_dual": [
+            "int"
+        ],
+        "eps_sufficient_descent": [
+            "float"
+        ],
         "sim_method_num_stages": [
             "ndarray",
             [
@@ -706,7 +735,10 @@
             "int"
         ],
         "sim_method_jac_reuse": [
-            "bool"
+            "ndarray",
+            [
+                "N"
+            ]
         ],
         "qp_solver_cond_N": [
             "int"

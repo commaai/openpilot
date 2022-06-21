@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-
-# Python library to control Zookeeper
-
 import ft4222
 import ft4222.I2CMaster
 

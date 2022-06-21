@@ -3,9 +3,10 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPainter>
 #include <QPushButton>
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
@@ -13,22 +14,31 @@ QFrame *horizontal_line(QWidget *parent = nullptr);
 class ElidedLabel : public QLabel {
   Q_OBJECT
 
- public:
+public:
   explicit ElidedLabel(QWidget *parent = 0);
   explicit ElidedLabel(const QString &text, QWidget *parent = 0);
 
- protected:
+signals:
+  void clicked();
+
+protected:
   void paintEvent(QPaintEvent *event) override;
   void resizeEvent(QResizeEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   QString lastText_, elidedText_;
 };
+
 
 class AbstractControl : public QFrame {
   Q_OBJECT
 
 public:
   void setDescription(const QString &desc) {
-    if(description) description->setText(desc);
+    if (description) description->setText(desc);
+  }
+
+  void setTitle(const QString &title) {
+    title_label->setText(title);
   }
 
 signals:
@@ -37,12 +47,6 @@ signals:
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
   void hideEvent(QHideEvent *e) override;
-
-  QSize minimumSizeHint() const override {
-    QSize size = QFrame::minimumSizeHint();
-    size.setHeight(120);
-    return size;
-  };
 
   QHBoxLayout *hlayout;
   QPushButton *title_label;
@@ -75,7 +79,7 @@ public:
   inline QString text() const { return btn.text(); }
 
 signals:
-  void released();
+  void clicked();
 
 public slots:
   void setEnabled(bool enabled) { btn.setEnabled(enabled); };
@@ -97,7 +101,7 @@ public:
     QObject::connect(&toggle, &Toggle::stateChanged, this, &ToggleControl::toggleFlipped);
   }
 
-  void setEnabled(bool enabled) { toggle.setEnabled(enabled); }
+  void setEnabled(bool enabled) { toggle.setEnabled(enabled); toggle.update(); }
 
 signals:
   void toggleFlipped(bool state);
@@ -112,14 +116,72 @@ class ParamControl : public ToggleControl {
 
 public:
   ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
-    if (params.getBool(param.toStdString().c_str())) {
-      toggle.togglePosition();
-    }
+    key = param.toStdString();
     QObject::connect(this, &ToggleControl::toggleFlipped, [=](bool state) {
-      params.putBool(param.toStdString().c_str(), state);
+      params.putBool(key, state);
     });
   }
 
+  void showEvent(QShowEvent *event) override {
+    if (params.getBool(key) != toggle.on) {
+      toggle.togglePosition();
+    }
+  };
+
 private:
+  std::string key;
   Params params;
+};
+
+class ListWidget : public QWidget {
+  Q_OBJECT
+ public:
+  explicit ListWidget(QWidget *parent = 0) : QWidget(parent), outer_layout(this) {
+    outer_layout.setMargin(0);
+    outer_layout.setSpacing(0);
+    outer_layout.addLayout(&inner_layout);
+    inner_layout.setMargin(0);
+    inner_layout.setSpacing(25); // default spacing is 25
+    outer_layout.addStretch();
+  }
+  inline void addItem(QWidget *w) { inner_layout.addWidget(w); }
+  inline void addItem(QLayout *layout) { inner_layout.addLayout(layout); }
+  inline void setSpacing(int spacing) { inner_layout.setSpacing(spacing); }
+
+private:
+  void paintEvent(QPaintEvent *) override {
+    QPainter p(this);
+    p.setPen(Qt::gray);
+    for (int i = 0; i < inner_layout.count() - 1; ++i) {
+      QRect r = inner_layout.itemAt(i)->geometry();
+      int bottom = r.bottom() + inner_layout.spacing() / 2;
+      p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+    }
+  }
+  QVBoxLayout outer_layout;
+  QVBoxLayout inner_layout;
+};
+
+// convenience class for wrapping layouts
+class LayoutWidget : public QWidget {
+  Q_OBJECT
+
+public:
+  LayoutWidget(QLayout *l, QWidget *parent = nullptr) : QWidget(parent) {
+    setLayout(l);
+  };
+};
+
+class ClickableWidget : public QWidget {
+  Q_OBJECT
+
+public:
+  ClickableWidget(QWidget *parent = nullptr);
+
+protected:
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  void paintEvent(QPaintEvent *) override;
+
+signals:
+  void clicked();
 };

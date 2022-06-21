@@ -1,6 +1,6 @@
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
@@ -9,7 +9,7 @@ SshControl::SshControl() : ButtonControl("SSH Keys", "", "Warning: This grants S
   username_label.setStyleSheet("color: #aaaaaa");
   hlayout->insertWidget(1, &username_label);
 
-  QObject::connect(this, &ButtonControl::released, [=]() {
+  QObject::connect(this, &ButtonControl::clicked, [=]() {
     if (text() == "ADD") {
       QString username = InputDialog::getText("Enter your GitHub username", this);
       if (username.length() > 0) {
@@ -40,25 +40,26 @@ void SshControl::refresh() {
 }
 
 void SshControl::getUserKeys(const QString &username) {
-  HttpRequest *request = new HttpRequest(this, "https://github.com/" + username + ".keys", false);
-  QObject::connect(request, &HttpRequest::receivedResponse, [=](const QString &resp) {
-    if (!resp.isEmpty()) {
-      params.put("GithubUsername", username.toStdString());
-      params.put("GithubSshKeys", resp.toStdString());
+  HttpRequest *request = new HttpRequest(this, false);
+  QObject::connect(request, &HttpRequest::requestDone, [=](const QString &resp, bool success) {
+    if (success) {
+      if (!resp.isEmpty()) {
+        params.put("GithubUsername", username.toStdString());
+        params.put("GithubSshKeys", resp.toStdString());
+      } else {
+        ConfirmationDialog::alert(QString("Username '%1' has no keys on GitHub").arg(username), this);
+      }
     } else {
-      ConfirmationDialog::alert("Username '" + username + "' has no keys on GitHub", this);
+      if (request->timeout()) {
+        ConfirmationDialog::alert("Request timed out", this);
+      } else {
+        ConfirmationDialog::alert(QString("Username '%1' doesn't exist on GitHub").arg(username), this);
+      }
     }
+
     refresh();
     request->deleteLater();
   });
-  QObject::connect(request, &HttpRequest::failedResponse, [=] {
-    ConfirmationDialog::alert("Username '" + username + "' doesn't exist on GitHub", this);
-    refresh();
-    request->deleteLater();
-  });
-  QObject::connect(request, &HttpRequest::timeoutResponse, [=] {
-    ConfirmationDialog::alert("Request timed out", this);
-    refresh();
-    request->deleteLater();
-  });
+
+  request->sendRequest("https://github.com/" + username + ".keys");
 }

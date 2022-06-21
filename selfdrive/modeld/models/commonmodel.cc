@@ -5,9 +5,9 @@
 #include <cmath>
 #include <cstring>
 
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/mat.h"
-#include "selfdrive/common/timing.h"
+#include "common/clutil.h"
+#include "common/mat.h"
+#include "common/timing.h"
 
 ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
   input_frames = std::make_unique<float[]>(buf_size);
@@ -22,16 +22,24 @@ ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
   loadyuv_init(&loadyuv, context, device_id, MODEL_WIDTH, MODEL_HEIGHT);
 }
 
-float* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, const mat3 &transform) {
+float* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3 &projection, cl_mem *output) {
   transform_queue(&this->transform, q,
-                  yuv_cl, frame_width, frame_height,
-                  y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, transform);
-  loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl);
+                  yuv_cl, frame_width, frame_height, frame_stride, frame_uv_offset,
+                  y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, projection);
 
-  std::memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
-  clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr);
-  clFinish(q);
-  return &input_frames[0];
+  if (output == NULL) {
+    loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl);
+
+    std::memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
+    CL_CHECK(clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr));
+    clFinish(q);
+    return &input_frames[0];
+  } else {
+    loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, *output, true);
+    // NOTE: Since thneed is using a different command queue, this clFinish is needed to ensure the image is ready.
+    clFinish(q);
+    return NULL;
+  }
 }
 
 ModelFrame::~ModelFrame() {
@@ -61,8 +69,4 @@ void softmax(const float* input, float* output, size_t len) {
 
 float sigmoid(float input) {
   return 1 / (1 + expf(-input));
-}
-
-float softplus(float input) {
-  return log1p(expf(input));
 }

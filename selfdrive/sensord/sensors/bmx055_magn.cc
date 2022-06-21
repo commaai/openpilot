@@ -6,8 +6,8 @@
 #include <cassert>
 #include <cstdio>
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 
 static int16_t compensate_x(trim_data_t trim_data, int16_t mag_data_x, uint16_t data_rhall) {
   uint16_t process_comp_x0 = data_rhall;
@@ -245,6 +245,6 @@ void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
   // The BMX055 Magnetometer has no FIFO mode. Self running mode only goes
   // up to 30 Hz. Therefore we put in forced mode, and request measurements
   // at a 100 Hz. When reading the registers we have to check the ready bit
-  // To verify the measurement was comleted this cycle.
+  // To verify the measurement was completed this cycle.
   set_register(BMX055_MAGN_I2C_REG_MAG, BMX055_MAGN_FORCED);
 }

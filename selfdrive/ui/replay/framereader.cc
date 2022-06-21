@@ -1,196 +1,249 @@
 #include "selfdrive/ui/replay/framereader.h"
-
-#include <unistd.h>
+#include "selfdrive/ui/replay/util.h"
 
 #include <cassert>
+#include "libyuv.h"
 
-#include <QDebug>
+#include "cereal/visionipc/visionbuf.h"
 
-static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
-  std::mutex *mutex = (std::mutex *)*arg;
-  switch (op) {
-  case AV_LOCK_CREATE:
-    mutex = new std::mutex();
-    break;
-  case AV_LOCK_OBTAIN:
-    mutex->lock();
-    break;
-  case AV_LOCK_RELEASE:
-    mutex->unlock();
-  case AV_LOCK_DESTROY:
-    delete mutex;
-    break;
-  }
-  return 0;
-}
+#ifdef __APPLE__
+#define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_VIDEOTOOLBOX
+#define HW_PIX_FMT AV_PIX_FMT_VIDEOTOOLBOX
+#else
+#define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_CUDA
+#define HW_PIX_FMT AV_PIX_FMT_CUDA
+#endif
 
-class AVInitializer {
-public:
-  AVInitializer() {
-    int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
-    assert(ret >= 0);
-    av_register_all();
-    avformat_network_init();
-  }
+namespace {
 
-  ~AVInitializer() { avformat_network_deinit(); }
+struct buffer_data {
+  const uint8_t *data;
+  int64_t offset;
+  size_t size;
 };
 
-static AVInitializer av_initializer;
+int readPacket(void *opaque, uint8_t *buf, int buf_size) {
+  struct buffer_data *bd = (struct buffer_data *)opaque;
+  assert(bd->offset <= bd->size);
+  buf_size = std::min((size_t)buf_size, (size_t)(bd->size - bd->offset));
+  if (!buf_size) return AVERROR_EOF;
 
-FrameReader::FrameReader(const std::string &url, QObject *parent) : url_(url), QObject(parent) {
-  process_thread_ = QThread::create(&FrameReader::process, this);
-  connect(process_thread_, &QThread::finished, process_thread_, &QThread::deleteLater);
-  process_thread_->start();
+  memcpy(buf, bd->data + bd->offset, buf_size);
+  bd->offset += buf_size;
+  return buf_size;
+}
+
+enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *pix_fmts) {
+  enum AVPixelFormat *hw_pix_fmt = reinterpret_cast<enum AVPixelFormat *>(ctx->opaque);
+  for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
+    if (*p == *hw_pix_fmt) return *p;
+  }
+  rWarning("Please run replay with the --no-hw-decoder flag!");
+  // fallback to YUV420p
+  *hw_pix_fmt = AV_PIX_FMT_NONE;
+  return AV_PIX_FMT_YUV420P;
+}
+
+}  // namespace
+
+FrameReader::FrameReader() {
+  av_log_set_level(AV_LOG_QUIET);
 }
 
 FrameReader::~FrameReader() {
-  // wait until thread is finished.
-  exit_ = true;
-  process_thread_->wait();
-  cv_decode_.notify_all();
-  cv_frame_.notify_all();
-  if (decode_thread_.joinable()) {
-    decode_thread_.join();
+  for (AVPacket *pkt : packets) {
+    av_packet_free(&pkt);
   }
 
-  // free all.
-  for (auto &f : frames_) {
-    av_free_packet(&f.pkt);
-    if (f.data) {
-      delete[] f.data;
-    }
-  }
-  while (!buffer_pool.empty()) {
-    delete[] buffer_pool.front();
-    buffer_pool.pop();
-  }
-  av_frame_free(&frmRgb_);
-  avcodec_close(pCodecCtx_);
-  avcodec_free_context(&pCodecCtx_);
-  avformat_close_input(&pFormatCtx_);
-  sws_freeContext(sws_ctx_);
-}
+  if (decoder_ctx) avcodec_free_context(&decoder_ctx);
+  if (input_ctx) avformat_close_input(&input_ctx);
+  if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
 
-void FrameReader::process() {
-  if (processFrames()) {
-    decode_thread_ = std::thread(&FrameReader::decodeThread, this);
-  }
-  if (!exit_) {
-    emit finished();
+  if (avio_ctx_) {
+    av_freep(&avio_ctx_->buffer);
+    avio_context_free(&avio_ctx_);
   }
 }
 
-bool FrameReader::processFrames() {
-  if (avformat_open_input(&pFormatCtx_, url_.c_str(), NULL, NULL) != 0) {
-    qDebug() << "error loading " << url_.c_str();
+bool FrameReader::load(const std::string &url, bool no_hw_decoder, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
+  FileReader f(local_cache, chunk_size, retries);
+  std::string data = f.read(url, abort);
+  if (data.empty()) return false;
+
+  return load((std::byte *)data.data(), data.size(), no_hw_decoder, abort);
+}
+
+bool FrameReader::load(const std::byte *data, size_t size, bool no_hw_decoder, std::atomic<bool> *abort) {
+  input_ctx = avformat_alloc_context();
+  if (!input_ctx) return false;
+
+  struct buffer_data bd = {
+    .data = (const uint8_t*)data,
+    .offset = 0,
+    .size = size,
+  };
+  const int avio_ctx_buffer_size = 64 * 1024;
+  unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);
+  avio_ctx_ = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size, 0, &bd, readPacket, nullptr, nullptr);
+  input_ctx->pb = avio_ctx_;
+
+  input_ctx->probesize = 10 * 1024 * 1024;  // 10MB
+  int ret = avformat_open_input(&input_ctx, nullptr, nullptr, nullptr);
+  if (ret != 0) {
+    char err_str[1024] = {0};
+    av_strerror(ret, err_str, std::size(err_str));
+    rError("Error loading video - %s", err_str);
     return false;
   }
-  avformat_find_stream_info(pFormatCtx_, NULL);
-  av_dump_format(pFormatCtx_, 0, url_.c_str(), 0);
 
-  auto pCodecCtxOrig = pFormatCtx_->streams[0]->codec;
-  auto pCodec = avcodec_find_decoder(pCodecCtxOrig->codec_id);
-  assert(pCodec);
+  ret = avformat_find_stream_info(input_ctx, nullptr);
+  if (ret < 0) {
+    rError("cannot find a video stream in the input file");
+    return false;
+  }
 
-  pCodecCtx_ = avcodec_alloc_context3(pCodec);
-  int ret = avcodec_copy_context(pCodecCtx_, pCodecCtxOrig);
-  assert(ret == 0);
+  AVStream *video = input_ctx->streams[0];
+  const AVCodec *decoder = avcodec_find_decoder(video->codecpar->codec_id);
+  if (!decoder) return false;
 
-  ret = avcodec_open2(pCodecCtx_, pCodec, NULL);
-  assert(ret >= 0);
+  decoder_ctx = avcodec_alloc_context3(decoder);
+  ret = avcodec_parameters_to_context(decoder_ctx, video->codecpar);
+  if (ret != 0) return false;
 
-  width = pCodecCtxOrig->width;
-  height = pCodecCtxOrig->height;
+  width = (decoder_ctx->width + 3) & ~3;
+  height = decoder_ctx->height;
+  visionbuf_compute_aligned_width_and_height(width, height, &aligned_width, &aligned_height);
 
-  sws_ctx_ = sws_getContext(width, height, AV_PIX_FMT_YUV420P,
-                            width, height, AV_PIX_FMT_BGR24,
-                            SWS_BILINEAR, NULL, NULL, NULL);
-  assert(sws_ctx_);
+  if (has_hw_decoder && !no_hw_decoder) {
+    if (!initHardwareDecoder(HW_DEVICE_TYPE)) {
+      rWarning("No device with hardware decoder found. fallback to CPU decoding.");
+    } else {
+      nv12toyuv_buffer.resize(getYUVSize());
+    }
+  }
 
-  frmRgb_ = av_frame_alloc();
-  assert(frmRgb_);
+  ret = avcodec_open2(decoder_ctx, decoder, nullptr);
+  if (ret < 0) return false;
 
-  frames_.reserve(60 * 20);  // 20fps, one minute
-  do {
-    Frame &frame = frames_.emplace_back();
-    if (av_read_frame(pFormatCtx_, &frame.pkt) < 0) {
-      frames_.pop_back();
+  packets.reserve(60 * 20);  // 20fps, one minute
+  while (!(abort && *abort)) {
+    AVPacket *pkt = av_packet_alloc();
+    ret = av_read_frame(input_ctx, pkt);
+    if (ret < 0) {
+      av_packet_free(&pkt);
+      valid_ = (ret == AVERROR_EOF);
       break;
     }
-  } while (!exit_);
-
-  valid_ = !exit_;
+    packets.push_back(pkt);
+    // some stream seems to contian no keyframes
+    key_frames_count_ += pkt->flags & AV_PKT_FLAG_KEY;
+  }
+  valid_ = valid_ && !packets.empty();
   return valid_;
 }
 
-uint8_t *FrameReader::get(int idx) {
-  if (!valid_ || idx < 0 || idx >= frames_.size()) {
+bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
+  for (int i = 0;; i++) {
+    const AVCodecHWConfig *config = avcodec_get_hw_config(decoder_ctx->codec, i);
+    if (!config) {
+      rWarning("decoder %s does not support hw device type %s.", decoder_ctx->codec->name,
+               av_hwdevice_get_type_name(hw_device_type));
+      return false;
+    }
+    if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hw_device_type) {
+      hw_pix_fmt = config->pix_fmt;
+      break;
+    }
+  }
+
+  int ret = av_hwdevice_ctx_create(&hw_device_ctx, hw_device_type, nullptr, nullptr, 0);
+  if (ret < 0) {
+    hw_pix_fmt = AV_PIX_FMT_NONE;
+    has_hw_decoder = false;
+    rWarning("Failed to create specified HW device %d.", ret);
+    return false;
+  }
+
+  decoder_ctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
+  decoder_ctx->opaque = &hw_pix_fmt;
+  decoder_ctx->get_format = get_hw_format;
+  return true;
+}
+
+bool FrameReader::get(int idx, uint8_t *yuv) {
+  assert(yuv != nullptr);
+  if (!valid_ || idx < 0 || idx >= packets.size()) {
+    return false;
+  }
+  return decode(idx, yuv);
+}
+
+bool FrameReader::decode(int idx, uint8_t *yuv) {
+  int from_idx = idx;
+  if (idx != prev_idx + 1 && key_frames_count_ > 1) {
+    // seeking to the nearest key frame
+    for (int i = idx; i >= 0; --i) {
+      if (packets[i]->flags & AV_PKT_FLAG_KEY) {
+        from_idx = i;
+        break;
+      }
+    }
+  }
+  prev_idx = idx;
+
+  for (int i = from_idx; i <= idx; ++i) {
+    AVFrame *f = decodeFrame(packets[i]);
+    if (f && i == idx) {
+      return copyBuffers(f, yuv);
+    }
+  }
+  return false;
+}
+
+AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
+  int ret = avcodec_send_packet(decoder_ctx, pkt);
+  if (ret < 0) {
+    rError("Error sending a packet for decoding: %d", ret);
     return nullptr;
   }
 
-  {
-    std::unique_lock lk(mutex_);
-    decode_idx_ = idx;
-    cv_decode_.notify_one();
-    cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].data || frames_[idx].failed; });
+  av_frame_.reset(av_frame_alloc());
+  ret = avcodec_receive_frame(decoder_ctx, av_frame_.get());
+  if (ret != 0) {
+    rError("avcodec_receive_frame error: %d", ret);
+    return nullptr;
   }
 
-  return frames_[idx].data;
-}
-
-void FrameReader::decodeThread() {
-  int idx = 0;
-  while (!exit_) {
-    const int from = std::max(idx, 0);
-    const int to = std::min(from + 20, (int)frames_.size());
-    for (int i = 0; i < frames_.size() && !exit_; ++i) {
-      Frame &frame = frames_[i];
-      if (i >= from && i < to) {
-        if (frame.data || frame.failed) continue;
-
-        uint8_t *dat = decodeFrame(&frame.pkt);
-        std::unique_lock lk(mutex_);
-        frame.data = dat;
-        frame.failed = !dat;
-        cv_frame_.notify_all();
-      } else if (frame.data) {
-        buffer_pool.push(frame.data);
-        frame.data = nullptr;
-        frame.failed = false;
-      }
+  if (av_frame_->format == hw_pix_fmt) {
+    hw_frame.reset(av_frame_alloc());
+    if ((ret = av_hwframe_transfer_data(hw_frame.get(), av_frame_.get(), 0)) < 0) {
+      rError("error transferring the data from GPU to CPU");
+      return nullptr;
     }
-
-    // sleep & wait
-    std::unique_lock lk(mutex_);
-    cv_decode_.wait(lk, [=] { return exit_ || decode_idx_ != -1; });
-    idx = decode_idx_;
-    decode_idx_ = -1;
+    return hw_frame.get();
+  } else {
+    return av_frame_.get();
   }
 }
 
-uint8_t *FrameReader::decodeFrame(AVPacket *pkt) {
-  int gotFrame;
-  AVFrame *f = av_frame_alloc();
-  avcodec_decode_video2(pCodecCtx_, f, &gotFrame, pkt);
-
-  uint8_t *dat = nullptr;
-  if (gotFrame) {
-    if (!buffer_pool.empty()) {
-      dat = buffer_pool.front();
-      buffer_pool.pop();
-    } else {
-      dat = new uint8_t[getRGBSize()];
+bool FrameReader::copyBuffers(AVFrame *f, uint8_t *yuv) {
+  if (hw_pix_fmt == HW_PIX_FMT) {
+    uint8_t *y = yuv ? yuv : nv12toyuv_buffer.data();
+    uint8_t *uv = y + width * height;
+    for (int i = 0; i < height/2; i++) {
+      memcpy(y + (i*2 + 0)*width, f->data[0] + (i*2 + 0)*f->linesize[0], width);
+      memcpy(y + (i*2 + 1)*width, f->data[0] + (i*2 + 1)*f->linesize[0], width);
+      memcpy(uv + i*width, f->data[1] + i*f->linesize[1], width);
     }
-
-    int ret = avpicture_fill((AVPicture *)frmRgb_, dat, AV_PIX_FMT_BGR24, f->width, f->height);
-    assert(ret > 0);
-    if (sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0,
-                  f->height, frmRgb_->data, frmRgb_->linesize) <= 0) {
-      delete[] dat;
-      dat = nullptr;
-    }
+  } else {
+    uint8_t *y = yuv ? yuv : nv12toyuv_buffer.data();
+    uint8_t *uv = y + width * height;
+    libyuv::I420ToNV12(f->data[0], f->linesize[0],
+                       f->data[1], f->linesize[1],
+                       f->data[2], f->linesize[2],
+                       y, width,
+                       uv, width,
+                       width, height);
   }
-  av_frame_free(&f);
-  return dat;
+  return true;
 }

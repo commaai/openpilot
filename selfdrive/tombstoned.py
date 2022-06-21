@@ -7,19 +7,15 @@ import signal
 import subprocess
 import time
 import glob
+from typing import NoReturn
 
-import sentry_sdk
-
-from common.params import Params
 from common.file_helpers import mkdirs_exists_ok
-from selfdrive.hardware import TICI, HARDWARE
 from selfdrive.loggerd.config import ROOT
-from selfdrive.swaglog import cloudlog
-from selfdrive.version import branch, commit, dirty, origin, version
+import selfdrive.sentry as sentry
+from system.swaglog import cloudlog
+from system.version import get_commit
 
-MAX_SIZE = 100000 * 10  # mal size is 40-100k, allow up to 1M
-if TICI:
-  MAX_SIZE = MAX_SIZE * 100  # Allow larger size for tici since files contain coredump
+MAX_SIZE = 1_000_000 * 100  # allow up to 100M
 MAX_TOMBSTONE_FN_LEN = 62  # 85 - 23 ("<dongle id>/crash/")
 
 TOMBSTONE_DIR = "/data/tombstones/"
@@ -29,16 +25,6 @@ APPORT_DIR = "/var/crash/"
 def safe_fn(s):
   extra = ['_']
   return "".join(c for c in s if c.isalnum() or c in extra).rstrip()
-
-
-def sentry_report(fn, message, contents):
-  cloudlog.error({'tombstone': message})
-
-  with sentry_sdk.configure_scope() as scope:
-      scope.set_extra("tombstone_fn", fn)
-      scope.set_extra("tombstone", contents)
-      sentry_sdk.capture_message(message=message)
-      sentry_sdk.flush()
 
 
 def clear_apport_folder():
@@ -103,13 +89,13 @@ def report_tombstone_android(fn):
   if fault_idx >= 0:
     message = message[:fault_idx]
 
-  sentry_report(fn, message, contents)
+  sentry.report_tombstone(fn, message, contents)
 
   # Copy crashlog to upload folder
   clean_path = executable.replace('./', '').replace('/', '_')
   date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
-  new_fn = f"{date}_{commit[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
+  new_fn = f"{date}_{get_commit(default='nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
 
   crashlog_dir = os.path.join(ROOT, "crash")
   mkdirs_exists_ok(crashlog_dir)
@@ -164,9 +150,9 @@ def report_tombstone_apport(fn):
     # Try to find first entry in openpilot, fall back to first line
     for line in stacktrace_s:
       if "at selfdrive/" in line:
-          crash_function = line
-          found = True
-          break
+        crash_function = line
+        found = True
+        break
 
     if not found:
       crash_function = stacktrace_s[1]
@@ -177,13 +163,13 @@ def report_tombstone_apport(fn):
 
   contents = stacktrace + "\n\n" + contents
   message = message + " - " + crash_function
-  sentry_report(fn, message, contents)
+  sentry.report_tombstone(fn, message, contents)
 
   # Copy crashlog to upload folder
   clean_path = path.replace('/', '_')
   date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
-  new_fn = f"{date}_{commit[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
+  new_fn = f"{date}_{get_commit(default='nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
 
   crashlog_dir = os.path.join(ROOT, "crash")
   mkdirs_exists_ok(crashlog_dir)
@@ -197,21 +183,12 @@ def report_tombstone_apport(fn):
     pass
 
 
-def main():
-  clear_apport_folder()  # Clear apport folder on start, otherwise duplicate crashes won't register
+def main() -> NoReturn:
+  sentry.init(sentry.SentryProject.SELFDRIVE_NATIVE)
+
+  # Clear apport folder on start, otherwise duplicate crashes won't register
+  clear_apport_folder()
   initial_tombstones = set(get_tombstones())
-
-  sentry_sdk.utils.MAX_STRING_LENGTH = 8192
-  sentry_sdk.init("https://a40f22e13cbc4261873333c125fc9d38@o33823.ingest.sentry.io/157615",
-                  default_integrations=False, release=version)
-
-  dongle_id = Params().get("DongleId", encoding='utf-8')
-  sentry_sdk.set_user({"id": dongle_id})
-  sentry_sdk.set_tag("dirty", dirty)
-  sentry_sdk.set_tag("origin", origin)
-  sentry_sdk.set_tag("branch", branch)
-  sentry_sdk.set_tag("commit", commit)
-  sentry_sdk.set_tag("device", HARDWARE.get_device_type())
 
   while True:
     now_tombstones = set(get_tombstones())

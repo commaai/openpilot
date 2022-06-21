@@ -1,20 +1,17 @@
-#include <QApplication>
-#include <QSslConfiguration>
+#include <sys/resource.h>
 
-#include "selfdrive/hardware/hw.h"
+#include <QApplication>
+
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
 
 int main(int argc, char *argv[]) {
-  qInstallMessageHandler(swagLogMessageHandler);
-  initApp();
+  setpriority(PRIO_PROCESS, 0, -20);
 
-  if (Hardware::EON()) {
-    QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-    ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem"));
-    QSslConfiguration::setDefaultConfiguration(ssl);
-  }
+  qInstallMessageHandler(swagLogMessageHandler);
+  initApp(argc, argv);
 
   QApplication a(argc, argv);
 

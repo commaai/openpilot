@@ -2,6 +2,8 @@
 import random
 import unittest
 
+import numpy as np
+
 import cereal.messaging as messaging
 from common.params import Params
 from selfdrive.locationd.calibrationd import Calibrator
@@ -16,7 +18,7 @@ class TestCalibrationd(unittest.TestCase):
     Params().put("CalibrationParams", msg.to_bytes())
     c = Calibrator(param_put=True)
 
-    self.assertEqual(list(msg.liveCalibration.rpyCalib), c.rpy)
+    np.testing.assert_allclose(msg.liveCalibration.rpyCalib, c.rpy)
     self.assertEqual(msg.liveCalibration.validBlocks, c.valid_blocks)
 
 

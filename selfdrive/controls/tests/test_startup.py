@@ -8,7 +8,6 @@ import cereal.messaging as messaging
 from common.params import Params
 from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp # pylint: disable=no-name-in-module,import-error
 from selfdrive.car.fingerprints import _FINGERPRINTS
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.mazda.values import CAR as MAZDA
 from selfdrive.controls.lib.events import EVENT_NAME
@@ -43,45 +42,36 @@ class TestStartup(unittest.TestCase):
     # TODO: test EventName.startup for release branches
 
     # officially supported car
-    (EventName.startupMaster, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS),
-    (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS),
-
-    # DSU unplugged
-    (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_NO_DSU),
-    (EventName.communityFeatureDisallowed, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_NO_DSU),
-
-    # community supported car
-    (EventName.startupMaster, HYUNDAI.KIA_STINGER, True, None),
-    (EventName.communityFeatureDisallowed, HYUNDAI.KIA_STINGER, False, None),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS),
 
     # dashcamOnly car
-    (EventName.startupNoControl, MAZDA.CX5, True, CX5_FW_VERSIONS),
-    (EventName.startupNoControl, MAZDA.CX5, False, CX5_FW_VERSIONS),
+    (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS),
+    (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS),
 
     # unrecognized car with no fw
-    (EventName.startupNoFw, None, True, None),
-    (EventName.startupNoFw, None, False, None),
+    (EventName.startupNoFw, None, None),
+    (EventName.startupNoFw, None, None),
 
     # unrecognized car
-    (EventName.startupNoCar, None, True, COROLLA_FW_VERSIONS[:1]),
-    (EventName.startupNoCar, None, False, COROLLA_FW_VERSIONS[:1]),
+    (EventName.startupNoCar, None, COROLLA_FW_VERSIONS[:1]),
+    (EventName.startupNoCar, None, COROLLA_FW_VERSIONS[:1]),
 
     # fuzzy match
-    (EventName.startupFuzzyFingerprint, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_FUZZY),
-    (EventName.startupFuzzyFingerprint, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY),
   ])
   @with_processes(['controlsd'])
-  def test_startup_alert(self, expected_event, car_model, toggle_enabled, fw_versions):
+  def test_startup_alert(self, expected_event, car_model, fw_versions):
 
     # TODO: this should be done without any real sockets
     controls_sock = messaging.sub_sock("controlsState")
-    pm = messaging.PubMaster(['can', 'pandaState'])
+    pm = messaging.PubMaster(['can', 'pandaStates'])
 
     params = Params()
     params.clear_all()
     params.put_bool("Passive", False)
     params.put_bool("OpenpilotEnabledToggle", True)
-    params.put_bool("CommunityFeaturesToggle", toggle_enabled)
 
     # Build capnn version of FW array
     if fw_versions is not None:
@@ -103,9 +93,9 @@ class TestStartup(unittest.TestCase):
 
     time.sleep(2) # wait for controlsd to be ready
 
-    msg = messaging.new_message('pandaState')
-    msg.pandaState.pandaType = log.PandaState.PandaType.uno
-    pm.send('pandaState', msg)
+    msg = messaging.new_message('pandaStates', 1)
+    msg.pandaStates[0].pandaType = log.PandaState.PandaType.uno
+    pm.send('pandaStates', msg)
 
     # fingerprint
     if (car_model is None) or (fw_versions is not None):

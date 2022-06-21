@@ -1,40 +1,63 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
-#include "selfdrive/ui/qt/qt_window.h"
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#else
+#include <GLES3/gl3.h>
+#endif
+
+#include <QOpenGLBuffer>
+#include <QOffscreenSurface>
 
 namespace {
+
 const char frame_vertex_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
-  "#version 150 core\n"
+#ifdef __APPLE__
+  "#version 330 core\n"
 #else
   "#version 300 es\n"
 #endif
-  "in vec4 aPosition;\n"
-  "in vec4 aTexCoord;\n"
+  "layout(location = 0) in vec4 aPosition;\n"
+  "layout(location = 1) in vec2 aTexCoord;\n"
   "uniform mat4 uTransform;\n"
-  "out vec4 vTexCoord;\n"
+  "out vec2 vTexCoord;\n"
   "void main() {\n"
   "  gl_Position = uTransform * aPosition;\n"
   "  vTexCoord = aTexCoord;\n"
   "}\n";
 
+#ifdef QCOM2
 const char frame_fragment_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
-  "#version 150 core\n"
-#else
   "#version 300 es\n"
-#endif
+  "#extension GL_OES_EGL_image_external_essl3 : enable\n"
   "precision mediump float;\n"
-  "uniform sampler2D uTexture;\n"
-  "in vec4 vTexCoord;\n"
+  "uniform samplerExternalOES uTexture;\n"
+  "in vec2 vTexCoord;\n"
   "out vec4 colorOut;\n"
   "void main() {\n"
-  "  colorOut = texture(uTexture, vTexCoord.xy);\n"
-#ifdef QCOM
-  "  vec3 dz = vec3(0.0627f, 0.0627f, 0.0627f);\n"
-  "  colorOut.rgb = ((vec3(1.0f, 1.0f, 1.0f) - dz) * colorOut.rgb / vec3(1.0f, 1.0f, 1.0f)) + dz;\n"
-#endif
+  "  colorOut = texture(uTexture, vTexCoord);\n"
   "}\n";
+#else
+const char frame_fragment_shader[] =
+#ifdef __APPLE__
+  "#version 330 core\n"
+#else
+  "#version 300 es\n"
+  "precision mediump float;\n"
+#endif
+  "uniform sampler2D uTextureY;\n"
+  "uniform sampler2D uTextureUV;\n"
+  "in vec2 vTexCoord;\n"
+  "out vec4 colorOut;\n"
+  "void main() {\n"
+  "  float y = texture(uTextureY, vTexCoord).r;\n"
+  "  vec2 uv = texture(uTextureUV, vTexCoord).rg - 0.5;\n"
+  "  float r = y + 1.402 * uv.y;\n"
+  "  float g = y - 0.344 * uv.x - 0.714 * uv.y;\n"
+  "  float b = y + 1.772 * uv.x;\n"
+  "  colorOut = vec4(r, g, b, 1.0);\n"
+  "}\n";
+#endif
 
 const mat4 device_transform = {{
   1.0,  0.0, 0.0, 0.0,
@@ -43,43 +66,43 @@ const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
-mat4 get_driver_view_transform() {
-  const float driver_view_ratio = 1.333;
-  mat4 transform;
-  if (Hardware::TICI()) {
-    // from dmonitoring.cc
-    const int full_width_tici = 1928;
-    const int full_height_tici = 1208;
-    const int adapt_width_tici = 668;
-    const int crop_x_offset = 32;
-    const int crop_y_offset = -196;
-    const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
-    const float xscale = yscale*(1080)/(2160)*full_width_tici/full_height_tici;
-    transform = (mat4){{
-      xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
-      0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
-      0.0,  0.0, 1.0, 0.0,
-      0.0,  0.0, 0.0, 1.0,
-    }};
-  } else {
-    // frame from 4/3 to 16/9 display
-    transform = (mat4){{
-      driver_view_ratio*(1080)/(1920),  0.0, 0.0, 0.0,
-      0.0,  1.0, 0.0, 0.0,
-      0.0,  0.0, 1.0, 0.0,
-      0.0,  0.0, 0.0, 1.0,
-    }};
-  }
+mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
+  const float driver_view_ratio = 2.0;
+  const float yscale = stream_height * driver_view_ratio / stream_width;
+  const float xscale = yscale*screen_height/screen_width*stream_width/stream_height;
+  mat4 transform = (mat4){{
+    xscale,  0.0, 0.0, 0.0,
+    0.0,  yscale, 0.0, 0.0,
+    0.0,  0.0, 1.0, 0.0,
+    0.0,  0.0, 0.0, 1.0,
+  }};
   return transform;
+}
+
+mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio) {
+  float zx = 1, zy = 1;
+  if (frame_aspect_ratio > widget_aspect_ratio) {
+    zy = widget_aspect_ratio / frame_aspect_ratio;
+  } else {
+    zx = frame_aspect_ratio / widget_aspect_ratio;
+  }
+
+  const mat4 frame_transform = {{
+    zx, 0.0, 0.0, 0.0,
+    0.0, zy, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+  }};
+  return frame_transform;
 }
 
 } // namespace
 
-CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, QWidget* parent) : stream_type(stream_type), QOpenGLWidget(parent) {
+CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
+                                   stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-
-  timer = new QTimer(this);
-  connect(timer, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
+  connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected, Qt::BlockingQueuedConnection);
+  connect(this, &CameraViewWidget::vipcThreadFrameReceived, this, &CameraViewWidget::vipcFrameReceived);
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -88,6 +111,7 @@ CameraViewWidget::~CameraViewWidget() {
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteBuffers(1, &frame_vbo);
     glDeleteBuffers(1, &frame_ibo);
+    glDeleteBuffers(2, textures);
   }
   doneCurrent();
 }
@@ -95,17 +119,23 @@ CameraViewWidget::~CameraViewWidget() {
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
-  gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
-  GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
-  GLint frame_texcoord_loc = glGetAttribLocation(gl_shader->prog, "aTexCoord");
+  program = std::make_unique<QOpenGLShaderProgram>(context());
+  bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
+  assert(ret);
+  ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
+  assert(ret);
 
-  auto [x1, x2, y1, y2] = stream_type == VISION_STREAM_RGB_FRONT ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
+  program->link();
+  GLint frame_pos_loc = program->attributeLocation("aPosition");
+  GLint frame_texcoord_loc = program->attributeLocation("aTexCoord");
+
+  auto [x1, x2, y1, y2] = stream_type == VISION_STREAM_DRIVER ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
   const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
   const float frame_coords[4][4] = {
-    {-1.0, -1.0, x2, y1}, //bl
-    {-1.0,  1.0, x2, y2}, //tl
-    { 1.0,  1.0, x1, y2}, //tr
-    { 1.0, -1.0, x1, y1}, //br
+    {-1.0, -1.0, x2, y1}, // bl
+    {-1.0,  1.0, x2, y2}, // tl
+    { 1.0,  1.0, x1, y2}, // tr
+    { 1.0, -1.0, x1, y1}, // br
   };
 
   glGenVertexArrays(1, &frame_vao);
@@ -125,95 +155,201 @@ void CameraViewWidget::initializeGL() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
-  if (stream_type == VISION_STREAM_RGB_FRONT) {
-    frame_mat = matmul(device_transform, get_driver_view_transform());
-  } else {
-    auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-    float zoom = ZOOM / intrinsic_matrix.v[0];
-    if (stream_type == VISION_STREAM_RGB_WIDE) {
-      zoom *= 0.5;
-    }
-    float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
-    float zy = zoom * 2 * intrinsic_matrix.v[5] / height();
+  glUseProgram(program->programId());
 
-    const mat4 frame_transform = {{
-      zx, 0.0, 0.0, 0.0,
-      0.0, zy, 0.0, -y_offset / height() * 2,
-      0.0, 0.0, 1.0, 0.0,
-      0.0, 0.0, 0.0, 1.0,
-    }};
-    frame_mat = matmul(device_transform, frame_transform);
-  }
-  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
+#ifdef QCOM2
+  glUniform1i(program->uniformLocation("uTexture"), 0);
+#else
+  glGenTextures(2, textures);
+  glUniform1i(program->uniformLocation("uTextureY"), 0);
+  glUniform1i(program->uniformLocation("uTextureUV"), 1);
+#endif
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  timer->start(0);
+  frames.clear();
+  if (!vipc_thread) {
+    vipc_thread = new QThread();
+    connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
+    connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
+    vipc_thread->start();
+  }
 }
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
-  timer->stop();
-  vipc_client->connected = false;
-  latest_frame = nullptr;
+  if (vipc_thread) {
+    vipc_thread->requestInterruption();
+    vipc_thread->quit();
+    vipc_thread->wait();
+    vipc_thread = nullptr;
+  }
+}
+
+void CameraViewWidget::updateFrameMat(int w, int h) {
+  if (zoomed_view) {
+    if (stream_type == VISION_STREAM_DRIVER) {
+      frame_mat = matmul(device_transform, get_driver_view_transform(w, h, stream_width, stream_height));
+    } else {
+      auto intrinsic_matrix = stream_type == VISION_STREAM_WIDE_ROAD ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+      float zoom = ZOOM / intrinsic_matrix.v[0];
+      if (stream_type == VISION_STREAM_WIDE_ROAD) {
+        zoom *= 0.5;
+      }
+      float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
+      float zy = zoom * 2 * intrinsic_matrix.v[5] / height();
+
+      const mat4 frame_transform = {{
+        zx, 0.0, 0.0, 0.0,
+        0.0, zy, 0.0, -y_offset / height() * 2,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+      }};
+      frame_mat = matmul(device_transform, frame_transform);
+    }
+  } else if (stream_width > 0 && stream_height > 0) {
+    // fit frame to widget size
+    float widget_aspect_ratio = (float)width() / height();
+    float frame_aspect_ratio = (float)stream_width  / stream_height;
+    frame_mat = matmul(device_transform, get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio));
+  }
 }
 
 void CameraViewWidget::paintGL() {
-  if (!latest_frame) {
-    glClearColor(0, 0, 0, 1.0);
-    glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    return;
+  glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
+  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+  if (frames.empty()) return;
+
+  int frame_idx;
+  for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
+    if (frames[frame_idx].first == draw_frame_id) break;
   }
 
   glViewport(0, 0, width(), height());
-
   glBindVertexArray(frame_vao);
+  glUseProgram(program->programId());
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+  VisionBuf *frame = frames[frame_idx].second;
+
+#ifdef QCOM2
   glActiveTexture(GL_TEXTURE0);
-
-  glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
-  if (!Hardware::EON()) {
-    // this is handled in ion on QCOM
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, latest_frame->width, latest_frame->height,
-                  0, GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);
-  }
-
-  glUseProgram(gl_shader->prog);
-  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
-  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
-
+  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
   assert(glGetError() == GL_NO_ERROR);
+#else
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame->y);
+  assert(glGetError() == GL_NO_ERROR);
+
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride/2);
+  glActiveTexture(GL_TEXTURE0 + 1);
+  glBindTexture(GL_TEXTURE_2D, textures[1]);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
+  assert(glGetError() == GL_NO_ERROR);
+#endif
+
+  glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
   glEnableVertexAttribArray(0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
   glDisableVertexAttribArray(0);
   glBindVertexArray(0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glActiveTexture(GL_TEXTURE0);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 }
 
-void CameraViewWidget::updateFrame() {
-  if (!vipc_client->connected && vipc_client->connect(false)) {
-    // init vision
-    for (int i = 0; i < vipc_client->num_buffers; i++) {
-      texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
+void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
+  makeCurrent();
+  frames.clear();
+  stream_width = vipc_client->buffers[0].width;
+  stream_height = vipc_client->buffers[0].height;
+  stream_stride = vipc_client->buffers[0].stride;
 
-      glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+#ifdef QCOM2
+  egl_display = eglGetCurrentDisplay();
 
-      // BGR
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-      assert(glGetError() == GL_NO_ERROR);
+  for (auto &pair : egl_images) {
+    eglDestroyImageKHR(egl_display, pair.second);
+  }
+  egl_images.clear();
+
+  for (int i = 0; i < vipc_client->num_buffers; i++) {  // import buffers into OpenGL
+    int fd = dup(vipc_client->buffers[i].fd);  // eglDestroyImageKHR will close, so duplicate
+    EGLint img_attrs[] = {
+      EGL_WIDTH, (int)vipc_client->buffers[i].width,
+      EGL_HEIGHT, (int)vipc_client->buffers[i].height,
+      EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_NV12,
+      EGL_DMA_BUF_PLANE0_FD_EXT, fd,
+      EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+      EGL_DMA_BUF_PLANE0_PITCH_EXT, (int)vipc_client->buffers[i].stride,
+      EGL_DMA_BUF_PLANE1_FD_EXT, fd,
+      EGL_DMA_BUF_PLANE1_OFFSET_EXT, (int)vipc_client->buffers[i].uv_offset,
+      EGL_DMA_BUF_PLANE1_PITCH_EXT, (int)vipc_client->buffers[i].stride,
+      EGL_NONE
+    };
+    egl_images[i] = eglCreateImageKHR(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs);
+    assert(eglGetError() == EGL_SUCCESS);
+  }
+#else
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, stream_width, stream_height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+  assert(glGetError() == GL_NO_ERROR);
+
+  glBindTexture(GL_TEXTURE_2D, textures[1]);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, stream_width/2, stream_height/2, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
+  assert(glGetError() == GL_NO_ERROR);
+#endif
+
+  updateFrameMat(width(), height());
+}
+
+void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
+  frames.push_back(std::make_pair(frame_id, buf));
+  while (frames.size() > FRAME_BUFFER_SIZE) {
+    frames.pop_front();
+  }
+  update();
+}
+
+void CameraViewWidget::vipcThread() {
+  VisionStreamType cur_stream_type = stream_type;
+  std::unique_ptr<VisionIpcClient> vipc_client;
+  VisionIpcBufExtra meta_main = {0};
+
+  while (!QThread::currentThread()->isInterruptionRequested()) {
+    if (!vipc_client || cur_stream_type != stream_type) {
+      cur_stream_type = stream_type;
+      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream_type, false));
     }
-    latest_frame = nullptr;
+
+    if (!vipc_client->connected) {
+      if (!vipc_client->connect(false)) {
+        QThread::msleep(100);
+        continue;
+      }
+      emit vipcThreadConnected(vipc_client.get());
+    }
+
+    if (VisionBuf *buf = vipc_client->recv(&meta_main, 1000)) {
+      emit vipcThreadFrameReceived(buf, meta_main.frame_id);
+    }
   }
 
-  if (vipc_client->connected) {
-    VisionBuf *buf = vipc_client->recv();
-    if (buf != nullptr) {
-      latest_frame = buf;
-      update();
-      emit frameUpdated();
-    } else {
-      LOGE("visionIPC receive timeout");
-    }
+#ifdef QCOM2
+  for (auto &pair : egl_images) {
+    eglDestroyImageKHR(egl_display, pair.second);
   }
+  egl_images.clear();
+#endif
 }

@@ -37,7 +37,7 @@
 #define MDL_START
 
 // acados
-#include "acados/utils/print.h"
+// #include "acados/utils/print.h"
 #include "acados_c/sim_interface.h"
 #include "acados_c/external_function_interface.h"
 
@@ -126,10 +126,14 @@ static void mdlInitializeSizes (SimStruct *S)
   {%- if dims.ny_0 > 0 and simulink_opts.inputs.cost_W_0 %}  {#- cost_W_0 #}
     {%- set n_inputs = n_inputs + 1 %}
   {%- endif -%}
-  {%- if dims.ny > 0 and simulink_opts.inputs.cost_W -%}  {#- cost_W #}
+  {%- if dims.ny > 0 and simulink_opts.inputs.cost_W %}  {#- cost_W #}
     {%- set n_inputs = n_inputs + 1 %}
   {%- endif -%}
-  {%- if dims.ny_e > 0 and simulink_opts.inputs.cost_W_e -%}  {#- cost_W_e #}
+  {%- if dims.ny_e > 0 and simulink_opts.inputs.cost_W_e %}  {#- cost_W_e #}
+    {%- set n_inputs = n_inputs + 1 -%}
+  {%- endif -%}
+
+  {%- if simulink_opts.inputs.reset_solver -%}  {#- reset_solver #}
     {%- set n_inputs = n_inputs + 1 -%}
   {%- endif -%}
 
@@ -256,7 +260,7 @@ static void mdlInitializeSizes (SimStruct *S)
     ssSetInputPortVectorDimension(S, {{ i_input }}, {{ dims.ny_0 * dims.ny_0 }});
   {%- endif %}
 
-  {%- if dims.ny_0 > 0 and simulink_opts.inputs.cost_W %}  {#- cost_W #}
+  {%- if dims.ny > 0 and simulink_opts.inputs.cost_W %}  {#- cost_W #}
     {%- set i_input = i_input + 1 %}
     // cost_W
     ssSetInputPortVectorDimension(S, {{ i_input }}, {{ dims.ny * dims.ny }});
@@ -267,6 +271,12 @@ static void mdlInitializeSizes (SimStruct *S)
     // cost_W_e
     ssSetInputPortVectorDimension(S, {{ i_input }}, {{ dims.ny_e * dims.ny_e }});
   {%- endif %}
+
+  {%- if simulink_opts.inputs.reset_solver -%}  {#- reset_solver #}
+    {%- set i_input = i_input + 1 %}
+    // reset_solver
+    ssSetInputPortVectorDimension(S, {{ i_input }}, 1);
+  {%- endif -%}
 
   {%- if simulink_opts.inputs.x_init -%}  {#- x_init #}
     {%- set i_input = i_input + 1 %}
@@ -317,6 +327,21 @@ static void mdlInitializeSizes (SimStruct *S)
     ssSetOutputPortVectorDimension(S, {{ i_output }}, 1);
   {%- endif %}
 
+  {%- if simulink_opts.outputs.CPU_time_sim == 1 %}
+    {%- set i_output = i_output + 1 %}
+    ssSetOutputPortVectorDimension(S, {{ i_output }}, 1);
+  {%- endif %}
+
+  {%- if simulink_opts.outputs.CPU_time_qp == 1 %}
+    {%- set i_output = i_output + 1 %}
+    ssSetOutputPortVectorDimension(S, {{ i_output }}, 1);
+  {%- endif %}
+
+  {%- if simulink_opts.outputs.CPU_time_lin == 1 %}
+    {%- set i_output = i_output + 1 %}
+    ssSetOutputPortVectorDimension(S, {{ i_output }}, 1);
+  {%- endif %}
+
   {%- if simulink_opts.outputs.sqp_iter == 1 %}
     {%- set i_output = i_output + 1 %}
     ssSetOutputPortVectorDimension(S, {{ i_output }}, 1 );
@@ -362,7 +387,7 @@ static void mdlInitializeSampleTimes(SimStruct *S)
 
 static void mdlStart(SimStruct *S)
 {
-    nlp_solver_capsule *capsule = {{ model.name }}_acados_create_capsule();
+    {{ model.name }}_solver_capsule *capsule = {{ model.name }}_acados_create_capsule();
     {{ model.name }}_acados_create(capsule);
 
     ssSetUserData(S, (void*)capsule);
@@ -371,7 +396,7 @@ static void mdlStart(SimStruct *S)
 
 static void mdlOutputs(SimStruct *S, int_T tid)
 {
-    nlp_solver_capsule *capsule = ssGetUserData(S);
+    {{ model.name }}_solver_capsule *capsule = ssGetUserData(S);
     ocp_nlp_config *nlp_config = {{ model.name }}_acados_get_nlp_config(capsule);
     ocp_nlp_dims *nlp_dims = {{ model.name }}_acados_get_nlp_dims(capsule);
     ocp_nlp_in *nlp_in = {{ model.name }}_acados_get_nlp_in(capsule);
@@ -391,13 +416,13 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     {%- set buffer_sizes = buffer_sizes | concat(with=(dims.ny_e)) %}
   {%- endif %}
 
-  {%- if dims.ny_0 > 0 and simulink_opts.inputs.cost_W_0 %}  {# cost_W_0 #}
+  {%- if dims.ny_0 > 0 and simulink_opts.inputs.cost_W_0 %}  {#- cost_W_0 #}
     {%- set buffer_sizes = buffer_sizes | concat(with=(dims.ny_0 * dims.ny_0)) %}
   {%- endif %}
-  {%- if dims.ny > 0 and simulink_opts.inputs.cost_W %}  {# cost_W #}
+  {%- if dims.ny > 0 and simulink_opts.inputs.cost_W %}  {#- cost_W #}
     {%- set buffer_sizes = buffer_sizes | concat(with=(dims.ny * dims.ny)) %}
   {%- endif %}
-  {%- if dims.ny_e > 0 and simulink_opts.inputs.cost_W_e %}  {# cost_W_e #}
+  {%- if dims.ny_e > 0 and simulink_opts.inputs.cost_W_e %}  {#- cost_W_e #}
     {%- set buffer_sizes = buffer_sizes | concat(with=(dims.ny_e * dims.ny_e)) %}
   {%- endif %}
 
@@ -587,7 +612,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, ii, "uh", buffer);
   {%- endif -%}
 
-  {%- if dims.ny_0 > 0 and simulink_opts.inputs.cost_W_0 %}  {# cost_W_0 #}
+  {%- if dims.ny_0 > 0 and simulink_opts.inputs.cost_W_0 %}  {#- cost_W_0 #}
     // cost_W_0
     {%- set i_input = i_input + 1 %}
     in_sign = ssGetInputPortRealSignalPtrs(S, {{ i_input }});
@@ -597,7 +622,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "W", buffer);
   {%- endif %}
 
-  {%- if dims.ny > 0 and simulink_opts.inputs.cost_W %}  {# cost_W #}
+  {%- if dims.ny > 0 and simulink_opts.inputs.cost_W %}  {#- cost_W #}
     // cost_W
     {%- set i_input = i_input + 1 %}
     in_sign = ssGetInputPortRealSignalPtrs(S, {{ i_input }});
@@ -616,6 +641,17 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         buffer[i] = (double)(*in_sign[i]);
 
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, {{ dims.N }}, "W", buffer);
+  {%- endif %}
+
+  {%- if simulink_opts.inputs.reset_solver %}  {#- reset_solver #}
+    // reset_solver
+    {%- set i_input = i_input + 1 %}
+    in_sign = ssGetInputPortRealSignalPtrs(S, {{ i_input }});
+    double reset = (double)(*in_sign[0]);
+    if (reset)
+    {
+        {{ model.name }}_acados_reset(capsule);
+    }
   {%- endif %}
 
   {%- if simulink_opts.inputs.x_init %}  {#- x_init #}
@@ -650,7 +686,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
     /* set outputs */
     // assign pointers to output signals
-    real_t *out_u0, *out_utraj, *out_xtraj, *out_status, *out_sqp_iter, *out_KKT_res, *out_x1, *out_cpu_time;
+    real_t *out_u0, *out_utraj, *out_xtraj, *out_status, *out_sqp_iter, *out_KKT_res, *out_x1, *out_cpu_time, *out_cpu_time_sim, *out_cpu_time_qp, *out_cpu_time_lin;
     int tmp_int;
 
     {%- set i_output = -1 -%}{# note here i_output is 0-based #}
@@ -702,6 +738,24 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     ocp_nlp_get(nlp_config, capsule->nlp_solver, "time_tot", (void *) out_cpu_time);
   {%- endif -%}
 
+  {%- if simulink_opts.outputs.CPU_time_sim == 1 %}
+    {%- set i_output = i_output + 1 %}
+    out_cpu_time_sim = ssGetOutputPortRealSignal(S, {{ i_output }});
+    ocp_nlp_get(nlp_config, capsule->nlp_solver, "time_sim", (void *) out_cpu_time_sim);
+  {%- endif -%}
+
+  {%- if simulink_opts.outputs.CPU_time_qp == 1 %}
+    {%- set i_output = i_output + 1 %}
+    out_cpu_time_qp = ssGetOutputPortRealSignal(S, {{ i_output }});
+    ocp_nlp_get(nlp_config, capsule->nlp_solver, "time_qp", (void *) out_cpu_time_qp);
+  {%- endif -%}
+
+  {%- if simulink_opts.outputs.CPU_time_lin == 1 %}
+    {%- set i_output = i_output + 1 %}
+    out_cpu_time_lin = ssGetOutputPortRealSignal(S, {{ i_output }});
+    ocp_nlp_get(nlp_config, capsule->nlp_solver, "time_lin", (void *) out_cpu_time_lin);
+  {%- endif -%}
+
   {%- if simulink_opts.outputs.sqp_iter == 1 %}
     {%- set i_output = i_output + 1 %}
     out_sqp_iter = ssGetOutputPortRealSignal(S, {{ i_output }});
@@ -714,7 +768,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
 static void mdlTerminate(SimStruct *S)
 {
-    nlp_solver_capsule *capsule = ssGetUserData(S);
+    {{ model.name }}_solver_capsule *capsule = ssGetUserData(S);
 
     {{ model.name }}_acados_free(capsule);
     {{ model.name }}_acados_free_capsule(capsule);

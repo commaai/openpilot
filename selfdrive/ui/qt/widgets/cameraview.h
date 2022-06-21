@@ -3,42 +3,75 @@
 #include <memory>
 
 #include <QOpenGLFunctions>
+#include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
+#include <QThread>
+
+#ifdef QCOM2
+#define EGL_EGLEXT_PROTOTYPES
+#define EGL_NO_X11
+#define GL_TEXTURE_EXTERNAL_OES 0x8D65
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <drm/drm_fourcc.h>
+#endif
 
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/common/glutil.h"
-#include "selfdrive/common/mat.h"
-#include "selfdrive/common/visionimg.h"
+#include "system/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
 
+const int FRAME_BUFFER_SIZE = 5;
+static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);
+
 class CameraViewWidget : public QOpenGLWidget, protected QOpenGLFunctions {
-Q_OBJECT
+  Q_OBJECT
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  explicit CameraViewWidget(VisionStreamType stream_type, QWidget* parent = nullptr);
+  explicit CameraViewWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraViewWidget();
+  void setStreamType(VisionStreamType type) { stream_type = type; }
+  void setBackgroundColor(const QColor &color) { bg = color; }
+  void setFrameId(int frame_id) { draw_frame_id = frame_id; }
 
 signals:
- void frameUpdated();
+  void clicked();
+  void vipcThreadConnected(VisionIpcClient *);
+  void vipcThreadFrameReceived(VisionBuf *, quint32);
 
 protected:
   void paintGL() override;
   void initializeGL() override;
+  void resizeGL(int w, int h) override { updateFrameMat(w, h); }
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
+  virtual void updateFrameMat(int w, int h);
+  void vipcThread();
+
+  bool zoomed_view;
+  GLuint frame_vao, frame_vbo, frame_ibo;
+  GLuint textures[2];
+  mat4 frame_mat;
+  std::unique_ptr<QOpenGLShaderProgram> program;
+  QColor bg = QColor("#000000");
+
+#ifdef QCOM2
+  EGLDisplay egl_display;
+  std::map<int, EGLImageKHR> egl_images;
+#endif
+
+  std::string stream_name;
+  int stream_width = 0;
+  int stream_height = 0;
+  int stream_stride = 0;
+  std::atomic<VisionStreamType> stream_type;
+  QThread *vipc_thread = nullptr;
+
+  std::deque<std::pair<uint32_t, VisionBuf*>> frames;
+  uint32_t draw_frame_id = 0;
 
 protected slots:
-  void updateFrame();
-
-private:
-  VisionBuf *latest_frame = nullptr;
-  GLuint frame_vao, frame_vbo, frame_ibo;
-  mat4 frame_mat;
-  std::unique_ptr<VisionIpcClient> vipc_client;
-  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-  std::unique_ptr<GLShader> gl_shader;
-
-  VisionStreamType stream_type;
-  QTimer* timer;
+  void vipcConnected(VisionIpcClient *vipc_client);
+  void vipcFrameReceived(VisionBuf *vipc_client, uint32_t frame_id);
 };

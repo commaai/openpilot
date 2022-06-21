@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import sys
 import subprocess
-from azure.storage.blob import BlockBlobService
+from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
 
-from selfdrive.test.test_routes import routes as test_car_models_routes
+from selfdrive.car.tests.routes import routes as test_car_models_routes
 from selfdrive.test.process_replay.test_processes import original_segments as replay_segments
 from xx.chffr.lib import azureutil  # pylint: disable=import-error
 from xx.chffr.lib.storage import _DATA_ACCOUNT_PRODUCTION, _DATA_ACCOUNT_CI, _DATA_BUCKET_PRODUCTION  # pylint: disable=import-error
@@ -18,19 +18,21 @@ DEST_KEY = azureutil.get_user_token(_DATA_ACCOUNT_CI, "openpilotci")
 SOURCE_KEYS = [azureutil.get_user_token(account, bucket) for account, bucket in SOURCES]
 SERVICE = BlockBlobService(_DATA_ACCOUNT_CI, sas_token=DEST_KEY)
 
-def upload_route(path):
+def upload_route(path, exclude_patterns=None):
+  if exclude_patterns is None:
+    exclude_patterns = ['*/dcamera.hevc']
+
   r, n = path.rsplit("--", 1)
+  r = '/'.join(r.split('/')[-2:])  # strip out anything extra in the path
   destpath = f"{r}/{n}"
   cmd = [
     "azcopy",
     "copy",
     f"{path}/*",
-    "https://{}.blob.core.windows.net/{}/{}?{}".format(_DATA_ACCOUNT_CI, "openpilotci", destpath, DEST_KEY),
+    f"https://{_DATA_ACCOUNT_CI}.blob.core.windows.net/openpilotci/{destpath}?{DEST_KEY}",
     "--recursive=false",
     "--overwrite=false",
-    "--exclude-pattern=*/dcamera.hevc",
-    "--exclude-pattern=*.mkv",
-  ]
+  ] + [f"--exclude-pattern={p}" for p in exclude_patterns]
   subprocess.check_call(cmd)
 
 def sync_to_ci_public(route):
@@ -46,8 +48,8 @@ def sync_to_ci_public(route):
     cmd = [
       "azcopy",
       "copy",
-      "https://{}.blob.core.windows.net/{}/{}?{}".format(source_account, source_bucket, key_prefix, source_key),
-      "https://{}.blob.core.windows.net/{}/{}?{}".format(_DATA_ACCOUNT_CI, "openpilotci", dongle_id, DEST_KEY),
+      f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}?{source_key}",
+      f"https://{_DATA_ACCOUNT_CI}.blob.core.windows.net/openpilotci/{dongle_id}?{DEST_KEY}",
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",
@@ -70,7 +72,7 @@ if __name__ == "__main__":
   to_sync = sys.argv[1:]
 
   if not len(to_sync):
-    # sync routes from test_routes and process replay
+    # sync routes from the car tests routes and process replay
     to_sync.extend([rt.route for rt in test_car_models_routes])
     to_sync.extend([s[1].rsplit('--', 1)[0] for s in replay_segments])
 

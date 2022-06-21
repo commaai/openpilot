@@ -1,24 +1,11 @@
 #include "selfdrive/ui/qt/offroad/wifiManager.h"
 
-#include <algorithm>
-#include <set>
-#include <cstdlib>
+#include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-
-template <typename T>
-T get_response(QDBusMessage response) {
-  QVariant first =  response.arguments().at(0);
-  QDBusVariant dbvFirst = first.value<QDBusVariant>();
-  QVariant vFirst = dbvFirst.variant();
-  if (vFirst.canConvert<T>()) {
-    return vFirst.value<T>();
-  } else {
-    LOGE("Variant unpacking failure");
-    return T();
-  }
-}
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "selfdrive/ui/qt/util.h"
 
 bool compare_by_strength(const Network &a, const Network &b) {
   if (a.connected == ConnectedType::CONNECTED) return true;
@@ -28,115 +15,122 @@ bool compare_by_strength(const Network &a, const Network &b) {
   return a.strength > b.strength;
 }
 
-WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
+template <typename T = QDBusMessage, typename... Args>
+T call(const QString &path, const QString &interface, const QString &method, Args &&...args) {
+  QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, QDBusConnection::systemBus());
+  nm.setTimeout(DBUS_TIMEOUT);
+  QDBusMessage response = nm.call(method, args...);
+  if constexpr (std::is_same_v<T, QDBusMessage>) {
+    return response;
+  } else if (response.arguments().count() >= 1) {
+    QVariant vFirst = response.arguments().at(0).value<QDBusVariant>().variant();
+    if (vFirst.canConvert<T>()) {
+      return vFirst.value<T>();
+    }
+    QDebug critical = qCritical();
+    critical << "Variant unpacking failure :" << method << ',';
+    (critical << ... << args);
+  }
+  return T();
+}
+
+template <typename... Args>
+QDBusPendingCall asyncCall(const QString &path, const QString &interface, const QString &method, Args &&...args) {
+  QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, QDBusConnection::systemBus());
+  return nm.asyncCall(method, args...);
+}
+
+WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
-  connecting_to_network = "";
 
   // Set tethering ssid as "weedle" + first 4 characters of a dongle id
   tethering_ssid = "weedle";
-  std::string bytes = Params().get("DongleId");
-  if (bytes.length() >= 4) {
-    tethering_ssid += "-" + QString::fromStdString(bytes.substr(0,4));
+  if (auto dongle_id = getDongleId()) {
+    tethering_ssid += "-" + dongle_id->left(4);
   }
 
   adapter = getAdapter();
   if (!adapter.isEmpty()) {
     setup();
   } else {
-    bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
+    QDBusConnection::systemBus().connect(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
   }
 
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, [=]() {
-    if (!adapter.isEmpty() && this->isVisible()) {
-      requestScan();
-    }
-  });
-  timer->start(5000);
+  timer.callOnTimeout(this, &WifiManager::requestScan);
 }
 
 void WifiManager::setup() {
-  QDBusInterface nm(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE, bus);
+  auto bus = QDBusConnection::systemBus();
   bus.connect(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
   bus.connect(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_PROPERTIES, "PropertiesChanged", this, SLOT(propertyChange(QString, QVariantMap, QStringList)));
 
   bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "ConnectionRemoved", this, SLOT(connectionRemoved(QDBusObjectPath)));
   bus.connect(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "NewConnection", this, SLOT(newConnection(QDBusObjectPath)));
 
-  QDBusInterface device_props(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_PROPERTIES, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
-  QDBusMessage response = device_props.call("Get", NM_DBUS_INTERFACE_DEVICE, "State");
-  raw_adapter_state = get_response<uint>(response);
+  raw_adapter_state = call<uint>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "State");
+  activeAp = call<QDBusObjectPath>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint").path();
 
-  initActiveAp();
   initConnections();
   requestScan();
 }
 
-void WifiManager::refreshNetworks() {
-  if (adapter.isEmpty()) {
-    return;
-  }
-  seen_networks.clear();
-  seen_ssids.clear();
-  ipv4_address = get_ipv4_address();
-
-  QDBusInterface nm(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
-
-  const QDBusReply<QList<QDBusObjectPath>> &response = nm.call("GetAllAccessPoints");
-  for (const QDBusObjectPath &path : response.value()) {
-    QByteArray ssid = get_property(path.path(), "Ssid");
-    if (ssid.isEmpty() || seen_ssids.contains(ssid)) {
-      continue;
-    }
-    unsigned int strength = get_ap_strength(path.path());
-    SecurityType security = getSecurityType(path.path());
-    ConnectedType ctype;
-    if (path.path() != activeAp) {
-      ctype = ConnectedType::DISCONNECTED;
-    } else {
-      if (ssid == connecting_to_network) {
-        ctype = ConnectedType::CONNECTING;
-      } else {
-        ctype = ConnectedType::CONNECTED;
-      }
-    }
-    Network network = {path.path(), ssid, strength, ctype, security};
-    seen_ssids.push_back(ssid);
-    seen_networks.push_back(network);
-  }
-  std::sort(seen_networks.begin(), seen_networks.end(), compare_by_strength);
+void WifiManager::start() {
+  timer.start(5000);
+  refreshNetworks();
 }
 
-QString WifiManager::get_ipv4_address() {
-  if (raw_adapter_state != NM_DEVICE_STATE_ACTIVATED) {
-    return "";
+void WifiManager::stop() {
+  timer.stop();
+}
+
+void WifiManager::refreshNetworks() {
+  if (adapter.isEmpty() || !timer.isActive()) return;
+
+  QDBusPendingCall pending_call = asyncCall(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "GetAllAccessPoints");
+  QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pending_call);
+  QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, &WifiManager::refreshFinished);
+}
+
+void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
+  ipv4_address = getIp4Address();
+  seenNetworks.clear();
+
+  const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
+  for (const QDBusObjectPath &path : wather_reply.value()) {
+    QDBusReply<QVariantMap> replay = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
+    auto properties = replay.value();
+
+    const QByteArray ssid = properties["Ssid"].toByteArray();
+    uint32_t strength = properties["Strength"].toUInt();
+    if (ssid.isEmpty() || (seenNetworks.contains(ssid) && strength <= seenNetworks[ssid].strength)) continue;
+
+    SecurityType security = getSecurityType(properties);
+    ConnectedType ctype = ConnectedType::DISCONNECTED;
+    if (path.path() == activeAp) {
+      ctype = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
+    }
+    seenNetworks[ssid] = {ssid, strength, ctype, security};
   }
-  QVector<QDBusObjectPath> conns = get_active_connections();
-  for (auto &p : conns) {
-    QString active_connection = p.path();
-    QDBusInterface nm(NM_DBUS_SERVICE, active_connection, NM_DBUS_INTERFACE_PROPERTIES, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
 
-    QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Ip4Config"));
-    QString ip4config = pth.path();
+  emit refreshSignal();
+  watcher->deleteLater();
+}
 
-    QString type = get_response<QString>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
+QString WifiManager::getIp4Address() {
+  if (raw_adapter_state != NM_DEVICE_STATE_ACTIVATED) return "";
 
+  for (const auto &p : getActiveConnections()) {
+    QString type = call<QString>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
     if (type == "802-11-wireless") {
-      QDBusInterface nm2(NM_DBUS_SERVICE, ip4config, NM_DBUS_INTERFACE_PROPERTIES, bus);
-      nm2.setTimeout(DBUS_TIMEOUT);
-
-      const QDBusArgument &arr = get_response<QDBusArgument>(nm2.call("Get", NM_DBUS_INTERFACE_IP4_CONFIG, "AddressData"));
-      QMap<QString, QVariant> pth2;
+      auto ip4config = call<QDBusObjectPath>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Ip4Config");
+      const auto &arr = call<QDBusArgument>(ip4config.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_IP4_CONFIG, "AddressData");
+      QVariantMap path;
       arr.beginArray();
       while (!arr.atEnd()) {
-        arr >> pth2;
-        QString ipv4 = pth2.value("address").value<QString>();
+        arr >> path;
         arr.endArray();
-        return ipv4;
+        return path.value("address").value<QString>();
       }
       arr.endArray();
     }
@@ -144,10 +138,10 @@ QString WifiManager::get_ipv4_address() {
   return "";
 }
 
-SecurityType WifiManager::getSecurityType(const QString &path) {
-  int sflag = get_property(path, "Flags").toInt();
-  int wpaflag = get_property(path, "WpaFlags").toInt();
-  int rsnflag = get_property(path, "RsnFlags").toInt();
+SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
+  int sflag = properties["Flags"].toUInt();
+  int wpaflag = properties["WpaFlags"].toUInt();
+  int rsnflag = properties["RsnFlags"].toUInt();
   int wpa_props = wpaflag | rsnflag;
 
   // obtained by looking at flags of networks in the office as reported by an Android phone
@@ -163,73 +157,53 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
   }
 }
 
-void WifiManager::connect(const Network &n) {
-  return connect(n, "", "");
-}
-
-void WifiManager::connect(const Network &n, const QString &password) {
-  return connect(n, "", password);
-}
-
-void WifiManager::connect(const Network &n, const QString &username, const QString &password) {
+void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
   connecting_to_network = n.ssid;
-  // disconnect();
-  forgetConnection(n.ssid); //Clear all connections that may already exist to the network we are connecting
-  connect(n.ssid, username, password, n.security_type);
-}
-
-void WifiManager::connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type) {
+  seenNetworks[n.ssid].connected = ConnectedType::CONNECTING;
+  forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-  connection["connection"]["id"] = "openpilot connection "+QString::fromStdString(ssid.toStdString());
+  connection["connection"]["id"] = "openpilot connection " + QString::fromStdString(n.ssid.toStdString());
   connection["connection"]["autoconnect-retries"] = 0;
 
-  connection["802-11-wireless"]["ssid"] = ssid;
+  connection["802-11-wireless"]["ssid"] = n.ssid;
   connection["802-11-wireless"]["mode"] = "infrastructure";
 
-  if (security_type == SecurityType::WPA) {
+  if (n.security_type == SecurityType::WPA) {
     connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
     connection["802-11-wireless-security"]["auth-alg"] = "open";
     connection["802-11-wireless-security"]["psk"] = password;
   }
 
   connection["ipv4"]["method"] = "auto";
+  connection["ipv4"]["dns-priority"] = 600;
   connection["ipv6"]["method"] = "ignore";
 
-  QDBusInterface nm_settings(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, bus);
-  nm_settings.setTimeout(DBUS_TIMEOUT);
-
-  nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
 
-void WifiManager::deactivateConnection(const QString &ssid) {
-  for (QDBusObjectPath active_connection_raw : get_active_connections()) {
-    QString active_connection = active_connection_raw.path();
-    QDBusInterface nm(NM_DBUS_SERVICE, active_connection, NM_DBUS_INTERFACE_PROPERTIES, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
-
-    QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject"));
+void WifiManager::deactivateConnectionBySsid(const QString &ssid) {
+  for (QDBusObjectPath active_connection : getActiveConnections()) {
+    auto pth = call<QDBusObjectPath>(active_connection.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
     if (pth.path() != "" && pth.path() != "/") {
       QString Ssid = get_property(pth.path(), "Ssid");
       if (Ssid == ssid) {
-        QDBusInterface nm2(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, bus);
-        nm2.setTimeout(DBUS_TIMEOUT);
-        nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
+        deactivateConnection(active_connection);
+        return;
       }
     }
   }
 }
 
-QVector<QDBusObjectPath> WifiManager::get_active_connections() {
-  QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
+void WifiManager::deactivateConnection(const QDBusObjectPath &path) {
+  asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeactivateConnection", QVariant::fromValue(path));
+}
 
-  QDBusMessage response = nm.call("Get", NM_DBUS_INTERFACE, "ActiveConnections");
-  const QDBusArgument &arr = get_response<QDBusArgument>(response);
+QVector<QDBusObjectPath> WifiManager::getActiveConnections() {
   QVector<QDBusObjectPath> conns;
-
   QDBusObjectPath path;
+  const QDBusArgument &arr = call<QDBusArgument>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "ActiveConnections");
   arr.beginArray();
   while (!arr.atEnd()) {
     arr >> path;
@@ -246,56 +220,28 @@ bool WifiManager::isKnownConnection(const QString &ssid) {
 void WifiManager::forgetConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
-    QDBusInterface nm2(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
-    nm2.call("Delete");
+    call(path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Delete");
   }
 }
 
-bool WifiManager::isWirelessAdapter(const QDBusObjectPath &path) {
-  QDBusInterface device_props(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
-  const uint deviceType = get_response<uint>(device_props.call("Get", NM_DBUS_INTERFACE_DEVICE, "DeviceType"));
-  return deviceType == NM_DEVICE_TYPE_WIFI;
+uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
+  return call<uint>(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "DeviceType");
 }
 
 void WifiManager::requestScan() {
-  QDBusInterface nm(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
-  nm.call("RequestScan", QVariantMap());
-}
-
-uint WifiManager::get_wifi_device_state() {
-  QDBusInterface device_props(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_PROPERTIES, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
-
-  QDBusMessage response = device_props.call("Get", NM_DBUS_INTERFACE_DEVICE, "State");
-  uint resp = get_response<uint>(response);
-  return resp;
+  if (!adapter.isEmpty()) {
+    asyncCall(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "RequestScan", QVariantMap());
+  }
 }
 
 QByteArray WifiManager::get_property(const QString &network_path , const QString &property) {
-  QDBusInterface device_props(NM_DBUS_SERVICE, network_path, NM_DBUS_INTERFACE_PROPERTIES, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
-
-  QDBusMessage response = device_props.call("Get", NM_DBUS_INTERFACE_ACCESS_POINT, property);
-  return get_response<QByteArray>(response);
+  return call<QByteArray>(network_path, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACCESS_POINT, property);
 }
 
-unsigned int WifiManager::get_ap_strength(const QString &network_path) {
-  QDBusInterface device_props(NM_DBUS_SERVICE, network_path, NM_DBUS_INTERFACE_PROPERTIES, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
-
-  QDBusMessage response = device_props.call("Get", NM_DBUS_INTERFACE_ACCESS_POINT, "Strength");
-  return get_response<unsigned int>(response);
-}
-
-QString WifiManager::getAdapter() {
-  QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
-
-  const QDBusReply<QList<QDBusObjectPath>> &response = nm.call("GetDevices");
+QString WifiManager::getAdapter(const uint adapter_type) {
+  QDBusReply<QList<QDBusObjectPath>> response = call(NM_DBUS_PATH, NM_DBUS_INTERFACE, "GetDevices");
   for (const QDBusObjectPath &path : response.value()) {
-    if (isWirelessAdapter(path)) {
+    if (getAdapterType(path) == adapter_type) {
       return path.path();
     }
   }
@@ -304,34 +250,26 @@ QString WifiManager::getAdapter() {
 
 void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   raw_adapter_state = new_state;
-  if (new_state == NM_DEVICE_STATE_NEED_AUTH && change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT) {
+  if (new_state == NM_DEVICE_STATE_NEED_AUTH && change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT && !connecting_to_network.isEmpty()) {
     forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
   } else if (new_state == NM_DEVICE_STATE_ACTIVATED) {
     connecting_to_network = "";
-    if (this->isVisible()) {
-      refreshNetworks();
-      emit refreshSignal();
-    }
+    refreshNetworks();
   }
 }
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
-    if (this->isVisible() || firstScan) {
-      refreshNetworks();
-      emit refreshSignal();
-      firstScan = false;
-    }
+    refreshNetworks();
   } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("ActiveAccessPoint")) {
-    const QDBusObjectPath &path = props.value("ActiveAccessPoint").value<QDBusObjectPath>();
-    activeAp = path.path();
+    activeAp = props.value("ActiveAccessPoint").value<QDBusObjectPath>().path();
   }
 }
 
 void WifiManager::deviceAdded(const QDBusObjectPath &path) {
-  if (isWirelessAdapter(path) && (adapter.isEmpty() || adapter == "/")) {
+  if (getAdapterType(path) == NM_DEVICE_TYPE_WIFI && (adapter.isEmpty() || adapter == "/")) {
     adapter = path.path();
     setup();
   }
@@ -342,51 +280,99 @@ void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
 }
 
 void WifiManager::newConnection(const QDBusObjectPath &path) {
-  knownConnections[path] = getConnectionSsid(path);
-  if (knownConnections[path] != tethering_ssid) {
-    activateWifiConnection(knownConnections[path]);
-  }
-}
-
-void WifiManager::disconnect() {
-  if (activeAp != "" && activeAp != "/") {
-    deactivateConnection(get_property(activeAp, "Ssid"));
+  Connection settings = getConnectionSettings(path);
+  if (settings.value("connection").value("type") == "802-11-wireless") {
+    knownConnections[path] = settings.value("802-11-wireless").value("ssid").toString();
+    if (knownConnections[path] != tethering_ssid) {
+      activateWifiConnection(knownConnections[path]);
+    }
   }
 }
 
 QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
-  for (const QString &conn_ssid : knownConnections) {
-    if (ssid == conn_ssid) {
-      return knownConnections.key(conn_ssid);
-    }
-  }
-  return QDBusObjectPath();
+  return knownConnections.key(ssid);
 }
 
-QString WifiManager::getConnectionSsid(const QDBusObjectPath &path) {
-  QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
-  const QDBusReply<Connection> result = nm.call("GetSettings");
-  return result.value().value("802-11-wireless").value("ssid").toString();
+Connection WifiManager::getConnectionSettings(const QDBusObjectPath &path) {
+  return QDBusReply<Connection>(call(path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "GetSettings")).value();
 }
 
 void WifiManager::initConnections() {
-  QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
-
-  const QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
+  const QDBusReply<QList<QDBusObjectPath>> response = call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "ListConnections");
   for (const QDBusObjectPath &path : response.value()) {
-    knownConnections[path] = getConnectionSsid(path);
+    const Connection settings = getConnectionSettings(path);
+    if (settings.value("connection").value("type") == "802-11-wireless") {
+      knownConnections[path] = settings.value("802-11-wireless").value("ssid").toString();
+    } else if (path.path() != "/") {
+      lteConnectionPath = path;
+    }
   }
 }
 
-void WifiManager::activateWifiConnection(const QString &ssid) {
+std::optional<QDBusPendingCall> WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
     connecting_to_network = ssid;
-    QDBusInterface nm3(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, bus);
-    nm3.setTimeout(DBUS_TIMEOUT);
-    nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
+    return asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
+  }
+  return std::nullopt;
+}
+
+void WifiManager::activateModemConnection(const QDBusObjectPath &path) {
+  QString modem = getAdapter(NM_DEVICE_TYPE_MODEM);
+  if (!path.path().isEmpty() && !modem.isEmpty()) {
+    asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(modem)), QVariant::fromValue(QDBusObjectPath("/")));
+  }
+}
+
+// function matches tici/hardware.py
+NetworkType WifiManager::currentNetworkType() {
+  auto primary_conn = call<QDBusObjectPath>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "PrimaryConnection");
+  auto primary_type = call<QString>(primary_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
+
+  if (primary_type == "802-3-ethernet") {
+    return NetworkType::ETHERNET;
+  } else if (primary_type == "802-11-wireless" && !isTetheringEnabled()) {
+    return NetworkType::WIFI;
+  } else {
+    for (const QDBusObjectPath &conn : getActiveConnections()) {
+      auto type = call<QString>(conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
+      if (type == "gsm") {
+        return NetworkType::CELL;
+      }
+    }
+  }
+  return NetworkType::NONE;
+}
+
+void WifiManager::updateGsmSettings(bool roaming, QString apn) {
+  if (!lteConnectionPath.path().isEmpty()) {
+    bool changes = false;
+    bool auto_config = apn.isEmpty();
+    Connection settings = getConnectionSettings(lteConnectionPath);
+    if (settings.value("gsm").value("auto-config").toBool() != auto_config) {
+      qWarning() << "Changing gsm.auto-config to" << auto_config;
+      settings["gsm"]["auto-config"] = auto_config;
+      changes = true;
+    }
+
+    if (settings.value("gsm").value("apn").toString() != apn) {
+      qWarning() << "Changing gsm.apn to" << apn;
+      settings["gsm"]["apn"] = apn;
+      changes = true;
+    }
+
+    if (settings.value("gsm").value("home-only").toBool() == roaming) {
+      qWarning() << "Changing gsm.home-only to" << !roaming;
+      settings["gsm"]["home-only"] = !roaming;
+      changes = true;
+    }
+
+    if (changes) {
+      call(lteConnectionPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));  // update is temporary
+      deactivateConnection(lteConnectionPath);
+      activateModemConnection(lteConnectionPath);
+    }
   }
 }
 
@@ -410,7 +396,7 @@ void WifiManager::addTetheringConnection() {
   connection["802-11-wireless-security"]["psk"] = defaultTetheringPassword;
 
   connection["ipv4"]["method"] = "shared";
-  QMap<QString,QVariant> address;
+  QVariantMap address;
   address["address"] = "192.168.43.1";
   address["prefix"] = 24u;
   connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
@@ -418,9 +404,20 @@ void WifiManager::addTetheringConnection() {
   connection["ipv4"]["route-metric"] = 1100;
   connection["ipv6"]["method"] = "ignore";
 
-  QDBusInterface nm_settings(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, bus);
-  nm_settings.setTimeout(DBUS_TIMEOUT);
-  nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
+}
+
+void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
+    int prime_type = uiState()->prime_type;
+    int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
+
+    if (!ipv4_forward) {
+      QTimer::singleShot(5000, this, [=] {
+        qWarning() << "net.ipv4.ip_forward = 0";
+        std::system("sudo sysctl net.ipv4.ip_forward=0");
+      });
+    }
+    call->deleteLater();
 }
 
 void WifiManager::setTetheringEnabled(bool enabled) {
@@ -428,20 +425,18 @@ void WifiManager::setTetheringEnabled(bool enabled) {
     if (!isKnownConnection(tethering_ssid)) {
       addTetheringConnection();
     }
-    activateWifiConnection(tethering_ssid);
+
+    auto pending_call = activateWifiConnection(tethering_ssid);
+
+    if (pending_call) {
+      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
+      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, &WifiManager::tetheringActivated);
+    }
+
   } else {
-    deactivateConnection(tethering_ssid);
+    deactivateConnectionBySsid(tethering_ssid);
   }
 }
-
-void WifiManager::initActiveAp() {
-  QDBusInterface device_props(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_PROPERTIES, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
-
-  const QDBusMessage &response = device_props.call("Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint");
-  activeAp = get_response<QDBusObjectPath>(response).path();
-}
-
 
 bool WifiManager::isTetheringEnabled() {
   if (activeAp != "" && activeAp != "/") {
@@ -456,10 +451,7 @@ QString WifiManager::getTetheringPassword() {
   }
   const QDBusObjectPath &path = getConnectionPath(tethering_ssid);
   if (!path.path().isEmpty()) {
-    QDBusInterface nm(NM_DBUS_INTERFACE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
-
-    const QDBusReply<QMap<QString, QMap<QString, QVariant>>> response = nm.call("GetSecrets", "802-11-wireless-security");
+    QDBusReply<QMap<QString, QVariantMap>> response = call(path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "GetSecrets", "802-11-wireless-security");
     return response.value().value("802-11-wireless-security").value("psk").toString();
   }
   return "";
@@ -468,13 +460,9 @@ QString WifiManager::getTetheringPassword() {
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
   const QDBusObjectPath &path = getConnectionPath(tethering_ssid);
   if (!path.path().isEmpty()) {
-    QDBusInterface nm(NM_DBUS_INTERFACE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
-
-    Connection settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
+    Connection settings = getConnectionSettings(path);
     settings["802-11-wireless-security"]["psk"] = newPassword;
-    nm.call("Update", QVariant::fromValue(settings));
-
+    call(path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
     if (isTetheringEnabled()) {
       activateWifiConnection(tethering_ssid);
     }

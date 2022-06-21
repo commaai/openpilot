@@ -35,7 +35,7 @@ def main(argv):
     args.data_dir = os.path.dirname(args.data_dir)
 
   route = Route(args.route_name, args.data_dir)
-  lr = MultiLogIterator(route.log_paths(), wraparound=False)
+  lr = MultiLogIterator(route.log_paths())
 
   with open(args.out_path, 'wb') as f:
     try:
@@ -52,7 +52,7 @@ def main(argv):
           i += 1
     except StopIteration:
       print('All done')
-  print('Writed {} msgs'.format(i))
+  print(f'Writed {i} msgs')
 
 
 if __name__ == "__main__":

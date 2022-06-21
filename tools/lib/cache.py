@@ -1,6 +1,6 @@
 import os
 import urllib.parse
-from tools.lib.file_helpers import mkdirs_exists_ok
+from common.file_helpers import mkdirs_exists_ok
 
 DEFAULT_CACHE_DIR = os.path.expanduser("~/.commacache")
 

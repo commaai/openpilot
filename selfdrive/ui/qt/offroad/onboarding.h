@@ -1,19 +1,20 @@
 #pragma once
 
+#include <QElapsedTimer>
 #include <QImage>
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QWidget>
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
 class TrainingGuide : public QFrame {
   Q_OBJECT
 
 public:
-  explicit TrainingGuide(QWidget *parent = 0) : QFrame(parent) {};
+  explicit TrainingGuide(QWidget *parent = 0);
 
 private:
   void showEvent(QShowEvent *event) override;
@@ -24,54 +25,57 @@ private:
   int currentIndex = 0;
 
   // Bounding boxes for each training guide step
-  const QRect continueBtnStandard = {1610, 0, 310, 1080};
+  const QRect continueBtnStandard = {1620, 0, 300, 1080};
   QVector<QRect> boundingRectStandard {
-    QRect(650, 710, 720, 190),
+    QRect(112, 804, 619, 166),
     continueBtnStandard,
     continueBtnStandard,
-    QRect(1470, 515, 235, 565),
-    QRect(1580, 630, 215, 130),
+    QRect(1476, 565, 253, 308),
+    QRect(1501, 529, 184, 108),
     continueBtnStandard,
-    QRect(1580, 630, 215, 130),
-    QRect(1210, 0, 485, 590),
-    QRect(1460, 400, 375, 210),
-    QRect(1460, 210, 300, 310),
+    QRect(1613, 665, 178, 153),
+    QRect(1220, 0, 420, 730),
+    QRect(1335, 499, 440, 147),
+    QRect(112, 820, 996, 148),
+    QRect(1412, 199, 316, 333),
     continueBtnStandard,
-    QRect(1375, 80, 545, 1000),
+    QRect(1237, 63, 683, 1017),
     continueBtnStandard,
-    QRect(1610, 130, 280, 800),
-    QRect(1385, 485, 400, 270),
+    QRect(1455, 110, 313, 860),
+    QRect(1253, 519, 383, 228),
     continueBtnStandard,
     continueBtnStandard,
-    QRect(1036, 769, 718, 189),
-    QRect(201, 769, 718, 189),
+    QRect(630, 804, 626, 164),
+    QRect(108, 804, 426, 164),
   };
 
-  const QRect continueBtnWide = {1850, 0, 310, 1080};
+  const QRect continueBtnWide = {1840, 0, 320, 1080};
   QVector<QRect> boundingRectWide {
-    QRect(654, 721, 718, 189),
+    QRect(112, 804, 618, 164),
     continueBtnWide,
     continueBtnWide,
-    QRect(1589, 530, 345, 555),
-    QRect(1660, 630, 195, 125),
+    QRect(1641, 558, 210, 313),
+    QRect(1662, 528, 184, 108),
     continueBtnWide,
-    QRect(1820, 630, 180, 155),
-    QRect(1360, 0, 460, 620),
-    QRect(1570, 400, 375, 215),
-    QRect(1610, 210, 295, 310),
+    QRect(1814, 621, 211, 170),
+    QRect(1350, 0, 497, 755),
+    QRect(1553, 516, 406, 112),
+    QRect(112, 804, 1126, 164),
+    QRect(1598, 199, 316, 333),
     continueBtnWide,
-    QRect(1555, 90, 610, 990),
+    QRect(1364, 90, 796, 990),
     continueBtnWide,
-    QRect(1600, 140, 280, 790),
-    QRect(1385, 490, 750, 270),
+    QRect(1593, 114, 318, 853),
+    QRect(1379, 511, 391, 243),
     continueBtnWide,
     continueBtnWide,
-    QRect(1138, 755, 718, 189),
-    QRect(303, 755, 718, 189),
+    QRect(630, 804, 626, 164),
+    QRect(108, 804, 426, 164),
   };
 
-  const QString IMG_PATH = vwp_w == 2160 ? "../assets/training_wide/" : "../assets/training/";
-  const QVector<QRect> boundingRect = vwp_w == 2160 ? boundingRectWide : boundingRectStandard;
+  QString img_path;
+  QVector<QRect> boundingRect;
+  QElapsedTimer click_timer;
 
 signals:
   void completedTraining();
@@ -115,14 +119,14 @@ class OnboardingWindow : public QStackedWidget {
 
 public:
   explicit OnboardingWindow(QWidget *parent = 0);
+  inline void showTrainingGuide() { setCurrentIndex(1); }
+  inline bool completed() const { return accepted_terms && training_done; }
 
 private:
-  void showEvent(QShowEvent *event) override;
   void updateActiveScreen();
 
   Params params;
-  std::string current_terms_version;
-  std::string current_training_version;
+  bool accepted_terms = false, training_done = false;
 
 signals:
   void onboardingDone();

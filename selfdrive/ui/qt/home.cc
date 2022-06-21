@@ -5,10 +5,10 @@
 #include <QMouseEvent>
 #include <QVBoxLayout>
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
-#include "selfdrive/ui/qt/widgets/setup.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 
@@ -19,7 +19,6 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   sidebar = new Sidebar(this);
   main_layout->addWidget(sidebar);
-  QObject::connect(this, &HomeWindow::update, sidebar, &Sidebar::updateState);
   QObject::connect(sidebar, &Sidebar::openSettings, this, &HomeWindow::openSettings);
 
   slayout = new QStackedLayout();
@@ -31,28 +30,41 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   onroad = new OnroadWindow(this);
   slayout->addWidget(onroad);
 
-  QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
-  QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransitionSignal);
+  body = new BodyWindow(this);
+  slayout->addWidget(body);
 
   driver_view = new DriverViewWindow(this);
   connect(driver_view, &DriverViewWindow::done, [=] {
     showDriverView(false);
   });
   slayout->addWidget(driver_view);
+  setAttribute(Qt::WA_NoSystemBackground);
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &HomeWindow::updateState);
+  QObject::connect(uiState(), &UIState::offroadTransition, this, &HomeWindow::offroadTransition);
 }
 
 void HomeWindow::showSidebar(bool show) {
   sidebar->setVisible(show);
 }
 
+void HomeWindow::updateState(const UIState &s) {
+  const SubMaster &sm = *(s.sm);
+
+  // switch to the generic robot UI
+  if (onroad->isVisible() && !body->isEnabled() && sm["carParams"].getCarParams().getNotCar()) {
+    body->setEnabled(true);
+    slayout->setCurrentWidget(body);
+  }
+}
+
 void HomeWindow::offroadTransition(bool offroad) {
+  body->setEnabled(false);
+  sidebar->setVisible(offroad);
   if (offroad) {
     slayout->setCurrentWidget(home);
   } else {
     slayout->setCurrentWidget(onroad);
   }
-  sidebar->setVisible(offroad);
-  emit offroadTransitionSignal(offroad);
 }
 
 void HomeWindow::showDriverView(bool show) {
@@ -67,18 +79,18 @@ void HomeWindow::showDriverView(bool show) {
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Handle sidebar collapsing
-  if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
+  if ((onroad->isVisible() || body->isVisible()) && (!sidebar->isVisible() || e->x() > sidebar->width())) {
+    sidebar->setVisible(!sidebar->isVisible() && !onroad->isMapVisible());
+  }
+}
 
-    // TODO: Handle this without exposing pointer to map widget
-    // Hide map first if visible, then hide sidebar
-    if (onroad->map != nullptr && onroad->map->isVisible()) {
-      onroad->map->setVisible(false);
-    } else if (!sidebar->isVisible()) {
-      sidebar->setVisible(true);
-    } else {
-      sidebar->setVisible(false);
-
-      if (onroad->map != nullptr) onroad->map->setVisible(true);
+void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
+  const SubMaster &sm = *(uiState()->sm);
+  if (sm["carParams"].getCarParams().getNotCar()) {
+    if (onroad->isVisible()) {
+      slayout->setCurrentWidget(body);
+    } else if (body->isVisible()) {
+      slayout->setCurrentWidget(onroad);
     }
   }
 }
@@ -87,10 +99,11 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(50);
+  main_layout->setContentsMargins(40, 40, 40, 45);
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
+  header_layout->setContentsMargins(15, 15, 15, 0);
   header_layout->setSpacing(16);
 
   date = new QLabel();
@@ -99,13 +112,13 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   update_notif = new QPushButton("UPDATE");
   update_notif->setVisible(false);
   update_notif->setStyleSheet("background-color: #364DEF;");
-  QObject::connect(update_notif, &QPushButton::released, [=]() { center_layout->setCurrentIndex(1); });
+  QObject::connect(update_notif, &QPushButton::clicked, [=]() { center_layout->setCurrentIndex(1); });
   header_layout->addWidget(update_notif, 0, Qt::AlignHCenter | Qt::AlignRight);
 
   alert_notif = new QPushButton();
   alert_notif->setVisible(false);
   alert_notif->setStyleSheet("background-color: #E22C2C;");
-  QObject::connect(alert_notif, &QPushButton::released, [=] { center_layout->setCurrentIndex(2); });
+  QObject::connect(alert_notif, &QPushButton::clicked, [=] { center_layout->setCurrentIndex(2); });
   header_layout->addWidget(alert_notif, 0, Qt::AlignHCenter | Qt::AlignRight);
 
   header_layout->addWidget(new QLabel(getBrandVersion()), 0, Qt::AlignHCenter | Qt::AlignRight);
@@ -119,9 +132,8 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QWidget* statsAndSetupWidget = new QWidget(this);
   QHBoxLayout* statsAndSetup = new QHBoxLayout(statsAndSetupWidget);
   statsAndSetup->setMargin(0);
-  DriveStats* drive = new DriveStats();
-  drive->setFixedSize(800, 800);
-  statsAndSetup->addWidget(drive);
+  statsAndSetup->setSpacing(30);
+  statsAndSetup->addWidget(new DriveStats, 1);
   statsAndSetup->addWidget(new SetupWidget);
 
   center_layout->addWidget(statsAndSetupWidget);
@@ -157,10 +169,10 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
       font-size: 55px;
     }
   )");
-  refresh();
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
+  refresh();
   timer->start(10 * 1000);
 }
 
@@ -188,6 +200,6 @@ void OffroadHome::refresh() {
   update_notif->setVisible(updateAvailable);
   alert_notif->setVisible(alerts);
   if (alerts) {
-    alert_notif->setText(QString::number(alerts) + " ALERT" + (alerts > 1 ? "S" : ""));
+    alert_notif->setText(QString::number(alerts) + (alerts > 1 ? " ALERTS" : " ALERT"));
   }
 }

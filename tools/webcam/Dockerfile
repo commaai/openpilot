@@ -27,14 +27,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     mkdir /tmp/opencv_build && \
     cd /tmp/opencv_build && \
 
-    wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz && \
+    curl -L -O https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz && \
     tar -xvf ${OPENCV_VERSION}.tar.gz && \
     mv opencv-${OPENCV_VERSION} OpenCV && \
     cd OpenCV && mkdir build && cd build && \
     cmake -DWITH_OPENGL=ON -DFORCE_VTK=ON -DWITH_TBB=ON -DWITH_GDAL=ON \
-          -DWITH_XINE=ON -DENABLE_PRECOMPILED_HEADERS=OFF .. && \
+          -DWITH_XINE=ON -DENABLE_PRECOMPILED_HEADERS=OFF -DBUILD_TESTS=OFF \
+          -DBUILD_PERF_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_apps=OFF .. && \
     make -j8 && \
     make install && \
     ldconfig && \
 
-    cd /tmp && rm -rf /tmp/opencv_build
+    cd / && rm -rf /tmp/*

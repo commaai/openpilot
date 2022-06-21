@@ -94,7 +94,7 @@ def generate_c_code_constraint( model, con_name, is_terminal, opts ):
         gen_dir = con_name + '_constraints'
         if not os.path.exists(gen_dir):
             os.mkdir(gen_dir)
-        gen_dir_location = './' + gen_dir
+        gen_dir_location = os.path.join('.', gen_dir)
         os.chdir(gen_dir_location)
 
         # export casadi functions

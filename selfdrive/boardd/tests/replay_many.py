@@ -21,7 +21,6 @@ def initializer():
   signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 def send_thread(sender_serial):
-  global jungle
   while True:
     try:
       if jungle:

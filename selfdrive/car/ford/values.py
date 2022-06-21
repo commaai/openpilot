@@ -1,20 +1,84 @@
-# flake8: noqa
+from collections import namedtuple
+from typing import Dict, List, Union
 
-from selfdrive.car import dbc_dict
 from cereal import car
-Ecu = car.CarParams.Ecu
+from selfdrive.car import dbc_dict
+from selfdrive.car.docs_definitions import CarInfo
 
-MAX_ANGLE = 87.  # make sure we never command the extremes (0xfff) which cause latching fault
+Ecu = car.CarParams.Ecu
+TransmissionType = car.CarParams.TransmissionType
+
+AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
+
+
+class CarControllerParams:
+  # Messages: Lane_Assist_Data1, LateralMotionControl
+  LKAS_STEER_STEP = 5
+  # Message: IPMA_Data
+  LKAS_UI_STEP = 100
+  # Message: ACCDATA_3
+  ACC_UI_STEP = 5
+
+  STEER_RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
+  STEER_RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
+
+
+class CANBUS:
+  main = 0
+  radar = 1
+  camera = 2
+
 
 class CAR:
-  FUSION = "FORD FUSION 2018"
+  ESCAPE_MK4 = "FORD ESCAPE 4TH GEN"
+  FOCUS_MK4 = "FORD FOCUS 4TH GEN"
 
-FINGERPRINTS = {
-  CAR.FUSION: [{
-    71: 8, 74: 8, 75: 8, 76: 8, 90: 8, 92: 8, 93: 8, 118: 8, 119: 8, 120: 8, 125: 8, 129: 8, 130: 8, 131: 8, 132: 8, 133: 8, 145: 8, 146: 8, 357: 8, 359: 8, 360: 8, 361: 8, 376: 8, 390: 8, 391: 8, 392: 8, 394: 8, 512: 8, 514: 8, 516: 8, 531: 8, 532: 8, 534: 8, 535: 8, 560: 8, 578: 8, 604: 8, 613: 8, 673: 8, 827: 8, 848: 8, 934: 8, 935: 8, 936: 8, 947: 8, 963: 8, 970: 8, 972: 8, 973: 8, 984: 8, 992: 8, 994: 8, 997: 8, 998: 8, 1003: 8, 1034: 8, 1045: 8, 1046: 8, 1053: 8, 1054: 8, 1058: 8, 1059: 8, 1068: 8, 1072: 8, 1073: 8, 1082: 8, 1107: 8, 1108: 8, 1109: 8, 1110: 8, 1200: 8, 1427: 8, 1430: 8, 1438: 8, 1459: 8
-  }],
+
+CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+  CAR.ESCAPE_MK4: CarInfo("Ford Escape", "NA"),
+  CAR.FOCUS_MK4: CarInfo("Ford Focus", "NA"),
 }
 
+
+FW_VERSIONS = {
+  CAR.ESCAPE_MK4: {
+    (Ecu.eps, 0x730, None): [
+      b'LX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.esp, 0x760, None): [
+      b'LX6C-2D053-NS\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'LJ6T-14F397-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7E0, None): [
+      b'LX6A-14C204-ESG\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
+  CAR.FOCUS_MK4: {
+    (Ecu.eps, 0x730, None): [
+      b'JX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.esp, 0x760, None): [
+      b'JX61-2D053-CJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'JX7T-14D049-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'JX7T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7E0, None): [
+      b'JX6A-14C204-BPL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
+}
+
+
 DBC = {
-  CAR.FUSION: dbc_dict('ford_fusion_2018_pt', 'ford_fusion_2018_adas'),
+  CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', None),
+  CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', None),
 }

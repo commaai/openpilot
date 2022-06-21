@@ -9,17 +9,6 @@
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
-class NetworkStrengthWidget : public QWidget {
-  Q_OBJECT
-
-public:
-  explicit NetworkStrengthWidget(int strength, QWidget* parent = nullptr) : strength_(strength), QWidget(parent) { setFixedSize(100, 15); }
-
-private:
-  void paintEvent(QPaintEvent* event) override;
-  int strength_ = 0;
-};
-
 class WifiUI : public QWidget {
   Q_OBJECT
 
@@ -29,6 +18,10 @@ public:
 private:
   WifiManager *wifi = nullptr;
   QVBoxLayout* main_layout;
+  QPixmap lock;
+  QPixmap checkmark;
+  QPixmap circled_slash;
+  QVector<QPixmap> strengths;
 
 signals:
   void connectToNetwork(const Network &n);
@@ -44,7 +37,9 @@ public:
 
 private:
   LabelControl* ipLabel;
+  ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
+  Params params;
 
 signals:
   void backPress();
@@ -54,23 +49,23 @@ public slots:
   void refresh();
 };
 
-class Networking : public QWidget {
+class Networking : public QFrame {
   Q_OBJECT
 
 public:
   explicit Networking(QWidget* parent = 0, bool show_advanced = true);
+  WifiManager* wifi = nullptr;
 
 private:
-  QStackedLayout* main_layout = nullptr; // nm_warning, wifiScreen, advanced
+  QStackedLayout* main_layout = nullptr;
   QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
-  bool show_advanced;
 
   WifiUI* wifiWidget;
-  WifiManager* wifi = nullptr;
 
 protected:
   void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
 public slots:
   void refresh();

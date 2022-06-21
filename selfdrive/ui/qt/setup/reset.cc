@@ -12,22 +12,22 @@
 #define USERDATA "/dev/disk/by-partlabel/userdata"
 
 void Reset::doReset() {
-  std::vector<const char*> cmds = {
-    "sudo umount " NVME " || true",
-    "yes | sudo mkfs.ext4 " NVME " || true",
-    "sudo umount " USERDATA " || true",
-    "yes | sudo mkfs.ext4 " USERDATA,
-    "sudo reboot",
-  };
+  // best effort to wipe nvme and sd card
+  std::system("sudo umount " NVME);
+  std::system("yes | sudo mkfs.ext4 " NVME);
 
-  for (auto &cmd : cmds) {
-    int ret = std::system(cmd);
-    if (ret != 0) {
-      body->setText("Reset failed. Reboot to try again.");
-      rebootBtn->show();
-      return;
-    }
+  // we handle two cases here
+  //  * user-prompted factory reset
+  //  * recovering from a corrupt userdata by formatting
+  int rm = std::system("sudo rm -rf /data/*");
+  std::system("sudo umount " USERDATA);
+  int fmt = std::system("yes | sudo mkfs.ext4 " USERDATA);
+
+  if (rm == 0 || fmt == 0) {
+    std::system("sudo reboot");
   }
+  body->setText("Reset failed. Reboot to try again.");
+  rebootBtn->show();
 }
 
 void Reset::confirm() {
@@ -67,12 +67,12 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
 
   rejectBtn = new QPushButton("Cancel");
   blayout->addWidget(rejectBtn);
-  QObject::connect(rejectBtn, &QPushButton::released, QCoreApplication::instance(), &QCoreApplication::quit);
+  QObject::connect(rejectBtn, &QPushButton::clicked, QCoreApplication::instance(), &QCoreApplication::quit);
 
   rebootBtn = new QPushButton("Reboot");
   blayout->addWidget(rebootBtn);
 #ifdef __aarch64__
-  QObject::connect(rebootBtn, &QPushButton::released, [=]{
+  QObject::connect(rebootBtn, &QPushButton::clicked, [=]{
     std::system("sudo reboot");
   });
 #endif
@@ -80,7 +80,7 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   confirmBtn = new QPushButton("Confirm");
   confirmBtn->setStyleSheet("background-color: #465BEA;");
   blayout->addWidget(confirmBtn);
-  QObject::connect(confirmBtn, &QPushButton::released, this, &Reset::confirm);
+  QObject::connect(confirmBtn, &QPushButton::clicked, this, &Reset::confirm);
 
   rejectBtn->setVisible(!recover);
   rebootBtn->setVisible(recover);

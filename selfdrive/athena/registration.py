@@ -1,45 +1,42 @@
-import os
+#!/usr/bin/env python3
 import time
 import json
-
 import jwt
+from pathlib import Path
+from typing import Optional
 
 from datetime import datetime, timedelta
 from common.api import api_get
 from common.params import Params
 from common.spinner import Spinner
-from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import HARDWARE
-from selfdrive.swaglog import cloudlog
+from system.hardware import HARDWARE, PC
+from system.swaglog import cloudlog
 
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
 
 
-def register(show_spinner=False) -> str:
+def is_registered_device() -> bool:
+  dongle = Params().get("DongleId", encoding='utf-8')
+  return dongle not in (None, UNREGISTERED_DONGLE_ID)
+
+
+def register(show_spinner=False) -> Optional[str]:
   params = Params()
   params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 
   IMEI = params.get("IMEI", encoding='utf8')
   HardwareSerial = params.get("HardwareSerial", encoding='utf8')
-  dongle_id = params.get("DongleId", encoding='utf8')
+  dongle_id: Optional[str] = params.get("DongleId", encoding='utf8')
   needs_registration = None in (IMEI, HardwareSerial, dongle_id)
 
-  # create a key for auth
-  # your private key is kept on your device persist partition and never sent to our servers
-  # do not erase your persist partition
-  if not os.path.isfile(PERSIST+"/comma/id_rsa.pub"):
-    needs_registration = True
-    cloudlog.warning("generating your personal RSA key")
-    mkdirs_exists_ok(PERSIST+"/comma")
-    assert os.system("openssl genrsa -out "+PERSIST+"/comma/id_rsa.tmp 2048") == 0
-    assert os.system("openssl rsa -in "+PERSIST+"/comma/id_rsa.tmp -pubout -out "+PERSIST+"/comma/id_rsa.tmp.pub") == 0
-    os.rename(PERSIST+"/comma/id_rsa.tmp", PERSIST+"/comma/id_rsa")
-    os.rename(PERSIST+"/comma/id_rsa.tmp.pub", PERSIST+"/comma/id_rsa.pub")
-
-  if needs_registration:
+  pubkey = Path(PERSIST+"/comma/id_rsa.pub")
+  if not pubkey.is_file():
+    dongle_id = UNREGISTERED_DONGLE_ID
+    cloudlog.warning(f"missing public key: {pubkey}")
+  elif needs_registration:
     if show_spinner:
       spinner = Spinner()
       spinner.update("registering device")
@@ -50,7 +47,10 @@ def register(show_spinner=False) -> str:
       private_key = f2.read()
 
     # Block until we get the imei
-    imei1, imei2 = None, None
+    serial = HARDWARE.get_serial()
+    start_time = time.monotonic()
+    imei1: Optional[str] = None
+    imei2: Optional[str] = None
     while imei1 is None and imei2 is None:
       try:
         imei1, imei2 = HARDWARE.get_imei(0), HARDWARE.get_imei(1)
@@ -58,11 +58,14 @@ def register(show_spinner=False) -> str:
         cloudlog.exception("Error getting imei, trying again...")
         time.sleep(1)
 
-    serial = HARDWARE.get_serial()
+      if time.monotonic() - start_time > 60 and show_spinner:
+        spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
+
     params.put("IMEI", imei1)
     params.put("HardwareSerial", serial)
 
     backoff = 0
+    start_time = time.monotonic()
     while True:
       try:
         register_token = jwt.encode({'register': True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
@@ -82,12 +85,15 @@ def register(show_spinner=False) -> str:
         backoff = min(backoff + 1, 15)
         time.sleep(backoff)
 
+      if time.monotonic() - start_time > 60 and show_spinner:
+        spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
+
     if show_spinner:
       spinner.close()
 
   if dongle_id:
     params.put("DongleId", dongle_id)
-    set_offroad_alert("Offroad_UnofficialHardware", dongle_id == UNREGISTERED_DONGLE_ID)
+    set_offroad_alert("Offroad_UnofficialHardware", (dongle_id == UNREGISTERED_DONGLE_ID) and not PC)
   return dongle_id
 
 

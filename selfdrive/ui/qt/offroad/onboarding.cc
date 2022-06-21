@@ -6,12 +6,26 @@
 #include <QQuickWidget>
 #include <QVBoxLayout>
 
-#include "selfdrive/common/util.h"
+#include "common/util.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
+TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
+  setAttribute(Qt::WA_OpaquePaintEvent);
+}
+
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
+  if (click_timer.elapsed() < 250) {
+    return;
+  }
+  click_timer.restart();
+
   if (boundingRect[currentIndex].contains(e->x(), e->y())) {
+    if (currentIndex == 9) {
+      const QRect yes = QRect(707, 804, 531, 164);
+      Params().putBool("RecordFront", yes.contains(e->x(), e->y()));
+    }
     currentIndex += 1;
   } else if (currentIndex == (boundingRect.size() - 2) && boundingRect.last().contains(e->x(), e->y())) {
     currentIndex = 0;
@@ -20,26 +34,36 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   if (currentIndex >= (boundingRect.size() - 1)) {
     emit completedTraining();
   } else {
-    image.load(IMG_PATH + "step" + QString::number(currentIndex) + ".png");
+    image.load(img_path + "step" + QString::number(currentIndex) + ".png");
     update();
   }
 }
 
 void TrainingGuide::showEvent(QShowEvent *event) {
+  img_path = width() == WIDE_WIDTH ? "../assets/training_wide/" : "../assets/training/";
+  boundingRect = width() == WIDE_WIDTH ? boundingRectWide : boundingRectStandard;
+
   currentIndex = 0;
-  image.load(IMG_PATH + "step0.png");
+  image.load(img_path + "step0.png");
+  click_timer.start();
 }
 
 void TrainingGuide::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
 
   QRect bg(0, 0, painter.device()->width(), painter.device()->height());
-  QBrush bgBrush("#000000");
-  painter.fillRect(bg, bgBrush);
+  painter.fillRect(bg, QColor("#000000"));
 
   QRect rect(image.rect());
   rect.moveCenter(bg.center());
   painter.drawImage(rect.topLeft(), image);
+
+  // progress bar
+  if (currentIndex > 0 && currentIndex < (boundingRect.size() - 2)) {
+    const int h = 20;
+    const int w = (currentIndex / (float)(boundingRect.size() - 2)) * width();
+    painter.fillRect(QRect(0, height() - h, w, h), QColor("#465BEA"));
+  }
 }
 
 void TermsPage::showEvent(QShowEvent *event) {
@@ -82,7 +106,7 @@ void TermsPage::showEvent(QShowEvent *event) {
 
   QPushButton *decline_btn = new QPushButton("Decline");
   buttons->addWidget(decline_btn);
-  QObject::connect(decline_btn, &QPushButton::released, this, &TermsPage::declinedTerms);
+  QObject::connect(decline_btn, &QPushButton::clicked, this, &TermsPage::declinedTerms);
 
   accept_btn = new QPushButton("Scroll to accept");
   accept_btn->setEnabled(false);
@@ -95,7 +119,7 @@ void TermsPage::showEvent(QShowEvent *event) {
     }
   )");
   buttons->addWidget(accept_btn);
-  QObject::connect(accept_btn, &QPushButton::released, this, &TermsPage::acceptedTerms);
+  QObject::connect(accept_btn, &QPushButton::clicked, this, &TermsPage::acceptedTerms);
 }
 
 void TermsPage::enableAccept() {
@@ -125,19 +149,17 @@ void DeclinePage::showEvent(QShowEvent *event) {
   QPushButton *back_btn = new QPushButton("Back");
   buttons->addWidget(back_btn);
 
-  QObject::connect(back_btn, &QPushButton::released, this, &DeclinePage::getBack);
+  QObject::connect(back_btn, &QPushButton::clicked, this, &DeclinePage::getBack);
 
-  QPushButton *uninstall_btn = new QPushButton("Decline, uninstall " + getBrand());
+  QPushButton *uninstall_btn = new QPushButton(QString("Decline, uninstall %1").arg(getBrand()));
   uninstall_btn->setStyleSheet("background-color: #B73D3D");
   buttons->addWidget(uninstall_btn);
-  QObject::connect(uninstall_btn, &QPushButton::released, [=]() {
+  QObject::connect(uninstall_btn, &QPushButton::clicked, [=]() {
     Params().putBool("DoUninstall", true);
   });
 }
 
 void OnboardingWindow::updateActiveScreen() {
-  bool accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
-  bool training_done = params.get("CompletedTrainingVersion") == current_training_version;
   if (!accepted_terms) {
     setCurrentIndex(0);
   } else if (!training_done && !params.getBool("Passive")) {
@@ -148,13 +170,16 @@ void OnboardingWindow::updateActiveScreen() {
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  current_terms_version = params.get("TermsVersion");
-  current_training_version = params.get("TrainingVersion");
+  std::string current_terms_version = params.get("TermsVersion");
+  std::string current_training_version = params.get("TrainingVersion");
+  accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
+  training_done = params.get("CompletedTrainingVersion") == current_training_version;
 
   TermsPage* terms = new TermsPage(this);
   addWidget(terms);
   connect(terms, &TermsPage::acceptedTerms, [=]() {
     Params().put("HasAcceptedTerms", current_terms_version);
+    accepted_terms = true;
     updateActiveScreen();
   });
   connect(terms, &TermsPage::declinedTerms, [=]() { setCurrentIndex(2); });
@@ -162,6 +187,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   TrainingGuide* tr = new TrainingGuide(this);
   addWidget(tr);
   connect(tr, &TrainingGuide::completedTraining, [=]() {
+    training_done = true;
     Params().put("CompletedTrainingVersion", current_training_version);
     updateActiveScreen();
   });
@@ -183,8 +209,5 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
       background-color: #4F4F4F;
     }
   )");
-}
-
-void OnboardingWindow::showEvent(QShowEvent *event) {
   updateActiveScreen();
 }

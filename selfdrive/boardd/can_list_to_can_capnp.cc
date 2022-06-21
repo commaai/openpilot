@@ -1,11 +1,5 @@
 #include "cereal/messaging/messaging.h"
-
-typedef struct {
-	long address;
-	std::string dat;
-	long busTime;
-	long src;
-} can_frame;
+#include "panda.h"
 
 extern "C" {
 

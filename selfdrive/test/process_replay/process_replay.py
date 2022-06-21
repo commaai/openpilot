@@ -8,15 +8,15 @@ import signal
 from collections import namedtuple
 
 import capnp
-from tqdm import tqdm
 
 import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.car.fingerprints import FW_VERSIONS
+from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.car_helpers import get_car, interfaces
+from selfdrive.test.process_replay.helpers import OpenpilotPrefix
 from selfdrive.manager.process import PythonProcess
 from selfdrive.manager.process_config import managed_processes
 
@@ -24,8 +24,10 @@ from selfdrive.manager.process_config import managed_processes
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
+PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
+FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster'])
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config'], defaults=({},))
 
 
 def wait_for_event(evt):
@@ -88,8 +90,8 @@ class DumbSocket:
 
 
 class FakeSubMaster(messaging.SubMaster):
-  def __init__(self, services):
-    super(FakeSubMaster, self).__init__(services, addr=None)
+  def __init__(self, services, ignore_alive=None, ignore_avg_freq=None):
+    super().__init__(services, ignore_alive=ignore_alive, ignore_avg_freq=ignore_avg_freq, addr=None)
     self.sock = {s: DumbSocket(s) for s in services}
     self.update_called = threading.Event()
     self.update_ready = threading.Event()
@@ -111,7 +113,7 @@ class FakeSubMaster(messaging.SubMaster):
   def update_msgs(self, cur_time, msgs):
     wait_for_event(self.update_called)
     self.update_called.clear()
-    super(FakeSubMaster, self).update_msgs(cur_time, msgs)
+    super().update_msgs(cur_time, msgs)
     self.update_ready.set()
 
   def wait_for_update(self):
@@ -172,7 +174,6 @@ def fingerprint(msgs, fsm, can_sock, fingerprint):
   can_sock.data = []
 
   fsm.update_ready.set()
-  print("finished fingerprinting")
 
 
 def get_car_params(msgs, fsm, can_sock, fingerprint):
@@ -232,7 +233,7 @@ def ublox_rcv_callback(msg):
   elif (msg_class, msg_id) in {(2, 1 * 16 + 5), (10, 9)}:
     return ["ubloxGnss"]
   else:
-     return []
+    return []
 
 
 CONFIGS = [
@@ -240,14 +241,18 @@ CONFIGS = [
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "deviceState": [], "pandaState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
-      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "ubloxRaw": [], "managerState": [],
+      "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
+      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "wideRoadCameraState": [], "managerState": [], "testJoystick": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
+    submaster_config={
+      'ignore_avg_freq': ['radarState', 'longitudinalPlan', 'driverCameraState', 'driverMonitoringState'],  # dcam is expected at 20 Hz
+      'ignore_alive': ['wideRoadCameraState'],  # TODO: Add to regen
+    }
   ),
   ProcessConfig(
     proc_name="radard",
@@ -264,13 +269,13 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pub_sub={
-      "modelV2": ["lateralPlan"], "radarState": ["longitudinalPlan"],
-      "carState": [], "controlsState": [],
+      "modelV2": ["lateralPlan", "longitudinalPlan"],
+      "carState": [], "controlsState": [], "radarState": [],
     },
-    ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay"],
+    ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
     init_callback=get_car_params,
     should_recv_callback=None,
-    tolerance=None,
+    tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
   ),
   ProcessConfig(
@@ -288,7 +293,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="dmonitoringd",
     pub_sub={
-      "driverState": ["driverMonitoringState"],
+      "driverStateV2": ["driverMonitoringState"],
       "liveCalibration": [], "carState": [], "modelV2": [], "controlsState": [],
     },
     ignore=["logMonoTime", "valid"],
@@ -336,17 +341,47 @@ CONFIGS = [
 
 
 def replay_process(cfg, lr, fingerprint=None):
-  if cfg.fake_pubsubmaster:
-    return python_replay_process(cfg, lr, fingerprint)
-  else:
-    return cpp_replay_process(cfg, lr, fingerprint)
+  with OpenpilotPrefix():
+    if cfg.fake_pubsubmaster:
+      return python_replay_process(cfg, lr, fingerprint)
+    else:
+      return cpp_replay_process(cfg, lr, fingerprint)
 
+def setup_env(simulation=False, CP=None):
+  params = Params()
+  params.clear_all()
+  params.put_bool("OpenpilotEnabledToggle", True)
+  params.put_bool("Passive", False)
+  params.put_bool("DisengageOnAccelerator", True)
+  params.put_bool("WideCameraOnly", False)
+  params.put_bool("DisableLogging", False)
+
+  os.environ["NO_RADAR_SLEEP"] = "1"
+  os.environ["REPLAY"] = "1"
+  os.environ['SKIP_FW_QUERY'] = ""
+  os.environ['FINGERPRINT'] = ""
+
+  if simulation:
+    os.environ["SIMULATION"] = "1"
+  elif "SIMULATION" in os.environ:
+    del os.environ["SIMULATION"]
+
+  # Regen or python process
+  if CP is not None:
+    if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
+      params.put_bool("DisengageOnAccelerator", False)
+
+    if CP.fingerprintSource == "fw":
+      params.put("CarParamsCache", CP.as_builder().to_bytes())
+    else:
+      os.environ['SKIP_FW_QUERY'] = "1"
+      os.environ['FINGERPRINT'] = CP.carFingerprint
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']
 
-  fsm = FakeSubMaster(pub_sockets)
+  fsm = FakeSubMaster(pub_sockets, **cfg.submaster_config)
   fpm = FakePubMaster(sub_sockets)
   args = (fsm, fpm)
   if 'can' in list(cfg.pub_sub.keys()):
@@ -356,35 +391,13 @@ def python_replay_process(cfg, lr, fingerprint=None):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  params = Params()
-  params.clear_all()
-  params.put_bool("OpenpilotEnabledToggle", True)
-  params.put_bool("Passive", False)
-  params.put_bool("CommunityFeaturesToggle", True)
-
-  os.environ['NO_RADAR_SLEEP'] = "1"
-
-  # TODO: remove after getting new route for civic & accord
-  migration = {
-    "HONDA CIVIC 2016 TOURING": "HONDA CIVIC 2016",
-    "HONDA ACCORD 2018 SPORT 2T": "HONDA ACCORD 2018",
-    "HONDA ACCORD 2T 2018": "HONDA ACCORD 2018",
-  }
-
   if fingerprint is not None:
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = fingerprint
+    setup_env()
   else:
-    os.environ['SKIP_FW_QUERY'] = ""
-    os.environ['FINGERPRINT'] = ""
-    for msg in lr:
-      if msg.which() == 'carParams':
-        car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-        if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
-          params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
-        else:
-          os.environ['SKIP_FW_QUERY'] = "1"
-          os.environ['FINGERPRINT'] = car_fingerprint
+    CP = [m for m in lr if m.which() == 'carParams'][0].carParams
+    setup_env(CP=CP)
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
@@ -399,7 +412,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
       can_sock = None
     cfg.init_callback(all_msgs, fsm, can_sock, fingerprint)
 
-  CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
+  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
   # wait for started process to be ready
   if 'can' in list(cfg.pub_sub.keys()):
@@ -408,7 +421,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
     fsm.wait_for_update()
 
   log_msgs, msg_queue = [], []
-  for msg in tqdm(pub_msgs, disable=CI):
+  for msg in pub_msgs:
     if cfg.should_recv_callback is not None:
       recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
     else:
@@ -422,12 +435,15 @@ def python_replay_process(cfg, lr, fingerprint=None):
       msg_queue.append(msg.as_builder())
 
     if should_recv:
-      fsm.update_msgs(0, msg_queue)
+      fsm.update_msgs(msg.logMonoTime / 1e9, msg_queue)
       msg_queue = []
 
       recv_cnt = len(recv_socks)
       while recv_cnt > 0:
-        m = fpm.wait_for_msg()
+        m = fpm.wait_for_msg().as_builder()
+        m.logMonoTime = msg.logMonoTime
+        m = m.as_reader()
+
         log_msgs.append(m)
         recv_cnt -= m.which() in recv_socks
   return log_msgs
@@ -441,36 +457,54 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
   log_msgs = []
 
-  os.environ["SIMULATION"] = "1"  # Disable submaster alive checks
+  # We need to fake SubMaster alive since we can't inject a fake clock
+  setup_env(simulation=True)
+
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
-  with Timeout(TIMEOUT):
-    while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
-      time.sleep(0)
+  try:
+    with Timeout(TIMEOUT):
+      while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
+        time.sleep(0)
 
-    # Make sure all subscribers are connected
-    sockets = {s: messaging.sub_sock(s, timeout=2000) for s in sub_sockets}
-    for s in sub_sockets:
-      messaging.recv_one_or_none(sockets[s])
+      # Make sure all subscribers are connected
+      sockets = {s: messaging.sub_sock(s, timeout=2000) for s in sub_sockets}
+      for s in sub_sockets:
+        messaging.recv_one_or_none(sockets[s])
 
-    for i, msg in enumerate(tqdm(pub_msgs, disable=CI)):
-      pm.send(msg.which(), msg.as_builder())
+      for i, msg in enumerate(pub_msgs):
+        pm.send(msg.which(), msg.as_builder())
 
-      resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
-      for s in resp_sockets:
-        response = messaging.recv_one(sockets[s])
+        resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
+        for s in resp_sockets:
+          response = messaging.recv_one(sockets[s])
 
-        if response is None:
-          print(f"Warning, no response received {i}")
-        else:
-          log_msgs.append(response)
+          if response is None:
+            print(f"Warning, no response received {i}")
+          else:
 
-      if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response
-        while not pm.all_readers_updated(msg.which()):
-          time.sleep(0)
+            response = response.as_builder()
+            response.logMonoTime = msg.logMonoTime
+            response = response.as_reader()
+            log_msgs.append(response)
 
+        if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response
+          while not pm.all_readers_updated(msg.which()):
+            time.sleep(0)
+  finally:
     managed_processes[cfg.proc_name].signal(signal.SIGKILL)
     managed_processes[cfg.proc_name].stop()
 
   return log_msgs
+
+
+def check_enabled(msgs):
+  for msg in msgs:
+    if msg.which() == "carParams":
+      if msg.carParams.notCar:
+        return True
+    elif msg.which() == "controlsState":
+      if msg.controlsState.active:
+        return True
+  return False

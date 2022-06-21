@@ -50,6 +50,14 @@ class TestRegistration(unittest.TestCase):
       self.assertEqual(register(), dongle)
       self.assertFalse(m.called)
 
+  def test_no_keys(self):
+    # missing pubkey
+    with mock.patch("selfdrive.athena.registration.api_get", autospec=True) as m:
+      dongle = register()
+      self.assertEqual(m.call_count, 0)
+      self.assertEqual(dongle, UNREGISTERED_DONGLE_ID)
+    self.assertEqual(self.params.get("DongleId", encoding='utf-8'), dongle)
+
   def test_missing_cache(self):
     # keys exist but no dongle id
     self._generate_keys()
@@ -65,7 +73,8 @@ class TestRegistration(unittest.TestCase):
     self.assertEqual(self.params.get("DongleId", encoding='utf-8'), dongle)
 
   def test_unregistered(self):
-    # no keys, no dongle id
+    # keys exist, but unregistered
+    self._generate_keys()
     with mock.patch("selfdrive.athena.registration.api_get", autospec=True) as m:
       m.return_value = MockResponse(None, 402)
       dongle = register()

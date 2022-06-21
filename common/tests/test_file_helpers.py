@@ -8,13 +8,12 @@ from common.file_helpers import atomic_write_in_dir
 
 class TestFileHelpers(unittest.TestCase):
   def run_atomic_write_func(self, atomic_write_func):
-    path = "/tmp/tmp{}".format(uuid4())
+    path = f"/tmp/tmp{uuid4()}"
     with atomic_write_func(path) as f:
       f.write("test")
 
     with open(path) as f:
       self.assertEqual(f.read(), "test")
-    self.assertEqual(os.stat(path).st_mode & 0o777, 0o644)
     os.remove(path)
 
   def test_atomic_write_on_fs_tmp(self):
