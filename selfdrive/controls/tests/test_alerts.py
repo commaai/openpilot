@@ -48,9 +48,9 @@ class TestAlerts(unittest.TestCase):
   # ensure alert text doesn't exceed allowed width
   def test_alert_text_length(self):
     font_path = os.path.join(BASEDIR, "selfdrive/assets/fonts")
-    regular_font_path = os.path.join(font_path, "opensans_semibold.ttf")
-    bold_font_path = os.path.join(font_path, "opensans_semibold.ttf")
-    semibold_font_path = os.path.join(font_path, "opensans_semibold.ttf")
+    regular_font_path = os.path.join(font_path, "Inter-SemiBold.ttf")
+    bold_font_path = os.path.join(font_path, "Inter-Bold.ttf")
+    semibold_font_path = os.path.join(font_path, "Inter-SemiBold.ttf")
 
     max_text_width = 1920 - 300  # full screen width is useable, minus sidebar
     # TODO: get exact scale factor. found this empirically, works well enough
