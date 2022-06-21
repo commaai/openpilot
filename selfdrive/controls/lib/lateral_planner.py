@@ -16,7 +16,7 @@ class LateralPlanner:
     self.LP = LanePlanner(wide_camera)
     self.DH = DesireHelper()
 
-    self.factor1 = CP.wheelbase
+    self.factor1 = CP.wheelbase - CP.centerToFront
     self.factor2 = (2 * CP.centerToFront * CP.mass) / (CP.wheelbase * CP.tireStiffnessRear)
     self.last_cloudlog_t = 0
     self.solution_invalid_cnt = 0
@@ -43,8 +43,12 @@ class LateralPlanner:
     self.LP.parse_model(md)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
+      self.speed_forward = np.linalg.norm(np.column_stack([md.velocity.x, md.velocity.y, md.velocity.z]), axis=1)
       self.t_idxs = np.array(md.position.t)
-      self.plan_yaw = list(md.orientation.z)
+      self.plan_yaw = np.array(md.orientation.z)
+      self.plan_yaw_rate = np.array(md.orientationRate.z)
+      self.plan_curv = self.plan_yaw_rate / np.maximum(self.speed_forward, np.ones_like(self.speed_forward))
+      self.plan_curv_rate = np.gradient(self.plan_curv, self.t_idxs)
     if len(md.position.xStd) == TRAJECTORY_SIZE:
       self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
 
@@ -69,17 +73,20 @@ class LateralPlanner:
 
     y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
     heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
+    curv_rate_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_curv_rate)
     self.y_pts = y_pts
 
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
+    assert len(curv_rate_pts) == LAT_MPC_N + 1
     # self.x0[4] = v_ego
     lateral_factor = max(0, self.factor1 - (self.factor2 * v_ego**2))
     p = np.array([v_ego, lateral_factor])
     self.lat_mpc.run(self.x0,
                      p,
                      y_pts,
-                     heading_pts)
+                     heading_pts,
+                     curv_rate_pts)
     # init state for next
     # mpc.u_sol is the desired curvature rate given x0 curv state.
     # with x0[3] = measured_curvature, this would be the actual desired rate.
