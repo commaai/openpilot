@@ -300,10 +300,12 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   return exact_match, matches
 
 
-def get_present_ecus(logcan, sendcan, versions):
+def get_present_ecus(logcan, sendcan):
   queries = list()
   parallel_queries = list()
   responses = set()
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+
   for r in REQUESTS:
     if r.brand not in versions:
       continue
@@ -329,7 +331,7 @@ def get_present_ecus(logcan, sendcan, versions):
 
   ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
   for query in queries:
-    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.2))
+    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
   return ecu_responses
 
 
