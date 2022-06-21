@@ -350,7 +350,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
     f.ecu = ecu_types[addr]
     f.fwVersion = version
     f.address = addr[0]
-    f.responseAddress = addr[0] + rx_offset
+    f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], rx_offset)
     f.request = request
 
     if addr[1] is not None:
