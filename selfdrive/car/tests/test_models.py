@@ -221,6 +221,7 @@ class TestCarModelBase(unittest.TestCase):
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
+      checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
