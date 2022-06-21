@@ -3,11 +3,12 @@ import struct
 import traceback
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, Optional, Set, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
+from selfdrive.car.ecu_addrs import get_ecu_addrs
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
@@ -15,6 +16,7 @@ from selfdrive.car.toyota.values import CAR as TOYOTA
 from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
+ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 
 
 def p16(val):
@@ -146,14 +148,12 @@ REQUESTS: List[Request] = [
     "volkswagen",
     [VOLKSWAGEN_VERSION_REQUEST_MULTI],
     [VOLKSWAGEN_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar],
     rx_offset=VOLKSWAGEN_RX_OFFSET,
   ),
   Request(
     "volkswagen",
     [VOLKSWAGEN_VERSION_REQUEST_MULTI],
     [VOLKSWAGEN_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.engine, Ecu.transmission],
   ),
   # Mazda
   Request(
@@ -261,7 +261,6 @@ def match_fw_to_car_exact(fw_versions_dict):
       ecu_type = ecu[0]
       addr = ecu[1:]
       found_version = fw_versions_dict.get(addr, None)
-      ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
       if ecu_type == Ecu.esp and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and found_version is None:
         continue
 
@@ -299,11 +298,46 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   return exact_match, matches
 
 
+def get_present_ecus(logcan, sendcan):
+  queries = list()
+  parallel_queries = list()
+  responses = set()
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+
+  for r in REQUESTS:
+    if r.brand not in versions:
+      continue
+
+    for brand_versions in versions[r.brand].values():
+      for ecu_type, addr, sub_addr in brand_versions:
+        # Only query ecus in whitelist if whitelist is not empty
+        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
+          a = (addr, sub_addr, r.bus)
+          # Build set of queries
+          if sub_addr is None:
+            if a not in parallel_queries:
+              parallel_queries.append(a)
+          else:  # subaddresses must be queried one by one
+            if [a] not in queries:
+              queries.append([a])
+
+          # Build set of expected responses to filter
+          response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
+          responses.add((response_addr, sub_addr, r.bus))
+
+  queries.insert(0, parallel_queries)
+
+  ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
+  for query in queries:
+    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
+  return ecu_responses
+
+
 def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
 
   # Extract ECU addresses to query from fingerprints
-  # ECUs using a subadress need be queried one by one, the rest can be done in parallel
+  # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
 
@@ -350,7 +384,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
     f.ecu = ecu_types[addr]
     f.fwVersion = version
     f.address = addr[0]
-    f.responseAddress = addr[0] + rx_offset
+    f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], rx_offset)
     f.request = request
 
     if addr[1] is not None:
