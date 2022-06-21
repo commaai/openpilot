@@ -9,20 +9,24 @@ os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
 
 import onnxruntime as ort # pylint: disable=import-error
 
-def read(sz):
+def read(sz, tf8=False):
   dd = []
   gt = 0
-  while gt < sz * 4:
-    st = os.read(0, sz * 4 - gt)
+  szof = 1 if tf8 else 4
+  while gt < sz * szof:
+    st = os.read(0, sz * szof - gt)
     assert(len(st) > 0)
     dd.append(st)
     gt += len(st)
-  return np.frombuffer(b''.join(dd), dtype=np.float32)
+  r = np.frombuffer(b''.join(dd), dtype=np.uint8 if tf8 else np.float32).astype(np.float32)
+  if tf8:
+    r = r / 255.
+  return r
 
 def write(d):
   os.write(1, d.tobytes())
 
-def run_loop(m):
+def run_loop(m, tf8_input=False):
   ishapes = [[1]+ii.shape[1:] for ii in m.get_inputs()]
   keys = [x.name for x in m.get_inputs()]
 
@@ -33,10 +37,10 @@ def run_loop(m):
   print("ready to run onnx model", keys, ishapes, file=sys.stderr)
   while 1:
     inputs = []
-    for shp in ishapes:
+    for k, shp in zip(keys, ishapes):
       ts = np.product(shp)
       #print("reshaping %s with offset %d" % (str(shp), offset), file=sys.stderr)
-      inputs.append(read(ts).reshape(shp))
+      inputs.append(read(ts, (k=='input_img' and tf8_input)).reshape(shp))
     ret = m.run(None, dict(zip(keys, inputs)))
     #print(ret, file=sys.stderr)
     for r in ret:
@@ -44,6 +48,7 @@ def run_loop(m):
 
 
 if __name__ == "__main__":
+  print(sys.argv, file=sys.stderr)
   print("Onnx available providers: ", ort.get_available_providers(), file=sys.stderr)
   options = ort.SessionOptions()
   options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
@@ -59,7 +64,10 @@ if __name__ == "__main__":
     options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     provider = 'CPUExecutionProvider'
 
-  print("Onnx selected provider: ", [provider], file=sys.stderr)
-  ort_session = ort.InferenceSession(sys.argv[1], options, providers=[provider])
-  print("Onnx using ", ort_session.get_providers(), file=sys.stderr)
-  run_loop(ort_session)
+  try:
+    print("Onnx selected provider: ", [provider], file=sys.stderr)
+    ort_session = ort.InferenceSession(sys.argv[1], options, providers=[provider])
+    print("Onnx using ", ort_session.get_providers(), file=sys.stderr)
+    run_loop(ort_session, tf8_input=("--use_tf8" in sys.argv))
+  except KeyboardInterrupt:
+    pass
