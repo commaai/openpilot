@@ -322,7 +322,8 @@ def get_present_ecus(logcan, sendcan, versions):
               queries.append([a])
 
           # Build set of expected responses to filter
-          responses.add((addr + r.rx_offset, sub_addr, r.bus))
+          response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
+          responses.add((response_addr, sub_addr, r.bus))
 
   queries.insert(0, parallel_queries)
 
@@ -383,7 +384,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
     f.ecu = ecu_types[addr]
     f.fwVersion = version
     f.address = addr[0]
-    f.responseAddress = addr[0] + rx_offset
+    f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], rx_offset)
     f.request = request
 
     if addr[1] is not None:
