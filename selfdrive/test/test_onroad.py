@@ -145,11 +145,14 @@ class TestOnroad(unittest.TestCase):
           route = params.get("CurrentRoute", encoding="utf-8")
           time.sleep(0.1)
 
+        print(f"Current route: {route}")
+
         while len(cls.segments) < 3:
           segs = set()
           if Path(ROOT).exists():
             segs = set(Path(ROOT).glob(f"{route}--*"))
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
+          print(f"Current segments {cls.segments}")
           time.sleep(2)
 
       # chop off last, incomplete segment
