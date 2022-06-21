@@ -13,6 +13,7 @@ Version 0.8.15 (2022-XX-XX)
 * Display speed limit while navigating
 * Reduced power usage: device runs cooler and fan spins less
 * AGNOS 5
+* Honda Civic 2022 support
 * Hyundai Tucson 2021 support thanks to bluesforte!
 * Lexus NX Hybrid 2020 support thanks to AlexandreSato!
 

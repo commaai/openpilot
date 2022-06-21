@@ -13,7 +13,7 @@ from system.hardware import PC
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.manager.process_config import managed_processes
 
-LM_THRESH = 120  # defined in selfdrive/camerad/imgproc/utils.h
+LM_THRESH = 120  # defined in system/camerad/imgproc/utils.h
 
 VISION_STREAMS = {
   "roadCameraState": VisionStreamType.VISION_STREAM_ROAD,
