@@ -1,4 +1,5 @@
 #pragma once
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 #include <DlContainer/IDlContainer.hpp>
 #include <DlSystem/DlError.hpp>
@@ -22,7 +23,7 @@
 
 class SNPEModel : public RunModel {
 public:
-  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false);
+  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false, bool use_tf8 = false);
   void addRecurrent(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
   void addCalib(float *state, int state_size);
@@ -51,6 +52,7 @@ private:
   std::unique_ptr<zdl::DlSystem::IUserBuffer> inputBuffer;
   float *input;
   size_t input_size;
+  bool use_tf8;
 
   // snpe output stuff
   zdl::DlSystem::UserBufferMap outputMap;

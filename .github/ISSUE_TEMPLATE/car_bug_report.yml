@@ -1,6 +1,6 @@
 name: Car bug report
 description: For issues with a particular car make or model
-labels: ["car bug"]
+labels: ["car", "bug"]
 body:
 
   - type: markdown
