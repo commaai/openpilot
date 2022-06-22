@@ -41,7 +41,7 @@ class SubaruCarInfo(CarInfo):
 
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
-  CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-20", "All"),
+  CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-20", "All", good_torque=True),
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19"),
     SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
