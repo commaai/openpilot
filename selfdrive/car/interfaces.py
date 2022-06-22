@@ -125,7 +125,7 @@ class CarInterfaceBase(ABC):
     elif candidate in params:
       out = params[candidate]
     else:
-      raise NotImplementedError("Did not find torque params for {candidate}")
+      raise NotImplementedError(f"Did not find torque params for {candidate}")
     return {key:out[i] for i, key in enumerate(params['legend'])}
 
   @abstractmethod
