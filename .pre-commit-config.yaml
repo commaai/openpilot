@@ -19,8 +19,8 @@ repos:
     rev: v0.931
     hooks:
     -   id: mypy
-        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(selfdrive/car/torque_data/)|(rednose_repo/)/'
-        additional_dependencies: ['lxml', 'numpy', 'types-atomicwrites', 'types-pycurl', 'types-requests', 'types-certifi']
+        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)/'
+        additional_dependencies: ['types-PyYAML', 'lxml', 'numpy', 'types-atomicwrites', 'types-pycurl', 'types-requests', 'types-certifi']
         args:
         - --warn-redundant-casts
         - --warn-return-any
