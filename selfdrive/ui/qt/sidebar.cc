@@ -57,26 +57,26 @@ void Sidebar::updateState(const UIState &s) {
   ItemStatus connectStatus;
   auto last_ping = deviceState.getLastAthenaPingTime();
   if (last_ping == 0) {
-    connectStatus = ItemStatus{"CONNECT\nOFFLINE", warning_color};
+    connectStatus = ItemStatus{tr("CONNECT\nOFFLINE"), warning_color};
   } else {
-    connectStatus = nanos_since_boot() - last_ping < 80e9 ? ItemStatus{"CONNECT\nONLINE", good_color} : ItemStatus{"CONNECT\nERROR", danger_color};
+    connectStatus = nanos_since_boot() - last_ping < 80e9 ? ItemStatus{tr("CONNECT\nONLINE"), good_color} : ItemStatus{tr("CONNECT\nERROR"), danger_color};
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
 
-  ItemStatus tempStatus = {"TEMP\nHIGH", danger_color};
+  ItemStatus tempStatus = {tr("TEMP\nHIGH"), danger_color};
   auto ts = deviceState.getThermalStatus();
   if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
-    tempStatus = {"TEMP\nGOOD", good_color};
+    tempStatus = {tr("TEMP\nGOOD"), good_color};
   } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
-    tempStatus = {"TEMP\nOK", warning_color};
+    tempStatus = {tr("TEMP\nOK"), warning_color};
   }
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
 
-  ItemStatus pandaStatus = {"VEHICLE\nONLINE", good_color};
+  ItemStatus pandaStatus = {tr("VEHICLE\nONLINE"), good_color};
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
-    pandaStatus = {"NO\nPANDA", danger_color};
+    pandaStatus = {tr("NO\nPANDA"), danger_color};
   } else if (s.scene.started && !sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK()) {
-    pandaStatus = {"GPS\nSEARCH", warning_color};
+    pandaStatus = {tr("GPS\nSEARCH"), warning_color};
   }
   setProperty("pandaStatus", QVariant::fromValue(pandaStatus));
 }

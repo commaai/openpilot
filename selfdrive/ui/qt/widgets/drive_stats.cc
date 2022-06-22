@@ -36,7 +36,7 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
 
     grid_layout->addWidget(newLabel(("Drives"), "unit"), row + 1, 0, Qt::AlignLeft);
     grid_layout->addWidget(labels.distance_unit = newLabel(getDistanceUnit(), "unit"), row + 1, 1, Qt::AlignLeft);
-    grid_layout->addWidget(newLabel(tr("Hours "), "unit"), row + 1, 2, Qt::AlignLeft);
+    grid_layout->addWidget(newLabel(tr("Hours"), "unit"), row + 1, 2, Qt::AlignLeft);
 
     main_layout->addLayout(grid_layout);
   };

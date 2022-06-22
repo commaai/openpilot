@@ -2,6 +2,14 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="fr_FR">
 <context>
+    <name>ButtonControl</name>
+    <message>
+        <location filename="../qt/widgets/controls.h" line="105"/>
+        <source>REVIEW</source>
+        <translation type="unfinished">EXAMEN</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <location filename="../qt/offroad/settings.cc" line="99"/>

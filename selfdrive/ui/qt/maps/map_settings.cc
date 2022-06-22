@@ -78,7 +78,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   main_layout->addWidget(current_widget);
 
   // Recents
-  QLabel *recents_title = new QLabel("Recent Destinations");
+  QLabel *recents_title = new QLabel(tr("Recent Destinations"));
   recents_title->setStyleSheet("font-size: 55px");
   main_layout->addWidget(recents_title);
   main_layout->addSpacing(20);
@@ -92,7 +92,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   QWidget * no_prime_widget = new QWidget;
   {
     QVBoxLayout *no_prime_layout = new QVBoxLayout(no_prime_widget);
-    QLabel *signup_header = new QLabel("Try the Navigation Beta");
+    QLabel *signup_header = new QLabel(tr("Try the Navigation Beta"));
     signup_header->setStyleSheet(R"(font-size: 75px; color: white; font-weight:600;)");
     signup_header->setAlignment(Qt::AlignCenter);
 
@@ -104,7 +104,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     screenshot->setPixmap(pm.scaledToWidth(1080, Qt::SmoothTransformation));
     no_prime_layout->addWidget(screenshot, 0, Qt::AlignHCenter);
 
-    QLabel *signup = new QLabel("Get turn-by-turn directions displayed and more with a comma \nprime subscription. Sign up now: https://connect.comma.ai");
+    QLabel *signup = new QLabel(tr("Get turn-by-turn directions displayed and more with a comma \nprime subscription. Sign up now: https://connect.comma.ai"));
     signup->setStyleSheet(R"(font-size: 45px; color: white; font-weight:300;)");
     signup->setAlignment(Qt::AlignCenter);
 
@@ -161,12 +161,12 @@ void MapPanel::showEvent(QShowEvent *event) {
 void MapPanel::clear() {
   home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
   home_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
-  home_address->setText("No home\nlocation set");
+  home_address->setText(tr("No home\nlocation set"));
   home_button->disconnect();
 
   work_button->setIcon(QPixmap("../assets/navigation/work_inactive.png"));
   work_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
-  work_address->setText("No work\nlocation set");
+  work_address->setText(tr("No work\nlocation set"));
   work_button->disconnect();
 
   clearLayout(recent_layout);

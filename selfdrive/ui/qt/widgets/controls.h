@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QPainter>
 #include <QPushButton>
+#include <QDebug>
 
 #include "common/params.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
@@ -67,6 +68,17 @@ public:
 
 private:
   ElidedLabel label;
+//  void changeEvent(QEvent *event) override {
+//    qDebug() << "LabelControl: changeEvent";
+//    if (event->type() == QEvent::LanguageChange) {
+//      qDebug() << "LabelControl: LanguageChange";
+//      qDebug() << this->label.text();
+////      this->setTrs();
+////      qApp->retranslateUi(this);
+//    }
+//
+//    QWidget::changeEvent(event);
+//  }
 };
 
 // widget for a button with a label
@@ -85,6 +97,19 @@ public slots:
   void setEnabled(bool enabled) { btn.setEnabled(enabled); };
 
 private:
+  void changeEvent(QEvent *event) override {
+    qDebug() << "LabelControl: changeEvent";
+    if (event->type() == QEvent::LanguageChange) {
+      qDebug() << "LabelControl: LanguageChange";
+      qDebug() << text();
+      setText(tr("REVIEW"));
+  //      this->setTrs();
+  //      qApp->retranslateUi(this);
+    }
+//    QWidget::changeEvent(event);
+  }
+
+
   QPushButton btn;
 };
 

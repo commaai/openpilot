@@ -1,6 +1,7 @@
 #include <sys/resource.h>
 
 #include <QApplication>
+#include <QTranslator>
 
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
@@ -16,10 +17,15 @@ int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
 
   QTranslator translator;
-  if (!translator.load("main_fr", "translations")) {
-    qDebug() << "Failed to load translation!";
+  if (!translator.load("main_fr", "/home/batman/openpilot/selfdrive/ui/translations")) {
+    qDebug() << "Failed to load translation fr!";
   }
   a.installTranslator(&translator);  // needs to be before setting main window
+//  QTranslator translator2;
+//  if (!translator.load("main_es", "/home/batman/openpilot/selfdrive/ui/translations")) {
+//    qDebug() << "Failed to load translation es!";
+//  }
+//  a.installTranslator(&translator2);
 
   MainWindow w;
   setMainWindow(&w);
