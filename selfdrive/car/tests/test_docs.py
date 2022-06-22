@@ -39,9 +39,18 @@ class TestCarDocs(unittest.TestCase):
           self.assertIn("RAV4", car.model, "Use correct capitalization")
 
   def test_torque_star(self):
+    failures = []
     for car in self.all_cars:
       if car.car_name == "honda":
-        self.assertTrue(car.row[Column.STEERING_TORQUE] in (Star.EMPTY, Star.HALF), f"{car.name} has full torque star")
+        if car.row[Column.STEERING_TORQUE] not in (Star.EMPTY, Star.HALF):
+          failures.append(f"{car.name} has full torque star")
+      elif car.car_name in ("toyota", "hyundai"):
+        if car.row[Column.STEERING_TORQUE] == Star.EMPTY:
+          failures.append(f"{car.name} has no torque star")
+
+    if len(failures):
+      print('\n'.join(failures))
+      self.fail("Unexpected car torque stars")
 
 
 if __name__ == "__main__":
