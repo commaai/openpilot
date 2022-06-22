@@ -139,20 +139,20 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
     if (ConfirmationDialog::confirm(tr("Are you sure you want to change device language?"), this)) {
       Params().put("DeviceLanguage", "main_fr");
-      qApp->quit();
-      QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
+      qApp->exit(99);
     }
-
-//    qApp->quit();
-//    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
-//    QTranslator translator;
-//    if (!translator.load("main_es", "/home/batman/openpilot/selfdrive/ui/translations")) {
-//      qDebug() << "Failed to load translation es!";
-//    }
-//    qDebug() << "Setting translation!";
-//    qApp->installTranslator(&translator);  // needs to be before setting main window
   });
   addItem(translateBtn);
+
+  auto translateBack = new ButtonControl(tr("Reset Language"), tr("RESET"), "");
+  connect(translateBack, &ButtonControl::clicked, [=]() {
+
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset device language?"), this)) {
+      Params().put("DeviceLanguage", "");
+      qApp->exit(99);
+    }
+  });
+  addItem(translateBack);
 
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {
