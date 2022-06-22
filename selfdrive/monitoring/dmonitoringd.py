@@ -3,6 +3,7 @@ import gc
 
 import cereal.messaging as messaging
 from cereal import car
+from common.params import Params
 from common.realtime import set_realtime_priority
 from selfdrive.controls.lib.events import Events
 from selfdrive.locationd.calibrationd import Calibration
@@ -19,7 +20,7 @@ def dmonitoringd_thread(sm=None, pm=None):
   if sm is None:
     sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'controlsState', 'modelV2'], poll=['driverStateV2'])
 
-  driver_status = DriverStatus()
+  driver_status = DriverStatus(rhd=Params().get_bool("IsRHD"))
 
   sm['liveCalibration'].calStatus = Calibration.INVALID
   sm['liveCalibration'].rpyCalib = [0, 0, 0]

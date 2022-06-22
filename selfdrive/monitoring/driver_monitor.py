@@ -115,7 +115,7 @@ class DriverBlink():
     self.right_blink = 0.
 
 class DriverStatus():
-  def __init__(self, settings=DRIVER_MONITOR_SETTINGS()):
+  def __init__(self, rhd=False, settings=DRIVER_MONITOR_SETTINGS()):
     # init policy settings
     self.settings = settings
 
@@ -138,6 +138,7 @@ class DriverStatus():
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
     self.wheel_on_right = False
+    self.rhd_toggled = rhd
     self.face_detected = False
     self.terminal_alert_cnt = 0
     self.terminal_time = 0
@@ -232,7 +233,7 @@ class DriverStatus():
       self.wheel_on_right = self.wheelpos_learner.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     else:
       self.wheel_on_right = rhd_pred > self.settings._WHEELPOS_THRESHOLD
-    driver_data = driver_state.rightDriverData if self.wheel_on_right else driver_state.leftDriverData
+    driver_data = driver_state.rightDriverData if self.rhd_toggled else driver_state.leftDriverData
     if not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,
                                     driver_data.faceOrientationStd, driver_data.facePositionStd,
                                     driver_data.readyProb, driver_data.notReadyProb)):
