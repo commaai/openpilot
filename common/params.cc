@@ -95,6 +95,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"CurrentRoute", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"DashcamOverride", PERSISTENT},
+    {"DeviceLanguage", PERSISTENT},
     {"DisableLogging", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"DisablePowerDown", PERSISTENT},
     {"DisableRadar_Allow", PERSISTENT},

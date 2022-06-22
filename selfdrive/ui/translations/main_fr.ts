@@ -83,11 +83,6 @@
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="137"/>
-        <source>Change Language</source>
-        <translation>Change Language FR</translation>
-    </message>
-    <message>
-        <location filename="../qt/offroad/settings.cc" line="137"/>
         <source>CHANGE</source>
         <translation type="unfinished"></translation>
     </message>
@@ -361,17 +356,6 @@ PANDA</translation>
 SEARCH</source>
         <translation type="vanished">GPS
 CHERCHER</translation>
-    </message>
-    <message>
-        <location filename="../qt/sidebar.cc" line="67"/>
-        <location filename="../qt/sidebar.cc" line="69"/>
-        <source>CONNECT</source>
-        <translation>CONNECT_FR</translation>
-    </message>
-    <message>
-        <location filename="../qt/sidebar.cc" line="67"/>
-        <source>OFFLINE</source>
-        <translation>OFFLINE_FR</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="69"/>

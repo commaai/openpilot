@@ -14,19 +14,15 @@ int main(int argc, char *argv[]) {
   qInstallMessageHandler(swagLogMessageHandler);
   initApp(argc, argv);
 
-  QApplication a(argc, argv);
-  qDebug() << "HERE";
+  QString language_file = QString::fromStdString(Params().get("DeviceLanguage"));
+  qDebug() << "Loading language:" << language_file;
 
   QTranslator translator;
-  if (!translator.load("main_fr", "/home/batman/openpilot/selfdrive/ui/translations")) {
-    qDebug() << "Failed to load translation fr!";
+  if (!translator.load(language_file, "/home/batman/openpilot/selfdrive/ui/translations")) {  // TODO: don't hardcode this
+    qDebug() << "Failed to load translation file!";
   }
-  a.installTranslator(&translator);  // needs to be before setting main window
-//  QTranslator translator2;
-//  if (!translator.load("main_es", "/home/batman/openpilot/selfdrive/ui/translations")) {
-//    qDebug() << "Failed to load translation es!";
-//  }
-//  a.installTranslator(&translator2);
+  QApplication a(argc, argv);
+  a.installTranslator(&translator);
 
   MainWindow w;
   setMainWindow(&w);
