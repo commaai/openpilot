@@ -120,6 +120,9 @@ class CarInterfaceBase(ABC):
       params = yaml.load(f, Loader=yaml.FullLoader)
     with open(TORQUE_OVERRIDE_PATH) as f:
       params_override = yaml.load(f, Loader=yaml.FullLoader)
+
+    assert len(set(sub.keys()) & set(params.keys()) & set(params_override.keys())) == 0
+
     if candidate in params_override:
       out = params_override[candidate]
     elif candidate in params:
