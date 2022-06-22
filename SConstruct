@@ -94,7 +94,7 @@ if arch == "larch64":
     "/usr/lib/aarch64-linux-gnu"
   ]
   cpppath += [
-    "#selfdrive/camerad/include",
+    "#system/camerad/include",
   ]
   cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
@@ -359,6 +359,7 @@ Export('cereal', 'messaging', 'visionipc')
 rednose_config = {
   'generated_folder': '#selfdrive/locationd/models/generated',
   'to_build': {
+    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
     'live': ('#selfdrive/locationd/models/live_kf.py', True, ['live_kf_constants.h']),
     'car': ('#selfdrive/locationd/models/car_kf.py', True, []),
   },
@@ -366,7 +367,6 @@ rednose_config = {
 
 if arch != "larch64":
   rednose_config['to_build'].update({
-    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, []),
     'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, []),
     'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, []),
@@ -379,6 +379,7 @@ SConscript(['rednose/SConscript'])
 
 # Build system services
 SConscript([
+  'system/camerad/SConscript',
   'system/clocksd/SConscript',
   'system/proclogd/SConscript',
 ])
@@ -396,7 +397,6 @@ SConscript(['third_party/SConscript'])
 SConscript(['common/kalman/SConscript'])
 SConscript(['common/transformations/SConscript'])
 
-SConscript(['selfdrive/camerad/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])

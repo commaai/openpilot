@@ -3,6 +3,7 @@ import unittest
 
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
+from selfdrive.car.docs_definitions import Column, Star
 
 
 class TestCarDocs(unittest.TestCase):
@@ -36,6 +37,11 @@ class TestCarDocs(unittest.TestCase):
       elif car.car_name == "toyota":
         if "rav4" in tokens:
           self.assertIn("RAV4", car.model, "Use correct capitalization")
+
+  def test_torque_star(self):
+    for car in self.all_cars:
+      if car.car_name == "honda":
+        self.assertTrue(car.row[Column.STEERING_TORQUE] in (Star.EMPTY, Star.HALF), f"{car.name} has full torque star")
 
 
 if __name__ == "__main__":
