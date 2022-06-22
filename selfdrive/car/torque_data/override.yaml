@@ -22,7 +22,7 @@ COMMA BODY: [.nan, 1000, .nan]
 # Totally new car
 KIA EV6 2022: [3.0, 2.5, 0.05]
 
-# Ideal car
+# Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]
 
 # Manually checked
