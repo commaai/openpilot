@@ -97,17 +97,18 @@ public slots:
   void setEnabled(bool enabled) { btn.setEnabled(enabled); };
 
 private:
-  void changeEvent(QEvent *event) override {
-    qDebug() << "LabelControl: changeEvent";
-    if (event->type() == QEvent::LanguageChange) {
-      qDebug() << "LabelControl: LanguageChange";
-      qDebug() << text();
-      setText(tr("REVIEW"));
-  //      this->setTrs();
-  //      qApp->retranslateUi(this);
-    }
-//    QWidget::changeEvent(event);
-  }
+//  void changeEvent(QEvent *event) override {
+//    qDebug() << "LabelControl: changeEvent";
+//    if (event->type() == QEvent::LanguageChange) {
+//      qDebug() << "LabelControl: LanguageChange";
+//      qDebug() << text();
+//      setText(tr(text().toStdString().c_str()));
+//      setText(tr("EXAMEN"));
+//  //      this->setTrs();
+//  //      qApp->retranslateUi(this);
+//    }
+////    QWidget::changeEvent(event);
+//  }
 
 
   QPushButton btn;

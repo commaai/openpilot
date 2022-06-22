@@ -84,7 +84,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="137"/>
         <source>Change Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Change Language FR</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="137"/>
@@ -211,7 +211,7 @@
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
-        <source>Get turn-by-turn directions displayed and more with a comma 
+        <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
         <translation type="unfinished"></translation>
     </message>
@@ -309,67 +309,127 @@ location set</source>
 <context>
     <name>Sidebar</name>
     <message>
-        <location filename="../qt/sidebar.cc" line="60"/>
         <source>CONNECT
 OFFLINE</source>
-        <translation>RELIER
+        <translation type="vanished">RELIER
 HORS LIGNE</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="62"/>
         <source>CONNECT
 ONLINE</source>
-        <translation>RELIER
+        <translation type="vanished">RELIER
 EN LIGNE</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="62"/>
         <source>CONNECT
 ERROR</source>
-        <translation>RELIER
+        <translation type="vanished">RELIER
 ERREUR</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="66"/>
         <source>TEMP
 HIGH</source>
-        <translation>TEMP
+        <translation type="vanished">TEMP
 HAUTE</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="69"/>
         <source>TEMP
 GOOD</source>
-        <translation>TEMP
+        <translation type="vanished">TEMP
 BIEN</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="71"/>
         <source>TEMP
 OK</source>
-        <translation>TEMP
+        <translation type="vanished">TEMP
 D&apos;ACCORD</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="75"/>
         <source>VEHICLE
 ONLINE</source>
-        <translation>VÉHICULE
+        <translation type="vanished">VÉHICULE
 EN LIGNE</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="77"/>
         <source>NO
 PANDA</source>
-        <translation>NON
+        <translation type="vanished">NON
 PANDA</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="79"/>
         <source>GPS
 SEARCH</source>
-        <translation>GPS
+        <translation type="vanished">GPS
 CHERCHER</translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="67"/>
+        <location filename="../qt/sidebar.cc" line="69"/>
+        <source>CONNECT</source>
+        <translation>CONNECT_FR</translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="67"/>
+        <source>OFFLINE</source>
+        <translation>OFFLINE_FR</translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="69"/>
+        <location filename="../qt/sidebar.cc" line="82"/>
+        <source>ONLINE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="69"/>
+        <source>ERROR</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="73"/>
+        <location filename="../qt/sidebar.cc" line="76"/>
+        <location filename="../qt/sidebar.cc" line="78"/>
+        <source>TEMP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="73"/>
+        <source>HIGH</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="76"/>
+        <source>GOOD</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="78"/>
+        <source>OK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="82"/>
+        <source>VEHICLE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="84"/>
+        <source>NO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="84"/>
+        <source>PANDA</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="86"/>
+        <source>GPS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="86"/>
+        <source>SEARCH</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

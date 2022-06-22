@@ -136,8 +136,10 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
   auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
   connect(translateBtn, &ButtonControl::clicked, [=]() {
+    qApp->quit();
+    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
     QTranslator translator;
-    if (!translator.load("main_es", "/home/batman/openpilot/selfdrive/ui/translations")) {
+    if (!translator.load("main_fr_es", "/home/batman/openpilot/selfdrive/ui/translations")) {
       qDebug() << "Failed to load translation es!";
     }
     qDebug() << "Setting translation!";

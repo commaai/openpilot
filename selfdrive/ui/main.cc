@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
   initApp(argc, argv);
 
   QApplication a(argc, argv);
+  qDebug() << "HERE";
 
   QTranslator translator;
   if (!translator.load("main_fr", "/home/batman/openpilot/selfdrive/ui/translations")) {

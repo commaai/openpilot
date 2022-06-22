@@ -1,8 +1,8 @@
 #!/bin/bash
 
-lupdate -extensions cc,h -recursive '.' -ts translations/main_fr.ts translations/main_es.ts translations/main_en.ts
+#lupdate -extensions cc,h -recursive '.' -ts translations/main_fr.ts translations/main_es.ts translations/main_en.ts translations/main_fr_es.ts
 # lupdate finds and adds all strings wrapped in tr() to main_languagecode files
-linguist translations/main_es.ts
+#linguist translations/main_fr_es.ts
 
 # once translated, run
 lrelease translations/*
