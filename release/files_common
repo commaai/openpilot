@@ -101,6 +101,7 @@ selfdrive/car/interfaces.py
 selfdrive/car/vin.py
 selfdrive/car/disable_ecu.py
 selfdrive/car/fw_versions.py
+selfdrive/car/ecu_addrs.py
 selfdrive/car/isotp_parallel_query.py
 selfdrive/car/tests/__init__.py
 selfdrive/car/tests/test_car_interfaces.py

@@ -360,7 +360,8 @@ void Replay::stream() {
       setCurrentSegment(toSeconds(cur_mono_time_) / 60);
 
       // migration for pandaState -> pandaStates to keep UI working for old segments
-      if (cur_which == cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D) {
+      if (cur_which == cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D && 
+          sockets_[cereal::Event::Which::PANDA_STATES] != nullptr) {
         MessageBuilder msg;
         auto ps = msg.initEvent().initPandaStates(1);
         ps[0].setIgnitionLine(true);
