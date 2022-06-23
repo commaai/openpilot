@@ -159,8 +159,8 @@ def hw_state_thread(end_event, hw_queue):
 
 
 def thermald_thread(end_event, hw_queue):
-  pm = messaging.PubMaster(['deviceState'])
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll=["pandaStates"])
+  pm = messaging.PubMaster(["deviceState"])
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates", "can"], poll=["pandaStates"])
 
   count = 0
 
@@ -253,7 +253,8 @@ def thermald_thread(end_event, hw_queue):
     )
 
     if fan_controller is not None:
-      msg.deviceState.fanSpeedPercentDesired = fan_controller.update(max_comp_temp, onroad_conditions["ignition"])
+      ignition = onroad_conditions["ignition"] or len(sm["can"]) > 0
+      msg.deviceState.fanSpeedPercentDesired = fan_controller.update(max_comp_temp, ignition)
 
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
     if is_offroad_for_5_min and max_comp_temp > OFFROAD_DANGER_TEMP:
