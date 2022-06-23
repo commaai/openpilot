@@ -204,7 +204,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
-      torque_params = CarInterfaceBase.get_torque_params(CAR.KIA_OPTIMA)
       set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
     elif candidate == CAR.KIA_STINGER:
       ret.lateralTuning.pid.kf = 0.00005
@@ -245,10 +244,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
                            get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
       tire_stiffness_factor = 0.65
-
-      ret.maxLateralAccel = 2.
-      # TODO override until there is more data
-      set_torque_tune(ret.lateralTuning, 2.0, 0.05)
+      set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
 
     # Genesis
     elif candidate == CAR.GENESIS_G70:
