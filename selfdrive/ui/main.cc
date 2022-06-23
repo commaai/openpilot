@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     qDebug() << "Loading language:" << language_file;
 
     QTranslator translator;
-    if (!translator.load(language_file, "/home/batman/openpilot/selfdrive/ui/translations")) {  // TODO: don't hardcode this
+    if (!translator.load(language_file, "translations")) {
       qDebug() << "Failed to load translation file!";
     }
     QApplication a(argc, argv);
