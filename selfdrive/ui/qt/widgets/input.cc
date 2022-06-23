@@ -1,11 +1,21 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 #include <QPushButton>
+#include <QDebug>
+#include <QDebug>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPainter>
+#include <QScrollBar>
+#include <QButtonGroup>
+#include <QVBoxLayout>
+#include <QWidget>
 
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
 
 
 QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
@@ -179,53 +189,119 @@ void InputDialog::setMinLength(int length) {
   minLength = length;
 }
 
-MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QWidget *parent) : QDialogBase(parent) {
-  QFrame *container = new QFrame(this);
-  container->setStyleSheet("QFrame { border-radius: 0; background-color: #ECECEC; }");
+MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, QWidget *parent) : QDialogBase(parent) {
+  QScrollArea *container = new QScrollArea(this);
+  container->setStyleSheet(R"(
+    QFrame { border-radius: 0; background-color: #292929; }
+    #ssidLabel {
+      font-size: 55px;
+      font-weight: 300;
+      text-align: left;
+      border: none;
+      padding-top: 50px;
+      padding-bottom: 50px;
+    }
+  )");
+
+
   QVBoxLayout *main_layout = new QVBoxLayout(container);
-  main_layout->setContentsMargins(32, 120, 32, 32);
+  main_layout->setContentsMargins(55, 50, 55, 50);
 
-  QLabel *prompt = new QLabel(prompt_text, this);
-  prompt->setWordWrap(true);
-  prompt->setAlignment(Qt::AlignHCenter);
-  prompt->setStyleSheet("font-size: 70px; font-weight: bold; color: black;");
-  main_layout->addWidget(prompt, 1, Qt::AlignTop | Qt::AlignHCenter);
+  QLabel *title = new QLabel(prompt_text);
+  title->setStyleSheet("font-size: 90px; font-weight: 500;");
+  main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
-  // cancel + confirm buttons
-  QHBoxLayout *btn_layout = new QHBoxLayout();
-  btn_layout->setSpacing(30);
-  main_layout->addLayout(btn_layout);
+  main_layout->addSpacing(25);
 
-  if (cancel_text.length()) {
-    QPushButton* cancel_btn = new QPushButton(cancel_text);
-    btn_layout->addWidget(cancel_btn);
-    QObject::connect(cancel_btn, &QPushButton::clicked, this, &ConfirmationDialog::reject);
+  // do list widget here and add it
+  ListWidget *scroll_view = new ListWidget(this);
+
+  for (QString &i : l) {
+    QHBoxLayout *hlayout = new QHBoxLayout;
+    hlayout->setContentsMargins(44, 0, 73, 0);
+    hlayout->setSpacing(50);
+    ElidedLabel *ssidLabel = new ElidedLabel(i);
+    ssidLabel->setObjectName("ssidLabel");
+    QObject::connect(ssidLabel, &ElidedLabel::clicked, this, [=]() { qDebug() << "Clicked"; });
+    hlayout->addWidget(ssidLabel);
+    scroll_view->addItem(hlayout);
+
   }
+//  QPushButton *btn = new QPushButton("Test");
+//  hlayout->addWidget(btn);
+  main_layout->addWidget(scroll_view);
+  main_layout->addStretch(1);
 
-  if (confirm_text.length()) {
-    QPushButton* confirm_btn = new QPushButton(confirm_text);
-    btn_layout->addWidget(confirm_btn);
-    QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
-  }
 
+
+
+  main_layout->addSpacing(35);
+
+  // back + continue buttons
+  QHBoxLayout *blayout = new QHBoxLayout;
+  main_layout->addLayout(blayout);
+  blayout->setSpacing(50);
+
+  QPushButton *back = new QPushButton("Exit");
+  back->setObjectName("navBtn");
+//  QObject::connect(back, &QPushButton::clicked, this, &Setup::prevPage);
+  blayout->addWidget(back);
+
+//  ListWidget *scroll_view = new ListWidget(container);  // FIXME: why can't I use ListWidget?
+//  QHBoxLayout *hlayout = new QHBoxLayout;
+//
+//
+//
+//  ElidedLabel *ssidLabel = new ElidedLabel("Language");
+//  ssidLabel->setObjectName("ssidLabel");
+//  QObject::connect(ssidLabel, &ElidedLabel::clicked, this, [=]() { qDebug() << "Clicked"; });
+//  hlayout->addWidget(ssidLabel);
+//  QPushButton *btn = new QPushButton("Test");
+//  hlayout->addWidget(btn);
+//  scroll_view->addItem(hlayout);
+//
+//
+//  main_layout->addWidget(scroll_view);
+//
+//  QLabel *prompt = new QLabel(prompt_text, this);
+//  prompt->setWordWrap(true);
+//  prompt->setAlignment(Qt::AlignHCenter);
+//  prompt->setStyleSheet("font-size: 70px; font-weight: bold; color: black;");
+//  main_layout->addWidget(prompt, 1, Qt::AlignTop | Qt::AlignHCenter);
+//
+//  // cancel + confirm buttons
+//  QHBoxLayout *btn_layout = new QHBoxLayout();
+//  btn_layout->setSpacing(30);
+//  main_layout->addLayout(btn_layout);
+//
+//  QString cancel_text = "Cancel";
+//
+//  if (cancel_text.length()) {
+//    QPushButton* cancel_btn = new QPushButton(cancel_text);
+//    btn_layout->addWidget(cancel_btn);
+//    QObject::connect(cancel_btn, &QPushButton::clicked, this, &ConfirmationDialog::reject);
+//  }
+//
+//  QString confirm_text = "Confirm";
+//
+//  if (confirm_text.length()) {
+//    QPushButton* confirm_btn = new QPushButton(confirm_text);
+//    btn_layout->addWidget(confirm_btn);
+//    QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
+//  }
+//
   QVBoxLayout *outer_layout = new QVBoxLayout(this);
-  outer_layout->setContentsMargins(210, 170, 210, 170);
+  outer_layout->setContentsMargins(55, 50, 55, 50);
   outer_layout->addWidget(container);
 }
 
-//bool MultiOptionDialog::alert(const QString &prompt_text, QWidget *parent) {
-//  MultiOptionDialog d = MultiOptionDialog(prompt_text, tr("Ok"), "", parent);
+QString MultiOptionDialog::getSelection(const QString &prompt_text, const QStringList l, QWidget *parent) {
+  MultiOptionDialog d = MultiOptionDialog(prompt_text, l, parent);
+  if (d.exec()) {
+    return d.selection;
+  }
+  return "";
 //  return d.exec();
-//}
-//
-//bool MultiOptionDialog::confirm(const QString &prompt_text, QWidget *parent) {
-//  MultiOptionDialog d = MultiOptionDialog(prompt_text, tr("Ok"), tr("Cancel"), parent);
-//  return d.exec();
-//}
-
-bool MultiOptionDialog::getSelection(const QString &prompt_text, const QStringList &l, QWidget *parent) {
-  MultiOptionDialog d = MultiOptionDialog(prompt_text, tr("Ok"), tr("Cancel"), parent);
-  return d.exec();
 }
 
 // ConfirmationDialog

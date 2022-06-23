@@ -162,9 +162,12 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 //  test->setMenu(menu);
 //  addItem(test);
 
+  QString selection = MultiOptionDialog::getSelection("Hi there", {"English", "French", "Spanish", "Chinese", "Japanese", "Language 17", "Language 4", "Language 4", "Language 4", "Language 4"}, this);
+  qDebug() << "Selected:" << selection;
+
   auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
   connect(translateBtn, &ButtonControl::clicked, [=]() {
-    QString selection = MultiOptionDialog::getSelection({"Test1", "Test2"}, this);
+    QString selection = MultiOptionDialog::getSelection("Hi there", {"English", "French"}, this);
     qDebug() << "Selected:" << selection;
 
 //    if (MultiOptionDialog::getSelection({"Test1", "Test2"}, this)) {
@@ -175,6 +178,17 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 //    }
   });
   addItem(translateBtn);
+
+//  auto translateBtn2 = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
+//  connect(translateBtn2, &ButtonControl::clicked, [=]() {
+//    if (MultiOptionDialog::getSelection({"Test1", "Test2"}, this)) {
+//      qDebug() << ""
+//      Params().put("LanguageSetting", "main_fr");
+//      qApp->quit();
+//      QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
+//    }
+//  });
+//  addItem(translateBtn2);
 
 
   auto translateBack = new ButtonControl(tr("Reset Language"), tr("RESET"), "");
