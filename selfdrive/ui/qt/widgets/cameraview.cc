@@ -227,8 +227,6 @@ void CameraViewWidget::paintGL() {
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  VisionBuf *frame = frames[frame_idx].second;
-
 #ifdef QCOM2
   glActiveTexture(GL_TEXTURE0);
   glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
