@@ -164,12 +164,15 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
   auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
   connect(translateBtn, &ButtonControl::clicked, [=]() {
+    QString selection = MultiOptionDialog::getSelection({"Test1", "Test2"}, this);
+    qDebug() << "Selected:" << selection;
 
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to change device language?"), this)) {
-      Params().put("LanguageSetting", "main_fr");
-      qApp->quit();
-      QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
-    }
+//    if (MultiOptionDialog::getSelection({"Test1", "Test2"}, this)) {
+//      qDebug() << ""
+//      Params().put("LanguageSetting", "main_fr");
+//      qApp->quit();
+//      QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
+//    }
   });
   addItem(translateBtn);
 
