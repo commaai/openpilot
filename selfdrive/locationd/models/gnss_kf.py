@@ -7,7 +7,7 @@ import sympy as sp
 
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from selfdrive.locationd.models.constants import ObservationKind
-from selfdrive.locationd.models.loc_kf import parse_pr, parse_prr
+from selfdrive.locationd.models.gnss_helpers import parse_pr, parse_prr
 
 
 class States():

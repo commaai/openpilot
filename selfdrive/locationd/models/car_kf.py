@@ -7,7 +7,7 @@ import numpy as np
 
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.locationd.models.constants import ObservationKind
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 from rednose.helpers.kalmanfilter import KalmanFilter
 

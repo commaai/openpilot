@@ -6,7 +6,7 @@ import unittest
 import logging
 import json
 
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 import selfdrive.loggerd.uploader as uploader
 
 from selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase

@@ -75,6 +75,7 @@ class CAR:
   CIVIC = "HONDA CIVIC 2016"
   CIVIC_BOSCH = "HONDA CIVIC (BOSCH) 2019"
   CIVIC_BOSCH_DIESEL = "HONDA CIVIC SEDAN 1.6 DIESEL 2019"
+  CIVIC_2022 = "HONDA CIVIC 2022"
   ACURA_ILX = "ACURA ILX 2016"
   CRV = "HONDA CR-V 2016"
   CRV_5G = "HONDA CR-V 2017"
@@ -108,33 +109,37 @@ class HondaCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.ACCORD: [
-    HondaCarInfo("Honda Accord 2018-21", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
-    HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
+    HondaCarInfo("Honda Accord 2018-21", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
+    HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
   ],
-  CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
+  CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
   CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", harness=Harness.nidec),
   CAR.CIVIC_BOSCH: [
-    HondaCarInfo("Honda Civic 2019-20", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS, harness=Harness.bosch),
-    HondaCarInfo("Honda Civic Hatchback 2017-21", harness=Harness.bosch),
+    HondaCarInfo("Honda Civic 2019-20", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS, harness=Harness.bosch_a),
+    HondaCarInfo("Honda Civic Hatchback 2017-21", harness=Harness.bosch_a),
   ],
   CAR.CIVIC_BOSCH_DIESEL: None,  # same platform
+  CAR.CIVIC_2022: [
+    HondaCarInfo("Honda Civic 2022", "All", min_steer_speed=0., harness=Harness.bosch_b),
+    HondaCarInfo("Honda Civic Hatchback 2022", "All", min_steer_speed=0., harness=Harness.bosch_b),
+  ],
   CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS, harness=Harness.nidec),
   CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring", harness=Harness.nidec),
-  CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-21", harness=Harness.bosch),
+  CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-21", harness=Harness.bosch_a),
   CAR.CRV_EU: None,  # HondaCarInfo("Honda CR-V EU", "Touring"),  # Euro version of CRV Touring
-  CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", harness=Harness.bosch),
+  CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", harness=Harness.bosch_a),
   CAR.FIT: HondaCarInfo("Honda Fit 2018-19", harness=Harness.nidec),
   CAR.FREED: HondaCarInfo("Honda Freed 2020", harness=Harness.nidec),
   CAR.HRV: HondaCarInfo("Honda HR-V 2019-20", harness=Harness.nidec),
   CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20", min_steer_speed=0., harness=Harness.nidec),
   CAR.ODYSSEY_CHN: None,  # Chinese version of Odyssey
   CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", harness=Harness.nidec),
-  CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
+  CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
   CAR.PILOT: HondaCarInfo("Honda Pilot 2016-21", harness=Harness.nidec),
   CAR.PASSPORT: HondaCarInfo("Honda Passport 2019-21", "All", harness=Harness.nidec),
   CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-22", harness=Harness.nidec),
-  CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
-  CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch),
+  CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
+  CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
 }
 
 
@@ -1392,6 +1397,40 @@ FW_VERSIONS = {
       b'57114-TYF-E030\x00\x00'
     ],
   },
+  CAR.CIVIC_2022: {
+    (Ecu.eps, 0x18DA30F1, None): [
+      b'39990-T39-A130\x00\x00',
+      b'39990-T43-J020\x00\x00',
+    ],
+    (Ecu.gateway, 0x18DAEFF1, None): [
+      b'38897-T20-A020\x00\x00',
+      b'38897-T20-A510\x00\x00',
+      b'38897-T21-A010\x00\x00',
+    ],
+    (Ecu.srs, 0x18DA53F1, None): [
+      b'77959-T20-A970\x00\x00',
+      b'77959-T47-A940\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18DA60F1, None): [
+      b'78108-T21-A220\x00\x00',
+      b'78108-T21-A620\x00\x00',
+      b'78108-T23-A110\x00\x00',
+    ],
+    (Ecu.vsa, 0x18DA28F1, None): [
+      b'57114-T20-AB40\x00\x00',
+      b'57114-T43-JB30\x00\x00',
+    ],
+    (Ecu.transmission, 0x18da1ef1, None): [
+      b'28101-65D-A020\x00\x00',
+      b'28101-65D-A120\x00\x00',
+      b'28101-65H-A020\x00\x00',
+    ],
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-64L-A540\x00\x00',
+      b'37805-64S-A540\x00\x00',
+      b'37805-64S-A720\x00\x00',
+    ],
+  },
 }
 
 DBC = {
@@ -1417,6 +1456,7 @@ DBC = {
   CAR.RIDGELINE: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
   CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
+  CAR.CIVIC_2022: dbc_dict('honda_civic_ex_2022_can_generated', None),
 }
 
 STEER_THRESHOLD = {
@@ -1429,5 +1469,6 @@ HONDA_NIDEC_ALT_PCM_ACCEL = {CAR.ODYSSEY}
 HONDA_NIDEC_ALT_SCM_MESSAGES = {CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.FREED, CAR.HRV, CAR.ODYSSEY_CHN,
                                 CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE}
 HONDA_BOSCH = {CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
-               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E}
+               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022}
 HONDA_BOSCH_ALT_BRAKE_SIGNAL = {CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G}
+HONDA_BOSCH_RADARLESS = {CAR.CIVIC_2022}

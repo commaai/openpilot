@@ -7,7 +7,7 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "common/version.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 const char *SWAGLOG_ADDR = "ipc:///tmp/logmessage";
 std::string daemon_name = "testy";
@@ -56,10 +56,7 @@ void recv_log(int thread_cnt, int thread_msg_cnt) {
 
     REQUIRE(ctx["version"].string_value() == COMMA_VERSION);
 
-    std::string device = "pc";
-    if (Hardware::TICI()) {
-      device = "tici";
-    }
+    std::string device = Hardware::get_name();
     REQUIRE(ctx["device"].string_value() == device);
 
     int thread_id = atoi(msg["msg"].string_value().c_str());

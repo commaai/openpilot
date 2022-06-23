@@ -21,8 +21,7 @@ class FfmpegEncoder : public VideoEncoder {
                 VideoEncoder(filename, type, in_width, in_height, fps, bitrate, cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS, out_width, out_height, write) { encoder_init(); }
   ~FfmpegEncoder();
   void encoder_init();
-  int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                   int in_width_, int in_height_, VisionIpcBufExtra *extra);
+  int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
   void encoder_open(const char* path);
   void encoder_close();
 
@@ -33,5 +32,6 @@ private:
 
   AVCodecContext *codec_ctx;
   AVFrame *frame = NULL;
+  std::vector<uint8_t> convert_buf;
   std::vector<uint8_t> downscale_buf;
 };

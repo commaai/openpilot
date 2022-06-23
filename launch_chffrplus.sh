@@ -8,7 +8,7 @@ source "$BASEDIR/launch_env.sh"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-function tici_init {
+function agnos_init {
   # wait longer for weston to come up
   if [ -f "$BASEDIR/prebuilt" ]; then
     sleep 3
@@ -22,12 +22,12 @@ function tici_init {
 
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
-    AGNOS_PY="$DIR/selfdrive/hardware/tici/agnos.py"
-    MANIFEST="$DIR/selfdrive/hardware/tici/agnos.json"
+    AGNOS_PY="$DIR/system/hardware/tici/agnos.py"
+    MANIFEST="$DIR/system/hardware/tici/agnos.json"
     if $AGNOS_PY --verify $MANIFEST; then
       sudo reboot
     fi
-    $DIR/selfdrive/hardware/tici/updater $AGNOS_PY $MANIFEST
+    $DIR/system/hardware/tici/updater $AGNOS_PY $MANIFEST
   fi
 }
 
@@ -77,9 +77,7 @@ function launch {
   export PYTHONPATH="$PWD:$PWD/pyextra"
 
   # hardware specific init
-  if [ -f /TICI ]; then
-    tici_init
-  fi
+  agnos_init
 
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
