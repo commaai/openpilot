@@ -119,12 +119,14 @@ class CarInterfaceBase(ABC):
     with open(TORQUE_PARAMS_PATH) as f:
       params = yaml.load(f, Loader=yaml.FullLoader)
     with open(TORQUE_OVERRIDE_PATH) as f:
-      params_override = yaml.load(f, Loader=yaml.FullLoader)
+      override = yaml.load(f, Loader=yaml.FullLoader)
 
-    assert len(set(sub.keys()) & set(params.keys()) & set(params_override.keys())) == 0
+    # Ensure no overlap
+    if sum([candidate in x for x in [sub, params, override]]) > 1:
+      raise RuntimeError(f'{candidate} is defined twice in torque config')
 
-    if candidate in params_override:
-      out = params_override[candidate]
+    if candidate in override:
+      out = override[candidate]
     elif candidate in params:
       out = params[candidate]
     else:
