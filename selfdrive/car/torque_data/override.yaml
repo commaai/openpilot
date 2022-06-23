@@ -1,7 +1,7 @@
 legend: [LAT_ACCEL_FACTOR, MAX_LAT_ACCEL_MEASURED, FRICTION]
 ### angle control
 # Nissan appears to have torque
-NISSAN X-TRAIL 2017: [.nan, 1.5, .nan] 
+NISSAN X-TRAIL 2017: [.nan, 1.5, .nan]
 NISSAN ALTIMA 2020: [.nan, 1.5, .nan]
 NISSAN LEAF 2018 Instrument Cluster: [.nan, 1.5, .nan]
 NISSAN LEAF 2018: [.nan, 1.5, .nan]
@@ -20,7 +20,7 @@ FORD FOCUS 4TH GEN: [.nan, 1.5, .nan]
 COMMA BODY: [.nan, 1000, .nan]
 
 # Totally new car
-KIA EV6 2022: [3.0, 2.5, 0.05]
+KIA EV6 2022: [3.0, 2.5, 0.0]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]
