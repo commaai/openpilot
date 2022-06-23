@@ -229,7 +229,6 @@ void UIState::updateStatus() {
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
-  qDebug() << "Create UIState";
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
@@ -239,8 +238,6 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   Params params;
   wide_camera = params.getBool("WideCameraOnly");
   prime_type = std::atoi(params.get("PrimeType").c_str());
-
-  qDebug() << "HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!";
 
   // update timer
   timer = new QTimer(this);

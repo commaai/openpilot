@@ -75,43 +75,43 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   )");
   setAttribute(Qt::WA_NoSystemBackground);
 
-  QTimer::singleShot(100, [=]{
-    QTranslator translator;
-    if (!translator.load("main_fr", "translations")) {
-      qDebug() << "Failed to load translation file!";
-    } else {
-      qDebug() << "Loaded successfully";
-    }
-//  qApp->installTranslator(&translator);
-
-    for (auto w : QObject::findChildren<QPushButton*>()) {
-      QString context = getWidgetContext(w)->metaObject()->className();
-      QString translation = translator.translate(context.toStdString().c_str(), w->text().toStdString().c_str());
-      qDebug() << "Text:" << w->text() << "Context:" << context;
-      qDebug() << "Translation:" << translation;
-      if (!w->text().isEmpty() && translation.isEmpty()) {
-        qDebug() << "Empty translation with non-empty source text!";
-      }
-      if (!translation.isEmpty()) {
-        w->setText(translation);
-      }
-      qDebug() << "\n";
-    }
-
-    for (auto w : QObject::findChildren<QLabel*>()) {
-      QString context = getWidgetContext(w)->metaObject()->className();
-      QString translation = translator.translate(context.toStdString().c_str(), w->text().toStdString().c_str());
-      qDebug() << "Text:" << w->text() << "Context:" << context;
-      qDebug() << "Translation:" << translation;
-      if (!w->text().isEmpty() && translation.isEmpty()) {
-        qDebug() << "Empty translation with non-empty source text!";
-      }
-      if (!translation.isEmpty()) {
-        w->setText(translation);
-      }
-      qDebug() << "\n";
-    }
-  });
+//  QTimer::singleShot(100, [=]{
+//    QTranslator translator;
+//    if (!translator.load("main_fr", "translations")) {
+//      qDebug() << "Failed to load translation file!";
+//    } else {
+//      qDebug() << "Loaded successfully";
+//    }
+////  qApp->installTranslator(&translator);
+//
+//    for (auto w : QObject::findChildren<QPushButton*>()) {
+//      QString context = getWidgetContext(w)->metaObject()->className();
+//      QString translation = translator.translate(context.toStdString().c_str(), w->text().toStdString().c_str());
+//      qDebug() << "Text:" << w->text() << "Context:" << context;
+//      qDebug() << "Translation:" << translation;
+//      if (!w->text().isEmpty() && translation.isEmpty()) {
+//        qDebug() << "Empty translation with non-empty source text!";
+//      }
+//      if (!translation.isEmpty()) {
+//        w->setText(translation);
+//      }
+//      qDebug() << "\n";
+//    }
+//
+//    for (auto w : QObject::findChildren<QLabel*>()) {
+//      QString context = getWidgetContext(w)->metaObject()->className();
+//      QString translation = translator.translate(context.toStdString().c_str(), w->text().toStdString().c_str());
+//      qDebug() << "Text:" << w->text() << "Context:" << context;
+//      qDebug() << "Translation:" << translation;
+//      if (!w->text().isEmpty() && translation.isEmpty()) {
+//        qDebug() << "Empty translation with non-empty source text!";
+//      }
+//      if (!translation.isEmpty()) {
+//        w->setText(translation);
+//      }
+//      qDebug() << "\n";
+//    }
+//  });
 
 }
 

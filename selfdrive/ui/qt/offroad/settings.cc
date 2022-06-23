@@ -136,71 +136,20 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     addItem(regulatoryBtn);
   }
 
-  auto combo = new QComboBox();
-  combo->setStyleSheet(R"(
-    color: #000000;
-    background-color: #ffffff;
-  )");
-//  for (int i = 0; i < 5; i++) {
-//    combo->addItem("Sub-item", "Sub-item");
-//  }
-
-  QStringListModel* model = new QStringListModel;
-  QStringList stringlist;
-  stringlist << "Test1" << "Test2" << "Test3";
-
-  model->setStringList(stringlist);
-  combo->setModel(model);
-
-  addItem(combo);
-
-//  auto test = new QPushButton("Test!");
-//  QMenu* menu = new QMenu(this);
-//  for (int i = 0; i < 30; i++) {
-//    menu->addAction("Sub-action");
-//  }
-//  test->setMenu(menu);
-//  addItem(test);
-
-//  QString selection = MultiOptionDialog::getSelection("Hi there", {"English", "French", "Spanish", "Chinese", "Japanese", "Language 17", "Language 4", "Language 4", "Language 4", "Language 4"}, this);
-//  qDebug() << "Selected:" << selection;
-
   auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
   connect(translateBtn, &ButtonControl::clicked, [=]() {
-    QString selection = MultiOptionDialog::getSelection("Hi there", {"English", "French"}, this);
-    qDebug() << "Selected:" << selection;
+    // TODO: store dynamic list of languages somewhere
+    QMap<QString, QString> lang_map{{"English", ""}, {"French", "main_fr"}};
+    QString selection = MultiOptionDialog::getSelection(tr("Select a language"), lang_map.keys(), this);
+    qDebug() << "Selected:" << lang_map[selection];
 
-//    if (MultiOptionDialog::getSelection({"Test1", "Test2"}, this)) {
-//      qDebug() << ""
-//      Params().put("LanguageSetting", "main_fr");
-//      qApp->quit();
-//      QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
-//    }
-  });
-  addItem(translateBtn);
-
-//  auto translateBtn2 = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
-//  connect(translateBtn2, &ButtonControl::clicked, [=]() {
-//    if (MultiOptionDialog::getSelection({"Test1", "Test2"}, this)) {
-//      qDebug() << ""
-//      Params().put("LanguageSetting", "main_fr");
-//      qApp->quit();
-//      QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
-//    }
-//  });
-//  addItem(translateBtn2);
-
-
-  auto translateBack = new ButtonControl(tr("Reset Language"), tr("RESET"), "");
-  connect(translateBack, &ButtonControl::clicked, [=]() {
-
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset device language?"), this)) {
-      Params().put("LanguageSetting", "");
+    if (!selection.isEmpty()) {
+      Params().put("LanguageSetting", lang_map[selection].toStdString());
       qApp->quit();
       QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
     }
   });
-  addItem(translateBack);
+  addItem(translateBtn);
 
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {

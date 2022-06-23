@@ -213,28 +213,50 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
 
   main_layout->addSpacing(25);
 
-  // do list widget here and add it
+  // FIXME: make this actually scroll
   ListWidget *scroll_view = new ListWidget(this);
+
+  QButtonGroup *group = new QButtonGroup(scroll_view);  // or (container)
+  group->setExclusive(true);
 
   for (QString &i : l) {
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->setContentsMargins(44, 0, 73, 0);
     hlayout->setSpacing(50);
-    ElidedLabel *ssidLabel = new ElidedLabel(i);
-    ssidLabel->setObjectName("ssidLabel");
-    QObject::connect(ssidLabel, &ElidedLabel::clicked, this, [=]() { qDebug() << "Clicked"; });
-    hlayout->addWidget(ssidLabel);
+    QPushButton *selectionLabel = new QPushButton(i);
+    selectionLabel->setCheckable(true);
+    selectionLabel->setObjectName(i);
+
+    QObject::connect(selectionLabel, &QPushButton::toggled, [=](bool checked) {
+      qDebug() << i << checked;
+    });
+
+    QObject::connect(selectionLabel, &QPushButton::clicked, this, [=]() {
+      selectLabel(i);
+    });
+    selectionLabel->setStyleSheet(R"(
+      QPushButton {
+        height: 150;
+        padding-left: 100px;
+        padding-right: 100px;
+        text-align: left;
+        font-size: 55px;
+        font-weight: 300;
+        border-radius: 10px;
+        background-color: #4F4F4F;
+      }
+      QPushButton:checked {
+        background-color: #465BEA;
+      }
+    )");
+    group->addButton(selectionLabel);
+    hlayout->addWidget(selectionLabel);
     scroll_view->addItem(hlayout);
 
   }
-//  QPushButton *btn = new QPushButton("Test");
-//  hlayout->addWidget(btn);
+
   main_layout->addWidget(scroll_view);
   main_layout->addStretch(1);
-
-
-
-
   main_layout->addSpacing(35);
 
   // back + continue buttons
@@ -242,57 +264,17 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   main_layout->addLayout(blayout);
   blayout->setSpacing(50);
 
-  QPushButton *back = new QPushButton("Exit");
-  back->setObjectName("navBtn");
-//  QObject::connect(back, &QPushButton::clicked, this, &Setup::prevPage);
-  blayout->addWidget(back);
+  QPushButton *confirm_btn = new QPushButton(tr("Select"));
+  QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
+  blayout->addWidget(confirm_btn);
 
-//  ListWidget *scroll_view = new ListWidget(container);  // FIXME: why can't I use ListWidget?
-//  QHBoxLayout *hlayout = new QHBoxLayout;
-//
-//
-//
-//  ElidedLabel *ssidLabel = new ElidedLabel("Language");
-//  ssidLabel->setObjectName("ssidLabel");
-//  QObject::connect(ssidLabel, &ElidedLabel::clicked, this, [=]() { qDebug() << "Clicked"; });
-//  hlayout->addWidget(ssidLabel);
-//  QPushButton *btn = new QPushButton("Test");
-//  hlayout->addWidget(btn);
-//  scroll_view->addItem(hlayout);
-//
-//
-//  main_layout->addWidget(scroll_view);
-//
-//  QLabel *prompt = new QLabel(prompt_text, this);
-//  prompt->setWordWrap(true);
-//  prompt->setAlignment(Qt::AlignHCenter);
-//  prompt->setStyleSheet("font-size: 70px; font-weight: bold; color: black;");
-//  main_layout->addWidget(prompt, 1, Qt::AlignTop | Qt::AlignHCenter);
-//
-//  // cancel + confirm buttons
-//  QHBoxLayout *btn_layout = new QHBoxLayout();
-//  btn_layout->setSpacing(30);
-//  main_layout->addLayout(btn_layout);
-//
-//  QString cancel_text = "Cancel";
-//
-//  if (cancel_text.length()) {
-//    QPushButton* cancel_btn = new QPushButton(cancel_text);
-//    btn_layout->addWidget(cancel_btn);
-//    QObject::connect(cancel_btn, &QPushButton::clicked, this, &ConfirmationDialog::reject);
-//  }
-//
-//  QString confirm_text = "Confirm";
-//
-//  if (confirm_text.length()) {
-//    QPushButton* confirm_btn = new QPushButton(confirm_text);
-//    btn_layout->addWidget(confirm_btn);
-//    QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
-//  }
-//
   QVBoxLayout *outer_layout = new QVBoxLayout(this);
   outer_layout->setContentsMargins(55, 50, 55, 50);
   outer_layout->addWidget(container);
+}
+
+void MultiOptionDialog::selectLabel(const QString &str) {
+  selection = str;
 }
 
 QString MultiOptionDialog::getSelection(const QString &prompt_text, const QStringList l, QWidget *parent) {
