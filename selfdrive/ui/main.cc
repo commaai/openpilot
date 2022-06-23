@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
   qInstallMessageHandler(swagLogMessageHandler);
   initApp(argc, argv);
 
-  QString language_file = QString::fromStdString(Params().get("DeviceLanguage"));
+  QString language_file = QString::fromStdString(Params().get("LanguageSetting"));
   qDebug() << "Loading language:" << language_file;
 
   QTranslator translator;
