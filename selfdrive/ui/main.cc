@@ -14,24 +14,18 @@ int main(int argc, char *argv[]) {
   qInstallMessageHandler(swagLogMessageHandler);
   initApp(argc, argv);
 
-  int result = 0;
+  QString language_file = QString::fromStdString(Params().get("DeviceLanguage"));
+  qDebug() << "Loading language:" << language_file;
 
-  do {
-    QString language_file = QString::fromStdString(Params().get("DeviceLanguage"));
-    qDebug() << "Loading language:" << language_file;
+  QTranslator translator;
+  if (!translator.load(language_file, "translations")) {
+    qDebug() << "Failed to load translation file!";
+  }
+  QApplication a(argc, argv);
+  a.installTranslator(&translator);
 
-    QTranslator translator;
-    if (!translator.load(language_file, "translations")) {
-      qDebug() << "Failed to load translation file!";
-    }
-    QApplication a(argc, argv);
-    a.installTranslator(&translator);
-
-    MainWindow w;
-    setMainWindow(&w);
-    a.installEventFilter(&w);
-    result = a.exec();
-  } while (result == 99);
-
-  return result;
+  MainWindow w;
+  setMainWindow(&w);
+  a.installEventFilter(&w);
+  return a.exec();
 }
