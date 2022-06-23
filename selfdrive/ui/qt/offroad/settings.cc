@@ -137,18 +137,30 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 
   auto combo = new QComboBox();
-  for (int i = 0; i < 5; i++) {
-    combo->addItem("Sub-item");
-  }
+  combo->setStyleSheet(R"(
+    color: #000000;
+    background-color: #ffffff;
+  )");
+//  for (int i = 0; i < 5; i++) {
+//    combo->addItem("Sub-item", "Sub-item");
+//  }
+
+  QStringListModel* model = new QStringListModel;
+  QStringList stringlist;
+  stringlist << "Test1" << "Test2" << "Test3";
+
+  model->setStringList(stringlist);
+  combo->setModel(model);
+
   addItem(combo);
 
-  auto test = new QPushButton("Test!");
-  QMenu* menu = new QMenu(this);
-  for (int i = 0; i < 30; i++) {
-    menu->addAction("Sub-action");
-  }
-  test->setMenu(menu);
-  addItem(test);
+//  auto test = new QPushButton("Test!");
+//  QMenu* menu = new QMenu(this);
+//  for (int i = 0; i < 30; i++) {
+//    menu->addAction("Sub-action");
+//  }
+//  test->setMenu(menu);
+//  addItem(test);
 
   auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
   connect(translateBtn, &ButtonControl::clicked, [=]() {
