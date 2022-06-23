@@ -139,7 +139,8 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
     if (ConfirmationDialog::confirm(tr("Are you sure you want to change device language?"), this)) {
       Params().put("DeviceLanguage", "main_fr");
-      qApp->exit(99);
+      qApp->quit();
+      QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
     }
   });
   addItem(translateBtn);
@@ -149,7 +150,8 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
     if (ConfirmationDialog::confirm(tr("Are you sure you want to reset device language?"), this)) {
       Params().put("DeviceLanguage", "");
-      qApp->exit(99);
+      qApp->quit();
+      QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
     }
   });
   addItem(translateBack);

@@ -239,6 +239,8 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   wide_camera = params.getBool("WideCameraOnly");
   prime_type = std::atoi(params.get("PrimeType").c_str());
 
+  qDebug() << "HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+
   // update timer
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
@@ -246,6 +248,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
 }
 
 void UIState::update() {
+  qDebug() << "UIState::update";
   update_sockets(this);
   update_state(this);
   updateStatus();

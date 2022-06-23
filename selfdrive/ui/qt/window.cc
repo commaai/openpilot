@@ -5,6 +5,7 @@
 #include "system/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
+  qDebug() << "MainWindow";
   main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 
@@ -91,13 +92,13 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
   return false;
 }
 
-void MainWindow::changeEvent(QEvent *event) {
-  qDebug() << "changeEvent";
-  if (event->type() == QEvent::LanguageChange) {
-    qDebug() << "LanguageChange";
-//    setTrs();
-//    ui->retranslateUi(this);
-  }
-
-  QWidget::changeEvent(event);
-}
+//void MainWindow::changeEvent(QEvent *event) {
+//  qDebug() << "changeEvent";
+//  if (event->type() == QEvent::LanguageChange) {
+//    qDebug() << "LanguageChange";
+////    setTrs();
+////    ui->retranslateUi(this);
+//  }
+//
+//  QWidget::changeEvent(event);
+//}

@@ -2,11 +2,78 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="fr_FR">
 <context>
+    <name>AdvancedNetworking</name>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="121"/>
+        <source>Back</source>
+        <translation>Retour</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="129"/>
+        <source>Enable Tethering</source>
+        <translation>Activer le partage de connexion</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="134"/>
+        <source>Tethering Password</source>
+        <translation>Tethering Password</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="134"/>
+        <location filename="../qt/offroad/networking.cc" line="161"/>
+        <source>EDIT</source>
+        <translation>ÉDITER</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="136"/>
+        <source>Enter new tethering password</source>
+        <translation>Entrez le nouveau mot de passe de partage de connexion</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="144"/>
+        <source>IP Address</source>
+        <translation>Adresse IP</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="153"/>
+        <source>Enable Roaming</source>
+        <translation>Activer l&apos;itinérance</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="161"/>
+        <source>APN Setting</source>
+        <translation>Paramètre APN</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="165"/>
+        <source>Enter APN</source>
+        <translation>Saisissez l&apos;APN</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="165"/>
+        <source>leave blank for automatic configuration</source>
+        <translation>laisser vide pour une configuration automatique</translation>
+    </message>
+</context>
+<context>
     <name>ButtonControl</name>
     <message>
-        <location filename="../qt/widgets/controls.h" line="105"/>
         <source>REVIEW</source>
-        <translation type="unfinished">EXAMEN</translation>
+        <translation type="obsolete">EXAMEN</translation>
+    </message>
+</context>
+<context>
+    <name>ConfirmationDialog</name>
+    <message>
+        <location filename="../qt/widgets/input.cc" line="220"/>
+        <location filename="../qt/widgets/input.cc" line="225"/>
+        <source>Ok</source>
+        <translation>Ok</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/input.cc" line="225"/>
+        <source>Cancel</source>
+        <translation>Annuler</translation>
     </message>
 </context>
 <context>
@@ -43,6 +110,7 @@
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="109"/>
+        <location filename="../qt/offroad/settings.cc" line="148"/>
         <source>RESET</source>
         <translation>RÉINITIALISER</translation>
     </message>
@@ -84,70 +152,90 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="137"/>
         <source>CHANGE</source>
-        <translation type="unfinished"></translation>
+        <translation>MONNAIE</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="158"/>
+        <location filename="../qt/offroad/settings.cc" line="137"/>
+        <source>Change Language</source>
+        <translation>Changer de langue</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="140"/>
+        <source>Are you sure you want to change device language?</source>
+        <translation>Voulez-vous vraiment changer la langue de l&apos;appareil&#xa0;?</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="148"/>
+        <source>Reset Language</source>
+        <translation>Réinitialiser la langue</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="151"/>
+        <source>Are you sure you want to reset device language?</source>
+        <translation>Voulez-vous vraiment réinitialiser la langue de l&apos;appareil&#xa0;?</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="169"/>
         <source>Reboot</source>
         <translation>Redémarrer</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="163"/>
+        <location filename="../qt/offroad/settings.cc" line="174"/>
         <source>Power Off</source>
         <translation>Éteindre</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="183"/>
+        <location filename="../qt/offroad/settings.cc" line="194"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
         <translation>openpilot exige que l&apos;appareil soit monté à moins de 4° à gauche ou à droite et à moins de 5° vers le haut ou 8° vers le bas. openpilot se calibre en permanence, une réinitialisation est rarement nécessaire.</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="194"/>
+        <location filename="../qt/offroad/settings.cc" line="205"/>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
         <translation> Votre appareil est pointé %1° %2 et %3° %4.</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="195"/>
+        <location filename="../qt/offroad/settings.cc" line="206"/>
         <source>down</source>
         <translation>vers le bas</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="195"/>
+        <location filename="../qt/offroad/settings.cc" line="206"/>
         <source>up</source>
         <translation>en haut</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="196"/>
+        <location filename="../qt/offroad/settings.cc" line="207"/>
         <source>left</source>
         <translation>gauche</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="196"/>
+        <location filename="../qt/offroad/settings.cc" line="207"/>
         <source>right</source>
         <translation>droit</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="199"/>
+        <location filename="../qt/offroad/settings.cc" line="210"/>
         <source>invalid CalibrationParams</source>
         <translation>non valide CalibrationParams</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="207"/>
+        <location filename="../qt/offroad/settings.cc" line="218"/>
         <source>Are you sure you want to reboot?</source>
         <translation>Voulez-vous vraiment redémarrer&#xa0;?</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="214"/>
+        <location filename="../qt/offroad/settings.cc" line="225"/>
         <source>Disengage to Reboot</source>
         <translation>Désengager pour redémarrer</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="220"/>
+        <location filename="../qt/offroad/settings.cc" line="231"/>
         <source>Are you sure you want to power off?</source>
         <translation>Voulez-vous vraiment éteindre&#xa0;?</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="227"/>
+        <location filename="../qt/offroad/settings.cc" line="238"/>
         <source>Disengage to Power Off</source>
         <translation>Désengager pour éteindre</translation>
     </message>
@@ -179,7 +267,7 @@
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="39"/>
         <source>Hours</source>
-        <translation type="unfinished">Les Heures</translation>
+        <translation>Les Heures</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="44"/>
@@ -193,34 +281,63 @@
     </message>
 </context>
 <context>
+    <name>InputDialog</name>
+    <message>
+        <location filename="../qt/widgets/input.cc" line="70"/>
+        <source>Cancel</source>
+        <translation>Annuler</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/input.cc" line="167"/>
+        <source>Need at least </source>
+        <translation>Besoin d&apos;au moins </translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/input.cc" line="167"/>
+        <source> characters!</source>
+        <translation> caractères!</translation>
+    </message>
+</context>
+<context>
     <name>MapPanel</name>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="81"/>
         <source>Recent Destinations</source>
-        <translation type="unfinished"></translation>
+        <translation>Destinations récentes</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="95"/>
         <source>Try the Navigation Beta</source>
-        <translation type="unfinished"></translation>
+        <translation>Essayez la version bêta de la navigation</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
-        <source>Get turn-by-turn directions displayed and more with a comma
+        <source>Get turn-by-turn directions displayed and more with a comma 
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation type="unfinished"></translation>
+        <translation>Obtenez des instructions détaillées affichées et plus encore avec une virgule
+abonnement premium. Inscrivez-vous maintenant : https://connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
         <source>No home
 location set</source>
-        <translation type="unfinished"></translation>
+        <translation>Pas de maison
+emplacement défini</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="169"/>
         <source>No work
 location set</source>
-        <translation type="unfinished"></translation>
+        <translation>Pas de travail
+emplacement défini</translation>
+    </message>
+</context>
+<context>
+    <name>Networking</name>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="30"/>
+        <source>Advanced</source>
+        <translation>Avancé</translation>
     </message>
 </context>
 <context>
@@ -260,30 +377,30 @@ location set</source>
 <context>
     <name>SettingsWindow</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="342"/>
+        <location filename="../qt/offroad/settings.cc" line="353"/>
         <source>Device</source>
         <translation>l&apos; appareil</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="343"/>
-        <location filename="../qt/offroad/settings.cc" line="382"/>
+        <location filename="../qt/offroad/settings.cc" line="354"/>
+        <location filename="../qt/offroad/settings.cc" line="393"/>
         <source>Network</source>
         <translation>Réseau</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="344"/>
+        <location filename="../qt/offroad/settings.cc" line="355"/>
         <source>Toggles</source>
         <translation>Bascule</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="345"/>
+        <location filename="../qt/offroad/settings.cc" line="356"/>
         <source>Software</source>
         <translation>Logiciel</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="350"/>
+        <location filename="../qt/offroad/settings.cc" line="361"/>
         <source>Navigation</source>
-        <translation>La navigation</translation>
+        <translation>Navigation</translation>
     </message>
 </context>
 <context>
@@ -358,131 +475,210 @@ SEARCH</source>
 CHERCHER</translation>
     </message>
     <message>
+        <location filename="../qt/sidebar.cc" line="67"/>
+        <location filename="../qt/sidebar.cc" line="69"/>
+        <source>CONNECT</source>
+        <translation>CONNECT</translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.cc" line="67"/>
+        <source>OFFLINE</source>
+        <translation>HORS LIGNE</translation>
+    </message>
+    <message>
         <location filename="../qt/sidebar.cc" line="69"/>
         <location filename="../qt/sidebar.cc" line="82"/>
         <source>ONLINE</source>
-        <translation type="unfinished"></translation>
+        <translation>EN LIGNE</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="69"/>
         <source>ERROR</source>
-        <translation type="unfinished"></translation>
+        <translation>ERREUR</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="73"/>
         <location filename="../qt/sidebar.cc" line="76"/>
         <location filename="../qt/sidebar.cc" line="78"/>
         <source>TEMP</source>
-        <translation type="unfinished"></translation>
+        <translation>TEMP</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="73"/>
         <source>HIGH</source>
-        <translation type="unfinished"></translation>
+        <translation>HAUTE</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="76"/>
         <source>GOOD</source>
-        <translation type="unfinished"></translation>
+        <translation>BIEN</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="78"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="82"/>
         <source>VEHICLE</source>
-        <translation type="unfinished"></translation>
+        <translation>VÉHICULE</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
         <source>NO</source>
-        <translation type="unfinished"></translation>
+        <translation>NO</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
         <source>PANDA</source>
-        <translation type="unfinished"></translation>
+        <translation>PANDA</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="86"/>
         <source>GPS</source>
-        <translation type="unfinished"></translation>
+        <translation>GPS</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="86"/>
         <source>SEARCH</source>
-        <translation type="unfinished"></translation>
+        <translation>CHERCHER</translation>
     </message>
 </context>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="232"/>
+        <location filename="../qt/offroad/settings.cc" line="243"/>
         <source>Git Branch</source>
         <translation>Branche Git</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="233"/>
+        <location filename="../qt/offroad/settings.cc" line="244"/>
         <source>Git Commit</source>
         <translation>Commettre Git</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="234"/>
+        <location filename="../qt/offroad/settings.cc" line="245"/>
         <source>OS Version</source>
         <translation>Version du système d&apos;exploitation</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="235"/>
+        <location filename="../qt/offroad/settings.cc" line="246"/>
         <source>Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Version</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="236"/>
+        <location filename="../qt/offroad/settings.cc" line="247"/>
         <source>Last Update Check</source>
         <translation>Vérification de la dernière mise à jour</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="236"/>
+        <location filename="../qt/offroad/settings.cc" line="247"/>
         <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
         <translation>La dernière fois qu&apos;openpilot a vérifié avec succès une mise à jour. La mise à jour ne fonctionne que lorsque la voiture est éteinte.</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="237"/>
+        <location filename="../qt/offroad/settings.cc" line="248"/>
         <source>Check for Update</source>
         <translation>Vérifier la mise à jour</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="242"/>
+        <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>CHECKING</source>
         <translation>VÉRIFICATION</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="249"/>
+        <location filename="../qt/offroad/settings.cc" line="260"/>
         <source>Uninstall </source>
         <translation>Désinstaller </translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="249"/>
+        <location filename="../qt/offroad/settings.cc" line="260"/>
         <source>UNINSTALL</source>
         <translation>DÉSINSTALLER</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="251"/>
+        <location filename="../qt/offroad/settings.cc" line="262"/>
         <source>Are you sure you want to uninstall?</source>
         <translation>Êtes-vous sur de vouloir désinstaller?</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="265"/>
+        <location filename="../qt/offroad/settings.cc" line="276"/>
         <source>failed to fetch update</source>
         <translation>échec de la récupération de la mise à jour</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="266"/>
-        <location filename="../qt/offroad/settings.cc" line="287"/>
+        <location filename="../qt/offroad/settings.cc" line="277"/>
+        <location filename="../qt/offroad/settings.cc" line="298"/>
         <source>CHECK</source>
         <translation>VÉRIFIER</translation>
+    </message>
+</context>
+<context>
+    <name>SshControl</name>
+    <message>
+        <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
+        <source>SSH Keys</source>
+        <translation>Clés SSH</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
+        <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
+        <translation>Avertissement&#xa0;: Cela accorde un accès SSH à toutes les clés publiques dans vos paramètres GitHub. N&apos;entrez jamais un nom d&apos;utilisateur GitHub autre que le vôtre. Un employé de la virgule ne vous demandera JAMAIS d&apos;ajouter son nom d&apos;utilisateur GitHub.</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/ssh_keys.cc" line="13"/>
+        <location filename="../qt/widgets/ssh_keys.cc" line="37"/>
+        <source>ADD</source>
+        <translation>AJOUTER</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/ssh_keys.cc" line="14"/>
+        <source>Enter your GitHub username</source>
+        <translation>Entrez votre nom d&apos;utilisateur GitHub</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/ssh_keys.cc" line="16"/>
+        <source>LOADING</source>
+        <translation>CHARGEMENT EN COURS</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/ssh_keys.cc" line="34"/>
+        <source>REMOVE</source>
+        <translation>RETIRER</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/ssh_keys.cc" line="50"/>
+        <source>Username &apos;%1&apos; has no keys on GitHub</source>
+        <translation>Le nom d&apos;utilisateur &apos;%1&apos; n&apos;a pas de clé sur GitHub</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/ssh_keys.cc" line="56"/>
+        <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
+        <translation>Le nom d&apos;utilisateur &apos;%1&apos; n&apos;existe pas sur GitHub</translation>
+    </message>
+</context>
+<context>
+    <name>WifiUI</name>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="210"/>
+        <location filename="../qt/offroad/networking.cc" line="263"/>
+        <source>Scanning for networks...</source>
+        <translation>Recherche de réseaux...</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="289"/>
+        <source>CONNECTING...</source>
+        <translation>DE LIAISON...</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="296"/>
+        <source>FORGET</source>
+        <translation>OUBLIEZ</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="299"/>
+        <source>Forget Wi-Fi Network &quot;</source>
+        <translation>Oubliez le réseau Wi-Fi &quot;</translation>
     </message>
 </context>
 </TS>
