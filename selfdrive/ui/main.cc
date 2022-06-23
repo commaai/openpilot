@@ -24,8 +24,12 @@ int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
   a.installTranslator(&translator);
 
+  qDebug() << "Before MainWindow";
   MainWindow w;
+  qDebug() << "Before MainWindow";
   setMainWindow(&w);
+  qDebug() << "Before MainWindow";
   a.installEventFilter(&w);
+  qDebug() << "Before MainWindow";
   return a.exec();
 }

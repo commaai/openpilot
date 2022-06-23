@@ -162,8 +162,8 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 //  test->setMenu(menu);
 //  addItem(test);
 
-  QString selection = MultiOptionDialog::getSelection("Hi there", {"English", "French", "Spanish", "Chinese", "Japanese", "Language 17", "Language 4", "Language 4", "Language 4", "Language 4"}, this);
-  qDebug() << "Selected:" << selection;
+//  QString selection = MultiOptionDialog::getSelection("Hi there", {"English", "French", "Spanish", "Chinese", "Japanese", "Language 17", "Language 4", "Language 4", "Language 4", "Language 4"}, this);
+//  qDebug() << "Selected:" << selection;
 
   auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
   connect(translateBtn, &ButtonControl::clicked, [=]() {
@@ -391,6 +391,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(close_btn, &QPushButton::clicked, this, &SettingsWindow::closeSettings);
 
   // setup panels
+  qDebug() << "DevicePanel";
   DevicePanel *device = new DevicePanel(this);
   QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
   QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);

@@ -65,13 +65,13 @@
 <context>
     <name>ConfirmationDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="269"/>
-        <location filename="../qt/widgets/input.cc" line="274"/>
+        <location filename="../qt/widgets/input.cc" line="345"/>
+        <location filename="../qt/widgets/input.cc" line="350"/>
         <source>Ok</source>
         <translation>Ok</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="274"/>
+        <location filename="../qt/widgets/input.cc" line="350"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
@@ -110,7 +110,7 @@
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="111"/>
-        <location filename="../qt/offroad/settings.cc" line="180"/>
+        <location filename="../qt/offroad/settings.cc" line="194"/>
         <source>RESET</source>
         <translation>RÉINITIALISER</translation>
     </message>
@@ -150,12 +150,12 @@
         <translation>VOIR</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="165"/>
+        <location filename="../qt/offroad/settings.cc" line="168"/>
         <source>CHANGE</source>
         <translation>MONNAIE</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="165"/>
+        <location filename="../qt/offroad/settings.cc" line="168"/>
         <source>Change Language</source>
         <translation>Changer de langue</translation>
     </message>
@@ -164,77 +164,77 @@
         <translation type="vanished">Voulez-vous vraiment changer la langue de l&apos;appareil&#xa0;?</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="180"/>
+        <location filename="../qt/offroad/settings.cc" line="194"/>
         <source>Reset Language</source>
         <translation>Réinitialiser la langue</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="183"/>
+        <location filename="../qt/offroad/settings.cc" line="197"/>
         <source>Are you sure you want to reset device language?</source>
         <translation>Voulez-vous vraiment réinitialiser la langue de l&apos;appareil&#xa0;?</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="201"/>
+        <location filename="../qt/offroad/settings.cc" line="215"/>
         <source>Reboot</source>
         <translation>Redémarrer</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="206"/>
+        <location filename="../qt/offroad/settings.cc" line="220"/>
         <source>Power Off</source>
         <translation>Éteindre</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="226"/>
+        <location filename="../qt/offroad/settings.cc" line="240"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
         <translation>openpilot exige que l&apos;appareil soit monté à moins de 4° à gauche ou à droite et à moins de 5° vers le haut ou 8° vers le bas. openpilot se calibre en permanence, une réinitialisation est rarement nécessaire.</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="237"/>
+        <location filename="../qt/offroad/settings.cc" line="251"/>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
         <translation> Votre appareil est pointé %1° %2 et %3° %4.</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="238"/>
+        <location filename="../qt/offroad/settings.cc" line="252"/>
         <source>down</source>
         <translation>vers le bas</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="238"/>
+        <location filename="../qt/offroad/settings.cc" line="252"/>
         <source>up</source>
         <translation>en haut</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="239"/>
+        <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>left</source>
         <translation>gauche</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="239"/>
+        <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>right</source>
         <translation>droit</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="242"/>
+        <location filename="../qt/offroad/settings.cc" line="256"/>
         <source>invalid CalibrationParams</source>
         <translation>non valide CalibrationParams</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="250"/>
+        <location filename="../qt/offroad/settings.cc" line="264"/>
         <source>Are you sure you want to reboot?</source>
         <translation>Voulez-vous vraiment redémarrer&#xa0;?</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="257"/>
+        <location filename="../qt/offroad/settings.cc" line="271"/>
         <source>Disengage to Reboot</source>
         <translation>Désengager pour redémarrer</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="263"/>
+        <location filename="../qt/offroad/settings.cc" line="277"/>
         <source>Are you sure you want to power off?</source>
         <translation>Voulez-vous vraiment éteindre&#xa0;?</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="270"/>
+        <location filename="../qt/offroad/settings.cc" line="284"/>
         <source>Disengage to Power Off</source>
         <translation>Désengager pour éteindre</translation>
     </message>
@@ -282,17 +282,17 @@
 <context>
     <name>InputDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="70"/>
+        <location filename="../qt/widgets/input.cc" line="80"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="167"/>
+        <location filename="../qt/widgets/input.cc" line="177"/>
         <source>Need at least </source>
         <translation>Besoin d&apos;au moins </translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="167"/>
+        <location filename="../qt/widgets/input.cc" line="177"/>
         <source> characters!</source>
         <translation> caractères!</translation>
     </message>
@@ -334,14 +334,12 @@ emplacement défini</translation>
 <context>
     <name>MultiOptionDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="227"/>
         <source>Ok</source>
-        <translation>Ok</translation>
+        <translation type="vanished">Ok</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="227"/>
         <source>Cancel</source>
-        <translation>Annuler</translation>
+        <translation type="vanished">Annuler</translation>
     </message>
 </context>
 <context>
@@ -454,28 +452,28 @@ emplacement défini</translation>
 <context>
     <name>SettingsWindow</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="385"/>
+        <location filename="../qt/offroad/settings.cc" line="400"/>
         <source>Device</source>
         <translation>l&apos; appareil</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="386"/>
-        <location filename="../qt/offroad/settings.cc" line="425"/>
+        <location filename="../qt/offroad/settings.cc" line="401"/>
+        <location filename="../qt/offroad/settings.cc" line="440"/>
         <source>Network</source>
         <translation>Réseau</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="387"/>
+        <location filename="../qt/offroad/settings.cc" line="402"/>
         <source>Toggles</source>
         <translation>Bascule</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="388"/>
+        <location filename="../qt/offroad/settings.cc" line="403"/>
         <source>Software</source>
         <translation>Logiciel</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="393"/>
+        <location filename="../qt/offroad/settings.cc" line="408"/>
         <source>Navigation</source>
         <translation>Navigation</translation>
     </message>
@@ -639,68 +637,68 @@ CHERCHER</translation>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="275"/>
+        <location filename="../qt/offroad/settings.cc" line="289"/>
         <source>Git Branch</source>
         <translation>Branche Git</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="276"/>
+        <location filename="../qt/offroad/settings.cc" line="290"/>
         <source>Git Commit</source>
         <translation>Commettre Git</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="277"/>
+        <location filename="../qt/offroad/settings.cc" line="291"/>
         <source>OS Version</source>
         <translation>Version du système d&apos;exploitation</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="278"/>
+        <location filename="../qt/offroad/settings.cc" line="292"/>
         <source>Version</source>
         <translation>Version</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="279"/>
+        <location filename="../qt/offroad/settings.cc" line="293"/>
         <source>Last Update Check</source>
         <translation>Vérification de la dernière mise à jour</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="279"/>
+        <location filename="../qt/offroad/settings.cc" line="293"/>
         <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
         <translation>La dernière fois qu&apos;openpilot a vérifié avec succès une mise à jour. La mise à jour ne fonctionne que lorsque la voiture est éteinte.</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="280"/>
+        <location filename="../qt/offroad/settings.cc" line="294"/>
         <source>Check for Update</source>
         <translation>Vérifier la mise à jour</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="285"/>
+        <location filename="../qt/offroad/settings.cc" line="299"/>
         <source>CHECKING</source>
         <translation>VÉRIFICATION</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="292"/>
+        <location filename="../qt/offroad/settings.cc" line="306"/>
         <source>Uninstall </source>
         <translation>Désinstaller </translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="292"/>
+        <location filename="../qt/offroad/settings.cc" line="306"/>
         <source>UNINSTALL</source>
         <translation>DÉSINSTALLER</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="294"/>
+        <location filename="../qt/offroad/settings.cc" line="308"/>
         <source>Are you sure you want to uninstall?</source>
         <translation>Êtes-vous sur de vouloir désinstaller?</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="308"/>
+        <location filename="../qt/offroad/settings.cc" line="322"/>
         <source>failed to fetch update</source>
         <translation>échec de la récupération de la mise à jour</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="309"/>
-        <location filename="../qt/offroad/settings.cc" line="330"/>
+        <location filename="../qt/offroad/settings.cc" line="323"/>
+        <location filename="../qt/offroad/settings.cc" line="344"/>
         <source>CHECK</source>
         <translation>VÉRIFIER</translation>
     </message>
