@@ -30,45 +30,45 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   std::vector<std::tuple<QString, QString, QString, QString>> toggles{
     {
       "OpenpilotEnabledToggle",
-      "Enable openpilot",
-      "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
+      tr("Enable openpilot"),
+      tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),
       "../assets/offroad/icon_openpilot.png",
     },
     {
       "IsLdwEnabled",
-      "Enable Lane Departure Warnings",
-      "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).",
+      tr("Enable Lane Departure Warnings"),
+      tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
       "../assets/offroad/icon_warning.png",
     },
     {
       "IsRHD",
-      "Enable Right-Hand Drive",
-      "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
+      tr("Enable Right-Hand Drive"),
+      tr("Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat."),
       "../assets/offroad/icon_openpilot_mirrored.png",
     },
     {
       "IsMetric",
-      "Use Metric System",
-      "Display speed in km/h instead of mph.",
+      tr("Use Metric System"),
+      tr("Display speed in km/h instead of mph."),
       "../assets/offroad/icon_metric.png",
     },
     {
       "RecordFront",
-      "Record and Upload Driver Camera",
-      "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
+      tr("Record and Upload Driver Camera"),
+      tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
       "../assets/offroad/icon_monitoring.png",
     },
     {
       "DisengageOnAccelerator",
-      "Disengage On Accelerator Pedal",
-      "When enabled, pressing the accelerator pedal will disengage openpilot.",
+      tr("Disengage On Accelerator Pedal"),
+      tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
       "../assets/offroad/icon_disengage_on_accelerator.svg",
     },
 #ifdef ENABLE_MAPS
     {
       "NavSettingTime24h",
-      "Show ETA in 24h format",
-      "Use 24h format instead of am/pm",
+      tr("Show ETA in 24h format"),
+      tr("Use 24h format instead of am/pm"),
       "../assets/offroad/icon_metric.png",
     },
 #endif
@@ -80,8 +80,8 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   if (params.getBool("DisableRadar_Allow")) {
     toggles.push_back({
       "DisableRadar",
-      "openpilot Longitudinal Control",
-      "openpilot will disable the car's radar and will take over control of gas and brakes. Warning: this disables AEB!",
+      tr("openpilot Longitudinal Control"),
+      tr("openpilot will disable the car's radar and will take over control of gas and brakes. Warning: this disables AEB!"),
       "../assets/offroad/icon_speed_limit.png",
     });
   }

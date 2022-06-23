@@ -84,7 +84,7 @@ void Networking::connectToNetwork(const Network &n) {
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
-    QString pass = InputDialog::getText("Enter password", this, "for \"" + n.ssid + "\"", true, 8);
+    QString pass = InputDialog::getText(tr("Enter password"), this, tr("for \"") + n.ssid + "\"", true, 8);
     if (!pass.isEmpty()) {
       wifi->connect(n, pass);
     }
@@ -94,7 +94,7 @@ void Networking::connectToNetwork(const Network &n) {
 void Networking::wrongPassword(const QString &ssid) {
   if (wifi->seenNetworks.contains(ssid)) {
     const Network &n = wifi->seenNetworks.value(ssid);
-    QString pass = InputDialog::getText("Wrong password", this, "for \"" + n.ssid +"\"", true, 8);
+    QString pass = InputDialog::getText(tr("Wrong password"), this, tr("for \"") + n.ssid +"\"", true, 8);
     if (!pass.isEmpty()) {
       wifi->connect(n, pass);
     }

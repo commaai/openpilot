@@ -339,6 +339,30 @@ emplacement défini</translation>
         <source>Advanced</source>
         <translation>Avancé</translation>
     </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="87"/>
+        <source>Enter password</source>
+        <translation>Entrer le mot de passe</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="87"/>
+        <location filename="../qt/offroad/networking.cc" line="97"/>
+        <source>for &quot;</source>
+        <translation>pour &quot;</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/networking.cc" line="97"/>
+        <source>Wrong password</source>
+        <translation>Mauvais mot de passe</translation>
+    </message>
+</context>
+<context>
+    <name>PairingPopup</name>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="86"/>
+        <source>Pair your device to your comma account</source>
+        <translation>Associez votre appareil à votre compte virgule</translation>
+    </message>
 </context>
 <context>
     <name>PrimeAdWidget</name>
@@ -362,6 +386,36 @@ emplacement défini</translation>
         <source>✓ DEVELOPER PERKS</source>
         <translation type="vanished">✓ AVANTAGES DE DÉVELOPPEUR</translation>
     </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="184"/>
+        <source>Upgrade Now</source>
+        <translation>Mettre à jour maintenant</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="189"/>
+        <source>Become a comma prime member at connect.comma.ai</source>
+        <translation>Devenez membre principal de la virgule sur connect.comma.ai</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="196"/>
+        <source>PRIME FEATURES:</source>
+        <translation>CARACTÉRISTIQUES PRINCIPALES&#xa0;:</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <source>Remote access</source>
+        <translation>Accès à distance</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <source>1 year of storage</source>
+        <translation>1 an de stockage</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <source>Developer perks</source>
+        <translation>Avantages pour les développeurs</translation>
+    </message>
 </context>
 <context>
     <name>PrimeUserWidget</name>
@@ -370,8 +424,19 @@ emplacement défini</translation>
         <translation type="vanished">COMMA PRIME</translation>
     </message>
     <message>
+        <location filename="../qt/widgets/prime.cc" line="123"/>
+        <source>✓ SUBSCRIBED</source>
+        <translation>✓ ABONNE</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="135"/>
+        <source>CONNECT.COMMA.AI</source>
+        <translation>CONNECT.COMMA.AI</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="148"/>
         <source>COMMA POINTS</source>
-        <translation type="vanished">COMMA POINTS</translation>
+        <translation>COMMA POINTS</translation>
     </message>
 </context>
 <context>
@@ -416,6 +481,21 @@ emplacement défini</translation>
     <message>
         <source>Scan QR code to pair!</source>
         <translation type="vanished">Scannez le code QR pour jumeler&#xa0;!</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="230"/>
+        <source>Finish Setup</source>
+        <translation>Terminer la configuration</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="236"/>
+        <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
+        <translation>Associez votre appareil avec comma connect (connect.comma.ai) et réclamez votre offre comma prime.</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="243"/>
+        <source>Pair device</source>
+        <translation>Pair device</translation>
     </message>
 </context>
 <context>
@@ -655,6 +735,89 @@ CHERCHER</translation>
         <location filename="../qt/widgets/ssh_keys.cc" line="56"/>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
         <translation>Le nom d&apos;utilisateur &apos;%1&apos; n&apos;existe pas sur GitHub</translation>
+    </message>
+</context>
+<context>
+    <name>TogglesPanel</name>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="33"/>
+        <source>Enable openpilot</source>
+        <translation>Activer openpilot</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="34"/>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
+        <translation>Utilisez le système openpilot pour le régulateur de vitesse adaptatif et l&apos;aide au maintien dans la voie. Votre attention est requise à tout moment pour utiliser cette fonctionnalité. La modification de ce paramètre prend effet lorsque la voiture est éteinte.</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="39"/>
+        <source>Enable Lane Departure Warnings</source>
+        <translation>Activer les avertissements de sortie de voie</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="40"/>
+        <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
+        <translation>Recevez des alertes pour revenir dans la voie lorsque votre véhicule dépasse une ligne de voie détectée sans qu&apos;un clignotant ne soit activé alors que vous conduisez à plus de 31 mph (50 km/h).</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="45"/>
+        <source>Enable Right-Hand Drive</source>
+        <translation>Activer la conduite à droite</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="46"/>
+        <source>Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.</source>
+        <translation>Autoriser openpilot à respecter les conventions de circulation à gauche et effectuer la surveillance du conducteur sur le siège conducteur droit.</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="51"/>
+        <source>Use Metric System</source>
+        <translation>Utiliser le système métrique</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="52"/>
+        <source>Display speed in km/h instead of mph.</source>
+        <translation>Affichage de la vitesse en km/h au lieu de mph.</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="57"/>
+        <source>Record and Upload Driver Camera</source>
+        <translation>Enregistrer et télécharger la caméra du pilote</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="58"/>
+        <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
+        <translation>Téléchargez les données de la caméra face au conducteur et aidez à améliorer l&apos;algorithme de surveillance du conducteur.</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="63"/>
+        <source>Disengage On Accelerator Pedal</source>
+        <translation>Désengager sur la pédale d&apos;accélérateur</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="64"/>
+        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
+        <translation>Lorsqu&apos;il est activé, le fait d&apos;appuyer sur la pédale d&apos;accélérateur désengage l&apos;openpilot.</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="70"/>
+        <source>Show ETA in 24h format</source>
+        <translation>Afficher l&apos;ETA au format 24h</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="71"/>
+        <source>Use 24h format instead of am/pm</source>
+        <translation>Utiliser le format 24h au lieu de am/pm</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="83"/>
+        <source>openpilot Longitudinal Control</source>
+        <translation>Contrôle longitudinal openpilot</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="84"/>
+        <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
+        <translation>openpilot désactivera le radar de la voiture et prendra le contrôle du gaz et des freins. Attention&#xa0;: cela désactive l&apos;AEB&#xa0;!</translation>
     </message>
 </context>
 <context>
