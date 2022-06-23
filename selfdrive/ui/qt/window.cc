@@ -5,19 +5,12 @@
 
 #include "system/hardware/hw.h"
 
-QWidget* TopLevelParentWidget (QWidget* widget) {
-  while (widget -> parentWidget() != Q_NULLPTR) {
-    widget = widget -> parentWidget();
-    qDebug() << widget->metaObject()->className();
-  }
-  return widget;
-}
-
-QWidget* getFirstCustomParentWidget(QWidget* widget) {
-  QStringList ignoredWidgets = {"QWidget", "QStackedWidget", "ParamControl", "LabelControl", "QLabel"};
+QWidget* getWidgetContext(QWidget* widget) {
+  // TODO: figure out how qt finds the context
+  QStringList ignoredWidgets = {"QWidget", "QStackedWidget", "ParamControl", "LabelControl", "QLabel", "ButtonControl", "ElidedLabel", "QPushButton"};
   while (widget->parentWidget() != Q_NULLPTR && ignoredWidgets.contains(widget->metaObject()->className())) {
     widget = widget->parentWidget();
-    qDebug() << widget->metaObject()->className();
+//    qDebug() << widget->metaObject()->className();
   }
   return widget;
 }
@@ -91,31 +84,31 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     }
 //  qApp->installTranslator(&translator);
 
-//    dumpObjectTree();
-//    qDebug() << translator.translate("DevicfePanel", "Serial");
-//    for (auto w : QObject::findChildren<QPushButton*>()) {
-//      TopLevelParentWidget(w)->metaObject()->className();
-//      qDebug() << w->text();
-////      qDebug() << "superClass" << w->metaObject()->superClass()->className();
-////      qDebug() << "window" << w->window();
-////      QString context = w->parentWidget()->parentWidget()->metaObject()->className();
-////      qDebug() << context;
-////      qDebug() << w->parentWidget()->objectName() << w->text() << translator.translate(context.toStdString().c_str(), w->text().toStdString().c_str());
-//      qDebug() << "\n";
-////      w->setText(translator.translate(context.toStdString().c_str(), w->text().toStdString().c_str()));
-//    }
-    for (auto w : QObject::findChildren<QLabel*>()) {
-      QString context = getFirstCustomParentWidget(w)->metaObject()->className();
-//      qDebug() << w->text();
-//      QString context = w->parentWidget()->metaObject()->className();
+    for (auto w : QObject::findChildren<QPushButton*>()) {
+      QString context = getWidgetContext(w)->metaObject()->className();
       QString translation = translator.translate(context.toStdString().c_str(), w->text().toStdString().c_str());
       qDebug() << "Text:" << w->text() << "Context:" << context;
       qDebug() << "Translation:" << translation;
       if (!w->text().isEmpty() && translation.isEmpty()) {
         qDebug() << "Empty translation with non-empty source text!";
       }
-//      qDebug() << w->parentWidget()->objectName() << w->text() << translator.translate("MainWindow", w->text().toStdString().c_str());
-//      w->setText(translator.translate("", w->text().toStdString().c_str()));
+      if (!translation.isEmpty()) {
+        w->setText(translation);
+      }
+      qDebug() << "\n";
+    }
+
+    for (auto w : QObject::findChildren<QLabel*>()) {
+      QString context = getWidgetContext(w)->metaObject()->className();
+      QString translation = translator.translate(context.toStdString().c_str(), w->text().toStdString().c_str());
+      qDebug() << "Text:" << w->text() << "Context:" << context;
+      qDebug() << "Translation:" << translation;
+      if (!w->text().isEmpty() && translation.isEmpty()) {
+        qDebug() << "Empty translation with non-empty source text!";
+      }
+      if (!translation.isEmpty()) {
+        w->setText(translation);
+      }
       qDebug() << "\n";
     }
   });

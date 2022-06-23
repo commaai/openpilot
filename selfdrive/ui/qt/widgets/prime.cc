@@ -126,7 +126,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
 
   primeLayout->addSpacing(60);
 
-  QLabel* commaPrime = new QLabel("comma prime");
+  QLabel* commaPrime = new QLabel(tr("comma prime"));
   commaPrime->setStyleSheet("font-size: 75px; font-weight: bold;");
   primeLayout->addWidget(commaPrime, 0, Qt::AlignTop);
 

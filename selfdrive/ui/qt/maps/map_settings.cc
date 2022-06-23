@@ -59,11 +59,11 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     current_widget = new QWidget(this);
     QVBoxLayout *current_layout = new QVBoxLayout(current_widget);
 
-    QLabel *title = new QLabel("Current Destination");
+    QLabel *title = new QLabel(tr("Current Destination"));
     title->setStyleSheet("font-size: 55px");
     current_layout->addWidget(title);
 
-    current_route = new ButtonControl("", "CLEAR");
+    current_route = new ButtonControl("", tr("CLEAR"));
     current_route->setStyleSheet("padding-left: 40px;");
     current_layout->addWidget(current_route);
     QObject::connect(current_route, &ButtonControl::clicked, [=]() {

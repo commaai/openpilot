@@ -264,6 +264,11 @@
         <translation type="vanished">LES HEURES</translation>
     </message>
     <message>
+        <location filename="../qt/widgets/drive_stats.cc" line="37"/>
+        <source>Drives</source>
+        <translation>Disques</translation>
+    </message>
+    <message>
         <location filename="../qt/widgets/drive_stats.cc" line="39"/>
         <source>Hours</source>
         <translation>Les Heures</translation>
@@ -299,6 +304,16 @@
 </context>
 <context>
     <name>MapPanel</name>
+    <message>
+        <location filename="../qt/maps/map_settings.cc" line="62"/>
+        <source>Current Destination</source>
+        <translation>Destination actuelle</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map_settings.cc" line="66"/>
+        <source>CLEAR</source>
+        <translation>DÉGAGER</translation>
+    </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="81"/>
         <source>Recent Destinations</source>
@@ -437,6 +452,11 @@ emplacement défini</translation>
         <location filename="../qt/widgets/prime.cc" line="123"/>
         <source>✓ SUBSCRIBED</source>
         <translation>✓ ABONNE</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="129"/>
+        <source>comma prime</source>
+        <translation>comma prime</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="135"/>
