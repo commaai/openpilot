@@ -51,7 +51,7 @@ You will also need the GM Camera harness - you can make it yourself or buy one f
   * Note: I am submitting the schematics to comma.ai as part of the Silverado port - I expect they will eventually take over the manufacture
 * **Only if your car doesn't have Adaptive Cruise** [Comma Pedal](https://www.etsy.com/listing/952895642/openpilot-comma-pedal-non-customizable)
   * Note 1: OPGM uses openpilot's vision-only ACC, which is not yet supported by comma.ai
-  * Note 2: The Pedal (currently) requires custom GM firmware (from the OPGM repo); flashing requires a special cable
+  * Note 2: The Pedal (currently) requires custom GM firmware (from the OPGM repo); flashing requires a special cable (you can also build yourself, buy from comma or tinybear)
   * Note 3: OP with a Pedal performing ACC on a gas-powered vehicle is unable to apply the brakes (yet) - it still works well enough in many cases
 
 You can also hop on the [openpilot Community Discord](https://discord.gg/paWZxDcmqD) and / or the [official comma.ai Discord](https://discord.comma.ai) should you need assistance, or want to inquire about a new model.
