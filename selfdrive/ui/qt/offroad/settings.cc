@@ -3,9 +3,6 @@
 #include <cassert>
 #include <cmath>
 #include <string>
-#include <QTranslator>
-#include <QComboBox>
-#include <QMenu>
 
 #include <QDebug>
 
@@ -26,19 +23,6 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
-
-QMap<QString, QString> getSupportedLanguages() {
-  QFile f("translations/languages.json");
-  f.open(QIODevice::ReadOnly | QIODevice::Text);
-  QString val = f.readAll();
-
-  QJsonObject obj = QJsonDocument::fromJson(val.toUtf8()).object();
-  QMap<QString, QString> map;
-  for (auto key : obj.keys()) {
-    map[key] = obj[key].toString();
-  }
-  return map;
-}
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
@@ -140,28 +124,14 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     addItem(retrainingBtn);
   }
 
-//  if (Hardware::TICI()) {
+  if (Hardware::TICI()) {
     auto regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
       const std::string txt = util::read_file("../assets/offroad/fcc.html");
       RichTextDialog::alert(QString::fromStdString(txt), this);
     });
     addItem(regulatoryBtn);
-//  }
-
-  auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
-  connect(translateBtn, &ButtonControl::clicked, [=]() {
-    QMap<QString, QString> langs = getSupportedLanguages();
-    QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), this);
-    qDebug() << "Selected:" << langs[selection];
-
-    if (!selection.isEmpty()) {
-      Params().put("LanguageSetting", langs[selection].toStdString());
-      qApp->quit();
-      QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
-    }
-  });
-  addItem(translateBtn);
+  }
 
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {

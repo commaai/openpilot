@@ -5,16 +5,6 @@
 
 #include "system/hardware/hw.h"
 
-QWidget* getWidgetContext(QWidget* widget) {
-  // TODO: figure out how qt finds the context
-  QStringList ignoredWidgets = {"QWidget", "QStackedWidget", "ParamControl", "LabelControl", "QLabel", "ButtonControl", "ElidedLabel", "QPushButton"};
-  while (widget->parentWidget() != Q_NULLPTR && ignoredWidgets.contains(widget->metaObject()->className())) {
-    widget = widget->parentWidget();
-//    qDebug() << widget->metaObject()->className();
-  }
-  return widget;
-}
-
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   qDebug() << "MainWindow";
   main_layout = new QStackedLayout(this);
@@ -74,45 +64,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     }
   )");
   setAttribute(Qt::WA_NoSystemBackground);
-
-//  QTimer::singleShot(100, [=]{
-//    QTranslator translator;
-//    if (!translator.load("main_fr", "translations")) {
-//      qDebug() << "Failed to load translation file!";
-//    } else {
-//      qDebug() << "Loaded successfully";
-//    }
-////  qApp->installTranslator(&translator);
-//
-//    for (auto w : QObject::findChildren<QPushButton*>()) {
-//      QString context = getWidgetContext(w)->metaObject()->className();
-//      QString translation = translator.translate(context.toStdString().c_str(), w->text().toStdString().c_str());
-//      qDebug() << "Text:" << w->text() << "Context:" << context;
-//      qDebug() << "Translation:" << translation;
-//      if (!w->text().isEmpty() && translation.isEmpty()) {
-//        qDebug() << "Empty translation with non-empty source text!";
-//      }
-//      if (!translation.isEmpty()) {
-//        w->setText(translation);
-//      }
-//      qDebug() << "\n";
-//    }
-//
-//    for (auto w : QObject::findChildren<QLabel*>()) {
-//      QString context = getWidgetContext(w)->metaObject()->className();
-//      QString translation = translator.translate(context.toStdString().c_str(), w->text().toStdString().c_str());
-//      qDebug() << "Text:" << w->text() << "Context:" << context;
-//      qDebug() << "Translation:" << translation;
-//      if (!w->text().isEmpty() && translation.isEmpty()) {
-//        qDebug() << "Empty translation with non-empty source text!";
-//      }
-//      if (!translation.isEmpty()) {
-//        w->setText(translation);
-//      }
-//      qDebug() << "\n";
-//    }
-//  });
-
 }
 
 void MainWindow::openSettings() {
@@ -134,6 +85,5 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
   if (evts.contains(event->type())) {
     device.resetInteractiveTimout();
   }
-
   return false;
 }

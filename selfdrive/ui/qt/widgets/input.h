@@ -6,7 +6,6 @@
 #include <QString>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QListWidget>
 
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 
@@ -59,17 +58,6 @@ public:
                               const QString &cancel_text, QWidget* parent);
   static bool alert(const QString &prompt_text, QWidget *parent);
   static bool confirm(const QString &prompt_text, QWidget *parent);
-};
-
-class MultiOptionDialog : public QDialogBase {
-  Q_OBJECT
-
-public:
-  explicit MultiOptionDialog(const QString &prompt_text, const QStringList l, QWidget *parent);
-//  static bool alert(const QString &prompt_text, QWidget *parent);
-//  static bool confirm(const QString &prompt_text, QWidget *parent);
-  static QString getSelection(const QString &prompt_text, const QStringList l, QWidget *parent);
-  QString selection;
 };
 
 // larger ConfirmationDialog for rich text

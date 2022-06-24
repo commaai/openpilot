@@ -1,21 +1,11 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 #include <QPushButton>
-#include <QDebug>
-#include <QDebug>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QPainter>
-#include <QScrollBar>
-#include <QButtonGroup>
-#include <QVBoxLayout>
-#include <QWidget>
 
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
-#include "selfdrive/ui/qt/widgets/controls.h"
 
 
 QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
@@ -187,101 +177,6 @@ void InputDialog::setMessage(const QString &message, bool clearInputField) {
 
 void InputDialog::setMinLength(int length) {
   minLength = length;
-}
-
-MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, QWidget *parent) : QDialogBase(parent) {
-  QFrame *container = new QFrame(this);
-  container->setStyleSheet(R"(
-    QFrame { background-color: #1B1B1B; }
-    #ssidLabel {
-      font-size: 55px;
-      font-weight: 300;
-      text-align: left;
-      border: none;
-      padding-top: 50px;
-      padding-bottom: 50px;
-    }
-  )");
-
-
-  QVBoxLayout *main_layout = new QVBoxLayout(container);
-  main_layout->setContentsMargins(55, 50, 55, 50);
-
-  QLabel *title = new QLabel(prompt_text, this);
-  title->setStyleSheet("font-size: 70px; font-weight: 500;");
-  main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
-
-  main_layout->addSpacing(25);
-
-  // FIXME: make this actually scroll
-  ListWidget *list = new ListWidget(this);
-
-  QButtonGroup *group = new QButtonGroup(list);  // or (container)
-  group->setExclusive(true);
-
-  for (QString &i : l) {
-    QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setContentsMargins(15, 0, 15, 0);
-    hlayout->setSpacing(50);
-    QPushButton *selectionLabel = new QPushButton(i);
-    selectionLabel->setCheckable(true);
-    selectionLabel->setObjectName(i);
-
-    QObject::connect(selectionLabel, &QPushButton::toggled, [=](bool checked) {
-      if (checked) selection = i;
-      qDebug() << i << checked;
-    });
-
-    // TODO: move this up
-    selectionLabel->setStyleSheet(R"(
-      QPushButton {
-        height: 125;
-        padding-left: 50px;
-        padding-right: 50px;
-        text-align: left;
-        font-size: 55px;
-        font-weight: 300;
-        border-radius: 10px;
-        background-color: #4F4F4F;
-      }
-      QPushButton:checked {
-        background-color: #465BEA;
-      }
-    )");
-    group->addButton(selectionLabel);
-    hlayout->addWidget(selectionLabel);
-    list->addItem(hlayout);
-
-  }
-
-  ScrollView *scroll_view = new ScrollView(list, this);
-  scroll_view->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-
-  main_layout->addWidget(scroll_view);
-  main_layout->addStretch(1);
-  main_layout->addSpacing(35);
-
-  // back + continue buttons
-  QHBoxLayout *blayout = new QHBoxLayout;
-  main_layout->addLayout(blayout);
-  blayout->setSpacing(50);
-
-  QPushButton *confirm_btn = new QPushButton(tr("Select"));
-  QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
-  blayout->addWidget(confirm_btn);
-
-  QVBoxLayout *outer_layout = new QVBoxLayout(this);
-  outer_layout->setContentsMargins(75, 75, 75, 75);
-  outer_layout->addWidget(container);
-}
-
-QString MultiOptionDialog::getSelection(const QString &prompt_text, const QStringList l, QWidget *parent) {
-  MultiOptionDialog d = MultiOptionDialog(prompt_text, l, parent);
-  if (d.exec()) {
-    return d.selection;
-  }
-  return "";
-//  return d.exec();
 }
 
 // ConfirmationDialog
