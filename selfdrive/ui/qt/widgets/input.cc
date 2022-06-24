@@ -29,7 +29,7 @@ QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
       font-family: Inter;
     }
     QDialogBase {
-      background-color: black;
+      background-color: transparent;
     }
     QPushButton {
       height: 160;
@@ -190,9 +190,9 @@ void InputDialog::setMinLength(int length) {
 }
 
 MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, QWidget *parent) : QDialogBase(parent) {
-  QScrollArea *container = new QScrollArea(this);
+  QFrame *container = new QFrame(this);
   container->setStyleSheet(R"(
-    QFrame { border-radius: 0; background-color: #292929; }
+    QFrame { background-color: #1B1B1B; }
     #ssidLabel {
       font-size: 55px;
       font-weight: 300;
@@ -234,6 +234,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
     QObject::connect(selectionLabel, &QPushButton::clicked, this, [=]() {
       selectLabel(i);
     });
+    // TODO: move this up
     selectionLabel->setStyleSheet(R"(
       QPushButton {
         height: 150;
@@ -269,7 +270,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   blayout->addWidget(confirm_btn);
 
   QVBoxLayout *outer_layout = new QVBoxLayout(this);
-  outer_layout->setContentsMargins(55, 50, 55, 50);
+  outer_layout->setContentsMargins(100, 100, 100, 100);
   outer_layout->addWidget(container);
 }
 
@@ -339,7 +340,7 @@ bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
 RichTextDialog::RichTextDialog(const QString &prompt_text, const QString &btn_text,
                                QWidget *parent) : QDialogBase(parent) {
   QFrame *container = new QFrame(this);
-  container->setStyleSheet("QFrame { background-color: #1B1B1B; }");
+  container->setStyleSheet("QFrame { background-color: transparent; }");
   QVBoxLayout *main_layout = new QVBoxLayout(container);
   main_layout->setContentsMargins(32, 32, 32, 32);
 
