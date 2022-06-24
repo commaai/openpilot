@@ -97,7 +97,7 @@ if __name__ == "__main__":
   CAN_MSGS = []
   logs = [f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2" for i in REPLAY_SEGS]
   with multiprocessing.Pool(24) as pool:
-    for lr in tqdm(pool.map(load_segment, logs), total=len(logs)):
+    for lr in tqdm(pool.map(load_segment, logs)):
       CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
 
   # set both to cycle ignition
