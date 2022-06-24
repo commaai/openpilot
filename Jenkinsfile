@@ -10,6 +10,7 @@ export TEST_DIR=${env.TEST_DIR}
 export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
+export AZURE_TOKEN='${env.AZURE_TOKEN}'
 
 source ~/.bash_profile
 if [ -f /TICI ]; then
@@ -45,6 +46,7 @@ pipeline {
     CI = "1"
     TEST_DIR = "/data/openpilot"
     SOURCE_DIR = "/data/openpilot_source/"
+    AZURE_TOKEN = credentials('azure_token')
   }
   options {
     timeout(time: 4, unit: 'HOURS')
@@ -88,8 +90,8 @@ pipeline {
           steps {
             sh "git config --global --add safe.directory ${WORKSPACE}"
             sh "git lfs pull"
-            sh "${WORKSPACE}/tools/sim/build_container.sh"
             lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
+              sh "${WORKSPACE}/tools/sim/build_container.sh"
               sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
               sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
             }
@@ -139,8 +141,8 @@ pipeline {
           steps {
             phone_steps("tici-party", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
-              ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+              ["test camerad", "python system/camerad/test/test_camerad.py"],
+              ["test exposure", "python system/camerad/test/test_exposure.py"],
             ])
           }
         }

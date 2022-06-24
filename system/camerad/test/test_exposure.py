@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 
 from selfdrive.test.helpers import with_processes
-from selfdrive.camerad.snapshot.snapshot import get_snapshots
+from system.camerad.snapshot.snapshot import get_snapshots
 
 from system.hardware import TICI
 

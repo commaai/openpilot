@@ -8,7 +8,7 @@
 #include <cstring>
 
 #include "common/util.h"
-#include "selfdrive/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_common.h"
 
 int main() {
   // set up fake camerabuf
