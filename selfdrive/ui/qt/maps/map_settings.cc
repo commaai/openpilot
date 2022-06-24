@@ -279,7 +279,7 @@ void MapPanel::parseResponse(const QString &response, bool success) {
   }
 
   if (!has_recents) {
-    QLabel *no_recents = new QLabel("no recent destinations");
+    QLabel *no_recents = new QLabel(tr("no recent destinations"));
     no_recents->setStyleSheet(R"(font-size: 50px; color: #9c9c9c)");
     recent_layout->addWidget(no_recents);
   }
