@@ -94,7 +94,7 @@ PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
         <li style='margin-bottom: 50px;'>Click "add new device" and scan the QR code on the right</li>
         <li style='margin-bottom: 50px;'>Bookmark connect.comma.ai to your home screen to use it like an app</li>
       </ol>
-    )", this));
+    )"), this);
     instructions->setStyleSheet("font-size: 47px; font-weight: bold; color: black;");
     instructions->setWordWrap(true);
     vlayout->addWidget(instructions);
