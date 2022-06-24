@@ -221,7 +221,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
 
   for (QString &i : l) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setContentsMargins(44, 0, 73, 0);
+    hlayout->setContentsMargins(15, 0, 15, 0);
     hlayout->setSpacing(50);
     QPushButton *selectionLabel = new QPushButton(i);
     selectionLabel->setCheckable(true);
@@ -235,9 +235,9 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
     // TODO: move this up
     selectionLabel->setStyleSheet(R"(
       QPushButton {
-        height: 150;
-        padding-left: 100px;
-        padding-right: 100px;
+        height: 125;
+        padding-left: 50px;
+        padding-right: 50px;
         text-align: left;
         font-size: 55px;
         font-weight: 300;
@@ -271,7 +271,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   blayout->addWidget(confirm_btn);
 
   QVBoxLayout *outer_layout = new QVBoxLayout(this);
-  outer_layout->setContentsMargins(100, 100, 100, 100);
+  outer_layout->setContentsMargins(75, 75, 75, 75);
   outer_layout->addWidget(container);
 }
 
