@@ -24,6 +24,7 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // TODO: choose based on frame input size
 const float ZOOM = 2912.8;
+const mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
 
 struct Alert {
   QString text1;
@@ -91,11 +92,8 @@ typedef struct {
 } line_vertices_data;
 
 typedef struct UIScene {
-  mat3 view_from_calib = {{
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0,
-    1.0, 0.0, 0.0
-  }};
+  bool calibration_valid = false;
+  mat3 view_from_calib = DEFAULT_CALIBRATION;
   cereal::PandaState::PandaType pandaType;
 
   // modelV2

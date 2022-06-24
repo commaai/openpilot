@@ -208,7 +208,12 @@ void NvgWindow::updateState(const UIState &s) {
     setProperty("engageable", cs.getEngageable() || cs.getEnabled());
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
   }
-  CameraViewWidget::updateCalibration(s.scene.view_from_calib);
+
+  if (s.scene.calibration_valid) {
+    CameraViewWidget::updateCalibration(s.scene.view_from_calib);
+  } else {
+    CameraViewWidget::updateCalibration(DEFAULT_CALIBRATION);
+  }
 }
 
 void NvgWindow::drawHud(QPainter &p) {
