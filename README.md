@@ -32,7 +32,7 @@ The GM Camera Harness (previously referred to as the [Bolt EV Harness](https://o
 It has been 3 LONG years in the making, but it looks like finally the goal is in sight!
 
 This support will effectively open the door for **official comma.ai support** (no need for custom Forks or hardware)
-for **ANY** GM vehicle with Lane-Keep Assist and Adaptive Cruise Control.
+for **ANY** GM vehicle with Lane-Keep Assist and Adaptive Cruise Control manufactured between 2016 and 2022 (with some exceptions...)
 
 OPGM isn't going anywhere any time soon either. Vehicles without built-in Adaptive Cruise will continue
 to be supported in OPGM with the use of a [Comma Pedal](https://github.com/commaai/openpilot/wiki/comma-pedal).
