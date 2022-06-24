@@ -69,7 +69,6 @@ public:
 //  static bool alert(const QString &prompt_text, QWidget *parent);
 //  static bool confirm(const QString &prompt_text, QWidget *parent);
   static QString getSelection(const QString &prompt_text, const QStringList l, QWidget *parent);
-  void selectLabel(const QString &str);
   QString selection;
 };
 

@@ -29,7 +29,7 @@ QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
       font-family: Inter;
     }
     QDialogBase {
-      background-color: transparent;
+      background-color: black;
     }
     QPushButton {
       height: 160;
@@ -207,16 +207,16 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   QVBoxLayout *main_layout = new QVBoxLayout(container);
   main_layout->setContentsMargins(55, 50, 55, 50);
 
-  QLabel *title = new QLabel(prompt_text);
-  title->setStyleSheet("font-size: 90px; font-weight: 500;");
+  QLabel *title = new QLabel(prompt_text, this);
+  title->setStyleSheet("font-size: 70px; font-weight: 500;");
   main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
   main_layout->addSpacing(25);
 
   // FIXME: make this actually scroll
-  ListWidget *scroll_view = new ListWidget(this);
+  ListWidget *list = new ListWidget(this);
 
-  QButtonGroup *group = new QButtonGroup(scroll_view);  // or (container)
+  QButtonGroup *group = new QButtonGroup(list);  // or (container)
   group->setExclusive(true);
 
   for (QString &i : l) {
@@ -228,12 +228,10 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
     selectionLabel->setObjectName(i);
 
     QObject::connect(selectionLabel, &QPushButton::toggled, [=](bool checked) {
+      if (checked) selection = i;
       qDebug() << i << checked;
     });
 
-    QObject::connect(selectionLabel, &QPushButton::clicked, this, [=]() {
-      selectLabel(i);
-    });
     // TODO: move this up
     selectionLabel->setStyleSheet(R"(
       QPushButton {
@@ -252,9 +250,12 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
     )");
     group->addButton(selectionLabel);
     hlayout->addWidget(selectionLabel);
-    scroll_view->addItem(hlayout);
+    list->addItem(hlayout);
 
   }
+
+  ScrollView *scroll_view = new ScrollView(list, this);
+  scroll_view->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
   main_layout->addWidget(scroll_view);
   main_layout->addStretch(1);
@@ -274,10 +275,6 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   outer_layout->addWidget(container);
 }
 
-void MultiOptionDialog::selectLabel(const QString &str) {
-  selection = str;
-}
-
 QString MultiOptionDialog::getSelection(const QString &prompt_text, const QStringList l, QWidget *parent) {
   MultiOptionDialog d = MultiOptionDialog(prompt_text, l, parent);
   if (d.exec()) {
@@ -294,7 +291,6 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   QFrame *container = new QFrame(this);
   container->setStyleSheet("QFrame { border-radius: 0; background-color: #ECECEC; }");
   QVBoxLayout *main_layout = new QVBoxLayout(container);
-  setAttribute(Qt::WA_TranslucentBackground); // No background
   main_layout->setContentsMargins(32, 120, 32, 32);
 
   QLabel *prompt = new QLabel(prompt_text, this);
@@ -340,12 +336,8 @@ bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
 
 RichTextDialog::RichTextDialog(const QString &prompt_text, const QString &btn_text,
                                QWidget *parent) : QDialogBase(parent) {
-  setAttribute(Qt::WA_AcceptTouchEvents);
-  setFocusPolicy(Qt::NoFocus);
-//  setWindowFlags(Qt::FramelessWindowHint);   //No windowing
-  setAttribute(Qt::WA_TranslucentBackground); // No background
   QFrame *container = new QFrame(this);
-  container->setStyleSheet("QFrame { background-color: black; }");
+  container->setStyleSheet("QFrame { background-color: #1B1B1B; }");
   QVBoxLayout *main_layout = new QVBoxLayout(container);
   main_layout->setContentsMargins(32, 32, 32, 32);
 
