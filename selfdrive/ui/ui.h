@@ -91,7 +91,11 @@ typedef struct {
 } line_vertices_data;
 
 typedef struct UIScene {
-  mat3 view_from_calib;
+  mat3 view_from_calib = {{
+    0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0,
+    1.0, 0.0, 0.0
+  }};
   cereal::PandaState::PandaType pandaType;
 
   // modelV2

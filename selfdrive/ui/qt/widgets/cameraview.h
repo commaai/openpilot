@@ -68,7 +68,11 @@ protected:
   int stream_stride = 0;
   float x_offset = 0;
   float y_offset = 0;
-  mat3 calibration = {{1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0}};
+  mat3 calibration = {{
+    0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0,
+    1.0, 0.0, 0.0
+  }};
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
 
