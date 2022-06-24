@@ -26,16 +26,16 @@ TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override
 TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.yaml')
 
 
-def get_torque_params(candidate, default=float('NaN')):
+def get_torque_params(candidate):
   with open(TORQUE_SUBSTITUTE_PATH) as f:
-    sub = yaml.load(f, Loader=yaml.FullLoader)
+    sub = yaml.load(f, Loader=yaml.CSafeLoader)
   if candidate in sub:
     candidate = sub[candidate]
 
   with open(TORQUE_PARAMS_PATH) as f:
-    params = yaml.load(f, Loader=yaml.FullLoader)
+    params = yaml.load(f, Loader=yaml.CSafeLoader)
   with open(TORQUE_OVERRIDE_PATH) as f:
-    override = yaml.load(f, Loader=yaml.FullLoader)
+    override = yaml.load(f, Loader=yaml.CSafeLoader)
 
   # Ensure no overlap
   if sum([candidate in x for x in [sub, params, override]]) > 1:
@@ -47,7 +47,7 @@ def get_torque_params(candidate, default=float('NaN')):
     out = params[candidate]
   else:
     raise NotImplementedError(f"Did not find torque params for {candidate}")
-  return {key:out[i] for i, key in enumerate(params['legend'])}
+  return {key: out[i] for i, key in enumerate(params['legend'])}
 
 
 # generic car and radar interfaces
