@@ -9,7 +9,7 @@
 #include "cereal/visionipc/visionbuf.h"
 #include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_server.h"
-#include "selfdrive/camerad/transforms/rgb_to_yuv.h"
+#include "system/camerad/transforms/rgb_to_yuv.h"
 #include "common/mat.h"
 #include "common/queue.h"
 #include "common/swaglog.h"

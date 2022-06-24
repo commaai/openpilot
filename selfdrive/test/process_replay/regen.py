@@ -127,7 +127,10 @@ def replay_cameras(lr, frs, disable_tqdm=False):
   ]
 
   def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
-    pm = messaging.PubMaster([s, ])
+    services = [(s, stream)]
+    if use_extra_client:
+      services.append(("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD))
+    pm = messaging.PubMaster([s for s, _ in services])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
 
     img = b"\x00" * int(size[0] * size[1] * 3 / 2)
@@ -137,16 +140,15 @@ def replay_cameras(lr, frs, disable_tqdm=False):
 
       rk.keep_time()
 
-      m = messaging.new_message(s)
-      msg = getattr(m, s)
-      msg.frameId = rk.frame
-      msg.timestampSof = m.logMonoTime
-      msg.timestampEof = m.logMonoTime
-      pm.send(s, m)
+      for s, stream in services:
+        m = messaging.new_message(s)
+        msg = getattr(m, s)
+        msg.frameId = rk.frame
+        msg.timestampSof = m.logMonoTime
+        msg.timestampEof = m.logMonoTime
+        pm.send(s, m)
 
-      vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
-      if use_extra_client:
-        vipc_server.send(VisionStreamType.VISION_STREAM_WIDE_ROAD, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+        vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
 
   init_data = [m for m in lr if m.which() == 'initData'][0]
   cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras

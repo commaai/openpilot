@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
@@ -38,9 +37,7 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, CAR.ELANTRA_GT_I30}
-    if candidate in HDA2_CAR:
-      ret.dashcamOnly = not os.path.exists('/data/enable-ev6')
+    ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, CAR.ELANTRA_GT_I30} or candidate in HDA2_CAR
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
@@ -207,7 +204,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
-      torque_params = CarInterfaceBase.get_torque_params(CAR.KIA_OPTIMA)
       set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
     elif candidate == CAR.KIA_STINGER:
       ret.lateralTuning.pid.kf = 0.00005
@@ -248,10 +244,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
                            get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
       tire_stiffness_factor = 0.65
-
-      ret.maxLateralAccel = 2.
-      # TODO override until there is more data
-      set_torque_tune(ret.lateralTuning, 2.0, 0.05)
+      set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
 
     # Genesis
     elif candidate == CAR.GENESIS_G70:
