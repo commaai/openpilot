@@ -121,7 +121,7 @@ Directory Structure
         ├── modeld          # Driving and monitoring model runners
         ├── proclogd        # Logs information from proc
         ├── sensord         # IMU interface code
-        ├── navd            # GPS Navigation code 
+        ├── navd            # Turn-by-turn navigation
         ├── test            # Unit tests, system tests, and a car simulator
         └── ui              # The UI
 
