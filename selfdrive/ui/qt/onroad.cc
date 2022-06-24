@@ -406,8 +406,8 @@ void NvgWindow::initializeGL() {
 }
 
 void NvgWindow::updateFrameMat() {
-  UIState *s = uiState();
   CameraViewWidget::updateFrameMat();
+  UIState *s = uiState();
   int w = width(), h = height();
 
   s->fb_w = w;
@@ -421,7 +421,6 @@ void NvgWindow::updateFrameMat() {
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
   // 3) Put (0, 0) in top left corner of video
-
   s->car_space_transform.reset();
   s->car_space_transform.translate(w / 2 - x_offset, h / 2 - y_offset)
       .scale(zoom, zoom)
