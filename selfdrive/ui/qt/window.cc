@@ -135,20 +135,5 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     device.resetInteractiveTimout();
   }
 
-//  if (event->type() == QEvent::LanguageChange) {
-//    obj->retranslateUi(this);
-//  }
-
   return false;
 }
-
-//void MainWindow::changeEvent(QEvent *event) {
-//  qDebug() << "changeEvent";
-//  if (event->type() == QEvent::LanguageChange) {
-//    qDebug() << "LanguageChange";
-////    setTrs();
-////    ui->retranslateUi(this);
-//  }
-//
-//  QWidget::changeEvent(event);
-//}
