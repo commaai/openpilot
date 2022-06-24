@@ -14,7 +14,6 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
   #    msg = b'\x00\x00\x00\x03\x00\x00\x00\x00'
   #  return make_can_msg(0x2a6, msg, 0)
 
-  lkasdisabled = CS.lkasdisabled
   color = 1  # default values are for park or neutral in 2017 are 0 0, but trying 1 1 for 2019
   lines = 1
   alerts = 0
@@ -22,6 +21,7 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
 
   if hud_count < (1 * 4):  # first 3 seconds, 4Hz
     alerts = 1
+
   # CAR.PACIFICA_2018_HYBRID and CAR.PACIFICA_2019_HYBRID
   # had color = 1 and lines = 1 but trying 2017 hybrid style for now.
   # Lines
@@ -47,10 +47,6 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
       color = 1  # control off, display white.
       lines = 0
       alerts = 7
-  if CS.lkasdisabled == 1:
-    color = 0
-    lines = 0
-    alerts = 0
 
   if hud_alert in [VisualAlert.ldw]: # possible use this instead
     color = 4
@@ -70,7 +66,7 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
       "CAR_MODEL": carmodel,  # byte 1
       "LKAS_LANE_LINES": lines,  # byte 2, last 4 bits
       "LKAS_ALERTS": alerts,  # byte 3, last 4 bits
-      "LKAS_Disabled":lkasdisabled,
+      "LKAS_Disabled": 0,
     }
   else:
     values = {
@@ -78,7 +74,7 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
       "CAR_MODEL": CS.lkas_car_model,  # byte 1
       "LKAS_LANE_LINES": lines,  # byte 2, last 4 bits
       "LKAS_ALERTS": alerts,  # byte 3, last 4 bits
-      "LKAS_Disabled":lkasdisabled,
+      "LKAS_Disabled": 0,
     }
 
   return packer.make_can_msg("DAS_6", 0, values)
@@ -95,7 +91,6 @@ def create_lkas_command(packer, apply_steer, moving_fast, frame):
 
 
 def create_wheel_buttons(packer, frame, bus, cancel=False):
-  # Cruise_Control_Buttons Message sent to cancel ACC.
   values = {
     "ACC_Cancel": cancel,
     "COUNTER": frame % 0x10,
