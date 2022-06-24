@@ -33,8 +33,10 @@ class Laikad:
                save_ephemeris=False, last_known_position=None):
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True)
     self.gnss_kf = GNSSKalman(GENERATED_DIR)
-    self.orbit_fetch_executor = ProcessPoolExecutor()
+    
+    self.orbit_fetch_executor = None
     self.orbit_fetch_future: Optional[Future] = None
+    
     self.last_fetch_orbits_t = None
     self.last_cached_t = None
     self.save_ephemeris = save_ephemeris
@@ -154,17 +156,16 @@ class Laikad:
     if t not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or t - self.last_fetch_orbits_t > SECS_IN_HR):
       astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types
       if self.orbit_fetch_future is None:
+        self.orbit_fetch_executor = ProcessPoolExecutor(max_workers=1)
         self.orbit_fetch_future = self.orbit_fetch_executor.submit(get_orbit_data, t, *astro_dog_vars)
         if block:
           self.orbit_fetch_future.result()
       if self.orbit_fetch_future.done():
-        ret = self.orbit_fetch_future.result()
         self.last_fetch_orbits_t = t
-        if ret:
+        if (ret := self.orbit_fetch_future.result()) is not None:
           self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
           self.cache_ephemeris(t=t)
-        self.orbit_fetch_future = None
-
+        self.orbit_fetch_executor = self.orbit_fetch_future = None
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
   astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types)
