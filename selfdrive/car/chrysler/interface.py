@@ -17,13 +17,14 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler, param)]
 
     ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 0.7
     ret.steerLimitTimer = 0.4
 
     ret.minSteerSpeed = 3.8  # m/s
     if candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
       # TODO: allow 2019 cars to steer down to 13 m/s if already engaged.
       ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
+
+    torque_params = CarInterfaceBase.get_torque_params(candidate)
 
     # Chrysler
     if candidate in (CAR.PACIFICA_2017_HYBRID, CAR.PACIFICA_2018, CAR.PACIFICA_2018_HYBRID, CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020):
@@ -50,9 +51,8 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.3
       ret.mass = 2493. + STD_CARGO_KG
       ret.maxLateralAccel = 2.4
-      ret.steerRateCost = 1.0
       ret.minSteerSpeed = 14.5
-      set_torque_tune(ret.lateralTuning, ret.maxLateralAccel, 0.05)
+      set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
 
     else:
       raise ValueError(f"Unsupported car: {candidate}")

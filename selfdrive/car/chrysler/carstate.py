@@ -32,7 +32,7 @@ class CarState(CarStateBase):
     ret.gasPressed = ret.gas > 1e-5
 
     # car speed
-    ret.vEgoRaw = cp.vl["ESP_8"]["Vehicle_Speed"] * CV.KPH_TO_MS
+    ret.vEgoRaw = cp.vl["ESP_8"]["VEHICLE_SPEED"] * CV.KPH_TO_MS
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = not ret.vEgoRaw > 0.001
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -72,7 +72,7 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = cp_cruise.vl["DAS_4"]["ACC_Set_Speed"] * CV.KPH_TO_MS
     ret.cruiseState.nonAdaptive = cp_cruise.vl["DAS_4"]["ACC_Activation_Status"] in (1, 2)  # 1 NormalCCOn and 2 NormalCCSet
     ret.cruiseState.standstill = cp_cruise.vl["DAS_3"]["ACC_STANDSTILL"] == 1
-    ret.accFaulted = cp.vl["DAS_3"]["ACC_FAULTED"] != 0
+    ret.accFaulted = cp_cruise.vl["DAS_3"]["ACC_FAULTED"] != 0
 
     if self.CP.carFingerprint in RAM_CARS:
       self.autoHighBeamBit = cp_cam.vl["DAS_6"]['Auto_High_Beam']  # Auto High Beam isn't Located in this message on chrysler or jeep currently located in 729 message
@@ -102,8 +102,6 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_RR", "BCM_1"),
       ("Brake_Pedal_State", "ESP_1"),
       ("Accelerator_Position", "ECM_5"),
-      ("SPEED_LEFT", "SPEED_1"),
-      ("SPEED_RIGHT", "SPEED_1"),
       ("WHEEL_SPEED_FL", "ESP_6"),
       ("WHEEL_SPEED_RR", "ESP_6"),
       ("WHEEL_SPEED_RL", "ESP_6"),
@@ -111,36 +109,29 @@ class CarState(CarStateBase):
       ("STEER_ANGLE", "STEERING"),
       ("STEERING_RATE", "STEERING"),
       ("TURN_SIGNALS", "STEERING_LEVERS"),
-      ("ACC_AVAILABLE", "DAS_3"),
-      ("ACC_ACTIVE", "DAS_3"),
-      ("ACC_FAULTED", "DAS_3"),
       ("HIGH_BEAM_FLASH", "STEERING_LEVERS"),
-      ("Acc_Set_Speed", "DAS_4"),
-      ("Acc_Activation_Status", "DAS_4"),
-      ("TORQUE_DRIVER", "EPS_2"),
-      ("TORQUE_MOTOR", "EPS_2"),
+      ("COLUMN_TORQUE", "EPS_2"),
+      ("EPS_MOTOR_TORQUE", "EPS_2"),
       ("LKAS_STATE", "EPS_2"),
       ("COUNTER", "EPS_2",),
       #("TRACTION_OFF", "TRACTION_BUTTON"),
-      ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS"),
+      ("SEATBELT_DRIVER_UNLATCHED", "ORC_1"),
       ("COUNTER", "CRUISE_BUTTONS"),
+      ("VEHICLE_SPEED", "ESP_8"),
     ]
 
     checks = [
       # sig_address, frequency
       ("ESP_1", 50),
       ("EPS_2", 100),
-      ("SPEED_1", 100),
       ("ESP_6", 50),
       ("ESP_8", 50),
       ("STEERING", 100),
-      ("DAS_3", 50),
       ("Transmission_Status", 50),
       ("ECM_5", 50),
       ("CRUISE_BUTTONS", 50),
-      ("DAS_4", 50),
       ("STEERING_LEVERS", 10),
-      ("SEATBELT_STATUS", 2),
+      ("ORC_1", 2),
       ("BCM_1", 1),
       #("TRACTION_BUTTON", 1),
     ]
@@ -166,8 +157,10 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in RAM_CARS:
       signals += [
-        ("ACC_Engaged", "DAS_3"),  # ACC Engaged
-        ("ACC_StandStill", "DAS_3"),  # ACC Engaged
+        ("ACC_AVAILABLE", "DAS_3"),
+        ("ACC_ACTIVE", "DAS_3"),
+        ("ACC_FAULTED", "DAS_3"),
+        ("ACC_STANDSTILL", "DAS_3"),
         ("COUNTER", "DAS_3"),
         ("ACC_Set_Speed", "DAS_4"),
         ("ACC_Activation_Status", "DAS_4"),

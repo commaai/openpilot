@@ -21,7 +21,7 @@ class CAR:
   JEEP_CHEROKEE_2019 = "JEEP GRAND CHEROKEE 2019" # includes 2020 Trailhawk
 
   # Ram
-  RAM_1500 = "Ram 1500 5TH GEN"
+  RAM_1500 = "RAM 1500 5TH GEN"
 
 
 class CarControllerParams:
