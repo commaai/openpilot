@@ -1,12 +1,10 @@
 #include "selfdrive/ui/qt/window.h"
 
 #include <QFontDatabase>
-#include <QTranslator>
 
 #include "system/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
-  qDebug() << "MainWindow";
   main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 
