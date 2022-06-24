@@ -294,6 +294,7 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   QFrame *container = new QFrame(this);
   container->setStyleSheet("QFrame { border-radius: 0; background-color: #ECECEC; }");
   QVBoxLayout *main_layout = new QVBoxLayout(container);
+  setAttribute(Qt::WA_TranslucentBackground); // No background
   main_layout->setContentsMargins(32, 120, 32, 32);
 
   QLabel *prompt = new QLabel(prompt_text, this);
@@ -339,8 +340,12 @@ bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
 
 RichTextDialog::RichTextDialog(const QString &prompt_text, const QString &btn_text,
                                QWidget *parent) : QDialogBase(parent) {
+  setAttribute(Qt::WA_AcceptTouchEvents);
+  setFocusPolicy(Qt::NoFocus);
+//  setWindowFlags(Qt::FramelessWindowHint);   //No windowing
+  setAttribute(Qt::WA_TranslucentBackground); // No background
   QFrame *container = new QFrame(this);
-  container->setStyleSheet("QFrame { background-color: transparent; }");
+  container->setStyleSheet("QFrame { background-color: black; }");
   QVBoxLayout *main_layout = new QVBoxLayout(container);
   main_layout->setContentsMargins(32, 32, 32, 32);
 
