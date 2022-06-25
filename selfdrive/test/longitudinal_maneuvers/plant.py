@@ -131,6 +131,7 @@ class Plant():
       "distance": self.distance,
       "speed": self.speed,
       "acceleration": self.acceleration,
+      "speeds": self.speeds,
       "distance_lead": self.distance_lead,
       "fcw": fcw,
     }
