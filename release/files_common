@@ -478,6 +478,7 @@ opendbc/comma_body.dbc
 
 opendbc/chrysler_pacifica_2017_hybrid.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
+opendbc/chrysler_ram_1500.dbc
 
 opendbc/gm_global_a_powertrain_generated.dbc
 opendbc/gm_global_a_object.dbc

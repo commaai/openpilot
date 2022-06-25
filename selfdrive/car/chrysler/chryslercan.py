@@ -7,13 +7,6 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
   # LKAS_HUD 0x2a6 (678) Controls what lane-keeping icon is displayed.
 
-  #if hud_alert in (VisualAlert.steerRequired):
-  #  if fingerprint in (CAR.RAM_1500, ):
-  #    msg = b'\x00\x00\x0F\x00\x00\x00\x00\x00'
-  #  else:
-  #    msg = b'\x00\x00\x00\x03\x00\x00\x00\x00'
-  #  return make_can_msg(0x2a6, msg, 0)
-
   color = 1  # default values are for park or neutral in 2017 are 0 0, but trying 1 1 for 2019
   lines = 1
   alerts = 0
@@ -34,9 +27,9 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
   # 0D left cross cross
   # 0E right lane cross
 
-  #Alerts
-  #7 Normal
-  #6 lane departure place hands on wheel
+  # Alerts
+  # 7 Normal
+  # 6 lane departure place hands on wheel
 
   if CS.out.gearShifter in (GearShifter.drive, GearShifter.reverse, GearShifter.low):
     if lkas_active:
@@ -48,35 +41,27 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
       lines = 0
       alerts = 7
 
-  if hud_alert in [VisualAlert.ldw]: # possible use this instead
+  if hud_alert == VisualAlert.ldw:
     color = 4
     lines = 0
     alerts = 6
-
-  if hud_alert in [VisualAlert.steerRequired]:
+  elif hud_alert == VisualAlert.steerRequired:
     color = 0
     lines = 0
     alerts = 0
     carmodel = 0xf
 
-  if fingerprint in (CAR.RAM_1500, ):
-    values = {
-      "Auto_High_Beam": CS.autoHighBeamBit,
-      "LKAS_ICON_COLOR": color,  # byte 0, last 2 bits
-      "CAR_MODEL": carmodel,  # byte 1
-      "LKAS_LANE_LINES": lines,  # byte 2, last 4 bits
-      "LKAS_ALERTS": alerts,  # byte 3, last 4 bits
-      "LKAS_Disabled": 0,
-    }
-  else:
-    values = {
-      "LKAS_ICON_COLOR": color,  # byte 0, last 2 bits
-      "CAR_MODEL": CS.lkas_car_model,  # byte 1
-      "LKAS_LANE_LINES": lines,  # byte 2, last 4 bits
-      "LKAS_ALERTS": alerts,  # byte 3, last 4 bits
-      "LKAS_Disabled": 0,
-    }
+  # TODO: what is this? why is it different?
+  if fingerprint != CAR.RAM_1500:
+    carmodel = CS.lkas_car_model
 
+  values = {
+    "LKAS_ICON_COLOR": color,
+    "CAR_MODEL": carmodel,  # TODO: look into this
+    "LKAS_LANE_LINES": lines,
+    "LKAS_ALERTS": alerts,
+    "LKAS_Disabled": 0,
+  }
   return packer.make_can_msg("DAS_6", 0, values)
 
 
