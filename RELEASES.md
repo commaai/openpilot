@@ -1,5 +1,6 @@
 Version 0.8.15 (20XX-XX-XX)
 ========================
+  * Fix FPV2 for Chrysler/Jeep/Ram
 
 Version 0.8.14 (2022-06-01)
 ========================
