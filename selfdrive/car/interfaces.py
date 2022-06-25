@@ -1,4 +1,4 @@
-import json
+import yaml
 import os
 import time
 from abc import abstractmethod, ABC
@@ -20,7 +20,34 @@ EventName = car.CarEvent.EventName
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
-TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data.json')
+
+TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.yaml')
+TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.yaml')
+TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.yaml')
+
+
+def get_torque_params(candidate):
+  with open(TORQUE_SUBSTITUTE_PATH) as f:
+    sub = yaml.load(f, Loader=yaml.CSafeLoader)
+  if candidate in sub:
+    candidate = sub[candidate]
+
+  with open(TORQUE_PARAMS_PATH) as f:
+    params = yaml.load(f, Loader=yaml.CSafeLoader)
+  with open(TORQUE_OVERRIDE_PATH) as f:
+    override = yaml.load(f, Loader=yaml.CSafeLoader)
+
+  # Ensure no overlap
+  if sum([candidate in x for x in [sub, params, override]]) > 1:
+    raise RuntimeError(f'{candidate} is defined twice in torque config')
+
+  if candidate in override:
+    out = override[candidate]
+  elif candidate in params:
+    out = params[candidate]
+  else:
+    raise NotImplementedError(f"Did not find torque params for {candidate}")
+  return {key: out[i] for i, key in enumerate(params['legend'])}
 
 
 # generic car and radar interfaces
@@ -83,7 +110,7 @@ class CarInterfaceBase(ABC):
     ret.steerControlType = car.CarParams.SteerControlType.torque
     ret.minSteerSpeed = 0.
     ret.wheelSpeedFactor = 1.0
-    ret.maxLateralAccel = CarInterfaceBase.get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
+    ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
@@ -108,10 +135,16 @@ class CarInterfaceBase(ABC):
     return ret
 
   @staticmethod
-  def get_torque_params(candidate, default=float('NaN')):
-    with open(TORQUE_PARAMS_PATH) as f:
-      data = json.load(f)
-    return {key: data[key].get(candidate, default) for key in data}
+  def configure_torque_tune(candidate, tune, steering_angle_deadzone_deg=0.0):
+    params = get_torque_params(candidate)
+
+    tune.init('torque')
+    tune.torque.useSteeringAngle = True
+    tune.torque.kp = 1.0 / params['LAT_ACCEL_FACTOR']
+    tune.torque.kf = 1.0 / params['LAT_ACCEL_FACTOR']
+    tune.torque.ki = 0.1 / params['LAT_ACCEL_FACTOR']
+    tune.torque.friction = params['FRICTION']
+    tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
