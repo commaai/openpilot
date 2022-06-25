@@ -4,7 +4,6 @@ from panda import Panda
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.chrysler.values import CAR, RAM_CARS
 from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.controls.lib.latcontrol_torque import set_torque_tune
 
 
 class CarInterface(CarInterfaceBase):
@@ -23,8 +22,6 @@ class CarInterface(CarInterfaceBase):
     if candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
       # TODO: allow 2019 cars to steer down to 13 m/s if already engaged.
       ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
-
-    torque_params = CarInterfaceBase.get_torque_params(candidate)
 
     # Chrysler
     if candidate in (CAR.PACIFICA_2017_HYBRID, CAR.PACIFICA_2018, CAR.PACIFICA_2018_HYBRID, CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020):
@@ -52,7 +49,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2493. + STD_CARGO_KG
       ret.maxLateralAccel = 2.4
       ret.minSteerSpeed = 14.5
-      set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     else:
       raise ValueError(f"Unsupported car: {candidate}")
