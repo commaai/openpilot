@@ -39,7 +39,7 @@ def yuv_to_rgb(y, u, v):
     [0.00000, -0.39465, 2.03211],
     [1.13983, -0.58060, 0.00000],
   ])
-  rgb = np.dot(yuv, m)
+  rgb = np.dot(yuv, m).clip(0, 255)
   return rgb.astype(np.uint8)
 
 
