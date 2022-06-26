@@ -67,23 +67,16 @@ TEST_CASE("logger") {
   const std::string log_root = "/tmp/test_logger";
   system(("rm " + log_root + " -rf").c_str());
 
-  ExitHandler do_exit;
-
   Logger logger(log_root);
-
-  SECTION("single thread logging & rotation(100 segments, one thread)") {
-    const int segment_cnt = 100;
-    for (int i = 0; i < segment_cnt; ++i) {
-      REQUIRE(logger.next());
-      REQUIRE(util::file_exists(logger.segmentPath() + "/rlog.lock"));
-      REQUIRE(logger.segment() == i);
-      write_msg(&logger);
-    }
-    do_exit = true;
-    do_exit.signal = 1;
-    logger.close(do_exit.signal);
-    for (int i = 0; i < segment_cnt; ++i) {
-      verify_segment(log_root + "/" + logger.routeName(), i, segment_cnt, 1);
-    }
+  const int segment_cnt = 100;
+  for (int i = 0; i < segment_cnt; ++i) {
+    REQUIRE(logger.next());
+    REQUIRE(util::file_exists(logger.segmentPath() + "/rlog.lock"));
+    REQUIRE(logger.segment() == i);
+    write_msg(&logger);
+  }
+  logger.close(1);
+  for (int i = 0; i < segment_cnt; ++i) {
+    verify_segment(log_root + "/" + logger.routeName(), i, segment_cnt, 1);
   }
 }

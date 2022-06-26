@@ -98,11 +98,13 @@ static void log_sentinel(Logger *h, SentinelType type, int signal = 0) {
 LoggerState::LoggerState(const std::string& segment_path) {
   bool ret = util::create_directories(segment_path, 0775);
   assert(ret == true);
-  lock_file = segment_path + "/.lock";
-  std::ofstream{lock_file};
 
-  log = std::make_unique<RawFile>(segment_path + "/rlog.bz2");
-  qlog = std::make_unique<RawFile>(segment_path + "/qlog.bz2");
+  std::string log_path = segment_path + "/rlog";
+  log = std::make_unique<RawFile>(log_path);
+  qlog = std::make_unique<RawFile>(segment_path + "/qlog");
+
+  lock_file = log_path + "/.lock";
+  std::ofstream{lock_file};
 }
 
 void LoggerState::write(uint8_t* data, size_t data_size, bool in_qlog) {
@@ -124,9 +126,8 @@ bool Logger::next() {
   if (logger) {
     log_sentinel(logger.get(), cereal::Sentinel::SentinelType::END_OF_SEGMENT);
   }
-  ++part;
-  segment_path = route_path + "--" + std::to_string(part);
-  logger = std::make_unique<Logger>(segment_path);
+  segment_path = route_path + "--" + std::to_string(++part);
+  logger.reset(new Logger(segment_path));
   // log init data & sentinel type.
   auto bytes = init_data.asBytes();
   logger->write(bytes.begin(), bytes.size(), true);
