@@ -86,7 +86,7 @@ std::string logger_get_route_name() {
   return route_name;
 }
 
-static void log_sentinel(Logger *h, SentinelType type, int signal = 0) {
+static void log_sentinel(LoggerState *h, SentinelType type, int signal = 0) {
   MessageBuilder msg;
   auto sen = msg.initEvent().initSentinel();
   sen.setType(type);
@@ -103,7 +103,7 @@ LoggerState::LoggerState(const std::string& segment_path) {
   log = std::make_unique<RawFile>(log_path);
   qlog = std::make_unique<RawFile>(segment_path + "/qlog");
 
-  lock_file = log_path + "/.lock";
+  lock_file = log_path + ".lock";
   std::ofstream{lock_file};
 }
 
@@ -116,7 +116,7 @@ LoggerState::~LoggerState() {
   std::remove(lock_file.c_str());
 }
 
-Logger::Logger(const std::string& log_root) {
+Logger::Logger(const std::string &log_root) {
   route_name = logger_get_route_name();
   route_path = log_root + "/" + route_name;
   init_data = logger_build_init_data();
@@ -126,8 +126,9 @@ bool Logger::next() {
   if (logger) {
     log_sentinel(logger.get(), cereal::Sentinel::SentinelType::END_OF_SEGMENT);
   }
+
   segment_path = route_path + "--" + std::to_string(++part);
-  logger.reset(new Logger(segment_path));
+  logger.reset(new LoggerState(segment_path));
   // log init data & sentinel type.
   auto bytes = init_data.asBytes();
   logger->write(bytes.begin(), bytes.size(), true);
@@ -137,4 +138,5 @@ bool Logger::next() {
 
 void Logger::close(int signal) {
   log_sentinel(logger.get(), cereal::Sentinel::SentinelType::END_OF_ROUTE, signal);
+  logger.reset(nullptr);
 }

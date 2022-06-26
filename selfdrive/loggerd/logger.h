@@ -43,18 +43,18 @@ class RawFile {
 typedef cereal::Sentinel::SentinelType SentinelType;
 
 class LoggerState {
-public:
+ public:
   LoggerState(const std::string& path);
   ~LoggerState();
   void write(uint8_t* data, size_t size, bool in_qlog);
 
-protected:
+ protected:
   std::string lock_file;
   std::unique_ptr<RawFile> log, qlog;
 };
 
 class Logger {
-public:
+ public:
   Logger(const std::string& log_root = LOG_ROOT);
   bool next();
   void close(int signal);
@@ -63,11 +63,11 @@ public:
   inline const std::string& segmentPath() const { return segment_path; }
   inline void write(uint8_t* data, size_t size, bool in_qlog) { logger->write(data, size, in_qlog); }
 
-protected:
+ protected:
   int part = -1;
   std::string route_path, route_name, segment_path;
   kj::Array<capnp::word> init_data;
-  std::unique_ptr<Logger> logger;
+  std::unique_ptr<LoggerState> logger;
 };
 
 kj::Array<capnp::word> logger_build_init_data();
