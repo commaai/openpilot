@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "selfdrive/ui/replay/filereader.h"
+#include "tools/replay/filereader.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
