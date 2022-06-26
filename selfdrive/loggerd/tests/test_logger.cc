@@ -56,11 +56,11 @@ void verify_segment(const std::string &route_path, int segment, int max_segment,
   }
 }
 
-void write_msg(LoggerHandle *logger) {
+void write_msg(LoggerManager *logger) {
   MessageBuilder msg;
   msg.initEvent().initClocks();
   auto bytes = msg.toBytes();
-  lh_log(logger, bytes.begin(), bytes.size(), true);
+  logger->write(bytes.begin(), bytes.size(), true);
 }
 
 TEST_CASE("logger") {
@@ -69,24 +69,21 @@ TEST_CASE("logger") {
 
   ExitHandler do_exit;
 
-  LoggerState logger = {};
-  logger_init(&logger, true);
-  char segment_path[PATH_MAX] = {};
-  int segment = -1;
+  LoggerManager logger(log_root);
 
   SECTION("single thread logging & rotation(100 segments, one thread)") {
     const int segment_cnt = 100;
     for (int i = 0; i < segment_cnt; ++i) {
-      REQUIRE(logger_next(&logger, log_root.c_str(), segment_path, sizeof(segment_path), &segment) == 0);
-      REQUIRE(util::file_exists(std::string(segment_path) + "/rlog.lock"));
-      REQUIRE(segment == i);
-      write_msg(logger.cur_handle);
+      REQUIRE(logger.next());
+      REQUIRE(util::file_exists(logger.segmentPath() + "/rlog.lock"));
+      REQUIRE(logger.segment() == i);
+      write_msg(&logger);
     }
     do_exit = true;
     do_exit.signal = 1;
-    logger_close(&logger, &do_exit);
+    logger.close(do_exit.signal);
     for (int i = 0; i < segment_cnt; ++i) {
-      verify_segment(log_root + "/" + logger.route_name, i, segment_cnt, 1);
+      verify_segment(log_root + "/" + logger.routeName(), i, segment_cnt, 1);
     }
   }
   SECTION("multiple threads logging & rotation(100 segments, 10 threads") {

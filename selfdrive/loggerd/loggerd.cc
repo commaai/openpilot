@@ -4,10 +4,8 @@
 ExitHandler do_exit;
 
 struct LoggerdState {
-  LoggerState logger = {};
-  char segment_path[4096];
+  Logger logger;
   std::mutex rotate_lock;
-  std::atomic<int> rotate_segment;
   std::atomic<double> last_camera_seen_tms;
   std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
   int max_waiting = 0;
@@ -17,14 +15,12 @@ struct LoggerdState {
 void logger_rotate(LoggerdState *s) {
   {
     std::unique_lock lk(s->rotate_lock);
-    int segment = -1;
-    int err = logger_next(&s->logger, LOG_ROOT.c_str(), s->segment_path, sizeof(s->segment_path), &segment);
-    assert(err == 0);
-    s->rotate_segment = segment;
+    bool ret =s->logger.next();
+    assert(ret);
     s->ready_to_rotate = 0;
     s->last_rotate_tms = millis_since_boot();
   }
-  LOGW((s->logger.part == 0) ? "logging to %s" : "rotated to %s", s->segment_path);
+  // LOGW((s->logger.segment() == 0) ? "logging to %s" : "rotated to %s", s->logger.segment_path);
 }
 
 void rotate_if_needed(LoggerdState *s) {
@@ -75,16 +71,16 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   }
   int offset_segment_num = idx.getSegmentNum() - re.encoderd_segment_offset;
 
-  if (offset_segment_num == s->rotate_segment) {
+  if (offset_segment_num == s->logger.segment()) {
     // loggerd is now on the segment that matches this packet
 
     // if this is a new segment, we close any possible old segments, move to the new, and process any queued packets
-    if (re.current_segment != s->rotate_segment) {
+    if (re.current_segment != s->logger.segment()) {
       if (re.recording) {
         re.writer.reset();
         re.recording = false;
       }
-      re.current_segment = s->rotate_segment;
+      re.current_segment = s->logger.segment();
       re.marked_ready_to_rotate = false;
       // we are in this segment now, process any queued messages before this one
       if (!re.q.empty()) {
@@ -106,7 +102,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         }
         // if we aren't actually recording, don't create the writer
         if (cam_info.record) {
-          re.writer.reset(new VideoWriter(s->segment_path,
+          re.writer.reset(new VideoWriter(s->logger.segmentPath().c_str(),
             cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
             cam_info.frame_width, cam_info.frame_height, cam_info.fps, idx.getType()));
           // write the header
@@ -141,28 +137,28 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     if (name == "qRoadEncodeData") { evt.setQRoadEncodeIdx(idx); }
     if (name == "roadEncodeData") { evt.setRoadEncodeIdx(idx); }
     auto new_msg = bmsg.toBytes();
-    logger_log(&s->logger, (uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
+    s->logger.write((uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
     bytes_count += new_msg.size();
 
     // free the message, we used it
     delete msg;
-  } else if (offset_segment_num > s->rotate_segment) {
+  } else if (offset_segment_num > s->logger.segment()) {
     // encoderd packet has a newer segment, this means encoderd has rolled over
     if (!re.marked_ready_to_rotate) {
       re.marked_ready_to_rotate = true;
       ++s->ready_to_rotate;
       LOGD("rotate %d -> %d ready %d/%d for %s",
-        s->rotate_segment.load(), offset_segment_num,
+        s->logger.segment(), offset_segment_num,
         s->ready_to_rotate.load(), s->max_waiting, name.c_str());
     }
     // queue up all the new segment messages, they go in after the rotate
     re.q.push_back(msg);
   } else {
-    LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->rotate_segment:%d re.encoderd_segment_offset:%d",
-      name.c_str(), idx.getSegmentNum(), s->rotate_segment.load(), re.encoderd_segment_offset);
+    LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->logger.segment():%d re.encoderd_segment_offset:%d",
+      name.c_str(), idx.getSegmentNum(), s->logger.segment(), re.encoderd_segment_offset);
     // free the message, it's useless. this should never happen
     // actually, this can happen if you restart encoderd
-    re.encoderd_segment_offset = -s->rotate_segment.load();
+    re.encoderd_segment_offset = -s->logger.segment();
     delete msg;
   }
 
@@ -201,9 +197,8 @@ void loggerd_thread() {
 
   LoggerdState s;
   // init logger
-  logger_init(&s.logger, true);
   logger_rotate(&s);
-  Params().put("CurrentRoute", s.logger.route_name);
+  Params().put("CurrentRoute", s.logger.routeName());
 
   // init encoders
   s.last_camera_seen_tms = millis_since_boot();
@@ -232,7 +227,7 @@ void loggerd_thread() {
           s.last_camera_seen_tms = millis_since_boot();
           bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock]);
         } else {
-          logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
+          s.logger.write((uint8_t *)msg->getData(), msg->getSize(), in_qlog);
           bytes_count += msg->getSize();
           delete msg;
         }
@@ -254,7 +249,7 @@ void loggerd_thread() {
   }
 
   LOGW("closing logger");
-  logger_close(&s.logger, &do_exit);
+  s.logger.close(do_exit.signal);
 
   if (do_exit.power_failure) {
     LOGE("power failure");

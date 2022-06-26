@@ -21,8 +21,8 @@ const std::string LOG_ROOT = Path::log_root();
 
 class RawFile {
  public:
-  RawFile(const char* path) {
-    file = util::safe_fopen(path, "wb");
+  RawFile(const std::string &path) {
+    file = util::safe_fopen(path.c_str(), "wb");
     assert(file != nullptr);
   }
   ~RawFile() {
@@ -42,39 +42,33 @@ class RawFile {
 
 typedef cereal::Sentinel::SentinelType SentinelType;
 
-typedef struct LoggerHandle {
-  pthread_mutex_t lock;
-  SentinelType end_sentinel_type;
-  int exit_signal;
-  int refcnt;
-  char segment_path[4096];
-  char log_path[4096];
-  char qlog_path[4096];
-  char lock_path[4096];
-  std::unique_ptr<RawFile> log, q_log;
-} LoggerHandle;
+class LoggerState {
+public:
+  LoggerState(const std::string& path);
+  ~LoggerState();
+  void write(uint8_t* data, size_t size, bool in_qlog);
 
-typedef struct LoggerState {
-  pthread_mutex_t lock;
-  int part;
+protected:
+  std::string lock_file;
+  std::unique_ptr<RawFile> log, qlog;
+};
+
+class Logger {
+public:
+  Logger(const std::string& log_root = LOG_ROOT);
+  bool next();
+  void close(int signal);
+  inline const std::string& routeName() const { return route_name; }
+  inline int segment() const { return part; }
+  inline const std::string& segmentPath() const { return segment_path; }
+  inline void write(uint8_t* data, size_t size, bool in_qlog) { logger->write(data, size, in_qlog); }
+
+protected:
+  int part = -1;
+  std::string route_path, route_name, segment_path;
   kj::Array<capnp::word> init_data;
-  std::string route_name;
-  char log_name[64];
-  bool has_qlog;
-
-  LoggerHandle handles[LOGGER_MAX_HANDLES];
-  LoggerHandle* cur_handle;
-} LoggerState;
+  std::unique_ptr<Logger> logger;
+};
 
 kj::Array<capnp::word> logger_build_init_data();
 std::string logger_get_route_name();
-void logger_init(LoggerState *s, bool has_qlog);
-int logger_next(LoggerState *s, const char* root_path,
-                            char* out_segment_path, size_t out_segment_path_len,
-                            int* out_part);
-LoggerHandle* logger_get_handle(LoggerState *s);
-void logger_close(LoggerState *s, ExitHandler *exit_handler=nullptr);
-void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog);
-
-void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog);
-void lh_close(LoggerHandle* h);
