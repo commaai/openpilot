@@ -2,7 +2,6 @@ import os
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc',
        'cereal', 'transformations')
 
-# qt_env.SetOption('warn', 'no-duplicate-environment')
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
@@ -18,5 +17,3 @@ if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
 
   if GetOption('test'):
     qt_env.Program('tests/test_replay', ['tests/test_runner.cc', 'tests/test_replay.cc'], LIBS=[replay_libs])
-
-# qt_env.SetOption('warn', 'duplicate-environment')
