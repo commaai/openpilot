@@ -19,3 +19,5 @@ if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
 
   if GetOption('test'):
     qt_env.Program('tests/test_replay', ['tests/test_runner.cc', 'tests/test_replay.cc'], LIBS=[replay_libs])
+
+qt_env.SetOption('warn', 'duplicate-environment')
