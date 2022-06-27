@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import sys
+import math
+import datetime
 from collections import Counter
 from pprint import pprint
 from tqdm import tqdm
+from typing import cast
 
 from cereal.services import service_list
 from tools.lib.route import Route
@@ -17,6 +20,8 @@ if __name__ == "__main__":
   cams = [s for s in service_list if s.endswith('CameraState')]
   cnt_cameras = dict.fromkeys(cams, 0)
 
+  start_time = math.inf
+  end_time = -math.inf
   for q in tqdm(r.qlog_paths()):
     if q is None:
       continue
@@ -31,6 +36,10 @@ if __name__ == "__main__":
       if not msg.valid:
         cnt_valid[msg.which()] += 1
 
+      end_time = max(end_time, msg.logMonoTime)
+      start_time = min(start_time, msg.logMonoTime)
+
+  duration = (end_time - start_time) / 1e9
 
   print("Events")
   pprint(cnt_events)
@@ -42,4 +51,9 @@ if __name__ == "__main__":
   print("\n")
   print("Cameras")
   for k, v in cnt_cameras.items():
-    print("  ", k.ljust(20), v)
+    s = service_list[k]
+    expected_frames = int(s.frequency * duration / cast(float, s.decimation))
+    print("  ", k.ljust(20), f"{v}, {v/expected_frames:.1%} of expected")
+
+  print("\n")
+  print("Route duration", datetime.timedelta(seconds=duration))

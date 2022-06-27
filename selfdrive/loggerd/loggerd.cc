@@ -6,7 +6,6 @@ ExitHandler do_exit;
 struct LoggerdState {
   LoggerState logger = {};
   char segment_path[4096];
-  std::mutex rotate_lock;
   std::atomic<int> rotate_segment;
   std::atomic<double> last_camera_seen_tms;
   std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
@@ -15,15 +14,12 @@ struct LoggerdState {
 };
 
 void logger_rotate(LoggerdState *s) {
-  {
-    std::unique_lock lk(s->rotate_lock);
-    int segment = -1;
-    int err = logger_next(&s->logger, LOG_ROOT.c_str(), s->segment_path, sizeof(s->segment_path), &segment);
-    assert(err == 0);
-    s->rotate_segment = segment;
-    s->ready_to_rotate = 0;
-    s->last_rotate_tms = millis_since_boot();
-  }
+  int segment = -1;
+  int err = logger_next(&s->logger, LOG_ROOT.c_str(), s->segment_path, sizeof(s->segment_path), &segment);
+  assert(err == 0);
+  s->rotate_segment = segment;
+  s->ready_to_rotate = 0;
+  s->last_rotate_tms = millis_since_boot();
   LOGW((s->logger.part == 0) ? "logging to %s" : "rotated to %s", s->segment_path);
 }
 
