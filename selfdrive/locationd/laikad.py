@@ -33,10 +33,10 @@ class Laikad:
                save_ephemeris=False, last_known_position=None):
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True)
     self.gnss_kf = GNSSKalman(GENERATED_DIR)
-    
-    self.orbit_fetch_executor = None
+
+    self.orbit_fetch_executor: Optional[ProcessPoolExecutor] = None
     self.orbit_fetch_future: Optional[Future] = None
-    
+
     self.last_fetch_orbits_t = None
     self.last_cached_t = None
     self.save_ephemeris = save_ephemeris
@@ -78,7 +78,7 @@ class Laikad:
         self.last_pos_residual = pos_fix_residual
         self.last_pos_fix_t = t
     return self.last_pos_fix
-  
+
   def process_ublox_msg(self, ublox_msg, ublox_mono_time: int, block=False):
     if ublox_msg.which == 'measurementReport':
       t = ublox_mono_time * 1e-9
@@ -163,13 +163,22 @@ class Laikad:
         self.orbit_fetch_executor = ProcessPoolExecutor(max_workers=1)
         self.orbit_fetch_future = self.orbit_fetch_executor.submit(get_orbit_data, t, *astro_dog_vars)
         if block:
+          print("WAITING FOR FETCH FUTURE")
+
           self.orbit_fetch_future.result()
+          print("GOT RESULT")
+
       if self.orbit_fetch_future.done():
         self.last_fetch_orbits_t = t
         if (ret := self.orbit_fetch_future.result()) is not None:
           self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
           self.cache_ephemeris(t=t)
+        print("Removedddddd")
+        assert self.orbit_fetch_executor is not None 
+        self.orbit_fetch_executor.shutdown()
+        print("Shutdown")
         self.orbit_fetch_executor = self.orbit_fetch_future = None
+
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
   astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types)
@@ -180,7 +189,7 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
     astro_dog.get_orbit_data(t, only_predictions=True)
     data = (astro_dog.orbits, astro_dog.orbit_fetched_times)
   except RuntimeError as e:
-    cloudlog.info(f"No orbit data found. {e}")
+    cloudlog.error(f"No orbit data found. {e}")
   cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
   return data
 
