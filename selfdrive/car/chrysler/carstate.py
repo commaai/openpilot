@@ -18,10 +18,10 @@ class CarState(CarStateBase):
 
     self.frame = int(cp.vl["EPS_STATUS"]["COUNTER"])
 
-    ret.doorOpen = any([cp.vl["DOORS"]["DOOR_OPEN_FL"],
-                        cp.vl["DOORS"]["DOOR_OPEN_FR"],
-                        cp.vl["DOORS"]["DOOR_OPEN_RL"],
-                        cp.vl["DOORS"]["DOOR_OPEN_RR"]])
+    ret.doorOpen = any([cp.vl["BCM_1"]["DOOR_OPEN_FL"],
+                        cp.vl["BCM_1"]["DOOR_OPEN_FR"],
+                        cp.vl["BCM_1"]["DOOR_OPEN_RL"],
+                        cp.vl["BCM_1"]["DOOR_OPEN_RR"]])
     ret.seatbeltUnlatched = cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_UNLATCHED"] == 1
 
     # brake pedal
@@ -51,12 +51,12 @@ class CarState(CarStateBase):
     ret.steeringRateDeg = cp.vl["STEERING"]["STEERING_RATE"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["GEAR"]["PRNDL"], None))
 
-    ret.cruiseState.enabled = cp.vl["ACC_2"]["ACC_STATUS_2"] == 7  # ACC is green.
-    ret.cruiseState.available = ret.cruiseState.enabled  # FIXME: for now same as enabled
+    ret.cruiseState.available = cp.vl["DAS_3"]["ACC_AVAILABLE"] == 1  # ACC is white
+    ret.cruiseState.enabled = cp.vl["DAS_3"]["ACC_ACTIVE"] == 1  # ACC is green
     ret.cruiseState.speed = cp.vl["DASHBOARD"]["ACC_SPEED_CONFIG_KPH"] * CV.KPH_TO_MS
     # CRUISE_STATE is a three bit msg, 0 is off, 1 and 2 are Non-ACC mode, 3 and 4 are ACC mode, find if there are other states too
     ret.cruiseState.nonAdaptive = cp.vl["DASHBOARD"]["CRUISE_STATE"] in (1, 2)
-    ret.accFaulted = cp.vl["ACC_2"]["ACC_FAULTED"] != 0
+    ret.accFaulted = cp.vl["DAS_3"]["ACC_FAULTED"] != 0
 
     ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
@@ -82,10 +82,10 @@ class CarState(CarStateBase):
     signals = [
       # sig_name, sig_address
       ("PRNDL", "GEAR"),
-      ("DOOR_OPEN_FL", "DOORS"),
-      ("DOOR_OPEN_FR", "DOORS"),
-      ("DOOR_OPEN_RL", "DOORS"),
-      ("DOOR_OPEN_RR", "DOORS"),
+      ("DOOR_OPEN_FL", "BCM_1"),
+      ("DOOR_OPEN_FR", "BCM_1"),
+      ("DOOR_OPEN_RL", "BCM_1"),
+      ("DOOR_OPEN_RR", "BCM_1"),
       ("Brake_Pedal_State", "ESP_1"),
       ("Accelerator_Position", "ECM_5"),
       ("SPEED_LEFT", "SPEED_1"),
@@ -97,8 +97,9 @@ class CarState(CarStateBase):
       ("STEER_ANGLE", "STEERING"),
       ("STEERING_RATE", "STEERING"),
       ("TURN_SIGNALS", "STEERING_LEVERS"),
-      ("ACC_STATUS_2", "ACC_2"),
-      ("ACC_FAULTED", "ACC_2"),
+      ("ACC_AVAILABLE", "DAS_3"),
+      ("ACC_ACTIVE", "DAS_3"),
+      ("ACC_FAULTED", "DAS_3"),
       ("HIGH_BEAM_FLASH", "STEERING_LEVERS"),
       ("ACC_SPEED_CONFIG_KPH", "DASHBOARD"),
       ("CRUISE_STATE", "DASHBOARD"),
@@ -118,14 +119,14 @@ class CarState(CarStateBase):
       ("SPEED_1", 100),
       ("WHEEL_SPEEDS", 50),
       ("STEERING", 100),
-      ("ACC_2", 50),
+      ("DAS_3", 50),
       ("GEAR", 50),
       ("ECM_5", 50),
       ("WHEEL_BUTTONS", 50),
       ("DASHBOARD", 15),
       ("STEERING_LEVERS", 10),
       ("SEATBELT_STATUS", 2),
-      ("DOORS", 1),
+      ("BCM_1", 1),
       ("TRACTION_BUTTON", 1),
     ]
 
