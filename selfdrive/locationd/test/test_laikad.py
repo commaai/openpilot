@@ -62,19 +62,19 @@ class TestLaikad(unittest.TestCase):
 
   def setUp(self):
     Params().delete(EPHEMERIS_CACHE)
-    
+
   def test_fetch_orbits(self):
     gpstime = GPSTime.from_datetime(datetime(2021, month=3, day=1))
     laikad = Laikad()
     laikad.fetch_orbits(gpstime, block=True)
     ephem = laikad.astro_dog.orbits['G01'][0]
     self.assertIsNotNone(ephem)
-    
+
     laikad.fetch_orbits(gpstime+2*SECS_IN_DAY, block=True)
     ephem2 = laikad.astro_dog.orbits['G01'][0]
     self.assertIsNotNone(ephem)
     self.assertNotEqual(ephem, ephem2)
-    
+
   def test_ephemeris_source_in_msg(self):
     data_mock = defaultdict(str)
     data_mock['sv_id'] = 1
@@ -183,7 +183,7 @@ class TestLaikad(unittest.TestCase):
     wait_for_cache()
 
     # Check both nav and orbits separate
-    laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.NAV)
+    laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.NAV, save_ephemeris=True)
     # Verify orbits and nav are loaded from cache
     self.dict_has_values(laikad.astro_dog.orbits)
     self.dict_has_values(laikad.astro_dog.nav)
@@ -198,7 +198,7 @@ class TestLaikad(unittest.TestCase):
       mock_method.assert_not_called()
 
       # Verify cache is working for only orbits by running a segment
-      laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT)
+      laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT, save_ephemeris=True)
       msg = verify_messages(self.logs, laikad, return_one_success=True)
       self.assertIsNotNone(msg)
       # Verify orbit data is not downloaded
