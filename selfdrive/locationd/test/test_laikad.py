@@ -63,14 +63,22 @@ class TestLaikad(unittest.TestCase):
   def setUp(self):
     Params().delete(EPHEMERIS_CACHE)
 
-  def test_fetch_orbits(self):
+  def test_fetch_orbits_non_blocking(self):
     gpstime = GPSTime.from_datetime(datetime(2021, month=3, day=1))
     laikad = Laikad()
-    laikad.fetch_orbits(gpstime, block=True)
+    laikad.fetch_orbits(gpstime, block=False)
+    laikad.orbit_fetch_future.result(5)
+    # Get results and save orbits to laikad:
+    laikad.fetch_orbits(gpstime, block=False)
+
     ephem = laikad.astro_dog.orbits['G01'][0]
     self.assertIsNotNone(ephem)
 
-    laikad.fetch_orbits(gpstime+2*SECS_IN_DAY, block=True)
+    laikad.fetch_orbits(gpstime+2*SECS_IN_DAY, block=False)
+    laikad.orbit_fetch_future.result(5)
+    # Get results and save orbits to laikad:
+    laikad.fetch_orbits(gpstime + 2 * SECS_IN_DAY, block=False)
+
     ephem2 = laikad.astro_dog.orbits['G01'][0]
     self.assertIsNotNone(ephem)
     self.assertNotEqual(ephem, ephem2)

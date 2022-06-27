@@ -117,7 +117,6 @@ class Laikad:
       return dat
     elif ublox_msg.which == 'ephemeris':
       ephem = convert_ublox_ephem(ublox_msg.ephemeris)
-      print("ephem time", ephem)
       self.astro_dog.add_navs({ephem.prn: [ephem]})
       self.cache_ephemeris(t=ephem.epoch)
     # elif ublox_msg.which == 'ionoData':
@@ -140,10 +139,8 @@ class Laikad:
         cloudlog.info("Could not reset kalman filter")
         return
     if len(measurements) > 0:
-      print("add observations")
       kf_add_observations(self.gnss_kf, t, measurements)
     else:
-      print("predict")
       # Ensure gnss filter is updated even with no new measurements
       self.gnss_kf.predict(t)
 
@@ -169,25 +166,13 @@ class Laikad:
         else:
           self.orbit_fetch_executor = ProcessPoolExecutor(max_workers=1)
           self.orbit_fetch_future = self.orbit_fetch_executor.submit(get_orbit_data, t, *astro_dog_vars)
-
       if self.orbit_fetch_future.done():
         self.last_fetch_orbits_t = t
         if (ret := self.orbit_fetch_future.result()) is not None:
           self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
           self.cache_ephemeris(t=t)
-        print("Removedddddd", t)
-        assert self.orbit_fetch_executor is not None
-        # self.orbit_fetch_future.cancel()
-        self.orbit_fetch_executor.shutdown()
-        print("Shutdown", t)
         self.orbit_fetch_executor = self.orbit_fetch_future = None
 
-  def __del__(self):
-    print("Dellll")
-    if self.orbit_fetch_executor is not None:
-      print("Dellll executor")
-      self.orbit_fetch_executor.shutdown()
-      self.orbit_fetch_executor = None
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
   astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types)
@@ -198,7 +183,7 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
     astro_dog.get_orbit_data(t, only_predictions=True)
     data = (astro_dog.orbits, astro_dog.orbit_fetched_times)
   except RuntimeError as e:
-    cloudlog.error(f"No orbit data found. {e}")
+    cloudlog.warning(f"No orbit data found. {e}")
   cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
   return data
 
@@ -289,21 +274,14 @@ def main(sm=None, pm=None):
   print("replayyyy", replay)
   # todo get last_known_position
   laikad = Laikad(save_ephemeris=not replay)
-  try:
-    while True:
-      sm.update()
+  while True:
+    sm.update()
 
-      if sm.updated['ubloxGnss']:
-        ublox_msg = sm['ubloxGnss']
-        msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'], block=replay)
-        if msg is not None:
-          pm.send('gnssMeasurements', msg)
-  except Exception as e:
-    print("Stopping", e)
-    if laikad.orbit_fetch_executor is not None:
-      print("cancel executor")
-      laikad.orbit_fetch_executor.shutdown()
-      laikad.orbit_fetch_executor = None
+    if sm.updated['ubloxGnss']:
+      ublox_msg = sm['ubloxGnss']
+      msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'], block=replay)
+      if msg is not None:
+        pm.send('gnssMeasurements', msg)
 
 
 if __name__ == "__main__":
