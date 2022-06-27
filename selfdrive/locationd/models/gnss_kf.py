@@ -3,11 +3,15 @@ import sys
 from typing import List
 
 import numpy as np
-import sympy as sp
 
-from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.locationd.models.gnss_helpers import parse_pr, parse_prr
+
+if __name__ == '__main__':  # Generating sympy
+  import sympy as sp
+  from rednose.helpers.ekf_sym import gen_code
+else:
+  from rednose.helpers.ekf_sym_pyx import EKF_sym  # pylint: disable=no-name-in-module
 
 
 class States():
