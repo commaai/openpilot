@@ -187,11 +187,8 @@ void CameraViewWidget::updateFrameMat() {
     if (stream_type == VISION_STREAM_DRIVER) {
       frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
     } else {
-      auto intrinsic_matrix = stream_type == VISION_STREAM_WIDE_ROAD ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-      float zoom = ZOOM / intrinsic_matrix.v[0];
-      if (stream_type == VISION_STREAM_WIDE_ROAD) {
-        zoom *= 0.5;
-      }
+      intrinsic_matrix = (stream_type == VISION_STREAM_WIDE_ROAD) ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+      zoom = (stream_type == VISION_STREAM_WIDE_ROAD) ? 2.5 : 1.1;
 
       // Project point at "infinity" to compute x and y offsets
       // to ensure this ends up in the middle of the screen

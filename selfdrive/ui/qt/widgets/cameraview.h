@@ -66,11 +66,15 @@ protected:
   int stream_width = 0;
   int stream_height = 0;
   int stream_stride = 0;
-  float x_offset = 0;
-  float y_offset = 0;
-  mat3 calibration = DEFAULT_CALIBRATION;
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
+
+  // Calibration
+  float x_offset = 0;
+  float y_offset = 0;
+  float zoom = 1.0;
+  mat3 calibration = DEFAULT_CALIBRATION;
+  mat3 intrinsic_matrix = fcam_intrinsic_matrix;
 
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
   uint32_t draw_frame_id = 0;

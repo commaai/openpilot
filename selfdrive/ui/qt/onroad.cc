@@ -412,11 +412,7 @@ void NvgWindow::updateFrameMat() {
 
   s->fb_w = w;
   s->fb_h = h;
-  auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-  float zoom = ZOOM / intrinsic_matrix.v[0];
-  if (s->wide_camera) {
-    zoom *= 0.5;
-  }
+
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
