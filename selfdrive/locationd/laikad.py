@@ -163,20 +163,20 @@ class Laikad:
         self.orbit_fetch_executor = ProcessPoolExecutor(max_workers=1)
         self.orbit_fetch_future = self.orbit_fetch_executor.submit(get_orbit_data, t, *astro_dog_vars)
         if block:
-          print("WAITING FOR FETCH FUTURE")
+          print("WAITING FOR FETCH FUTURE", t)
 
           self.orbit_fetch_future.result()
-          print("GOT RESULT")
+          print("GOT RESULT", t)
 
       if self.orbit_fetch_future.done():
         self.last_fetch_orbits_t = t
         if (ret := self.orbit_fetch_future.result()) is not None:
           self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
           self.cache_ephemeris(t=t)
-        print("Removedddddd")
-        assert self.orbit_fetch_executor is not None 
+        print("Removedddddd", t)
+        assert self.orbit_fetch_executor is not None
         self.orbit_fetch_executor.shutdown()
-        print("Shutdown")
+        print("Shutdown", t)
         self.orbit_fetch_executor = self.orbit_fetch_future = None
 
 
