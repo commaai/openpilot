@@ -10,6 +10,9 @@ from selfdrive.locationd.models.gnss_helpers import parse_pr, parse_prr
 if __name__ == '__main__':  # Generating sympy
   import sympy as sp
   from rednose.helpers.ekf_sym import gen_code
+else:
+  from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx  # pylint: disable=no-name-in-module,import-error
+  from rednose.helpers.ekf_sym import EKF_sym  # pylint: disable=no-name-in-module,import-error
 
 
 class States():
@@ -121,12 +124,9 @@ class GNSSKalman():
     self.dim_state = self.x_initial.shape[0]
 
     # init filter
-    if cython:
-      from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx as EKF_sym  # pylint: disable=no-name-in-module
-    else:
-      from rednose.helpers.ekf_sym import EKF_sym  # pylint: disable=no-name-in-module
-    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.x_initial, self.P_initial, self.dim_state,
-                          self.dim_state, maha_test_kinds=self.maha_test_kinds)
+    filter_cls = EKF_sym_pyx if cython else EKF_sym
+    self.filter = filter_cls(generated_dir, self.name, self.Q, self.x_initial, self.P_initial, self.dim_state,
+                             self.dim_state, maha_test_kinds=self.maha_test_kinds)
     self.init_state(GNSSKalman.x_initial, covs=GNSSKalman.P_initial)
 
   @property
