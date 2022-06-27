@@ -19,15 +19,6 @@
 #include "common/swaglog.h"
 #include "common/version.h"
 
-// ***** logging helpers *****
-
-void append_property(const char* key, const char* value, void *cookie) {
-  std::vector<std::pair<std::string, std::string> > *properties =
-    (std::vector<std::pair<std::string, std::string> > *)cookie;
-
-  properties->push_back(std::make_pair(std::string(key), std::string(value)));
-}
-
 // ***** log metadata *****
 kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;

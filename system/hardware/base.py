@@ -87,6 +87,10 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
+  def get_som_power_draw(self):
+    pass
+
+  @abstractmethod
   def shutdown(self):
     pass
 
