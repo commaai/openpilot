@@ -175,10 +175,17 @@ class Laikad:
           self.cache_ephemeris(t=t)
         print("Removedddddd", t)
         assert self.orbit_fetch_executor is not None
+        # self.orbit_fetch_future.cancel()
         self.orbit_fetch_executor.shutdown()
         print("Shutdown", t)
         self.orbit_fetch_executor = self.orbit_fetch_future = None
 
+  def __del__(self):
+    print("Dellll")
+    if self.orbit_fetch_executor is not None:
+      print("Dellll executor")
+      self.orbit_fetch_executor.shutdown()
+      self.orbit_fetch_executor = None
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
   astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types)
@@ -277,17 +284,24 @@ def main(sm=None, pm=None):
     pm = messaging.PubMaster(['gnssMeasurements'])
 
   replay = "REPLAY" in os.environ
-
+  print("replayyyy", replay)
   # todo get last_known_position
   laikad = Laikad(save_ephemeris=not replay)
-  while True:
-    sm.update()
+  try:
+    while True:
+      sm.update()
 
-    if sm.updated['ubloxGnss']:
-      ublox_msg = sm['ubloxGnss']
-      msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'], block=replay)
-      if msg is not None:
-        pm.send('gnssMeasurements', msg)
+      if sm.updated['ubloxGnss']:
+        ublox_msg = sm['ubloxGnss']
+        msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'], block=replay)
+        if msg is not None:
+          pm.send('gnssMeasurements', msg)
+  except Exception as e:
+    print("Stopping", e)
+    if laikad.orbit_fetch_executor is not None:
+      print("cancel executor")
+      laikad.orbit_fetch_executor.shutdown()
+      laikad.orbit_fetch_executor = None
 
 
 if __name__ == "__main__":
