@@ -101,7 +101,7 @@ def create_bosch_supplemental_1(packer, car_fingerprint, idx):
   return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values, idx)
 
 
-def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stock_hud, frame):
+def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stock_hud):
   commands = []
   bus_pt = get_pt_bus(CP.carFingerprint)
   radar_disabled = CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl
