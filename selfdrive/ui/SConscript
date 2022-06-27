@@ -18,10 +18,11 @@ if arch == "Darwin":
   del base_libs[base_libs.index('OpenCL')]
   qt_env['FRAMEWORKS'] += ['OpenCL']
 
-widgets_src = ["ui.cc", "qt/util.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
+qt_util = qt_env.Library("qt_util", ["#selfdrive/ui/qt/api.cc", "#selfdrive/ui/qt/util.cc"], LIBS=base_libs)
+widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
-               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc", "qt/api.cc",
+               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc",
                "qt/request_repeater.cc", "qt/qt_window.cc", "qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
 qt_env['CPPDEFINES'] = []
@@ -31,7 +32,7 @@ if maps:
   qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
-qt_libs = [widgets] + base_libs
+qt_libs = [widgets, qt_util] + base_libs
 
 # build assets
 assets = "#selfdrive/assets/assets.cc"
