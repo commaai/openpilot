@@ -117,6 +117,7 @@ class Laikad:
       return dat
     elif ublox_msg.which == 'ephemeris':
       ephem = convert_ublox_ephem(ublox_msg.ephemeris)
+      print("ephem time", ephem)
       self.astro_dog.add_navs({ephem.prn: [ephem]})
       self.cache_ephemeris(t=ephem.epoch)
     # elif ublox_msg.which == 'ionoData':
@@ -139,8 +140,10 @@ class Laikad:
         cloudlog.info("Could not reset kalman filter")
         return
     if len(measurements) > 0:
+      print("add observations")
       kf_add_observations(self.gnss_kf, t, measurements)
     else:
+      print("predict")
       # Ensure gnss filter is updated even with no new measurements
       self.gnss_kf.predict(t)
 
@@ -160,13 +163,12 @@ class Laikad:
     if t not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or t - self.last_fetch_orbits_t > SECS_IN_HR):
       astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types
       if self.orbit_fetch_future is None:
-        self.orbit_fetch_executor = ProcessPoolExecutor(max_workers=1)
-        self.orbit_fetch_future = self.orbit_fetch_executor.submit(get_orbit_data, t, *astro_dog_vars)
         if block:
-          print("WAITING FOR FETCH FUTURE", t)
-
-          self.orbit_fetch_future.result()
-          print("GOT RESULT", t)
+          self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = get_orbit_data(t, *astro_dog_vars)
+          return
+        else:
+          self.orbit_fetch_executor = ProcessPoolExecutor(max_workers=1)
+          self.orbit_fetch_future = self.orbit_fetch_executor.submit(get_orbit_data, t, *astro_dog_vars)
 
       if self.orbit_fetch_future.done():
         self.last_fetch_orbits_t = t
