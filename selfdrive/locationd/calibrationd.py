@@ -223,6 +223,8 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
     timeout = 0 if sm.frame == -1 else 100
     sm.update(timeout)
 
+    calibrator.not_car = sm['carParams'].notCar
+
     if sm.updated['cameraOdometry']:
       calibrator.handle_v_ego(sm['carState'].vEgo)
       new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
@@ -231,9 +233,6 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
 
       if DEBUG and new_rpy is not None:
         print('got new rpy', new_rpy)
-
-    elif sm.updated['carParams']:
-      calibrator.not_car = sm['carParams'].notCar
 
     # 4Hz driven by cameraOdometry
     if sm.frame % 5 == 0:
