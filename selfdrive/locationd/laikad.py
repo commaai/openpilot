@@ -62,6 +62,16 @@ class Laikad:
         cls=CacheSerializer))
       self.last_cached_t = t
 
+  def get_est_pos(self, t, processed_measurements):
+    if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
+      min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 4
+      pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
+      if len(pos_fix) > 0:
+        self.last_pos_fix = pos_fix[:3]
+        self.last_pos_residual = pos_fix_residual
+        self.last_pos_fix_t = t
+    return self.last_pos_fix
+  
   def process_ublox_msg(self, ublox_msg, ublox_mono_time: int, block=False):
     if ublox_msg.which == 'measurementReport':
       t = ublox_mono_time * 1e-9
@@ -73,17 +83,11 @@ class Laikad:
       new_meas = read_raw_ublox(report)
       processed_measurements = process_measurements(new_meas, self.astro_dog)
 
-      if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
-        min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 4
-        pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
-        if len(pos_fix) > 0:
-          self.last_pos_fix = pos_fix[:3]
-          self.last_pos_residual = pos_fix_residual
-          self.last_pos_fix_t = t
+      est_pos = self.get_est_pos(t, processed_measurements)
 
-      corrected_measurements = correct_measurements(processed_measurements, self.last_pos_fix, self.astro_dog) if self.last_pos_fix_t is not None else []
+      corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog) if len(est_pos) > 0 else []
 
-      self.update_localizer(self.last_pos_fix, t, corrected_measurements)
+      self.update_localizer(est_pos, t, corrected_measurements)
       kf_valid = all(self.kf_valid(t))
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
       ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
@@ -116,7 +120,7 @@ class Laikad:
     valid = self.kf_valid(t)
     if not all(valid):
       if not valid[0]:
-        cloudlog.info("Init gnss kalman filter")
+        cloudlog.info("Kalman filter uninitialized")
       elif not valid[1]:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       elif not valid[2]:
@@ -133,7 +137,7 @@ class Laikad:
       # Ensure gnss filter is updated even with no new measurements
       self.gnss_kf.predict(t)
 
-  def kf_valid(self, t: float):
+  def kf_valid(self, t: float) -> List[bool]:
     filter_time = self.gnss_kf.filter.filter_time
     return [filter_time is not None,
             filter_time is not None and abs(t - filter_time) < MAX_TIME_GAP,
