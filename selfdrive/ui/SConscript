@@ -59,7 +59,7 @@ qt_src = ["main.cc", "qt/sidebar.cc", "qt/onroad.cc", "qt/body.cc",
 qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
 if GetOption('test'):
   qt_src.remove("main.cc")
-  qt_env.Program('tests/test_translations', qt_src + [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'], LIBS=qt_libs)
+  qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=qt_libs)
 
 
 # setup and factory resetter
