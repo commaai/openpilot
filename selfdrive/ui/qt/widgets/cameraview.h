@@ -83,7 +83,7 @@ protected:
   mat3 intrinsic_matrix = fcam_intrinsic_matrix;
 
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
-  uint32_t prev_frame_id = 0;
+  uint32_t prev_frame_id = 0U;
   int frame_index = 0;
 
 protected slots:
