@@ -59,8 +59,7 @@ function install_ubuntu_common_requirements() {
     qtmultimedia5-dev \
     qtlocation5-dev \
     qtpositioning5-dev \
-    qtbase5-dev \
-    qtbase5-dev-tools \
+    qttools5-dev-tools \
     libqt5sql5-sqlite \
     libqt5svg5-dev \
     libqt5x11extras5-dev \
@@ -74,8 +73,10 @@ function install_ubuntu_latest_requirements() {
   install_ubuntu_common_requirements
 
   sudo apt-get install -y --no-install-recommends \
+    qtbase5-dev \
     qtchooser \
     qt5-qmake \
+    qtbase5-dev-tools \
     python3-dev
 }
 
