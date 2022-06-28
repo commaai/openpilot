@@ -1,5 +1,5 @@
-#include "selfdrive/ui/replay/camera.h"
-#include "selfdrive/ui/replay/util.h"
+#include "tools/replay/camera.h"
+#include "tools/replay/util.h"
 
 #include <cassert>
 

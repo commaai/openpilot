@@ -411,6 +411,8 @@ SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 
+SConscript(['tools/replay/SConscript'])
+
 if GetOption('test'):
   SConscript('panda/tests/safety/SConscript')
 
