@@ -159,19 +159,22 @@ class Laikad:
   def fetch_orbits(self, t: GPSTime, block):
     if t not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or t - self.last_fetch_orbits_t > SECS_IN_HR):
       astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types
-      if self.orbit_fetch_future is None:
-        if block:
-          self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = get_orbit_data(t, *astro_dog_vars)
-          return
-        else:
-          self.orbit_fetch_executor = ProcessPoolExecutor(max_workers=1)
-          self.orbit_fetch_future = self.orbit_fetch_executor.submit(get_orbit_data, t, *astro_dog_vars)
-      if self.orbit_fetch_future.done():
+
+      ret = None
+
+      if block:
+        ret = get_orbit_data(t, *astro_dog_vars)
+      elif self.orbit_fetch_future is None:
+        self.orbit_fetch_executor = ProcessPoolExecutor(max_workers=1)
+        self.orbit_fetch_future = self.orbit_fetch_executor.submit(get_orbit_data, t, *astro_dog_vars)
+      elif self.orbit_fetch_future.done():
         self.last_fetch_orbits_t = t
-        if (ret := self.orbit_fetch_future.result()) is not None:
-          self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
-          self.cache_ephemeris(t=t)
+        ret = self.orbit_fetch_future.result()
         self.orbit_fetch_executor = self.orbit_fetch_future = None
+
+      if ret is not None:
+        self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
+        self.cache_ephemeris(t=t)
 
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
