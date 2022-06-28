@@ -176,7 +176,7 @@ class TestLaikad(unittest.TestCase):
       while Params().get(EPHEMERIS_CACHE) is None:
         time.sleep(0.1)
         max_time -= 0.1
-        if max_time == 0:
+        if max_time < 0:
           self.fail("Cache has not been written after 2 seconds")
 
     # Test cache with no ephemeris
