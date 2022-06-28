@@ -32,7 +32,7 @@ class Laikad:
   def __init__(self, valid_const=("GPS", "GLONASS"), auto_update=False, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV),
                save_ephemeris=False, last_known_position=None):
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True)
-    self.gnss_kf = GNSSKalman(GENERATED_DIR)
+    self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True)
 
     self.orbit_fetch_executor: Optional[ProcessPoolExecutor] = None
     self.orbit_fetch_future: Optional[Future] = None
@@ -145,7 +145,7 @@ class Laikad:
       self.gnss_kf.predict(t)
 
   def kf_valid(self, t: float) -> List[bool]:
-    filter_time = self.gnss_kf.filter.filter_time
+    filter_time = self.gnss_kf.filter.get_filter_time()
     return [filter_time is not None,
             filter_time is not None and abs(t - filter_time) < MAX_TIME_GAP,
             all(np.isfinite(self.gnss_kf.x[GStates.ECEF_POS]))]
