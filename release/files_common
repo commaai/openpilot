@@ -296,8 +296,8 @@ selfdrive/ui/qt/offroad/*.qml
 selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.h
 
-selfdrive/ui/replay/*.cc
-selfdrive/ui/replay/*.h
+tools/replay/*.cc
+tools/replay/*.h
 
 selfdrive/ui/qt/maps/*.cc
 selfdrive/ui/qt/maps/*.h

@@ -2,9 +2,9 @@
 
 #include <QFutureSynchronizer>
 
-#include "selfdrive/ui/replay/framereader.h"
-#include "selfdrive/ui/replay/logreader.h"
-#include "selfdrive/ui/replay/util.h"
+#include "tools/replay/framereader.h"
+#include "tools/replay/logreader.h"
+#include "tools/replay/util.h"
 
 struct RouteIdentifier {
   QString dongle_id;
