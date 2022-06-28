@@ -234,12 +234,13 @@ void CameraViewWidget::paintGL() {
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   if (frames.empty()) return;
-  VisionBuf *frame = frames[frame_idx].second;
 
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+  VisionBuf *frame = frames[frame_idx].second;
 
 #ifdef QCOM2
   glActiveTexture(GL_TEXTURE0);
