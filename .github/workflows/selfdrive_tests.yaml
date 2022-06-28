@@ -293,7 +293,6 @@ jobs:
                         scons -j$(nproc) --test && \
                         ./selfdrive/ui/tests/create_test_translations.sh \
                         ./selfdrive/ui/tests/test_translations \
-                        ./selfdrive/ui/tests/test_sound \
                         coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
