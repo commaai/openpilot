@@ -291,29 +291,8 @@ jobs:
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
                         scons -j$(nproc) --test && \
-                        $UNIT_TEST common && \
-                        $UNIT_TEST opendbc/can && \
-                        $UNIT_TEST selfdrive/boardd && \
-                        $UNIT_TEST selfdrive/controls && \
-                        $UNIT_TEST selfdrive/monitoring && \
-                        $UNIT_TEST selfdrive/loggerd && \
-                        $UNIT_TEST selfdrive/car && \
-                        $UNIT_TEST selfdrive/locationd && \
-                        selfdrive/locationd/test/_test_locationd_lib.py && \
-                        $UNIT_TEST selfdrive/athena && \
-                        $UNIT_TEST selfdrive/thermald && \
-                        $UNIT_TEST selfdrive/hardware/tici && \
-                        $UNIT_TEST selfdrive/modeld && \
-                        $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/ui/tests/create_test_translations.sh \
                         ./selfdrive/ui/tests/test_translations \
-                        ./common/tests/test_util && \
-                        ./common/tests/test_swaglog && \
-                        ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
-                        ./selfdrive/loggerd/tests/test_logger &&\
-                        ./system/proclogd/tests/test_proclog && \
-                        ./selfdrive/ui/replay/tests/test_replay && \
-                        ./system/camerad/test/ae_gray_test && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
