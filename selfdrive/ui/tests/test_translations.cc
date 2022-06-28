@@ -32,7 +32,7 @@ void checkTextWidgetType(MainWindow &w) {
   }
 }
 
-TEST_CASE("tr() wrap all strings") {
+TEST_CASE("ui_all_strings_marked_tr") {
   qWarning() << "TestCase";
   MainWindow w;
   qWarning() << "MainWindow";
