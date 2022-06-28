@@ -291,8 +291,8 @@ jobs:
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
                         scons -j$(nproc) --test && \
-                        ./selfdrive/ui/tests/create_test_translations.sh \
-                        ./selfdrive/ui/tests/test_translations \
+                        ./selfdrive/ui/tests/create_test_translations.sh && \
+                        ./selfdrive/ui/tests/test_translations && \
                         $UNIT_TEST common && \
                         $UNIT_TEST opendbc/can && \
                         $UNIT_TEST selfdrive/boardd && \
