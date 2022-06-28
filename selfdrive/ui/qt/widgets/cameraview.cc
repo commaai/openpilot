@@ -235,10 +235,21 @@ void CameraViewWidget::paintGL() {
 
   if (frames.empty()) return;
 
-  int frame_idx;
-  for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
-    if (frames[frame_idx].first == draw_frame_id) break;
+  int frame_idx = frames.size() - 1;
+
+  // Always draw latest frame until sync logic is more stable
+  // for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
+  //   if (frames[frame_idx].first == draw_frame_id) break;
+  // }
+
+  // Log duplicate/dropped frames
+  static int prev_id = 0;
+  if (frames[frame_idx].first == prev_id) {
+    qInfo() << "Drawing same frame twice" << frames[frame_idx].first;
+  } else if (frames[frame_idx].first != prev_id + 1) {
+    qInfo() << "Skipped frame" << frames[frame_idx].first;
   }
+  prev_id = frames[frame_idx].first;
 
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
