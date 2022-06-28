@@ -271,7 +271,6 @@ def main(sm=None, pm=None):
     pm = messaging.PubMaster(['gnssMeasurements'])
 
   replay = "REPLAY" in os.environ
-  print("replayyyy", replay)
   # todo get last_known_position
   laikad = Laikad(save_ephemeris=not replay)
   while True:
