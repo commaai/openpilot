@@ -7,6 +7,7 @@ from unittest import mock
 from unittest.mock import Mock, patch
 
 from common.params import Params
+from laika.constants import SECS_IN_DAY
 from laika.ephemeris import EphemerisType, GPSEphemeris
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId, TimeRangeHolder
@@ -61,6 +62,26 @@ class TestLaikad(unittest.TestCase):
 
   def setUp(self):
     Params().delete(EPHEMERIS_CACHE)
+
+  def test_fetch_orbits_non_blocking(self):
+    gpstime = GPSTime.from_datetime(datetime(2021, month=3, day=1))
+    laikad = Laikad()
+    laikad.fetch_orbits(gpstime, block=False)
+    laikad.orbit_fetch_future.result(5)
+    # Get results and save orbits to laikad:
+    laikad.fetch_orbits(gpstime, block=False)
+
+    ephem = laikad.astro_dog.orbits['G01'][0]
+    self.assertIsNotNone(ephem)
+
+    laikad.fetch_orbits(gpstime+2*SECS_IN_DAY, block=False)
+    laikad.orbit_fetch_future.result(5)
+    # Get results and save orbits to laikad:
+    laikad.fetch_orbits(gpstime + 2 * SECS_IN_DAY, block=False)
+
+    ephem2 = laikad.astro_dog.orbits['G01'][0]
+    self.assertIsNotNone(ephem)
+    self.assertNotEqual(ephem, ephem2)
 
   def test_ephemeris_source_in_msg(self):
     data_mock = defaultdict(str)
@@ -155,7 +176,7 @@ class TestLaikad(unittest.TestCase):
       while Params().get(EPHEMERIS_CACHE) is None:
         time.sleep(0.1)
         max_time -= 0.1
-        if max_time == 0:
+        if max_time < 0:
           self.fail("Cache has not been written after 2 seconds")
 
     # Test cache with no ephemeris
@@ -170,7 +191,7 @@ class TestLaikad(unittest.TestCase):
     wait_for_cache()
 
     # Check both nav and orbits separate
-    laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.NAV)
+    laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.NAV, save_ephemeris=True)
     # Verify orbits and nav are loaded from cache
     self.dict_has_values(laikad.astro_dog.orbits)
     self.dict_has_values(laikad.astro_dog.nav)
@@ -185,7 +206,7 @@ class TestLaikad(unittest.TestCase):
       mock_method.assert_not_called()
 
       # Verify cache is working for only orbits by running a segment
-      laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT)
+      laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT, save_ephemeris=True)
       msg = verify_messages(self.logs, laikad, return_one_success=True)
       self.assertIsNotNone(msg)
       # Verify orbit data is not downloaded
