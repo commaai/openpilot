@@ -310,7 +310,7 @@ jobs:
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./system/proclogd/tests/test_proclog && \
-                        ./selfdrive/ui/replay/tests/test_replay && \
+                        ./tools/replay/tests/test_replay && \
                         ./system/camerad/test/ae_gray_test && \
                         coverage xml"
     - name: "Upload coverage to Codecov"

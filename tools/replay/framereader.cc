@@ -1,5 +1,5 @@
-#include "selfdrive/ui/replay/framereader.h"
-#include "selfdrive/ui/replay/util.h"
+#include "tools/replay/framereader.h"
+#include "tools/replay/util.h"
 
 #include <cassert>
 #include "libyuv.h"
