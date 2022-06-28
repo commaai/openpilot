@@ -240,7 +240,7 @@ void CameraViewWidget::paintGL() {
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  VisionBuf *frame = frames[frame_idx].second;
+  VisionBuf *frame = frames[frame_index].second;
 
 #ifdef QCOM2
   glActiveTexture(GL_TEXTURE0);
