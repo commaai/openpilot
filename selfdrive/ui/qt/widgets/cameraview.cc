@@ -240,6 +240,16 @@ void CameraViewWidget::paintGL() {
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+  static int prev_id = 0;
+
+  // Uncomment to fix
+  // frame_index = frames.size() - 1;
+  if (frames[frame_index].first == prev_id) {
+    qWarning() << "Drawing same frame twice" << frames[frame_index].first;
+  } else if (frames[frame_index].first != prev_id + 1) {
+    qWarning() << "Skipped frame" << frames[frame_index].first;
+  }
+  prev_id = frames[frame_index].first;
   VisionBuf *frame = frames[frame_index].second;
 
 #ifdef QCOM2
