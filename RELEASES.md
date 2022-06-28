@@ -1,5 +1,6 @@
 Version 0.8.15 (20XX-XX-XX)
 ========================
+  * Blocked the invalid params error for 2500/3500
   * Fix FPV2 for Chrysler/Jeep/Ram
 
 Version 0.8.14 (2022-06-01)
