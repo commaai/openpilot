@@ -30,7 +30,7 @@ void checkTextWidgetType(MainWindow &w) {
   }
 }
 
-TEST_CASE("test UI string wrapping") {
+TEST_CASE("tr() wrap all strings") {
   MainWindow w;
   checkTextWidgetType<QPushButton*>(w);
   checkTextWidgetType<QLabel*>(w);
