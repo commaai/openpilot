@@ -178,8 +178,7 @@ def main(sm=None, pm=None):
       liveParameters.roll = float(x[States.ROAD_ROLL])
       liveParameters.angleOffsetAverageDeg = angle_offset_average
       liveParameters.angleOffsetDeg = angle_offset
-      liveParameters.valid = 
-      all((
+      liveParameters.valid = all((
         abs(liveParameters.angleOffsetAverageDeg) < 10.0,
         # abs(liveParameters.angleOffsetDeg) < 10.0,
         0.2 <= liveParameters.stiffnessFactor <= 5.0
