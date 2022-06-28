@@ -85,6 +85,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 }
 
 void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
+  HomeWindow::mousePressEvent(e);
   const SubMaster &sm = *(uiState()->sm);
   if (sm["carParams"].getCarParams().getNotCar()) {
     if (onroad->isVisible()) {
@@ -92,8 +93,7 @@ void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
     } else if (body->isVisible()) {
       slayout->setCurrentWidget(onroad);
     }
-  } else {
-    HomeWindow::mousePressEvent(e);
+    showSidebar(false);
   }
 }
 
