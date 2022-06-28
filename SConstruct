@@ -356,22 +356,27 @@ Export('cereal', 'messaging', 'visionipc')
 
 # Build rednose library and ekf models
 
+rednose_deps = [
+  "#selfdrive/locationd/models/constants.py",
+  "#selfdrive/locationd/models/gnss_helpers.py",
+]
+
 rednose_config = {
   'generated_folder': '#selfdrive/locationd/models/generated',
   'to_build': {
-    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
-    'live': ('#selfdrive/locationd/models/live_kf.py', True, ['live_kf_constants.h']),
-    'car': ('#selfdrive/locationd/models/car_kf.py', True, []),
+    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, [], rednose_deps),
+    'live': ('#selfdrive/locationd/models/live_kf.py', True, ['live_kf_constants.h'], rednose_deps),
+    'car': ('#selfdrive/locationd/models/car_kf.py', True, [], rednose_deps),
   },
 }
 
 if arch != "larch64":
   rednose_config['to_build'].update({
-    'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, []),
-    'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, []),
-    'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, []),
-    'feature_handler_5': ('#rednose/helpers/feature_handler.py', False, []),
-    'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', True, []),
+    'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, [], rednose_deps),
+    'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
+    'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
+    'feature_handler_5': ('#rednose/helpers/feature_handler.py', False, [], []),
+    'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', True, [], rednose_deps),
   })
 
 Export('rednose_config')
@@ -410,6 +415,8 @@ SConscript(['selfdrive/loggerd/SConscript'])
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
+
+SConscript(['tools/replay/SConscript'])
 
 if GetOption('test'):
   SConscript('panda/tests/safety/SConscript')

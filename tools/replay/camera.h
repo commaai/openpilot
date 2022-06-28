@@ -3,8 +3,8 @@
 #include <unistd.h>
 #include "cereal/visionipc/visionipc_server.h"
 #include "common/queue.h"
-#include "selfdrive/ui/replay/framereader.h"
-#include "selfdrive/ui/replay/logreader.h"
+#include "tools/replay/framereader.h"
+#include "tools/replay/logreader.h"
 
 class CameraServer {
 public:
