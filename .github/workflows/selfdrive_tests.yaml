@@ -303,7 +303,6 @@ jobs:
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST selfdrive/hardware/tici && \
-                        $UNIT_TEST selfdrive/modeld && \
                         $UNIT_TEST tools/lib/tests && \
                         echo "test_util" && ./common/tests/test_util && \
                         echo "test_swaglog" && ./common/tests/test_swaglog && \
