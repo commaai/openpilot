@@ -1,15 +1,5 @@
 #include "catch2/catch.hpp"
-
-#include "system/hardware/hw.h"
-#include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
-#include <QDebug>
-#include <QTimer>
-#include <QObject>
-#include <QWidget>
-#include <QPushButton>
-#include <QTranslator>
 
 const QString TEST_TEXT = "(WRAPPED_SOURCE_TEXT)";
 QRegExp RE_NUM("\\d*");
