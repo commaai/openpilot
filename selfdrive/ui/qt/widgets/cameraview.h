@@ -33,7 +33,7 @@ public:
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setFrameId(uint32_t frame_id) {
-    if (!frames.empty() && (frame_id != prev_frame_id)) {
+    if (!frames.empty() && frame_id != prev_frame_id) {
       frame_index = std::max(int(frame_id - frames[0].first), frame_index - 1);  // ensure we can't skip backwards
       frame_index = std::clamp(frame_index, 0, int(frames.size()) - 1);          // clip to maximum range
     }
