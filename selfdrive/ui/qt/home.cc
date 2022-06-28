@@ -91,7 +91,6 @@ void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
       slayout->setCurrentWidget(body);
     } else if (body->isVisible()) {
       slayout->setCurrentWidget(onroad);
-      HomeWindow::mousePressEvent(e);
     }
   } else {
     HomeWindow::mousePressEvent(e);
