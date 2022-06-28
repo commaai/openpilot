@@ -124,6 +124,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"IsMetric", PERSISTENT},
     {"IsOffroad", CLEAR_ON_MANAGER_START},
     {"IsOnroad", PERSISTENT},
+    {"IsRhdDetected", PERSISTENT},
     {"IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"IsUpdateAvailable", CLEAR_ON_MANAGER_START},
     {"JoystickDebugMode", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
