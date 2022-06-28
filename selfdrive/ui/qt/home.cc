@@ -93,6 +93,7 @@ void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
       slayout->setCurrentWidget(onroad);
     }
   }
+  HomeWindow::mousePressEvent(e);
 }
 
 // OffroadHome: the offroad home page
