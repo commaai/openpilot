@@ -89,11 +89,13 @@ void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
   if (sm["carParams"].getCarParams().getNotCar()) {
     if (onroad->isVisible()) {
       slayout->setCurrentWidget(body);
+      HomeWindow::mousePressEvent(e);
     } else if (body->isVisible()) {
       slayout->setCurrentWidget(onroad);
     }
+  } else {
+    HomeWindow::mousePressEvent(e);
   }
-  HomeWindow::mousePressEvent(e);
 }
 
 // OffroadHome: the offroad home page
