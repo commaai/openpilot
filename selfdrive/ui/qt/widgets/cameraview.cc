@@ -234,7 +234,6 @@ void CameraViewWidget::paintGL() {
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   if (frames.empty()) return;
-  frame_idx = std::clamp(frame_idx, 0, (int)frames.size() - 1);  // clip to maximum range
   VisionBuf *frame = frames[frame_idx].second;
 
   glViewport(0, 0, width(), height());
