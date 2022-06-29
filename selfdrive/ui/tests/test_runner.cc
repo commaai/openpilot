@@ -1,5 +1,6 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"
+
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
