@@ -27,7 +27,7 @@ TIMEOUT = 15
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config'], defaults=({},))
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config', 'environ', 'subtest_name'], defaults=({}, {}, ""))
 
 
 def wait_for_event(evt):
@@ -190,6 +190,7 @@ def get_car_params(msgs, fsm, can_sock, fingerprint):
     _, CP = get_car(can, sendcan)
   Params().put("CarParams", CP.to_bytes())
 
+
 def controlsd_rcv_callback(msg, CP, cfg, fsm):
   # no sendcan until controlsd is initialized
   socks = [s for s in cfg.pub_sub[msg.which()] if
@@ -197,6 +198,7 @@ def controlsd_rcv_callback(msg, CP, cfg, fsm):
   if "sendcan" in socks and fsm.frame < 2000:
     socks.remove("sendcan")
   return socks, len(socks) > 0
+
 
 def radar_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() != "can":
@@ -347,6 +349,19 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="laikad",
+    subtest_name="Offline",
+    pub_sub={
+      "ubloxGnss": ["gnssMeasurements"],
+    },
+    ignore=["logMonoTime"],
+    init_callback=get_car_params,
+    should_recv_callback=laika_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=True,
+    environ={"LaikadNoInternet": "1"},
+  ),
+  ProcessConfig(
+    proc_name="laikad",
     pub_sub={
       "ubloxGnss": ["gnssMeasurements"],
     },
@@ -380,6 +395,12 @@ def setup_env(simulation=False, CP=None):
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
 
+  # Clear all custom processConfig environment variables
+  for cfg in CONFIGS:
+    for k, _ in cfg.environ.items():
+      if k in os.environ:
+        del os.environ[k]
+
   if simulation:
     os.environ["SIMULATION"] = "1"
   elif "SIMULATION" in os.environ:
@@ -395,6 +416,7 @@ def setup_env(simulation=False, CP=None):
     else:
       os.environ['SKIP_FW_QUERY'] = "1"
       os.environ['FINGERPRINT'] = CP.carFingerprint
+
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
@@ -417,6 +439,8 @@ def python_replay_process(cfg, lr, fingerprint=None):
   else:
     CP = [m for m in lr if m.which() == 'carParams'][0].carParams
     setup_env(CP=CP)
+
+  os.environ.update(cfg.environ)
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
