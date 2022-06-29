@@ -15,7 +15,7 @@ QString getVersion() {
 }
 
 QString getBrand() {
-  return Params().getBool("Passive") ? "dashcam" : "openpilot";
+  return Params().getBool("Passive") ? QObject::tr("dashcam") : QObject::tr("openpilot");
 }
 
 QString getBrandVersion() {
