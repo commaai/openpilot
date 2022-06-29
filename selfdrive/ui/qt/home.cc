@@ -5,7 +5,7 @@
 #include <QMouseEvent>
 #include <QVBoxLayout>
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
@@ -32,7 +32,6 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   body = new BodyWindow(this);
   slayout->addWidget(body);
-  body->setEnabled(false);
 
   driver_view = new DriverViewWindow(this);
   connect(driver_view, &DriverViewWindow::done, [=] {
@@ -59,6 +58,7 @@ void HomeWindow::updateState(const UIState &s) {
 }
 
 void HomeWindow::offroadTransition(bool offroad) {
+  body->setEnabled(false);
   sidebar->setVisible(offroad);
   if (offroad) {
     slayout->setCurrentWidget(home);
@@ -85,6 +85,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 }
 
 void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
+  HomeWindow::mousePressEvent(e);
   const SubMaster &sm = *(uiState()->sm);
   if (sm["carParams"].getCarParams().getNotCar()) {
     if (onroad->isVisible()) {
@@ -92,6 +93,7 @@ void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
     } else if (body->isVisible()) {
       slayout->setCurrentWidget(onroad);
     }
+    showSidebar(false);
   }
 }
 

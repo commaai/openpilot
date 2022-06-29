@@ -8,7 +8,7 @@
 #include <QWidget>
 #include <QStackedWidget>
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 class MapPanel : public QWidget {

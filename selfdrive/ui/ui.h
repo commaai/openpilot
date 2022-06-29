@@ -11,9 +11,9 @@
 #include <QTransform>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
+#include "common/modeldata.h"
+#include "common/params.h"
+#include "common/timing.h"
 
 const int bdr_s = 30;
 const int header_h = 420;
@@ -22,10 +22,7 @@ const int footer_h = 280;
 const int UI_FREQ = 20;   // Hz
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
-// TODO: this is also hardcoded in common/transformations/camera.py
-// TODO: choose based on frame input size
-const float y_offset = 150.0;
-const float ZOOM = 2912.8;
+const mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
 
 struct Alert {
   QString text1;
@@ -54,7 +51,7 @@ struct Alert {
         return {"openpilot Unavailable", "Waiting for controls to start",
                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
                 AudibleAlert::NONE};
-      } else if (controls_missing > CONTROLS_TIMEOUT) {
+      } else if (controls_missing > CONTROLS_TIMEOUT && !Hardware::PC()) {
         // car is started, but controls is lagging or died
         if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
           return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
@@ -93,7 +90,8 @@ typedef struct {
 } line_vertices_data;
 
 typedef struct UIScene {
-  mat3 view_from_calib;
+  bool calibration_valid = false;
+  mat3 view_from_calib = DEFAULT_CALIBRATION;
   cereal::PandaState::PandaType pandaType;
 
   // modelV2
@@ -107,7 +105,7 @@ typedef struct UIScene {
   QPointF lead_vertices[2];
 
   float light_sensor, accel_sensor, gyro_sensor;
-  bool started, ignition, is_metric, longitudinal_control, end_to_end;
+  bool started, ignition, is_metric, longitudinal_control;
   uint64_t started_frame;
 } UIScene;
 

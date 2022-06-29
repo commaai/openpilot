@@ -7,7 +7,7 @@
 #include <QStackedWidget>
 #include <QWidget>
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
 class TrainingGuide : public QFrame {

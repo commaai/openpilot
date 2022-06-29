@@ -36,9 +36,13 @@ class Bootlog:
     return timestamp_to_datetime(self._timestamp)
 
   def __eq__(self, b) -> bool:
+    if not isinstance(b, Bootlog):
+      return False
     return self.datetime == b.datetime
 
   def __lt__(self, b) -> bool:
+    if not isinstance(b, Bootlog):
+      return False
     return self.datetime < b.datetime
 
 

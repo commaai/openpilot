@@ -5,33 +5,14 @@ import sys
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.models.constants import ObservationKind
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from rednose.helpers.lst_sq_computer import LstSqComputer
 from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
 
+from selfdrive.locationd.models.constants import ObservationKind
+from selfdrive.locationd.models.gnss_helpers import parse_pr, parse_prr
+
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
-
-
-def parse_prr(m):
-  from laika.raw_gnss import GNSSMeasurement
-  sat_pos_vel_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
-                                  m[GNSSMeasurement.SAT_VEL]))
-  R_i = np.atleast_2d(m[GNSSMeasurement.PRR_STD]**2)
-  z_i = m[GNSSMeasurement.PRR]
-  return z_i, R_i, sat_pos_vel_i
-
-
-def parse_pr(m):
-  from laika.raw_gnss import GNSSMeasurement
-  pseudorange = m[GNSSMeasurement.PR]
-  pseudorange_stdev = m[GNSSMeasurement.PR_STD]
-  sat_pos_freq_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
-                                   np.array([m[GNSSMeasurement.GLONASS_FREQ]])))
-  z_i = np.atleast_1d(pseudorange)
-  R_i = np.atleast_2d(pseudorange_stdev**2)
-  return z_i, R_i, sat_pos_freq_i
-
 
 class States():
   ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters

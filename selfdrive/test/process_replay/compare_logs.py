@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
 import bz2
-import os
 import sys
 import math
 import numbers
 import dictdiffer
 from collections import Counter
-
-if "CI" in os.environ:
-  def tqdm(x):
-    return x
-else:
-  from tqdm import tqdm  # type: ignore
 
 from tools.lib.logreader import LogReader
 
@@ -19,7 +12,7 @@ EPSILON = sys.float_info.epsilon
 
 
 def save_log(dest, log_msgs, compress=True):
-  dat = b"".join(msg.as_builder().to_bytes() for msg in tqdm(log_msgs))
+  dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)
 
   if compress:
     dat = bz2.compress(dat)
@@ -67,7 +60,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     raise Exception(f"logs are not same length: {len(log1)} VS {len(log2)}\n\t\t{cnt1}\n\t\t{cnt2}")
 
   diff = []
-  for msg1, msg2 in tqdm(zip(log1, log2)):
+  for msg1, msg2 in zip(log1, log2):
     if msg1.which() != msg2.which():
       print(msg1, msg2)
       raise Exception("msgs not aligned between logs")

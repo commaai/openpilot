@@ -1,9 +1,10 @@
+from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 Ecu = car.CarParams.Ecu
 
 
@@ -62,14 +63,20 @@ class Footnote(Enum):
     Column.MODEL)
 
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.HOLDEN_ASTRA: CarInfo("Holden Astra 2017", "Adaptive Cruise"),
-  CAR.VOLT: CarInfo("Chevrolet Volt 2017-18", "Adaptive Cruise", footnotes=[Footnote.OBD_II], min_enable_speed=0),
-  CAR.CADILLAC_ATS: CarInfo("Cadillac ATS Premium Performance 2018", "Adaptive Cruise"),
-  CAR.MALIBU: CarInfo("Chevrolet Malibu Premier 2017", "Adaptive Cruise"),
-  CAR.ACADIA: CarInfo("GMC Acadia 2018", "Adaptive Cruise", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo", footnotes=[Footnote.OBD_II]),
-  CAR.BUICK_REGAL: CarInfo("Buick Regal Essence 2018", "Adaptive Cruise"),
-  CAR.ESCALADE_ESV: CarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS", footnotes=[Footnote.OBD_II]),
+@dataclass
+class GMCarInfo(CarInfo):
+  package: str = "Adaptive Cruise"
+  harness: Enum = Harness.none
+
+
+CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
+  CAR.HOLDEN_ASTRA: GMCarInfo("Holden Astra 2017", harness=Harness.custom),
+  CAR.VOLT: GMCarInfo("Chevrolet Volt 2017-18", footnotes=[Footnote.OBD_II], min_enable_speed=0, harness=Harness.custom),
+  CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018"),
+  CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017", harness=Harness.custom),
+  CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo", footnotes=[Footnote.OBD_II]),
+  CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
+  CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS", footnotes=[Footnote.OBD_II]),
 }
 
 

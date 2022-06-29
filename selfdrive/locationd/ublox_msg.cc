@@ -10,7 +10,7 @@
 #include <ctime>
 #include <unordered_map>
 
-#include "selfdrive/common/swaglog.h"
+#include "common/swaglog.h"
 
 const double gpsPi = 3.1415926535898;
 #define UBLOX_MSG_SIZE(hdr) (*(uint16_t *)&hdr[4])

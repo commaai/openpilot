@@ -16,11 +16,24 @@ index = """
 <body>
 <div id="joyDiv" style="width:100%;height:100%"></div>
 <script type="text/javascript">
+// Set up gamepad handlers
+let gamepad = null;
+window.addEventListener("gamepadconnected", function(e) {
+  gamepad = e.gamepad;
+});
+window.addEventListener("gamepaddisconnected", function(e) {
+  gamepad = null;
+});
 // Create JoyStick object into the DIV 'joyDiv'
 var joy = new JoyStick('joyDiv');
 setInterval(function(){
   var x = -joy.GetX()/100;
   var y = joy.GetY()/100;
+  if (x === 0 && y === 0 && gamepad !== null) {
+    let gamepadstate = navigator.getGamepads()[gamepad.index];
+    x = -gamepadstate.axes[0];
+    y = -gamepadstate.axes[1];
+  }
   let xhr = new XMLHttpRequest();
   xhr.open("GET", "/control/"+x+"/"+y);
   xhr.send();

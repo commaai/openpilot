@@ -1,7 +1,6 @@
 import numpy as np
 
 import common.transformations.orientation as orient
-from selfdrive.hardware import TICI
 
 ## -- hardcoded hardware params --
 eon_f_focal_length = 910.0
@@ -45,14 +44,9 @@ tici_fcam_intrinsics_inv = np.linalg.inv(tici_fcam_intrinsics)
 tici_ecam_intrinsics_inv = np.linalg.inv(tici_ecam_intrinsics)
 
 
-if not TICI:
-  FULL_FRAME_SIZE = eon_f_frame_size
-  FOCAL = eon_f_focal_length
-  fcam_intrinsics = eon_fcam_intrinsics
-else:
-  FULL_FRAME_SIZE = tici_f_frame_size
-  FOCAL = tici_f_focal_length
-  fcam_intrinsics = tici_fcam_intrinsics
+FULL_FRAME_SIZE = tici_f_frame_size
+FOCAL = tici_f_focal_length
+fcam_intrinsics = tici_fcam_intrinsics
 
 W, H = FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1]
 

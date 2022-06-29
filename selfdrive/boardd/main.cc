@@ -1,9 +1,9 @@
 #include <cassert>
 
 #include "selfdrive/boardd/boardd.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "common/swaglog.h"
+#include "common/util.h"
+#include "system/hardware/hw.h"
 
 int main(int argc, char *argv[]) {
   LOGW("starting boardd");
@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     int err;
     err = util::set_realtime_priority(54);
     assert(err == 0);
-    err = util::set_core_affinity({Hardware::TICI() ? 4 : 3});
+    err = util::set_core_affinity({4});
     assert(err == 0);
   }
 
