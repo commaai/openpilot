@@ -1,4 +1,4 @@
-#include "selfdrive/ui/replay/consoleui.h"
+#include "tools/replay/consoleui.h"
 
 #include <QApplication>
 #include <initializer_list>

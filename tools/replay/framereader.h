@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "selfdrive/ui/replay/filereader.h"
+#include "tools/replay/filereader.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -46,7 +46,6 @@ private:
 
   AVPixelFormat hw_pix_fmt = AV_PIX_FMT_NONE;
   AVBufferRef *hw_device_ctx = nullptr;
-  std::vector<uint8_t> nv12toyuv_buffer;
   int prev_idx = -1;
   inline static std::atomic<bool> has_hw_decoder = true;
 };

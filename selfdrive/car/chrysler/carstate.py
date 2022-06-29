@@ -47,8 +47,6 @@ class CarState(CarStateBase):
 
     ret.leftBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 1
     ret.rightBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 2
-    ret.steeringAngleDeg = cp.vl["STEERING"]["STEER_ANGLE"]
-    ret.steeringRateDeg = cp.vl["STEERING"]["STEERING_RATE"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["GEAR"]["PRNDL"], None))
 
     ret.cruiseState.available = cp.vl["DAS_3"]["ACC_AVAILABLE"] == 1  # ACC is white
@@ -58,6 +56,8 @@ class CarState(CarStateBase):
     ret.cruiseState.nonAdaptive = cp.vl["DASHBOARD"]["CRUISE_STATE"] in (1, 2)
     ret.accFaulted = cp.vl["DAS_3"]["ACC_FAULTED"] != 0
 
+    ret.steeringAngleDeg = cp.vl["STEERING"]["STEER_ANGLE"]
+    ret.steeringRateDeg = cp.vl["STEERING"]["STEERING_RATE"]
     ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
