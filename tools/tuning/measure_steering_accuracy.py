@@ -17,7 +17,7 @@ signal.signal(signal.SIGINT, sigint_handler)
 if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description='Sniff a communication socket')
-  parser.add_argument('control_type', help="[pid|indi|lqr|angle]")
+  parser.add_argument('control_type', help="[pid|indi|lqr|angle|torque]")
   parser.add_argument('--addr', default='127.0.0.1', help="IP address for optional ZMQ listener, default to msgq")
   parser.add_argument('--group', default='all', help="speed group to display, [crawl|slow|medium|fast|veryfast|germany|all], default to all")
   args = parser.parse_args()
@@ -64,6 +64,8 @@ if __name__ == "__main__":
       control_state = sm['controlsState'].lateralControlState.lqrState
     elif args.control_type == "angle":
       control_state = sm['controlsState'].lateralControlState.angleState
+    elif args.control_type == "torque":
+      control_state = sm['controlsState'].lateralControlState.torqueState
     else:
       raise ValueError("invalid lateral control type, see help")
 
@@ -81,7 +83,8 @@ if __name__ == "__main__":
 
       # wait 5 seconds after engage / standstill / override / lane change
       if cnt >= 500:
-        actual_angle = control_state.steeringAngleDeg
+        actual_angle = sm['carState'].steeringAngleDeg
+
         desired_angle = control_state.steeringAngleDesiredDeg
 
         # calculate error before rounding, then round for stats grouping

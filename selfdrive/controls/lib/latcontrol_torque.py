@@ -71,6 +71,7 @@ class LatControlTorque(LatControl):
                                       feedforward=ff,
                                       speed=CS.vEgo,
                                       freeze_integrator=freeze_integrator)
+      angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
 
       pid_log.active = True
       pid_log.p = self.pid.p
@@ -81,6 +82,7 @@ class LatControlTorque(LatControl):
       pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS)
       pid_log.actualLateralAccel = actual_lateral_accel
       pid_log.desiredLateralAccel = desired_lateral_accel
+      pid_log.steeringAngleDesiredDeg = angle_steers_des_no_offset + params.angleOffsetDeg
 
     # TODO left is positive in this convention
     return -output_torque, 0.0, pid_log
