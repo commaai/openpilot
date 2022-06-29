@@ -34,7 +34,7 @@ def wait_for_event(evt):
   if not evt.wait(TIMEOUT):
     if threading.currentThread().getName() == "MainThread":
       # tested process likely died. don't let test just hang
-      raise Exception("Timeout reached. Tested process likely crashed.")
+      raise Exception(f"Timeout reached. Tested process {os.environ['PROC_NAME']} likely crashed.")
     else:
       # done testing this process, let it die
       sys.exit(0)
@@ -381,7 +381,8 @@ def replay_process(cfg, lr, fingerprint=None):
     else:
       return cpp_replay_process(cfg, lr, fingerprint)
 
-def setup_env(simulation=False, CP=None):
+
+def setup_env(cfg, simulation=False, CP=None):
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
@@ -400,6 +401,9 @@ def setup_env(simulation=False, CP=None):
     for k, _ in cfg.environ.items():
       if k in os.environ:
         del os.environ[k]
+
+  os.environ.update(cfg.environ)
+  os.environ['PROC_NAME'] = cfg.proc_name
 
   if simulation:
     os.environ["SIMULATION"] = "1"
@@ -435,10 +439,10 @@ def python_replay_process(cfg, lr, fingerprint=None):
   if fingerprint is not None:
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = fingerprint
-    setup_env()
+    setup_env(cfg)
   else:
     CP = [m for m in lr if m.which() == 'carParams'][0].carParams
-    setup_env(CP=CP)
+    setup_env(cfg, CP=CP)
 
   os.environ.update(cfg.environ)
 
@@ -501,9 +505,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   log_msgs = []
 
   # We need to fake SubMaster alive since we can't inject a fake clock
-  setup_env(simulation=True)
-
-  os.environ.update(cfg.environ)
+  setup_env(cfg, simulation=True)
 
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
