@@ -19,7 +19,7 @@ void checkWidgetTrWrap(MainWindow &w) {
   int i = 0;
   for (auto widget : w.findChildren<T>()) {
     const QString text = widget->text();
-    SECTION(text.toStdString() + std::to_string(i)) {
+    SECTION(text.toStdString() + "-" + std::to_string(i)) {
       bool isNumber = RE_NUM.exactMatch(text);
       bool wrapped = text.contains(TEST_TEXT);
       QString parentWidgets = getParentWidgets(widget).join("->");
