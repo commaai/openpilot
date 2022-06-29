@@ -303,14 +303,15 @@ jobs:
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST selfdrive/hardware/tici && \
+                        $UNIT_TEST selfdrive/modeld && \
                         $UNIT_TEST tools/lib/tests && \
-                        echo "test_util" && ./common/tests/test_util && \
-                        echo "test_swaglog" && ./common/tests/test_swaglog && \
-                        echo "test_boardd_usbprotocol" && ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
-                        echo "test_logger" && ./selfdrive/loggerd/tests/test_logger &&\
-                        echo "test_proclog" && ./system/proclogd/tests/test_proclog && \
-                        echo "test_replay" && ./tools/replay/tests/test_replay && \
-                        echo "ae_gray_test" && ./system/camerad/test/ae_gray_test && \
+                        ./common/tests/test_util && \
+                        ./common/tests/test_swaglog && \
+                        ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
+                        ./selfdrive/loggerd/tests/test_logger &&\
+                        ./system/proclogd/tests/test_proclog && \
+                        ./tools/replay/tests/test_replay && \
+                        ./system/camerad/test/ae_gray_test && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
