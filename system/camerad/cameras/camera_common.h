@@ -85,11 +85,6 @@ typedef struct FrameMetadata {
   float processing_time;
 } FrameMetadata;
 
-typedef struct CameraExpInfo {
-  int op_id;
-  float grey_frac;
-} CameraExpInfo;
-
 struct MultiCameraState;
 struct CameraState;
 class Debayer;
