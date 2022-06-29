@@ -7,6 +7,7 @@ TEST_TEXT="(WRAPPED_SOURCE_TEXT)"
 TEST_TS_FILE=$UI_DIR/translations/main_test_en.ts
 TEST_QM_FILE=$UI_DIR/translations/main_test_en.qm
 
+# translation strings
 UNFINISHED="<translation type=\"unfinished\"><\/translation>"
 TRANSLATED="<translation>$TEST_TEXT<\/translation>"
 

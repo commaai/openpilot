@@ -1,5 +1,6 @@
 #include "catch2/catch.hpp"
 
+#include "common/params.h"
 #include "selfdrive/ui/qt/window.h"
 
 const QString TEST_TEXT = "(WRAPPED_SOURCE_TEXT)";  // what each string should be translated to
@@ -40,6 +41,10 @@ void checkWidgetTrWrap(MainWindow &w) {
 
 // Tests all strings in the UI are wrapped with tr()
 TEST_CASE("UI: test all strings wrapped") {
+  Params().remove("HardwareSerial");
+  Params().remove("DongleId");
+  qputenv("TICI", "1");
+
   MainWindow w;
   checkWidgetTrWrap<QPushButton*>(w);
   checkWidgetTrWrap<QLabel*>(w);
