@@ -358,7 +358,7 @@ CONFIGS = [
     should_recv_callback=laika_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
-    environ={"LaikadNoInternet": "1"},
+    environ={"LAIKAD_NO_INTERNET": "1"},
   ),
   ProcessConfig(
     proc_name="laikad",
@@ -502,6 +502,8 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
 
   # We need to fake SubMaster alive since we can't inject a fake clock
   setup_env(simulation=True)
+
+  os.environ.update(cfg.environ)
 
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
