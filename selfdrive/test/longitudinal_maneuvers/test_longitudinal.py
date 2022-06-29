@@ -114,7 +114,7 @@ maneuvers = [
     initial_speed=0.,
     lead_relevancy=True,
     initial_distance_lead=STOP_DISTANCE,
-    speed_lead_values=[0., 0., 5.],
+    speed_lead_values=[0., 0., 2.],
     breakpoints=[1., 10., 15.],
     ensure_start=True,
   ),

@@ -57,6 +57,5 @@ class Maneuver():
         print('Planner not starting!')
         valid = False
 
-
     print("maneuver end", valid)
     return valid, np.array(logs)
