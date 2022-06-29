@@ -1,8 +1,8 @@
 #include "catch2/catch.hpp"
-#include "selfdrive/ui/qt/window.h"
-#include <QDebug>
 
-const QString TEST_TEXT = "(WRAPPED_SOURCE_TEXT)";
+#include "selfdrive/ui/qt/window.h"
+
+const QString TEST_TEXT = "(WRAPPED_SOURCE_TEXT)";  // what each string should be translated to
 QRegExp RE_NUM("\\d*");
 
 QStringList getParentWidgets(QWidget* widget){
@@ -15,29 +15,32 @@ QStringList getParentWidgets(QWidget* widget){
 }
 
 template <typename T>
-void checkTextWidgetType(MainWindow &w) {
+void checkWidgetTrWrap(MainWindow &w) {
+  int i = 0;
   for (auto widget : w.findChildren<T>()) {
     const QString text = widget->text();
-    qWarning() << text;
-    bool isNumber = RE_NUM.exactMatch(text);
-    bool wrapped = text.contains(TEST_TEXT);
-    QString parentWidgets = getParentWidgets(widget).join("->");
-    if (!text.isEmpty() && !isNumber && !wrapped) {
-      FAIL(("\"" + text + "\" must be wrapped. Parent widgets: " + parentWidgets).toStdString());
+    SECTION(text.toStdString() + std::to_string(i)) {
+      bool isNumber = RE_NUM.exactMatch(text);
+      bool wrapped = text.contains(TEST_TEXT);
+      QString parentWidgets = getParentWidgets(widget).join("->");
+
+      if (!text.isEmpty() && !isNumber && !wrapped) {
+        FAIL(("\"" + text + "\" must be wrapped. Parent widgets: " + parentWidgets).toStdString());
+      }
+
+      // warn if source string wrapped, but UI adds text
+      // TODO: add way to ignore this
+      if (wrapped && text != TEST_TEXT) {
+        WARN(("\"" + text + "\" is dynamic and needs a custom retranslate function. Parent widgets: " + parentWidgets).toStdString());
+      }
     }
-    // dynamic if source string wrapped, but UI adds text
-    if (wrapped && text != TEST_TEXT) {
-      WARN(("\"" + text + "\" is dynamic and needs a custom retranslate function. Parent widgets: " + parentWidgets).toStdString());
-    }
+    i++;
   }
 }
 
-TEST_CASE("ui_all_strings_marked_tr") {
-  qWarning() << "TestCase";
+// Tests all strings in the UI are wrapped with tr()
+TEST_CASE("UI: test all strings wrapped") {
   MainWindow w;
-  qWarning() << "MainWindow";
-  checkTextWidgetType<QPushButton*>(w);
-  qWarning() << "QPushButton";
-  checkTextWidgetType<QLabel*>(w);
-  qWarning() << "QLabel";
+  checkWidgetTrWrap<QPushButton*>(w);
+  checkWidgetTrWrap<QLabel*>(w);
 }
