@@ -309,6 +309,7 @@ jobs:
                         ./common/tests/test_swaglog && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
                         ./selfdrive/loggerd/tests/test_logger &&\
+                        ./selfdrive/ui/tests/test_sound && \
                         ./system/proclogd/tests/test_proclog && \
                         ./tools/replay/tests/test_replay && \
                         ./system/camerad/test/ae_gray_test && \
