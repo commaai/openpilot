@@ -79,14 +79,9 @@ if GetOption('extras'):
   senv['LINKFLAGS'].append('-Wl,-strip-debug')
 
   release = "release3"
-  dashcam = "dashcam3"
   installers = [
     ("openpilot", release),
-    ("openpilot_test", f"{release}-staging"),
-    ("openpilot_nightly", "master-ci"),
-    ("openpilot_internal", "master"),
-    ("dashcam", dashcam),
-    ("dashcam_test", f"{dashcam}-staging"),
+    ("openpilot_internal", release),
   ]
 
   cont = {}
