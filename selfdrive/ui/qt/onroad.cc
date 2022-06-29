@@ -199,7 +199,7 @@ void NvgWindow::updateState(const UIState &s) {
   setProperty("is_metric", s.scene.is_metric);
   setProperty("speed", cur_speed);
   setProperty("setSpeed", set_speed);
-  setProperty("speedUnit", s.scene.is_metric ? "km/h" : "mph");
+  setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
   setProperty("status", s.status);
 
@@ -266,10 +266,10 @@ void NvgWindow::drawHud(QPainter &p) {
     p.setPen(QColor(0xa6, 0xa6, 0xa6, 0xff));
   }
   configFont(p, "Inter", 40, "SemiBold");
-  QRect max_rect = getTextRect(p, Qt::AlignCenter, "MAX");
+  QRect max_rect = getTextRect(p, Qt::AlignCenter, tr("MAX"));
   max_rect.moveCenter({set_speed_rect.center().x(), 0});
   max_rect.moveTop(set_speed_rect.top() + 27);
-  p.drawText(max_rect, Qt::AlignCenter, "MAX");
+  p.drawText(max_rect, Qt::AlignCenter, tr("MAX"));
 
   // Draw set speed
   if (is_cruise_set) {
@@ -313,16 +313,16 @@ void NvgWindow::drawHud(QPainter &p) {
 
     // "SPEED"
     configFont(p, "Inter", 28, "SemiBold");
-    QRect text_speed_rect = getTextRect(p, Qt::AlignCenter, "SPEED");
+    QRect text_speed_rect = getTextRect(p, Qt::AlignCenter, tr("SPEED"));
     text_speed_rect.moveCenter({sign_rect.center().x(), 0});
     text_speed_rect.moveTop(sign_rect_outer.top() + 22);
-    p.drawText(text_speed_rect, Qt::AlignCenter, "SPEED");
+    p.drawText(text_speed_rect, Qt::AlignCenter, tr("SPEED"));
 
     // "LIMIT"
-    QRect text_limit_rect = getTextRect(p, Qt::AlignCenter, "LIMIT");
+    QRect text_limit_rect = getTextRect(p, Qt::AlignCenter, tr("LIMIT"));
     text_limit_rect.moveCenter({sign_rect.center().x(), 0});
     text_limit_rect.moveTop(sign_rect_outer.top() + 51);
-    p.drawText(text_limit_rect, Qt::AlignCenter, "LIMIT");
+    p.drawText(text_limit_rect, Qt::AlignCenter, tr("LIMIT"));
 
     // Speed limit value
     configFont(p, "Inter", 70, "Bold");
