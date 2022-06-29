@@ -9,12 +9,12 @@
 python lib/auth.py
 
 # Start a replay
-selfdrive/ui/replay/replay <route-name>
+tools/replay/replay <route-name>
 
 # Example:
-# selfdrive/ui/replay/replay '4cf7a6ad03080c90|2021-09-29--13-46-36'
+# tools/replay/replay '4cf7a6ad03080c90|2021-09-29--13-46-36'
 # or use --demo to replay the default demo route:
-# selfdrive/ui/replay/replay --demo
+# tools/replay/replay --demo
 
 # watch the replay with the normal openpilot UI
 cd selfdrive/ui && ./ui
@@ -25,8 +25,8 @@ python replay/ui.py
 
 ## usage
 ``` bash
-$ selfdrive/ui/replay/replay -h
-Usage: selfdrive/ui/replay/replay [options] route
+$ tools/replay/replay -h
+Usage: tools/replay/replay [options] route
 Mock openpilot components by publishing logged messages.
 
 Options:
@@ -51,7 +51,7 @@ simply replay a route using the `--dcam` and `--ecam` flags:
 
 ```bash
 # start a replay
-cd selfdrive/ui/replay && ./replay --demo --dcam --ecam
+cd tools/replay && ./replay --demo --dcam --ecam
 
 # then start watch3
 cd selfdrive/ui && ./watch3
@@ -70,5 +70,5 @@ In order to replay specific route:
 MOCK=1 selfdrive/boardd/tests/boardd_old.py
 
 # In another terminal:
-selfdrive/ui/replay/replay <route-name>
+tools/replay/replay <route-name>
 ```

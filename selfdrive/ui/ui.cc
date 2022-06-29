@@ -140,6 +140,7 @@ static void update_state(UIState *s) {
         scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);
       }
     }
+    scene.calibration_valid = sm["liveCalibration"].getLiveCalibration().getCalStatus() == 1;
   }
   if (s->worldObjectsVisible()) {
     if (sm.updated("modelV2")) {
