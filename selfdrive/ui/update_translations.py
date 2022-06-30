@@ -16,7 +16,7 @@ def update_translations(release=False, suffix=""):
 
   for name, file in translation_files.items():
     if not len(file):
-      print(f"{name} translation has no file, skipping...")
+      print(f"{name} has no translation file, skipping...")
       continue
 
     tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}{suffix}.ts")
