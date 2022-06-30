@@ -17,7 +17,7 @@
 #endif
 
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
 
 const int FRAME_BUFFER_SIZE = 5;
@@ -42,11 +42,12 @@ signals:
 protected:
   void paintGL() override;
   void initializeGL() override;
-  void resizeGL(int w, int h) override { updateFrameMat(w, h); }
+  void resizeGL(int w, int h) override { updateFrameMat(); }
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
-  virtual void updateFrameMat(int w, int h);
+  virtual void updateFrameMat();
+  void updateCalibration(const mat3 &calib);
   void vipcThread();
 
   bool zoomed_view;
@@ -67,6 +68,13 @@ protected:
   int stream_stride = 0;
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
+
+  // Calibration
+  float x_offset = 0;
+  float y_offset = 0;
+  float zoom = 1.0;
+  mat3 calibration = DEFAULT_CALIBRATION;
+  mat3 intrinsic_matrix = fcam_intrinsic_matrix;
 
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
   uint32_t draw_frame_id = 0;

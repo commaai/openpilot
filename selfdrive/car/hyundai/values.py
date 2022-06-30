@@ -13,21 +13,27 @@ class CarControllerParams:
   ACCEL_MAX = 2.0 # m/s
 
   def __init__(self, CP):
-    # To determine the limit for your car, find the maximum value that the stock LKAS will request.
-    # If the max stock LKAS request is <384, add your car to this list.
-    if CP.carFingerprint in HDA2_CAR:
-      self.STEER_MAX = 150
-    elif CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.ELANTRA_GT_I30, CAR.IONIQ,
-                             CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_HEV,
-                             CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO, CAR.KIA_STINGER):
-      self.STEER_MAX = 255
-    else:
-      self.STEER_MAX = 384
     self.STEER_DELTA_UP = 3
     self.STEER_DELTA_DOWN = 7
     self.STEER_DRIVER_ALLOWANCE = 50
     self.STEER_DRIVER_MULTIPLIER = 2
     self.STEER_DRIVER_FACTOR = 1
+    self.STEER_THRESHOLD = 150
+
+    if CP.carFingerprint in HDA2_CAR:
+      self.STEER_MAX = 270
+      self.STEER_DRIVER_ALLOWANCE = 250
+      self.STEER_DRIVER_MULTIPLIER = 2
+      self.STEER_THRESHOLD = 250
+
+    # To determine the limit for your car, find the maximum value that the stock LKAS will request.
+    # If the max stock LKAS request is <384, add your car to this list.
+    elif CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.ELANTRA_GT_I30, CAR.IONIQ,
+                               CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_HEV,
+                               CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO, CAR.KIA_STINGER):
+      self.STEER_MAX = 255
+    else:
+      self.STEER_MAX = 384
 
 
 class CAR:
@@ -80,6 +86,8 @@ class CAR:
 
 @dataclass
 class HyundaiCarInfo(CarInfo):
+  # TODO: we can probably remove LKAS. LKAS is standard on many
+  # HKG and for others, it's likely packaged together with SCC
   package: str = "SCC + LKAS"
   good_torque: bool = True
 
@@ -121,7 +129,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Forte 2018", harness=Harness.hyundai_b),
     HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
   ],
-  CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "SCC + LFA", harness=Harness.hyundai_a),
+  CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "SCC", harness=Harness.hyundai_a),
   CAR.KIA_NIRO_EV: [
     HyundaiCarInfo("Kia Niro Electric 2019-20", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_f),
     HyundaiCarInfo("Kia Niro Electric 2021", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_c),
@@ -144,7 +152,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
-  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "All", harness=Harness.none),
+  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "All", harness=Harness.hyundai_p),
 
   # Genesis
   CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018", "All", harness=Harness.hyundai_f),
@@ -1138,9 +1146,6 @@ FW_VERSIONS = {
       b'\xf1\000DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
       b'\xf1\x8799110L5000\xf1\000DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
     ],
-    (Ecu.esp, 0x7b0, None): [
-      b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x81\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x8756310-L5500\xf1\x00DN8 MDPS C 1.00 1.02 56310-L5500 4DNHC102',
       b'\xf1\x8756310-L5450\xf1\x00DN8 MDPS C 1.00 1.02 56310-L5450 4DNHC102',
@@ -1266,5 +1271,3 @@ DBC = {
   CAR.KIA_EV6: dbc_dict('kia_ev6', None),
   CAR.SONATA_HYBRID: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
 }
-
-STEER_THRESHOLD = 150

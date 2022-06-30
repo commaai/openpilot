@@ -25,7 +25,6 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = candidate not in (CAR.CX5_2022, CAR.CX9_2021)
 
     ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.8
     tire_stiffness_factor = 0.70   # not optimized yet
 

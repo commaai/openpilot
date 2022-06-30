@@ -18,6 +18,8 @@ def logging(started, params, CP: car.CarParams) -> bool:
   return started and run
 
 procs = [
+  # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
+  NativeProcess("camerad", "system/camerad", ["./camerad"], unkillable=True, callback=driverview),
   NativeProcess("clocksd", "system/clocksd", ["./clocksd"]),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"]),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"]),
@@ -25,8 +27,6 @@ procs = [
   PythonProcess("timezoned", "system.timezoned", enabled=not PC, offroad=True),
 
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
-  # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
-  NativeProcess("camerad", "selfdrive/camerad", ["./camerad"], unkillable=True, callback=driverview),
   NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], enabled=(not PC or WEBCAM), callback=driverview),
   NativeProcess("encoderd", "selfdrive/loggerd", ["./encoderd"]),
   NativeProcess("loggerd", "selfdrive/loggerd", ["./loggerd"], onroad=False, callback=logging),
@@ -57,6 +57,7 @@ procs = [
 
   # Experimental
   PythonProcess("rawgpsd", "selfdrive.sensord.rawgps.rawgpsd", enabled=os.path.isfile("/persist/comma/use-quectel-rawgps")),
+  PythonProcess("laikad", "selfdrive.locationd.laikad", enabled=os.path.isfile("/persist/comma/use-laikad")),
 ]
 
 managed_processes = {p.name: p for p in procs}
