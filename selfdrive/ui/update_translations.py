@@ -10,7 +10,7 @@ TRANSLATIONS_DIR = os.path.join(UI_DIR, 'translations')
 LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, 'languages.json')
 
 
-def update_translations(args):
+def update_translations(no_update=False, release=False, suffix=''):
   with open(LANGUAGES_FILE, 'r') as f:
     translation_files = json.load(f)
 
@@ -18,15 +18,15 @@ def update_translations(args):
     if not len(file):
       print(f'{name} translation has no file, skipping...')
       continue
-    tr_file = os.path.join(TRANSLATIONS_DIR, f'{file}.ts')
-    if not args.no_update:
+    tr_file = os.path.join(TRANSLATIONS_DIR, f'{file}{suffix}.ts')
+    if not no_update:
       # if os.path.exists(tr_file):
       #   print(f'Updating {name} translation: {tr_file}')
       # else:
       #   print(f'Creating {name} translation: {tr_file}')
       ret = os.system(f'lupdate -recursive {UI_DIR} -ts {tr_file}')
       assert ret == 0
-    if args.release:
+    if release:
       ret = os.system(f'lrelease {tr_file}')
       assert ret == 0
 
@@ -38,4 +38,4 @@ if __name__ == '__main__':
   parser.add_argument('--release', action='store_true', help='Create final qm translation files used by UI')
   args = parser.parse_args()
 
-  update_translations(args)
+  update_translations(args.no_update, args.release)
