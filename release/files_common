@@ -289,7 +289,7 @@ selfdrive/ui/soundd/*.cc
 selfdrive/ui/soundd/*.h
 selfdrive/ui/soundd/soundd
 selfdrive/ui/soundd/.gitignore
-selfdrive/ui/translations
+selfdrive/ui/translations/*
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
