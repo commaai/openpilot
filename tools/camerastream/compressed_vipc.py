@@ -73,6 +73,10 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
           continue
         assert len(frames) == 1
         img_yuv = frames[0].to_ndarray(format=av.video.format.VideoFormat('yuv420p')).flatten()
+        uv_offset = H*W
+        y = img_yuv[:uv_offset]
+        uv = img_yuv[uv_offset:].reshape(2, -1).ravel('F')
+        img_yuv = np.hstack((y, uv))
 
       vipc_server.send(vst, img_yuv.data, cnt, int(time_q[0]*1e9), int(time.monotonic()*1e9))
       cnt += 1
