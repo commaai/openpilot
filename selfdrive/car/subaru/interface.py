@@ -118,6 +118,5 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def apply(self, c):
-    hud_control = c.hudControl
     ret = self.CC.update(c, self.CS)
     return ret
