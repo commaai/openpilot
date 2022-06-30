@@ -1,24 +1,48 @@
 #!/usr/bin/env python3
-import os
 import json
+import os
 import unittest
+
 from selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
 
 
 class TestTranslations(unittest.TestCase):
 
-  def test_missing_language_files(self):
-    with open(LANGUAGES_FILE, 'r') as f:
-      translation_files = json.load(f)
+  @classmethod
+  def setUpClass(cls):
+    with open(LANGUAGES_FILE, "r") as f:
+      cls.translation_files = json.load(f)
 
-    for name, file in translation_files.items():
+  def test_missing_translation_files(self):
+    for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
         if not len(file):
-          self.skipTest(f'{name} translation has no file, skipping...')
+          self.skipTest(f"{name} translation has no file")
 
-        file_path = os.path.join(TRANSLATIONS_DIR, f'{file}.ts')
-        self.assertTrue(os.path.exists(file_path), f'{name} has no language file, run selfdrive/ui/update_translations.py')
+        self.assertTrue(os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")),
+                        f"{name} has no XML translation file, run selfdrive/ui/update_translations.py")
+        self.assertTrue(os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.qm")),
+                        f"{name} has no compiled QM translation file, run selfdrive/ui/update_translations.py --release")
+
+  def test_translations_updated(self):
+    suffix = "_test"
+    update_translations(suffix=suffix)
+
+    for name, file in self.translation_files.items():
+      with self.subTest(name=name, file=file):
+        if not len(file):
+          self.skipTest(f"{name} translation has no file")
+
+        cur_tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}.ts")
+        new_tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}{suffix}.ts")
+        with open(cur_tr_file, "r") as f:
+          cur_translations = f.read()
+        with open(new_tr_file, "r") as f:
+          new_translations = f.read()
+
+        self.assertEqual(cur_translations, new_translations,
+                         f"{name} translation file out of date. Run selfdrive/ui/update_translations.py to update the translation files")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   unittest.main()
