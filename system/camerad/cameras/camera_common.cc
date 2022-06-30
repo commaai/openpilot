@@ -66,11 +66,10 @@ private:
   bool hdr_;
 };
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_rgb_type, VisionStreamType init_yuv_type, release_cb init_release_callback) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_rgb_type, VisionStreamType init_yuv_type) {
   vipc_server = v;
   this->rgb_type = init_rgb_type;
   this->yuv_type = init_yuv_type;
-  this->release_callback = init_release_callback;
 
   const CameraInfo *ci = &s->ci;
   camera_state = s;
@@ -127,7 +126,7 @@ CameraBuf::~CameraBuf() {
 }
 
 bool CameraBuf::acquire() {
-  if (!safe_queue.try_pop(cur_buf_idx, 1)) return false;
+  if (!safe_queue.try_pop(cur_buf_idx, 50)) return false;
 
   if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
     LOGE("no frame data? wtf");
@@ -169,9 +168,7 @@ bool CameraBuf::acquire() {
 }
 
 void CameraBuf::release() {
-  if (release_callback) {
-    release_callback((void*)camera_state, cur_buf_idx);
-  }
+  // Empty
 }
 
 void CameraBuf::queue(size_t buf_idx) {

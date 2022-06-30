@@ -47,13 +47,13 @@ void SshControl::getUserKeys(const QString &username) {
         params.put("GithubUsername", username.toStdString());
         params.put("GithubSshKeys", resp.toStdString());
       } else {
-        ConfirmationDialog::alert(QString(tr("Username '%1' has no keys on GitHub")).arg(username), this);
+        ConfirmationDialog::alert(tr("Username '%1' has no keys on GitHub").arg(username), this);
       }
     } else {
       if (request->timeout()) {
         ConfirmationDialog::alert(tr("Request timed out"), this);
       } else {
-        ConfirmationDialog::alert(QString(tr("Username '%1' doesn't exist on GitHub")).arg(username), this);
+        ConfirmationDialog::alert(tr("Username '%1' doesn't exist on GitHub").arg(username), this);
       }
     }
 
