@@ -63,7 +63,7 @@ class CarController:
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 
     if self.CP.openpilotLongitudinalControl:
-      # Gas/regen and brakes - all at 25Hz
+      # Gas/regen, brakes, and UI commands - all at 25Hz
       if self.frame % 4 == 0:
         if not CC.longActive:
           # Stock ECU sends max regen when not enabled
