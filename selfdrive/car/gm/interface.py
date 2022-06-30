@@ -50,7 +50,8 @@ class CarInterface(CarInterfaceBase):
     ret.pcmCruise = False  # For ASCM, stock non-adaptive cruise control is kept off
     ret.radarOffCan = False  # For ASCM, radar exists
     ret.transmissionType = TransmissionType.automatic
-    ret.networkLocation = NetworkLocation.gateway  # gateway: OBD-II harness (typically ASCM), fwdCamera: non-ASCM
+    # NetworkLocation.gateway: OBD-II harness (typically ASCM), NetworkLocation.fwdCamera: non-ASCM
+    ret.networkLocation = NetworkLocation.gateway
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
