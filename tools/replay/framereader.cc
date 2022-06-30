@@ -1,5 +1,5 @@
-#include "selfdrive/ui/replay/framereader.h"
-#include "selfdrive/ui/replay/util.h"
+#include "tools/replay/framereader.h"
+#include "tools/replay/util.h"
 
 #include <cassert>
 #include "libyuv.h"
@@ -117,8 +117,6 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_hw_decoder, s
   if (has_hw_decoder && !no_hw_decoder) {
     if (!initHardwareDecoder(HW_DEVICE_TYPE)) {
       rWarning("No device with hardware decoder found. fallback to CPU decoding.");
-    } else {
-      nv12toyuv_buffer.resize(getYUVSize());
     }
   }
 
@@ -227,17 +225,16 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
 }
 
 bool FrameReader::copyBuffers(AVFrame *f, uint8_t *yuv) {
+  assert(f != nullptr && yuv != nullptr);
+  uint8_t *y = yuv;
+  uint8_t *uv = y + width * height;
   if (hw_pix_fmt == HW_PIX_FMT) {
-    uint8_t *y = yuv ? yuv : nv12toyuv_buffer.data();
-    uint8_t *uv = y + width * height;
     for (int i = 0; i < height/2; i++) {
       memcpy(y + (i*2 + 0)*width, f->data[0] + (i*2 + 0)*f->linesize[0], width);
       memcpy(y + (i*2 + 1)*width, f->data[0] + (i*2 + 1)*f->linesize[0], width);
       memcpy(uv + i*width, f->data[1] + i*f->linesize[1], width);
     }
   } else {
-    uint8_t *y = yuv ? yuv : nv12toyuv_buffer.data();
-    uint8_t *uv = y + width * height;
     libyuv::I420ToNV12(f->data[0], f->linesize[0],
                        f->data[1], f->linesize[1],
                        f->data[2], f->linesize[2],

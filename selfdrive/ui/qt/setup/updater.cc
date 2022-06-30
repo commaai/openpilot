@@ -20,13 +20,13 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     QVBoxLayout *layout = new QVBoxLayout(prompt);
     layout->setContentsMargins(100, 250, 100, 100);
 
-    QLabel *title = new QLabel("Update Required");
+    QLabel *title = new QLabel(tr("Update Required"));
     title->setStyleSheet("font-size: 80px; font-weight: bold;");
     layout->addWidget(title);
 
     layout->addSpacing(75);
 
-    QLabel *desc = new QLabel("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.");
+    QLabel *desc = new QLabel(tr("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB."));
     desc->setWordWrap(true);
     desc->setStyleSheet("font-size: 65px;");
     layout->addWidget(desc);
@@ -37,14 +37,14 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     hlayout->setSpacing(30);
     layout->addLayout(hlayout);
 
-    QPushButton *connect = new QPushButton("Connect to Wi-Fi");
+    QPushButton *connect = new QPushButton(tr("Connect to Wi-Fi"));
     connect->setObjectName("navBtn");
     QObject::connect(connect, &QPushButton::clicked, [=]() {
       setCurrentWidget(wifi);
     });
     hlayout->addWidget(connect);
 
-    QPushButton *install = new QPushButton("Install");
+    QPushButton *install = new QPushButton(tr("Install"));
     install->setObjectName("navBtn");
     install->setStyleSheet("background-color: #465BEA;");
     QObject::connect(install, &QPushButton::clicked, this, &Updater::installUpdate);
@@ -61,7 +61,7 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     networking->setStyleSheet("Networking { background-color: #292929; border-radius: 13px; }");
     layout->addWidget(networking, 1);
 
-    QPushButton *back = new QPushButton("Back");
+    QPushButton *back = new QPushButton(tr("Back"));
     back->setObjectName("navBtn");
     back->setStyleSheet("padding-left: 60px; padding-right: 60px;");
     QObject::connect(back, &QPushButton::clicked, [=]() {
@@ -77,7 +77,7 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     layout->setContentsMargins(150, 330, 150, 150);
     layout->setSpacing(0);
 
-    text = new QLabel("Loading...");
+    text = new QLabel(tr("Loading..."));
     text->setStyleSheet("font-size: 90px; font-weight: 600;");
     layout->addWidget(text, 0, Qt::AlignTop);
 
@@ -91,7 +91,7 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
 
     layout->addStretch();
 
-    reboot = new QPushButton("Reboot");
+    reboot = new QPushButton(tr("Reboot"));
     reboot->setObjectName("navBtn");
     reboot->setStyleSheet("padding-left: 60px; padding-right: 60px;");
     QObject::connect(reboot, &QPushButton::clicked, [=]() {
@@ -161,7 +161,7 @@ void Updater::updateFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   if (exitCode == 0) {
     Hardware::reboot();
   } else {
-    text->setText("Update failed");
+    text->setText(tr("Update failed"));
     reboot->show();
   }
 }

@@ -236,6 +236,13 @@ def ublox_rcv_callback(msg):
     return []
 
 
+def laika_rcv_callback(msg, CP, cfg, fsm):
+  if msg.ubloxGnss.which() == "measurementReport":
+    return ["gnssMeasurements"], True
+  else:
+    return [], False
+
+
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
@@ -282,7 +289,8 @@ CONFIGS = [
     proc_name="calibrationd",
     pub_sub={
       "carState": ["liveCalibration"],
-      "cameraOdometry": []
+      "cameraOdometry": [],
+      "carParams": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
@@ -336,6 +344,17 @@ CONFIGS = [
     should_recv_callback=ublox_rcv_callback,
     tolerance=None,
     fake_pubsubmaster=False,
+  ),
+  ProcessConfig(
+    proc_name="laikad",
+    pub_sub={
+      "ubloxGnss": ["gnssMeasurements"],
+    },
+    ignore=["logMonoTime"],
+    init_callback=get_car_params,
+    should_recv_callback=laika_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=True,
   ),
 ]
 

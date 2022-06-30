@@ -53,7 +53,7 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
   layout->setContentsMargins(150, 290, 150, 150);
   layout->setSpacing(0);
 
-  QLabel *title = new QLabel("Installing...");
+  QLabel *title = new QLabel(tr("Installing..."));
   title->setStyleSheet("font-size: 90px; font-weight: 600;");
   layout->addWidget(title, 0, Qt::AlignTop);
 
@@ -141,9 +141,9 @@ void Installer::cachedFetch(const QString &cache) {
 void Installer::readProgress() {
   const QVector<QPair<QString, int>> stages = {
     // prefix, weight in percentage
-    {"Receiving objects: ", 91},
-    {"Resolving deltas: ", 2},
-    {"Updating files: ", 7},
+    {tr("Receiving objects: "), 91},
+    {tr("Resolving deltas: "), 2},
+    {tr("Updating files: "), 7},
   };
 
   auto line = QString(proc.readAllStandardError());

@@ -146,18 +146,18 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setPen(QColor(0xff, 0xff, 0xff));
   p.setRenderHint(QPainter::TextAntialiasing);
   if (alert.size == cereal::ControlsState::AlertSize::SMALL) {
-    configFont(p, "Open Sans", 74, "SemiBold");
+    configFont(p, "Inter", 74, "SemiBold");
     p.drawText(r, Qt::AlignCenter, alert.text1);
   } else if (alert.size == cereal::ControlsState::AlertSize::MID) {
-    configFont(p, "Open Sans", 88, "Bold");
+    configFont(p, "Inter", 88, "Bold");
     p.drawText(QRect(0, c.y() - 125, width(), 150), Qt::AlignHCenter | Qt::AlignTop, alert.text1);
-    configFont(p, "Open Sans", 66, "Regular");
+    configFont(p, "Inter", 66, "Regular");
     p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, alert.text2);
   } else if (alert.size == cereal::ControlsState::AlertSize::FULL) {
     bool l = alert.text1.length() > 15;
-    configFont(p, "Open Sans", l ? 132 : 177, "Bold");
+    configFont(p, "Inter", l ? 132 : 177, "Bold");
     p.drawText(QRect(0, r.y() + (l ? 240 : 270), width(), 600), Qt::AlignHCenter | Qt::TextWordWrap, alert.text1);
-    configFont(p, "Open Sans", 88, "Regular");
+    configFont(p, "Inter", 88, "Regular");
     p.drawText(QRect(0, r.height() - (l ? 361 : 420), width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, alert.text2);
   }
 }
@@ -199,7 +199,7 @@ void NvgWindow::updateState(const UIState &s) {
   setProperty("is_metric", s.scene.is_metric);
   setProperty("speed", cur_speed);
   setProperty("setSpeed", set_speed);
-  setProperty("speedUnit", s.scene.is_metric ? "km/h" : "mph");
+  setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
   setProperty("status", s.status);
 
@@ -207,6 +207,12 @@ void NvgWindow::updateState(const UIState &s) {
   if (sm.frame % (UI_FREQ / 2) == 0) {
     setProperty("engageable", cs.getEngageable() || cs.getEnabled());
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
+  }
+
+  if (s.scene.calibration_valid) {
+    CameraViewWidget::updateCalibration(s.scene.view_from_calib);
+  } else {
+    CameraViewWidget::updateCalibration(DEFAULT_CALIBRATION);
   }
 }
 
@@ -259,11 +265,11 @@ void NvgWindow::drawHud(QPainter &p) {
   } else {
     p.setPen(QColor(0xa6, 0xa6, 0xa6, 0xff));
   }
-  configFont(p, "Open Sans", 40, "SemiBold");
-  QRect max_rect = getTextRect(p, Qt::AlignCenter, "MAX");
+  configFont(p, "Inter", 40, "SemiBold");
+  QRect max_rect = getTextRect(p, Qt::AlignCenter, tr("MAX"));
   max_rect.moveCenter({set_speed_rect.center().x(), 0});
-  max_rect.moveTop(set_speed_rect.top() + 23);
-  p.drawText(max_rect, Qt::AlignCenter, "MAX");
+  max_rect.moveTop(set_speed_rect.top() + 27);
+  p.drawText(max_rect, Qt::AlignCenter, tr("MAX"));
 
   // Draw set speed
   if (is_cruise_set) {
@@ -279,10 +285,10 @@ void NvgWindow::drawHud(QPainter &p) {
   } else {
     p.setPen(QColor(0x72, 0x72, 0x72, 0xff));
   }
-  configFont(p, "Open Sans", 90, "Bold");
+  configFont(p, "Inter", 90, "Bold");
   QRect speed_rect = getTextRect(p, Qt::AlignCenter, setSpeedStr);
   speed_rect.moveCenter({set_speed_rect.center().x(), 0});
-  speed_rect.moveTop(set_speed_rect.top() + 67);
+  speed_rect.moveTop(set_speed_rect.top() + 77);
   p.drawText(speed_rect, Qt::AlignCenter, setSpeedStr);
 
 
@@ -306,23 +312,23 @@ void NvgWindow::drawHud(QPainter &p) {
     p.drawRoundedRect(sign_rect, 16, 16);
 
     // "SPEED"
-    configFont(p, "Open Sans", 28, "SemiBold");
-    QRect text_speed_rect = getTextRect(p, Qt::AlignCenter, "SPEED");
+    configFont(p, "Inter", 28, "SemiBold");
+    QRect text_speed_rect = getTextRect(p, Qt::AlignCenter, tr("SPEED"));
     text_speed_rect.moveCenter({sign_rect.center().x(), 0});
-    text_speed_rect.moveTop(sign_rect_outer.top() + 20);
-    p.drawText(text_speed_rect, Qt::AlignCenter, "SPEED");
+    text_speed_rect.moveTop(sign_rect_outer.top() + 22);
+    p.drawText(text_speed_rect, Qt::AlignCenter, tr("SPEED"));
 
     // "LIMIT"
-    QRect text_limit_rect = getTextRect(p, Qt::AlignCenter, "LIMIT");
+    QRect text_limit_rect = getTextRect(p, Qt::AlignCenter, tr("LIMIT"));
     text_limit_rect.moveCenter({sign_rect.center().x(), 0});
-    text_limit_rect.moveTop(sign_rect_outer.top() + 48);
-    p.drawText(text_limit_rect, Qt::AlignCenter, "LIMIT");
+    text_limit_rect.moveTop(sign_rect_outer.top() + 51);
+    p.drawText(text_limit_rect, Qt::AlignCenter, tr("LIMIT"));
 
     // Speed limit value
-    configFont(p, "Open Sans", 70, "Bold");
+    configFont(p, "Inter", 70, "Bold");
     QRect speed_limit_rect = getTextRect(p, Qt::AlignCenter, speedLimitStr);
     speed_limit_rect.moveCenter({sign_rect.center().x(), 0});
-    speed_limit_rect.moveTop(sign_rect.top() + 70);
+    speed_limit_rect.moveTop(sign_rect_outer.top() + 85);
     p.drawText(speed_limit_rect, Qt::AlignCenter, speedLimitStr);
   }
 
@@ -343,10 +349,8 @@ void NvgWindow::drawHud(QPainter &p) {
     p.drawEllipse(center, inner_radius_2, inner_radius_2);
 
     // Speed limit value
-    if (speedLimit < 1 ) center -= {0, 2}; // Make sure dash is centered if no speed limit available
-
-    int font_size = (speedLimitStr.size() >= 3) ? 62 : 70;
-    configFont(p, "Open Sans", font_size, "Bold");
+    int font_size = (speedLimitStr.size() >= 3) ? 60 : 70;
+    configFont(p, "Inter", font_size, "Bold");
     QRect speed_limit_rect = getTextRect(p, Qt::AlignCenter, speedLimitStr);
     speed_limit_rect.moveCenter(center);
     p.setPen(blackColor());
@@ -354,9 +358,9 @@ void NvgWindow::drawHud(QPainter &p) {
   }
 
   // current speed
-  configFont(p, "Open Sans", 176, "Bold");
+  configFont(p, "Inter", 176, "Bold");
   drawText(p, rect().center().x(), 210, speedStr);
-  configFont(p, "Open Sans", 66, "Regular");
+  configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
   // engage-ability icon
@@ -401,23 +405,20 @@ void NvgWindow::initializeGL() {
   setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
-void NvgWindow::updateFrameMat(int w, int h) {
-  CameraViewWidget::updateFrameMat(w, h);
-
+void NvgWindow::updateFrameMat() {
+  CameraViewWidget::updateFrameMat();
   UIState *s = uiState();
+  int w = width(), h = height();
+
   s->fb_w = w;
   s->fb_h = h;
-  auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-  float zoom = ZOOM / intrinsic_matrix.v[0];
-  if (s->wide_camera) {
-    zoom *= 0.5;
-  }
+
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
   // 3) Put (0, 0) in top left corner of video
   s->car_space_transform.reset();
-  s->car_space_transform.translate(w / 2, h / 2 + y_offset)
+  s->car_space_transform.translate(w / 2 - x_offset, h / 2 - y_offset)
       .scale(zoom, zoom)
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }

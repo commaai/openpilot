@@ -105,7 +105,9 @@ selfdrive/car/ecu_addrs.py
 selfdrive/car/isotp_parallel_query.py
 selfdrive/car/tests/__init__.py
 selfdrive/car/tests/test_car_interfaces.py
-selfdrive/car/torque_data.json
+selfdrive/car/torque_data/params.yaml
+selfdrive/car/torque_data/substitute.yaml
+selfdrive/car/torque_data/override.yaml
 
 selfdrive/car/body/*.py
 selfdrive/car/chrysler/*.py
@@ -294,8 +296,8 @@ selfdrive/ui/qt/offroad/*.qml
 selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.h
 
-selfdrive/ui/replay/*.cc
-selfdrive/ui/replay/*.h
+tools/replay/*.cc
+tools/replay/*.h
 
 selfdrive/ui/qt/maps/*.cc
 selfdrive/ui/qt/maps/*.h
