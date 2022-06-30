@@ -101,7 +101,7 @@ def create_bosch_supplemental_1(packer, car_fingerprint, idx):
   return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values, idx)
 
 
-def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stock_hud, frame):
+def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stock_hud):
   commands = []
   bus_pt = get_pt_bus(CP.carFingerprint)
   radar_disabled = CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl
@@ -141,8 +141,6 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stoc
   if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
     lkas_hud_values['LANE_LINES'] = 3
     lkas_hud_values['DASHED_LANES'] = hud.lanes_visible
-    # TODO: understand this better, does car need to see it fall after start up?
-    lkas_hud_values['LKAS_PROBLEM'] = 0 if frame > 200 else 1
 
   if not (CP.flags & HondaFlags.BOSCH_EXT_HUD):
     lkas_hud_values['SET_ME_X48'] = 0x48
