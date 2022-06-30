@@ -88,10 +88,9 @@ class CarController:
 
       # Radar needs to know current speed and yaw rate (50hz),
       # and that ADAS is alive (10hz)
-      time_and_headlights_step = 10
-      tt = self.frame * DT_CTRL
-
       if not self.CP.radarOffCan:
+        tt = self.frame * DT_CTRL
+        time_and_headlights_step = 10
         if self.frame % time_and_headlights_step == 0:
           idx = (self.frame // time_and_headlights_step) % 4
           can_sends.append(gmcan.create_adas_time_status(CanBus.OBSTACLE, int((tt - self.start_time) * 60), idx))
