@@ -7,7 +7,6 @@ from selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, u
 
 
 class TestTranslations(unittest.TestCase):
-
   @classmethod
   def setUpClass(cls):
     with open(LANGUAGES_FILE, "r") as f:
@@ -32,6 +31,7 @@ class TestTranslations(unittest.TestCase):
       with self.subTest(name=name, file=file):
         cur_tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}.ts")
         new_tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}{suffix}.ts")
+
         if not len(file):
           self.skipTest(f"{name} translation has no file")
         elif not os.path.exists(cur_tr_file):
