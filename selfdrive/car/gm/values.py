@@ -12,7 +12,7 @@ Ecu = car.CarParams.Ecu
 class CarControllerParams:
   STEER_MAX = 300  # GM limit is 3Nm. Used by carcontroller to generate LKA output
   STEER_STEP = 2  # Control frames per command (50hz)
-  STEER_DELTA_UP = 7 # Delta rates require review due to observed EPS weakness
+  STEER_DELTA_UP = 7  # Delta rates require review due to observed EPS weakness
   STEER_DELTA_DOWN = 17
   MIN_STEER_SPEED = 3.  # m/s
   STEER_DRIVER_ALLOWANCE = 50
@@ -26,9 +26,9 @@ class CarControllerParams:
 
   # Volt gasbrake lookups
   # TODO: These values should be confirmed on non-Volt vehicles
-  MAX_GAS = 3072 # Safety limit, not ACC max. Stock ACC >4096 from standstill.
-  ZERO_GAS = 2048 # Coasting
-  MAX_BRAKE = 350 # ~ -3.5 m/s^2 with regen
+  MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
+  ZERO_GAS = 2048  # Coasting
+  MAX_BRAKE = 350  # ~ -3.5 m/s^2 with regen
   MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
 
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
@@ -36,8 +36,8 @@ class CarControllerParams:
   # to apply some more braking if we're on a downhill slope.
   # Our controller should still keep the 2 second average above
   # -3.5 m/s^2 as per planner limits
-  ACCEL_MAX = 2. # m/s^2
-  ACCEL_MIN = -4. # m/s^2
+  ACCEL_MAX = 2.  # m/s^2
+  ACCEL_MIN = -4.  # m/s^2
 
   GAS_LOOKUP_BP = [-1., 0., ACCEL_MAX]
   GAS_LOOKUP_V = [MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
