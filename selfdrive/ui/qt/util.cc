@@ -63,13 +63,13 @@ QString timeAgo(const QDateTime &date) {
     s = "now";
   } else if (diff < 60 * 60) {
     int minutes = diff / 60;
-    s = QString(QObject::tr("%1 minute%2 ago")).arg(minutes).arg(minutes > 1 ? "s" : "");
+    s = QObject::tr("%1 minute%2 ago").arg(minutes).arg(minutes > 1 ? "s" : "");
   } else if (diff < 60 * 60 * 24) {
     int hours = diff / (60 * 60);
-    s = QString(QObject::tr("%1 hour%2 ago")).arg(hours).arg(hours > 1 ? "s" : "");
+    s = QObject::tr("%1 hour%2 ago").arg(hours).arg(hours > 1 ? "s" : "");
   } else if (diff < 3600 * 24 * 7) {
     int days = diff / (60 * 60 * 24);
-    s = QString(QObject::tr("%1 day%2 ago")).arg(days).arg(days > 1 ? "s" : "");
+    s = QObject::tr("%1 day%2 ago").arg(days).arg(days > 1 ? "s" : "");
   } else {
     s = date.date().toString();
   }
