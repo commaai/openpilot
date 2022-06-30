@@ -31,7 +31,7 @@ def update_translations(release=False, suffix=''):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Update translation files for UI',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument('--release', action='store_true', help='Create final qm translation files used by UI')
+  parser.add_argument('--release', action='store_true', help='Create compiled QM translation files used by UI')
   args = parser.parse_args()
 
   update_translations(args.release)
