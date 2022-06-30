@@ -30,11 +30,13 @@ class TestTranslations(unittest.TestCase):
 
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
-        if not len(file):
-          self.skipTest(f"{name} translation has no file")
-
         cur_tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}.ts")
         new_tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}{suffix}.ts")
+        if not len(file):
+          self.skipTest(f"{name} translation has no file")
+        elif not os.path.exists(cur_tr_file):
+          self.skipTest(f"{name} missing translation file")  # caught by test_missing_translation_files
+
         with open(cur_tr_file, "r") as f:
           cur_translations = f.read()
         with open(new_tr_file, "r") as f:
