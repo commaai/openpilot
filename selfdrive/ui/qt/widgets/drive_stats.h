@@ -12,7 +12,7 @@ public:
 private:
   void showEvent(QShowEvent *event) override;
   void updateStats();
-  inline QString getDistanceUnit() const { return metric_ ? "KM" : "Miles"; }
+  inline QString getDistanceUnit() const { return metric_ ? tr("KM") : tr("Miles"); }
 
   bool metric_;
   QJsonDocument stats_;

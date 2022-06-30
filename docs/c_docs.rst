@@ -54,7 +54,7 @@ soundd
 replay
 """"""
 .. autodoxygenindex::
-   :project: selfdrive_ui_replay
+   :project: tools_replay
 
 qt
 ""
