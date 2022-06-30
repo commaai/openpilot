@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import math
 import os
 import time
 from collections import defaultdict
@@ -149,8 +150,8 @@ class Laikad:
 
   def kf_valid(self, t: float) -> List[bool]:
     filter_time = self.gnss_kf.filter.get_filter_time()
-    return [filter_time is not None,
-            filter_time is not None and abs(t - filter_time) < MAX_TIME_GAP,
+    return [not math.isnan(filter_time),
+            abs(t - filter_time) < MAX_TIME_GAP,
             all(np.isfinite(self.gnss_kf.x[GStates.ECEF_POS]))]
 
   def init_gnss_localizer(self, est_pos):

@@ -242,7 +242,7 @@ def laika_rcv_callback(msg, CP, cfg, fsm):
   if msg.ubloxGnss.which() == "measurementReport":
     return ["gnssMeasurements"], True
   else:
-    return [], False
+    return [], True
 
 
 CONFIGS = [
