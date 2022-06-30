@@ -7,7 +7,7 @@
 
 #include "cereal/gen/cpp/log.capnp.h"
 #include "system/camerad/cameras/camera_common.h"
-#include "selfdrive/ui/replay/filereader.h"
+#include "tools/replay/filereader.h"
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
 const int MAX_CAMERAS = std::size(ALL_CAMERAS);

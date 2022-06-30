@@ -305,12 +305,15 @@ jobs:
                         $UNIT_TEST selfdrive/hardware/tici && \
                         $UNIT_TEST selfdrive/modeld && \
                         $UNIT_TEST tools/lib/tests && \
+                        ./selfdrive/ui/tests/create_test_translations.sh && \
+                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
+                        ./selfdrive/ui/tests/test_translations.py && \
                         ./common/tests/test_util && \
                         ./common/tests/test_swaglog && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./system/proclogd/tests/test_proclog && \
-                        ./selfdrive/ui/replay/tests/test_replay && \
+                        ./tools/replay/tests/test_replay && \
                         ./system/camerad/test/ae_gray_test && \
                         coverage xml"
     - name: "Upload coverage to Codecov"

@@ -6,8 +6,8 @@
 
 #include "catch2/catch.hpp"
 #include "common/util.h"
-#include "selfdrive/ui/replay/replay.h"
-#include "selfdrive/ui/replay/util.h"
+#include "tools/replay/replay.h"
+#include "tools/replay/util.h"
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
