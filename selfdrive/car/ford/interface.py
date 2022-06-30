@@ -78,6 +78,5 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def apply(self, c):
-    ret = self.CC.update(c, self.CS, self.frame)
-    self.frame += 1
+    ret = self.CC.update(c, self.CS)
     return ret
