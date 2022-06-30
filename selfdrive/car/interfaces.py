@@ -204,6 +204,14 @@ class CarInterfaceBase(ABC):
     if cs_out.accFaulted:
       events.add(EventName.accFaulted)
 
+    # Below steer speed alert hysteresis
+    if self.CP.minSteerSpeed > 0. and cs_out.vEgo < (self.CP.minSteerSpeed + 1.):
+      self.low_speed_alert = True
+    elif cs_out.vEgo > (self.CP.minSteerSpeed + 2.):
+      self.low_speed_alert = False
+    if self.low_speed_alert:
+      events.add(EventName.belowSteerSpeed)
+
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
     if cs_out.steerFaultTemporary:
