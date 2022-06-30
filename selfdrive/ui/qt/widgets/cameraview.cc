@@ -243,13 +243,12 @@ void CameraViewWidget::paintGL() {
   // }
 
   // Log duplicate/dropped frames
-  static int prev_id = 0;
-  if (frames[frame_idx].first == prev_id) {
+  if (frames[frame_idx].first == prev_frame_id) {
     qInfo() << "Drawing same frame twice" << frames[frame_idx].first;
-  } else if (frames[frame_idx].first != prev_id + 1) {
+  } else if (frames[frame_idx].first != prev_frame_id + 1) {
     qInfo() << "Skipped frame" << frames[frame_idx].first;
   }
-  prev_id = frames[frame_idx].first;
+  prev_frame_id = frames[frame_idx].first;
 
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
