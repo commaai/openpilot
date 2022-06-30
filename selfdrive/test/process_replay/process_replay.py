@@ -382,7 +382,7 @@ def replay_process(cfg, lr, fingerprint=None):
       return cpp_replay_process(cfg, lr, fingerprint)
 
 
-def setup_env(cfg, simulation=False, CP=None):
+def setup_env(simulation=False, CP=None, cfg=None):
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
@@ -396,14 +396,15 @@ def setup_env(cfg, simulation=False, CP=None):
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
 
-  # Clear all custom processConfig environment variables
-  for cfg in CONFIGS:
-    for k, _ in cfg.environ.items():
-      if k in os.environ:
-        del os.environ[k]
+  if cfg is not None:
+    # Clear all custom processConfig environment variables
+    for cfg in CONFIGS:
+      for k, _ in cfg.environ.items():
+        if k in os.environ:
+          del os.environ[k]
 
-  os.environ.update(cfg.environ)
-  os.environ['PROC_NAME'] = cfg.proc_name
+    os.environ.update(cfg.environ)
+    os.environ['PROC_NAME'] = cfg.proc_name
 
   if simulation:
     os.environ["SIMULATION"] = "1"
@@ -439,12 +440,10 @@ def python_replay_process(cfg, lr, fingerprint=None):
   if fingerprint is not None:
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = fingerprint
-    setup_env(cfg)
+    setup_env(cfg=cfg)
   else:
     CP = [m for m in lr if m.which() == 'carParams'][0].carParams
-    setup_env(cfg, CP=CP)
-
-  os.environ.update(cfg.environ)
+    setup_env(CP=CP, cfg=cfg)
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
@@ -505,7 +504,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   log_msgs = []
 
   # We need to fake SubMaster alive since we can't inject a fake clock
-  setup_env(cfg, simulation=True)
+  setup_env(simulation=True, cfg=cfg)
 
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
