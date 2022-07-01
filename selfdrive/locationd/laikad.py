@@ -18,7 +18,7 @@ from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox
-from selfdrive.locationd.laikad_helpers import calc_pos_fix_gauss_newton, get_posfix_sympy_fun
+from selfdrive.locationd.laikad_helpers import calc_pos_fix_gauss_newton, get_posfix_sympy_fun, pr_residual
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
@@ -27,6 +27,9 @@ from system.swaglog import cloudlog
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
 CACHE_VERSION = 0.1
+# To help kalman filter convergence
+RESIDUAL_THRESHOLD = 100
+RESIDUAL_WEIGHT = 1/6e6
 
 
 class Laikad:
@@ -108,8 +111,9 @@ class Laikad:
       est_pos = self.get_est_pos(t, processed_measurements)
 
       corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog) if len(est_pos) > 0 else []
-
       self.update_localizer(est_pos, t, corrected_measurements)
+      self.kf_check_residual(corrected_measurements)
+
       kf_valid = all(self.kf_valid(t))
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
       ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
@@ -189,6 +193,18 @@ class Laikad:
       if ret is not None:
         self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
         self.cache_ephemeris(t=t)
+
+  def kf_check_residual(self, corrected_measurements):
+    if len(corrected_measurements) > 0:
+      fx_pos = pr_residual(corrected_measurements, self.posfix_functions)
+      # x0: [x, y, z, bc, bg]
+      x0 = [*self.gnss_kf.x[GStates.ECEF_POS], self.gnss_kf.x[GStates.CLOCK_BIAS][0], self.gnss_kf.x[GStates.GLONASS_BIAS][0]]
+      residual, _ = fx_pos(x0, weight=1.0)
+      residual_median = np.median(abs(residual))
+      if residual_median > RESIDUAL_THRESHOLD:
+        a = min(1, residual_median * RESIDUAL_WEIGHT)
+        p = self.gnss_kf.P * (1 - 1 / a) + self.gnss_kf.P_initial * a
+        self.gnss_kf.init_state(self.gnss_kf.x, covs=p, filter_time=self.gnss_kf.filter.get_filter_time())
 
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
