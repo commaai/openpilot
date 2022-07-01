@@ -79,6 +79,6 @@ FW_VERSIONS = {
 
 
 DBC = {
-  CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', 'ford_fusion_2018_adas'),
-  CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', 'ford_fusion_2018_adas'),
+  CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', None),
+  CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', None),
 }

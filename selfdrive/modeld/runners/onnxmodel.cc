@@ -14,12 +14,13 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 
-ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_extra) {
+ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_extra, bool _use_tf8) {
   LOGD("loading model %s", path);
 
   output = _output;
   output_size = _output_size;
   use_extra = _use_extra;
+  use_tf8 = _use_tf8;
 
   int err = pipe(pipein);
   assert(err == 0);
@@ -28,11 +29,12 @@ ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int 
 
   std::string exe_dir = util::dir_name(util::readlink("/proc/self/exe"));
   std::string onnx_runner = exe_dir + "/runners/onnx_runner.py";
+  std::string tf8_arg = use_tf8 ? "--use_tf8" : "";
 
   proc_pid = fork();
   if (proc_pid == 0) {
     LOGD("spawning onnx process %s", onnx_runner.c_str());
-    char *argv[] = {(char*)onnx_runner.c_str(), (char*)path, nullptr};
+    char *argv[] = {(char*)onnx_runner.c_str(), (char*)path, (char*)tf8_arg.c_str(), nullptr};
     dup2(pipein[0], 0);
     dup2(pipeout[1], 1);
     close(pipein[0]);
