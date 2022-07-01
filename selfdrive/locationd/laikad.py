@@ -203,7 +203,6 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
     cloudlog.warning(f"No orbit data found or parsing failure: {e}")
 
 
-
 def create_measurement_msg(meas: GNSSMeasurement):
   c = log.GnssMeasurements.CorrectedMeasurement.new_message()
   c.constellationId = meas.constellation_id.value
