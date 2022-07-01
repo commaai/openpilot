@@ -10,7 +10,7 @@ import time
 from typing import Dict, Generator, Union
 import requests
 
-import selfdrive.hardware.tici.casync as casync
+import system.hardware.tici.casync as casync
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 
