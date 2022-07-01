@@ -48,10 +48,9 @@ def create_lkas_command(packer, apply_steer, moving_fast, frame):
   return packer.make_can_msg("LKAS_COMMAND", 0, values)
 
 
-def create_wheel_buttons(packer, frame, cancel=False):
-  # WHEEL_BUTTONS (571) Message sent to cancel ACC.
+def create_cruise_buttons(packer, frame, cancel=False):
   values = {
-    "ACC_CANCEL": cancel,
-    "COUNTER": frame % 0x10
+    "ACC_Cancel": cancel,
+    "COUNTER": frame % 0x10,
   }
-  return packer.make_can_msg("WHEEL_BUTTONS", 0, values)
+  return packer.make_can_msg("CRUISE_BUTTONS", 0, values)
