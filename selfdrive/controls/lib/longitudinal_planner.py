@@ -69,8 +69,9 @@ class Planner:
     long_control_state = sm['controlsState'].longControlState
     force_slow_decel = sm['controlsState'].forceDecel
 
-    # Reset current state when not engaged, or user is controlling the speed
-    reset_state = long_control_state == LongCtrlState.off
+    # Reset current state when not engaged or user is controlling the speed
+    # No reset if car is not using openpilot longitudinal (for accurate planner predictions)
+    reset_state = long_control_state == LongCtrlState.off and self.CP.openpilotLongitudinalControl
 
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
