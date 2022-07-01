@@ -19,8 +19,8 @@ class CarController:
 
   def update(self, CC, CS):
     actuators = CC.actuators
-    pcm_cancel_cmd = CC.cruiseControl.cancel
     hud_control = CC.hudControl
+    pcm_cancel_cmd = CC.cruiseControl.cancel
 
     can_sends = []
 
