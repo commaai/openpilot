@@ -140,18 +140,13 @@ class Laikad:
     # Check time and outputs are valid
     valid = self.kf_valid(t)
     if not all(valid):
-      if not valid[0]:
-        cloudlog.info("Kalman filter uninitialized")
-      elif not valid[1]:
+      if not valid[1]:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       elif not valid[2]:
         cloudlog.error("Gnss kalman filter state is nan")
       if len(est_pos) > 0:
         cloudlog.info(f"Reset kalman filter with {est_pos}")
         self.init_gnss_localizer(est_pos)
-      else:
-        cloudlog.info("Could not reset kalman filter")
-        return
     if len(measurements) > 0:
       kf_add_observations(self.gnss_kf, t, measurements)
     else:
@@ -199,8 +194,8 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
   try:
     astro_dog.get_orbit_data(t, only_predictions=True)
     data = (astro_dog.orbits, astro_dog.orbit_fetched_times)
-  except RuntimeError as e:
-    cloudlog.warning(f"No orbit data found. {e}")
+  except (RuntimeError, ValueError, IOError) as e:
+    cloudlog.warning(f"No orbit data found or parsing failure: {e}")
   cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
   return data
 
