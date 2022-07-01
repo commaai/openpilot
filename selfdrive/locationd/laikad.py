@@ -13,7 +13,7 @@ import numpy as np
 from cereal import log, messaging
 from common.params import Params, put_nonblocking
 from laika import AstroDog
-from laika.constants import SECS_IN_HR, SECS_IN_MIN
+from laika.constants import SECS_IN_MIN
 from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
@@ -31,7 +31,14 @@ CACHE_VERSION = 0.1
 
 class Laikad:
   def __init__(self, valid_const=("GPS", "GLONASS"), auto_fetch_orbits=True, auto_update=False, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV),
-               save_ephemeris=False, last_known_position=None):
+               save_ephemeris=False):
+    """
+    valid_const: GNSS constellation which can be used
+    auto_fetch_orbits: If true fetch orbits from internet when needed
+    auto_update: If true download AstroDog will download all files needed. This can be ephemeris or correction data like ionosphere.
+    valid_ephem_types: Valid ephemeris types to be used by AstroDog
+    save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
+    """
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True)
 
@@ -45,7 +52,7 @@ class Laikad:
     self.load_cache()
 
     self.posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
-    self.last_pos_fix = last_known_position if last_known_position is not None else []
+    self.last_pos_fix = []
     self.last_pos_residual = []
     self.last_pos_fix_t = None
 
@@ -64,12 +71,16 @@ class Laikad:
       self.last_fetch_orbits_t = cache['last_fetch_orbits_t']
     except json.decoder.JSONDecodeError:
       cloudlog.exception("Error parsing cache")
+    timestamp = self.last_fetch_orbits_t.as_datetime() if self.last_fetch_orbits_t is not None else 'Nan'
+    cloudlog.debug(f"Loaded nav and orbits cache with timestamp: {timestamp}. Unique orbit and nav sats: {list(cache['orbits'].keys())} {list(cache['nav'].keys())} " +
+                  f"Total: {sum([len(v) for v in cache['orbits']])} and {sum([len(v) for v in cache['nav']])}")
 
   def cache_ephemeris(self, t: GPSTime):
     if self.save_ephemeris and (self.last_cached_t is None or t - self.last_cached_t > SECS_IN_MIN):
       put_nonblocking(EPHEMERIS_CACHE, json.dumps(
         {'version': CACHE_VERSION, 'last_fetch_orbits_t': self.last_fetch_orbits_t, 'orbits': self.astro_dog.orbits, 'nav': self.astro_dog.nav},
         cls=CacheSerializer))
+      cloudlog.debug("Cache saved")
       self.last_cached_t = t
 
   def get_est_pos(self, t, processed_measurements):
@@ -130,8 +141,8 @@ class Laikad:
     # Check time and outputs are valid
     valid = self.kf_valid(t)
     if not all(valid):
-      if not valid[0]:
-        cloudlog.info("Kalman filter uninitialized")
+      if not valid[0]:  # Filter not initialized
+        pass
       elif not valid[1]:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       elif not valid[2]:
@@ -140,7 +151,6 @@ class Laikad:
         cloudlog.info(f"Reset kalman filter with {est_pos}")
         self.init_gnss_localizer(est_pos)
       else:
-        cloudlog.info("Could not reset kalman filter")
         return
     if len(measurements) > 0:
       kf_add_observations(self.gnss_kf, t, measurements)
@@ -161,7 +171,7 @@ class Laikad:
     self.gnss_kf.init_state(x_initial, covs_diag=p_initial_diag)
 
   def fetch_orbits(self, t: GPSTime, block):
-    if t not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or t - self.last_fetch_orbits_t > SECS_IN_HR):
+    if t not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or t - self.last_fetch_orbits_t > SECS_IN_MIN):
       astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types
 
       ret = None
@@ -185,14 +195,12 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
   astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types)
   cloudlog.info(f"Start to download/parse orbits for time {t.as_datetime()}")
   start_time = time.monotonic()
-  data = None
   try:
     astro_dog.get_orbit_data(t, only_predictions=True)
-    data = (astro_dog.orbits, astro_dog.orbit_fetched_times)
-  except RuntimeError as e:
-    cloudlog.warning(f"No orbit data found. {e}")
-  cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
-  return data
+    cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
+    return astro_dog.orbits, astro_dog.orbit_fetched_times
+  except (RuntimeError, ValueError, IOError) as e:
+    cloudlog.warning(f"No orbit data found or parsing failure: {e}")
 
 
 def create_measurement_msg(meas: GNSSMeasurement):
@@ -241,7 +249,7 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
   ekf_data[ObservationKind.PSEUDORANGE_RATE_GPS] = ekf_data[ObservationKind.PSEUDORANGE_GPS]
   ekf_data[ObservationKind.PSEUDORANGE_RATE_GLONASS] = ekf_data[ObservationKind.PSEUDORANGE_GLONASS]
   for kind, data in ekf_data.items():
-    if len(data) >0:
+    if len(data) > 0:
       gnss_kf.predict_and_observe(t, kind, data)
 
 
@@ -278,7 +286,6 @@ def main(sm=None, pm=None):
     pm = messaging.PubMaster(['gnssMeasurements'])
 
   replay = "REPLAY" in os.environ
-  # todo get last_known_position
   use_internet = "LAIKAD_NO_INTERNET" not in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet)
   while True:
