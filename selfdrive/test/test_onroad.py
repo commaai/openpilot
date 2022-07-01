@@ -24,7 +24,7 @@ PROCS = {
   "selfdrive.controls.controlsd": 35.0,
   "./loggerd": 10.0,
   "./encoderd": 12.5,
-  "./camerad": 16.5,
+  "./camerad": 14.5,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 11.7,
   "./_ui": 19.2,
@@ -33,7 +33,7 @@ PROCS = {
   "selfdrive.controls.radard": 4.5,
   "./_modeld": 4.48,
   "./boardd": 3.63,
-  "./_dmonitoringmodeld": 10.0,
+  "./_dmonitoringmodeld": 5.0,
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "./_soundd": 1.0,
@@ -60,7 +60,7 @@ TIMINGS = {
   "roadCameraState": [2.5, 0.35],
   "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
-  "driverState": [2.5, 0.40],
+  "driverStateV2": [2.5, 0.40],
   "liveLocationKalman": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }
@@ -118,6 +118,7 @@ class TestOnroad(unittest.TestCase):
     os.environ['REPLAY'] = "1"
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
+    os.environ['LOGPRINT'] = 'debug'
 
     params = Params()
     params.clear_all()
@@ -221,7 +222,7 @@ class TestOnroad(unittest.TestCase):
     # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [
       ("modelV2", 0.050, 0.036),
-      ("driverState", 0.050, 0.026),
+      ("driverStateV2", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
