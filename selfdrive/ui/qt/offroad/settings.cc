@@ -127,8 +127,11 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   if (Hardware::TICI()) {
     auto regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
-      const std::string txt = util::read_file("../assets/offroad/fcc.html");
-      RichTextDialog::alert(QString::fromStdString(txt), this);
+      const QString txt = QString::fromStdString(util::read_file("../assets/offroad/fcc.html"));
+      auto w = new RichTextDialog(txt, tr("Ok"), this);
+      QObject::connect(w, &QDialog::finished, [=](int result) {
+        w->deleteLater();
+      });
     });
     addItem(regulatoryBtn);
   }
