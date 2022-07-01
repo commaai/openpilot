@@ -5,7 +5,7 @@ import lzma
 import os
 import struct
 import sys
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from typing import Dict, List, Tuple, BinaryIO, Callable, Optional
 
 import requests
@@ -21,8 +21,10 @@ CA_TABLE_HEADER_LEN = 16
 CA_TABLE_ENTRY_LEN = 40
 CA_TABLE_MIN_LEN = CA_TABLE_HEADER_LEN + CA_TABLE_ENTRY_LEN
 
+Chunk = namedtuple('Chunk', ['sha', 'offset', 'length'])
 
-def parse_caibx(caibx_path: str) -> List[Tuple[bytes, int, int]]:
+
+def parse_caibx(caibx_path: str) -> List[Chunk]:
   """Parses the chunks from a caibx file. Can handle both local and remote files.
   Returns a list of chunks with hash, offset and length"""
   if os.path.isfile(caibx_path):
@@ -63,26 +65,26 @@ def parse_caibx(caibx_path: str) -> List[Tuple[bytes, int, int]]:
     if i < num_chunks - 1:
       assert length >= min_size
 
-    chunks.append((sha, offset, length))
+    chunks.append(Chunk(sha, offset, length))
     offset = new_offset
 
   return chunks
 
 
-def build_chunk_dict(chunks: List[Tuple[bytes, int, int]]) -> Dict[bytes, Tuple[int, int]]:
+def build_chunk_dict(chunks: List[Chunk]) -> Dict[bytes, Chunk]:
   """Turn a list of chunks into a dict for faster lookups based on hash"""
-  return {sha: (offset, length) for sha, offset, length in chunks}
+  return {c.sha: c for c in chunks}
 
 
-def read_chunk_local_file(sha: bytes, chunk: Tuple[int, int], f: BinaryIO) -> bytes:
+def read_chunk_local_file(chunk: Chunk, f: BinaryIO) -> bytes:
   """Read a chunk from an open file"""
-  f.seek(chunk[0])
-  return f.read(chunk[1])
+  f.seek(chunk.offset)
+  return f.read(chunk.length)
 
 
-def read_chunk_remote_store(sha: bytes, chunk: Tuple[int, int], store_path: str) -> bytes:
+def read_chunk_remote_store(chunk: Chunk, store_path: str) -> bytes:
   """Read an lzma compressed chunk from a remote store"""
-  sha_hex = sha.hex()
+  sha_hex = chunk.sha.hex()
   url = os.path.join(store_path, sha_hex[:4], sha_hex + ".cacnk")
 
   resp = requests.get(url)
@@ -92,32 +94,32 @@ def read_chunk_remote_store(sha: bytes, chunk: Tuple[int, int], store_path: str)
   return decompressor.decompress(resp.content)
 
 
-def extract(target: List[Tuple[bytes, int, int]],
-            sources: List[Tuple[str, functools.partial[bytes], Dict[bytes, Tuple[int, int]]]],
+def extract(target: List[Chunk],
+            sources: List[Tuple[str, functools.partial[bytes], Dict[bytes, Chunk]]],
             out_path: str, progress: Optional[Callable[[int], None]] = None):
   stats: Dict[str, int] = defaultdict(int)
 
   with open(out_path, 'wb') as out:
-    for sha, offset, length in target:
+    for cur_chunk in target:
 
       # Find source for desired chunk
-      for name, callback, store_chunks in sources:
-        if sha in store_chunks:
-          bts = callback(sha, store_chunks[sha])
+      for name, chunk_reader, store_chunks in sources:
+        if cur_chunk.sha in store_chunks:
+          bts = chunk_reader(store_chunks[cur_chunk.sha])
 
           # Check length
-          if len(bts) != length:
+          if len(bts) != cur_chunk.length:
             continue
 
           # Check hash
-          if SHA512.new(bts, truncate="256").digest() != sha:
+          if SHA512.new(bts, truncate="256").digest() != cur_chunk.sha:
             continue
 
           # Write to output
-          out.seek(offset)
+          out.seek(cur_chunk.offset)
           out.write(bts)
 
-          stats[name] += length
+          stats[name] += cur_chunk.length
 
           if progress is not None:
             progress(sum(stats.values()))
