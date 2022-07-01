@@ -13,7 +13,7 @@ import numpy as np
 from cereal import log, messaging
 from common.params import Params, put_nonblocking
 from laika import AstroDog
-from laika.constants import SECS_IN_HR, SECS_IN_MIN
+from laika.constants import SECS_IN_MIN
 from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
@@ -171,7 +171,7 @@ class Laikad:
     self.gnss_kf.init_state(x_initial, covs_diag=p_initial_diag)
 
   def fetch_orbits(self, t: GPSTime, block):
-    if t not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or t - self.last_fetch_orbits_t > SECS_IN_HR):
+    if t not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or t - self.last_fetch_orbits_t > SECS_IN_MIN):
       astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types
 
       ret = None
@@ -195,14 +195,12 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
   astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types)
   cloudlog.info(f"Start to download/parse orbits for time {t.as_datetime()}")
   start_time = time.monotonic()
-  data = None
   try:
     astro_dog.get_orbit_data(t, only_predictions=True)
-    data = (astro_dog.orbits, astro_dog.orbit_fetched_times)
+    cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
+    return astro_dog.orbits, astro_dog.orbit_fetched_times
   except (RuntimeError, ValueError, IOError) as e:
     cloudlog.warning(f"No orbit data found or parsing failure: {e}")
-  cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
-  return data
 
 
 def create_measurement_msg(meas: GNSSMeasurement):
