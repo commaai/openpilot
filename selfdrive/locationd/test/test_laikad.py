@@ -120,6 +120,18 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
+  def test_kf_becomes_valid(self):
+    laikad = Laikad(auto_update=False)
+    m = self.logs[0]
+    self.assertFalse(all(laikad.kf_valid(m.logMonoTime * 1e-9)))
+    kf_valid = False
+    for m in self.logs:
+      laikad.process_ublox_msg(m.ubloxGnss, m.logMonoTime, block=True)
+      kf_valid = all(laikad.kf_valid(m.logMonoTime * 1e-9))
+      if kf_valid:
+        break
+    self.assertTrue(kf_valid)
+
   def test_laika_online_nav_only(self):
     laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV)
     # Disable fetch_orbits to test NAV only
