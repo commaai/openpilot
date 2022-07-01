@@ -398,8 +398,8 @@ def setup_env(simulation=False, CP=None, cfg=None):
 
   if cfg is not None:
     # Clear all custom processConfig environment variables
-    for cfg in CONFIGS:
-      for k, _ in cfg.environ.items():
+    for config in CONFIGS:
+      for k, _ in config.environ.items():
         if k in os.environ:
           del os.environ[k]
 
