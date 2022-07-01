@@ -118,6 +118,7 @@ class TestOnroad(unittest.TestCase):
     os.environ['REPLAY'] = "1"
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
+    os.environ['LOGPRINT'] = 'debug'
 
     params = Params()
     params.clear_all()
