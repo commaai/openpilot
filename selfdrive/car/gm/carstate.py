@@ -3,7 +3,9 @@ from common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, EV_CAR, NO_ASCM, AccState, CanBus, STEER_THRESHOLD
+from selfdrive.car.gm.values import DBC, NO_ASCM, AccState, CanBus, STEER_THRESHOLD
+
+TransmissionType = car.CarParams.TransmissionType
 
 
 class CarState(CarStateBase):
@@ -37,7 +39,7 @@ class CarState(CarStateBase):
     ret.brakePressed = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] >= 10
 
     # Regen braking is braking
-    if self.car_fingerprint in EV_CAR:
+    if self.CP.transmissionType == TransmissionType.direct:
       ret.brakePressed = ret.brakePressed or pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
 
     if not ret.brakePressed:
@@ -142,7 +144,7 @@ class CarState(CarStateBase):
       signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR"))
       checks.append(("GAS_SENSOR", 50))
 
-    if CP.carFingerprint in EV_CAR:
+    if CP.transmissionType == TransmissionType.direct:
       signals.append(("RegenPaddle", "EBCMRegenPaddle"))
       checks.append(("EBCMRegenPaddle", 50))
 
@@ -155,7 +157,9 @@ class CarState(CarStateBase):
     ]
 
     checks = [
-      ("ASCMLKASteeringCmd", 1),
+      ("ASCMLKASteeringCmd", 10), # 10 Hz is the stock inactive rate (every 100ms). 
+      #                             While active 50 Hz (every 20 ms) is normal
+      #                             EPS will tolerate around 200ms when active before faulting 
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK)

@@ -55,6 +55,9 @@ class Pc(HardwareBase):
 
   def get_current_power_draw(self):
     return 0
+  
+  def get_som_power_draw(self):
+    return 0
 
   def shutdown(self):
     print("SHUTDOWN!")

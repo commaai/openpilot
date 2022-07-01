@@ -1,7 +1,7 @@
 from cereal import car
 from common.conversions import Conversions as CV
-from common.realtime import DT_CTRL
 from common.numpy_fast import interp, clip
+from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits, create_gas_interceptor_command2
 from selfdrive.car.gm import gmcan
@@ -26,11 +26,13 @@ def actuator_hystereses(final_pedal, pedal_steady):
   final_pedal = pedal_steady
 
   return final_pedal, pedal_steady
+NetworkLocation = car.CarParams.NetworkLocation
 
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.pedal_steady = 0.
+    self.CP = CP
     self.start_time = 0.
     self.apply_steer_last = 0
     self.apply_gas = 0
@@ -43,10 +45,10 @@ class CarController:
 
     self.params = CarControllerParams()
 
-    self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
-    self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
-    self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
-    self.packer_body = CANPacker(DBC[CP.carFingerprint]['body'])
+    self.packer_pt = CANPacker(DBC[self.CP.carFingerprint]['pt'])
+    self.packer_obj = CANPacker(DBC[self.CP.carFingerprint]['radar'])
+    self.packer_ch = CANPacker(DBC[self.CP.carFingerprint]['chassis'])
+    self.packer_body = CANPacker(DBC[self.CP.carFingerprint]['body'])
 
   def update(self, CC, CS):
     actuators = CC.actuators
@@ -81,7 +83,7 @@ class CarController:
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 
     # TODO: All three conditions should not be required - really only last two?
-    if CS.CP.carFingerprint not in NO_ASCM and CS.CP.openpilotLongitudinalControl and not CS.CP.pcmCruise:
+    if self.CP.carFingerprint not in NO_ASCM and self.CP.openpilotLongitudinalControl and not self.CP.pcmCruise:
       # Gas/regen and brakes - all at 25Hz
       if (self.frame % 4) == 0:
         if not CC.longActive:
@@ -191,7 +193,7 @@ class CarController:
     lka_active = CS.lkas_status == 1
     lka_critical = lka_active and abs(actuators.steer) > 0.9
     lka_icon_status = (lka_active, lka_critical)
-    if self.frame % self.params.CAMERA_KEEPALIVE_STEP == 0 or lka_icon_status != self.lka_icon_status_last:
+    if self.CP.networkLocation != NetworkLocation.fwdCamera and (self.frame % self.params.CAMERA_KEEPALIVE_STEP == 0 or lka_icon_status != self.lka_icon_status_last):
       steer_alert = hud_alert in (VisualAlert.steerRequired, VisualAlert.ldw)
       can_sends.append(gmcan.create_lka_icon_command(CanBus.SW_GMLAN, lka_active, lka_critical, steer_alert))
       self.lka_icon_status_last = lka_icon_status
