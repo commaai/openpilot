@@ -71,7 +71,8 @@ class Laikad:
       self.last_fetch_orbits_t = cache['last_fetch_orbits_t']
     except json.decoder.JSONDecodeError:
       cloudlog.exception("Error parsing cache")
-    cloudlog.debug(f"Loaded nav and orbits cache with timestamp: {self.last_fetch_orbits_t.as_datetime()}. Unique orbit and nav sats: {list(cache['orbits'].keys())} {list(cache['nav'].keys())} " +
+    timestamp = self.last_fetch_orbits_t.as_datetime() if self.last_fetch_orbits_t is not None else 'Nan'
+    cloudlog.debug(f"Loaded nav and orbits cache with timestamp: {timestamp}. Unique orbit and nav sats: {list(cache['orbits'].keys())} {list(cache['nav'].keys())} " +
                   f"Total: {sum([len(v) for v in cache['orbits']])} and {sum([len(v) for v in cache['nav']])}")
 
   def cache_ephemeris(self, t: GPSTime):
@@ -140,6 +141,7 @@ class Laikad:
     # Check time and outputs are valid
     valid = self.kf_valid(t)
     if not all(valid):
+
       if not valid[1]:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       elif not valid[2]:
@@ -147,6 +149,8 @@ class Laikad:
       if len(est_pos) > 0:
         cloudlog.info(f"Reset kalman filter with {est_pos}")
         self.init_gnss_localizer(est_pos)
+      else:
+        return
     if len(measurements) > 0:
       kf_add_observations(self.gnss_kf, t, measurements)
     else:
