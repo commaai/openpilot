@@ -24,25 +24,21 @@ class TestTranslations(unittest.TestCase):
                         f"{name} has no compiled QM translation file, run selfdrive/ui/update_translations.py --release")
 
   def test_translations_updated(self):
-    suffix = "_test"
-    update_translations(suffix=suffix)
+    prev_translations = update_translations()
 
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
-        cur_tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}.ts")
-        new_tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}{suffix}.ts")
+        tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}.ts")
 
         if not len(file):
           self.skipTest(f"{name} translation has no file")
-        elif not os.path.exists(cur_tr_file):
+        elif not os.path.exists(tr_file):
           self.skipTest(f"{name} missing translation file")  # caught by test_missing_translation_files
 
-        with open(cur_tr_file, "r") as f:
-          cur_translations = f.read()
-        with open(new_tr_file, "r") as f:
+        with open(tr_file, "r") as f:
           new_translations = f.read()
 
-        self.assertEqual(cur_translations, new_translations,
+        self.assertEqual(prev_translations[name], new_translations,
                          f"{name} translation file out of date. Run selfdrive/ui/update_translations.py to update the translation files")
 
 
