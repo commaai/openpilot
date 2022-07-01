@@ -6,17 +6,17 @@
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="25"/>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>proche</translation>
     </message>
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="30"/>
         <source>Snooze Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Répéter la mise à jour</translation>
     </message>
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="41"/>
         <source>Reboot and Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Redémarrer et mettre à jour</translation>
     </message>
 </context>
 <context>
@@ -99,17 +99,17 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="140"/>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vous devez accepter les Termes et Conditions afin d&apos;utiliser openpilot.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="149"/>
         <source>Back</source>
-        <translation type="unfinished">Retour</translation>
+        <translation>Retour</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="154"/>
         <source>Decline, uninstall %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Refuser, désinstaller %1</translation>
     </message>
 </context>
 <context>
@@ -122,7 +122,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="114"/>
         <source>N/A</source>
-        <translation type="unfinished"></translation>
+        <translation>N / A</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="115"/>
@@ -331,7 +331,7 @@
     <message>
         <location filename="../qt/offroad/driverview.cc" line="56"/>
         <source>camera starting</source>
-        <translation type="unfinished"></translation>
+        <translation>démarrage de la caméra</translation>
     </message>
 </context>
 <context>
@@ -357,22 +357,22 @@
     <message>
         <location filename="../installer/installer.cc" line="56"/>
         <source>Installing...</source>
-        <translation type="unfinished"></translation>
+        <translation>Installation...</translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="144"/>
         <source>Receiving objects: </source>
-        <translation type="unfinished"></translation>
+        <translation>Réception d&apos;objets&#xa0;: </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="145"/>
         <source>Resolving deltas: </source>
-        <translation type="unfinished"></translation>
+        <translation>Résolution des deltas&#xa0;: </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="146"/>
         <source>Updating files: </source>
-        <translation type="unfinished"></translation>
+        <translation>Mise à jour des fichiers&#xa0;: </translation>
     </message>
 </context>
 <context>
@@ -421,7 +421,7 @@ emplacement défini</translation>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="282"/>
         <source>no recent destinations</source>
-        <translation type="unfinished"></translation>
+        <translation>aucune destination récente</translation>
     </message>
 </context>
 <context>
@@ -469,30 +469,30 @@ emplacement défini</translation>
     <message>
         <location filename="../qt/onroad.cc" line="202"/>
         <source>km/h</source>
-        <translation type="unfinished"></translation>
+        <translation>km/h</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="202"/>
         <source>mph</source>
-        <translation type="unfinished"></translation>
+        <translation>mi/h</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="269"/>
         <location filename="../qt/onroad.cc" line="272"/>
         <source>MAX</source>
-        <translation type="unfinished"></translation>
+        <translation>MAX</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="316"/>
         <location filename="../qt/onroad.cc" line="319"/>
         <source>SPEED</source>
-        <translation type="unfinished"></translation>
+        <translation>LA RAPIDITÉ</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="322"/>
         <location filename="../qt/onroad.cc" line="325"/>
         <source>LIMIT</source>
-        <translation type="unfinished"></translation>
+        <translation>LIMITE</translation>
     </message>
 </context>
 <context>
@@ -500,17 +500,17 @@ emplacement défini</translation>
     <message>
         <location filename="../qt/home.cc" line="114"/>
         <source>UPDATE</source>
-        <translation type="unfinished"></translation>
+        <translation>METTRE À JOUR</translation>
     </message>
     <message>
         <location filename="../qt/home.cc" line="205"/>
         <source> ALERTS</source>
-        <translation type="unfinished"></translation>
+        <translation> ALERTES</translation>
     </message>
     <message>
         <location filename="../qt/home.cc" line="205"/>
         <source> ALERT</source>
-        <translation type="unfinished"></translation>
+        <translation> ALERTE</translation>
     </message>
 </context>
 <context>
@@ -529,7 +529,13 @@ emplacement défini</translation>
         &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Bookmark connect.comma.ai to your home screen to use it like an app&lt;/li&gt;
       &lt;/ol&gt;
     </source>
-        <translation type="unfinished"></translation>
+        <translation>
+      &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
+        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Accédez à https://connect.comma.ai sur votre téléphone&lt;/li&gt;
+        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Cliquez sur &quot;ajouter un nouvel appareil&quot; et scannez le code QR à droite&lt;/li&gt;
+        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Marquez connect.comma.ai sur votre écran d&apos;accueil pour l&apos;utiliser comme une application&lt;/li&gt;
+      &lt;/ol&gt;
+    </translation>
     </message>
 </context>
 <context>
@@ -617,37 +623,37 @@ emplacement défini</translation>
     <message>
         <location filename="../qt/text.cc" line="36"/>
         <source>Reboot</source>
-        <translation type="unfinished">Redémarrer</translation>
+        <translation>Redémarrer</translation>
     </message>
     <message>
         <location filename="../qt/text.cc" line="41"/>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation>Sortir</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="18"/>
         <source>dashcam</source>
-        <translation type="unfinished"></translation>
+        <translation>Dash Cam</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="18"/>
         <source>openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="66"/>
         <source>%1 minute%2 ago</source>
-        <translation type="unfinished"></translation>
+        <translation>Il y a %1 minute%2</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="69"/>
         <source>%1 hour%2 ago</source>
-        <translation type="unfinished"></translation>
+        <translation>Il y a %1&#xa0;heure%2</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="72"/>
         <source>%1 day%2 ago</source>
-        <translation type="unfinished"></translation>
+        <translation>Il y a %1&#xa0;jour%2</translation>
     </message>
 </context>
 <context>
@@ -655,47 +661,47 @@ emplacement défini</translation>
     <message>
         <location filename="../qt/setup/reset.cc" line="29"/>
         <source>Reset failed. Reboot to try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>La réinitialisation a échoué. Redémarrez pour réessayer.</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="34"/>
         <source>Are you sure you want to reset your device?</source>
-        <translation type="unfinished"></translation>
+        <translation>Voulez-vous vraiment réinitialiser votre appareil&#xa0;?</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="38"/>
         <source>Resetting device...</source>
-        <translation type="unfinished"></translation>
+        <translation>Réinitialisation de l&apos;appareil...</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="53"/>
         <source>System Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Réinitialisation du système</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="59"/>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Réinitialisation du système déclenchée. Appuyez sur confirmer pour effacer tout le contenu et les paramètres. Appuyez sur Annuler pour reprendre le démarrage.</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="68"/>
         <source>Cancel</source>
-        <translation type="unfinished">Annuler</translation>
+        <translation>Annuler</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="72"/>
         <source>Reboot</source>
-        <translation type="unfinished">Redémarrer</translation>
+        <translation>Redémarrer</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="80"/>
         <source>Confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>Confirmer</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="88"/>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de monter la partition de données. Appuyez sur confirmer pour réinitialiser votre appareil.</translation>
     </message>
 </context>
 <context>
@@ -703,7 +709,7 @@ emplacement défini</translation>
     <message>
         <location filename="../qt/widgets/input.cc" line="362"/>
         <source>Ok</source>
-        <translation type="unfinished">Ok</translation>
+        <translation>Ok</translation>
     </message>
 </context>
 <context>
@@ -711,7 +717,7 @@ emplacement défini</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="334"/>
         <source>×</source>
-        <translation type="unfinished"></translation>
+        <translation>×</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="361"/>
@@ -745,105 +751,105 @@ emplacement défini</translation>
     <message>
         <location filename="../qt/setup/setup.cc" line="73"/>
         <source>WARNING: Low Voltage</source>
-        <translation type="unfinished"></translation>
+        <translation>AVERTISSEMENT : basse tension</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="79"/>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alimentez votre appareil dans une voiture avec un harnais ou procédez à vos risques et périls.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="92"/>
         <source>Power off</source>
-        <translation type="unfinished"></translation>
+        <translation>Éteindre</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="99"/>
         <location filename="../qt/setup/setup.cc" line="182"/>
         <location filename="../qt/setup/setup.cc" line="268"/>
         <source>Continue</source>
-        <translation type="unfinished"></translation>
+        <translation>Continuer</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="117"/>
         <source>Getting Started</source>
-        <translation type="unfinished"></translation>
+        <translation>Commencer</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="122"/>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avant de prendre la route, terminons l&apos;installation et couvrons quelques détails.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="147"/>
         <source>Connect to Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Connectez-vous au Wi-Fi</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="165"/>
         <location filename="../qt/setup/setup.cc" line="263"/>
         <source>Back</source>
-        <translation type="unfinished">Retour</translation>
+        <translation>Retour</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="182"/>
         <source>Continue without Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Continuer sans Wi-Fi</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="184"/>
         <source>Waiting for internet</source>
-        <translation type="unfinished"></translation>
+        <translation>En attente d&apos;internet</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="238"/>
         <source>Choose Software to Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Choisissez le logiciel à installer</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="248"/>
         <source>Dashcam</source>
-        <translation type="unfinished"></translation>
+        <translation>Dash Cam</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="253"/>
         <source>Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>Logiciel personnalisé</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
         <source>Enter URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Entrer l&apos;URL</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
         <source>for Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>pour les logiciels personnalisés</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="303"/>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>Téléchargement...</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="315"/>
         <source>Download Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec du téléchargement</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="321"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation type="unfinished"></translation>
+        <translation>Assurez-vous que l&apos;URL saisie est valide et que la connexion Internet de l&apos;appareil est bonne.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="334"/>
         <source>Reboot device</source>
-        <translation type="unfinished"></translation>
+        <translation>Redémarrer l&apos;appareil</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="341"/>
         <source>Start over</source>
-        <translation type="unfinished"></translation>
+        <translation>Recommencer</translation>
     </message>
 </context>
 <context>
@@ -1112,7 +1118,7 @@ CHERCHER</translation>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="54"/>
         <source>Request timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>La demande a expiré</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="56"/>
@@ -1125,7 +1131,7 @@ CHERCHER</translation>
     <message>
         <location filename="../qt/widgets/ssh_keys.h" line="13"/>
         <source>Enable SSH</source>
-        <translation type="unfinished"></translation>
+        <translation>Activer SSH</translation>
     </message>
 </context>
 <context>
@@ -1133,22 +1139,22 @@ CHERCHER</translation>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="79"/>
         <source>Terms &amp; Conditions</source>
-        <translation type="unfinished"></translation>
+        <translation>termes et conditions</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="107"/>
         <source>Decline</source>
-        <translation type="unfinished"></translation>
+        <translation>Déclin</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="111"/>
         <source>Scroll to accept</source>
-        <translation type="unfinished"></translation>
+        <translation>Faites défiler pour accepter</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="126"/>
         <source>Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>Accepter</translation>
     </message>
 </context>
 <context>
@@ -1239,42 +1245,42 @@ CHERCHER</translation>
     <message>
         <location filename="../qt/setup/updater.cc" line="23"/>
         <source>Update Required</source>
-        <translation type="unfinished"></translation>
+        <translation>Mise à jour requise</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="29"/>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Une mise à jour du système d&apos;exploitation est nécessaire. Connectez votre appareil au Wi-Fi pour une expérience de mise à jour plus rapide. La taille du téléchargement est d&apos;environ 1 Go.</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="40"/>
         <source>Connect to Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Connectez-vous au Wi-Fi</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="47"/>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Installer</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="64"/>
         <source>Back</source>
-        <translation type="unfinished">Retour</translation>
+        <translation>Retour</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="80"/>
         <source>Loading...</source>
-        <translation type="unfinished"></translation>
+        <translation>Chargement...</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="94"/>
         <source>Reboot</source>
-        <translation type="unfinished">Redémarrer</translation>
+        <translation>Redémarrer</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="164"/>
         <source>Update failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Mise à jour a échoué</translation>
     </message>
 </context>
 <context>
