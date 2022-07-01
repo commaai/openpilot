@@ -214,7 +214,7 @@ void DevicePanel::updateCalibDescription() {
                          QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? tr("left") : tr("right"));
       }
     } catch (kj::Exception) {
-      qInfo() << tr("invalid CalibrationParams");
+      qInfo() << "invalid CalibrationParams";
     }
   }
   qobject_cast<ButtonControl *>(sender())->setDescription(desc);
