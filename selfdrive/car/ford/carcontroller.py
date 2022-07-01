@@ -1,8 +1,8 @@
 from cereal import car
 from common.numpy_fast import clip, interp
+from opendbc.can.packer import CANPacker
 from selfdrive.car.ford import fordcan
 from selfdrive.car.ford.values import CarControllerParams
-from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -17,11 +17,12 @@ def apply_ford_steer_angle_limits(apply_steer, apply_steer_last, vEgo):
   return apply_steer
 
 
-class CarController():
+class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.VM = VM
     self.packer = CANPacker(dbc_name)
+    self.frame = 0
 
     self.apply_steer_last = 0
     self.steer_rate_limited = False
@@ -29,7 +30,7 @@ class CarController():
     self.lkas_enabled_last = False
     self.steer_alert_last = False
 
-  def update(self, CC, CS, frame):
+  def update(self, CC, CS):
     can_sends = []
 
     actuators = CC.actuators
@@ -48,7 +49,7 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # send steering commands at 20Hz
-    if (frame % CarControllerParams.LKAS_STEER_STEP) == 0:
+    if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
       lca_rq = 1 if CC.latActive else 0
 
       # use LatCtlPath_An_Actl to actuate steering for now until curvature control is implemented
@@ -69,15 +70,14 @@ class CarController():
       can_sends.append(fordcan.create_tja_command(self.packer, lca_rq, ramp_type, precision,
                                                   path_offset, path_angle, curvature_rate, curvature))
 
-
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
 
     # send lkas ui command at 1Hz or if ui state changes
-    if (frame % CarControllerParams.LKAS_UI_STEP) == 0 or send_ui:
+    if (self.frame % CarControllerParams.LKAS_UI_STEP) == 0 or send_ui:
       can_sends.append(fordcan.create_lkas_ui_command(self.packer, main_on, CC.latActive, steer_alert, CS.lkas_status_stock_values))
 
     # send acc ui command at 20Hz or if ui state changes
-    if (frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
+    if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
       can_sends.append(fordcan.create_acc_ui_command(self.packer, main_on, CC.latActive, CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on
@@ -87,4 +87,5 @@ class CarController():
     new_actuators = actuators.copy()
     new_actuators.steeringAngleDeg = apply_steer
 
+    self.frame += 1
     return new_actuators, can_sends
