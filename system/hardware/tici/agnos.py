@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import functools
 import hashlib
 import json
 import lzma
@@ -7,7 +6,8 @@ import os
 import struct
 import subprocess
 import time
-from typing import Dict, Generator, Union
+from typing import Dict, Generator, List, Tuple, Union
+
 import requests
 
 import system.hardware.tici.casync as casync
@@ -174,17 +174,17 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
 
   target = casync.parse_caibx(partition['casync_caibx'])
 
-  sources = []
+  sources: List[Tuple[str, casync.ChunkReader, casync.ChunkDict]] = []
 
   # First source is the current partition. Index file for current version is provided in the manifest
   if 'casync_seed_caibx' in partition:
-    sources += [('seed', functools.partial(casync.read_chunk_local_file, f=open(seed_path, 'rb')), casync.build_chunk_dict(casync.parse_caibx(partition['casync_seed_caibx'])))]
+    sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(casync.parse_caibx(partition['casync_seed_caibx'])))]
 
   # Second source is the target partition, this allows for resuming
-  sources += [('target', functools.partial(casync.read_chunk_local_file, f=open(path, 'rb')), casync.build_chunk_dict(target))]
+  sources += [('target', casync.FileChunkReader(path), casync.build_chunk_dict(target))]
 
   # Finally we add the remote source to download any missing chunks
-  sources += [('remote', functools.partial(casync.read_chunk_remote_store, store_path=partition['casync_store']), casync.build_chunk_dict(target))]
+  sources += [('remote', casync.RemoteChunkReader(partition['casync_store']), casync.build_chunk_dict(target))]
 
   last_p = 0
 

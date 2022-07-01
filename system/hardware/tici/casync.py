@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-import functools
 import io
 import lzma
 import os
 import struct
 import sys
+from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
-from typing import Dict, List, Tuple, BinaryIO, Callable, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 import requests
 from Crypto.Hash import SHA512
@@ -22,6 +22,43 @@ CA_TABLE_ENTRY_LEN = 40
 CA_TABLE_MIN_LEN = CA_TABLE_HEADER_LEN + CA_TABLE_ENTRY_LEN
 
 Chunk = namedtuple('Chunk', ['sha', 'offset', 'length'])
+ChunkDict = Dict[bytes, Chunk]
+
+
+class ChunkReader(ABC):
+  @abstractmethod
+  def read(self, chunk: Chunk) -> bytes:
+    ...
+
+
+class FileChunkReader(ChunkReader):
+  """Reads chunks from a local file"""
+  def __init__(self, fn: str) -> None:
+
+    super().__init__()
+    self.f = open(fn, 'rb')
+
+  def read(self, chunk: Chunk) -> bytes:
+    self.f.seek(chunk.offset)
+    return self.f.read(chunk.length)
+
+
+class RemoteChunkReader(ChunkReader):
+  """Reads lzma compressed chunks from a remote store"""
+
+  def __init__(self, url: str) -> None:
+    super().__init__()
+    self.url = url
+
+  def read(self, chunk: Chunk) -> bytes:
+    sha_hex = chunk.sha.hex()
+    url = os.path.join(self.url, sha_hex[:4], sha_hex + ".cacnk")
+
+    resp = requests.get(url)
+    resp.raise_for_status()
+
+    decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
+    return decompressor.decompress(resp.content)
 
 
 def parse_caibx(caibx_path: str) -> List[Chunk]:
@@ -71,32 +108,15 @@ def parse_caibx(caibx_path: str) -> List[Chunk]:
   return chunks
 
 
-def build_chunk_dict(chunks: List[Chunk]) -> Dict[bytes, Chunk]:
+def build_chunk_dict(chunks: List[Chunk]) -> ChunkDict:
   """Turn a list of chunks into a dict for faster lookups based on hash"""
   return {c.sha: c for c in chunks}
 
 
-def read_chunk_local_file(chunk: Chunk, f: BinaryIO) -> bytes:
-  """Read a chunk from an open file"""
-  f.seek(chunk.offset)
-  return f.read(chunk.length)
-
-
-def read_chunk_remote_store(chunk: Chunk, store_path: str) -> bytes:
-  """Read an lzma compressed chunk from a remote store"""
-  sha_hex = chunk.sha.hex()
-  url = os.path.join(store_path, sha_hex[:4], sha_hex + ".cacnk")
-
-  resp = requests.get(url)
-  resp.raise_for_status()
-
-  decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
-  return decompressor.decompress(resp.content)
-
-
 def extract(target: List[Chunk],
-            sources: List[Tuple[str, functools.partial[bytes], Dict[bytes, Chunk]]],
-            out_path: str, progress: Optional[Callable[[int], None]] = None):
+            sources: List[Tuple[str, ChunkReader, ChunkDict]],
+            out_path: str,
+            progress: Optional[Callable[[int], None]] = None):
   stats: Dict[str, int] = defaultdict(int)
 
   with open(out_path, 'wb') as out:
@@ -105,7 +125,7 @@ def extract(target: List[Chunk],
       # Find source for desired chunk
       for name, chunk_reader, store_chunks in sources:
         if cur_chunk.sha in store_chunks:
-          bts = chunk_reader(store_chunks[cur_chunk.sha])
+          bts = chunk_reader.read(store_chunks[cur_chunk.sha])
 
           # Check length
           if len(bts) != cur_chunk.length:
@@ -142,8 +162,8 @@ def extract_simple(caibx_path, out_path, store_path):
   # (name, callback, chunks)
   target = parse_caibx(caibx_path)
   sources = [
-    # (store_path, functools.partial(read_chunk_remote_store, store_path=store_path), build_chunk_dict(target)),
-    (store_path, functools.partial(read_chunk_local_file, f=open(store_path, 'rb')), build_chunk_dict(target)),
+    # (store_path, RemoteChunkReader(store_path), build_chunk_dict(target)),
+    (store_path, FileChunkReader(store_path), build_chunk_dict(target)),
   ]
 
   return extract(target, sources, out_path)
