@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-import sys
-import struct
-import os
-import lzma
 import functools
-import requests
 import io
+import lzma
+import os
+import struct
+import sys
 from collections import defaultdict
+from typing import Dict, List, Tuple, BinaryIO, Callable, Optional
 
+import requests
 from Crypto.Hash import SHA512
-
 
 CA_FORMAT_INDEX = 0x96824d9c7b129ff9
 CA_FORMAT_TABLE = 0xe75b9e112f17417d
@@ -22,7 +22,7 @@ CA_TABLE_ENTRY_LEN = 40
 CA_TABLE_MIN_LEN = CA_TABLE_HEADER_LEN + CA_TABLE_ENTRY_LEN
 
 
-def parse_caibx(caibx_path):
+def parse_caibx(caibx_path: str) -> List[Tuple[bytes, int, int]]:
   """Parses the chunks from a caibx file. Can handle both local and remote files.
   Returns a list of chunks with hash, offset and length"""
   if os.path.isfile(caibx_path):
@@ -69,18 +69,18 @@ def parse_caibx(caibx_path):
   return chunks
 
 
-def build_chunk_dict(chunks):
+def build_chunk_dict(chunks: List[Tuple[bytes, int, int]]) -> Dict[bytes, Tuple[int, int]]:
   """Turn a list of chunks into a dict for faster lookups based on hash"""
   return {sha: (offset, length) for sha, offset, length in chunks}
 
 
-def read_chunk_local_file(sha, chunk, f):
+def read_chunk_local_file(sha: bytes, chunk: Tuple[int, int], f: BinaryIO) -> bytes:
   """Read a chunk from an open file"""
   f.seek(chunk[0])
   return f.read(chunk[1])
 
 
-def read_chunk_remote_store(sha, chunk, store_path):
+def read_chunk_remote_store(sha: bytes, chunk: Tuple[int, int], store_path: str) -> bytes:
   """Read an lzma compressed chunk from a remote store"""
   sha_hex = sha.hex()
   url = os.path.join(store_path, sha_hex[:4], sha_hex + ".cacnk")
@@ -92,8 +92,10 @@ def read_chunk_remote_store(sha, chunk, store_path):
   return decompressor.decompress(resp.content)
 
 
-def extract(target, sources, out_path, progress=None):
-  stats = defaultdict(int)
+def extract(target: List[Tuple[bytes, int, int]],
+            sources: List[Tuple[str, functools.partial[bytes], Dict[bytes, Tuple[int, int]]]],
+            out_path: str, progress: Optional[Callable[[int], None]] = None):
+  stats: Dict[str, int] = defaultdict(int)
 
   with open(out_path, 'wb') as out:
     for sha, offset, length in target:
@@ -127,7 +129,7 @@ def extract(target, sources, out_path, progress=None):
   return stats
 
 
-def print_stats(stats):
+def print_stats(stats: Dict[str, int]):
   total_bytes = sum(stats.values())
   print(f"Total size: {total_bytes / 1024 / 1024:.2f} MB")
   for name, total in stats.items():
