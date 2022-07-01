@@ -1,8 +1,8 @@
 from cereal import car
 from common.numpy_fast import clip, interp
+from opendbc.can.packer import CANPacker
 from selfdrive.car.ford import fordcan
 from selfdrive.car.ford.values import CarControllerParams
-from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -17,7 +17,7 @@ def apply_ford_steer_angle_limits(apply_steer, apply_steer_last, vEgo):
   return apply_steer
 
 
-class CarController():
+class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.VM = VM
@@ -69,7 +69,6 @@ class CarController():
       can_sends.append(fordcan.create_lkas_command(self.packer, apply_steer, curvature))
       can_sends.append(fordcan.create_tja_command(self.packer, lca_rq, ramp_type, precision,
                                                   path_offset, path_angle, curvature_rate, curvature))
-
 
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
 
