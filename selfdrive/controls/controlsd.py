@@ -571,7 +571,7 @@ class Controls:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
-      actuators.accel = self.LoC.update(CC.longActive, CS, long_plan, pid_accel_limits, t_since_plan)
+      actuators.accel, actuators.futureAccel = self.LoC.update(CC.longActive, CS, long_plan, pid_accel_limits, t_since_plan)
 
       # Steering PID loop and lateral MPC
       self.desired_curvature, self.desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
@@ -585,7 +585,8 @@ class Controls:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
         if CC.longActive:
-          actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
+          actuators.accel = 4.0 * clip(self.sm['testJoystick'].axes[0], -1, 1)
+          actuators.futureAccel = actuators.accel
 
         if CC.latActive:
           steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
