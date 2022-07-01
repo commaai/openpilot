@@ -66,9 +66,5 @@ class RichTextDialog : public QDialogBase {
 
 public:
   explicit RichTextDialog(const QString &prompt_text, const QString &btn_text, QWidget* parent);
-  int exec() override {
-    // grabGesture doesn't work when a QScrollArea is inside a QDialog and the dialog is opened by calling exec()
-    // https://bugreports.qt.io/browse/QTBUG-67210
-    assert(0);
-  }
+  static bool alert(const QString &prompt_text, QWidget *parent);
 };

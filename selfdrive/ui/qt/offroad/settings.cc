@@ -124,17 +124,14 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     addItem(retrainingBtn);
   }
 
-  if (Hardware::TICI()) {
+  // if (Hardware::TICI()) {
     auto regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
-      const QString txt = QString::fromStdString(util::read_file("../assets/offroad/fcc.html"));
-      auto w = new RichTextDialog(txt, tr("Ok"), this);
-      QObject::connect(w, &QDialog::finished, [=](int result) {
-        w->deleteLater();
-      });
+      const std::string txt = util::read_file("../assets/offroad/fcc.html");
+      RichTextDialog::alert(QString::fromStdString(txt), this);
     });
     addItem(regulatoryBtn);
-  }
+  // }
 
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {

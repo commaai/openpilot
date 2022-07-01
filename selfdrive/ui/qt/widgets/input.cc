@@ -251,5 +251,9 @@ RichTextDialog::RichTextDialog(const QString &prompt_text, const QString &btn_te
   QVBoxLayout *outer_layout = new QVBoxLayout(this);
   outer_layout->setContentsMargins(100, 100, 100, 100);
   outer_layout->addWidget(container);
-  showMaximized();
+}
+
+bool RichTextDialog::alert(const QString &prompt_text, QWidget *parent) {
+  auto d = RichTextDialog(prompt_text, tr("Ok"), parent);
+  return d.exec();
 }
