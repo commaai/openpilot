@@ -1,4 +1,4 @@
-#include "selfdrive/ui/replay/util.h"
+#include "tools/replay/util.h"
 
 #include <bzlib.h>
 #include <curl/curl.h>

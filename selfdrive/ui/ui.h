@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QColor>
 #include <QFuture>
+#include <QPolygonF>
 #include <QTransform>
 
 #include "cereal/messaging/messaging.h"
@@ -22,10 +23,7 @@ const int footer_h = 280;
 const int UI_FREQ = 20;   // Hz
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
-// TODO: this is also hardcoded in common/transformations/camera.py
-// TODO: choose based on frame input size
-const float y_offset = 150.0;
-const float ZOOM = 2912.8;
+const mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
 
 struct Alert {
   QString text1;
@@ -87,21 +85,17 @@ const QColor bg_colors [] = {
   [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
 };
 
-typedef struct {
-  QPointF v[TRAJECTORY_SIZE * 2];
-  int cnt;
-} line_vertices_data;
-
 typedef struct UIScene {
-  mat3 view_from_calib;
+  bool calibration_valid = false;
+  mat3 view_from_calib = DEFAULT_CALIBRATION;
   cereal::PandaState::PandaType pandaType;
 
   // modelV2
   float lane_line_probs[4];
   float road_edge_stds[2];
-  line_vertices_data track_vertices;
-  line_vertices_data lane_line_vertices[4];
-  line_vertices_data road_edge_vertices[2];
+  QPolygonF track_vertices;
+  QPolygonF lane_line_vertices[4];
+  QPolygonF road_edge_vertices[2];
 
   // lead
   QPointF lead_vertices[2];

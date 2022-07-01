@@ -7,7 +7,7 @@
 #include <QTimer>
 #include <QTimerEvent>
 
-#include "selfdrive/ui/replay/replay.h"
+#include "tools/replay/replay.h"
 #include <ncurses.h>
 
 class ConsoleUI : public QObject {
