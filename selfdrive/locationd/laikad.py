@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import math
 import os
 import time
 from collections import defaultdict
@@ -29,11 +30,12 @@ CACHE_VERSION = 0.1
 
 
 class Laikad:
-  def __init__(self, valid_const=("GPS", "GLONASS"), auto_update=False, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV),
+  def __init__(self, valid_const=("GPS", "GLONASS"), auto_fetch_orbits=True, auto_update=False, valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV),
                save_ephemeris=False, last_known_position=None):
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True)
 
+    self.auto_fetch_orbits = auto_fetch_orbits
     self.orbit_fetch_executor: Optional[ProcessPoolExecutor] = None
     self.orbit_fetch_future: Optional[Future] = None
 
@@ -41,6 +43,7 @@ class Laikad:
     self.last_cached_t = None
     self.save_ephemeris = save_ephemeris
     self.load_cache()
+
     self.posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
     self.last_pos_fix = last_known_position if last_known_position is not None else []
     self.last_pos_residual = []
@@ -85,7 +88,8 @@ class Laikad:
       report = ublox_msg.measurementReport
       if report.gpsWeek > 0:
         latest_msg_t = GPSTime(report.gpsWeek, report.rcvTow)
-        self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
+        if self.auto_fetch_orbits:
+          self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
 
       new_meas = read_raw_ublox(report)
       processed_measurements = process_measurements(new_meas, self.astro_dog)
@@ -146,8 +150,8 @@ class Laikad:
 
   def kf_valid(self, t: float) -> List[bool]:
     filter_time = self.gnss_kf.filter.get_filter_time()
-    return [filter_time is not None,
-            filter_time is not None and abs(t - filter_time) < MAX_TIME_GAP,
+    return [not math.isnan(filter_time),
+            abs(t - filter_time) < MAX_TIME_GAP,
             all(np.isfinite(self.gnss_kf.x[GStates.ECEF_POS]))]
 
   def init_gnss_localizer(self, est_pos):
@@ -275,7 +279,8 @@ def main(sm=None, pm=None):
 
   replay = "REPLAY" in os.environ
   # todo get last_known_position
-  laikad = Laikad(save_ephemeris=not replay)
+  use_internet = "LAIKAD_NO_INTERNET" not in os.environ
+  laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet)
   while True:
     sm.update()
 

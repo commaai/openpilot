@@ -48,8 +48,6 @@ const bool env_disable_driver = getenv("DISABLE_DRIVER") != NULL;
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
 
-typedef void (*release_cb)(void *cookie, int buf_idx);
-
 typedef struct CameraInfo {
   uint32_t frame_width, frame_height;
   uint32_t frame_stride;
@@ -85,11 +83,6 @@ typedef struct FrameMetadata {
   float processing_time;
 } FrameMetadata;
 
-typedef struct CameraExpInfo {
-  int op_id;
-  float grey_frac;
-} CameraExpInfo;
-
 struct MultiCameraState;
 struct CameraState;
 class Debayer;
@@ -108,7 +101,6 @@ private:
   SafeQueue<int> safe_queue;
 
   int frame_buf_count;
-  release_cb release_callback;
 
 public:
   cl_command_queue q;
@@ -124,7 +116,7 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback=nullptr);
+  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type);
   bool acquire();
   void release();
   void queue(size_t buf_idx);
