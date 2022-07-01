@@ -177,7 +177,6 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
   sources = []
 
   # First source is the current partition. Index file for current version is provided in the manifest
-  # TODO: build url based on agnos version or parition hash instead?
   if 'casync_seed_caibx' in partition:
     sources += [('seed', functools.partial(casync.read_chunk_local_file, f=open(seed_path, 'rb')), casync.build_chunk_dict(casync.parse_caibx(partition['casync_seed_caibx'])))]
 
@@ -197,7 +196,7 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
       print(f"Installing {partition['name']}: {p}", flush=True)
 
   stats = casync.extract(target, sources, path, progress)
-  cloudlog.event(f'casync done', stats=stats, error=True)
+  cloudlog.event('casync done', stats=stats, error=True)
 
   os.sync()
   if not verify_partition(target_slot_number, partition, force_full_check=True):
