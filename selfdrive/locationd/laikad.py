@@ -141,8 +141,9 @@ class Laikad:
     # Check time and outputs are valid
     valid = self.kf_valid(t)
     if not all(valid):
-
-      if not valid[1]:
+      if not valid[0]:  # Filter not initialized
+        pass
+      elif not valid[1]:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       elif not valid[2]:
         cloudlog.error("Gnss kalman filter state is nan")
