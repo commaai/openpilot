@@ -193,5 +193,4 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def apply(self, c):
-    ret = self.CC.update(c, self.CS, self.ext_bus)
-    return ret
+    return self.CC.update(c, self.CS, self.ext_bus)
