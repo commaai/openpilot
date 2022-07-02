@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from collections import defaultdict
 import jinja2
 import os
 from enum import Enum
@@ -59,12 +60,28 @@ def sort_by_tier(all_car_info: List[CarInfo]) -> Dict[Tier, List[CarInfo]]:
   return tier_car_info
 
 
+def sort_by_make(all_car_info: List[CarInfo]) -> Dict[str, List[CarInfo]]:
+  """Sorts car info by market-standard vehicle make"""
+  make_car_info = defaultdict(list)
+
+  for car_info in all_car_info:
+    make_car_info[car_info.make].append(car_info)
+
+  # Sort cars by model + year
+  for make, cars in make_car_info.items():
+    make_car_info[make] = natsorted(cars, key=lambda car: (car.make + car.model).lower())
+
+  return make_car_info
+  # # Sort by makes
+  # return dict(natsorted(make_car_info.items(), key=lambda i: i[0].lower()))
+
+
 def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  cars_md: str = template.render(tiers=sort_by_tier(all_car_info), all_car_info=all_car_info,
+  cars_md: str = template.render(tiers=sort_by_tier(all_car_info), makes=sort_by_make(all_car_info), all_car_info=all_car_info,
                                  footnotes=footnotes, Star=Star, Column=Column, star_descriptions=STAR_DESCRIPTIONS)
   return cars_md
 
