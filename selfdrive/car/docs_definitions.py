@@ -159,18 +159,6 @@ class Harness(Enum):
   none = "None"
 
 
-STAR_COLUMN_NAMES = {
-  "Gas & Brakes": ["openpilot Adaptive Cruise Control (ACC)", Column.FSR_LONGITUDINAL.value],
-  "Steering": [Column.FSR_STEERING.value, Column.STEERING_TORQUE.value],
-  "Support": [Column.MAINTAINED.value],
-}
-
-
-STAR_COLUMN_DESCRIPTIONS = {
-
-}
-
-
 STAR_DESCRIPTIONS = {
   "Gas & Brakes": {  # icon and row name
     Column.LONGITUDINAL: {  # star column

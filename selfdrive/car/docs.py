@@ -5,7 +5,7 @@ import jinja2
 import os
 from enum import Enum
 from natsort import natsorted
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from common.basedir import BASEDIR
 from selfdrive.car.docs_definitions import STAR_DESCRIPTIONS, CarInfo, Column, StarColumns, Star, Tier
@@ -48,30 +48,24 @@ def get_all_car_info() -> List[CarInfo]:
   return sorted_cars
 
 
-def sort_by_tier(all_car_info: List[CarInfo]) -> Dict[Tier, List[CarInfo]]:
-  tier_car_info: Dict[Tier, List[CarInfo]] = {tier: [] for tier in Tier}
-  for car_info in all_car_info:
-    tier_car_info[car_info.tier].append(car_info)
-
-  # Sort cars by make and model + year
-  for tier, cars in tier_car_info.items():
-    tier_car_info[tier] = natsorted(cars, key=lambda car: (car.make + car.model).lower())
-
-  return tier_car_info
-
-
-def sort_by_make(all_car_info: List[CarInfo]) -> Dict[str, List[CarInfo]]:
-  """Sorts car info by market-standard vehicle make"""
-  make_car_info = defaultdict(list)
+def sort_car_info(all_car_info: List[CarInfo], by: str = "tier") -> Dict[Any, List[CarInfo]]:
+  """tier sorts car info by tier, make sorts car info by market-standard vehicle make"""
+  sorted_car_info = defaultdict(list)
 
   for car_info in all_car_info:
-    make_car_info[car_info.make].append(car_info)
+    sorted_car_info[getattr(car_info, by)].append(car_info)
 
   # Sort cars by model + year
-  for make, cars in make_car_info.items():
-    make_car_info[make] = natsorted(cars, key=lambda car: (car.make + car.model).lower())
+  for key, cars in sorted_car_info.items():
+    sorted_car_info[key] = natsorted(cars, key=lambda car: (car.make + car.model).lower())
 
-  return make_car_info
+  if by == "tier":
+    tier_sort = [Tier.GOLD, Tier.SILVER, Tier.BRONZE]
+    sorted_car_info = dict(natsorted(sorted_car_info.items(), key=lambda i: tier_sort.index(i[0])))
+  elif by == "make":
+    sorted_car_info = dict(natsorted(sorted_car_info.items(), key=lambda i: i[0].lower()))
+
+  return sorted_car_info
 
 
 def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
@@ -79,8 +73,8 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  cars_md: str = template.render(tiers=sort_by_tier(all_car_info), makes=sort_by_make(all_car_info), all_car_info=all_car_info,
-                                 footnotes=footnotes, Star=Star, StarColumns=StarColumns, Column=Column, STAR_DESCRIPTIONS=STAR_DESCRIPTIONS)
+  cars_md: str = template.render(sort_car_info=sort_car_info, all_car_info=all_car_info, footnotes=footnotes,
+                                 Star=Star, StarColumns=StarColumns, Column=Column, STAR_DESCRIPTIONS=STAR_DESCRIPTIONS)
   return cars_md
 
 

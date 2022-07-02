@@ -7,28 +7,28 @@ A supported vehicle is one that just works when you install a comma device. Ever
 
 Cars are organized into three tiers:
 
-{% for tier in tiers %}
+{% for tier in sort_car_info(all_car_info, by="tier") %}
 - {{tier.name.title()}} - {{tier.value}}
 {% endfor %}
 
 How We Rate The Cars
 ---
 
-{% for star_row in star_descriptions.values() %}
+{% for star_row in STAR_DESCRIPTIONS.values() %}
 {% for name, stars in star_row.items() %}
-### {{name}}
-{% for star, description in stars %}
-- {{star_icon.format(star)}} - {{description}}
+### {{name.value}}
+{% for star in stars %}
+- {{star_icon.format(star.value)}} - {{stars[star]}}
 {% endfor %}
 
 {% endfor %}
 {% endfor %}
 **All supported cars can move between the tiers as support changes.**
 
-{% for tier, cars in tiers.items() %}
+{% for tier, cars in sort_car_info(all_car_info, by="tier").items() %}
 # {{tier.name.title()}} - {{cars | length}} cars
 
-|{{Column | map(attribute='value') | join('|')}}|
+|{{Column | map(attribute='value') | join('|') | replace("openpilot Adaptive Cruise Control (ACC)", "openpilot ACC")}}|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
 {% for car_info in cars %}
 |{% for column in Column %}{{car_info.get_column(column, star_icon, footnote_tag)}}|{% endfor %}
