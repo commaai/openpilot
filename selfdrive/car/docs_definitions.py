@@ -36,6 +36,7 @@ class Star(Enum):
 
 StarColumns = list(Column)[3:]
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
+MaintainedFootnote = CarFootnote("Low user count, community maintained, harness hardware not sold by comma.", Column.MODEL)
 
 
 def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[Enum]:
@@ -86,13 +87,15 @@ class CarInfo:
       Column.MAINTAINED: Star.FULL if CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none else Star.EMPTY,
     }
 
-    if not math.isnan(CP.maxLateralAccel):
-      if CP.maxLateralAccel >= GREAT_TORQUE_THRESHOLD:
-        self.row[Column.STEERING_TORQUE] = Star.FULL
-      elif CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
-        self.row[Column.STEERING_TORQUE] = Star.HALF
-      else:
-        self.row[Column.STEERING_TORQUE] = Star.EMPTY
+    if CP.maxLateralAccel >= GREAT_TORQUE_THRESHOLD:
+      self.row[Column.STEERING_TORQUE] = Star.FULL
+    elif CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
+      self.row[Column.STEERING_TORQUE] = Star.HALF
+    else:
+      self.row[Column.STEERING_TORQUE] = Star.EMPTY
+
+    if not self.row[Column.MAINTAINED]:
+      self.footnotes.append(MaintainedFootnote)
 
     if CP.notCar:
       for col in StarColumns:
