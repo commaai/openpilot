@@ -12,11 +12,12 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     steps:
     - name: Wait for green check mark
-      uses: lewagon/wait-on-check-action@v0.2
+      uses: commaai/wait-on-check-action@f16fc3bb6cd4886520b4e9328db1d42104d5cadc
       with:
         ref: master
         wait-interval: 30
         running-workflow-name: 'build master-ci'
+        check-regexp: ^((?!.*(build prebuilt).*).)*$
     - uses: actions/checkout@v3
       with:
         submodules: true

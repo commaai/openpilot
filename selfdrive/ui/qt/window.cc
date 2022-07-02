@@ -2,7 +2,7 @@
 
 #include <QFontDatabase>
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
@@ -45,9 +45,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   });
 
   // load fonts
-  QFontDatabase::addApplicationFont("../assets/fonts/opensans_regular.ttf");
-  QFontDatabase::addApplicationFont("../assets/fonts/opensans_bold.ttf");
-  QFontDatabase::addApplicationFont("../assets/fonts/opensans_semibold.ttf");
   QFontDatabase::addApplicationFont("../assets/fonts/Inter-Black.ttf");
   QFontDatabase::addApplicationFont("../assets/fonts/Inter-Bold.ttf");
   QFontDatabase::addApplicationFont("../assets/fonts/Inter-ExtraBold.ttf");

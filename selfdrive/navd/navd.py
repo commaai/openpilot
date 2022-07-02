@@ -14,7 +14,7 @@ from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
                                     parse_banner_instructions)
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
@@ -32,6 +32,7 @@ class RouteEngine:
     self.last_bearing = None
 
     self.gps_ok = False
+    self.localizer_valid = False
 
     self.nav_destination = None
     self.step_idx = None
@@ -73,9 +74,9 @@ class RouteEngine:
     location = self.sm['liveLocationKalman']
     self.gps_ok = location.gpsOK
 
-    localizer_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
+    self.localizer_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
 
-    if localizer_valid:
+    if self.localizer_valid:
       self.last_bearing = math.degrees(location.calibratedOrientationNED.value[2])
       self.last_position = Coordinate(location.positionGeodetic.value[0], location.positionGeodetic.value[1])
 
@@ -142,8 +143,10 @@ class RouteEngine:
             coord = Coordinate.from_mapbox_tuple(c)
 
             # Last step does not have maxspeed
-            if (maxspeed_idx < len(maxspeeds)) and ('unknown' not in maxspeeds[maxspeed_idx]):
-              coord.annotations['maxspeed'] = maxspeed_to_ms(maxspeeds[maxspeed_idx])
+            if (maxspeed_idx < len(maxspeeds)):
+              maxspeed = maxspeeds[maxspeed_idx]
+              if ('unknown' not in maxspeed) and ('none' not in maxspeed):
+                coord.annotations['maxspeed'] = maxspeed_to_ms(maxspeed)
 
             coords.append(coord)
             maxspeed_idx += 1
@@ -202,7 +205,7 @@ class RouteEngine:
       if along_geometry < distance_along_geometry(geometry, geometry[closest_idx]):
         closest = geometry[closest_idx - 1]
 
-    if 'maxspeed' in closest.annotations:
+    if ('maxspeed' in closest.annotations) and self.localizer_valid:
       msg.navInstruction.speedLimit = closest.annotations['maxspeed']
 
     # Speed limit sign type

@@ -11,7 +11,7 @@ from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
 from common.conversions import Conversions as CV
 from panda import ALTERNATIVE_EXPERIENCE
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
@@ -27,7 +27,7 @@ from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
-from selfdrive.hardware import HARDWARE
+from system.hardware import HARDWARE
 from selfdrive.manager.process_config import managed_processes
 
 SOFT_DISABLE_TIME = 3  # seconds
@@ -38,7 +38,7 @@ REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
 IGNORE_PROCESSES = {"uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "statsd",
-                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad"} | \
+                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad", "laikad"} | \
                    {k for k, v in managed_processes.items() if not v.enabled}
 
 ThermalStatus = log.DeviceState.ThermalStatus
@@ -103,6 +103,9 @@ class Controls:
     self.CP.alternativeExperience = 0
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+
+    if self.CP.dashcamOnly and params.get_bool("DashcamOverride"):
+      self.CP.dashcamOnly = False
 
     # read params
     self.is_metric = params.get_bool("IsMetric")
@@ -314,7 +317,7 @@ class Controls:
         self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
         self.events.add(EventName.commIssueAvgFreq)
-      else: # invalid or can_rcv_error.
+      else:  # invalid or can_rcv_error.
         self.events.add(EventName.commIssue)
 
       logs = {
@@ -595,7 +598,14 @@ class Controls:
         lac_log.saturated = abs(actuators.steer) >= 0.9
 
     # Send a "steering required alert" if saturation count has reached the limit
-    if lac_log.active and lac_log.saturated and not CS.steeringPressed:
+    if lac_log.active and not CS.steeringPressed and self.CP.lateralTuning.which() == 'torque':
+      undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
+      turning = abs(lac_log.desiredLateralAccel) > 1.0
+      good_speed = CS.vEgo > 5
+      max_torque = abs(self.last_actuators.steer) > 0.99
+      if undershooting and turning and good_speed and max_torque:
+        self.events.add(EventName.steerSaturated)
+    elif lac_log.active and lac_log.saturated and not CS.steeringPressed:
       dpath_points = lat_plan.dPathPoints
       if len(dpath_points):
         # Check if we deviated from the path

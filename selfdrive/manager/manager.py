@@ -13,13 +13,13 @@ from common.basedir import BASEDIR
 from common.params import Params, ParamKeyType
 from common.text_window import TextWindow
 from selfdrive.boardd.set_time import set_time
-from selfdrive.hardware import HARDWARE, PC
+from system.hardware import HARDWARE, PC
 from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
-from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
+from system.swaglog import cloudlog, add_file_handler
+from system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
                               terms_version, training_version
 
 

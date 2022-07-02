@@ -10,7 +10,7 @@ from struct import unpack_from, calcsize, pack
 
 import cereal.messaging as messaging
 from cereal import log
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
 from selfdrive.sensord.rawgps.structs import dict_unpacker

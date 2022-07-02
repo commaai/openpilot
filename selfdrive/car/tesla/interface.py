@@ -42,7 +42,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerLimitTimer = 1.0
     ret.steerActuatorDelay = 0.25
-    ret.steerRateCost = 0.5
 
     if candidate in (CAR.AP2_MODELS, CAR.AP1_MODELS):
       ret.mass = 2100. + STD_CARGO_KG
@@ -65,5 +64,4 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def apply(self, c):
-    ret = self.CC.update(c, self.CS)
-    return ret
+    return self.CC.update(c, self.CS)
