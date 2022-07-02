@@ -61,11 +61,11 @@ def sort_car_info(all_car_info: List[CarInfo], by: str = "tier") -> Dict[Any, Li
 
   if by == "tier":
     tier_sort = [Tier.GOLD, Tier.SILVER, Tier.BRONZE]
-    sorted_car_info = dict(natsorted(sorted_car_info.items(), key=lambda i: tier_sort.index(i[0])))
+    sorted_car_info = natsorted(sorted_car_info.items(), key=lambda i: tier_sort.index(i[0]))
   elif by == "make":
-    sorted_car_info = dict(natsorted(sorted_car_info.items(), key=lambda i: i[0].lower()))
+    sorted_car_info = natsorted(sorted_car_info.items(), key=lambda i: i[0].lower())
 
-  return sorted_car_info
+  return dict(sorted_car_info)
 
 
 def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
