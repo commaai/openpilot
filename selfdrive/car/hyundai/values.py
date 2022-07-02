@@ -89,7 +89,6 @@ class HyundaiCarInfo(CarInfo):
   # TODO: we can probably remove LKAS. LKAS is standard on many
   # HKG and for others, it's likely packaged together with SCC
   package: str = "SCC + LKAS"
-  good_torque: bool = True
 
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {

@@ -40,8 +40,8 @@ CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
   CAR.CX9: MazdaCarInfo("Mazda CX-9 2016-17"),
   CAR.MAZDA3: MazdaCarInfo("Mazda 3 2017"),
   CAR.MAZDA6: MazdaCarInfo("Mazda 6 2017"),
-  CAR.CX9_2021: MazdaCarInfo("Mazda CX-9 2021", good_torque=True),
-  CAR.CX5_2022: MazdaCarInfo("Mazda CX-5 2022", good_torque=True),
+  CAR.CX9_2021: MazdaCarInfo("Mazda CX-9 2021"),
+  CAR.CX5_2022: MazdaCarInfo("Mazda CX-5 2022"),
 }
 
 
