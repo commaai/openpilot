@@ -59,8 +59,8 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     },
     {
       "EndToEndToggle",
-      "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
-      "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
+      tr("\U0001f96c Disable use of lanelines (Alpha) \U0001f96c"),
+      tr("In this mode openpilot will ignore lanelines and just drive how it thinks a human would."),
       "../assets/offroad/icon_road.png",
     },
     {
