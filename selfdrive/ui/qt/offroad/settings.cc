@@ -153,7 +153,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(translateBtn, &ButtonControl::clicked, [=]() {
     QMap<QString, QString> langs = getSupportedLanguages();
     QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), this);
-    qDebug() << "Selected:" << langs[selection];
+    qDebug() << "Selected:" << selection << langs[selection];
 
     if (!selection.isEmpty()) {
       Params().put("LanguageSetting", langs[selection].toStdString());

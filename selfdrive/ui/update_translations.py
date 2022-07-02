@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from collections import defaultdict
 import json
 import os
 from typing import Dict
@@ -15,15 +16,16 @@ def update_translations(release: bool = False) -> Dict[str, str]:
   with open(LANGUAGES_FILE, "r") as f:
     translation_files = json.load(f)
 
-  prev_translations = {}
+  prev_translations = defaultdict(str)
   for name, file in translation_files.items():
     if not len(file):
       print(f"{name} has no translation file, skipping...")
       continue
 
     tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}.ts")
-    with open(tr_file, "r") as f:
-      prev_translations[name] = f.read()
+    if os.path.exists(tr_file):
+      with open(tr_file, "r") as f:
+        prev_translations[name] = f.read()
 
     ret = os.system(f"lupdate -recursive {UI_DIR} -ts {tr_file}")
     assert ret == 0

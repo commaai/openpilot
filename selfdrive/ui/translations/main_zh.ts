@@ -76,13 +76,13 @@
 <context>
     <name>ConfirmationDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="325"/>
-        <location filename="../qt/widgets/input.cc" line="330"/>
+        <location filename="../qt/widgets/input.cc" line="315"/>
+        <location filename="../qt/widgets/input.cc" line="320"/>
         <source>Ok</source>
         <translation>好的</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="330"/>
+        <location filename="../qt/widgets/input.cc" line="320"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -392,9 +392,14 @@ location set</source>
 <context>
     <name>MultiOptionDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="269"/>
+        <location filename="../qt/widgets/input.cc" line="223"/>
         <source>Select</source>
         <translation>选择</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/input.cc" line="258"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -640,7 +645,7 @@ location set</source>
 <context>
     <name>RichTextDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="362"/>
+        <location filename="../qt/widgets/input.cc" line="352"/>
         <source>Ok</source>
         <translation>好的</translation>
     </message>

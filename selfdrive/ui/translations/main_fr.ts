@@ -83,13 +83,13 @@
 <context>
     <name>ConfirmationDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="325"/>
-        <location filename="../qt/widgets/input.cc" line="330"/>
+        <location filename="../qt/widgets/input.cc" line="315"/>
+        <location filename="../qt/widgets/input.cc" line="320"/>
         <source>Ok</source>
         <translation>Ok</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="330"/>
+        <location filename="../qt/widgets/input.cc" line="320"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
@@ -431,11 +431,12 @@ emplacement défini</translation>
         <translation type="vanished">Ok</translation>
     </message>
     <message>
+        <location filename="../qt/widgets/input.cc" line="258"/>
         <source>Cancel</source>
-        <translation type="vanished">Annuler</translation>
+        <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="269"/>
+        <location filename="../qt/widgets/input.cc" line="223"/>
         <source>Select</source>
         <translation>Choisir</translation>
     </message>
@@ -707,7 +708,7 @@ emplacement défini</translation>
 <context>
     <name>RichTextDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="362"/>
+        <location filename="../qt/widgets/input.cc" line="352"/>
         <source>Ok</source>
         <translation>Ok</translation>
     </message>
