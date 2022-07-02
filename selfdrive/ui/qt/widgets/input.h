@@ -6,7 +6,6 @@
 #include <QString>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QListWidget>
 
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 
@@ -66,8 +65,6 @@ class MultiOptionDialog : public QDialogBase {
 
 public:
   explicit MultiOptionDialog(const QString &prompt_text, const QStringList l, QWidget *parent);
-//  static bool alert(const QString &prompt_text, QWidget *parent);
-//  static bool confirm(const QString &prompt_text, QWidget *parent);
   static QString getSelection(const QString &prompt_text, const QStringList l, QWidget *parent);
   QString selection;
 };

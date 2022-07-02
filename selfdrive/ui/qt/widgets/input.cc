@@ -1,15 +1,7 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 #include <QPushButton>
-#include <QDebug>
-#include <QDebug>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QPainter>
-#include <QScrollBar>
 #include <QButtonGroup>
-#include <QVBoxLayout>
-#include <QWidget>
 
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"

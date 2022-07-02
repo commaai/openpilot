@@ -3,9 +3,6 @@
 #include <cassert>
 #include <cmath>
 #include <string>
-#include <QTranslator>
-#include <QComboBox>
-#include <QMenu>
 
 #include <QDebug>
 
@@ -140,14 +137,14 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     addItem(retrainingBtn);
   }
 
-//  if (Hardware::TICI()) {
+  if (Hardware::TICI()) {
     auto regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
       const std::string txt = util::read_file("../assets/offroad/fcc.html");
       RichTextDialog::alert(QString::fromStdString(txt), this);
     });
     addItem(regulatoryBtn);
-//  }
+  }
 
   auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
   connect(translateBtn, &ButtonControl::clicked, [=]() {
@@ -352,7 +349,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(close_btn, &QPushButton::clicked, this, &SettingsWindow::closeSettings);
 
   // setup panels
-  qDebug() << "DevicePanel";
   DevicePanel *device = new DevicePanel(this);
   QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
   QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
