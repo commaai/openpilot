@@ -8,7 +8,7 @@ from natsort import natsorted
 from typing import Dict, List
 
 from common.basedir import BASEDIR
-from selfdrive.car.docs_definitions import STAR_DESCRIPTIONS, CarInfo, Column, Star, Tier
+from selfdrive.car.docs_definitions import STAR_DESCRIPTIONS, CarInfo, Column, StarColumns, Star, Tier
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 from selfdrive.car.tests.routes import non_tested_cars
@@ -72,8 +72,6 @@ def sort_by_make(all_car_info: List[CarInfo]) -> Dict[str, List[CarInfo]]:
     make_car_info[make] = natsorted(cars, key=lambda car: (car.make + car.model).lower())
 
   return make_car_info
-  # # Sort by makes
-  # return dict(natsorted(make_car_info.items(), key=lambda i: i[0].lower()))
 
 
 def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
@@ -82,7 +80,7 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
 
   footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
   cars_md: str = template.render(tiers=sort_by_tier(all_car_info), makes=sort_by_make(all_car_info), all_car_info=all_car_info,
-                                 footnotes=footnotes, Star=Star, Column=Column, star_descriptions=STAR_DESCRIPTIONS)
+                                 footnotes=footnotes, Star=Star, StarColumns=StarColumns, Column=Column, STAR_DESCRIPTIONS=STAR_DESCRIPTIONS)
   return cars_md
 
 

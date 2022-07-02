@@ -21,7 +21,7 @@ class Column(Enum):
   MAKE = "Make"
   MODEL = "Model"
   PACKAGE = "Supported Package"
-  LONGITUDINAL = "openpilot ACC"
+  LONGITUDINAL = "openpilot Adaptive Cruise Control (ACC)"
   FSR_LONGITUDINAL = "Stop and Go"
   FSR_STEERING = "Steer to 0"
   STEERING_TORQUE = "Steering Torque"
@@ -99,6 +99,10 @@ class CarInfo:
       for col in StarColumns:
         self.row[col] = Star.FULL
 
+    # TODO: add this
+    # if self.row[Column.MAINTAINED] == Star.EMPTY:
+    #   all_footnotes.append(MaintainedFootnote)
+
     self.all_footnotes = all_footnotes
     for column in StarColumns:
       # Demote if footnote specifies a star
@@ -155,33 +159,45 @@ class Harness(Enum):
   none = "None"
 
 
+STAR_COLUMN_NAMES = {
+  "Gas & Brakes": ["openpilot Adaptive Cruise Control (ACC)", Column.FSR_LONGITUDINAL.value],
+  "Steering": [Column.FSR_STEERING.value, Column.STEERING_TORQUE.value],
+  "Support": [Column.MAINTAINED.value],
+}
+
+
+STAR_COLUMN_DESCRIPTIONS = {
+
+}
+
+
 STAR_DESCRIPTIONS = {
   "Gas & Brakes": {  # icon and row name
-    "openpilot Adaptive Cruise Control (ACC)": [  # star column
-      [Star.FULL.value, "openpilot is able to control the gas and brakes."],
-      [Star.HALF.value, "openpilot is able to control the gas and brakes with some restrictions."],
-      [Star.EMPTY.value, "The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system."],
-    ],
-    Column.FSR_LONGITUDINAL.value: [
-      [Star.FULL.value, "Adaptive Cruise Control (ACC) operates down to 0 mph."],
-      [Star.EMPTY.value, "Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed."],
-    ],
+    Column.LONGITUDINAL: {  # star column
+      Star.FULL: "openpilot is able to control the gas and brakes.",
+      Star.HALF: "openpilot is able to control the gas and brakes with some restrictions.",
+      Star.EMPTY: "The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system.",
+    },
+    Column.FSR_LONGITUDINAL: {
+      Star.FULL: "Adaptive Cruise Control (ACC) operates down to 0 mph.",
+      Star.EMPTY: "Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.",
+    },
   },
   "Steering": {
-    Column.FSR_STEERING.value: [
-      [Star.FULL.value, "openpilot can control the steering wheel down to 0 mph."],
-      [Star.EMPTY.value, "No steering control below certain speeds."],
-    ],
-    Column.STEERING_TORQUE.value: [
-      [Star.FULL.value, "Car has enough steering torque to take tighter turns."],
-      [Star.HALF.value, "Car has enough steering torque for comfortable highway driving."],
-      [Star.EMPTY.value, "Limited ability to make turns."],
-    ],
+    Column.FSR_STEERING: {
+      Star.FULL: "openpilot can control the steering wheel down to 0 mph.",
+      Star.EMPTY: "No steering control below certain speeds.",
+    },
+    Column.STEERING_TORQUE: {
+      Star.FULL: "Car has enough steering torque to take tighter turns.",
+      Star.HALF: "Car has enough steering torque for comfortable highway driving.",
+      Star.EMPTY: "Limited ability to make turns.",
+    },
   },
   "Support": {
-    Column.MAINTAINED.value: [
-      [Star.FULL.value, "Mainline software support, harness hardware sold by comma, lots of users, primary development target."],
-      [Star.EMPTY.value, "Low user count, community maintained, harness hardware not sold by comma."],
-    ],
+    Column.MAINTAINED: {
+      Star.FULL: "Mainline software support, harness hardware sold by comma, lots of users, primary development target.",
+      Star.EMPTY: "Low user count, community maintained, harness hardware not sold by comma.",
+    },
   },
 }
