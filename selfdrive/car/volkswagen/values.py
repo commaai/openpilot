@@ -112,11 +112,12 @@ class Footnote(Enum):
     "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
     Column.MODEL)
   PASSAT = CarFootnote(
-    "European B8 Passat on MQB platform, not including USA/China/Mideast.",
+    "Refers only to the European B8 Passat on MQB platform, not including NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
-  PASSAT_NMS = CarFootnote(
-    "USA/China/Mideast NMS Passat made on the PQ46 platform, not including Europe.",
-    Column.MODEL)
+  # TODO: Enable this footnote and add to CAR.PASSAT_NMS prior to releasing PQ from dashcamOnly mode
+  # PASSAT_NMS = CarFootnote(
+  #  "Refers only to the NMS Passat in the USA/China/Mideast markets, not including the MQB-based European B8 Passat.",
+  #  Column.MODEL)
   VW_HARNESS = CarFootnote(
     "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
     "store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black " +
@@ -149,7 +150,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Jetta GLI 2021"),
   ],
   CAR.PASSAT_MK8: VWCarInfo("Volkswagen Passat 2015-19", footnotes=[Footnote.PASSAT]),
-  CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat 2017, 2021", footnotes=[Footnote.PASSAT_NMS]),
+  CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat NMS 2017, 2021"),
   CAR.POLO_MK6: VWCarInfo("Volkswagen Polo 2020"),
   CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
