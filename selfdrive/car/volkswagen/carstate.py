@@ -199,8 +199,10 @@ class CarState(CarStateBase):
         ret.gearShifter = GearShifter.drive
 
     # Update door and trunk/hatch lid open status.
-    # FIXME: need to locate signals for other three doors and trunk if possible
-    ret.doorOpen = bool(pt_cp.vl["Gate_Komf_1"]["GK1_Fa_Tuerkont"])
+    ret.doorOpen = any([pt_cp.vl["Gate_Komf_1"]["GK1_Fa_Tuerkont"],
+                        pt_cp.vl["Gate_Komf_1"]["BSK_BT_geoeffnet"],
+                        pt_cp.vl["Gate_Komf_1"]["BSK_HL_geoeffnet"],
+                        pt_cp.vl["Gate_Komf_1"]["BSK_HR_geoeffnet"]])
 
     # Update seatbelt fastened status.
     ret.seatbeltUnlatched = not bool(pt_cp.vl["Airbag_1"]["Gurtschalter_Fahrer"])
