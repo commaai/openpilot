@@ -216,8 +216,7 @@ class CarState(CarStateBase):
 
     # Consume factory LDW data relevant for factory SWA (Lane Change Assist)
     # and capture it for forwarding to the blind spot radar controller
-    # TODO: populate this
-    self.ldw_stock_values = None
+    self.ldw_stock_values = cam_cp.vl["LDW_Status"] if self.CP.networkLocation == NetworkLocation.fwdCamera else {}
 
     # Stock FCW is considered active if the release bit for brake-jerk warning
     # is set. Stock AEB considered active if the partial braking or target
@@ -484,9 +483,22 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser_pq(CP):
 
-    # TODO: Populate this for NetworkLocation.fwdCamera
     signals = []
     checks = []
+
+    if CP.networkLocation == NetworkLocation.fwdCamera:
+      signals += [
+        # sig_name, sig_address
+        ("LDW_SW_Warnung_links", "LDW_Status"),      # Blind spot in warning mode on left side due to lane departure
+        ("LDW_SW_Warnung_rechts", "LDW_Status"),     # Blind spot in warning mode on right side due to lane departure
+        ("LDW_Seite_DLCTLC", "LDW_Status"),          # Direction of most likely lane departure (left or right)
+        ("LDW_DLC", "LDW_Status"),                   # Lane departure, distance to line crossing
+        ("LDW_TLC", "LDW_Status"),                   # Lane departure, time to line crossing
+      ]
+      checks += [
+        # sig_address, frequency
+        ("LDW_Status", 10)      # From R242 Driver assistance camera
+      ]
 
     if CP.networkLocation == NetworkLocation.gateway:
       # Radars are here on CANBUS.cam
