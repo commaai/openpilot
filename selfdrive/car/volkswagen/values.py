@@ -112,7 +112,7 @@ class Footnote(Enum):
     "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
     Column.MODEL)
   PASSAT = CarFootnote(
-    "Refers only to the European B8 Passat on MQB platform, not including NMS Passat in the USA/China/Mideast markets.",
+    "Refers only to the MQB-based European B8 Passat, not including the NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
   # TODO: Enable this footnote and add to CAR.PASSAT_NMS prior to releasing PQ from dashcamOnly mode
   # PASSAT_NMS = CarFootnote(
