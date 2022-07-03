@@ -36,7 +36,7 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.transmissionType = TransmissionType.manual
 
-      if any(msg in fingerprint[1] for msg in (0x1A0, 0xAE)):  # FIXME: what are these messages
+      if any(msg in fingerprint[1] for msg in (0x1A0, 0xAE)):  # Bremse_1, ??? (FIXME: 0xAE undocumented, why this?)
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
