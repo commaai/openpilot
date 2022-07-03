@@ -427,6 +427,10 @@ class CarState(CarStateBase):
       ("ESP_Passiv_getastet", "Bremse_1"),       # Stability control disabled
       ("GRA_Status", "Motor_2"),                 # ACC engagement status
       ("GK1_Fa_Tuerkont", "Gate_Komf_1"),        # Door open, driver
+      ("BSK_BT_geoeffnet", "Gate_Komf_1"),       # Door open, passenger
+      ("BSK_HL_geoeffnet", "Gate_Komf_1"),       # Door open, rear left
+      ("BSK_HR_geoeffnet", "Gate_Komf_1"),       # Door open, rear right
+      ("BSK_HD_Hauptraste", "Gate_Komf_1"),      # Trunk or hatch open
       ("GK1_Blinker_li", "Gate_Komf_1"),         # Left turn signal on
       ("GK1_Blinker_re", "Gate_Komf_1"),         # Right turn signal on
       ("Bremsinfo", "Kombi_1"),                  # Manual handbrake applied
