@@ -202,7 +202,8 @@ class CarState(CarStateBase):
     ret.doorOpen = any([pt_cp.vl["Gate_Komf_1"]["GK1_Fa_Tuerkont"],
                         pt_cp.vl["Gate_Komf_1"]["BSK_BT_geoeffnet"],
                         pt_cp.vl["Gate_Komf_1"]["BSK_HL_geoeffnet"],
-                        pt_cp.vl["Gate_Komf_1"]["BSK_HR_geoeffnet"]])
+                        pt_cp.vl["Gate_Komf_1"]["BSK_HR_geoeffnet"],
+                        pt_cp.vl["Gate_Komf_1"]["BSK_HD_Hauptraste"]])
 
     # Update seatbelt fastened status.
     ret.seatbeltUnlatched = not bool(pt_cp.vl["Airbag_1"]["Gurtschalter_Fahrer"])
