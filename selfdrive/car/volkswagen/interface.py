@@ -29,6 +29,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in PQ_CARS:
       # Set global PQ35/PQ46/NMS parameters
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagenPq)]
+      # ret.dashcamOnly = True  # Enable Passat NMS footnote before removing from dashcamOnly
       ret.enableBsm = 0x3BA in fingerprint[0]  # SWA_1
 
       if 0x440 in fingerprint[0]:  # Getriebe_1
