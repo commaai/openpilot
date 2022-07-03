@@ -222,8 +222,9 @@ class CarState(CarStateBase):
     # is set. Stock AEB considered active if the partial braking or target
     # braking release bits are set.
     # Refer to VW Self Study Program 890253: Volkswagen Driver Assistance
-    # Systems, chapter on Front Assist with Braking: Golf Family for all MQB
-    # TODO: fix document ref and populate this
+    # Systems, chapters on Front Assist with Braking and City Emergency
+    # Braking for the 2016 Passat NMS
+    # TODO: deferred until we can collect data on pre-MY2016 behavior, AWV message may be shorter with fewer signals
     ret.stockFcw = False
     ret.stockAeb = False
 
