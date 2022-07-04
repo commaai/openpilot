@@ -112,22 +112,25 @@ void MapWindow::updateState(const UIState &s) {
     auto locationd_orientation = locationd_location.getCalibratedOrientationNED();
     auto locationd_velocity = locationd_location.getVelocityCalibrated();
 
-    bool locationd_valid = (locationd_location.getStatus() == cereal::LiveLocationKalman::Status::VALID) &&
-     locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid();
-
-    auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
-    auto laikad_pos_std = laikad_location.getPositionECEF().getStd();
-    auto laikad_pos_ecef = laikad_location.getPositionECEF().getValue();
-    auto laikad_velocity_ecef = laikad_location.getVelocityECEF().getValue();
-
-    bool laikad_valid = std::max({laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]}) < 5.0;
-    localizer_valid = locationd_valid || laikad_valid;
+    localizer_valid = locationd_valid = (locationd_location.getStatus() == cereal::LiveLocationKalman::Status::VALID) &&
+      locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid();
 
     if (locationd_valid) {
       last_position = QMapbox::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
       last_bearing = RAD2DEG(locationd_orientation.getValue()[2]);
       velocity_filter.update(locationd_velocity.getValue()[0]);
-    } else if (laikad_valid) {
+    }
+  }
+
+  if (sm.updated("gnssMeasurements") && !locationd_valid) {
+    auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
+    auto laikad_pos_std = laikad_location.getPositionECEF().getStd();
+    auto laikad_pos_ecef = laikad_location.getPositionECEF().getValue();
+    auto laikad_velocity_ecef = laikad_location.getVelocityECEF().getValue();
+
+    localizer_valid = std::max({laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]}) < 5.0;
+
+    if (localizer_valid) {
       ECEF ecef = {.x = laikad_pos_ecef[0], .y = laikad_pos_ecef[1], .z = laikad_pos_ecef[2]};
       Geodetic laikad_pos = ecef2geodetic(ecef);
       last_position = QMapbox::Coordinate(laikad_pos.lat, laikad_pos.lon);

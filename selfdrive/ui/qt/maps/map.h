@@ -105,6 +105,7 @@ private:
   std::optional<float> last_bearing;
   FirstOrderFilter velocity_filter;
   bool localizer_valid = false;
+  bool locationd_valid = false;
 
   MapInstructions* map_instructions;
   MapETA* map_eta;
