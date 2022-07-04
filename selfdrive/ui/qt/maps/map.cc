@@ -1,5 +1,6 @@
 #include "selfdrive/ui/qt/maps/map.h"
 
+#include <eigen3/Eigen/Dense>
 #include <cmath>
 
 #include <QDebug>
@@ -7,6 +8,7 @@
 #include <QPainterPath>
 
 #include "common/swaglog.h"
+#include "common/transformations/coordinates.hpp"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
@@ -105,18 +107,45 @@ void MapWindow::updateState(const UIState &s) {
   update();
 
   if (sm.updated("liveLocationKalman")) {
-    auto location = sm["liveLocationKalman"].getLiveLocationKalman();
-    auto pos = location.getPositionGeodetic();
-    auto orientation = location.getCalibratedOrientationNED();
-    auto velocity = location.getVelocityCalibrated();
+    auto locationd_location = sm["liveLocationKalman"].getLiveLocationKalman();
+    auto locationd_pos = locationd_location.getPositionGeodetic();
+    auto locationd_orientation = locationd_location.getCalibratedOrientationNED();
+    auto locationd_velocity = locationd_location.getVelocityCalibrated();
 
-    localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) &&
-     pos.getValid() && orientation.getValid() && velocity.getValid();
+    bool locationd_valid = (locationd_location.getStatus() == cereal::LiveLocationKalman::Status::VALID) &&
+     locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid();
 
-    if (localizer_valid) {
-      last_position = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
-      last_bearing = RAD2DEG(orientation.getValue()[2]);
-      velocity_filter.update(velocity.getValue()[0]);
+    auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
+    auto laikad_pos_std = laikad_location.getPositionECEF().getStd();
+    auto laikad_pos_ecef = laikad_location.getPositionECEF().getValue();
+    auto laikad_velocity_ecef = laikad_location.getVelocityECEF().getValue();
+
+    bool laikad_valid = std::max({laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]}) < 5.0;
+    localizer_valid = locationd_valid || laikad_valid;
+
+    if (locationd_valid) {
+      last_position = QMapbox::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
+      last_bearing = RAD2DEG(locationd_orientation.getValue()[2]);
+      velocity_filter.update(locationd_velocity.getValue()[0]);
+    } else if (laikad_valid) {
+      ECEF ecef = {.x = laikad_pos_ecef[0], .y = laikad_pos_ecef[1], .z = laikad_pos_ecef[2]};
+      Geodetic laikad_pos = ecef2geodetic(ecef);
+      last_position = QMapbox::Coordinate(laikad_pos.lat, laikad_pos.lon);
+
+      // Compute NED velocity
+      LocalCoord converter(ecef);
+      ECEF next_ecef = {.x = ecef.x + laikad_velocity_ecef[0], .y = ecef.y + laikad_velocity_ecef[1], .z = ecef.z + laikad_velocity_ecef[2]};
+      Eigen::VectorXd ned_vel = converter.ecef2ned(next_ecef).to_vector() - converter.ecef2ned(ecef).to_vector();
+
+      float velocity = ned_vel.norm();
+      velocity_filter.update(velocity);
+
+      // Convert NED velocity to angle
+      if (velocity > 1.0) {
+        float new_bearing = fmod(RAD2DEG(atan2(ned_vel[1], ned_vel[0])) + 360.0, 360.0);
+        float delta = 0.1 * angle_difference(*last_bearing, new_bearing); // Smooth heading
+        last_bearing = fmod(*last_bearing + delta + 360.0, 360.0);
+      }
     }
   }
 
