@@ -18,7 +18,7 @@ from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox
-from selfdrive.locationd.laikad_helpers import calc_pos_fix_gauss_newton, get_posfix_sympy_fun, pr_residual
+from selfdrive.locationd.laikad_helpers import calc_pos_fix_gauss_newton, get_posfix_sympy_fun
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
@@ -108,11 +108,13 @@ class Laikad:
       new_meas = read_raw_ublox(report)
       processed_measurements = process_measurements(new_meas, self.astro_dog)
 
-      est_pos = self.get_est_pos(t, processed_measurements)
+      est_pos = self.gnss_kf.x[GStates.ECEF_POS]
 
       corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog) if len(est_pos) > 0 else []
-      self.update_localizer(est_pos, t, corrected_measurements)
-      self.kf_check_residual(corrected_measurements)
+      measurements_for_kf = corrected_measurements
+      if len(corrected_measurements) == 0 and len(processed_measurements) > 3:
+        measurements_for_kf = processed_measurements
+      self.update_localizer(est_pos, t, measurements_for_kf)
 
       kf_valid = all(self.kf_valid(t))
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
@@ -157,7 +159,8 @@ class Laikad:
       else:
         return
     if len(measurements) > 0:
-      kf_add_observations(self.gnss_kf, t, measurements)
+      residuals = kf_add_observations(self.gnss_kf, t, measurements)
+      self.kf_check_residual(residuals)
     else:
       # Ensure gnss filter is updated even with no new measurements
       self.gnss_kf.predict(t)
@@ -194,17 +197,13 @@ class Laikad:
         self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
         self.cache_ephemeris(t=t)
 
-  def kf_check_residual(self, corrected_measurements):
-    if len(corrected_measurements) > 0:
-      fx_pos = pr_residual(corrected_measurements, self.posfix_functions)
-      # x0: [x, y, z, bc, bg]
-      x0 = [*self.gnss_kf.x[GStates.ECEF_POS], self.gnss_kf.x[GStates.CLOCK_BIAS][0], self.gnss_kf.x[GStates.GLONASS_BIAS][0]]
-      residual, _ = fx_pos(x0, weight=1.0)
-      residual_median = np.median(abs(residual))
-      if residual_median > RESIDUAL_THRESHOLD:
-        a = min(1, residual_median * RESIDUAL_WEIGHT)
-        p = self.gnss_kf.P * (1 - 1 / a) + self.gnss_kf.P_initial * a
-        self.gnss_kf.init_state(self.gnss_kf.x, covs=p, filter_time=self.gnss_kf.filter.get_filter_time())
+  def kf_check_residual(self, residuals):
+    # if median residual is too large increase the Covariance matrix to improve convergence
+    residual_median = np.median(np.abs(residuals))
+    if residual_median > RESIDUAL_THRESHOLD:
+      a = min(1, residual_median * RESIDUAL_WEIGHT)
+      p = self.gnss_kf.P * (1 - 1 / a) + self.gnss_kf.P_initial * a
+      self.gnss_kf.init_state(self.gnss_kf.x, covs=p, filter_time=self.gnss_kf.filter.get_filter_time())
 
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
@@ -257,16 +256,20 @@ def create_measurement_msg(meas: GNSSMeasurement):
 def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMeasurement]):
   ekf_data = defaultdict(list)
   for m in measurements:
-    m_arr = m.as_array()
+    m_arr = m.as_array(only_corrected=False)
     if m.constellation_id == ConstellationId.GPS:
       ekf_data[ObservationKind.PSEUDORANGE_GPS].append(m_arr)
     elif m.constellation_id == ConstellationId.GLONASS:
       ekf_data[ObservationKind.PSEUDORANGE_GLONASS].append(m_arr)
   ekf_data[ObservationKind.PSEUDORANGE_RATE_GPS] = ekf_data[ObservationKind.PSEUDORANGE_GPS]
   ekf_data[ObservationKind.PSEUDORANGE_RATE_GLONASS] = ekf_data[ObservationKind.PSEUDORANGE_GLONASS]
+  residuals = []
   for kind, data in ekf_data.items():
     if len(data) > 0:
-      gnss_kf.predict_and_observe(t, kind, data)
+      r = gnss_kf.predict_and_observe(t, kind, data)
+      if r is not None:
+        residuals.extend(r[6])
+  return residuals
 
 
 class CacheSerializer(json.JSONEncoder):
