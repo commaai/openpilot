@@ -123,8 +123,13 @@ def parse_caibx(caibx_path: str) -> List[Chunk]:
 
 
 def build_chunk_dict(chunks: List[Chunk]) -> ChunkDict:
-  """Turn a list of chunks into a dict for faster lookups based on hash"""
-  return {c.sha: c for c in chunks}
+  """Turn a list of chunks into a dict for faster lookups based on hash.
+  Keep first chunk since it's more likely to be already downloaded."""
+  r = {}
+  for c in chunks:
+    if c.sha not in r:
+      r[c.sha] = c
+  return r
 
 
 def extract(target: List[Chunk],
