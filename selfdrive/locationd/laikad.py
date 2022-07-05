@@ -86,7 +86,7 @@ class Laikad:
       cloudlog.debug("Cache saved")
       self.last_cached_t = t
 
-  def get_est_pos(self, t, processed_measurements):
+  def update_pos_fix(self, t, processed_measurements):
     if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
       min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 4
       pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
@@ -107,7 +107,7 @@ class Laikad:
 
       new_meas = read_raw_ublox(report)
       processed_measurements = process_measurements(new_meas, self.astro_dog)
-
+      self.update_pos_fix(t, processed_measurements)
       est_pos = self.gnss_kf.x[GStates.ECEF_POS]
 
       corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, allow_incomplete_delay=True) if len(est_pos) > 0 else []
