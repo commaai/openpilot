@@ -110,10 +110,8 @@ class Laikad:
 
       est_pos = self.gnss_kf.x[GStates.ECEF_POS]
 
-      corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog) if len(est_pos) > 0 else []
-      measurements_for_kf = corrected_measurements
-      if len(corrected_measurements) == 0 and len(processed_measurements) > 3:
-        measurements_for_kf = processed_measurements
+      corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, allow_incomplete_delay=True) if len(est_pos) > 0 else []
+      measurements_for_kf = corrected_measurements if len(corrected_measurements) > 0 else processed_measurements
       self.update_localizer(est_pos, t, measurements_for_kf)
 
       kf_valid = all(self.kf_valid(t))
