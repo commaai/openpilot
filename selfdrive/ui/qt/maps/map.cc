@@ -114,7 +114,7 @@ void MapWindow::updateState(const UIState &s) {
     auto locationd_orientation = locationd_location.getCalibratedOrientationNED();
     auto locationd_velocity = locationd_location.getVelocityCalibrated();
 
-    localizer_valid = locationd_valid = (locationd_location.getStatus() == cereal::LiveLocationKalman::Status::VALID) &&
+    locationd_valid = (locationd_location.getStatus() == cereal::LiveLocationKalman::Status::VALID) &&
       locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid();
 
     if (locationd_valid) {
@@ -124,18 +124,19 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-  if (sm.updated("gnssMeasurements") && !locationd_valid) {
+  if (sm.updated("gnssMeasurements")) {
     auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
-    auto laikad_pos_std = laikad_location.getPositionECEF().getStd();
-    auto laikad_pos_ecef = laikad_location.getPositionECEF().getValue();
+    auto laikad_pos = laikad_location.getPositionECEF();
+    auto laikad_pos_ecef = laikad_pos.getValue();
+    auto laikad_pos_std = laikad_pos.getStd();
     auto laikad_velocity_ecef = laikad_location.getVelocityECEF().getValue();
 
-    localizer_valid = Eigen::Vector3d(laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]).norm() < VALID_POS_STD;
+    laikad_valid = laikad_pos.getValid() && Eigen::Vector3d(laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]).norm() < VALID_POS_STD;
 
-    if (localizer_valid) {
+    if (laikad_valid && !locationd_valid) {
       ECEF ecef = {.x = laikad_pos_ecef[0], .y = laikad_pos_ecef[1], .z = laikad_pos_ecef[2]};
-      Geodetic laikad_pos = ecef2geodetic(ecef);
-      last_position = QMapbox::Coordinate(laikad_pos.lat, laikad_pos.lon);
+      Geodetic laikad_pos_geodetic = ecef2geodetic(ecef);
+      last_position = QMapbox::Coordinate(laikad_pos_geodetic.lat, laikad_pos_geodetic.lon);
 
       // Compute NED velocity
       LocalCoord converter(ecef);
@@ -180,9 +181,7 @@ void MapWindow::updateState(const UIState &s) {
 
   initLayers();
 
-  if (!localizer_valid) {
-    map_instructions->showError("Waiting for GPS");
-  } else {
+  if (locationd_valid || laikad_valid) {
     map_instructions->noError();
 
     // Update current location marker
@@ -192,6 +191,8 @@ void MapWindow::updateState(const UIState &s) {
     carPosSource["type"] = "geojson";
     carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
     m_map->updateSource("carPosSource", carPosSource);
+  } else {
+    map_instructions->showError("Waiting for GPS");
   }
 
   if (pan_counter == 0) {
@@ -212,7 +213,7 @@ void MapWindow::updateState(const UIState &s) {
       auto i = sm["navInstruction"].getNavInstruction();
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
-      if (localizer_valid) {
+      if (locationd_valid || laikad_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
         emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
         emit instructionsChanged(i);
