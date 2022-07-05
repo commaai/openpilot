@@ -24,6 +24,8 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
+const float VALID_POS_STD = 50.0; // m
+
 const QString ICON_SUFFIX = ".png";
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
@@ -128,7 +130,7 @@ void MapWindow::updateState(const UIState &s) {
     auto laikad_pos_ecef = laikad_location.getPositionECEF().getValue();
     auto laikad_velocity_ecef = laikad_location.getVelocityECEF().getValue();
 
-    localizer_valid = std::max({laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]}) < 5.0;
+    localizer_valid = Eigen::Vector3d(laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]).norm() < VALID_POS_STD;
 
     if (localizer_valid) {
       ECEF ecef = {.x = laikad_pos_ecef[0], .y = laikad_pos_ecef[1], .z = laikad_pos_ecef[2]};
