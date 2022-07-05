@@ -4,6 +4,7 @@ import lzma
 import os
 import struct
 import sys
+import time
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from typing import Callable, Dict, List, Optional, Tuple
@@ -66,6 +67,7 @@ class RemoteChunkReader(ChunkReader):
       except Exception:
         if i == CHUNK_DOWNLOAD_RETRIES - 1:
           raise
+        time.sleep(CHUNK_DOWNLOAD_TIMEOUT)
 
     resp.raise_for_status()
 
