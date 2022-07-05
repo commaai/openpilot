@@ -45,7 +45,7 @@ class GNSSKalman:
                (.1)**2, (0)**2, (0.005)**2,
                .1**2, (.01)**2])
 
-  maha_test_kinds: List[int] = [ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
+  maha_test_kinds: List[int] = [ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]  # ObservationKind.PSEUDORANGE_RATE
 
   @staticmethod
   def generate_code(generated_dir):
