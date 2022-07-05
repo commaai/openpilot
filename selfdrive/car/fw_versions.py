@@ -194,6 +194,10 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
+def get_requests_for_brand(brand):
+ return [r for r in REQUESTS if r.brand == brand]
+
+
 def build_fw_dict(fw_versions):
   fw_versions_dict = {}
   for fw in fw_versions:
@@ -201,6 +205,15 @@ def build_fw_dict(fw_versions):
     sub_addr = fw.subAddress if fw.subAddress != 0 else None
     fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
   return fw_versions_dict
+
+
+def get_all_brand_addrs():
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+  brand_addrs = defaultdict(set)
+  for brand, cars in versions.items():
+    for fw in cars.values():
+      brand_addrs[brand] |= {(addr, subaddr) for ecu, addr, subaddr in fw.keys()}
+  return brand_addrs
 
 
 def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
@@ -346,7 +359,19 @@ def get_present_ecus(logcan, sendcan):
   return ecu_responses
 
 
-def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progress=False):
+def get_brand_candidates(rx_addrs):
+  brand_rx_offsets = set((r.brand, r.rx_offset) for r in REQUESTS)
+  all_brand_addrs = get_all_brand_addrs()
+  brand_matches = defaultdict(set)
+  for brand, rx_offset in brand_rx_offsets:
+    for addr, subaddr, bus in rx_addrs:
+      a = (uds.get_rx_addr_for_tx_addr(addr, -rx_offset), subaddr)
+      if a in all_brand_addrs[brand]:
+        brand_matches[brand].add(a)
+  return dict(brand_matches)
+
+
+def get_fw_versions(logcan, sendcan, requests, versions, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
 
   # Extract ECU addresses to query from fingerprints
@@ -354,34 +379,34 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   addrs = []
   parallel_addrs = []
 
-  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
-  if extra is not None:
-    versions.update(extra)
+  # versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+  # if extra is not None:
+  #   versions.update(extra)
 
   # log brand candidates
-  brand_candidates = get_brand_candidates(logcan, sendcan, versions)
-  cloudlog.event("brand candidates", ecu_response_addrs=brand_candidates)
+  # brand_candidates = get_brand_candidates(logcan, sendcan, versions)
+  # cloudlog.event("brand candidates", ecu_response_addrs=brand_candidates)
 
-  for brand, brand_versions in versions.items():
-    for c in brand_versions.values():
-      for ecu_type, addr, sub_addr in c.keys():
-        a = (brand, addr, sub_addr)
-        if a not in ecu_types:
-          ecu_types[(addr, sub_addr)] = ecu_type
+  for c in versions.values():
+    for ecu_type, addr, sub_addr in c.keys():
+      a = (addr, sub_addr)
+      if a not in ecu_types:
+        ecu_types[(addr, sub_addr)] = ecu_type
 
-        if sub_addr is None:
-          if a not in parallel_addrs:
-            parallel_addrs.append(a)
-        else:
-          if [a] not in addrs:
-            addrs.append([a])
+      if sub_addr is None:
+        if a not in parallel_addrs:
+          parallel_addrs.append(a)
+      else:
+        if [a] not in addrs:
+          addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
 
   fw_versions = {}
+  print(addrs)
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
-      for r in REQUESTS:
+      for r in requests:
         try:
           addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
                    (len(r.whitelist_ecus) == 0 or ecu_types[(a, s)] in r.whitelist_ecus)]
@@ -446,7 +471,8 @@ if __name__ == "__main__":
   print()
 
   t = time.time()
-  fw_vers = get_fw_versions(logcan, sendcan, extra=extra, debug=args.debug, progress=True)
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+  fw_vers = get_fw_versions(logcan, sendcan, REQUESTS, versions=versions, debug=args.debug, progress=True)
   _, candidates = match_fw_to_car(fw_vers)
 
   print()
