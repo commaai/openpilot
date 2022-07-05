@@ -302,7 +302,7 @@ jobs:
                         selfdrive/locationd/test/_test_locationd_lib.py && \
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
-                        $UNIT_TEST selfdrive/hardware/tici && \
+                        $UNIT_TEST system/hardware/tici && \
                         $UNIT_TEST selfdrive/modeld && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
