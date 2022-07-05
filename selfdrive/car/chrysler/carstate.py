@@ -64,14 +64,14 @@ class CarState(CarStateBase):
     steer_state = cp.vl["EPS_2"]["LKAS_STATE"]
     ret.steerFaultPermanent = steer_state == 4 or (steer_state == 0 and ret.vEgo > self.CP.minSteerSpeed)
 
-    ret.genericToggle = bool(cp.vl["STEERING_LEVERS"]["HIGH_BEAM_FLASH"])
+    ret.genericToggle = bool(cp.vl["STEERING_LEVERS"]["HIGH_BEAM_PRESSED"])
 
     if self.CP.enableBsm:
-      ret.leftBlindspot = cp.vl["BLIND_SPOT_WARNINGS"]["BLIND_SPOT_LEFT"] == 1
-      ret.rightBlindspot = cp.vl["BLIND_SPOT_WARNINGS"]["BLIND_SPOT_RIGHT"] == 1
+      ret.leftBlindspot = cp.vl["BSM_1"]["LEFT_STATUS"] == 1
+      ret.rightBlindspot = cp.vl["BSM_1"]["RIGHT_STATUS"] == 1
 
     self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]["COUNTER"]
-    self.lkas_car_model = cp_cam.vl["LKAS_HUD"]["CAR_MODEL"]
+    self.lkas_car_model = cp_cam.vl["DAS_6"]["CAR_MODEL"]
     self.lkas_status_ok = cp_cam.vl["LKAS_HEARTBIT"]["LKAS_STATUS_OK"]
     self.button_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
 
@@ -100,7 +100,7 @@ class CarState(CarStateBase):
       ("ACC_AVAILABLE", "DAS_3"),
       ("ACC_ACTIVE", "DAS_3"),
       ("ACC_FAULTED", "DAS_3"),
-      ("HIGH_BEAM_FLASH", "STEERING_LEVERS"),
+      ("HIGH_BEAM_PRESSED", "STEERING_LEVERS"),
       ("ACC_SPEED_CONFIG_KPH", "DAS_4"),
       ("CRUISE_STATE", "DAS_4"),
       ("COLUMN_TORQUE", "EPS_2"),
@@ -132,10 +132,10 @@ class CarState(CarStateBase):
 
     if CP.enableBsm:
       signals += [
-        ("BLIND_SPOT_RIGHT", "BLIND_SPOT_WARNINGS"),
-        ("BLIND_SPOT_LEFT", "BLIND_SPOT_WARNINGS"),
+        ("RIGHT_STATUS", "BSM_1"),
+        ("LEFT_STATUS", "BSM_1"),
       ]
-      checks.append(("BLIND_SPOT_WARNINGS", 2))
+      checks.append(("BSM_1", 2))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
@@ -144,13 +144,13 @@ class CarState(CarStateBase):
     signals = [
       # sig_name, sig_address
       ("COUNTER", "LKAS_COMMAND"),
-      ("CAR_MODEL", "LKAS_HUD"),
+      ("CAR_MODEL", "DAS_6"),
       ("LKAS_STATUS_OK", "LKAS_HEARTBIT")
     ]
     checks = [
       ("LKAS_COMMAND", 100),
       ("LKAS_HEARTBIT", 10),
-      ("LKAS_HUD", 4),
+      ("DAS_6", 4),
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
