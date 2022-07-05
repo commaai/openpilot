@@ -35,14 +35,14 @@ def create_lkas_hud(packer, gear, lkas_active, hud_alert, hud_count, lkas_car_mo
     "LKAS_ALERTS": alerts,  # byte 3, last 4 bits
     }
 
-  return packer.make_can_msg("LKAS_HUD", 0, values)  # 0x2a6
+  return packer.make_can_msg("DAS_6", 0, values)  # 0x2a6
 
 
 def create_lkas_command(packer, apply_steer, moving_fast, frame):
   # LKAS_COMMAND 0x292 (658) Lane-keeping signal to turn the wheel.
   values = {
-    "LKAS_STEERING_TORQUE": apply_steer,
-    "LKAS_HIGH_TORQUE": int(moving_fast),
+    "STEERING_TORQUE": apply_steer,
+    "LKAS_CONTROL_BIT": int(moving_fast),
     "COUNTER": frame % 0x10,
   }
   return packer.make_can_msg("LKAS_COMMAND", 0, values)
