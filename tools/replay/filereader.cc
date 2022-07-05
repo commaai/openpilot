@@ -1,9 +1,9 @@
-#include "selfdrive/ui/replay/filereader.h"
+#include "tools/replay/filereader.h"
 
 #include <fstream>
 
 #include "common/util.h"
-#include "selfdrive/ui/replay/util.h"
+#include "tools/replay/util.h"
 
 std::string cacheFilePath(const std::string &url) {
   static std::string cache_path = [] {

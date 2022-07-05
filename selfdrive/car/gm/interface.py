@@ -9,6 +9,8 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+TransmissionType = car.CarParams.TransmissionType
+NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
@@ -45,7 +47,11 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
-    ret.pcmCruise = False  # stock cruise control is kept off
+    ret.pcmCruise = False  # For ASCM, stock non-adaptive cruise control is kept off
+    ret.radarOffCan = False  # For ASCM, radar exists
+    ret.transmissionType = TransmissionType.automatic
+    # NetworkLocation.gateway: OBD-II harness (typically ASCM), NetworkLocation.fwdCamera: non-ASCM
+    ret.networkLocation = NetworkLocation.gateway
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
@@ -77,17 +83,18 @@ class CarInterface(CarInterfaceBase):
     ret.minEnableSpeed = 18 * CV.MPH_TO_MS
 
     if candidate == CAR.VOLT:
+      ret.transmissionType = TransmissionType.direct
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
-      tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
-      ret.centerToFront = ret.wheelbase * 0.45 # Volt Gen 1, TODO corner weigh
+      tire_stiffness_factor = 0.469  # Stock Michelin Energy Saver A/S, LiveParameters
+      ret.centerToFront = ret.wheelbase * 0.45  # Volt Gen 1, TODO corner weigh
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.17]
       ret.lateralTuning.pid.kiBP = [0.]
       ret.lateralTuning.pid.kiV = [0.]
-      ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_volt()
+      ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.MALIBU:
@@ -160,7 +167,7 @@ class CarInterface(CarInterfaceBase):
 
       ret.buttonEvents = [be]
 
-    events = self.create_common_events(ret, pcm_enable=False)
+    events = self.create_common_events(ret, pcm_enable=self.CP.pcmCruise)
 
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
@@ -170,12 +177,11 @@ class CarInterface(CarInterfaceBase):
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 
     # handle button presses
-    events.events.extend(create_button_enable_events(ret.buttonEvents))
+    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise))
 
     ret.events = events.to_msg()
 
     return ret
 
   def apply(self, c):
-    ret = self.CC.update(c, self.CS)
-    return ret
+    return self.CC.update(c, self.CS)

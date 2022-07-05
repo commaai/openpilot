@@ -34,6 +34,7 @@ class NvgWindow : public CameraViewWidget {
   Q_PROPERTY(bool is_cruise_set MEMBER is_cruise_set);
   Q_PROPERTY(bool has_eu_speed_limit MEMBER has_eu_speed_limit);
   Q_PROPERTY(bool has_us_speed_limit MEMBER has_us_speed_limit);
+  Q_PROPERTY(bool is_metric MEMBER is_metric);
 
   Q_PROPERTY(bool engageable MEMBER engageable);
   Q_PROPERTY(bool dmActive MEMBER dmActive);
@@ -57,6 +58,7 @@ private:
   float setSpeed;
   float speedLimit;
   bool is_cruise_set = false;
+  bool is_metric = false;
   bool engageable = false;
   bool dmActive = false;
   bool hideDM = false;
@@ -68,7 +70,7 @@ protected:
   void paintGL() override;
   void initializeGL() override;
   void showEvent(QShowEvent *event) override;
-  void updateFrameMat(int w, int h) override;
+  void updateFrameMat() override;
   void drawLaneLines(QPainter &painter, const UIState *s);
   void drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd);
   void drawHud(QPainter &p);

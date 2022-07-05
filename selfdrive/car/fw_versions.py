@@ -148,14 +148,12 @@ REQUESTS: List[Request] = [
     "volkswagen",
     [VOLKSWAGEN_VERSION_REQUEST_MULTI],
     [VOLKSWAGEN_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar],
     rx_offset=VOLKSWAGEN_RX_OFFSET,
   ),
   Request(
     "volkswagen",
     [VOLKSWAGEN_VERSION_REQUEST_MULTI],
     [VOLKSWAGEN_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.engine, Ecu.transmission],
   ),
   # Mazda
   Request(
@@ -300,10 +298,12 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   return exact_match, matches
 
 
-def get_brand_candidates(logcan, sendcan, versions):
+def get_present_ecus(logcan, sendcan):
   queries = list()
   parallel_queries = list()
   responses = set()
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+
   for r in REQUESTS:
     if r.brand not in versions:
       continue
@@ -311,38 +311,39 @@ def get_brand_candidates(logcan, sendcan, versions):
     for brand_versions in versions[r.brand].values():
       for ecu_type, addr, sub_addr in brand_versions:
         # Only query ecus in whitelist if whitelist is not empty
-        if (len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus) and ecu_type in ESSENTIAL_ECUS:
+        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
           a = (addr, sub_addr, r.bus)
           # Build set of queries
           if sub_addr is None:
             if a not in parallel_queries:
               parallel_queries.append(a)
-          else:
+          else:  # subaddresses must be queried one by one
             if [a] not in queries:
               queries.append([a])
 
           # Build set of expected responses to filter
-          response_addr = addr + r.rx_offset
+          response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
           responses.add((response_addr, sub_addr, r.bus))
 
   queries.insert(0, parallel_queries)
 
   ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
   for query in queries:
-    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses))
+    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
 
-  cloudlog.event("ecu responses", ecu_responses=ecu_responses)
-
-  brand_candidates = set()
-  for r in REQUESTS:
-    ecu_addrs = {(addr - r.rx_offset, sub_addr) for addr, sub_addr, _ in ecu_responses}
-    for candidate, candidate_fw in versions[r.brand].items():
-      # brand is a candidate if any of its platforms is a complete subset of the response ecus
-      candidate_addrs = {(addr, sub_addr) for ecu_type, addr, sub_addr in candidate_fw.keys() if ecu_type in ESSENTIAL_ECUS}
-      if len(ecu_addrs.intersection(candidate_addrs)) == len(candidate_addrs):
-        brand_candidates.add(r.brand)
-
-  return brand_candidates
+  # cloudlog.event("ecu responses", ecu_responses=ecu_responses)
+  #
+  # brand_candidates = set()
+  # for r in REQUESTS:
+  #   ecu_addrs = {(addr - r.rx_offset, sub_addr) for addr, sub_addr, _ in ecu_responses}
+  #   for candidate, candidate_fw in versions[r.brand].items():
+  #     # brand is a candidate if any of its platforms is a complete subset of the response ecus
+  #     candidate_addrs = {(addr, sub_addr) for ecu_type, addr, sub_addr in candidate_fw.keys() if ecu_type in ESSENTIAL_ECUS}
+  #     if len(ecu_addrs.intersection(candidate_addrs)) == len(candidate_addrs):
+  #       brand_candidates.add(r.brand)
+  #
+  # return brand_candidates
+  return ecu_responses
 
 
 def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progress=False):
@@ -400,7 +401,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
     f.ecu = ecu_types[addr]
     f.fwVersion = version
     f.address = addr[0]
-    f.responseAddress = addr[0] + rx_offset
+    f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], rx_offset)
     f.request = request
 
     if addr[1] is not None:
