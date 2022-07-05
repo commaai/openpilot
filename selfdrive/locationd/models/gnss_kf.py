@@ -15,7 +15,7 @@ else:
   from rednose.helpers.ekf_sym import EKF_sym  # pylint: disable=no-name-in-module,import-error
 
 
-class States():
+class States:
   ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters
   ECEF_VELOCITY = slice(3, 6)
   CLOCK_BIAS = slice(6, 7)  # clock bias in light-meters,
@@ -25,7 +25,7 @@ class States():
   GLONASS_FREQ_SLOPE = slice(10, 11)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
 
 
-class GNSSKalman():
+class GNSSKalman:
   name = 'gnss'
 
   x_initial = np.array([-2712700.6008, -4281600.6679, 3859300.1830,
@@ -45,7 +45,7 @@ class GNSSKalman():
                (.1)**2, (0)**2, (0.005)**2,
                .1**2, (.01)**2])
 
-  maha_test_kinds: List[int] = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
+  maha_test_kinds: List[int] = [ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
 
   @staticmethod
   def generate_code(generated_dir):
