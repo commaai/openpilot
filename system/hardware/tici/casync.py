@@ -21,6 +21,11 @@ CA_TABLE_HEADER_LEN = 16
 CA_TABLE_ENTRY_LEN = 40
 CA_TABLE_MIN_LEN = CA_TABLE_HEADER_LEN + CA_TABLE_ENTRY_LEN
 
+CHUNK_DOWNLOAD_TIMEOUT = 10
+CHUNK_DOWNLOAD_RETRIES = 3
+
+CAIBX_DOWNLOAD_TIMEOUT = 120
+
 Chunk = namedtuple('Chunk', ['sha', 'offset', 'length'])
 ChunkDict = Dict[bytes, Chunk]
 
@@ -54,7 +59,14 @@ class RemoteChunkReader(ChunkReader):
     sha_hex = chunk.sha.hex()
     url = os.path.join(self.url, sha_hex[:4], sha_hex + ".cacnk")
 
-    resp = requests.get(url)
+    for i in range(CHUNK_DOWNLOAD_RETRIES):
+      try:
+        resp = requests.get(url, timeout=CHUNK_DOWNLOAD_TIMEOUT)
+        break
+      except requests.exceptions.RequestException:
+        if i == CHUNK_DOWNLOAD_RETRIES - 1:
+          raise
+
     resp.raise_for_status()
 
     decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
@@ -67,7 +79,7 @@ def parse_caibx(caibx_path: str) -> List[Chunk]:
   if os.path.isfile(caibx_path):
     caibx = open(caibx_path, 'rb')
   else:
-    resp = requests.get(caibx_path)
+    resp = requests.get(caibx_path, timeout=CAIBX_DOWNLOAD_TIMEOUT)
     resp.raise_for_status()
     caibx = io.BytesIO(resp.content)
 
