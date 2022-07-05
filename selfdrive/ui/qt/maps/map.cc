@@ -148,8 +148,12 @@ void MapWindow::updateState(const UIState &s) {
       // Convert NED velocity to angle
       if (velocity > 1.0) {
         float new_bearing = fmod(RAD2DEG(atan2(ned_vel[1], ned_vel[0])) + 360.0, 360.0);
-        float delta = 0.1 * angle_difference(*last_bearing, new_bearing); // Smooth heading
-        last_bearing = fmod(*last_bearing + delta + 360.0, 360.0);
+        if (last_bearing) {
+          float delta = 0.1 * angle_difference(*last_bearing, new_bearing); // Smooth heading
+          last_bearing = fmod(*last_bearing + delta + 360.0, 360.0);
+        } else {
+          last_bearing = new_bearing;
+        }
       }
     }
   }
