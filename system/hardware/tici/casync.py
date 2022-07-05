@@ -63,7 +63,7 @@ class RemoteChunkReader(ChunkReader):
       try:
         resp = requests.get(url, timeout=CHUNK_DOWNLOAD_TIMEOUT)
         break
-      except requests.exceptions.RequestException:
+      except Exception:
         if i == CHUNK_DOWNLOAD_RETRIES - 1:
           raise
 
