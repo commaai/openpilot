@@ -290,10 +290,10 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   for brand in set(r.brand for r in REQUESTS):
     fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
     matches = match_fw_to_car_exact(fw_versions_dict)
+
     if len(matches):
       break
-
-    if allow_fuzzy:
+    elif allow_fuzzy:
       matches = match_fw_to_car_fuzzy(fw_versions_dict)
 
       # Fuzzy match found
