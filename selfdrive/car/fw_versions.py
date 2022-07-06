@@ -350,7 +350,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
       for ecu_type, addr, sub_addr in c.keys():
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
-          ecu_types[(addr, sub_addr)] = ecu_type
+          ecu_types[a] = ecu_type
 
         if sub_addr is None:
           if a not in parallel_addrs:
@@ -367,7 +367,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
       for r in REQUESTS:
         try:
           addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
-                   (len(r.whitelist_ecus) == 0 or ecu_types[(a, s)] in r.whitelist_ecus)]
+                   (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
