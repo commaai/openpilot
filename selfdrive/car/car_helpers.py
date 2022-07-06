@@ -108,7 +108,7 @@ def fingerprint(logcan, sendcan):
         requests_for_brand = [r for r in REQUESTS if r.brand == brand]
         print('Requests:', requests_for_brand)
         car_fw = get_fw_versions(logcan, sendcan, requests_for_brand, versions[brand])
-        print('Car fw:', car_fw)
+        # print('Car fw:', car_fw)
         exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
         print('Exact fw match: {}, fw candidates: {}'.format(exact_fw_match, fw_candidates))
         if len(fw_candidates):

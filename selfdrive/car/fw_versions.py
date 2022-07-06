@@ -379,10 +379,6 @@ def get_fw_versions(logcan, sendcan, requests, versions, timeout=0.1, debug=Fals
   addrs = []
   parallel_addrs = []
 
-  # versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
-  # if extra is not None:
-  #   versions.update(extra)
-
   # log brand candidates
   # brand_candidates = get_brand_candidates(logcan, sendcan, versions)
   # cloudlog.event("brand candidates", ecu_response_addrs=brand_candidates)
@@ -408,8 +404,7 @@ def get_fw_versions(logcan, sendcan, requests, versions, timeout=0.1, debug=Fals
     for addr_chunk in chunks(addr):
       for r in requests:
         try:
-          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
-                   (len(r.whitelist_ecus) == 0 or ecu_types[(a, s)] in r.whitelist_ecus)]
+          addrs = [(a, s) for (a, s) in addr_chunk if len(r.whitelist_ecus) == 0 or ecu_types[(a, s)] in r.whitelist_ecus]
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
