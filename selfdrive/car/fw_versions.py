@@ -381,7 +381,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   for addr, (version, request, rx_offset, brand) in fw_versions.items():
     f = car.CarParams.CarFw.new_message()
 
-    f.ecu = ecu_types[(addr[0], addr[1], brand)]
+    f.ecu = ecu_types.get((addr[0], addr[1], brand), Ecu.unknown)
     f.fwVersion = version
     f.address = addr[0]
     f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], rx_offset)
