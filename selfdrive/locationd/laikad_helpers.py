@@ -86,4 +86,4 @@ def get_posfix_sympy_fun(constellation):
 
   res = [res] + [sympy.diff(res, v) for v in var]
 
-  return sympy.lambdify([x, y, z, bc, bg, pr, sat_x, sat_y, sat_z, weight], res)
+  return sympy.lambdify([x, y, z, bc, bg, pr, sat_x, sat_y, sat_z, weight], res, modules=["numpy"])

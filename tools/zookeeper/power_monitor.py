@@ -27,8 +27,10 @@ if __name__ == "__main__":
     while duration is None or time.monotonic() - start_time < duration:
       fltr.update(z.read_power())
       if rk.frame % rate == 0:
-        print(f"{fltr.x:.2f} W")
         measurements.append(fltr.x)
+        t = datetime.timedelta(seconds=time.monotonic() - start_time)
+        avg = sum(measurements) / len(measurements)
+        print(f"Now: {fltr.x:.2f} W, Avg: {avg:.2f} W over {t}")
       rk.keep_time()
   except KeyboardInterrupt:
     pass
