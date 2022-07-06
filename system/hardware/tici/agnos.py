@@ -190,6 +190,7 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
   raw_hash = get_raw_hash(seed_path, partition['size'])
   caibx_url = f"{CAIBX_URL}{raw_hash}.caibx"
   try:
+    cloudlog.info(f"casync fetching {caibx_url}")
     sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(casync.parse_caibx(caibx_url)))]
   except requests.RequestException:
     cloudlog.error(f"casync failed to load {caibx_url}")
