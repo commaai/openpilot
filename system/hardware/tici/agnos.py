@@ -188,7 +188,7 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
 
   # First source is the current partition. Index file for current version is provided in the manifest
   raw_hash = get_raw_hash(seed_path, partition['size'])
-  caibx_url = f"{CAIBX_URL}{raw_hash}.caibx"
+  caibx_url = f"{CAIBX_URL}{partition['name']}-{raw_hash}.caibx"
   try:
     cloudlog.info(f"casync fetching {caibx_url}")
     sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(casync.parse_caibx(caibx_url)))]
