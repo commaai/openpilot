@@ -114,10 +114,10 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 static void update_sockets(UIState *s) {
 //  // ensure UI stays responsive when modelV2 is not alive
 //  int timeout = s->sm->alive("modelV2") ? 1000 / UI_FREQ : 0;
-  double t = millis_since_boot();
+//  double t = millis_since_boot();
   s->sm->update(0);
-  t = millis_since_boot() - t;
-  qDebug() << "sm->update(0) took" << t << "ms";
+//  t = millis_since_boot() - t;
+//  qDebug() << "sm->update(0) took" << t << "ms";
 }
 
 static void update_state(UIState *s) {
@@ -229,22 +229,47 @@ void UIState::updateStatus() {
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
-//  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>, const std::initializer_list<const char *>>({
-  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
+  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
     "wideRoadCameraState", "managerState", "navInstruction", "navRoute",
-  });
-//  }, {"modelV2"});
+  }, {"modelV2"});
 
   Params params;
   wide_camera = params.getBool("WideCameraOnly");
   prime_type = std::atoi(params.get("PrimeType").c_str());
 
-  // update timer
-  timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
-  timer->start(1000 / UI_FREQ);
+//  // update timer
+//  timer = new QTimer(this);
+//  QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
+//  timer->start(1000 / UI_FREQ);
+
+
+  connect(this, &UIState::vipcThreadFrameReceived, this, &UIState::vipcFrameReceived);
+  vipc_thread = new QThread();
+  connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
+  vipc_thread->start();
+//  vipc_thread->start();
+}
+
+void UIState::vipcThread() {
+  qDebug() << "In thread";
+  while (true) {
+//    qDebug() << "In while";
+    if (sm) {
+//      qDebug() << "In sm";
+//      qDebug() << "sm poll";
+      if (sm->poll(50)) {
+        emit vipcThreadFrameReceived();
+//        qDebug() << "emit";
+      }
+    }
+  }
+}
+
+void UIState::vipcFrameReceived() {
+//  qDebug() << "Update!";
+  update();
 }
 
 void UIState::update() {

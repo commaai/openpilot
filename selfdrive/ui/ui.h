@@ -130,17 +130,21 @@ public:
 
   QTransform car_space_transform;
   bool wide_camera;
+  QThread *vipc_thread = nullptr;
 
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
+  void vipcThreadFrameReceived();
 
 private slots:
   void update();
+  void vipcFrameReceived();
 
 private:
   QTimer *timer;
   bool started_prev = false;
+  void vipcThread();
 };
 
 UIState *uiState();
