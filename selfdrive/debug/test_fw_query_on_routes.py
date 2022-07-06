@@ -130,7 +130,7 @@ if __name__ == "__main__":
               expected = car_fws[live_fingerprint]
               for (_, expected_addr, expected_sub_addr), v in expected.items():
                 for version in car_fw:
-                  if version.brand != brand:
+                  if version.brand != brand and len(version.brand):
                     continue
                   sub_addr = None if version.subAddress == 0 else version.subAddress
                   addr = version.address
