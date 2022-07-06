@@ -285,21 +285,23 @@ def match_fw_to_car_exact(fw_versions_dict):
 
 
 def match_fw_to_car(fw_versions, allow_fuzzy=True):
-  exact_match = True
   matches = set()
+  exact_match = True
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
   for brand in versions.keys():
+    # Attempt to fingerprint after whitelisting versions for this brand
     fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
     matches = match_fw_to_car_exact(fw_versions_dict)
 
-    if len(matches):
-      break
-    elif allow_fuzzy:
+    if allow_fuzzy and len(matches) == 0:
       matches = match_fw_to_car_fuzzy(fw_versions_dict)
+
       # Fuzzy match found
       if len(matches) == 1:
         exact_match = False
-        break
+
+    if len(matches):
+      break
 
   return exact_match, matches
 
