@@ -12,7 +12,6 @@ from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car, get_pres
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
-import time
 
 EventName = car.CarEvent.EventName
 
@@ -92,7 +91,7 @@ def fingerprint(logcan, sendcan):
       if cached_params.carName == "mock":
         cached_params = None
 
-    if False and cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
+    if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
       cloudlog.warning("Using cached CarParams")
       vin = cached_params.carVin
       car_fw = list(cached_params.carFw)
@@ -100,9 +99,7 @@ def fingerprint(logcan, sendcan):
       cloudlog.warning("Getting VIN & FW versions")
       _, vin = get_vin(logcan, sendcan, bus)
       ecu_responses = get_present_ecus(logcan, sendcan)
-      t = time.time()
       car_fw = get_fw_versions(logcan, sendcan)
-      print('FW fingerprinting time:', time.time() - t)
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
