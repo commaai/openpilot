@@ -23,7 +23,7 @@ private:
   int segment_num = -1;
   int counter = 0;
 
-  SafeQueue<VisionIpcBufExtra> extras;
+  std::vector<VisionIpcBufExtra> extras;
 
   static void dequeue_handler(V4LEncoder *e);
   std::thread dequeue_handler_thread;
