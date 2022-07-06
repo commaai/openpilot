@@ -295,7 +295,6 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
       break
     elif allow_fuzzy:
       matches = match_fw_to_car_fuzzy(fw_versions_dict)
-
       # Fuzzy match found
       if len(matches) == 1:
         exact_match = False
