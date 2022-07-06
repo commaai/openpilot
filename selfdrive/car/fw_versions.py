@@ -288,6 +288,7 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   matches = set()
   exact_match = True
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+
   # For each brand, attempt to fingerprint using FW returned from its queries
   for brand in versions.keys():
     fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
