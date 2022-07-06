@@ -183,11 +183,12 @@ class Laikad:
 
       if block:
         ret = get_orbit_data(t, *astro_dog_vars)
+        self.last_fetch_orbits_t = t
       elif self.orbit_fetch_future is None:
         self.orbit_fetch_executor = ProcessPoolExecutor(max_workers=1)
         self.orbit_fetch_future = self.orbit_fetch_executor.submit(get_orbit_data, t, *astro_dog_vars)
-      elif self.orbit_fetch_future.done():
         self.last_fetch_orbits_t = t
+      elif self.orbit_fetch_future.done():
         ret = self.orbit_fetch_future.result()
         self.orbit_fetch_executor = self.orbit_fetch_future = None
 
