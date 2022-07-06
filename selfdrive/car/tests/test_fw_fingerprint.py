@@ -31,7 +31,7 @@ class TestFwFingerprint(unittest.TestCase):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
-      _, matches = match_fw_to_car(CP.carFw, extra_brands=[brand])
+      _, matches = match_fw_to_car(CP.carFw)
       self.assertFingerprints(matches, car_model)
 
   def test_no_duplicate_fw_versions(self):
@@ -61,10 +61,9 @@ class TestFwFingerprint(unittest.TestCase):
   def test_fw_request_ecu_whitelist(self):
     passed = True
     brands = set(r.brand for r in REQUESTS)
-    versions = get_interface_attr('FW_VERSIONS')
     for brand in brands:
       whitelisted_ecus = [ecu for r in REQUESTS for ecu in r.whitelist_ecus if r.brand == brand]
-      brand_ecus = set([fw[0] for car_fw in versions[brand].values() for fw in car_fw])
+      brand_ecus = set([fw[0] for car_fw in VERSIONS[brand].values() for fw in car_fw])
 
       # each ecu in brand's fw versions needs to be whitelisted at least once
       ecus_not_whitelisted = set(brand_ecus) - set(whitelisted_ecus)

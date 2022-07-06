@@ -10,13 +10,13 @@ from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.car_helpers import interface_names
-from selfdrive.car.fw_versions import REQUESTS, match_fw_to_car_exact, match_fw_to_car_fuzzy, build_fw_dict
+from selfdrive.car.fw_versions import match_fw_to_car_exact, match_fw_to_car_fuzzy, build_fw_dict
 
 
 NO_API = "NO_API" in os.environ
-SUPPORTED_BRANDS = set(r.brand for r in REQUESTS)
-SUPPORTED_CARS = [brand for brand in SUPPORTED_BRANDS for brand in interface_names[brand]]
 VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
+SUPPORTED_BRANDS = VERSIONS.keys()
+SUPPORTED_CARS = [brand for brand in SUPPORTED_BRANDS for brand in interface_names[brand]]
 
 try:
   from xx.pipeline.c.CarState import migration
@@ -88,8 +88,7 @@ if __name__ == "__main__":
             print("not in supported cars")
             break
 
-          brands = [CP.carName] if len(CP.carName) else SUPPORTED_BRANDS
-          for brand in brands:
+          for brand in SUPPORTED_BRANDS:
             fw_versions_dict = build_fw_dict(car_fw, filter_brand=brand)
             exact_matches = match_fw_to_car_exact(fw_versions_dict)
             fuzzy_matches = match_fw_to_car_fuzzy(fw_versions_dict)

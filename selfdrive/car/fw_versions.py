@@ -284,11 +284,11 @@ def match_fw_to_car_exact(fw_versions_dict):
   return set(candidates.keys()) - set(invalid)
 
 
-def match_fw_to_car(fw_versions, allow_fuzzy=True, extra_brands=None):
+def match_fw_to_car(fw_versions, allow_fuzzy=True):
   exact_match = True
   matches = set()
-  extra_brands = [] if extra_brands is None else extra_brands
-  for brand in set([r.brand for r in REQUESTS] + extra_brands):
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+  for brand in versions.keys():
     fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
     matches = match_fw_to_car_exact(fw_versions_dict)
 
