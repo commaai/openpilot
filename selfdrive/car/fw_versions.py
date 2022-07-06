@@ -194,10 +194,10 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
-def build_fw_dict(fw_versions, brand=None):
+def build_fw_dict(fw_versions, filter_brand=None):
   fw_versions_dict = {}
   for fw in fw_versions:
-    if brand is None or fw.brand == brand:
+    if filter_brand is None or fw.brand == filter_brand:
       addr = fw.address
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
       fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
@@ -288,7 +288,7 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   exact_match = True
   matches = set()
   for brand in set(r.brand for r in REQUESTS):
-    fw_versions_dict = build_fw_dict(fw_versions, brand=brand)
+    fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
     matches = match_fw_to_car_exact(fw_versions_dict)
     if len(matches):
       break

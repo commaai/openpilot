@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
           brands = [CP.carName] if len(CP.carName) else SUPPORTED_BRANDS
           for brand in brands:
-            fw_versions_dict = build_fw_dict(car_fw, brand=brand)
+            fw_versions_dict = build_fw_dict(car_fw, filter_brand=brand)
             exact_matches = match_fw_to_car_exact(fw_versions_dict)
             fuzzy_matches = match_fw_to_car_fuzzy(fw_versions_dict)
             if len(exact_matches) or len(fuzzy_matches):
