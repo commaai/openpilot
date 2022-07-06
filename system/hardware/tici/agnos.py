@@ -195,7 +195,7 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
   except requests.RequestException:
     cloudlog.error(f"casync failed to load {caibx_url}")
 
-  # Third source is the target partition, this allows for resuming
+  # Second source is the target partition, this allows for resuming
   sources += [('target', casync.FileChunkReader(path), casync.build_chunk_dict(target))]
 
   # Finally we add the remote source to download any missing chunks
