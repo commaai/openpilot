@@ -11,23 +11,11 @@ from tools.lib.route import Route
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.car.fw_versions import REQUESTS, match_fw_to_car_exact, match_fw_to_car_fuzzy, build_fw_dict
-from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
-from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
-from selfdrive.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
-from selfdrive.car.volkswagen.values import FW_VERSIONS as VW_FW_VERSIONS
-from selfdrive.car.mazda.values import FW_VERSIONS as MAZDA_FW_VERSIONS
-from selfdrive.car.subaru.values import FW_VERSIONS as SUBARU_FW_VERSIONS
 
 
 NO_API = "NO_API" in os.environ
-SUPPORTED_CARS = set(interface_names['toyota'])
-SUPPORTED_CARS |= set(interface_names['honda'])
-SUPPORTED_CARS |= set(interface_names['hyundai'])
-SUPPORTED_CARS |= set(interface_names['volkswagen'])
-SUPPORTED_CARS |= set(interface_names['mazda'])
-SUPPORTED_CARS |= set(interface_names['subaru'])
-SUPPORTED_CARS |= set(interface_names['nissan'])
 SUPPORTED_BRANDS = set(r.brand for r in REQUESTS)
+SUPPORTED_CARS = [brand for brand in SUPPORTED_BRANDS for brand in interface_names[brand]]
 VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
 try:
