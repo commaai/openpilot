@@ -11,7 +11,11 @@ class CarState(CarStateBase):
     super().__init__(CP)
     self.CP = CP
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    self.shifter_values = can_define.dv["Transmission_Status"]["Gear_State"]
+
+    if CP.carFingerprint in RAM_CARS:
+      self.shifter_values = can_define.dv["Transmission_Status"]["Gear_State"]
+    else:
+      self.shifter_values = can_define.dv["GEAR"]["PRNDL"]
 
   def update(self, cp, cp_cam):
 
@@ -34,7 +38,7 @@ class CarState(CarStateBase):
 
     # car speed
     if self.CP.carFingerprint in RAM_CARS:
-      ret.vEgoRaw = cp.vl["ESP_8"]["VEHICLE_SPEED"] * CV.KPH_TO_MS
+      ret.vEgoRaw = cp.vl["ESP_8"]["Vehicle_Speed"] * CV.KPH_TO_MS
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["Transmission_Status"]["Gear_State"], None))
     else:
       ret.vEgoRaw = (cp.vl["SPEED_1"]["SPEED_LEFT"] + cp.vl["SPEED_1"]["SPEED_RIGHT"]) / 2.
@@ -58,7 +62,7 @@ class CarState(CarStateBase):
     ret.steeringAngleDeg = cp.vl["STEERING"]["STEER_ANGLE"]
     ret.steeringRateDeg = cp.vl["STEERING"]["STEERING_RATE"]
     ret.steeringTorque = cp.vl["EPS_2"]["COLUMN_TORQUE"]
-    ret.steeringTorqueEps = cp.vl["EPS_2"]["EPS_MOTOR_TORQUE"]
+    ret.steeringTorqueEps = cp.vl["EPS_2"]["EPS_TORQUE_MOTOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     self.frame = int(cp.vl["EPS_2"]["COUNTER"])
     steer_state = cp.vl["EPS_2"]["LKAS_STATE"]
@@ -98,7 +102,6 @@ class CarState(CarStateBase):
       ("COUNTER", "DAS_3"),
       ("ACC_Set_Speed", "DAS_4"),
       ("ACC_Activation_Status", "DAS_4"),
-      ("Auto_High_Beam", "DAS_6"),
     ]
     checks = [
       ("DAS_3", 50),
@@ -110,7 +113,6 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     signals = [
       # sig_name, sig_address
-      ("Gear_State", "Transmission_Status"),
       ("DOOR_OPEN_FL", "BCM_1"),
       ("DOOR_OPEN_FR", "BCM_1"),
       ("DOOR_OPEN_RL", "BCM_1"),
@@ -128,12 +130,9 @@ class CarState(CarStateBase):
       ("SEATBELT_DRIVER_UNLATCHED", "ORC_1"),
       ("COUNTER", "EPS_2",),
       ("COLUMN_TORQUE", "EPS_2"),
-      ("EPS_MOTOR_TORQUE", "EPS_2"),
+      ("EPS_TORQUE_MOTOR", "EPS_2"),
       ("LKAS_STATE", "EPS_2"),
       ("COUNTER", "CRUISE_BUTTONS"),
-      ("ACC_AVAILABLE", "DAS_3"),
-      ("ACC_ACTIVE", "DAS_3"),
-      ("ACC_FAULTED", "DAS_3"),
     ]
 
     checks = [
@@ -142,10 +141,8 @@ class CarState(CarStateBase):
       ("EPS_2", 100),
       ("ESP_6", 50),
       ("STEERING", 100),
-      ("Transmission_Status", 50),
       ("ECM_5", 50),
       ("CRUISE_BUTTONS", 50),
-      ("DAS_4", 15),
       ("STEERING_LEVERS", 10),
       ("ORC_1", 2),
       ("BCM_1", 1),
@@ -160,17 +157,21 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in RAM_CARS:
       signals += [
-        ("VEHICLE_SPEED", "ESP_8"),
+        ("Gear_State", "Transmission_Status"),
+        ("Vehicle_Speed", "ESP_8"),
       ]
       checks += [
         ("ESP_8", 50),
+        ("Transmission_Status", 50),
       ]
     else:
       signals += [
+        ("PRNDL", "GEAR"),
         ("SPEED_LEFT", "SPEED_1"),
         ("SPEED_RIGHT", "SPEED_1"),
       ]
       checks += [
+        ("GEAR", 50),
         ("SPEED_1", 100),
       ]
       signals += CarState.get_cruise_signals()[0]
@@ -189,6 +190,9 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint in RAM_CARS:
+      signals += [
+        ("Auto_High_Beam", "DAS_6"),
+      ]
       signals += CarState.get_cruise_signals()[0]
       checks += CarState.get_cruise_signals()[1]
 

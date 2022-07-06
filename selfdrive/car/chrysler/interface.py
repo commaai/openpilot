@@ -12,7 +12,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "chrysler"
 
-    param = Panda.FLAG_CHRYSLER_RAM if candidate in RAM_CARS else None
+    param = Panda.FLAG_CHRYSLER_RAM_DT if candidate in RAM_CARS else None
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler, param)]
 
     ret.steerActuatorDelay = 0.1
