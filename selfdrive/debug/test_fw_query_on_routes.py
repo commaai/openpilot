@@ -88,7 +88,10 @@ if __name__ == "__main__":
             print("not in supported cars")
             break
 
-          for brand in SUPPORTED_BRANDS:
+          # Older routes only have carFw from their brand
+          new_route = all([len(fw.brand) for fw in car_fw])
+          brands = SUPPORTED_BRANDS if new_route else [None]
+          for brand in brands:
             fw_versions_dict = build_fw_dict(car_fw, filter_brand=brand)
             exact_matches = match_fw_to_car_exact(fw_versions_dict)
             fuzzy_matches = match_fw_to_car_fuzzy(fw_versions_dict)
