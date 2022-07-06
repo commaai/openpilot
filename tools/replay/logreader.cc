@@ -51,16 +51,21 @@ bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool loca
   std::string data = f.read(url, abort);
   if (data.empty()) return false;
 
-  return load((std::byte*)data.data(), data.size(), abort);
+  bool is_bz2 = url.find(".bz2") != std::string::npos;
+  return load((std::byte*)data.data(), data.size(), abort, is_bz2);
 }
 
-bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abort) {
-  raw_ = decompressBZ2(data, size, abort);
-  if (raw_.empty()) {
-    if (!(abort && *abort)) {
-      rWarning("failed to decompress log");
+bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abort, bool is_bz2) {
+  if (is_bz2) {
+    raw_ = decompressBZ2(data, size, abort);
+    if (raw_.empty()) {
+      if (!(abort && *abort)) {
+        rWarning("failed to decompress log");
+      }
+      return false;
     }
-    return false;
+  } else {
+    raw_.assign((const char *)data, size);
   }
 
   try {
