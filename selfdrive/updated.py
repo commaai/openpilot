@@ -50,8 +50,9 @@ OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
-DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
-DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
+DAYS_NO_CONNECTIVITY_MAX = 365     # do not allow to engage after this many days
+DAYS_NO_CONNECTIVITY_PROMPT = 365  # send an offroad prompt after this many days
+# TODO: JJS: There are a couple params related to this, but it doesn't seem to honor them in this file
 
 class WaitTimeHelper:
   def __init__(self, proc):
