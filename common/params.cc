@@ -128,7 +128,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"IsUpdateAvailable", CLEAR_ON_MANAGER_START},
     {"JoystickDebugMode", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
-    {"LaikadEphemeris", PERSISTENT},
+    {"LaikadEphemeris", PERSISTENT | DONT_LOG},
     {"LastAthenaPingTime", CLEAR_ON_MANAGER_START},
     {"LastGPSPosition", PERSISTENT},
     {"LastManagerExitReason", CLEAR_ON_MANAGER_START},

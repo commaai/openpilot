@@ -114,7 +114,6 @@ class Footnote(Enum):
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Driver Assistance"
-  good_torque: bool = True
   harness: Enum = Harness.vw
 
 
@@ -438,6 +437,7 @@ FW_VERSIONS = {
   },
   CAR.PASSAT_MK8: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8703N906026E \xf1\x892114',
       b'\xf1\x8704E906023AH\xf1\x893379',
       b'\xf1\x8704L906026ET\xf1\x891990',
       b'\xf1\x8704L906026GA\xf1\x892013',
@@ -450,17 +450,20 @@ FW_VERSIONS = {
       b'\xf1\x870D9300014L \xf1\x895002',
       b'\xf1\x870D9300041A \xf1\x894801',
       b'\xf1\x870DD300045T \xf1\x891601',
+      b'\xf1\x870DL300011H \xf1\x895201',
       b'\xf1\x870GC300042H \xf1\x891404',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655AE\xf1\x890195\xf1\x82\r56140056130012416612124111',
       b'\xf1\x873Q0959655AN\xf1\x890306\xf1\x82\r58160058140013036914110311',
+      b'\xf1\x873Q0959655BA\xf1\x890195\xf1\x82\r56140056130012516612125111',
       b'\xf1\x873Q0959655BB\xf1\x890195\xf1\x82\r56140056130012026612120211',
       b'\xf1\x873Q0959655BK\xf1\x890703\xf1\x82\0165915005914001344701311442900',
       b'\xf1\x873Q0959655CN\xf1\x890720\xf1\x82\x0e5915005914001305701311052900',
       b'\xf1\x875Q0959655S \xf1\x890870\xf1\x82\02315120011111200631145171716121691132111',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x873Q0909144J \xf1\x895063\xf1\x82\x0566B00611A1',
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522B0060803',
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522B0080803',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521B00606A1',

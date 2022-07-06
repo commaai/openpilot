@@ -1,4 +1,4 @@
-#include "selfdrive/ui/replay/route.h"
+#include "tools/replay/route.h"
 
 #include <QDir>
 #include <QEventLoop>
@@ -11,8 +11,8 @@
 
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
-#include "selfdrive/ui/replay/replay.h"
-#include "selfdrive/ui/replay/util.h"
+#include "tools/replay/replay.h"
+#include "tools/replay/util.h"
 
 Route::Route(const QString &route, const QString &data_dir) : data_dir_(data_dir) {
   route_ = parseRoute(route);
