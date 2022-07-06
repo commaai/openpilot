@@ -65,8 +65,8 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["EPS_2"]["EPS_TORQUE_MOTOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     self.frame = int(cp.vl["EPS_2"]["COUNTER"])
-    steer_state = cp.vl["EPS_2"]["LKAS_STATE"]
-    ret.steerFaultPermanent = steer_state == 4 or (steer_state == 0 and ret.vEgo > self.CP.minSteerSpeed)
+    #steer_state = cp.vl["EPS_2"]["LKAS_STATE"]
+    #ret.steerFaultPermanent = steer_state == 4 or (steer_state == 0 and ret.vEgo > self.CP.minSteerSpeed)
 
     # cruise state
     cp_cruise = cp_cam if self.CP.carFingerprint in RAM_CARS else cp
@@ -79,14 +79,14 @@ class CarState(CarStateBase):
     ret.accFaulted = cp_cruise.vl["DAS_3"]["ACC_FAULTED"] != 0
 
     if self.CP.carFingerprint in RAM_CARS:
-      self.autoHighBeamBit = cp_cam.vl["DAS_6"]['Auto_High_Beam']  # Auto High Beam isn't Located in this message on chrysler or jeep currently located in 729 message
+      self.autoHighBeamBit = cp_cam.vl["DAS_6"]['AUTO_HIGH_BEAM_ON']  # Auto High Beam isn't Located in this message on chrysler or jeep currently located in 729 message
 
     # blindspot sensors
     if self.CP.enableBsm:
       ret.leftBlindspot = cp.vl["BSM_1"]["LEFT_STATUS"] == 1
       ret.rightBlindspot = cp.vl["BSM_1"]["RIGHT_STATUS"] == 1
 
-    self.lkas_counter = cp_cam.vl["DAS_3"]["COUNTER"]
+    self.lkas_counter = cp_cruise.vl["DAS_3"]["COUNTER"]
     self.lkas_car_model = cp_cam.vl["DAS_6"]["CAR_MODEL"]
     self.button_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
 
@@ -100,8 +100,8 @@ class CarState(CarStateBase):
       ("ACC_FAULTED", "DAS_3"),
       ("ACC_STANDSTILL", "DAS_3"),
       ("COUNTER", "DAS_3"),
-      ("ACC_Set_Speed", "DAS_4"),
-      ("ACC_Activation_Status", "DAS_4"),
+      ("ACC_SET_SPEED_KPH", "DAS_4"),
+      ("ACC_STATE", "DAS_4"),
     ]
     checks = [
       ("DAS_3", 50),
@@ -129,8 +129,6 @@ class CarState(CarStateBase):
       ("HIGH_BEAM_PRESSED", "STEERING_LEVERS"),
       ("SEATBELT_DRIVER_UNLATCHED", "ORC_1"),
       ("COUNTER", "EPS_2",),
-      ("ACC_SET_SPEED_KPH", "DAS_4"),
-      ("ACC_STATE", "DAS_4"),
       ("COLUMN_TORQUE", "EPS_2"),
       ("EPS_TORQUE_MOTOR", "EPS_2"),
       ("LKAS_STATE", "EPS_2"),
@@ -193,7 +191,7 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in RAM_CARS:
       signals += [
-        ("Auto_High_Beam", "DAS_6"),
+        ("AUTO_HIGH_BEAM_ON", "DAS_6"),
       ]
       signals += CarState.get_cruise_signals()[0]
       checks += CarState.get_cruise_signals()[1]
