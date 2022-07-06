@@ -24,7 +24,7 @@ public:
   virtual void encoder_close() = 0;
 
   void publisher_init();
-  static void publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
+  static void publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, const VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
 
   void writer_open(const char* path) {
     if (this->write) write_handler_thread = std::thread(VideoEncoder::write_handler, this, path);

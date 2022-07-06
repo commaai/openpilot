@@ -11,7 +11,7 @@ void VideoEncoder::publisher_init() {
   pm.reset(new PubMaster({service_name}));
 }
 
-void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra,
+void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, const VisionIpcBufExtra &extra,
                                      unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat) {
   // broadcast packet
   MessageBuilder msg;
