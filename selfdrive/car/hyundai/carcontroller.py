@@ -1,11 +1,11 @@
 from cereal import car
-from common.realtime import DT_CTRL
-from common.numpy_fast import clip, interp
 from common.conversions import Conversions as CV
+from common.numpy_fast import clip, interp
+from common.realtime import DT_CTRL
+from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai import hda2can, hyundaican
 from selfdrive.car.hyundai.values import Buttons, CarControllerParams, HDA2_CAR, CAR
-from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -114,11 +114,10 @@ class CarController:
 
         accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
-        lead_visible = False
         stopping = actuators.longControlState == LongCtrlState.stopping
         set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
-        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2), lead_visible,
-                                             set_speed_in_units, stopping, CS.out.gasPressed))
+        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
+                                                        hud_control.leadVisible, set_speed_in_units, stopping, CS.out.gasPressed))
         self.accel = accel
 
       # 20 Hz LFA MFA message

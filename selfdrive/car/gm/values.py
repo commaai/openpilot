@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from collections import defaultdict
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Union
 
@@ -9,9 +10,9 @@ Ecu = car.CarParams.Ecu
 
 
 class CarControllerParams:
-  STEER_MAX = 300  # Safety limit, not LKA max. Trucks use 600.
-  STEER_STEP = 2  # control frames per command
-  STEER_DELTA_UP = 7
+  STEER_MAX = 300  # GM limit is 3Nm. Used by carcontroller to generate LKA output
+  STEER_STEP = 2  # Control frames per command (50hz)
+  STEER_DELTA_UP = 7  # Delta rates require review due to observed EPS weakness
   STEER_DELTA_DOWN = 17
   MIN_STEER_SPEED = 3.  # m/s
   STEER_DRIVER_ALLOWANCE = 50
@@ -24,19 +25,20 @@ class CarControllerParams:
   CAMERA_KEEPALIVE_STEP = 100
 
   # Volt gasbrake lookups
-  MAX_GAS = 3072 # Safety limit, not ACC max. Stock ACC >4096 from standstill.
-  ZERO_GAS = 2048 # Coasting
-  MAX_BRAKE = 350 # ~ -3.5 m/s^2 with regen
+  # TODO: These values should be confirmed on non-Volt vehicles
+  MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
+  ZERO_GAS = 2048  # Coasting
+  MAX_BRAKE = 350  # ~ -3.5 m/s^2 with regen
+  MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
 
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
   # perform the closed loop control, and might need some
   # to apply some more braking if we're on a downhill slope.
   # Our controller should still keep the 2 second average above
   # -3.5 m/s^2 as per planner limits
-  ACCEL_MAX = 2. # m/s^2
-  ACCEL_MIN = -4. # m/s^2
+  ACCEL_MAX = 2.  # m/s^2
+  ACCEL_MIN = -4.  # m/s^2
 
-  MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
   GAS_LOOKUP_BP = [-1., 0., ACCEL_MAX]
   GAS_LOOKUP_V = [MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
   BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.]
@@ -67,16 +69,17 @@ class Footnote(Enum):
 class GMCarInfo(CarInfo):
   package: str = "Adaptive Cruise"
   harness: Enum = Harness.none
+  footnotes: List[Enum] = field(default_factory=lambda: [Footnote.OBD_II])
 
 
 CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.HOLDEN_ASTRA: GMCarInfo("Holden Astra 2017", harness=Harness.custom),
-  CAR.VOLT: GMCarInfo("Chevrolet Volt 2017-18", footnotes=[Footnote.OBD_II], min_enable_speed=0, harness=Harness.custom),
+  CAR.VOLT: GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0, harness=Harness.custom),
   CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018"),
   CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017", harness=Harness.custom),
-  CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo", footnotes=[Footnote.OBD_II]),
+  CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
-  CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS", footnotes=[Footnote.OBD_II]),
+  CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS"),
 }
 
 
@@ -100,10 +103,12 @@ class CanBus:
   CHASSIS = 2
   SW_GMLAN = 3
   LOOPBACK = 128
+  DROPPED = 192
 
 FINGERPRINTS = {
+  CAR.HOLDEN_ASTRA: [
   # Astra BK MY17, ASCM unplugged
-  CAR.HOLDEN_ASTRA: [{
+  {
     190: 8, 193: 8, 197: 8, 199: 4, 201: 8, 209: 7, 211: 8, 241: 6, 249: 8, 288: 5, 298: 8, 304: 1, 309: 8, 311: 8, 313: 8, 320: 3, 328: 1, 352: 5, 381: 6, 384: 4, 386: 8, 388: 8, 393: 8, 398: 8, 401: 8, 413: 8, 417: 8, 419: 8, 422: 1, 426: 7, 431: 8, 442: 8, 451: 8, 452: 8, 453: 8, 455: 7, 456: 8, 458: 5, 479: 8, 481: 7, 485: 8, 489: 8, 497: 8, 499: 3, 500: 8, 501: 8, 508: 8, 528: 5, 532: 6, 554: 3, 560: 8, 562: 8, 563: 5, 564: 5, 565: 5, 567: 5, 647: 5, 707: 8, 715: 8, 723: 8, 753: 5, 761: 7, 806: 1, 810: 8, 840: 5, 842: 5, 844: 8, 866: 4, 961: 8, 969: 8, 977: 8, 979: 8, 985: 5, 1001: 8, 1009: 8, 1011: 6, 1017: 8, 1019: 3, 1020: 8, 1105: 6, 1217: 8, 1221: 5, 1225: 8, 1233: 8, 1249: 8, 1257: 6, 1259: 8, 1261: 7, 1263: 4, 1265: 8, 1267: 8, 1280: 4, 1300: 8, 1328: 4, 1417: 8, 1906: 7, 1907: 7, 1908: 7, 1912: 7, 1919: 7,
   }],
   CAR.VOLT: [
@@ -145,12 +150,4 @@ FINGERPRINTS = {
   }],
 }
 
-DBC = {
-  CAR.HOLDEN_ASTRA: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.VOLT: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.MALIBU: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.ACADIA: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.CADILLAC_ATS: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.BUICK_REGAL: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.ESCALADE_ESV: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-}
+DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))

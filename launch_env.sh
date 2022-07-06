@@ -7,7 +7,7 @@ export OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
 
 if [ -z "$AGNOS_VERSION" ]; then
-  export AGNOS_VERSION="4"
+  export AGNOS_VERSION="5.1"
 fi
 
 if [ -z "$PASSIVE" ]; then

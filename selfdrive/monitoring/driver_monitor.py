@@ -3,9 +3,9 @@ from math import atan2
 from cereal import car
 from common.numpy_fast import interp
 from common.realtime import DT_DMON
-from selfdrive.hardware import TICI
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
+from common.transformations.camera import tici_d_frame_size
 
 EventName = car.CarEvent.EventName
 
@@ -16,7 +16,7 @@ EventName = car.CarEvent.EventName
 # ******************************************************************************************
 
 class DRIVER_MONITOR_SETTINGS():
-  def __init__(self, TICI=TICI, DT_DMON=DT_DMON):
+  def __init__(self):
     self._DT_DMON = DT_DMON
     # ref (page15-16): https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:42018X1947&rid=2
     self._AWARENESS_TIME = 30. # passive wheeltouch total timeout
@@ -26,39 +26,39 @@ class DRIVER_MONITOR_SETTINGS():
     self._DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
     self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
-    self._FACE_THRESHOLD = 0.5
-    self._PARTIAL_FACE_THRESHOLD = 0.8 if TICI else 0.45
-    self._EYE_THRESHOLD = 0.65 if TICI else 0.6
-    self._SG_THRESHOLD = 0.925 if TICI else 0.91
-    self._BLINK_THRESHOLD = 0.8 if TICI else 0.55
-    self._BLINK_THRESHOLD_SLACK = 0.9 if TICI else 0.7
-    self._BLINK_THRESHOLD_STRICT = self._BLINK_THRESHOLD
+    self._FACE_THRESHOLD = 0.7
+    self._EYE_THRESHOLD = 0.65
+    self._SG_THRESHOLD = 0.9
+    self._BLINK_THRESHOLD = 0.87
 
-    self._EE_THRESH11 = 0.75 if TICI else 0.4
-    self._EE_THRESH12 = 3.25 if TICI else 2.45
+    self._EE_THRESH11 = 0.75
+    self._EE_THRESH12 = 3.25
     self._EE_THRESH21 = 0.01
     self._EE_THRESH22 = 0.35
 
-    self._POSE_PITCH_THRESHOLD = 0.3237
-    self._POSE_PITCH_THRESHOLD_SLACK = 0.3657
+    self._POSE_PITCH_THRESHOLD = 0.3133
+    self._POSE_PITCH_THRESHOLD_SLACK = 0.3237
     self._POSE_PITCH_THRESHOLD_STRICT = self._POSE_PITCH_THRESHOLD
-    self._POSE_YAW_THRESHOLD = 0.3109
-    self._POSE_YAW_THRESHOLD_SLACK = 0.4294
+    self._POSE_YAW_THRESHOLD = 0.4020
+    self._POSE_YAW_THRESHOLD_SLACK = 0.5042
     self._POSE_YAW_THRESHOLD_STRICT = self._POSE_YAW_THRESHOLD
-    self._PITCH_NATURAL_OFFSET = 0.057 # initial value before offset is learned
-    self._YAW_NATURAL_OFFSET = 0.11 # initial value before offset is learned
+    self._PITCH_NATURAL_OFFSET = 0.029 # initial value before offset is learned
+    self._YAW_NATURAL_OFFSET = 0.097 # initial value before offset is learned
     self._PITCH_MAX_OFFSET = 0.124
     self._PITCH_MIN_OFFSET = -0.0881
     self._YAW_MAX_OFFSET = 0.289
     self._YAW_MIN_OFFSET = -0.0246
 
-    self._POSESTD_THRESHOLD = 0.315
+    self._POSESTD_THRESHOLD = 0.3
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
     self._POSE_CALIB_MIN_SPEED = 13  # 30 mph
     self._POSE_OFFSET_MIN_COUNT = int(60 / self._DT_DMON)  # valid data counts before calibration completes, 1min cumulative
     self._POSE_OFFSET_MAX_COUNT = int(360 / self._DT_DMON)  # stop deweighting new data after 6 min, aka "short term memory"
+
+    self._WHEELPOS_THRESHOLD = 0.5
+    self._WHEELPOS_FILTER_MIN_COUNT = int(5 / self._DT_DMON)
 
     self._RECOVERY_FACTOR_MAX = 5.  # relative to minus step change
     self._RECOVERY_FACTOR_MIN = 1.25  # relative to minus step change
@@ -67,9 +67,9 @@ class DRIVER_MONITOR_SETTINGS():
     self._MAX_TERMINAL_DURATION = int(30 / self._DT_DMON)  # not allowed to engage after 30s of terminal alerts
 
 
-# model output refers to center of cropped image, so need to apply the x displacement offset
-RESIZED_FOCAL = 320.0
-H, W, FULL_W = 320, 160, 426
+# model output refers to center of undistorted+leveled image
+EFL = 598.0 # focal length in K
+W, H = tici_d_frame_size # corrected image has same size as raw
 
 class DistractedType:
   NOT_DISTRACTED = 0
@@ -77,22 +77,22 @@ class DistractedType:
   DISTRACTED_BLINK = 2
   DISTRACTED_E2E = 4
 
-def face_orientation_from_net(angles_desc, pos_desc, rpy_calib, is_rhd):
+def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   # the output of these angles are in device frame
   # so from driver's perspective, pitch is up and yaw is right
 
   pitch_net, yaw_net, roll_net = angles_desc
 
-  face_pixel_position = ((pos_desc[0] + .5)*W - W + FULL_W, (pos_desc[1]+.5)*H)
-  yaw_focal_angle = atan2(face_pixel_position[0] - FULL_W//2, RESIZED_FOCAL)
-  pitch_focal_angle = atan2(face_pixel_position[1] - H//2, RESIZED_FOCAL)
+  face_pixel_position = ((pos_desc[0]+0.5)*W, (pos_desc[1]+0.5)*H)
+  yaw_focal_angle = atan2(face_pixel_position[0] - W//2, EFL)
+  pitch_focal_angle = atan2(face_pixel_position[1] - H//2, EFL)
 
   pitch = pitch_net + pitch_focal_angle
   yaw = -yaw_net + yaw_focal_angle
 
   # no calib for roll
   pitch -= rpy_calib[1]
-  yaw -= rpy_calib[2] * (1 - 2 * int(is_rhd))  # lhd -> -=, rhd -> +=
+  yaw -= rpy_calib[2]
   return roll_net, pitch, yaw
 
 class DriverPose():
@@ -113,7 +113,6 @@ class DriverBlink():
   def __init__(self):
     self.left_blink = 0.
     self.right_blink = 0.
-    self.cfactor = 1.
 
 class DriverStatus():
   def __init__(self, rhd=False, settings=DRIVER_MONITOR_SETTINGS()):
@@ -121,7 +120,7 @@ class DriverStatus():
     self.settings = settings
 
     # init driver status
-    self.is_rhd_region = rhd
+    self.wheelpos_learner = RunningStatFilter()
     self.pose = DriverPose(self.settings._POSE_OFFSET_MAX_COUNT)
     self.pose_calibrated = False
     self.blink = DriverBlink()
@@ -138,8 +137,9 @@ class DriverStatus():
     self.distracted_types = []
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
+    self.wheel_on_right = False
+    self.rhd_toggled = rhd
     self.face_detected = False
-    self.face_partial = False
     self.terminal_alert_cnt = 0
     self.terminal_time = 0
     self.step_change = 0.
@@ -198,7 +198,7 @@ class DriverStatus():
        yaw_error > self.settings._POSE_YAW_THRESHOLD*self.pose.cfactor_yaw:
       distracted_types.append(DistractedType.DISTRACTED_POSE)
 
-    if (self.blink.left_blink + self.blink.right_blink)*0.5 > self.settings._BLINK_THRESHOLD*self.blink.cfactor:
+    if (self.blink.left_blink + self.blink.right_blink)*0.5 > self.settings._BLINK_THRESHOLD:
       distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
     if self.ee1_calibrated:
@@ -215,13 +215,7 @@ class DriverStatus():
     return distracted_types
 
   def set_policy(self, model_data, car_speed):
-    ep = min(model_data.meta.engagedProb, 0.8) / 0.8 # engaged prob
     bp = model_data.meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
-    # TODO: retune adaptive blink
-    self.blink.cfactor = interp(ep, [0, 0.5, 1],
-                                           [self.settings._BLINK_THRESHOLD_STRICT,
-                                            self.settings._BLINK_THRESHOLD,
-                                            self.settings._BLINK_THRESHOLD_SLACK]) / self.settings._BLINK_THRESHOLD
     k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
     bp_normal = max(min(bp / k1, 0.5),0)
     self.pose.cfactor_pitch = interp(bp_normal, [0, 0.5],
@@ -232,28 +226,36 @@ class DriverStatus():
                                             self.settings._POSE_YAW_THRESHOLD_STRICT]) / self.settings._POSE_YAW_THRESHOLD
 
   def update_states(self, driver_state, cal_rpy, car_speed, op_engaged):
-    if not all(len(x) > 0 for x in (driver_state.faceOrientation, driver_state.facePosition,
-                                    driver_state.faceOrientationStd, driver_state.facePositionStd,
-                                    driver_state.readyProb, driver_state.notReadyProb)):
+    rhd_pred = driver_state.wheelOnRightProb
+    if car_speed > 0.01:
+      self.wheelpos_learner.push_and_update(rhd_pred)
+    if self.wheelpos_learner.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT:
+      self.wheel_on_right = self.wheelpos_learner.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
+    else:
+      self.wheel_on_right = rhd_pred > self.settings._WHEELPOS_THRESHOLD
+    driver_data = driver_state.rightDriverData if self.rhd_toggled else driver_state.leftDriverData
+    if not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,
+                                    driver_data.faceOrientationStd, driver_data.facePositionStd,
+                                    driver_data.readyProb, driver_data.notReadyProb)):
       return
 
-    self.face_partial = driver_state.partialFace > self.settings._PARTIAL_FACE_THRESHOLD
-    self.face_detected = driver_state.faceProb > self.settings._FACE_THRESHOLD or self.face_partial
-    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_state.faceOrientation, driver_state.facePosition, cal_rpy, self.is_rhd_region)
-    self.pose.pitch_std = driver_state.faceOrientationStd[0]
-    self.pose.yaw_std = driver_state.faceOrientationStd[1]
-    # self.pose.roll_std = driver_state.faceOrientationStd[2]
+    self.face_detected = driver_data.faceProb > self.settings._FACE_THRESHOLD
+    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
+    if self.wheel_on_right:
+      self.pose.yaw *= -1
+    self.pose.pitch_std = driver_data.faceOrientationStd[0]
+    self.pose.yaw_std = driver_data.faceOrientationStd[1]
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
-    self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD and not self.face_partial
-    self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.eev1 = driver_state.notReadyProb[1]
-    self.eev2 = driver_state.readyProb[0]
+    self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD
+    self.blink.left_blink = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.blink.right_blink = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.eev1 = driver_data.notReadyProb[1]
+    self.eev2 = driver_data.readyProb[0]
 
     self.distracted_types = self._get_distracted_types()
     self.driver_distracted = (DistractedType.DISTRACTED_POSE in self.distracted_types or
                                             DistractedType.DISTRACTED_BLINK in self.distracted_types) and \
-                                          driver_state.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
+                                          driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter

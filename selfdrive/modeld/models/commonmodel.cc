@@ -22,9 +22,9 @@ ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
   loadyuv_init(&loadyuv, context, device_id, MODEL_WIDTH, MODEL_HEIGHT);
 }
 
-float* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, const mat3 &projection, cl_mem *output) {
+float* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3 &projection, cl_mem *output) {
   transform_queue(&this->transform, q,
-                  yuv_cl, frame_width, frame_height,
+                  yuv_cl, frame_width, frame_height, frame_stride, frame_uv_offset,
                   y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, projection);
 
   if (output == NULL) {

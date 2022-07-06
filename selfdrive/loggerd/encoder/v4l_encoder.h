@@ -13,8 +13,7 @@ public:
              VideoEncoder(filename, type, in_width, in_height, fps, bitrate, codec, out_width, out_height, write) { encoder_init(); }
   ~V4LEncoder();
   void encoder_init();
-  int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                   int in_width, int in_height, VisionIpcBufExtra *extra);
+  int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
   void encoder_open(const char* path);
   void encoder_close();
 private:

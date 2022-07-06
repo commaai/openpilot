@@ -3,14 +3,14 @@
 #include <cmath>
 
 #include <QDebug>
-#include <QPainterPath>
 #include <QFileInfo>
+#include <QPainterPath>
 
 #include "common/swaglog.h"
-#include "selfdrive/ui/ui.h"
-#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/request_repeater.h"
+#include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/ui.h"
 
 
 const int PAN_TIMEOUT = 100;
@@ -24,16 +24,8 @@ const float MAP_SCALE = 2;
 
 const QString ICON_SUFFIX = ".png";
 
-MapWindow::MapWindow(const QMapboxGLSettings &settings) :
-  m_settings(settings), velocity_filter(0, 10, 0.05) {
-  sm = new SubMaster({"liveLocationKalman", "navInstruction", "navRoute"});
-
-  // Connect now, so any navRoutes sent while the map is initializing are not dropped
-  sm->update(0);
-
-  timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-  timer->start(50);
+MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
   // Instructions
   map_instructions = new MapInstructions(this);
@@ -105,16 +97,15 @@ void MapWindow::initLayers() {
   }
 }
 
-void MapWindow::timerUpdate() {
+void MapWindow::updateState(const UIState &s) {
   if (!uiState()->scene.started) {
     return;
   }
-
+  const SubMaster &sm = *(s.sm);
   update();
 
-  sm->update(0);
-  if (sm->updated("liveLocationKalman")) {
-    auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
+  if (sm.updated("liveLocationKalman")) {
+    auto location = sm["liveLocationKalman"].getLiveLocationKalman();
     auto pos = location.getPositionGeodetic();
     auto orientation = location.getCalibratedOrientationNED();
     auto velocity = location.getVelocityCalibrated();
@@ -129,7 +120,7 @@ void MapWindow::timerUpdate() {
     }
   }
 
-  if (sm->updated("navRoute") && (*sm)["navRoute"].getNavRoute().getCoordinates().size()) {
+  if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
     qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
 
     // Only open the map on setting destination the first time
@@ -178,9 +169,9 @@ void MapWindow::timerUpdate() {
     zoom_counter--;
   }
 
-  if (sm->updated("navInstruction")) {
-    if (sm->valid("navInstruction")) {
-      auto i = (*sm)["navInstruction"].getNavInstruction();
+  if (sm.updated("navInstruction")) {
+    if (sm.valid("navInstruction")) {
+      auto i = sm["navInstruction"].getNavInstruction();
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
       if (localizer_valid) {
@@ -194,9 +185,9 @@ void MapWindow::timerUpdate() {
     }
   }
 
-  if (sm->rcv_frame("navRoute") != route_rcv_frame) {
+  if (sm.rcv_frame("navRoute") != route_rcv_frame) {
     qWarning() << "Updating navLayer with new route";
-    auto route = (*sm)["navRoute"].getNavRoute();
+    auto route = sm["navRoute"].getNavRoute();
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
     QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
     QVariantMap navSource;
@@ -205,7 +196,7 @@ void MapWindow::timerUpdate() {
     m_map->updateSource("navSource", navSource);
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
-    route_rcv_frame = sm->rcv_frame("navRoute");
+    route_rcv_frame = sm.rcv_frame("navRoute");
   }
 }
 

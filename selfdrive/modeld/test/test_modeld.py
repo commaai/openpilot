@@ -5,7 +5,7 @@ import numpy as np
 import random
 
 import cereal.messaging as messaging
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.transformations.camera import tici_f_frame_size
 from common.realtime import DT_MDL
 from selfdrive.manager.process_config import managed_processes

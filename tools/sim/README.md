@@ -46,8 +46,8 @@ All inputs:
 
 | key  |   functionality   |
 |:----:|:-----------------:|
-|  1   |  Cruise up 5 mph  |
-|  2   | Cruise down 5 mph |
+|  1   |  Cruise up 1 mph  |
+|  2   | Cruise down 1 mph |
 |  3   |   Cruise cancel   |
 |  q   |     Exit all      |
 | wasd | Control manually  |
