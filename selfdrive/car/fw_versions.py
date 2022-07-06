@@ -367,7 +367,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
 
   addrs.insert(0, parallel_addrs)
 
-  fw_versions = []
+  fw_versions = defaultdict(dict)
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
       for r in REQUESTS:
@@ -378,26 +378,27 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             t = 2 * timeout if i == 0 else timeout
-            fw_versions.extend([(r.brand, addr, version, r.request, r.rx_offset) for addr, version in query.get_data(t).items()])
+            fw_versions[r.brand].update({addr: (version, r.request, r.rx_offset) for addr, version in query.get_data(t).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
   # Build capnp list to put into CarParams
   car_fw = []
-  for brand, addr, version, request, rx_offset in fw_versions:
-    f = car.CarParams.CarFw.new_message()
+  for brand, responses in fw_versions.items():
+    for addr, (version, request, rx_offset) in responses.items():
+      f = car.CarParams.CarFw.new_message()
 
-    f.ecu = ecu_types[addr]
-    f.fwVersion = version
-    f.address = addr[0]
-    f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], rx_offset)
-    f.request = request
-    f.brand = brand
+      f.ecu = ecu_types[addr]
+      f.fwVersion = version
+      f.address = addr[0]
+      f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], rx_offset)
+      f.request = request
+      f.brand = brand
 
-    if addr[1] is not None:
-      f.subAddress = addr[1]
+      if addr[1] is not None:
+        f.subAddress = addr[1]
 
-    car_fw.append(f)
+      car_fw.append(f)
 
   return car_fw
 
