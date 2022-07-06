@@ -112,9 +112,12 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 }
 
 static void update_sockets(UIState *s) {
-  // ensure UI stays responsive when modelV2 is not alive
-  int timeout = s->sm->alive("modelV2") ? 1000 / UI_FREQ : 0;
-  s->sm->update(timeout);
+//  // ensure UI stays responsive when modelV2 is not alive
+//  int timeout = s->sm->alive("modelV2") ? 1000 / UI_FREQ : 0;
+  double t = millis_since_boot();
+  s->sm->update(0);
+  t = millis_since_boot() - t;
+  qDebug() << "sm->update(0) took" << t << "ms";
 }
 
 static void update_state(UIState *s) {
@@ -226,11 +229,13 @@ void UIState::updateStatus() {
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
-  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>, const std::initializer_list<const char *>>({
+//  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>, const std::initializer_list<const char *>>({
+  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
     "wideRoadCameraState", "managerState", "navInstruction", "navRoute",
-  }, {"modelV2"});
+  });
+//  }, {"modelV2"});
 
   Params params;
   wide_camera = params.getBool("WideCameraOnly");
