@@ -239,9 +239,9 @@ void CameraViewWidget::paintGL() {
   int frame_idx = frames.size() - 1;
 
   // Always draw latest frame until sync logic is more stable
-  // for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
-  //   if (frames[frame_idx].first == draw_frame_id) break;
-  // }
+   for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
+     if (frames[frame_idx].first == draw_frame_id) break;
+   }
 
   // Log duplicate/dropped frames
   if (frames[frame_idx].first == prev_frame_id) {
