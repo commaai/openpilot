@@ -5,7 +5,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits, create_gas_interceptor_command2
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import DBC, NO_ASCM, CanBus, CarControllerParams, EV_CAR
+from selfdrive.car.gm.values import DBC, NO_ASCM, CanBus, CarControllerParams
 import math
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -26,7 +26,9 @@ def actuator_hystereses(final_pedal, pedal_steady):
   final_pedal = pedal_steady
 
   return final_pedal, pedal_steady
+
 NetworkLocation = car.CarParams.NetworkLocation
+TransmissionType = car.CarParams.TransmissionType
 
 
 class CarController:
@@ -145,7 +147,7 @@ class CarController:
         
         if CS.CP.enableGasInterceptor:
           # #TODO: Add alert when not in L mode re: limited braking
-          singlePedalMode = CS.out.gearShifter == GearShifter.low and CS.CP.carFingerprint in EV_CAR
+          singlePedalMode = CS.out.gearShifter == GearShifter.low and self.CP.transmissionType == TransmissionType.automatic
           # TODO: JJS Detect saturated battery?
           if singlePedalMode:
             # In L Mode, Pedal applies regen at a fixed coast-point (TODO: max regen in L mode may be different per car)
