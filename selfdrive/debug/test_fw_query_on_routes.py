@@ -8,8 +8,9 @@ import traceback
 from tqdm import tqdm
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
+from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.car_helpers import interface_names
-from selfdrive.car.fw_versions import match_fw_to_car_exact, match_fw_to_car_fuzzy, build_fw_dict
+from selfdrive.car.fw_versions import REQUESTS, match_fw_to_car_exact, match_fw_to_car_fuzzy, build_fw_dict
 from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
 from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
 from selfdrive.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
@@ -26,6 +27,8 @@ SUPPORTED_CARS |= set(interface_names['volkswagen'])
 SUPPORTED_CARS |= set(interface_names['mazda'])
 SUPPORTED_CARS |= set(interface_names['subaru'])
 SUPPORTED_CARS |= set(interface_names['nissan'])
+SUPPORTED_BRANDS = set(r.brand for r in REQUESTS)
+VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
 try:
   from xx.pipeline.c.CarState import migration
@@ -97,9 +100,13 @@ if __name__ == "__main__":
             print("not in supported cars")
             break
 
-          fw_versions_dict = build_fw_dict(car_fw)
-          exact_matches = match_fw_to_car_exact(fw_versions_dict)
-          fuzzy_matches = match_fw_to_car_fuzzy(fw_versions_dict)
+          brands = [CP.carName] if len(CP.carName) else SUPPORTED_BRANDS
+          for brand in brands:
+            fw_versions_dict = build_fw_dict(car_fw, brand=brand)
+            exact_matches = match_fw_to_car_exact(fw_versions_dict)
+            fuzzy_matches = match_fw_to_car_fuzzy(fw_versions_dict)
+            if len(exact_matches) or len(fuzzy_matches):
+              break
 
           if (len(exact_matches) == 1) and (list(exact_matches)[0] == live_fingerprint):
             good_exact += 1
@@ -126,12 +133,15 @@ if __name__ == "__main__":
 
           print("Mismatches")
           found = False
-          for car_fws in [TOYOTA_FW_VERSIONS, HONDA_FW_VERSIONS, HYUNDAI_FW_VERSIONS, VW_FW_VERSIONS, MAZDA_FW_VERSIONS, SUBARU_FW_VERSIONS]:
+          for brand in SUPPORTED_BRANDS:
+            car_fws = VERSIONS[brand]
             if live_fingerprint in car_fws:
               found = True
               expected = car_fws[live_fingerprint]
               for (_, expected_addr, expected_sub_addr), v in expected.items():
                 for version in car_fw:
+                  if version.brand != brand:
+                    continue
                   sub_addr = None if version.subAddress == 0 else version.subAddress
                   addr = version.address
 
