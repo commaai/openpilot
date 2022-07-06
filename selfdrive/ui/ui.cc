@@ -229,11 +229,11 @@ void UIState::updateStatus() {
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
-  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>, const std::initializer_list<const char *>>({
+  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
     "wideRoadCameraState", "managerState", "navInstruction", "navRoute",
-  }, {"modelV2"});
+  });
 
   Params params;
   wide_camera = params.getBool("WideCameraOnly");
@@ -245,29 +245,40 @@ UIState::UIState(QObject *parent) : QObject(parent) {
 //  timer->start(1000 / UI_FREQ);
 
 
-  connect(this, &UIState::vipcThreadFrameReceived, this, &UIState::vipcFrameReceived);
-  vipc_thread = new QThread();
-  connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
-  vipc_thread->start();
-//  vipc_thread->start();
+  connect(this, &UIState::uiThreadModelReceived, this, &UIState::uiModelReceived);
+  ui_poll_thread = new QThread();
+  connect(ui_poll_thread, &QThread::started, [=]() { uiPollThread(); });
+  ui_poll_thread->start();
+//  ui_poll_thread->start();
 }
 
-void UIState::vipcThread() {
+void UIState::uiPollThread() {
+  std::unique_ptr<SubMaster> sm2 = std::make_unique<SubMaster, const std::initializer_list<const char *>, const std::initializer_list<const char *>>({
+    "modelV2"}, {"modelV2"});
   qDebug() << "In thread";
+  FirstOrderFilter fps_filter(UI_FREQ, 3, 1. / UI_FREQ);
+  double t = millis_since_boot();
+  uint32_t model_frame_id = 0;
   while (true) {
-//    qDebug() << "In while";
-    if (sm) {
-//      qDebug() << "In sm";
-//      qDebug() << "sm poll";
-      if (sm->poll(50)) {
-        emit vipcThreadFrameReceived();
-//        qDebug() << "emit";
+    qDebug() << "In while";
+    if (sm2) {
+      sm2->update(50);
+      uint32_t new_frame_id = (*sm2)["modelV2"].getModelV2().getFrameId();
+      qDebug() << new_frame_id;
+      if (model_frame_id != new_frame_id) {
+        model_frame_id = new_frame_id;
+        emit uiThreadModelReceived();
+        qDebug() << "emit";
       }
     }
+    double dt = millis_since_boot() - t;
+    t = millis_since_boot();
+    double fps = fps_filter.update(1. / dt * 1000);
+    LOGW("frame rate: %.2f fps", fps);
   }
 }
 
-void UIState::vipcFrameReceived() {
+void UIState::uiModelReceived() {
 //  qDebug() << "Update!";
   update();
 }
