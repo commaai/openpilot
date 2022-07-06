@@ -106,6 +106,9 @@ class Laikad:
           self.fetch_orbits(latest_msg_t + SECS_IN_MIN, block)
 
       new_meas = read_raw_ublox(report)
+      # Filter measurements with unexpected pseudoranges for GPS and GLONASS satellites
+      new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
+
       processed_measurements = process_measurements(new_meas, self.astro_dog)
       self.update_pos_fix(t, processed_measurements)
       est_pos = self.gnss_kf.x[GStates.ECEF_POS]
