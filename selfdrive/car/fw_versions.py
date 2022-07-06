@@ -194,12 +194,13 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
-def build_fw_dict(fw_versions):
+def build_fw_dict(fw_versions, brand=None):
   fw_versions_dict = {}
   for fw in fw_versions:
-    addr = fw.address
-    sub_addr = fw.subAddress if fw.subAddress != 0 else None
-    fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
+    if brand is None or fw.brand == brand:
+      addr = fw.address
+      sub_addr = fw.subAddress if fw.subAddress != 0 else None
+      fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
   return fw_versions_dict
 
 
@@ -284,16 +285,21 @@ def match_fw_to_car_exact(fw_versions_dict):
 
 
 def match_fw_to_car(fw_versions, allow_fuzzy=True):
-  fw_versions_dict = build_fw_dict(fw_versions)
-  matches = match_fw_to_car_exact(fw_versions_dict)
-
   exact_match = True
-  if allow_fuzzy and len(matches) == 0:
-    matches = match_fw_to_car_fuzzy(fw_versions_dict)
+  matches = set()
+  for brand in set(r.brand for r in REQUESTS):
+    fw_versions_dict = build_fw_dict(fw_versions, brand=brand)
+    matches = match_fw_to_car_exact(fw_versions_dict)
+    if len(matches):
+      break
 
-    # Fuzzy match found
-    if len(matches) == 1:
-      exact_match = False
+    if allow_fuzzy:
+      matches = match_fw_to_car_fuzzy(fw_versions_dict)
+
+      # Fuzzy match found
+      if len(matches) == 1:
+        exact_match = False
+        break
 
   return exact_match, matches
 
@@ -361,7 +367,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
 
   addrs.insert(0, parallel_addrs)
 
-  fw_versions = {}
+  fw_versions = defaultdict(dict)
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
       for r in REQUESTS:
@@ -372,25 +378,27 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             t = 2 * timeout if i == 0 else timeout
-            fw_versions.update({addr: (version, r.request, r.rx_offset) for addr, version in query.get_data(t).items()})
+            fw_versions[r.brand].update({addr: (version, r.request, r.rx_offset) for addr, version in query.get_data(t).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
   # Build capnp list to put into CarParams
   car_fw = []
-  for addr, (version, request, rx_offset) in fw_versions.items():
-    f = car.CarParams.CarFw.new_message()
+  for brand, responses in fw_versions.items():
+    for addr, (version, request, rx_offset) in responses.items():
+      f = car.CarParams.CarFw.new_message()
 
-    f.ecu = ecu_types[addr]
-    f.fwVersion = version
-    f.address = addr[0]
-    f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], rx_offset)
-    f.request = request
+      f.ecu = ecu_types[addr]
+      f.fwVersion = version
+      f.address = addr[0]
+      f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], rx_offset)
+      f.request = request
+      f.brand = brand
 
-    if addr[1] is not None:
-      f.subAddress = addr[1]
+      if addr[1] is not None:
+        f.subAddress = addr[1]
 
-    car_fw.append(f)
+      car_fw.append(f)
 
   return car_fw
 
