@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.chrysler.values import CAR
+from selfdrive.car.chrysler.values import RAM_CARS
 
 GearShifter = car.CarState.GearShifter
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -52,7 +52,7 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
     carmodel = 0xf
 
   # TODO: what is this? why is it different?
-  if fingerprint != CAR.RAM_1500:
+  if fingerprint not in RAM_CARS:
     carmodel = CS.lkas_car_model
 
   values = {
@@ -65,19 +65,18 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
   return packer.make_can_msg("DAS_6", 0, values)
 
 
-def create_lkas_command(packer, apply_steer, moving_fast, frame):
-  # LKAS_COMMAND Lane-keeping signal to turn the wheel.
+def create_lkas_command(packer, CP, apply_steer, lat_active, frame):
+  # LKAS_COMMAND Lane-keeping signal to turn the wheel
+  enabled_val = 2 if CP.carFingerprint in RAM_CARS else 1
   values = {
-    "LKAS_STEERING_TORQUE": apply_steer,
-    "LKAS_CONTROL_BIT": 2 if moving_fast else 0,  # 0=IDLE, 2=LKAS
-    "COUNTER": frame % 0x10,
+    "STEERING_TORQUE": apply_steer,
+    "LKAS_CONTROL_BIT": enabled_val if lat_active else 0,
   }
-  return packer.make_can_msg("LKAS_COMMAND", 0, values)
+  return packer.make_can_msg("LKAS_COMMAND", 0, values, frame % 0x10)
 
 
-def create_wheel_buttons(packer, frame, bus, cancel=False):
+def create_cruise_buttons(packer, frame, bus, cancel=False):
   values = {
     "ACC_Cancel": cancel,
-    "COUNTER": frame % 0x10,
   }
-  return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
+  return packer.make_can_msg("CRUISE_BUTTONS", bus, values, frame % 0x10)

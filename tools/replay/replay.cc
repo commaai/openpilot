@@ -1,4 +1,4 @@
-#include "selfdrive/ui/replay/replay.h"
+#include "tools/replay/replay.h"
 
 #include <QDebug>
 #include <QtConcurrent>
@@ -8,7 +8,7 @@
 #include "common/params.h"
 #include "common/timing.h"
 #include "system/hardware/hw.h"
-#include "selfdrive/ui/replay/util.h"
+#include "tools/replay/util.h"
 
 Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, uint32_t flags, QString data_dir, QObject *parent)
     : sm(sm_), flags_(flags), QObject(parent) {

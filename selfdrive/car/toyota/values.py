@@ -99,7 +99,6 @@ class Footnote(Enum):
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
   harness: Enum = Harness.toyota
-  good_torque: bool = True
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
@@ -1262,6 +1261,7 @@ FW_VERSIONS = {
       b'\x01F152642711\x00\x00\x00\x00\x00\x00',
       b'\x01F152642750\x00\x00\x00\x00\x00\x00',
       b'\x01F152642751\x00\x00\x00\x00\x00\x00',
+      b'\x01F15260R292\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B42170\x00\x00\x00\x00\x00\x00',
@@ -1296,6 +1296,7 @@ FW_VERSIONS = {
       b'\x028965B0R01500\x00\x00\x00\x008965B0R02500\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
+      b'\x01896634AA0000\x00\x00\x00\x00',
       b'\x01896634AA1000\x00\x00\x00\x00',
       b'\x01896634A88000\x00\x00\x00\x00',
     ],

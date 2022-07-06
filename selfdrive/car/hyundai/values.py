@@ -89,7 +89,6 @@ class HyundaiCarInfo(CarInfo):
   # TODO: we can probably remove LKAS. LKAS is standard on many
   # HKG and for others, it's likely packaged together with SCC
   package: str = "SCC + LKAS"
-  good_torque: bool = True
 
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
@@ -1145,9 +1144,6 @@ FW_VERSIONS = {
       b'\xf1\x8799110L5000\xf1\000DNhe SCC FHCUP      1.00 1.02 99110-L5000         ',
       b'\xf1\000DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
       b'\xf1\x8799110L5000\xf1\000DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
-    ],
-    (Ecu.esp, 0x7b0, None): [
-      b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x81\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x8756310-L5500\xf1\x00DN8 MDPS C 1.00 1.02 56310-L5500 4DNHC102',

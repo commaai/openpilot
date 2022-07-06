@@ -4,8 +4,8 @@
 
 #include <QThread>
 
-#include "selfdrive/ui/replay/camera.h"
-#include "selfdrive/ui/replay/route.h"
+#include "tools/replay/camera.h"
+#include "tools/replay/route.h"
 
 // one segment uses about 100M of memory
 constexpr int FORWARD_SEGS = 5;
