@@ -73,8 +73,8 @@ class CarState(CarStateBase):
 
     ret.cruiseState.available = cp_cruise.vl["DAS_3"]["ACC_AVAILABLE"] == 1
     ret.cruiseState.enabled = cp_cruise.vl["DAS_3"]["ACC_ACTIVE"] == 1
-    ret.cruiseState.speed = cp_cruise.vl["DAS_4"]["ACC_Set_Speed"] * CV.KPH_TO_MS
-    ret.cruiseState.nonAdaptive = cp_cruise.vl["DAS_4"]["ACC_Activation_Status"] in (1, 2)  # 1 NormalCCOn and 2 NormalCCSet
+    ret.cruiseState.speed = cp_cruise.vl["DAS_4"]["ACC_SET_SPEED_KPH"] * CV.KPH_TO_MS
+    ret.cruiseState.nonAdaptive = cp_cruise.vl["DAS_4"]["ACC_STATE"] in (1, 2)  # 1 NormalCCOn and 2 NormalCCSet
     ret.cruiseState.standstill = cp_cruise.vl["DAS_3"]["ACC_STANDSTILL"] == 1
     ret.accFaulted = cp_cruise.vl["DAS_3"]["ACC_FAULTED"] != 0
 
@@ -129,6 +129,8 @@ class CarState(CarStateBase):
       ("HIGH_BEAM_PRESSED", "STEERING_LEVERS"),
       ("SEATBELT_DRIVER_UNLATCHED", "ORC_1"),
       ("COUNTER", "EPS_2",),
+      ("ACC_SET_SPEED_KPH", "DAS_4"),
+      ("ACC_STATE", "DAS_4"),
       ("COLUMN_TORQUE", "EPS_2"),
       ("EPS_TORQUE_MOTOR", "EPS_2"),
       ("LKAS_STATE", "EPS_2"),
