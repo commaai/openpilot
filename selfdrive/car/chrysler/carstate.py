@@ -51,9 +51,9 @@ class CarState(CarStateBase):
 
     ret.cruiseState.available = cp.vl["DAS_3"]["ACC_AVAILABLE"] == 1  # ACC is white
     ret.cruiseState.enabled = cp.vl["DAS_3"]["ACC_ACTIVE"] == 1  # ACC is green
-    ret.cruiseState.speed = cp.vl["DAS_4"]["ACC_SPEED_CONFIG_KPH"] * CV.KPH_TO_MS
+    ret.cruiseState.speed = cp.vl["DAS_4"]["ACC_SET_SPEED_KPH"] * CV.KPH_TO_MS
     # CRUISE_STATE is a three bit msg, 0 is off, 1 and 2 are Non-ACC mode, 3 and 4 are ACC mode, find if there are other states too
-    ret.cruiseState.nonAdaptive = cp.vl["DAS_4"]["CRUISE_STATE"] in (1, 2)
+    ret.cruiseState.nonAdaptive = cp.vl["DAS_4"]["ACC_STATE"] in (1, 2)
     ret.accFaulted = cp.vl["DAS_3"]["ACC_FAULTED"] != 0
 
     ret.steeringAngleDeg = cp.vl["STEERING"]["STEER_ANGLE"]
@@ -101,8 +101,8 @@ class CarState(CarStateBase):
       ("ACC_ACTIVE", "DAS_3"),
       ("ACC_FAULTED", "DAS_3"),
       ("HIGH_BEAM_PRESSED", "STEERING_LEVERS"),
-      ("ACC_SPEED_CONFIG_KPH", "DAS_4"),
-      ("CRUISE_STATE", "DAS_4"),
+      ("ACC_SET_SPEED_KPH", "DAS_4"),
+      ("ACC_STATE", "DAS_4"),
       ("COLUMN_TORQUE", "EPS_2"),
       ("EPS_TORQUE_MOTOR", "EPS_2"),
       ("LKAS_STATE", "EPS_2"),
