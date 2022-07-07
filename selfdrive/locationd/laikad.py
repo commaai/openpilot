@@ -11,6 +11,7 @@ from typing import List, Optional
 import numpy as np
 
 from cereal import log, messaging
+from common.numpy_fast import clip
 from common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_MIN
@@ -210,9 +211,8 @@ class Laikad:
     # if median residual is too large increase the Covariance matrix to improve convergence
     residual_median = np.median(np.abs(residuals))
     if residual_median > RESIDUAL_THRESHOLD:
-      print("Residual!", residual_median * RESIDUAL_WEIGHT, residual_median)
-      a = min(residual_median * RESIDUAL_WEIGHT, 1)
-      p = self.gnss_kf.P * (1 - a) + self.gnss_kf.P_initial * a
+      a = clip(residual_median * RESIDUAL_WEIGHT, 1e-5, 1)
+      p = self.gnss_kf.P * (1 + a) + self.gnss_kf.P_initial * (0.1+a)
       self.gnss_kf.init_state(self.gnss_kf.x, covs=p, filter_time=self.gnss_kf.filter.get_filter_time())
 
 
