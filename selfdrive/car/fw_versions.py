@@ -99,6 +99,7 @@ CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x
 
 CHRYSLER_RX_OFFSET = -0x280
 
+
 @dataclass
 class Request:
   brand: str
@@ -115,7 +116,7 @@ REQUESTS: List[Request] = [
     "chrysler",
     [CHRYSLER_VERSION_REQUEST],
     [CHRYSLER_VERSION_RESPONSE],
-    CHRYSLER_RX_OFFSET,
+    rx_offset=CHRYSLER_RX_OFFSET,
   ),
   Request(
     "chrysler",
