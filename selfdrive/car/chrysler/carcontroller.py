@@ -45,7 +45,7 @@ class CarController:
 
     if self.frame % 25 == 0:
       if CS.lkas_car_model != -1:
-        can_sends.append(create_lkas_hud(self.packer, lkas_active, CC.hudControl.visualAlert, self.hud_count, CS, self.CP.carFingerprint))
+        can_sends.append(create_lkas_hud(self.packer, lkas_active, CC.hudControl.visualAlert, self.hud_count, CS.lkas_car_model))
         self.hud_count += 1
 
     can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_active, self.frame))

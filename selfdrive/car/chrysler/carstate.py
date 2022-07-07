@@ -80,6 +80,7 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in RAM_CARS:
       self.autoHighBeamBit = cp_cam.vl["DAS_6"]['AUTO_HIGH_BEAM_ON']  # Auto High Beam isn't Located in this message on chrysler or jeep currently located in 729 message
+      ret.steerFaultTemporary  = cp.vl["EPS_3"]["DASM_FAULT"] == 1
 
     # blindspot sensors
     if self.CP.enableBsm:
@@ -157,11 +158,13 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in RAM_CARS:
       signals += [
-        ("Gear_State", "Transmission_Status"),
+        ("DASM_FAULT", "EPS_3"),
         ("Vehicle_Speed", "ESP_8"),
+        ("Gear_State", "Transmission_Status"),
       ]
       checks += [
         ("ESP_8", 50),
+        ("EPS_3", 50),
         ("Transmission_Status", 50),
       ]
     else:

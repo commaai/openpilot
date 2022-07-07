@@ -4,60 +4,44 @@ from selfdrive.car.chrysler.values import RAM_CARS
 GearShifter = car.CarState.GearShifter
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
-  # LKAS_HUD 0x2a6 (678) Controls what lane-keeping icon is displayed.
+def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, car_model):
+  # LKAS_HUD - Controls what lane-keeping icon is displayed
 
-  color = 1  # default values are for park or neutral in 2017 are 0 0, but trying 1 1 for 2019
-  lines = 1
-  alerts = 0
-  carmodel = 0
+  # == Color ==
+  # 0 hidden?
+  # 1 white
+  # 2 green
+  # 3 ldw
+
+  # == Lines ==
+  # 03 white Lines
+  # 04 grey lines
+  # 09 left lane close
+  # 0A right lane close
+  # 0B left Lane very close
+  # 0C right Lane very close
+  # 0D left cross cross
+  # 0E right lane cross
+
+  # == Alerts ==
+  # 7 Normal
+  # 6 lane departure place hands on wheel
+
+  color = 2 if lkas_active else 1
+  lines = 3 if lkas_active else 0
+  alerts = 7 if lkas_active else 0
 
   if hud_count < (1 * 4):  # first 3 seconds, 4Hz
     alerts = 1
 
-  # CAR.PACIFICA_2018_HYBRID and CAR.PACIFICA_2019_HYBRID
-  # had color = 1 and lines = 1 but trying 2017 hybrid style for now.
-  # Lines
-  # 03 White Lines
-  # 04 grey lines
-  # 09 left lane close
-  # 0A right lane close
-  # 0B Left Lane very close
-  # 0C Right Lane very close
-  # 0D left cross cross
-  # 0E right lane cross
-
-  # Alerts
-  # 7 Normal
-  # 6 lane departure place hands on wheel
-
-  if CS.out.gearShifter in (GearShifter.drive, GearShifter.reverse, GearShifter.low):
-    if lkas_active:
-      color = 2  # control active, display green.
-      lines = 3
-      alerts = 7
-    else:
-      color = 1  # control off, display white.
-      lines = 0
-      alerts = 7
-
-  if hud_alert == VisualAlert.ldw:
+  if hud_alert in (VisualAlert.ldw, VisualAlert.steerRequired):
     color = 4
     lines = 0
     alerts = 6
-  elif hud_alert == VisualAlert.steerRequired:
-    color = 0
-    lines = 0
-    alerts = 0
-    carmodel = 0xf
-
-  # TODO: what is this? why is it different?
-  if fingerprint not in RAM_CARS:
-    carmodel = CS.lkas_car_model
 
   values = {
     "LKAS_ICON_COLOR": color,
-    "CAR_MODEL": carmodel,  # TODO: look into this
+    "CAR_MODEL": car_model,
     "LKAS_LANE_LINES": lines,
     "LKAS_ALERTS": alerts,
   }
