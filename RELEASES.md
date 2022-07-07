@@ -1,6 +1,5 @@
-Version 0.8.15 (2022-XX-XX)
+Version 0.8.15 (2022-07-XX)
 ========================
-* New driving model
 * New lateral controller based on physical wheel torque model
   * Much smoother control, consistent across the speed range
   * Effective feedforward that uses road roll
@@ -10,9 +9,14 @@ Version 0.8.15 (2022-XX-XX)
   * takes a larger input frame
   * outputs a driver state for both driver and passenger
   * automatically determines which side the driver is on (soon)
-* Display speed limit while navigating
 * Reduced power usage: device runs cooler and fan spins less
+* Minor UI updates
+  * New font
+  * Refreshed max speed design
+  * Speed limits shown while navigating
+  * More consistent camera view perspective across cars
 * AGNOS 5
+* Honda Civic 2022 support
 * Hyundai Tucson 2021 support thanks to bluesforte!
 * Lexus NX Hybrid 2020 support thanks to AlexandreSato!
 

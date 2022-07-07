@@ -42,27 +42,27 @@ class TestStartup(unittest.TestCase):
     # TODO: test EventName.startup for release branches
 
     # officially supported car
-    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS),
-    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS, "toyota"),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS, "toyota"),
 
     # dashcamOnly car
-    (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS),
-    (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS),
+    (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS, "mazda"),
+    (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS, "mazda"),
 
     # unrecognized car with no fw
-    (EventName.startupNoFw, None, None),
-    (EventName.startupNoFw, None, None),
+    (EventName.startupNoFw, None, None, ""),
+    (EventName.startupNoFw, None, None, ""),
 
     # unrecognized car
-    (EventName.startupNoCar, None, COROLLA_FW_VERSIONS[:1]),
-    (EventName.startupNoCar, None, COROLLA_FW_VERSIONS[:1]),
+    (EventName.startupNoCar, None, COROLLA_FW_VERSIONS[:1], "toyota"),
+    (EventName.startupNoCar, None, COROLLA_FW_VERSIONS[:1], "toyota"),
 
     # fuzzy match
-    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY),
-    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY, "toyota"),
+    (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY, "toyota"),
   ])
   @with_processes(['controlsd'])
-  def test_startup_alert(self, expected_event, car_model, fw_versions):
+  def test_startup_alert(self, expected_event, car_model, fw_versions, brand):
 
     # TODO: this should be done without any real sockets
     controls_sock = messaging.sub_sock("controlsState")
@@ -82,6 +82,7 @@ class TestStartup(unittest.TestCase):
         f.ecu = ecu
         f.address = addr
         f.fwVersion = version
+        f.brand = brand
 
         if subaddress is not None:
           f.subAddress = subaddress
