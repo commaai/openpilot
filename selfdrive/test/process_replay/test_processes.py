@@ -24,6 +24,7 @@ original_segments = [
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
   ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA
+  ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--2"),         # CHRYSLER.RAM_1500
   ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),      # SUBARU.IMPREZA
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
@@ -35,19 +36,20 @@ original_segments = [
 ]
 
 segments = [
-  ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),
-  ("HYUNDAI", "fakedata|2022-01-20--17-49-04--0"),
-  ("TOYOTA", "fakedata|2022-04-29--15-57-12--0"),
-  ("TOYOTA2", "fakedata|2022-04-29--16-08-01--0"),
-  ("TOYOTA3", "fakedata|2022-04-29--16-17-39--0"),
-  ("HONDA", "fakedata|2022-01-20--17-56-40--0"),
-  ("HONDA2", "fakedata|2022-04-29--16-31-55--0"),
-  ("CHRYSLER", "fakedata|2022-01-20--18-00-11--0"),
-  ("SUBARU", "fakedata|2022-01-20--18-01-57--0"),
-  ("GM", "fakedata|2022-01-20--18-03-41--0"),
-  ("NISSAN", "fakedata|2022-01-20--18-05-29--0"),
-  ("VOLKSWAGEN", "fakedata|2022-01-20--18-07-15--0"),
-  ("MAZDA", "fakedata|2022-01-20--18-09-32--0"),
+  ("BODY", "regen660D86654BA|2022-07-06--14-27-15--0"),
+  ("HYUNDAI", "regen657E25856BB|2022-07-06--14-26-51--0"),
+  ("TOYOTA", "regenBA97410FBEC|2022-07-06--14-26-49--0"),
+  ("TOYOTA2", "regenDEDB1D9C991|2022-07-06--14-54-08--0"),
+  ("TOYOTA3", "regenDDC1FE60734|2022-07-06--14-32-06--0"),
+  ("HONDA", "regen17B09D158B8|2022-07-06--14-31-46--0"),
+  ("HONDA2", "regen041739C3E9A|2022-07-06--15-08-02--0"),
+  ("CHRYSLER", "regenBB2F9C1425C|2022-07-06--14-31-41--0"),
+  ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--2"),
+  ("SUBARU", "regen732B69F33B1|2022-07-06--14-36-18--0"),
+  ("GM", "regen01D09D915B5|2022-07-06--14-36-20--0"),
+  ("NISSAN", "regenEA6FB2773F5|2022-07-06--14-58-23--0"),
+  ("VOLKSWAGEN", "regen007098CA0EF|2022-07-06--15-01-26--0"),
+  ("MAZDA", "regen61BA413D53B|2022-07-06--14-39-42--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -71,7 +73,7 @@ def run_test_process(data):
     assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
     upload_file(cur_log_fn, os.path.basename(cur_log_fn))
     os.remove(cur_log_fn)
-  return (segment, cfg.proc_name, res)
+  return (segment, cfg.proc_name, cfg.subtest_name, res)
 
 
 def get_log_data(segment):
@@ -212,9 +214,9 @@ if __name__ == "__main__":
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
-    for (segment, proc, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
+    for (segment, proc, subtest_name, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
       if isinstance(result, list):
-        results[segment][proc] = result
+        results[segment][proc + subtest_name] = result
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   if not upload:
