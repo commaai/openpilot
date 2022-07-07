@@ -305,8 +305,7 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
       if len(matches) == 1:
         return exact_match, matches
 
-  else:
-    return True, []
+  return True, []
 
 
 def get_present_ecus(logcan, sendcan):
