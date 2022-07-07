@@ -285,26 +285,28 @@ def match_fw_to_car_exact(fw_versions_dict):
 
 
 def match_fw_to_car(fw_versions, allow_fuzzy=True):
-  matches = set()
-  exact_match = True
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
-  # For each brand, attempt to fingerprint using FW returned from its queries
-  for brand in versions.keys():
-    fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-    matches = match_fw_to_car_exact(fw_versions_dict)
+  # Try exact matching first
+  exact_matches = [True]
+  if allow_fuzzy:
+    exact_matches.append(False)
 
-    if allow_fuzzy and len(matches) == 0:
-      matches = match_fw_to_car_fuzzy(fw_versions_dict)
+  for exact_match in exact_matches:
+    # For each brand, attempt to fingerprint using FW returned from its queries
+    for brand in versions.keys():
+      fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
 
-      # Fuzzy match found
+      if exact_match:
+        matches = match_fw_to_car_exact(fw_versions_dict)
+      else:
+        matches = match_fw_to_car_fuzzy(fw_versions_dict)
+
       if len(matches) == 1:
-        exact_match = False
+        return exact_match, matches
 
-    if len(matches):
-      break
-
-  return exact_match, matches
+  else:
+    return True, []
 
 
 def get_present_ecus(logcan, sendcan):
