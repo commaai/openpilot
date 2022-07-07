@@ -10,7 +10,7 @@ from common.realtime import config_realtime_process, DT_MDL
 from common.numpy_fast import clip
 from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from selfdrive.locationd.models.constants import GENERATED_DIR
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s

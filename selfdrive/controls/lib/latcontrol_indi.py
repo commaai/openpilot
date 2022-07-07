@@ -78,6 +78,7 @@ class LatControlINDI(LatControl):
     steers_des += math.radians(params.angleOffsetDeg)
     indi_log.steeringAngleDesiredDeg = math.degrees(steers_des)
 
+    # desired rate is the desired rate of change in the setpoint, not the absolute desired curvature
     rate_des = VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, 0)
     indi_log.steeringRateDesiredDeg = math.degrees(rate_des)
 

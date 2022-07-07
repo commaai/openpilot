@@ -1,13 +1,15 @@
+import yaml
 import os
 import time
 from abc import abstractmethod, ABC
-from typing import Dict, Tuple, List
+from typing import Any, Dict, Tuple, List
 
 from cereal import car
+from common.basedir import BASEDIR
+from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
-from common.conversions import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -19,9 +21,36 @@ MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
 
+TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.yaml')
+TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.yaml')
+TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.yaml')
+
+
+def get_torque_params(candidate):
+  with open(TORQUE_SUBSTITUTE_PATH) as f:
+    sub = yaml.load(f, Loader=yaml.CSafeLoader)
+  if candidate in sub:
+    candidate = sub[candidate]
+
+  with open(TORQUE_PARAMS_PATH) as f:
+    params = yaml.load(f, Loader=yaml.CSafeLoader)
+  with open(TORQUE_OVERRIDE_PATH) as f:
+    override = yaml.load(f, Loader=yaml.CSafeLoader)
+
+  # Ensure no overlap
+  if sum([candidate in x for x in [sub, params, override]]) > 1:
+    raise RuntimeError(f'{candidate} is defined twice in torque config')
+
+  if candidate in override:
+    out = override[candidate]
+  elif candidate in params:
+    out = params[candidate]
+  else:
+    raise NotImplementedError(f"Did not find torque params for {candidate}")
+  return {key: out[i] for i, key in enumerate(params['legend'])}
+
 
 # generic car and radar interfaces
-
 
 class CarInterfaceBase(ABC):
   def __init__(self, CP, CarController, CarState):
@@ -81,6 +110,7 @@ class CarInterfaceBase(ABC):
     ret.steerControlType = car.CarParams.SteerControlType.torque
     ret.minSteerSpeed = 0.
     ret.wheelSpeedFactor = 1.0
+    ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
@@ -103,6 +133,18 @@ class CarInterfaceBase(ABC):
     ret.longitudinalActuatorDelayUpperBound = 0.15
     ret.steerLimitTimer = 1.0
     return ret
+
+  @staticmethod
+  def configure_torque_tune(candidate, tune, steering_angle_deadzone_deg=0.0):
+    params = get_torque_params(candidate)
+
+    tune.init('torque')
+    tune.torque.useSteeringAngle = True
+    tune.torque.kp = 1.0 / params['LAT_ACCEL_FACTOR']
+    tune.torque.kf = 1.0 / params['LAT_ACCEL_FACTOR']
+    tune.torque.ki = 0.1 / params['LAT_ACCEL_FACTOR']
+    tune.torque.friction = params['FRICTION']
+    tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
@@ -293,3 +335,31 @@ class CarStateBase(ABC):
   @staticmethod
   def get_loopback_can_parser(CP):
     return None
+
+
+# interface-specific helpers
+
+def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: bool = False) -> Dict[str, Any]:
+  # read all the folders in selfdrive/car and return a dict where:
+  # - keys are all the car models or brand names
+  # - values are attr values from all car folders
+  result = {}
+  for car_folder in sorted([x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]):
+    try:
+      brand_name = car_folder.split('/')[-1]
+      brand_values = __import__(f'selfdrive.car.{brand_name}.values', fromlist=[attr])
+      if hasattr(brand_values, attr) or not ignore_none:
+        attr_data = getattr(brand_values, attr, None)
+      else:
+        continue
+
+      if combine_brands:
+        if isinstance(attr_data, dict):
+          for f, v in attr_data.items():
+            result[f] = v
+      else:
+        result[brand_name] = attr_data
+    except (ImportError, OSError):
+      pass
+
+  return result

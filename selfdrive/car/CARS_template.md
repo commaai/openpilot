@@ -14,31 +14,19 @@ Cars are organized into three tiers:
 How We Rate The Cars
 ---
 
-### openpilot Adaptive Cruise Control (ACC)
-- {{star_icon.format(Star.FULL.value)}} - openpilot is able to control the gas and brakes.
-- {{star_icon.format(Star.HALF.value)}} - openpilot is able to control the gas and brakes with some restrictions.
-- {{star_icon.format(Star.EMPTY.value)}} - The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system.
+{% for star_row in star_descriptions.values() %}
+{% for name, stars in star_row.items() %}
+### {{name}}
+{% for star, description in stars %}
+- {{star_icon.format(star)}} - {{description}}
+{% endfor %}
 
-### Stop and Go
-- {{star_icon.format(Star.FULL.value)}} - Adaptive Cruise Control (ACC) operates down to 0 mph.
-- {{star_icon.format(Star.EMPTY.value)}} - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.
-
-### Steer to 0
-- {{star_icon.format(Star.FULL.value)}} - openpilot can control the steering wheel down to 0 mph.
-- {{star_icon.format(Star.EMPTY.value)}} - No steering control below certain speeds.
-
-### Steering Torque
-- {{star_icon.format(Star.FULL.value)}} - Car has enough steering torque for comfortable highway driving.
-- {{star_icon.format(Star.EMPTY.value)}} - Limited ability to make turns.
-
-### Actively Maintained
-- {{star_icon.format(Star.FULL.value)}} - Mainline software support, harness hardware sold by comma, lots of users, primary development target.
-- {{star_icon.format(Star.EMPTY.value)}} - Low user count, community maintained, harness hardware not sold by comma.
-
+{% endfor %}
+{% endfor %}
 **All supported cars can move between the tiers as support changes.**
 
 {% for tier, cars in tiers.items() %}
-## {{tier.name.title()}} Cars
+# {{tier.name.title()}} - {{cars | length}} cars
 
 |{{Column | map(attribute='value') | join('|')}}|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
