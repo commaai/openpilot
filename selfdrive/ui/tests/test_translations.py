@@ -26,12 +26,8 @@ class TestTranslations(unittest.TestCase):
   def _read_translation_file(path, file, file_ext):
     tr_file = os.path.join(path, f"{file}.{file_ext}")
     with open(tr_file, "rb") as f:
-      # fix extra relative path depth
+      # fix relative path depth
       return f.read().replace(b"filename=\"../../", b"filename=\"../")
-
-  @staticmethod
-  def _translation_file_exists(file, file_ext):
-    return os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.{file_ext}"))
 
   def test_missing_translation_files(self):
     for name, file in self.translation_files.items():
@@ -39,9 +35,9 @@ class TestTranslations(unittest.TestCase):
         if not len(file):
           self.skipTest(f"{name} translation has no defined file")
 
-        self.assertTrue(self._translation_file_exists(file, "ts"),
+        self.assertTrue(os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")),
                         f"{name} has no XML translation file, run selfdrive/ui/update_translations.py")
-        self.assertTrue(self._translation_file_exists(file, "qm"),
+        self.assertTrue(os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.qm")),
                         f"{name} has no compiled QM translation file, run selfdrive/ui/update_translations.py --release")
 
   def test_translations_updated(self):
@@ -56,7 +52,7 @@ class TestTranslations(unittest.TestCase):
           with self.subTest(file_ext=file_ext):
 
             # caught by test_missing_translation_files
-            if not self._translation_file_exists(file, file_ext):
+            if not os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.{file_ext}")):
               self.skipTest(f"{name} missing translation file")
 
             cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file, file_ext)
