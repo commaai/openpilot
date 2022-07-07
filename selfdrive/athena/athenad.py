@@ -364,6 +364,12 @@ def uploadFilesToUrls(files_data):
       failed.append(fn)
       continue
 
+    # Skip item if already in queue
+    url = file['url'].split('?', maxsplit=1)[0]
+    if any(url == item.url.split('?', maxsplit=1)[0] for item in list(upload_queue.queue) + list(cur_upload_items.values())):
+      failed.append(fn)
+      continue
+
     item = UploadItem(
       path=path,
       url=file['url'],
