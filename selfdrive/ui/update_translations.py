@@ -12,7 +12,7 @@ TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
 LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
 
 
-def update_translations(release: bool = False) -> Dict[str, str]:
+def update_translations(release=False, translations_dir=TRANSLATIONS_DIR):
   with open(LANGUAGES_FILE, "r") as f:
     translation_files = json.load(f)
 
@@ -22,11 +22,7 @@ def update_translations(release: bool = False) -> Dict[str, str]:
       print(f"{name} has no translation file, skipping...")
       continue
 
-    tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}.ts")
-    if os.path.exists(tr_file):
-      with open(tr_file, "r") as f:
-        prev_translations[name] = f.read()
-
+    tr_file = os.path.join(translations_dir, f"{file}.ts")
     ret = os.system(f"lupdate -recursive {UI_DIR} -ts {tr_file}")
     assert ret == 0
 

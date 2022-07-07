@@ -366,7 +366,12 @@
         <location filename="../qt/maps/map_settings.cc" line="107"/>
         <source>Get turn-by-turn directions displayed and more with a comma 
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>使用逗号获取显示的详细路线和更多信息
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Get turn-by-turn directions displayed and more with a comma
+prime subscription. Sign up now: https://connect.comma.ai</source>
+        <translation type="vanished">使用逗号获取显示的详细路线和更多信息
 主要订阅。 立即注册：https://connect.comma.ai</translation>
     </message>
     <message>
@@ -653,33 +658,33 @@ location set</source>
 <context>
     <name>SettingsWindow</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="331"/>
+        <location filename="../qt/offroad/settings.cc" line="327"/>
         <source>×</source>
         <translation>×</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="357"/>
+        <location filename="../qt/offroad/settings.cc" line="353"/>
         <source>Device</source>
         <translation>设备</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="358"/>
-        <location filename="../qt/offroad/settings.cc" line="397"/>
+        <location filename="../qt/offroad/settings.cc" line="354"/>
+        <location filename="../qt/offroad/settings.cc" line="393"/>
         <source>Network</source>
         <translation>网络</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="359"/>
+        <location filename="../qt/offroad/settings.cc" line="355"/>
         <source>Toggles</source>
         <translation>切换</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="360"/>
+        <location filename="../qt/offroad/settings.cc" line="356"/>
         <source>Software</source>
         <translation>软件</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="365"/>
+        <location filename="../qt/offroad/settings.cc" line="361"/>
         <source>Navigation</source>
         <translation>导航</translation>
     </message>
@@ -878,6 +883,41 @@ location set</source>
         <location filename="../qt/sidebar.cc" line="86"/>
         <source>SEARCH</source>
         <translation>搜索</translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.h" line="37"/>
+        <source>--</source>
+        <translation>--</translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.h" line="38"/>
+        <source>Wi-Fi</source>
+        <translation>Wi-Fi</translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.h" line="39"/>
+        <source>ETH</source>
+        <translation>以太網</translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.h" line="40"/>
+        <source>2G</source>
+        <translation>2G</translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.h" line="41"/>
+        <source>3G</source>
+        <translation>3G</translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.h" line="42"/>
+        <source>LTE</source>
+        <translation>LTE</translation>
+    </message>
+    <message>
+        <location filename="../qt/sidebar.h" line="43"/>
+        <source>5G</source>
+        <translation>5G</translation>
     </message>
 </context>
 <context>
