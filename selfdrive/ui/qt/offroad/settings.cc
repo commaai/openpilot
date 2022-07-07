@@ -155,7 +155,6 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     if (!selection.isEmpty()) {
       Params().put("LanguageSetting", langs[selection].toStdString());
       qApp->quit();
-      QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
     }
   });
   addItem(translateBtn);
