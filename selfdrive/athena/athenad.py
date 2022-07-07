@@ -367,7 +367,6 @@ def uploadFilesToUrls(files_data):
     # Skip item if already in queue
     url = file['url'].split('?')[0]
     if any(url == item['url'].split('?')[0] for item in listUploadQueue()):
-      failed.append(fn)
       continue
 
     item = UploadItem(
