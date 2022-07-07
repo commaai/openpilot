@@ -133,7 +133,7 @@ void encoderd_thread() {
 }
 
 int main() {
-  if (Hardware::TICI()) {
+  if (!Hardware::PC()) {
     int ret;
     ret = util::set_realtime_priority(52);
     assert(ret == 0);

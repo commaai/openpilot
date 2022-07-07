@@ -11,7 +11,8 @@ from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url, upload_file
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_enabled, replay_process
-from selfdrive.version import get_commit
+from system.version import get_commit
+from tools.lib.filereader import FileReader
 from tools.lib.logreader import LogReader
 
 original_segments = [
@@ -34,19 +35,19 @@ original_segments = [
 ]
 
 segments = [
-  ("BODY", "bd6a637565e91581|2022-04-04--22-05-08--0"),
-  ("HYUNDAI", "fakedata|2022-01-20--17-49-04--0"),
-  ("TOYOTA", "fakedata|2022-04-29--15-57-12--0"),
-  ("TOYOTA2", "fakedata|2022-04-29--16-08-01--0"),
-  ("TOYOTA3", "fakedata|2022-04-29--16-17-39--0"),
-  ("HONDA", "fakedata|2022-01-20--17-56-40--0"),
-  ("HONDA2", "fakedata|2022-04-29--16-31-55--0"),
-  ("CHRYSLER", "fakedata|2022-01-20--18-00-11--0"),
-  ("SUBARU", "fakedata|2022-01-20--18-01-57--0"),
-  ("GM", "fakedata|2022-01-20--18-03-41--0"),
-  ("NISSAN", "fakedata|2022-01-20--18-05-29--0"),
-  ("VOLKSWAGEN", "fakedata|2022-01-20--18-07-15--0"),
-  ("MAZDA", "fakedata|2022-01-20--18-09-32--0"),
+  ("BODY", "regen660D86654BA|2022-07-06--14-27-15--0"),
+  ("HYUNDAI", "regen657E25856BB|2022-07-06--14-26-51--0"),
+  ("TOYOTA", "regenBA97410FBEC|2022-07-06--14-26-49--0"),
+  ("TOYOTA2", "regenDEDB1D9C991|2022-07-06--14-54-08--0"),
+  ("TOYOTA3", "regenDDC1FE60734|2022-07-06--14-32-06--0"),
+  ("HONDA", "regen17B09D158B8|2022-07-06--14-31-46--0"),
+  ("HONDA2", "regen041739C3E9A|2022-07-06--15-08-02--0"),
+  ("CHRYSLER", "regenBB2F9C1425C|2022-07-06--14-31-41--0"),
+  ("SUBARU", "regen732B69F33B1|2022-07-06--14-36-18--0"),
+  ("GM", "regen01D09D915B5|2022-07-06--14-36-20--0"),
+  ("NISSAN", "regenEA6FB2773F5|2022-07-06--14-58-23--0"),
+  ("VOLKSWAGEN", "regen007098CA0EF|2022-07-06--15-01-26--0"),
+  ("MAZDA", "regen61BA413D53B|2022-07-06--14-39-42--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -57,9 +58,10 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 
 
 def run_test_process(data):
-  segment, cfg, args, cur_log_fn, ref_log_path, lr = data
+  segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
   res = None
   if not args.upload_only:
+    lr = LogReader.from_bytes(lr_dat)
     res, log_msgs = test_process(cfg, lr, ref_log_path, args.ignore_fields, args.ignore_msgs)
     # save logs so we can upload when updating refs
     save_log(cur_log_fn, log_msgs)
@@ -72,10 +74,10 @@ def run_test_process(data):
   return (segment, cfg.proc_name, res)
 
 
-def get_logreader(segment):
+def get_log_data(segment):
   r, n = segment.rsplit("--", 1)
-  lr = LogReader(get_url(r, n))
-  return (segment, lr)
+  with FileReader(get_url(r, n)) as f:
+    return (segment, f.read())
 
 
 def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
@@ -91,8 +93,7 @@ def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
     if not check_enabled(log_msgs):
-      segment = os.path.basename(ref_log_path).split("/")[-1].split("_")[0]
-      raise Exception(f"Route never enabled: {segment}")
+      raise Exception(f"Route never enabled: {ref_log_path}")
 
   try:
     return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
@@ -131,12 +132,13 @@ def format_diff(results, ref_commit):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
+  all_cars = {car for car, _ in segments}
+  all_procs = {cfg.proc_name for cfg in CONFIGS}
 
-  # whitelist has precedence over blacklist in case both are defined
-  parser.add_argument("--whitelist-procs", type=str, nargs="*", default=[],
+  parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
+  parser.add_argument("--whitelist-procs", type=str, nargs="*", default=all_procs,
                       help="Whitelist given processes from the test (e.g. controlsd)")
-  parser.add_argument("--whitelist-cars", type=str, nargs="*", default=[],
+  parser.add_argument("--whitelist-cars", type=str, nargs="*", default=all_cars,
                       help="Whitelist given cars from the test (e.g. HONDA)")
   parser.add_argument("--blacklist-procs", type=str, nargs="*", default=[],
                       help="Blacklist given processes from the test (e.g. controlsd)")
@@ -153,7 +155,11 @@ if __name__ == "__main__":
   parser.add_argument("-j", "--jobs", type=int, default=1)
   args = parser.parse_args()
 
-  full_test = all(len(x) == 0 for x in (args.whitelist_procs, args.whitelist_cars, args.blacklist_procs, args.blacklist_cars, args.ignore_fields, args.ignore_msgs))
+  tested_procs = set(args.whitelist_procs) - set(args.blacklist_procs)
+  tested_cars = set(args.whitelist_cars) - set(args.blacklist_cars)
+  tested_cars = {c.upper() for c in tested_cars}
+
+  full_test = (tested_procs == all_procs) and (tested_cars == all_cars) and all(len(x) == 0 for x in (args.ignore_fields, args.ignore_msgs))
   upload = args.update_refs or args.upload_only
   os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
 
@@ -174,37 +180,35 @@ if __name__ == "__main__":
 
   # check to make sure all car brands are tested
   if full_test:
-    tested_cars = {c.lower() for c, _ in segments}
-    untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
+    untested = (set(interface_names) - set(excluded_interfaces)) - {c.lower() for c in tested_cars}
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
-      lreaders: Any = {}
-      p1 = pool.map(get_logreader, [seg for car, seg in segments])
-      for (segment, lr) in tqdm(p1, desc="Getting Logs", total=len(segments)):
-        lreaders[segment] = lr
+      download_segments = [seg for car, seg in segments if car in tested_cars]
+      log_data: Dict[str, LogReader] = {}
+      p1 = pool.map(get_log_data, download_segments)
+      for segment, lr in tqdm(p1, desc="Getting Logs", total=len(download_segments)):
+        log_data[segment] = lr
 
     pool_args: Any = []
     for car_brand, segment in segments:
-      if (len(args.whitelist_cars) and car_brand.upper() not in args.whitelist_cars) or \
-         (not len(args.whitelist_cars) and car_brand.upper() in args.blacklist_cars):
+      if car_brand not in tested_cars:
         continue
 
       for cfg in CONFIGS:
-        if (len(args.whitelist_procs) and cfg.proc_name not in args.whitelist_procs) or \
-           (not len(args.whitelist_procs) and cfg.proc_name in args.blacklist_procs):
+        if cfg.proc_name not in tested_procs:
           continue
 
-        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}{cfg.subtest_name}_{cur_commit}.bz2")
         if args.update_refs:  # reference logs will not exist if routes were just regenerated
           ref_log_path = get_url(*segment.rsplit("--", 1))
         else:
-          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}{cfg.subtest_name}_{ref_commit}.bz2")
           ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
 
-        lr = None if args.upload_only else lreaders[segment]
-        pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, lr))
+        dat = None if args.upload_only else log_data[segment]
+        pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, dat))
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)

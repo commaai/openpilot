@@ -4,14 +4,15 @@ import unittest
 from parameterized import parameterized
 
 from cereal import car
-from selfdrive.car.car_helpers import interfaces
+from selfdrive.car.car_helpers import get_interface_attr, interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import match_fw_to_car
+from selfdrive.car.fw_versions import REQUESTS, match_fw_to_car
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
 
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
+VERSIONS = get_interface_attr("FW_VERSIONS", ignore_none=True)
 
 
 class TestFwFingerprint(unittest.TestCase):
@@ -20,14 +21,14 @@ class TestFwFingerprint(unittest.TestCase):
     self.assertEqual(len(candidates), 1, f"got more than one candidate: {candidates}")
     self.assertEqual(candidates[0], expected)
 
-  @parameterized.expand([(k, v) for k, v in FW_VERSIONS.items()])
-  def test_fw_fingerprint(self, car_model, ecus):
+  @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
+  def test_fw_fingerprint(self, brand, car_model, ecus):
     CP = car.CarParams.new_message()
     for _ in range(200):
       fw = []
       for ecu, fw_versions in ecus.items():
         ecu_name, addr, sub_addr = ecu
-        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions),
+        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
       _, matches = match_fw_to_car(CP.carFw)
@@ -56,6 +57,22 @@ class TestFwFingerprint(unittest.TestCase):
             passed = False
 
     self.assertTrue(passed, "Blacklisted FW versions found")
+
+  def test_fw_request_ecu_whitelist(self):
+    passed = True
+    brands = set(r.brand for r in REQUESTS)
+    for brand in brands:
+      whitelisted_ecus = [ecu for r in REQUESTS for ecu in r.whitelist_ecus if r.brand == brand]
+      brand_ecus = set([fw[0] for car_fw in VERSIONS[brand].values() for fw in car_fw])
+
+      # each ecu in brand's fw versions needs to be whitelisted at least once
+      ecus_not_whitelisted = set(brand_ecus) - set(whitelisted_ecus)
+      if len(whitelisted_ecus) and len(ecus_not_whitelisted):
+        ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_whitelisted])
+        print(f'{brand.title()}: FW query whitelist missing ecus: {ecu_strings}')
+        passed = False
+
+    self.assertTrue(passed, "Not all ecus in FW versions found in query whitelists")
 
 
 if __name__ == "__main__":

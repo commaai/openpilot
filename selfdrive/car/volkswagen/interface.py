@@ -45,7 +45,6 @@ class CarInterface(CarInterfaceBase):
     # Global lateral tuning defaults, can be overridden per-vehicle
 
     ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.6  # Let the params learner figure this out
     tire_stiffness_factor = 1.0  # Let the params learner figure this out
@@ -194,12 +193,4 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def apply(self, c):
-    hud_control = c.hudControl
-    ret = self.CC.update(c, self.CS, self.frame, self.ext_bus, c.actuators,
-                         hud_control.visualAlert,
-                         hud_control.leftLaneVisible,
-                         hud_control.rightLaneVisible,
-                         hud_control.leftLaneDepart,
-                         hud_control.rightLaneDepart)
-    self.frame += 1
-    return ret
+    return self.CC.update(c, self.CS, self.ext_bus)
