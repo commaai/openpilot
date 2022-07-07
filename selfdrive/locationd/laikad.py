@@ -49,7 +49,7 @@ class Laikad:
     self.orbit_fetch_future: Optional[Future] = None
 
     self.last_fetch_orbits_t = None
-    self.got_ublox_msgs = False
+    self.got_first_ublox_msg = False
     self.last_cached_t = None
     self.save_ephemeris = save_ephemeris
     self.load_cache()
@@ -102,7 +102,7 @@ class Laikad:
       t = ublox_mono_time * 1e-9
       report = ublox_msg.measurementReport
       if report.gpsWeek > 0:
-        self.got_ublox_msgs = True
+        self.got_first_ublox_msg = True
         latest_msg_t = GPSTime(report.gpsWeek, report.rcvTow)
         if self.auto_fetch_orbits:
           self.fetch_orbits(latest_msg_t, block)
@@ -180,25 +180,25 @@ class Laikad:
 
   def fetch_orbits(self, t: GPSTime, block):
     # Download new orbits if 1 hour of orbits data left
-    if t + SECS_IN_HR not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or t - self.last_fetch_orbits_t > SECS_IN_MIN):
+    if t + SECS_IN_HR not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or abs(t - self.last_fetch_orbits_t) > SECS_IN_MIN):
       astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types
       ret = None
 
       if block:
         ret = get_orbit_data(t, *astro_dog_vars)
-        self.last_fetch_orbits_t = t
       elif self.orbit_fetch_future is None:
         self.orbit_fetch_executor = ProcessPoolExecutor(max_workers=1)
         self.orbit_fetch_future = self.orbit_fetch_executor.submit(get_orbit_data, t, *astro_dog_vars)
       elif self.orbit_fetch_future.done():
-
-        self.last_fetch_orbits_t = t
         ret = self.orbit_fetch_future.result()
         self.orbit_fetch_executor = self.orbit_fetch_future = None
 
       if ret is not None:
-        self.astro_dog.orbits, self.astro_dog.orbit_fetched_times = ret
-        self.cache_ephemeris(t=t)
+        if ret[0] is None:
+          self.last_fetch_orbits_t = ret[2]
+        else:
+          self.astro_dog.orbits, self.astro_dog.orbit_fetched_times, self.last_fetch_orbits_t = ret
+          self.cache_ephemeris(t=t)
 
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
@@ -208,9 +208,10 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
   try:
     astro_dog.get_orbit_data(t, only_predictions=True)
     cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
-    return astro_dog.orbits, astro_dog.orbit_fetched_times
+    return astro_dog.orbits, astro_dog.orbit_fetched_times, t
   except (RuntimeError, ValueError, IOError) as e:
     cloudlog.warning(f"No orbit data found or parsing failure: {e}")
+  return None, None, t
 
 
 def create_measurement_msg(meas: GNSSMeasurement):
@@ -298,7 +299,6 @@ def main(sm=None, pm=None):
   replay = "REPLAY" in os.environ
   use_internet = "LAIKAD_NO_INTERNET" not in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet)
-
   while True:
     sm.update()
 
@@ -307,11 +307,10 @@ def main(sm=None, pm=None):
       msg = laikad.process_ublox_msg(ublox_msg, sm.logMonoTime['ubloxGnss'], block=replay)
       if msg is not None:
         pm.send('gnssMeasurements', msg)
-    if not laikad.got_ublox_msgs and sm.updated['clocks']:
+    if not laikad.got_first_ublox_msg and sm.updated['clocks']:
       clocks_msg = sm['clocks']
       t = GPSTime.from_datetime(datetime.utcfromtimestamp(clocks_msg.wallTimeNanos * 1E-9))
       if laikad.auto_fetch_orbits:
-        print("Use clock time to fetch")
         laikad.fetch_orbits(t, block=replay)
 
 
