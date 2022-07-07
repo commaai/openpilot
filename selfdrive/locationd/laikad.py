@@ -184,7 +184,7 @@ class Laikad:
       astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types
       ret = None
 
-      if block:
+      if block:  # Used for testing purposes
         ret = get_orbit_data(t, *astro_dog_vars)
       elif self.orbit_fetch_future is None:
         self.orbit_fetch_executor = ProcessPoolExecutor(max_workers=1)
