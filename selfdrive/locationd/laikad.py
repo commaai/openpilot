@@ -113,7 +113,9 @@ class Laikad:
       self.update_pos_fix(t, processed_measurements)
       est_pos = self.gnss_kf.x[GStates.ECEF_POS]
 
-      corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, allow_incomplete_delay=True) if len(est_pos) > 0 else []
+      allow_incomplete_delay = any(self.gnss_kf.P[GStates.ECEF_POS].diagonal() > 1e3)
+
+      corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, allow_incomplete_delay=allow_incomplete_delay) if len(est_pos) > 0 else []
       measurements_for_kf = corrected_measurements if len(corrected_measurements) > 0 else processed_measurements
       self.update_localizer(est_pos, t, measurements_for_kf)
 
@@ -123,6 +125,12 @@ class Laikad:
 
       pos_std = np.sqrt(abs(self.gnss_kf.P[GStates.ECEF_POS].diagonal())).tolist()
       vel_std = np.sqrt(abs(self.gnss_kf.P[GStates.ECEF_VELOCITY].diagonal())).tolist()
+      # if allow_incomplete_delay and self.last_pos_fix is not None and len(self.last_pos_fix) == 3:
+      #
+      #   print("pos diff", np.linalg.norm(np.array(self.last_pos_fix)- np.array(ecef_pos)), "allow_incomplete_delay", allow_incomplete_delay, "proc/corrected meas len", len(processed_measurements), len(corrected_measurements), "pos std", self.gnss_kf.P[GStates.ECEF_POS].diagonal())
+      # elif (int(ublox_mono_time) % 5 ==0 or len(corrected_measurements) == 0) and self.last_pos_fix is not None and len(self.last_pos_fix) == 3:
+      #   print("pos diff", np.linalg.norm(np.array(self.last_pos_fix) - np.array(ecef_pos)), "proc/corr meas len",
+      #         len(processed_measurements), len(corrected_measurements))
 
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
       dat = messaging.new_message("gnssMeasurements")
@@ -202,8 +210,9 @@ class Laikad:
     # if median residual is too large increase the Covariance matrix to improve convergence
     residual_median = np.median(np.abs(residuals))
     if residual_median > RESIDUAL_THRESHOLD:
-      a = min(1, residual_median * RESIDUAL_WEIGHT)
-      p = self.gnss_kf.P * (1 - 1 / a) + self.gnss_kf.P_initial * a
+      print("Residual!", residual_median * RESIDUAL_WEIGHT, residual_median)
+      a = min(residual_median * RESIDUAL_WEIGHT, 1)
+      p = self.gnss_kf.P * (1 - a) + self.gnss_kf.P_initial * a
       self.gnss_kf.init_state(self.gnss_kf.x, covs=p, filter_time=self.gnss_kf.filter.get_filter_time())
 
 
