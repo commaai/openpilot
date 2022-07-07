@@ -3,11 +3,12 @@ import struct
 import traceback
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, Optional, Set, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
+from selfdrive.car.ecu_addrs import get_ecu_addrs
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
@@ -15,6 +16,7 @@ from selfdrive.car.toyota.values import CAR as TOYOTA
 from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
+ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 
 
 def p16(val):
@@ -146,12 +148,14 @@ REQUESTS: List[Request] = [
     "volkswagen",
     [VOLKSWAGEN_VERSION_REQUEST_MULTI],
     [VOLKSWAGEN_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar],
     rx_offset=VOLKSWAGEN_RX_OFFSET,
   ),
   Request(
     "volkswagen",
     [VOLKSWAGEN_VERSION_REQUEST_MULTI],
     [VOLKSWAGEN_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.engine, Ecu.transmission],
   ),
   # Mazda
   Request(
@@ -192,12 +196,13 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
-def build_fw_dict(fw_versions):
+def build_fw_dict(fw_versions, filter_brand=None):
   fw_versions_dict = {}
   for fw in fw_versions:
-    addr = fw.address
-    sub_addr = fw.subAddress if fw.subAddress != 0 else None
-    fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
+    if filter_brand is None or fw.brand == filter_brand:
+      addr = fw.address
+      sub_addr = fw.subAddress if fw.subAddress != 0 else None
+      fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
   return fw_versions_dict
 
 
@@ -259,7 +264,6 @@ def match_fw_to_car_exact(fw_versions_dict):
       ecu_type = ecu[0]
       addr = ecu[1:]
       found_version = fw_versions_dict.get(addr, None)
-      ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
       if ecu_type == Ecu.esp and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and found_version is None:
         continue
 
@@ -283,25 +287,69 @@ def match_fw_to_car_exact(fw_versions_dict):
 
 
 def match_fw_to_car(fw_versions, allow_fuzzy=True):
-  fw_versions_dict = build_fw_dict(fw_versions)
-  matches = match_fw_to_car_exact(fw_versions_dict)
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
-  exact_match = True
-  if allow_fuzzy and len(matches) == 0:
-    matches = match_fw_to_car_fuzzy(fw_versions_dict)
+  # Try exact matching first
+  exact_matches = [True]
+  if allow_fuzzy:
+    exact_matches.append(False)
 
-    # Fuzzy match found
-    if len(matches) == 1:
-      exact_match = False
+  for exact_match in exact_matches:
+    # For each brand, attempt to fingerprint using FW returned from its queries
+    for brand in versions.keys():
+      fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
 
-  return exact_match, matches
+      if exact_match:
+        matches = match_fw_to_car_exact(fw_versions_dict)
+      else:
+        matches = match_fw_to_car_fuzzy(fw_versions_dict)
+
+      if len(matches) == 1:
+        return exact_match, matches
+
+  return True, []
+
+
+def get_present_ecus(logcan, sendcan):
+  queries = list()
+  parallel_queries = list()
+  responses = set()
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+
+  for r in REQUESTS:
+    if r.brand not in versions:
+      continue
+
+    for brand_versions in versions[r.brand].values():
+      for ecu_type, addr, sub_addr in brand_versions:
+        # Only query ecus in whitelist if whitelist is not empty
+        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
+          a = (addr, sub_addr, r.bus)
+          # Build set of queries
+          if sub_addr is None:
+            if a not in parallel_queries:
+              parallel_queries.append(a)
+          else:  # subaddresses must be queried one by one
+            if [a] not in queries:
+              queries.append([a])
+
+          # Build set of expected responses to filter
+          response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
+          responses.add((response_addr, sub_addr, r.bus))
+
+  queries.insert(0, parallel_queries)
+
+  ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
+  for query in queries:
+    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
+  return ecu_responses
 
 
 def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
 
   # Extract ECU addresses to query from fingerprints
-  # ECUs using a subadress need be queried one by one, the rest can be done in parallel
+  # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
 
@@ -336,20 +384,21 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             t = 2 * timeout if i == 0 else timeout
-            fw_versions.update({addr: (version, r.request, r.rx_offset) for addr, version in query.get_data(t).items()})
+            fw_versions.update({(r.brand, addr): (version, r) for addr, version in query.get_data(t).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
   # Build capnp list to put into CarParams
   car_fw = []
-  for addr, (version, request, rx_offset) in fw_versions.items():
+  for (brand, addr), (version, request) in fw_versions.items():
     f = car.CarParams.CarFw.new_message()
 
     f.ecu = ecu_types[addr]
     f.fwVersion = version
     f.address = addr[0]
-    f.responseAddress = addr[0] + rx_offset
-    f.request = request
+    f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], request.rx_offset)
+    f.request = request.request
+    f.brand = brand
 
     if addr[1] is not None:
       f.subAddress = addr[1]

@@ -119,6 +119,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.COROLLA: ToyotaCarInfo("Toyota Corolla 2017-19", footnotes=[Footnote.DSU]),
   CAR.COROLLA_TSS2: [
     ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
+    ToyotaCarInfo("Toyota Corolla Cross 2020-21 (Non-US only)"),
     ToyotaCarInfo("Toyota Corolla Hatchback 2019-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
   ],
   CAR.COROLLAH_TSS2: [
@@ -815,6 +816,7 @@ FW_VERSIONS = {
       b'F152676303\x00\x00\x00\x00\x00\x00',
       b'F152676304\x00\x00\x00\x00\x00\x00',
       b'F152612D00\x00\x00\x00\x00\x00\x00',
+      b'F152612842\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
@@ -1260,6 +1262,7 @@ FW_VERSIONS = {
       b'\x01F152642711\x00\x00\x00\x00\x00\x00',
       b'\x01F152642750\x00\x00\x00\x00\x00\x00',
       b'\x01F152642751\x00\x00\x00\x00\x00\x00',
+      b'\x01F15260R292\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B42170\x00\x00\x00\x00\x00\x00',
@@ -1294,6 +1297,7 @@ FW_VERSIONS = {
       b'\x028965B0R01500\x00\x00\x00\x008965B0R02500\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
+      b'\x01896634AA0000\x00\x00\x00\x00',
       b'\x01896634AA1000\x00\x00\x00\x00',
       b'\x01896634A88000\x00\x00\x00\x00',
     ],
@@ -1313,6 +1317,7 @@ FW_VERSIONS = {
       b'\x018966342X6000\x00\x00\x00\x00',
       b'\x01896634A25000\x00\x00\x00\x00',
       b'\x018966342W5000\x00\x00\x00\x00',
+      b'\x018966342W7000\x00\x00\x00\x00',
       b'\x028966342W4001\x00\x00\x00\x00897CF1203001\x00\x00\x00\x00',
       b'\x02896634A13000\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02896634A13001\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
@@ -1758,13 +1763,14 @@ FW_VERSIONS = {
       b'\x01896630EB0000\x00\x00\x00\x00',
       b'\x01896630EC9000\x00\x00\x00\x00',
       b'\x01896630ED0000\x00\x00\x00\x00',
+      b'\x01896630ED0100\x00\x00\x00\x00',
       b'\x01896630ED6000\x00\x00\x00\x00',
       b'\x018966348W5100\x00\x00\x00\x00',
       b'\x018966348W9000\x00\x00\x00\x00',
       b'\x01896634D12000\x00\x00\x00\x00',
       b'\x01896634D12100\x00\x00\x00\x00',
       b'\x01896634D43000\x00\x00\x00\x00',
-      b'\x01896630ED0100\x00\x00\x00\x00',
+      b'\x01896634D44000\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'\x01F15260E031\x00\x00\x00\x00\x00\x00',
