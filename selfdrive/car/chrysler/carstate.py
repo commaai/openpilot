@@ -12,6 +12,10 @@ class CarState(CarStateBase):
     self.CP = CP
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
+    self.auto_high_beam = 0
+    self.button_counter = 0
+    self.lkas_car_model = -1
+
     if CP.carFingerprint in RAM_CARS:
       self.shifter_values = can_define.dv["Transmission_Status"]["Gear_State"]
     else:
@@ -79,7 +83,7 @@ class CarState(CarStateBase):
     ret.accFaulted = cp_cruise.vl["DAS_3"]["ACC_FAULTED"] != 0
 
     if self.CP.carFingerprint in RAM_CARS:
-      self.autoHighBeamBit = cp_cam.vl["DAS_6"]['AUTO_HIGH_BEAM_ON']  # Auto High Beam isn't Located in this message on chrysler or jeep currently located in 729 message
+      self.auto_high_beam = cp_cam.vl["DAS_6"]['AUTO_HIGH_BEAM_ON']  # Auto High Beam isn't Located in this message on chrysler or jeep currently located in 729 message
       ret.steerFaultTemporary  = cp.vl["EPS_3"]["DASM_FAULT"] == 1
 
     # blindspot sensors
@@ -87,7 +91,6 @@ class CarState(CarStateBase):
       ret.leftBlindspot = cp.vl["BSM_1"]["LEFT_STATUS"] == 1
       ret.rightBlindspot = cp.vl["BSM_1"]["RIGHT_STATUS"] == 1
 
-    self.lkas_counter = cp_cruise.vl["DAS_3"]["COUNTER"]
     self.lkas_car_model = cp_cam.vl["DAS_6"]["CAR_MODEL"]
     self.button_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
 
