@@ -60,7 +60,6 @@ def create_lkas_hud(packer, lkas_active, hud_alert, hud_count, CS, fingerprint):
     "CAR_MODEL": carmodel,  # TODO: look into this
     "LKAS_LANE_LINES": lines,
     "LKAS_ALERTS": alerts,
-    "LKAS_Disabled": 0,
   }
   return packer.make_can_msg("DAS_6", 0, values)
 
