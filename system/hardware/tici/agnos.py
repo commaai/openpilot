@@ -13,6 +13,7 @@ import requests
 import system.hardware.tici.casync as casync
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
+CAIBX_URL = "https://commadist.azureedge.net/agnosupdate/"
 
 
 class StreamingDecompressor:
@@ -103,28 +104,37 @@ def get_partition_path(target_slot_number: int, partition: dict) -> str:
   return path
 
 
+def get_raw_hash(path: str, partition_size: int) -> str:
+  raw_hash = hashlib.sha256()
+  pos, chunk_size = 0, 1024 * 1024
+
+  with open(path, 'rb+') as out:
+    while pos < partition_size:
+      n = min(chunk_size, partition_size - pos)
+      raw_hash.update(out.read(n))
+      pos += n
+
+  return raw_hash.hexdigest().lower()
+
+
 def verify_partition(target_slot_number: int, partition: Dict[str, Union[str, int]], force_full_check: bool = False) -> bool:
   full_check = partition['full_check'] or force_full_check
   path = get_partition_path(target_slot_number, partition)
+
   if not isinstance(partition['size'], int):
     return False
+
   partition_size: int = partition['size']
 
   if not isinstance(partition['hash_raw'], str):
     return False
+
   partition_hash: str = partition['hash_raw']
-  with open(path, 'rb+') as out:
-    if full_check:
-      raw_hash = hashlib.sha256()
 
-      pos, chunk_size = 0, 1024 * 1024
-      while pos < partition_size:
-        n = min(chunk_size, partition_size - pos)
-        raw_hash.update(out.read(n))
-        pos += n
-
-      return raw_hash.hexdigest().lower() == partition_hash.lower()
-    else:
+  if full_check:
+    return get_raw_hash(path, partition_size) == partition_hash.lower()
+  else:
+    with open(path, 'rb+') as out:
       out.seek(partition_size)
       return out.read(64) == partition_hash.lower().encode()
 
@@ -177,8 +187,13 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
   sources: List[Tuple[str, casync.ChunkReader, casync.ChunkDict]] = []
 
   # First source is the current partition. Index file for current version is provided in the manifest
-  if 'casync_seed_caibx' in partition:
-    sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(casync.parse_caibx(partition['casync_seed_caibx'])))]
+  raw_hash = get_raw_hash(seed_path, partition['size'])
+  caibx_url = f"{CAIBX_URL}{partition['name']}-{raw_hash}.caibx"
+  try:
+    cloudlog.info(f"casync fetching {caibx_url}")
+    sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(casync.parse_caibx(caibx_url)))]
+  except requests.RequestException:
+    cloudlog.error(f"casync failed to load {caibx_url}")
 
   # Second source is the target partition, this allows for resuming
   sources += [('target', casync.FileChunkReader(path), casync.build_chunk_dict(target))]
