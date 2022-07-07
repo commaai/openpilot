@@ -126,9 +126,10 @@ if __name__ == "__main__":
           print("New style (exact):", exact_matches)
           print("New style (fuzzy):", fuzzy_matches)
 
-          for version in car_fw:
+          padding = max([len(fw.brand) for fw in car_fw])
+          for version in sorted(car_fw, key=lambda fw: fw.brand):
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-            print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
+            print(f"  Brand: {version.brand:{padding}} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
 
           print("Mismatches")
           found = False
