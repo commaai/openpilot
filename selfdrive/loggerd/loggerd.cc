@@ -204,10 +204,8 @@ void loggerd_thread() {
   // init encoders
   s.last_camera_seen_tms = millis_since_boot();
   for (const auto &cam : cameras_logged) {
-    if (cam.enable) {
-      s.max_waiting++;
-      if (cam.has_qcamera) { s.max_waiting++; }
-    }
+    s.max_waiting++;
+    if (cam.has_qcamera) { s.max_waiting++; }
   }
 
   uint64_t msg_count = 0, bytes_count = 0;
