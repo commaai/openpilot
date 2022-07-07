@@ -4,6 +4,8 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, GEN1
+from selfdrive.controls.lib.latcontrol import MIN_STEER_SPEED
+
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -91,7 +93,7 @@ class CarState(CarStateBase):
     # Check if LKAS is disabled due to lack of driver torque when all other states indicate
     # it should be enabled (steer lockout). Don't warn until we actually get lkas active
     # and lose it again, i.e, after initial lkas activation
-    if self.CP.minSteerSpeed != 0 or not ret.standstill:
+    if self.CP.minSteerSpeed != 0 or ret.vEgo > MIN_STEER_SPEED:
       ret.steerFaultTemporary = self.lkas_allowed_speed and lkas_blocked
 
     self.acc_active_last = ret.cruiseState.enabled
