@@ -23,6 +23,83 @@ from selfdrive.version import is_dirty, get_commit, get_version, get_origin, get
                               terms_version, training_version
 
 
+import threading
+import time
+from cereal import log
+from tools.sim.lib.can import can_function
+from common.realtime import DT_DMON, Ratekeeper
+
+pm = messaging.PubMaster(['can'])
+
+class VehicleState:
+  def __init__(self):
+    self.speed = 0
+    self.angle = 0
+    self.bearing_deg = 0.0
+ #   self.vel = carla.Vector3D()
+    self.cruise_button = 0
+    self.is_engaged = False
+    self.ignition = True
+
+def panda_state_function(vs: VehicleState, exit_event: threading.Event):
+  pm = messaging.PubMaster(['pandaStates'])
+  while not exit_event.is_set():
+    dat = messaging.new_message('pandaStates', 1)
+    dat.valid = True
+    dat.pandaStates[0] = {
+      'ignitionLine': vs.ignition,
+      'pandaType': "blackPanda",
+      'controlsAllowed': True,
+      'safetyModel': 'hondaNidec'
+    }
+    pm.send('pandaStates', dat)
+    time.sleep(0.5)
+
+
+def peripheral_state_function(exit_event: threading.Event):
+  pm = messaging.PubMaster(['peripheralState'])
+  while not exit_event.is_set():
+    dat = messaging.new_message('peripheralState')
+    dat.valid = True
+    # fake peripheral state data
+    dat.peripheralState = {
+      'pandaType': log.PandaState.PandaType.blackPanda,
+      'voltage': 12000,
+      'current': 5678,
+      'fanSpeedRpm': 1000
+    }
+    pm.send('peripheralState', dat)
+    time.sleep(0.5)
+
+def fake_driver_monitoring(exit_event: threading.Event):
+  pm = messaging.PubMaster(['driverState', 'driverMonitoringState'])
+  while not exit_event.is_set():
+    # dmonitoringmodeld output
+    dat = messaging.new_message('driverState')
+    dat.driverState.faceProb = 1.0
+    pm.send('driverState', dat)
+
+    # dmonitoringd output
+    dat = messaging.new_message('driverMonitoringState')
+    dat.driverMonitoringState = {
+      "faceDetected": True,
+      "isDistracted": False,
+      "awarenessStatus": 1.,
+    }
+    pm.send('driverMonitoringState', dat)
+
+    time.sleep(DT_DMON)
+
+
+def can_function_runner(vs: VehicleState, exit_event: threading.Event):
+  i = 0
+  while not exit_event.is_set():
+    can_function(pm, vs.speed, vs.angle, i, vs.cruise_button, vs.is_engaged)
+    time.sleep(0.01)
+    i += 1
+
+
+
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
 
@@ -120,6 +197,17 @@ def manager_thread() -> None:
   cloudlog.info({"environ": os.environ})
 
   params = Params()
+
+  threads = []
+  vehicle_state = VehicleState()
+  threads_exit_event = threading.Event()
+
+  threads.append(threading.Thread(target=panda_state_function, args=(vehicle_state, threads_exit_event,)))
+  threads.append(threading.Thread(target=peripheral_state_function, args=(threads_exit_event,)))
+  threads.append(threading.Thread(target=fake_driver_monitoring, args=(threads_exit_event,)))
+  threads.append(threading.Thread(target=can_function_runner, args=(vehicle_state, threads_exit_event,)))
+  for t in threads:
+    t.start()
 
   ignore: List[str] = []
   if params.get("DongleId", encoding='utf8') in (None, UNREGISTERED_DONGLE_ID):

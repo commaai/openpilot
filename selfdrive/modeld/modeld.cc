@@ -183,8 +183,8 @@ int main(int argc, char **argv) {
   model_init(&model, device_id, context);
   LOGW("models loaded, modeld starting");
 
-  VisionIpcClient vipc_client_main = VisionIpcClient("camerad", main_wide_camera ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD, true, device_id, context);
-  VisionIpcClient vipc_client_extra = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, false, device_id, context);
+  VisionIpcClient vipc_client_main = VisionIpcClient("camerad", main_wide_camera ? VISION_STREAM_ROAD : VISION_STREAM_ROAD, true, device_id, context);
+  VisionIpcClient vipc_client_extra = VisionIpcClient("camerad", VISION_STREAM_ROAD, false, device_id, context);
 
   while (!do_exit && !vipc_client_main.connect(false)) {
     util::sleep_for(100);

@@ -54,7 +54,7 @@ void OnroadWindow::updateState(const UIState &s) {
     } else if (alert.type == "controlsUnresponsivePermanent") {
       bgColor = bg_colors[STATUS_DISENGAGED];
     }
-    alerts->updateAlert(alert, bgColor);
+    // alerts->updateAlert(alert, bgColor);
   }
 
   hud->updateState(s);
