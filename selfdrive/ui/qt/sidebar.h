@@ -34,13 +34,13 @@ protected:
 
   QPixmap home_img, settings_img;
   const QMap<cereal::DeviceState::NetworkType, QString> network_type = {
-    {cereal::DeviceState::NetworkType::NONE, "--"},
-    {cereal::DeviceState::NetworkType::WIFI, "Wi-Fi"},
-    {cereal::DeviceState::NetworkType::ETHERNET, "ETH"},
-    {cereal::DeviceState::NetworkType::CELL2_G, "2G"},
-    {cereal::DeviceState::NetworkType::CELL3_G, "3G"},
-    {cereal::DeviceState::NetworkType::CELL4_G, "LTE"},
-    {cereal::DeviceState::NetworkType::CELL5_G, "5G"}
+    {cereal::DeviceState::NetworkType::NONE, tr("--")},
+    {cereal::DeviceState::NetworkType::WIFI, tr("Wi-Fi")},
+    {cereal::DeviceState::NetworkType::ETHERNET, tr("ETH")},
+    {cereal::DeviceState::NetworkType::CELL2_G, tr("2G")},
+    {cereal::DeviceState::NetworkType::CELL3_G, tr("3G")},
+    {cereal::DeviceState::NetworkType::CELL4_G, tr("LTE")},
+    {cereal::DeviceState::NetworkType::CELL5_G, tr("5G")}
   };
 
   const QRect settings_btn = QRect(50, 35, 200, 117);
