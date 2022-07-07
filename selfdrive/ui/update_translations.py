@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-from collections import defaultdict
 import json
 import os
-from typing import Dict
 
 from common.basedir import BASEDIR
 
@@ -16,7 +14,6 @@ def update_translations(release=False, translations_dir=TRANSLATIONS_DIR):
   with open(LANGUAGES_FILE, "r") as f:
     translation_files = json.load(f)
 
-  prev_translations = defaultdict(str)
   for name, file in translation_files.items():
     if not len(file):
       print(f"{name} has no translation file, skipping...")
@@ -29,8 +26,6 @@ def update_translations(release=False, translations_dir=TRANSLATIONS_DIR):
     if release:
       ret = os.system(f"lrelease {tr_file}")
       assert ret == 0
-
-  return prev_translations
 
 
 if __name__ == "__main__":
