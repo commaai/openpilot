@@ -25,17 +25,10 @@ class CAR:
 
 
 class CarControllerParams:
-  def __init__(self, CP):
-    self.STEER_MAX = 261         # higher than this faults the EPS
-    self.STEER_DELTA_UP = 3      # 3 is stock. 100 is fine. 200 is too much it seems
-    self.STEER_DELTA_DOWN = 3    # no faults on the way down it seems
-    self.STEER_ERROR_MAX = 80
-
-    if CP.carFingerprint in RAM_CARS:
-      self.BUTTONS_BUS = 2
-    else:
-      # Jeep + Chrysler
-      self.BUTTONS_BUS = 0
+  STEER_MAX = 261  # higher than this faults the EPS on Chrysler/Jeep. Ram DT allows more
+  STEER_DELTA_UP = 3
+  STEER_DELTA_DOWN = 3
+  STEER_ERROR_MAX = 80
 
 STEER_THRESHOLD = 120
 
