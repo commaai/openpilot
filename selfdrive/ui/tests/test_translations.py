@@ -2,9 +2,12 @@
 from collections import defaultdict
 import json
 import os
+import shutil
 import unittest
 
 from selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
+
+TMP_TRANSLATIONS_DIR = os.path.join(TRANSLATIONS_DIR, "tmp")
 
 
 class TestTranslations(unittest.TestCase):
@@ -12,52 +15,55 @@ class TestTranslations(unittest.TestCase):
   def setUpClass(cls):
     with open(LANGUAGES_FILE, "r") as f:
       cls.translation_files = json.load(f)
-    cls.prev_translations = cls._get_previous_translations(cls)
 
-  def _get_previous_translations(self):
-    prev_translations = defaultdict(lambda: defaultdict(str))
+    # Set up temp directory
+    shutil.copytree(TRANSLATIONS_DIR, TMP_TRANSLATIONS_DIR, dirs_exist_ok=True)
 
-    for file in self.translation_files.values():
-      if len(file):
-        for file_ext in ["ts", "qm"]:
-          tr_file = os.path.join(TRANSLATIONS_DIR, f"{file}.{file_ext}")
+  @classmethod
+  def tearDownClass(cls):
+    shutil.rmtree(TMP_TRANSLATIONS_DIR, ignore_errors=True)
 
-          if os.path.exists(tr_file):
-            with open(tr_file, "rb") as f:
-              prev_translations[file][file_ext] = f.read()
+  @staticmethod
+  def _read_translation_file(path, file, file_ext):
+    tr_file = os.path.join(path, f"{file}.{file_ext}")
+    with open(tr_file, "rb") as f:
+      # fix extra relative path depth
+      return f.read().replace(b"filename=\"../../", b"filename=\"../")
 
-    return prev_translations
+  @staticmethod
+  def _translation_file_exists(file, file_ext):
+    return os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.{file_ext}"))
 
   def test_missing_translation_files(self):
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
         if not len(file):
-          self.skipTest(f"{name} translation has no file")
+          self.skipTest(f"{name} translation has no defined file")
 
-        self.assertTrue(len(self.prev_translations[file]["ts"]),
+        self.assertTrue(self._translation_file_exists(file, "ts"),
                         f"{name} has no XML translation file, run selfdrive/ui/update_translations.py")
-        self.assertTrue(len(self.prev_translations[file]["qm"]),
+        self.assertTrue(self._translation_file_exists(file, "qm"),
                         f"{name} has no compiled QM translation file, run selfdrive/ui/update_translations.py --release")
 
   def test_translations_updated(self):
-    update_translations(release=True)
+    update_translations(release=True, translations_dir=TMP_TRANSLATIONS_DIR)
 
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
+        if not len(file):
+          self.skipTest(f"{name} translation has no defined file")
+
         for file_ext in ["ts", "qm"]:
           with self.subTest(file_ext=file_ext):
-            new_file = os.path.join(TRANSLATIONS_DIR, f"{file}.{file_ext}")
 
             # caught by test_missing_translation_files
-            if not len(file):
-              self.skipTest(f"{name} translation has no file")
-            elif not len(self.prev_translations[file][file_ext]):
+            if not self._translation_file_exists(file, file_ext):
               self.skipTest(f"{name} missing translation file")
 
-            with open(new_file, "rb") as f:
-              new_translations = f.read()
+            cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file, file_ext)
+            new_translations = self._read_translation_file(TMP_TRANSLATIONS_DIR, file, file_ext)
 
-            self.assertEqual(self.prev_translations[file][file_ext], new_translations,
+            self.assertEqual(cur_translations, new_translations,
                              f"{file} ({name}) {file_ext.upper()} translation file out of date. Run selfdrive/ui/update_translations.py --release to update the translation files")
 
 
