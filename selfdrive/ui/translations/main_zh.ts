@@ -877,37 +877,37 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.h" line="37"/>
         <source>--</source>
-        <translation type="unfinished"></translation>
+        <translation>--</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="38"/>
         <source>Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Wi-Fi</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="39"/>
         <source>ETH</source>
-        <translation type="unfinished"></translation>
+        <translation>以太網</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="40"/>
         <source>2G</source>
-        <translation type="unfinished"></translation>
+        <translation>2G</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="41"/>
         <source>3G</source>
-        <translation type="unfinished"></translation>
+        <translation>3G</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="42"/>
         <source>LTE</source>
-        <translation type="unfinished"></translation>
+        <translation>LTE</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="43"/>
         <source>5G</source>
-        <translation type="unfinished"></translation>
+        <translation>5G</translation>
     </message>
 </context>
 <context>
