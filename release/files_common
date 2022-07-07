@@ -474,6 +474,7 @@ opendbc/can/parser_pyx.pyx
 
 opendbc/comma_body.dbc
 
+opendbc/chrysler_ram_dt_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
 
