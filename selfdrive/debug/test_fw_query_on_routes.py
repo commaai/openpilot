@@ -91,11 +91,20 @@ if __name__ == "__main__":
           # Older routes only have carFw from their brand
           old_route = not any([len(fw.brand) for fw in car_fw])
           brands = SUPPORTED_BRANDS if not old_route else [None]
+
+          # Exact match
+          exact_matches, fuzzy_matches = [], []
           for brand in brands:
             fw_versions_dict = build_fw_dict(car_fw, filter_brand=brand)
             exact_matches = match_fw_to_car_exact(fw_versions_dict)
+            if len(exact_matches) == 1:
+              break
+
+          # Fuzzy match
+          for brand in brands:
+            fw_versions_dict = build_fw_dict(car_fw, filter_brand=brand)
             fuzzy_matches = match_fw_to_car_fuzzy(fw_versions_dict)
-            if len(exact_matches) or len(fuzzy_matches):
+            if len(fuzzy_matches) == 1:
               break
 
           if (len(exact_matches) == 1) and (list(exact_matches)[0] == live_fingerprint):
