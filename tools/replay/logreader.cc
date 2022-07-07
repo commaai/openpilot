@@ -47,19 +47,12 @@ LogReader::~LogReader() {
 }
 
 bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
-  FileReader f(local_cache, chunk_size, retries);
-  raw_ = f.read(url, abort);
+  raw_ = FileReader(local_cache, chunk_size, retries).read(url, abort);
   if (raw_.empty()) return false;
 
-  bool is_bz2 = url.find(".bz2") != std::string::npos;
-  if (is_bz2) {
+  if (url.find(".bz2") != std::string::npos) {
     raw_ = decompressBZ2(raw_, abort);
-    if (raw_.empty()) {
-      if (!(abort && *abort)) {
-        rWarning("failed to decompress log");
-      }
-      return false;
-    }
+    if (raw_.empty()) return false;
   }
   return parse(abort);
 }
