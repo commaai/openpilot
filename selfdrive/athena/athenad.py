@@ -14,7 +14,6 @@ import sys
 import tempfile
 import threading
 import time
-import urllib.parse
 from collections import namedtuple
 from datetime import datetime
 from functools import partial
@@ -366,8 +365,8 @@ def uploadFilesToUrls(files_data):
       continue
 
     # Skip item if already in queue
-    url = urllib.parse.urlparse(file['url']).path
-    if any(url == urllib.parse.urlparse(item['url']).path for item in listUploadQueue()):
+    url = file['url'].split('?')[0]
+    if any(url == item['url'].split('?')[0] for item in listUploadQueue()):
       failed.append(fn)
       continue
 
