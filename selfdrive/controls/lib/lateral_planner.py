@@ -17,7 +17,7 @@ class LateralPlanner:
     self.DH = DesireHelper()
 
     self.factor1 = CP.wheelbase - CP.centerToFront
-    self.factor2 = (2 * CP.centerToFront * CP.mass) / (CP.wheelbase * CP.tireStiffnessRear)
+    self.factor2 = (CP.centerToFront * CP.mass) / (CP.wheelbase * CP.tireStiffnessRear)
     self.last_cloudlog_t = 0
     self.solution_invalid_cnt = 0
 
@@ -86,7 +86,7 @@ class LateralPlanner:
                      p,
                      y_pts,
                      heading_pts,
-                     curv_rate_pts)
+                     np.zeros_like(curv_rate_pts))
     # init state for next
     # mpc.u_sol is the desired curvature rate given x0 curv state.
     # with x0[3] = measured_curvature, this would be the actual desired rate.
