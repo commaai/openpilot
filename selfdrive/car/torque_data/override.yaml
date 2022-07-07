@@ -19,8 +19,9 @@ FORD FOCUS 4TH GEN: [.nan, 1.5, .nan]
 # No steering wheel
 COMMA BODY: [.nan, 1000, .nan]
 
-# Totally new car
+# Totally new cars
 KIA EV6 2022: [3.0, 2.5, 0.0]
+RAM 1500 5TH GEN: [2.0, 2.0, 0.05]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]

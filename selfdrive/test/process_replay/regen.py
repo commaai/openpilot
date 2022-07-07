@@ -15,6 +15,8 @@ from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
+from panda.python import Panda
+from selfdrive.car.toyota.values import EPS_SCALE
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
@@ -30,8 +32,8 @@ def replay_panda_states(s, msgs):
 
   # TODO: new safety params from flags, remove after getting new routes for Toyota
   safety_param_migration = {
-    "TOYOTA PRIUS 2017": 578,
-    "TOYOTA RAV4 2017": 329
+    "TOYOTA PRIUS 2017": EPS_SCALE["TOYOTA PRIUS 2017"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
+    "TOYOTA RAV4 2017": EPS_SCALE["TOYOTA RAV4 2017"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
   }
 
   # Migrate safety param base on carState
@@ -177,8 +179,22 @@ def replay_cameras(lr, frs, disable_tqdm=False):
   return vs, p
 
 
+def migrate_carparams(lr):
+  all_msgs = []
+  for msg in lr:
+    if msg.which() == 'carParams':
+      CP = messaging.new_message('carParams')
+      CP.carParams = msg.carParams.as_builder()
+      for car_fw in CP.carParams.carFw:
+        car_fw.brand = CP.carParams.carName
+      msg = CP.as_reader()
+    all_msgs.append(msg)
+
+  return all_msgs
+
+
 def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
-  lr = list(lr)
+  lr = migrate_carparams(list(lr))
   if frs is None:
     frs = dict()
 
