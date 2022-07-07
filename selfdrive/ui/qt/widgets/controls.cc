@@ -125,7 +125,9 @@ void ElidedLabel::paintEvent(QPaintEvent *event) {
 ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }
 
 void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
-  emit clicked();
+  if (rect().contains(event->pos())) {
+    emit clicked();
+  }
 }
 
 // Fix stylesheets
