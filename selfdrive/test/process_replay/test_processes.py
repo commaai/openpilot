@@ -71,7 +71,7 @@ def run_test_process(data):
     assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
     upload_file(cur_log_fn, os.path.basename(cur_log_fn))
     os.remove(cur_log_fn)
-  return (segment, cfg.proc_name, res)
+  return (segment, cfg.proc_name, cfg.subtest_name, res)
 
 
 def get_log_data(segment):
@@ -212,9 +212,9 @@ if __name__ == "__main__":
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
-    for (segment, proc, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
+    for (segment, proc, subtest_name, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
       if isinstance(result, list):
-        results[segment][proc] = result
+        results[segment][proc + subtest_name] = result
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   if not upload:
