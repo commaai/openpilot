@@ -67,7 +67,7 @@ class TestLaikad(unittest.TestCase):
     gpstime = GPSTime.from_datetime(datetime(2021, month=3, day=1))
     laikad = Laikad()
     laikad.fetch_orbits(gpstime, block=False)
-    laikad.orbit_fetch_future.result(5)
+    laikad.orbit_fetch_future.result(30)
     # Get results and save orbits to laikad:
     laikad.fetch_orbits(gpstime, block=False)
 
@@ -75,7 +75,7 @@ class TestLaikad(unittest.TestCase):
     self.assertIsNotNone(ephem)
 
     laikad.fetch_orbits(gpstime+2*SECS_IN_DAY, block=False)
-    laikad.orbit_fetch_future.result(5)
+    laikad.orbit_fetch_future.result(30)
     # Get results and save orbits to laikad:
     laikad.fetch_orbits(gpstime + 2 * SECS_IN_DAY, block=False)
 
