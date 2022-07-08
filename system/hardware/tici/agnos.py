@@ -186,7 +186,7 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
 
   sources: List[Tuple[str, casync.ChunkReader, casync.ChunkDict]] = []
 
-  # First source is the current partition. Index file for current version is provided in the manifest
+  # First source is the current partition.
   try:
     raw_hash = get_raw_hash(seed_path, partition['size'])
     caibx_url = f"{CAIBX_URL}{partition['name']}-{raw_hash}.caibx"
