@@ -14,13 +14,12 @@ int main(int argc, char *argv[]) {
   qInstallMessageHandler(swagLogMessageHandler);
   initApp(argc, argv);
 
-  QString language_file = QString::fromStdString(Params().get("LanguageSetting"));
-  qDebug() << "Loading language:" << language_file;
-
   QTranslator translator;
+  QString language_file = QString::fromStdString(Params().get("LanguageSetting"));
   if (!translator.load(language_file, "translations")) {
-    qDebug() << "Failed to load translation file!";
+    LOGW("Failed to load translation file: %s", language_file);
   }
+
   QApplication a(argc, argv);
   a.installTranslator(&translator);
 
