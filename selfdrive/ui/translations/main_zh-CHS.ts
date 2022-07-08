@@ -160,7 +160,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="118"/>
         <source>REVIEW</source>
-        <translation>审查</translation>
+        <translation>重新查看</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="118"/>
@@ -180,15 +180,15 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="128"/>
         <source>VIEW</source>
-        <translation>看法</translation>
+        <translation>查看</translation>
     </message>
     <message>
         <source>Change Language</source>
-        <translation type="vanished">改变语言</translation>
+        <translation type="vanished">切换语言</translation>
     </message>
     <message>
         <source>CHANGE</source>
-        <translation type="vanished">改变</translation>
+        <translation type="vanished">切换</translation>
     </message>
     <message>
         <source>Select a language</source>
@@ -227,7 +227,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="184"/>
         <source>left</source>
-        <translation>剩下</translation>
+        <translation>向左</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="184"/>
@@ -270,7 +270,7 @@
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="44"/>
         <source>ALL TIME</source>
-        <translation>整天</translation>
+        <translation>全部</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="46"/>
@@ -285,7 +285,7 @@
     <message>
         <location filename="../qt/widgets/drive_stats.h" line="15"/>
         <source>Miles</source>
-        <translation>迈尔斯</translation>
+        <translation>英里</translation>
     </message>
 </context>
 <context>
@@ -293,7 +293,7 @@
     <message>
         <location filename="../qt/offroad/driverview.cc" line="56"/>
         <source>camera starting</source>
-        <translation>相机启动</translation>
+        <translation>相机启动中</translation>
     </message>
 </context>
 <context>
@@ -324,7 +324,7 @@
     <message>
         <location filename="../installer/installer.cc" line="144"/>
         <source>Receiving objects: </source>
-        <translation>接收物体： </translation>
+        <translation>正在接收： </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="145"/>
@@ -462,12 +462,12 @@ location set</source>
     <message>
         <location filename="../qt/home.cc" line="205"/>
         <source> ALERTS</source>
-        <translation> 个警报</translation>
+        <translation> 警报</translation>
     </message>
     <message>
         <location filename="../qt/home.cc" line="205"/>
         <source> ALERT</source>
-        <translation> 个警报</translation>
+        <translation> 警报</translation>
     </message>
 </context>
 <context>
@@ -561,7 +561,7 @@ location set</source>
     <message>
         <location filename="../qt/text.cc" line="41"/>
         <source>Exit</source>
-        <translation>出口</translation>
+        <translation>退出</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="18"/>
@@ -571,7 +571,7 @@ location set</source>
     <message>
         <location filename="../qt/util.cc" line="18"/>
         <source>openpilot</source>
-        <translation>开放式飞行员</translation>
+        <translation>openpilot</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="66"/>
@@ -732,7 +732,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="184"/>
         <source>Waiting for internet</source>
-        <translation>等待上网</translation>
+        <translation>等待网络连接</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="238"/>
@@ -857,7 +857,7 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
         <source>NO</source>
-        <translation>不</translation>
+        <translation>未连接</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
@@ -1046,12 +1046,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="107"/>
         <source>Decline</source>
-        <translation>衰退</translation>
+        <translation>拒绝</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="111"/>
         <source>Scroll to accept</source>
-        <translation>滚动接受</translation>
+        <translation>滑动接受</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="126"/>
@@ -1084,7 +1084,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="44"/>
         <source>Enable Right-Hand Drive</source>
-        <translation>启用右手驱动</translation>
+        <translation>启用右舵模式</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="45"/>
@@ -1114,7 +1114,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="62"/>
         <source>Disengage On Accelerator Pedal</source>
-        <translation>松开加速踏板</translation>
+        <translation>踩油门解除</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="63"/>
