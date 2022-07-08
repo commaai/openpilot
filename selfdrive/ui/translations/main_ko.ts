@@ -212,7 +212,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="182"/>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation>사용자의 기기가 %1° %2 및 %3° %4를 가리키고 있습니다.</translation>
+        <translation> 사용자의 기기가 %1° %2 및 %3° %4를 가리키고 있습니다.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="183"/>
@@ -1015,7 +1015,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="50"/>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>사용자 이름 &apos;%1&apos; GitHub에 키가 없습니다.</translation>
+        <translation>사용자 이름 &apos;%1&apos; GitHub에 키가 없습니다</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="54"/>
@@ -1025,7 +1025,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="56"/>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>사용자 이름 &apos;%1&apos; GitHub에 없습니다.</translation>
+        <translation>사용자 이름 &apos;%1&apos; GitHub에 없습니다</translation>
     </message>
 </context>
 <context>
@@ -1099,7 +1099,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="51"/>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>mph가 아닌 km/h로 속도 표시</translation>
+        <translation>mph가 아닌 km/h로 속도 표시.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="56"/>
