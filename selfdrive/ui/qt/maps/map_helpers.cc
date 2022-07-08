@@ -116,3 +116,8 @@ std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param) {
     return {};
   }
 }
+
+double angle_difference(double angle1, double angle2) {
+  double diff = fmod(angle2 - angle1 + 180.0, 360.0) - 180.0;
+  return diff < -180.0 ? diff + 360.0 : diff;
+}

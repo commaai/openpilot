@@ -138,7 +138,7 @@ class TestLaikad(unittest.TestCase):
     laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT)
     correct_msgs = verify_messages(self.logs, laikad)
 
-    correct_msgs_expected = 560
+    correct_msgs_expected = 555
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
@@ -159,7 +159,7 @@ class TestLaikad(unittest.TestCase):
     # Disable fetch_orbits to test NAV only
     laikad.fetch_orbits = Mock()
     correct_msgs = verify_messages(self.logs, laikad)
-    correct_msgs_expected = 560
+    correct_msgs_expected = 559
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
@@ -168,8 +168,8 @@ class TestLaikad(unittest.TestCase):
     downloader_mock.side_effect = IOError
     laikad = Laikad(auto_update=False)
     correct_msgs = verify_messages(self.logs, laikad)
-    self.assertEqual(256, len(correct_msgs))
-    self.assertEqual(256, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
+    self.assertEqual(16, len(correct_msgs))
+    self.assertEqual(16, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
   def test_laika_get_orbits(self):
     laikad = Laikad(auto_update=False)
