@@ -25,6 +25,7 @@ Version 0.8.15 (2022-07-20)
 * AGNOS 5
   * Support VSCode remote SSH target
   * Support for delta updates to reduce data usage on future OS updates
+* Chrysler ECU firmware fingerprinting thanks to realfast!
 * Honda Civic 2022 support
 * Hyundai Tucson 2021 support thanks to bluesforte!
 * Lexus NX Hybrid 2020 support thanks to AlexandreSato!
