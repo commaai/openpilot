@@ -181,6 +181,87 @@ void InputDialog::setMinLength(int length) {
   minLength = length;
 }
 
+// ConfirmationDialog
+
+ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
+                                       QWidget *parent) : QDialogBase(parent) {
+  QFrame *container = new QFrame(this);
+  container->setStyleSheet("QFrame { border-radius: 0; background-color: #ECECEC; }");
+  QVBoxLayout *main_layout = new QVBoxLayout(container);
+  main_layout->setContentsMargins(32, 120, 32, 32);
+
+  QLabel *prompt = new QLabel(prompt_text, this);
+  prompt->setWordWrap(true);
+  prompt->setAlignment(Qt::AlignHCenter);
+  prompt->setStyleSheet("font-size: 70px; font-weight: bold; color: black;");
+  main_layout->addWidget(prompt, 1, Qt::AlignTop | Qt::AlignHCenter);
+
+  // cancel + confirm buttons
+  QHBoxLayout *btn_layout = new QHBoxLayout();
+  btn_layout->setSpacing(30);
+  main_layout->addLayout(btn_layout);
+
+  if (cancel_text.length()) {
+    QPushButton* cancel_btn = new QPushButton(cancel_text);
+    btn_layout->addWidget(cancel_btn);
+    QObject::connect(cancel_btn, &QPushButton::clicked, this, &ConfirmationDialog::reject);
+  }
+
+  if (confirm_text.length()) {
+    QPushButton* confirm_btn = new QPushButton(confirm_text);
+    btn_layout->addWidget(confirm_btn);
+    QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
+  }
+
+  QVBoxLayout *outer_layout = new QVBoxLayout(this);
+  outer_layout->setContentsMargins(210, 170, 210, 170);
+  outer_layout->addWidget(container);
+}
+
+bool ConfirmationDialog::alert(const QString &prompt_text, QWidget *parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Ok"), "", parent);
+  return d.exec();
+}
+
+bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Ok"), tr("Cancel"), parent);
+  return d.exec();
+}
+
+
+// RichTextDialog
+
+RichTextDialog::RichTextDialog(const QString &prompt_text, const QString &btn_text,
+                               QWidget *parent) : QDialogBase(parent) {
+  QFrame *container = new QFrame(this);
+  container->setStyleSheet("QFrame { background-color: #1B1B1B; }");
+  QVBoxLayout *main_layout = new QVBoxLayout(container);
+  main_layout->setContentsMargins(32, 32, 32, 32);
+
+  QLabel *prompt = new QLabel(prompt_text, this);
+  prompt->setWordWrap(true);
+  prompt->setAlignment(Qt::AlignLeft);
+  prompt->setTextFormat(Qt::RichText);
+  prompt->setStyleSheet("font-size: 42px; font-weight: light; color: #C9C9C9; margin: 45px;");
+  main_layout->addWidget(new ScrollView(prompt, this), 1, Qt::AlignTop);
+
+  // confirm button
+  QPushButton* confirm_btn = new QPushButton(btn_text);
+  main_layout->addWidget(confirm_btn);
+  QObject::connect(confirm_btn, &QPushButton::clicked, this, &QDialog::accept);
+
+  QVBoxLayout *outer_layout = new QVBoxLayout(this);
+  outer_layout->setContentsMargins(100, 100, 100, 100);
+  outer_layout->addWidget(container);
+}
+
+bool RichTextDialog::alert(const QString &prompt_text, QWidget *parent) {
+  auto d = RichTextDialog(prompt_text, tr("Ok"), parent);
+  return d.exec();
+}
+
+// MultiOptionDialog
+
 MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, QWidget *parent) : QDialogBase(parent) {
   QFrame *container = new QFrame(this);
   container->setStyleSheet("QFrame { background-color: #1B1B1B; }");
@@ -264,83 +345,4 @@ QString MultiOptionDialog::getSelection(const QString &prompt_text, const QStrin
     return d.selection;
   }
   return "";
-}
-
-// ConfirmationDialog
-
-ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
-                                       QWidget *parent) : QDialogBase(parent) {
-  QFrame *container = new QFrame(this);
-  container->setStyleSheet("QFrame { border-radius: 0; background-color: #ECECEC; }");
-  QVBoxLayout *main_layout = new QVBoxLayout(container);
-  main_layout->setContentsMargins(32, 120, 32, 32);
-
-  QLabel *prompt = new QLabel(prompt_text, this);
-  prompt->setWordWrap(true);
-  prompt->setAlignment(Qt::AlignHCenter);
-  prompt->setStyleSheet("font-size: 70px; font-weight: bold; color: black;");
-  main_layout->addWidget(prompt, 1, Qt::AlignTop | Qt::AlignHCenter);
-
-  // cancel + confirm buttons
-  QHBoxLayout *btn_layout = new QHBoxLayout();
-  btn_layout->setSpacing(30);
-  main_layout->addLayout(btn_layout);
-
-  if (cancel_text.length()) {
-    QPushButton* cancel_btn = new QPushButton(cancel_text);
-    btn_layout->addWidget(cancel_btn);
-    QObject::connect(cancel_btn, &QPushButton::clicked, this, &ConfirmationDialog::reject);
-  }
-
-  if (confirm_text.length()) {
-    QPushButton* confirm_btn = new QPushButton(confirm_text);
-    btn_layout->addWidget(confirm_btn);
-    QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
-  }
-
-  QVBoxLayout *outer_layout = new QVBoxLayout(this);
-  outer_layout->setContentsMargins(210, 170, 210, 170);
-  outer_layout->addWidget(container);
-}
-
-bool ConfirmationDialog::alert(const QString &prompt_text, QWidget *parent) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Ok"), "", parent);
-  return d.exec();
-}
-
-bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Ok"), tr("Cancel"), parent);
-  return d.exec();
-}
-
-
-// RichTextDialog
-
-RichTextDialog::RichTextDialog(const QString &prompt_text, const QString &btn_text,
-                               QWidget *parent) : QDialogBase(parent) {
-  QFrame *container = new QFrame(this);
-  container->setStyleSheet("QFrame { background-color: #1B1B1B; }");
-  QVBoxLayout *main_layout = new QVBoxLayout(container);
-  main_layout->setContentsMargins(32, 32, 32, 32);
-
-  QLabel *prompt = new QLabel(prompt_text, this);
-  prompt->setWordWrap(true);
-  prompt->setAlignment(Qt::AlignLeft);
-  prompt->setTextFormat(Qt::RichText);
-  prompt->setStyleSheet("font-size: 42px; font-weight: light; color: #C9C9C9; margin: 45px;");
-  main_layout->addWidget(new ScrollView(prompt, this), 1, Qt::AlignTop);
-
-  // confirm button
-  QPushButton* confirm_btn = new QPushButton(btn_text);
-  main_layout->addWidget(confirm_btn);
-  QObject::connect(confirm_btn, &QPushButton::clicked, this, &QDialog::accept);
-
-  QVBoxLayout *outer_layout = new QVBoxLayout(this);
-  outer_layout->setContentsMargins(100, 100, 100, 100);
-  outer_layout->addWidget(container);
-}
-
-bool RichTextDialog::alert(const QString &prompt_text, QWidget *parent) {
-  auto d = RichTextDialog(prompt_text, tr("Ok"), parent);
-  return d.exec();
 }

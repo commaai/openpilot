@@ -60,15 +60,6 @@ public:
   static bool confirm(const QString &prompt_text, QWidget *parent);
 };
 
-class MultiOptionDialog : public QDialogBase {
-  Q_OBJECT
-
-public:
-  explicit MultiOptionDialog(const QString &prompt_text, const QStringList l, QWidget *parent);
-  static QString getSelection(const QString &prompt_text, const QStringList l, QWidget *parent);
-  QString selection;
-};
-
 // larger ConfirmationDialog for rich text
 class RichTextDialog : public QDialogBase {
   Q_OBJECT
@@ -76,4 +67,13 @@ class RichTextDialog : public QDialogBase {
 public:
   explicit RichTextDialog(const QString &prompt_text, const QString &btn_text, QWidget* parent);
   static bool alert(const QString &prompt_text, QWidget *parent);
+};
+
+class MultiOptionDialog : public QDialogBase {
+  Q_OBJECT
+
+public:
+  explicit MultiOptionDialog(const QString &prompt_text, const QStringList l, QWidget *parent);
+  static QString getSelection(const QString &prompt_text, const QStringList l, QWidget *parent);
+  QString selection;
 };
