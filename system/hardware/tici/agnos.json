@@ -47,8 +47,6 @@
     "size": 10737418240,
     "sparse": true,
     "full_check": false,
-    "has_ab": true,
-    "casync_caibx": "https://commadist.azureedge.net/agnosupdate/system-59622eddd068d49f2e9df69ef5115e3f205ad369539690a5b240c8c93796dd13.caibx",
-    "casync_store": "https://commadist.azureedge.net/agnosupdate/system-59622eddd068d49f2e9df69ef5115e3f205ad369539690a5b240c8c93796dd13"
+    "has_ab": true
   }
 ]

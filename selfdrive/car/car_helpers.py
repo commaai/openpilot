@@ -167,7 +167,7 @@ def fingerprint(logcan, sendcan):
     source = car.CarParams.FingerprintSource.fixed
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match,
-                 fw_count=len(car_fw), ecu_rx_addrs=list(ecu_rx_addrs), error=True)
+                 fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
