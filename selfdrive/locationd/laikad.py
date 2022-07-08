@@ -119,10 +119,9 @@ class Laikad:
       self.update_pos_fix(t, processed_measurements)
       est_pos = self.gnss_kf.x[GStates.ECEF_POS]
 
-      allow_incomplete_delay = any(self.gnss_kf.P[GStates.ECEF_POS].diagonal() > 1e4)
-
+      allow_incomplete_delay = any(abs(self.gnss_kf.P[GStates.ECEF_POS].diagonal()) > 1e4)
       corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, allow_incomplete_delay=allow_incomplete_delay) if len(est_pos) > 0 else []
-      measurements_for_kf = corrected_measurements if len(corrected_measurements) > 0 else processed_measurements
+      measurements_for_kf = corrected_measurements if len(corrected_measurements) > 2 else processed_measurements
       self.update_localizer(est_pos, t, measurements_for_kf)
 
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
@@ -131,10 +130,15 @@ class Laikad:
       pos_std = np.sqrt(abs(self.gnss_kf.P[GStates.ECEF_POS].diagonal()))
       vel_std = np.sqrt(abs(self.gnss_kf.P[GStates.ECEF_VELOCITY].diagonal()))
 
-      kf_valid = all(self.kf_valid(t)) and all(pos_std < 1e1) and all(vel_std < 1e1)
+      kf_valid = all(self.kf_valid(t)) and bool(np.linalg.norm(pos_std) < 1e1) and bool(np.linalg.norm(vel_std) < 1e1)
       # print(kf_valid)
       pos_std = pos_std.tolist()
       vel_std = vel_std.tolist()
+      # print("len(corrected_measurements)", len(corrected_measurements))
+      # if self.last_pos_fix is not None and len(self.last_pos_fix) == 3 and kf_valid:
+      #   print("pos diff", np.linalg.norm(np.array(self.last_pos_fix) - np.array(ecef_pos)), "allow_incomplete_delay", allow_incomplete_delay,
+      #       "proc/corrected meas len", len(processed_measurements), len(corrected_measurements), "pos std", np.round(pos_std,3), "vel_std", np.round(vel_std,3))
+
       # if allow_incomplete_delay and self.last_pos_fix is not None and len(self.last_pos_fix) == 3:
       #
       #   print("pos diff", np.linalg.norm(np.array(self.last_pos_fix)- np.array(ecef_pos)), "allow_incomplete_delay", allow_incomplete_delay, "proc/corrected meas len", len(processed_measurements), len(corrected_measurements), "pos std", self.gnss_kf.P[GStates.ECEF_POS].diagonal())
