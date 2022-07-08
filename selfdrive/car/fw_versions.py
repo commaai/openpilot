@@ -461,6 +461,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Get firmware version of ECUs')
   parser.add_argument('--scan', action='store_true')
   parser.add_argument('--debug', action='store_true')
+  parser.add_argument('--brand', help='Only query addresses/with requests for this brand')
   args = parser.parse_args()
 
   logcan = messaging.sub_sock('can')
@@ -486,7 +487,7 @@ if __name__ == "__main__":
   print()
 
   t = time.time()
-  fw_vers = get_brand_fw_versions(logcan, sendcan, extra=extra, debug=args.debug, progress=True)
+  fw_vers = get_brand_fw_versions(logcan, sendcan, brand=args.brand, extra=extra, debug=args.debug, progress=True)
   _, candidates = match_fw_to_car(fw_vers)
 
   print()
