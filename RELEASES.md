@@ -11,8 +11,9 @@ Version 0.8.15 (2022-07-20)
   * Used on select Toyota and Hyundai models at first
   * Significantly improved control on TSS-P Prius
 * New driver monitoring model
-  * Takes a larger input frame
-  * Outputs a driver state for both driver and passenger
+  * Bigger model, covering full interior view from driver camera
+  * Works with a wider variety of mounting angles
+  * 3x more unique comma three training data than previous
 * Navigation improvements
   * Speed limits shown while navigating
   * Faster position fix by using raw GPS measurements
