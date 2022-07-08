@@ -28,6 +28,7 @@ from system.swaglog import cloudlog
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
 CACHE_VERSION = 0.1
+POS_FIX_RESIDUAL_THRESHOLD = 100.0
 
 
 class Laikad:
@@ -89,9 +90,9 @@ class Laikad:
 
   def get_est_pos(self, t, processed_measurements):
     if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
-      min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 4
+      min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 5
       pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
-      if len(pos_fix) > 0:
+      if len(pos_fix) > 0 and np.median(np.abs(pos_fix_residual)) < POS_FIX_RESIDUAL_THRESHOLD:
         self.last_pos_fix = pos_fix[:3]
         self.last_pos_residual = pos_fix_residual
         self.last_pos_fix_t = t
@@ -119,11 +120,12 @@ class Laikad:
 
       self.update_localizer(est_pos, t, corrected_measurements)
       kf_valid = all(self.kf_valid(t))
-      ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
-      ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
+      ecef_pos = self.gnss_kf.x[GStates.ECEF_POS]
+      ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY]
 
-      pos_std = np.sqrt(abs(self.gnss_kf.P[GStates.ECEF_POS].diagonal())).tolist()
-      vel_std = np.sqrt(abs(self.gnss_kf.P[GStates.ECEF_VELOCITY].diagonal())).tolist()
+      p = self.gnss_kf.P.diagonal()
+      pos_std = np.sqrt(p[GStates.ECEF_POS])
+      vel_std = np.sqrt(p[GStates.ECEF_VELOCITY])
 
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
       dat = messaging.new_message("gnssMeasurements")
@@ -131,8 +133,8 @@ class Laikad:
       dat.gnssMeasurements = {
         "gpsWeek": report.gpsWeek,
         "gpsTimeOfWeek": report.rcvTow,
-        "positionECEF": measurement_msg(value=ecef_pos, std=pos_std, valid=kf_valid),
-        "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std, valid=kf_valid),
+        "positionECEF": measurement_msg(value=ecef_pos.tolist(), std=pos_std.tolist(), valid=kf_valid),
+        "velocityECEF": measurement_msg(value=ecef_vel.tolist(), std=vel_std.tolist(), valid=kf_valid),
         "positionFixECEF": measurement_msg(value=self.last_pos_fix, std=self.last_pos_residual, valid=self.last_pos_fix_t == t),
         "ubloxMonoTime": ublox_mono_time,
         "correctedMeasurements": meas_msgs
