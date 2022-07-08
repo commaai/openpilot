@@ -15,6 +15,7 @@ Version 0.8.15 (2022-07-XX)
   * Speed limits shown while navigating
   * Faster position fix by using raw GPS measurements
 * UI updates
+  * Multilanguage support for settings and home screen
   * New font
   * Refreshed max speed design
   * More consistent camera view perspective across cars
