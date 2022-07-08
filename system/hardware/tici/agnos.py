@@ -196,8 +196,8 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
       sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(casync.parse_caibx(caibx_url)))]
     except requests.RequestException:
       cloudlog.error(f"casync failed to load {caibx_url}")
-  except IOError:
-    cloudlog.error("Failed to hash seed partition")
+  except Exception:
+    cloudlog.excption("Failed to hash seed partition")
 
   # Second source is the target partition, this allows for resuming
   sources += [('target', casync.FileChunkReader(path), casync.build_chunk_dict(target))]
