@@ -359,7 +359,7 @@ def get_brand_matches(rx_addrs) -> Dict[str, Set[Tuple[int, Optional[int]]]]:
   # TODO: make this cleaner
   brand_rx_offsets = set((r.brand, r.rx_offset) for r in REQUESTS)
   all_brand_addrs = get_all_brand_addrs()
-  brand_matches = {r.brand: set() for r in REQUESTS}
+  brand_matches: Dict[str, Set[Tuple[int, Optional[int]]]] = {r.brand: set() for r in REQUESTS}
   for brand, rx_offset in brand_rx_offsets:
     for addr, subaddr, _ in rx_addrs:
       a = (uds.get_rx_addr_for_tx_addr(addr, -rx_offset), subaddr)
