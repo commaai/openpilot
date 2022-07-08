@@ -5,17 +5,23 @@ Version 0.8.15 (2022-07-XX)
   * Effective feedforward that uses road roll
   * Simplified tuning, all car-specific parameters can be derived from data
   * Significantly improved control on TSS-P Prius
+* New driving model
+  * Path planning uses end-to-end output instead of lane lines
 * New driver monitoring model
-  * takes a larger input frame
-  * outputs a driver state for both driver and passenger
-  * automatically determines which side the driver is on (soon)
-* Reduced power usage: device runs cooler and fan spins less
-* Minor UI updates
+  * Takes a larger input frame
+  * Outputs a driver state for both driver and passenger
+  * Automatically determines which side the driver is on (soon)
+* Navigation improvements
+  * Speed limits shown while navigating
+  * Faster position fix by using raw GPS measurements
+* UI updates
   * New font
   * Refreshed max speed design
-  * Speed limits shown while navigating
   * More consistent camera view perspective across cars
+* Reduced power usage: device runs cooler and fan spins less
 * AGNOS 5
+  * Support for delta updates to reduce data usage on future OS updates
+  * Support VSCode remote SSH target
 * Honda Civic 2022 support
 * Hyundai Tucson 2021 support thanks to bluesforte!
 * Lexus NX Hybrid 2020 support thanks to AlexandreSato!
