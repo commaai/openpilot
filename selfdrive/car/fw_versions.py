@@ -423,7 +423,7 @@ def get_brand_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, 
     for addr_chunk in chunks(addr):
       for r in requests:
         try:
-          addrs = [(a, s) for (a, s) in addr_chunk if len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus]
+          addrs = [(a, s) for (b, a, s) in addr_chunk if len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus]
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
