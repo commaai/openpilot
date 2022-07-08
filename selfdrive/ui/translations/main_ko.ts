@@ -920,7 +920,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="221"/>
         <source>Git Commit</source>
-        <translation>Git Commit</translation>
+        <translation>Git 커밋</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="222"/>
