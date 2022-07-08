@@ -32,6 +32,12 @@ class CarControllerParams:
                                CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_HEV,
                                CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO, CAR.KIA_STINGER):
       self.STEER_MAX = 255
+
+    # These cars have significantly more torque than most HKG.  Limit to 70% of max.
+    elif CP.carFingerprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV):
+      self.STEER_MAX = 270
+
+    # Default for most HKG
     else:
       self.STEER_MAX = 384
 
