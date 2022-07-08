@@ -1,7 +1,9 @@
 Version 0.8.15 (2022-07-XX)
 ========================
 * New driving model
-  * Path planning uses end-to-end output instead of lane lines
+  * Path planning uses end-to-end output instead of lane lines at all times
+  * Reduced ping pong
+  * Improved lane centering
 * New lateral controller based on physical wheel torque model
   * Much smoother control, consistent across the speed range
   * Effective feedforward that uses road roll
