@@ -76,13 +76,13 @@
 <context>
     <name>ConfirmationDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="222"/>
-        <location filename="../qt/widgets/input.cc" line="227"/>
+        <location filename="../qt/widgets/input.cc" line="221"/>
+        <location filename="../qt/widgets/input.cc" line="226"/>
         <source>Ok</source>
         <translation>確定</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="227"/>
+        <location filename="../qt/widgets/input.cc" line="226"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -302,17 +302,17 @@
 <context>
     <name>InputDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="72"/>
+        <location filename="../qt/widgets/input.cc" line="71"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="169"/>
+        <location filename="../qt/widgets/input.cc" line="168"/>
         <source>Need at least </source>
         <translation>需要至少 </translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="169"/>
+        <location filename="../qt/widgets/input.cc" line="168"/>
         <source> characters!</source>
         <translation> 個字元！</translation>
     </message>
@@ -397,12 +397,12 @@ location set</source>
 <context>
     <name>MultiOptionDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="296"/>
+        <location filename="../qt/widgets/input.cc" line="301"/>
         <source>Select</source>
         <translation>選擇</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="331"/>
+        <location filename="../qt/widgets/input.cc" line="335"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -653,7 +653,7 @@ location set</source>
 <context>
     <name>RichTextDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="259"/>
+        <location filename="../qt/widgets/input.cc" line="258"/>
         <source>Ok</source>
         <translation>確定</translation>
     </message>
