@@ -1,3 +1,4 @@
+import capnp
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
@@ -110,7 +111,7 @@ FINGERPRINTS = {
   ],
 }
 
-FW_VERSIONS: Dict[str, Dict[Tuple[Ecu, int, Optional[int]], List[str]]] = {
+FW_VERSIONS: Dict[str, Dict[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]], List[str]]] = {
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [],
     (Ecu.srs, 0x744, None): [],
