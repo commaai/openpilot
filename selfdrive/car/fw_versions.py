@@ -299,24 +299,21 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
   # Try exact matching first
-  exact_matches = [True]
+  exact_matches = [(True, match_fw_to_car_exact)]
   if allow_fuzzy:
-    exact_matches.append(False)
+    exact_matches.append((False, match_fw_to_car_fuzzy))
 
-  for exact_match in exact_matches:
+  for exact_match, match_func in exact_matches:
     # For each brand, attempt to fingerprint using FW returned from its queries
+    matches = set()
     for brand in versions.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
+      matches |= match_func(fw_versions_dict)
 
-      if exact_match:
-        matches = match_fw_to_car_exact(fw_versions_dict)
-      else:
-        matches = match_fw_to_car_fuzzy(fw_versions_dict)
+    if len(matches):
+      return exact_match, matches
 
-      if len(matches) == 1:
-        return exact_match, matches
-
-  return True, []
+  return True, set()
 
 
 def get_present_ecus(logcan, sendcan):
@@ -386,12 +383,12 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
 
 
 def get_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=False, progress=False):
-  ecu_types = {}
-
   # Extract ECU addresses to query from fingerprints
   # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
+
+  ecu_types = {}
   requests = [r for r in REQUESTS if brand is None or r.brand == brand]
 
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
