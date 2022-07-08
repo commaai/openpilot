@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
@@ -110,7 +110,7 @@ FINGERPRINTS = {
   ],
 }
 
-FW_VERSIONS = {
+FW_VERSIONS: Dict[str, Dict[Tuple[Ecu, int, Optional[int]], List[str]]] = {
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [],
     (Ecu.srs, 0x744, None): [],
