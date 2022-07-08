@@ -100,8 +100,7 @@ class ManagerProcess(ABC):
 
     try:
       fn = WATCHDOG_FN + str(self.proc.pid)
-      # TODO: why can't pylint find struct.unpack?
-      self.last_watchdog_time = struct.unpack('Q', open(fn, "rb").read())[0] # pylint: disable=no-member
+      self.last_watchdog_time = struct.unpack('Q', open(fn, "rb").read())[0]
     except Exception:
       pass
 
@@ -109,8 +108,9 @@ class ManagerProcess(ABC):
 
     if dt > self.watchdog_max_dt or self.proc.exitcode is not None:
       # Only restart while offroad for now
-      if (self.watchdog_seen or self.proc.exitcode is not None) and ENABLE_WATCHDOG:
-        cloudlog.error(f"Watchdog timeout for {self.name} (exitcode {self.proc.exitcode}) restarting ({started=})")
+      if (self.watchdog_seen and ENABLE_WATCHDOG) or self.proc.exitcode is not None:
+        if dt <= self.watchdog_max_dt:
+          cloudlog.error(f"Watchdog timeout for {self.name} (exitcode {self.proc.exitcode}) restarting ({started=})")
         self.restart()
     else:
       self.watchdog_seen = True
