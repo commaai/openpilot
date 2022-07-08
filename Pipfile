@@ -41,6 +41,8 @@ tenacity = "*"
 mpld3 = "*"
 carla = {version = "==0.9.13", markers="platform_system != 'Darwin'"}
 ft4222 = "*"
+pandas = "*"
+tabulate = "*"
 
 [packages]
 atomicwrites = "*"
@@ -86,8 +88,6 @@ urllib3 = "*"
 utm = "*"
 websocket_client = "*"
 hatanaka = "==2.4"
-PyQt5 = "==5.15.4"
-PyQt5-sip = "==12.9.0"
 
 [requires]
 python_version = "3.8"
