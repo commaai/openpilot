@@ -61,6 +61,16 @@ class TestTranslations(unittest.TestCase):
             self.assertEqual(cur_translations, new_translations,
                              f"{file} ({name}) {file_ext.upper()} translation file out of date. Run selfdrive/ui/update_translations.py --release to update the translation files")
 
+  def test_unfinished_translations(self):
+    for name, file in self.translation_files.items():
+      with self.subTest(name=name, file=file):
+        if not len(file):
+          raise self.skipTest(f"{name} translation has no defined file")
+
+        cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file, "ts")
+        self.assertTrue(b"<translation type=\"unfinished\">" not in cur_translations,
+                        f"{file} ({name}) translation file has unfinished translations. Finish translations or mark them as completed in Qt Linguist")
+
 
 if __name__ == "__main__":
   unittest.main()
