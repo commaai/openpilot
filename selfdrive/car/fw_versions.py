@@ -423,7 +423,8 @@ def get_brand_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, 
     for addr_chunk in chunks(addr):
       for r in requests:
         try:
-          addrs = [(a, s) for (b, a, s) in addr_chunk if len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus]
+          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
+                   (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
@@ -437,7 +438,7 @@ def get_brand_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, 
   for (brand, addr), (version, request) in fw_versions.items():
     f = car.CarParams.CarFw.new_message()
 
-    f.ecu = ecu_types[addr]
+    f.ecu = ecu_types[(brand, *addr)]
     f.fwVersion = version
     f.address = addr[0]
     f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], request.rx_offset)
