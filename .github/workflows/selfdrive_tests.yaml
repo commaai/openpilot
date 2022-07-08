@@ -64,6 +64,7 @@ jobs:
       run: |
           cd $STRIPPED_DIR
           ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py && \
+                          release/check-dirty.sh && \
                           python -m unittest discover selfdrive/car"
 
   build_all:
@@ -89,7 +90,7 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Build openpilot with all flags
-      run: ${{ env.RUN }} "scons -j$(nproc) --extras --test"
+      run: ${{ env.RUN }} "scons -j$(nproc) --extras --test && release/check-dirty.sh"
     - name: Cleanup scons cache
       run: |
           ${{ env.RUN }} "scons -j$(nproc) --extras --test && \
