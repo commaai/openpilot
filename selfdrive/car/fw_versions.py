@@ -371,7 +371,7 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
   addrs.insert(0, parallel_addrs)
 
   fw_versions = {}
-  for addr in tqdm(addrs, disable=not progress):
+  for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
       for r in REQUESTS:
         try:
@@ -380,7 +380,8 @@ def get_fw_versions(logcan, sendcan, extra=None, timeout=0.1, debug=False, progr
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            fw_versions.update({(r.brand, addr): (version, r) for addr, version in query.get_data(timeout).items()})
+            t = 2 * timeout if i == 0 else timeout
+            fw_versions.update({(r.brand, addr): (version, r) for addr, version in query.get_data(t).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
