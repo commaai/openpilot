@@ -61,7 +61,6 @@ def remove_ignored_invalid_fields(msg, ignore):
       field = getattr(attr, keys[-1])
       if not hasattr(field, "valid"):
         raise AttributeError(f"Message {field} doesn't have a 'valid' field") # todo test
-      # print(field)
       if not getattr(field, "valid"):
         return None
         # Reset msg values:
@@ -102,7 +101,6 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     # print("HIII")
     # msg1 = remove_ignored_fields(msg1, ignore_fields)
     # msg2 = remove_ignored_fields(msg2, ignore_fields)
-    # print("HIII2")
     msg_ret = remove_ignored_invalid_fields(msg1, ignore_invalid_fields)
     msg_ret2 = remove_ignored_invalid_fields(msg2, ignore_invalid_fields)
     if msg_ret is None or msg_ret2 is None:
