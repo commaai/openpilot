@@ -368,14 +368,14 @@ def get_brand_matches(rx_addrs) -> Dict[str, Set[Tuple[int, Optional[int]]]]:
   return dict(brand_matches)
 
 
-def get_fw_versions(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=False, progress=False):
+def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=False, progress=False):
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
   all_car_fw = []
   brand_matches = get_brand_matches(ecu_rx_addrs)
 
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
-    car_fw = get_brand_fw_versions(logcan, sendcan, brand=brand, timeout=timeout, debug=debug, progress=progress)
+    car_fw = get_fw_versions(logcan, sendcan, brand=brand, timeout=timeout, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
     matches = match_fw_to_car_exact(build_fw_dict(car_fw))
     if len(matches) == 1:
@@ -385,8 +385,7 @@ def get_fw_versions(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=False, pro
   return all_car_fw
 
 
-# TODO: better name
-def get_brand_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=False, progress=False):
+def get_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
 
   # Extract ECU addresses to query from fingerprints
@@ -488,7 +487,7 @@ if __name__ == "__main__":
   print()
 
   t = time.time()
-  fw_vers = get_brand_fw_versions(logcan, sendcan, brand=args.brand, extra=extra, debug=args.debug, progress=True)
+  fw_vers = get_fw_versions(logcan, sendcan, brand=args.brand, extra=extra, debug=args.debug, progress=True)
   _, candidates = match_fw_to_car(fw_vers)
 
   print()
