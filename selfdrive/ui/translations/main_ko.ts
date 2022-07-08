@@ -489,7 +489,7 @@ location set</source>
         <translation>
       &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
         &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;https://connect.comma.ai에 접속하세요&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;"새 장치 추가"를 클릭하고 오른쪽 QR 코드를 검색합니다.&lt;/li&gt;
+        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;&quot;새 장치 추가&quot;를 클릭하고 오른쪽 QR 코드를 검색합니다.&lt;/li&gt;
         &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;connect.comma.ai을 앱처럼 사용하려면 홈 화면에 바로가기를 만드십시오.&lt;/li&gt;
       &lt;/ol&gt;
     </translation>
