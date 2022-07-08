@@ -68,7 +68,6 @@ class TestTranslations(unittest.TestCase):
           raise self.skipTest(f"{name} translation has no defined file")
 
         cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file, "ts")
-
         self.assertTrue(b"<translation type=\"unfinished\">" not in cur_translations,
                         f"{file} ({name}) translation file has unfinished translations. Finish translations or mark them as completed in Qt Linguist")
 
