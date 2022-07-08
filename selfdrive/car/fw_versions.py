@@ -448,9 +448,10 @@ if __name__ == "__main__":
   print()
   print("Found FW versions")
   print("{")
+  padding = max([len(fw.brand) for fw in fw_vers])
   for version in fw_vers:
     subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-    print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
+    print(f"  Brand: {version.brand:{padding}} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
   print("}")
 
   print()
