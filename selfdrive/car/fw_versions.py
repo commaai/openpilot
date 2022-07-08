@@ -361,11 +361,11 @@ def get_brand_matches(rx_addrs) -> Dict[str, Set[Tuple[int, Optional[int]]]]:
   all_brand_addrs = get_all_brand_addrs()
   brand_matches = {r.brand: set() for r in REQUESTS}
   for brand, rx_offset in brand_rx_offsets:
-    for addr, subaddr, bus in rx_addrs:
+    for addr, subaddr, _ in rx_addrs:
       a = (uds.get_rx_addr_for_tx_addr(addr, -rx_offset), subaddr)
       if a in all_brand_addrs[brand]:
         brand_matches[brand].add(a)
-  return dict(brand_matches)
+  return brand_matches
 
 
 def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=False, progress=False):
@@ -427,8 +427,7 @@ def get_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            t = 2 * timeout if i == 0 else timeout
-            fw_versions.update({(r.brand, addr): (version, r) for addr, version in query.get_data(t).items()})
+            fw_versions.update({(r.brand, addr): (version, r) for addr, version in query.get_data(timeout).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
