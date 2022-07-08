@@ -1,12 +1,12 @@
 Version 0.8.15 (2022-07-XX)
 ========================
+* New driving model
+  * Path planning uses end-to-end output instead of lane lines
 * New lateral controller based on physical wheel torque model
   * Much smoother control, consistent across the speed range
   * Effective feedforward that uses road roll
   * Simplified tuning, all car-specific parameters can be derived from data
   * Significantly improved control on TSS-P Prius
-* New driving model
-  * Path planning uses end-to-end output instead of lane lines
 * New driver monitoring model
   * Takes a larger input frame
   * Outputs a driver state for both driver and passenger
