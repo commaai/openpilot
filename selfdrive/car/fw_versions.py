@@ -196,10 +196,6 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
-def get_requests_for_brand(brand):
- return [r for r in REQUESTS if r.brand == brand]
-
-
 def build_fw_dict(fw_versions, filter_brand=None):
   fw_versions_dict = {}
   for fw in fw_versions:
@@ -355,26 +351,15 @@ def get_present_ecus(logcan, sendcan):
   ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
   for query in queries:
     ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
-
-  # cloudlog.event("ecu responses", ecu_responses=ecu_responses)
-  #
-  # brand_candidates = set()
-  # for r in REQUESTS:
-  #   ecu_addrs = {(addr - r.rx_offset, sub_addr) for addr, sub_addr, _ in ecu_responses}
-  #   for candidate, candidate_fw in versions[r.brand].items():
-  #     # brand is a candidate if any of its platforms is a complete subset of the response ecus
-  #     candidate_addrs = {(addr, sub_addr) for ecu_type, addr, sub_addr in candidate_fw.keys() if ecu_type in ESSENTIAL_ECUS}
-  #     if len(ecu_addrs.intersection(candidate_addrs)) == len(candidate_addrs):
-  #       brand_candidates.add(r.brand)
-  #
-  # return brand_candidates
   return ecu_responses
 
 
-def get_brand_candidates(rx_addrs):
+def get_brand_matches(rx_addrs) -> Dict[str, Set[Tuple[int, Optional[int]]]]:
+  """Returns dictionary of brands and matches with ECUs in their FW versions"""
+  # TODO: make this cleaner
   brand_rx_offsets = set((r.brand, r.rx_offset) for r in REQUESTS)
   all_brand_addrs = get_all_brand_addrs()
-  brand_matches = defaultdict(set)
+  brand_matches = {r.brand: set() for r in REQUESTS}
   for brand, rx_offset in brand_rx_offsets:
     for addr, subaddr, bus in rx_addrs:
       a = (uds.get_rx_addr_for_tx_addr(addr, -rx_offset), subaddr)
@@ -383,40 +368,62 @@ def get_brand_candidates(rx_addrs):
   return dict(brand_matches)
 
 
-def get_fw_versions(logcan, sendcan, requests, versions, timeout=0.1, debug=False, progress=False):
+def get_fw_versions(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=False, progress=False):
+  """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
+
+  all_car_fw = []
+  brand_matches = get_brand_matches(ecu_rx_addrs)
+
+  for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
+    car_fw = get_brand_fw_versions(logcan, sendcan, brand=brand, timeout=timeout, debug=debug, progress=progress)
+    all_car_fw.extend(car_fw)
+    matches = match_fw_to_car_exact(build_fw_dict(car_fw))
+    if len(matches) == 1:
+      break
+
+  # Could have exact matched, fuzzy matched, or failed to fingerprint
+  return all_car_fw
+
+
+# TODO: better name
+def get_brand_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
 
   # Extract ECU addresses to query from fingerprints
   # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
+  requests = [r for r in REQUESTS if brand is None or r.brand == brand]
 
-  # log brand candidates
-  # brand_candidates = get_brand_candidates(logcan, sendcan, versions)
-  # cloudlog.event("brand candidates", ecu_response_addrs=brand_candidates)
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+  if extra is not None:
+    versions.update(extra)
 
-  for c in versions.values():
-    for ecu_type, addr, sub_addr in c.keys():
-      a = (addr, sub_addr)
-      if a not in ecu_types:
-        ecu_types[(addr, sub_addr)] = ecu_type
+  if brand is not None:
+    versions = {brand: versions[brand]}
 
-      if sub_addr is None:
-        if a not in parallel_addrs:
-          parallel_addrs.append(a)
-      else:
-        if [a] not in addrs:
-          addrs.append([a])
+  for brand, brand_versions in versions.items():
+    for c in brand_versions.values():
+      for ecu_type, addr, sub_addr in c.keys():
+        a = (brand, addr, sub_addr)
+        if a not in ecu_types:
+          ecu_types[a] = ecu_type
+
+        if sub_addr is None:
+          if a not in parallel_addrs:
+            parallel_addrs.append(a)
+        else:
+          if [a] not in addrs:
+            addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
 
   fw_versions = {}
-  print(addrs)
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
       for r in requests:
         try:
-          addrs = [(a, s) for (a, s) in addr_chunk if len(r.whitelist_ecus) == 0 or ecu_types[(a, s)] in r.whitelist_ecus]
+          addrs = [(a, s) for (a, s) in addr_chunk if len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus]
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
@@ -479,8 +486,7 @@ if __name__ == "__main__":
   print()
 
   t = time.time()
-  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
-  fw_vers = get_fw_versions(logcan, sendcan, REQUESTS, versions=versions, debug=args.debug, progress=True)
+  fw_vers = get_brand_fw_versions(logcan, sendcan, extra=extra, debug=args.debug, progress=True)
   _, candidates = match_fw_to_car(fw_vers)
 
   print()
