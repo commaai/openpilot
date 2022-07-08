@@ -264,7 +264,11 @@ bool RichTextDialog::alert(const QString &prompt_text, QWidget *parent) {
 
 MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, QWidget *parent) : QDialogBase(parent) {
   QFrame *container = new QFrame(this);
-  container->setStyleSheet("QFrame { background-color: #1B1B1B; }");
+  container->setStyleSheet(R"(
+    QFrame { background-color: #1B1B1B; }
+    #confirm_btn:enabled { background-color: #465BEA; }
+    #confirm_btn:enabled:pressed { background-color: #3049F4; }
+  )");
 
   QVBoxLayout *main_layout = new QVBoxLayout(container);
   main_layout->setContentsMargins(55, 50, 55, 50);
@@ -279,8 +283,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   list->setStyleSheet(R"(
     QPushButton {
       height: 125;
-      padding-left: 50px;
-      padding-right: 50px;
+      padding: 0px 50px;
       text-align: left;
       font-size: 55px;
       font-weight: 300;
@@ -294,6 +297,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   group->setExclusive(true);
 
   QPushButton *confirm_btn = new QPushButton(tr("Select"));
+  confirm_btn->setObjectName("confirm_btn");
   confirm_btn->setEnabled(false);
   QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
 
@@ -306,8 +310,6 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
 
     QObject::connect(selectionLabel, &QPushButton::toggled, [=](bool checked) {
       if (checked) selection = s;
-      // TODO: make into a property
-      confirm_btn->setStyleSheet("QPushButton {background-color: #465BEA;} QPushButton:pressed {background-color: #3049F4;}");
       confirm_btn->setEnabled(true);
     });
 
