@@ -7,7 +7,6 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
-#include "selfdrive/ui/qt/widgets/controls.h"
 
 
 QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
@@ -266,6 +265,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   QFrame *container = new QFrame(this);
   container->setStyleSheet(R"(
     QFrame { background-color: #1B1B1B; }
+    #confirm_btn[enabled="false"] { background-color: #2B2B2B; }
     #confirm_btn:enabled { background-color: #465BEA; }
     #confirm_btn:enabled:pressed { background-color: #3049F4; }
   )");
@@ -279,8 +279,10 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
 
   main_layout->addSpacing(25);
 
-  ListWidget *list = new ListWidget(this);
-  list->setStyleSheet(R"(
+  QWidget *listWidget = new QWidget(this);
+  QVBoxLayout *listLayout = new QVBoxLayout(listWidget);
+  listLayout->setSpacing(15);
+  listWidget->setStyleSheet(R"(
     QPushButton {
       height: 125;
       padding: 0px 50px;
@@ -293,7 +295,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
     QPushButton:checked { background-color: #465BEA; }
   )");
 
-  QButtonGroup *group = new QButtonGroup(list);
+  QButtonGroup *group = new QButtonGroup(listWidget);
   group->setExclusive(true);
 
   QPushButton *confirm_btn = new QPushButton(tr("Select"));
@@ -315,10 +317,10 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
 
     group->addButton(selectionLabel);
     hlayout->addWidget(selectionLabel);
-    list->addItem(hlayout);
+    listLayout->addLayout(hlayout);
   }
 
-  ScrollView *scroll_view = new ScrollView(list, this);
+  ScrollView *scroll_view = new ScrollView(listWidget, this);
   scroll_view->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
   main_layout->addWidget(scroll_view);
