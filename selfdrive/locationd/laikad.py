@@ -125,7 +125,7 @@ class Laikad:
       measurements_for_kf = corrected_measurements if len(corrected_measurements) > 0 else processed_measurements
       self.update_localizer(est_pos, t, measurements_for_kf)
 
-      kf_valid = all(self.kf_valid(t)) and np.linalg.norm(self.gnss_kf.P[GStates.ECEF_POS].diagonal()) < 1e1
+      kf_valid = all(self.kf_valid(t)) and all(self.gnss_kf.P[GStates.ECEF_POS].diagonal() < 1e1)
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
       ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist()
 

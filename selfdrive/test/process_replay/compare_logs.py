@@ -45,13 +45,49 @@ def remove_ignored_fields(msg, ignore):
       setattr(attr, keys[-1], val)
   return msg.as_reader()
 
+def remove_ignored_invalid_fields(msg, ignore):
+  msg = msg.as_builder()
+  for key in ignore:
+    attr = msg
+    keys = key.split(".")
+    if msg.which() != keys[0] and len(keys) > 1:
+      continue
+    for k in keys[:-1]:
+      try:
+        attr = getattr(attr, k)
+      except AttributeError:
+        break
+    else:
+      field = getattr(attr, keys[-1])
+      if not hasattr(field, "valid"):
+        raise AttributeError(f"Message {field} doesn't have a 'valid' field") # todo test
+      # print(field)
+      if not getattr(field, "valid"):
+        return None
+        # Reset msg values:
+        # for k in field.schema.fieldnames:
+        #   v = getattr(field, k)
+        #   if isinstance(v, bool):
+        #     val = False
+        #   elif isinstance(v, numbers.Number):
+        #     val = 0
+        #   elif isinstance(v, capnp._DynamicListBuilder):
+        #     val = []
+        #   else:
+        #     raise NotImplementedError
+        #   setattr(field, k, val)
+      #     print("check", getattr(field, k))
+      # print("getattr", getattr(attr, keys[-1]))
+  return msg.as_reader()
 
-def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None):
+
+def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None, ignore_invalid_fields=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
     ignore_msgs = []
-
+  if ignore_invalid_fields is None:
+    ignore_invalid_fields = []
   log1, log2 = (list(filter(lambda m: m.which() not in ignore_msgs, log)) for log in (log1, log2))
 
   if len(log1) != len(log2):
@@ -62,11 +98,18 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   diff = []
   for msg1, msg2 in zip(log1, log2):
     if msg1.which() != msg2.which():
-      print(msg1, msg2)
       raise Exception("msgs not aligned between logs")
-
-    msg1_bytes = remove_ignored_fields(msg1, ignore_fields).as_builder().to_bytes()
-    msg2_bytes = remove_ignored_fields(msg2, ignore_fields).as_builder().to_bytes()
+    # print("HIII")
+    # msg1 = remove_ignored_fields(msg1, ignore_fields)
+    # msg2 = remove_ignored_fields(msg2, ignore_fields)
+    # print("HIII2")
+    msg_ret = remove_ignored_invalid_fields(msg1, ignore_invalid_fields)
+    msg_ret2 = remove_ignored_invalid_fields(msg2, ignore_invalid_fields)
+    if msg_ret is None or msg_ret2 is None:
+      continue
+    msg1_bytes = msg_ret.as_builder().to_bytes()
+    # msg2_bytes = remove_ignored_invalid_fields(msg2, ignore_invalid_fields).as_builder().to_bytes()
+    msg2_bytes = msg_ret2.as_builder().to_bytes()
 
     if msg1_bytes != msg2_bytes:
       msg1_dict = msg1.to_dict(verbose=True)
