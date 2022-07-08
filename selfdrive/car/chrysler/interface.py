@@ -51,7 +51,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2493. + STD_CARGO_KG
       ret.maxLateralAccel = 2.4
       ret.minSteerSpeed = 14.5
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.1], [0.02]]
+      ret.lateralTuning.pid.kf = 0.00003
 
     else:
       raise ValueError(f"Unsupported car: {candidate}")
