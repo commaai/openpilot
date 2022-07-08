@@ -92,6 +92,13 @@ SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
 SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
 
+CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xf132)
+CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(0xf132)
+
+CHRYSLER_RX_OFFSET = -0x280
+
 
 @dataclass
 class Request:
@@ -187,6 +194,18 @@ REQUESTS: List[Request] = [
     [TESTER_PRESENT_REQUEST, UDS_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, UDS_VERSION_RESPONSE],
     bus=0,
+  ),
+  # Chrysler / FCA / Stellantis
+  Request(
+    "chrysler",
+    [CHRYSLER_VERSION_REQUEST],
+    [CHRYSLER_VERSION_RESPONSE],
+    rx_offset=CHRYSLER_RX_OFFSET,
+  ),
+  Request(
+    "chrysler",
+    [CHRYSLER_VERSION_REQUEST],
+    [CHRYSLER_VERSION_RESPONSE],
   ),
 ]
 
@@ -445,7 +464,7 @@ if __name__ == "__main__":
   print()
   print("Found FW versions")
   print("{")
-  padding = max([len(fw.brand) for fw in fw_vers])
+  padding = max([len(fw.brand) for fw in fw_vers] or [0])
   for version in fw_vers:
     subaddr = None if version.subAddress == 0 else hex(version.subAddress)
     print(f"  Brand: {version.brand:{padding}} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
