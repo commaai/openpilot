@@ -6,7 +6,7 @@
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="25"/>
         <source>Close</source>
-        <translation>关</translation>
+        <translation>关闭</translation>
     </message>
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="30"/>
@@ -16,7 +16,7 @@
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="41"/>
         <source>Reboot and Update</source>
-        <translation>重启和更新</translation>
+        <translation>重启并更新</translation>
     </message>
 </context>
 <context>
@@ -24,17 +24,17 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="121"/>
         <source>Back</source>
-        <translation>后退</translation>
+        <translation>返回</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="129"/>
         <source>Enable Tethering</source>
-        <translation>启用网络共享</translation>
+        <translation>启用WiFi热点</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
         <source>Tethering Password</source>
-        <translation>网络共享密码</translation>
+        <translation>WiFi热点密码</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
@@ -45,7 +45,7 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="136"/>
         <source>Enter new tethering password</source>
-        <translation>输入新的网络共享密码</translation>
+        <translation>输入新的WiFi热点密码</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="144"/>
@@ -55,22 +55,22 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="153"/>
         <source>Enable Roaming</source>
-        <translation>启用漫游</translation>
+        <translation>启用数据漫游</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="161"/>
         <source>APN Setting</source>
-        <translation>APN 设置</translation>
+        <translation>APN设置</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="165"/>
         <source>Enter APN</source>
-        <translation>输入 APN</translation>
+        <translation>输入APN</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="165"/>
         <source>leave blank for automatic configuration</source>
-        <translation>为自动配置留空</translation>
+        <translation>留空以自动配置</translation>
     </message>
 </context>
 <context>
@@ -92,17 +92,17 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="140"/>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>您必须接受条款和条件才能使用 openpilot。</translation>
+        <translation>您必须接受条款和条件以使用openpilot。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="149"/>
         <source>Back</source>
-        <translation>后退</translation>
+        <translation>返回</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="154"/>
         <source>Decline, uninstall %1</source>
-        <translation>拒绝，卸载 %1</translation>
+        <translation>拒绝并卸载%1</translation>
     </message>
 </context>
 <context>
@@ -110,37 +110,37 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="98"/>
         <source>Dongle ID</source>
-        <translation>加密狗 ID</translation>
+        <translation>设备ID（Dongle ID）</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="98"/>
         <source>N/A</source>
-        <translation>不适用</translation>
+        <translation>N/A</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="99"/>
         <source>Serial</source>
-        <translation>串行</translation>
+        <translation>序列号</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="103"/>
         <source>Driver Camera</source>
-        <translation>司机摄像头</translation>
+        <translation>驾驶员摄像头</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="103"/>
         <source>PREVIEW</source>
-        <translation>预习</translation>
+        <translation>预览</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="104"/>
         <source>Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)</source>
-        <translation>预览面向驾驶员的摄像头，以帮助优化设备安装位置以获得最佳驾驶员监控体验。 （车辆必须关闭）</translation>
+        <translation>打开并预览驾驶员摄像头，用于调整安装角度以获得最优驾驶员监控体验。仅熄火时可用。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="108"/>
         <source>Reset Calibration</source>
-        <translation>重置校准</translation>
+        <translation>重置设备校准</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="108"/>
@@ -150,32 +150,32 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="111"/>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>您确定要重置校准吗？</translation>
+        <translation>您确定要重置设备校准吗？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="118"/>
         <source>Review Training Guide</source>
-        <translation>查看培训指南</translation>
+        <translation>新手指南</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="118"/>
         <source>REVIEW</source>
-        <translation>重新查看</translation>
+        <translation>查看</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="118"/>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>查看 openpilot 的规则、功能和限制</translation>
+        <translation>查看openpilot的使用规则，以及其功能和限制。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="120"/>
         <source>Are you sure you want to review the training guide?</source>
-        <translation>您确定要查看培训指南吗？</translation>
+        <translation>您确定要查看新手指南吗？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="128"/>
         <source>Regulatory</source>
-        <translation>监管</translation>
+        <translation>监管信息</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="128"/>
@@ -207,32 +207,32 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="171"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot 要求设备安装在左或右 4° 以内，上 5° 或下 8° 以内。 openpilot 会持续校准，很少需要重置。</translation>
+        <translation>openpilot要求设备安装的偏航角在左4°和右4°之间，俯仰角在上5°和下8°之间。一般来说，openpilot会持续更新校准，很少需要重置。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="182"/>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> 您的设备指向 %1° %2 和 %3° %4。</translation>
+        <translation>您的设备校准为%1° %2、%3° %4。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="183"/>
         <source>down</source>
-        <translation>下</translation>
+        <translation>朝下</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="183"/>
         <source>up</source>
-        <translation>向上</translation>
+        <translation>朝上</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="184"/>
         <source>left</source>
-        <translation>向左</translation>
+        <translation>朝左</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="184"/>
         <source>right</source>
-        <translation>向右</translation>
+        <translation>朝右</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="195"/>
@@ -242,17 +242,17 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="202"/>
         <source>Disengage to Reboot</source>
-        <translation>脱离以重新启动</translation>
+        <translation>取消openpilot以重新启动</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="208"/>
         <source>Are you sure you want to power off?</source>
-        <translation>您确定要关闭电源吗？</translation>
+        <translation>您确定要关机吗？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="215"/>
         <source>Disengage to Power Off</source>
-        <translation>脱离以关闭电源</translation>
+        <translation>取消openpilot以关机</translation>
     </message>
 </context>
 <context>
