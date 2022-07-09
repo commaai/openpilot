@@ -528,12 +528,12 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="123"/>
         <source>✓ SUBSCRIBED</source>
-        <translation>✓ 購読</translation>
+        <translation>✓ 購読しました</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="129"/>
         <source>comma prime</source>
-        <translation>コンマプライム</translation>
+        <translation>comma prime</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="135"/>
@@ -543,7 +543,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="148"/>
         <source>COMMA POINTS</source>
-        <translation>コンマポイント</translation>
+        <translation>COMMA POINTS</translation>
     </message>
 </context>
 <context>
