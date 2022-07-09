@@ -78,7 +78,6 @@ void MainWindow::changeLanguage(const QString &lang) {
   qApp->removeTranslator(&translator);
   if (translator.load(lang, "translations")) {
     qApp->installTranslator(&translator);
-    qWarning() << "updating translate";
   }
 }
 

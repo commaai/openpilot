@@ -100,17 +100,16 @@ void TogglesPanel::translateUi() {
 
 DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   setSpacing(50);
-  addItem(dongle_id = new LabelControl(tr("Dongle ID"), getDongleId().value_or(tr("N/A"))));
-  addItem(serial = new LabelControl(tr("Serial"), params.get("HardwareSerial").c_str()));
+  addItem(dongle_id = new LabelControl("", getDongleId().value_or(tr("N/A"))));
+  addItem(serial = new LabelControl("", params.get("HardwareSerial").c_str()));
 
   // offroad-only buttons
 
-  dcamBtn = new ButtonControl(tr("Driver Camera"), tr("PREVIEW"),
-                                   tr("Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)"));
+  dcamBtn = new ButtonControl();
   connect(dcamBtn, &ButtonControl::clicked, [=]() { emit showDriverView(); });
   addItem(dcamBtn);
 
-  resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
+  resetCalibBtn = new ButtonControl();
   connect(resetCalibBtn, &ButtonControl::showDescription, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), this)) {
@@ -120,7 +119,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(resetCalibBtn);
 
   if (!params.getBool("Passive")) {
-    retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
+    retrainingBtn = new ButtonControl();
     connect(retrainingBtn, &ButtonControl::clicked, [=]() {
       if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), this)) {
         emit reviewTrainingGuide();
@@ -130,7 +129,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 
   if (Hardware::TICI()) {
-    regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
+    regulatoryBtn = new ButtonControl();
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
       const std::string txt = util::read_file("../assets/offroad/fcc.html");
       RichTextDialog::alert(QString::fromStdString(txt), this);
@@ -138,7 +137,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     addItem(regulatoryBtn);
   }
 
-  translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
+  translateBtn = new ButtonControl();
   connect(translateBtn, &ButtonControl::clicked, [=]() {
     QMap<QString, QString> langs = getSupportedLanguages();
     QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), this);
@@ -158,12 +157,12 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   QHBoxLayout *power_layout = new QHBoxLayout();
   power_layout->setSpacing(30);
 
-  reboot_btn = new QPushButton(tr("Reboot"));
+  reboot_btn = new QPushButton();
   reboot_btn->setObjectName("reboot_btn");
   power_layout->addWidget(reboot_btn);
   QObject::connect(reboot_btn, &QPushButton::clicked, this, &DevicePanel::reboot);
 
-  poweroff_btn = new QPushButton(tr("Power Off"));
+  poweroff_btn = new QPushButton();
   poweroff_btn->setObjectName("poweroff_btn");
   power_layout->addWidget(poweroff_btn);
   QObject::connect(poweroff_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
@@ -184,15 +183,28 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 void DevicePanel::translateUi() {
   dongle_id->setTitle(tr("Dongle ID"));
   serial->setTitle(tr("Serial"));
+
   dcamBtn->setTitle(tr("Driver Camera"));
+  dcamBtn->setText(tr("PREVIEW"));
+  dcamBtn->setDescription(tr("Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)"));
+
   resetCalibBtn->setTitle(tr("Reset Calibration"));
+  resetCalibBtn->setText(tr("RESET"));
+
   if (retrainingBtn) {
     retrainingBtn->setTitle(tr("Review Training Guide"));
+    retrainingBtn->setText(tr("REVIEW"));
+    retrainingBtn->setDescription(tr("Review the rules, features, and limitations of openpilot"));
   }
+
   if (regulatoryBtn) {
     regulatoryBtn->setTitle(tr("Regulatory"));
+    regulatoryBtn->setText(tr("VIEW"));
   }
+
   translateBtn->setTitle(tr("Change Language"));
+  translateBtn->setText(tr("CHANGE"));
+
   reboot_btn->setText(tr("Reboot"));
   poweroff_btn->setText(tr("Power Off"));
 }
@@ -293,7 +305,6 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
 }
 
 void SoftwarePanel::translateUi() {
-  qWarning() << "SoftwarePanel::translateUi";
   gitBranchLbl->setTitle(tr("Git Branch"));
   gitCommitLbl->setTitle(tr("Git Commit"));
   osVersionLbl->setTitle(tr("OS Version"));
