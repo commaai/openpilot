@@ -265,7 +265,7 @@
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="39"/>
         <source>Hours</source>
-        <translation>小时数</translation>
+        <translation>小时</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="44"/>
@@ -275,12 +275,12 @@
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="46"/>
         <source>PAST WEEK</source>
-        <translation>上周</translation>
+        <translation>过去一周</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.h" line="15"/>
         <source>KM</source>
-        <translation>千米</translation>
+        <translation>公里</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.h" line="15"/>
@@ -293,7 +293,7 @@
     <message>
         <location filename="../qt/offroad/driverview.cc" line="56"/>
         <source>camera starting</source>
-        <translation>相机启动中</translation>
+        <translation>正在启动相机</translation>
     </message>
 </context>
 <context>
@@ -306,12 +306,12 @@
     <message>
         <location filename="../qt/widgets/input.cc" line="167"/>
         <source>Need at least </source>
-        <translation>需要至少 </translation>
+        <translation>至少需要 </translation>
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="167"/>
         <source> characters!</source>
-        <translation> 字符！</translation>
+        <translation> 个字符！</translation>
     </message>
 </context>
 <context>
@@ -319,7 +319,7 @@
     <message>
         <location filename="../installer/installer.cc" line="56"/>
         <source>Installing...</source>
-        <translation>安装...</translation>
+        <translation>正在安装...</translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="144"/>
@@ -329,7 +329,7 @@
     <message>
         <location filename="../installer/installer.cc" line="145"/>
         <source>Resolving deltas: </source>
-        <translation>解决增量： </translation>
+        <translation>处理： </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="146"/>
@@ -984,7 +984,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
         <source>SSH Keys</source>
-        <translation>SSH 密钥</translation>
+        <translation>SSH密钥</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
@@ -1033,7 +1033,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.h" line="13"/>
         <source>Enable SSH</source>
-        <translation>启用 SSH</translation>
+        <translation>启用SSH</translation>
     </message>
 </context>
 <context>
