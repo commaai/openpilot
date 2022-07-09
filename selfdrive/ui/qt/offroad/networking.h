@@ -30,15 +30,21 @@ public slots:
   void refresh();
 };
 
-class AdvancedNetworking : public QWidget {
+class AdvancedNetworking : public QWidget, public UI {
   Q_OBJECT
 public:
   explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
 
 private:
+  void translateUi() override;
   LabelControl* ipLabel;
   ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
+  QPushButton* back = nullptr;
+  ButtonControl *editPasswordButton = nullptr;
+  ToggleControl *roamingToggle = nullptr;
+  ButtonControl *editApnButton = nullptr;
+
   Params params;
 
 signals:
@@ -49,7 +55,7 @@ public slots:
   void refresh();
 };
 
-class Networking : public QFrame {
+class Networking : public QFrame, public UI {
   Q_OBJECT
 
 public:
@@ -60,12 +66,14 @@ private:
   QStackedLayout* main_layout = nullptr;
   QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
+  QPushButton* advancedSettings = nullptr;
 
   WifiUI* wifiWidget;
 
 protected:
   void showEvent(QShowEvent* event) override;
   void hideEvent(QHideEvent* event) override;
+  void translateUi() override;
 
 public slots:
   void refresh();

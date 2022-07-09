@@ -27,7 +27,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
   vlayout->setContentsMargins(20, 20, 20, 20);
   if (show_advanced) {
-    QPushButton* advancedSettings = new QPushButton(tr("Advanced"));
+    advancedSettings = new QPushButton();
     advancedSettings->setObjectName("advanced_btn");
     advancedSettings->setStyleSheet("margin-right: 30px;");
     advancedSettings->setFixedSize(400, 100);
@@ -70,6 +70,12 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
     }
   )");
   main_layout->setCurrentWidget(wifiScreen);
+
+  translateUi();
+}
+
+void Networking::translateUi() {
+  advancedSettings->setText(tr("Advanced"));
 }
 
 void Networking::refresh() {
@@ -118,7 +124,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->setSpacing(20);
 
   // Back button
-  QPushButton* back = new QPushButton(tr("Back"));
+  back = new QPushButton();
   back->setObjectName("back_btn");
   back->setFixedSize(400, 100);
   connect(back, &QPushButton::clicked, [=]() { emit backPress(); });
@@ -126,12 +132,12 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   ListWidget *list = new ListWidget(this);
   // Enable tethering layout
-  tetheringToggle = new ToggleControl(tr("Enable Tethering"), "", "", wifi->isTetheringEnabled());
+  tetheringToggle = new ToggleControl("", "", "", wifi->isTetheringEnabled());
   list->addItem(tetheringToggle);
   QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, this, &AdvancedNetworking::toggleTethering);
 
   // Change tethering password
-  ButtonControl *editPasswordButton = new ButtonControl(tr("Tethering Password"), tr("EDIT"));
+  editPasswordButton = new ButtonControl();
   connect(editPasswordButton, &ButtonControl::clicked, [=]() {
     QString pass = InputDialog::getText(tr("Enter new tethering password"), this, "", true, 8, wifi->getTetheringPassword());
     if (!pass.isEmpty()) {
@@ -141,7 +147,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(editPasswordButton);
 
   // IP address
-  ipLabel = new LabelControl(tr("IP Address"), wifi->ipv4_address);
+  ipLabel = new LabelControl("", wifi->ipv4_address);
   list->addItem(ipLabel);
 
   // SSH keys
@@ -150,7 +156,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   // Roaming toggle
   const bool roamingEnabled = params.getBool("GsmRoaming");
-  ToggleControl *roamingToggle = new ToggleControl(tr("Enable Roaming"), "", "", roamingEnabled);
+  roamingToggle = new ToggleControl("", "", "", roamingEnabled);
   QObject::connect(roamingToggle, &SshToggle::toggleFlipped, [=](bool state) {
     params.putBool("GsmRoaming", state);
     wifi->updateGsmSettings(state, QString::fromStdString(params.get("GsmApn")));
@@ -158,7 +164,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(roamingToggle);
 
   // APN settings
-  ButtonControl *editApnButton = new ButtonControl(tr("APN Setting"), tr("EDIT"));
+  editApnButton = new ButtonControl();
   connect(editApnButton, &ButtonControl::clicked, [=]() {
     const bool roamingEnabled = params.getBool("GsmRoaming");
     const QString cur_apn = QString::fromStdString(params.get("GsmApn"));
@@ -178,6 +184,19 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   main_layout->addWidget(new ScrollView(list, this));
   main_layout->addStretch(1);
+
+  translateUi();
+}
+
+void AdvancedNetworking::translateUi() {
+  back->setText(tr("Back"));
+  tetheringToggle->setTitle(tr("Enable Tethering"));
+  editPasswordButton->setTitle(tr("Tethering Password"));
+  editPasswordButton->setText(tr("EDIT"));
+  ipLabel->setTitle(tr("IP Address"));
+  roamingToggle->setTitle(tr("Enable Roaming"));
+  editApnButton->setTitle(tr("APN Setting"));
+  editApnButton->setText(tr("EDIT"));
 }
 
 void AdvancedNetworking::refresh() {
