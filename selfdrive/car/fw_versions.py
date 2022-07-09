@@ -371,10 +371,7 @@ def get_present_ecus(logcan, sendcan):
 
 
 def get_brand_ecu_matches(rx_addrs):
-  """
-  Returns dictionary of brands and matches with ECUs in their FW versions.
-  Tries all possible rx offsets for all brands' requests.
-  """
+  """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
   brand_addrs = get_brand_addrs()
   brand_matches = {r.brand: set() for r in REQUESTS}
