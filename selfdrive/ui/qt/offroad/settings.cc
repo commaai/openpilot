@@ -76,7 +76,6 @@ void TogglesPanel::retranslateUi() {
       "../assets/offroad/icon_metric.png",
     },
 #endif
-
   };
 
   Params params;
@@ -110,7 +109,6 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   setSpacing(50);
 
   dongle_id = new LabelControl();
-  dongle_id->setText(tr("N/A"));
   addItem(dongle_id);
   serial = new LabelControl();
   serial->setText(params.get("HardwareSerial").c_str());
@@ -197,6 +195,8 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
 void DevicePanel::retranslateUi() {
   dongle_id->setTitle(tr("Dongle ID"));
+  dongle_id->setText(getDongleId().value_or(tr("N/A")));
+
   serial->setTitle(tr("Serial"));
 
   dcamBtn->setTitle(tr("Driver Camera"));
