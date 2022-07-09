@@ -67,10 +67,12 @@ void MapWindow::initLayers() {
     modelPath["id"] = "modelPathLayer";
     modelPath["type"] = "line";
     modelPath["source"] = "modelPathSource";
+    modelPath["country-label"] = "name_zh";
     m_map->addLayer(modelPath);
     m_map->setPaintProperty("modelPathLayer", "line-color", QColor("red"));
     m_map->setPaintProperty("modelPathLayer", "line-width", 5.0);
     m_map->setLayoutProperty("modelPathLayer", "line-cap", "round");
+    m_map->setLayoutProperty("modelPathLayer", "country-label", "name_zh");
   }
   if (!m_map->layerExists("navLayer")) {
     qDebug() << "Initializing navLayer";
@@ -78,6 +80,7 @@ void MapWindow::initLayers() {
     nav["id"] = "navLayer";
     nav["type"] = "line";
     nav["source"] = "navSource";
+    nav["country-label"] = "name_zh";
     m_map->addLayer(nav, "road-intersection");
     m_map->setPaintProperty("navLayer", "line-color", QColor("#31a1ee"));
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
@@ -92,6 +95,7 @@ void MapWindow::initLayers() {
     carPos["id"] = "carPosLayer";
     carPos["type"] = "symbol";
     carPos["source"] = "carPosSource";
+    carPos["country-label"] = "name_zh";
     m_map->addLayer(carPos);
     m_map->setLayoutProperty("carPosLayer", "icon-pitch-alignment", "map");
     m_map->setLayoutProperty("carPosLayer", "icon-image", "label-arrow");
@@ -99,6 +103,7 @@ void MapWindow::initLayers() {
     m_map->setLayoutProperty("carPosLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("carPosLayer", "icon-allow-overlap", true);
     m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
+    m_map->setLayoutProperty("carPosLayer", "country-label", "name_zh");
   }
 }
 
