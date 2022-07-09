@@ -160,12 +160,15 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   // text
   QString text1, text2;
   text1 = QCoreApplication::translate("OnroadAlerts", qPrintable(alert.text1));
+
   if (alert.type.indexOf("calibrationIncomplete") == 0) {
     const QString find_txt = "Calibration in Progress: ";
     if (int pos = alert.text2.indexOf(find_txt); pos == 0) {
       text2 = tr("Calibration in Progress: %1").arg(alert.text2.mid(find_txt.length()));
     }
-  } else {
+  }
+
+  if (text2.isEmpty()) {
     text2 = QCoreApplication::translate("OnroadAlerts", qPrintable(alert.text2));
   }
 
