@@ -105,6 +105,7 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 
 // OnroadAlerts
 OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
+  // copied from selfdrive/controls/lib/events.py
   const QString dumy_alerts_translation[] = {
     tr("openpilot Unavailable"),
     tr("TAKE CONTROL IMMEDIATELY"),
