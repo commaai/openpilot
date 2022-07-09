@@ -225,7 +225,7 @@ def build_fw_dict(fw_versions, filter_brand=None):
   return fw_versions_dict
 
 
-def get_all_brand_addrs():
+def get_brand_addrs():
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
   brand_addrs = defaultdict(set)
   for brand, cars in versions.items():
@@ -370,17 +370,23 @@ def get_present_ecus(logcan, sendcan):
   return ecu_responses
 
 
-def get_brand_matches(rx_addrs) -> Dict[str, Set[Tuple[int, Optional[int]]]]:
-  """Returns dictionary of brands and matches with ECUs in their FW versions"""
-  # TODO: make this cleaner
+def get_brand_ecu_matches(rx_addrs):
+  """
+  Returns dictionary of brands and matches with ECUs in their FW versions.
+  Tries all possible rx offsets for all brands' requests.
+  """
+
+  brand_addrs = get_brand_addrs()
+  brand_matches = {r.brand: set() for r in REQUESTS}
+
   brand_rx_offsets = set((r.brand, r.rx_offset) for r in REQUESTS)
-  all_brand_addrs = get_all_brand_addrs()
-  brand_matches: Dict[str, Set[Tuple[int, Optional[int]]]] = {r.brand: set() for r in REQUESTS}
-  for brand, rx_offset in brand_rx_offsets:
-    for addr, subaddr, _ in rx_addrs:
-      a = (uds.get_rx_addr_for_tx_addr(addr, -rx_offset), subaddr)
-      if a in all_brand_addrs[brand]:
+  for addr, sub_addr, _ in rx_addrs:
+    # Since we can't know what request an rx addr returned from, add matches for all possible rx offsets
+    for brand, rx_offset in brand_rx_offsets:
+      a = (uds.get_rx_addr_for_tx_addr(addr, -rx_offset), sub_addr)
+      if a in brand_addrs[brand]:
         brand_matches[brand].add(a)
+
   return brand_matches
 
 
@@ -388,7 +394,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
   all_car_fw = []
-  brand_matches = get_brand_matches(ecu_rx_addrs)
+  brand_matches = get_brand_ecu_matches(ecu_rx_addrs)
 
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
     car_fw = get_fw_versions(logcan, sendcan, brand=brand, timeout=timeout, debug=debug, progress=progress)
