@@ -370,15 +370,15 @@ def get_present_ecus(logcan, sendcan):
   return ecu_responses
 
 
-def get_brand_ecu_matches(rx_addrs):
+def get_brand_ecu_matches(ecu_rx_addrs):
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
   brand_addrs = get_brand_addrs()
   brand_matches = {r.brand: set() for r in REQUESTS}
 
   brand_rx_offsets = set((r.brand, r.rx_offset) for r in REQUESTS)
-  for addr, sub_addr, _ in rx_addrs:
-    # Since we can't know what request an rx addr returned from, add matches for all possible rx offsets
+  for addr, sub_addr, _ in ecu_rx_addrs:
+    # Since we can't know what request an ecu responded to, add matches for all possible rx offsets
     for brand, rx_offset in brand_rx_offsets:
       a = (uds.get_rx_addr_for_tx_addr(addr, -rx_offset), sub_addr)
       if a in brand_addrs[brand]:
