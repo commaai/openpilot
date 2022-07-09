@@ -329,12 +329,12 @@
     <message>
         <location filename="../installer/installer.cc" line="145"/>
         <source>Resolving deltas: </source>
-        <translation>处理： </translation>
+        <translation>正在处理： </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="146"/>
         <source>Updating files: </source>
-        <translation>更新文件： </translation>
+        <translation>正在更新文件： </translation>
     </message>
 </context>
 <context>
@@ -347,12 +347,12 @@
     <message>
         <location filename="../qt/maps/map_settings.cc" line="66"/>
         <source>CLEAR</source>
-        <translation>CLEAR</translation>
+        <translation>清空</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="81"/>
         <source>Recent Destinations</source>
-        <translation>近期目的地</translation>
+        <translation>最近目的地</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="95"/>
@@ -363,27 +363,25 @@
         <location filename="../qt/maps/map_settings.cc" line="107"/>
         <source>Get turn-by-turn directions displayed and more with a comma 
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>使用逗号获取显示的详细路线和更多信息
-主要订阅。 立即注册：https://connect.comma.ai</translation>
+        <translation>订阅comma prime以获取导航。 
+立即注册：https://connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
         <source>No home
 location set</source>
-        <translation>没有家
-位置集</translation>
+        <translation>家：未设定</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="169"/>
         <source>No work
 location set</source>
-        <translation>没有工作
-位置集</translation>
+        <translation>工作：未设定</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="282"/>
         <source>no recent destinations</source>
-        <translation>没有最近的目的地</translation>
+        <translation>无最近目的地</translation>
     </message>
 </context>
 <context>
@@ -402,23 +400,23 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="30"/>
         <source>Advanced</source>
-        <translation>先进的</translation>
+        <translation>高级</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <source>Enter password</source>
-        <translation>先进的</translation>
+        <translation>输入密码</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>for &quot;</source>
-        <translation>为了 &quot;</translation>
+        <translation>网络名称：&quot;</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>Wrong password</source>
-        <translation>Wrong password</translation>
+        <translation>密码错误</translation>
     </message>
 </context>
 <context>
@@ -426,30 +424,30 @@ location set</source>
     <message>
         <location filename="../qt/onroad.cc" line="202"/>
         <source>km/h</source>
-        <translation>公里/小时</translation>
+        <translation>km/h</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="202"/>
         <source>mph</source>
-        <translation>英里/小时</translation>
+        <translation>mph</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="269"/>
         <location filename="../qt/onroad.cc" line="272"/>
         <source>MAX</source>
-        <translation>最大限度</translation>
+        <translation>最高定速</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="316"/>
         <location filename="../qt/onroad.cc" line="319"/>
         <source>SPEED</source>
-        <translation>速度</translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="322"/>
         <location filename="../qt/onroad.cc" line="325"/>
         <source>LIMIT</source>
-        <translation>限制</translation>
+        <translation>限速</translation>
     </message>
 </context>
 <context>
@@ -475,7 +473,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="86"/>
         <source>Pair your device to your comma account</source>
-        <translation>将您的设备与您的逗号账户配对</translation>
+        <translation>将您的设备与comma账号配对</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="91"/>
@@ -505,12 +503,12 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="189"/>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>成为 connect.comma.ai 的逗号主要会员</translation>
+        <translation>打开connect.comma.ai以注册comma prime会员</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="196"/>
         <source>PRIME FEATURES:</source>
-        <translation>主要特点：</translation>
+        <translation>comma prime特权：</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
@@ -520,7 +518,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
         <source>1 year of storage</source>
-        <translation>1年存储</translation>
+        <translation>1年数据存储</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
@@ -533,12 +531,12 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="123"/>
         <source>✓ SUBSCRIBED</source>
-        <translation>✓ 订阅</translation>
+        <translation>✓ 已订阅</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="129"/>
         <source>comma prime</source>
-        <translation>逗号素数</translation>
+        <translation>comma prime</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="135"/>
@@ -548,7 +546,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="148"/>
         <source>COMMA POINTS</source>
-        <translation>逗号分</translation>
+        <translation>COMMA POINTS点数</translation>
     </message>
 </context>
 <context>
@@ -566,7 +564,7 @@ location set</source>
     <message>
         <location filename="../qt/util.cc" line="18"/>
         <source>dashcam</source>
-        <translation>行车记录器</translation>
+        <translation>行车记录仪</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="18"/>
@@ -604,17 +602,17 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="38"/>
         <source>Resetting device...</source>
-        <translation>正在重置设备...</translation>
+        <translation>正在重置设备……</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="53"/>
         <source>System Reset</source>
-        <translation>系统重置</translation>
+        <translation>恢复出厂设置</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="59"/>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>触发系统重置。 按确认删除所有内容和设置。 按取消恢复启动。</translation>
+        <translation>已触发系统重置：确认以删除所有内容和设置。取消以正常启动设备。</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="68"/>
@@ -634,7 +632,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="88"/>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>无法挂载数据分区。 按确认重置您的设备。</translation>
+        <translation>无法挂载数据分区。 确认以重置您的设备。</translation>
     </message>
 </context>
 <context>
@@ -666,7 +664,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="328"/>
         <source>Toggles</source>
-        <translation>切换</translation>
+        <translation>设定</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="329"/>
@@ -980,7 +978,8 @@ location set</source>
     </message>
 </context>
 <context>
-    <name>SshControl</name>
+    <name>
+Control</name>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
         <source>SSH Keys</source>
