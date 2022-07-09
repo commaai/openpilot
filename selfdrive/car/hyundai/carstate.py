@@ -172,6 +172,7 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = cp.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
 
     self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["_COUNTER"]
+    self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
 
     return ret
 
@@ -313,7 +314,9 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
     if CP.carFingerprint in HDA2_CAR:
-      return None
+      signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
+      checks = [("CAM_0x2a4", 20)]
+      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6)
 
     signals = [
       # signal_name, signal_address
