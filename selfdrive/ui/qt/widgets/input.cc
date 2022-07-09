@@ -261,7 +261,7 @@ bool RichTextDialog::alert(const QString &prompt_text, QWidget *parent) {
 
 // MultiOptionDialog
 
-MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, QWidget *parent) : QDialogBase(parent) {
+MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, const QStringList &l, const QString &current, QWidget *parent) : QDialogBase(parent) {
   QFrame *container = new QFrame(this);
   container->setStyleSheet(R"(
     QFrame { background-color: #1B1B1B; }
@@ -301,12 +301,17 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   confirm_btn->setObjectName("confirm_btn");
   confirm_btn->setEnabled(false);
 
-  for (QString &s : l) {
+  for (const QString &s : l) {
     QPushButton *selectionLabel = new QPushButton(s);
     selectionLabel->setCheckable(true);
+    selectionLabel->setChecked(s == current);
     QObject::connect(selectionLabel, &QPushButton::toggled, [=](bool checked) {
       if (checked) selection = s;
-      confirm_btn->setEnabled(true);
+      if (selection != current) {
+        confirm_btn->setEnabled(true);
+      } else {
+        confirm_btn->setEnabled(false);
+      }
     });
 
     group->addButton(selectionLabel);
@@ -336,8 +341,8 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   outer_layout->addWidget(container);
 }
 
-QString MultiOptionDialog::getSelection(const QString &prompt_text, const QStringList l, QWidget *parent) {
-  MultiOptionDialog d = MultiOptionDialog(prompt_text, l, parent);
+QString MultiOptionDialog::getSelection(const QString &prompt_text, const QStringList &l, const QString &current, QWidget *parent) {
+  MultiOptionDialog d = MultiOptionDialog(prompt_text, l, current, parent);
   if (d.exec()) {
     return d.selection;
   }

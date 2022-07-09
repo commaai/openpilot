@@ -73,7 +73,7 @@ class MultiOptionDialog : public QDialogBase {
   Q_OBJECT
 
 public:
-  explicit MultiOptionDialog(const QString &prompt_text, const QStringList l, QWidget *parent);
-  static QString getSelection(const QString &prompt_text, const QStringList l, QWidget *parent);
+  explicit MultiOptionDialog(const QString &prompt_text, const QStringList &l, const QString &current, QWidget *parent);
+  static QString getSelection(const QString &prompt_text, const QStringList &l, const QString &current, QWidget *parent);
   QString selection;
 };
