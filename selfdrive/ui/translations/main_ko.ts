@@ -341,6 +341,57 @@
     </message>
 </context>
 <context>
+    <name>MapETA</name>
+    <message>
+        <location filename="../qt/maps/map.cc" line="618"/>
+        <source>eta</source>
+        <translation>에타</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="628"/>
+        <source>min</source>
+        <translation>분</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="632"/>
+        <source>hr</source>
+        <translation>시간</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="652"/>
+        <source>km</source>
+        <translation>km</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="655"/>
+        <source>mi</source>
+        <translation>mi</translation>
+    </message>
+</context>
+<context>
+    <name>MapInstructions</name>
+    <message>
+        <location filename="../qt/maps/map.cc" line="421"/>
+        <source> km</source>
+        <translation> km</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="424"/>
+        <source> m</source>
+        <translation> m</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="432"/>
+        <source> mi</source>
+        <translation> mi</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="435"/>
+        <source> ft</source>
+        <translation> ft</translation>
+    </message>
+</context>
+<context>
     <name>MapPanel</name>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="62"/>
@@ -387,6 +438,19 @@ location set</source>
         <location filename="../qt/maps/map_settings.cc" line="282"/>
         <source>no recent destinations</source>
         <translation>최근 경로 없음</translation>
+    </message>
+</context>
+<context>
+    <name>MapWindow</name>
+    <message>
+        <location filename="../qt/maps/map.cc" line="178"/>
+        <source>Map Loading</source>
+        <translation>지도 로딩</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="195"/>
+        <source>Waiting for GPS</source>
+        <translation>GPS를 기다리는 중</translation>
     </message>
 </context>
 <context>
