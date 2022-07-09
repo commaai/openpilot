@@ -1,10 +1,18 @@
 #include "selfdrive/ui/qt/window.h"
 
+#include <QApplication>
 #include <QFontDatabase>
 
 #include "system/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
+  QString translation_file = QString::fromStdString(Params().get("LanguageSetting"));
+  if (!translator.load(translation_file, "translations") && translation_file.length()) {
+    qCritical() << "Failed to load translation file:" << translation_file;
+  }
+  qApp->installTranslator(&translator);
+
+
   main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 
@@ -16,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
   QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
+  QObject::connect(settingsWindow, &SettingsWindow::changeLanguage, this, &MainWindow::changeLanguage);
   QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, [=]() {
     onboardingWindow->showTrainingGuide();
     main_layout->setCurrentWidget(onboardingWindow);
@@ -64,6 +73,15 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_NoSystemBackground);
 }
 
+void MainWindow::changeLanguage(const QString &lang) {
+  Params().put("LanguageSetting", lang.toStdString());
+  qApp->removeTranslator(&translator);
+  if (translator.load(lang, "translations")) {
+    qApp->installTranslator(&translator);
+    qWarning() << "updating translate";
+  }
+}
+
 void MainWindow::openSettings() {
   main_layout->setCurrentWidget(settingsWindow);
 }
@@ -74,6 +92,18 @@ void MainWindow::closeSettings() {
   if (uiState()->scene.started) {
     homeWindow->showSidebar(false);
   }
+}
+
+void MainWindow::changeEvent(QEvent* event) {
+  if (event && event->type() == QEvent::LanguageChange) {
+    auto children = QObject::findChildren<QWidget *>();
+    for (auto c : children) {
+      if (auto ui = dynamic_cast<UI *>(c)) {
+        ui->translateUi();
+      }
+    }
+  }
+  QWidget::changeEvent(event);
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {

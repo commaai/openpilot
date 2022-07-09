@@ -62,7 +62,7 @@ class LabelControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  LabelControl(const QString &title, const QString &text = "", const QString &desc = "", QWidget *parent = nullptr) : AbstractControl(title, desc, "", parent) {
+  LabelControl(const QString &title = "", const QString &text = "", const QString &desc = "", QWidget *parent = nullptr) : AbstractControl(title, desc, "", parent) {
     label.setText(text);
     label.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     hlayout->addWidget(&label);
@@ -78,7 +78,7 @@ class ButtonControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  ButtonControl(const QString &title, const QString &text, const QString &desc = "", QWidget *parent = nullptr);
+  ButtonControl(const QString &title = "", const QString &text = "", const QString &desc = "", QWidget *parent = nullptr);
   inline void setText(const QString &text) { btn.setText(text); }
   inline QString text() const { return btn.text(); }
 
@@ -188,4 +188,10 @@ protected:
 
 signals:
   void clicked();
+};
+
+
+class UI {
+public:
+  virtual void translateUi() = 0;
 };

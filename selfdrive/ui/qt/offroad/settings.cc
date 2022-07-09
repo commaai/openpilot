@@ -94,19 +94,23 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 }
 
+void TogglesPanel::translateUi() {
+  
+}
+
 DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   setSpacing(50);
-  addItem(new LabelControl(tr("Dongle ID"), getDongleId().value_or(tr("N/A"))));
-  addItem(new LabelControl(tr("Serial"), params.get("HardwareSerial").c_str()));
+  addItem(dongle_id = new LabelControl(tr("Dongle ID"), getDongleId().value_or(tr("N/A"))));
+  addItem(serial = new LabelControl(tr("Serial"), params.get("HardwareSerial").c_str()));
 
   // offroad-only buttons
 
-  auto dcamBtn = new ButtonControl(tr("Driver Camera"), tr("PREVIEW"),
+  dcamBtn = new ButtonControl(tr("Driver Camera"), tr("PREVIEW"),
                                    tr("Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)"));
   connect(dcamBtn, &ButtonControl::clicked, [=]() { emit showDriverView(); });
   addItem(dcamBtn);
 
-  auto resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
+  resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
   connect(resetCalibBtn, &ButtonControl::showDescription, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), this)) {
@@ -116,7 +120,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(resetCalibBtn);
 
   if (!params.getBool("Passive")) {
-    auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
+    retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
     connect(retrainingBtn, &ButtonControl::clicked, [=]() {
       if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), this)) {
         emit reviewTrainingGuide();
@@ -126,7 +130,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 
   if (Hardware::TICI()) {
-    auto regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
+    regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
       const std::string txt = util::read_file("../assets/offroad/fcc.html");
       RichTextDialog::alert(QString::fromStdString(txt), this);
@@ -134,15 +138,12 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     addItem(regulatoryBtn);
   }
 
-  auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
+  translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
   connect(translateBtn, &ButtonControl::clicked, [=]() {
     QMap<QString, QString> langs = getSupportedLanguages();
     QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), this);
     if (!selection.isEmpty()) {
-      // put language setting, exit Qt UI, and trigger fast restart
-      Params().put("LanguageSetting", langs[selection].toStdString());
-      qApp->exit(18);
-      watchdog_kick(0);
+      emit parent->changeLanguage(langs[selection]);
     }
   });
   addItem(translateBtn);
@@ -157,12 +158,12 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   QHBoxLayout *power_layout = new QHBoxLayout();
   power_layout->setSpacing(30);
 
-  QPushButton *reboot_btn = new QPushButton(tr("Reboot"));
+  reboot_btn = new QPushButton(tr("Reboot"));
   reboot_btn->setObjectName("reboot_btn");
   power_layout->addWidget(reboot_btn);
   QObject::connect(reboot_btn, &QPushButton::clicked, this, &DevicePanel::reboot);
 
-  QPushButton *poweroff_btn = new QPushButton(tr("Power Off"));
+  poweroff_btn = new QPushButton(tr("Power Off"));
   poweroff_btn->setObjectName("poweroff_btn");
   power_layout->addWidget(poweroff_btn);
   QObject::connect(poweroff_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
@@ -178,6 +179,22 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     #poweroff_btn:pressed { background-color: #FF2424; }
   )");
   addItem(power_layout);
+}
+
+void DevicePanel::translateUi() {
+  dongle_id->setTitle(tr("Dongle ID"));
+  serial->setTitle(tr("Serial"));
+  dcamBtn->setTitle(tr("Driver Camera"));
+  resetCalibBtn->setTitle(tr("Reset Calibration"));
+  if (retrainingBtn) {
+    retrainingBtn->setTitle(tr("Review Training Guide"));
+  }
+  if (regulatoryBtn) {
+    regulatoryBtn->setTitle(tr("Regulatory"));
+  }
+  translateBtn->setTitle(tr("Change Language"));
+  reboot_btn->setText(tr("Reboot"));
+  poweroff_btn->setText(tr("Power Off"));
 }
 
 void DevicePanel::updateCalibDescription() {
@@ -231,12 +248,13 @@ void DevicePanel::poweroff() {
 }
 
 SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
-  gitBranchLbl = new LabelControl(tr("Git Branch"));
-  gitCommitLbl = new LabelControl(tr("Git Commit"));
-  osVersionLbl = new LabelControl(tr("OS Version"));
-  versionLbl = new LabelControl(tr("Version"), "", QString::fromStdString(params.get("ReleaseNotes")).trimmed());
-  lastUpdateLbl = new LabelControl(tr("Last Update Check"), "", tr("The last time openpilot successfully checked for an update. The updater only runs while the car is off."));
-  updateBtn = new ButtonControl(tr("Check for Update"), "");
+  gitBranchLbl = new LabelControl();
+  gitCommitLbl = new LabelControl();
+  osVersionLbl = new LabelControl();
+  versionLbl = new LabelControl("", "", QString::fromStdString(params.get("ReleaseNotes")).trimmed());
+  lastUpdateLbl = new LabelControl("", "", tr("The last time openpilot successfully checked for an update. The updater only runs while the car is off."));
+  
+  updateBtn = new ButtonControl();
   connect(updateBtn, &ButtonControl::clicked, [=]() {
     if (params.getBool("IsOffroad")) {
       fs_watch->addPath(QString::fromStdString(params.getParamPath("LastUpdateTime")));
@@ -271,6 +289,17 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
       updateLabels();
     }
   });
+  translateUi();
+}
+
+void SoftwarePanel::translateUi() {
+  qWarning() << "SoftwarePanel::translateUi";
+  gitBranchLbl->setTitle(tr("Git Branch"));
+  gitCommitLbl->setTitle(tr("Git Commit"));
+  osVersionLbl->setTitle(tr("OS Version"));
+  versionLbl->setTitle(tr("Version"));
+  lastUpdateLbl->setTitle(tr("Last Update Check"));
+  updateBtn->setTitle(tr("Check for Update"));
 }
 
 void SoftwarePanel::showEvent(QShowEvent *event) {
@@ -336,24 +365,22 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
   QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
 
-  QList<QPair<QString, QWidget *>> panels = {
-    {tr("Device"), device},
-    {tr("Network"), new Networking(this)},
-    {tr("Toggles"), new TogglesPanel(this)},
-    {tr("Software"), new SoftwarePanel(this)},
-  };
+  panels.push_back({new QPushButton(), device});
+      panels.push_back({new QPushButton(), new Networking(this)});
+      panels.push_back({new QPushButton(), new TogglesPanel(this)});
+      panels.push_back({new QPushButton(), new SoftwarePanel(this)});
 
 #ifdef ENABLE_MAPS
   auto map_panel = new MapPanel(this);
-  panels.push_back({tr("Navigation"), map_panel});
+  panels.push_back({new QPushButton(), map_panel});
   QObject::connect(map_panel, &MapPanel::closeSettings, this, &SettingsWindow::closeSettings);
 #endif
 
   const int padding = panels.size() > 3 ? 25 : 35;
 
   nav_btns = new QButtonGroup(this);
-  for (auto &[name, panel] : panels) {
-    QPushButton *btn = new QPushButton(name);
+  for (auto &[btn, panel] : panels) {
+    // QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
     btn->setChecked(nav_btns->buttons().size() == 0);
     btn->setStyleSheet(QString(R"(
@@ -377,13 +404,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    const int lr_margin = name != tr("Network") ? 50 : 0;  // Network panel handles its own margins
+    const int lr_margin = 0;//name != tr("Network") ? 50 : 0;  // Network panel handles its own margins
     panel->setContentsMargins(lr_margin, 25, lr_margin, 25);
 
     ScrollView *panel_frame = new ScrollView(panel, this);
     panel_widget->addWidget(panel_frame);
 
-    QObject::connect(btn, &QPushButton::clicked, [=, w = panel_frame]() {
+    QObject::connect(btn, &QPushButton::clicked, [=, btn=btn, w = panel_frame]() {
       btn->setChecked(true);
       panel_widget->setCurrentWidget(w);
     });
@@ -406,4 +433,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       background-color: black;
     }
   )");
+  translateUi();
+}
+
+void SettingsWindow::translateUi() {
+  panels[0].first->setText(tr("Device"));
+  panels[1].first->setText(tr("Network"));
+  panels[2].first->setText(tr("Toggles"));
+  panels[3].first->setText(tr("Software"));
+  #ifdef ENABLE_MAPS
+  panels[4].first->setText(tr("Navigation"));
+  #endif
 }

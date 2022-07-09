@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QStackedLayout>
+#include <QTranslator>
 #include <QWidget>
 
 #include "selfdrive/ui/qt/home.h"
@@ -13,8 +14,12 @@ class MainWindow : public QWidget {
 public:
   explicit MainWindow(QWidget *parent = 0);
 
+public slots:
+  void changeLanguage(const QString &lang);
+
 private:
   bool eventFilter(QObject *obj, QEvent *event) override;
+  void changeEvent(QEvent* event) override;
   void openSettings();
   void closeSettings();
 
@@ -24,4 +29,5 @@ private:
   HomeWindow *homeWindow;
   SettingsWindow *settingsWindow;
   OnboardingWindow *onboardingWindow;
+  QTranslator translator;
 };
