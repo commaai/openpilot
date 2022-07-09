@@ -276,7 +276,6 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   QLabel *title = new QLabel(prompt_text, this);
   title->setStyleSheet("font-size: 70px; font-weight: 500;");
   main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
-
   main_layout->addSpacing(25);
 
   QWidget *listWidget = new QWidget(this);
@@ -301,13 +300,8 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   QPushButton *confirm_btn = new QPushButton(tr("Select"));
   confirm_btn->setObjectName("confirm_btn");
   confirm_btn->setEnabled(false);
-  QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
 
   for (QString &s : l) {
-    QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setContentsMargins(15, 0, 15, 0);
-    hlayout->setSpacing(50);
-
     QPushButton *selectionLabel = new QPushButton(s);
     selectionLabel->setCheckable(true);
     QObject::connect(selectionLabel, &QPushButton::toggled, [=](bool checked) {
@@ -316,8 +310,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
     });
 
     group->addButton(selectionLabel);
-    hlayout->addWidget(selectionLabel);
-    listLayout->addLayout(hlayout);
+    listLayout->addWidget(selectionLabel);
   }
 
   ScrollView *scroll_view = new ScrollView(listWidget, this);
@@ -334,6 +327,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
 
   QPushButton *cancel_btn = new QPushButton(tr("Cancel"));
   QObject::connect(cancel_btn, &QPushButton::clicked, this, &ConfirmationDialog::reject);
+  QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
   blayout->addWidget(cancel_btn);
   blayout->addWidget(confirm_btn);
 
