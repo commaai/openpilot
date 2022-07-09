@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include <QApplication>
 #include <QDebug>
 
 #include "common/timing.h"
@@ -103,6 +104,20 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 // ***** onroad widgets *****
 
 // OnroadAlerts
+OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
+  const QString dumy_alerts_translation[] = {
+    tr("openpilot Unavailable"),
+    tr("TAKE CONTROL IMMEDIATELY"),
+    tr("openpilot will disengage"),
+    tr("WARNING: This branch is not tested"),
+    tr("Poor GPS reception"),
+    tr("Hardware malfunctioning if sky is visible"),
+    tr("Always keep hands on wheel and eyes on road"),
+    tr("Calibration in Progress"),
+    // TODO: add all events
+  };
+};
+
 void OnroadAlerts::updateAlert(const Alert &a, const QColor &color) {
   if (!alert.equal(a) || color != bg) {
     alert = a;
@@ -142,6 +157,17 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   // text
+  QString text1, text2;
+  text1 = QCoreApplication::translate("OnroadAlerts", qPrintable(alert.text1));
+  if (alert.type.indexOf("calibrationIncomplete") == 0) {
+    const QString find_txt = "Calibration in Progress: ";
+    if (int pos = alert.text2.indexOf(find_txt); pos == 0) {
+      text2 = tr("Calibration in Progress: %1").arg(alert.text2.mid(find_txt.length()));
+    }
+  } else {
+    text2 = QCoreApplication::translate("OnroadAlerts", qPrintable(alert.text2));
+  }
+
   const QPoint c = r.center();
   p.setPen(QColor(0xff, 0xff, 0xff));
   p.setRenderHint(QPainter::TextAntialiasing);
@@ -150,15 +176,15 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     p.drawText(r, Qt::AlignCenter, alert.text1);
   } else if (alert.size == cereal::ControlsState::AlertSize::MID) {
     configFont(p, "Inter", 88, "Bold");
-    p.drawText(QRect(0, c.y() - 125, width(), 150), Qt::AlignHCenter | Qt::AlignTop, alert.text1);
+    p.drawText(QRect(0, c.y() - 125, width(), 150), Qt::AlignHCenter | Qt::AlignTop, text1);
     configFont(p, "Inter", 66, "Regular");
-    p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, alert.text2);
+    p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, text2);
   } else if (alert.size == cereal::ControlsState::AlertSize::FULL) {
     bool l = alert.text1.length() > 15;
     configFont(p, "Inter", l ? 132 : 177, "Bold");
-    p.drawText(QRect(0, r.y() + (l ? 240 : 270), width(), 600), Qt::AlignHCenter | Qt::TextWordWrap, alert.text1);
+    p.drawText(QRect(0, r.y() + (l ? 240 : 270), width(), 600), Qt::AlignHCenter | Qt::TextWordWrap, text1);
     configFont(p, "Inter", 88, "Regular");
-    p.drawText(QRect(0, r.height() - (l ? 361 : 420), width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, alert.text2);
+    p.drawText(QRect(0, r.height() - (l ? 361 : 420), width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, text2);
   }
 }
 

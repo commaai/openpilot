@@ -13,7 +13,7 @@ class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
-  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {};
+  OnroadAlerts(QWidget *parent = 0);
   void updateAlert(const Alert &a, const QColor &color);
 
 protected:
