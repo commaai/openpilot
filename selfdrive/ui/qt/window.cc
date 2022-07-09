@@ -96,7 +96,7 @@ void MainWindow::changeEvent(QEvent* event) {
   if (event && event->type() == QEvent::LanguageChange) {
     for (auto c : QObject::findChildren<QWidget *>()) {
       if (auto ui = dynamic_cast<UI *>(c)) {
-        ui->translateUi();
+        ui->retranslateUi();
       }
     }
   }

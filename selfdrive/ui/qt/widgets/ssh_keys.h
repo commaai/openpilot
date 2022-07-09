@@ -14,9 +14,9 @@ public:
     QObject::connect(this, &SshToggle::toggleFlipped, [=](bool state) {
       Hardware::set_ssh_enabled(state);
     });
-    translateUi();
+    retranslateUi();
   }
-  void translateUi() override {
+  void retranslateUi() override {
     setTitle(tr("Enable SSH"));
   }
 };
@@ -27,7 +27,7 @@ class SshControl : public ButtonControl, public UI{
 
 public:
   SshControl();
-  void translateUi() override;
+  void retranslateUi() override;
 
 private:
   Params params;

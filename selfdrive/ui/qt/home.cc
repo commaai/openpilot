@@ -173,7 +173,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   )");
 }
 
-void OffroadHome::translateUi() {
+void OffroadHome::retranslateUi() {
   update_notif->setText(tr("UPDATE"));
 }
 

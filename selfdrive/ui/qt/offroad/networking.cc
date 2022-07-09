@@ -71,10 +71,10 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   )");
   main_layout->setCurrentWidget(wifiScreen);
 
-  translateUi();
+  retranslateUi();
 }
 
-void Networking::translateUi() {
+void Networking::retranslateUi() {
   advancedSettings->setText(tr("Advanced"));
 }
 
@@ -186,10 +186,10 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addWidget(new ScrollView(list, this));
   main_layout->addStretch(1);
 
-  translateUi();
+  retranslateUi();
 }
 
-void AdvancedNetworking::translateUi() {
+void AdvancedNetworking::retranslateUi() {
   back->setText(tr("Back"));
   tetheringToggle->setTitle(tr("Enable Tethering"));
   editPasswordButton->setTitle(tr("Tethering Password"));

@@ -164,10 +164,10 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &PrimeUserWidget::replyFinished);
   }
 
-  translateUi();
+  retranslateUi();
 }
 
-void PrimeUserWidget::translateUi() {
+void PrimeUserWidget::retranslateUi() {
   subscribed->setText(tr("✓ SUBSCRIBED"));
   commaPrime->setText(tr("comma prime"));
   connectUrl->setText(tr("CONNECT.COMMA.AI"));
@@ -221,10 +221,10 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
     }
   )");
 
-  translateUi();
+  retranslateUi();
 }
 
-void PrimeAdWidget::translateUi() {
+void PrimeAdWidget::retranslateUi() {
   upgrade->setText(tr("Upgrade Now"));
   description->setText(tr("Become a comma prime member at connect.comma.ai"));
   features->setText(tr("PRIME FEATURES:"));

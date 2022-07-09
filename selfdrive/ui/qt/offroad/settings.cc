@@ -26,10 +26,10 @@
 #include "selfdrive/ui/qt/qt_window.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
-  translateUi();
+  retranslateUi();
 }
 
-void TogglesPanel::translateUi() {
+void TogglesPanel::retranslateUi() {
   // param, title, desc, icon
   std::vector<std::tuple<QString, QString, QString, QString>> toggles{
     {
@@ -192,10 +192,10 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     #poweroff_btn:pressed { background-color: #FF2424; }
   )");
   addItem(power_layout);
-  translateUi();
+  retranslateUi();
 }
 
-void DevicePanel::translateUi() {
+void DevicePanel::retranslateUi() {
   dongle_id->setTitle(tr("Dongle ID"));
   serial->setTitle(tr("Serial"));
 
@@ -318,10 +318,10 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
       updateLabels();
     }
   });
-  translateUi();
+  retranslateUi();
 }
 
-void SoftwarePanel::translateUi() {
+void SoftwarePanel::retranslateUi() {
   gitBranchLbl->setTitle(tr("Git Branch"));
   gitCommitLbl->setTitle(tr("Git Commit"));
   osVersionLbl->setTitle(tr("OS Version"));
@@ -464,10 +464,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       background-color: black;
     }
   )");
-  translateUi();
+  retranslateUi();
 }
 
-void SettingsWindow::translateUi() {
+void SettingsWindow::retranslateUi() {
   panels[0].first->setText(tr("Device"));
   panels[1].first->setText(tr("Network"));
   panels[2].first->setText(tr("Toggles"));

@@ -19,7 +19,7 @@ public:
   explicit SettingsWindow(QWidget *parent = 0);
 
 protected:
-  void translateUi() override;
+  void retranslateUi() override;
   void showEvent(QShowEvent *event) override;
 
 signals:
@@ -50,7 +50,7 @@ private slots:
   void updateCalibDescription();
 
 private:
-  void translateUi() override;
+  void retranslateUi() override;
 
   Params params;
   LabelControl *dongle_id = nullptr;
@@ -70,7 +70,7 @@ public:
   explicit TogglesPanel(SettingsWindow *parent);
 
 private:
-  void translateUi() override;
+  void retranslateUi() override;
 
   std::vector<ParamControl*> controls;
 };
@@ -83,7 +83,7 @@ public:
 private:
   void showEvent(QShowEvent *event) override;
   void updateLabels();
-  void translateUi() override;
+  void retranslateUi() override;
 
   LabelControl *gitBranchLbl;
   LabelControl *gitCommitLbl;

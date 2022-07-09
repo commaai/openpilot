@@ -36,7 +36,7 @@ public:
   explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
 
 private:
-  void translateUi() override;
+  void retranslateUi() override;
   LabelControl* ipLabel;
   ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
@@ -73,7 +73,7 @@ private:
 protected:
   void showEvent(QShowEvent* event) override;
   void hideEvent(QHideEvent* event) override;
-  void translateUi() override;
+  void retranslateUi() override;
 
 public slots:
   void refresh();

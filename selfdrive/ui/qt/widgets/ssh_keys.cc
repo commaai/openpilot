@@ -24,11 +24,11 @@ SshControl::SshControl() : ButtonControl() {
     }
   });
 
-  translateUi();
+  retranslateUi();
   refresh();
 }
 
-void SshControl::translateUi() {
+void SshControl::retranslateUi() {
   setTitle(tr("SSH Keys"));
   setDescription(tr("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username."));
   

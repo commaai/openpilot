@@ -153,10 +153,10 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     }
   }
 
-  translateUi();
+  retranslateUi();
 }
 
-void MapPanel::translateUi() {
+void MapPanel::retranslateUi() {
   signup_header->setText(tr("Try the Navigation Beta"));
   signup->setText(tr("Get turn-by-turn directions displayed and more with a comma \nprime subscription. Sign up now: https://connect.comma.ai"));
 }

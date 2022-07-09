@@ -46,7 +46,7 @@ class PrimeUserWidget : public QWidget, public UI {
   Q_OBJECT
 public:
   explicit PrimeUserWidget(QWidget* parent = 0);
-  void translateUi() override;
+  void retranslateUi() override;
 
 private:
   QVBoxLayout* mainLayout;
@@ -66,7 +66,7 @@ class PrimeAdWidget : public QFrame, public UI {
   Q_OBJECT
 public:
   explicit PrimeAdWidget(QWidget* parent = 0);
-  void translateUi() override;
+  void retranslateUi() override;
 
 private:
   QLabel *upgrade;

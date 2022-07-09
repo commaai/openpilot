@@ -20,7 +20,7 @@ public:
   void parseResponse(const QString &response, bool success);
   void updateCurrentRoute();
   void clear();
-  void translateUi() override;
+  void retranslateUi() override;
 
 private:
   void showEvent(QShowEvent *event) override;

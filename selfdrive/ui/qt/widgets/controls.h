@@ -193,5 +193,5 @@ signals:
 
 class UI {
 public:
-  virtual void translateUi() = 0;
+  virtual void retranslateUi() = 0;
 };

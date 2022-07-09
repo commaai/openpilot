@@ -10,7 +10,7 @@ class DriveStats : public QFrame, public UI {
 
 public:
   explicit DriveStats(QWidget* parent = 0);
-  void translateUi() override;
+  void retranslateUi() override;
 
 private:
   void showEvent(QShowEvent *event) override;

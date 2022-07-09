@@ -62,10 +62,10 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
     QLabel[type="unit"] { font-size: 51px; font-weight: 300; color: #A0A0A0; }
   )");
 
-  translateUi();
+  retranslateUi();
 }
 
-void DriveStats::translateUi() {
+void DriveStats::retranslateUi() {
   all_.title->setText(tr("ALL TIME"));
   week_.title->setText(tr("PAST WEEK"));
   for (auto &s : {all_, week_}) {
