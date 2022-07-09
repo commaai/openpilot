@@ -230,7 +230,7 @@ def get_brand_addrs():
   brand_addrs = defaultdict(set)
   for brand, cars in versions.items():
     for fw in cars.values():
-      brand_addrs[brand] |= {(addr, subaddr) for ecu, addr, subaddr in fw.keys()}
+      brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
   return brand_addrs
 
 
@@ -245,7 +245,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   # time and only one is in our database.
   exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
-  # Build lookup table from (addr, subaddr, fw) to list of candidate cars
+  # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
     if candidate == exclude:
