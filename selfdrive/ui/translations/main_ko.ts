@@ -108,12 +108,12 @@
 <context>
     <name>DevicePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="199"/>
+        <location filename="../qt/offroad/settings.cc" line="197"/>
         <source>Dongle ID</source>
         <translation>Dongle ID</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="113"/>
+        <location filename="../qt/offroad/settings.cc" line="198"/>
         <source>N/A</source>
         <translation>N/A</translation>
     </message>
@@ -148,7 +148,7 @@
         <translation>재설정</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="128"/>
+        <location filename="../qt/offroad/settings.cc" line="126"/>
         <source>Are you sure you want to reset calibration?</source>
         <translation>캘리브레이션을 재설정하시겠습니까？</translation>
     </message>
@@ -168,7 +168,7 @@
         <translation>openpilot의 규칙, 기능, 제한 다시보기</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="137"/>
+        <location filename="../qt/offroad/settings.cc" line="135"/>
         <source>Are you sure you want to review the training guide?</source>
         <translation>트레이닝 가이드를 다시보시겠습니까？</translation>
     </message>
@@ -193,7 +193,7 @@
         <translation>변경</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="157"/>
+        <location filename="../qt/offroad/settings.cc" line="155"/>
         <source>Select a language</source>
         <translation>언어선택</translation>
     </message>
@@ -394,17 +394,17 @@
 <context>
     <name>MapPanel</name>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="62"/>
+        <location filename="../qt/maps/map_settings.cc" line="162"/>
         <source>Current Destination</source>
         <translation>현재 목적지</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="66"/>
+        <location filename="../qt/maps/map_settings.cc" line="163"/>
         <source>CLEAR</source>
         <translation>CLEAR</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="81"/>
+        <location filename="../qt/maps/map_settings.cc" line="164"/>
         <source>Recent Destinations</source>
         <translation>최근 목적지</translation>
     </message>
@@ -421,21 +421,21 @@ prime subscription. Sign up now: https://connect.comma.ai</source>
 즉시등록：https://connect.comma.ai</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="171"/>
+        <location filename="../qt/maps/map_settings.cc" line="174"/>
         <source>No home
 location set</source>
         <translation>집
 설정되지않음</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="176"/>
+        <location filename="../qt/maps/map_settings.cc" line="179"/>
         <source>No work
 location set</source>
         <translation>회사
 설정되지않음</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="289"/>
+        <location filename="../qt/maps/map_settings.cc" line="292"/>
         <source>no recent destinations</source>
         <translation>최근 경로 없음</translation>
     </message>
@@ -1200,12 +1200,12 @@ location set</source>
         <translation>오전/오후 대신 24시간 형식 사용</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="86"/>
+        <location filename="../qt/offroad/settings.cc" line="85"/>
         <source>openpilot Longitudinal Control</source>
         <translation>openpilot Longitudinal Control</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="87"/>
+        <location filename="../qt/offroad/settings.cc" line="86"/>
         <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
         <translation>openpilot은 차량&apos;의 레이더를 무력화시키고 가속페달과 브레이크의 제어를 인계받을 것이다. 경고: AEB를 비활성화합니다!</translation>
     </message>

@@ -108,12 +108,12 @@
 <context>
     <name>DevicePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="199"/>
+        <location filename="../qt/offroad/settings.cc" line="197"/>
         <source>Dongle ID</source>
         <translation>加密狗 ID</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="113"/>
+        <location filename="../qt/offroad/settings.cc" line="198"/>
         <source>N/A</source>
         <translation>不适用</translation>
     </message>
@@ -148,7 +148,7 @@
         <translation>重置</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="128"/>
+        <location filename="../qt/offroad/settings.cc" line="126"/>
         <source>Are you sure you want to reset calibration?</source>
         <translation>您确定要重置校准吗？</translation>
     </message>
@@ -168,7 +168,7 @@
         <translation>查看 openpilot 的规则、功能和限制</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="137"/>
+        <location filename="../qt/offroad/settings.cc" line="135"/>
         <source>Are you sure you want to review the training guide?</source>
         <translation>您确定要查看培训指南吗？</translation>
     </message>
@@ -193,7 +193,7 @@
         <translation>切换</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="157"/>
+        <location filename="../qt/offroad/settings.cc" line="155"/>
         <source>Select a language</source>
         <translation>选择语言</translation>
     </message>
@@ -394,17 +394,17 @@
 <context>
     <name>MapPanel</name>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="62"/>
+        <location filename="../qt/maps/map_settings.cc" line="162"/>
         <source>Current Destination</source>
         <translation>当前目的地</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="66"/>
+        <location filename="../qt/maps/map_settings.cc" line="163"/>
         <source>CLEAR</source>
         <translation>CLEAR</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="81"/>
+        <location filename="../qt/maps/map_settings.cc" line="164"/>
         <source>Recent Destinations</source>
         <translation>近期目的地</translation>
     </message>
@@ -421,21 +421,21 @@ prime subscription. Sign up now: https://connect.comma.ai</source>
 主要订阅。 立即注册：https://connect.comma.ai</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="171"/>
+        <location filename="../qt/maps/map_settings.cc" line="174"/>
         <source>No home
 location set</source>
         <translation>没有家
 位置集</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="176"/>
+        <location filename="../qt/maps/map_settings.cc" line="179"/>
         <source>No work
 location set</source>
         <translation>没有工作
 位置集</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map_settings.cc" line="289"/>
+        <location filename="../qt/maps/map_settings.cc" line="292"/>
         <source>no recent destinations</source>
         <translation>没有最近的目的地</translation>
     </message>
@@ -1200,12 +1200,12 @@ location set</source>
         <translation>使用 24 小时制代替上午/下午</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="86"/>
+        <location filename="../qt/offroad/settings.cc" line="85"/>
         <source>openpilot Longitudinal Control</source>
         <translation>openpilot 纵向控制</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="87"/>
+        <location filename="../qt/offroad/settings.cc" line="86"/>
         <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
         <translation>openpilot 将禁用汽车的雷达并接管油门和刹车的控制。 警告：这会禁用 AEB！</translation>
     </message>
