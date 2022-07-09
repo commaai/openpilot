@@ -281,10 +281,10 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
 
   QWidget *listWidget = new QWidget(this);
   QVBoxLayout *listLayout = new QVBoxLayout(listWidget);
-  listLayout->setSpacing(15);
+  listLayout->setSpacing(20);
   listWidget->setStyleSheet(R"(
     QPushButton {
-      height: 125;
+      height: 135;
       padding: 0px 50px;
       text-align: left;
       font-size: 55px;
@@ -338,7 +338,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
   blayout->addWidget(confirm_btn);
 
   QVBoxLayout *outer_layout = new QVBoxLayout(this);
-  outer_layout->setContentsMargins(75, 75, 75, 75);
+  outer_layout->setContentsMargins(50, 50, 50, 50);
   outer_layout->addWidget(container);
 }
 
