@@ -13,10 +13,8 @@ int main(int argc, char *argv[]) {
   qInstallMessageHandler(swagLogMessageHandler);
   initApp(argc, argv);
 
-  
   QApplication a(argc, argv);
   
-
   MainWindow w;
   setMainWindow(&w);
   a.installEventFilter(&w);
