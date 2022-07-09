@@ -21,7 +21,7 @@ MODEL_CX = MODEL_INPUT_SIZE[0] / 2.
 MODEL_CY = 21.
 
 model_fl = 728.0
-model_height = 1.22
+model_height = 1.70
 
 # canonical model transform
 model_intrinsics = np.array([
