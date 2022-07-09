@@ -73,12 +73,10 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void MainWindow::changeLanguage(const QString &lang) {
+  Params().put("LanguageSetting", lang.toStdString());
   qApp->removeTranslator(&translator);
   if (translator.load(lang, "translations")) {
-    Params().put("LanguageSetting", lang.toStdString());
     qApp->installTranslator(&translator);
-  } else {
-    qWarning() << "failed to load translation:" << lang;
   }
 }
 
