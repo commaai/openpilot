@@ -1061,7 +1061,7 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="13"/>
-        <location filename="../qt/widgets/ssh_keys.cc" line="44"/>
+        <location filename="../qt/widgets/ssh_keys.cc" line="43"/>
         <source>ADD</source>
         <translation>추가</translation>
     </message>
@@ -1076,22 +1076,22 @@ location set</source>
         <translation>로딩</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/ssh_keys.cc" line="41"/>
+        <location filename="../qt/widgets/ssh_keys.cc" line="40"/>
         <source>REMOVE</source>
         <translation>제거</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/ssh_keys.cc" line="57"/>
+        <location filename="../qt/widgets/ssh_keys.cc" line="56"/>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
         <translation>사용자 이름 &apos;%1&apos; GitHub에 키가 없습니다</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/ssh_keys.cc" line="61"/>
+        <location filename="../qt/widgets/ssh_keys.cc" line="60"/>
         <source>Request timed out</source>
         <translation>요청 시간 초과</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/ssh_keys.cc" line="63"/>
+        <location filename="../qt/widgets/ssh_keys.cc" line="62"/>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
         <translation>사용자 이름 &apos;%1&apos; GitHub에 없습니다</translation>
     </message>

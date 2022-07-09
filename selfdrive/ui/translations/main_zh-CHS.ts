@@ -1061,7 +1061,7 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="13"/>
-        <location filename="../qt/widgets/ssh_keys.cc" line="44"/>
+        <location filename="../qt/widgets/ssh_keys.cc" line="43"/>
         <source>ADD</source>
         <translation>添加</translation>
     </message>
@@ -1076,22 +1076,22 @@ location set</source>
         <translation>正在加载</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/ssh_keys.cc" line="41"/>
+        <location filename="../qt/widgets/ssh_keys.cc" line="40"/>
         <source>REMOVE</source>
         <translation>消除</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/ssh_keys.cc" line="57"/>
+        <location filename="../qt/widgets/ssh_keys.cc" line="56"/>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
         <translation>用户名“%1”在 GitHub 上没有密钥</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/ssh_keys.cc" line="61"/>
+        <location filename="../qt/widgets/ssh_keys.cc" line="60"/>
         <source>Request timed out</source>
         <translation>请求超时</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/ssh_keys.cc" line="63"/>
+        <location filename="../qt/widgets/ssh_keys.cc" line="62"/>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
         <translation>GitHub 上不存在用户名“%1”</translation>
     </message>
