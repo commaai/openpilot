@@ -400,25 +400,24 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
     if len(matches) == 1:
       break
 
-  # Could have exact matched, fuzzy matched, or failed to fingerprint
   return all_car_fw
 
 
 def get_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=False, progress=False):
-  # Extract ECU addresses to query from fingerprints
-  # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
-  addrs = []
-  parallel_addrs = []
-
   ecu_types = {}
   requests = [r for r in REQUESTS if brand is None or r.brand == brand]
 
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+  if brand is not None:
+    versions = {brand: versions[brand]}
+
   if extra is not None:
     versions.update(extra)
 
-  if brand is not None:
-    versions = {brand: versions[brand]}
+  # Extract ECU addresses to query from fingerprints
+  # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
+  addrs = []
+  parallel_addrs = []
 
   for brand, brand_versions in versions.items():
     for c in brand_versions.values():
@@ -455,7 +454,7 @@ def get_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=
   for (brand, addr), (version, request) in fw_versions.items():
     f = car.CarParams.CarFw.new_message()
 
-    f.ecu = ecu_types[(brand, *addr)]
+    f.ecu = ecu_types[(brand, addr[0], addr[1])]
     f.fwVersion = version
     f.address = addr[0]
     f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], request.rx_offset)
