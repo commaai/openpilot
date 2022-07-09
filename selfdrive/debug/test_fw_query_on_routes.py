@@ -17,6 +17,7 @@ NO_API = "NO_API" in os.environ
 VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 SUPPORTED_BRANDS = VERSIONS.keys()
 SUPPORTED_CARS = [brand for brand in SUPPORTED_BRANDS for brand in interface_names[brand]]
+UNKNOWN_BRAND = "unknown"
 
 try:
   from xx.pipeline.c.CarState import migration
@@ -126,10 +127,10 @@ if __name__ == "__main__":
           print("New style (exact):", exact_matches)
           print("New style (fuzzy):", fuzzy_matches)
 
-          padding = max([len(fw.brand) for fw in car_fw])
+          padding = max([len(fw.brand or UNKNOWN_BRAND) for fw in car_fw])
           for version in sorted(car_fw, key=lambda fw: fw.brand):
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-            print(f"  Brand: {version.brand:{padding}} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
+            print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
 
           print("Mismatches")
           found = False
