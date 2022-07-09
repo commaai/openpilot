@@ -307,7 +307,11 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, const QStringLi
     selectionLabel->setChecked(s == current);
     QObject::connect(selectionLabel, &QPushButton::toggled, [=](bool checked) {
       if (checked) selection = s;
-      confirm_btn->setEnabled(true);
+      if (selection != current) {
+        confirm_btn->setEnabled(true);
+      } else {
+        confirm_btn->setEnabled(false);
+      }
     });
 
     group->addButton(selectionLabel);
