@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 #include <QPushButton>
+#include <QButtonGroup>
 
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
@@ -256,4 +257,89 @@ RichTextDialog::RichTextDialog(const QString &prompt_text, const QString &btn_te
 bool RichTextDialog::alert(const QString &prompt_text, QWidget *parent) {
   auto d = RichTextDialog(prompt_text, tr("Ok"), parent);
   return d.exec();
+}
+
+// MultiOptionDialog
+
+MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, QWidget *parent) : QDialogBase(parent) {
+  QFrame *container = new QFrame(this);
+  container->setStyleSheet(R"(
+    QFrame { background-color: #1B1B1B; }
+    #confirm_btn[enabled="false"] { background-color: #2B2B2B; }
+    #confirm_btn:enabled { background-color: #465BEA; }
+    #confirm_btn:enabled:pressed { background-color: #3049F4; }
+  )");
+
+  QVBoxLayout *main_layout = new QVBoxLayout(container);
+  main_layout->setContentsMargins(55, 50, 55, 50);
+
+  QLabel *title = new QLabel(prompt_text, this);
+  title->setStyleSheet("font-size: 70px; font-weight: 500;");
+  main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
+  main_layout->addSpacing(25);
+
+  QWidget *listWidget = new QWidget(this);
+  QVBoxLayout *listLayout = new QVBoxLayout(listWidget);
+  listLayout->setSpacing(20);
+  listWidget->setStyleSheet(R"(
+    QPushButton {
+      height: 135;
+      padding: 0px 50px;
+      text-align: left;
+      font-size: 55px;
+      font-weight: 300;
+      border-radius: 10px;
+      background-color: #4F4F4F;
+    }
+    QPushButton:checked { background-color: #465BEA; }
+  )");
+
+  QButtonGroup *group = new QButtonGroup(listWidget);
+  group->setExclusive(true);
+
+  QPushButton *confirm_btn = new QPushButton(tr("Select"));
+  confirm_btn->setObjectName("confirm_btn");
+  confirm_btn->setEnabled(false);
+
+  for (QString &s : l) {
+    QPushButton *selectionLabel = new QPushButton(s);
+    selectionLabel->setCheckable(true);
+    QObject::connect(selectionLabel, &QPushButton::toggled, [=](bool checked) {
+      if (checked) selection = s;
+      confirm_btn->setEnabled(true);
+    });
+
+    group->addButton(selectionLabel);
+    listLayout->addWidget(selectionLabel);
+  }
+
+  ScrollView *scroll_view = new ScrollView(listWidget, this);
+  scroll_view->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+  main_layout->addWidget(scroll_view);
+  main_layout->addStretch(1);
+  main_layout->addSpacing(35);
+
+  // cancel + confirm buttons
+  QHBoxLayout *blayout = new QHBoxLayout;
+  main_layout->addLayout(blayout);
+  blayout->setSpacing(50);
+
+  QPushButton *cancel_btn = new QPushButton(tr("Cancel"));
+  QObject::connect(cancel_btn, &QPushButton::clicked, this, &ConfirmationDialog::reject);
+  QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
+  blayout->addWidget(cancel_btn);
+  blayout->addWidget(confirm_btn);
+
+  QVBoxLayout *outer_layout = new QVBoxLayout(this);
+  outer_layout->setContentsMargins(50, 50, 50, 50);
+  outer_layout->addWidget(container);
+}
+
+QString MultiOptionDialog::getSelection(const QString &prompt_text, const QStringList l, QWidget *parent) {
+  MultiOptionDialog d = MultiOptionDialog(prompt_text, l, parent);
+  if (d.exec()) {
+    return d.selection;
+  }
+  return "";
 }
