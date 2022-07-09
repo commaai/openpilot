@@ -307,9 +307,9 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->setContentsMargins(15, 0, 15, 0);
     hlayout->setSpacing(50);
+
     QPushButton *selectionLabel = new QPushButton(s);
     selectionLabel->setCheckable(true);
-
     QObject::connect(selectionLabel, &QPushButton::toggled, [=](bool checked) {
       if (checked) selection = s;
       confirm_btn->setEnabled(true);
@@ -334,7 +334,6 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, QStringList l, 
 
   QPushButton *cancel_btn = new QPushButton(tr("Cancel"));
   QObject::connect(cancel_btn, &QPushButton::clicked, this, &ConfirmationDialog::reject);
-
   blayout->addWidget(cancel_btn);
   blayout->addWidget(confirm_btn);
 
