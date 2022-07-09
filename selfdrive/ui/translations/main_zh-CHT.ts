@@ -397,12 +397,12 @@ location set</source>
 <context>
     <name>MultiOptionDialog</name>
     <message>
-        <location filename="../qt/widgets/input.cc" line="301"/>
+        <location filename="../qt/widgets/input.cc" line="300"/>
         <source>Select</source>
         <translation>選擇</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="335"/>
+        <location filename="../qt/widgets/input.cc" line="328"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
