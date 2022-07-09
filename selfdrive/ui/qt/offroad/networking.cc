@@ -147,7 +147,8 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(editPasswordButton);
 
   // IP address
-  ipLabel = new LabelControl("", wifi->ipv4_address);
+  ipLabel = new LabelControl();
+  ipLabel->setText(wifi->ipv4_address);
   list->addItem(ipLabel);
 
   // SSH keys

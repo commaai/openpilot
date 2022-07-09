@@ -49,6 +49,7 @@ signals:
   void showDescription();
 
 protected:
+  AbstractControl(QWidget *parent);
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
   void hideEvent(QHideEvent *e) override;
 
@@ -62,8 +63,7 @@ class LabelControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  LabelControl(const QString &title = "", const QString &text = "", const QString &desc = "", QWidget *parent = nullptr) : AbstractControl(title, desc, "", parent) {
-    label.setText(text);
+  LabelControl(QWidget *parent = nullptr) : AbstractControl(parent) {
     label.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     hlayout->addWidget(&label);
   }

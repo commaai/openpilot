@@ -108,8 +108,13 @@ void TogglesPanel::translateUi() {
 
 DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   setSpacing(50);
-  addItem(dongle_id = new LabelControl("", getDongleId().value_or(tr("N/A"))));
-  addItem(serial = new LabelControl("", params.get("HardwareSerial").c_str()));
+
+  dongle_id = new LabelControl();
+  dongle_id->setText(tr("N/A"));
+  addItem(dongle_id);
+  serial = new LabelControl();
+  serial->setText(params.get("HardwareSerial").c_str());
+  addItem(serial);
 
   // offroad-only buttons
 

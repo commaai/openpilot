@@ -17,6 +17,9 @@ QFrame *horizontal_line(QWidget *parent) {
   return line;
 }
 
+AbstractControl::AbstractControl(QWidget *parent) : AbstractControl("", "", "", parent) {
+}
+
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
 
