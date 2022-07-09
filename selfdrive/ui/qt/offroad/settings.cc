@@ -263,9 +263,11 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   gitBranchLbl = new LabelControl();
   gitCommitLbl = new LabelControl();
   osVersionLbl = new LabelControl();
-  versionLbl = new LabelControl("", "", QString::fromStdString(params.get("ReleaseNotes")).trimmed());
-  lastUpdateLbl = new LabelControl("", "", tr("The last time openpilot successfully checked for an update. The updater only runs while the car is off."));
-  
+  lastUpdateLbl = new LabelControl();
+
+  versionLbl = new LabelControl();
+  versionLbl->setDescription(QString::fromStdString(params.get("ReleaseNotes")).trimmed());
+
   updateBtn = new ButtonControl();
   connect(updateBtn, &ButtonControl::clicked, [=]() {
     if (params.getBool("IsOffroad")) {
@@ -310,6 +312,7 @@ void SoftwarePanel::translateUi() {
   osVersionLbl->setTitle(tr("OS Version"));
   versionLbl->setTitle(tr("Version"));
   lastUpdateLbl->setTitle(tr("Last Update Check"));
+  lastUpdateLbl->setDescription(tr("The last time openpilot successfully checked for an update. The updater only runs while the car is off."));
   updateBtn->setTitle(tr("Check for Update"));
 }
 
