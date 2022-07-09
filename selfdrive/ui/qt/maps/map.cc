@@ -82,6 +82,7 @@ void MapWindow::initLayers() {
     m_map->setPaintProperty("navLayer", "line-color", QColor("#31a1ee"));
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
+    m_map->setLayoutProperty("navLayer", "country-label", "zh");
   }
   if (!m_map->layerExists("carPosLayer")) {
     qDebug() << "Initializing carPosLayer";
