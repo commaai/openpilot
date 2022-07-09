@@ -393,10 +393,11 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
   QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
 
+  Networking *networking = new Networking(this);
   panels.push_back({new QPushButton(), device});
-      panels.push_back({new QPushButton(), new Networking(this)});
-      panels.push_back({new QPushButton(), new TogglesPanel(this)});
-      panels.push_back({new QPushButton(), new SoftwarePanel(this)});
+  panels.push_back({new QPushButton(), networking});
+  panels.push_back({new QPushButton(), new TogglesPanel(this)});
+  panels.push_back({new QPushButton(), new SoftwarePanel(this)});
 
 #ifdef ENABLE_MAPS
   auto map_panel = new MapPanel(this);
@@ -408,7 +409,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   nav_btns = new QButtonGroup(this);
   for (auto &[btn, panel] : panels) {
-    // QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
     btn->setChecked(nav_btns->buttons().size() == 0);
     btn->setStyleSheet(QString(R"(
@@ -432,7 +432,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    const int lr_margin = 0;//name != tr("Network") ? 50 : 0;  // Network panel handles its own margins
+    const int lr_margin = panel != networking ? 50 : 0;  // Network panel handles its own margins
     panel->setContentsMargins(lr_margin, 25, lr_margin, 25);
 
     ScrollView *panel_frame = new ScrollView(panel, this);
@@ -469,7 +469,7 @@ void SettingsWindow::translateUi() {
   panels[1].first->setText(tr("Network"));
   panels[2].first->setText(tr("Toggles"));
   panels[3].first->setText(tr("Software"));
-  #ifdef ENABLE_MAPS
+#ifdef ENABLE_MAPS
   panels[4].first->setText(tr("Navigation"));
-  #endif
+#endif
 }
