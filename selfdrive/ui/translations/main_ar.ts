@@ -723,7 +723,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="315"/>
         <source>×</source>
-        <translation>لا</translation>
+        <translation>×</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="341"/>
