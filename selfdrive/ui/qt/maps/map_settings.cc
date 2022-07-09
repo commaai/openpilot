@@ -92,7 +92,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   QWidget * no_prime_widget = new QWidget;
   {
     QVBoxLayout *no_prime_layout = new QVBoxLayout(no_prime_widget);
-    QLabel *signup_header = new QLabel(tr("Try the Navigation Beta"));
+    signup_header = new QLabel();
     signup_header->setStyleSheet(R"(font-size: 75px; color: white; font-weight:600;)");
     signup_header->setAlignment(Qt::AlignCenter);
 
@@ -104,7 +104,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     screenshot->setPixmap(pm.scaledToWidth(1080, Qt::SmoothTransformation));
     no_prime_layout->addWidget(screenshot, 0, Qt::AlignHCenter);
 
-    QLabel *signup = new QLabel(tr("Get turn-by-turn directions displayed and more with a comma \nprime subscription. Sign up now: https://connect.comma.ai"));
+    signup = new QLabel();
     signup->setStyleSheet(R"(font-size: 45px; color: white; font-weight:300;)");
     signup->setAlignment(Qt::AlignCenter);
 
@@ -152,6 +152,13 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
       });
     }
   }
+
+  translateUi();
+}
+
+void MapPanel::translateUi() {
+  signup_header->setText(tr("Try the Navigation Beta"));
+  signup->setText(tr("Get turn-by-turn directions displayed and more with a comma \nprime subscription. Sign up now: https://connect.comma.ai"));
 }
 
 void MapPanel::showEvent(QShowEvent *event) {

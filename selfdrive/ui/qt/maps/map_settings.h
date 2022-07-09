@@ -11,7 +11,7 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
-class MapPanel : public QWidget {
+class MapPanel : public QWidget, public UI {
   Q_OBJECT
 public:
   explicit MapPanel(QWidget* parent = nullptr);
@@ -20,6 +20,7 @@ public:
   void parseResponse(const QString &response, bool success);
   void updateCurrentRoute();
   void clear();
+  void translateUi() override;
 
 private:
   void showEvent(QShowEvent *event) override;
@@ -31,6 +32,8 @@ private:
   QVBoxLayout *recent_layout;
   QWidget *current_widget;
   ButtonControl *current_route;
+  QLabel *signup_header;
+  QLabel *signup;
 
 signals:
   void closeSettings();

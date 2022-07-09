@@ -12,7 +12,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   }
   qApp->installTranslator(&translator);
 
-
   main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 

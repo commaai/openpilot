@@ -178,6 +178,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     #poweroff_btn:pressed { background-color: #FF2424; }
   )");
   addItem(power_layout);
+  translateUi();
 }
 
 void DevicePanel::translateUi() {
