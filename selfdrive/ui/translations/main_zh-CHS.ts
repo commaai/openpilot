@@ -260,12 +260,12 @@
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="37"/>
         <source>Drives</source>
-        <translation>驱动器</translation>
+        <translation>旅程数</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="39"/>
         <source>Hours</source>
-        <translation>小时</translation>
+        <translation>小时数</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="44"/>
