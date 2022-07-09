@@ -26,6 +26,10 @@
 #include "selfdrive/ui/qt/qt_window.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
+  translateUi();
+}
+
+void TogglesPanel::translateUi() {
   // param, title, desc, icon
   std::vector<std::tuple<QString, QString, QString, QString>> toggles{
     {
@@ -76,7 +80,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   };
 
   Params params;
-
   if (params.getBool("DisableRadar_Allow")) {
     toggles.push_back({
       "DisableRadar",
@@ -86,16 +89,21 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     });
   }
 
-  for (auto &[param, title, desc, icon] : toggles) {
-    auto toggle = new ParamControl(param, title, desc, icon, this);
-    bool locked = params.getBool((param + "Lock").toStdString());
-    toggle->setEnabled(!locked);
-    addItem(toggle);
+  if (controls.empty()) {
+    for (auto &[param, title, desc, icon] : toggles) {
+      auto toggle = new ParamControl(param, "", "", icon, this);
+      bool locked = params.getBool((param + "Lock").toStdString());
+      toggle->setEnabled(!locked);
+      addItem(toggle);
+      controls.push_back(toggle);
+    }
+  } else {
+    for (int i = 0; i < controls.size(); ++i) {
+      auto &[param, title, desc, icon] = toggles[i];
+      controls[i]->setTitle(title);
+      controls[i]->setDescription(desc);
+    }
   }
-}
-
-void TogglesPanel::translateUi() {
-  
 }
 
 DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {

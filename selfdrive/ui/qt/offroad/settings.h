@@ -71,6 +71,8 @@ public:
 
 private:
   void translateUi() override;
+
+  std::vector<ParamControl*> controls;
 };
 
 class SoftwarePanel : public ListWidget, public UI {
