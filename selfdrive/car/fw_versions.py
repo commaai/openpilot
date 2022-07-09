@@ -404,9 +404,6 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
 
 
 def get_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=False, progress=False):
-  ecu_types = {}
-  requests = [r for r in REQUESTS if brand is None or r.brand == brand]
-
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
   if brand is not None:
     versions = {brand: versions[brand]}
@@ -418,6 +415,7 @@ def get_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=
   # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
+  ecu_types = {}
 
   for brand, brand_versions in versions.items():
     for c in brand_versions.values():
@@ -436,6 +434,7 @@ def get_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=
   addrs.insert(0, parallel_addrs)
 
   fw_versions = {}
+  requests = [r for r in REQUESTS if brand is None or r.brand == brand]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for r in requests:
