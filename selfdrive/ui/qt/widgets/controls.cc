@@ -76,8 +76,7 @@ void AbstractControl::hideEvent(QHideEvent *e) {
 
 // controls
 
-ButtonControl::ButtonControl(const QString &title, const QString &text, const QString &desc, QWidget *parent) : AbstractControl(title, desc, "", parent) {
-  btn.setText(text);
+ButtonControl::ButtonControl(QWidget *parent) : AbstractControl(parent) {
   btn.setStyleSheet(R"(
     QPushButton {
       padding: 0;
