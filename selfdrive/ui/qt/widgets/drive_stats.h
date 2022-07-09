@@ -3,11 +3,14 @@
 #include <QJsonDocument>
 #include <QLabel>
 
-class DriveStats : public QFrame {
+#include "selfdrive/ui/qt/widgets/controls.h"
+
+class DriveStats : public QFrame, public UI {
   Q_OBJECT
 
 public:
   explicit DriveStats(QWidget* parent = 0);
+  void translateUi() override;
 
 private:
   void showEvent(QShowEvent *event) override;

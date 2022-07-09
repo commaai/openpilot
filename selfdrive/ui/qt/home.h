@@ -11,14 +11,16 @@
 #include "selfdrive/ui/qt/body.h"
 #include "selfdrive/ui/qt/onroad.h"
 #include "selfdrive/ui/qt/sidebar.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
 #include "selfdrive/ui/ui.h"
 
-class OffroadHome : public QFrame {
+class OffroadHome : public QFrame, public UI {
   Q_OBJECT
 
 public:
   explicit OffroadHome(QWidget* parent = 0);
+  void translateUi() override;
 
 private:
   void showEvent(QShowEvent *event) override;

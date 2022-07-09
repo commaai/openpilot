@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
 enum PrimeType {
@@ -41,14 +42,19 @@ public:
 };
 
 // widget for paired users with prime
-class PrimeUserWidget : public QWidget {
+class PrimeUserWidget : public QWidget, public UI {
   Q_OBJECT
 public:
   explicit PrimeUserWidget(QWidget* parent = 0);
+  void translateUi() override;
 
 private:
   QVBoxLayout* mainLayout;
   QLabel* points;
+  QLabel* subscribed;
+  QLabel* commaPrime;
+  QLabel* connectUrl;
+  QLabel* commaPoints;
 
 private slots:
   void replyFinished(const QString &response);
@@ -56,10 +62,17 @@ private slots:
 
 
 // widget for paired users without prime
-class PrimeAdWidget : public QFrame {
+class PrimeAdWidget : public QFrame, public UI {
   Q_OBJECT
 public:
   explicit PrimeAdWidget(QWidget* parent = 0);
+  void translateUi() override;
+
+private:
+  QLabel *upgrade;
+  QLabel *description;
+  QLabel *features;
+  QLabel *bullets_1, *bullets_2, *bullets_3;
 };
 
 // container widget

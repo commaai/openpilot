@@ -120,19 +120,19 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   primeLayout->setMargin(0);
   primeWidget->setContentsMargins(60, 50, 60, 50);
 
-  QLabel* subscribed = new QLabel(tr("✓ SUBSCRIBED"));
+  subscribed = new QLabel();
   subscribed->setStyleSheet("font-size: 41px; font-weight: bold; color: #86FF4E;");
   primeLayout->addWidget(subscribed, 0, Qt::AlignTop);
 
   primeLayout->addSpacing(60);
 
-  QLabel* commaPrime = new QLabel(tr("comma prime"));
+  commaPrime = new QLabel();
   commaPrime->setStyleSheet("font-size: 75px; font-weight: bold;");
   primeLayout->addWidget(commaPrime, 0, Qt::AlignTop);
 
   primeLayout->addSpacing(20);
 
-  QLabel* connectUrl = new QLabel(tr("CONNECT.COMMA.AI"));
+  connectUrl = new QLabel();
   connectUrl->setStyleSheet("font-size: 41px; font-family: Inter SemiBold; color: #A0A0A0;");
   primeLayout->addWidget(connectUrl, 0, Qt::AlignTop);
 
@@ -145,7 +145,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   pointsLayout->setMargin(0);
   pointsWidget->setContentsMargins(60, 50, 60, 50);
 
-  QLabel* commaPoints = new QLabel(tr("COMMA POINTS"));
+  commaPoints = new QLabel();
   commaPoints->setStyleSheet("font-size: 41px; font-family: Inter SemiBold;");
   pointsLayout->addWidget(commaPoints, 0, Qt::AlignTop);
 
@@ -163,6 +163,15 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
     RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_Owner", 6);
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &PrimeUserWidget::replyFinished);
   }
+
+  translateUi();
+}
+
+void PrimeUserWidget::translateUi() {
+  subscribed->setText(tr("✓ SUBSCRIBED"));
+  commaPrime->setText(tr("comma prime"));
+  connectUrl->setText(tr("CONNECT.COMMA.AI"));
+  commaPoints->setText(tr("COMMA POINTS"));
 }
 
 void PrimeUserWidget::replyFinished(const QString &response) {
@@ -181,30 +190,28 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
   main_layout->setContentsMargins(80, 90, 80, 60);
   main_layout->setSpacing(0);
 
-  QLabel *upgrade = new QLabel(tr("Upgrade Now"));
+  upgrade = new QLabel();
   upgrade->setStyleSheet("font-size: 75px; font-weight: bold;");
   main_layout->addWidget(upgrade, 0, Qt::AlignTop);
   main_layout->addSpacing(50);
 
-  QLabel *description = new QLabel(tr("Become a comma prime member at connect.comma.ai"));
+  description = new QLabel();
   description->setStyleSheet("font-size: 60px; font-weight: light; color: white;");
   description->setWordWrap(true);
   main_layout->addWidget(description, 0, Qt::AlignTop);
 
   main_layout->addStretch();
 
-  QLabel *features = new QLabel(tr("PRIME FEATURES:"));
+  features = new QLabel();
   features->setStyleSheet("font-size: 41px; font-weight: bold; color: #E5E5E5;");
   main_layout->addWidget(features, 0, Qt::AlignBottom);
   main_layout->addSpacing(30);
 
-  QVector<QString> bullets = {tr("Remote access"), tr("1 year of storage"), tr("Developer perks")};
-  for (auto &b: bullets) {
-    const QString check = "<b><font color='#465BEA'>✓</font></b> ";
-    QLabel *l = new QLabel(check + b);
-    l->setAlignment(Qt::AlignLeft);
-    l->setStyleSheet("font-size: 50px; margin-bottom: 15px;");
-    main_layout->addWidget(l, 0, Qt::AlignBottom);
+  for (auto b: {&bullets_1, &bullets_2, &bullets_3}) {
+    *b = new QLabel();
+    (*b)->setAlignment(Qt::AlignLeft);
+    (*b)->setStyleSheet("font-size: 50px; margin-bottom: 15px;");
+    main_layout->addWidget(*b, 0, Qt::AlignBottom);
   }
 
   setStyleSheet(R"(
@@ -213,8 +220,20 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
       background-color: #333333;
     }
   )");
+
+  translateUi();
 }
 
+void PrimeAdWidget::translateUi() {
+  upgrade->setText(tr("Upgrade Now"));
+  description->setText(tr("Become a comma prime member at connect.comma.ai"));
+  features->setText(tr("PRIME FEATURES:"));
+
+  const QString check = "<b><font color='#465BEA'>✓</font></b> ";
+  bullets_1->setText(check + tr("Remote access"));
+  bullets_2->setText(check + tr("1 year of storage"));
+  bullets_3->setText(check + tr("Developer perks"));
+}
 
 SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   mainLayout = new QStackedWidget;
