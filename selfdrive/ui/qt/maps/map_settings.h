@@ -34,6 +34,8 @@ private:
   ButtonControl *current_route;
   QLabel *signup_header;
   QLabel *signup;
+  QLabel *recents_title;
+  QLabel *current_dest_title;
 
 signals:
   void closeSettings();

@@ -59,11 +59,11 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     current_widget = new QWidget(this);
     QVBoxLayout *current_layout = new QVBoxLayout(current_widget);
 
-    QLabel *title = new QLabel(tr("Current Destination"));
-    title->setStyleSheet("font-size: 55px");
-    current_layout->addWidget(title);
+    current_dest_title = new QLabel();
+    current_dest_title->setStyleSheet("font-size: 55px");
+    current_layout->addWidget(current_dest_title);
 
-    current_route = new ButtonControl("", tr("CLEAR"));
+    current_route = new ButtonControl();
     current_route->setStyleSheet("padding-left: 40px;");
     current_layout->addWidget(current_route);
     QObject::connect(current_route, &ButtonControl::clicked, [=]() {
@@ -78,7 +78,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   main_layout->addWidget(current_widget);
 
   // Recents
-  QLabel *recents_title = new QLabel(tr("Recent Destinations"));
+  recents_title = new QLabel();
   recents_title->setStyleSheet("font-size: 55px");
   main_layout->addWidget(recents_title);
   main_layout->addSpacing(20);
@@ -159,6 +159,9 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 void MapPanel::retranslateUi() {
   signup_header->setText(tr("Try the Navigation Beta"));
   signup->setText(tr("Get turn-by-turn directions displayed and more with a comma \nprime subscription. Sign up now: https://connect.comma.ai"));
+  current_dest_title->setText(tr("Current Destination"));
+  current_route->setText(tr("CLEAR"));
+  recents_title->setText(tr("Recent Destinations"));
 }
 
 void MapPanel::showEvent(QShowEvent *event) {
