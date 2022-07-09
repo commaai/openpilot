@@ -21,29 +21,29 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(50, 50, 50, 60);
 
-  auto add_stats_layouts = [=](const QString &title, StatsLabels& labels) {
+  auto add_stats_layouts = [=](StatsLabels& labels) {
     QGridLayout* grid_layout = new QGridLayout;
     grid_layout->setVerticalSpacing(10);
     grid_layout->setContentsMargins(0, 10, 0, 10);
 
     int row = 0;
-    grid_layout->addWidget(newLabel(title, "title"), row++, 0, 1, 3);
+    grid_layout->addWidget(labels.title = newLabel("", "title"), row++, 0, 1, 3);
     grid_layout->addItem(new QSpacerItem(0, 50), row++, 0, 1, 1);
 
     grid_layout->addWidget(labels.routes = newLabel("0", "number"), row, 0, Qt::AlignLeft);
     grid_layout->addWidget(labels.distance = newLabel("0", "number"), row, 1, Qt::AlignLeft);
     grid_layout->addWidget(labels.hours = newLabel("0", "number"), row, 2, Qt::AlignLeft);
 
-    grid_layout->addWidget(newLabel((tr("Drives")), "unit"), row + 1, 0, Qt::AlignLeft);
-    grid_layout->addWidget(labels.distance_unit = newLabel(getDistanceUnit(), "unit"), row + 1, 1, Qt::AlignLeft);
-    grid_layout->addWidget(newLabel(tr("Hours"), "unit"), row + 1, 2, Qt::AlignLeft);
+    grid_layout->addWidget(labels.routes_title = newLabel("", "unit"), row + 1, 0, Qt::AlignLeft);
+    grid_layout->addWidget(labels.distance_title = newLabel("", "unit"), row + 1, 1, Qt::AlignLeft);
+    grid_layout->addWidget(labels.hours_title = newLabel("", "unit"), row + 1, 2, Qt::AlignLeft);
 
     main_layout->addLayout(grid_layout);
   };
 
-  add_stats_layouts(tr("ALL TIME"), all_);
+  add_stats_layouts(all_);
   main_layout->addStretch();
-  add_stats_layouts(tr("PAST WEEK"), week_);
+  add_stats_layouts(week_);
 
   if (auto dongleId = getDongleId()) {
     QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/stats";
@@ -66,14 +66,20 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
 }
 
 void DriveStats::translateUi() {
-
+  all_.title->setText(tr("ALL TIME"));
+  week_.title->setText(tr("PAST WEEK"));
+  for (auto &s : {all_, week_}) {
+    s.routes_title->setText(tr("Drives"));
+    s.distance_title->setText(getDistanceUnit());
+    s.hours_title->setText(tr("Hours"));
+  }
 }
 
 void DriveStats::updateStats() {
   auto update = [=](const QJsonObject& obj, StatsLabels& labels) {
     labels.routes->setText(QString::number((int)obj["routes"].toDouble()));
     labels.distance->setText(QString::number(int(obj["distance"].toDouble() * (metric_ ? MILE_TO_KM : 1))));
-    labels.distance_unit->setText(getDistanceUnit());
+    labels.distance_title->setText(getDistanceUnit());
     labels.hours->setText(QString::number((int)(obj["minutes"].toDouble() / 60)));
   };
 

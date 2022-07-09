@@ -20,8 +20,12 @@ private:
   bool metric_;
   QJsonDocument stats_;
   struct StatsLabels {
-    QLabel *routes, *distance, *distance_unit, *hours;
+    QLabel *title;
+    QLabel *routes_title, *distance_title, *hours_title;
+    QLabel *routes, *distance, *hours;
   } all_, week_;
+
+  QLabel *all_time, *past_week;
 
 private slots:
   void parseResponse(const QString &response, bool success);
