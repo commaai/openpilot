@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-import os
 import json
+import os
 
 from common.basedir import BASEDIR
 

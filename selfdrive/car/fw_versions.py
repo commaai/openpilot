@@ -92,6 +92,13 @@ SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
 SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
 
+CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xf132)
+CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(0xf132)
+
+CHRYSLER_RX_OFFSET = -0x280
+
 
 @dataclass
 class Request:
@@ -187,6 +194,18 @@ REQUESTS: List[Request] = [
     [TESTER_PRESENT_REQUEST, UDS_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, UDS_VERSION_RESPONSE],
     bus=0,
+  ),
+  # Chrysler / FCA / Stellantis
+  Request(
+    "chrysler",
+    [CHRYSLER_VERSION_REQUEST],
+    [CHRYSLER_VERSION_RESPONSE],
+    rx_offset=CHRYSLER_RX_OFFSET,
+  ),
+  Request(
+    "chrysler",
+    [CHRYSLER_VERSION_REQUEST],
+    [CHRYSLER_VERSION_RESPONSE],
   ),
 ]
 
@@ -290,24 +309,21 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
   # Try exact matching first
-  exact_matches = [True]
+  exact_matches = [(True, match_fw_to_car_exact)]
   if allow_fuzzy:
-    exact_matches.append(False)
+    exact_matches.append((False, match_fw_to_car_fuzzy))
 
-  for exact_match in exact_matches:
+  for exact_match, match_func in exact_matches:
     # For each brand, attempt to fingerprint using FW returned from its queries
+    matches = set()
     for brand in versions.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
+      matches |= match_func(fw_versions_dict)
 
-      if exact_match:
-        matches = match_fw_to_car_exact(fw_versions_dict)
-      else:
-        matches = match_fw_to_car_fuzzy(fw_versions_dict)
+    if len(matches):
+      return exact_match, matches
 
-      if len(matches) == 1:
-        return exact_match, matches
-
-  return True, []
+  return True, set()
 
 
 def get_present_ecus(logcan, sendcan):
@@ -448,9 +464,10 @@ if __name__ == "__main__":
   print()
   print("Found FW versions")
   print("{")
+  padding = max([len(fw.brand) for fw in fw_vers] or [0])
   for version in fw_vers:
     subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-    print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
+    print(f"  Brand: {version.brand:{padding}} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
   print("}")
 
   print()

@@ -1,6 +1,9 @@
 #include "selfdrive/ui/qt/util.h"
 
 #include <QApplication>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLayoutItem>
 #include <QStyleOption>
 #include <QPainterPath>
@@ -34,6 +37,19 @@ std::optional<QString> getDongleId() {
   } else {
     return {};
   }
+}
+
+QMap<QString, QString> getSupportedLanguages() {
+  QFile f("translations/languages.json");
+  f.open(QIODevice::ReadOnly | QIODevice::Text);
+  QString val = f.readAll();
+
+  QJsonObject obj = QJsonDocument::fromJson(val.toUtf8()).object();
+  QMap<QString, QString> map;
+  for (auto key : obj.keys()) {
+    map[key] = obj[key].toString();
+  }
+  return map;
 }
 
 void configFont(QPainter &p, const QString &family, int size, const QString &style) {
