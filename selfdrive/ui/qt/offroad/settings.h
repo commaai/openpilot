@@ -12,7 +12,7 @@
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 // ********** settings window + top-level panels **********
-class SettingsWindow : public QFrame,  public UI {
+class SettingsWindow : public QFrame, public UI {
   Q_OBJECT
 
 public:
