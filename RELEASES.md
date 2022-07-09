@@ -11,8 +11,9 @@ Version 0.8.15 (2022-07-20)
   * Used on select Toyota and Hyundai models at first
   * Significantly improved control on TSS-P Prius
 * New driver monitoring model
-  * Takes a larger input frame
-  * Outputs a driver state for both driver and passenger
+  * Bigger model, covering full interior view from driver camera
+  * Works with a wider variety of mounting angles
+  * 3x more unique comma three training data than previous
 * Navigation improvements
   * Speed limits shown while navigating
   * Faster position fix by using raw GPS measurements
@@ -25,6 +26,7 @@ Version 0.8.15 (2022-07-20)
 * AGNOS 5
   * Support VSCode remote SSH target
   * Support for delta updates to reduce data usage on future OS updates
+* Chrysler ECU firmware fingerprinting thanks to realfast!
 * Honda Civic 2022 support
 * Hyundai Tucson 2021 support thanks to bluesforte!
 * Lexus NX Hybrid 2020 support thanks to AlexandreSato!

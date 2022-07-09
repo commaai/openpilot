@@ -27,6 +27,8 @@ class TestFwFingerprint(unittest.TestCase):
     for _ in range(200):
       fw = []
       for ecu, fw_versions in ecus.items():
+        if not len(fw_versions):
+          raise unittest.SkipTest("Car model has no FW versions")
         ecu_name, addr, sub_addr = ecu
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
