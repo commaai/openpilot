@@ -45,7 +45,7 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="136"/>
         <source>Enter new tethering password</source>
-        <translation>새 테더링 비밀번호 입력</translation>
+        <translation>새 테더링 비밀번호를 입력하세요</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="144"/>
@@ -70,7 +70,7 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="165"/>
         <source>leave blank for automatic configuration</source>
-        <translation>자동 구성을 위해 비워둠</translation>
+        <translation>자동설정을 하려면 공백으로 두세요</translation>
     </message>
 </context>
 <context>
@@ -92,7 +92,7 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="140"/>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>당신은 반드시 약관에 동의해야만 openpilot을 사용할 수 있습니다.</translation>
+        <translation>openpilot을 사용하려면 이용 약관에 동의해야 합니다.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="149"/>
@@ -102,7 +102,7 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="154"/>
         <source>Decline, uninstall %1</source>
-        <translation>거절，삭제 %1</translation>
+        <translation>거절, %1 제거</translation>
     </message>
 </context>
 <context>
@@ -135,7 +135,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
         <source>Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)</source>
-        <translation>운전자 카메라를 미리 보면서 최적의 운전자 모니터링 경험을 위해 기기 장착 위치를 최적화할수 있습니다. (차량은 반드시 닫아야 합니다)</translation>
+        <translation>운전자 카메라를 미리 보면서 최적의 운전자 모니터링 경험을 위해 장치의 장착 위치를 최적화할수 있습니다. (차량연결은 해제되어있어야 합니다)</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="109"/>
@@ -150,7 +150,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="112"/>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>캘리브레이션을 재설정하시겠습니까？</translation>
+        <translation>캘리브레이션을 재설정하시겠습니까?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="119"/>
@@ -165,12 +165,12 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="119"/>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>openpilot의 규칙, 기능, 제한 다시보기</translation>
+        <translation>openpilot의 규칙, 기능 및 제한 다시보기</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="121"/>
         <source>Are you sure you want to review the training guide?</source>
-        <translation>트레이닝 가이드를 다시보시겠습니까？</translation>
+        <translation>트레이닝 가이드를 다시보시겠습니까?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="129"/>
@@ -185,7 +185,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="137"/>
         <source>Change Language</source>
-        <translation>언어변경</translation>
+        <translation>언어 변경</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="137"/>
@@ -195,7 +195,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="141"/>
         <source>Select a language</source>
-        <translation>언어선택</translation>
+        <translation>언어를 선택하세요</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="161"/>
@@ -210,37 +210,37 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="186"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot은 장치를 왼쪽 또는 오른쪽 4° 이내, 위쪽 5° 또는 아래쪽 8° 이내로 설치해야 합니다. openpilot은 지속적으로 보정되므로 리셋이 거의 필요하지 않습니다.</translation>
+        <translation>openpilot은 장치를 좌측 또는 우측은 4° 이내, 위쪽 5° 또는 아래쪽은 8° 이내로 설치해야 합니다. openpilot은 지속적으로 보정되므로 리셋이 거의 필요하지 않습니다.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="197"/>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> 사용자의 기기가 %1° %2 및 %3° %4를 가리키고 있습니다.</translation>
+        <translation> 사용자의 장치가 %1° %2 및 %3° %4를 가리키고 있습니다.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="198"/>
         <source>down</source>
-        <translation>아래</translation>
+        <translation>아래로</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="198"/>
         <source>up</source>
-        <translation>위</translation>
+        <translation>위로</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="199"/>
         <source>left</source>
-        <translation>왼쪽</translation>
+        <translation>좌측으로</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="199"/>
         <source>right</source>
-        <translation>오른쪽</translation>
+        <translation>우측으로</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="210"/>
         <source>Are you sure you want to reboot?</source>
-        <translation>재부팅 하시겠습니까？</translation>
+        <translation>재부팅 하시겠습니까?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="217"/>
@@ -250,7 +250,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="223"/>
         <source>Are you sure you want to power off?</source>
-        <translation>전원을 종료하시겠습니까？</translation>
+        <translation>전원을 종료하시겠습니까?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="230"/>
@@ -263,7 +263,7 @@
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="37"/>
         <source>Drives</source>
-        <translation>주행수</translation>
+        <translation>주행</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="39"/>
@@ -273,7 +273,7 @@
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="44"/>
         <source>ALL TIME</source>
-        <translation>전체 시간</translation>
+        <translation>전체</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="46"/>
@@ -309,12 +309,12 @@
     <message>
         <location filename="../qt/widgets/input.cc" line="168"/>
         <source>Need at least </source>
-        <translation>최소 필요 </translation>
+        <translation>최소 </translation>
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="168"/>
         <source> characters!</source>
-        <translation> 문자！</translation>
+        <translation>자가 필요합니다!</translation>
     </message>
 </context>
 <context>
@@ -345,7 +345,7 @@
     <message>
         <location filename="../qt/maps/map.cc" line="618"/>
         <source>eta</source>
-        <translation>에타</translation>
+        <translation>도착</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="628"/>
@@ -401,7 +401,7 @@
     <message>
         <location filename="../qt/maps/map_settings.cc" line="66"/>
         <source>CLEAR</source>
-        <translation>CLEAR</translation>
+        <translation>삭제</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="81"/>
@@ -411,14 +411,14 @@
     <message>
         <location filename="../qt/maps/map_settings.cc" line="95"/>
         <source>Try the Navigation Beta</source>
-        <translation>네비게이션(베타)을 사용해보세요</translation>
+        <translation>네비게이션(베타)를 사용해보세요</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
-        <source>Get turn-by-turn directions displayed and more with a comma 
+        <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>자세한 경로안내를 확인하시려면 comma prime을 구독하세요.
-즉시등록：https://connect.comma.ai</translation>
+        <translation>자세한 경로안내를 원하시면 comma prime을 구독하세요.
+등록：https://connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
@@ -437,7 +437,7 @@ location set</source>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="282"/>
         <source>no recent destinations</source>
-        <translation>최근 경로 없음</translation>
+        <translation>최근 목적지 없음</translation>
     </message>
 </context>
 <context>
@@ -471,7 +471,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="30"/>
         <source>Advanced</source>
-        <translation>고급</translation>
+        <translation>고급 설정</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
@@ -775,12 +775,12 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="117"/>
         <source>Getting Started</source>
-        <translation>시작</translation>
+        <translation>설정 시작</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="122"/>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>출발하기 전에 설치를 완료하고 몇 가지 세부 사항을 살펴보겠습니다.</translation>
+        <translation>출발하기 전에 설정을 완료하고 몇 가지 세부 사항을 살펴보겠습니다.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="147"/>
@@ -859,7 +859,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="230"/>
         <source>Finish Setup</source>
-        <translation>설치완료</translation>
+        <translation>설정 완료</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="236"/>
@@ -869,7 +869,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="243"/>
         <source>Pair device</source>
-        <translation>페어링</translation>
+        <translation>장치 페어링</translation>
     </message>
 </context>
 <context>
@@ -911,12 +911,12 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.cc" line="76"/>
         <source>GOOD</source>
-        <translation>경고</translation>
+        <translation>좋음</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="78"/>
         <source>OK</source>
-        <translation>좋음</translation>
+        <translation>경고</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="82"/>
@@ -1009,7 +1009,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="239"/>
         <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation>이전에 openpilot에서 업데이트를 성공적으로 확인한 시간입니다. 업데이트 프로그램은 차량 연결이 해제되었을때만 작동합니다.</translation>
+        <translation>최근에 openpilot이 업데이트를 성공적으로 확인했습니다. 업데이트 프로그램은 차량 연결이 해제되었을때만 작동합니다.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="240"/>
@@ -1019,22 +1019,22 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="245"/>
         <source>CHECKING</source>
-        <translation>검사중</translation>
+        <translation>확인중</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
         <source>Uninstall </source>
-        <translation>삭제 </translation>
+        <translation>제거 </translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
         <source>UNINSTALL</source>
-        <translation>삭제</translation>
+        <translation>제거</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="254"/>
         <source>Are you sure you want to uninstall?</source>
-        <translation>삭제하시겠습니까？</translation>
+        <translation>제거하시겠습니까?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="268"/>
@@ -1084,7 +1084,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="50"/>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>사용자 이름 &apos;%1&apos; GitHub에 키가 없습니다</translation>
+        <translation>&apos;%1&apos;의 키가 GitHub에 없습니다</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="54"/>
@@ -1094,7 +1094,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="56"/>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>사용자 이름 &apos;%1&apos; GitHub에 없습니다</translation>
+        <translation>&apos;%1&apos;은 GitHub에 없습니다</translation>
     </message>
 </context>
 <context>
@@ -1120,7 +1120,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="111"/>
         <source>Scroll to accept</source>
-        <translation>스크롤 허용</translation>
+        <translation>허용하려면 아래로 스크롤하세요</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="126"/>
@@ -1168,12 +1168,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="52"/>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>mph가 아닌 km/h로 속도 표시.</translation>
+        <translation>mph 대신 km/h로 속도를 표시합니다.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="57"/>
         <source>Record and Upload Driver Camera</source>
-        <translation>운전자 카메라 기록 및 업로드</translation>
+        <translation>운전자 카메라 녹화 및 업로드</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="58"/>
@@ -1193,7 +1193,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="70"/>
         <source>Show ETA in 24h format</source>
-        <translation>24시간 형식으로 ETA 표시</translation>
+        <translation>24시간 형식으로 도착예정시간 표시</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="71"/>
@@ -1275,7 +1275,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
         <source>Forget Wi-Fi Network &quot;</source>
-        <translation>wifi 네트워크 저장안함&quot;</translation>
+        <translation>wifi 네트워크 저장안함 &quot;</translation>
     </message>
 </context>
 </TS>
