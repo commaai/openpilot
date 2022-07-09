@@ -29,6 +29,7 @@ Version 0.8.15 (2022-07-20)
 * Chrysler ECU firmware fingerprinting thanks to realfast!
 * Honda Civic 2022 support
 * Hyundai Tucson 2021 support thanks to bluesforte!
+* Kia EV6 2022 support
 * Lexus NX Hybrid 2020 support thanks to AlexandreSato!
 * Ram 1500 2019-21 support thanks to realfast!
 
