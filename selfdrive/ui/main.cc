@@ -15,9 +15,9 @@ int main(int argc, char *argv[]) {
   initApp(argc, argv);
 
   QTranslator translator;
-  QString language_file = QString::fromStdString(Params().get("LanguageSetting"));
-  if (!translator.load(language_file, "translations")) {
-    LOGW("Failed to load translation file: %s", language_file);
+  QString translation_file = QString::fromStdString(Params().get("LanguageSetting"));
+  if (!translator.load(translation_file, "translations")) {
+    qCritical() << "Failed to load translation file:" << translation_file;
   }
 
   QApplication a(argc, argv);
