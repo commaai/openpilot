@@ -24,19 +24,6 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
-QMap<QString, QString> getSupportedLanguages() {
-  QFile f("translations/languages.json");
-  f.open(QIODevice::ReadOnly | QIODevice::Text);
-  QString val = f.readAll();
-
-  QJsonObject obj = QJsonDocument::fromJson(val.toUtf8()).object();
-  QMap<QString, QString> map;
-  for (auto key : obj.keys()) {
-    map[key] = obj[key].toString();
-  }
-  return map;
-}
-
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
   std::vector<std::tuple<QString, QString, QString, QString>> toggles{
@@ -150,8 +137,6 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(translateBtn, &ButtonControl::clicked, [=]() {
     QMap<QString, QString> langs = getSupportedLanguages();
     QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), this);
-    qDebug() << "Selected:" << selection << langs[selection];
-
     if (!selection.isEmpty()) {
       Params().put("LanguageSetting", langs[selection].toStdString());
       qApp->quit();
