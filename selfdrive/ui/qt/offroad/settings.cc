@@ -294,7 +294,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
 
 
-  auto uninstallBtn = new ButtonControl(tr("Uninstall ") + getBrand(), tr("UNINSTALL"));
+  uninstallBtn = new ButtonControl();
   connect(uninstallBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to uninstall?"), this)) {
       params.putBool("DoUninstall", true);
@@ -328,6 +328,8 @@ void SoftwarePanel::translateUi() {
   lastUpdateLbl->setTitle(tr("Last Update Check"));
   lastUpdateLbl->setDescription(tr("The last time openpilot successfully checked for an update. The updater only runs while the car is off."));
   updateBtn->setTitle(tr("Check for Update"));
+  uninstallBtn->setTitle(tr("Uninstall ") + getBrand());
+  uninstallBtn->setText(tr("UNINSTALL"));
 }
 
 void SoftwarePanel::showEvent(QShowEvent *event) {

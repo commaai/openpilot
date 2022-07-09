@@ -91,6 +91,7 @@ private:
   LabelControl *versionLbl;
   LabelControl *lastUpdateLbl;
   ButtonControl *updateBtn;
+  ButtonControl *uninstallBtn;
 
   Params params;
   QFileSystemWatcher *fs_watch;
