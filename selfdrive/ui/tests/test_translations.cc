@@ -41,6 +41,7 @@ void checkWidgetTrWrap(MainWindow &w) {
 
 // Tests all strings in the UI are wrapped with tr()
 TEST_CASE("UI: test all strings wrapped") {
+  Params().remove("LanguageSetting");
   Params().remove("HardwareSerial");
   Params().remove("DongleId");
   qputenv("TICI", "1");

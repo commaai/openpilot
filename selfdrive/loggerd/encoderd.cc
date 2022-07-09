@@ -124,10 +124,8 @@ void encoderd_thread() {
 
   std::vector<std::thread> encoder_threads;
   for (const auto &cam : cameras_logged) {
-    if (cam.enable) {
-      encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
-      s.max_waiting++;
-    }
+    encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
+    s.max_waiting++;
   }
   for (auto &t : encoder_threads) t.join();
 }

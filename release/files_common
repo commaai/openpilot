@@ -196,6 +196,7 @@ system/hardware/tici/hardware.h
 system/hardware/tici/hardware.py
 system/hardware/tici/pins.py
 system/hardware/tici/agnos.py
+system/hardware/tici/casync.py
 system/hardware/tici/agnos.json
 system/hardware/tici/amplifier.py
 system/hardware/tici/updater
@@ -230,6 +231,7 @@ selfdrive/locationd/models/gnss_helpers.py
 
 selfdrive/locationd/calibrationd.py
 
+system/logcatd/.gitignore
 system/logcatd/SConscript
 system/logcatd/logcatd_systemd.cc
 
@@ -238,6 +240,7 @@ system/proclogd/main.cc
 system/proclogd/proclog.cc
 system/proclogd/proclog.h
 
+selfdrive/loggerd/.gitignore
 selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder/encoder.cc
 selfdrive/loggerd/encoder/encoder.h
@@ -413,6 +416,7 @@ scripts/stop_updater.sh
 pyextra/.gitignore
 pyextra/acados_template/**
 
+rednose/.gitignore
 rednose/**
 laika/**
 
@@ -473,6 +477,7 @@ opendbc/can/parser_pyx.pyx
 
 opendbc/comma_body.dbc
 
+opendbc/chrysler_ram_dt_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
 

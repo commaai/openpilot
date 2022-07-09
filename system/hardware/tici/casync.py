@@ -22,7 +22,7 @@ CA_TABLE_HEADER_LEN = 16
 CA_TABLE_ENTRY_LEN = 40
 CA_TABLE_MIN_LEN = CA_TABLE_HEADER_LEN + CA_TABLE_ENTRY_LEN
 
-CHUNK_DOWNLOAD_TIMEOUT = 10
+CHUNK_DOWNLOAD_TIMEOUT = 60
 CHUNK_DOWNLOAD_RETRIES = 3
 
 CAIBX_DOWNLOAD_TIMEOUT = 120
@@ -55,6 +55,7 @@ class RemoteChunkReader(ChunkReader):
   def __init__(self, url: str) -> None:
     super().__init__()
     self.url = url
+    self.session = requests.Session()
 
   def read(self, chunk: Chunk) -> bytes:
     sha_hex = chunk.sha.hex()
@@ -62,7 +63,7 @@ class RemoteChunkReader(ChunkReader):
 
     for i in range(CHUNK_DOWNLOAD_RETRIES):
       try:
-        resp = requests.get(url, timeout=CHUNK_DOWNLOAD_TIMEOUT)
+        resp = self.session.get(url, timeout=CHUNK_DOWNLOAD_TIMEOUT)
         break
       except Exception:
         if i == CHUNK_DOWNLOAD_RETRIES - 1:

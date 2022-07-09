@@ -18,8 +18,8 @@ VIN_UNKNOWN = "0" * 17
 
 
 def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
-  for request, response in ((UDS_VIN_REQUEST, UDS_VIN_RESPONSE), (OBD_VIN_REQUEST, OBD_VIN_RESPONSE)):
-    for i in range(retry):
+  for i in range(retry):
+    for request, response in ((UDS_VIN_REQUEST, UDS_VIN_RESPONSE), (OBD_VIN_REQUEST, OBD_VIN_RESPONSE)):
       try:
         query = IsoTpParallelQuery(sendcan, logcan, bus, FUNCTIONAL_ADDRS, [request, ], [response, ], functional_addr=True, debug=debug)
         for addr, vin in query.get_data(timeout).items():
