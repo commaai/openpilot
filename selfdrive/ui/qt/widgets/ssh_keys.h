@@ -6,23 +6,28 @@
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 // SSH enable toggle
-class SshToggle : public ToggleControl {
+class SshToggle : public ToggleControl, public UI {
   Q_OBJECT
 
 public:
-  SshToggle() : ToggleControl(tr("Enable SSH"), "", "", Hardware::get_ssh_enabled()) {
+  SshToggle() : ToggleControl("", "", "", Hardware::get_ssh_enabled()) {
     QObject::connect(this, &SshToggle::toggleFlipped, [=](bool state) {
       Hardware::set_ssh_enabled(state);
     });
+    translateUi();
+  }
+  void translateUi() override {
+    setTitle(tr("Enable SSH"));
   }
 };
 
 // SSH key management widget
-class SshControl : public ButtonControl {
+class SshControl : public ButtonControl, public UI{
   Q_OBJECT
 
 public:
   SshControl();
+  void translateUi() override;
 
 private:
   Params params;

@@ -4,7 +4,7 @@
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
-SshControl::SshControl() : ButtonControl(tr("SSH Keys"), "", tr("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.")) {
+SshControl::SshControl() : ButtonControl() {
   username_label.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
   username_label.setStyleSheet("color: #aaaaaa");
   hlayout->insertWidget(1, &username_label);
@@ -24,7 +24,14 @@ SshControl::SshControl() : ButtonControl(tr("SSH Keys"), "", tr("Warning: This g
     }
   });
 
+  translateUi();
   refresh();
+}
+
+void SshControl::translateUi() {
+  setTitle(tr("SSH Keys"));
+  setDescription(tr("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username."));
+  
 }
 
 void SshControl::refresh() {
