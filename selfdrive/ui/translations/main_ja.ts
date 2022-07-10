@@ -505,7 +505,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="196"/>
         <source>PRIME FEATURES:</source>
-        <translation>主な機能：</translation>
+        <translation>特典：</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
