@@ -29,6 +29,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
   std::vector<std::tuple<QString, QString, QString, QString>> toggles{
     {
+      "GooglyEyes",
+      "Toggle styles of DM icon at standstill",
+      "Googly eyes...or not googly eyes?",
+      "../assets/offroad/icon_monitoring.png",
+    },
+    {
       "OpenpilotEnabledToggle",
       tr("Enable openpilot"),
       tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),
@@ -39,12 +45,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Enable Lane Departure Warnings"),
       tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
       "../assets/offroad/icon_warning.png",
-    },
-    {
-      "IsRHD",
-      tr("Enable Right-Hand Drive"),
-      tr("Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat."),
-      "../assets/offroad/icon_openpilot_mirrored.png",
     },
     {
       "IsMetric",

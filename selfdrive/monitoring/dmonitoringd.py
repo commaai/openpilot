@@ -3,7 +3,7 @@ import gc
 
 import cereal.messaging as messaging
 from cereal import car
-from common.params import Params
+from common.params import Params, put_nonblocking
 from common.realtime import set_realtime_priority
 from selfdrive.controls.lib.events import Events
 from selfdrive.locationd.calibrationd import Calibration
@@ -20,7 +20,7 @@ def dmonitoringd_thread(sm=None, pm=None):
   if sm is None:
     sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'controlsState', 'modelV2'], poll=['driverStateV2'])
 
-  driver_status = DriverStatus(rhd=Params().get_bool("IsRHD"))
+  driver_status = DriverStatus(rhd_saved=Params().get_bool("IsRhdDetected"))
 
   sm['liveCalibration'].calStatus = Calibration.INVALID
   sm['liveCalibration'].rpyCalib = [0, 0, 0]
@@ -80,9 +80,17 @@ def dmonitoringd_thread(sm=None, pm=None):
       "hiStdCount": driver_status.hi_stds,
       "isActiveMode": driver_status.active_monitoring_mode,
       "isRHD": driver_status.wheel_on_right,
+      "pP": driver_status.pose.pitch,
+      "pY": driver_status.pose.yaw,
+      "mBP": driver_status.sgp,
     }
     pm.send('driverMonitoringState', dat)
 
+    # save rhd virtual toggle every 5 mins
+    if (sm['driverStateV2'].frameId % 6000 == 0 and
+     driver_status.wheelpos_learner.filtered_stat.n > driver_status.settings._WHEELPOS_FILTER_MIN_COUNT and
+     driver_status.wheel_on_right == (driver_status.wheelpos_learner.filtered_stat.M > driver_status.settings._WHEELPOS_THRESHOLD)):
+      put_nonblocking("IsRhdDetected", str(int(driver_status.wheel_on_right)))
 
 def main(sm=None, pm=None):
   dmonitoringd_thread(sm, pm)

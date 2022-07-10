@@ -58,7 +58,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._POSE_OFFSET_MAX_COUNT = int(360 / self._DT_DMON)  # stop deweighting new data after 6 min, aka "short term memory"
 
     self._WHEELPOS_THRESHOLD = 0.5
-    self._WHEELPOS_FILTER_MIN_COUNT = int(5 / self._DT_DMON)
+    self._WHEELPOS_FILTER_MIN_COUNT = int(5 / self._DT_DMON) # allow 5 seconds to converge wheel side
 
     self._RECOVERY_FACTOR_MAX = 5.  # relative to minus step change
     self._RECOVERY_FACTOR_MIN = 1.25  # relative to minus step change
@@ -88,17 +88,21 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   pitch_focal_angle = atan2(face_pixel_position[1] - H//2, EFL)
 
   pitch = pitch_net + pitch_focal_angle
+  pitchnc = pitch_net + pitch_focal_angle
   yaw = -yaw_net + yaw_focal_angle
+  yawnc = -yaw_net + yaw_focal_angle
 
   # no calib for roll
   pitch -= rpy_calib[1]
   yaw -= rpy_calib[2]
-  return roll_net, pitch, yaw
+  return roll_net, pitch, yaw, pitchnc, yawnc
 
 class DriverPose():
   def __init__(self, max_trackable):
     self.yaw = 0.
+    self.yawnc = 0.
     self.pitch = 0.
+    self.pitchnc = 0.
     self.roll = 0.
     self.yaw_std = 0.
     self.pitch_std = 0.
@@ -115,7 +119,7 @@ class DriverBlink():
     self.right_blink = 0.
 
 class DriverStatus():
-  def __init__(self, rhd=False, settings=DRIVER_MONITOR_SETTINGS()):
+  def __init__(self, rhd_saved=False, settings=DRIVER_MONITOR_SETTINGS()):
     # init policy settings
     self.settings = settings
 
@@ -130,6 +134,7 @@ class DriverStatus():
     self.ee2_offseter = RunningStatFilter(max_trackable=self.settings._POSE_OFFSET_MAX_COUNT)
     self.ee1_calibrated = False
     self.ee2_calibrated = False
+    self.sgp = 0.
 
     self.awareness = 1.
     self.awareness_active = 1.
@@ -138,7 +143,8 @@ class DriverStatus():
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
     self.wheel_on_right = False
-    self.rhd_toggled = rhd
+    self.wheel_on_right_last = None
+    self.wheel_on_right_default = rhd_saved
     self.face_detected = False
     self.terminal_alert_cnt = 0
     self.terminal_time = 0
@@ -227,22 +233,28 @@ class DriverStatus():
 
   def update_states(self, driver_state, cal_rpy, car_speed, op_engaged):
     rhd_pred = driver_state.wheelOnRightProb
-    if car_speed > 0.01:
+    # calibrates only when there's movement and either face detected
+    if car_speed > 0.01 and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
+                                          driver_state.rightDriverData.faceProb > self.settings._FACE_THRESHOLD):
       self.wheelpos_learner.push_and_update(rhd_pred)
     if self.wheelpos_learner.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT:
       self.wheel_on_right = self.wheelpos_learner.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     else:
-      self.wheel_on_right = rhd_pred > self.settings._WHEELPOS_THRESHOLD
-    driver_data = driver_state.rightDriverData if self.rhd_toggled else driver_state.leftDriverData
+      self.wheel_on_right = self.wheel_on_right_default # use default/saved if calibration is unfinished
+    # make sure no switching when engaged
+    if op_engaged and self.wheel_on_right_last is not None and self.wheel_on_right_last != self.wheel_on_right:
+      self.wheel_on_right = self.wheel_on_right_last
+    driver_data = driver_state.rightDriverData if self.wheel_on_right else driver_state.leftDriverData
     if not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,
                                     driver_data.faceOrientationStd, driver_data.facePositionStd,
                                     driver_data.readyProb, driver_data.notReadyProb)):
       return
 
     self.face_detected = driver_data.faceProb > self.settings._FACE_THRESHOLD
-    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
+    self.pose.roll, self.pose.pitch, self.pose.yaw, self.pose.pitchnc, self.pose.yawnc = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
     if self.wheel_on_right:
       self.pose.yaw *= -1
+    self.wheel_on_right_last = self.wheel_on_right
     self.pose.pitch_std = driver_data.faceOrientationStd[0]
     self.pose.yaw_std = driver_data.faceOrientationStd[1]
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
@@ -251,6 +263,7 @@ class DriverStatus():
     self.blink.right_blink = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
     self.eev1 = driver_data.notReadyProb[1]
     self.eev2 = driver_data.readyProb[0]
+    self.sgp = driver_data.sunglassesProb > self.settings._SG_THRESHOLD
 
     self.distracted_types = self._get_distracted_types()
     self.driver_distracted = (DistractedType.DISTRACTED_POSE in self.distracted_types or

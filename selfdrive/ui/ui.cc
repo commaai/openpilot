@@ -101,6 +101,14 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     update_line_data(s, road_edges[i], 0.025, 0, &scene.road_edge_vertices[i], max_idx);
   }
 
+  float pointp = (*s->sm)["driverMonitoringState"].getDriverMonitoringState().getPP();
+  pointp = 0.33 * pointp + 0.66 * scene.dmppp;
+  scene.dmppp = pointp;
+  scene.dm_pp = pointp;
+  float pointy = (*s->sm)["driverMonitoringState"].getDriverMonitoringState().getPY();
+  pointy = 0.33 * pointy + 0.66 * scene.dmpyp;
+  scene.dmpyp = pointy;
+  scene.dm_py = pointy;
   // update path
   auto lead_one = (*s->sm)["radarState"].getRadarState().getLeadOne();
   if (lead_one.getStatus()) {
@@ -193,6 +201,7 @@ static void update_state(UIState *s) {
 
 void ui_update_params(UIState *s) {
   s->scene.is_metric = Params().getBool("IsMetric");
+  s->scene.use_ge = Params().getBool("GooglyEyes");
 }
 
 void UIState::updateStatus() {
