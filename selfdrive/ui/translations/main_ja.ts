@@ -432,7 +432,7 @@ location set</source>
         <location filename="../qt/onroad.cc" line="269"/>
         <location filename="../qt/onroad.cc" line="272"/>
         <source>MAX</source>
-        <translation>最大速度</translation>
+        <translation>最高速度</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="316"/>
@@ -444,7 +444,7 @@ location set</source>
         <location filename="../qt/onroad.cc" line="322"/>
         <location filename="../qt/onroad.cc" line="325"/>
         <source>LIMIT</source>
-        <translation>制限</translation>
+        <translation>制限速度</translation>
     </message>
 </context>
 <context>
