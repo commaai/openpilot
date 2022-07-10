@@ -92,7 +92,7 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="140"/>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>openpilotを利用するためには、利用規約に同意する必要があります。</translation>
+        <translation>openpilot を利用するためには、利用規約に同意する必要があります。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="149"/>
@@ -102,7 +102,7 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="154"/>
         <source>Decline, uninstall %1</source>
-        <translation>拒否して　%1 をｱﾝｲﾝｽﾄｰﾙ</translation>
+        <translation>拒否して %1 をｱﾝｲﾝｽﾄｰﾙ</translation>
     </message>
 </context>
 <context>
@@ -150,7 +150,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="111"/>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>本当にキャリブレーションをリセットしますか？</translation>
+        <translation>ｷｬﾘﾌﾞﾚｰｼｮﾝをリセットしてもよろしいですか？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="118"/>
@@ -242,7 +242,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="202"/>
         <source>Disengage to Reboot</source>
-        <translation>openpilot をキャンセルして再起動できます</translation>
+        <translation>openpilot をキャンセルして再起動ができます</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="208"/>
@@ -252,7 +252,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="215"/>
         <source>Disengage to Power Off</source>
-        <translation>openpilot をキャンセルしてシャットダウンできます</translation>
+        <translation>openpilot をキャンセルしてシャットダウンができます</translation>
     </message>
 </context>
 <context>
