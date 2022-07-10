@@ -110,7 +110,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="98"/>
         <source>Dongle ID</source>
-        <translation>Dongle ID</translation>
+        <translation>ドングル番号 (Dongle ID)</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="98"/>
