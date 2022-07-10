@@ -1134,7 +1134,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="83"/>
         <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>openpilot は、車のレーダーを無効化し、アクセルとブレーキの制御を引き継ぎます。注意：AEBを無効にします!</translation>
+        <translation>openpilot は、車のレーダーを無効化し、アクセルとブレーキの制御を引き継ぎます。注意：AEB を無効化にします!</translation>
     </message>
 </context>
 <context>
@@ -1147,7 +1147,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/updater.cc" line="29"/>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>OSのアップデートが必要です。Wi-Fiに接続することで、最速のアップデートを体験できます。ダウンロードサイズは約1GBです。</translation>
+        <translation>ｵﾍﾟﾚｰﾃｨﾝｸﾞｼｽﾃﾑのアップデートが必要です。Wi-Fi に接続することで、最速のアップデートを体験できます。ダウンロードサイズは約 1GB です。</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="40"/>
