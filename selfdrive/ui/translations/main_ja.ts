@@ -528,7 +528,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="123"/>
         <source>✓ SUBSCRIBED</source>
-        <translation>✓ 購読しました</translation>
+        <translation>✓ 入会しました</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="129"/>
