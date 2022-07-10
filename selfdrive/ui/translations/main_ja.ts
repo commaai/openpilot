@@ -306,12 +306,12 @@
     <message>
         <location filename="../qt/widgets/input.cc" line="167"/>
         <source>Need at least </source>
-        <translation>最低限必要なもの </translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="167"/>
         <source> characters!</source>
-        <translation> 記号！</translation>
+        <translation> 文字以上で入力してください！</translation>
     </message>
 </context>
 <context>
