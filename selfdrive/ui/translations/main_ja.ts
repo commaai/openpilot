@@ -413,7 +413,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>Wrong password</source>
-        <translation>パスワードが間違っています</translation>
+        <translation>ﾊﾟｽﾜｰﾄﾞが間違っています</translation>
     </message>
 </context>
 <context>
