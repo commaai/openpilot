@@ -11,7 +11,7 @@
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="30"/>
         <source>Snooze Update</source>
-        <translation>更新停止</translation>
+        <translation>更新の一時停止</translation>
     </message>
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="41"/>
