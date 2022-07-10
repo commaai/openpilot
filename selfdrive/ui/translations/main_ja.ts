@@ -483,9 +483,9 @@ location set</source>
     </source>
         <translation>
       &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;モバイルでアクセス https://connect.comma.ai&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;“新しいデバイスを追加”をクリックし，QRコードを読み込みます&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;connect.comma.aiをホーム画面にブックマークして、アプリのように使うことができます&lt;/li&gt;
+        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;モバイルデバイスで「connect.comma.ai」にアクセス&lt;/li&gt;
+        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;「新しいデバイスを追加」を押すと、右側のQRコードをスキャンしてください&lt;/li&gt;
+        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;「connect.comma.ai」をホーム画面に追加して、アプリのような使うことができます&lt;/li&gt;
       &lt;/ol&gt;
     </translation>
     </message>
