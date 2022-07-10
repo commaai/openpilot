@@ -242,7 +242,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="202"/>
         <source>Disengage to Reboot</source>
-        <translation>openpilot をキャンセルして再起動します</translation>
+        <translation>openpilot をキャンセルして再起動できます</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="208"/>
@@ -252,7 +252,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="215"/>
         <source>Disengage to Power Off</source>
-        <translation>openpilot をキャンセルしてシャットダウンします</translation>
+        <translation>openpilot をキャンセルしてシャットダウンできます</translation>
     </message>
 </context>
 <context>
