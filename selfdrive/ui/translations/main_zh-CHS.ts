@@ -687,7 +687,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="79"/>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>使用安全带在汽车中为您的设备供电或自行承担风险。</translation>
+        <translation>请使用car harness线束为您的设备供电，或自行承担风险。</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="92"/>
@@ -704,28 +704,28 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="117"/>
         <source>Getting Started</source>
-        <translation>入门</translation>
+        <translation>开始设置</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="122"/>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>在我们上路之前，让我们完成安装并介绍一些细节。</translation>
+        <translation>开始旅程之前，让我们完成安装并介绍一些细节。</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="147"/>
         <source>Connect to Wi-Fi</source>
-        <translation>连接到无线网络</translation>
+        <translation>连接到WiFi</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="165"/>
         <location filename="../qt/setup/setup.cc" line="263"/>
         <source>Back</source>
-        <translation>后退</translation>
+        <translation>返回</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="182"/>
         <source>Continue without Wi-Fi</source>
-        <translation>在没有 Wi-Fi 的情况下继续</translation>
+        <translation>不连接WiFi并继续</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="184"/>
@@ -740,12 +740,12 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="248"/>
         <source>Dashcam</source>
-        <translation>行车记录器</translation>
+        <translation>Dashcam（行车记录仪）</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="253"/>
         <source>Custom Software</source>
-        <translation>定制的软件</translation>
+        <translation>自定义软件</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
@@ -755,12 +755,12 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
         <source>for Custom Software</source>
-        <translation>定制软件</translation>
+        <translation>以下载自定义软件</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="303"/>
         <source>Downloading...</source>
-        <translation>正在下载...</translation>
+        <translation>正在下载……</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="315"/>
@@ -770,7 +770,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="321"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>确保输入的 URL 有效，并且设备的互联网连接良好。</translation>
+        <translation>请确保互联网连接良好且输入的URL有效。</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="334"/>
@@ -793,7 +793,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="236"/>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>将您的设备与 comma connect (connect.comma.ai) 配对并领取您的 comma prime 优惠。</translation>
+        <translation>将您的设备与comma connect（connect.comma.ai）配对并领取您的comma prime优惠。</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="243"/>
@@ -807,7 +807,7 @@ location set</source>
         <location filename="../qt/sidebar.cc" line="67"/>
         <location filename="../qt/sidebar.cc" line="69"/>
         <source>CONNECT</source>
-        <translation>连接</translation>
+        <translation>CONNECT状态</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="67"/>
@@ -818,49 +818,49 @@ location set</source>
         <location filename="../qt/sidebar.cc" line="69"/>
         <location filename="../qt/sidebar.cc" line="82"/>
         <source>ONLINE</source>
-        <translation>在线的</translation>
+        <translation>在线</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="69"/>
         <source>ERROR</source>
-        <translation>错误</translation>
+        <translation>连接出错</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="73"/>
         <location filename="../qt/sidebar.cc" line="76"/>
         <location filename="../qt/sidebar.cc" line="78"/>
         <source>TEMP</source>
-        <translation>温度</translation>
+        <translation>设备温度</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="73"/>
         <source>HIGH</source>
-        <translation>高的</translation>
+        <translation>过热</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="76"/>
         <source>GOOD</source>
-        <translation>好的</translation>
+        <translation>良好</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="78"/>
         <source>OK</source>
-        <translation>好的</translation>
+        <translation>正常</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="82"/>
         <source>VEHICLE</source>
-        <translation>车辆</translation>
+        <translation>车辆连接状态</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
         <source>NO</source>
-        <translation>未连接</translation>
+        <translation>无</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
         <source>PANDA</source>
-        <translation>熊猫</translation>
+        <translation>PANDA</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="86"/>
@@ -870,7 +870,7 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.cc" line="86"/>
         <source>SEARCH</source>
-        <translation>搜索</translation>
+        <translation>搜索中</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="37"/>
@@ -885,7 +885,7 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.h" line="39"/>
         <source>ETH</source>
-        <translation>以太網</translation>
+        <translation>以太网</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="40"/>
@@ -913,27 +913,27 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="220"/>
         <source>Git Branch</source>
-        <translation>Git 分支</translation>
+        <translation>Git Branch</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="221"/>
         <source>Git Commit</source>
-        <translation>Git 提交</translation>
+        <translation>Git Commit</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="222"/>
         <source>OS Version</source>
-        <translation>操作系统版本</translation>
+        <translation>系统版本</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="223"/>
         <source>Version</source>
-        <translation>版本</translation>
+        <translation>软件版本</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="224"/>
         <source>Last Update Check</source>
-        <translation>最后更新检查</translation>
+        <translation>上次检查更新</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="224"/>
