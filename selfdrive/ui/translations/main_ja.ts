@@ -408,7 +408,7 @@ location set</source>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>for &quot;</source>
-        <translation>&quot; のため</translation>
+        <translation>ﾈｯﾄﾜｰｸ名：&quot;</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
