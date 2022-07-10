@@ -165,7 +165,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="118"/>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>openpilot 規約 機能 制約を見る</translation>
+        <translation>openpilot の特徴を見る</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="120"/>
