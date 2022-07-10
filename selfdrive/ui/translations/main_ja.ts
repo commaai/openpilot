@@ -24,17 +24,17 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="121"/>
         <source>Back</source>
-        <translation>もどる</translation>
+        <translation>戻る</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="129"/>
         <source>Enable Tethering</source>
-        <translation>テザリングを有効化</translation>
+        <translation>ﾃｻﾞﾘﾝｸﾞを有効化</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
         <source>Tethering Password</source>
-        <translation>テザリングパスワード</translation>
+        <translation>ﾃｻﾞﾘﾝｸﾞﾊﾟｽﾜｰﾄﾞ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
@@ -45,17 +45,17 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="136"/>
         <source>Enter new tethering password</source>
-        <translation>新しいテザリングパスワードを入力</translation>
+        <translation>新しいﾃｻﾞﾘﾝｸﾞﾊﾟｽﾜｰﾄﾞを入力してください</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="144"/>
         <source>IP Address</source>
-        <translation>IPアドレス</translation>
+        <translation>IP アドレス</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="153"/>
         <source>Enable Roaming</source>
-        <translation>ローミングを有効化</translation>
+        <translation>ﾛｰﾐﾝｸﾞを有効化</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="161"/>
@@ -65,12 +65,12 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="165"/>
         <source>Enter APN</source>
-        <translation>APN 入力</translation>
+        <translation>APN を入力</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="165"/>
         <source>leave blank for automatic configuration</source>
-        <translation>空欄で自動設定</translation>
+        <translation>空白のままにして、自動設定にします。</translation>
     </message>
 </context>
 <context>
@@ -102,7 +102,7 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="154"/>
         <source>Decline, uninstall %1</source>
-        <translation>拒否してアンインストール %1</translation>
+        <translation>拒否して　%1 をｱﾝｲﾝｽﾄｰﾙ</translation>
     </message>
 </context>
 <context>
@@ -110,7 +110,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="98"/>
         <source>Dongle ID</source>
-        <translation>ドングル ID</translation>
+        <translation>Dongle ID</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="98"/>
@@ -120,7 +120,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="99"/>
         <source>Serial</source>
-        <translation>シリアル</translation>
+        <translation>シリアル番号</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="103"/>
@@ -140,7 +140,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="108"/>
         <source>Reset Calibration</source>
-        <translation>キャリブレーションリセット</translation>
+        <translation>ｷｬﾘﾌﾞﾚｰｼｮﾝをﾘｾｯﾄ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="108"/>
@@ -175,7 +175,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="128"/>
         <source>Regulatory</source>
-        <translation>レギュレーション</translation>
+        <translation>認証情報</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="128"/>
@@ -192,7 +192,7 @@
     </message>
     <message>
         <source>Select a language</source>
-        <translation type="obsolete">言語を選択する</translation>
+        <translation type="obsolete">言語を選択</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="146"/>
@@ -237,22 +237,22 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="195"/>
         <source>Are you sure you want to reboot?</source>
-        <translation>本当に再起動しますか？</translation>
+        <translation>再起動してもよろしいですか？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="202"/>
         <source>Disengage to Reboot</source>
-        <translation>再起動するために離脱します</translation>
+        <translation>openpilot をキャンセルして再起動します</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="208"/>
         <source>Are you sure you want to power off?</source>
-        <translation>本当に電源を切っても良いですか？</translation>
+        <translation>シャットダウンしてもよろしいですか？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="215"/>
         <source>Disengage to Power Off</source>
-        <translation>電源を切るために離脱します</translation>
+        <translation>openpilot をキャンセルしてシャットダウンします</translation>
     </message>
 </context>
 <context>
@@ -293,7 +293,7 @@
     <message>
         <location filename="../qt/offroad/driverview.cc" line="56"/>
         <source>camera starting</source>
-        <translation>カメラ起動</translation>
+        <translation>ｶﾒﾗを起動しています</translation>
     </message>
 </context>
 <context>
@@ -319,22 +319,22 @@
     <message>
         <location filename="../installer/installer.cc" line="56"/>
         <source>Installing...</source>
-        <translation>インストール...</translation>
+        <translation>インストールしています</translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="144"/>
         <source>Receiving objects: </source>
-        <translation>オブジェクトを受信中： </translation>
+        <translation>ｵﾌﾞｼﾞｪｸﾄをﾀﾞｳﾝﾛｰﾄﾞしています： </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="145"/>
         <source>Resolving deltas: </source>
-        <translation>リゾルブ解決中： </translation>
+        <translation>デルタを解決しています： </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="146"/>
         <source>Updating files: </source>
-        <translation>ファイルを更新中： </translation>
+        <translation>ファイルを更新しています： </translation>
     </message>
 </context>
 <context>
@@ -347,7 +347,7 @@
     <message>
         <location filename="../qt/maps/map_settings.cc" line="66"/>
         <source>CLEAR</source>
-        <translation>クリア</translation>
+        <translation>削除</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="81"/>
@@ -357,7 +357,7 @@
     <message>
         <location filename="../qt/maps/map_settings.cc" line="95"/>
         <source>Try the Navigation Beta</source>
-        <translation>ベータ版ナビゲーション</translation>
+        <translation>ベータ版ﾅﾋﾞｹﾞｰｼｮﾝを試し</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
@@ -369,15 +369,15 @@ prime subscription. Sign up now: https://connect.comma.ai</source>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
         <source>No home
 location set</source>
-        <translation>自宅の登録なし
-位置を設定</translation>
+        <translation>自宅の住所はまだ
+設定されていません</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="169"/>
         <source>No work
 location set</source>
-        <translation>職場の登録なし
-位置を設定</translation>
+        <translation>職場の住所はまだ
+設定されていません</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="282"/>
@@ -408,7 +408,7 @@ location set</source>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>for &quot;</source>
-        <translation>のため &quot;</translation>
+        <translation>&quot; のため</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
@@ -421,18 +421,18 @@ location set</source>
     <message>
         <location filename="../qt/onroad.cc" line="202"/>
         <source>km/h</source>
-        <translation>km/時</translation>
+        <translation>km/h</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="202"/>
         <source>mph</source>
-        <translation>マイル/時</translation>
+        <translation>mph</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="269"/>
         <location filename="../qt/onroad.cc" line="272"/>
         <source>MAX</source>
-        <translation>最大</translation>
+        <translation>最大速度</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="316"/>
@@ -470,7 +470,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="86"/>
         <source>Pair your device to your comma account</source>
-        <translation>デバイスとアカウントを連携する</translation>
+        <translation>デバイスと comma アカウントを連携する</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="91"/>
@@ -495,12 +495,12 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="184"/>
         <source>Upgrade Now</source>
-        <translation>いますぐアップグレード</translation>
+        <translation>今すぐｱｯﾌﾟｸﾞﾚｰﾄ</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="189"/>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>connect.comma.ai のプライムメンバーになる</translation>
+        <translation>connect.comma.ai でプライム会員に登録できます</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="196"/>
@@ -515,7 +515,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
         <source>1 year of storage</source>
-        <translation>1年の保存期間</translation>
+        <translation>一年間の保存期間</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
@@ -556,17 +556,17 @@ location set</source>
     <message>
         <location filename="../qt/text.cc" line="41"/>
         <source>Exit</source>
-        <translation>退出</translation>
+        <translation>閉じる</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="18"/>
         <source>dashcam</source>
-        <translation>ダッシュカム</translation>
+        <translation>ﾄﾞﾗｲﾌﾞﾚｺｰﾀﾞｰ</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="18"/>
         <source>openpilot</source>
-        <translation>オープンパイロット</translation>
+        <translation>openpilot</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="66"/>
@@ -594,7 +594,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="34"/>
         <source>Are you sure you want to reset your device?</source>
-        <translation>本当に初期化しますか？</translation>
+        <translation>初期化してもよろしいですか？</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="38"/>
@@ -609,7 +609,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="59"/>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>システムを初期化させます。 すべてのコンテンツと設定が削除されます。 キャンセルを押すと再起動します。</translation>
+        <translation>システムを初期化させます。 すべてのコンテンツと設定が削除されます。 キャンセルを押すと起動を続行します。</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="68"/>
@@ -629,7 +629,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="88"/>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>dataパーティションをマウントできません。 確認を押すとデバイスが初期化されます。</translation>
+        <translation>data パーティションをマウントできません。 確認を押すとデバイスが初期化されます。</translation>
     </message>
 </context>
 <context>
@@ -656,7 +656,7 @@ location set</source>
         <location filename="../qt/offroad/settings.cc" line="327"/>
         <location filename="../qt/offroad/settings.cc" line="366"/>
         <source>Network</source>
-        <translation>ネットワーク</translation>
+        <translation>ﾈｯﾄﾜｰｸ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="328"/>
@@ -666,12 +666,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="329"/>
         <source>Software</source>
-        <translation>ソフトウェア</translation>
+        <translation>ｿﾌﾄｳｪｱ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="334"/>
         <source>Navigation</source>
-        <translation>ナビゲーション</translation>
+        <translation>ﾅﾋﾞｹﾞｰｼｮﾝ</translation>
     </message>
 </context>
 <context>
@@ -711,7 +711,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="147"/>
         <source>Connect to Wi-Fi</source>
-        <translation>Wi-Fiに接続</translation>
+        <translation>Wi-Fi に接続</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="165"/>
@@ -737,7 +737,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="248"/>
         <source>Dashcam</source>
-        <translation>ダッシュカム</translation>
+        <translation>ﾄﾞﾗｲﾌﾞﾚｺｰﾀﾞｰ</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="253"/>
@@ -747,7 +747,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
         <source>Enter URL</source>
-        <translation>URLを入力</translation>
+        <translation>URL を入力</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
@@ -767,7 +767,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="321"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>入力されたURLが有効であること、デバイスがインターネットに接続されていることを確認してください。</translation>
+        <translation>入力された URL を確認し、デバイスがインターネットに接続されていることを確認してください。</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="334"/>
@@ -777,7 +777,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="341"/>
         <source>Start over</source>
-        <translation>再スタート</translation>
+        <translation>最初からやり直す</translation>
     </message>
 </context>
 <context>
@@ -857,7 +857,7 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
         <source>PANDA</source>
-        <translation>パンダ</translation>
+        <translation>PANDA</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="86"/>
@@ -940,7 +940,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="225"/>
         <source>Check for Update</source>
-        <translation>更新確認</translation>
+        <translation>更新プログラムをチェック</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="230"/>
@@ -960,7 +960,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="239"/>
         <source>Are you sure you want to uninstall?</source>
-        <translation>本当にアンインストールしますか？</translation>
+        <translation>アンインストールしてもよろしいですか？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
@@ -984,7 +984,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>警告: これは、GitHub の設定にあるすべての公開鍵への SSH アクセスを許可するものです。自分以外のGitHubのユーザー名を入力しないでください。コンマのスタッフがGitHubのユーザー名を追加するようお願いすることはありません。</translation>
+        <translation>警告: これは、GitHub の設定にあるすべての公開鍵への SSH アクセスを許可するものです。自分以外の GitHub のユーザー名を入力しないでください。コンマのスタッフが GitHub のユーザー名を追加するようお願いすることはありません。</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="13"/>
@@ -995,7 +995,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="14"/>
         <source>Enter your GitHub username</source>
-        <translation>GitHubのユーザー名を入力してください</translation>
+        <translation>GitHub のユーザー名を入力してください</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="16"/>
@@ -1010,7 +1010,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="50"/>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>ユーザー名“%1”は GitHub に鍵がありません</translation>
+        <translation>ユーザー名 “%1” は GitHub に鍵がありません</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="54"/>
@@ -1094,7 +1094,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="51"/>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>速度はmphではなくkm/hで表示されます。</translation>
+        <translation>速度は mph ではなく km/h で表示されます。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="56"/>
@@ -1124,7 +1124,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="70"/>
         <source>Use 24h format instead of am/pm</source>
-        <translation>AM/PMの代わりに24時間形式を使用します</translation>
+        <translation>AM/PM の代わりに24時間形式を使用します</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="82"/>
@@ -1134,7 +1134,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="83"/>
         <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>openpilotは、車のレーダーを無効化し、アクセルとブレーキの制御を引き継ぎます。注意：AEBを無効にします!</translation>
+        <translation>openpilot は、車のレーダーを無効化し、アクセルとブレーキの制御を引き継ぎます。注意：AEBを無効にします!</translation>
     </message>
 </context>
 <context>
@@ -1152,7 +1152,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/updater.cc" line="40"/>
         <source>Connect to Wi-Fi</source>
-        <translation>Wi-Fiに接続</translation>
+        <translation>Wi-Fi に接続</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="47"/>
@@ -1201,7 +1201,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
         <source>Forget Wi-Fi Network &quot;</source>
-        <translation>Wi-Fiを削除する”</translation>
+        <translation>&quot; から切断</translation>
     </message>
 </context>
 </TS>
