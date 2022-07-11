@@ -6,7 +6,7 @@
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="25"/>
         <source>Close</source>
-        <translation>关</translation>
+        <translation>关闭</translation>
     </message>
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="30"/>
@@ -16,7 +16,7 @@
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="41"/>
         <source>Reboot and Update</source>
-        <translation>重启和更新</translation>
+        <translation>重启并更新</translation>
     </message>
 </context>
 <context>
@@ -24,17 +24,17 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="121"/>
         <source>Back</source>
-        <translation>后退</translation>
+        <translation>返回</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="129"/>
         <source>Enable Tethering</source>
-        <translation>启用网络共享</translation>
+        <translation>启用WiFi热点</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
         <source>Tethering Password</source>
-        <translation>网络共享密码</translation>
+        <translation>WiFi热点密码</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
@@ -45,7 +45,7 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="136"/>
         <source>Enter new tethering password</source>
-        <translation>输入新的网络共享密码</translation>
+        <translation>输入新的WiFi热点密码</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="144"/>
@@ -55,22 +55,22 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="153"/>
         <source>Enable Roaming</source>
-        <translation>启用漫游</translation>
+        <translation>启用数据漫游</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="161"/>
         <source>APN Setting</source>
-        <translation>APN 设置</translation>
+        <translation>APN设置</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="165"/>
         <source>Enter APN</source>
-        <translation>输入 APN</translation>
+        <translation>输入APN</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="165"/>
         <source>leave blank for automatic configuration</source>
-        <translation>为自动配置留空</translation>
+        <translation>留空以自动配置</translation>
     </message>
 </context>
 <context>
@@ -92,17 +92,17 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="140"/>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>您必须接受条款和条件才能使用 openpilot。</translation>
+        <translation>您必须接受条款和条件以使用openpilot。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="149"/>
         <source>Back</source>
-        <translation>后退</translation>
+        <translation>返回</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="154"/>
         <source>Decline, uninstall %1</source>
-        <translation>拒绝，卸载 %1</translation>
+        <translation>拒绝并卸载%1</translation>
     </message>
 </context>
 <context>
@@ -110,37 +110,37 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="99"/>
         <source>Dongle ID</source>
-        <translation>加密狗 ID</translation>
+        <translation>设备ID（Dongle ID）</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="99"/>
         <source>N/A</source>
-        <translation>不适用</translation>
+        <translation>N/A</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="100"/>
         <source>Serial</source>
-        <translation>串行</translation>
+        <translation>序列号</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="104"/>
         <source>Driver Camera</source>
-        <translation>司机摄像头</translation>
+        <translation>驾驶员摄像头</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="104"/>
         <source>PREVIEW</source>
-        <translation>预习</translation>
+        <translation>预览</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
         <source>Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)</source>
-        <translation>预览面向驾驶员的摄像头，以帮助优化设备安装位置以获得最佳驾驶员监控体验。 （车辆必须关闭）</translation>
+        <translation>打开并预览驾驶员摄像头，用于调整安装角度以获得最优驾驶员监控体验。仅熄火时可用。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="109"/>
         <source>Reset Calibration</source>
-        <translation>重置校准</translation>
+        <translation>重置设备校准</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="109"/>
@@ -150,32 +150,32 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="112"/>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>您确定要重置校准吗？</translation>
+        <translation>您确定要重置设备校准吗？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="119"/>
         <source>Review Training Guide</source>
-        <translation>查看培训指南</translation>
+        <translation>新手指南</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="119"/>
         <source>REVIEW</source>
-        <translation>重新查看</translation>
+        <translation>查看</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="119"/>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>查看 openpilot 的规则、功能和限制</translation>
+        <translation>查看openpilot的使用规则，以及其功能和限制。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="121"/>
         <source>Are you sure you want to review the training guide?</source>
-        <translation>您确定要查看培训指南吗？</translation>
+        <translation>您确定要查看新手指南吗？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="129"/>
         <source>Regulatory</source>
-        <translation>监管</translation>
+        <translation>监管信息</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="129"/>
@@ -210,32 +210,32 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="186"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot 要求设备安装在左或右 4° 以内，上 5° 或下 8° 以内。 openpilot 会持续校准，很少需要重置。</translation>
+        <translation>openpilot要求设备安装的偏航角在左4°和右4°之间，俯仰角在上5°和下8°之间。一般来说，openpilot会持续更新校准，很少需要重置。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="197"/>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> 您的设备指向 %1° %2 和 %3° %4。</translation>
+        <translation>您的设备校准为%1° %2、%3° %4。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="198"/>
         <source>down</source>
-        <translation>下</translation>
+        <translation>朝下</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="198"/>
         <source>up</source>
-        <translation>向上</translation>
+        <translation>朝上</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="199"/>
         <source>left</source>
-        <translation>向左</translation>
+        <translation>朝左</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="199"/>
         <source>right</source>
-        <translation>向右</translation>
+        <translation>朝右</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="210"/>
@@ -245,17 +245,17 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="217"/>
         <source>Disengage to Reboot</source>
-        <translation>脱离以重新启动</translation>
+        <translation>取消openpilot以重新启动</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="223"/>
         <source>Are you sure you want to power off?</source>
-        <translation>您确定要关闭电源吗？</translation>
+        <translation>您确定要关机吗？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="230"/>
         <source>Disengage to Power Off</source>
-        <translation>脱离以关闭电源</translation>
+        <translation>取消openpilot以关机</translation>
     </message>
 </context>
 <context>
@@ -263,7 +263,7 @@
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="37"/>
         <source>Drives</source>
-        <translation>驱动器</translation>
+        <translation>旅程数</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="39"/>
@@ -278,12 +278,12 @@
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="46"/>
         <source>PAST WEEK</source>
-        <translation>上周</translation>
+        <translation>过去一周</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.h" line="15"/>
         <source>KM</source>
-        <translation>千米</translation>
+        <translation>公里</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.h" line="15"/>
@@ -296,7 +296,7 @@
     <message>
         <location filename="../qt/offroad/driverview.cc" line="56"/>
         <source>camera starting</source>
-        <translation>相机启动中</translation>
+        <translation>正在启动相机</translation>
     </message>
 </context>
 <context>
@@ -309,12 +309,12 @@
     <message>
         <location filename="../qt/widgets/input.cc" line="168"/>
         <source>Need at least </source>
-        <translation>需要至少 </translation>
+        <translation>至少需要 </translation>
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="168"/>
         <source> characters!</source>
-        <translation> 字符！</translation>
+        <translation> 个字符！</translation>
     </message>
 </context>
 <context>
@@ -322,7 +322,7 @@
     <message>
         <location filename="../installer/installer.cc" line="56"/>
         <source>Installing...</source>
-        <translation>安装...</translation>
+        <translation>正在安装……</translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="144"/>
@@ -332,12 +332,12 @@
     <message>
         <location filename="../installer/installer.cc" line="145"/>
         <source>Resolving deltas: </source>
-        <translation>解决增量： </translation>
+        <translation>正在处理： </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="146"/>
         <source>Updating files: </source>
-        <translation>更新文件： </translation>
+        <translation>正在更新文件： </translation>
     </message>
 </context>
 <context>
@@ -401,12 +401,12 @@
     <message>
         <location filename="../qt/maps/map_settings.cc" line="66"/>
         <source>CLEAR</source>
-        <translation>CLEAR</translation>
+        <translation>清空</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="81"/>
         <source>Recent Destinations</source>
-        <translation>近期目的地</translation>
+        <translation>最近目的地</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="95"/>
@@ -417,27 +417,25 @@
         <location filename="../qt/maps/map_settings.cc" line="107"/>
         <source>Get turn-by-turn directions displayed and more with a comma 
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>使用逗号获取显示的详细路线和更多信息
-主要订阅。 立即注册：https://connect.comma.ai</translation>
+        <translation>订阅comma prime以获取导航。 
+立即注册：https://connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
         <source>No home
 location set</source>
-        <translation>没有家
-位置集</translation>
+        <translation>家：未设定</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="169"/>
         <source>No work
 location set</source>
-        <translation>没有工作
-位置集</translation>
+        <translation>工作：未设定</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="282"/>
         <source>no recent destinations</source>
-        <translation>没有最近的目的地</translation>
+        <translation>无最近目的地</translation>
     </message>
 </context>
 <context>
@@ -445,7 +443,7 @@ location set</source>
     <message>
         <location filename="../qt/maps/map.cc" line="178"/>
         <source>Map Loading</source>
-        <translation>地图加载</translation>
+        <translation>地图加载中</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="195"/>
@@ -471,23 +469,23 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="30"/>
         <source>Advanced</source>
-        <translation>先进的</translation>
+        <translation>高级</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <source>Enter password</source>
-        <translation>先进的</translation>
+        <translation>输入密码</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>for &quot;</source>
-        <translation>为了 &quot;</translation>
+        <translation>网络名称：&quot;</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>Wrong password</source>
-        <translation>Wrong password</translation>
+        <translation>密码错误</translation>
     </message>
 </context>
 <context>
@@ -495,30 +493,30 @@ location set</source>
     <message>
         <location filename="../qt/onroad.cc" line="202"/>
         <source>km/h</source>
-        <translation>公里/小时</translation>
+        <translation>km/h</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="202"/>
         <source>mph</source>
-        <translation>英里/小时</translation>
+        <translation>mph</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="269"/>
         <location filename="../qt/onroad.cc" line="272"/>
         <source>MAX</source>
-        <translation>最大限度</translation>
+        <translation>最高定速</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="316"/>
         <location filename="../qt/onroad.cc" line="319"/>
         <source>SPEED</source>
-        <translation>速度</translation>
+        <translation>SPEED</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="322"/>
         <location filename="../qt/onroad.cc" line="325"/>
         <source>LIMIT</source>
-        <translation>限制</translation>
+        <translation>LIMIT</translation>
     </message>
 </context>
 <context>
@@ -544,7 +542,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="86"/>
         <source>Pair your device to your comma account</source>
-        <translation>将您的设备与您的逗号账户配对</translation>
+        <translation>将您的设备与comma账号配对</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="91"/>
@@ -574,12 +572,12 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="189"/>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>成为 connect.comma.ai 的逗号主要会员</translation>
+        <translation>打开connect.comma.ai以注册comma prime会员</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="196"/>
         <source>PRIME FEATURES:</source>
-        <translation>主要特点：</translation>
+        <translation>comma prime特权：</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
@@ -589,7 +587,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
         <source>1 year of storage</source>
-        <translation>1年存储</translation>
+        <translation>1年数据存储</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
@@ -602,12 +600,12 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="123"/>
         <source>✓ SUBSCRIBED</source>
-        <translation>✓ 订阅</translation>
+        <translation>✓ 已订阅</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="129"/>
         <source>comma prime</source>
-        <translation>逗号素数</translation>
+        <translation>comma prime</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="135"/>
@@ -617,7 +615,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="148"/>
         <source>COMMA POINTS</source>
-        <translation>逗号分</translation>
+        <translation>COMMA POINTS点数</translation>
     </message>
 </context>
 <context>
@@ -635,7 +633,7 @@ location set</source>
     <message>
         <location filename="../qt/util.cc" line="21"/>
         <source>dashcam</source>
-        <translation>行车记录器</translation>
+        <translation>行车记录仪</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="21"/>
@@ -673,17 +671,17 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="38"/>
         <source>Resetting device...</source>
-        <translation>正在重置设备...</translation>
+        <translation>正在重置设备……</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="53"/>
         <source>System Reset</source>
-        <translation>系统重置</translation>
+        <translation>恢复出厂设置</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="59"/>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>触发系统重置。 按确认删除所有内容和设置。 按取消恢复启动。</translation>
+        <translation>已触发系统重置：确认以删除所有内容和设置。取消以正常启动设备。</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="68"/>
@@ -703,7 +701,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="88"/>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>无法挂载数据分区。 按确认重置您的设备。</translation>
+        <translation>无法挂载数据分区。 确认以重置您的设备。</translation>
     </message>
 </context>
 <context>
@@ -735,7 +733,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="343"/>
         <source>Toggles</source>
-        <translation>切换</translation>
+        <translation>设定</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="344"/>
@@ -758,7 +756,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="79"/>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>使用安全带在汽车中为您的设备供电或自行承担风险。</translation>
+        <translation>请使用car harness线束为您的设备供电，或自行承担风险。</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="92"/>
@@ -775,28 +773,28 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="117"/>
         <source>Getting Started</source>
-        <translation>入门</translation>
+        <translation>开始设置</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="122"/>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>在我们上路之前，让我们完成安装并介绍一些细节。</translation>
+        <translation>开始旅程之前，让我们完成安装并介绍一些细节。</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="147"/>
         <source>Connect to Wi-Fi</source>
-        <translation>连接到无线网络</translation>
+        <translation>连接到WiFi</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="165"/>
         <location filename="../qt/setup/setup.cc" line="263"/>
         <source>Back</source>
-        <translation>后退</translation>
+        <translation>返回</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="182"/>
         <source>Continue without Wi-Fi</source>
-        <translation>在没有 Wi-Fi 的情况下继续</translation>
+        <translation>不连接WiFi并继续</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="184"/>
@@ -811,12 +809,12 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="248"/>
         <source>Dashcam</source>
-        <translation>行车记录器</translation>
+        <translation>Dashcam（行车记录仪）</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="253"/>
         <source>Custom Software</source>
-        <translation>定制的软件</translation>
+        <translation>自定义软件</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
@@ -826,12 +824,12 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
         <source>for Custom Software</source>
-        <translation>定制软件</translation>
+        <translation>以下载自定义软件</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="303"/>
         <source>Downloading...</source>
-        <translation>正在下载...</translation>
+        <translation>正在下载……</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="315"/>
@@ -841,7 +839,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="321"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>确保输入的 URL 有效，并且设备的互联网连接良好。</translation>
+        <translation>请确保互联网连接良好且输入的URL有效。</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="334"/>
@@ -864,7 +862,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="236"/>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>将您的设备与 comma connect (connect.comma.ai) 配对并领取您的 comma prime 优惠。</translation>
+        <translation>将您的设备与comma connect（connect.comma.ai）配对并领取您的comma prime优惠。</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="243"/>
@@ -878,7 +876,7 @@ location set</source>
         <location filename="../qt/sidebar.cc" line="67"/>
         <location filename="../qt/sidebar.cc" line="69"/>
         <source>CONNECT</source>
-        <translation>连接</translation>
+        <translation>CONNECT</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="67"/>
@@ -889,49 +887,49 @@ location set</source>
         <location filename="../qt/sidebar.cc" line="69"/>
         <location filename="../qt/sidebar.cc" line="82"/>
         <source>ONLINE</source>
-        <translation>在线的</translation>
+        <translation>在线</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="69"/>
         <source>ERROR</source>
-        <translation>错误</translation>
+        <translation>连接出错</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="73"/>
         <location filename="../qt/sidebar.cc" line="76"/>
         <location filename="../qt/sidebar.cc" line="78"/>
         <source>TEMP</source>
-        <translation>温度</translation>
+        <translation>设备温度</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="73"/>
         <source>HIGH</source>
-        <translation>高的</translation>
+        <translation>过热</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="76"/>
         <source>GOOD</source>
-        <translation>好的</translation>
+        <translation>良好</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="78"/>
         <source>OK</source>
-        <translation>好的</translation>
+        <translation>一般</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="82"/>
         <source>VEHICLE</source>
-        <translation>车辆</translation>
+        <translation>车辆连接</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
         <source>NO</source>
-        <translation>未连接</translation>
+        <translation>无</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
         <source>PANDA</source>
-        <translation>熊猫</translation>
+        <translation>PANDA</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="86"/>
@@ -941,7 +939,7 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.cc" line="86"/>
         <source>SEARCH</source>
-        <translation>搜索</translation>
+        <translation>搜索中</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="37"/>
@@ -956,7 +954,7 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.h" line="39"/>
         <source>ETH</source>
-        <translation>以太網</translation>
+        <translation>以太网</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="40"/>
@@ -984,32 +982,32 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="235"/>
         <source>Git Branch</source>
-        <translation>Git 分支</translation>
+        <translation>Git Branch</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="236"/>
         <source>Git Commit</source>
-        <translation>Git 提交</translation>
+        <translation>Git Commit</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="237"/>
         <source>OS Version</source>
-        <translation>操作系统版本</translation>
+        <translation>系统版本</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="238"/>
         <source>Version</source>
-        <translation>版本</translation>
+        <translation>软件版本</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="239"/>
         <source>Last Update Check</source>
-        <translation>最后更新检查</translation>
+        <translation>上次检查更新</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="239"/>
         <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation>上次 openpilot 成功检查更新的时间。 更新程序仅在汽车关闭时运行。</translation>
+        <translation>上一次成功检查更新的时间。更新程序仅在汽车熄火时运行。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="240"/>
@@ -1019,7 +1017,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="245"/>
         <source>CHECKING</source>
-        <translation>正在检查</translation>
+        <translation>正在检查更新</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
@@ -1039,7 +1037,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="268"/>
         <source>failed to fetch update</source>
-        <translation>未能获取更新</translation>
+        <translation>获取更新失败</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="269"/>
@@ -1053,12 +1051,12 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
         <source>SSH Keys</source>
-        <translation>SSH 密钥</translation>
+        <translation>SSH密钥</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>警告：这将授予对 GitHub 设置中所有公钥的 SSH 访问权限。 切勿输入您自己以外的 GitHub 用户名。 逗号员工永远不会要求您添加他们的 GitHub 用户名。</translation>
+        <translation>警告：这将授予SSH访问权限给您GitHub设置中的所有公钥。切勿输入您自己以外的GitHub用户名。comma员工永远不会要求您添加他们的GitHub用户名。</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="13"/>
@@ -1069,7 +1067,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="14"/>
         <source>Enter your GitHub username</source>
-        <translation>输入你的 GitHub 用户名</translation>
+        <translation>输入您的GitHub用户名</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="16"/>
@@ -1079,12 +1077,12 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="34"/>
         <source>REMOVE</source>
-        <translation>消除</translation>
+        <translation>删除</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="50"/>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>用户名“%1”在 GitHub 上没有密钥</translation>
+        <translation>用户名“%1”在GitHub上没有密钥</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="54"/>
@@ -1094,7 +1092,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="56"/>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>GitHub 上不存在用户名“%1”</translation>
+        <translation>GitHub上不存在用户名“%1”</translation>
     </message>
 </context>
 <context>
@@ -1102,7 +1100,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.h" line="13"/>
         <source>Enable SSH</source>
-        <translation>启用 SSH</translation>
+        <translation>启用SSH</translation>
     </message>
 </context>
 <context>
@@ -1120,7 +1118,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="111"/>
         <source>Scroll to accept</source>
-        <translation>滑动接受</translation>
+        <translation>滑动以接受</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="126"/>
@@ -1133,12 +1131,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="33"/>
         <source>Enable openpilot</source>
-        <translation>启用 openpilot</translation>
+        <translation>启用openpilot</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="34"/>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>使用 openpilot 系统进行自适应巡航控制和车道保持驾驶员辅助。 任何时候都需要您注意使用此功能。 更改此设置在汽车断电时生效。</translation>
+        <translation>使用openpilot进行自适应巡航和车道保持辅助。使用此功能时您必须时刻保持注意力。该设置的更改在熄火时生效。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="39"/>
@@ -1148,7 +1146,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="40"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>当您的车辆在以超过 31 英里/小时（50 公里/小时）的速度行驶时在检测到的车道线上漂移而没有激活转向信号时，接收提醒以返回车道。</translation>
+        <translation>车速超过31mph（50km/h）时，若检测到车辆越过车道线且未打转向灯，系统将发出警告以提醒您返回车道。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="45"/>
@@ -1158,57 +1156,57 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="46"/>
         <source>Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.</source>
-        <translation>允许 openpilot 遵守左侧交通惯例并在右侧驾驶座上执行驾驶员监控。</translation>
+        <translation>允许openpilot遵守左侧交通惯例并在右侧驾驶座上执行驾驶员监控。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="51"/>
         <source>Use Metric System</source>
-        <translation>使用公制</translation>
+        <translation>使用公制单位</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="52"/>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>以公里/小时而不是英里/小时显示速度。</translation>
+        <translation>显示车速时，以km/h代替mph。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="57"/>
         <source>Record and Upload Driver Camera</source>
-        <translation>记录和上传司机摄像头</translation>
+        <translation>录制并上传驾驶员摄像头</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="58"/>
         <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
-        <translation>从面向驾驶员的摄像头上传数据，帮助改进驾驶员监控算法。</translation>
+        <translation>上传驾驶员摄像头的数据，帮助改进驾驶员监控算法。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="63"/>
         <source>Disengage On Accelerator Pedal</source>
-        <translation>踩油门解除</translation>
+        <translation>踩油门时取消控制</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="64"/>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>启用后，踩下油门踏板将解除 openpilot。</translation>
+        <translation>启用后，踩下油门踏板将取消openpilot。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="70"/>
         <source>Show ETA in 24h format</source>
-        <translation>以 24 小时格式显示 ETA</translation>
+        <translation>以24小时格式显示预计到达时间</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="71"/>
         <source>Use 24h format instead of am/pm</source>
-        <translation>使用 24 小时制代替上午/下午</translation>
+        <translation>使用24小时制代替am/pm</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="83"/>
         <source>openpilot Longitudinal Control</source>
-        <translation>openpilot 纵向控制</translation>
+        <translation>openpilot纵向控制</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="84"/>
         <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>openpilot 将禁用汽车的雷达并接管油门和刹车的控制。 警告：这会禁用 AEB！</translation>
+        <translation>openpilot将禁用车辆的雷达并接管油门和刹车的控制。警告：AEB将被禁用！</translation>
     </message>
 </context>
 <context>
@@ -1221,12 +1219,12 @@ location set</source>
     <message>
         <location filename="../qt/setup/updater.cc" line="29"/>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>需要操作系统更新。 将您的设备连接到 Wi-Fi，以获得最快的更新体验。 下载大小约为 1GB。</translation>
+        <translation>操作系统需要更新。请将您的设备连接到WiFi以获取更快的更新体验。下载大小约为1GB。</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="40"/>
         <source>Connect to Wi-Fi</source>
-        <translation>连接到无线网络</translation>
+        <translation>连接到WiFi</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="47"/>
@@ -1236,12 +1234,12 @@ location set</source>
     <message>
         <location filename="../qt/setup/updater.cc" line="64"/>
         <source>Back</source>
-        <translation>后退</translation>
+        <translation>返回</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="80"/>
         <source>Loading...</source>
-        <translation>正在加载...</translation>
+        <translation>正在加载……</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="94"/>
@@ -1260,12 +1258,12 @@ location set</source>
         <location filename="../qt/offroad/networking.cc" line="210"/>
         <location filename="../qt/offroad/networking.cc" line="263"/>
         <source>Scanning for networks...</source>
-        <translation>正在扫描网络...</translation>
+        <translation>正在扫描网络……</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="289"/>
         <source>CONNECTING...</source>
-        <translation>正在连接...</translation>
+        <translation>正在连接……</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="296"/>
@@ -1275,7 +1273,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
         <source>Forget Wi-Fi Network &quot;</source>
-        <translation>忘记 Wi-Fi 网络&quot;</translation>
+        <translation>忘记WiFi网络&quot;</translation>
     </message>
 </context>
 </TS>
