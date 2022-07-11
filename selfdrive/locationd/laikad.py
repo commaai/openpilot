@@ -105,22 +105,20 @@ class Laikad:
       if report.gpsWeek > 0:
         self.got_first_ublox_msg = True
         latest_msg_t = GPSTime(report.gpsWeek, report.rcvTow)
-
         if self.auto_fetch_orbits:
           self.fetch_orbits(latest_msg_t, block)
-      if int(t) % 5 == 0:
-        print(t)
 
       new_meas = read_raw_ublox(report)
       # Filter measurements with unexpected pseudoranges for GPS and GLONASS satellites
       new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
 
       processed_measurements = process_measurements(new_meas, self.astro_dog)
+
       est_pos = self.get_est_pos(t, processed_measurements)
 
-      converged = all(np.sqrt(self.gnss_kf.P.diagonal()[GStates.ECEF_POS]) < 50)
-
       corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, allow_incomplete_delay=False) if len(est_pos) > 0 else []
+
+      converged = all(np.sqrt(self.gnss_kf.P.diagonal()[GStates.ECEF_POS]) < 50)
       use_corrected = len(corrected_measurements) > 0 or converged
       measurements_for_kf = corrected_measurements if use_corrected else processed_measurements
 
