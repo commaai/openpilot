@@ -862,7 +862,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="236"/>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>将您的设备与comma connect（connect.comma.ai）配对并领取您的comma prime优惠。</translation>
+        <translation>将您的设备与comma connect （connect.comma.ai）配对并领取您的comma prime优惠。</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="243"/>
