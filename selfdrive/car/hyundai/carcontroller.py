@@ -52,7 +52,12 @@ class CarController:
     hud_control = CC.hudControl
 
     # Steering Torque
-    new_steer = int(round(actuators.steer * self.params.STEER_MAX))
+
+    # These cars have significantly more torque than most HKG.  Limit to 70% of max.
+    steer = actuators.steer
+    if self.CP.carFingerprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV):
+      steer = clip(steer, -0.7, 0.7)
+    new_steer = int(round(steer * self.params.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
     self.steer_rate_limited = new_steer != apply_steer
 
@@ -69,6 +74,9 @@ class CarController:
     if self.CP.carFingerprint in HDA2_CAR:
       # steering control
       can_sends.append(hda2can.create_lkas(self.packer, CC.enabled, self.frame, CC.latActive, apply_steer))
+
+      if self.frame % 5 == 0:
+        can_sends.append(hda2can.create_cam_0x2a4(self.packer, self.frame, CS.cam_0x2a4))
 
       # cruise cancel
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
