@@ -190,8 +190,8 @@ class Laikad:
 
   def init_gnss_localizer(self, est_pos):
     x_initial, p_initial_diag = np.copy(GNSSKalman.x_initial), np.copy(np.diagonal(GNSSKalman.P_initial))
-    # x_initial[GStates.ECEF_POS] = est_pos
-    # p_initial_diag[GStates.ECEF_POS] = 1000 ** 2
+    x_initial[GStates.ECEF_POS] = est_pos
+    p_initial_diag[GStates.ECEF_POS] = 1e4 ** 2
     self.gnss_kf.init_state(x_initial, covs_diag=p_initial_diag)
 
   def fetch_orbits(self, t: GPSTime, block):
