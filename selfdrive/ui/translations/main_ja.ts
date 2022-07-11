@@ -382,7 +382,7 @@ location set</source>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="282"/>
         <source>no recent destinations</source>
-        <translation>最寄りの目的地がありません</translation>
+        <translation>最近の目的地履歴がありません</translation>
     </message>
 </context>
 <context>
