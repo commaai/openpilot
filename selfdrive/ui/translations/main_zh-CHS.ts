@@ -978,8 +978,7 @@ location set</source>
     </message>
 </context>
 <context>
-    <name>
-Control</name>
+    <name>SshControl</name>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
         <source>SSH Keys</source>
