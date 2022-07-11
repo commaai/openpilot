@@ -92,7 +92,7 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="140"/>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>openpilot を利用するためには、利用規約に同意する必要があります。</translation>
+        <translation>openpilot をご利用される前に、利用規約に同意する必要があります。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="149"/>
