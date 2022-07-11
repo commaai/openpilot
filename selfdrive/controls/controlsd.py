@@ -602,14 +602,14 @@ class Controls:
         lac_log.saturated = abs(actuators.steer) >= 0.9
 
     # Send a "steering required alert" if saturation count has reached the limit
-    if lac_log.active and not CS.steeringPressed and self.CP.lateralTuning.which() == 'torque':
+    if lac_log.active and not CS.steeringPressed and self.CP.lateralTuning.which() == 'torque' and not self.joystick_mode:
       undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
       turning = abs(lac_log.desiredLateralAccel) > 1.0
       good_speed = CS.vEgo > 5
       max_torque = abs(self.last_actuators.steer) > 0.99
       if undershooting and turning and good_speed and max_torque:
         self.events.add(EventName.steerSaturated)
-    elif lac_log.active and lac_log.saturated and not CS.steeringPressed:
+    elif lac_log.active and not CS.steeringPressed and lac_log.saturated:
       dpath_points = lat_plan.dPathPoints
       if len(dpath_points):
         # Check if we deviated from the path
