@@ -12,7 +12,6 @@ from typing import List, Optional
 import numpy as np
 
 from cereal import log, messaging
-from common.numpy_fast import clip
 from common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
@@ -29,10 +28,7 @@ from system.swaglog import cloudlog
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
 CACHE_VERSION = 0.1
-POS_FIX_RESIDUAL_THRESHOLD = 100.0
-# To help kalman filter convergence
-RESIDUAL_THRESHOLD = 100
-RESIDUAL_WEIGHT = 1/6e6
+RESIDUAL_THRESHOLD = 100.
 
 
 class Laikad:
@@ -92,11 +88,11 @@ class Laikad:
       cloudlog.debug("Cache saved")
       self.last_cached_t = t
 
-  def update_pos_fix(self, t, processed_measurements):
+  def get_est_pos(self, t, processed_measurements):
     if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
       min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 5
       pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
-      if len(pos_fix) > 0 and np.median(np.abs(pos_fix_residual)) < POS_FIX_RESIDUAL_THRESHOLD:
+      if len(pos_fix) > 0 and np.median(np.abs(pos_fix_residual)) < RESIDUAL_THRESHOLD:
         self.last_pos_fix = pos_fix[:3]
         self.last_pos_residual = pos_fix_residual
         self.last_pos_fix_t = t
@@ -117,13 +113,14 @@ class Laikad:
       new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
 
       processed_measurements = process_measurements(new_meas, self.astro_dog)
-      self.update_pos_fix(t, processed_measurements)
-      est_pos = self.gnss_kf.x[GStates.ECEF_POS]
+      est_pos = self.get_est_pos(t, processed_measurements)
 
-      allow_incomplete_delay = any(self.gnss_kf.P[GStates.ECEF_POS].diagonal() > 1e3)
+      converged = all(np.sqrt(self.gnss_kf.P.diagonal()[GStates.ECEF_POS]) < 10)
+      # est_pos = self.last_pos_fix  # self.gnss_kf.x[GStates.ECEF_POS] if converged else
+      # print("converged", converged)
+      corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, allow_incomplete_delay=False) if len(est_pos) > 0 else []
+      measurements_for_kf = corrected_measurements if len(corrected_measurements) > 0 or converged else processed_measurements
 
-      corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, allow_incomplete_delay=allow_incomplete_delay) if len(est_pos) > 0 else []
-      measurements_for_kf = corrected_measurements if len(corrected_measurements) > 0 else processed_measurements
       self.update_localizer(est_pos, t, measurements_for_kf)
 
       kf_valid = all(self.kf_valid(t))
@@ -133,9 +130,9 @@ class Laikad:
       p = self.gnss_kf.P.diagonal()
       pos_std = np.sqrt(p[GStates.ECEF_POS])
       vel_std = np.sqrt(p[GStates.ECEF_VELOCITY])
-      # if allow_incomplete_delay and self.last_pos_fix is not None and len(self.last_pos_fix) == 3:
-      #
-      #   print("pos diff", np.linalg.norm(np.array(self.last_pos_fix)- np.array(ecef_pos)), "allow_incomplete_delay", allow_incomplete_delay, "proc/corrected meas len", len(processed_measurements), len(corrected_measurements), "pos std", self.gnss_kf.P[GStates.ECEF_POS].diagonal())
+      if not converged and self.last_pos_fix is not None and len(self.last_pos_fix) == 3:
+
+        print("pos diff", np.linalg.norm(np.array(self.last_pos_fix)- np.array(ecef_pos)), "converged", converged, "proc/corrected meas len", len(processed_measurements), len(corrected_measurements), "pos std", self.gnss_kf.P.diagonal()[GStates.ECEF_POS])
       # elif (int(ublox_mono_time) % 5 ==0 or len(corrected_measurements) == 0) and self.last_pos_fix is not None and len(self.last_pos_fix) == 3:
       #   print("pos diff", np.linalg.norm(np.array(self.last_pos_fix) - np.array(ecef_pos)), "proc/corr meas len",
       #         len(processed_measurements), len(corrected_measurements))
@@ -177,7 +174,10 @@ class Laikad:
         return
     if len(measurements) > 0:
       residuals = kf_add_observations(self.gnss_kf, t, measurements)
-      self.kf_check_residual(residuals)
+      kf_residual_correct = self.kf_check_residual(residuals)
+      # If kalman filter was reinitialized add observations again
+      if not kf_residual_correct:
+        kf_add_observations(self.gnss_kf, t, measurements)
     else:
       # Ensure gnss filter is updated even with no new measurements
       self.gnss_kf.predict(t)
@@ -190,8 +190,8 @@ class Laikad:
 
   def init_gnss_localizer(self, est_pos):
     x_initial, p_initial_diag = np.copy(GNSSKalman.x_initial), np.copy(np.diagonal(GNSSKalman.P_initial))
-    x_initial[GStates.ECEF_POS] = est_pos
-    p_initial_diag[GStates.ECEF_POS] = 1000 ** 2
+    # x_initial[GStates.ECEF_POS] = est_pos
+    # p_initial_diag[GStates.ECEF_POS] = 1000 ** 2
     self.gnss_kf.init_state(x_initial, covs_diag=p_initial_diag)
 
   def fetch_orbits(self, t: GPSTime, block):
@@ -218,11 +218,12 @@ class Laikad:
 
   def kf_check_residual(self, residuals):
     # if median residual is too large increase the Covariance matrix to improve convergence
-    residual_median = np.median(np.abs(residuals))
-    if residual_median > RESIDUAL_THRESHOLD:
-      a = clip(residual_median * RESIDUAL_WEIGHT, 1e-5, 1)
-      p = self.gnss_kf.P * (1 + a) + self.gnss_kf.P_initial * (0.1+a)
+    if np.median(np.abs(residuals)) > RESIDUAL_THRESHOLD:
+      print("residual!")
+      p = self.gnss_kf.P * 1.5 + self.gnss_kf.P_initial * 0.1
       self.gnss_kf.init_state(self.gnss_kf.x, covs=p, filter_time=self.gnss_kf.filter.get_filter_time())
+      return False
+    return True
 
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
