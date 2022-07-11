@@ -415,7 +415,7 @@
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
-        <source>Get turn-by-turn directions displayed and more with a comma 
+        <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
         <translation>使用逗号获取显示的详细路线和更多信息
 主要订阅。 立即注册：https://connect.comma.ai</translation>

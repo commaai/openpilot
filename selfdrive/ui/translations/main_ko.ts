@@ -415,7 +415,7 @@
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
-        <source>Get turn-by-turn directions displayed and more with a comma 
+        <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
         <translation>자세한 경로안내를 원하시면 comma prime을 구독하세요.
 등록：https://connect.comma.ai</translation>
