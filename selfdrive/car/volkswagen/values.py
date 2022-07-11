@@ -119,7 +119,13 @@ class VWCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.ARTEON_MK1: VWCarInfo("Volkswagen Arteon 2018, 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-  CAR.ATLAS_MK1: VWCarInfo("Volkswagen Atlas 2018-19, 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.ATLAS_MK1: [
+    VWCarInfo("Volkswagen Atlas 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Atlas Cross Sport 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Teramont 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Teramont Cross Sport 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Teramont X 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  ],
   CAR.GOLF_MK7: [
     VWCarInfo("Volkswagen e-Golf 2014, 2018-20"),
     VWCarInfo("Volkswagen Golf 2015-20"),
