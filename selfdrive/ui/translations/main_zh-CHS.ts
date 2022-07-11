@@ -319,7 +319,7 @@
     <message>
         <location filename="../installer/installer.cc" line="56"/>
         <source>Installing...</source>
-        <translation>正在安装...</translation>
+        <translation>正在安装……</translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="144"/>
@@ -938,7 +938,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="224"/>
         <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation>上次 openpilot 成功检查更新的时间。 更新程序仅在汽车关闭时运行。</translation>
+        <translation>上一次成功检查更新的时间。更新程序仅在汽车熄火时运行。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="225"/>
@@ -948,7 +948,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="230"/>
         <source>CHECKING</source>
-        <translation>正在检查</translation>
+        <translation>正在检查更新</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="237"/>
@@ -968,7 +968,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>failed to fetch update</source>
-        <translation>未能获取更新</translation>
+        <translation>获取更新失败</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="254"/>
@@ -988,7 +988,7 @@ Control</name>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>警告：这将授予对 GitHub 设置中所有公钥的 SSH 访问权限。 切勿输入您自己以外的 GitHub 用户名。 逗号员工永远不会要求您添加他们的 GitHub 用户名。</translation>
+        <translation>警告：这将授予SSH访问权限给您GitHub设置中的所有公钥。切勿输入您自己以外的GitHub用户名。comma员工永远不会要求您添加他们的GitHub用户名。</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="13"/>
@@ -999,7 +999,7 @@ Control</name>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="14"/>
         <source>Enter your GitHub username</source>
-        <translation>输入你的 GitHub 用户名</translation>
+        <translation>输入您的GitHub用户名</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="16"/>
@@ -1009,12 +1009,12 @@ Control</name>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="34"/>
         <source>REMOVE</source>
-        <translation>消除</translation>
+        <translation>删除</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="50"/>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>用户名“%1”在 GitHub 上没有密钥</translation>
+        <translation>用户名“%1”在GitHub上没有密钥</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="54"/>
@@ -1024,7 +1024,7 @@ Control</name>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="56"/>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>GitHub 上不存在用户名“%1”</translation>
+        <translation>GitHub上不存在用户名“%1”</translation>
     </message>
 </context>
 <context>
@@ -1050,7 +1050,7 @@ Control</name>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="111"/>
         <source>Scroll to accept</source>
-        <translation>滑动接受</translation>
+        <translation>滑动以接受</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="126"/>
@@ -1063,12 +1063,12 @@ Control</name>
     <message>
         <location filename="../qt/offroad/settings.cc" line="32"/>
         <source>Enable openpilot</source>
-        <translation>启用 openpilot</translation>
+        <translation>启用openpilot</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="33"/>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>使用 openpilot 系统进行自适应巡航控制和车道保持驾驶员辅助。 任何时候都需要您注意使用此功能。 更改此设置在汽车断电时生效。</translation>
+        <translation>使用openpilot进行自适应巡航和车道保持辅助。使用此功能时您必须时刻保持注意力。该设置的更改在熄火时生效。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="38"/>
@@ -1078,7 +1078,7 @@ Control</name>
     <message>
         <location filename="../qt/offroad/settings.cc" line="39"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>当您的车辆在以超过 31 英里/小时（50 公里/小时）的速度行驶时在检测到的车道线上漂移而没有激活转向信号时，接收提醒以返回车道。</translation>
+        <translation>车速超过31mph（50km/h）时，若检测到车辆越过车道线且未打转向灯，系统将发出警告以提醒您返回车道。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="44"/>
@@ -1088,57 +1088,57 @@ Control</name>
     <message>
         <location filename="../qt/offroad/settings.cc" line="45"/>
         <source>Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.</source>
-        <translation>允许 openpilot 遵守左侧交通惯例并在右侧驾驶座上执行驾驶员监控。</translation>
+        <translation>允许openpilot遵守左侧交通惯例并在右侧驾驶座上执行驾驶员监控。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="50"/>
         <source>Use Metric System</source>
-        <translation>使用公制</translation>
+        <translation>使用公制单位</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="51"/>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>以公里/小时而不是英里/小时显示速度。</translation>
+        <translation>显示车速时，以km/h代替mph。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="56"/>
         <source>Record and Upload Driver Camera</source>
-        <translation>记录和上传司机摄像头</translation>
+        <translation>录制并上传驾驶员摄像头</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="57"/>
         <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
-        <translation>从面向驾驶员的摄像头上传数据，帮助改进驾驶员监控算法。</translation>
+        <translation>上传驾驶员摄像头的数据，帮助改进驾驶员监控算法。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="62"/>
         <source>Disengage On Accelerator Pedal</source>
-        <translation>踩油门解除</translation>
+        <translation>踩油门时取消控制</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="63"/>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>启用后，踩下油门踏板将解除 openpilot。</translation>
+        <translation>启用后，踩下油门踏板将取消openpilot。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="69"/>
         <source>Show ETA in 24h format</source>
-        <translation>以 24 小时格式显示 ETA</translation>
+        <translation>以24小时格式显示预计到达时间</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="70"/>
         <source>Use 24h format instead of am/pm</source>
-        <translation>使用 24 小时制代替上午/下午</translation>
+        <translation>使用24小时制代替am/pm</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="82"/>
         <source>openpilot Longitudinal Control</source>
-        <translation>openpilot 纵向控制</translation>
+        <translation>openpilot纵向控制</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="83"/>
         <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>openpilot 将禁用汽车的雷达并接管油门和刹车的控制。 警告：这会禁用 AEB！</translation>
+        <translation>openpilot将禁用车辆的雷达并接管油门和刹车的控制。警告：AEB将被禁用！</translation>
     </message>
 </context>
 <context>
@@ -1151,12 +1151,12 @@ Control</name>
     <message>
         <location filename="../qt/setup/updater.cc" line="29"/>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>需要操作系统更新。 将您的设备连接到 Wi-Fi，以获得最快的更新体验。 下载大小约为 1GB。</translation>
+        <translation>操作系统需要更新。请将您的设备连接到WiFi以获取更快的更新体验。下载大小约为1GB。</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="40"/>
         <source>Connect to Wi-Fi</source>
-        <translation>连接到无线网络</translation>
+        <translation>连接到WiFi</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="47"/>
@@ -1166,12 +1166,12 @@ Control</name>
     <message>
         <location filename="../qt/setup/updater.cc" line="64"/>
         <source>Back</source>
-        <translation>后退</translation>
+        <translation>返回</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="80"/>
         <source>Loading...</source>
-        <translation>正在加载...</translation>
+        <translation>正在加载……</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="94"/>
@@ -1190,12 +1190,12 @@ Control</name>
         <location filename="../qt/offroad/networking.cc" line="210"/>
         <location filename="../qt/offroad/networking.cc" line="263"/>
         <source>Scanning for networks...</source>
-        <translation>正在扫描网络...</translation>
+        <translation>正在扫描网络……</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="289"/>
         <source>CONNECTING...</source>
-        <translation>正在连接...</translation>
+        <translation>正在连接……</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="296"/>
@@ -1205,7 +1205,7 @@ Control</name>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
         <source>Forget Wi-Fi Network &quot;</source>
-        <translation>忘记 Wi-Fi 网络&quot;</translation>
+        <translation>忘记WiFi网络&quot;</translation>
     </message>
 </context>
 </TS>
