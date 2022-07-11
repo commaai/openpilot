@@ -1129,7 +1129,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="82"/>
         <source>openpilot Longitudinal Control</source>
-        <translation>openpilot による垂直方向の制御</translation>
+        <translation>openpilot 縦方向制御</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="83"/>
