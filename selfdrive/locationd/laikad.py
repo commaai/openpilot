@@ -179,7 +179,7 @@ class Laikad:
       kf_residual_correct = self.kf_check_residual(residuals)
       # If kalman filter was reinitialized add observations again
       if not kf_residual_correct:
-        residuals = kf_add_observations(self.gnss_kf, t, measurements)
+        kf_add_observations(self.gnss_kf, t, measurements)
     else:
       # Ensure gnss filter is updated even with no new measurements
       self.gnss_kf.predict(t)
@@ -221,7 +221,6 @@ class Laikad:
   def kf_check_residual(self, residuals):
     # if median residual is too large increase the Covariance matrix to improve convergence
     if np.median(np.abs(residuals)) > RESIDUAL_THRESHOLD:
-      print("residual!")
       p = self.gnss_kf.P * 1.5 + self.gnss_kf.P_initial * 0.1
       self.gnss_kf.init_state(self.gnss_kf.x, covs=p, filter_time=self.gnss_kf.filter.get_filter_time())
       return False
