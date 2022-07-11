@@ -16,6 +16,7 @@ class CarController:
     self.lkas_active_prev = False
 
     self.packer = CANPacker(dbc_name)
+    self.params = CarControllerParams(CP)
 
   def update(self, CC, CS, low_speed_alert):
     can_sends = []
@@ -40,8 +41,8 @@ class CarController:
     # steering
     if self.frame % 2 == 0:
       # steer torque
-      new_steer = int(round(CC.actuators.steer * CarControllerParams.STEER_MAX))
-      apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, CarControllerParams)
+      new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
+      apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
       if not lkas_active:
         apply_steer = 0
       self.steer_rate_limited = new_steer != apply_steer
@@ -56,6 +57,6 @@ class CarController:
     self.lkas_active_prev = lkas_active
 
     new_actuators = CC.actuators.copy()
-    new_actuators.steer = self.apply_steer_last / CarControllerParams.STEER_MAX
+    new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
 
     return new_actuators, can_sends
