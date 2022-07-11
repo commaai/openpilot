@@ -118,7 +118,16 @@ class VWCarInfo(CarInfo):
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
-  CAR.ARTEON_MK1: VWCarInfo("Volkswagen Arteon 2018, 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.ARTEON_MK1: [
+    VWCarInfo("Volkswagen Arteon 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Arteon Shooting Brake 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Arteon R 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Arteon R Shooting Brake 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Arteon eHybrid Shooting Brake 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen CC Shooting Brake 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  ],
   CAR.ATLAS_MK1: [
     VWCarInfo("Volkswagen Atlas 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Atlas Cross Sport 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
