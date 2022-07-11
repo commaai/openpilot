@@ -70,7 +70,7 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="165"/>
         <source>leave blank for automatic configuration</source>
-        <translation>空白のままにして、自動設定にします。</translation>
+        <translation>空白のままにして、自動設定にします</translation>
     </message>
 </context>
 <context>
@@ -185,17 +185,17 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="137"/>
         <source>Change Language</source>
-        <translation type="unfinished">言語を変更</translation>
+        <translation>言語を変更</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="137"/>
         <source>CHANGE</source>
-        <translation type="unfinished">変更</translation>
+        <translation>変更</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="141"/>
         <source>Select a language</source>
-        <translation type="unfinished">言語を選択</translation>
+        <translation>言語を選択</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="161"/>
@@ -322,7 +322,7 @@
     <message>
         <location filename="../installer/installer.cc" line="56"/>
         <source>Installing...</source>
-        <translation>インストールしています</translation>
+        <translation>インストールしています...</translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="144"/>
@@ -345,27 +345,27 @@
     <message>
         <location filename="../qt/maps/map.cc" line="618"/>
         <source>eta</source>
-        <translation type="unfinished"></translation>
+        <translation>予定到着時間</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="628"/>
         <source>min</source>
-        <translation type="unfinished"></translation>
+        <translation>分</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="632"/>
         <source>hr</source>
-        <translation type="unfinished"></translation>
+        <translation>時間</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="652"/>
         <source>km</source>
-        <translation type="unfinished"></translation>
+        <translation>ｷﾛﾒｰﾄﾙ</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="655"/>
         <source>mi</source>
-        <translation type="unfinished"></translation>
+        <translation>ﾏｲﾙ</translation>
     </message>
 </context>
 <context>
@@ -373,22 +373,22 @@
     <message>
         <location filename="../qt/maps/map.cc" line="421"/>
         <source> km</source>
-        <translation type="unfinished"></translation>
+        <translation> ｷﾛﾒｰﾄﾙ</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="424"/>
         <source> m</source>
-        <translation type="unfinished"></translation>
+        <translation> ﾒｰﾄﾙ</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="432"/>
         <source> mi</source>
-        <translation type="unfinished"></translation>
+        <translation> ﾏｲﾙ</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="435"/>
         <source> ft</source>
-        <translation type="unfinished"></translation>
+        <translation> ﾌｨｰﾄ</translation>
     </message>
 </context>
 <context>
@@ -444,12 +444,12 @@ location set</source>
     <message>
         <location filename="../qt/maps/map.cc" line="178"/>
         <source>Map Loading</source>
-        <translation type="unfinished"></translation>
+        <translation>マップを読み込んでいます</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="195"/>
         <source>Waiting for GPS</source>
-        <translation type="unfinished"></translation>
+        <translation>GPS信号を探しています</translation>
     </message>
 </context>
 <context>
@@ -457,12 +457,12 @@ location set</source>
     <message>
         <location filename="../qt/widgets/input.cc" line="300"/>
         <source>Select</source>
-        <translation type="unfinished">選択</translation>
+        <translation>選択</translation>
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="333"/>
         <source>Cancel</source>
-        <translation type="unfinished">キャンセル</translation>
+        <translation>キャンセル</translation>
     </message>
 </context>
 <context>
