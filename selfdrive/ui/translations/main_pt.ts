@@ -184,15 +184,15 @@
     </message>
     <message>
         <source>Change Language</source>
-        <translation type="obsolete">言語を変更</translation>
+        <translation type="obsolete">Mudar Língua</translation>
     </message>
     <message>
         <source>CHANGE</source>
-        <translation type="obsolete">変更</translation>
+        <translation type="obsolete">MUDAR</translation>
     </message>
     <message>
         <source>Select a language</source>
-        <translation type="obsolete">言語を選択する</translation>
+        <translation type="obsolete">Selecione uma linguagem</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="146"/>
@@ -207,12 +207,12 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="171"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot は、左右に4°、上に5°、下に8°の範囲に設置する必要があります。openpilot は継続的に校正されているので、手動でリセットする必要はほとんどありません。</translation>
+        <translation>o openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 8° para baixo. o openpilot está continuamente calibrando, a redefinição raramente é necessária.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="182"/>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> デバイスは %1° %2 と %3° %4を示しています。</translation>
+        <translation> Seu dispositivo está montado %1° %2 e %3° %4.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="183"/>
@@ -237,22 +237,22 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="195"/>
         <source>Are you sure you want to reboot?</source>
-        <translation>本当に再起動しますか？</translation>
+        <translation>Tem certeza que quer reiniciar？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="202"/>
         <source>Disengage to Reboot</source>
-        <translation>再起動するために離脱します</translation>
+        <translation>Desacione para Reiniciar</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="208"/>
         <source>Are you sure you want to power off?</source>
-        <translation>本当に電源を切っても良いですか？</translation>
+        <translation>Tem certeza que quer desligar？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="215"/>
         <source>Disengage to Power Off</source>
-        <translation>電源を切るために離脱します</translation>
+        <translation>Desacione para Desligar</translation>
     </message>
 </context>
 <context>
@@ -762,22 +762,22 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/setup/setup.cc" line="315"/>
         <source>Download Failed</source>
-        <translation>ダウンロード失敗</translation>
+        <translation>Download Falhou</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="321"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>入力されたURLが有効であること、デバイスがインターネットに接続されていることを確認してください。</translation>
+        <translation>Garanta que a URL inserida é valida, e uma boa conexão à internet.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="334"/>
         <source>Reboot device</source>
-        <translation>デバイスを再起動</translation>
+        <translation>Reiniciar Dispositivo</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="341"/>
         <source>Start over</source>
-        <translation>再スタート</translation>
+        <translation>Inicializar</translation>
     </message>
 </context>
 <context>
