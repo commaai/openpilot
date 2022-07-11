@@ -105,8 +105,11 @@ class Laikad:
       if report.gpsWeek > 0:
         self.got_first_ublox_msg = True
         latest_msg_t = GPSTime(report.gpsWeek, report.rcvTow)
+
         if self.auto_fetch_orbits:
           self.fetch_orbits(latest_msg_t, block)
+      if int(t) % 5 == 0:
+        print(t)
 
       new_meas = read_raw_ublox(report)
       # Filter measurements with unexpected pseudoranges for GPS and GLONASS satellites
