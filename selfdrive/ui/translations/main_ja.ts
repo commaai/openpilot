@@ -130,7 +130,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="103"/>
         <source>PREVIEW</source>
-        <translation>プレビュー</translation>
+        <translation>見る</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="104"/>
@@ -145,7 +145,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="108"/>
         <source>RESET</source>
-        <translation>リセット</translation>
+        <translation>ﾘｾｯﾄ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="111"/>
@@ -160,7 +160,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="118"/>
         <source>REVIEW</source>
-        <translation>レビュー</translation>
+        <translation>見る</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="118"/>
@@ -180,7 +180,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="128"/>
         <source>VIEW</source>
-        <translation>ビュー</translation>
+        <translation>見る</translation>
     </message>
     <message>
         <source>Change Language</source>
