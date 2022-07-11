@@ -520,7 +520,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
         <source>Developer perks</source>
-        <translation>開発者特典</translation>
+        <translation>開発者向け特典</translation>
     </message>
 </context>
 <context>
