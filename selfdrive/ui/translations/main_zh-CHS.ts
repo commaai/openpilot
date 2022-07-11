@@ -876,7 +876,7 @@ location set</source>
         <location filename="../qt/sidebar.cc" line="67"/>
         <location filename="../qt/sidebar.cc" line="69"/>
         <source>CONNECT</source>
-        <translation>CONNECT状态</translation>
+        <translation>CONNECT</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="67"/>
