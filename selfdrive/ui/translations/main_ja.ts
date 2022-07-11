@@ -1109,12 +1109,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="62"/>
         <source>Disengage On Accelerator Pedal</source>
-        <translation>アクセルペダルで解除する</translation>
+        <translation>ｱｸｾﾙ踏むと openpilot をｷｬﾝｾﾙ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="63"/>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>有効な場合 openpilot はアクセルペダルを踏むと解除されます。</translation>
+        <translation>有効な場合は、アクセルを踏むと openpilot をキャンセルします。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="69"/>
