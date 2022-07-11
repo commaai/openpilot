@@ -13,6 +13,7 @@
 #endif
 
 #include "common/params.h"
+#include "common/watchdog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
@@ -132,6 +133,20 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     });
     addItem(regulatoryBtn);
   }
+
+  auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
+  connect(translateBtn, &ButtonControl::clicked, [=]() {
+    QMap<QString, QString> langs = getSupportedLanguages();
+    QString currentLang = QString::fromStdString(Params().get("LanguageSetting"));
+    QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(currentLang), this);
+    if (!selection.isEmpty()) {
+      // put language setting, exit Qt UI, and trigger fast restart
+      Params().put("LanguageSetting", langs[selection].toStdString());
+      qApp->exit(18);
+      watchdog_kick(0);
+    }
+  });
+  addItem(translateBtn);
 
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {
@@ -279,10 +294,6 @@ void SoftwarePanel::updateLabels() {
   osVersionLbl->setText(QString::fromStdString(Hardware::get_os_version()).trimmed());
 }
 
-QWidget *network_panel(QWidget *parent) {
-  return new Networking(parent);
-}
-
 void SettingsWindow::showEvent(QShowEvent *event) {
   panel_widget->setCurrentIndex(0);
   nav_btns->buttons()[0]->setChecked(true);
@@ -328,7 +339,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},
-    {tr("Network"), network_panel(this)},
+    {tr("Network"), new Networking(this)},
     {tr("Toggles"), new TogglesPanel(this)},
     {tr("Software"), new SoftwarePanel(this)},
   };

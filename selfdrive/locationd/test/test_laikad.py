@@ -67,7 +67,7 @@ class TestLaikad(unittest.TestCase):
     gpstime = GPSTime.from_datetime(datetime(2021, month=3, day=1))
     laikad = Laikad()
     laikad.fetch_orbits(gpstime, block=False)
-    laikad.orbit_fetch_future.result(5)
+    laikad.orbit_fetch_future.result(30)
     # Get results and save orbits to laikad:
     laikad.fetch_orbits(gpstime, block=False)
 
@@ -75,13 +75,35 @@ class TestLaikad(unittest.TestCase):
     self.assertIsNotNone(ephem)
 
     laikad.fetch_orbits(gpstime+2*SECS_IN_DAY, block=False)
-    laikad.orbit_fetch_future.result(5)
+    laikad.orbit_fetch_future.result(30)
     # Get results and save orbits to laikad:
     laikad.fetch_orbits(gpstime + 2 * SECS_IN_DAY, block=False)
 
     ephem2 = laikad.astro_dog.orbits['G01'][0]
     self.assertIsNotNone(ephem)
     self.assertNotEqual(ephem, ephem2)
+
+  def test_fetch_orbits_with_wrong_clocks(self):
+    laikad = Laikad()
+
+    def check_has_orbits():
+      self.assertGreater(len(laikad.astro_dog.orbits), 0)
+      ephem = laikad.astro_dog.orbits['G01'][0]
+      self.assertIsNotNone(ephem)
+    real_current_time = GPSTime.from_datetime(datetime(2021, month=3, day=1))
+    wrong_future_clock_time = real_current_time + SECS_IN_DAY
+
+    laikad.fetch_orbits(wrong_future_clock_time, block=True)
+    check_has_orbits()
+    self.assertEqual(laikad.last_fetch_orbits_t, wrong_future_clock_time)
+
+    # Test fetching orbits with earlier time
+    assert real_current_time < laikad.last_fetch_orbits_t
+
+    laikad.astro_dog.orbits = {}
+    laikad.fetch_orbits(real_current_time, block=True)
+    check_has_orbits()
+    self.assertEqual(laikad.last_fetch_orbits_t, real_current_time)
 
   def test_ephemeris_source_in_msg(self):
     data_mock = defaultdict(str)
@@ -116,7 +138,7 @@ class TestLaikad(unittest.TestCase):
     laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT)
     correct_msgs = verify_messages(self.logs, laikad)
 
-    correct_msgs_expected = 560
+    correct_msgs_expected = 555
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
@@ -137,7 +159,7 @@ class TestLaikad(unittest.TestCase):
     # Disable fetch_orbits to test NAV only
     laikad.fetch_orbits = Mock()
     correct_msgs = verify_messages(self.logs, laikad)
-    correct_msgs_expected = 560
+    correct_msgs_expected = 559
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
@@ -146,8 +168,8 @@ class TestLaikad(unittest.TestCase):
     downloader_mock.side_effect = IOError
     laikad = Laikad(auto_update=False)
     correct_msgs = verify_messages(self.logs, laikad)
-    self.assertEqual(256, len(correct_msgs))
-    self.assertEqual(256, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
+    self.assertEqual(16, len(correct_msgs))
+    self.assertEqual(16, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
   def test_laika_get_orbits(self):
     laikad = Laikad(auto_update=False)

@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
+import hashlib
 import json
 import lzma
-import hashlib
-import requests
+import os
 import struct
 import subprocess
 import time
-import os
-from typing import Dict, Generator, Union
+from typing import Dict, Generator, List, Tuple, Union
+
+import requests
+
+import system.hardware.tici.casync as casync
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
+CAIBX_URL = "https://commadist.azureedge.net/agnosupdate/"
 
 
 class StreamingDecompressor:
@@ -74,6 +78,7 @@ def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
     else:
       raise Exception("Unhandled sparse chunk type")
 
+
 # noop wrapper with same API as unsparsify() for non sparse images
 def noop(f: StreamingDecompressor) -> Generator[bytes, None, None]:
   while not f.eof:
@@ -99,28 +104,37 @@ def get_partition_path(target_slot_number: int, partition: dict) -> str:
   return path
 
 
-def verify_partition(target_slot_number: int, partition: Dict[str, Union[str, int]]) -> bool:
-  full_check = partition['full_check']
+def get_raw_hash(path: str, partition_size: int) -> str:
+  raw_hash = hashlib.sha256()
+  pos, chunk_size = 0, 1024 * 1024
+
+  with open(path, 'rb+') as out:
+    while pos < partition_size:
+      n = min(chunk_size, partition_size - pos)
+      raw_hash.update(out.read(n))
+      pos += n
+
+  return raw_hash.hexdigest().lower()
+
+
+def verify_partition(target_slot_number: int, partition: Dict[str, Union[str, int]], force_full_check: bool = False) -> bool:
+  full_check = partition['full_check'] or force_full_check
   path = get_partition_path(target_slot_number, partition)
+
   if not isinstance(partition['size'], int):
     return False
+
   partition_size: int = partition['size']
 
   if not isinstance(partition['hash_raw'], str):
     return False
+
   partition_hash: str = partition['hash_raw']
-  with open(path, 'rb+') as out:
-    if full_check:
-      raw_hash = hashlib.sha256()
 
-      pos, chunk_size = 0, 1024 * 1024
-      while pos < partition_size:
-        n = min(chunk_size, partition_size - pos)
-        raw_hash.update(out.read(n))
-        pos += n
-
-      return raw_hash.hexdigest().lower() == partition_hash.lower()
-    else:
+  if full_check:
+    return get_raw_hash(path, partition_size) == partition_hash.lower()
+  else:
+    with open(path, 'rb+') as out:
       out.seek(partition_size)
       return out.read(64) == partition_hash.lower().encode()
 
@@ -135,21 +149,10 @@ def clear_partition_hash(target_slot_number: int, partition: dict) -> None:
     os.sync()
 
 
-def flash_partition(target_slot_number: int, partition: dict, cloudlog):
-  cloudlog.info(f"Downloading and writing {partition['name']}")
-
-  if verify_partition(target_slot_number, partition):
-    cloudlog.info(f"Already flashed {partition['name']}")
-    return
-
+def extract_compressed_image(target_slot_number: int, partition: dict, cloudlog):
+  path = get_partition_path(target_slot_number, partition)
   downloader = StreamingDecompressor(partition['url'])
 
-  # Clear hash before flashing in case we get interrupted
-  full_check = partition['full_check']
-  if not full_check:
-    clear_partition_hash(target_slot_number, partition)
-
-  path = get_partition_path(target_slot_number, partition)
   with open(path, 'wb+') as out:
     # Flash partition
     last_p = 0
@@ -172,9 +175,76 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
     if out.tell() != partition['size']:
       raise Exception("Uncompressed size mismatch")
 
-    # Write hash after successfull flash
     os.sync()
-    if not full_check:
+
+
+def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
+  path = get_partition_path(target_slot_number, partition)
+  seed_path = path[:-1] + ('b' if path[-1] == 'a' else 'a')
+
+  target = casync.parse_caibx(partition['casync_caibx'])
+
+  sources: List[Tuple[str, casync.ChunkReader, casync.ChunkDict]] = []
+
+  # First source is the current partition.
+  try:
+    raw_hash = get_raw_hash(seed_path, partition['size'])
+    caibx_url = f"{CAIBX_URL}{partition['name']}-{raw_hash}.caibx"
+
+    try:
+      cloudlog.info(f"casync fetching {caibx_url}")
+      sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(casync.parse_caibx(caibx_url)))]
+    except requests.RequestException:
+      cloudlog.error(f"casync failed to load {caibx_url}")
+  except Exception:
+    cloudlog.exception("casync failed to hash seed partition")
+
+  # Second source is the target partition, this allows for resuming
+  sources += [('target', casync.FileChunkReader(path), casync.build_chunk_dict(target))]
+
+  # Finally we add the remote source to download any missing chunks
+  sources += [('remote', casync.RemoteChunkReader(partition['casync_store']), casync.build_chunk_dict(target))]
+
+  last_p = 0
+
+  def progress(cur):
+    nonlocal last_p
+    p = int(cur / partition['size'] * 100)
+    if p != last_p:
+      last_p = p
+      print(f"Installing {partition['name']}: {p}", flush=True)
+
+  stats = casync.extract(target, sources, path, progress)
+  cloudlog.error(f'casync done {json.dumps(stats)}')
+
+  os.sync()
+  if not verify_partition(target_slot_number, partition, force_full_check=True):
+    raise Exception(f"Raw hash mismatch '{partition['hash_raw'].lower()}'")
+
+
+def flash_partition(target_slot_number: int, partition: dict, cloudlog):
+  cloudlog.info(f"Downloading and writing {partition['name']}")
+
+  if verify_partition(target_slot_number, partition):
+    cloudlog.info(f"Already flashed {partition['name']}")
+    return
+
+  # Clear hash before flashing in case we get interrupted
+  full_check = partition['full_check']
+  if not full_check:
+    clear_partition_hash(target_slot_number, partition)
+
+  path = get_partition_path(target_slot_number, partition)
+
+  if 'casync_caibx' in partition:
+    extract_casync_image(target_slot_number, partition, cloudlog)
+  else:
+    extract_compressed_image(target_slot_number, partition, cloudlog)
+
+  # Write hash after successfull flash
+  if not full_check:
+    with open(path, 'wb+') as out:
+      out.seek(partition['size'])
       out.write(partition['hash_raw'].lower().encode())
 
 
@@ -228,8 +298,8 @@ def verify_agnos_update(manifest_path: str, target_slot_number: int) -> bool:
 
 
 if __name__ == "__main__":
-  import logging
   import argparse
+  import logging
 
   parser = argparse.ArgumentParser(description="Flash and verify AGNOS update",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
