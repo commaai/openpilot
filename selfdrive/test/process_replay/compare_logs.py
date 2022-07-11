@@ -46,11 +46,27 @@ def remove_ignored_fields(msg, ignore):
   return msg.as_reader()
 
 
-def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None):
+def get_field_tolerance(diff_field, field_tolerances):
+  for field, tolerance in field_tolerances.items():
+    field_splitted = field.split('.')
+    for i, field_section in enumerate(field_splitted[:len(diff_field)]):
+      if field_section != diff_field[i]:
+        break
+    else:
+      # diff_field matches field in field_tolerances
+      return tolerance
+
+
+def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None, field_tolerances=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
     ignore_msgs = []
+  if ignore_msgs is None:
+    ignore_msgs = []
+  if field_tolerances is None:
+    field_tolerances = {}
+  default_tolerance = EPSILON if tolerance is None else tolerance
 
   log1, log2 = (list(filter(lambda m: m.which() not in ignore_msgs, log)) for log in (log1, log2))
 
@@ -80,10 +96,13 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       def outside_tolerance(diff):
         try:
           if diff[0] == "change":
+            field_tolerance = default_tolerance
+            if (tol := get_field_tolerance(diff[1], field_tolerances)) is not None:
+              field_tolerance = tol
             a, b = diff[2]
             finite = math.isfinite(a) and math.isfinite(b)
             if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
-              return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
+              return abs(a - b) > max(field_tolerance, field_tolerance * max(abs(a), abs(b)))
         except TypeError:
           pass
         return True

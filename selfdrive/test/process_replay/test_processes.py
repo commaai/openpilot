@@ -99,7 +99,7 @@ def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
       raise Exception(f"Route never enabled: {ref_log_path}")
 
   try:
-    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
+    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance, cfg.field_tolerances), log_msgs
   except Exception as e:
     return str(e), log_msgs
 

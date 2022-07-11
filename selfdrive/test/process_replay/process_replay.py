@@ -27,7 +27,7 @@ TIMEOUT = 15
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config', 'environ', 'subtest_name'], defaults=({}, {}, ""))
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config', 'environ', 'subtest_name', "field_tolerances"], defaults=({}, {}, "", {}))
 
 
 def wait_for_event(evt):
@@ -357,7 +357,8 @@ CONFIGS = [
     ignore=["logMonoTime"],
     init_callback=get_car_params,
     should_recv_callback=laika_rcv_callback,
-    tolerance=NUMPY_TOLERANCE,
+    tolerance=1e-6,
+    field_tolerances={"gnssMeasurements.velocityECEF.value": 1e-4, "gnssMeasurements.positionECEF.std": 1e-3},
     fake_pubsubmaster=True,
     environ={"LAIKAD_NO_INTERNET": "1"},
   ),
@@ -370,7 +371,8 @@ CONFIGS = [
     ignore=["logMonoTime"],
     init_callback=get_car_params,
     should_recv_callback=laika_rcv_callback,
-    tolerance=NUMPY_TOLERANCE,
+    tolerance=1e-6,
+    field_tolerances={"gnssMeasurements.velocityECEF.value": 1e-4, "gnssMeasurements.positionECEF.std": 1e-3},
     fake_pubsubmaster=True,
   ),
 ]
