@@ -1084,7 +1084,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="45"/>
         <source>Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.</source>
-        <translation>openpilotが左側通行規則を遵守し、右側の運転席でドライバーの監視を行うことを可能にします。</translation>
+        <translation>openpilot が左側通行規則を遵守し、右ハンドルでドライバー監視を行うことを可能にします。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="50"/>
