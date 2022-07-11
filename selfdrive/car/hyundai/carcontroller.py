@@ -75,6 +75,9 @@ class CarController:
       # steering control
       can_sends.append(hda2can.create_lkas(self.packer, CC.enabled, self.frame, CC.latActive, apply_steer))
 
+      if self.frame % 5 == 0:
+        can_sends.append(hda2can.create_cam_0x2a4(self.packer, self.frame, CS.cam_0x2a4))
+
       # cruise cancel
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
         if CC.cruiseControl.cancel:
