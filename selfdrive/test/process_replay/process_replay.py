@@ -548,11 +548,18 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
 
 
 def check_enabled(msgs):
+  cur_enabled_count = 0
+  max_enabled_count = 0
   for msg in msgs:
     if msg.which() == "carParams":
       if msg.carParams.notCar:
         return True
     elif msg.which() == "controlsState":
       if msg.controlsState.active:
-        return True
-  return False
+        cur_enabled_count += 1
+      else:
+        cur_enabled_count = 0
+      max_enabled_count = max(max_enabled_count, cur_enabled_count)
+
+  print("MAX", max_enabled_count)
+  return max_enabled_count > 100
