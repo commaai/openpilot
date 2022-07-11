@@ -1,6 +1,7 @@
+import capnp
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
@@ -110,6 +111,21 @@ FINGERPRINTS = {
   ],
 }
 
+FW_VERSIONS: Dict[str, Dict[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]], List[str]]] = {
+  CAR.RAM_1500: {
+    (Ecu.combinationMeter, 0x742, None): [],
+    (Ecu.srs, 0x744, None): [],
+    (Ecu.esp, 0x747, None): [],
+    (Ecu.fwdCamera, 0x753, None): [],
+    (Ecu.fwdCamera, 0x764, None): [],
+    (Ecu.eps, 0x761, None): [],
+    (Ecu.fwdRadar, 0x757, None): [],
+    (Ecu.eps, 0x75A, None): [],
+    (Ecu.engine, 0x7e0, None): [],
+    (Ecu.transmission, 0x7e1, None): [],
+    (Ecu.gateway, 0x18DACBF1, None): [],
+  }
+}
 
 DBC = {
   CAR.PACIFICA_2017_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
