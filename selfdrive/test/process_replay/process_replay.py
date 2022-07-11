@@ -354,7 +354,7 @@ CONFIGS = [
       "ubloxGnss": ["gnssMeasurements"],
       "clocks": []
     },
-    ignore=["logMonoTime"],
+    ignore=["logMonoTime", "gnssMeasurements.positionECEF.std", "gnssMeasurements.velocityECEF.std"],
     init_callback=get_car_params,
     should_recv_callback=laika_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
@@ -367,7 +367,7 @@ CONFIGS = [
       "ubloxGnss": ["gnssMeasurements"],
       "clocks": []
     },
-    ignore=["logMonoTime"],
+    ignore=["logMonoTime", "gnssMeasurements.positionECEF.std", "gnssMeasurements.velocityECEF.std"],
     init_callback=get_car_params,
     should_recv_callback=laika_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
