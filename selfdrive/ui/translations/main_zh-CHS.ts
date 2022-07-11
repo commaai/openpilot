@@ -443,7 +443,7 @@ location set</source>
     <message>
         <location filename="../qt/maps/map.cc" line="178"/>
         <source>Map Loading</source>
-        <translation>地图加载</translation>
+        <translation>地图加载中</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="195"/>
@@ -510,13 +510,13 @@ location set</source>
         <location filename="../qt/onroad.cc" line="316"/>
         <location filename="../qt/onroad.cc" line="319"/>
         <source>SPEED</source>
-        <translation></translation>
+        <translation>SPEED</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="322"/>
         <location filename="../qt/onroad.cc" line="325"/>
         <source>LIMIT</source>
-        <translation>限速</translation>
+        <translation>LIMIT</translation>
     </message>
 </context>
 <context>
@@ -914,12 +914,12 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.cc" line="78"/>
         <source>OK</source>
-        <translation>正常</translation>
+        <translation>一般</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="82"/>
         <source>VEHICLE</source>
-        <translation>车辆连接状态</translation>
+        <translation>车辆连接</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
