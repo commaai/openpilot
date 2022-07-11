@@ -2,7 +2,7 @@ import numpy as np
 
 import common.transformations.orientation as orient
 from selfdrive.hardware import TICI
-from common.transformations.model import model_height
+model_height = 1.70
 
 ## -- hardcoded hardware params --
 eon_f_focal_length = 910.0
