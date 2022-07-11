@@ -47,21 +47,19 @@ def remove_ignored_fields(msg, ignore):
 
 
 def get_field_tolerance(diff_field, field_tolerances):
-  for field, tolerance in field_tolerances.items():
-    field_splitted = field.split('.')
-    for i, field_section in enumerate(field_splitted[:len(diff_field)]):
-      if field_section != diff_field[i]:
-        break
-    else:
-      # diff_field matches field in field_tolerances
-      return tolerance
+  diff_field_str = diff_field[0]
+  for s in diff_field[1:]:
+    # loop until number
+    if not isinstance(s, str):
+      break
+    diff_field_str += '.'+s
+  if diff_field_str in field_tolerances:
+    return field_tolerances[diff_field_str]
 
 
 def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None, field_tolerances=None):
   if ignore_fields is None:
     ignore_fields = []
-  if ignore_msgs is None:
-    ignore_msgs = []
   if ignore_msgs is None:
     ignore_msgs = []
   if field_tolerances is None:
@@ -88,7 +86,6 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       msg1_dict = msg1.to_dict(verbose=True)
       msg2_dict = msg2.to_dict(verbose=True)
 
-      tolerance = EPSILON if tolerance is None else tolerance
       dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
 
       # Dictdiffer only supports relative tolerance, we also want to check for absolute
