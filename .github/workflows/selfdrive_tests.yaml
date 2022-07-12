@@ -563,3 +563,13 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body: "${{ steps.save_diff.outputs.diff }}"
           edit-mode: replace
+      - name: Delete comment
+        if: steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == ''
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.deleteComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ steps.fc.outputs.comment-id }}
+            })
