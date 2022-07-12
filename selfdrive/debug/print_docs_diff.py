@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-import os
+import argparse
 import pickle
 
-from common.basedir import BASEDIR
 from selfdrive.car.docs import get_all_car_info
 from selfdrive.car.docs_definitions import Column
 
@@ -12,8 +11,8 @@ COLUMN_HEADER = "|---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|"
 ARROW_SYMBOL = "➡️"
 
 
-def load_base_car_info():
-  with open(os.path.join(BASEDIR, "../openpilot_cache/old_car_info"), "rb") as f:  # TODO: rename to base
+def load_base_car_info(path):
+  with open(path, "rb") as f:
     return pickle.load(f)
 
 
@@ -25,8 +24,8 @@ def format_row(builder):
   return "|" + "|".join(builder) + "|"
 
 
-def print_car_info_diff():
-  base_car_info = {f"{i.make} {i.model}": i for i in load_base_car_info()}
+def print_car_info_diff(path):
+  base_car_info = {f"{i.make} {i.model}": i for i in load_base_car_info(path)}
   new_car_info = {f"{i.make} {i.model}": i for i in get_all_car_info()}
 
   tier_changes = []
@@ -85,4 +84,7 @@ def print_car_info_diff():
 
 
 if __name__ == "__main__":
-  print_car_info_diff()
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--path", required=True)
+  args = parser.parse_args()
+  print_car_info_diff(args.path)
