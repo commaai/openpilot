@@ -7,7 +7,7 @@ from selfdrive.car.docs_definitions import Column
 
 STAR_ICON = '<a href="##"><img valign="top" src="https://raw.githubusercontent.com/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
 COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
-COLUMN_HEADER = "|---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|"
+COLUMN_HEADER = "|---|---|---|:---:|:---:|:---:|:---:|:---:|"
 ARROW_SYMBOL = "➡️"
 
 
