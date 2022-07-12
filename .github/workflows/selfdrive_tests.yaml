@@ -521,7 +521,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: true
-          ref: 25f417801e65c4e406d91defa2adad7eede8fee4
+          ref: ${{ github.event.pull_request.base.ref }}
       - name: Cache scons
         id: scons-cache
         # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
@@ -551,6 +551,7 @@ jobs:
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
+        if: env.HAS_AZURE_TOKEN
         uses: peter-evans/find-comment@v1
         id: fc
         with:
