@@ -92,7 +92,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       if candidate not in (CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
         set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
-      # ret.maxLateralAccel = .45
+      ret.maxLateralAccel = .45
       ret.minEnableSpeed = 99
 
     elif candidate in (CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
