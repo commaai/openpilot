@@ -153,7 +153,10 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Passat Alltrack 2015-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Passat GTE 2015-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
   ],
-  CAR.POLO_MK6: VWCarInfo("Volkswagen Polo 2020"),
+  CAR.POLO_MK6: [
+    VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  ],
   CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
