@@ -14,6 +14,7 @@ class CarController:
     self.hud_count = 0
     self.last_lkas_falling_edge = 0
     self.lkas_active_prev = False
+    self.last_button_frame = 0
 
     self.packer = CANPacker(dbc_name)
     self.params = CarControllerParams(CP)
@@ -26,11 +27,15 @@ class CarController:
 
     # *** control msgs ***
 
-    das_bus = 2 if self.CP.carFingerprint in RAM_CARS else 0
-    if CC.cruiseControl.cancel:
-      can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, cancel=True))
-    elif CC.enabled and CS.out.cruiseState.standstill:
-      can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, resume=True))
+    # cruise buttons - for cancellation and ACC resuming
+    if (self.frame - self.last_button_frame) > 10:
+      das_bus = 2 if self.CP.carFingerprint in RAM_CARS else 0
+      if CC.cruiseControl.cancel:
+        self.last_button_frame = self.frame
+        can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, cancel=True))
+      elif CC.cruiseControl.resume:
+        self.last_button_frame = self.frame
+        can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, resume=True))
 
     # HUD alerts
     if self.frame % 25 == 0:
