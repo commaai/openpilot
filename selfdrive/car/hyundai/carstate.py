@@ -134,15 +134,16 @@ class CarState(CarStateBase):
   def update_hda2(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
-    ret.gasPressed = ret.gas > 1e-3
-    ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
+    #ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
+    #ret.gasPressed = ret.gas > 1e-3
+    #ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
 
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
 
-    gear = cp.vl["ACCELERATOR"]["GEAR"]
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
+    #gear = cp.vl["ACCELERATOR"]["GEAR"]
+    
+    ret.gearShifter = self.parse_gear_shifter('D')
 
     # TODO: figure out positions
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -316,7 +317,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint in HDA2_CAR:
       signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
       checks = [("CAM_0x2a4", 20)]
-      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6)
+      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 5)
 
     signals = [
       # signal_name, signal_address
@@ -350,9 +351,9 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_3", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
-      ("ACCELERATOR_PEDAL", "ACCELERATOR"),
-      ("GEAR", "ACCELERATOR"),
-      ("BRAKE_PRESSED", "BRAKE"),
+      #("ACCELERATOR_PEDAL", "ACCELERATOR"),
+      #("GEAR", "ACCELERATOR"),
+      #("BRAKE_PRESSED", "BRAKE"),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
       ("STEERING_ANGLE", "STEERING_SENSORS"),
@@ -375,8 +376,8 @@ class CarState(CarStateBase):
 
     checks = [
       ("WHEEL_SPEEDS", 100),
-      ("ACCELERATOR", 100),
-      ("BRAKE", 100),
+      #("ACCELERATOR", 100),
+      #("BRAKE", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
       ("SCC1", 50),
@@ -387,4 +388,4 @@ class CarState(CarStateBase):
       ("DOORS_SEATBELTS", 4),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 5)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 4)
