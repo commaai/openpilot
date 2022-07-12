@@ -204,7 +204,7 @@ def manager_thread() -> None:
 
   threads.append(threading.Thread(target=panda_state_function, args=(vehicle_state, threads_exit_event,)))
   threads.append(threading.Thread(target=peripheral_state_function, args=(threads_exit_event,)))
-  threads.append(threading.Thread(target=fake_driver_monitoring, args=(threads_exit_event,)))
+  # threads.append(threading.Thread(target=fake_driver_monitoring, args=(threads_exit_event,)))
   threads.append(threading.Thread(target=can_function_runner, args=(vehicle_state, threads_exit_event,)))
   for t in threads:
     t.start()
