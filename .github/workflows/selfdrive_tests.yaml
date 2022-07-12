@@ -10,6 +10,7 @@ env:
   CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_REGISTRY: ghcr.io/commaai
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
+  HAS_AZURE_TOKEN: $AZURE_TOKEN != ''  # used as a proxy for write permissions
 
   DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
   BUILD: |
@@ -365,7 +366,7 @@ jobs:
 #        name: process_replay_diff.txt
 #        path: selfdrive/test/process_replay/diff.txt
 #    - name: Upload reference logs
-#      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
+#      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.HAS_AZURE_TOKEN }}
 #      run: |
 #        ${{ env.RUN }} "scons -j$(nproc) && \
 #                        CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
@@ -546,7 +547,7 @@ jobs:
         id: save_diff
         run: |
           ${{ env.RUN }} "scons -j$(nproc)"
-          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/old_car_info") || "Test"
+          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/old_car_info" || "Test")
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
@@ -556,7 +557,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: This PR makes changes to
       - name: Update comment
-        if: steps.save_diff.outputs.diff != '' && env.AZURE_TOKEN != ''
+        if: steps.save_diff.outputs.diff != '' && env.HAS_AZURE_TOKEN
         uses: peter-evans/create-or-update-comment@v1
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
@@ -564,7 +565,7 @@ jobs:
           body: "${{ steps.save_diff.outputs.diff }}"
           edit-mode: replace
       - name: Delete comment
-        if: steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && env.AZURE_TOKEN != ''
+        if: steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && env.HAS_AZURE_TOKEN
         uses: actions/github-script@v6
         with:
           script: |
