@@ -1,4 +1,5 @@
 from opendbc.can.packer import CANPacker
+from common.realtime import DT_CTRL
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, create_cruise_buttons
 from selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams
@@ -27,12 +28,16 @@ class CarController:
 
     # *** control msgs ***
 
-    # cruise buttons - for cancellation and ACC resuming
-    if (self.frame - self.last_button_frame) > 10:
+    # cruise buttons
+    if (self.frame - self.last_button_frame)*DT_CTRL > 0.1:
       das_bus = 2 if self.CP.carFingerprint in RAM_CARS else 0
+
+      # ACC cancellation
       if CC.cruiseControl.cancel:
         self.last_button_frame = self.frame
         can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, cancel=True))
+
+      # ACC resume from standstill
       elif CC.cruiseControl.resume:
         self.last_button_frame = self.frame
         can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, resume=True))
