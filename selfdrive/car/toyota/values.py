@@ -97,7 +97,7 @@ class Footnote(Enum):
 
 @dataclass
 class ToyotaCarInfo(CarInfo):
-  package: str = "All"
+  package: str = "TSS"
   harness: Enum = Harness.toyota
 
 
