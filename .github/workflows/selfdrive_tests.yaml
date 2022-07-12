@@ -10,7 +10,7 @@ env:
   CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_REGISTRY: ghcr.io/commaai
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
-  HAS_AZURE_TOKEN: $AZURE_TOKEN != ''  # used as a proxy for write permissions
+  HAS_AZURE_TOKEN: $AZURE_TOKEN != ''
 
   DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
   BUILD: |
