@@ -520,7 +520,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: true
-          ref: 959be4b285dc6841899b38b24fe0f0a2349793ce
+          ref: 0f7b77055fed6c994bc7d682269d4912b42808d7
       - name: Cache scons
         id: scons-cache
         # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
