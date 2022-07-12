@@ -49,7 +49,7 @@ def remove_ignored_fields(msg, ignore):
 def get_field_tolerance(diff_field, field_tolerances):
   diff_field_str = diff_field[0]
   for s in diff_field[1:]:
-    # loop until number
+    # loop until number in field
     if not isinstance(s, str):
       break
     diff_field_str += '.'+s
