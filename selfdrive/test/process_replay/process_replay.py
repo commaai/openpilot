@@ -562,5 +562,4 @@ def check_enabled(msgs):
         cur_enabled_count = 0
       max_enabled_count = max(max_enabled_count, cur_enabled_count)
 
-  print("MAX", max_enabled_count)
-  return max_enabled_count > int(5. / DT_CTRL)
+  return max_enabled_count > int(10. / DT_CTRL)
