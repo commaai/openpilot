@@ -20,8 +20,11 @@ class CarControllerParams:
     self.STEER_DRIVER_FACTOR = 1
     self.STEER_THRESHOLD = 150
 
-    if CP.carFingerprint in HDA2_CAR:
-      self.STEER_MAX = 384
+    if CP.carFingerprint in HDA2_CAR and CP.carFingerprint not in (CAR.GENESIS_GV70):
+      self.STEER_MAX = 270
+      self.STEER_DRIVER_ALLOWANCE = 250
+      self.STEER_DRIVER_MULTIPLIER = 2
+      self.STEER_THRESHOLD = 250
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.
@@ -81,6 +84,7 @@ class CAR:
   GENESIS_G70_2020 = "GENESIS G70 2020"
   GENESIS_G80 = "GENESIS G80 2017"
   GENESIS_G90 = "GENESIS G90 2017"
+  GENESIS_GV70 = "GENESIS GV70 2022"
 
 
 @dataclass
@@ -157,6 +161,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", "All", harness=Harness.hyundai_f),
   CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2018", "All", harness=Harness.hyundai_h),
   CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2018", "All", harness=Harness.hyundai_c),
+  CAR.GENESIS_GV70: HyundaiCarInfo("Genesis GV70 2022", "All", harness=Harness.hyundai_l),
+
 }
 
 class Buttons:
@@ -850,6 +856,13 @@ FW_VERSIONS = {
       b'\xf1\x81640H0051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
+  CAR.GENESIS_GV70: {
+    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00IK__ SCC F-CUP      1.00 1.02 96400-G9100         ', ],
+    (Ecu.engine, 0x7e0, None): [b'\xf1\x81640F0051\x00\x00\x00\x00\x00\x00\x00\x00', ],
+    (Ecu.eps, 0x7d4, None): [b'\xf1\x00IK  FAKE R 1.00 1.06 57700-G9420 4I4VL106', ],
+    (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00IK  MFC  AT USA LHD 1.00 1.01 95740-G9000 170920', ],
+    (Ecu.transmission, 0x7e1, None): [b'\xf1\x87VDJLT17895112DN4\x88fVf\x99\x88\x88\x88\x87fVe\x88vhwwUFU\x97eFex\x99\xff\xb7\x82\xf1\x81E25\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  E25\x00\x00\x00\x00\x00\x00\x00SIK0T33NB2\x11\x1am\xda', ],
+  },
   CAR.KONA: {
     (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00OS__ SCC F-CUP      1.00 1.00 95655-J9200         ', ],
     (Ecu.esp, 0x7d1, None): [b'\xf1\x816V5RAK00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00', ],
@@ -1217,7 +1230,7 @@ FEATURES = {
   "use_fca": {CAR.SONATA, CAR.SONATA_HYBRID, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.GENESIS_G70_2020, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS, CAR.KONA_HEV, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.TUCSON},
 }
 
-HDA2_CAR = {CAR.KIA_EV6, }
+HDA2_CAR = {CAR.KIA_EV6, CAR.GENESIS_GV70}
 
 HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019}  # these cars use a different gas signal
 EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV}
@@ -1236,6 +1249,7 @@ DBC = {
   CAR.GENESIS_G70_2020: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.GENESIS_G80: dbc_dict('hyundai_kia_generic', None),
   CAR.GENESIS_G90: dbc_dict('hyundai_kia_generic', None),
+  CAR.GENESIS_GV70: dbc_dict('kia_ev6', None),
   CAR.HYUNDAI_GENESIS: dbc_dict('hyundai_kia_generic', None),
   CAR.IONIQ_PHEV_2019: dbc_dict('hyundai_kia_generic', None),
   CAR.IONIQ_PHEV: dbc_dict('hyundai_kia_generic', None),

@@ -16,4 +16,4 @@ fi
 
 export STAGING_ROOT="/data/safe_staging"
 export SKIP_FW_QUERY=1
-export FINGERPRINT="KIA EV6 2022"
+export FINGERPRINT="GENESIS GV70 2022"
