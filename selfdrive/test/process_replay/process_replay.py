@@ -14,6 +14,7 @@ from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
 from common.timeout import Timeout
+from common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
@@ -562,4 +563,4 @@ def check_enabled(msgs):
       max_enabled_count = max(max_enabled_count, cur_enabled_count)
 
   print("MAX", max_enabled_count)
-  return max_enabled_count > 100
+  return max_enabled_count > int(5. / DT_CTRL)
