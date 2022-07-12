@@ -18,7 +18,7 @@ def load_base_car_info():
 
 
 def get_star_diff(base_car, new_car):
-  return [column for column, value in base_car.row.items() if value != new_car.row]
+  return [column for column, value in base_car.row.items() if value != new_car.row[column]]
 
 
 def format_row(builder):
