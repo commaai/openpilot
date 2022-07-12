@@ -29,7 +29,7 @@ class CarController:
     das_bus = 2 if self.CP.carFingerprint in RAM_CARS else 0
     if CC.cruiseControl.cancel:
       can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, cancel=True))
-    elif CC.enabled and CS.out.cruiseState.standstill:
+    elif CC.cruiseControl.resume:
       can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, resume=True))
 
     # HUD alerts
