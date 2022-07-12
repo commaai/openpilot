@@ -45,7 +45,7 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="136"/>
         <source>Enter new tethering password</source>
-        <translation>Insita nova senha thetering</translation>
+        <translation>Insira nova senha thetering</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="144"/>
@@ -185,17 +185,17 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="137"/>
         <source>Change Language</source>
-        <translation type="unfinished">Mudar Língua</translation>
+        <translation>Mudar Língua</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="137"/>
         <source>CHANGE</source>
-        <translation type="unfinished">MUDAR</translation>
+        <translation>MUDAR</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="141"/>
         <source>Select a language</source>
-        <translation type="unfinished">Selecione uma linguagem</translation>
+        <translation>Selecione uma linguagem</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="161"/>
@@ -345,27 +345,27 @@
     <message>
         <location filename="../qt/maps/map.cc" line="618"/>
         <source>eta</source>
-        <translation type="unfinished"></translation>
+        <translation>eta</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="628"/>
         <source>min</source>
-        <translation type="unfinished"></translation>
+        <translation>min</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="632"/>
         <source>hr</source>
-        <translation type="unfinished"></translation>
+        <translation>hr</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="652"/>
         <source>km</source>
-        <translation type="unfinished"></translation>
+        <translation>km</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="655"/>
         <source>mi</source>
-        <translation type="unfinished"></translation>
+        <translation>mi</translation>
     </message>
 </context>
 <context>
@@ -373,22 +373,22 @@
     <message>
         <location filename="../qt/maps/map.cc" line="421"/>
         <source> km</source>
-        <translation type="unfinished"></translation>
+        <translation> km</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="424"/>
         <source> m</source>
-        <translation type="unfinished"></translation>
+        <translation> m</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="432"/>
         <source> mi</source>
-        <translation type="unfinished"></translation>
+        <translation> milha</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="435"/>
         <source> ft</source>
-        <translation type="unfinished"></translation>
+        <translation> pés</translation>
     </message>
 </context>
 <context>
@@ -444,12 +444,12 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/maps/map.cc" line="178"/>
         <source>Map Loading</source>
-        <translation type="unfinished"></translation>
+        <translation>Carregando Mapa</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="195"/>
         <source>Waiting for GPS</source>
-        <translation type="unfinished"></translation>
+        <translation>Esperando por GPS</translation>
     </message>
 </context>
 <context>
@@ -457,12 +457,12 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/widgets/input.cc" line="300"/>
         <source>Select</source>
-        <translation type="unfinished">選択</translation>
+        <translation>Selecione</translation>
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="333"/>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
 </context>
 <context>
