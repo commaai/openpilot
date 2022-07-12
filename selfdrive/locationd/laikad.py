@@ -60,8 +60,6 @@ class Laikad:
     self.last_pos_residual = []
     self.last_pos_fix_t = None
 
-    self.kf_residual_correct = False
-
   def load_cache(self):
     if not self.save_ephemeris:
       return
@@ -121,7 +119,6 @@ class Laikad:
       corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog) if len(est_pos) > 0 else []
 
       self.update_localizer(est_pos, t, corrected_measurements)
-      kf_valid = all(self.kf_valid(t)) and self.kf_residual_correct
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS]
       ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY]
 
@@ -129,6 +126,7 @@ class Laikad:
       pos_std = np.sqrt(p[GStates.ECEF_POS])
       vel_std = np.sqrt(p[GStates.ECEF_VELOCITY])
 
+      kf_valid = all(self.kf_valid(t))
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
       dat = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
@@ -166,9 +164,9 @@ class Laikad:
         return
     if len(measurements) > 0:
       residuals = kf_add_observations(self.gnss_kf, t, measurements)
-      self.kf_residual_correct = self.kf_check_residual(residuals)
+      kf_residual_correct = self.kf_check_residual(residuals)
       # # If kalman filter was reinitialized add observations again
-      if not self.kf_residual_correct:
+      if not kf_residual_correct:
         kf_add_observations(self.gnss_kf, t, measurements)
     else:
       # Ensure gnss filter is updated even with no new measurements
@@ -211,7 +209,7 @@ class Laikad:
   def kf_check_residual(self, residuals):
     # if median residual is too large increase the Covariance matrix to improve convergence
     if np.median(np.abs(residuals)) > RESIDUAL_THRESHOLD:
-      p = self.gnss_kf.P * 1.5 + self.gnss_kf.P_initial * 0.3
+      p = self.gnss_kf.P * 1.5 + self.gnss_kf.P_initial * 0.2
       self.gnss_kf.init_state(self.gnss_kf.x, covs=p, filter_time=self.gnss_kf.filter.get_filter_time())
       return False
     return True
@@ -279,7 +277,7 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
   for kind, data in ekf_data.items():
     if len(data) > 0:
       r = gnss_kf.predict_and_observe(t, kind, data)
-      if r is not None:
+      if r is not None and kind in [ObservationKind.PSEUDORANGE_GPS, ObservationKind.PSEUDORANGE_GLONASS]:
         residuals.extend(r[6])
   return residuals
 
