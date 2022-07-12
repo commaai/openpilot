@@ -308,13 +308,8 @@
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="168"/>
-        <source>Need at least </source>
-        <translation>최소 </translation>
-    </message>
-    <message>
-        <location filename="../qt/widgets/input.cc" line="168"/>
-        <source> characters!</source>
-        <translation>자가 필요합니다!</translation>
+        <source>Need at least %1 characters!</source>
+        <translation>최소 %1 자가 필요합니다!</translation>
     </message>
 </context>
 <context>

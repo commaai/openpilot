@@ -308,13 +308,8 @@
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="168"/>
-        <source>Need at least </source>
-        <translation>需要至少 </translation>
-    </message>
-    <message>
-        <location filename="../qt/widgets/input.cc" line="168"/>
-        <source> characters!</source>
-        <translation> 個字元！</translation>
+        <source>Need at least %1 characters!</source>
+        <translation>需要至少 %1 個字元！</translation>
     </message>
 </context>
 <context>
