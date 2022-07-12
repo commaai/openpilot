@@ -325,4 +325,4 @@ if __name__ == "__main__":
     logging.warning(f"Verification succeeded. Swapping to slot {target_slot_number}")
     swap(args.manifest, target_slot_number, logging)
   else:
-    flash_agnos_update(args.manifest, target_slot_number, logging)
+    flash_agnos_update(args.manifest, target_slot_number, logging, standalone=True)
