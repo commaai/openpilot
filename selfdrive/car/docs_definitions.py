@@ -72,6 +72,7 @@ class CarInfo:
       min_enable_speed = self.min_enable_speed
 
     self.car_name = CP.carName
+    self.car_fingerprint = CP.carFingerprint
     self.make, self.model = self.name.split(' ', 1)
     self.row = {
       Column.MAKE: self.make,
@@ -106,12 +107,13 @@ class CarInfo:
         self.row[column] = footnote.value.star
 
     self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
+    self.row["tier"] = {Tier.GOLD: Star.FULL, Tier.SILVER: Star.HALF, Tier.BRONZE: Star.EMPTY}[self.tier]
     return self
 
   @no_type_check
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
+  def get_column(self, column: Union[Column, str], star_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
-    if column in StarColumns:
+    if column in StarColumns or isinstance(column, str):
       item = star_icon.format(item.value)
 
     footnote = get_footnote(self.footnotes, column)
