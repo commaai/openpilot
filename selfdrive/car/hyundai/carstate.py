@@ -8,7 +8,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.hyundai.values import DBC, FEATURES, HDA2_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
 from selfdrive.car.interfaces import CarStateBase
 
-PREV_BUTTON_SAMPLES = 6
+PREV_BUTTON_SAMPLES = 8
 
 
 class CarState(CarStateBase):
