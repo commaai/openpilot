@@ -18,14 +18,14 @@ from tools.lib.logreader import LogReader
 original_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
-  ("HYUNDAI", "d824e27e8c60172c|2022-07-08--21-21-15--1"),     # HYUNDAI.KIA_EV6
+  ("HYUNDAI", "d824e27e8c60172c|2022-07-08--21-21-15--0"),     # HYUNDAI.KIA_EV6
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
   ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
   ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA
-  ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--2"),         # CHRYSLER.RAM_1500
+  ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--3"),         # CHRYSLER.RAM_1500
   ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),      # SUBARU.IMPREZA
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
@@ -39,13 +39,14 @@ original_segments = [
 segments = [
   ("BODY", "regen660D86654BA|2022-07-06--14-27-15--0"),
   ("HYUNDAI", "regen657E25856BB|2022-07-06--14-26-51--0"),
+  ("HYUNDAI", "d824e27e8c60172c|2022-07-08--21-21-15--0"),
   ("TOYOTA", "regenBA97410FBEC|2022-07-06--14-26-49--0"),
   ("TOYOTA2", "regenDEDB1D9C991|2022-07-06--14-54-08--0"),
   ("TOYOTA3", "regenDDC1FE60734|2022-07-06--14-32-06--0"),
   ("HONDA", "regen17B09D158B8|2022-07-06--14-31-46--0"),
   ("HONDA2", "regen041739C3E9A|2022-07-06--15-08-02--0"),
   ("CHRYSLER", "regenBB2F9C1425C|2022-07-06--14-31-41--0"),
-  ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--2"),
+  ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--3"),
   ("SUBARU", "regen732B69F33B1|2022-07-06--14-36-18--0"),
   ("GM", "regen01D09D915B5|2022-07-06--14-36-20--0"),
   ("NISSAN", "regenEA6FB2773F5|2022-07-06--14-58-23--0"),
@@ -65,7 +66,7 @@ def run_test_process(data):
   res = None
   if not args.upload_only:
     lr = LogReader.from_bytes(lr_dat)
-    res, log_msgs = test_process(cfg, lr, ref_log_path, args.ignore_fields, args.ignore_msgs)
+    res, log_msgs = test_process(cfg, lr, ref_log_path, cur_log_fn, args.ignore_fields, args.ignore_msgs)
     # save logs so we can upload when updating refs
     save_log(cur_log_fn, log_msgs)
 
@@ -83,7 +84,7 @@ def get_log_data(segment):
     return (segment, f.read())
 
 
-def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
+def test_process(cfg, lr, ref_log_path, new_log_path, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
@@ -96,7 +97,7 @@ def test_process(cfg, lr, ref_log_path, ignore_fields=None, ignore_msgs=None):
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
     if not check_enabled(log_msgs):
-      raise Exception(f"Route never enabled: {ref_log_path}")
+      return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
 
   try:
     return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
@@ -216,8 +217,7 @@ if __name__ == "__main__":
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
     for (segment, proc, subtest_name, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
-      if isinstance(result, list):
-        results[segment][proc + subtest_name] = result
+      results[segment][proc + subtest_name] = result
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   if not upload:
