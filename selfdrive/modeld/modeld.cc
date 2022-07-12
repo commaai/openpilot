@@ -119,10 +119,10 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     bool is_rhd = ((bool)sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
     frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
     if (sm.updated("liveCalibration")) {
-      auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
+      auto rpy_calib = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
       Eigen::Vector3d device_from_calib_euler;
       for (int i=0; i<3; i++) {
-        device_from_calib_euler(i) = extrinsic_matrix[i];
+        device_from_calib_euler(i) = rpy_calib[i];
       }
       model_transform_main = update_calibration(device_from_calib_euler, main_wide_camera, false);
       model_transform_extra = update_calibration(device_from_calib_euler, true, true);
