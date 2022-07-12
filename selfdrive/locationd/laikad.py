@@ -27,6 +27,7 @@ from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
+DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache"
 CACHE_VERSION = 0.1
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
 
@@ -42,7 +43,7 @@ class Laikad:
     valid_ephem_types: Valid ephemeris types to be used by AstroDog
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
-    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True, cache_dir="/tmp/comma_download_cache")
+    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True)
 
     self.auto_fetch_orbits = auto_fetch_orbits
