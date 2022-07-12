@@ -359,6 +359,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=laika_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
+    field_tolerances={"gnssMeasurements.velocityECEF.value": 1e-5, "gnssMeasurements.positionECEF.std": 1e-4},
     fake_pubsubmaster=True,
     environ={"LAIKAD_NO_INTERNET": "1"},
   ),
@@ -372,6 +373,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=laika_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
+    field_tolerances={"gnssMeasurements.velocityECEF.value": 1e-5, "gnssMeasurements.positionECEF.std": 1e-4},
     fake_pubsubmaster=True,
   ),
 ]

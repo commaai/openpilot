@@ -209,7 +209,9 @@ class Laikad:
   def kf_check_residual(self, residuals):
     # if median residual is too large increase the Covariance matrix to improve convergence
     if np.median(np.abs(residuals)) > RESIDUAL_THRESHOLD:
+      cloudlog.debug(f"Median residual of measurements above threshold. Residuals/threshold: {np.abs(residuals).flatten().round()}, {RESIDUAL_THRESHOLD}")
       p = self.gnss_kf.P * 1.5 + self.gnss_kf.P_initial * 0.2
+      p[p > 1e16] = 1e16
       self.gnss_kf.init_state(self.gnss_kf.x, covs=p, filter_time=self.gnss_kf.filter.get_filter_time())
       return False
     return True
