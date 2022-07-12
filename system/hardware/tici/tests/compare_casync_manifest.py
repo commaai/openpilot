@@ -59,16 +59,16 @@ if __name__ == "__main__":
       sources['remote_uncompressed'].append(chunk.length)
       sources['remote_compressed'].append(chunk_sizes[chunk.sha])
 
-  print("Update statistics (excluding zeros):")
-  print(f"  Total (uncompressed) {sum(sources['seed'] + sources['remote_uncompressed']) / 1000 / 1000:.2f} MB n = {len(to)}")
-  print(f"  Total (compressed download) {sum(chunk_sizes.values()) / 1000 / 1000:.2f} MB n = {len(to)}")
-
-  print("Seed:")
-  print(f"  Seed (uncompressed) {sum(sources['seed']) / 1000 / 1000:.2f} MB n = {len(sources['seed'])}")
-
-  print("Remote:")
+  print()
+  print("Update statistics (excluding zeros)")
+  print()
+  print("Download only with no seed:")
+  print(f"  Remote (uncompressed)\t\t{sum(sources['seed'] + sources['remote_uncompressed']) / 1000 / 1000:.2f} MB\tn = {len(to)}")
+  print(f"  Remote (compressed download)\t{sum(chunk_sizes.values()) / 1000 / 1000:.2f} MB\tn = {len(to)}")
+  print()
+  print("Upgrade with seed partition:")
+  print(f"  Seed   (uncompressed)\t\t{sum(sources['seed']) / 1000 / 1000:.2f} MB\t\t\t\tn = {len(sources['seed'])}")
   sz, n = sum(sources['remote_uncompressed']), len(sources['remote_uncompressed'])
-  print(f"  Remote (uncompressed) {sz / 1000 / 1000:.2f} MB (avg {sz / 1000 / 1000 / n:4f} MB) n = {n}")
-
+  print(f"  Remote (uncompressed)\t\t{sz / 1000 / 1000:.2f} MB\t(avg {sz / 1000 / 1000 / n:4f} MB)\tn = {n}")
   sz, n = sum(sources['remote_compressed']), len(sources['remote_compressed'])
-  print(f"  Remote (compressed download) {sz / 1000 / 1000:.2f} MB (avg {sz / 1000 / 1000 / n:4f} MB) n = {n}")
+  print(f"  Remote (compressed download)\t{sz / 1000 / 1000:.2f} MB\t(avg {sz / 1000 / 1000 / n:4f} MB)\tn = {n}")
