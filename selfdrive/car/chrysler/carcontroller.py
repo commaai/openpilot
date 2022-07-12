@@ -29,7 +29,7 @@ class CarController:
     # *** control msgs ***
 
     # cruise buttons
-    if (self.frame - self.last_button_frame)*DT_CTRL > 0.1:
+    if (self.frame - self.last_button_frame)*DT_CTRL > 0.05:
       das_bus = 2 if self.CP.carFingerprint in RAM_CARS else 0
 
       # ACC cancellation
