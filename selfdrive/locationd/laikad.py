@@ -28,7 +28,7 @@ from system.swaglog import cloudlog
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
 CACHE_VERSION = 0.1
-POS_FIX_RESIDUAL_THRESHOLD = 100.0
+RESIDUAL_THRESHOLD = 100.
 
 
 class Laikad:
@@ -59,6 +59,8 @@ class Laikad:
     self.last_pos_fix = []
     self.last_pos_residual = []
     self.last_pos_fix_t = None
+
+    self.kf_residual_correct = False
 
   def load_cache(self):
     if not self.save_ephemeris:
@@ -92,7 +94,7 @@ class Laikad:
     if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
       min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 5
       pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
-      if len(pos_fix) > 0 and np.median(np.abs(pos_fix_residual)) < POS_FIX_RESIDUAL_THRESHOLD:
+      if len(pos_fix) > 0 and np.median(np.abs(pos_fix_residual)) < RESIDUAL_THRESHOLD:
         self.last_pos_fix = pos_fix[:3]
         self.last_pos_residual = pos_fix_residual
         self.last_pos_fix_t = t
@@ -119,7 +121,7 @@ class Laikad:
       corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog) if len(est_pos) > 0 else []
 
       self.update_localizer(est_pos, t, corrected_measurements)
-      kf_valid = all(self.kf_valid(t))
+      kf_valid = all(self.kf_valid(t)) and self.kf_residual_correct
       ecef_pos = self.gnss_kf.x[GStates.ECEF_POS]
       ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY]
 
@@ -163,7 +165,11 @@ class Laikad:
       else:
         return
     if len(measurements) > 0:
-      kf_add_observations(self.gnss_kf, t, measurements)
+      residuals = kf_add_observations(self.gnss_kf, t, measurements)
+      self.kf_residual_correct = self.kf_check_residual(residuals)
+      # # If kalman filter was reinitialized add observations again
+      if not self.kf_residual_correct:
+        kf_add_observations(self.gnss_kf, t, measurements)
     else:
       # Ensure gnss filter is updated even with no new measurements
       self.gnss_kf.predict(t)
@@ -201,6 +207,14 @@ class Laikad:
         else:
           self.astro_dog.orbits, self.astro_dog.orbit_fetched_times, self.last_fetch_orbits_t = ret
           self.cache_ephemeris(t=t)
+
+  def kf_check_residual(self, residuals):
+    # if median residual is too large increase the Covariance matrix to improve convergence
+    if np.median(np.abs(residuals)) > RESIDUAL_THRESHOLD:
+      p = self.gnss_kf.P * 1.5 + self.gnss_kf.P_initial * 0.3
+      self.gnss_kf.init_state(self.gnss_kf.x, covs=p, filter_time=self.gnss_kf.filter.get_filter_time())
+      return False
+    return True
 
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
@@ -261,9 +275,13 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
       ekf_data[ObservationKind.PSEUDORANGE_GLONASS].append(m_arr)
   ekf_data[ObservationKind.PSEUDORANGE_RATE_GPS] = ekf_data[ObservationKind.PSEUDORANGE_GPS]
   ekf_data[ObservationKind.PSEUDORANGE_RATE_GLONASS] = ekf_data[ObservationKind.PSEUDORANGE_GLONASS]
+  residuals = []
   for kind, data in ekf_data.items():
     if len(data) > 0:
-      gnss_kf.predict_and_observe(t, kind, data)
+      r = gnss_kf.predict_and_observe(t, kind, data)
+      if r is not None:
+        residuals.extend(r[6])
+  return residuals
 
 
 class CacheSerializer(json.JSONEncoder):
