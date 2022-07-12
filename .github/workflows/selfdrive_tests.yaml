@@ -515,7 +515,7 @@ jobs:
     name: comment on PR with car docs diff
     runs-on: ubuntu-20.04
     timeout-minutes: 50
-    if: github.event_name == 'pull_request' && env.AZURE_TOKEN != ''
+    if: ${{ github.event_name == 'pull_request' && env.AZURE_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v3
         with:
