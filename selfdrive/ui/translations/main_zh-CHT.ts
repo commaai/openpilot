@@ -125,7 +125,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="104"/>
         <source>Driver Camera</source>
-        <translation>駕駛監控</translation>
+        <translation>駕駛員攝像頭</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="104"/>
@@ -134,8 +134,8 @@
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
-        <source>Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)</source>
-        <translation>預覽駕駛監控鏡頭畫面，方便調整設備安裝的位置，以提供更準確的駕駛監控。(車子必須保持在熄火的狀態)</translation>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation>預覽駕駛員監控鏡頭畫面，以確保其具有良好視野。僅在熄火時可用。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="109"/>
