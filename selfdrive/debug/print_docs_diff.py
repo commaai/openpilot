@@ -41,10 +41,11 @@ def print_car_info_diff():
 
     new_car = new_car_info[base_car_model]
 
+    # Tier changes
     if base_car.tier != new_car.tier:
       tier_changes.append(f"- Tier for {base_car.make} {base_car.model} changed! ({base_car.tier.name.title()} {ARROW_SYMBOL} {new_car.tier.name.title()})")
-      print(tier_changes[-1])
 
+    # Star changes
     diff = get_star_diff(base_car, new_car)
     if not len(diff):
       continue
