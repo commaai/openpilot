@@ -542,52 +542,50 @@ location set</source>
         <translation>將設備與您的 comma 帳號配對</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="91"/>
-        <source>
-      &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Go to https://connect.comma.ai on your phone&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Click &quot;add new device&quot; and scan the QR code on the right&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Bookmark connect.comma.ai to your home screen to use it like an app&lt;/li&gt;
-      &lt;/ol&gt;
-    </source>
-        <translation>
-      &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;用手機連至 https://connect.comma.ai&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;點選 &quot;add new device&quot; 後掃描右邊的二維碼&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;將 connect.comma.ai 加入您的主屏幕，以便像手機 App 一樣使用它&lt;/li&gt;
-      &lt;/ol&gt;
-    </translation>
+        <location filename="../qt/widgets/prime.cc" line="97"/>
+        <source>Go to https://connect.comma.ai on your phone</source>
+        <translation>用手機連至 https://connect.comma.ai</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="98"/>
+        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <translation>點選 &quot;add new device&quot; 後掃描右邊的二維碼</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="99"/>
+        <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
+        <translation>將 connect.comma.ai 加入您的主屏幕，以便像手機 App 一樣使用它</translation>
     </message>
 </context>
 <context>
     <name>PrimeAdWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="184"/>
+        <location filename="../qt/widgets/prime.cc" line="187"/>
         <source>Upgrade Now</source>
         <translation>馬上升級</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="189"/>
+        <location filename="../qt/widgets/prime.cc" line="192"/>
         <source>Become a comma prime member at connect.comma.ai</source>
         <translation>成為 connect.comma.ai 的高級會員</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="196"/>
+        <location filename="../qt/widgets/prime.cc" line="199"/>
         <source>PRIME FEATURES:</source>
         <translation>高級會員特點：</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Remote access</source>
         <translation>遠程訪問</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>1 year of storage</source>
         <translation>一年的雲端行車記錄</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Developer perks</source>
         <translation>開發者福利</translation>
     </message>
@@ -595,22 +593,22 @@ location set</source>
 <context>
     <name>PrimeUserWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="123"/>
+        <location filename="../qt/widgets/prime.cc" line="126"/>
         <source>✓ SUBSCRIBED</source>
         <translation>✓ 已訂閱</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="129"/>
+        <location filename="../qt/widgets/prime.cc" line="132"/>
         <source>comma prime</source>
         <translation>comma 高級會員</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="135"/>
+        <location filename="../qt/widgets/prime.cc" line="138"/>
         <source>CONNECT.COMMA.AI</source>
         <translation>CONNECT.COMMA.AI</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="148"/>
+        <location filename="../qt/widgets/prime.cc" line="151"/>
         <source>COMMA POINTS</source>
         <translation>COMMA 積分</translation>
     </message>
@@ -855,17 +853,17 @@ location set</source>
 <context>
     <name>SetupWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="230"/>
+        <location filename="../qt/widgets/prime.cc" line="233"/>
         <source>Finish Setup</source>
         <translation>完成設置</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="236"/>
+        <location filename="../qt/widgets/prime.cc" line="239"/>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
         <translation>將您的設備與 comma connect (connect.comma.ai) 配對並領取您的 comma 高級會員優惠。</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="243"/>
+        <location filename="../qt/widgets/prime.cc" line="246"/>
         <source>Pair device</source>
         <translation>配對設備</translation>
     </message>
