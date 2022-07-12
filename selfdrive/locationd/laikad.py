@@ -27,6 +27,7 @@ from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
+DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache"
 CACHE_VERSION = 0.1
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
 
@@ -42,7 +43,7 @@ class Laikad:
     valid_ephem_types: Valid ephemeris types to be used by AstroDog
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
-    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True)
+    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True)
 
     self.auto_fetch_orbits = auto_fetch_orbits
@@ -183,7 +184,7 @@ class Laikad:
   def fetch_orbits(self, t: GPSTime, block):
     # Download new orbits if 1 hour of orbits data left
     if t + SECS_IN_HR not in self.astro_dog.orbit_fetched_times and (self.last_fetch_orbits_t is None or abs(t - self.last_fetch_orbits_t) > SECS_IN_MIN):
-      astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types
+      astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types, self.astro_dog.cache_dir
       ret = None
 
       if block:  # Used for testing purposes
@@ -203,8 +204,8 @@ class Laikad:
           self.cache_ephemeris(t=t)
 
 
-def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types):
-  astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types)
+def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types, cache_dir):
+  astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, cache_dir=cache_dir)
   cloudlog.info(f"Start to download/parse orbits for time {t.as_datetime()}")
   start_time = time.monotonic()
   try:
@@ -301,6 +302,7 @@ def main(sm=None, pm=None):
   replay = "REPLAY" in os.environ
   use_internet = "LAIKAD_NO_INTERNET" not in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet)
+
   while True:
     sm.update()
 
