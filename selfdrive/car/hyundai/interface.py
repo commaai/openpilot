@@ -236,11 +236,13 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_EV6:
-      ret.mass = 2055 + STD_CARGO_KG
-      ret.wheelbase = 2.9
-      ret.steerRatio = 16.
+      # Sonata 2020
+      ret.mass = 1513. + STD_CARGO_KG
+      ret.wheelbase = 2.84
+      ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
-                           get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
+                      get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
+
       tire_stiffness_factor = 0.65
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
