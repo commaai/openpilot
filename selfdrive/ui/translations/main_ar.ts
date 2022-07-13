@@ -110,7 +110,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="99"/>
         <source>Dongle ID</source>
-        <translation>معرف الجهاز<</translation>
+        <translation>معرف الجهاز</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="99"/>
@@ -133,9 +133,13 @@
         <translation>معاينة</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="105"/>
         <source>Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)</source>
-        <translation>من خلال معاينة كاميرا السائق ، يمكنك تحسين موضع تثبيت الجهاز للحصول على تجربة مراقبة مثالية للسائق. (يجب أن تكون السيارة مطفائة)</translation>
+        <translation type="vanished">من خلال معاينة كاميرا السائق ، يمكنك تحسين موضع تثبيت الجهاز للحصول على تجربة مراقبة مثالية للسائق. (يجب أن تكون السيارة مطفائة)</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="105"/>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="109"/>
@@ -204,7 +208,8 @@
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="166"/>
-        <source>إيقاف التشغيل</source>
+        <source>Power Off</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="186"/>
@@ -307,13 +312,16 @@
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="168"/>
-        <source>Need at least </source>
-        <translation>تحتاج على الأقل </translation>
+        <source>Need at least %1 characters!</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="168"/>
+        <source>Need at least </source>
+        <translation type="vanished">تحتاج على الأقل </translation>
+    </message>
+    <message>
         <source> characters!</source>
-        <translation> الرسالة！</translation>
+        <translation type="vanished"> الرسالة！</translation>
     </message>
 </context>
 <context>
@@ -342,27 +350,27 @@
 <context>
     <name>MapETA</name>
     <message>
-        <location filename="../qt/maps/map.cc" line="618"/>
+        <location filename="../qt/maps/map.cc" line="622"/>
         <source>eta</source>
         <translation>الوقت المقدر للوصول</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="628"/>
+        <location filename="../qt/maps/map.cc" line="632"/>
         <source>min</source>
         <translation>دقيقة</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="632"/>
+        <location filename="../qt/maps/map.cc" line="636"/>
         <source>hr</source>
         <translation>ساعة</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="652"/>
+        <location filename="../qt/maps/map.cc" line="656"/>
         <source>km</source>
         <translation>كلم</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="655"/>
+        <location filename="../qt/maps/map.cc" line="659"/>
         <source>mi</source>
         <translation>ميل</translation>
     </message>
@@ -414,7 +422,7 @@
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
-        <source>Get turn-by-turn directions displayed and more with a comma 
+        <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
         <translation>اشترك في القائد الآلي للحصول على معلومات مفصلة عن المسار.
 التسجيل الفوري: https://connect.comma.ai</translation>
@@ -480,8 +488,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>for &quot;</source>
-        <translation>إلى  &quot;</translation>
+        <translation type="vanished">إلى  &quot;</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
@@ -546,7 +558,21 @@ location set</source>
         <translation>قم بإقران جهازك بحساب كوما الخاص بك</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="91"/>
+        <location filename="../qt/widgets/prime.cc" line="97"/>
+        <source>Go to https://connect.comma.ai on your phone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="98"/>
+        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="99"/>
+        <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>
       &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
         &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Go to https://connect.comma.ai on your phone&lt;/li&gt;
@@ -554,7 +580,7 @@ location set</source>
         &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Bookmark connect.comma.ai to your home screen to use it like an app&lt;/li&gt;
       &lt;/ol&gt;
     </source>
-        <translation>
+        <translation type="vanished">
       &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
         &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;انتقل إلى https://connect.comma.ai على هاتفك&lt;/li&gt;
         &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;انقر &quot;إضافة جهاز جديد&quot; وقم بمسح رمز الاستجابة السريعة الموجود على اليمين&lt;/li&gt;
@@ -566,32 +592,32 @@ location set</source>
 <context>
     <name>PrimeAdWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="184"/>
+        <location filename="../qt/widgets/prime.cc" line="187"/>
         <source>Upgrade Now</source>
         <translation>تحديث الآن</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="189"/>
+        <location filename="../qt/widgets/prime.cc" line="192"/>
         <source>Become a comma prime member at connect.comma.ai</source>
         <translation>كن عضوًا رئيسيًا بكوما في connect.comma.ai</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="196"/>
+        <location filename="../qt/widgets/prime.cc" line="199"/>
         <source>PRIME FEATURES:</source>
         <translation>ميزات البرايم：</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Remote access</source>
         <translation>الوصول عن بعد</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>1 year of storage</source>
         <translation>1 سنة من التخزين</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Developer perks</source>
         <translation>امتيازات المطور</translation>
     </message>
@@ -599,22 +625,22 @@ location set</source>
 <context>
     <name>PrimeUserWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="123"/>
+        <location filename="../qt/widgets/prime.cc" line="126"/>
         <source>✓ SUBSCRIBED</source>
         <translation>✓ مشترك</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="129"/>
+        <location filename="../qt/widgets/prime.cc" line="132"/>
         <source>comma prime</source>
         <translation>كوما برايم</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="135"/>
+        <location filename="../qt/widgets/prime.cc" line="138"/>
         <source>CONNECT.COMMA.AI</source>
         <translation>CONNECT.COMMA.AI</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="148"/>
+        <location filename="../qt/widgets/prime.cc" line="151"/>
         <source>COMMA POINTS</source>
         <translation>نقاط كوما</translation>
     </message>
@@ -856,17 +882,21 @@ location set</source>
 <context>
     <name>SetupWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="230"/>
+        <location filename="../qt/widgets/prime.cc" line="233"/>
         <source>Finish Setup</source>
         <translation>إنهاء الإعداد</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="236"/>
-        <source>قم بإقران جهازك بـ comma connect (connect.comma.ai) واطلب عرض كوما الأساسي الخاص بك.</source>
-        <translation>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</translation>
+        <location filename="../qt/widgets/prime.cc" line="239"/>
+        <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="243"/>
+        <source>قم بإقران جهازك بـ comma connect (connect.comma.ai) واطلب عرض كوما الأساسي الخاص بك.</source>
+        <translation type="vanished">Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="246"/>
         <source>Pair device</source>
         <translation>إقتران الجهاز</translation>
     </message>
@@ -1021,14 +1051,18 @@ location set</source>
         <translation>تدقيق</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="252"/>
         <source>Uninstall </source>
-        <translation>الغاء التثبيت </translation>
+        <translation type="vanished">الغاء التثبيت </translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
         <source>UNINSTALL</source>
         <translation>الغاء التثبيت</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="252"/>
+        <source>Uninstall %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="254"/>
@@ -1273,8 +1307,12 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
+        <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Forget Wi-Fi Network &quot;</source>
-        <translation>إنسى شبكة واي-فاي&quot;</translation>
+        <translation type="vanished">إنسى شبكة واي-فاي&quot;</translation>
     </message>
 </context>
 </TS>
