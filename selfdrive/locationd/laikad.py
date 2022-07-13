@@ -164,10 +164,12 @@ class Laikad:
         return
     if len(measurements) > 0:
       residuals = kf_add_observations(self.gnss_kf, t, measurements)
-      kf_residual_correct = self.kf_check_residual(residuals)
-      # # If kalman filter was reinitialized add observations again
-      if not kf_residual_correct:
-        kf_add_observations(self.gnss_kf, t, measurements)
+      for i in range(4):
+        kf_residual_correct = self.kf_check_residual(residuals)
+        if kf_residual_correct:
+          break
+        cloudlog.debug(f"Median residual of measurements above threshold. Repeat {i} Residuals/threshold: {np.abs(residuals).flatten().round()}, {RESIDUAL_THRESHOLD}")
+        residuals = kf_add_observations(self.gnss_kf, t, measurements)
     else:
       # Ensure gnss filter is updated even with no new measurements
       self.gnss_kf.predict(t)
@@ -209,10 +211,7 @@ class Laikad:
   def kf_check_residual(self, residuals):
     # if median residual is too large increase the Covariance matrix to improve convergence
     if np.median(np.abs(residuals)) > RESIDUAL_THRESHOLD:
-      cloudlog.debug(f"Median residual of measurements above threshold. Residuals/threshold: {np.abs(residuals).flatten().round()}, {RESIDUAL_THRESHOLD}")
-      p = self.gnss_kf.P * 1.5 + self.gnss_kf.P_initial * 0.2
-      p[p > 1e16] = 1e16
-      self.gnss_kf.init_state(self.gnss_kf.x, covs=p, filter_time=self.gnss_kf.filter.get_filter_time())
+      self.gnss_kf.init_state(self.gnss_kf.x, covs=self.gnss_kf.P_initial, filter_time=self.gnss_kf.filter.get_filter_time())
       return False
     return True
 
