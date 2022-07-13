@@ -64,14 +64,11 @@ jobs:
       run: |
           eval "$BUILD"
           rm $STRIPPED_DIR/Dockerfile.openpilot_base
-    - name: pre-commit
-      run: |
-          cd $STRIPPED_DIR
-          ${{ env.RUN }} "pre-commit run --all"
     - name: Build openpilot and run checks
       run: |
           cd $STRIPPED_DIR
           ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py && \
+                          pre-commit run --all && \
                           release/check-dirty.sh && \
                           python -m unittest discover selfdrive/car"
 
