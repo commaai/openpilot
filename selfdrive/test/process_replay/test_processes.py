@@ -100,7 +100,7 @@ def test_process(cfg, lr, ref_log_path, new_log_path, ignore_fields=None, ignore
       return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
 
   try:
-    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
+    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance, cfg.field_tolerances), log_msgs
   except Exception as e:
     return str(e), log_msgs
 
@@ -217,7 +217,8 @@ if __name__ == "__main__":
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
     for (segment, proc, subtest_name, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
-      results[segment][proc + subtest_name] = result
+      if not args.upload_only:
+        results[segment][proc + subtest_name] = result
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   if not upload:
