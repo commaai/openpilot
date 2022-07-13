@@ -93,7 +93,7 @@ class Laikad:
   def get_est_pos(self, t, processed_measurements):
     if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
       min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 5
-      pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
+      pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements, max_n=self.max_least_squares_steps)
       if len(pos_fix) > 0 and np.median(np.abs(pos_fix_residual)) < RESIDUAL_THRESHOLD:
         self.last_pos_fix = pos_fix[:3]
         self.last_pos_residual = pos_fix_residual

@@ -20,7 +20,7 @@ def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C
     return [], []
 
   Fx_pos = pr_residual(measurements, posfix_functions, signal=signal)
-  x = gauss_newton(Fx_pos, x0, max_n)
+  x = gauss_newton(Fx_pos, x0, max_n=max_n)
   residual, _ = Fx_pos(x, weight=1.0)
   return x.tolist(), residual.tolist()
 
