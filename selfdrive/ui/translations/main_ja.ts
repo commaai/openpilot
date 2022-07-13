@@ -125,7 +125,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="104"/>
         <source>Driver Camera</source>
-        <translation>ドライバーカメラ</translation>
+        <translation>車内カメラ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="104"/>
@@ -135,7 +135,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>車内カメラをプレビューして、ドライバー監視システムの視界を確保します。(車両の電源を切る必要があります)</translation>
+        <translation>車内カメラをプレビューしますと、ドライバー監視システムの視界を確保します。(車両の電源を切る必要があります)</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="109"/>
@@ -1172,7 +1172,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="57"/>
         <source>Record and Upload Driver Camera</source>
-        <translation>ドライバーカメラの録画とアップロード</translation>
+        <translation>車内カメラの録画とアップロード</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="58"/>
