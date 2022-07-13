@@ -60,6 +60,7 @@ jobs:
         cp Dockerfile.openpilot_base $STRIPPED_DIR
         cp .pre-commit-config.yaml $STRIPPED_DIR
         cp .pylintrc $STRIPPED_DIR
+        cp mypy.ini $STRIPPED_DIR
     - name: Build Docker image
       run: |
           eval "$BUILD"
