@@ -25,7 +25,7 @@ class CarController:
 
     # EPS faults if LKAS re-enables too quickly
     lkas_control_bit = not low_speed_alert and (self.frame - self.last_lkas_falling_edge > 200)
-    lkas_active = CC.latActive and lkas_control_bit
+    lkas_active = CC.latActive and self.lkas_control_bit_prev
 
     # *** control msgs ***
 
@@ -65,7 +65,7 @@ class CarController:
     self.frame += 1
     if not lkas_control_bit and self.lkas_control_bit_prev:
       self.last_lkas_falling_edge = self.frame
-    self.lkas_control_bit_prev = lkas_active
+    self.lkas_control_bit_prev = lkas_control_bit
 
     new_actuators = CC.actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
