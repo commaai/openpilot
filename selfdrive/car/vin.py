@@ -17,7 +17,7 @@ VIN_UNKNOWN = "0" * 17
 
 
 def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
-  addrs = [0x7e0, 0x7e2]  # engine, VMCU
+  addrs = [0x7e0, 0x7e2, 0x18da10f1]  # engine, VMCU, 29-bit engine
   for i in range(retry):
     for request, response in ((UDS_VIN_REQUEST, UDS_VIN_RESPONSE), (OBD_VIN_REQUEST, OBD_VIN_RESPONSE)):
       try:
