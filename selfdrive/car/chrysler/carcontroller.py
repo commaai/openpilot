@@ -1,4 +1,5 @@
 from opendbc.can.packer import CANPacker
+from common.realtime import DT_CTRL
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, create_cruise_buttons
 from selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams
@@ -14,8 +15,10 @@ class CarController:
     self.hud_count = 0
     self.last_lkas_falling_edge = 0
     self.lkas_active_prev = False
+    self.last_button_frame = 0
 
     self.packer = CANPacker(dbc_name)
+    self.params = CarControllerParams(CP)
 
   def update(self, CC, CS, low_speed_alert):
     can_sends = []
@@ -25,11 +28,19 @@ class CarController:
 
     # *** control msgs ***
 
-    das_bus = 2 if self.CP.carFingerprint in RAM_CARS else 0
-    if CC.cruiseControl.cancel:
-      can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, cancel=True))
-    elif CC.enabled and CS.out.cruiseState.standstill:
-      can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, resume=True))
+    # cruise buttons
+    if (self.frame - self.last_button_frame)*DT_CTRL > 0.05:
+      das_bus = 2 if self.CP.carFingerprint in RAM_CARS else 0
+
+      # ACC cancellation
+      if CC.cruiseControl.cancel:
+        self.last_button_frame = self.frame
+        can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, cancel=True))
+
+      # ACC resume from standstill
+      elif CC.cruiseControl.resume:
+        self.last_button_frame = self.frame
+        can_sends.append(create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, resume=True))
 
     # HUD alerts
     if self.frame % 25 == 0:
@@ -40,8 +51,8 @@ class CarController:
     # steering
     if self.frame % 2 == 0:
       # steer torque
-      new_steer = int(round(CC.actuators.steer * CarControllerParams.STEER_MAX))
-      apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, CarControllerParams)
+      new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
+      apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
       if not lkas_active:
         apply_steer = 0
       self.steer_rate_limited = new_steer != apply_steer
@@ -56,6 +67,6 @@ class CarController:
     self.lkas_active_prev = lkas_active
 
     new_actuators = CC.actuators.copy()
-    new_actuators.steer = self.apply_steer_last / CarControllerParams.STEER_MAX
+    new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
 
     return new_actuators, can_sends
