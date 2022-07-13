@@ -415,9 +415,10 @@
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
-        <source>Get turn-by-turn directions displayed and more with a comma 
+        <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>より詳細な案内や表示に関する情報を得ることができます。 詳しくはこちら：https://connect.comma.ai</translation>
+        <translation>より詳細な案内情報を得ることができます。
+詳しくはこちら：https://connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
