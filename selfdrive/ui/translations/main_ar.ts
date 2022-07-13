@@ -55,7 +55,7 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="153"/>
         <source>Enable Roaming</source>
-        <translation>استخدم التجوال</translation>
+        <translation>تفعيل التجوال</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="161"/>
@@ -79,7 +79,7 @@
         <location filename="../qt/widgets/input.cc" line="221"/>
         <location filename="../qt/widgets/input.cc" line="226"/>
         <source>Ok</source>
-        <translation>تأكيد</translation>
+        <translation>موافق</translation>
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="226"/>
@@ -92,7 +92,7 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="140"/>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>يجب أن توافق على الشروط والأحكام لاستخدام برنامج Openpilot.</translation>
+        <translation>يجب أن توافق على الشروط والأحكام لاستخدام برنامج الاوبن بايلوت.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="149"/>
@@ -110,7 +110,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="99"/>
         <source>Dongle ID</source>
-        <translation>معرف الجهاز</translation>
+        <translation>معرف الجهاز<</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="99"/>
@@ -165,7 +165,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="119"/>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>إعادة النظر في قواعد القائد الآلي وميزاته وقيوده</translation>
+        <translation>راجع القواعد والميزات والقيود الخاصة بالاوبن بايلوت</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="121"/>
@@ -193,67 +193,66 @@
         <translation>تغيير</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="140"/>
+        <location filename="../qt/offroad/settings.cc" line="141"/>
         <source>Select a language</source>
         <translation>اختر اللغة</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="160"/>
+        <location filename="../qt/offroad/settings.cc" line="161"/>
         <source>Reboot</source>
         <translation>إعادة التشغيل</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="165"/>
-        <source>Power Off</source>
-        <translation>إيقاف التشغيل</translation>
+        <location filename="../qt/offroad/settings.cc" line="166"/>
+        <source>إيقاف التشغيل</source>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="185"/>
+        <location filename="../qt/offroad/settings.cc" line="186"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>يتطلب القائد الآلي أن يتم تركيب الجهاز في حدود 4 درجات يسارًا أو يمينًا و 5 درجات لأعلى أو 8 درجات لأسفل. يقوم برنامج القائد الآلي بالمعايرة بشكل مستمر ، ونادراً ما تكون إعادة الضبط مطلوبة.</translation>
-    </message>
-    <message>
-        <location filename="../qt/offroad/settings.cc" line="196"/>
-        <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> جهازك مائل٪ 1 °٪ 2 و٪ 3 °٪ 4.</translation>
+        <translation>يتطلب الاوبن بايلوت أن يتم تركيب الجهاز في حدود 4 درجات يسارًا أو يمينًا و 5 درجات لأعلى أو 8 درجات لأسفل. يقوم برنامج الأوبن بايلوت بالمعايرة بشكل مستمر ، ونادراً ما تكون إعادة الضبط مطلوب</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="197"/>
+        <source> Your device is pointed %1° %2 and %3° %4.</source>
+        <translation> جهازك مائل٪ %1° %2 و %3° %4يشير إلى.</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="198"/>
         <source>down</source>
         <translation>أسفل</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="197"/>
+        <location filename="../qt/offroad/settings.cc" line="198"/>
         <source>up</source>
         <translation>أعلى</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="198"/>
+        <location filename="../qt/offroad/settings.cc" line="199"/>
         <source>left</source>
         <translation>يسار</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="198"/>
+        <location filename="../qt/offroad/settings.cc" line="199"/>
         <source>right</source>
         <translation>يمين</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="209"/>
+        <location filename="../qt/offroad/settings.cc" line="210"/>
         <source>Are you sure you want to reboot?</source>
         <translation>هل أنت متأكد أنك تريد إعادة التشغيل؟</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="216"/>
+        <location filename="../qt/offroad/settings.cc" line="217"/>
         <source>Disengage to Reboot</source>
         <translation>فك الارتباط لإعادة التشغيل</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="222"/>
+        <location filename="../qt/offroad/settings.cc" line="223"/>
         <source>Are you sure you want to power off?</source>
         <translation>هل أنت متأكد أنك تريد إيقاف التشغيل؟</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="229"/>
+        <location filename="../qt/offroad/settings.cc" line="230"/>
         <source>Disengage to Power Off</source>
         <translation>فك الارتباط لإيقاف التشغيل</translation>
     </message>
@@ -322,7 +321,7 @@
     <message>
         <location filename="../installer/installer.cc" line="56"/>
         <source>Installing...</source>
-        <translation>جاري التثبيت ...</translation>
+        <translation>جاري التثبيت...</translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="144"/>
@@ -338,6 +337,57 @@
         <location filename="../installer/installer.cc" line="146"/>
         <source>Updating files: </source>
         <translation>تحديث البيانات： </translation>
+    </message>
+</context>
+<context>
+    <name>MapETA</name>
+    <message>
+        <location filename="../qt/maps/map.cc" line="618"/>
+        <source>eta</source>
+        <translation>الوقت المقدر للوصول</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="628"/>
+        <source>min</source>
+        <translation>دقيقة</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="632"/>
+        <source>hr</source>
+        <translation>ساعة</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="652"/>
+        <source>km</source>
+        <translation>كلم</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="655"/>
+        <source>mi</source>
+        <translation>ميل</translation>
+    </message>
+</context>
+<context>
+    <name>MapInstructions</name>
+    <message>
+        <location filename="../qt/maps/map.cc" line="421"/>
+        <source> km</source>
+        <translation> كلم</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="424"/>
+        <source> m</source>
+        <translation> متر</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="432"/>
+        <source> mi</source>
+        <translation> ميل</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="435"/>
+        <source> ft</source>
+        <translation> قدم</translation>
     </message>
 </context>
 <context>
@@ -380,7 +430,7 @@ location set</source>
         <location filename="../qt/maps/map_settings.cc" line="169"/>
         <source>No work
 location set</source>
-        <translation>لا عمل
+        <translation>بدون عمل
 تعيين الموقع</translation>
     </message>
     <message>
@@ -390,14 +440,27 @@ location set</source>
     </message>
 </context>
 <context>
+    <name>MapWindow</name>
+    <message>
+        <location filename="../qt/maps/map.cc" line="178"/>
+        <source>Map Loading</source>
+        <translation>تحميل الخريطة</translation>
+    </message>
+    <message>
+        <location filename="../qt/maps/map.cc" line="195"/>
+        <source>Waiting for GPS</source>
+        <translation>في انتظار GPS</translation>
+    </message>
+</context>
+<context>
     <name>MultiOptionDialog</name>
     <message>
         <location filename="../qt/widgets/input.cc" line="300"/>
         <source>Select</source>
-        <translation>اختار</translation>
+        <translation>اختر</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="328"/>
+        <location filename="../qt/widgets/input.cc" line="333"/>
         <source>Cancel</source>
         <translation>الغاء</translation>
     </message>
@@ -418,7 +481,7 @@ location set</source>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>for &quot;</source>
-        <translation>مثل &quot;</translation>
+        <translation>إلى  &quot;</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
@@ -436,7 +499,7 @@ location set</source>
     <message>
         <location filename="../qt/onroad.cc" line="202"/>
         <source>mph</source>
-        <translation>ميل</translation>
+        <translation>ميل/س</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="269"/>
@@ -448,7 +511,7 @@ location set</source>
         <location filename="../qt/onroad.cc" line="316"/>
         <location filename="../qt/onroad.cc" line="319"/>
         <source>SPEED</source>
-        <translation>السرعة</translation>
+        <translation>السرغة</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="322"/>
@@ -467,12 +530,12 @@ location set</source>
     <message>
         <location filename="../qt/home.cc" line="205"/>
         <source> ALERTS</source>
-        <translation> تنبيه </translation>
+        <translation> التنبيهات</translation>
     </message>
     <message>
         <location filename="../qt/home.cc" line="205"/>
         <source> ALERT</source>
-        <translation> تنبيه </translation>
+        <translation> التنبيهات</translation>
     </message>
 </context>
 <context>
@@ -493,9 +556,9 @@ location set</source>
     </source>
         <translation>
       &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;قم بالوصول إلى https://connect.comma.ai&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;&quot;أضف جهازًا جديدًا&quot;انقر فوق رمز الاستجابة السريعة الصحيح وامسحه ضوئيًا.&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;لاستخدام connect.comma.ai كتطبيق ، قم بإنشاء اختصار على شاشتك الرئيسية.&lt;/li&gt;
+        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;انتقل إلى https://connect.comma.ai على هاتفك&lt;/li&gt;
+        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;انقر &quot;إضافة جهاز جديد&quot; وقم بمسح رمز الاستجابة السريعة الموجود على اليمين&lt;/li&gt;
+        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;ضع إشارة مرجعية على connect.comma.ai على شاشتك الرئيسية لاستخدامه مثل أي تطبيق&lt;/li&gt;
       &lt;/ol&gt;
     </translation>
     </message>
@@ -510,12 +573,12 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="189"/>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>قم بالتسجيل في كوما برايم الرئيسية على connect.comma.ai</translation>
+        <translation>كن عضوًا رئيسيًا بكوما في connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="196"/>
         <source>PRIME FEATURES:</source>
-        <translation>مميزات كوما برايم：</translation>
+        <translation>ميزات البرايم：</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
@@ -561,7 +624,7 @@ location set</source>
     <message>
         <location filename="../qt/text.cc" line="36"/>
         <source>Reboot</source>
-        <translation>إعادة التشغيل</translation>
+        <translation>اعادة التشغيل</translation>
     </message>
     <message>
         <location filename="../qt/text.cc" line="41"/>
@@ -571,27 +634,27 @@ location set</source>
     <message>
         <location filename="../qt/util.cc" line="21"/>
         <source>dashcam</source>
-        <translation>القائد الآلي</translation>
+        <translation>داش كام</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="21"/>
         <source>openpilot</source>
-        <translation>openالقائد الآلي</translation>
+        <translation>اوبن بايلوت</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="82"/>
         <source>%1 minute%2 ago</source>
-        <translation>منذ٪1 دقيقة٪2</translation>
+        <translation>%1 دقيقة%2 منذ</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="85"/>
         <source>%1 hour%2 ago</source>
-        <translation>قبل٪1 ساعة٪2</translation>
+        <translation>%1 ساعة%2 منذ</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="88"/>
         <source>%1 day%2 ago</source>
-        <translation>قبل٪1 يوم٪2</translation>
+        <translation>%1 يوم%2 منذ</translation>
     </message>
 </context>
 <context>
@@ -609,12 +672,12 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="38"/>
         <source>Resetting device...</source>
-        <translation>جارٍ تهيئة الجهاز ...</translation>
+        <translation>إعادة ضبط الجهاز...</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="53"/>
         <source>System Reset</source>
-        <translation>إعادة ضبط الجهاز</translation>
+        <translation>إعادة تعيين النظام</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="59"/>
@@ -629,7 +692,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="72"/>
         <source>Reboot</source>
-        <translation>اعادة التشغيل</translation>
+        <translation>إعادة تشغيل</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="80"/>
@@ -647,41 +710,41 @@ location set</source>
     <message>
         <location filename="../qt/widgets/input.cc" line="258"/>
         <source>Ok</source>
-        <translation>نعم</translation>
+        <translation>موافق</translation>
     </message>
 </context>
 <context>
     <name>SettingsWindow</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="314"/>
+        <location filename="../qt/offroad/settings.cc" line="315"/>
         <source>×</source>
-        <translation>لا</translation>
+        <translation>×</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="340"/>
+        <location filename="../qt/offroad/settings.cc" line="341"/>
         <source>Device</source>
         <translation>الجهاز</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="341"/>
-        <location filename="../qt/offroad/settings.cc" line="380"/>
+        <location filename="../qt/offroad/settings.cc" line="342"/>
+        <location filename="../qt/offroad/settings.cc" line="381"/>
         <source>Network</source>
         <translation>الشبكة</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="342"/>
+        <location filename="../qt/offroad/settings.cc" line="343"/>
         <source>Toggles</source>
         <translation>تبديل</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="343"/>
+        <location filename="../qt/offroad/settings.cc" line="344"/>
         <source>Software</source>
         <translation>البرنامج</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="348"/>
+        <location filename="../qt/offroad/settings.cc" line="349"/>
         <source>Navigation</source>
-        <translation>الخرائط</translation>
+        <translation>التنقل</translation>
     </message>
 </context>
 <context>
@@ -689,12 +752,12 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="73"/>
         <source>WARNING: Low Voltage</source>
-        <translation>تحذير: البطاريات منخفضة</translation>
+        <translation>تحذير: الطاقة منخفظة</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="79"/>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>قم بتشغيل جهازك في سيارة باستخدام أداة تثبيت أو المضي قدمًا على مسؤوليتك الخاصة.</translation>
+        <translation>تشغيل هذا الجهاز على مركبتك على مسؤليتك الخاصة.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="92"/>
@@ -706,12 +769,12 @@ location set</source>
         <location filename="../qt/setup/setup.cc" line="182"/>
         <location filename="../qt/setup/setup.cc" line="268"/>
         <source>Continue</source>
-        <translation>أكمل</translation>
+        <translation>المتابعة</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="117"/>
         <source>Getting Started</source>
-        <translation>البداء</translation>
+        <translation>البدء</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="122"/>
@@ -721,18 +784,18 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="147"/>
         <source>Connect to Wi-Fi</source>
-        <translation>اتصل بشبكة واي فاي</translation>
+        <translation>اتصل بشبكة Wi-Fi</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="165"/>
         <location filename="../qt/setup/setup.cc" line="263"/>
         <source>Back</source>
-        <translation>الخلف</translation>
+        <translation>الرجوع</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="182"/>
         <source>Continue without Wi-Fi</source>
-        <translation>استمر بدون واي فاي</translation>
+        <translation>استمر بدون Wi-Fi</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="184"/>
@@ -757,7 +820,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
         <source>Enter URL</source>
-        <translation>أدخل الرابط</translation>
+        <translation>إدخال عنوان الموقع</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
@@ -772,17 +835,17 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="315"/>
         <source>Download Failed</source>
-        <translation>فشل التحميل</translation>
+        <translation>التحميل فشل</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="321"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>تأكد من أن عنوان الوب الذي تم إدخاله صحيح ، وأن اتصال الجهاز بالإنترنت جيد.</translation>
+        <translation>تأكد من أن عنوان الموقع الذي تم إدخاله صحيح ، وأن اتصال الجهاز بالإنترنت جيد.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="334"/>
         <source>Reboot device</source>
-        <translation>إعادة التشغيل الجهاز</translation>
+        <translation>جهاز إعادة التشغيل</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="341"/>
@@ -799,8 +862,8 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="236"/>
-        <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>قم بإقران جهازك كوما الاتصال (connect.comma.ai) واطلب عرض كوما الأساسي الخاص بك.</translation>
+        <source>قم بإقران جهازك بـ comma connect (connect.comma.ai) واطلب عرض كوما الأساسي الخاص بك.</source>
+        <translation>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="243"/>
@@ -819,7 +882,7 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.cc" line="67"/>
         <source>OFFLINE</source>
-        <translation>غير متصل</translation>
+        <translation>غير متصل على الانترنت</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="69"/>
@@ -842,12 +905,12 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.cc" line="73"/>
         <source>HIGH</source>
-        <translation>مرتفعه</translation>
+        <translation>عالية</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="76"/>
         <source>GOOD</source>
-        <translation>متوسطة</translation>
+        <translation>مرتفعة قلبلا</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="78"/>
@@ -862,7 +925,7 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
         <source>NO</source>
-        <translation>غير متصل</translation>
+        <translation>لا</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="84"/>
@@ -887,101 +950,101 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.h" line="38"/>
         <source>Wi-Fi</source>
-        <translation>واي فاي</translation>
+        <translation>Wi-Fi</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="39"/>
         <source>ETH</source>
-        <translation>إيثرنت</translation>
+        <translation>الكيبل</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="40"/>
         <source>2G</source>
-        <translation>الجيل الثاني</translation>
+        <translation>ج2</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="41"/>
         <source>3G</source>
-        <translation>الجيل الثالث</translation>
+        <translation>ج3</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="42"/>
         <source>LTE</source>
-        <translation>الجيل الرابع</translation>
+        <translation>LTE</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="43"/>
         <source>5G</source>
-        <translation>الجيل الخامس</translation>
+        <translation>ج5</translation>
     </message>
 </context>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="234"/>
+        <location filename="../qt/offroad/settings.cc" line="235"/>
         <source>Git Branch</source>
         <translation>الفرع البرمجي</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="235"/>
+        <location filename="../qt/offroad/settings.cc" line="236"/>
         <source>Git Commit</source>
         <translation>آخر تحديث</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="236"/>
+        <location filename="../qt/offroad/settings.cc" line="237"/>
         <source>OS Version</source>
         <translation>إصدار نظام التشغيل</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="237"/>
+        <location filename="../qt/offroad/settings.cc" line="238"/>
         <source>Version</source>
         <translation>الإصدار</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="238"/>
+        <location filename="../qt/offroad/settings.cc" line="239"/>
         <source>Last Update Check</source>
         <translation>التحقق من آخر تحديث</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="238"/>
+        <location filename="../qt/offroad/settings.cc" line="239"/>
         <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation>.آخر مرة نجح فيها برنامج القائد الآلي في التحقق من وجود تحديث. يعمل المحدث فقط أثناء إيقاف تشغيل السيارة</translation>
+        <translation>آخر مرة نجح فيها برنامج الاوبن بايلوت في التحقق من وجود تحديث. يعمل المحدث فقط أثناء إيقاف تشغيل السيارة.</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="239"/>
+        <location filename="../qt/offroad/settings.cc" line="240"/>
         <source>Check for Update</source>
         <translation>فحص التحديثات</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="244"/>
+        <location filename="../qt/offroad/settings.cc" line="245"/>
         <source>CHECKING</source>
         <translation>تدقيق</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="251"/>
-        <source>Uninstall</source>
-        <translation>الغاء التثبيت</translation>
+        <location filename="../qt/offroad/settings.cc" line="252"/>
+        <source>Uninstall </source>
+        <translation>الغاء التثبيت </translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="251"/>
+        <location filename="../qt/offroad/settings.cc" line="252"/>
         <source>UNINSTALL</source>
         <translation>الغاء التثبيت</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="253"/>
+        <location filename="../qt/offroad/settings.cc" line="254"/>
         <source>Are you sure you want to uninstall?</source>
-        <translation>هل أنت متأكد أنك تريد إلغاء التثبيت؟？</translation>
-    </message>
-    <message>
-        <location filename="../qt/offroad/settings.cc" line="267"/>
-        <source>failed to fetch update</source>
-        <translation>فشل في جلب التحديث</translation>
+        <translation>삭제하시겠습니까？</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="268"/>
-        <location filename="../qt/offroad/settings.cc" line="289"/>
+        <source>failed to fetch update</source>
+        <translation>هل أنت متأكد أنك تريد إلغاء التثبيت</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="269"/>
+        <location filename="../qt/offroad/settings.cc" line="290"/>
         <source>CHECK</source>
-        <translation>يتم التحقق</translation>
+        <translation>التحقق من</translation>
     </message>
 </context>
 <context>
@@ -994,7 +1057,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>تحذير: هذا يمنح اس اس اتش الوصول إلى جميع المفاتيح العامة في إعدادات جت هب. لا تدخل أبدًا اسم مستخدم جت هب بخلاف اسم المستخدم الخاص بك. لن يطلب منك موظف الفاصلة أبدًا إضافة اسم مستخدم جت هب الخاص به.</translation>
+        <translation>تحذير: هذا يمنح اس اس اتش الوصول إلى جميع المفاتيح العامة في إعدادات جت هب. لا تدخل أبدًا اسم مستخدم جت هب بخلاف اسم المستخدم الخاص بك. لن يطلب منك موظف كوما أبدًا إضافة اسم مستخدم جت هب الخاص به.</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="13"/>
@@ -1020,7 +1083,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="50"/>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>اسم االمستخدم &apos;%1&apos; ليس لدي مفتاح على جت هب</translation>
+        <translation>اسم المستخدم &apos;%1&apos; ليس لديه مفاتيح على جت هب</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="54"/>
@@ -1030,7 +1093,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="56"/>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>اسم االمستخدم &apos;%1&apos; يوجد على جت هب</translation>
+        <translation>اسم المستخدم &apos;%1&apos; غير&apos;t موجودة على جت هب</translation>
     </message>
 </context>
 <context>
@@ -1046,12 +1109,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="79"/>
         <source>Terms &amp; Conditions</source>
-        <translation>الاشتراطات</translation>
+        <translation>شروط</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="107"/>
         <source>Decline</source>
-        <translation>غير موافق</translation>
+        <translation>رفض</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="111"/>
@@ -1061,7 +1124,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="126"/>
         <source>Agree</source>
-        <translation>موافق</translation>
+        <translation>يوافق على</translation>
     </message>
 </context>
 <context>
@@ -1069,12 +1132,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="33"/>
         <source>Enable openpilot</source>
-        <translation>تفعيل القائد الآلي</translation>
+        <translation>تمكين الأوبن بايلوت</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="34"/>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>استخدم نظام القائد الآلي للتحكم التكيفي في ثبات السرعة والحفاظ على مساعدة السائق. انتباهك مطلوب في جميع الأوقات لاستخدام هذه الميزة. يسري تغيير هذا الإعداد عند إيقاف تشغيل السيارة</translation>
+        <translation>.استخدم نظام القائد الآلي للتحكم التكيفي في ثبات السرعة والحفاظ على مساعدة السائق. انتباهك مطلوب في جميع الأوقات لاستخدام هذه الميزة. يسري تغيير هذا الإعداد عند إيقاف تشغيل السيارة</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="39"/>
@@ -1094,7 +1157,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="46"/>
         <source>Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.</source>
-        <translation>القائد الآلي يلتزم بقواعد المرور على اليسار ويقوم بمراقبة السائق من مقعد السائق الأيمن.</translation>
+        <translation>الأوبن بايلوت يلتزم بقواعد المرور على اليسار ويقوم بمراقبة السائق من مقعد السائق الأيمن.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="51"/>
@@ -1104,7 +1167,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="52"/>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>عرض السرعة بالكيلو متر في الساعة بدلاً من ميل في الساعة.</translation>
+        <translation>عرض السرعة بالكيلو متر في الساعة بدلا من ميلا في الساعة.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="57"/>
@@ -1124,7 +1187,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="64"/>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>عند التمكين ، سيؤدي الضغط على دواسة الوقود إلى فصل القائد الآلي..</translation>
+        <translation>عند التمكين ، سيؤدي الضغط على دواسة الوقود إلى فصل الأوبن بايلوت .</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="70"/>
@@ -1139,12 +1202,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="83"/>
         <source>openpilot Longitudinal Control</source>
-        <translation>القائد الآلي التحكم الطولي</translation>
+        <translation>openpilot التحكم الطولي</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="84"/>
         <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>سوف يقوم برنامج القائد الآلي بتعطيل رادار السيارة وسيتولى السيطرة على دواسة الوقود والفرامل. تحذير: هذا يعطل نظام فرملة الطوارئ!</translation>
+        <translation>سوف يقوم برنامج الأوبن بايلوت بتعطيل السيارة&apos;كالرادار وسيتولى السيطرة على دواسة الوقود والفرامل. تحذير: هذا يعطل AEB!</translation>
     </message>
 </context>
 <context>
@@ -1182,7 +1245,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/updater.cc" line="94"/>
         <source>Reboot</source>
-        <translation>إعادة التشغيل</translation>
+        <translation>اعادة التشغيل</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="164"/>
@@ -1196,22 +1259,22 @@ location set</source>
         <location filename="../qt/offroad/networking.cc" line="210"/>
         <location filename="../qt/offroad/networking.cc" line="263"/>
         <source>Scanning for networks...</source>
-        <translation>جارٍ البحث عن الشبكة ...</translation>
+        <translation>البحث عن شبكات...</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="289"/>
         <source>CONNECTING...</source>
-        <translation> التوصيل...</translation>
+        <translation>توصيل...</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="296"/>
         <source>FORGET</source>
-        <translation>نسيان</translation>
+        <translation>إنسى</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
         <source>Forget Wi-Fi Network &quot;</source>
-        <translation>انسى شبكة الواي فاي &quot;</translation>
+        <translation>إنسى شبكة واي-فاي&quot;</translation>
     </message>
 </context>
 </TS>
