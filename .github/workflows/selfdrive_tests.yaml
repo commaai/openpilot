@@ -70,6 +70,9 @@ jobs:
           cd $STRIPPED_DIR
           ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py && \
                           pre-commit run --all && \
+                          rm .pre-commit-config.yaml && \
+                          rm .pylintrc && \
+                          rm mypy.ini && \
                           release/check-dirty.sh && \
                           python -m unittest discover selfdrive/car"
 
