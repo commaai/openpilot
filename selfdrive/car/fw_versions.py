@@ -434,7 +434,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   addrs.insert(0, parallel_addrs)
 
   fw_versions = {}
-  requests = [r for r in REQUESTS if query_brand is None or r.query_brand == query_brand]
+  requests = [r for r in REQUESTS if query_brand is None or r.brand == query_brand]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for r in requests:
