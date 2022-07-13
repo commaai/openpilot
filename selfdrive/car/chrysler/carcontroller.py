@@ -59,7 +59,7 @@ class CarController:
       self.apply_steer_last = apply_steer
 
       idx = self.frame // 2
-      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_active, idx))
+      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), low_speed_alert, idx))
 
     self.frame += 1
     if not lkas_active and self.lkas_active_prev:
