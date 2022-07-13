@@ -52,6 +52,15 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
   },
+  [CAMERA_ID_OS04C10] = {
+    .frame_width = FRAME_WIDTH,
+    .frame_height = FRAME_HEIGHT,
+    .frame_stride = FRAME_STRIDE,
+
+    .bayer = true,
+    .bayer_flip = 1,
+    .hdr = false,
+  },
 };
 
 const float DC_GAIN = 2.5;
@@ -215,6 +224,8 @@ void CameraState::sensors_start() {
     sensors_i2c(start_reg_array_ar0231, std::size(start_reg_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_IMX390) {
     sensors_i2c(start_reg_array_imx390, std::size(start_reg_array_imx390), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+  } else if (camera_id == CAMERA_ID_OS04C10) {
+    sensors_i2c(start_reg_array_os04c10, std::size(start_reg_array_os04c10), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   } else {
     assert(false);
   }
@@ -308,7 +319,8 @@ int CameraState::sensors_init() {
       break;
     case 2:
       // port 2
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x34;
+      //i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x34;
+      i2c_info->slave_addr = 0x36*2;
       break;
   }
 
@@ -327,6 +339,9 @@ int CameraState::sensors_init() {
   } else if (camera_id == CAMERA_ID_IMX390) {
     probe->reg_addr = 0x330;
     probe->expected_data = 0x1538;
+  } else if (camera_id == CAMERA_ID_OS04C10) {
+    probe->reg_addr = 0x300a;
+    probe->expected_data = 0x5304;
   } else {
     assert(false);
   }
@@ -393,8 +408,8 @@ int CameraState::sensors_init() {
   power->power_settings[1].power_seq_type = 1;
   power->power_settings[2].power_seq_type = 3;
 
-  LOGD("probing the sensor");
   int ret = do_cam_control(sensor_fd, CAM_SENSOR_PROBE_CMD, (void *)(uintptr_t)cam_packet_handle, 0);
+  LOGD("probing the sensor: %d", ret);
 
   mm.free(i2c_info);
   mm.free(power_settings);
@@ -646,8 +661,8 @@ void CameraState::camera_open() {
   LOGD("-- Probing sensor %d", camera_num);
   ret = sensors_init();
   if (ret != 0) {
-    LOGD("AR0231 init failed, trying IMX390");
-    camera_id = CAMERA_ID_IMX390;
+    LOGD("AR0231 init failed, trying OS04C10");
+    camera_id = CAMERA_ID_OS04C10;
     ret = sensors_init();
   }
   LOGD("-- Probing sensor %d done with %d", camera_num, ret);
@@ -675,6 +690,8 @@ void CameraState::camera_open() {
     sensors_i2c(init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_IMX390) {
     sensors_i2c(init_array_imx390, std::size(init_array_imx390), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+  } else if (camera_id == CAMERA_ID_OS04C10) {
+    sensors_i2c(init_array_os04c10, std::size(init_array_os04c10), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   } else {
     assert(false);
   }

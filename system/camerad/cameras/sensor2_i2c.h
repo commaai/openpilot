@@ -2,6 +2,13 @@ struct i2c_random_wr_payload start_reg_array_ar0231[] = {{0x301A, 0x91C}};
 struct i2c_random_wr_payload stop_reg_array_ar0231[] = {{0x301A, 0x918}};
 struct i2c_random_wr_payload start_reg_array_imx390[] = {{0x0, 0}};
 struct i2c_random_wr_payload stop_reg_array_imx390[] = {{0x0, 1}};
+struct i2c_random_wr_payload start_reg_array_os04c10[] = {{0x100, 1}};
+struct i2c_random_wr_payload stop_reg_array_os04c10[] = {{0x100, 0}};
+
+struct i2c_random_wr_payload init_array_os04c10[] = {
+  // PLL
+  {0x301, 0x84},
+};
 
 struct i2c_random_wr_payload init_array_imx390[] = {
   {0x2008, 0xd0}, {0x2009, 0x07}, {0x200a, 0x00}, // MODE_VMAX = time between frames
