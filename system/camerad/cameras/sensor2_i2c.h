@@ -6,8 +6,21 @@ struct i2c_random_wr_payload start_reg_array_os04c10[] = {{0x100, 1}};
 struct i2c_random_wr_payload stop_reg_array_os04c10[] = {{0x100, 0}};
 
 struct i2c_random_wr_payload init_array_os04c10[] = {
+  // disable reset
+  {0x103, 0},
+
   // PLL
-  {0x301, 0x84},
+  {0x301, 0x84},  // pre_div0
+
+  {0x303, 0x01*2},              // pll1_prediv
+  {0x304, 0x00}, {0x305, 0x5a}, // pll1_divp
+  {0x306, 0},                   // pll1_divpix
+
+  {0x323, 0x04*2},              // pll2_prediv
+  {0x324, 0x02}, {0x325, 0xbc}, // pll2_divp
+
+  // MIPI (12-bit mode)
+  {0x3022, 0x61},
 };
 
 struct i2c_random_wr_payload init_array_imx390[] = {
