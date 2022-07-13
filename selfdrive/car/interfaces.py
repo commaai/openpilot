@@ -108,7 +108,8 @@ class CarInterfaceBase(ABC):
 
     # standard ALC params
     ret.steerControlType = car.CarParams.SteerControlType.torque
-    ret.minSteerSpeed = 0.
+    ret.minSteerEnableSpeed = 0.  # only uses enable speed if disable speed is not set  # TODO: actually maybe we want to set both, it's not set in too many places
+    ret.minSteerDisableSpeed = 0.
     ret.wheelSpeedFactor = 1.0
     ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
 
