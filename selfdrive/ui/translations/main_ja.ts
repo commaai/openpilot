@@ -1038,7 +1038,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="268"/>
         <source>failed to fetch update</source>
-        <translation>更新の取得に失敗しました</translation>
+        <translation>更新のﾀﾞｳﾝﾛｰﾄﾞにｴﾗｰが発生しました</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="269"/>
