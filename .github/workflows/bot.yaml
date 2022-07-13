@@ -31,9 +31,9 @@ jobs:
           CACHE_SKIP_SAVE: true
         with:
           path: /tmp/scons_cache
-          key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          key: scons-${{ hashFiles('.github/workflows/bot.yaml') }}-
           restore-keys: |
-            scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+            scons-${{ hashFiles('.github/workflows/bot.yaml') }}-
             scons-
       - name: Build Docker image
         run: eval "$BUILD"
