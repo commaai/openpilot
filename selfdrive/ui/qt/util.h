@@ -14,6 +14,7 @@ QString getBrand();
 QString getBrandVersion();
 QString getUserAgent();
 std::optional<QString> getDongleId();
+QMap<QString, QString> getSupportedLanguages();
 void configFont(QPainter &p, const QString &family, int size, const QString &style);
 void clearLayout(QLayout* layout);
 void setQtSurfaceFormat();

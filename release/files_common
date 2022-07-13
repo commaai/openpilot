@@ -35,7 +35,6 @@ common/filter_simple.py
 common/stat_live.py
 common/spinner.py
 common/text_window.py
-common/SConscript
 
 common/kalman/.gitignore
 common/kalman/*
@@ -58,6 +57,7 @@ common/api/__init__.py
 
 release/*
 
+tools/__init__.py
 tools/lib/*
 tools/joystick/*
 tools/replay/*.cc
@@ -129,7 +129,15 @@ system/clocksd/.gitignore
 system/clocksd/SConscript
 system/clocksd/clocksd.cc
 
-selfdrive/debug/*.py
+selfdrive/debug/can_printer.py
+selfdrive/debug/check_freq.py
+selfdrive/debug/dump.py
+selfdrive/debug/filter_log_message.py
+selfdrive/debug/get_fingerprint.py
+selfdrive/debug/uiview.py
+
+selfdrive/debug/hyundai_enable_radar_points.py
+selfdrive/debug/vw_mqb_config.py
 
 common/SConscript
 common/version.h
@@ -188,6 +196,9 @@ selfdrive/controls/lib/lateral_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 selfdrive/hardware
+
+system/__init__.py
+
 system/hardware/__init__.py
 system/hardware/base.h
 system/hardware/base.py
@@ -197,6 +208,7 @@ system/hardware/tici/hardware.h
 system/hardware/tici/hardware.py
 system/hardware/tici/pins.py
 system/hardware/tici/agnos.py
+system/hardware/tici/casync.py
 system/hardware/tici/agnos.json
 system/hardware/tici/amplifier.py
 system/hardware/tici/updater
@@ -217,10 +229,10 @@ selfdrive/locationd/generated/gps.h
 
 selfdrive/locationd/laikad.py
 selfdrive/locationd/laikad_helpers.py
-selfdrive/locationd/locationd.cc
 selfdrive/locationd/locationd.h
 selfdrive/locationd/locationd.cc
 selfdrive/locationd/paramsd.py
+selfdrive/locationd/models/__init__.py
 selfdrive/locationd/models/.gitignore
 selfdrive/locationd/models/car_kf.py
 selfdrive/locationd/models/gnss_kf.py
@@ -232,6 +244,7 @@ selfdrive/locationd/models/gnss_helpers.py
 
 selfdrive/locationd/calibrationd.py
 
+system/logcatd/.gitignore
 system/logcatd/SConscript
 system/logcatd/logcatd_systemd.cc
 
@@ -240,6 +253,7 @@ system/proclogd/main.cc
 system/proclogd/proclog.cc
 system/proclogd/proclog.h
 
+selfdrive/loggerd/.gitignore
 selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder/encoder.cc
 selfdrive/loggerd/encoder/encoder.h
@@ -329,6 +343,7 @@ selfdrive/manager/process.py
 selfdrive/manager/test/__init__.py
 selfdrive/manager/test/test_manager.py
 
+selfdrive/modeld/__init__.py
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc
 selfdrive/modeld/dmonitoringmodeld.cc
@@ -415,6 +430,7 @@ scripts/stop_updater.sh
 pyextra/.gitignore
 pyextra/acados_template/**
 
+rednose/.gitignore
 rednose/**
 laika/**
 
@@ -475,7 +491,8 @@ opendbc/can/parser_pyx.pyx
 
 opendbc/comma_body.dbc
 
-opendbc/chrysler_pacifica_2017_hybrid.dbc
+opendbc/chrysler_ram_dt_generated.dbc
+opendbc/chrysler_pacifica_2017_hybrid_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
 
 opendbc/gm_global_a_powertrain_generated.dbc
