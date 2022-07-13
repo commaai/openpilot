@@ -394,7 +394,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
   brand_matches = get_brand_ecu_matches(ecu_rx_addrs)
 
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
-    car_fw = get_fw_versions(logcan, sendcan, brand=brand, timeout=timeout, debug=debug, progress=progress)
+    car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
     matches = match_fw_to_car_exact(build_fw_dict(car_fw))
     if len(matches) == 1:
@@ -403,10 +403,10 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
   return all_car_fw
 
 
-def get_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=False, progress=False):
+def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
-  if brand is not None:
-    versions = {brand: versions[brand]}
+  if query_brand is not None:
+    versions = {query_brand: versions[query_brand]}
 
   if extra is not None:
     versions.update(extra)
@@ -434,7 +434,7 @@ def get_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=
   addrs.insert(0, parallel_addrs)
 
   fw_versions = {}
-  requests = [r for r in REQUESTS if brand is None or r.brand == brand]
+  requests = [r for r in REQUESTS if query_brand is None or r.brand == query_brand]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for r in requests:
@@ -444,7 +444,7 @@ def get_fw_versions(logcan, sendcan, brand=None, extra=None, timeout=0.1, debug=
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            fw_versions.update({(r.brand, addr): (version, r) for addr, version in query.get_data(timeout).items()})
+            fw_versions.update({(r.brand, addr): (version, r) for (addr, _), version in query.get_data(timeout).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
@@ -497,13 +497,13 @@ if __name__ == "__main__":
 
   t = time.time()
   print("Getting vin...")
-  addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
-  print(f"VIN: {vin}")
+  addr, vin_rx_addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
+  print(f'TX: {hex(addr)}, RX: {hex(vin_rx_addr)}, VIN: {vin}')
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
 
   t = time.time()
-  fw_vers = get_fw_versions(logcan, sendcan, brand=args.brand, extra=extra, debug=args.debug, progress=True)
+  fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra=extra, debug=args.debug, progress=True)
   _, candidates = match_fw_to_car(fw_vers)
 
   print()
