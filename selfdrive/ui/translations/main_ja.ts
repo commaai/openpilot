@@ -683,7 +683,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="59"/>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>システムの初期化をリクエストしました。「確認」ボタンを押すと初期化にします。「キャンセル」ボタンを押すと起動を続行します。</translation>
+        <translation>システムの初期化をリクエストしました。「確認」ボタンを押すとデバイスが初期化にします。「キャンセル」ボタンを押すと起動を続行します。</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="68"/>
@@ -703,7 +703,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="88"/>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>data パーティションをマウントできません。「確認」ボタンを押すとデバイスが初期化されます。</translation>
+        <translation>data パーティションをマウントできません。「確認」ボタンを押すとデバイスが初期化にします。</translation>
     </message>
 </context>
 <context>
