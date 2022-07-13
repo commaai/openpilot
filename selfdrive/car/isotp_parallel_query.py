@@ -28,6 +28,7 @@ class IsoTpParallelQuery:
         self.real_addrs.append((a, None))
 
     self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in self.real_addrs}
+    self.rx_addrs = defaultdict(int)
     self.msg_buffer = defaultdict(list)
 
   def rx(self):
@@ -126,7 +127,7 @@ class IsoTpParallelQuery:
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
           else:
-            results[tx_addr] = dat[len(expected_response):]
+            results[(tx_addr, msg._can_client.rx_addr)] = dat[len(expected_response):]
             request_done[tx_addr] = True
         else:
           error_code = dat[2] if len(dat) > 2 else -1

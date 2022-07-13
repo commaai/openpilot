@@ -444,7 +444,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            fw_versions.update({(r.brand, addr): (version, r) for addr, version in query.get_data(timeout).items()})
+            fw_versions.update({(r.brand, addr): (version, r) for (addr, _), version in query.get_data(timeout).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
@@ -497,7 +497,7 @@ if __name__ == "__main__":
 
   t = time.time()
   print("Getting vin...")
-  addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
+  addr, vin, rx_addr = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
   print(f"VIN: {vin}")
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
