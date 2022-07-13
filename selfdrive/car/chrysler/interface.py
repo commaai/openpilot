@@ -93,4 +93,4 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def apply(self, c):
-    return self.CC.update(c, self.CS, self.low_speed_alert)
+    return self.CC.update(c, self.CS)
