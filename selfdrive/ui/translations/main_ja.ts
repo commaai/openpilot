@@ -210,7 +210,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="186"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot は、左右に4°、上に5°、下に8°の範囲に設置する必要があります。openpilot は継続的に校正されているので、手動でリセットする必要はほとんどありません。</translation>
+        <translation>openpilot は、左または右の4°以内、上の5°または下の8°以内にデバイスを取付ける必要があります。キャリブレーションを引き続きます、リセットはほとんど必要ありません。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="197"/>
