@@ -557,7 +557,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: This PR makes changes to
       - name: Update comment
-        if: steps.save_diff.outputs.diff != '' && ${{ env.AZURE_TOKEN != '' }}
+        if: ${{ steps.save_diff.outputs.diff != '' && env.AZURE_TOKEN != '' }}
         uses: peter-evans/create-or-update-comment@b95e16d2859ad843a14218d1028da5b2c4cbc4b4
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
@@ -565,7 +565,7 @@ jobs:
           body: "${{ steps.save_diff.outputs.diff }}"
           edit-mode: replace
       - name: Delete comment
-        if: steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && ${{ env.AZURE_TOKEN != '' }}
+        if: ${{ steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && env.AZURE_TOKEN != '' }}
         uses: actions/github-script@v6
         with:
           script: |
