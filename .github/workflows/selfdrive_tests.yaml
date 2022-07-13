@@ -58,10 +58,15 @@ jobs:
       run: |
         TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
         cp Dockerfile.openpilot_base $STRIPPED_DIR
+        cp .pre-commit-config.yaml $STRIPPED_DIR
     - name: Build Docker image
       run: |
           eval "$BUILD"
           rm $STRIPPED_DIR/Dockerfile.openpilot_base
+    - name: pre-commit
+      run: |
+          cd $STRIPPED_DIR
+          ${{ env.RUN }} "pre-commit run --all"
     - name: Build openpilot and run checks
       run: |
           cd $STRIPPED_DIR
