@@ -28,7 +28,6 @@ class IsoTpParallelQuery:
         self.real_addrs.append((a, None))
 
     self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in self.real_addrs}
-    self.rx_addrs = defaultdict(int)
     self.msg_buffer = defaultdict(list)
 
   def rx(self):
