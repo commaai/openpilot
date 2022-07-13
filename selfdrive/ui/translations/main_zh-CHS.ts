@@ -1266,7 +1266,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
-        <translation>Forget Wi-Fi Network &quot;%1&quot;?</translation>
+        <translation>忘记WiFi网络 &quot;%1&quot;?</translation>
     </message>
 </context>
 </TS>
