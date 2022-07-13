@@ -215,7 +215,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="197"/>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> デバイスは %1° %2 と %3° %4を示しています。</translation>
+        <translation> このデバイスは%2の%1°、%4の%3°に向けます。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="198"/>
