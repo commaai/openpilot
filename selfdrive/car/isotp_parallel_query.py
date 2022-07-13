@@ -4,7 +4,7 @@ from functools import partial
 from typing import Optional
 
 import cereal.messaging as messaging
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
@@ -126,7 +126,7 @@ class IsoTpParallelQuery:
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
           else:
-            results[tx_addr] = dat[len(expected_response):]
+            results[(tx_addr, msg._can_client.rx_addr)] = dat[len(expected_response):]
             request_done[tx_addr] = True
         else:
           error_code = dat[2] if len(dat) > 2 else -1

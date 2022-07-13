@@ -11,12 +11,12 @@ from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.spinner import Spinner
 from common.timeout import Timeout
 from common.transformations.camera import get_view_frame_from_road_frame, tici_f_frame_size, tici_d_frame_size
-from selfdrive.hardware import PC
+from system.hardware import PC
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.test_processes import format_diff
-from selfdrive.version import get_commit
+from system.version import get_commit
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 

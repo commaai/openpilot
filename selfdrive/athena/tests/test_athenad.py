@@ -16,7 +16,7 @@ from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
-from selfdrive import swaglog
+from system import swaglog
 from selfdrive.athena import athenad
 from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
@@ -120,6 +120,13 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertTrue(resp, 'list empty!')
     self.assertCountEqual(resp, expected)
 
+  def test_strip_bz2_extension(self):
+    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
+    Path(fn).touch()
+    if fn.endswith('.bz2'):
+      self.assertEqual(athenad.strip_bz2_extension(fn), fn[:-4])
+
+
   @with_http_server
   def test_do_upload(self, host):
     fn = os.path.join(athenad.ROOT, 'qlog.bz2')
@@ -135,9 +142,6 @@ class TestAthenadMethods(unittest.TestCase):
 
   @with_http_server
   def test_uploadFileToUrl(self, host):
-    not_exists_resp = dispatcher["uploadFileToUrl"]("does_not_exist.bz2", "http://localhost:1238", {})
-    self.assertEqual(not_exists_resp, {'enqueued': 0, 'items': [], 'failed': ['does_not_exist.bz2']})
-
     fn = os.path.join(athenad.ROOT, 'qlog.bz2')
     Path(fn).touch()
 
@@ -147,6 +151,24 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertDictContainsSubset({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}, resp['items'][0])
     self.assertIsNotNone(resp['items'][0].get('id'))
     self.assertEqual(athenad.upload_queue.qsize(), 1)
+
+  @with_http_server
+  def test_uploadFileToUrl_duplicate(self, host):
+    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
+    Path(fn).touch()
+
+    url1 = f"{host}/qlog.bz2?sig=sig1"
+    dispatcher["uploadFileToUrl"]("qlog.bz2", url1, {})
+
+    # Upload same file again, but with different signature
+    url2 = f"{host}/qlog.bz2?sig=sig2"
+    resp = dispatcher["uploadFileToUrl"]("qlog.bz2", url2, {})
+    self.assertEqual(resp, {'enqueued': 0, 'items': []})
+
+  @with_http_server
+  def test_uploadFileToUrl_does_not_exist(self, host):
+    not_exists_resp = dispatcher["uploadFileToUrl"]("does_not_exist.bz2", "http://localhost:1238", {})
+    self.assertEqual(not_exists_resp, {'enqueued': 0, 'items': [], 'failed': ['does_not_exist.bz2']})
 
   @with_http_server
   def test_upload_handler(self, host):

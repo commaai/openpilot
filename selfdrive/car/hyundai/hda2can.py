@@ -12,12 +12,15 @@ def create_lkas(packer, enabled, frame, lat_active, apply_steer):
   }
   return packer.make_can_msg("LKAS", 4, values, frame % 255)
 
+def create_cam_0x2a4(packer, frame, camera_values):
+  camera_values.update({
+    "BYTE7": 0,
+  })
+  return packer.make_can_msg("CAM_0x2a4", 4, camera_values, frame % 255)
 
-def create_buttons(packer, cnt, cancel, resume):
+def create_buttons(packer, cnt, btn):
   values = {
-    "_COUNTER": cnt % 0xf,
     "SET_ME_1": 1,
-    "DISTANCE_BTN": 1 if resume else 0,
-    "PAUSE_RESUME_BTN": 1 if cancel else 0,
+    "CRUISE_BUTTONS": btn,
   }
-  return packer.make_can_msg("CRUISE_BUTTONS", 5, values)
+  return packer.make_can_msg("CRUISE_BUTTONS", 5, values, cnt % 0xf)

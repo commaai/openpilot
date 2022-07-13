@@ -53,7 +53,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     p.setPen(Qt::white);
     p.setRenderHint(QPainter::TextAntialiasing);
     configFont(p, "Inter", 100, "Bold");
-    p.drawText(geometry(), Qt::AlignCenter, "camera starting");
+    p.drawText(geometry(), Qt::AlignCenter, tr("camera starting"));
     return;
   }
 
@@ -63,7 +63,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
   // is_rhd = driver_state.getWheelOnRightProb() > 0.5;
   driver_data = is_rhd ? driver_state.getRightDriverData() : driver_state.getLeftDriverData();
 
-  bool face_detected = driver_data.getFaceProb() > 0.5;
+  bool face_detected = driver_data.getFaceProb() > 0.7;
   if (face_detected) {
     auto fxy_list = driver_data.getFacePosition();
     auto std_list = driver_data.getFaceOrientationStd();

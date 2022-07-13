@@ -4,7 +4,7 @@
 #include <QJsonObject>
 
 #include "common/params.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 
 QString get_mapbox_token() {
@@ -115,4 +115,9 @@ std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param) {
   } else {
     return {};
   }
+}
+
+double angle_difference(double angle1, double angle2) {
+  double diff = fmod(angle2 - angle1 + 180.0, 360.0) - 180.0;
+  return diff < -180.0 ? diff + 360.0 : diff;
 }

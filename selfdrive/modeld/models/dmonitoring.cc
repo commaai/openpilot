@@ -6,7 +6,7 @@
 #include "common/modeldata.h"
 #include "common/params.h"
 #include "common/timing.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 #include "selfdrive/modeld/models/dmonitoring.h"
 
@@ -20,7 +20,6 @@ static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
 }
 
 void dmonitoring_init(DMonitoringModelState* s) {
-  s->is_rhd = Params().getBool("IsRHD");
 
 #ifdef USE_ONNX_MODEL
   s->m = new ONNXModel("models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);

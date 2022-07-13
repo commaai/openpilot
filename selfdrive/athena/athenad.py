@@ -32,12 +32,12 @@ from common.basedir import PERSIST
 from common.file_helpers import CallbackReader
 from common.params import Params
 from common.realtime import sec_since_boot, set_core_affinity
-from selfdrive.hardware import HARDWARE, PC, AGNOS
+from system.hardware import HARDWARE, PC, AGNOS
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.statsd import STATS_DIR
-from selfdrive.swaglog import SWAGLOG_DIR, cloudlog
-from selfdrive.version import get_commit, get_origin, get_short_branch, get_version
+from system.swaglog import SWAGLOG_DIR, cloudlog
+from system.version import get_commit, get_origin, get_short_branch, get_version
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -364,6 +364,11 @@ def uploadFilesToUrls(files_data):
       failed.append(fn)
       continue
 
+    # Skip item if already in queue
+    url = file['url'].split('?')[0]
+    if any(url == item['url'].split('?')[0] for item in listUploadQueue()):
+      continue
+
     item = UploadItem(
       path=path,
       url=file['url'],
@@ -493,7 +498,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def takeSnapshot():
-  from selfdrive.camerad.snapshot.snapshot import jpeg_write, snapshot
+  from system.camerad.snapshot.snapshot import jpeg_write, snapshot
   ret = snapshot()
   if ret is not None:
     def b64jpeg(x):

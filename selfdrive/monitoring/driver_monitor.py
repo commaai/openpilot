@@ -26,10 +26,10 @@ class DRIVER_MONITOR_SETTINGS():
     self._DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
     self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
-    self._FACE_THRESHOLD = 0.5
+    self._FACE_THRESHOLD = 0.7
     self._EYE_THRESHOLD = 0.65
-    self._SG_THRESHOLD = 0.925
-    self._BLINK_THRESHOLD = 0.861
+    self._SG_THRESHOLD = 0.9
+    self._BLINK_THRESHOLD = 0.87
 
     self._EE_THRESH11 = 0.75
     self._EE_THRESH12 = 3.25
@@ -120,7 +120,7 @@ class DriverStatus():
     self.settings = settings
 
     # init driver status
-    # self.wheelpos_learner = RunningStatFilter()
+    self.wheelpos_learner = RunningStatFilter()
     self.pose = DriverPose(self.settings._POSE_OFFSET_MAX_COUNT)
     self.pose_calibrated = False
     self.blink = DriverBlink()
@@ -137,7 +137,8 @@ class DriverStatus():
     self.distracted_types = []
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
-    self.wheel_on_right = rhd
+    self.wheel_on_right = False
+    self.rhd_toggled = rhd
     self.face_detected = False
     self.terminal_alert_cnt = 0
     self.terminal_time = 0
@@ -225,14 +226,14 @@ class DriverStatus():
                                             self.settings._POSE_YAW_THRESHOLD_STRICT]) / self.settings._POSE_YAW_THRESHOLD
 
   def update_states(self, driver_state, cal_rpy, car_speed, op_engaged):
-    # rhd_pred = driver_state.wheelOnRightProb
-    # if car_speed > 0.01:
-    #   self.wheelpos_learner.push_and_update(rhd_pred)
-    # if self.wheelpos_learner.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT:
-    #   self.wheel_on_right = self.wheelpos_learner.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
-    # else:
-    #   self.wheel_on_right = rhd_pred > self.settings._WHEELPOS_THRESHOLD
-    driver_data = driver_state.rightDriverData if self.wheel_on_right else driver_state.leftDriverData
+    rhd_pred = driver_state.wheelOnRightProb
+    if car_speed > 0.01:
+      self.wheelpos_learner.push_and_update(rhd_pred)
+    if self.wheelpos_learner.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT:
+      self.wheel_on_right = self.wheelpos_learner.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
+    else:
+      self.wheel_on_right = rhd_pred > self.settings._WHEELPOS_THRESHOLD
+    driver_data = driver_state.rightDriverData if self.rhd_toggled else driver_state.leftDriverData
     if not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,
                                     driver_data.faceOrientationStd, driver_data.facePositionStd,
                                     driver_data.readyProb, driver_data.notReadyProb)):
