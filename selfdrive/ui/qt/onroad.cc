@@ -242,10 +242,10 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   }
 
   // dm icon
-  if (!hideDM) {
+  // if (!hideDM) {
     drawIcon(p, radius / 2 + (bdr_s * 2), rect().bottom() - footer_h / 2,
              dm_img, QColor(0, 0, 0, 70), dmActive ? 1.0 : 0.2);
-  }
+  // }
 }
 
 void OnroadHud::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
