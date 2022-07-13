@@ -135,7 +135,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>車内カメラをプレビューしますと、ドライバー監視システムの視界を確保します。(車両の電源を切る必要があります)</translation>
+        <translation>車内カメラをプレビューして、ドライバー監視システムの視界を確保ができます。(車両の電源を切る必要があります)</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="109"/>
