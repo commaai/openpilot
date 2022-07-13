@@ -308,13 +308,8 @@
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="168"/>
-        <source>Need at least </source>
-        <translation>至少需要 </translation>
-    </message>
-    <message>
-        <location filename="../qt/widgets/input.cc" line="168"/>
-        <source> characters!</source>
-        <translation> 个字符！</translation>
+        <source>Need at least %1 characters!</source>
+        <translation>至少需要 %1 个字符！</translation>
     </message>
 </context>
 <context>
@@ -479,8 +474,8 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
-        <source>for &quot;</source>
-        <translation>网络名称：&quot;</translation>
+        <source>for &quot;%1&quot;</source>
+        <translation>网络名称：&quot;%1&quot;</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
@@ -545,52 +540,50 @@ location set</source>
         <translation>将您的设备与comma账号配对</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="91"/>
-        <source>
-      &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Go to https://connect.comma.ai on your phone&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Click &quot;add new device&quot; and scan the QR code on the right&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Bookmark connect.comma.ai to your home screen to use it like an app&lt;/li&gt;
-      &lt;/ol&gt;
-    </source>
-        <translation>
-      &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;在手机上访问 https://connect.comma.ai&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;点击“添加新设备”，扫描右侧二维码&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;将 connect.comma.ai 收藏到您的主屏幕，以便像应用程序一样使用它&lt;/li&gt;
-      &lt;/ol&gt;
-    </translation>
+        <location filename="../qt/widgets/prime.cc" line="97"/>
+        <source>Go to https://connect.comma.ai on your phone</source>
+        <translation>在手机上访问 https://connect.comma.ai</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="98"/>
+        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <translation>点击“添加新设备”，扫描右侧二维码</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="99"/>
+        <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
+        <translation>将 connect.comma.ai 收藏到您的主屏幕，以便像应用程序一样使用它</translation>
     </message>
 </context>
 <context>
     <name>PrimeAdWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="184"/>
+        <location filename="../qt/widgets/prime.cc" line="187"/>
         <source>Upgrade Now</source>
         <translation>现在升级</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="189"/>
+        <location filename="../qt/widgets/prime.cc" line="192"/>
         <source>Become a comma prime member at connect.comma.ai</source>
         <translation>打开connect.comma.ai以注册comma prime会员</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="196"/>
+        <location filename="../qt/widgets/prime.cc" line="199"/>
         <source>PRIME FEATURES:</source>
         <translation>comma prime特权：</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Remote access</source>
         <translation>远程访问</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>1 year of storage</source>
         <translation>1年数据存储</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Developer perks</source>
         <translation>开发者福利</translation>
     </message>
@@ -598,22 +591,22 @@ location set</source>
 <context>
     <name>PrimeUserWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="123"/>
+        <location filename="../qt/widgets/prime.cc" line="126"/>
         <source>✓ SUBSCRIBED</source>
         <translation>✓ 已订阅</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="129"/>
+        <location filename="../qt/widgets/prime.cc" line="132"/>
         <source>comma prime</source>
         <translation>comma prime</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="135"/>
+        <location filename="../qt/widgets/prime.cc" line="138"/>
         <source>CONNECT.COMMA.AI</source>
         <translation>CONNECT.COMMA.AI</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="148"/>
+        <location filename="../qt/widgets/prime.cc" line="151"/>
         <source>COMMA POINTS</source>
         <translation>COMMA POINTS点数</translation>
     </message>
@@ -855,17 +848,17 @@ location set</source>
 <context>
     <name>SetupWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="230"/>
+        <location filename="../qt/widgets/prime.cc" line="233"/>
         <source>Finish Setup</source>
         <translation>完成设置</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="236"/>
+        <location filename="../qt/widgets/prime.cc" line="239"/>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
         <translation>将您的设备与comma connect （connect.comma.ai）配对并领取您的comma prime优惠。</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="243"/>
+        <location filename="../qt/widgets/prime.cc" line="246"/>
         <source>Pair device</source>
         <translation>配对设备</translation>
     </message>
@@ -1021,13 +1014,13 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
-        <source>Uninstall </source>
-        <translation>卸载 </translation>
+        <source>UNINSTALL</source>
+        <translation>卸载</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
-        <source>UNINSTALL</source>
-        <translation>卸载</translation>
+        <source>Uninstall %1</source>
+        <translation>卸载 %1</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="254"/>
@@ -1272,8 +1265,8 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
-        <source>Forget Wi-Fi Network &quot;</source>
-        <translation>忘记WiFi网络&quot;</translation>
+        <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
+        <translation>忘记WiFi网络 &quot;%1&quot;?</translation>
     </message>
 </context>
 </TS>
