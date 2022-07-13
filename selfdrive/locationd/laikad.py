@@ -170,6 +170,7 @@ class Laikad:
         if kf_residual_correct:
           break
         cloudlog.debug(f"Median residual of measurements above threshold. Repeat {i} Residuals/threshold: {np.abs(residuals).flatten().round()}, {RESIDUAL_THRESHOLD}")
+        print(f"Median residual of measurements above threshold. Repeat {i} Residuals/threshold: {np.abs(residuals).flatten().round()} x {self.gnss_kf.x}")
         residuals = kf_add_observations(self.gnss_kf, t, measurements)
     else:
       # Ensure gnss filter is updated even with no new measurements
