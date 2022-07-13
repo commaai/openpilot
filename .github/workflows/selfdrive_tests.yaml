@@ -10,6 +10,7 @@ env:
   CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_REGISTRY: ghcr.io/commaai
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
+  HAS_AZURE_TOKEN: $AZURE_TOKEN != ''
 
   DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
   BUILD: |
@@ -17,12 +18,12 @@ env:
       docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
       docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
-  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
 
   BUILD_CL: |
       docker pull $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest || true
       docker build --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
-  RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache $CL_BASE_IMAGE /bin/sh -c
+  RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
   UNIT_TEST: coverage run --append -m unittest discover
 
@@ -365,7 +366,7 @@ jobs:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
     - name: Upload reference logs
-      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
+      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.HAS_AZURE_TOKEN }}
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
                         CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
@@ -510,3 +511,67 @@ jobs:
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/openpilot-docs:latest
+
+  car_docs_diff:
+    name: comment on PR with car docs diff
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          ref: ${{ github.event.pull_request.base.ref }}
+      - name: Cache scons
+        id: scons-cache
+        # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+        uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+        env:
+          CACHE_SKIP_SAVE: true
+        with:
+          path: /tmp/scons_cache
+          key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          restore-keys: |
+            scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+            scons-
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Get base car info
+        run: |
+          ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
+          sudo chown -R $USER:$USER ${{ github.workspace }}
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Save car docs diff
+        id: save_diff
+        run: |
+          ${{ env.RUN }} "scons -j$(nproc)"
+          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_info")
+          output="${output//$'\n'/'%0A'}"
+          echo "::set-output name=diff::$output"
+      - name: Find comment
+        if: env.HAS_AZURE_TOKEN
+        uses: peter-evans/find-comment@v1
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: This PR makes changes to
+      - name: Update comment
+        if: steps.save_diff.outputs.diff != '' && env.HAS_AZURE_TOKEN
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: "${{ steps.save_diff.outputs.diff }}"
+          edit-mode: replace
+      - name: Delete comment
+        if: steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && env.HAS_AZURE_TOKEN
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.deleteComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ steps.fc.outputs.comment-id }}
+            })
