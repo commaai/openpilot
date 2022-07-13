@@ -308,13 +308,8 @@
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="168"/>
-        <source>Need at least </source>
-        <translation>최소 </translation>
-    </message>
-    <message>
-        <location filename="../qt/widgets/input.cc" line="168"/>
-        <source> characters!</source>
-        <translation>자가 필요합니다!</translation>
+        <source>Need at least %1 characters!</source>
+        <translation>최소 %1 자가 필요합니다!</translation>
     </message>
 </context>
 <context>
@@ -481,8 +476,8 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
-        <source>for &quot;</source>
-        <translation>하기위한 &quot;</translation>
+        <source>for &quot;%1&quot;</source>
+        <translation>하기위한 &quot;%1&quot;</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
@@ -547,52 +542,50 @@ location set</source>
         <translation>장치를 콤마 계정과 페어링합니다</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="91"/>
-        <source>
-      &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Go to https://connect.comma.ai on your phone&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Click &quot;add new device&quot; and scan the QR code on the right&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Bookmark connect.comma.ai to your home screen to use it like an app&lt;/li&gt;
-      &lt;/ol&gt;
-    </source>
-        <translation>
-      &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;https://connect.comma.ai에 접속하세요&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;&quot;새 장치 추가&quot;를 클릭하고 오른쪽 QR 코드를 검색합니다.&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;connect.comma.ai을 앱처럼 사용하려면 홈 화면에 바로가기를 만드십시오.&lt;/li&gt;
-      &lt;/ol&gt;
-    </translation>
+        <location filename="../qt/widgets/prime.cc" line="97"/>
+        <source>Go to https://connect.comma.ai on your phone</source>
+        <translation>https://connect.comma.ai에 접속하세요</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="98"/>
+        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <translation>&quot;새 장치 추가&quot;를 클릭하고 오른쪽 QR 코드를 검색합니다</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="99"/>
+        <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
+        <translation>connect.comma.ai을 앱처럼 사용하려면 홈 화면에 바로가기를 만드십시오</translation>
     </message>
 </context>
 <context>
     <name>PrimeAdWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="184"/>
+        <location filename="../qt/widgets/prime.cc" line="187"/>
         <source>Upgrade Now</source>
         <translation>지금 업그레이드</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="189"/>
+        <location filename="../qt/widgets/prime.cc" line="192"/>
         <source>Become a comma prime member at connect.comma.ai</source>
         <translation>connect.comma.ai에서 comma prime에 가입합니다</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="196"/>
+        <location filename="../qt/widgets/prime.cc" line="199"/>
         <source>PRIME FEATURES:</source>
         <translation>PRIME 기능：</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Remote access</source>
         <translation>원격 접속</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>1 year of storage</source>
         <translation>1년간 저장</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Developer perks</source>
         <translation>개발자 혜택</translation>
     </message>
@@ -600,22 +593,22 @@ location set</source>
 <context>
     <name>PrimeUserWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="123"/>
+        <location filename="../qt/widgets/prime.cc" line="126"/>
         <source>✓ SUBSCRIBED</source>
         <translation>✓ 구독함</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="129"/>
+        <location filename="../qt/widgets/prime.cc" line="132"/>
         <source>comma prime</source>
         <translation>comma prime</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="135"/>
+        <location filename="../qt/widgets/prime.cc" line="138"/>
         <source>CONNECT.COMMA.AI</source>
         <translation>CONNECT.COMMA.AI</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="148"/>
+        <location filename="../qt/widgets/prime.cc" line="151"/>
         <source>COMMA POINTS</source>
         <translation>COMMA POINTS</translation>
     </message>
@@ -857,17 +850,17 @@ location set</source>
 <context>
     <name>SetupWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="230"/>
+        <location filename="../qt/widgets/prime.cc" line="233"/>
         <source>Finish Setup</source>
         <translation>설정 완료</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="236"/>
+        <location filename="../qt/widgets/prime.cc" line="239"/>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
         <translation>장치를 (connect.comma.ai)에서 페어링하고 comma prime 오퍼를 청구합니다.</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="243"/>
+        <location filename="../qt/widgets/prime.cc" line="246"/>
         <source>Pair device</source>
         <translation>장치 페어링</translation>
     </message>
@@ -1023,13 +1016,13 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
-        <source>Uninstall </source>
-        <translation>제거 </translation>
+        <source>UNINSTALL</source>
+        <translation>제거</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
-        <source>UNINSTALL</source>
-        <translation>제거</translation>
+        <source>Uninstall %1</source>
+        <translation>제거 %1</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="254"/>
@@ -1274,8 +1267,8 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
-        <source>Forget Wi-Fi Network &quot;</source>
-        <translation>wifi 네트워크 저장안함 &quot;</translation>
+        <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
+        <translation>wifi 네트워크 저장안함 &quot;%1&quot;?</translation>
     </message>
 </context>
 </TS>
