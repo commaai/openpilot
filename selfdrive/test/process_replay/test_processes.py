@@ -217,7 +217,7 @@ if __name__ == "__main__":
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
     for (segment, proc, subtest_name, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
-      if isinstance(result, list):
+      if not args.upload_only:
         results[segment][proc + subtest_name] = result
 
   diff1, diff2, failed = format_diff(results, ref_commit)
