@@ -82,12 +82,12 @@ class CarController:
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
         if CC.cruiseControl.cancel:
           for _ in range(20):
-            can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, True, False))
+            can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, Buttons.CANCEL))
           self.last_button_frame = self.frame
 
         # cruise standstill resume
         elif CC.cruiseControl.resume:
-          can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, False, True))
+          can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, Buttons.RES_ACCEL))
           self.last_button_frame = self.frame
     else:
 
