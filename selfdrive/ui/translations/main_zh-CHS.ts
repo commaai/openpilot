@@ -478,10 +478,6 @@ location set</source>
         <translation>网络名称：&quot;%1&quot;</translation>
     </message>
     <message>
-        <source>for &quot;</source>
-        <translation type="vanished">网络名称：&quot;</translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>Wrong password</source>
         <translation>密码错误</translation>
@@ -1017,10 +1013,6 @@ location set</source>
         <translation>正在检查更新</translation>
     </message>
     <message>
-        <source>Uninstall </source>
-        <translation type="vanished">卸载 </translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
         <source>UNINSTALL</source>
         <translation>卸载</translation>
@@ -1275,10 +1267,6 @@ location set</source>
         <location filename="../qt/offroad/networking.cc" line="299"/>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>Forget Wi-Fi Network &quot;%1&quot;?</translation>
-    </message>
-    <message>
-        <source>Forget Wi-Fi Network &quot;</source>
-        <translation type="vanished">忘记WiFi网络&quot;</translation>
     </message>
 </context>
 </TS>

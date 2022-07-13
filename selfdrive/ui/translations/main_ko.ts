@@ -480,10 +480,6 @@ location set</source>
         <translation>하기위한 &quot;%1&quot;</translation>
     </message>
     <message>
-        <source>for &quot;</source>
-        <translation type="vanished">하기위한 &quot;</translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>Wrong password</source>
         <translation>비밀번호가 틀렸습니다</translation>
@@ -1019,10 +1015,6 @@ location set</source>
         <translation>확인중</translation>
     </message>
     <message>
-        <source>Uninstall </source>
-        <translation type="vanished">제거 </translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
         <source>UNINSTALL</source>
         <translation>제거</translation>
@@ -1277,10 +1269,6 @@ location set</source>
         <location filename="../qt/offroad/networking.cc" line="299"/>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>wifi 네트워크 저장안함 &quot;%1&quot;?</translation>
-    </message>
-    <message>
-        <source>Forget Wi-Fi Network &quot;</source>
-        <translation type="vanished">wifi 네트워크 저장안함 &quot;</translation>
     </message>
 </context>
 </TS>
