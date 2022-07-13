@@ -128,7 +128,15 @@ system/clocksd/.gitignore
 system/clocksd/SConscript
 system/clocksd/clocksd.cc
 
-selfdrive/debug/*.py
+selfdrive/debug/can_printer.py
+selfdrive/debug/check_freq.py
+selfdrive/debug/dump.py
+selfdrive/debug/filter_log_message.py
+selfdrive/debug/get_fingerprint.py
+selfdrive/debug/uiview.py
+
+selfdrive/debug/hyundai_enable_radar_points.py
+selfdrive/debug/vw_mqb_config.py
 
 common/SConscript
 common/version.h
