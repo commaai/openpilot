@@ -10,7 +10,6 @@ env:
   CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_REGISTRY: ghcr.io/commaai
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
-  HAS_AZURE_TOKEN: $AZURE_TOKEN != ''
 
   DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
   BUILD: |
@@ -366,7 +365,7 @@ jobs:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
     - name: Upload reference logs
-      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.HAS_AZURE_TOKEN }}
+      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
                         CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
@@ -518,6 +517,13 @@ jobs:
     timeout-minutes: 50
     if: github.event_name == 'pull_request'
     steps:
+      - name: Check permissions
+      - id: check
+        continue-on-error: true
+        uses: prince-chrismc/check-actor-permissions-action@ba5895467e41da28211a1a90dfe7465b8dce3ad9
+        with:
+          github_token: ${{ github.token }}
+          permission: write
       - uses: actions/checkout@v3
         with:
           submodules: true
@@ -551,14 +557,14 @@ jobs:
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
-        if: env.HAS_AZURE_TOKEN
+        if: steps.check.outputs.permitted == 'true'
         uses: peter-evans/find-comment@v1
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: This PR makes changes to
       - name: Update comment
-        if: steps.save_diff.outputs.diff != '' && env.HAS_AZURE_TOKEN
+        if: steps.save_diff.outputs.diff != '' && steps.check.outputs.permitted == 'true'
         uses: peter-evans/create-or-update-comment@v1
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
@@ -566,7 +572,7 @@ jobs:
           body: "${{ steps.save_diff.outputs.diff }}"
           edit-mode: replace
       - name: Delete comment
-        if: steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && env.HAS_AZURE_TOKEN
+        if: steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && steps.check.outputs.permitted == 'true'
         uses: actions/github-script@v6
         with:
           script: |
