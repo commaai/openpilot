@@ -418,7 +418,7 @@ location set</source>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>for &quot;</source>
-        <translation>مثلمن أجل & مثل;</translation>
+        <translation>مثل &quot;</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
@@ -1211,7 +1211,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
         <source>Forget Wi-Fi Network &quot;</source>
-        <translation>انسى شبكة الواي فاي</translation>
+        <translation>انسى شبكة الواي فاي &quot;</translation>
     </message>
 </context>
 </TS>
