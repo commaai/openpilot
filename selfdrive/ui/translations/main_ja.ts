@@ -703,7 +703,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="88"/>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation type="unfinished">「data」パーティションをマウントできません。「確認」ボタンを押すとデバイスが初期化されます。</translation>
+        <translation>「data」パーティションをマウントできません。「確認」ボタンを押すとデバイスが初期化されます。</translation>
     </message>
 </context>
 <context>
