@@ -220,27 +220,27 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="198"/>
         <source>down</source>
-        <translation>下</translation>
+        <translation>baixo</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="198"/>
         <source>up</source>
-        <translation>上</translation>
+        <translation>cima</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="199"/>
         <source>left</source>
-        <translation>左</translation>
+        <translation>esquerda</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="199"/>
         <source>right</source>
-        <translation>右</translation>
+        <translation>direita</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="210"/>
         <source>Are you sure you want to reboot?</source>
-        <translation>Tem certeza que quer reiniciar？</translation>
+        <translation>Tem certeza que quer reiniciar?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="217"/>
@@ -250,7 +250,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="223"/>
         <source>Are you sure you want to power off?</source>
-        <translation>Tem certeza que quer desligar？</translation>
+        <translation>Tem certeza que quer desligar?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="230"/>
@@ -327,17 +327,17 @@
     <message>
         <location filename="../installer/installer.cc" line="144"/>
         <source>Receiving objects: </source>
-        <translation>Recebendo objetos： </translation>
+        <translation>Recebendo objetos: </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="145"/>
         <source>Resolving deltas: </source>
-        <translation>Resolvendo deltas： </translation>
+        <translation>Resolvendo deltas: </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="146"/>
         <source>Updating files: </source>
-        <translation>Atualizando arquivos： </translation>
+        <translation>Atualizando arquivos: </translation>
     </message>
 </context>
 <context>
@@ -578,7 +578,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/widgets/prime.cc" line="196"/>
         <source>PRIME FEATURES:</source>
-        <translation>PRIME FEATURES：</translation>
+        <translation>PRIME FEATURES:</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="201"/>
@@ -830,7 +830,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/setup/setup.cc" line="303"/>
         <source>Downloading...</source>
-        <translation>ダウンロード中...</translation>
+        <translation>Baixando...</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="315"/>
