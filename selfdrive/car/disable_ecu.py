@@ -6,6 +6,7 @@ EXT_DIAG_RESPONSE = b'\x50\x03'
 
 COM_CONT_RESPONSE = b''
 
+
 def disable_ecu(logcan, sendcan, bus=0, addr=0x7d0, com_cont_req=b'\x28\x83\x01', timeout=0.1, retry=10, debug=False):
   """Silence an ECU by disabling sending and receiving messages using UDS 0x28.
   The ECU will stay silent as long as openpilot keeps sending Tester Present.
@@ -26,9 +27,22 @@ def disable_ecu(logcan, sendcan, bus=0, addr=0x7d0, com_cont_req=b'\x28\x83\x01'
 
         cloudlog.warning("ecu disabled")
         return True
+
     except Exception:
       cloudlog.exception("ecu disable exception")
 
     print(f"ecu disable retry ({i+1}) ...")
   cloudlog.warning("ecu disable failed")
   return False
+
+
+if __name__ == "__main__":
+  import time
+  import cereal.messaging as messaging
+  sendcan = messaging.pub_sock('sendcan')
+  logcan = messaging.sub_sock('can')
+  time.sleep(1)
+
+  # honda bosch radar disable
+  disabled = disable_ecu(logcan, sendcan, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03', timeout=0.5, debug=False)
+  print(f"disabled: {disabled}")
