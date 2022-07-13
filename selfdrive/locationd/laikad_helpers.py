@@ -5,7 +5,7 @@ from laika.constants import EARTH_ROTATION_RATE, SPEED_OF_LIGHT
 from laika.helpers import ConstellationId
 
 
-def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C1C', min_measurements=6):
+def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C1C', min_measurements=6, max_n=25):
   '''
   Calculates gps fix using gauss newton method
   To solve the problem a minimal of 4 measurements are required.
@@ -20,7 +20,7 @@ def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C
     return [], []
 
   Fx_pos = pr_residual(measurements, posfix_functions, signal=signal)
-  x = gauss_newton(Fx_pos, x0)
+  x = gauss_newton(Fx_pos, x0, max_n)
   residual, _ = Fx_pos(x, weight=1.0)
   return x.tolist(), residual.tolist()
 
@@ -43,7 +43,7 @@ def pr_residual(measurements, posfix_functions, signal='C1C'):
   return Fx_pos
 
 
-def gauss_newton(fun, b, xtol=1e-9, max_n=8):
+def gauss_newton(fun, b, xtol=1e-9, max_n=25):
   for _ in range(max_n):
     # Compute function and jacobian on current estimate
     r, J = fun(b)

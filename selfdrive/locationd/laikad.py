@@ -35,7 +35,7 @@ RESIDUAL_THRESHOLD = 100.
 class Laikad:
   def __init__(self, valid_const=("GPS", "GLONASS"), auto_fetch_orbits=True, auto_update=False,
                valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV),
-               save_ephemeris=False):
+               save_ephemeris=False, max_least_squares_steps=6):
     """
     valid_const: GNSS constellation which can be used
     auto_fetch_orbits: If true fetch orbits from internet when needed
@@ -57,6 +57,7 @@ class Laikad:
     self.load_cache()
 
     self.posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
+    self.max_least_squares_steps = max_least_squares_steps
     self.last_pos_fix = []
     self.last_pos_residual = []
     self.last_pos_fix_t = None
@@ -318,7 +319,8 @@ def main(sm=None, pm=None):
 
   replay = "REPLAY" in os.environ
   use_internet = "LAIKAD_NO_INTERNET" not in os.environ
-  laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet)
+  max_least_squares_steps = 50 if replay else 6  # Ensures consistent output of replay on pc and CI
+  laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet, max_least_squares_steps=max_least_squares_steps)
 
   while True:
     sm.update()
