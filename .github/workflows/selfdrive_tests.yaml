@@ -518,7 +518,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Check permissions
-      - id: check
+        id: check
         continue-on-error: true
         uses: prince-chrismc/check-actor-permissions-action@ba5895467e41da28211a1a90dfe7465b8dce3ad9
         with:
@@ -558,14 +558,14 @@ jobs:
           echo "::set-output name=diff::$output"
       - name: Find comment
         if: steps.check.outputs.permitted == 'true'
-        uses: peter-evans/find-comment@v1
+        uses: peter-evans/find-comment@1769778a0c5bd330272d749d12c036d65e70d39d
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: This PR makes changes to
       - name: Update comment
         if: steps.save_diff.outputs.diff != '' && steps.check.outputs.permitted == 'true'
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@b95e16d2859ad843a14218d1028da5b2c4cbc4b4
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
