@@ -296,7 +296,7 @@ void WifiUI::refresh() {
       QPushButton *forgetBtn = new QPushButton(tr("FORGET"));
       forgetBtn->setObjectName("forgetBtn");
       QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
-        if (ConfirmationDialog::confirm(tr("Forget Wi-Fi Network \"") + QString::fromUtf8(network.ssid) + "\"?", this)) {
+        if (ConfirmationDialog::confirm(tr("Forget Wi-Fi Network \"%1\"?".arg(QString::fromUtf8(network.ssid))), this)) {
           wifi->forgetConnection(network.ssid);
         }
       });
