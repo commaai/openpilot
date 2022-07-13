@@ -8,7 +8,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.hyundai.values import DBC, FEATURES, HDA2_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
 from selfdrive.car.interfaces import CarStateBase
 
-PREV_BUTTON_SAMPLES = 4
+PREV_BUTTON_SAMPLES = 8
 
 
 class CarState(CarStateBase):
@@ -171,7 +171,10 @@ class CarState(CarStateBase):
     speed_factor = CV.MPH_TO_MS if cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] == 1 else CV.KPH_TO_MS
     ret.cruiseState.speed = cp.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
 
-    self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["_COUNTER"]
+    self.cruise_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["CRUISE_BUTTONS"])
+    self.main_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["ADAPTIVE_CRUISE_MAIN_BTN"])
+    self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
+
     self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
 
     return ret
@@ -362,7 +365,9 @@ class CarState(CarStateBase):
       ("CRUISE_ACTIVE", "SCC1"),
       ("SET_SPEED", "CRUISE_INFO"),
       ("CRUISE_STANDSTILL", "CRUISE_INFO"),
-      ("_COUNTER", "CRUISE_BUTTONS"),
+      ("COUNTER", "CRUISE_BUTTONS"),
+      ("CRUISE_BUTTONS", "CRUISE_BUTTONS"),
+      ("ADAPTIVE_CRUISE_MAIN_BTN", "CRUISE_BUTTONS"),
 
       ("DISTANCE_UNIT", "CLUSTER_INFO"),
 

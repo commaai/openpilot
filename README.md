@@ -105,23 +105,25 @@ Directory Structure
     ├── third_party         # External libraries
     ├── pyextra             # Extra python packages
     └── system              # Generic services
+        ├── camerad         # Driver to capture images from the camera sensors
+        ├── clocksd         # Broadcasts current time
+        ├── hardware        # Hardware abstraction classes
         ├── logcatd         # systemd journal as a service
         └── proclogd        # Logs information from /proc
     └── selfdrive           # Code needed to drive the car
         ├── assets          # Fonts, images, and sounds for UI
         ├── athena          # Allows communication with the app
         ├── boardd          # Daemon to talk to the board
-        ├── camerad         # Driver to capture images from the camera sensors
         ├── car             # Car specific code to read states and control actuators
-        ├── common          # Shared C/C++ code for the daemons
         ├── controls        # Planning and controls
         ├── debug           # Tools to help you debug and do car ports
         ├── locationd       # Precise localization and vehicle parameter estimation
         ├── loggerd         # Logger and uploader of car data
+        ├── manager         # Deamon that starts/stops all other daemons as needed
         ├── modeld          # Driving and monitoring model runners
-        ├── proclogd        # Logs information from proc
-        ├── sensord         # IMU interface code
+        ├── monitoring      # Daemon to determine driver attention
         ├── navd            # Turn-by-turn navigation
+        ├── sensord         # IMU interface code
         ├── test            # Unit tests, system tests, and a car simulator
         └── ui              # The UI
 

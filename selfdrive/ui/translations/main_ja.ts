@@ -134,8 +134,8 @@
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="104"/>
-        <source>Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)</source>
-        <translation>ドライバーカメラのプレビューにより、デバイスの取り付け位置を最適化し、最高のドライバーモニタリング体験を提供します。(車両の電源を切る必要があります)</translation>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation>ドライバー向けカメラをプレビューする、ドライバーモニタリングの視認性を確保します。(車両の電源を切る必要があります)</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="108"/>
