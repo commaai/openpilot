@@ -42,7 +42,7 @@ class GNSSKalman():
   # process noise
   Q = np.diag([0.03**2, 0.03**2, 0.03**2,
                3**2, 3**2, 3**2,
-               (.1)**2, (0)**2, (0.005)**2,
+               (10000)**2, (10)**2, (0.005)**2,
                .1**2, (.01)**2])
 
   maha_test_kinds: List[int] = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
