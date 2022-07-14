@@ -24,8 +24,7 @@ class CarController:
     can_sends = []
 
     # EPS faults if LKAS re-enables too quickly
-    lkas_control_bit = self.frame - self.last_lkas_falling_edge > 200
-    lkas_active = CC.latActive and self.lkas_control_bit_prev
+    lkas_active = CC.latActive and (self.frame - self.last_lkas_falling_edge > 200)
 
     # *** control msgs ***
 
