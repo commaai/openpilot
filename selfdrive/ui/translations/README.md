@@ -26,7 +26,7 @@ openpilot provides a few tools to help contributors manage their translations an
 
 ### Improving an Existing Language
 
-Follow steps above, ommitting steps 1. and 2. Any time you edit translations you'll want to make sure to compile them.
+Follow the steps above, omitting steps 1. and 2. Any time you edit translations you'll want to make sure to compile them.
 
 ### Testing
 
