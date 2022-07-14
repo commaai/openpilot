@@ -47,24 +47,23 @@ class RadarInterface(RadarInterfaceBase):
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
-    if self.trigger_msg not in self.updated_messages and self.rcp.can_valid:
-      return None
+    ret = car.RadarData.new_message()
+    errors = []
+    if not self.rcp.can_valid:
+      errors.append("canError")
+    ret.errors = errors
 
-    rr = self._update(self.updated_messages)
+    if self.trigger_msg not in self.updated_messages:
+      return ret
+
+    rr = self._update(self.updated_messages, ret)
     self.updated_messages.clear()
 
     return rr
 
-  def _update(self, updated_messages):
-    ret = car.RadarData.new_message()
+  def _update(self, updated_messages, ret):
     if self.rcp is None:
       return ret
-
-    errors = []
-
-    if not self.rcp.can_valid:
-      errors.append("canError")
-    ret.errors = errors
 
     for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
       msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]

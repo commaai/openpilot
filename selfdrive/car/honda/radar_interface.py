@@ -43,16 +43,24 @@ class RadarInterface(RadarInterfaceBase):
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
-    if self.trigger_msg not in self.updated_messages and self.rcp.can_valid:
-      return None
+    ret = car.RadarData.new_message()
+    errors = []
+    if not self.rcp.can_valid:
+      errors.append("canError")
+    if self.radar_fault:
+      errors.append("fault")
+    if self.radar_wrong_config:
+      errors.append("wrongConfig")
+    ret.errors = errors
 
-    rr = self._update(self.updated_messages)
+    if self.trigger_msg not in self.updated_messages:
+      return ret
+
+    rr = self._update(self.updated_messages, ret)
     self.updated_messages.clear()
     return rr
 
-  def _update(self, updated_messages):
-    ret = car.RadarData.new_message()
-
+  def _update(self, updated_messages, ret):
     for ii in sorted(updated_messages):
       cpt = self.rcp.vl[ii]
       if ii == 0x400:
@@ -74,15 +82,5 @@ class RadarInterface(RadarInterfaceBase):
         if ii in self.pts:
           del self.pts[ii]
 
-    errors = []
-    if not self.rcp.can_valid:
-      errors.append("canError")
-    if self.radar_fault:
-      errors.append("fault")
-    if self.radar_wrong_config:
-      errors.append("wrongConfig")
-    ret.errors = errors
-
     ret.points = list(self.pts.values())
-
     return ret
