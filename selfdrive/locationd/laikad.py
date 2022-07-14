@@ -15,6 +15,7 @@ from cereal import log, messaging
 from common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
+from laika.downloader import DownloadFailed
 from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
@@ -212,7 +213,7 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types, cach
     astro_dog.get_orbit_data(t, only_predictions=True)
     cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
     return astro_dog.orbits, astro_dog.orbit_fetched_times, t
-  except (RuntimeError, ValueError, IOError) as e:
+  except (DownloadFailed, RuntimeError, ValueError, IOError) as e:
     cloudlog.warning(f"No orbit data found or parsing failure: {e}")
   return None, None, t
 
