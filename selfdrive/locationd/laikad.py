@@ -320,7 +320,7 @@ def main(sm=None, pm=None):
 
   replay = "REPLAY" in os.environ
   use_internet = "LAIKAD_NO_INTERNET" not in os.environ
-  max_least_squares_steps = 50 if replay else 6  # Ensures consistent output of replay on pc and CI
+  max_least_squares_steps = 75 if replay else 6  # Ensures consistent output of replay on pc and CI
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet, max_least_squares_steps=max_least_squares_steps)
 
   while True:

@@ -43,7 +43,7 @@ def pr_residual(measurements, posfix_functions, signal='C1C'):
   return Fx_pos
 
 
-def gauss_newton(fun, b, xtol=1e-9, max_n=25):
+def gauss_newton(fun, b, xtol=1e-10, max_n=25):
   for _ in range(max_n):
     # Compute function and jacobian on current estimate
     r, J = fun(b)
