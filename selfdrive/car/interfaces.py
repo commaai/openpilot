@@ -174,21 +174,15 @@ class CarInterfaceBase(ABC):
   def apply(self, c: car.CarControl) -> Tuple[car.CarControl.Actuators, List[bytes]]:
     pass
 
-  def create_steer_speed_event(self, cs_out):
+  def add_steer_speed_alert(self, cs_out, events):
     # Low speed steer alert hysteresis logic
-    if self.CP.minSteerSpeed > 0. and cs_out.vEgo < (self.CP.minSteerSpeed + 0.5):
+    if cs_out.vEgo < self.CP.minSteerDisableSpeed and self.CP.minSteerDisableSpeed > 0.:
       self.low_speed_alert = True
-    elif cs_out.vEgo > (self.CP.minSteerSpeed + 1.):
+    elif cs_out.vEgo > self.CP.minSteerEnableSpeed + 0.5:
       self.low_speed_alert = False
+
     if self.low_speed_alert:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
-
-    # TODO: Resets lkas allowed when car disengages, unclear if all cars can work without this
-    # (drive above upper steer speed, then go between steer speeds and engage, does it work without engaging above upper?)
-    if CS.vEgo < self.CP.minSteerDisableSpeed or not self.enabled:
-      self.lkas_allowed_speed = False
-    elif CS.vEgo > self.CP.minSteerEnableSpeed and self.enabled:
-      self.lkas_allowed_speed = True
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True):
     events = Events()
@@ -220,6 +214,8 @@ class CarInterfaceBase(ABC):
       events.add(EventName.parkBrake)
     if cs_out.accFaulted:
       events.add(EventName.accFaulted)
+
+    self.add_steer_speed_alert(events)
 
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1

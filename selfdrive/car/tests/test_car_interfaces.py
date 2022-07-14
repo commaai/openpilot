@@ -46,6 +46,11 @@ class TestCarInterfaces(unittest.TestCase):
       elif tuning == 'indi':
         self.assertTrue(len(car_params.lateralTuning.indi.outerLoopGainV))
 
+    # Both or neither should be set
+    if max(car_params.minSteerDisableSpeed, car_params.minSteerEnableSpeed) > 0:
+      self.assertGreater(car_params.minSteerEnableSpeed, 0)
+      self.assertGreater(car_params.minSteerDisableSpeed, 0)
+
     # Run car interface
     CC = car.CarControl.new_message()
     for _ in range(10):

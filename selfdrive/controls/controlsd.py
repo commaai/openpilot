@@ -556,11 +556,11 @@ class Controls:
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
 
-    # TODO: Resets lkas allowed when car disengages, unclear if all cars can work without this
-    # (drive above upper steer speed, then go between steer speeds and engage, does it work without engaging above upper?)
-    if CS.vEgo < self.CP.minSteerDisableSpeed or not self.enabled:
+    # TODO: check presence of belowSteerSpeed event?
+    # Check if lkas is allowed with asymmetrical minimum steer speeds
+    if CS.vEgo < self.CP.minSteerDisableSpeed and self.CP.minSteerDisableSpeed > 0:
       self.lkas_allowed_speed = False
-    elif CS.vEgo > self.CP.minSteerEnableSpeed and self.enabled:
+    elif CS.vEgo > self.CP.minSteerEnableSpeed:
       self.lkas_allowed_speed = True
 
     # Check which actuators can be enabled
