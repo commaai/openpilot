@@ -32,6 +32,8 @@ class CarControllerParams:
                                CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_HEV,
                                CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO, CAR.KIA_STINGER):
       self.STEER_MAX = 255
+
+    # Default for most HKG
     else:
       self.STEER_MAX = 384
 
@@ -105,7 +107,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-21", harness=Harness.hyundai_h),
   CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020", harness=Harness.hyundai_b),
   CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-21", harness=Harness.hyundai_g),
-  CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", harness=Harness.hyundai_i),
+  CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", video_link="https://youtu.be/0dwpAHiZgFo", harness=Harness.hyundai_i),
   CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All", harness=Harness.hyundai_d),
   CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-22", "All", harness=Harness.hyundai_l),
   CAR.SANTA_FE_HEV_2022: HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022", "All", harness=Harness.hyundai_l),
@@ -149,15 +151,15 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Sorento 2018", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_c),
     HyundaiCarInfo("Kia Sorento 2019", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_e),
   ],
-  CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
+  CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
   CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "All", harness=Harness.hyundai_p),
 
   # Genesis
-  CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018", "All", harness=Harness.hyundai_f),
+  CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", "All", harness=Harness.hyundai_f),
   CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", "All", harness=Harness.hyundai_f),
-  CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2018", "All", harness=Harness.hyundai_h),
-  CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2018", "All", harness=Harness.hyundai_c),
+  CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2017-19", "All", harness=Harness.hyundai_h),
+  CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2017-18", "All", harness=Harness.hyundai_c),
 }
 
 class Buttons:
@@ -165,7 +167,7 @@ class Buttons:
   RES_ACCEL = 1
   SET_DECEL = 2
   GAP_DIST = 3
-  CANCEL = 4
+  CANCEL = 4  # on newer models, this is a pause/resume button
 
 FINGERPRINTS = {
   CAR.ELANTRA: [{

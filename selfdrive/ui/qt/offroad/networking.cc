@@ -84,7 +84,7 @@ void Networking::connectToNetwork(const Network &n) {
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
-    QString pass = InputDialog::getText(tr("Enter password"), this, tr("for \"") + n.ssid + "\"", true, 8);
+    QString pass = InputDialog::getText(tr("Enter password"), this, tr("for \"%1\"").arg(QString::fromUtf8(n.ssid)), true, 8);
     if (!pass.isEmpty()) {
       wifi->connect(n, pass);
     }
@@ -94,7 +94,7 @@ void Networking::connectToNetwork(const Network &n) {
 void Networking::wrongPassword(const QString &ssid) {
   if (wifi->seenNetworks.contains(ssid)) {
     const Network &n = wifi->seenNetworks.value(ssid);
-    QString pass = InputDialog::getText(tr("Wrong password"), this, tr("for \"") + n.ssid +"\"", true, 8);
+    QString pass = InputDialog::getText(tr("Wrong password"), this, tr("for \"%1\"").arg(QString::fromUtf8(n.ssid)), true, 8);
     if (!pass.isEmpty()) {
       wifi->connect(n, pass);
     }
@@ -174,7 +174,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(editApnButton);
 
   // Set initial config
-  wifi->updateGsmSettings(roamingEnabled,  QString::fromStdString(params.get("GsmApn")));
+  wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")));
 
   main_layout->addWidget(new ScrollView(list, this));
   main_layout->addStretch(1);
@@ -296,7 +296,7 @@ void WifiUI::refresh() {
       QPushButton *forgetBtn = new QPushButton(tr("FORGET"));
       forgetBtn->setObjectName("forgetBtn");
       QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
-        if (ConfirmationDialog::confirm(tr("Forget Wi-Fi Network \"") + QString::fromUtf8(network.ssid) + "\"?", this)) {
+        if (ConfirmationDialog::confirm(tr("Forget Wi-Fi Network \"%1\"?").arg(QString::fromUtf8(network.ssid)), this)) {
           wifi->forgetConnection(network.ssid);
         }
       });

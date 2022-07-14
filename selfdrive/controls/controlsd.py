@@ -12,6 +12,7 @@ import cereal.messaging as messaging
 from common.conversions import Conversions as CV
 from panda import ALTERNATIVE_EXPERIENCE
 from system.swaglog import cloudlog
+from system.version import get_short_branch
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
@@ -61,6 +62,9 @@ ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
     config_realtime_process(4, Priority.CTRL_HIGH)
+
+    # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
+    self.branch = get_short_branch("")
 
     # Setup sockets
     self.pm = pm
@@ -402,7 +406,8 @@ class Controls:
 
     if not self.initialized:
       all_valid = CS.canValid and self.sm.all_checks()
-      if all_valid or self.sm.frame * DT_CTRL > 3.5 or SIMULATION:
+      timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
+      if all_valid or timed_out or SIMULATION:
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
         self.initialized = True
@@ -598,14 +603,14 @@ class Controls:
         lac_log.saturated = abs(actuators.steer) >= 0.9
 
     # Send a "steering required alert" if saturation count has reached the limit
-    if lac_log.active and not CS.steeringPressed and self.CP.lateralTuning.which() == 'torque':
+    if lac_log.active and not CS.steeringPressed and self.CP.lateralTuning.which() == 'torque' and not self.joystick_mode:
       undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
       turning = abs(lac_log.desiredLateralAccel) > 1.0
       good_speed = CS.vEgo > 5
       max_torque = abs(self.last_actuators.steer) > 0.99
       if undershooting and turning and good_speed and max_torque:
         self.events.add(EventName.steerSaturated)
-    elif lac_log.active and lac_log.saturated and not CS.steeringPressed:
+    elif lac_log.active and not CS.steeringPressed and lac_log.saturated:
       dpath_points = lat_plan.dPathPoints
       if len(dpath_points):
         # Check if we deviated from the path
@@ -653,6 +658,10 @@ class Controls:
     CC.cruiseControl.cancel = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
     if self.joystick_mode and self.sm.rcv_frame['testJoystick'] > 0 and self.sm['testJoystick'].buttons[0]:
       CC.cruiseControl.cancel = True
+
+    speeds = self.sm['longitudinalPlan'].speeds
+    if len(speeds):
+      CC.cruiseControl.resume = self.enabled and CS.cruiseState.standstill and speeds[-1] > 0.1
 
     hudControl = CC.hudControl
     hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
