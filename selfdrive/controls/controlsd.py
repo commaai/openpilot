@@ -401,7 +401,7 @@ class Controls:
       self.low_speed_alert = True
     elif CS.vEgo > self.CP.minSteerEnableSpeed and self.enabled:
       self.low_speed_alert = False
-    if self.low_speed_alert:
+    if self.enabled and self.low_speed_alert:
       self.events.add(EventName.belowSteerSpeed)
 
   def data_sample(self):
