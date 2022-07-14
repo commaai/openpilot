@@ -99,7 +99,8 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.TRANSPORTER_T61:
       ret.mass = 1926 + STD_CARGO_KG
       ret.wheelbase = 3.00  # SWB, LWB is 3.40, TBD how to detect difference
-      ret.minSteerSpeed = 14.0
+      ret.minSteerEnableSpeed = 14.0
+      ret.minSteerDisableSpeed = 14.0
 
     elif candidate == CAR.TROC_MK1:
       ret.mass = 1413 + STD_CARGO_KG
@@ -175,15 +176,6 @@ class CarInterface(CarInterfaceBase):
         buttonEvents.append(be)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic])
-
-    # Low speed steer alert hysteresis logic
-    if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
-      self.low_speed_alert = True
-    elif ret.vEgo > (self.CP.minSteerSpeed + 2.):
-      self.low_speed_alert = False
-    if self.low_speed_alert:
-      events.add(EventName.belowSteerSpeed)
-
     ret.events = events.to_msg()
     ret.buttonEvents = buttonEvents
 
