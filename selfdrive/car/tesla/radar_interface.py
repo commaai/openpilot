@@ -66,8 +66,6 @@ class RadarInterface(RadarInterfaceBase):
     ret = car.RadarData.new_message()
     errors = []
     sgu_info = self.rcp.vl['TeslaRadarSguInfo']
-    if self.rcp.bus_timeout:
-      errors.append("canTimeout")
     if not self.rcp.can_valid:
       errors.append('canError')
     if sgu_info['RADC_HWFail'] or sgu_info['RADC_SGUFail'] or sgu_info['RADC_SensorDirty']:
