@@ -63,12 +63,7 @@ class RadarInterface(RadarInterfaceBase):
     values = self.rcp.update_strings(can_strings)
     self.updated_messages.update(values)
 
-    if self.trigger_msg not in self.updated_messages and self.rcp.can_valid:
-      return None
-
     ret = car.RadarData.new_message()
-
-    # Errors
     errors = []
     sgu_info = self.rcp.vl['TeslaRadarSguInfo']
     if self.rcp.bus_timeout:
@@ -78,6 +73,9 @@ class RadarInterface(RadarInterfaceBase):
     if sgu_info['RADC_HWFail'] or sgu_info['RADC_SGUFail'] or sgu_info['RADC_SensorDirty']:
       errors.append('fault')
     ret.errors = errors
+
+    if self.trigger_msg not in self.updated_messages:
+      return ret
 
     # Radar tracks
     for i in range(NUM_POINTS):

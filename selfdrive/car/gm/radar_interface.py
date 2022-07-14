@@ -51,9 +51,6 @@ class RadarInterface(RadarInterfaceBase):
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
-    if self.trigger_msg not in self.updated_messages and self.rcp.can_valid:
-      return None
-
     ret = car.RadarData.new_message()
     header = self.rcp.vl[RADAR_HEADER_MSG]
     fault = header['FLRRSnsrBlckd'] or header['FLRRSnstvFltPrsntInt'] or \
@@ -67,6 +64,9 @@ class RadarInterface(RadarInterfaceBase):
     if fault:
       errors.append("fault")
     ret.errors = errors
+
+    if self.trigger_msg not in self.updated_messages:
+      return ret
 
     currentTargets = set()
     num_targets = header['FLRRNumValidTargets']

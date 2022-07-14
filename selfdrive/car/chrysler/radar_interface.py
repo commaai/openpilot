@@ -56,9 +56,6 @@ class RadarInterface(RadarInterfaceBase):
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
-    if self.trigger_msg not in self.updated_messages and self.rcp.can_valid:
-      return None
-
     ret = car.RadarData.new_message()
     errors = []
     if self.rcp.bus_timeout:
@@ -66,6 +63,9 @@ class RadarInterface(RadarInterfaceBase):
     if not self.rcp.can_valid:
       errors.append("canError")
     ret.errors = errors
+
+    if self.trigger_msg not in self.updated_messages:
+      return ret
 
     for ii in self.updated_messages:  # ii should be the message ID as a number
       cpt = self.rcp.vl[ii]
