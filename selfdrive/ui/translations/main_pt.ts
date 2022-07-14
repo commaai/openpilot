@@ -411,7 +411,7 @@
     <message>
         <location filename="../qt/maps/map_settings.cc" line="95"/>
         <source>Try the Navigation Beta</source>
-        <translation>Teste a Navegação Beta</translation>
+        <translation>Experimente a Navegação Beta</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
@@ -1187,7 +1187,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="64"/>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>Quando ativado, pressionar o pedal do acelerador desacionára o openpilot.</translation>
+        <translation>Quando ativado, pressionar o pedal do acelerador desacionará o openpilot.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="70"/>
