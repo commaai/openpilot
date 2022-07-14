@@ -167,8 +167,8 @@ class Laikad:
     if len(measurements) > 0:
       residuals = kf_add_observations(self.gnss_kf, t, measurements)
       for i in range(4):
-        kf_residual_correct = self.kf_check_residual(residuals)
-        if kf_residual_correct:
+        residual_correct = kf_update_on_residuals(self.gnss_kf, residuals)
+        if residual_correct:
           break
         cloudlog.debug(f"Median residual of measurements above threshold. Repeat {i} Residuals/threshold: {np.abs(residuals).flatten().round()}, {RESIDUAL_THRESHOLD}")
         residuals = kf_add_observations(self.gnss_kf, t, measurements)
@@ -209,13 +209,6 @@ class Laikad:
         else:
           self.astro_dog.orbits, self.astro_dog.orbit_fetched_times, self.last_fetch_orbits_t = ret
           self.cache_ephemeris(t=t)
-
-  def kf_check_residual(self, residuals):
-    # if median residual is too large increase the Covariance matrix to improve convergence
-    if np.median(np.abs(residuals)) > RESIDUAL_THRESHOLD:
-      self.gnss_kf.init_state(self.gnss_kf.x, covs=self.gnss_kf.P_initial, filter_time=self.gnss_kf.filter.get_filter_time())
-      return False
-    return True
 
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types, cache_dir):
@@ -283,6 +276,14 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
       if r is not None and kind in [ObservationKind.PSEUDORANGE_GPS, ObservationKind.PSEUDORANGE_GLONASS]:
         residuals.extend(r[6])
   return residuals
+
+
+def kf_update_on_residuals(gnss_kf, residuals):
+  # if median residual is too large increase the Covariance matrix to improve convergence
+  if np.median(np.abs(residuals)) > RESIDUAL_THRESHOLD:
+    gnss_kf.init_state(gnss_kf.x, covs=gnss_kf.P_initial, filter_time=gnss_kf.filter.get_filter_time())
+    return False
+  return True
 
 
 class CacheSerializer(json.JSONEncoder):
