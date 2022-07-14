@@ -2,9 +2,9 @@ import math
 
 from cereal import car
 from collections import namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Union, no_type_check
+from typing import Dict, List, Optional, Set, Union, no_type_check
 
 TACO_TORQUE_THRESHOLD = 2.5  # m/s^2
 GREAT_TORQUE_THRESHOLD = 1.4  # m/s^2
@@ -38,6 +38,28 @@ StarColumns = list(Column)[3:]
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
 
+def get_year_string(years: Set[int]) -> str:
+  # TODO: surely this can be simplified
+  consecutive_years = []
+  for year in years:
+    close = {y for y in years if abs(y - year) == 1}
+    for group in consecutive_years:
+      if len(close.intersection(group)):
+        group |= close
+        break
+    else:
+      consecutive_years.append({year, *close})
+
+  builder = []
+  for years in consecutive_years:
+    if len(years) > 1:
+      builder.append(f"{min(years)}-{str(max(years))[-2:]}")
+    else:
+      builder.append(str(list(years)[0]))
+
+  return ', '.join(builder)
+
+
 def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[Enum]:
   # Returns applicable footnote given current column
   if footnotes is not None:
@@ -52,6 +74,7 @@ class CarInfo:
   name: str
   package: str
   video_link: Optional[str] = None
+  years: Set[int] = field(default_factory=lambda: set())
   footnotes: Optional[List[Enum]] = None
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
@@ -73,6 +96,7 @@ class CarInfo:
 
     self.car_name = CP.carName
     self.make, self.model = self.name.split(' ', 1)
+    self.year_string = get_year_string(self.years)
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
@@ -109,10 +133,12 @@ class CarInfo:
     return self
 
   @no_type_check
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
+  def get_column(self, column: Column, star_icon: str, footnote_tag: str, add_years: bool = True) -> str:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
       item = star_icon.format(item.value)
+    elif column == Column.MODEL and add_years:
+      item += f" {self.year_string}"
 
     footnote = get_footnote(self.footnotes, column)
     if footnote is not None:

@@ -27,7 +27,7 @@ CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 def get_all_car_info() -> List[CarInfo]:
   all_car_info: List[CarInfo] = []
-  for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
+  for model, car_info in get_interface_attr("CAR_INFO", combine_brands=False)['toyota'].items():
     # Hyundai exception: those with radar have openpilot longitudinal
     fingerprint = {0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}}
     CP = interfaces[model][0].get_params(model, fingerprint=fingerprint, disable_radar=True)
@@ -43,7 +43,7 @@ def get_all_car_info() -> List[CarInfo]:
       all_car_info.append(_car_info.init(CP, non_tested_cars, ALL_FOOTNOTES))
 
   # Sort cars by make and model + year
-  sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: (car.make + car.model).lower())
+  sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: (car.make + car.model + car.year_string).lower())
   return sorted_cars
 
 
@@ -54,7 +54,7 @@ def sort_by_tier(all_car_info: List[CarInfo]) -> Dict[Tier, List[CarInfo]]:
 
   # Sort cars by make and model + year
   for tier, cars in tier_car_info.items():
-    tier_car_info[tier] = natsorted(cars, key=lambda car: (car.make + car.model).lower())
+    tier_car_info[tier] = natsorted(cars, key=lambda car: (car.make + car.model + " " +car.year_string).lower())
 
   return tier_car_info
 
