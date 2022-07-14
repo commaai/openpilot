@@ -406,7 +406,8 @@ class Controls:
 
     if not self.initialized:
       all_valid = CS.canValid and self.sm.all_checks()
-      if all_valid or self.sm.frame * DT_CTRL > 3.5 or SIMULATION:
+      timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
+      if all_valid or timed_out or SIMULATION:
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
         self.initialized = True

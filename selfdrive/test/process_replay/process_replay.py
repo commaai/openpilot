@@ -14,6 +14,7 @@ from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
 from common.timeout import Timeout
+from common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
@@ -27,7 +28,7 @@ TIMEOUT = 15
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config', 'environ', 'subtest_name'], defaults=({}, {}, ""))
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config', 'environ', 'subtest_name', "field_tolerances"], defaults=({}, {}, "", {}))
 
 
 def wait_for_event(evt):
@@ -548,11 +549,17 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
 
 
 def check_enabled(msgs):
+  cur_enabled_count = 0
+  max_enabled_count = 0
   for msg in msgs:
     if msg.which() == "carParams":
       if msg.carParams.notCar:
         return True
     elif msg.which() == "controlsState":
       if msg.controlsState.active:
-        return True
-  return False
+        cur_enabled_count += 1
+      else:
+        cur_enabled_count = 0
+      max_enabled_count = max(max_enabled_count, cur_enabled_count)
+
+  return max_enabled_count > int(10. / DT_CTRL)
