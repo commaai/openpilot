@@ -133,9 +133,13 @@
         <translation>PREVISUAL</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="105"/>
         <source>Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)</source>
-        <translation>Pré visualizar a câmera do motorista para ajudar a montagem do dispositivo e obter um melhor monitoramento. (veiculo precisa estar desligado)</translation>
+        <translation type="vanished">Pré visualizar a câmera do motorista para ajudar a montagem do dispositivo e obter um melhor monitoramento. (veiculo precisa estar desligado)</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="105"/>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation>Pré-visualizar a câmera voltada para o motorista para garantir que monitor tem uma boa visibilidade (veículo precisa estar desligado)</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="109"/>
@@ -308,13 +312,16 @@
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="168"/>
-        <source>Need at least </source>
-        <translation>Necessário no mínimo </translation>
+        <source>Need at least %1 characters!</source>
+        <translation>Necessário no mínimo %1 caracteres</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="168"/>
+        <source>Need at least </source>
+        <translation type="vanished">Necessário no mínimo </translation>
+    </message>
+    <message>
         <source> characters!</source>
-        <translation> caracteres!</translation>
+        <translation type="vanished"> caracteres!</translation>
     </message>
 </context>
 <context>
@@ -343,27 +350,27 @@
 <context>
     <name>MapETA</name>
     <message>
-        <location filename="../qt/maps/map.cc" line="618"/>
+        <location filename="../qt/maps/map.cc" line="622"/>
         <source>eta</source>
         <translation>eta</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="628"/>
+        <location filename="../qt/maps/map.cc" line="632"/>
         <source>min</source>
         <translation>min</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="632"/>
+        <location filename="../qt/maps/map.cc" line="636"/>
         <source>hr</source>
         <translation>hr</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="652"/>
+        <location filename="../qt/maps/map.cc" line="656"/>
         <source>km</source>
         <translation>km</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="655"/>
+        <location filename="../qt/maps/map.cc" line="659"/>
         <source>mi</source>
         <translation>mi</translation>
     </message>
@@ -415,9 +422,15 @@
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
+        <source>Get turn-by-turn directions displayed and more with a comma
+prime subscription. Sign up now: https://connect.comma.ai</source>
+        <translation>Obtenha instruções passo a passo exibidas e muito mais com 
+uma assinatura prime Increva-se agora：https://connect.comma.ai</translation>
+    </message>
+    <message>
         <source>Get turn-by-turn directions displayed and more with a comma 
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Obtenha instruções passo a passo exibidas e muito mais com uma assinatura prime Increva-se agora：https://connect.comma.ai</translation>
+        <translation type="vanished">Obtenha instruções passo a passo exibidas e muito mais com uma assinatura prime Increva-se agora：https://connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
@@ -480,8 +493,12 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
+        <source>for &quot;%1&quot;</source>
+        <translation>para &quot;%1&quot;</translation>
+    </message>
+    <message>
         <source>for &quot;</source>
-        <translation>para &quot;</translation>
+        <translation type="vanished">para &quot;</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
@@ -546,7 +563,21 @@ trabalho definido</translation>
         <translation>Pareie seu dispositivo a sua conta comma</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="91"/>
+        <location filename="../qt/widgets/prime.cc" line="97"/>
+        <source>Go to https://connect.comma.ai on your phone</source>
+        <translation>navegue até https://connect.comma.ai no seu telefone</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="98"/>
+        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <translation>Clique &quot;add new device&quot; e escaneie o QR code a seguir</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="99"/>
+        <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
+        <translation>Salve connect.comma.ai como sua página inicial para utilizar com um app</translation>
+    </message>
+    <message>
         <source>
       &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
         &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Go to https://connect.comma.ai on your phone&lt;/li&gt;
@@ -554,7 +585,7 @@ trabalho definido</translation>
         &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Bookmark connect.comma.ai to your home screen to use it like an app&lt;/li&gt;
       &lt;/ol&gt;
     </source>
-        <translation>
+        <translation type="vanished">
       &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
         &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Navegue até https://connect.comma.ai&lt;/li&gt;
         &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Clique em &quot;add new device&quot; e  escaneie o QR code
@@ -566,32 +597,32 @@ trabalho definido</translation>
 <context>
     <name>PrimeAdWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="184"/>
+        <location filename="../qt/widgets/prime.cc" line="187"/>
         <source>Upgrade Now</source>
         <translation>Atualizar Agora</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="189"/>
+        <location filename="../qt/widgets/prime.cc" line="192"/>
         <source>Become a comma prime member at connect.comma.ai</source>
         <translation>Torne-se um membro comma prime em connect.comma.ai</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="196"/>
+        <location filename="../qt/widgets/prime.cc" line="199"/>
         <source>PRIME FEATURES:</source>
         <translation>PRIME FEATURES:</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Remote access</source>
         <translation>Acesso remoto</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>1 year of storage</source>
         <translation>1 ano de armazenamento</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Developer perks</source>
         <translation>Benefícios para desenvolvedor</translation>
     </message>
@@ -599,22 +630,22 @@ trabalho definido</translation>
 <context>
     <name>PrimeUserWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="123"/>
+        <location filename="../qt/widgets/prime.cc" line="126"/>
         <source>✓ SUBSCRIBED</source>
         <translation>✓ INSCRITO</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="129"/>
+        <location filename="../qt/widgets/prime.cc" line="132"/>
         <source>comma prime</source>
         <translation>comma prime</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="135"/>
+        <location filename="../qt/widgets/prime.cc" line="138"/>
         <source>CONNECT.COMMA.AI</source>
         <translation>CONNECT.COMMA.AI</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="148"/>
+        <location filename="../qt/widgets/prime.cc" line="151"/>
         <source>COMMA POINTS</source>
         <translation>PONTOS COMMA</translation>
     </message>
@@ -856,17 +887,17 @@ trabalho definido</translation>
 <context>
     <name>SetupWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="230"/>
+        <location filename="../qt/widgets/prime.cc" line="233"/>
         <source>Finish Setup</source>
         <translation>Terminar Configuração</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="236"/>
+        <location filename="../qt/widgets/prime.cc" line="239"/>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
         <translation>Pareie seu dispositivo com comma connect (connect.comma.ai) e reivindique sua oferta de comma prime.</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="243"/>
+        <location filename="../qt/widgets/prime.cc" line="246"/>
         <source>Pair device</source>
         <translation>Parear dispositivo</translation>
     </message>
@@ -1021,14 +1052,18 @@ trabalho definido</translation>
         <translation>VERIFICANDO</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="252"/>
         <source>Uninstall </source>
-        <translation>Desinstalar </translation>
+        <translation type="vanished">Desinstalar </translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
         <source>UNINSTALL</source>
         <translation>DESINSTALAR</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="252"/>
+        <source>Uninstall %1</source>
+        <translation>Desintalando %1</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="254"/>
@@ -1273,8 +1308,12 @@ trabalho definido</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
+        <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
+        <translation>Esquecer Rede Wi-Fi &quot;%1&quot;?</translation>
+    </message>
+    <message>
         <source>Forget Wi-Fi Network &quot;</source>
-        <translation>Esqueça a rede Wi-Fi &quot;</translation>
+        <translation type="vanished">Esqueça a rede Wi-Fi &quot;</translation>
     </message>
 </context>
 </TS>
