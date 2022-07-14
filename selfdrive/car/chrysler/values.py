@@ -1,6 +1,7 @@
+import capnp
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
@@ -25,10 +26,16 @@ class CAR:
 
 
 class CarControllerParams:
-  STEER_MAX = 261  # higher than this faults the EPS on Chrysler/Jeep. Ram DT allows more
-  STEER_DELTA_UP = 3
-  STEER_DELTA_DOWN = 3
-  STEER_ERROR_MAX = 80
+  def __init__(self, CP):
+    self.STEER_MAX = 261  # higher than this faults the EPS on Chrysler/Jeep. Ram DT allows more
+    self.STEER_ERROR_MAX = 80
+
+    if CP.carFingerprint in RAM_CARS:
+      self.STEER_DELTA_UP = 6
+      self.STEER_DELTA_DOWN = 6
+    else:
+      self.STEER_DELTA_UP = 3
+      self.STEER_DELTA_DOWN = 3
 
 STEER_THRESHOLD = 120
 
@@ -46,8 +53,8 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.PACIFICA_2018: ChryslerCarInfo("Chrysler Pacifica 2017-18"),
   CAR.PACIFICA_2020: ChryslerCarInfo("Chrysler Pacifica 2019-20"),
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
-  CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-20", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
-  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-21"),
+  CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
+  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-22"),
 }
 
 # Unique CAN messages:
@@ -110,6 +117,21 @@ FINGERPRINTS = {
   ],
 }
 
+FW_VERSIONS: Dict[str, Dict[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]], List[str]]] = {
+  CAR.RAM_1500: {
+    (Ecu.combinationMeter, 0x742, None): [],
+    (Ecu.srs, 0x744, None): [],
+    (Ecu.esp, 0x747, None): [],
+    (Ecu.fwdCamera, 0x753, None): [],
+    (Ecu.fwdCamera, 0x764, None): [],
+    (Ecu.eps, 0x761, None): [],
+    (Ecu.fwdRadar, 0x757, None): [],
+    (Ecu.eps, 0x75A, None): [],
+    (Ecu.engine, 0x7e0, None): [],
+    (Ecu.transmission, 0x7e1, None): [],
+    (Ecu.gateway, 0x18DACBF1, None): [],
+  }
+}
 
 DBC = {
   CAR.PACIFICA_2017_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),

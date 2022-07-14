@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
-from selfdrive.car.chrysler.values import CAR, RAM_CARS
+from selfdrive.car.chrysler.values import CAR, DBC, RAM_CARS
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -11,6 +11,8 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "chrysler"
+
+    ret.radarOffCan = DBC[candidate]['radar'] is None
 
     param = Panda.FLAG_CHRYSLER_RAM_DT if candidate in RAM_CARS else None
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler, param)]
@@ -44,12 +46,15 @@ class CarInterface(CarInterfaceBase):
 
     # Ram
     elif candidate == CAR.RAM_1500:
+      ret.steerActuatorDelay = 0.2
+
       ret.wheelbase = 3.88
       ret.steerRatio = 16.3
       ret.mass = 2493. + STD_CARGO_KG
       ret.maxLateralAccel = 2.4
       ret.minSteerSpeed = 14.5
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
 
     else:
       raise ValueError(f"Unsupported car: {candidate}")
@@ -88,4 +93,4 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def apply(self, c):
-    return self.CC.update(c, self.CS, self.low_speed_alert)
+    return self.CC.update(c, self.CS)
