@@ -74,6 +74,7 @@ class CarInfo:
   name: str
   package: str
   video_link: Optional[str] = None
+  # TODO: make required once all cars are moved over
   years: Set[int] = field(default_factory=lambda: set())
   footnotes: Optional[List[Enum]] = None
   min_steer_speed: Optional[float] = None
@@ -137,6 +138,7 @@ class CarInfo:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
       item = star_icon.format(item.value)
+    # TODO: new webpage might not use get_column, not needed?
     elif column == Column.MODEL and add_years:
       item += f" {self.year_string}"
 

@@ -27,6 +27,7 @@ CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 def get_all_car_info() -> List[CarInfo]:
   all_car_info: List[CarInfo] = []
+  # TODO revert
   for model, car_info in get_interface_attr("CAR_INFO", combine_brands=False)['toyota'].items():
     # Hyundai exception: those with radar have openpilot longitudinal
     fingerprint = {0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}}
