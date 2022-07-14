@@ -14,7 +14,7 @@ class CarController:
 
     self.hud_count = 0
     self.last_lkas_falling_edge = 0
-    self.lkas_control_bit_prev = False
+    self.lkas_active_prev = False
     self.last_button_frame = 0
 
     self.packer = CANPacker(dbc_name)
@@ -29,7 +29,7 @@ class CarController:
     # *** control msgs ***
 
     # cruise buttons
-    if (self.frame - self.last_button_frame)*DT_CTRL > 0.05:
+    if (self.frame - self.last_button_frame) * DT_CTRL > 0.05:
       das_bus = 2 if self.CP.carFingerprint in RAM_CARS else 0
 
       # ACC cancellation
@@ -59,12 +59,12 @@ class CarController:
       self.apply_steer_last = apply_steer
 
       idx = self.frame // 2
-      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit, idx))
+      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_active, idx))
 
     self.frame += 1
-    if not lkas_control_bit and self.lkas_control_bit_prev:
+    if not lkas_active and self.lkas_active_prev:
       self.last_lkas_falling_edge = self.frame
-    self.lkas_control_bit_prev = lkas_control_bit
+    self.lkas_active_prev = lkas_active
 
     new_actuators = CC.actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
