@@ -37,10 +37,10 @@ public:
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
-             "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d%s",
+             "-DHDR=%d -DCAM_NUM=%d%s",
              ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, b->rgb_stride, buf_width, uv_offset,
-             ci->bayer_flip, ci->hdr, s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
+             ci->hdr, s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
     const char *cl_file = "cameras/real_debayer.cl";
     cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
@@ -66,7 +66,7 @@ private:
   bool hdr_;
 };
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_rgb_type, VisionStreamType init_yuv_type) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_yuv_type) {
   vipc_server = v;
   this->rgb_type = init_rgb_type;
   this->yuv_type = init_yuv_type;
@@ -91,10 +91,6 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   yuv_transform = get_model_yuv_transform(ci->bayer);
 
-  vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
-  rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
-  LOGD("created %d UI vipc buffers with size %dx%d", UI_BUF_COUNT, rgb_width, rgb_height);
-
   int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, rgb_width);
   int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, rgb_height);
   assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, rgb_width));
@@ -104,10 +100,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers_with_sizes(yuv_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height, nv12_size, nv12_width, nv12_uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
 
-  if (ci->bayer) {
-    debayer = new Debayer(device_id, context, this, s, nv12_width, nv12_uv_offset);
-  }
-  rgb2yuv = std::make_unique<Rgb2Yuv>(context, device_id, rgb_width, rgb_height, rgb_stride);
+  debayer = new Debayer(device_id, context, this, s, nv12_width, nv12_uv_offset);
 
 #ifdef __APPLE__
   q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
@@ -144,12 +137,7 @@ bool CameraBuf::acquire() {
 
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
-  if (debayer) {
-    debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
-  } else {
-    assert(rgb_stride == camera_state->ci.frame_stride);
-    rgb2yuv->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl);
-  }
+  debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
 
   clWaitForEvents(1, &event);
   CL_CHECK(clReleaseEvent(event));

@@ -9,7 +9,6 @@
 #include "cereal/visionipc/visionbuf.h"
 #include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_server.h"
-#include "system/camerad/transforms/rgb_to_yuv.h"
 #include "common/mat.h"
 #include "common/queue.h"
 #include "common/swaglog.h"
@@ -27,7 +26,6 @@
 #define CAMERA_ID_IMX390 9
 #define CAMERA_ID_MAX 10
 
-const int UI_BUF_COUNT = 4;
 const int YUV_BUFFER_COUNT = 40;
 
 enum CameraType {
@@ -51,8 +49,6 @@ const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
 typedef struct CameraInfo {
   uint32_t frame_width, frame_height;
   uint32_t frame_stride;
-  bool bayer;
-  int bayer_flip;
   bool hdr;
   uint32_t frame_offset = 0;
   uint32_t extra_height = 0;
@@ -92,7 +88,6 @@ private:
   VisionIpcServer *vipc_server;
   CameraState *camera_state;
   Debayer *debayer = nullptr;
-  std::unique_ptr<Rgb2Yuv> rgb2yuv;
 
   VisionStreamType rgb_type, yuv_type;
 
