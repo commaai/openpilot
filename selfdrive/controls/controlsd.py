@@ -51,6 +51,7 @@ LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 ButtonEvent = car.CarState.ButtonEvent
 SafetyModel = car.CarParams.SafetyModel
+RadarError = car.RadarData.Error
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 CSID_MAP = {"1": EventName.roadCameraError, "2": EventName.wideRoadCameraError, "0": EventName.driverCameraError}
@@ -225,8 +226,7 @@ class Controls:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
     # Handle car events. Ignore when CAN is invalid
-    radar_bus_missing = car.RadarData.Error.canBusMissing in self.sm['radarState'].radarErrors
-    if CS.canTimeout or radar_bus_missing:
+    if CS.canTimeout or RadarError.canBusMissing in self.sm['radarState'].radarErrors:
       self.events.add(EventName.canBusMissing)
     elif not CS.canValid:
       self.events.add(EventName.canError)
@@ -310,7 +310,7 @@ class Controls:
           self.events.add(EventName.cameraFrameRate)
     if self.rk.lagging:
       self.events.add(EventName.controlsdLagging)
-    if len(self.sm['radarState'].radarErrors) and not radar_bus_missing:
+    if len(self.sm['radarState'].radarErrors) and RadarError.canBusMissing not in self.sm['radarState'].radarErrors:
       self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
