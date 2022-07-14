@@ -21,7 +21,7 @@ openpilot provides a few tools to help contributors manage their translations an
    ```
 4. Save your file and generate the compiled QM file used by the Qt UI:
    ```shell
-   selfdrive/ui/update_translations.py
+   selfdrive/ui/update_translations.py --release
    ```
 
 ### Improving an Existing Language
