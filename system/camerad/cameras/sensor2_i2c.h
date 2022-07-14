@@ -6,48 +6,72 @@ struct i2c_random_wr_payload start_reg_array_os04c10[] = {{0x100, 1}};
 struct i2c_random_wr_payload stop_reg_array_os04c10[] = {{0x100, 0}};
 
 struct i2c_random_wr_payload init_array_os04c10[] = {
+  {0x103, 1},
+
+  //{0x5000, 1},
+
+  //{0x5003, 0xc0},
+
+  // switch to 2 lane mode
+  //{0x3016, 0x32}
+  //{0x100, 0},
+
   // disable reset
-  {0x103, 0},
-  {0x100, 0},
 
   // 24 mhz in
 
   // PLL1 (this is correct for 10-bit MIPI)
-  // 24/1.5*0x5a = 1440 mhz PHY clock
-  // 1440/4/2 = 180 mhz PCLK (this is 2x too high)
+  // 24/1.5*0x5a = 1440 mhz PHY clock (MIPI)
+  {0x303, 0x01},  // pre_div = /1.5
+  {0x304, 0x00}, {0x305, 0x5a}, // pll1_divp = 0x5a
+  {0x301, 0x84},  // pre_div0, pll1_divsys(/5)[7:6] = 2, pll1_predivp(/1)[5] = 0, pll1_divs(/4)[3:2] = 1
   // 1440/5/2 = 144 mhz SCLK
+  {0x3106, 0x25}, // dig_sclk_div[3:2] = 1 (/2)
+  // 1440/4/2 = 180 mhz PCLK (this is 2x too high)
+  {0x3020, 0x17},     // pclk_sel[3:2] = 1 (/2)
 
-  // (24/2/3)*0x2bc = 2800 mhz
-  // 2800/2 = 1400 mhz DAC_CLK
+  // PLL2
+  // 24/2/3*0x2bc = 2800 mhz other clock (this valid?)
+  {0x323, 0x04},                // pll2_prediv(/3)[2:0]
+  {0x324, 0x02}, {0x325, 0xbc}, // pll2_divp
   // 2800/7 = 400 mhz SA1_CLK
+  {0x326, 0x82},                // pre_div0(/2)[7], pll2_divsa1(/7)[1:0]
   // 2800/5 = 560 mhz SRAM_CLK
+  {0x327, 0x04},                // pll2_digsram(/5)[2:0] 
+  // 2800/2 = 1400 mhz DAC_CLK
+  {0x329, 0x1},                 // pll2_divdac(/2)[1:0]
 
-  // PLL
-  {0x301, 0x84},  // pre_div0
-  // pll1_divsys = 2
-  // pll1_predivp = 0
-  // pll1_divs = 1
-
-  {0x302, 0x01},
-  {0x303, 0x01},
+  //{0x302, 0x01},
   //{0x303, 0x02},
   //{0x303, 0x05}, // setting this to 5 gets output (/4)
-  {0x304, 0x00}, {0x305, 0x5a}, // pll1_divp = 0x5a
-  {0x306, 0},                   // pll1_divpix
-  {0x3106, 0x25}, // dig_sclk_div = 1 (/2)
-  {0x3020, 0x17},     // pclk_sel = 1 (/2)
+  //{0x306, 0},                   // pll1_divpix
 
-  {0x326, 0x82},                // pre_div0
-  {0x323, 0x04},                // pll2_prediv
-  {0x324, 0x02}, {0x325, 0xbc}, // pll2_divp
+  //{0x323, 0x07},                // pll2_prediv
   //{0x324, 0x01}, {0x325, 0x5e}, // pll2_divp
   //{0x324, 0x00}, {0x325, 0xfc}, // pll2_divp
 
-  {0x327, 0x04},                // pll2_digsram
   // pll2_predivp = 1
   // pll2_divsa1 = 2
-  {0x329, 0x1},                 // pll2_divdac(2)
   //{0x321, 1},
+
+  // exposure
+  {0x3501, 0x3f},
+
+  // https://github.com/hanwckf/linux-rk3328-box/blob/master/drivers/media/i2c/ov4689.c
+  {0x481f, 0x40},
+  {0x4829, 0x78},
+  {0x4837, 0x10},
+
+  // MIPI PCLK period (broken with 0xe stock, MIPI/PHY = 1440/180 = 8)
+  // this makes output happen
+  {0x4837, 0x8}
+
+  // data type
+  {0x4814, 0x2B},
+  {0x4815, 0x2B},
+  {0x4816, 0x2B},
+
+  //{0x3508, 0xf},
 
   // MIPI (10-bit mode)
   //{0x3022, 0x01},
@@ -55,13 +79,10 @@ struct i2c_random_wr_payload init_array_os04c10[] = {
   // MIPI_CORE_37 = 0xe (MIPI PCLK period)
 
   // output size
-  //{0x3808, 0x00}, {0x3809, 0xa0},
-  //{0x380A, 0x00}, {0x380B, 0xf0},
-
-  // data type
-  /*{0x4814, 0x2C},
-  {0x4815, 0x2C},
-  {0x4816, 0x2C},*/
+  // 1928
+  //{0x3808, 0x07}, {0x3809, 0x88},
+  //{0x380A, 0x00}, {0x380B, 0xb8},
+  //{0x380c, 0x2a}, {0x380d, 0x18},
 
   //{0x5000, 0xe8}, // isp disable
 };
