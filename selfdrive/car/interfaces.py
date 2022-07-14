@@ -215,7 +215,7 @@ class CarInterfaceBase(ABC):
     if cs_out.accFaulted:
       events.add(EventName.accFaulted)
 
-    self.add_steer_speed_alert(events)
+    self.add_steer_speed_alert(cs_out, events)
 
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
