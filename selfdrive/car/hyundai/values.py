@@ -167,7 +167,7 @@ class Buttons:
   RES_ACCEL = 1
   SET_DECEL = 2
   GAP_DIST = 3
-  CANCEL = 4
+  CANCEL = 4  # on newer models, this is a pause/resume button
 
 FINGERPRINTS = {
   CAR.ELANTRA: [{

@@ -14,7 +14,7 @@ class CarController:
 
     self.hud_count = 0
     self.last_lkas_falling_edge = 0
-    self.lkas_active_prev = False
+    self.lkas_control_bit_prev = False
     self.last_button_frame = 0
 
     self.packer = CANPacker(dbc_name)
@@ -24,7 +24,8 @@ class CarController:
     can_sends = []
 
     # EPS faults if LKAS re-enables too quickly
-    lkas_active = CC.latActive and not low_speed_alert and (self.frame - self.last_lkas_falling_edge > 200)
+    lkas_control_bit = not low_speed_alert and (self.frame - self.last_lkas_falling_edge > 200)
+    lkas_active = CC.latActive and self.lkas_control_bit_prev
 
     # *** control msgs ***
 
@@ -59,12 +60,12 @@ class CarController:
       self.apply_steer_last = apply_steer
 
       idx = self.frame // 2
-      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_active, idx))
+      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit, idx))
 
     self.frame += 1
-    if not lkas_active and self.lkas_active_prev:
+    if not lkas_control_bit and self.lkas_control_bit_prev:
       self.last_lkas_falling_edge = self.frame
-    self.lkas_active_prev = lkas_active
+    self.lkas_control_bit_prev = lkas_control_bit
 
     new_actuators = CC.actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
