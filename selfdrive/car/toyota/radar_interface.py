@@ -57,23 +57,25 @@ class RadarInterface(RadarInterfaceBase):
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
-    ret = car.RadarData.new_message()
     errors = []
     if self.rcp.bus_timeout:
       errors.append("canBusMissing")
     elif not self.rcp.can_valid:
       errors.append("canError")
-    ret.errors = errors
 
     if self.trigger_msg not in self.updated_messages:
-      return ret
+      return None
 
-    rr = self._update(self.updated_messages, ret)
+    rr = self._update(self.updated_messages, errors=errors)
     self.updated_messages.clear()
 
     return rr
 
-  def _update(self, updated_messages, ret):
+  def _update(self, updated_messages, errors=None):
+    ret = car.RadarData.new_message()
+    if errors is not None:
+      ret.errors = errors
+
     for ii in sorted(updated_messages):
       if ii in self.RADAR_A_MSGS:
         cpt = self.rcp.vl[ii]
