@@ -22,7 +22,7 @@ def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C
   Fx_pos = pr_residual(measurements, posfix_functions, signal=signal)
   x = gauss_newton(Fx_pos, x0, max_n=max_n)
   residual, _ = Fx_pos(x, weight=1.0)
-  return x.tolist(), residual.tolist()
+  return x, residual
 
 
 def pr_residual(measurements, posfix_functions, signal='C1C'):
@@ -43,7 +43,7 @@ def pr_residual(measurements, posfix_functions, signal='C1C'):
   return Fx_pos
 
 
-def gauss_newton(fun, b, xtol=1e-10, max_n=25):
+def gauss_newton(fun, b, xtol=1e-8, max_n=25):
   for _ in range(max_n):
     # Compute function and jacobian on current estimate
     r, J = fun(b)

@@ -30,13 +30,13 @@ MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
 DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache"
 CACHE_VERSION = 0.1
-RESIDUAL_THRESHOLD = 150.
+RESIDUAL_THRESHOLD = 100.
 
 
 class Laikad:
   def __init__(self, valid_const=("GPS", "GLONASS"), auto_fetch_orbits=True, auto_update=False,
                valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV),
-               save_ephemeris=False, max_least_squares_steps=6):
+               save_ephemeris=False):
     """
     valid_const: GNSS constellation which can be used
     auto_fetch_orbits: If true fetch orbits from internet when needed
@@ -58,11 +58,11 @@ class Laikad:
     self.load_cache()
 
     self.posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
-    self.max_least_squares_steps = max_least_squares_steps
     self.last_pos_fix = []
     self.last_pos_residual = []
     self.last_pos_fix_t = None
     self.residual_count = 0
+
   def load_cache(self):
     if not self.save_ephemeris:
       return
@@ -94,10 +94,10 @@ class Laikad:
   def get_est_pos(self, t, processed_measurements):
     if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
       min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 5
-      pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements, max_n=self.max_least_squares_steps)
+      pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
       if len(pos_fix) > 0 and np.median(np.abs(pos_fix_residual)) < RESIDUAL_THRESHOLD:
-        self.last_pos_fix = pos_fix[:3]
-        self.last_pos_residual = pos_fix_residual
+        self.last_pos_fix = pos_fix[:3].round(2).tolist()  # Rounding fixes inconsistent outcomes in process replay when using different CPU's
+        self.last_pos_residual = pos_fix_residual.tolist()
         self.last_pos_fix_t = t
     return self.last_pos_fix
 
@@ -318,7 +318,6 @@ class EphemerisSourceType(IntEnum):
 
 
 def main(sm=None, pm=None):
-  os.system('cat /proc/cpuinfo | grep "model name"')
   if sm is None:
     sm = messaging.SubMaster(['ubloxGnss', 'clocks'])
   if pm is None:
@@ -326,8 +325,7 @@ def main(sm=None, pm=None):
 
   replay = "REPLAY" in os.environ
   use_internet = "LAIKAD_NO_INTERNET" not in os.environ
-  max_least_squares_steps = 75 if replay else 6  # Ensures consistent output of replay on pc and CI
-  laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet, max_least_squares_steps=max_least_squares_steps)
+  laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet)
 
   while True:
     sm.update()
