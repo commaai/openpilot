@@ -66,7 +66,6 @@ private:
 
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_yuv_type) {
   vipc_server = v;
-  this->rgb_type = init_rgb_type;
   this->yuv_type = init_yuv_type;
 
   const CameraInfo *ci = &s->ci;
@@ -87,7 +86,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
 
-  yuv_transform = get_model_yuv_transform(ci->bayer);
+  yuv_transform = get_model_yuv_transform();
 
   int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, rgb_width);
   int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, rgb_height);
@@ -126,7 +125,6 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
-  cur_rgb_buf = vipc_server->get_buffer(rgb_type);
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   cl_event event;
@@ -177,32 +175,6 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
   framed.setProcessingTime(frame_data.processing_time);
-}
-
-kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
-  static const int x_min = util::getenv("XMIN", 0);
-  static const int y_min = util::getenv("YMIN", 0);
-  static const int env_xmax = util::getenv("XMAX", -1);
-  static const int env_ymax = util::getenv("YMAX", -1);
-  static const int scale = util::getenv("SCALE", 1);
-
-  assert(b->cur_rgb_buf);
-
-  const int x_max = env_xmax != -1 ? env_xmax : b->rgb_width - 1;
-  const int y_max = env_ymax != -1 ? env_ymax : b->rgb_height - 1;
-  const int new_width = (x_max - x_min + 1) / scale;
-  const int new_height = (y_max - y_min + 1) / scale;
-  const uint8_t *dat = (const uint8_t *)b->cur_rgb_buf->addr;
-
-  kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(new_width*new_height*3);
-  uint8_t *resized_dat = frame_image.begin();
-  int goff = x_min*3 + y_min*b->rgb_stride;
-  for (int r=0;r<new_height;r++) {
-    for (int c=0;c<new_width;c++) {
-      memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*b->rgb_stride*scale+c*3*scale], 3*sizeof(uint8_t));
-    }
-  }
-  return kj::mv(frame_image);
 }
 
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {

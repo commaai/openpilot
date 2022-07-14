@@ -88,7 +88,7 @@ private:
   CameraState *camera_state;
   Debayer *debayer = nullptr;
 
-  VisionStreamType rgb_type, yuv_type;
+  VisionStreamType yuv_type;
 
   int cur_buf_idx;
 
@@ -110,7 +110,7 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type);
+  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType yuv_type);
   bool acquire();
   void release();
   void queue(size_t buf_idx);
@@ -119,7 +119,6 @@ public:
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
-kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
