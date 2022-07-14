@@ -161,7 +161,7 @@ class Laikad:
       elif not valid[2]:
         cloudlog.error("Gnss kalman filter state is nan")
       if len(est_pos) > 0:
-        cloudlog.info(f"Reset kalman filter with {est_pos}")
+        cloudlog.error(f"Reset kalman filter with {est_pos}")
         self.init_gnss_localizer(est_pos)
       else:
         return
@@ -171,7 +171,7 @@ class Laikad:
         residual_correct = kf_update_on_residuals(self.gnss_kf, residuals)
         if residual_correct:
           break
-        cloudlog.debug(f"Median residual of measurements above threshold. Repeat {i} Residuals/threshold: {np.abs(residuals).flatten().round()}, {RESIDUAL_THRESHOLD}")
+        cloudlog.error(f"Median residual of measurements above threshold. Repeat {i} Residuals/threshold: {np.abs(residuals).flatten().round()}, {RESIDUAL_THRESHOLD}")
         residuals = kf_add_observations(self.gnss_kf, t, measurements)
     else:
       # Ensure gnss filter is updated even with no new measurements
@@ -221,7 +221,7 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types, cach
     cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
     return astro_dog.orbits, astro_dog.orbit_fetched_times, t
   except (DownloadFailed, RuntimeError, ValueError, IOError) as e:
-    cloudlog.warning(f"No orbit data found or parsing failure: {e}")
+    cloudlog.error(f"No orbit data found or parsing failure: {e}")
   return None, None, t
 
 
@@ -314,6 +314,7 @@ class EphemerisSourceType(IntEnum):
 
 
 def main(sm=None, pm=None):
+  os.system('cat /proc/cpuinfo | grep "model name"')
   if sm is None:
     sm = messaging.SubMaster(['ubloxGnss', 'clocks'])
   if pm is None:
