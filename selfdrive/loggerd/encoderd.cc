@@ -103,8 +103,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
-        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
-                                               buf->width, buf->height, &extra);
+        int out_id = encoders[i]->encode_frame(buf, &extra);
 
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d", extra.frame_id);
@@ -125,16 +124,14 @@ void encoderd_thread() {
 
   std::vector<std::thread> encoder_threads;
   for (const auto &cam : cameras_logged) {
-    if (cam.enable) {
-      encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
-      s.max_waiting++;
-    }
+    encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
+    s.max_waiting++;
   }
   for (auto &t : encoder_threads) t.join();
 }
 
 int main() {
-  if (Hardware::TICI()) {
+  if (!Hardware::PC()) {
     int ret;
     ret = util::set_realtime_priority(52);
     assert(ret == 0);

@@ -1,6 +1,6 @@
 #include "common.h"
 
-unsigned int honda_checksum(uint32_t address, const std::vector<uint8_t> &d) {
+unsigned int honda_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
   int s = 0;
   bool extended = address > 0x7FF;
   while (address) { s += (address & 0xF); address >>= 4; }
@@ -15,7 +15,7 @@ unsigned int honda_checksum(uint32_t address, const std::vector<uint8_t> &d) {
   return s & 0xF;
 }
 
-unsigned int toyota_checksum(uint32_t address, const std::vector<uint8_t> &d) {
+unsigned int toyota_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
   unsigned int s = d.size();
   while (address) { s += address & 0xFF; address >>= 8; }
   for (int i = 0; i < d.size() - 1; i++) { s += d[i]; }
@@ -23,7 +23,7 @@ unsigned int toyota_checksum(uint32_t address, const std::vector<uint8_t> &d) {
   return s & 0xFF;
 }
 
-unsigned int subaru_checksum(uint32_t address, const std::vector<uint8_t> &d) {
+unsigned int subaru_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
   unsigned int s = 0;
   while (address) { s += address & 0xFF; address >>= 8; }
 
@@ -33,7 +33,7 @@ unsigned int subaru_checksum(uint32_t address, const std::vector<uint8_t> &d) {
   return s & 0xFF;
 }
 
-unsigned int chrysler_checksum(uint32_t address, const std::vector<uint8_t> &d) {
+unsigned int chrysler_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
   /* jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf */
   uint8_t checksum = 0xFF;
   for (int j = 0; j < (d.size() - 1); j++) {
@@ -107,7 +107,7 @@ void init_crc_lookup_tables() {
   gen_crc_lookup_table_16(0x1021, crc16_lut_xmodem);    // CRC-16 XMODEM for HKG CAN FD
 }
 
-unsigned int volkswagen_crc(uint32_t address, const std::vector<uint8_t> &d) {
+unsigned int volkswagen_mqb_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
   // Volkswagen uses standard CRC8 8H2F/AUTOSAR, but they compute it with
   // a magic variable padding byte tacked onto the end of the payload.
   // https://www.autosar.org/fileadmin/user_upload/standards/classic/4-3/AUTOSAR_SWS_CRCLibrary.pdf
@@ -188,7 +188,7 @@ unsigned int volkswagen_crc(uint32_t address, const std::vector<uint8_t> &d) {
   return crc ^ 0xFF; // Return after standard final XOR for CRC8 8H2F/AUTOSAR
 }
 
-unsigned int pedal_checksum(const std::vector<uint8_t> &d) {
+unsigned int pedal_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
   uint8_t crc = 0xFF;
   uint8_t poly = 0xD5; // standard crc8
 
@@ -206,7 +206,7 @@ unsigned int pedal_checksum(const std::vector<uint8_t> &d) {
   return crc;
 }
 
-unsigned int hkg_can_fd_checksum(uint32_t address, const std::vector<uint8_t> &d) {
+unsigned int hkg_can_fd_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
 
   uint16_t crc = 0;
 

@@ -1,12 +1,16 @@
 #include "selfdrive/ui/qt/util.h"
 
 #include <QApplication>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLayoutItem>
 #include <QStyleOption>
+#include <QPainterPath>
 
 #include "common/params.h"
 #include "common/swaglog.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 QString getVersion() {
   static QString version =  QString::fromStdString(Params().get("Version"));
@@ -14,7 +18,7 @@ QString getVersion() {
 }
 
 QString getBrand() {
-  return Params().getBool("Passive") ? "dashcam" : "openpilot";
+  return Params().getBool("Passive") ? QObject::tr("dashcam") : QObject::tr("openpilot");
 }
 
 QString getBrandVersion() {
@@ -33,6 +37,19 @@ std::optional<QString> getDongleId() {
   } else {
     return {};
   }
+}
+
+QMap<QString, QString> getSupportedLanguages() {
+  QFile f("translations/languages.json");
+  f.open(QIODevice::ReadOnly | QIODevice::Text);
+  QString val = f.readAll();
+
+  QJsonObject obj = QJsonDocument::fromJson(val.toUtf8()).object();
+  QMap<QString, QString> map;
+  for (auto key : obj.keys()) {
+    map[key] = obj[key].toString();
+  }
+  return map;
 }
 
 void configFont(QPainter &p, const QString &family, int size, const QString &style) {
@@ -62,13 +79,13 @@ QString timeAgo(const QDateTime &date) {
     s = "now";
   } else if (diff < 60 * 60) {
     int minutes = diff / 60;
-    s = QString("%1 minute%2 ago").arg(minutes).arg(minutes > 1 ? "s" : "");
+    s = QObject::tr("%1 minute%2 ago").arg(minutes).arg(minutes > 1 ? "s" : "");
   } else if (diff < 60 * 60 * 24) {
     int hours = diff / (60 * 60);
-    s = QString("%1 hour%2 ago").arg(hours).arg(hours > 1 ? "s" : "");
+    s = QObject::tr("%1 hour%2 ago").arg(hours).arg(hours > 1 ? "s" : "");
   } else if (diff < 3600 * 24 * 7) {
     int days = diff / (60 * 60 * 24);
-    s = QString("%1 day%2 ago").arg(days).arg(days > 1 ? "s" : "");
+    s = QObject::tr("%1 day%2 ago").arg(days).arg(days > 1 ? "s" : "");
   } else {
     s = date.date().toString();
   }
@@ -133,5 +150,66 @@ QPixmap loadPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMo
     return QPixmap(fileName);
   } else {
     return QPixmap(fileName).scaled(size, aspectRatioMode, Qt::SmoothTransformation);
+  }
+}
+
+QRect getTextRect(QPainter &p, int flags, QString text) {
+  QFontMetrics fm(p.font());
+  QRect init_rect = fm.boundingRect(text);
+  return fm.boundingRect(init_rect, flags, text);
+}
+
+void drawRoundedRect(QPainter &painter, const QRectF &rect, qreal xRadiusTop, qreal yRadiusTop, qreal xRadiusBottom, qreal yRadiusBottom){
+  qreal w_2 = rect.width() / 2;
+  qreal h_2 = rect.height() / 2;
+
+  xRadiusTop = 100 * qMin(xRadiusTop, w_2) / w_2;
+  yRadiusTop = 100 * qMin(yRadiusTop, h_2) / h_2;
+
+  xRadiusBottom = 100 * qMin(xRadiusBottom, w_2) / w_2;
+  yRadiusBottom = 100 * qMin(yRadiusBottom, h_2) / h_2;
+
+  qreal x = rect.x();
+  qreal y = rect.y();
+  qreal w = rect.width();
+  qreal h = rect.height();
+
+  qreal rxx2Top = w*xRadiusTop/100;
+  qreal ryy2Top = h*yRadiusTop/100;
+
+  qreal rxx2Bottom = w*xRadiusBottom/100;
+  qreal ryy2Bottom = h*yRadiusBottom/100;
+
+  QPainterPath path;
+  path.arcMoveTo(x, y, rxx2Top, ryy2Top, 180);
+  path.arcTo(x, y, rxx2Top, ryy2Top, 180, -90);
+  path.arcTo(x+w-rxx2Top, y, rxx2Top, ryy2Top, 90, -90);
+  path.arcTo(x+w-rxx2Bottom, y+h-ryy2Bottom, rxx2Bottom, ryy2Bottom, 0, -90);
+  path.arcTo(x, y+h-ryy2Bottom, rxx2Bottom, ryy2Bottom, 270, -90);
+  path.closeSubpath();
+
+  painter.drawPath(path);
+}
+
+QColor interpColor(float xv, std::vector<float> xp, std::vector<QColor> fp) {
+  assert(xp.size() == fp.size());
+
+  int N = xp.size();
+  int hi = 0;
+
+  while (hi < N and xv > xp[hi]) hi++;
+  int low = hi - 1;
+
+  if (hi == N && xv > xp[low]) {
+    return fp[fp.size() - 1];
+  } else if (hi == 0){
+    return fp[0];
+  } else {
+    return QColor(
+      (xv - xp[low]) * (fp[hi].red() - fp[low].red()) / (xp[hi] - xp[low]) + fp[low].red(),
+      (xv - xp[low]) * (fp[hi].green() - fp[low].green()) / (xp[hi] - xp[low]) + fp[low].green(),
+      (xv - xp[low]) * (fp[hi].blue() - fp[low].blue()) / (xp[hi] - xp[low]) + fp[low].blue(),
+      (xv - xp[low]) * (fp[hi].alpha() - fp[low].alpha()) / (xp[hi] - xp[low]) + fp[low].alpha()
+    );
   }
 }

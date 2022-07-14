@@ -123,6 +123,10 @@ struct sample_t torque_meas;       // last 6 motor torques produced by the eps
 struct sample_t torque_driver;     // last 6 driver torques measured
 uint32_t ts_last = 0;
 
+// state for controls_allowed timeout logic
+bool heartbeat_engaged = false;             // openpilot enabled, passed in heartbeat USB command
+uint32_t heartbeat_engaged_mismatches = 0;  // count of mismatches between heartbeat_engaged and controls_allowed
+
 // for safety modes with angle steering control
 uint32_t ts_angle_last = 0;
 int desired_angle_last = 0;

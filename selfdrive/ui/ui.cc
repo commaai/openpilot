@@ -10,7 +10,7 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "common/watchdog.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
@@ -55,10 +55,13 @@ static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_sta
 }
 
 static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off, float z_off, line_vertices_data *pvd, int max_idx, bool allow_invert=true) {
+                             float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
 
-  std::vector<QPointF> left_points, right_points;
+  QPolygonF left_points, right_points;
+  left_points.reserve(max_idx + 1);
+  right_points.reserve(max_idx + 1);
+
   for (int i = 0; i <= max_idx; i++) {
     QPointF left, right;
     bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
@@ -69,19 +72,10 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
         continue;
       }
       left_points.push_back(left);
-      right_points.push_back(right);
+      right_points.push_front(right);
     }
   }
-
-  pvd->cnt = 2 * left_points.size();
-  assert(left_points.size() == right_points.size());
-  assert(pvd->cnt <= std::size(pvd->v));
-
-  for (int left_idx = 0; left_idx < left_points.size(); left_idx++){
-    int right_idx = 2 * left_points.size() - left_idx - 1;
-    pvd->v[left_idx] = left_points[left_idx];
-    pvd->v[right_idx] = right_points[left_idx];
-  }
+  *pvd = left_points + right_points;
 }
 
 static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
@@ -114,7 +108,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
-  update_line_data(s, model_position, scene.end_to_end ? 0.9 : 0.5, 1.22, &scene.track_vertices, max_idx, false);
+  update_line_data(s, model_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
 }
 
 static void update_sockets(UIState *s) {
@@ -140,6 +134,7 @@ static void update_state(UIState *s) {
         scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);
       }
     }
+    scene.calibration_valid = sm["liveCalibration"].getLiveCalibration().getCalStatus() == 1;
   }
   if (s->worldObjectsVisible()) {
     if (sm.updated("modelV2")) {
@@ -182,7 +177,7 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (Hardware::TICI() && sm.updated("wideRoadCameraState")) {
+  if (sm.updated("wideRoadCameraState")) {
     auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
 
     float max_lines = 1618;
@@ -221,8 +216,7 @@ void UIState::updateStatus() {
     if (scene.started) {
       status = STATUS_DISENGAGED;
       scene.started_frame = sm->frame;
-      scene.end_to_end = Params().getBool("EndToEndToggle");
-      wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+      wide_camera = Params().getBool("WideCameraOnly");
     }
     started_prev = scene.started;
     emit offroadTransition(!scene.started);
@@ -233,11 +227,11 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
-    "wideRoadCameraState", "managerState",
+    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "gnssMeasurements",
   });
 
   Params params;
-  wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
+  wide_camera = params.getBool("WideCameraOnly");
   prime_type = std::atoi(params.get("PrimeType").c_str());
 
   // update timer
@@ -252,7 +246,7 @@ void UIState::update() {
   updateStatus();
 
   if (sm->frame % UI_FREQ == 0) {
-    watchdog_kick();
+    watchdog_kick(nanos_since_boot());
   }
   emit uiUpdate(*this);
 }

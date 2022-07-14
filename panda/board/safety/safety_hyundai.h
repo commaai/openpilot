@@ -71,7 +71,7 @@ enum {
 
 // some newer HKG models can re-enable after spamming cancel button,
 // so keep track of user button presses to deny engagement if no interaction
-const uint8_t HYUNDAI_PREV_BUTTON_SAMPLES = 4;  // roughly 80 ms
+const uint8_t HYUNDAI_PREV_BUTTON_SAMPLES = 8;  // roughly 160 ms
 uint8_t hyundai_last_button_interaction;  // button messages since the user pressed an enable button
 
 bool hyundai_legacy = false;
@@ -296,6 +296,7 @@ static int hyundai_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
   // LKA STEER: safety check
   if (addr == 832) {
     int desired_torque = ((GET_BYTES_04(to_send) >> 16) & 0x7ffU) - 1024U;
+    bool steer_req = GET_BIT(to_send, 27U) != 0U;
     uint32_t ts = microsecond_timer_get();
     bool violation = 0;
 
@@ -323,8 +324,8 @@ static int hyundai_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
       }
     }
 
-    // no torque if controls is not allowed
-    if (!controls_allowed && (desired_torque != 0)) {
+    // no torque if controls is not allowed or mismatch with CF_Lkas_ActToi bit
+      if ((!controls_allowed || !steer_req) && (desired_torque != 0)) {
       violation = 1;
     }
 

@@ -19,26 +19,12 @@
 #include "common/swaglog.h"
 #include "common/version.h"
 
-// ***** logging helpers *****
-
-void append_property(const char* key, const char* value, void *cookie) {
-  std::vector<std::pair<std::string, std::string> > *properties =
-    (std::vector<std::pair<std::string, std::string> > *)cookie;
-
-  properties->push_back(std::make_pair(std::string(key), std::string(value)));
-}
-
 // ***** log metadata *****
 kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (Hardware::TICI()) {
-    init.setDeviceType(cereal::InitData::DeviceType::TICI);
-  } else {
-    init.setDeviceType(cereal::InitData::DeviceType::PC);
-  }
-
+  init.setDeviceType(Hardware::get_device_type());
   init.setVersion(COMMA_VERSION);
 
   std::ifstream cmdline_stream("/proc/cmdline");

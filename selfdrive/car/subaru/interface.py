@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car.subaru.values import CAR, PREGLOBAL_CARS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.subaru.values import CAR, PREGLOBAL_CARS
+
 
 class CarInterface(CarInterfaceBase):
 
@@ -22,7 +23,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
 
-    ret.steerRateCost = 0.7
     ret.steerLimitTimer = 0.4
 
     if candidate == CAR.ASCENT:
@@ -118,9 +118,4 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def apply(self, c):
-    hud_control = c.hudControl
-    ret = self.CC.update(c, self.CS, self.frame, c.actuators,
-                         c.cruiseControl.cancel, hud_control.visualAlert,
-                         hud_control.leftLaneVisible, hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart)
-    self.frame += 1
-    return ret
+    return self.CC.update(c, self.CS)

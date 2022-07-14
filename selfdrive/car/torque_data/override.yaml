@@ -1,0 +1,30 @@
+legend: [LAT_ACCEL_FACTOR, MAX_LAT_ACCEL_MEASURED, FRICTION]
+### angle control
+# Nissan appears to have torque
+NISSAN X-TRAIL 2017: [.nan, 1.5, .nan]
+NISSAN ALTIMA 2020: [.nan, 1.5, .nan]
+NISSAN LEAF 2018 Instrument Cluster: [.nan, 1.5, .nan]
+NISSAN LEAF 2018: [.nan, 1.5, .nan]
+NISSAN ROGUE 2019: [.nan, 1.5, .nan]
+
+# Tesla has high torque
+TESLA AP1 MODEL S: [.nan, 2.5, .nan]
+TESLA AP2 MODEL S: [.nan, 2.5, .nan]
+
+# Guess
+FORD ESCAPE 4TH GEN: [.nan, 1.5, .nan]
+FORD FOCUS 4TH GEN: [.nan, 1.5, .nan]
+###
+
+# No steering wheel
+COMMA BODY: [.nan, 1000, .nan]
+
+# Totally new cars
+KIA EV6 2022: [3.5, 2.5, 0.0]
+RAM 1500 5TH GEN: [2.0, 2.0, 0.0]
+
+# Dashcam or fallback configured as ideal car
+mock: [10.0, 10, 0.0]
+
+# Manually checked
+HONDA CIVIC 2022: [2.5, 1.2, 0.15]

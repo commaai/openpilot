@@ -127,6 +127,7 @@ BO_ 466 PCM_CRUISE: 8 XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 467 PCM_CRUISE_2: 8 XXX
+ SG_ PCM_FOLLOW_DISTANCE : 12|2@0+ (1,0) [0|3] "" XXX
  SG_ MAIN_ON : 15|1@0+ (1,0) [0|1] "" XXX
  SG_ LOW_SPEED_LOCKOUT : 14|2@0+ (1,0) [0|3] "" XXX
  SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "km/h" XXX
@@ -476,6 +477,7 @@ CM_ SG_ 1592 LOCKED_VIA_KEYFOB "1 for as long as car is locked with key fob or d
 VAL_ 295 GEAR 0 "P" 1 "R" 2 "N" 3 "D" 4 "B";
 VAL_ 466 CRUISE_STATE 11 "timer_3sec" 10 "adaptive click down" 9 "adaptive click up" 8 "adaptive engaged" 7 "standstill" 6 "non-adaptive click up" 5 "non-adaptive click down" 4 "non-adaptive hold down" 3 "non-adaptive hold up" 2 "non-adaptive being engaged" 1 "non-adaptive engaged" 0 "off";
 VAL_ 467 LOW_SPEED_LOCKOUT 2 "low speed locked" 1 "ok";
+VAL_ 467 PCM_FOLLOW_DISTANCE 1 "far" 2 "medium" 3 "close";
 VAL_ 614 STATE 3 "enabled" 1 "disabled";
 VAL_ 614 DIRECTION_CMD 3 "right" 2 "center" 1 "left";
 VAL_ 643 STATE 0 "normal" 1 "adaptive_cruise_control" 3 "emergency_braking";
