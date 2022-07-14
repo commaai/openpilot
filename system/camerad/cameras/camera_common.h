@@ -49,7 +49,6 @@ const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
 typedef struct CameraInfo {
   uint32_t frame_width, frame_height;
   uint32_t frame_stride;
-  bool hdr;
   uint32_t frame_offset = 0;
   uint32_t extra_height = 0;
   int registers_offset = -1;

@@ -46,15 +46,11 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .registers_offset = 0,
     .frame_offset = AR0231_REGISTERS_HEIGHT,
     .stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT,
-
-    .hdr = false,
   },
   [CAMERA_ID_IMX390] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
-
-    .hdr = false,
   },
 };
 
