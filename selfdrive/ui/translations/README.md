@@ -32,7 +32,7 @@ Follow steps above, ommitting steps 1. and 2. Any time you edit translations you
 
 openpilot has a unit test to make sure all translations are up to date with the text in openpilot and that all translations are completed.
 
-Run: 
+Run and fix any issues:
 
 ```python
 selfdrive/ui/tests/test_translations.py
