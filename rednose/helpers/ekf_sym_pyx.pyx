@@ -78,7 +78,7 @@ cdef np.ndarray[np.float64_t, ndim=1, mode="c"] vector_to_numpy(VectorXd arr):
   cdef double[:] mem_view = <double[:arr.rows()]>arr.data()
   return np.copy(np.asarray(mem_view, dtype=np.double, order="C"))
 
-cdef class EKF_sym:
+cdef class EKF_sym_pyx:
   cdef EKFSym* ekf
   def __cinit__(self, str gen_dir, str name, np.ndarray[np.float64_t, ndim=2] Q,
       np.ndarray[np.float64_t, ndim=1] x_initial, np.ndarray[np.float64_t, ndim=2] P_initial, int dim_main,

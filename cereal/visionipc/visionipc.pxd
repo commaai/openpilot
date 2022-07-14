@@ -16,6 +16,7 @@ cdef extern from "visionbuf.h":
     size_t width
     size_t height
     size_t stride
+    size_t uv_offset
     void set_frame_id(uint64_t id)
 
 cdef extern from "visionipc.h":
@@ -28,6 +29,7 @@ cdef extern from "visionipc_server.h":
   cdef cppclass VisionIpcServer:
     VisionIpcServer(string, void*, void*)
     void create_buffers(VisionStreamType, size_t, bool, size_t, size_t)
+    void create_buffers_with_sizes(VisionStreamType, size_t, bool, size_t, size_t, size_t, size_t, size_t)
     VisionBuf * get_buffer(VisionStreamType)
     void send(VisionBuf *, VisionIpcBufExtra *, bool)
     void start_listener()

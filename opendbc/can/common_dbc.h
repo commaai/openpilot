@@ -31,17 +31,14 @@ struct SignalValue {
 
 enum SignalType {
   DEFAULT,
+  COUNTER,
   HONDA_CHECKSUM,
-  HONDA_COUNTER,
   TOYOTA_CHECKSUM,
   PEDAL_CHECKSUM,
-  PEDAL_COUNTER,
-  VOLKSWAGEN_CHECKSUM,
-  VOLKSWAGEN_COUNTER,
+  VOLKSWAGEN_MQB_CHECKSUM,
   SUBARU_CHECKSUM,
   CHRYSLER_CHECKSUM,
   HKG_CAN_FD_CHECKSUM,
-  HKG_CAN_FD_COUNTER,
 };
 
 struct Signal {
@@ -51,6 +48,7 @@ struct Signal {
   double factor, offset;
   bool is_little_endian;
   SignalType type;
+  unsigned int (*calc_checksum)(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 };
 
 struct Msg {
@@ -73,6 +71,6 @@ struct DBC {
   std::vector<Val> vals;
 };
 
-DBC* dbc_parse(const std::string& dbc_name, const std::string& dbc_file_path);
+DBC* dbc_parse(const std::string& dbc_path);
 const DBC* dbc_lookup(const std::string& dbc_name);
 std::vector<std::string> get_dbc_names();

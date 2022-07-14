@@ -15,12 +15,12 @@
 #include "cereal/services.h"
 #include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_common.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 #include "selfdrive/loggerd/encoder/encoder.h"
 #include "selfdrive/loggerd/logger.h"
@@ -33,8 +33,8 @@
 #endif
 
 constexpr int MAIN_FPS = 20;
-const int MAIN_BITRATE = Hardware::TICI() ? 10000000 : 5000000;
-const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
+const int MAIN_BITRATE = 10000000;
+const int DCAM_BITRATE = MAIN_BITRATE;
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
@@ -50,7 +50,6 @@ struct LogCameraInfo {
   int bitrate;
   bool is_h265;
   bool has_qcamera;
-  bool enable;
   bool record;
 };
 
@@ -63,7 +62,6 @@ const LogCameraInfo cameras_logged[] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .has_qcamera = true,
-    .enable = true,
     .record = true,
     .frame_width = 1928,
     .frame_height = 1208,
@@ -76,7 +74,6 @@ const LogCameraInfo cameras_logged[] = {
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
     .has_qcamera = false,
-    .enable = true,
     .record = Params().getBool("RecordFront"),
     .frame_width = 1928,
     .frame_height = 1208,
@@ -89,8 +86,7 @@ const LogCameraInfo cameras_logged[] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .has_qcamera = false,
-    .enable = Hardware::TICI(),
-    .record = Hardware::TICI(),
+    .record = true,
     .frame_width = 1928,
     .frame_height = 1208,
   },
@@ -100,8 +96,7 @@ const LogCameraInfo qcam_info = {
   .fps = MAIN_FPS,
   .bitrate = 256000,
   .is_h265 = false,
-  .enable = true,
   .record = true,
-  .frame_width = Hardware::TICI() ? 526 : 480,
-  .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
+  .frame_width = 526,
+  .frame_height = 330,
 };

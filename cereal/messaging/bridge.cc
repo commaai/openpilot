@@ -79,9 +79,13 @@ int main(int argc, char** argv) {
       Message * msg = sub_sock->receive();
       if (msg == NULL) continue;
       int ret;
-      do { ret = sub2pub[sub_sock]->sendMessage(msg); } while (ret == -1 && errno == EINTR);
-      assert(ret >= 0);
+      do {
+        ret = sub2pub[sub_sock]->sendMessage(msg);
+      } while (ret == -1 && errno == EINTR && !do_exit);
+      assert(ret >= 0 || do_exit);
       delete msg;
+
+      if (do_exit) break;
     }
   }
   return 0;

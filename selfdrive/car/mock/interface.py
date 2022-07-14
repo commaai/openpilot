@@ -2,7 +2,7 @@
 import math
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase

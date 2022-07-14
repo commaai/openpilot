@@ -36,6 +36,8 @@ fi
 tee $CONTINUE_PATH << EOF
 #!/usr/bin/bash
 
+sudo abctl --set_success
+
 while true; do
   if ! sudo systemctl is-active -q ssh; then
     sudo systemctl start ssh

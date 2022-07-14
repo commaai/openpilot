@@ -9,6 +9,7 @@
 #include <mutex>
 #include <cstring>
 
+#include "common.h"
 #include "common_dbc.h"
 
 std::regex bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
@@ -54,35 +55,39 @@ typedef struct ChecksumState {
   bool little_endian;
   SignalType checksum_type;
   SignalType counter_type;
+  unsigned int (*calc_checksum)(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 } ChecksumState;
 
 ChecksumState* get_checksum(const std::string& dbc_name) {
   ChecksumState* s = nullptr;
   if (startswith(dbc_name, {"honda_", "acura_"})) {
-    s = new ChecksumState({4, 2, 3, 5, false, HONDA_CHECKSUM, HONDA_COUNTER});
+    s = new ChecksumState({4, 2, 3, 5, false, HONDA_CHECKSUM, COUNTER, &honda_checksum});
   } else if (startswith(dbc_name, {"toyota_", "lexus_"})) {
-    s = new ChecksumState({8, -1, 7, -1, false, TOYOTA_CHECKSUM});
+    s = new ChecksumState({8, -1, 7, -1, false, TOYOTA_CHECKSUM, DEFAULT, &toyota_checksum});
   } else if (startswith(dbc_name, "kia_ev6")) {
-    s = new ChecksumState({16, 8, 0, 0, true, HKG_CAN_FD_CHECKSUM, HKG_CAN_FD_COUNTER});
-  } else if (startswith(dbc_name, {"vw_", "volkswagen_", "audi_", "seat_", "skoda_"})) {
-    s = new ChecksumState({8, 4, 0, 0, true, VOLKSWAGEN_CHECKSUM, VOLKSWAGEN_COUNTER});
+    s = new ChecksumState({16, -1, 0, -1, true, HKG_CAN_FD_CHECKSUM, COUNTER, &hkg_can_fd_checksum});
+  } else if (startswith(dbc_name, {"vw_mqb_2010"})) {
+    s = new ChecksumState({8, 4, 0, 0, true, VOLKSWAGEN_MQB_CHECKSUM, COUNTER, &volkswagen_mqb_checksum});
   } else if (startswith(dbc_name, "subaru_global_")) {
-    s = new ChecksumState({8, -1, 0, -1, true, SUBARU_CHECKSUM});
+    s = new ChecksumState({8, -1, 0, -1, true, SUBARU_CHECKSUM, DEFAULT, &subaru_checksum});
   } else if (startswith(dbc_name, "chrysler_")) {
-    s = new ChecksumState({8, -1, 7, -1, false, CHRYSLER_CHECKSUM});
+    s = new ChecksumState({8, -1, 7, -1, false, CHRYSLER_CHECKSUM, DEFAULT, &chrysler_checksum});
   } else if (startswith(dbc_name, "comma_body")) {
-    s = new ChecksumState({8, 4, 7, 3, false, PEDAL_CHECKSUM, PEDAL_COUNTER});
+    s = new ChecksumState({8, 4, 7, 3, false, PEDAL_CHECKSUM, COUNTER, &pedal_checksum});
   }
   return s;
 }
 
-void set_signal_type(Signal& s, uint32_t address, ChecksumState* chk, const std::string& dbc_name, int line_num) {
+void set_signal_type(Signal& s, ChecksumState* chk, const std::string& dbc_name, int line_num) {
+  s.calc_checksum = nullptr;
   if (chk) {
     if (s.name == "CHECKSUM") {
-      DBC_ASSERT(s.size == chk->checksum_size, "CHECKSUM is not " << chk->checksum_size << " bits long");
-      DBC_ASSERT((s.start_bit % 8) == chk->checksum_start_bit, " CHECKSUM starts at wrong bit");
+      DBC_ASSERT(chk->checksum_size == -1 || s.size == chk->checksum_size, "CHECKSUM is not " << chk->checksum_size << " bits long");
+      DBC_ASSERT(chk->checksum_start_bit == -1 || (s.start_bit % 8) == chk->checksum_start_bit, " CHECKSUM starts at wrong bit");
       DBC_ASSERT(s.is_little_endian == chk->little_endian, "CHECKSUM has wrong endianness");
+      DBC_ASSERT(chk->calc_checksum != nullptr, "CHECKSUM calculate function not supplied");
       s.type = chk->checksum_type;
+      s.calc_checksum = chk->calc_checksum;
     } else if (s.name == "COUNTER") {
       DBC_ASSERT(chk->counter_size == -1 || s.size == chk->counter_size, "COUNTER is not " << chk->counter_size << " bits long");
       DBC_ASSERT(chk->counter_start_bit == -1 || (s.start_bit % 8) == chk->counter_start_bit, "COUNTER starts at wrong bit");
@@ -90,21 +95,22 @@ void set_signal_type(Signal& s, uint32_t address, ChecksumState* chk, const std:
       s.type = chk->counter_type;
     }
   }
-  // TODO: replace hardcoded addresses with signal names. prefix with COMMA_PEDAL_?
-  if (address == 0x200 || address == 0x201) {
-    if (s.name == "CHECKSUM_PEDAL") {
-      DBC_ASSERT(s.size == 8, "PEDAL CHECKSUM is not 8 bits long");
-      s.type = PEDAL_CHECKSUM;
-    } else if (s.name == "COUNTER_PEDAL") {
-      DBC_ASSERT(s.size == 4, "PEDAL COUNTER is not 4 bits long");
-      s.type = PEDAL_COUNTER;
-    }
+
+  // TODO: CAN packer/parser shouldn't know anything about interceptors or pedals
+  if (s.name == "CHECKSUM_PEDAL") {
+    DBC_ASSERT(s.size == 8, "INTERCEPTOR CHECKSUM is not 8 bits long");
+    s.type = PEDAL_CHECKSUM;
+  } else if (s.name == "COUNTER_PEDAL") {
+    DBC_ASSERT(s.size == 4, "INTERCEPTOR COUNTER is not 4 bits long");
+    s.type = COUNTER;
   }
 }
 
-DBC* dbc_parse(const std::string& dbc_name, const std::string& dbc_file_path) {
-  std::ifstream infile(dbc_file_path + "/" + dbc_name + ".dbc");
+DBC* dbc_parse(const std::string& dbc_path) {
+  std::ifstream infile(dbc_path);
   if (!infile) return nullptr;
+
+  const std::string dbc_name = std::filesystem::path(dbc_path).filename();
 
   std::unique_ptr<ChecksumState> checksum(get_checksum(dbc_name));
 
@@ -161,7 +167,7 @@ DBC* dbc_parse(const std::string& dbc_name, const std::string& dbc_file_path) {
       sig.is_signed = match[offset + 5].str() == "-";
       sig.factor = std::stod(match[offset + 6].str());
       sig.offset = std::stod(match[offset + 7].str());
-      set_signal_type(sig, address, checksum.get(), dbc_name, line_num);
+      set_signal_type(sig, checksum.get(), dbc_name, line_num);
       if (sig.is_little_endian) {
         sig.lsb = sig.start_bit;
         sig.msb = sig.start_bit + sig.size - 1;
@@ -206,7 +212,7 @@ DBC* dbc_parse(const std::string& dbc_name, const std::string& dbc_file_path) {
   return dbc;
 }
 
-const std::string get_dbc_file_path() {
+const std::string get_dbc_root_path() {
   char *basedir = std::getenv("BASEDIR");
   if (basedir != NULL) {
     return std::string(basedir) + "/opendbc";
@@ -218,18 +224,22 @@ const std::string get_dbc_file_path() {
 const DBC* dbc_lookup(const std::string& dbc_name) {
   static std::mutex lock;
   static std::map<std::string, DBC*> dbcs;
-  static const std::string& dbc_file_path = get_dbc_file_path();
+
+  std::string dbc_file_path = dbc_name;
+  if (!std::filesystem::exists(dbc_file_path)) {
+    dbc_file_path = get_dbc_root_path() + "/" + dbc_name + ".dbc";
+  }
 
   std::unique_lock lk(lock);
   auto it = dbcs.find(dbc_name);
   if (it == dbcs.end()) {
-    it = dbcs.insert(it, {dbc_name, dbc_parse(dbc_name, dbc_file_path)});
+    it = dbcs.insert(it, {dbc_name, dbc_parse(dbc_file_path)});
   }
   return it->second;
 }
 
 std::vector<std::string> get_dbc_names() {
-  static const std::string& dbc_file_path = get_dbc_file_path();
+  static const std::string& dbc_file_path = get_dbc_root_path();
   std::vector<std::string> dbcs;
   for (std::filesystem::directory_iterator i(dbc_file_path), end; i != end; i++) {
     if (!is_directory(i->path())) {

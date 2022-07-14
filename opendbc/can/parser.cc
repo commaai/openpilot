@@ -45,26 +45,14 @@ bool MessageState::parse(uint64_t sec, const std::vector<uint8_t> &dat) {
 
     bool checksum_failed = false;
     if (!ignore_checksum) {
-      if (sig.type == SignalType::HONDA_CHECKSUM && honda_checksum(address, dat) != tmp) {
-        checksum_failed = true;
-      } else if (sig.type == SignalType::TOYOTA_CHECKSUM && toyota_checksum(address, dat) != tmp) {
-        checksum_failed = true;
-      } else if (sig.type == SignalType::VOLKSWAGEN_CHECKSUM && volkswagen_crc(address, dat) != tmp) {
-        checksum_failed = true;
-      } else if (sig.type == SignalType::SUBARU_CHECKSUM && subaru_checksum(address, dat) != tmp) {
-        checksum_failed = true;
-      } else if (sig.type == SignalType::CHRYSLER_CHECKSUM && chrysler_checksum(address, dat) != tmp) {
-        checksum_failed = true;
-      } else if (sig.type == SignalType::HKG_CAN_FD_CHECKSUM && hkg_can_fd_checksum(address, dat) != tmp) {
-        checksum_failed = true;
-      } else if (sig.type == SignalType::PEDAL_CHECKSUM && pedal_checksum(dat) != tmp) {
+      if (sig.calc_checksum != nullptr && sig.calc_checksum(address, sig, dat) != tmp) {
         checksum_failed = true;
       }
     }
 
     bool counter_failed = false;
     if (!ignore_counter) {
-      if (sig.type == SignalType::HONDA_COUNTER || sig.type == SignalType::VOLKSWAGEN_COUNTER || sig.type == SignalType::PEDAL_COUNTER) {
+      if (sig.type == SignalType::COUNTER) {
         counter_failed = !update_counter_generic(tmp, sig.size);
       }
     }
@@ -78,7 +66,7 @@ bool MessageState::parse(uint64_t sec, const std::vector<uint8_t> &dat) {
     vals[i] = tmp * sig.factor + sig.offset;
     all_vals[i].push_back(vals[i]);
   }
-  seen = sec;
+  last_seen_nanos = sec;
 
   return true;
 }
@@ -285,16 +273,19 @@ void CANParser::UpdateCans(uint64_t sec, const capnp::DynamicStruct::Reader& cms
 }
 
 void CANParser::UpdateValid(uint64_t sec) {
-  const bool show_missing = (last_sec - first_sec) > 2e9;
+  const bool show_missing = (last_sec - first_sec) > 8e9;
 
   can_valid = true;
   for (const auto& kv : message_states) {
     const auto& state = kv.second;
-    if (state.check_threshold > 0 && (sec - state.seen) > state.check_threshold) {
-      if (state.seen > 0) {
-        LOGE("0x%X TIMEOUT", state.address);
-      } else if (show_missing) {
+
+    const bool missing = state.last_seen_nanos == 0;
+    const bool timed_out = (sec - state.last_seen_nanos) > state.check_threshold;
+    if (state.check_threshold > 0 && (missing || timed_out)) {
+      if (missing) {
         LOGE("0x%X MISSING", state.address);
+      } else if (show_missing) {
+        LOGE("0x%X TIMEOUT", state.address);
       }
       can_valid = false;
     }
@@ -306,7 +297,7 @@ std::vector<SignalValue> CANParser::query_latest() {
 
   for (auto& kv : message_states) {
     auto& state = kv.second;
-    if (last_sec != 0 && state.seen != last_sec) continue;
+    if (last_sec != 0 && state.last_seen_nanos != last_sec) continue;
 
     for (int i = 0; i < state.parse_sigs.size(); i++) {
       const Signal &sig = state.parse_sigs[i];
