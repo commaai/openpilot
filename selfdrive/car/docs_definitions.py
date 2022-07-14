@@ -59,10 +59,10 @@ class CarInfo:
 
   def init(self, CP: car.CarParams, non_tested_cars: List[str], all_footnotes: Dict[Enum, int]):
     # TODO: set all the min steer speeds in carParams and remove this
-    min_steer_speed = CP.minSteerSpeed
+    min_steer_speed = CP.minSteerDisableSpeed
     if self.min_steer_speed is not None:
       min_steer_speed = self.min_steer_speed
-      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
+      assert CP.minSteerDisableSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
 
     assert self.harness is not None, f"{CP.carFingerprint}: Need to specify car harness"
 

@@ -44,12 +44,6 @@ CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
   CAR.CX5_2022: MazdaCarInfo("Mazda CX-5 2022"),
 }
 
-
-class LKAS_LIMITS:
-  STEER_THRESHOLD = 15
-  DISABLE_SPEED = 45    # kph
-  ENABLE_SPEED = 52     # kph
-
 class Buttons:
   NONE = 0
   SET_PLUS = 1
@@ -301,3 +295,5 @@ DBC = {
 
 # Gen 1 hardware: same CAN messages and same camera
 GEN1 = {CAR.CX5, CAR.CX9, CAR.CX9_2021, CAR.MAZDA3, CAR.MAZDA6, CAR.CX5_2022}
+
+STEER_THRESHOLD = 15

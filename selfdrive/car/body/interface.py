@@ -16,7 +16,8 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "body"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.body)]
 
-    ret.minSteerSpeed = -math.inf
+    ret.minSteerEnableSpeed = -math.inf
+    ret.minSteerDisableSpeed = -math.inf
     ret.maxLateralAccel = math.inf  # TODO: set to a reasonable value
     ret.steerRatio = 0.5
     ret.steerLimitTimer = 1.0
