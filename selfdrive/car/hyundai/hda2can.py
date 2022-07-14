@@ -1,3 +1,8 @@
+from selfdrive.car.hyundai.values import CAR
+
+def get_btn_bus(car_fingerprint):
+  return 4 if car_fingerprint in (CAR.GENESIS_GV70) else 5
+
 def create_lkas(packer, enabled, frame, lat_active, apply_steer):
   values = {
     "LKA_MODE": 2,
@@ -32,11 +37,11 @@ def create_cam_0x2a4(packer, frame, camera_values):
   })
   return packer.make_can_msg("CAM_0x2a4", 4, camera_values, frame % 255)
 
-def create_buttons(packer, cnt, cancel, resume, bus=5):
+def create_buttons(packer, cnt, cancel, resume, car_fingerprint):
   values = {
     "_COUNTER": cnt % 0xf,
     "SET_ME_1": 1,
     "DISTANCE_BTN": 1 if resume else 0,
     "PAUSE_RESUME_BTN": 1 if cancel else 0,
   }
-  return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
+  return packer.make_can_msg("CRUISE_BUTTONS", get_btn_bus(car_fingerprint), values)
