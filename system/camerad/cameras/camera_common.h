@@ -9,7 +9,6 @@
 #include "cereal/visionipc/visionbuf.h"
 #include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_server.h"
-#include "system/camerad/transforms/rgb_to_yuv.h"
 #include "common/mat.h"
 #include "common/queue.h"
 #include "common/swaglog.h"
@@ -27,7 +26,6 @@
 #define CAMERA_ID_IMX390 9
 #define CAMERA_ID_MAX 10
 
-const int UI_BUF_COUNT = 4;
 const int YUV_BUFFER_COUNT = 40;
 
 enum CameraType {
@@ -35,11 +33,6 @@ enum CameraType {
   DriverCam,
   WideRoadCam
 };
-
-// TODO: remove these once all the internal tools are moved to vipc
-const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
-const bool env_send_road = getenv("SEND_ROAD") != NULL;
-const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
 
 // for debugging
 const bool env_disable_road = getenv("DISABLE_ROAD") != NULL;
@@ -51,9 +44,6 @@ const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
 typedef struct CameraInfo {
   uint32_t frame_width, frame_height;
   uint32_t frame_stride;
-  bool bayer;
-  int bayer_flip;
-  bool hdr;
   uint32_t frame_offset = 0;
   uint32_t extra_height = 0;
   int registers_offset = -1;
@@ -92,9 +82,8 @@ private:
   VisionIpcServer *vipc_server;
   CameraState *camera_state;
   Debayer *debayer = nullptr;
-  std::unique_ptr<Rgb2Yuv> rgb2yuv;
 
-  VisionStreamType rgb_type, yuv_type;
+  VisionStreamType yuv_type;
 
   int cur_buf_idx;
 
@@ -116,7 +105,7 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type);
+  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType yuv_type);
   bool acquire();
   void release();
   void queue(size_t buf_idx);
@@ -125,7 +114,6 @@ public:
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
-kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
