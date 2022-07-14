@@ -8,10 +8,10 @@ Before getting started, make sure you have set up the openpilot Ubuntu developme
 
 ### Adding a New Language
 
-openpilot provides a few tools to help contributors manage their translations and to ensure their they are up to date with the text in openpilot. To get started:
+openpilot provides a few tools to help contributors manage their translations and to ensure quality. To get started:
 
 1. Add your new language to [languages.json](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/languages.json) with the appropriate [language code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) and the localized language name (Simplified Chinese is `中文（繁體）`).
-2. Run `selfdrive/ui/update_translations.py` to generate the translation file `*.ts`.
+2. Run `selfdrive/ui/update_translations.py` to generate the translation file (`*.ts`).
 3. Run `linguist selfdrive/ui/translations/your_language_file.ts` to edit the translation file, marking each translation as completed.
 4. Save your file and run `selfdrive/ui/update_translations.py --release` to generate the compiled QM file used by the Qt UI.
 
