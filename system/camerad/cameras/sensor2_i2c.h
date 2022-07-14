@@ -55,21 +55,30 @@ struct i2c_random_wr_payload init_array_os04c10[] = {
   //{0x321, 1},
 
   // exposure
-  {0x3501, 0x3f},
+  /*{0x3501, 0x1f},
 
   // https://github.com/hanwckf/linux-rk3328-box/blob/master/drivers/media/i2c/ov4689.c
   {0x481f, 0x40},
   {0x4829, 0x78},
   {0x4837, 0x10},
 
+  // https://patchwork.kernel.org/project/linux-media/patch/20210813081845.26619-1-arec.kao@intel.com/#24384123
+  {0x484b, 0x01},
+
   // MIPI PCLK period (broken with 0xe stock, MIPI/PHY = 1440/180 = 8)
-  // this makes output happen
-  {0x4837, 0x8}
+  // this makes some output happen
+  //{0x4837, 0x8},
+  //{0x4837, 0xe},
 
   // data type
   {0x4814, 0x2B},
   {0x4815, 0x2B},
-  {0x4816, 0x2B},
+  {0x4816, 0x2B},*/
+
+  // disable ISP
+  //{0x5000, 0x0},
+
+  //{0x484b, 0x3f},
 
   //{0x3508, 0xf},
 
@@ -84,7 +93,6 @@ struct i2c_random_wr_payload init_array_os04c10[] = {
   //{0x380A, 0x00}, {0x380B, 0xb8},
   //{0x380c, 0x2a}, {0x380d, 0x18},
 
-  //{0x5000, 0xe8}, // isp disable
 };
 
 struct i2c_random_wr_payload init_array_imx390[] = {
