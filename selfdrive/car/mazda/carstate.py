@@ -67,9 +67,8 @@ class CarState(CarStateBase):
     # Either due to low speed or hands off
     lkas_blocked = cp.vl["STEER_RATE"]["LKAS_BLOCK"] == 1
 
-    if ret.vEgo > max(self.CP.minSteerSpeed, 1):  # TODO: tune max(x, 1), or see if we can just use standstill
-      self.above_min_steer_counter += 1
-    else:
+    self.above_min_steer_counter += 1
+    if ret.vEgo < max(self.CP.minSteerSpeed, 1):  # TODO: tune max(x, 1), or see if we can just use standstill
       self.above_min_steer_counter = 0
 
     if self.CP.minSteerSpeed > 0:
