@@ -6,7 +6,7 @@
 #include "common/params.h"
 #include "selfdrive/ui/ui.h"
 
-typedef QPair<QString, QColor> ItemStatus;
+typedef QPair<QPair<QString, QString>, QColor> ItemStatus;
 Q_DECLARE_METATYPE(ItemStatus);
 
 class Sidebar : public QFrame {
@@ -30,17 +30,17 @@ public slots:
 protected:
   void paintEvent(QPaintEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
-  void drawMetric(QPainter &p, const QString &label, QColor c, int y);
+  void drawMetric(QPainter &p, const QPair<QString, QString> &label, QColor c, int y);
 
   QPixmap home_img, settings_img;
   const QMap<cereal::DeviceState::NetworkType, QString> network_type = {
-    {cereal::DeviceState::NetworkType::NONE, "--"},
-    {cereal::DeviceState::NetworkType::WIFI, "Wi-Fi"},
-    {cereal::DeviceState::NetworkType::ETHERNET, "ETH"},
-    {cereal::DeviceState::NetworkType::CELL2_G, "2G"},
-    {cereal::DeviceState::NetworkType::CELL3_G, "3G"},
-    {cereal::DeviceState::NetworkType::CELL4_G, "LTE"},
-    {cereal::DeviceState::NetworkType::CELL5_G, "5G"}
+    {cereal::DeviceState::NetworkType::NONE, tr("--")},
+    {cereal::DeviceState::NetworkType::WIFI, tr("Wi-Fi")},
+    {cereal::DeviceState::NetworkType::ETHERNET, tr("ETH")},
+    {cereal::DeviceState::NetworkType::CELL2_G, tr("2G")},
+    {cereal::DeviceState::NetworkType::CELL3_G, tr("3G")},
+    {cereal::DeviceState::NetworkType::CELL4_G, tr("LTE")},
+    {cereal::DeviceState::NetworkType::CELL5_G, tr("5G")}
   };
 
   const QRect settings_btn = QRect(50, 35, 200, 117);

@@ -20,7 +20,7 @@ repos:
     hooks:
     -   id: mypy
         exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)/'
-        additional_dependencies: ['lxml', 'numpy', 'types-atomicwrites', 'types-pycurl', 'types-requests', 'types-certifi']
+        additional_dependencies: ['types-PyYAML', 'lxml', 'numpy', 'types-atomicwrites', 'types-pycurl', 'types-requests', 'types-certifi']
         args:
         - --warn-redundant-casts
         - --warn-return-any
@@ -54,7 +54,7 @@ repos:
         entry: cppcheck
         language: system
         types: [c++]
-        exclude: '^(third_party/)|(pyextra/)|(cereal/)|(opendbc/)|(panda/)|(tools/)|(selfdrive/modeld/thneed/debug/)|(selfdrive/modeld/test/)|(selfdrive/camerad/test/)/|(installer/)'
+        exclude: '^(third_party/)|(pyextra/)|(cereal/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(tools/)|(selfdrive/modeld/thneed/debug/)|(selfdrive/modeld/test/)|(selfdrive/camerad/test/)/|(installer/)'
         args:
         - --error-exitcode=1
         - --language=c++

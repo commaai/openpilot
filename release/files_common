@@ -35,7 +35,6 @@ common/filter_simple.py
 common/stat_live.py
 common/spinner.py
 common/text_window.py
-common/SConscript
 
 common/kalman/.gitignore
 common/kalman/*
@@ -58,8 +57,11 @@ common/api/__init__.py
 
 release/*
 
+tools/__init__.py
 tools/lib/*
 tools/joystick/*
+tools/replay/*.cc
+tools/replay/*.h
 
 selfdrive/__init__.py
 selfdrive/sentry.py
@@ -101,10 +103,13 @@ selfdrive/car/interfaces.py
 selfdrive/car/vin.py
 selfdrive/car/disable_ecu.py
 selfdrive/car/fw_versions.py
+selfdrive/car/ecu_addrs.py
 selfdrive/car/isotp_parallel_query.py
 selfdrive/car/tests/__init__.py
 selfdrive/car/tests/test_car_interfaces.py
-selfdrive/car/torque_data.json
+selfdrive/car/torque_data/params.yaml
+selfdrive/car/torque_data/substitute.yaml
+selfdrive/car/torque_data/override.yaml
 
 selfdrive/car/body/*.py
 selfdrive/car/chrysler/*.py
@@ -124,7 +129,15 @@ system/clocksd/.gitignore
 system/clocksd/SConscript
 system/clocksd/clocksd.cc
 
-selfdrive/debug/*.py
+selfdrive/debug/can_printer.py
+selfdrive/debug/check_freq.py
+selfdrive/debug/dump.py
+selfdrive/debug/filter_log_message.py
+selfdrive/debug/get_fingerprint.py
+selfdrive/debug/uiview.py
+
+selfdrive/debug/hyundai_enable_radar_points.py
+selfdrive/debug/vw_mqb_config.py
 
 common/SConscript
 common/version.h
@@ -182,6 +195,10 @@ selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
 selfdrive/controls/lib/lateral_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
+selfdrive/hardware
+
+system/__init__.py
+
 system/hardware/__init__.py
 system/hardware/base.h
 system/hardware/base.py
@@ -191,6 +208,7 @@ system/hardware/tici/hardware.h
 system/hardware/tici/hardware.py
 system/hardware/tici/pins.py
 system/hardware/tici/agnos.py
+system/hardware/tici/casync.py
 system/hardware/tici/agnos.json
 system/hardware/tici/amplifier.py
 system/hardware/tici/updater
@@ -209,18 +227,24 @@ selfdrive/locationd/generated/ubx.h
 selfdrive/locationd/generated/gps.cpp
 selfdrive/locationd/generated/gps.h
 
+selfdrive/locationd/laikad.py
+selfdrive/locationd/laikad_helpers.py
 selfdrive/locationd/locationd.h
 selfdrive/locationd/locationd.cc
 selfdrive/locationd/paramsd.py
+selfdrive/locationd/models/__init__.py
 selfdrive/locationd/models/.gitignore
-selfdrive/locationd/models/live_kf.py
 selfdrive/locationd/models/car_kf.py
-selfdrive/locationd/models/constants.py
+selfdrive/locationd/models/gnss_kf.py
+selfdrive/locationd/models/live_kf.py
 selfdrive/locationd/models/live_kf.h
 selfdrive/locationd/models/live_kf.cc
+selfdrive/locationd/models/constants.py
+selfdrive/locationd/models/gnss_helpers.py
 
 selfdrive/locationd/calibrationd.py
 
+system/logcatd/.gitignore
 system/logcatd/SConscript
 system/logcatd/logcatd_systemd.cc
 
@@ -229,6 +253,7 @@ system/proclogd/main.cc
 system/proclogd/proclog.cc
 system/proclogd/proclog.h
 
+selfdrive/loggerd/.gitignore
 selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder/encoder.cc
 selfdrive/loggerd/encoder/encoder.h
@@ -278,6 +303,7 @@ selfdrive/ui/soundd/*.cc
 selfdrive/ui/soundd/*.h
 selfdrive/ui/soundd/soundd
 selfdrive/ui/soundd/.gitignore
+selfdrive/ui/translations/*
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
@@ -286,31 +312,22 @@ selfdrive/ui/qt/offroad/*.h
 selfdrive/ui/qt/offroad/*.qml
 selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.h
-
-selfdrive/ui/replay/*.cc
-selfdrive/ui/replay/*.h
-
 selfdrive/ui/qt/maps/*.cc
 selfdrive/ui/qt/maps/*.h
 
-selfdrive/camerad/SConscript
-selfdrive/camerad/main.cc
+system/camerad/SConscript
+system/camerad/main.cc
 
-selfdrive/camerad/snapshot/*
-selfdrive/camerad/include/*
-selfdrive/camerad/cameras/camera_common.h
-selfdrive/camerad/cameras/camera_common.cc
-selfdrive/camerad/cameras/sensor2_i2c.h
+system/camerad/snapshot/*
+system/camerad/include/*
+system/camerad/cameras/camera_common.h
+system/camerad/cameras/camera_common.cc
+system/camerad/cameras/sensor2_i2c.h
 
-selfdrive/camerad/transforms/rgb_to_yuv.cc
-selfdrive/camerad/transforms/rgb_to_yuv.h
-selfdrive/camerad/transforms/rgb_to_yuv.cl
-selfdrive/camerad/transforms/rgb_to_yuv_test.cc
-
-selfdrive/camerad/imgproc/conv.cl
-selfdrive/camerad/imgproc/pool.cl
-selfdrive/camerad/imgproc/utils.cc
-selfdrive/camerad/imgproc/utils.h
+system/camerad/imgproc/conv.cl
+system/camerad/imgproc/pool.cl
+system/camerad/imgproc/utils.cc
+system/camerad/imgproc/utils.h
 
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py
@@ -321,6 +338,7 @@ selfdrive/manager/process.py
 selfdrive/manager/test/__init__.py
 selfdrive/manager/test/test_manager.py
 
+selfdrive/modeld/__init__.py
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc
 selfdrive/modeld/dmonitoringmodeld.cc
@@ -407,7 +425,9 @@ scripts/stop_updater.sh
 pyextra/.gitignore
 pyextra/acados_template/**
 
+rednose/.gitignore
 rednose/**
+laika/**
 
 cereal/.gitignore
 cereal/__init__.py
@@ -466,7 +486,8 @@ opendbc/can/parser_pyx.pyx
 
 opendbc/comma_body.dbc
 
-opendbc/chrysler_pacifica_2017_hybrid.dbc
+opendbc/chrysler_ram_dt_generated.dbc
+opendbc/chrysler_pacifica_2017_hybrid_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
 
 opendbc/gm_global_a_powertrain_generated.dbc
@@ -490,6 +511,7 @@ opendbc/honda_odyssey_exl_2018_generated.dbc
 opendbc/honda_odyssey_extreme_edition_2018_china_can_generated.dbc
 opendbc/honda_insight_ex_2019_can_generated.dbc
 opendbc/acura_ilx_2016_nidec.dbc
+opendbc/honda_civic_ex_2022_can_generated.dbc
 
 opendbc/kia_ev6.dbc
 opendbc/hyundai_kia_generic.dbc

@@ -10,6 +10,10 @@ LAST_MSG = max(RADAR_MSGS_C + RADAR_MSGS_D)
 NUMBER_MSGS = len(RADAR_MSGS_C) + len(RADAR_MSGS_D)
 
 def _create_radar_can_parser(car_fingerprint):
+  dbc = DBC[car_fingerprint]['radar']
+  if dbc is None:
+    return None
+
   msg_n = len(RADAR_MSGS_C)
   # list of [(signal name, message name or number), (...)]
   # [('RADAR_STATE', 1024),
@@ -46,6 +50,9 @@ class RadarInterface(RadarInterfaceBase):
     self.trigger_msg = LAST_MSG
 
   def update(self, can_strings):
+    if self.rcp is None:
+      return super().update(None)
+
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 

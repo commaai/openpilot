@@ -81,7 +81,7 @@ class Camerad:
     cl_arg = f" -DHEIGHT={H} -DWIDTH={W} -DRGB_STRIDE={W * 3} -DUV_WIDTH={W // 2} -DUV_HEIGHT={H // 2} -DRGB_SIZE={W * H} -DCL_DEBUG "
 
     # TODO: move rgb_to_yuv.cl to local dir once the frame stream camera is removed
-    kernel_fn = os.path.join(BASEDIR, "selfdrive", "camerad", "transforms", "rgb_to_yuv.cl")
+    kernel_fn = os.path.join(BASEDIR, "system", "camerad", "transforms", "rgb_to_yuv.cl")
     with open(kernel_fn) as f:
       prg = cl.Program(self.ctx, f.read()).build(cl_arg)
       self.krnl = prg.rgb_to_yuv
@@ -198,12 +198,12 @@ def gps_callback(gps, vehicle_state):
 
 
 def fake_driver_monitoring(exit_event: threading.Event):
-  pm = messaging.PubMaster(['driverState', 'driverMonitoringState'])
+  pm = messaging.PubMaster(['driverStateV2', 'driverMonitoringState'])
   while not exit_event.is_set():
     # dmonitoringmodeld output
-    dat = messaging.new_message('driverState')
-    dat.driverState.faceProb = 1.0
-    pm.send('driverState', dat)
+    dat = messaging.new_message('driverStateV2')
+    dat.driverStateV2.leftDriverData.faceProb = 1.0
+    pm.send('driverStateV2', dat)
 
     # dmonitoringd output
     dat = messaging.new_message('driverMonitoringState')

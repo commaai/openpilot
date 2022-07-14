@@ -8,7 +8,7 @@ from system.version import is_comma_remote, is_tested_branch
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
-from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
+from selfdrive.car.fw_versions import get_fw_versions_ordered, match_fw_to_car, get_present_ecus
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
@@ -79,6 +79,7 @@ interfaces = load_interfaces(interface_names)
 def fingerprint(logcan, sendcan):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
+  ecu_rx_addrs = set()
 
   if not fixed_fingerprint and not skip_fw_query:
     # Vin query only reliably works thorugh OBDII
@@ -92,16 +93,17 @@ def fingerprint(logcan, sendcan):
 
     if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
       cloudlog.warning("Using cached CarParams")
-      vin = cached_params.carVin
+      vin, vin_rx_addr = cached_params.carVin, 0
       car_fw = list(cached_params.carFw)
     else:
       cloudlog.warning("Getting VIN & FW versions")
-      _, vin = get_vin(logcan, sendcan, bus)
-      car_fw = get_fw_versions(logcan, sendcan)
+      _, vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
+      ecu_rx_addrs = get_present_ecus(logcan, sendcan)
+      car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs)
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
-    vin = VIN_UNKNOWN
+    vin, vin_rx_addr = VIN_UNKNOWN, 0
     exact_fw_match, fw_candidates, car_fw = True, set(), []
 
   if len(vin) != 17:
@@ -113,7 +115,7 @@ def fingerprint(logcan, sendcan):
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0
-  frame_fingerprint = 25  # 0.25s
+  frame_fingerprint = 100  # 1s
   car_fingerprint = None
   done = False
 
@@ -163,8 +165,8 @@ def fingerprint(logcan, sendcan):
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
-  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint,
-                 source=source, fuzzy=not exact_match, fw_count=len(car_fw))
+  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match,
+                 fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 

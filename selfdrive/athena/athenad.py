@@ -364,6 +364,11 @@ def uploadFilesToUrls(files_data):
       failed.append(fn)
       continue
 
+    # Skip item if already in queue
+    url = file['url'].split('?')[0]
+    if any(url == item['url'].split('?')[0] for item in listUploadQueue()):
+      continue
+
     item = UploadItem(
       path=path,
       url=file['url'],
@@ -493,7 +498,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def takeSnapshot():
-  from selfdrive.camerad.snapshot.snapshot import jpeg_write, snapshot
+  from system.camerad.snapshot.snapshot import jpeg_write, snapshot
   ret = snapshot()
   if ret is not None:
     def b64jpeg(x):
