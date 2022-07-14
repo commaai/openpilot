@@ -33,7 +33,8 @@ const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alig
 
 const size_t FRAME_WIDTH = 0xa80;
 const size_t FRAME_HEIGHT = 0x5f0;
-const size_t FRAME_STRIDE = 0xfc0;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
+const size_t FRAME_STRIDE = 0xd20;
+//const size_t FRAME_STRIDE = 0xfc0;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
 
 const size_t AR0231_REGISTERS_HEIGHT = 2;
 const size_t AR0231_STATS_HEIGHT = 2;
@@ -57,9 +58,9 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_stride = FRAME_STRIDE,
   },
   [CAMERA_ID_OS04C10] = {
-    .frame_width = 0xa80,
-    .frame_height = 0x5f0,
-    .frame_stride = 0xfc0, // (0xa80*12//8)
+    .frame_width = FRAME_WIDTH,
+    .frame_height = FRAME_HEIGHT,
+    .frame_stride = FRAME_STRIDE, // (0xa80*12//8)
     //.frame_stride = 0xfc0, // (0xa80*12//8)
 
     .bayer = true,
@@ -316,11 +317,13 @@ int CameraState::sensors_init() {
   switch (camera_num) {
     case 0:
       // port 0
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x34;
+      //i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x34;
+      i2c_info->slave_addr = 0x36*2;
       break;
     case 1:
       // port 1
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x30 : 0x36;
+      //i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x30 : 0x36;
+      i2c_info->slave_addr = 0x20;
       break;
     case 2:
       // port 2
@@ -543,10 +546,12 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
 		 .h_init = 0x0,
 		 .v_init = 0x0,
 		};
-    io_cfg[0].format = CAM_FORMAT_MIPI_RAW_12;             // CAM_FORMAT_UBWC_TP10 for YUV
+    //io_cfg[0].format = CAM_FORMAT_MIPI_RAW_12;             // CAM_FORMAT_UBWC_TP10 for YUV
+    io_cfg[0].format = CAM_FORMAT_MIPI_RAW_10;
     io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
-    io_cfg[0].bpp = 0xc;
+    //io_cfg[0].bpp = 0xc;
+    io_cfg[0].bpp = 0xa;
     io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
@@ -654,6 +659,8 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
 }
 
 void CameraState::camera_open() {
+  if (!enabled) return;
+
   int ret;
   sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", camera_num);
   assert(sensor_fd >= 0);
@@ -700,10 +707,12 @@ void CameraState::camera_open() {
     dt = 0x2c;
   } else if (camera_id == CAMERA_ID_OS04C10) {
     sensors_i2c(init_array_os04c10, std::size(init_array_os04c10), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+    // one is 0x2a, two are 0x2b
     dt = 0x2a;
   } else {
     assert(false);
   }
+  printf("dt is %x\n", dt);
 
   // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
   // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
@@ -718,7 +727,8 @@ void CameraState::camera_open() {
 
       .vc = 0x0,
       .dt = dt,
-      .format = CAM_FORMAT_MIPI_RAW_12,
+      //.format = CAM_FORMAT_MIPI_RAW_12,
+      .format = CAM_FORMAT_MIPI_RAW_10,
 
       .test_pattern = 0x2,  // 0x3?
       .usage_type = 0x0,
@@ -744,7 +754,8 @@ void CameraState::camera_open() {
       .num_out_res = 0x1,
       .data[0] = (struct cam_isp_out_port_info){
           .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-          .format = CAM_FORMAT_MIPI_RAW_12,
+          //.format = CAM_FORMAT_MIPI_RAW_12,
+          .format = CAM_FORMAT_MIPI_RAW_10,
           .width = ci.frame_width,
           .height = ci.frame_height + ci.extra_height,
           .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
