@@ -27,14 +27,22 @@
 
 extern ExitHandler do_exit;
 
-/*const size_t FRAME_WIDTH = 1928;
-const size_t FRAME_HEIGHT = 1208;
-const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)*/
+//const size_t FRAME_WIDTH = 1928;
+//const size_t FRAME_HEIGHT = 1208;
+//const size_t FRAME_STRIDE = 2416;  // for 10 bit output
+//const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
+
+//const size_t FRAME_HEIGHT = 0x630;
+
+//const size_t FRAME_WIDTH = 0xa80;
+//const size_t FRAME_HEIGHT = 0x5f0;
+//const size_t FRAME_STRIDE = 0xd20; // for 10 bit output
 
 const size_t FRAME_WIDTH = 0xa80;
 const size_t FRAME_HEIGHT = 0x5f0;
-const size_t FRAME_STRIDE = 0xd20;
-//const size_t FRAME_STRIDE = 0xfc0;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
+const size_t FRAME_STRIDE = 0xd20; // for 10 bit output
+
+//const size_t FRAME_STRIDE = 0xfc0;  // for 12 bit output
 
 const size_t AR0231_REGISTERS_HEIGHT = 2;
 const size_t AR0231_STATS_HEIGHT = 2;
@@ -708,7 +716,7 @@ void CameraState::camera_open() {
   } else if (camera_id == CAMERA_ID_OS04C10) {
     sensors_i2c(init_array_os04c10, std::size(init_array_os04c10), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
     // one is 0x2a, two are 0x2b
-    dt = 0x2a;
+    dt = 0x2b;
   } else {
     assert(false);
   }
@@ -724,6 +732,7 @@ void CameraState::camera_open() {
       .lane_type = CAM_ISP_LANE_TYPE_DPHY,
       .lane_num = 4,
       .lane_cfg = 0x3210,
+      //.lane_cfg = 0x3210,
 
       .vc = 0x0,
       .dt = dt,
@@ -1256,6 +1265,10 @@ static void driver_cam_auto_exposure(CameraState *c) {
 }
 
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
+  const CameraBuf *b = &c->buf;
+  const uint8_t *dat = (const uint8_t *)b->cur_camera_buf->addr;
+  printf("here %2x %2x %2x %2x %2x %2x\n", dat[0], dat[1], dat[2], dat[3], dat[1000], dat[10000]);
+
   driver_cam_auto_exposure(c);
 
   MessageBuilder msg;
