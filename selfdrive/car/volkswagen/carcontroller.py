@@ -87,7 +87,7 @@ class CarController:
       idx = (CS.gra_stock_values["COUNTER"] + 1) % 16
       if CC.cruiseControl.cancel:
         can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx, cancel=True))
-      elif CC.enabled and CS.out.cruiseState.standstill:
+      elif CC.cruiseControl.resume:
         can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx, resume=True))
 
     new_actuators = actuators.copy()
