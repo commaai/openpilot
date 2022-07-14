@@ -173,7 +173,7 @@ class Controls:
     self.last_actuators = car.CarControl.Actuators.new_message()
     self.desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
-    self.low_speed_alert = False
+    self.lkas_allowed_speed = False
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -396,14 +396,6 @@ class Controls:
       and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3:
       self.events.add(EventName.noTarget)
 
-    # Below steer speed alert hysteresis  # TODO: add the hysteresis/offsets
-    if CS.vEgo < self.CP.minSteerDisableSpeed or not self.enabled:
-      self.low_speed_alert = True
-    elif CS.vEgo > self.CP.minSteerEnableSpeed and self.enabled:
-      self.low_speed_alert = False
-    if self.enabled and self.low_speed_alert:
-      self.events.add(EventName.belowSteerSpeed)
-
   def data_sample(self):
     """Receive data from sockets and update carState"""
 
@@ -563,9 +555,15 @@ class Controls:
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
+
+    if CS.vEgo < self.CP.minSteerDisableSpeed or not self.enabled:
+      self.lkas_allowed_speed = False
+    elif CS.vEgo > self.CP.minSteerEnableSpeed and self.enabled:
+      self.lkas_allowed_speed = True
+
     # Check which actuators can be enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
-                     EventName.belowSteerSpeed not in self.events.events and not CS.standstill
+                     self.lkas_allowed_speed and not CS.standstill
     CC.longActive = self.active and not self.events.any(ET.OVERRIDE) and self.CP.openpilotLongitudinalControl
 
     actuators = CC.actuators
