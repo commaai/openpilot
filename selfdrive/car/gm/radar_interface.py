@@ -60,6 +60,8 @@ class RadarInterface(RadarInterfaceBase):
       header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
       header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
     errors = []
+    if self.rcp.bus_timeout:
+      errors.append("canBusMissing")
     if not self.rcp.can_valid:
       errors.append("canError")
     if fault:
