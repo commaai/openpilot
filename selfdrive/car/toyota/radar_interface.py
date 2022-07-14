@@ -61,9 +61,7 @@ class RadarInterface(RadarInterfaceBase):
     errors = []
     if self.rcp.bus_timeout:
       errors.append("canTimeout")
-    if self.rcp.bus_timeout:
-      errors.append("canTimeout")
-    elif not self.rcp.can_valid:
+    if not self.rcp.can_valid:
       errors.append("canError")
     ret.errors = errors
 
