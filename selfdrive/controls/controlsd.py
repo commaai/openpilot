@@ -556,6 +556,8 @@ class Controls:
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
 
+    # TODO: Resets lkas allowed when car disengages, unclear if all cars can work without this
+    # (drive above upper steer speed, then go between steer speeds and engage, does it work without engaging above upper?)
     if CS.vEgo < self.CP.minSteerDisableSpeed or not self.enabled:
       self.lkas_allowed_speed = False
     elif CS.vEgo > self.CP.minSteerEnableSpeed and self.enabled:

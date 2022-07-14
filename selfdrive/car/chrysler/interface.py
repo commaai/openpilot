@@ -21,11 +21,11 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
 
     ret.minSteerEnableSpeed = 3.8  # m/s
-    # ret.minSteerDisableSpeed = 3.8  # m/s  # TODO: do we want to have to set this?
+    ret.minSteerDisableSpeed = 3.8  # m/s
     if candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
       # m/s 17 on the way up, 13 on the way down once engaged.
       ret.minSteerEnableSpeed = 17.
-      ret.minSteerDisableSpeed = 13.
+      ret.minSteerDisableSpeed = 13. + 1.  # + 1 for fault threshold
 
     # Chrysler
     if candidate in (CAR.PACIFICA_2017_HYBRID, CAR.PACIFICA_2018, CAR.PACIFICA_2018_HYBRID, CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020):
@@ -48,15 +48,14 @@ class CarInterface(CarInterfaceBase):
 
     # Ram
     elif candidate == CAR.RAM_1500:
-      ret.steerActuatorDelay = 0.2
-
       ret.wheelbase = 3.88
       ret.steerRatio = 16.3
+      ret.steerActuatorDelay = 0.2
       ret.mass = 2493. + STD_CARGO_KG
       ret.maxLateralAccel = 2.4
-      ret.minSteerEnableSpeed = 14.5
+      ret.minSteerEnableSpeed = 13. + 1.  # + 1 for fault threshold
+      ret.minSteerDisableSpeed = 13. + 1.  # + 1 for fault threshold
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
 
     else:
       raise ValueError(f"Unsupported car: {candidate}")

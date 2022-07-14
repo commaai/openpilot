@@ -108,8 +108,8 @@ class CarInterfaceBase(ABC):
 
     # standard ALC params
     ret.steerControlType = car.CarParams.SteerControlType.torque
-    ret.minSteerEnableSpeed = -1.  # only uses enable speed if disable speed is not set  # TODO: actually maybe we want to set both, it's not set in too many places
-    ret.minSteerDisableSpeed = -1.
+    ret.minSteerEnableSpeed = 0.  # only uses enable speed if disable speed is not set  # TODO: actually maybe we want to set both, it's not set in too many places
+    ret.minSteerDisableSpeed = 0.
     ret.wheelSpeedFactor = 1.0
     ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
 
@@ -173,6 +173,22 @@ class CarInterfaceBase(ABC):
   @abstractmethod
   def apply(self, c: car.CarControl) -> Tuple[car.CarControl.Actuators, List[bytes]]:
     pass
+
+  def create_steer_speed_event(self, cs_out):
+    # Low speed steer alert hysteresis logic
+    if self.CP.minSteerSpeed > 0. and cs_out.vEgo < (self.CP.minSteerSpeed + 0.5):
+      self.low_speed_alert = True
+    elif cs_out.vEgo > (self.CP.minSteerSpeed + 1.):
+      self.low_speed_alert = False
+    if self.low_speed_alert:
+      events.add(car.CarEvent.EventName.belowSteerSpeed)
+
+    # TODO: Resets lkas allowed when car disengages, unclear if all cars can work without this
+    # (drive above upper steer speed, then go between steer speeds and engage, does it work without engaging above upper?)
+    if CS.vEgo < self.CP.minSteerDisableSpeed or not self.enabled:
+      self.lkas_allowed_speed = False
+    elif CS.vEgo > self.CP.minSteerEnableSpeed and self.enabled:
+      self.lkas_allowed_speed = True
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True):
     events = Events()
