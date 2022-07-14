@@ -154,8 +154,6 @@ class CarState(CarStateBase):
       ("ZV_HFS_offen", "Gateway_72"),            # Door open, rear left
       ("ZV_HBFS_offen", "Gateway_72"),           # Door open, rear right
       ("ZV_HD_offen", "Gateway_72"),             # Trunk or hatch open
-      ("BH_Blinker_li", "Gateway_72"),           # Left turn signal, instantaneous state of turn stalk
-      ("BH_Blinker_re", "Gateway_72"),           # Right turn signal, instantaneous state of turn stalk
       ("Comfort_Signal_Left", "Blinkmodi_02"),   # Left turn signal, active for duration of comfort signaling
       ("Comfort_Signal_Right", "Blinkmodi_02"),  # Right turn signal, active for duration of comfort signaling
       ("AB_Gurtschloss_FA", "Airbag_02"),        # Seatbelt status, driver

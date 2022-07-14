@@ -46,8 +46,6 @@ DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, Non
 
 
 MQB_BUTTONS = [
-  Button(car.CarState.ButtonEvent.Type.leftBlinker, "Gateway_72", "BH_Blinker_li", [1]),
-  Button(car.CarState.ButtonEvent.Type.rightBlinker, "Gateway_72", "BH_Blinker_re", [1]),
   Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
   Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
   Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
