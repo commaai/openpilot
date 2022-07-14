@@ -30,7 +30,7 @@ MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
 DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache"
 CACHE_VERSION = 0.1
-RESIDUAL_THRESHOLD = 100.
+RESIDUAL_THRESHOLD = 150.
 
 
 class Laikad:
@@ -62,7 +62,7 @@ class Laikad:
     self.last_pos_fix = []
     self.last_pos_residual = []
     self.last_pos_fix_t = None
-
+    self.residual_count = 0
   def load_cache(self):
     if not self.save_ephemeris:
       return
@@ -133,6 +133,8 @@ class Laikad:
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
       dat = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
+      # if self.last_pos_fix is not None and len(self.last_pos_fix) == 3 and len(ecef_pos) == 3:
+      #   print(np.linalg.norm(self.last_pos_fix - ecef_pos))
       dat.gnssMeasurements = {
         "gpsWeek": report.gpsWeek,
         "gpsTimeOfWeek": report.rcvTow,
@@ -171,8 +173,10 @@ class Laikad:
         residual_correct = kf_update_on_residuals(self.gnss_kf, residuals)
         if residual_correct:
           break
-        cloudlog.error(f"Median residual of measurements above threshold. Repeat {i} Residuals/threshold: {np.abs(residuals).flatten().round()}, {RESIDUAL_THRESHOLD}")
+        cloudlog.error(f"Median residual of measurements above threshold. Repeat {i} Residuals/threshold: {np.abs(residuals).flatten().round()} median:{np.median(np.abs(residuals))}, {RESIDUAL_THRESHOLD}")
         residuals = kf_add_observations(self.gnss_kf, t, measurements)
+        self.residual_count += 1
+        print("self.residual_count", self.residual_count)
     else:
       # Ensure gnss filter is updated even with no new measurements
       self.gnss_kf.predict(t)
@@ -314,7 +318,7 @@ class EphemerisSourceType(IntEnum):
 
 
 def main(sm=None, pm=None):
-  os.system('cat /proc/cpuinfo | grep "model name"')
+  # os.system('cat /proc/cpuinfo | grep "model name"')
   if sm is None:
     sm = messaging.SubMaster(['ubloxGnss', 'clocks'])
   if pm is None:
