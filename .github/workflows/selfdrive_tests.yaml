@@ -360,7 +360,7 @@ jobs:
     - name: Run replay
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
+                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j1 && \
                         coverage xml"
     - name: Print diff
       if: always()
