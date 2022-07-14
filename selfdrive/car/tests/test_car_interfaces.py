@@ -69,7 +69,8 @@ class TestCarInterfaces(unittest.TestCase):
     radar_interface.update([])
     if not car_params.radarOffCan and radar_interface.rcp is not None and \
        hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
-      radar_interface._update([radar_interface.trigger_msg])
+      ret = car.RadarData.new_message()
+      radar_interface._update([radar_interface.trigger_msg], ret)
 
 if __name__ == "__main__":
   unittest.main()
