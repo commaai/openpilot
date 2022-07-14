@@ -318,7 +318,7 @@ class EphemerisSourceType(IntEnum):
 
 
 def main(sm=None, pm=None):
-  # os.system('cat /proc/cpuinfo | grep "model name"')
+  os.system('cat /proc/cpuinfo | grep "model name"')
   if sm is None:
     sm = messaging.SubMaster(['ubloxGnss', 'clocks'])
   if pm is None:
