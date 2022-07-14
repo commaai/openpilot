@@ -226,8 +226,8 @@ class Controls:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
     # Handle car events. Ignore when CAN is invalid
-    if CS.canTimeout or RadarError.canBusMissing in self.sm['radarState'].radarErrors:
-      self.events.add(EventName.canBusMissing)
+    if CS.canTimeout or RadarError.canTimeout in self.sm['radarState'].radarErrors:
+      self.events.add(EventName.canTimeout)
     elif not CS.canValid:
       self.events.add(EventName.canError)
     else:
@@ -310,7 +310,7 @@ class Controls:
           self.events.add(EventName.cameraFrameRate)
     if self.rk.lagging:
       self.events.add(EventName.controlsdLagging)
-    if len(self.sm['radarState'].radarErrors) and RadarError.canBusMissing not in self.sm['radarState'].radarErrors:
+    if len(self.sm['radarState'].radarErrors) and RadarError.canTimeout not in self.sm['radarState'].radarErrors:
       self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
