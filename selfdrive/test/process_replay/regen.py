@@ -263,7 +263,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   seg_path = os.path.join(outdir, segment)
   # check to make sure openpilot is engaged in the route
   if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
-    raise Exception(f"Route never enabled: {segment}")
+    raise Exception(f"Route did not engage for long enough: {segment}")
 
   return seg_path
 
