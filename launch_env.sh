@@ -6,6 +6,7 @@ export NUMEXPR_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
 
+# Remove this now?
 if [ -z "$AGNOS_VERSION" ]; then
   export AGNOS_VERSION="5.2"
 fi

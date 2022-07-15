@@ -47,6 +47,9 @@
     "size": 10737418240,
     "sparse": true,
     "full_check": false,
-    "has_ab": true
+    "has_ab": true,
+    "version_files": {
+      "/VERSION": "5.2"
+    }
   }
 ]

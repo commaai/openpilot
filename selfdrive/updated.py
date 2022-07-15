@@ -37,7 +37,7 @@ from markdown_it import MarkdownIt
 
 from common.basedir import BASEDIR
 from common.params import Params
-from system.hardware import AGNOS, HARDWARE
+from system.hardware import AGNOS
 from system.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.version import is_tested_branch
@@ -265,25 +265,22 @@ def finalize_update(wait_helper: WaitTimeHelper) -> None:
 
 
 def handle_agnos_update(wait_helper: WaitTimeHelper) -> None:
-  from system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
+  import system.hardware.tici.agnos as agnos
+  manifest_path = os.path.join(OVERLAY_MERGED, "system/hardware/tici/agnos.json")
 
-  cur_version = HARDWARE.get_os_version()
-  updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
-                          echo -n $AGNOS_VERSION"], OVERLAY_MERGED).strip()
-
-  cloudlog.info(f"AGNOS version check: {cur_version} vs {updated_version}")
-  if cur_version == updated_version:
+  # Check if current slot is already valid for new manifest
+  current_slot_number = agnos.get_current_slot_number()
+  if agnos.verify_agnos_update(manifest_path, current_slot_number, current_slot_number):
     return
 
   # prevent an openpilot getting swapped in with a mismatched or partially downloaded agnos
   set_consistent_flag(False)
 
-  cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
+  cloudlog.info("Beginning background installation for AGNOS")
   set_offroad_alert("Offroad_NeosUpdate", True)
 
-  manifest_path = os.path.join(OVERLAY_MERGED, "system/hardware/tici/agnos.json")
-  target_slot_number = get_target_slot_number()
-  flash_agnos_update(manifest_path, target_slot_number, cloudlog)
+  target_slot_number = agnos.get_target_slot_number()
+  agnos.flash_agnos_update(manifest_path, target_slot_number, cloudlog)
   set_offroad_alert("Offroad_NeosUpdate", False)
 
 

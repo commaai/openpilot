@@ -85,9 +85,13 @@ def noop(f: StreamingDecompressor) -> Generator[bytes, None, None]:
     yield f.read(1024 * 1024)
 
 
-def get_target_slot_number() -> int:
+def get_current_slot_number() -> int:
   current_slot = subprocess.check_output(["abctl", "--boot_slot"], encoding='utf-8').strip()
-  return 1 if current_slot == "_a" else 0
+  return 0 if current_slot == "_a" else 1
+
+
+def get_target_slot_number() -> int:
+  return 0 if (get_current_slot_number() == 1) else 0
 
 
 def slot_number_to_suffix(slot_number: int) -> str:
@@ -117,7 +121,7 @@ def get_raw_hash(path: str, partition_size: int) -> str:
   return raw_hash.hexdigest().lower()
 
 
-def verify_partition(target_slot_number: int, partition: Dict[str, Union[str, int]], force_full_check: bool = False) -> bool:
+def verify_partition(target_slot_number: int, partition: Dict[str, Union[str, int, Dict[str, str]]], force_full_check: bool = False, current_slot_number: int = -1) -> bool:
   full_check = partition['full_check'] or force_full_check
   path = get_partition_path(target_slot_number, partition)
 
@@ -133,6 +137,18 @@ def verify_partition(target_slot_number: int, partition: Dict[str, Union[str, in
 
   if full_check:
     return get_raw_hash(path, partition_size) == partition_hash.lower()
+  elif ('version_files' in partition) and isinstance(partition['version_files'], dict) and (current_slot_number == target_slot_number):
+    # Check /VERSION for system when it's the current slot
+    files: Dict[str, str] = partition['version_files']
+    for fn, expected in files.items():
+      if not os.path.exists(fn):
+        return False
+
+      with open(fn, 'r') as f:
+        if f.read() != expected:
+          return False
+
+    return True
   else:
     with open(path, 'rb+') as out:
       out.seek(partition_size)
@@ -292,9 +308,9 @@ def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, st
   cloudlog.info(f"AGNOS ready on slot {target_slot_number}")
 
 
-def verify_agnos_update(manifest_path: str, target_slot_number: int) -> bool:
+def verify_agnos_update(manifest_path: str, target_slot_number: int, current_slot_number: int) -> bool:
   update = json.load(open(manifest_path))
-  return all(verify_partition(target_slot_number, partition) for partition in update)
+  return all(verify_partition(target_slot_number, partition, current_slot_number=current_slot_number) for partition in update)
 
 
 if __name__ == "__main__":
@@ -304,21 +320,31 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Flash and verify AGNOS update",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument("--verify", action="store_true", help="Verify and perform swap if update ready")
+  parser.add_argument("--verify", action="store_true", help="Verify if current installed partitions are correct")
+  parser.add_argument("--swap-if-ready", action="store_true", help="Verify and perform swap, no download is performed")
   parser.add_argument("--swap", action="store_true", help="Verify and perform swap, downloads if necessary")
   parser.add_argument("manifest", help="Manifest json")
   args = parser.parse_args()
 
   logging.basicConfig(level=logging.INFO)
 
+  current_slot_number = get_current_slot_number()
   target_slot_number = get_target_slot_number()
+
   if args.verify:
-    if verify_agnos_update(args.manifest, target_slot_number):
+    # Check if AGNOS on current slot is valid
+    if verify_agnos_update(args.manifest, current_slot_number, current_slot_number):
+      exit(0)
+    exit(1)
+  elif args.swap_if_ready:
+    # Check if AGNOS on other slot is valid and swap to it
+    if verify_agnos_update(args.manifest, target_slot_number, current_slot_number):
       swap(args.manifest, target_slot_number, logging)
       exit(0)
     exit(1)
   elif args.swap:
-    while not verify_agnos_update(args.manifest, target_slot_number):
+    # Ensure AGNOS on other slot is valid and swap to it, download if needed
+    while not verify_agnos_update(args.manifest, target_slot_number, current_slot_number):
       logging.error("Verification failed. Flashing AGNOS")
       flash_agnos_update(args.manifest, target_slot_number, logging, standalone=True)
 
