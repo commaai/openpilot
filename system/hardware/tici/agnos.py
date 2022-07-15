@@ -139,8 +139,7 @@ def verify_partition(target_slot_number: int, partition: Dict[str, Union[str, in
     return get_raw_hash(path, partition_size) == partition_hash.lower()
   elif ('version_files' in partition) and isinstance(partition['version_files'], dict) and (current_slot_number == target_slot_number):
     # Check /VERSION for system when it's the current slot
-    files: Dict[str, str] = partition['version_files']
-    for fn, expected in files.items():
+    for fn, expected in partition['version_files'].items():
       if not os.path.exists(fn):
         return False
 
