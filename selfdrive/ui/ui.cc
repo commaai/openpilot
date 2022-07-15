@@ -118,6 +118,7 @@ static void update_sockets(UIState *s) {
 static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
+  s->scene.headlightON = sm["carState"].getCarState().getHeadlightON();
 
   if (sm.updated("liveCalibration")) {
     auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
@@ -301,6 +302,10 @@ void Device::updateBrightness(const UIState &s) {
     brightness = 0;
   }
 
+  if (s.scene.headlightON) {
+    brightness *= 0.5;
+  }
+  
   if (brightness != last_brightness) {
     if (!brightness_future.isRunning()) {
       brightness_future = QtConcurrent::run(Hardware::set_brightness, brightness);

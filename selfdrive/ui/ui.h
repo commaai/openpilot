@@ -87,6 +87,7 @@ const QColor bg_colors [] = {
 
 typedef struct UIScene {
   bool calibration_valid = false;
+  bool headlightON = false;
   mat3 view_from_calib = DEFAULT_CALIBRATION;
   cereal::PandaState::PandaType pandaType;
 

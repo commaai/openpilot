@@ -123,6 +123,7 @@ class CarState(CarStateBase):
     self.buttonStates["gapAdjustCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Verstellung_Zeitluecke"])
     ret.leftBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Left"])
     ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Right"])
+    ret.headlightON = bool(pt_cp.vl["Gate_Komf_1"]["GK1_Abblendlicht"])
 
     # Read ACC hardware button type configuration info that has to pass thru
     # to the radar. Ends up being different for steering wheel buttons vs
@@ -161,6 +162,7 @@ class CarState(CarStateBase):
       ("ZV_HD_offen", "Gateway_72"),             # Trunk or hatch open
       ("Comfort_Signal_Left", "Blinkmodi_02"),   # Left turn signal including comfort blink interval
       ("Comfort_Signal_Right", "Blinkmodi_02"),  # Right turn signal including comfort blink interval
+      ("GK1_Abblendlicht", "Gate_Komf_1"),       # Right turn signal including comfort blink interval
       ("AB_Gurtschloss_FA", "Airbag_02"),        # Seatbelt status, driver
       ("AB_Gurtschloss_BF", "Airbag_02"),        # Seatbelt status, passenger
       ("ESP_Fahrer_bremst", "ESP_05"),           # Brake pedal pressed

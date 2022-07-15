@@ -120,6 +120,7 @@ class CarState(CarStateBase):
     ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
+    ret.headlightON = bool(cp.vl["LIGHT_STALK"]["LOW_BEAM"]) != 0
     ret.stockAeb = bool(cp_cam.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cam.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
 
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
@@ -161,6 +162,7 @@ class CarState(CarStateBase):
       ("TURN_SIGNALS", "BLINKERS_STATE"),
       ("LKA_STATE", "EPS_STATUS"),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
+      ("LOW_BEAM", "LIGHT_STALK"),
     ]
 
     checks = [
