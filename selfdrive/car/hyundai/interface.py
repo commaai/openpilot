@@ -280,8 +280,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
     elif candidate == CAR.GENESIS_GV70:
-      ret.mass = 1513. + STD_CARGO_KG
-      ret.wheelbase = 2.84
+      ret.mass = 1950. + STD_CARGO_KG
+      ret.wheelbase = 2.87
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
                       get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
