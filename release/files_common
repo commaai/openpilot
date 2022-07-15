@@ -324,11 +324,6 @@ system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
 system/camerad/cameras/sensor2_i2c.h
 
-system/camerad/transforms/rgb_to_yuv.cc
-system/camerad/transforms/rgb_to_yuv.h
-system/camerad/transforms/rgb_to_yuv.cl
-system/camerad/transforms/rgb_to_yuv_test.cc
-
 system/camerad/imgproc/conv.cl
 system/camerad/imgproc/pool.cl
 system/camerad/imgproc/utils.cc
