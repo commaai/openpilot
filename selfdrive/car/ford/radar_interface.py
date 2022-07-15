@@ -2,21 +2,30 @@
 from math import cos, sin
 from cereal import car
 from opendbc.can.parser import CANParser
-from selfdrive.car.ford.values import CANBUS, DBC
+from common.conversions import Conversions as CV
+from selfdrive.car.ford.values import CANBUS, DBC, RADAR
 from selfdrive.car.interfaces import RadarInterfaceBase
 
-RADAR_START_ADDR = 0x120
-RADAR_MSG_COUNT = 64
+FUSION_RADAR_MSGS = list(range(0x500, 0x540))
+
+CADS_RADAR_START_ADDR = 0x120
+CADS_RADAR_MSG_COUNT = 64
 
 
-def _create_radar_can_parser(CP):
-  if DBC[CP.carFingerprint]['radar'] is None:
-    return None
+def _create_fusion_radar_can_parser():
+  msg_n = len(FUSION_RADAR_MSGS)
+  signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
+                     FUSION_RADAR_MSGS * 3))
+  checks = list(zip(FUSION_RADAR_MSGS, [20] * msg_n))
 
+  return CANParser(RADAR.FUSION, signals, checks, CANBUS.radar)
+
+
+def _create_cads_radar_can_parser():
   signals = []
   checks = []
 
-  for i in range(1, RADAR_MSG_COUNT + 1):
+  for i in range(1, CADS_RADAR_MSG_COUNT + 1):
     msg = f"MRR_Detection_{i:03d}"
     signals += [
       (f"CAN_DET_VALID_LEVEL_{i:02d}", msg),
@@ -28,16 +37,27 @@ def _create_radar_can_parser(CP):
     ]
     checks += [(msg, 20)]
 
-  return CANParser(DBC[CP.carFingerprint]['radar'], signals, checks, CANBUS.radar)
+  return CANParser(RADAR.CADS, signals, checks, CANBUS.radar)
+
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.updated_messages = set()
-    self.trigger_msg = RADAR_START_ADDR + RADAR_MSG_COUNT - 1
-    self.track_id = 0
 
-    self.rcp = _create_radar_can_parser(CP)
+    self.updated_messages = set()
+    self.track_id = 0
+    self.radar = DBC[CP.carFingerprint]['radar']
+    if self.radar is None:
+      self.rcp = None
+    elif self.radar == RADAR.FUSION:
+      self.rcp = _create_fusion_radar_can_parser()
+      self.trigger_msg = FUSION_RADAR_MSGS[-1]
+      self.valid_cnt = {key: 0 for key in FUSION_RADAR_MSGS}
+    elif self.radar == RADAR.CADS:
+      self.rcp = _create_cads_radar_can_parser()
+      self.trigger_msg = CADS_RADAR_START_ADDR + CADS_RADAR_MSG_COUNT - 1
+    else:
+      raise ValueError(f"Unsupported radar: {self.radar}")
 
   def update(self, can_strings):
     if self.rcp is None:
@@ -49,23 +69,52 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    rr = self._update(self.updated_messages)
-    self.updated_messages.clear()
-
-    return rr
-
-  def _update(self, updated_messages):
     ret = car.RadarData.new_message()
-    if self.rcp is None:
-      return ret
-
     errors = []
-
     if not self.rcp.can_valid:
       errors.append("canError")
     ret.errors = errors
 
-    for ii in range(1, RADAR_MSG_COUNT + 1):
+    if self.radar == RADAR.FUSION:
+      self._update_fusion()
+    elif self.radar == RADAR.CADS:
+      self._update_cads()
+
+    ret.points = list(self.pts.values())
+    self.updated_messages.clear()
+    return ret
+
+  def _update_fusion(self):
+    for ii in sorted(self.updated_messages):
+      cpt = self.rcp.vl[ii]
+
+      if cpt['X_Rel'] > 0.00001:
+        self.valid_cnt[ii] = 0    # reset counter
+
+      if cpt['X_Rel'] > 0.00001:
+        self.valid_cnt[ii] += 1
+      else:
+        self.valid_cnt[ii] = max(self.valid_cnt[ii] - 1, 0)
+      #print ii, self.valid_cnt[ii], cpt['VALID'], cpt['X_Rel'], cpt['Angle']
+
+      # radar point only valid if there have been enough valid measurements
+      if self.valid_cnt[ii] > 0:
+        if ii not in self.pts:
+          self.pts[ii] = car.RadarData.RadarPoint.new_message()
+          self.pts[ii].trackId = self.track_id
+          self.track_id += 1
+        self.pts[ii].dRel = cpt['X_Rel']  # from front of car
+        self.pts[ii].yRel = cpt['X_Rel'] * cpt['Angle'] * CV.DEG_TO_RAD  # in car frame's y axis, left is positive
+        self.pts[ii].vRel = cpt['V_Rel']
+        self.pts[ii].aRel = float('nan')
+        self.pts[ii].yvRel = float('nan')
+        self.pts[ii].measured = True
+      else:
+        if ii in self.pts:
+          del self.pts[ii]
+
+  def _update_cads(self):
+    for ii in range(1, CADS_RADAR_MSG_COUNT + 1):
       msg = self.rcp.vl[f"MRR_Detection_{ii:03d}"]
 
       # SCAN_INDEX rotates through 0..3 on each message
@@ -85,8 +134,8 @@ class RadarInterface(RadarInterfaceBase):
 
       if valid and 0 < amplitude <= 15:
         azimuth = msg[f"CAN_DET_AZIMUTH_{ii:02d}"]              # rad [-3.1416|3.13964]
-        dist = msg[f"CAN_DET_RANGE_{ii:02d}"]                  # m [0|255.984]
-        distRate = msg[f"CAN_DET_RANGE_RATE_{ii:02d}"]         # m/s [-128|127.984]
+        dist = msg[f"CAN_DET_RANGE_{ii:02d}"]                   # m [0|255.984]
+        distRate = msg[f"CAN_DET_RANGE_RATE_{ii:02d}"]          # m/s [-128|127.984]
 
         # *** openpilot radar point ***
         self.pts[i].dRel = cos(azimuth) * dist                  # m from front of car
@@ -97,6 +146,3 @@ class RadarInterface(RadarInterfaceBase):
 
       else:
         del self.pts[i]
-
-    ret.points = list(self.pts.values())
-    return ret

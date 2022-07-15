@@ -24,6 +24,11 @@ class CarControllerParams:
   STEER_RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
 
 
+class RADAR:
+  FUSION = 'ford_fusion_2018_adas'
+  CADS = 'FORD_CADS'
+
+
 class CANBUS:
   main = 0
   radar = 1
@@ -80,6 +85,6 @@ FW_VERSIONS = {
 
 
 DBC = {
-  CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', 'FORD_CADS'),
-  CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', 'FORD_CADS'),
+  CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.CADS),
+  CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.CADS),
 }
