@@ -222,7 +222,7 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
     raise Exception(f"Raw hash mismatch '{partition['hash_raw'].lower()}'")
 
 
-def flash_partition(target_slot_number: int, partition: dict, cloudlog):
+def flash_partition(target_slot_number: int, partition: dict, cloudlog, standalone=False):
   cloudlog.info(f"Downloading and writing {partition['name']}")
 
   if verify_partition(target_slot_number, partition):
@@ -236,7 +236,7 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
 
   path = get_partition_path(target_slot_number, partition)
 
-  if 'casync_caibx' in partition:
+  if ('casync_caibx' in partition) and not standalone:
     extract_casync_image(target_slot_number, partition, cloudlog)
   else:
     extract_compressed_image(target_slot_number, partition, cloudlog)
@@ -263,7 +263,7 @@ def swap(manifest_path: str, target_slot_number: int, cloudlog) -> None:
       cloudlog.error(f"Swap failed {out}")
 
 
-def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog) -> None:
+def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, standalone=False) -> None:
   update = json.load(open(manifest_path))
 
   cloudlog.info(f"Target slot {target_slot_number}")
@@ -276,7 +276,7 @@ def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog) ->
 
     for retries in range(10):
       try:
-        flash_partition(target_slot_number, partition, cloudlog)
+        flash_partition(target_slot_number, partition, cloudlog, standalone)
         success = True
         break
 
@@ -320,9 +320,9 @@ if __name__ == "__main__":
   elif args.swap:
     while not verify_agnos_update(args.manifest, target_slot_number):
       logging.error("Verification failed. Flashing AGNOS")
-      flash_agnos_update(args.manifest, target_slot_number, logging)
+      flash_agnos_update(args.manifest, target_slot_number, logging, standalone=True)
 
     logging.warning(f"Verification succeeded. Swapping to slot {target_slot_number}")
     swap(args.manifest, target_slot_number, logging)
   else:
-    flash_agnos_update(args.manifest, target_slot_number, logging)
+    flash_agnos_update(args.manifest, target_slot_number, logging, standalone=True)

@@ -71,6 +71,7 @@ TEST_CASE("LogReader") {
     FileReader reader(true);
     std::string corrupt_content = reader.read(TEST_RLOG_URL);
     corrupt_content.resize(corrupt_content.length() / 2);
+    corrupt_content = decompressBZ2(corrupt_content);
     LogReader log;
     REQUIRE(log.load((std::byte *)corrupt_content.data(), corrupt_content.size()));
     REQUIRE(log.events.size() > 0);

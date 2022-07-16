@@ -88,13 +88,16 @@ PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
     title->setWordWrap(true);
     vlayout->addWidget(title);
 
-    QLabel *instructions = new QLabel(tr(R"(
+    QLabel *instructions = new QLabel(QString(R"(
       <ol type='1' style='margin-left: 15px;'>
-        <li style='margin-bottom: 50px;'>Go to https://connect.comma.ai on your phone</li>
-        <li style='margin-bottom: 50px;'>Click "add new device" and scan the QR code on the right</li>
-        <li style='margin-bottom: 50px;'>Bookmark connect.comma.ai to your home screen to use it like an app</li>
+        <li style='margin-bottom: 50px;'>%1</li>
+        <li style='margin-bottom: 50px;'>%2</li>
+        <li style='margin-bottom: 50px;'>%3</li>
       </ol>
-    )"), this);
+    )").arg(tr("Go to https://connect.comma.ai on your phone"))
+    .arg(tr("Click \"add new device\" and scan the QR code on the right"))
+    .arg(tr("Bookmark connect.comma.ai to your home screen to use it like an app")), this);
+
     instructions->setStyleSheet("font-size: 47px; font-weight: bold; color: black;");
     instructions->setWordWrap(true);
     vlayout->addWidget(instructions);
