@@ -28,6 +28,9 @@ def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
           if vin.startswith(b'\x11'):
             vin = vin[1:18]
 
+          # Ford returns 24 bytes padded with nulls, trim to correct length
+          vin = vin[0:17]
+
           return addr[0], rx_addr, vin.decode()
         print(f"vin query retry ({i+1}) ...")
       except Exception:
