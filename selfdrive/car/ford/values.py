@@ -25,8 +25,8 @@ class CarControllerParams:
 
 
 class RADAR:
-  FUSION = 'ford_fusion_2018_adas'
-  CADS = 'FORD_CADS'
+  DELPHI_ESR = 'ford_fusion_2018_adas'
+  DELPHI_MRR = 'FORD_CADS'
 
 
 class CANBUS:
@@ -85,6 +85,6 @@ FW_VERSIONS = {
 
 
 DBC = {
-  CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.CADS),
-  CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.CADS),
+  CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR),
+  CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR),
 }

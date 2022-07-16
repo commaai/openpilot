@@ -6,26 +6,26 @@ from common.conversions import Conversions as CV
 from selfdrive.car.ford.values import CANBUS, DBC, RADAR
 from selfdrive.car.interfaces import RadarInterfaceBase
 
-FUSION_RADAR_MSGS = list(range(0x500, 0x540))
+DELPHI_ESR_RADAR_MSGS = list(range(0x500, 0x540))
 
-CADS_RADAR_START_ADDR = 0x120
-CADS_RADAR_MSG_COUNT = 64
+DELPHI_MRR_RADAR_START_ADDR = 0x120
+DELPHI_MRR_RADAR_MSG_COUNT = 64
 
 
-def _create_fusion_radar_can_parser():
-  msg_n = len(FUSION_RADAR_MSGS)
+def _create_delphi_esr_radar_can_parser():
+  msg_n = len(DELPHI_ESR_RADAR_MSGS)
   signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
-                     FUSION_RADAR_MSGS * 3))
-  checks = list(zip(FUSION_RADAR_MSGS, [20] * msg_n))
+                     DELPHI_ESR_RADAR_MSGS * 3))
+  checks = list(zip(DELPHI_ESR_RADAR_MSGS, [20] * msg_n))
 
-  return CANParser(RADAR.FUSION, signals, checks, CANBUS.radar)
+  return CANParser(RADAR.DELPHI_ESR, signals, checks, CANBUS.radar)
 
 
-def _create_cads_radar_can_parser():
+def _create_delphi_mrr_radar_can_parser():
   signals = []
   checks = []
 
-  for i in range(1, CADS_RADAR_MSG_COUNT + 1):
+  for i in range(1, DELPHI_MRR_RADAR_MSG_COUNT + 1):
     msg = f"MRR_Detection_{i:03d}"
     signals += [
       (f"CAN_DET_VALID_LEVEL_{i:02d}", msg),
@@ -37,7 +37,7 @@ def _create_cads_radar_can_parser():
     ]
     checks += [(msg, 20)]
 
-  return CANParser(RADAR.CADS, signals, checks, CANBUS.radar)
+  return CANParser(RADAR.DELPHI_MRR, signals, checks, CANBUS.radar)
 
 
 class RadarInterface(RadarInterfaceBase):
@@ -49,13 +49,13 @@ class RadarInterface(RadarInterfaceBase):
     self.radar = DBC[CP.carFingerprint]['radar']
     if self.radar is None:
       self.rcp = None
-    elif self.radar == RADAR.FUSION:
-      self.rcp = _create_fusion_radar_can_parser()
-      self.trigger_msg = FUSION_RADAR_MSGS[-1]
-      self.valid_cnt = {key: 0 for key in FUSION_RADAR_MSGS}
-    elif self.radar == RADAR.CADS:
-      self.rcp = _create_cads_radar_can_parser()
-      self.trigger_msg = CADS_RADAR_START_ADDR + CADS_RADAR_MSG_COUNT - 1
+    elif self.radar == RADAR.DELPHI_ESR:
+      self.rcp = _create_delphi_esr_radar_can_parser()
+      self.trigger_msg = DELPHI_ESR_RADAR_MSGS[-1]
+      self.valid_cnt = {key: 0 for key in DELPHI_ESR_RADAR_MSGS}
+    elif self.radar == RADAR.DELPHI_MRR:
+      self.rcp = _create_delphi_mrr_radar_can_parser()
+      self.trigger_msg = DELPHI_MRR_RADAR_START_ADDR + DELPHI_MRR_RADAR_MSG_COUNT - 1
     else:
       raise ValueError(f"Unsupported radar: {self.radar}")
 
@@ -75,16 +75,16 @@ class RadarInterface(RadarInterfaceBase):
       errors.append("canError")
     ret.errors = errors
 
-    if self.radar == RADAR.FUSION:
-      self._update_fusion()
-    elif self.radar == RADAR.CADS:
-      self._update_cads()
+    if self.radar == RADAR.DELPHI_ESR:
+      self._update_delphi_esr()
+    elif self.radar == RADAR.DELPHI_MRR:
+      self._update_delphi_mrr()
 
     ret.points = list(self.pts.values())
     self.updated_messages.clear()
     return ret
 
-  def _update_fusion(self):
+  def _update_delphi_esr(self):
     for ii in sorted(self.updated_messages):
       cpt = self.rcp.vl[ii]
 
@@ -113,8 +113,8 @@ class RadarInterface(RadarInterfaceBase):
         if ii in self.pts:
           del self.pts[ii]
 
-  def _update_cads(self):
-    for ii in range(1, CADS_RADAR_MSG_COUNT + 1):
+  def _update_delphi_mrr(self):
+    for ii in range(1, DELPHI_MRR_RADAR_MSG_COUNT + 1):
       msg = self.rcp.vl[f"MRR_Detection_{ii:03d}"]
 
       # SCAN_INDEX rotates through 0..3 on each message
