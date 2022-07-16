@@ -9,7 +9,7 @@
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"
 #include "selfdrive/loggerd/logger.h"
-#include "selfdrive/ui/replay/util.h"
+#include "tools/replay/util.h"
 
 typedef cereal::Sentinel::SentinelType SentinelType;
 

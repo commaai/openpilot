@@ -1,11 +1,11 @@
 from cereal import car
-from common.realtime import DT_CTRL
-from common.numpy_fast import clip, interp
 from common.conversions import Conversions as CV
+from common.numpy_fast import clip, interp
+from common.realtime import DT_CTRL
+from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai import hda2can, hyundaican
 from selfdrive.car.hyundai.values import Buttons, CarControllerParams, HDA2_CAR, CAR
-from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -52,7 +52,12 @@ class CarController:
     hud_control = CC.hudControl
 
     # Steering Torque
-    new_steer = int(round(actuators.steer * self.params.STEER_MAX))
+
+    # These cars have significantly more torque than most HKG.  Limit to 70% of max.
+    steer = actuators.steer
+    if self.CP.carFingerprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV):
+      steer = clip(steer, -0.7, 0.7)
+    new_steer = int(round(steer * self.params.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
     self.steer_rate_limited = new_steer != apply_steer
 
@@ -70,16 +75,19 @@ class CarController:
       # steering control
       can_sends.append(hda2can.create_lkas(self.packer, CC.enabled, self.frame, CC.latActive, apply_steer))
 
+      if self.frame % 5 == 0:
+        can_sends.append(hda2can.create_cam_0x2a4(self.packer, self.frame, CS.cam_0x2a4))
+
       # cruise cancel
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
         if CC.cruiseControl.cancel:
           for _ in range(20):
-            can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, True, False))
+            can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, Buttons.CANCEL))
           self.last_button_frame = self.frame
 
         # cruise standstill resume
-        elif CC.enabled and CS.out.cruiseState.standstill:
-          can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, False, True))
+        elif CC.cruiseControl.resume:
+          can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, Buttons.RES_ACCEL))
           self.last_button_frame = self.frame
     else:
 
@@ -96,7 +104,7 @@ class CarController:
       if not self.CP.openpilotLongitudinalControl:
         if CC.cruiseControl.cancel:
           can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL))
-        elif CS.out.cruiseState.standstill:
+        elif CC.cruiseControl.resume:
           # send resume at a max freq of 10Hz
           if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
             # send 25 messages at a time to increases the likelihood of resume being accepted

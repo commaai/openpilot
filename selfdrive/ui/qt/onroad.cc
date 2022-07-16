@@ -199,7 +199,7 @@ void NvgWindow::updateState(const UIState &s) {
   setProperty("is_metric", s.scene.is_metric);
   setProperty("speed", cur_speed);
   setProperty("setSpeed", set_speed);
-  setProperty("speedUnit", s.scene.is_metric ? "km/h" : "mph");
+  setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
   setProperty("status", s.status);
 
@@ -207,6 +207,12 @@ void NvgWindow::updateState(const UIState &s) {
   if (sm.frame % (UI_FREQ / 2) == 0) {
     setProperty("engageable", cs.getEngageable() || cs.getEnabled());
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
+  }
+
+  if (s.scene.calibration_valid) {
+    CameraViewWidget::updateCalibration(s.scene.view_from_calib);
+  } else {
+    CameraViewWidget::updateCalibration(DEFAULT_CALIBRATION);
   }
 }
 
@@ -260,10 +266,10 @@ void NvgWindow::drawHud(QPainter &p) {
     p.setPen(QColor(0xa6, 0xa6, 0xa6, 0xff));
   }
   configFont(p, "Inter", 40, "SemiBold");
-  QRect max_rect = getTextRect(p, Qt::AlignCenter, "MAX");
+  QRect max_rect = getTextRect(p, Qt::AlignCenter, tr("MAX"));
   max_rect.moveCenter({set_speed_rect.center().x(), 0});
   max_rect.moveTop(set_speed_rect.top() + 27);
-  p.drawText(max_rect, Qt::AlignCenter, "MAX");
+  p.drawText(max_rect, Qt::AlignCenter, tr("MAX"));
 
   // Draw set speed
   if (is_cruise_set) {
@@ -290,7 +296,7 @@ void NvgWindow::drawHud(QPainter &p) {
   // US/Canada (MUTCD style) sign
   if (has_us_speed_limit) {
     const int border_width = 6;
-    const int sign_width = (speedLimitStr.size() >= 3) ? 199 : 148;
+    const int sign_width = rect_width - 24;
     const int sign_height = 186;
 
     // White outer square
@@ -307,16 +313,16 @@ void NvgWindow::drawHud(QPainter &p) {
 
     // "SPEED"
     configFont(p, "Inter", 28, "SemiBold");
-    QRect text_speed_rect = getTextRect(p, Qt::AlignCenter, "SPEED");
+    QRect text_speed_rect = getTextRect(p, Qt::AlignCenter, tr("SPEED"));
     text_speed_rect.moveCenter({sign_rect.center().x(), 0});
     text_speed_rect.moveTop(sign_rect_outer.top() + 22);
-    p.drawText(text_speed_rect, Qt::AlignCenter, "SPEED");
+    p.drawText(text_speed_rect, Qt::AlignCenter, tr("SPEED"));
 
     // "LIMIT"
-    QRect text_limit_rect = getTextRect(p, Qt::AlignCenter, "LIMIT");
+    QRect text_limit_rect = getTextRect(p, Qt::AlignCenter, tr("LIMIT"));
     text_limit_rect.moveCenter({sign_rect.center().x(), 0});
     text_limit_rect.moveTop(sign_rect_outer.top() + 51);
-    p.drawText(text_limit_rect, Qt::AlignCenter, "LIMIT");
+    p.drawText(text_limit_rect, Qt::AlignCenter, tr("LIMIT"));
 
     // Speed limit value
     configFont(p, "Inter", 70, "Bold");
@@ -399,23 +405,20 @@ void NvgWindow::initializeGL() {
   setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
-void NvgWindow::updateFrameMat(int w, int h) {
-  CameraViewWidget::updateFrameMat(w, h);
-
+void NvgWindow::updateFrameMat() {
+  CameraViewWidget::updateFrameMat();
   UIState *s = uiState();
+  int w = width(), h = height();
+
   s->fb_w = w;
   s->fb_h = h;
-  auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-  float zoom = ZOOM / intrinsic_matrix.v[0];
-  if (s->wide_camera) {
-    zoom *= 0.5;
-  }
+
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
   // 3) Put (0, 0) in top left corner of video
   s->car_space_transform.reset();
-  s->car_space_transform.translate(w / 2, h / 2 + y_offset)
+  s->car_space_transform.translate(w / 2 - x_offset, h / 2 - y_offset)
       .scale(zoom, zoom)
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
@@ -427,13 +430,13 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
     painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
-    painter.drawPolygon(scene.lane_line_vertices[i].v, scene.lane_line_vertices[i].cnt);
+    painter.drawPolygon(scene.lane_line_vertices[i]);
   }
 
   // road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
     painter.setBrush(QColor::fromRgbF(1.0, 0, 0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0)));
-    painter.drawPolygon(scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt);
+    painter.drawPolygon(scene.road_edge_vertices[i]);
   }
 
   // paint path
@@ -452,7 +455,7 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   bg.setColorAt(0.75 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.35));
   bg.setColorAt(1.0, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.0));
   painter.setBrush(bg);
-  painter.drawPolygon(scene.track_vertices.v, scene.track_vertices.cnt);
+  painter.drawPolygon(scene.track_vertices);
 
   painter.restore();
 }

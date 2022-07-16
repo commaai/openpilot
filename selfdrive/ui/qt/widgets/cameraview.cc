@@ -6,6 +6,8 @@
 #include <GLES3/gl3.h>
 #endif
 
+#include <cmath>
+
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>
 
@@ -58,13 +60,6 @@ const char frame_fragment_shader[] =
   "  colorOut = vec4(r, g, b, 1.0);\n"
   "}\n";
 #endif
-
-const mat4 device_transform = {{
-  1.0,  0.0, 0.0, 0.0,
-  0.0,  1.0, 0.0, 0.0,
-  0.0,  0.0, 1.0, 0.0,
-  0.0,  0.0, 0.0, 1.0,
-}};
 
 mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 2.0;
@@ -185,33 +180,53 @@ void CameraViewWidget::hideEvent(QHideEvent *event) {
   }
 }
 
-void CameraViewWidget::updateFrameMat(int w, int h) {
+void CameraViewWidget::updateFrameMat() {
+  int w = width(), h = height();
+
   if (zoomed_view) {
     if (stream_type == VISION_STREAM_DRIVER) {
-      frame_mat = matmul(device_transform, get_driver_view_transform(w, h, stream_width, stream_height));
+      frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
     } else {
-      auto intrinsic_matrix = stream_type == VISION_STREAM_WIDE_ROAD ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-      float zoom = ZOOM / intrinsic_matrix.v[0];
-      if (stream_type == VISION_STREAM_WIDE_ROAD) {
-        zoom *= 0.5;
-      }
+      intrinsic_matrix = (stream_type == VISION_STREAM_WIDE_ROAD) ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+      zoom = (stream_type == VISION_STREAM_WIDE_ROAD) ? 2.5 : 1.1;
+
+      // Project point at "infinity" to compute x and y offsets
+      // to ensure this ends up in the middle of the screen
+      // TODO: use proper perspective transform?
+      const vec3 inf = {{1000., 0., 0.}};
+      const vec3 Ep = matvecmul3(calibration, inf);
+      const vec3 Kep = matvecmul3(intrinsic_matrix, Ep);
+
+      float x_offset_ = (Kep.v[0] / Kep.v[2] - intrinsic_matrix.v[2]) * zoom;
+      float y_offset_ = (Kep.v[1] / Kep.v[2] - intrinsic_matrix.v[5]) * zoom;
+
+      float max_x_offset = intrinsic_matrix.v[2] * zoom - w / 2 - 5;
+      float max_y_offset = intrinsic_matrix.v[5] * zoom - h / 2 - 5;
+
+      x_offset = std::clamp(x_offset_, -max_x_offset, max_x_offset);
+      y_offset = std::clamp(y_offset_, -max_y_offset, max_y_offset);
+
       float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
       float zy = zoom * 2 * intrinsic_matrix.v[5] / height();
-
       const mat4 frame_transform = {{
-        zx, 0.0, 0.0, 0.0,
-        0.0, zy, 0.0, -y_offset / height() * 2,
+        zx, 0.0, 0.0, -x_offset / width() * 2,
+        0.0, zy, 0.0, y_offset / height() * 2,
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
       }};
-      frame_mat = matmul(device_transform, frame_transform);
+      frame_mat = frame_transform;
     }
   } else if (stream_width > 0 && stream_height > 0) {
     // fit frame to widget size
     float widget_aspect_ratio = (float)width() / height();
     float frame_aspect_ratio = (float)stream_width  / stream_height;
-    frame_mat = matmul(device_transform, get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio));
+    frame_mat = get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio);
   }
+}
+
+void CameraViewWidget::updateCalibration(const mat3 &calib) {
+  calibration = calib;
+  updateFrameMat();
 }
 
 void CameraViewWidget::paintGL() {
@@ -220,10 +235,20 @@ void CameraViewWidget::paintGL() {
 
   if (frames.empty()) return;
 
-  int frame_idx;
-  for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
-    if (frames[frame_idx].first == draw_frame_id) break;
+  int frame_idx = frames.size() - 1;
+
+  // Always draw latest frame until sync logic is more stable
+  // for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
+  //   if (frames[frame_idx].first == draw_frame_id) break;
+  // }
+
+  // Log duplicate/dropped frames
+  if (frames[frame_idx].first == prev_frame_id) {
+    qDebug() << "Drawing same frame twice" << frames[frame_idx].first;
+  } else if (frames[frame_idx].first != prev_frame_id + 1) {
+    qDebug() << "Skipped frame" << frames[frame_idx].first;
   }
+  prev_frame_id = frames[frame_idx].first;
 
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
@@ -311,7 +336,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   assert(glGetError() == GL_NO_ERROR);
 #endif
 
-  updateFrameMat(width(), height());
+  updateFrameMat();
 }
 
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
