@@ -125,7 +125,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="104"/>
         <source>Driver Camera</source>
-        <translation>駕駛監控</translation>
+        <translation>駕駛員攝像頭</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="104"/>
@@ -134,8 +134,8 @@
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
-        <source>Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)</source>
-        <translation>預覽駕駛監控鏡頭畫面，方便調整設備安裝的位置，以提供更準確的駕駛監控。(車子必須保持在熄火的狀態)</translation>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation>預覽駕駛員監控鏡頭畫面，以確保其具有良好視野。僅在熄火時可用。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="109"/>
@@ -308,13 +308,8 @@
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="168"/>
-        <source>Need at least </source>
-        <translation>需要至少 </translation>
-    </message>
-    <message>
-        <location filename="../qt/widgets/input.cc" line="168"/>
-        <source> characters!</source>
-        <translation> 個字元！</translation>
+        <source>Need at least %1 characters!</source>
+        <translation>需要至少 %1 個字元！</translation>
     </message>
 </context>
 <context>
@@ -343,27 +338,27 @@
 <context>
     <name>MapETA</name>
     <message>
-        <location filename="../qt/maps/map.cc" line="618"/>
+        <location filename="../qt/maps/map.cc" line="622"/>
         <source>eta</source>
         <translation>埃塔</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="628"/>
+        <location filename="../qt/maps/map.cc" line="632"/>
         <source>min</source>
         <translation>分鐘</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="632"/>
+        <location filename="../qt/maps/map.cc" line="636"/>
         <source>hr</source>
         <translation>小時</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="652"/>
+        <location filename="../qt/maps/map.cc" line="656"/>
         <source>km</source>
         <translation>km</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="655"/>
+        <location filename="../qt/maps/map.cc" line="659"/>
         <source>mi</source>
         <translation>mi</translation>
     </message>
@@ -415,15 +410,10 @@
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
-        <source>Get turn-by-turn directions displayed and more with a comma 
+        <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
         <translation>成為 comma 高級會員來使用導航功能
 立即註冊：https://connect.comma.ai</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation type="vanished">成為 comma 高級會員來使用導航功能，立即註冊：https://connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
@@ -486,8 +476,8 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
-        <source>for &quot;</source>
-        <translation>給 &quot;</translation>
+        <source>for &quot;%1&quot;</source>
+        <translation>給 &quot;%1&quot;</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
@@ -552,52 +542,50 @@ location set</source>
         <translation>將設備與您的 comma 帳號配對</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="91"/>
-        <source>
-      &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Go to https://connect.comma.ai on your phone&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Click &quot;add new device&quot; and scan the QR code on the right&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Bookmark connect.comma.ai to your home screen to use it like an app&lt;/li&gt;
-      &lt;/ol&gt;
-    </source>
-        <translation>
-      &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;用手機連至 https://connect.comma.ai&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;點選 &quot;add new device&quot; 後掃描右邊的二維碼&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;將 connect.comma.ai 加入您的主屏幕，以便像手機 App 一樣使用它&lt;/li&gt;
-      &lt;/ol&gt;
-    </translation>
+        <location filename="../qt/widgets/prime.cc" line="97"/>
+        <source>Go to https://connect.comma.ai on your phone</source>
+        <translation>用手機連至 https://connect.comma.ai</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="98"/>
+        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <translation>點選 &quot;add new device&quot; 後掃描右邊的二維碼</translation>
+    </message>
+    <message>
+        <location filename="../qt/widgets/prime.cc" line="99"/>
+        <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
+        <translation>將 connect.comma.ai 加入您的主屏幕，以便像手機 App 一樣使用它</translation>
     </message>
 </context>
 <context>
     <name>PrimeAdWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="184"/>
+        <location filename="../qt/widgets/prime.cc" line="187"/>
         <source>Upgrade Now</source>
         <translation>馬上升級</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="189"/>
+        <location filename="../qt/widgets/prime.cc" line="192"/>
         <source>Become a comma prime member at connect.comma.ai</source>
         <translation>成為 connect.comma.ai 的高級會員</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="196"/>
+        <location filename="../qt/widgets/prime.cc" line="199"/>
         <source>PRIME FEATURES:</source>
         <translation>高級會員特點：</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Remote access</source>
         <translation>遠程訪問</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>1 year of storage</source>
         <translation>一年的雲端行車記錄</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="201"/>
+        <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Developer perks</source>
         <translation>開發者福利</translation>
     </message>
@@ -605,22 +593,22 @@ location set</source>
 <context>
     <name>PrimeUserWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="123"/>
+        <location filename="../qt/widgets/prime.cc" line="126"/>
         <source>✓ SUBSCRIBED</source>
         <translation>✓ 已訂閱</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="129"/>
+        <location filename="../qt/widgets/prime.cc" line="132"/>
         <source>comma prime</source>
         <translation>comma 高級會員</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="135"/>
+        <location filename="../qt/widgets/prime.cc" line="138"/>
         <source>CONNECT.COMMA.AI</source>
         <translation>CONNECT.COMMA.AI</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="148"/>
+        <location filename="../qt/widgets/prime.cc" line="151"/>
         <source>COMMA POINTS</source>
         <translation>COMMA 積分</translation>
     </message>
@@ -865,17 +853,17 @@ location set</source>
 <context>
     <name>SetupWidget</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="230"/>
+        <location filename="../qt/widgets/prime.cc" line="233"/>
         <source>Finish Setup</source>
         <translation>完成設置</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="236"/>
+        <location filename="../qt/widgets/prime.cc" line="239"/>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
         <translation>將您的設備與 comma connect (connect.comma.ai) 配對並領取您的 comma 高級會員優惠。</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="243"/>
+        <location filename="../qt/widgets/prime.cc" line="246"/>
         <source>Pair device</source>
         <translation>配對設備</translation>
     </message>
@@ -1031,13 +1019,13 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
-        <source>Uninstall </source>
-        <translation>卸載 </translation>
+        <source>UNINSTALL</source>
+        <translation>卸載</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="252"/>
-        <source>UNINSTALL</source>
-        <translation>卸載</translation>
+        <source>Uninstall %1</source>
+        <translation>卸載 %1</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="254"/>
@@ -1282,8 +1270,8 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
-        <source>Forget Wi-Fi Network &quot;</source>
-        <translation>清除 Wi-Fi 網路 &quot;</translation>
+        <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
+        <translation>清除 Wi-Fi 網路 &quot;%1&quot;?</translation>
     </message>
 </context>
 </TS>
