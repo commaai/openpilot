@@ -99,6 +99,11 @@ CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x
 
 CHRYSLER_RX_OFFSET = -0x280
 
+FORD_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+FORD_VERSION_RESPONSE =  bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+
 
 @dataclass
 class Request:
@@ -206,6 +211,13 @@ REQUESTS: List[Request] = [
     "chrysler",
     [CHRYSLER_VERSION_REQUEST],
     [CHRYSLER_VERSION_RESPONSE],
+  ),
+  # Ford
+  Request(
+    "ford",
+    [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
+    [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
+    bus=0,
   ),
 ]
 
@@ -444,7 +456,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            fw_versions.update({(r.brand, addr): (version, r) for addr, version in query.get_data(timeout).items()})
+            fw_versions.update({(r.brand, addr): (version, r) for (addr, _), version in query.get_data(timeout).items()})
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
@@ -497,8 +509,8 @@ if __name__ == "__main__":
 
   t = time.time()
   print("Getting vin...")
-  addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
-  print(f"VIN: {vin}")
+  addr, vin_rx_addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
+  print(f'TX: {hex(addr)}, RX: {hex(vin_rx_addr)}, VIN: {vin}')
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
 

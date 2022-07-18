@@ -52,10 +52,10 @@ public:
   ~LogReader();
   bool load(const std::string &url, std::atomic<bool> *abort = nullptr, bool local_cache = false, int chunk_size = -1, int retries = 0);
   bool load(const std::byte *data, size_t size, std::atomic<bool> *abort = nullptr);
-
   std::vector<Event*> events;
 
 private:
+  bool parse(std::atomic<bool> *abort);
   std::string raw_;
 #ifdef HAS_MEMORY_RESOURCE
   std::pmr::monotonic_buffer_resource *mbr_ = nullptr;

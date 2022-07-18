@@ -10,7 +10,6 @@ env:
   CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_REGISTRY: ghcr.io/commaai
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
-  HAS_AZURE_TOKEN: $AZURE_TOKEN != ''
 
   DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
   BUILD: |
@@ -59,6 +58,9 @@ jobs:
       run: |
         TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
         cp Dockerfile.openpilot_base $STRIPPED_DIR
+        cp .pre-commit-config.yaml $STRIPPED_DIR
+        cp .pylintrc $STRIPPED_DIR
+        cp mypy.ini $STRIPPED_DIR
     - name: Build Docker image
       run: |
           eval "$BUILD"
@@ -67,6 +69,10 @@ jobs:
       run: |
           cd $STRIPPED_DIR
           ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py && \
+                          pre-commit run --all && \
+                          rm .pre-commit-config.yaml && \
+                          rm .pylintrc && \
+                          rm mypy.ini && \
                           release/check-dirty.sh && \
                           python -m unittest discover selfdrive/car"
 
@@ -366,7 +372,7 @@ jobs:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
     - name: Upload reference logs
-      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.HAS_AZURE_TOKEN }}
+      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
                         CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
@@ -551,22 +557,22 @@ jobs:
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
-        if: env.HAS_AZURE_TOKEN
-        uses: peter-evans/find-comment@v1
+        if: ${{ env.AZURE_TOKEN != '' }}
+        uses: peter-evans/find-comment@1769778a0c5bd330272d749d12c036d65e70d39d
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: This PR makes changes to
       - name: Update comment
-        if: steps.save_diff.outputs.diff != '' && env.HAS_AZURE_TOKEN
-        uses: peter-evans/create-or-update-comment@v1
+        if: ${{ steps.save_diff.outputs.diff != '' && env.AZURE_TOKEN != '' }}
+        uses: peter-evans/create-or-update-comment@b95e16d2859ad843a14218d1028da5b2c4cbc4b4
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: "${{ steps.save_diff.outputs.diff }}"
           edit-mode: replace
       - name: Delete comment
-        if: steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && env.HAS_AZURE_TOKEN
+        if: ${{ steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && env.AZURE_TOKEN != '' }}
         uses: actions/github-script@v6
         with:
           script: |

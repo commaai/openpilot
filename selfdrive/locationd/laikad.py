@@ -15,6 +15,7 @@ from cereal import log, messaging
 from common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
+from laika.downloader import DownloadFailed
 from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
@@ -78,8 +79,8 @@ class Laikad:
       cloudlog.exception("Error parsing cache")
     timestamp = self.last_fetch_orbits_t.as_datetime() if self.last_fetch_orbits_t is not None else 'Nan'
     cloudlog.debug(
-      f"Loaded nav and orbits cache with timestamp: {timestamp}. Unique orbit and nav sats: {list(cache['orbits'].keys())} {list(cache['nav'].keys())} " +
-      f"Total: {sum([len(v) for v in cache['orbits']])} and {sum([len(v) for v in cache['nav']])}")
+      f"Loaded nav ({sum([len(v) for v in cache['nav']])}) and orbits ({sum([len(v) for v in cache['orbits']])}) cache with timestamp: {timestamp}. Unique orbit and nav sats: {list(cache['orbits'].keys())} {list(cache['nav'].keys())} " +
+      f"With time range: {[f'{start.as_datetime()}, {end.as_datetime()}' for (start,end) in self.astro_dog.orbit_fetched_times._ranges]}")
 
   def cache_ephemeris(self, t: GPSTime):
     if self.save_ephemeris and (self.last_cached_t is None or t - self.last_cached_t > SECS_IN_MIN):
@@ -93,10 +94,15 @@ class Laikad:
     if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
       min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 5
       pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
-      if len(pos_fix) > 0 and np.median(np.abs(pos_fix_residual)) < POS_FIX_RESIDUAL_THRESHOLD:
-        self.last_pos_fix = pos_fix[:3]
-        self.last_pos_residual = pos_fix_residual
+      if len(pos_fix) > 0:
         self.last_pos_fix_t = t
+        residual_median = np.median(np.abs(pos_fix_residual))
+        if np.median(np.abs(pos_fix_residual)) < POS_FIX_RESIDUAL_THRESHOLD:
+          cloudlog.debug(f"Pos fix is within threshold with median: {residual_median.round()}")
+          self.last_pos_fix = pos_fix[:3]
+          self.last_pos_residual = pos_fix_residual
+        else:
+          cloudlog.debug(f"Pos fix failed with median: {residual_median.round()}. All residuals: {np.round(pos_fix_residual)}")
     return self.last_pos_fix
 
   def process_ublox_msg(self, ublox_msg, ublox_mono_time: int, block=False):
@@ -114,10 +120,11 @@ class Laikad:
       new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
 
       processed_measurements = process_measurements(new_meas, self.astro_dog)
-
       est_pos = self.get_est_pos(t, processed_measurements)
 
       corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog) if len(est_pos) > 0 else []
+      if ublox_mono_time % 10 == 0:
+        cloudlog.debug(f"Measurements Incoming/Processed/Corrected: {len(new_meas), len(processed_measurements), len(corrected_measurements)}")
 
       self.update_localizer(est_pos, t, corrected_measurements)
       kf_valid = all(self.kf_valid(t))
@@ -211,8 +218,10 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types, cach
   try:
     astro_dog.get_orbit_data(t, only_predictions=True)
     cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
+    cloudlog.debug(f"Downloaded orbits ({sum([len(v) for v in astro_dog.orbits])}): {list(astro_dog.orbits.keys())}" +
+                   f"With time range: {[f'{start.as_datetime()}, {end.as_datetime()}' for (start,end) in astro_dog.orbit_fetched_times._ranges]}")
     return astro_dog.orbits, astro_dog.orbit_fetched_times, t
-  except (RuntimeError, ValueError, IOError) as e:
+  except (DownloadFailed, RuntimeError, ValueError, IOError) as e:
     cloudlog.warning(f"No orbit data found or parsing failure: {e}")
   return None, None, t
 

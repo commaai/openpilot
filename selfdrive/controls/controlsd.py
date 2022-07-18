@@ -96,7 +96,11 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      ignore = ['driverCameraState', 'managerState'] if SIMULATION else None
+      ignore = []
+      if SIMULATION:
+        ignore += ['driverCameraState', 'managerState']
+      if params.get_bool('WideCameraOnly'):
+        ignore += ['roadCameraState']
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState'] + self.camera_packets + joystick_packet,
@@ -224,12 +228,8 @@ class Controls:
     if not self.CP.notCar:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
-    # Handle car events. Ignore when CAN is invalid
-    if CS.canTimeout:
-      self.events.add(EventName.canBusMissing)
-    elif not CS.canValid:
-      self.events.add(EventName.canError)
-    else:
+    # Add car events, ignore if CAN isn't valid
+    if CS.canValid:
       self.events.add_from_msg(CS.events)
 
     # Create events for temperature, disk space, and memory
@@ -309,14 +309,19 @@ class Controls:
           self.events.add(EventName.cameraFrameRate)
     if self.rk.lagging:
       self.events.add(EventName.controlsdLagging)
-    if len(self.sm['radarState'].radarErrors):
+    if len(self.sm['radarState'].radarErrors) or not self.sm.all_checks(['radarState']):
       self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
+    if CS.canTimeout:
+      self.events.add(EventName.canBusMissing)
+    elif not CS.canValid:
+      self.events.add(EventName.canError)
 
     # generic catch-all. ideally, a more specific event should be added above instead
-    no_system_errors = len(self.events) != num_events
-    if (not self.sm.all_checks() or self.can_rcv_error) and no_system_errors and CS.canValid and not CS.canTimeout:
+    has_disable_events = self.events.any(ET.NO_ENTRY) and (self.events.any(ET.SOFT_DISABLE) or self.events.any(ET.IMMEDIATE_DISABLE))
+    no_system_errors = (not has_disable_events) or (len(self.events) == num_events)
+    if (not self.sm.all_checks() or self.can_rcv_error) and no_system_errors:
       if not self.sm.all_alive():
         self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
