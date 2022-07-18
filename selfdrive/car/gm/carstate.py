@@ -29,6 +29,7 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    ret.vEgoCluster = ret.vEgo
     ret.standstill = ret.vEgoRaw < 0.01
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]["PRNDL"], None))
 
@@ -135,9 +136,9 @@ class CarState(CarStateBase):
     ]
 
     checks = [
-      ("ASCMLKASteeringCmd", 10), # 10 Hz is the stock inactive rate (every 100ms). 
+      ("ASCMLKASteeringCmd", 10), # 10 Hz is the stock inactive rate (every 100ms).
       #                             While active 50 Hz (every 20 ms) is normal
-      #                             EPS will tolerate around 200ms when active before faulting 
+      #                             EPS will tolerate around 200ms when active before faulting
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK)
