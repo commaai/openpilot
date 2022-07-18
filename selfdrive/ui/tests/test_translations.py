@@ -61,6 +61,7 @@ class TestTranslations(unittest.TestCase):
             self.assertEqual(cur_translations, new_translations,
                              f"{file} ({name}) {file_ext.upper()} translation file out of date. Run selfdrive/ui/update_translations.py --release to update the translation files")
 
+  @unittest.skip("Only test unfinished translations before going to release")
   def test_unfinished_translations(self):
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
