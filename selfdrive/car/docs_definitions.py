@@ -12,9 +12,9 @@ GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 
 
 class Tier(Enum):
-  GOLD = "The best openpilot experience. Great highway driving and beyond."
-  SILVER = "A solid highway driving experience, but is limited by stock longitudinal. May be upgraded in the future."
-  BRONZE = "A good highway experience, but may have limited performance in traffic and on sharp turns."
+  GOLD = 0
+  SILVER = 1
+  BRONZE = 2
 
 
 class Column(Enum):
@@ -25,7 +25,6 @@ class Column(Enum):
   FSR_LONGITUDINAL = "Stop and Go"
   FSR_STEERING = "Steer to 0"
   STEERING_TORQUE = "Steering Torque"
-  MAINTAINED = "Actively Maintained"
 
 
 class Star(Enum):
@@ -82,15 +81,14 @@ class CarInfo:
       Column.FSR_LONGITUDINAL: Star.FULL if min_enable_speed <= 0. else Star.EMPTY,
       Column.FSR_STEERING: Star.FULL if min_steer_speed <= 0. else Star.EMPTY,
       # Column.STEERING_TORQUE set below
-      Column.MAINTAINED: Star.FULL if CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none else Star.EMPTY,
     }
 
     # Set steering torque star from max lateral acceleration
     if not math.isnan(CP.maxLateralAccel):
-      if CP.maxLateralAccel >= GREAT_TORQUE_THRESHOLD:
+      #if CP.maxLateralAccel >= GREAT_TORQUE_THRESHOLD:
+      #  self.row[Column.STEERING_TORQUE] = Star.FULL
+      if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
         self.row[Column.STEERING_TORQUE] = Star.FULL
-      elif CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
-        self.row[Column.STEERING_TORQUE] = Star.HALF
       else:
         self.row[Column.STEERING_TORQUE] = Star.EMPTY
 
@@ -105,7 +103,8 @@ class CarInfo:
       if footnote is not None and footnote.value.star is not None:
         self.row[column] = footnote.value.star
 
-    self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
+    ms = len(StarColumns)
+    self.tier = {ms: Tier.GOLD, ms-1: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
     return self
 
   @no_type_check
@@ -156,11 +155,6 @@ class Harness(Enum):
 
 STAR_DESCRIPTIONS = {
   "Gas & Brakes": {  # icon and row name
-    "openpilot Adaptive Cruise Control (ACC)": [  # star column
-      [Star.FULL.value, "openpilot is able to control the gas and brakes."],
-      [Star.HALF.value, "openpilot is able to control the gas and brakes with some restrictions."],
-      [Star.EMPTY.value, "The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system."],
-    ],
     Column.FSR_LONGITUDINAL.value: [
       [Star.FULL.value, "Adaptive Cruise Control (ACC) operates down to 0 mph."],
       [Star.EMPTY.value, "Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed."],
@@ -172,15 +166,8 @@ STAR_DESCRIPTIONS = {
       [Star.EMPTY.value, "No steering control below certain speeds."],
     ],
     Column.STEERING_TORQUE.value: [
-      [Star.FULL.value, "Car has enough steering torque to take tighter turns."],
-      [Star.HALF.value, "Car has enough steering torque for comfortable highway driving."],
+      [Star.FULL.value, "Car has enough steering torque to take tight turns."],
       [Star.EMPTY.value, "Limited ability to make turns."],
-    ],
-  },
-  "Support": {
-    Column.MAINTAINED.value: [
-      [Star.FULL.value, "Mainline software support, harness hardware sold by comma, lots of users, primary development target."],
-      [Star.EMPTY.value, "Low user count, community maintained, harness hardware not sold by comma."],
     ],
   },
 }
