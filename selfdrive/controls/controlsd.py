@@ -163,6 +163,7 @@ class Controls:
     self.can_rcv_error = False
     self.soft_disable_timer = 0
     self.v_cruise_kph = 255
+    self.v_cruise_cluster_kph = 255
     self.v_cruise_kph_last = 0
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
