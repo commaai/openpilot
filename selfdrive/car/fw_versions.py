@@ -228,7 +228,7 @@ def chunks(l, n=128):
 
 
 def build_fw_dict(fw_versions, filter_brand=None):
-  """Returns all fw versions for an address (from different requests or brands if filter not specified)"""
+  """Returns all FW versions for an address"""
 
   fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
