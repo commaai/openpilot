@@ -234,13 +234,15 @@ def chunks(l, n=128):
 
 
 def build_fw_dict(fw_versions, filter_brand=None):
-  fw_versions_dict = {}
+  """Returns all fw versions for an address (from different requests or brands if filter not specified)"""
+
+  fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
     if filter_brand is None or fw.brand == filter_brand:
       addr = fw.address
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
-      fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
-  return fw_versions_dict
+      fw_versions_dict[(addr, sub_addr)].add(fw.fwVersion)
+  return dict(fw_versions_dict)
 
 
 def get_brand_addrs():
@@ -277,17 +279,18 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
 
   match_count = 0
   candidate = None
-  for addr, version in fw_versions_dict.items():
-    # All cars that have this FW response on the specified address
-    candidates = all_fw_versions[(addr[0], addr[1], version)]
+  for addr, versions in fw_versions_dict.items():
+    for version in versions:
+      # All cars that have this FW response on the specified address
+      candidates = all_fw_versions[(addr[0], addr[1], version)]
 
-    if len(candidates) == 1:
-      match_count += 1
-      if candidate is None:
-        candidate = candidates[0]
-      # We uniquely matched two different cars. No fuzzy match possible
-      elif candidate != candidates[0]:
-        return set()
+      if len(candidates) == 1:
+        match_count += 1
+        if candidate is None:
+          candidate = candidates[0]
+        # We uniquely matched two different cars. No fuzzy match possible
+        elif candidate != candidates[0]:
+          return set()
 
   if match_count >= 2:
     if log:
@@ -309,23 +312,23 @@ def match_fw_to_car_exact(fw_versions_dict):
     for ecu, expected_versions in fws.items():
       ecu_type = ecu[0]
       addr = ecu[1:]
-      found_version = fw_versions_dict.get(addr, None)
-      if ecu_type == Ecu.esp and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and found_version is None:
+      found_versions = fw_versions_dict.get(addr, set())
+      if ecu_type == Ecu.esp and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and not len(found_versions):
         continue
 
       # On some Toyota models, the engine can show on two different addresses
-      if ecu_type == Ecu.engine and candidate in (TOYOTA.CAMRY, TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS) and found_version is None:
+      if ecu_type == Ecu.engine and candidate in (TOYOTA.CAMRY, TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS) and not len(found_versions):
         continue
 
       # Ignore non essential ecus
-      if ecu_type not in ESSENTIAL_ECUS and found_version is None:
+      if ecu_type not in ESSENTIAL_ECUS and not len(found_versions):
         continue
 
       # Virtual debug ecu doesn't need to match the database
       if ecu_type == Ecu.debug:
         continue
 
-      if found_version not in expected_versions:
+      if not any([found_version in expected_versions for found_version in found_versions]):
         invalid.append(candidate)
         break
 
@@ -343,8 +346,7 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
     # Until erroneous FW versions are removed, try to fingerprint on all possible combinations
     matches = set()
     fw_versions_dict = build_fw_dict(fw_versions, filter_brand=None)
-    for fw_versions_subset in all_subsets(fw_versions_dict.items()):
-      matches |= match_func(dict(fw_versions_subset))
+    matches |= match_func(fw_versions_dict)
 
     if len(matches):
       return exact_match, matches
@@ -413,9 +415,15 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
     car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
-    matches = match_fw_to_car_exact(build_fw_dict(car_fw))
-    if len(matches) == 1:
+
+    # TODO: Until erroneous FW versions are removed, try to fingerprint on all possible combinations so far
+    exact_match, matches = match_fw_to_car(all_car_fw, allow_fuzzy=False)
+    if exact_match and len(matches) == 1:
       break
+    all_fw_versions_dict = build_fw_dict(all_car_fw)
+    for fw_versions_subset in all_subsets(all_fw_versions_dict.items()):
+      if len(match_fw_to_car_exact(dict(fw_versions_subset))) == 1:
+        break
 
   return all_car_fw
 
