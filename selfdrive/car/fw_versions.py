@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import itertools
 import struct
 import traceback
 from collections import defaultdict
@@ -22,11 +21,6 @@ ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu
 
 def p16(val):
   return struct.pack("!H", val)
-
-
-def all_subsets(iterable):
-  s = list(iterable)
-  return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
 
 
 TESTER_PRESENT_REQUEST = bytes([uds.SERVICE_TYPE.TESTER_PRESENT, 0x0])
@@ -418,12 +412,8 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
 
     # TODO: Until erroneous FW versions are removed, try to fingerprint on all possible combinations so far
     exact_match, matches = match_fw_to_car(all_car_fw, allow_fuzzy=False)
-    if exact_match and len(matches) == 1:
+    if len(matches) == 1:
       break
-    all_fw_versions_dict = build_fw_dict(all_car_fw)
-    for fw_versions_subset in all_subsets(all_fw_versions_dict.items()):
-      if len(match_fw_to_car_exact(dict(fw_versions_subset))) == 1:
-        break
 
   return all_car_fw
 
