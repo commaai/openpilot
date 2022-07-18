@@ -76,6 +76,7 @@ class CarState(CarStateBase):
         conversion = CV.MPH_TO_MS if cp.vl["HUD"]["SPEED_MPH"] else CV.KPH_TO_MS
       speed -= 1  # Speed on HUD is always 1 lower than actually sent on can bus
       ret.cruiseState.speed = speed * conversion
+      ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     if self.CP.carFingerprint == CAR.ALTIMA:
       ret.steeringTorque = cp_cam.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]

@@ -59,6 +59,7 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = cp.vl["DI_state"]["DI_digitalSpeed"] * CV.KPH_TO_MS
     elif speed_units == "MPH":
       ret.cruiseState.speed = cp.vl["DI_state"]["DI_digitalSpeed"] * CV.MPH_TO_MS
+    ret.cruiseState.speedCluster = ret.cruiseState.speed
     ret.cruiseState.available = ((cruise_state == "STANDBY") or ret.cruiseState.enabled)
     ret.cruiseState.standstill = False # This needs to be false, since we can resume from stop without sending anything special
 

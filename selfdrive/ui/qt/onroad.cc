@@ -184,7 +184,7 @@ void NvgWindow::updateState(const UIState &s) {
 
   const auto cs = sm["controlsState"].getControlsState();
 
-  float set_speed = cs_alive ? cs.getVCruise() : SET_SPEED_NA;
+  float set_speed = cs_alive ? cs.getVCruiseCluster() : SET_SPEED_NA;
   bool cruise_set = set_speed > 0 && (int)set_speed != SET_SPEED_NA;
   if (cruise_set && !s.scene.is_metric) {
     set_speed *= KM_TO_MILE;
