@@ -277,35 +277,6 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   pm->send("thumbnail", msg);
 }
 
-// TODO: Remove
-float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
-  int lum_med;
-  uint32_t lum_binning[256] = {0};
-  const uint8_t *pix_ptr = b->cur_yuv_buf->y;
-
-  unsigned int lum_total = 0;
-  for (int y = y_start; y < y_end; y += y_skip) {
-    for (int x = x_start; x < x_end; x += x_skip) {
-      uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
-      lum_binning[lum]++;
-      lum_total += 1;
-    }
-  }
-
-
-  // Find mean lumimance value
-  unsigned int lum_cur = 0;
-  for (lum_med = 255; lum_med >= 0; lum_med--) {
-    lum_cur += lum_binning[lum_med];
-
-    if (lum_cur >= lum_total / 2) {
-      break;
-    }
-  }
-
-  return lum_med / 256.0;
-}
-
 void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
   const char *thread_name = nullptr;
   if (cs == &cameras->road_cam) {
