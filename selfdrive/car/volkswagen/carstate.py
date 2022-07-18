@@ -176,6 +176,7 @@ class CarState(CarStateBase):
       ("GRA_Tip_Wiederaufnahme", "GRA_ACC_01"),  # ACC button, resume
       ("GRA_Verstellung_Zeitluecke", "GRA_ACC_01"),  # ACC button, time gap adj
       ("GRA_Typ_Hauptschalter", "GRA_ACC_01"),   # ACC main button type
+      ("GRA_Codierung", "GRA_ACC_01"),           # ACC button configuration/coding
       ("GRA_Tip_Stufe_2", "GRA_ACC_01"),         # unknown related to stalk type
       ("GRA_ButtonTypeInfo", "GRA_ACC_01"),      # unknown related to stalk type
       ("COUNTER", "GRA_ACC_01"),                 # GRA_ACC_01 CAN message counter
