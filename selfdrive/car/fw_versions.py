@@ -411,7 +411,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
     all_car_fw.extend(car_fw)
 
     # TODO: Until erroneous FW versions are removed, try to fingerprint on all possible combinations so far
-    exact_match, matches = match_fw_to_car(all_car_fw, allow_fuzzy=False)
+    _, matches = match_fw_to_car(all_car_fw, allow_fuzzy=False)
     if len(matches) == 1:
       break
 
