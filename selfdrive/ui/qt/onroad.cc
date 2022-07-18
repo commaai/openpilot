@@ -190,7 +190,7 @@ void NvgWindow::updateState(const UIState &s) {
     set_speed *= KM_TO_MILE;
   }
 
-  float cur_speed = cs_alive ? std::max<float>(0.0, sm["carState"].getCarState().getVEgo()) : 0.0;
+  float cur_speed = cs_alive ? std::max<float>(0.0, sm["carState"].getCarState().getVEgoCluster()) : 0.0;
   cur_speed  *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
   auto speed_limit_sign = sm["navInstruction"].getNavInstruction().getSpeedLimitSign();

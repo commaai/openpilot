@@ -15,6 +15,7 @@ class CarState(CarStateBase):
     ret.vEgoRaw = ((ret.wheelSpeeds.fl + ret.wheelSpeeds.fr) / 2.) * self.CP.wheelSpeedFactor
 
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    ret.vEgoCluster = ret.vEgo
     ret.standstill = False
 
     ret.steerFaultPermanent = any([cp.vl['VAR_VALUES']['MOTOR_ERR_L'], cp.vl['VAR_VALUES']['MOTOR_ERR_R'],
