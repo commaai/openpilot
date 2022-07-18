@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import itertools
 import struct
 import traceback
 from collections import defaultdict
@@ -21,6 +22,11 @@ ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu
 
 def p16(val):
   return struct.pack("!H", val)
+
+
+def all_subsets(iterable):
+  s = list(iterable)
+  return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
 
 
 TESTER_PRESENT_REQUEST = bytes([uds.SERVICE_TYPE.TESTER_PRESENT, 0x0])
@@ -327,19 +333,18 @@ def match_fw_to_car_exact(fw_versions_dict):
 
 
 def match_fw_to_car(fw_versions, allow_fuzzy=True):
-  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
-
   # Try exact matching first
   exact_matches = [(True, match_fw_to_car_exact)]
   if allow_fuzzy:
     exact_matches.append((False, match_fw_to_car_fuzzy))
 
   for exact_match, match_func in exact_matches:
-    # For each brand, attempt to fingerprint using FW returned from its queries
+    # TODO: For each brand, attempt to fingerprint using FW returned from its queries
+    # Until erroneous FW versions are removed, try to fingerprint on all possible combinations
     matches = set()
-    for brand in versions.keys():
-      fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-      matches |= match_func(fw_versions_dict)
+    fw_versions_dict = build_fw_dict(fw_versions, filter_brand=None)
+    for fw_versions_subset in all_subsets(fw_versions_dict.items()):
+      matches |= match_func(dict(fw_versions_subset))
 
     if len(matches):
       return exact_match, matches
