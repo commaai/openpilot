@@ -630,10 +630,7 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
   exposure_time = 5;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (dc_gain_enabled ? DC_GAIN : 1) * sensor_analog_gains[gain_idx] * exposure_time;
 
-<<<<<<< HEAD:system/camerad/cameras/camera_qcom2.cc
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, yuv_type);
-=======
-  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 
   // Initialize histogram bins
   int val = 0;
@@ -652,7 +649,6 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
     val += width;
     histogram_bin_widths[i] = width;
   }
->>>>>>> 699ced2cf (do AE on sensor histogram):selfdrive/camerad/cameras/camera_qcom2.cc
 }
 
 void CameraState::camera_open() {
@@ -695,6 +691,17 @@ void CameraState::camera_open() {
   LOG("-- Configuring sensor");
   if (camera_id == CAMERA_ID_AR0231) {
     sensors_i2c(init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
+
+    // TODO: make camera_num a proper enum
+    // TODO: check orientation/flip
+    if (camera_num == 0) { // Wide road
+      ar0231_set_histogram_region(96, 250, 1734, 524);
+    } else if (camera_num == 1) { // Road
+      ar0231_set_histogram_region(96, 160, 1734, 986);
+    } else if (camera_num == 2) { // Driver
+      ar0231_set_histogram_region(96, 242, 1736, 906);
+    }
+
   } else if (camera_id == CAMERA_ID_IMX390) {
     sensors_i2c(init_array_imx390, std::size(init_array_imx390), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   } else {
@@ -1138,6 +1145,17 @@ void CameraState::handle_camera_event(void *evdat) {
       skipped = true;
     }
   }
+}
+
+void CameraState::ar0231_set_histogram_region(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+  struct i2c_random_wr_payload i2c_cmds[] =
+  {
+    {0x3140, x},
+    {0x3142, y},
+    {0x3144, w},
+    {0x3146, h},
+  };
+  sensors_i2c(i2c_cmds, sizeof(i2c_cmds)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
 }
 
 void CameraState::set_camera_exposure(float grey_frac) {

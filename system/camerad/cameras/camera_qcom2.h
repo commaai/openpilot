@@ -59,6 +59,7 @@ public:
   void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type, bool enabled);
   void camera_close();
 
+  void ar0231_set_histogram_region(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
   std::map<uint16_t, uint16_t> ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs);
   double get_geometric_mean(VisionBuf *camera_buf);
   std::vector<int> get_histogram(VisionBuf *camera_buf);
