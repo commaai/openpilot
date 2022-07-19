@@ -64,15 +64,18 @@ common_model = lenv.Object(common_src)
 # build thneed model
 if use_thneed and arch == "larch64":
   fn = File("models/supercombo").abspath
-  compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
-  cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} --in {fn}.dlc --out {fn}.thneed --binary --optimize"
+  cmd = f"cd {Dir('#').abspath}/tinygrad && OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 FLOAT16=1 MATMUL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
+  lenv.Command(fn + ".thneed", [fn + ".onnx"], cmd)
 
-  lib_paths = ':'.join(Dir(p).abspath for p in lenv["LIBPATH"])
-  kernel_path = os.path.join(Dir('.').abspath, "thneed", "kernels")
-  cenv = Environment(ENV={'LD_LIBRARY_PATH': f"{lib_paths}:{lenv['ENV']['LD_LIBRARY_PATH']}", 'KERNEL_PATH': kernel_path})
+  #compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
+  #cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} --in {fn}.dlc --out {fn}.thneed --binary --optimize"
 
-  kernels = [os.path.join(kernel_path, x) for x in os.listdir(kernel_path) if x.endswith(".cl")]
-  cenv.Command(fn + ".thneed", [fn + ".dlc", kernels, compiler], cmd)
+  #lib_paths = ':'.join(Dir(p).abspath for p in lenv["LIBPATH"])
+  #kernel_path = os.path.join(Dir('.').abspath, "thneed", "kernels")
+  #cenv = Environment(ENV={'LD_LIBRARY_PATH': f"{lib_paths}:{lenv['ENV']['LD_LIBRARY_PATH']}", 'KERNEL_PATH': kernel_path})
+
+  #kernels = [os.path.join(kernel_path, x) for x in os.listdir(kernel_path) if x.endswith(".cl")]
+  #cenv.Command(fn + ".thneed", [fn + ".dlc", kernels, compiler], cmd)
 
 lenv.Program('_dmonitoringmodeld', [
     "dmonitoringmodeld.cc",

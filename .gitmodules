@@ -16,3 +16,6 @@
 [submodule "body"]
   path = body
   url = ../../commaai/body.git
+[submodule "tinygrad"]
+	path = tinygrad
+	url = https://github.com/geohot/tinygrad.git
