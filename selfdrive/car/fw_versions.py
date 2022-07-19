@@ -217,7 +217,14 @@ REQUESTS: List[Request] = [
     "ford",
     [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.engine],
+  ),
+  Request(
+    "ford",
+    [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
+    [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
     bus=0,
+    whitelist_ecus=[Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera],
   ),
 ]
 
