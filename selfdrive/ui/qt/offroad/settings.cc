@@ -256,9 +256,10 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
   connect(uiState(), &UIState::offroadTransition, updateBtn, &QPushButton::setEnabled);
 
-  branchSwitcherBtn = new ButtonControl(tr("Switch Branch"), tr("ENTER"));
+  branchSwitcherBtn = new ButtonControl(tr("Switch Branch"), tr("ENTER"), tr("The new branch will be pulled the next time the updater runs."));
   connect(branchSwitcherBtn, &ButtonControl::clicked, [=]() {
-    QString branch = InputDialog::getText(tr("Enter name of new branch"), this);
+    QString branch = InputDialog::getText(tr("Enter branch name"), this, tr("The new branch will be pulled the next time the updater runs."),
+                                          false, -1, QString::fromStdString(params.get("SwitchToBranch")));
     if (branch.isEmpty()) {
       params.remove("SwitchToBranch");
     } else {
