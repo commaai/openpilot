@@ -48,17 +48,7 @@ def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[En
   return None
 
 
-def get_model_years(year_str):
-  year_set = set()
-  for group in re.split(", | ", year_str):
-    if re.fullmatch("\\d{4}", group):
-      year_set.add(int(group))
-    elif re.fullmatch("\\d{4}-\\d{2}", group):
-      year_set |= set(range(int(group[:4]), int("20" + group[-2:]) + 1))
-  return year_set
-
-
-def split_years(model):
+def split_years(model: str) -> str:
   match = re.search(MODEL_YEARS_RE, model)
   years = ""
   if match is not None:
