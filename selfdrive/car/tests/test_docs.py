@@ -4,6 +4,7 @@ import unittest
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
 from selfdrive.car.docs_definitions import Column, Star
+from selfdrive.car.honda.values import CAR as HONDA
 
 
 class TestCarDocs(unittest.TestCase):
@@ -11,7 +12,7 @@ class TestCarDocs(unittest.TestCase):
     self.all_cars = get_all_car_info()
 
   def test_generator(self):
-    generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE)
+    generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE, False)
     with open(CARS_MD_OUT, "r") as f:
       current_cars_md = f.read()
 
@@ -43,8 +44,9 @@ class TestCarDocs(unittest.TestCase):
     # Asserts brand-specific assumptions around steering torque star
     for car in self.all_cars:
       with self.subTest(car=car):
-        if car.car_name == "honda":
-          self.assertIn(car.row[Column.STEERING_TORQUE], (Star.EMPTY, Star.HALF), f"{car.name} has full torque star")
+        # honda sanity check, it's the definition of a no torque star
+        if car.car_fingerprint in (HONDA.ACCORD, HONDA.CIVIC, HONDA.CRV, HONDA.ODYSSEY, HONDA.PILOT):
+          self.assertEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has full torque star")
         elif car.car_name in ("toyota", "hyundai"):
           self.assertNotEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has no torque star")
 
