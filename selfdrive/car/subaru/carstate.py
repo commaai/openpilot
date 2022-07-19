@@ -173,7 +173,7 @@ class CarState(CarStateBase):
         ("Standstill_2", "ES_Distance"),
         ("Cruise_Fault", "ES_Distance"),
         ("Signal5", "ES_Distance"),
-        ("Counter", "ES_Distance"),
+        ("COUNTER", "ES_Distance"),
         ("Signal6", "ES_Distance"),
         ("Cruise_Button", "ES_Distance"),
         ("Signal7", "ES_Distance"),
@@ -188,7 +188,7 @@ class CarState(CarStateBase):
         ("Cruise_Set_Speed", "ES_DashStatus"),
         ("Conventional_Cruise", "ES_DashStatus"),
 
-        ("Counter", "ES_Distance"),
+        ("COUNTER", "ES_Distance"),
         ("Signal1", "ES_Distance"),
         ("Cruise_Fault", "ES_Distance"),
         ("Cruise_Throttle", "ES_Distance"),
@@ -206,7 +206,7 @@ class CarState(CarStateBase):
         ("Cruise_Resume", "ES_Distance"),
         ("Signal6", "ES_Distance"),
 
-        ("Counter", "ES_LKAS_State"),
+        ("COUNTER", "ES_LKAS_State"),
         ("LKAS_Alert_Msg", "ES_LKAS_State"),
         ("Signal1", "ES_LKAS_State"),
         ("LKAS_ACTIVE", "ES_LKAS_State"),
