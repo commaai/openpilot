@@ -311,7 +311,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
 
   cur_hash = run(["git", "rev-parse", "HEAD"], OVERLAY_MERGED).rstrip()
   upstream_hash = run(["git", "rev-parse", "@{u}"], OVERLAY_MERGED).rstrip()
-  new_version = cur_hash != upstream_hash
+  new_version: bool = cur_hash != upstream_hash
   git_fetch_result = check_git_fetch_result(git_fetch_output)
 
   new_branch = Params().get("SwitchToBranch", encoding='utf8')
