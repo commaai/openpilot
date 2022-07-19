@@ -42,7 +42,7 @@ def get_all_car_info() -> List[CarInfo]:
       all_car_info.append(_car_info.init(CP, ALL_FOOTNOTES))
 
   # Sort cars by make and model + year
-  sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: (car.make + car.model + " " + car.years).lower())
+  sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: car.name.lower())
   return sorted_cars
 
 
