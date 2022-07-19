@@ -1,5 +1,3 @@
-import math
-
 from cereal import car
 from collections import namedtuple
 from dataclasses import dataclass
@@ -85,13 +83,11 @@ class CarInfo:
     }
 
     # Set steering torque star from max lateral acceleration
-    if not math.isnan(CP.maxLateralAccel):
-      #if CP.maxLateralAccel >= GREAT_TORQUE_THRESHOLD:
-      #  self.row[Column.STEERING_TORQUE] = Star.FULL
-      if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
-        self.row[Column.STEERING_TORQUE] = Star.FULL
-      else:
-        self.row[Column.STEERING_TORQUE] = Star.EMPTY
+    assert CP.maxLateralAccel > 0.1
+    if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
+      self.row[Column.STEERING_TORQUE] = Star.FULL
+    else:
+      self.row[Column.STEERING_TORQUE] = Star.EMPTY
 
     if CP.notCar:
       for col in StarColumns:

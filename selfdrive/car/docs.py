@@ -75,5 +75,5 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   with open(args.out, 'w') as f:
-    f.write(generate_cars_md(get_all_car_info(), args.template, args.tier_columns, ))
+    f.write(generate_cars_md(get_all_car_info(), args.template, args.tier_columns))
   print(f"Generated and written to {args.out}")
