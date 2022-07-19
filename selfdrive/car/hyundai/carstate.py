@@ -142,7 +142,7 @@ class CarState(CarStateBase):
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
 
     gear = cp.vl["ACCELERATOR"]["GEAR"]
-    self.parse_gear_shifter(self.shifter_values.get(gear))
+    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     # TODO: figure out positions
     ret.wheelSpeeds = self.get_wheel_speeds(
