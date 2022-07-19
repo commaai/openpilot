@@ -708,33 +708,33 @@ location set</source>
 <context>
     <name>SettingsWindow</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="337"/>
+        <location filename="../qt/offroad/settings.cc" line="338"/>
         <source>×</source>
         <translation>×</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="363"/>
+        <location filename="../qt/offroad/settings.cc" line="364"/>
         <source>Device</source>
         <translation>设备</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="364"/>
-        <location filename="../qt/offroad/settings.cc" line="403"/>
+        <location filename="../qt/offroad/settings.cc" line="365"/>
+        <location filename="../qt/offroad/settings.cc" line="404"/>
         <source>Network</source>
         <translation>网络</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="365"/>
+        <location filename="../qt/offroad/settings.cc" line="366"/>
         <source>Toggles</source>
         <translation>设定</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="366"/>
+        <location filename="../qt/offroad/settings.cc" line="367"/>
         <source>Software</source>
         <translation>软件</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="371"/>
+        <location filename="../qt/offroad/settings.cc" line="372"/>
         <source>Navigation</source>
         <translation>导航</translation>
     </message>
@@ -1023,33 +1023,39 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../qt/offroad/settings.cc" line="259"/>
         <location filename="../qt/offroad/settings.cc" line="261"/>
-        <source>Enter name of new branch</source>
+        <source>The new branch will be pulled the next time the updater runs.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="271"/>
+        <location filename="../qt/offroad/settings.cc" line="261"/>
+        <source>Enter branch name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="272"/>
         <source>UNINSTALL</source>
         <translation>卸载</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="271"/>
+        <location filename="../qt/offroad/settings.cc" line="272"/>
         <source>Uninstall %1</source>
         <translation>卸载 %1</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="273"/>
+        <location filename="../qt/offroad/settings.cc" line="274"/>
         <source>Are you sure you want to uninstall?</source>
         <translation>您确定要卸载吗？</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="290"/>
+        <location filename="../qt/offroad/settings.cc" line="291"/>
         <source>failed to fetch update</source>
         <translation>获取更新失败</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="291"/>
-        <location filename="../qt/offroad/settings.cc" line="312"/>
+        <location filename="../qt/offroad/settings.cc" line="292"/>
+        <location filename="../qt/offroad/settings.cc" line="313"/>
         <source>CHECK</source>
         <translation>查看</translation>
     </message>
