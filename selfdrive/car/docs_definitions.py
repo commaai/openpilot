@@ -1,3 +1,5 @@
+import re
+
 from cereal import car
 from collections import namedtuple
 from dataclasses import dataclass
@@ -43,6 +45,17 @@ def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[En
       if fn.value.column == column:
         return fn
   return None
+
+
+def get_model_years(year_str):
+  year_set = set()
+  for group in re.split(", | ", year_str):
+    if re.fullmatch("\\d{4}", group):
+      year_set.add(int(group))
+    elif re.fullmatch("\\d{4}-\\d{2}", group):
+      year_set |= set(range(int(group[:4]), int("20" + group[-2:]) + 1))
+  return year_set
+
 
 
 @dataclass
