@@ -69,7 +69,7 @@ if GetOption('extras'):
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
                  LIBS=qt_libs + ['curl', 'common', 'json11'])
 
-cmd = f"selfdrive/ui/update_translations.py --release"
+cmd = f"selfdrive/ui/update_translations.py"
 qt_env.Command('', '', cmd)
 
 if GetOption('extras'):
