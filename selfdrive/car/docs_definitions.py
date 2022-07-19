@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Tuple, Union, no_type_check
 TACO_TORQUE_THRESHOLD = 2.5  # m/s^2
 GREAT_TORQUE_THRESHOLD = 1.4  # m/s^2
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
-MODEL_YEARS_RE = r"((\d{4}-\d{2})|(\d{4}))(,|$)"
+MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
 
 
 class Tier(Enum):
