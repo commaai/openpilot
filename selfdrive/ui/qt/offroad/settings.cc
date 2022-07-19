@@ -13,6 +13,7 @@
 #endif
 
 #include "common/params.h"
+#include "common/watchdog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
@@ -23,6 +24,7 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
@@ -70,6 +72,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Use 24h format instead of am/pm"),
       "../assets/offroad/icon_metric.png",
     },
+    {
+      "NavSettingLeftSide",
+      tr("Show Map on Left Side of UI"),
+      tr("Show map on left side when in split screen view."),
+      "../assets/offroad/icon_road.png",
+    },
 #endif
 
   };
@@ -101,7 +109,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   // offroad-only buttons
 
   auto dcamBtn = new ButtonControl(tr("Driver Camera"), tr("PREVIEW"),
-                                   tr("Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)"));
+                                   tr("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"));
   connect(dcamBtn, &ButtonControl::clicked, [=]() { emit showDriverView(); });
   addItem(dcamBtn);
 
@@ -132,6 +140,20 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     });
     addItem(regulatoryBtn);
   }
+
+  auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
+  connect(translateBtn, &ButtonControl::clicked, [=]() {
+    QMap<QString, QString> langs = getSupportedLanguages();
+    QString currentLang = QString::fromStdString(Params().get("LanguageSetting"));
+    QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(currentLang), this);
+    if (!selection.isEmpty()) {
+      // put language setting, exit Qt UI, and trigger fast restart
+      Params().put("LanguageSetting", langs[selection].toStdString());
+      qApp->exit(18);
+      watchdog_kick(0);
+    }
+  });
+  addItem(translateBtn);
 
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {
@@ -232,9 +254,21 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
     }
     std::system("pkill -1 -f selfdrive.updated");
   });
+  connect(uiState(), &UIState::offroadTransition, updateBtn, &QPushButton::setEnabled);
 
+  branchSwitcherBtn = new ButtonControl(tr("Switch Branch"), tr("ENTER"));
+  connect(branchSwitcherBtn, &ButtonControl::clicked, [=]() {
+    QString branch = InputDialog::getText(tr("Enter name of new branch"), this);
+    if (branch.isEmpty()) {
+      params.remove("SwitchToBranch");
+    } else {
+      params.put("SwitchToBranch", branch.toStdString());
+    }
+    std::system("pkill -1 -f selfdrive.updated");
+  });
+  connect(uiState(), &UIState::offroadTransition, branchSwitcherBtn, &QPushButton::setEnabled);
 
-  auto uninstallBtn = new ButtonControl(tr("Uninstall ") + getBrand(), tr("UNINSTALL"));
+  auto uninstallBtn = new ButtonControl(tr("Uninstall %1").arg(getBrand()), tr("UNINSTALL"));
   connect(uninstallBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to uninstall?"), this)) {
       params.putBool("DoUninstall", true);
@@ -242,8 +276,11 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
   connect(uiState(), &UIState::offroadTransition, uninstallBtn, &QPushButton::setEnabled);
 
-  QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl, uninstallBtn};
+  QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, branchSwitcherBtn, gitBranchLbl, gitCommitLbl, osVersionLbl, uninstallBtn};
   for (QWidget* w : widgets) {
+    if (w == branchSwitcherBtn && params.getBool("IsTestedBranch")) {
+      continue;
+    }
     addItem(w);
   }
 
@@ -277,10 +314,6 @@ void SoftwarePanel::updateLabels() {
   gitBranchLbl->setText(QString::fromStdString(params.get("GitBranch")));
   gitCommitLbl->setText(QString::fromStdString(params.get("GitCommit")).left(10));
   osVersionLbl->setText(QString::fromStdString(Hardware::get_os_version()).trimmed());
-}
-
-QWidget *network_panel(QWidget *parent) {
-  return new Networking(parent);
 }
 
 void SettingsWindow::showEvent(QShowEvent *event) {
@@ -328,7 +361,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},
-    {tr("Network"), network_panel(this)},
+    {tr("Network"), new Networking(this)},
     {tr("Toggles"), new TogglesPanel(this)},
     {tr("Software"), new SoftwarePanel(this)},
   };

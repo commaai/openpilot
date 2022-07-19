@@ -52,6 +52,12 @@ void OnroadWindow::updateState(const UIState &s) {
     alerts->updateAlert(alert, bgColor);
   }
 
+  if (s.scene.map_on_left) {
+    split->setDirection(QBoxLayout::LeftToRight);
+  } else {
+    split->setDirection(QBoxLayout::RightToLeft);
+  }
+
   nvg->updateState(s);
 
   if (bg != bgColor) {
@@ -80,7 +86,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
       QObject::connect(uiState(), &UIState::offroadTransition, m, &MapWindow::offroadTransition);
 
       m->setFixedWidth(topWidget(this)->width() / 2);
-      split->addWidget(m, 0, Qt::AlignRight);
+      split->insertWidget(0, m);
 
       // Make map visible after adding to split
       m->offroadTransition(offroad);
@@ -296,7 +302,7 @@ void NvgWindow::drawHud(QPainter &p) {
   // US/Canada (MUTCD style) sign
   if (has_us_speed_limit) {
     const int border_width = 6;
-    const int sign_width = (speedLimitStr.size() >= 3) ? 199 : 148;
+    const int sign_width = rect_width - 24;
     const int sign_height = 186;
 
     // White outer square
