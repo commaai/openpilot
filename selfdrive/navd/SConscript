@@ -6,18 +6,13 @@ base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
 if arch == 'larch64':
   base_libs.append('EGL')
 
-base_libs += ['qmapboxgl']
+if arch in ['larch64', 'x86_64']:
+  if arch == 'x86_64':
+    rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
+    qt_env["RPATH"] += rpath
 
-maps = arch in ['larch64', 'x86_64']
+  qt_libs = ["qt_widgets", "qt_util", "qmapboxgl"] + base_libs
 
-if maps and arch == 'x86_64':
-  rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
-  qt_env["RPATH"] += rpath
-
-qt_libs = ["qt_widgets", "qt_util"] + base_libs
-
-
-if maps:
   nav_src = ["main.cc", "map_renderer.cc"]
   qt_env.Program("map_renderer", nav_src, LIBS=qt_libs + ['common', 'json11'])
 
