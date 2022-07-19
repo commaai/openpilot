@@ -28,8 +28,6 @@ jobs:
         BRANCH: badges
 
     - uses: actions/checkout@v3
-      with:
-        ref: ${{ steps.coverage.outputs.branch }}
 
     # Create the directory where badges will be saved, if needed
     - name: Create destination directory
