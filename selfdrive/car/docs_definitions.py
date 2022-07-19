@@ -1,12 +1,13 @@
+import re
+
 from cereal import car
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Union, no_type_check
+from typing import Dict, List, Optional, Tuple, Union, no_type_check
 
-TACO_TORQUE_THRESHOLD = 2.5  # m/s^2
-GREAT_TORQUE_THRESHOLD = 1.4  # m/s^2
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
+MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
 
 
 class Tier(Enum):
@@ -45,6 +46,16 @@ def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[En
   return None
 
 
+def split_name(name: str) -> Tuple[str, str, str]:
+  make, model = name.split(" ", 1)
+  years = ""
+  match = re.search(MODEL_YEARS_RE, model)
+  if match is not None:
+    years = model[match.start():]
+    model = model[:match.start() - 1]
+  return make, model, years
+
+
 @dataclass
 class CarInfo:
   name: str
@@ -55,7 +66,7 @@ class CarInfo:
   min_enable_speed: Optional[float] = None
   harness: Optional[Enum] = None
 
-  def init(self, CP: car.CarParams, non_tested_cars: List[str], all_footnotes: Dict[Enum, int]):
+  def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     # TODO: set all the min steer speeds in carParams and remove this
     min_steer_speed = CP.minSteerSpeed
     if self.min_steer_speed is not None:
@@ -71,7 +82,7 @@ class CarInfo:
 
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
-    self.make, self.model = self.name.split(' ', 1)
+    self.make, self.model, self.years = split_name(self.name)
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
@@ -80,15 +91,13 @@ class CarInfo:
       Column.LONGITUDINAL: Star.FULL if CP.openpilotLongitudinalControl and not CP.radarOffCan else Star.EMPTY,
       Column.FSR_LONGITUDINAL: Star.FULL if min_enable_speed <= 0. else Star.EMPTY,
       Column.FSR_STEERING: Star.FULL if min_steer_speed <= 0. else Star.EMPTY,
-      # Column.STEERING_TORQUE set below
+      Column.STEERING_TORQUE: Star.EMPTY,
     }
 
     # Set steering torque star from max lateral acceleration
     assert CP.maxLateralAccel > 0.1
     if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
       self.row[Column.STEERING_TORQUE] = Star.FULL
-    else:
-      self.row[Column.STEERING_TORQUE] = Star.EMPTY
 
     if CP.notCar:
       for col in StarColumns:
@@ -105,7 +114,7 @@ class CarInfo:
     full_stars = [s for col, s in self.row.items() if col in TierColumns].count(Star.FULL)
     if full_stars == len(TierColumns):
       self.tier = Tier.GOLD
-    elif full_stars == (len(TierColumns)-1):
+    elif full_stars == len(TierColumns) - 1:
       self.tier = Tier.SILVER
     else:
       self.tier = Tier.BRONZE
@@ -117,6 +126,8 @@ class CarInfo:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
       item = star_icon.format(item.value)
+    elif column == Column.MODEL and len(self.years):
+      item += f" {self.years}"
 
     footnote = get_footnote(self.footnotes, column)
     if footnote is not None:

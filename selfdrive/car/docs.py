@@ -10,7 +10,6 @@ from common.basedir import BASEDIR
 from selfdrive.car.docs_definitions import STAR_DESCRIPTIONS, StarColumns, TierColumns, CarInfo, Column, Star
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
-from selfdrive.car.tests.routes import non_tested_cars
 
 
 def get_all_footnotes() -> Dict[Enum, int]:
@@ -40,10 +39,10 @@ def get_all_car_info() -> List[CarInfo]:
       car_info = (car_info,)
 
     for _car_info in car_info:
-      all_car_info.append(_car_info.init(CP, non_tested_cars, ALL_FOOTNOTES))
+      all_car_info.append(_car_info.init(CP, ALL_FOOTNOTES))
 
   # Sort cars by make and model + year
-  sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: (car.make + car.model).lower())
+  sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: car.name.lower())
   return sorted_cars
 
 
