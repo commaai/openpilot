@@ -1,16 +1,11 @@
 #include <QApplication>
-#include <QCommandLineParser>
 #include <QDebug>
-#include <QThread>
 #include <csignal>
 
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
-
 #include "selfdrive/navd/map_renderer.h"
-
 #include "selfdrive/hardware/hw.h"
-#include "common/params.h"
 
 
 
