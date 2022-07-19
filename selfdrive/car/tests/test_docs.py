@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import unittest
 
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
@@ -49,6 +50,11 @@ class TestCarDocs(unittest.TestCase):
           self.assertEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has full torque star")
         elif car.car_name in ("toyota", "hyundai"):
           self.assertNotEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has no torque star")
+
+  def test_year_format(self):
+    for car in self.all_cars:
+      with self.subTest(car=car):
+        self.assertIsNone(re.search(r"\d{4}-\d{4}", car.name), f"Format years correctly: {car.name}")
 
 
 if __name__ == "__main__":
