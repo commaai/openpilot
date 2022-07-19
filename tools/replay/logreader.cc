@@ -47,22 +47,22 @@ LogReader::~LogReader() {
 }
 
 bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
-  FileReader f(local_cache, chunk_size, retries);
-  std::string data = f.read(url, abort);
-  if (data.empty()) return false;
+  raw_ = FileReader(local_cache, chunk_size, retries).read(url, abort);
+  if (raw_.empty()) return false;
 
-  return load((std::byte*)data.data(), data.size(), abort);
+  if (url.find(".bz2") != std::string::npos) {
+    raw_ = decompressBZ2(raw_, abort);
+    if (raw_.empty()) return false;
+  }
+  return parse(abort);
 }
 
 bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abort) {
-  raw_ = decompressBZ2(data, size, abort);
-  if (raw_.empty()) {
-    if (!(abort && *abort)) {
-      rWarning("failed to decompress log");
-    }
-    return false;
-  }
+  raw_.assign((const char *)data, size);
+  return parse(abort);
+}
 
+bool LogReader::parse(std::atomic<bool> *abort) {
   try {
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
     while (words.size() > 0 && !(abort && *abort)) {
