@@ -48,12 +48,11 @@ def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[En
 
 def split_name(name: str) -> Tuple[str, str, str]:
   make, model = name.split(" ", 1)
-  match = re.search(MODEL_YEARS_RE, model)
   years = ""
+  match = re.search(MODEL_YEARS_RE, model)
   if match is not None:
     years = model[match.start():]
     model = model[:match.start() - 1]
-
   return make, model, years
 
 
