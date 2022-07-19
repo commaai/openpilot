@@ -1,4 +1,4 @@
-def create_pq_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
+def create_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
   values = {
     "LM_Offset": abs(apply_steer),
     "LM_OffSign": 1 if apply_steer < 0 else 0,
@@ -8,7 +8,7 @@ def create_pq_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
 
   return packer.make_can_msg("HCA_1", bus, values, idx)
 
-def create_pq_hud_control(packer, bus, enabled, steering_pressed, hud_alert, left_lane_visible, right_lane_visible,
+def create_lka_hud_control(packer, bus, enabled, steering_pressed, hud_alert, left_lane_visible, right_lane_visible,
                           ldw_stock_values, left_lane_depart, right_lane_depart):
   values = ldw_stock_values.copy()
   values.update({
@@ -20,11 +20,10 @@ def create_pq_hud_control(packer, bus, enabled, steering_pressed, hud_alert, lef
   })
   return packer.make_can_msg("LDW_Status", bus, values)
 
-def create_pq_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
-  values = {
-    "GRA_Sender": CS.graSenderCoding,
-    "GRA_Abbrechen": 1 if (buttonStatesToSend["cancel"] or CS.buttonStates["cancel"]) else 0,
-    "GRA_Hauptschalt": CS.graHauptschalter,
-  }
+def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False, resume=False):
+  values = gra_stock_values.copy()
+
+  values["GRA_Abbrechen"] = cancel
+  values["GRA_Recall"] = resume
 
   return packer.make_can_msg("GRA_Neu", bus, values, idx)

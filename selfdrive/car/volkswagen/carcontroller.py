@@ -14,11 +14,19 @@ class CarController:
     self.frame = 0
 
     if CP.carFingerprint in PQ_CARS:
+      self.create_steering_control = pqcan.create_steering_control
+      self.create_lka_hud_control = pqcan.create_lka_hud_control
+      self.create_acc_buttons_control = pqcan.create_acc_buttons_control
       self.packer_pt = CANPacker(DBC_FILES.pq)
       self.ldw_step = P.PQ_LDW_STEP
+      self.ldw_messages = PQ_LDW_MESSAGES
     else:
+      self.create_steering_control = volkswagencan.create_steering_control
+      self.create_lka_hud_control = volkswagencan.create_lka_hud_control
+      self.create_acc_buttons_control = volkswagencan.create_acc_buttons_control
       self.packer_pt = CANPacker(DBC_FILES.mqb)
       self.ldw_step = P.MQB_LDW_STEP
+      self.ldw_messages = MQB_LDW_MESSAGES
 
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
@@ -70,37 +78,27 @@ class CarController:
 
       self.apply_steer_last = apply_steer
       idx = (self.frame / P.HCA_STEP) % 16
-      if self.CP.carFingerprint in PQ_CARS:
-        can_sends.append(pqcan.create_pq_steering_control(self.packer_pt, CANBUS.pt, apply_steer, idx, hcaEnabled))
-      else:
-        can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, CANBUS.pt, apply_steer, idx, hcaEnabled))
+      can_sends.append(self.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, idx, hcaEnabled))
 
     # **** HUD Controls ***************************************************** #
 
     if self.frame % self.ldw_step == 0:
       hud_alert = 0
       if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw):
-        hud_alert = PQ_LDW_MESSAGES["laneAssistTakeOver"] if self.CP.carFingerprint in PQ_CARS else MQB_LDW_MESSAGES["laneAssistTakeOver"]
+        hud_alert = self.ldw_messages["laneAssistTakeOver"]
 
-      if self.CP.carFingerprint in PQ_CARS:
-        can_sends.append(pqcan.create_pq_hud_control(self.packer_pt, CANBUS.pt, CC.enabled,
-                                                              CS.out.steeringPressed, hud_alert, hud_control.leftLaneVisible,
-                                                              hud_control.rightLaneVisible, CS.ldw_stock_values,
-                                                              hud_control.leftLaneDepart, hud_control.rightLaneDepart))
-      else:
-        can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, CC.enabled,
-                                                              CS.out.steeringPressed, hud_alert, hud_control.leftLaneVisible,
-                                                              hud_control.rightLaneVisible, CS.ldw_stock_values,
-                                                              hud_control.leftLaneDepart, hud_control.rightLaneDepart))
+      can_sends.append(self.create_lka_hud_control(self.packer_pt, CANBUS.pt, CC.enabled, CS.out.steeringPressed,
+                                                   hud_alert, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                                   CS.ldw_stock_values, hud_control.leftLaneDepart, hud_control.rightLaneDepart))
 
     # **** ACC Button Controls ********************************************** #
 
     if self.CP.pcmCruise and self.frame % P.GRA_ACC_STEP == 0:
-      idx = (CS.gra_stock_values["COUNTER"] + 1) % 16
-      if CC.cruiseControl.cancel:
-        can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx, cancel=True))
-      elif CC.cruiseControl.resume:
-        can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx, resume=True))
+      if CC.cruiseControl.cancel or CC.cruiseControl.resume:
+        idx = (CS.gra_stock_values["COUNTER"] + 1) % 16
+        can_sends.append(self.create_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx,
+                                                         cancel=CC.cruiseControl.cancel,
+                                                         resume=CC.cruiseControl.resume))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / P.STEER_MAX

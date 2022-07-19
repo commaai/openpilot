@@ -1,4 +1,4 @@
-def create_mqb_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
+def create_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
   values = {
     "SET_ME_0X3": 0x3,
     "Assist_Torque": abs(apply_steer),
@@ -12,7 +12,7 @@ def create_mqb_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
   }
   return packer.make_can_msg("HCA_01", bus, values, idx)
 
-def create_mqb_hud_control(packer, bus, enabled, steering_pressed, hud_alert, left_lane_visible, right_lane_visible,
+def create_lka_hud_control(packer, bus, enabled, steering_pressed, hud_alert, left_lane_visible, right_lane_visible,
                            ldw_stock_values, left_lane_depart, right_lane_depart):
   # Lane color reference:
   # 0 (LKAS disabled) - off
@@ -29,7 +29,7 @@ def create_mqb_hud_control(packer, bus, enabled, steering_pressed, hud_alert, le
   })
   return packer.make_can_msg("LDW_02", bus, values)
 
-def create_mqb_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False, resume=False):
+def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False, resume=False):
   values = gra_stock_values.copy()
 
   values["GRA_Abbrechen"] = cancel
