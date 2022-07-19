@@ -94,7 +94,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
         ("ACC_CONTROL", 50),
       ]
 
-    signals += [("ROUGH_CAR_SPEED_2", "CAR_SPEED")]
+    signals += [("CAR_SPEED", "CAR_SPEED")]
     checks += [("CAR_SPEED", 10)]
 
   else:  # Nidec signals
@@ -208,7 +208,10 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
     if self.CP.carFingerprint in HONDA_BOSCH:
-      ret.vEgoCluster = cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] * CV.KPH_TO_MS
+      # Actual value shown on dashboard, only 2Hz, kph/mph based on ["CAR_SPEED"]["IMPERIAL_UNIT"]
+      # ret.vEgoCluster = cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] * CV.KPH_TO_MS
+
+      ret.vEgoCluster = cp.vl["CAR_SPEED"]["CAR_SPEED"] * CV.KPH_TO_MS
     else:
       ret.vEgoCluster = ret.vEgo
 
