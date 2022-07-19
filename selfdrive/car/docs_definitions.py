@@ -1,20 +1,19 @@
-import math
+import re
 
 from cereal import car
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Union, no_type_check
+from typing import Dict, List, Optional, Tuple, Union, no_type_check
 
-TACO_TORQUE_THRESHOLD = 2.5  # m/s^2
-GREAT_TORQUE_THRESHOLD = 1.4  # m/s^2
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
+MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
 
 
 class Tier(Enum):
-  GOLD = "The best openpilot experience. Great highway driving and beyond."
-  SILVER = "A solid highway driving experience, but is limited by stock longitudinal. May be upgraded in the future."
-  BRONZE = "A good highway experience, but may have limited performance in traffic and on sharp turns."
+  GOLD = 0
+  SILVER = 1
+  BRONZE = 2
 
 
 class Column(Enum):
@@ -25,7 +24,6 @@ class Column(Enum):
   FSR_LONGITUDINAL = "Stop and Go"
   FSR_STEERING = "Steer to 0"
   STEERING_TORQUE = "Steering Torque"
-  MAINTAINED = "Actively Maintained"
 
 
 class Star(Enum):
@@ -35,6 +33,7 @@ class Star(Enum):
 
 
 StarColumns = list(Column)[3:]
+TierColumns = (Column.FSR_LONGITUDINAL, Column.FSR_STEERING, Column.STEERING_TORQUE)
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
 
@@ -47,6 +46,16 @@ def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[En
   return None
 
 
+def split_name(name: str) -> Tuple[str, str, str]:
+  make, model = name.split(" ", 1)
+  years = ""
+  match = re.search(MODEL_YEARS_RE, model)
+  if match is not None:
+    years = model[match.start():]
+    model = model[:match.start() - 1]
+  return make, model, years
+
+
 @dataclass
 class CarInfo:
   name: str
@@ -57,7 +66,7 @@ class CarInfo:
   min_enable_speed: Optional[float] = None
   harness: Optional[Enum] = None
 
-  def init(self, CP: car.CarParams, non_tested_cars: List[str], all_footnotes: Dict[Enum, int]):
+  def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     # TODO: set all the min steer speeds in carParams and remove this
     min_steer_speed = CP.minSteerSpeed
     if self.min_steer_speed is not None:
@@ -72,7 +81,8 @@ class CarInfo:
       min_enable_speed = self.min_enable_speed
 
     self.car_name = CP.carName
-    self.make, self.model = self.name.split(' ', 1)
+    self.car_fingerprint = CP.carFingerprint
+    self.make, self.model, self.years = split_name(self.name)
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
@@ -81,18 +91,13 @@ class CarInfo:
       Column.LONGITUDINAL: Star.FULL if CP.openpilotLongitudinalControl and not CP.radarOffCan else Star.EMPTY,
       Column.FSR_LONGITUDINAL: Star.FULL if min_enable_speed <= 0. else Star.EMPTY,
       Column.FSR_STEERING: Star.FULL if min_steer_speed <= 0. else Star.EMPTY,
-      # Column.STEERING_TORQUE set below
-      Column.MAINTAINED: Star.FULL if CP.carFingerprint not in non_tested_cars and self.harness is not Harness.none else Star.EMPTY,
+      Column.STEERING_TORQUE: Star.EMPTY,
     }
 
     # Set steering torque star from max lateral acceleration
-    if not math.isnan(CP.maxLateralAccel):
-      if CP.maxLateralAccel >= GREAT_TORQUE_THRESHOLD:
-        self.row[Column.STEERING_TORQUE] = Star.FULL
-      elif CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
-        self.row[Column.STEERING_TORQUE] = Star.HALF
-      else:
-        self.row[Column.STEERING_TORQUE] = Star.EMPTY
+    assert CP.maxLateralAccel > 0.1
+    if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
+      self.row[Column.STEERING_TORQUE] = Star.FULL
 
     if CP.notCar:
       for col in StarColumns:
@@ -105,7 +110,15 @@ class CarInfo:
       if footnote is not None and footnote.value.star is not None:
         self.row[column] = footnote.value.star
 
-    self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
+    # openpilot ACC star doesn't count for tiers
+    full_stars = [s for col, s in self.row.items() if col in TierColumns].count(Star.FULL)
+    if full_stars == len(TierColumns):
+      self.tier = Tier.GOLD
+    elif full_stars == len(TierColumns) - 1:
+      self.tier = Tier.SILVER
+    else:
+      self.tier = Tier.BRONZE
+
     return self
 
   @no_type_check
@@ -113,6 +126,8 @@ class CarInfo:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
       item = star_icon.format(item.value)
+    elif column == Column.MODEL and len(self.years):
+      item += f" {self.years}"
 
     footnote = get_footnote(self.footnotes, column)
     if footnote is not None:
@@ -156,11 +171,6 @@ class Harness(Enum):
 
 STAR_DESCRIPTIONS = {
   "Gas & Brakes": {  # icon and row name
-    "openpilot Adaptive Cruise Control (ACC)": [  # star column
-      [Star.FULL.value, "openpilot is able to control the gas and brakes."],
-      [Star.HALF.value, "openpilot is able to control the gas and brakes with some restrictions."],
-      [Star.EMPTY.value, "The gas and brakes are controlled by the car's stock Adaptive Cruise Control (ACC) system."],
-    ],
     Column.FSR_LONGITUDINAL.value: [
       [Star.FULL.value, "Adaptive Cruise Control (ACC) operates down to 0 mph."],
       [Star.EMPTY.value, "Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed."],
@@ -172,15 +182,8 @@ STAR_DESCRIPTIONS = {
       [Star.EMPTY.value, "No steering control below certain speeds."],
     ],
     Column.STEERING_TORQUE.value: [
-      [Star.FULL.value, "Car has enough steering torque to take tighter turns."],
-      [Star.HALF.value, "Car has enough steering torque for comfortable highway driving."],
+      [Star.FULL.value, "Car has enough steering torque to take tight turns."],
       [Star.EMPTY.value, "Limited ability to make turns."],
-    ],
-  },
-  "Support": {
-    Column.MAINTAINED.value: [
-      [Star.FULL.value, "Mainline software support, harness hardware sold by comma, lots of users, primary development target."],
-      [Star.EMPTY.value, "Low user count, community maintained, harness hardware not sold by comma."],
     ],
   },
 }

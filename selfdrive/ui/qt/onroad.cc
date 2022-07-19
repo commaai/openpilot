@@ -52,6 +52,12 @@ void OnroadWindow::updateState(const UIState &s) {
     alerts->updateAlert(alert, bgColor);
   }
 
+  if (s.scene.map_on_left) {
+    split->setDirection(QBoxLayout::LeftToRight);
+  } else {
+    split->setDirection(QBoxLayout::RightToLeft);
+  }
+
   nvg->updateState(s);
 
   if (bg != bgColor) {
@@ -80,7 +86,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
       QObject::connect(uiState(), &UIState::offroadTransition, m, &MapWindow::offroadTransition);
 
       m->setFixedWidth(topWidget(this)->width() / 2);
-      split->addWidget(m, 0, Qt::AlignRight);
+      split->insertWidget(0, m);
 
       // Make map visible after adding to split
       m->offroadTransition(offroad);

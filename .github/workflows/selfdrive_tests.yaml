@@ -553,7 +553,7 @@ jobs:
         id: save_diff
         run: |
           ${{ env.RUN }} "scons -j$(nproc)"
-          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_info")
+          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_info") || true
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
