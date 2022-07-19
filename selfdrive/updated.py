@@ -315,10 +315,8 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
   new_version: bool = cur_hash != upstream_hash
   git_fetch_result = check_git_fetch_result(git_fetch_output)
 
-  new_version = True
-
   cloudlog.info(f"comparing {cur_hash} to {upstream_hash}")
-  if new_version or git_fetch_result:
+  if new_version or git_fetch_result or new_branch:
     cloudlog.info("Running update")
 
     if new_version:
