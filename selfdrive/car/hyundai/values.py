@@ -1252,7 +1252,7 @@ DBC = {
   CAR.GENESIS_G70_2020: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.GENESIS_G80: dbc_dict('hyundai_kia_generic', None),
   CAR.GENESIS_G90: dbc_dict('hyundai_kia_generic', None),
-  CAR.GENESIS_GV70: dbc_dict('kia_ev6', None),
+  CAR.GENESIS_GV70: dbc_dict('hyundai_genesis_gv70', None),
   CAR.HYUNDAI_GENESIS: dbc_dict('hyundai_kia_generic', None),
   CAR.IONIQ_PHEV_2019: dbc_dict('hyundai_kia_generic', None),
   CAR.IONIQ_PHEV: dbc_dict('hyundai_kia_generic', None),
