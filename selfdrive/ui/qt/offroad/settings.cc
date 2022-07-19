@@ -254,6 +254,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
     }
     std::system("pkill -1 -f selfdrive.updated");
   });
+  connect(uiState(), &UIState::offroadTransition, updateBtn, &QPushButton::setEnabled);
 
   branchSwitcherBtn = new ButtonControl(tr("Switch Branch"), tr("ENTER"));
   connect(branchSwitcherBtn, &ButtonControl::clicked, [=]() {
@@ -267,8 +268,6 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
   connect(uiState(), &UIState::offroadTransition, branchSwitcherBtn, &QPushButton::setEnabled);
 
-  branchSwitcherBtn->setVisible(!params.getBool("IsTestedBranch"));
-
   auto uninstallBtn = new ButtonControl(tr("Uninstall %1").arg(getBrand()), tr("UNINSTALL"));
   connect(uninstallBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to uninstall?"), this)) {
@@ -279,6 +278,9 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
 
   QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, branchSwitcherBtn, gitBranchLbl, gitCommitLbl, osVersionLbl, uninstallBtn};
   for (QWidget* w : widgets) {
+    if (w == branchSwitcherBtn && params.getBool("IsTestedBranch")) {
+      continue;
+    }
     addItem(w);
   }
 
