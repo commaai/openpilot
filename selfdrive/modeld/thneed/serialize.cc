@@ -50,11 +50,13 @@ void Thneed::load(const char *filename) {
       desc.image_row_pitch = mobj["row_pitch"].int_value();
       desc.buffer = clbuf;
 
-      cl_image_format format;
+      cl_image_format format = {0};
       format.image_channel_order = CL_RGBA;
       format.image_channel_data_type = CL_HALF_FLOAT;
 
-      clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, NULL);
+      cl_int errcode;
+      clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
+      if (clbuf == NULL) printf("clError: %s\n", cl_get_error_string(errcode));
       assert(clbuf != NULL);
     }
 
@@ -65,6 +67,29 @@ void Thneed::load(const char *filename) {
   for (const auto &[name, source] : jdat["programs"].object_items()) {
     if (debug >= 1) printf("building %s with size %zu\n", name.c_str(), source.string_value().size());
     g_programs[name] = cl_program_from_source(context, device_id, source.string_value());
+  }
+
+  for (auto &obj : jdat["inputs"].array_items()) {
+    auto mobj = obj.object_items();
+    int sz = mobj["size"].int_value();
+    cl_mem aa = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
+    input_clmem.push_back(aa);
+    input_sizes.push_back(sz);
+    printf("Thneed::load: adding input %s with size %d\n", mobj["name"].string_value().data(), sz);
+
+    cl_int cl_err;
+    void *ret = clEnqueueMapBuffer(command_queue, aa, CL_TRUE, CL_MAP_WRITE, 0, sz, 0, NULL, NULL, &cl_err);
+    assert(cl_err == CL_SUCCESS);
+    inputs.push_back(ret);
+  }
+
+  for (auto &obj : jdat["outputs"].array_items()) {
+    auto mobj = obj.object_items();
+    int sz = mobj["size"].int_value();
+    printf("Thneed::save: adding output with size %d\n", sz);
+    // TODO: support multiple outputs
+    output = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
+    assert(output != NULL);
   }
 
   for (auto &obj : jdat["binaries"].array_items()) {
