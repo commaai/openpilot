@@ -309,14 +309,17 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
   git_fetch_output = run(["git", "fetch"], OVERLAY_MERGED, low_priority=True)
   cloudlog.info("git fetch success: %s", git_fetch_output)
 
-  new_branch = Params().get("SwitchToBranch", encoding='utf8')
   cur_hash = run(["git", "rev-parse", "HEAD"], OVERLAY_MERGED).rstrip()
   upstream_hash = run(["git", "rev-parse", "@{u}"], OVERLAY_MERGED).rstrip()
-  new_version: bool = cur_hash != upstream_hash
+  new_version = cur_hash != upstream_hash
   git_fetch_result = check_git_fetch_result(git_fetch_output)
 
+  new_branch = Params().get("SwitchToBranch", encoding='utf8')
+  if new_branch is not None:
+    new_version = True
+
   cloudlog.info(f"comparing {cur_hash} to {upstream_hash}")
-  if new_version or git_fetch_result or new_branch:
+  if new_version or git_fetch_result:
     cloudlog.info("Running update")
 
     if new_version:
