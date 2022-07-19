@@ -4,7 +4,7 @@ from cereal import car
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Union, no_type_check
+from typing import Dict, List, Optional, Tuple, Union, no_type_check
 
 TACO_TORQUE_THRESHOLD = 2.5  # m/s^2
 GREAT_TORQUE_THRESHOLD = 1.4  # m/s^2
@@ -48,13 +48,15 @@ def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[En
   return None
 
 
-def split_years(model: str) -> str:
+def split_name(name: str) -> Tuple[str, str, str]:
+  make, model = name.split(" ", 1)
   match = re.search(MODEL_YEARS_RE, model)
   years = ""
   if match is not None:
     years = model[match.start():]
     model = model[:match.start() - 1]
-  return model, years
+
+  return make, model, years
 
 
 @dataclass
@@ -83,8 +85,7 @@ class CarInfo:
 
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
-    self.make, self.model = self.name.split(' ', 1)
-    self.model, self.years = split_years(self.model)
+    self.make, self.model, self.years = split_name(self.name)
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
