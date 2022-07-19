@@ -34,6 +34,7 @@ class Star(Enum):
 
 
 StarColumns = list(Column)[3:]
+TierColumns = (Column.FSR_LONGITUDINAL, Column.FSR_STEERING, Column.STEERING_TORQUE)
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
 
@@ -103,8 +104,15 @@ class CarInfo:
       if footnote is not None and footnote.value.star is not None:
         self.row[column] = footnote.value.star
 
-    ms = len(StarColumns)
-    self.tier = {ms: Tier.GOLD, ms-1: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
+    # openpilot ACC star doesn't count for tiers
+    full_stars = [s for col, s in self.row.items() if col in TierColumns].count(Star.FULL)
+    if full_stars == len(TierColumns):
+      self.tier = Tier.GOLD
+    elif full_stars == (len(TierColumns)-1):
+      self.tier = Tier.SILVER
+    else:
+      self.tier = Tier.BRONZE
+
     return self
 
   @no_type_check

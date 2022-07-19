@@ -18,7 +18,7 @@ How We Rate The Cars
 {% endfor %}
 {% endfor %}
 
-# {{all_car_info | length}} supported cars
+# {{all_car_info | length}} Supported Cars
 
 |{{Column | map(attribute='value') | join('|')}}|
 |---|---|---|:---:|:---:|:---:|:---:|
