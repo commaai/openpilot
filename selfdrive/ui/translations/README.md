@@ -1,7 +1,5 @@
 # Multilanguage
 
-![multilanguage_onroad](https://user-images.githubusercontent.com/25857203/178912800-2c798af8-78e3-498e-9e19-35906e0bafff.png)
-
 ## Contributing
 
 Before getting started, make sure you have set up the openpilot Ubuntu development environment by reading the [tools README.md](/tools/README.md).
@@ -30,10 +28,19 @@ Follow the steps above, omitting steps 1. and 2. Any time you edit translations 
 
 ### Testing
 
-openpilot has a unit test to make sure all translations are up to date with the text in openpilot and that all translations are completed.
+openpilot has a few unit tests to make sure all translations are up to date and all strings are wrapped in a translation marker.
 
-Run and fix any issues:
+Tests translation files up to date:
 
-```python
+```shell
 selfdrive/ui/tests/test_translations.py
 ```
+
+Tests all static source strings are wrapped:
+
+```shell
+selfdrive/ui/tests/create_test_translations.sh && selfdrive/ui/tests/test_translations
+```
+
+---
+![multilanguage_onroad](https://user-images.githubusercontent.com/25857203/178912800-2c798af8-78e3-498e-9e19-35906e0bafff.png)
