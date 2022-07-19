@@ -53,7 +53,6 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.vEgoCluster = ret.vEgo
 
     ret.standstill = ret.vEgoRaw < 0.1
 
@@ -79,7 +78,6 @@ class CarState(CarStateBase):
       ret.cruiseState.standstill = cp.vl["SCC11"]["SCCInfoDisplay"] == 4.
       speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] else CV.KPH_TO_MS
       ret.cruiseState.speed = cp.vl["SCC11"]["VSetDis"] * speed_conv
-      ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     # TODO: Find brake pressure
     ret.brake = 0
@@ -155,7 +153,6 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.vEgoCluster = ret.vEgo
     ret.standstill = ret.vEgoRaw < 0.1
 
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEERING_RATE"]
@@ -173,7 +170,6 @@ class CarState(CarStateBase):
 
     speed_factor = CV.MPH_TO_MS if cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] == 1 else CV.KPH_TO_MS
     ret.cruiseState.speed = cp.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
-    ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     self.cruise_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["ADAPTIVE_CRUISE_MAIN_BTN"])

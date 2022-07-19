@@ -32,7 +32,6 @@ class CarState(CarStateBase):
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     # Kalman filter, even though Subaru raw wheel speed is heaviliy filtered by default
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.vEgoCluster = ret.vEgo
     ret.standstill = ret.vEgoRaw < 0.01
 
     # continuous blinker signals for assisted lane change
@@ -57,8 +56,6 @@ class CarState(CarStateBase):
     if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
        (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
       ret.cruiseState.speed *= CV.MPH_TO_KPH
-
-    ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     ret.seatbeltUnlatched = cp.vl["Dashlights"]["SEATBELT_FL"] == 1
     ret.doorOpen = any([cp.vl["BodyInfo"]["DOOR_OPEN_RR"],

@@ -210,10 +210,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in HONDA_BOSCH:
       # Actual value shown on dashboard, only 2Hz, kph/mph based on ["CAR_SPEED"]["IMPERIAL_UNIT"]
       # ret.vEgoCluster = cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] * CV.KPH_TO_MS
-
       ret.vEgoCluster = cp.vl["CAR_SPEED"]["CAR_SPEED"] * CV.KPH_TO_MS
-    else:
-      ret.vEgoCluster = ret.vEgo
 
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE"]
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE_RATE"]
@@ -252,11 +249,9 @@ class CarState(CarStateBase):
         conversion_factor = CV.MPH_TO_MS if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS and not self.is_metric else CV.KPH_TO_MS
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
         ret.cruiseState.speed = self.v_cruise_pcm_prev if acc_hud["CRUISE_SPEED"] > 160.0 else acc_hud["CRUISE_SPEED"] * conversion_factor
-        ret.cruiseState.speedCluster = ret.cruiseState.speed
         self.v_cruise_pcm_prev = ret.cruiseState.speed
     else:
       ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * CV.KPH_TO_MS
-      ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     if self.CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
       ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0

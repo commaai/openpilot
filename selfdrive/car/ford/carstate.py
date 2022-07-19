@@ -24,7 +24,6 @@ class CarState(CarStateBase):
     # car speed
     ret.vEgoRaw = cp.vl["EngVehicleSpThrottle2"]["Veh_V_ActlEng"] * CV.KPH_TO_MS
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.vEgoCluster = ret.vEgo
     ret.yawRate = cp.vl["Yaw_Data_FD1"]["VehYaw_W_Actl"] * CV.RAD_TO_DEG
     ret.standstill = cp.vl["DesiredTorqBrk"]["VehStop_D_Stat"] == 1
 
@@ -47,7 +46,6 @@ class CarState(CarStateBase):
 
     # cruise state
     ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * CV.MPH_TO_MS
-    ret.cruiseState.speedCluster = ret.cruiseState.speed
     ret.cruiseState.enabled = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (4, 5)
     ret.cruiseState.available = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (3, 4, 5)
 

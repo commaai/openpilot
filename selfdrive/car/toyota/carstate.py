@@ -52,7 +52,6 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.vEgoCluster = ret.vEgo
 
     ret.standstill = ret.vEgoRaw < 0.001
 
@@ -94,7 +93,6 @@ class CarState(CarStateBase):
     else:
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
-    ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     if self.CP.carFingerprint in RADAR_ACC_CAR:
       self.acc_type = cp.vl["ACC_CONTROL"]["ACC_TYPE"]
