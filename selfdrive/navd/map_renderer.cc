@@ -46,7 +46,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
 
   if (online) {
     vipc_server.reset(new VisionIpcServer("navd"));
-    vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_MAP, NUM_VIPC_BUFFERS, true, WIDTH, HEIGHT);
+    vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_MAP, NUM_VIPC_BUFFERS, false, WIDTH, HEIGHT);
     vipc_server->start_listener();
 
     pm.reset(new PubMaster({"navThumbnail"}));
@@ -118,8 +118,16 @@ void MapRenderer::sendVipc() {
     .timestamp_eof = ts,
   };
 
-  assert(cap.sizeInBytes() == buf->len);
-  memcpy(buf->addr, cap.bits(), buf->len);
+  assert(cap.sizeInBytes() >= buf->len);
+  uint8_t* dst = (uint8_t*)buf->addr;
+  uint8_t* src = cap.bits();
+
+  // RGB to greyscale
+  memset(dst, 128, buf->len);
+  for (int i = 0; i < WIDTH * HEIGHT; i++) {
+    dst[i] = src[i * 3];
+  }
+
   vipc_server->send(buf, &extra);
 
   if (frame_id % 100 == 0) {
@@ -171,7 +179,7 @@ void MapRenderer::initLayers() {
     nav["type"] = "line";
     nav["source"] = "navSource";
     m_map->addLayer(nav, "road-intersection");
-    m_map->setPaintProperty("navLayer", "line-color", QColor("blue"));
+    m_map->setPaintProperty("navLayer", "line-color", QColor("grey"));
     m_map->setPaintProperty("navLayer", "line-width", 3);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
   }
