@@ -26,9 +26,13 @@ openpilot provides a few tools to help contributors manage their translations an
 
 Follow the steps above, omitting steps 1. and 2. Any time you edit translations you'll want to make sure to compile them.
 
+### Updating the UI
+
+Any time you edit source code in the UI, you need to update and compile the translations to ensure the line numbers and contexts are up to date (last step above).
+
 ### Testing
 
-openpilot has a few unit tests to make sure all translations are up to date and all strings are wrapped in a translation marker.
+openpilot has a few unit tests to make sure all translations are up to date and that all strings are wrapped in a translation marker.
 
 Tests translation files up to date:
 
