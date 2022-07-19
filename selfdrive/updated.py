@@ -311,8 +311,12 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
 
   cur_hash = run(["git", "rev-parse", "HEAD"], OVERLAY_MERGED).rstrip()
   upstream_hash = run(["git", "rev-parse", "@{u}"], OVERLAY_MERGED).rstrip()
-  new_version: bool = cur_hash != upstream_hash
+  new_version = cur_hash != upstream_hash
   git_fetch_result = check_git_fetch_result(git_fetch_output)
+
+  new_branch = Params().get("SwitchToBranch", encoding='utf8')
+  if new_branch is not None:
+    new_version = True
 
   cloudlog.info(f"comparing {cur_hash} to {upstream_hash}")
   if new_version or git_fetch_result:
@@ -320,12 +324,16 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
 
     if new_version:
       cloudlog.info("git reset in progress")
-      r = [
-        run(["git", "reset", "--hard", "@{u}"], OVERLAY_MERGED, low_priority=True),
-        run(["git", "clean", "-xdf"], OVERLAY_MERGED, low_priority=True ),
-        run(["git", "submodule", "init"], OVERLAY_MERGED, low_priority=True),
-        run(["git", "submodule", "update"], OVERLAY_MERGED, low_priority=True),
+      cmds = [
+        ["git", "reset", "--hard", "@{u}"],
+        ["git", "clean", "-xdf"],
+        ["git", "submodule", "init"],
+        ["git", "submodule", "update"],
       ]
+      if new_branch is not None:
+        cloudlog.info(f"switching to branch {repr(new_branch)}")
+        cmds.insert(0, ["git", "checkout", "-f", new_branch])
+      r = [run(cmd, OVERLAY_MERGED, low_priority=True) for cmd in cmds]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
       if AGNOS:
