@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Union, no_type_check
 TACO_TORQUE_THRESHOLD = 2.5  # m/s^2
 GREAT_TORQUE_THRESHOLD = 1.4  # m/s^2
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
+MODEL_YEARS_RE = r"(\d{4}-\d{2}(,|$))|(\d{4}(,|$))"
 
 
 class Tier(Enum):
@@ -57,6 +58,14 @@ def get_model_years(year_str):
   return year_set
 
 
+def split_years(model):
+  match = re.search(MODEL_YEARS_RE, model)
+  years = ""
+  if match is not None:
+    years = model[match.start():]
+    model = model[:match.start() - 1]
+  return model, years
+
 
 @dataclass
 class CarInfo:
@@ -85,6 +94,7 @@ class CarInfo:
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model = self.name.split(' ', 1)
+    self.model, self.years = split_years(self.model)
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
@@ -130,6 +140,8 @@ class CarInfo:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
       item = star_icon.format(item.value)
+    elif column == Column.MODEL and len(self.years):
+      item += f" {self.years}"
 
     footnote = get_footnote(self.footnotes, column)
     if footnote is not None:
