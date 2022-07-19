@@ -19,7 +19,7 @@ class MapRenderer : public QObject {
   Q_OBJECT
 
 public:
-  MapRenderer(const QMapboxGLSettings &, bool enable_vipc=true);
+  MapRenderer(const QMapboxGLSettings &, bool online=true);
   uint8_t* getImage();
   void update();
   bool loaded();
@@ -34,6 +34,7 @@ private:
 
   std::unique_ptr<VisionIpcServer> vipc_server;
   std::unique_ptr<PubMaster> pm;
+  std::unique_ptr<SubMaster> sm;
   void sendVipc();
 
   QMapboxGLSettings m_settings;
@@ -43,7 +44,10 @@ private:
 
   uint32_t frame_id = 0;
 
+  QTimer* timer;
+
 public slots:
   void updatePosition(QMapbox::Coordinate position, float bearing);
   void updateRoute(QList<QGeoCoordinate> coordinates);
+  void msgUpdate();
 };

@@ -13,7 +13,7 @@ const int HEIGHT = WIDTH;
 
 const int NUM_VIPC_BUFFERS = 4;
 
-MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool enable_vipc) : m_settings(settings) {
+MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_settings(settings) {
   QSurfaceFormat fmt;
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 
@@ -44,12 +44,41 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool enable_vipc) : 
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
   gl_functions->glViewport(0, 0, WIDTH, HEIGHT);
 
-  if (enable_vipc) {
+  if (online) {
     vipc_server.reset(new VisionIpcServer("navd"));
     vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_MAP, NUM_VIPC_BUFFERS, true, WIDTH, HEIGHT);
     vipc_server->start_listener();
 
     pm.reset(new PubMaster({"navThumbnail"}));
+    sm.reset(new SubMaster({"liveLocationKalman", "navRoute"}));
+
+    timer = new QTimer(this);
+    QObject::connect(timer, SIGNAL(timeout()), this, SLOT(msgUpdate()));
+    timer->start(50);
+  }
+}
+
+void MapRenderer::msgUpdate() {
+  sm->update(0);
+
+  if (sm->updated("liveLocationKalman")) {
+    auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
+    auto pos = location.getPositionGeodetic();
+    auto orientation = location.getCalibratedOrientationNED();
+
+    bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
+    if (localizer_valid) {
+      updatePosition(QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]), RAD2DEG(orientation.getValue()[2]));
+    }
+  }
+
+  if (sm->updated("navRoute")) {
+    QList<QGeoCoordinate> route;
+    auto coords = (*sm)["navRoute"].getNavRoute().getCoordinates();
+    for (auto const &c : coords) {
+      route.push_back(QGeoCoordinate(c.getLatitude(), c.getLongitude()));
+    }
+    updateRoute(route);
   }
 }
 
