@@ -129,7 +129,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   ],
   CAR.HIGHLANDER: ToyotaCarInfo("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo", footnotes=[Footnote.DSU]),
   CAR.HIGHLANDER_TSS2: ToyotaCarInfo("Toyota Highlander 2020-22"),
-  CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19", footnotes=[Footnote.DSU]),
+  CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19", video_link="https://www.youtube.com/watch?v=9lEh-bIvFO8", footnotes=[Footnote.DSU]),
   CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-22"),
   CAR.PRIUS: [
     ToyotaCarInfo("Toyota Prius 2016-20", "TSS-P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
