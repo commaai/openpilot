@@ -63,6 +63,12 @@ if GetOption('test'):
   qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=qt_libs)
 
 
+# build translation files
+translation_sources = Glob("#selfdrive/ui/translations/*.ts", strings=True)
+translation_targets = [src.replace('.ts', '.qm') for src in translation_sources]
+qt_env.Command(translation_targets, translation_sources, 'lrelease $SOURCES')
+
+
 # setup and factory resetter
 if GetOption('extras'):
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)

@@ -271,7 +271,16 @@ else:
 Export('envCython')
 
 # Qt build environment
+def objcopy(source, target, env, for_signature):
+#   print((source, target))
+#   print(dir(source[0]))
+  return f'lrelease {source[0]}'
+#   return '$OBJCOPY -O binary %s %s' % (source[0], target[0])
+TranslationsBuilder = Builder(generator=objcopy, suffix='.qm', src_suffix='.ts')
+
 qt_env = env.Clone()
+qt_env.TranslationsBuilder = TranslationsBuilder
+# qt_env._set_builders()
 qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus"]
 
 qt_libs = []
